@@ -21,6 +21,23 @@ internal static class ShowcaseReducers
             LastAction = nameof(ChangeEmailAction),
         };
 
+    /// <summary>Changes the demo completion without affecting the form.</summary>
+    /// <param name="state">Current state.</param>
+    /// <param name="action">The selection.</param>
+    /// <returns>Updated state, or the original state for an unsupported percentage.</returns>
+    public static ShowcaseState ChangeProgress(
+        ShowcaseState state,
+        ChangeProgressAction action
+    ) =>
+        action.Percent is < 0 or > 100
+            ? state
+            : state with
+            {
+                ProgressPercent = action.Percent,
+                ActionCount = state.ActionCount + 1,
+                LastAction = nameof(ChangeProgressAction),
+            };
+
     /// <summary>Changes to a supported theme.</summary>
     /// <param name="state">Current state.</param>
     /// <param name="action">The selection.</param>
@@ -49,6 +66,7 @@ internal static class ShowcaseReducers
         new()
         {
             ThemeMode = state.ThemeMode,
+            ProgressPercent = state.ProgressPercent,
             ActionCount = state.ActionCount + 1,
             LastAction = nameof(ResetProfileAction),
         };

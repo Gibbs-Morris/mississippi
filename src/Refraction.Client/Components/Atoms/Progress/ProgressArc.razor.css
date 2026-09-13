@@ -1,0 +1,45 @@
+.rf-progress-arc {
+    display: inline-block;
+    width: var(--rf-progress-size, 36px);
+    height: var(--rf-progress-size, 36px);
+    flex: none;
+}
+
+.rf-progress-arc__svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    transform: rotate(-90deg);
+}
+
+.rf-progress-arc__track {
+    fill: none;
+    stroke: var(--rf-color-text-muted);
+    stroke-width: var(--rf-progress-stroke-width, 2);
+}
+
+.rf-progress-arc__fill {
+    fill: none;
+    stroke: var(--rf-color-action-primary);
+    stroke-width: var(--rf-progress-stroke-width, 2);
+    stroke-linecap: round;
+}
+
+.rf-progress-arc[data-state="indeterminate"] .rf-progress-arc__svg {
+    animation: rf-progress-spin 1.4s linear infinite;
+}
+
+.rf-progress-arc[data-reduced-motion="true"] .rf-progress-arc__svg {
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rf-progress-arc[data-state="indeterminate"] .rf-progress-arc__svg {
+        animation: none;
+    }
+}
+
+@keyframes rf-progress-spin {
+    from { transform: rotate(-90deg); }
+    to { transform: rotate(270deg); }
+}

@@ -44,7 +44,11 @@ rendered by the form and state inspector. Reset restores the example address
 while preserving the chosen theme. State lasts only for the current browser
 session and is not persisted to a server.
 
-The gallery identifies the verified input/theme surface separately from the
+Choose percentages or **Unknown duration** in the progress demonstration to
+follow `ChangeProgressAction` through the same store. Form reset preserves the
+selected progress. The sample starts no background operation.
+
+The gallery identifies the verified input, theme, and progress surface separately from the
 library's prototype controls. It is not a whole-library accessibility
 certification. Components are organized into atomic folders, with page-level
 store integration and separate markup, logic, and styles.

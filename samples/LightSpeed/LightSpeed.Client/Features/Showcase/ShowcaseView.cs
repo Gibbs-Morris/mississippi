@@ -20,4 +20,8 @@ public sealed record ShowcaseView(
     string StatusText,
     int ActionCount,
     string LastAction
-);
+)
+{
+    /// <summary>Gets the demonstrated completion, or null for unknown duration.</summary>
+    public int? ProgressPercent { get; init; } = 25;
+}

@@ -40,6 +40,9 @@ internal static class ShowcaseSelectors
             error,
             status,
             state.ActionCount,
-            state.LastAction);
+            state.LastAction)
+        {
+            ProgressPercent = state.ProgressPercent,
+        };
     }
 }

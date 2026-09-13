@@ -1,0 +1,24 @@
+@using Mississippi.Refraction.Client.Components.Atoms.Progress
+<section aria-label="Progress arc demonstration">
+    <p class="label">ATOM / PROGRESS ARC</p>
+    <h2>Completion at a glance.</h2>
+    <div class="preview">
+        <ProgressArc Value="@(Percent ?? 0)" State="@ProgressState" aria-label="Workspace synchronization"
+                     style="--rf-progress-size:72px"/>
+        <p>@StatusText</p>
+    </div>
+    <div class="progress-options" role="group" aria-label="Demo completion">
+        @foreach (int value in CompletionOptions)
+        {
+            <button type="button" aria-pressed="@(Percent == value ? "true" : "false")"
+                    @onclick="() => PercentChanged.InvokeAsync(value)">
+                @value%
+            </button>
+        }
+        <button type="button" aria-pressed="@(Percent is null ? "true" : "false")"
+                @onclick="() => PercentChanged.InvokeAsync(null)">
+            Unknown duration
+        </button>
+    </div>
+    <p class="note">Choose a state to inspect the arc. No background operation is started.</p>
+</section>

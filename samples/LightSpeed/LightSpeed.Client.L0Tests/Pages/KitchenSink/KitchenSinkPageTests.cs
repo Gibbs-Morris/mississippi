@@ -32,4 +32,24 @@ public sealed class KitchenSinkPageTests : BunitContext
         Assert.Equal("light", cut.Find("[data-rf-theme]").GetAttribute("data-rf-theme"));
         Assert.Empty(cut.FindAll("[role=alert]"));
     }
+
+    /// <summary>Progress choices dispatch through Reservoir and survive form resets.</summary>
+    [Fact]
+    public void ProgressChoicesUpdateSelectedState()
+    {
+        Services.AddReservoir().AddShowcaseFeature();
+        using IRenderedComponent<KitchenSinkPage> cut = Render<KitchenSinkPage>();
+        cut.FindAll(".progress-options button").Single(button => button.TextContent.Trim() == "75%").Click();
+        Assert.Equal("75", cut.Find("[role=progressbar]").GetAttribute("aria-valuenow"));
+        Assert.Equal("ChangeProgressAction", cut.Find("[data-testid=last-action]").TextContent);
+        Assert.Equal("75%", cut.Find("[data-testid=state-progress]").TextContent);
+        cut.Find("form button[type=button]").Click();
+        Assert.Equal("75", cut.Find("[role=progressbar]").GetAttribute("aria-valuenow"));
+        cut.FindAll(".progress-options button")
+            .Single(button => button.TextContent.Trim() == "Unknown duration")
+            .Click();
+        Assert.False(cut.Find("[role=progressbar]").HasAttribute("aria-valuenow"));
+        Assert.Equal("Unknown", cut.Find("[data-testid=state-progress]").TextContent);
+        Assert.Equal("3", cut.Find("[data-testid=action-count]").TextContent);
+    }
 }

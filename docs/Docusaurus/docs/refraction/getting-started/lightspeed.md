@@ -6,8 +6,8 @@ sidebar_position: 2
 
 # Explore Refraction in LightSpeed
 
-LightSpeed demonstrates Refraction inputs and scoped themes with Reservoir
-client state. Its kitchen sink shows the selected state after each form action.
+LightSpeed demonstrates Refraction inputs, progress arcs, and scoped themes with
+Reservoir client state. Its kitchen sink shows the selected state after each action.
 
 ## What you will achieve
 
@@ -38,6 +38,10 @@ Change the color theme, clear the work email, and select **Validate profile**.
 Enter a valid address to clear the error. Select **Reset example** to restore
 the starting form while retaining the chosen theme.
 
+In **Completion at a glance**, select a percentage or **Unknown duration**.
+The arc and the inspector follow the same action. Resetting the form preserves
+this selection; no background operation starts.
+
 ## Verify it works
 
 The form displays an associated error for an empty submitted address.
@@ -60,5 +64,6 @@ feature, with a visible action and state trail.
 ## Next Steps
 
 - [InputField contract](../reference/input-field.md)
+- [ProgressArc contract](../reference/progress-arc.md)
 - [Scoped themes](../reference/themes.md)
 - [Reservoir overview](../../reservoir/index.md)
