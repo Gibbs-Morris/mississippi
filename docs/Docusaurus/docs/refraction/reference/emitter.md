@@ -31,15 +31,17 @@ handlers that could invoke activation twice. Native focus replaces the
 prototype's explicit `tabindex`.
 
 The optional `Label` is visible inside the button. Every rendered emitter must
-have a meaningful name: supply a nonblank `Label`, a string `aria-label`, or a
-string `aria-labelledby`. When `Label` is blank and no nonblank string ARIA name
+have a meaningful name: supply a nonblank `Label`, a nonblank string
+`aria-label`, or a nonblank string `aria-labelledby`. When `Label` is blank and no nonblank string ARIA name
 is supplied, `InvalidOperationException` is thrown during parameter
 application. Non-string ARIA naming values are rejected separately. The seed
 is decorative and carries `aria-hidden="true"`.
 
 Use `aria-labelledby` when an existing nonempty element supplies the name. The
-value must contain the ID or space-separated IDs of those labeling elements;
-the atom does not resolve IDs or inspect remote DOM content.
+guard checks only the parameter value. A nonblank ID that has no matching
+element, or references an empty element, still passes parameter validation.
+Callers must supply the ID or space-separated IDs of existing nonempty labeling
+elements; the atom does not resolve IDs or inspect remote DOM content.
 
 When callers provide case variants of one naming attribute, the last value is
 validated and rendered. Keep one nonblank string value to make the effective
@@ -72,8 +74,9 @@ prototype assumptions about `role="button"`, `tabindex="0"`, or a generic
 wrapper with the native button contract. Provide a nonblank `Label` for a
 visible action, or provide a nonblank string `aria-label`/`aria-labelledby` for
 icon-only use. For `aria-labelledby`, supply IDs of existing nonempty labeling
-elements; a missing valid source throws `InvalidOperationException`, and
-non-string ARIA naming values are rejected.
+elements. If no nonblank label or ARIA value is supplied,
+`InvalidOperationException` is thrown; non-string ARIA naming values are
+rejected as well.
 
 The atom remains presentational: pages or container components own state and
 dispatch, while `OnActivate` and `OnFocus` report intent upward. The

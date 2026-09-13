@@ -24,9 +24,10 @@ namespace Mississippi.Refraction.Client.Components.Atoms.Activation;
 ///         supplies a native accessible name. The decorative seed remains an 8px visual identity.
 ///     </para>
 ///     <para>
-///         Every rendered emitter must have a nonblank visible label or a string
-///         <c>aria-label</c>/<c>aria-labelledby</c> attribute. An
-///         <see cref="InvalidOperationException" /> is thrown when the requirement is not met.
+///         Every rendered emitter must receive a nonblank visible label or a nonblank string
+///         <c>aria-label</c>/<c>aria-labelledby</c> parameter. An
+///         <see cref="InvalidOperationException" /> is thrown when no valid naming parameter is supplied
+///         or a supplied ARIA naming value is not a string.
 ///     </para>
 /// </remarks>
 public sealed partial class Emitter : ComponentBase
@@ -130,8 +131,10 @@ public sealed partial class Emitter : ComponentBase
         name.Equals("onfocus", StringComparison.OrdinalIgnoreCase) ||
         name.Equals("type", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Validates that the rendered button has a meaningful accessible name.</summary>
-    /// <exception cref="InvalidOperationException">Thrown when no valid accessible name is supplied.</exception>
+    /// <summary>Validates the supplied accessible naming parameter values.</summary>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when no nonblank naming parameter is supplied or a supplied ARIA naming value is not a string.
+    /// </exception>
     /// <inheritdoc />
     protected override void OnParametersSet() => ValidateAccessibleName();
 
