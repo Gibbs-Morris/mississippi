@@ -112,7 +112,95 @@ See [Runtime Composition](../../reference/runtime-composition.md) for the stagin
 - The nested callback selects a nonempty stream provider and nonempty stream namespaces.
 - The selected stream provider exists on the host, unless `UseMemoryStreams(...)` created it for local development or
   tests.
-- The host can build and start using its normal Orleans validation and connectivity checks.
+- The host can build and start using its normal Orleans validation. Provider resolution alone does not check external
+  connectivity or message delivery.
+
+### Verify a host-owned named provider
+
+When the host owns the stream provider, register it on `siloBuilder` and pass the same name to `AddAqueduct(...)`.
+This source-checkout check registers an Orleans memory stream provider independently of Aqueduct; it does not call
+`aqueduct.UseMemoryStreams()`.
+
+From the checkout root, create a temporary project with the SDK project reference used by the [getting-started
+path](../getting-started/getting-started.md):
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+dotnet --version
+dotnet new console --framework net10.0 --output .scratchpad/aqueduct-provider-resolution --name AqueductProviderResolution
+dotnet add .scratchpad/aqueduct-provider-resolution/AqueductProviderResolution.csproj reference src/Sdk.Runtime/Sdk.Runtime.csproj
+```
+
+Replace `Program.cs` with this complete host. It resolves the selected provider before entering the normal
+`RunAsync()` lifecycle:
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+
+using Mississippi.Aqueduct.Abstractions;
+using Mississippi.Aqueduct.Runtime;
+using Mississippi.Hosting.Runtime;
+
+using Orleans.Hosting;
+using Orleans.Streams;
+
+
+const string providerName = "host-owned-provider";
+
+HostApplicationBuilder builder = Host.CreateApplicationBuilder();
+builder.UseOrleans(siloBuilder =>
+{
+    siloBuilder.UseLocalhostClustering();
+    siloBuilder.AddMemoryStreams(providerName);
+    siloBuilder.AddMemoryGrainStorage("PubSubStore");
+    siloBuilder.UseMississippi(runtime =>
+    {
+        runtime.AddAqueduct(aqueduct => aqueduct.StreamProviderName = providerName);
+        runtime.ApplyToSilo(siloBuilder);
+    });
+});
+
+using IHost host = builder.Build();
+
+IOptions<AqueductOptions> options = host.Services.GetRequiredService<IOptions<AqueductOptions>>();
+string selectedProviderName = options.Value.StreamProviderName;
+_ = host.Services.GetRequiredKeyedService<IStreamProvider>(selectedProviderName);
+Console.WriteLine($"Resolved host-owned provider '{selectedProviderName}'.");
+
+await host.RunAsync();
+```
+
+Run the check from the checkout root. The restore and build use the SDK selected by `global.json`; the verification
+used SDK `10.0.400`:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+dotnet --version
+dotnet restore .scratchpad/aqueduct-provider-resolution/AqueductProviderResolution.csproj --use-lock-file
+dotnet build .scratchpad/aqueduct-provider-resolution/AqueductProviderResolution.csproj -c Release --no-incremental --no-restore -warnaserror
+dotnet run --project .scratchpad/aqueduct-provider-resolution/AqueductProviderResolution.csproj -c Release --no-build --no-restore
+```
+
+The build must report `0 Warning(s)` and `0 Error(s)`. After the resolved-provider line appears, wait for the normal
+Orleans startup message and press Ctrl+C once. The built-in logs should include:
+
+```text
+Resolved host-owned provider 'host-owned-provider'.
+Orleans Silo started.
+Application started. Press Ctrl+C to shut down.
+Application is shutting down...
+Orleans Silo stopped.
+```
+
+This check proves that the configured name and keyed service registration agree. To prove the failure path, leave the
+host registration at `host-owned-provider` and change only the `AddAqueduct(...)` value to a different nonempty name,
+such as `valid-but-missing-provider`. Running the same command must produce an unhandled `InvalidOperationException`
+from `GetRequiredKeyedService(...)` before `RunAsync()` starts the host; no Orleans startup log should appear. Because
+the run command uses `--no-build`, run the documented build command again before rerunning it, and rebuild again after
+restoring matching names for the normal run. Provider resolution does not check external connectivity or message
+delivery.
 
 ## Summary
 
