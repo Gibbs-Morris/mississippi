@@ -59,8 +59,12 @@ Classify the result as one of:
 Keep higher-authority and hand-written policy ahead of captured lessons, while
 still detecting contradictions between peer lessons. Reconcile a conflict with
 the existing guidance before writing: do not silently retire or rewrite peer
-content. An already-approved, valid resolution may authorize its bounded change
-without another approval; an unresolved conflict is a valid no-write outcome.
+content. After checking every applicable source, an unresolved contradiction
+makes the overall result **Conflict** before **Duplicate**, even when another
+source matches; mention duplicate matches in the report if useful, but do not
+skip reconciliation or the local conflict-recording route. An already-approved,
+valid resolution may authorize its bounded change without another approval; an
+unresolved conflict is a valid no-write outcome.
 Follow the consuming project's rule for recording a conflict for human review.
 If final verification exposes a contradiction, correct or safely remove only
 the new change. This workflow does not intake broad user rules or act as a
