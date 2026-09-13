@@ -54,6 +54,8 @@ public sealed partial class ProgressArc : ComponentBase
         (IsIndeterminate ? 75 : 100 - (((ClampedValue - Min) / (Max - Min)) * 100)).ToString(
             CultureInfo.InvariantCulture);
 
+    private string FillOpacity => IsIndeterminate || (ClampedValue > Min) ? "1" : "0";
+
     private bool IsIndeterminate => State == RefractionStates.Indeterminate;
 
     private static void ValidateProgress(

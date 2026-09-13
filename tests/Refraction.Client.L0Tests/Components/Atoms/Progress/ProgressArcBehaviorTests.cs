@@ -91,6 +91,28 @@ public sealed class ProgressArcBehaviorTests : BunitContext
         Assert.Equal(parameter, error.ParamName);
     }
 
+    /// <summary>Nonzero minima use the clamped value for accessible state and fill visibility.</summary>
+    /// <param name="value">Requested completion.</param>
+    /// <param name="expected">Expected clamped completion.</param>
+    /// <param name="expectedOpacity">Expected fill opacity.</param>
+    [Theory]
+    [InlineData(10, "25", "0")]
+    [InlineData(25, "25", "0")]
+    [InlineData(50, "50", "1")]
+    public void NonzeroMinimumUsesClampedValueForFillVisibility(
+        double value,
+        string expected,
+        string expectedOpacity
+    )
+    {
+        using IRenderedComponent<ProgressArc> cut = Render<ProgressArc>(p => p
+            .Add(c => c.Min, 25)
+            .Add(c => c.Max, 100)
+            .Add(c => c.Value, value));
+        Assert.Equal(expected, cut.Find("[role=progressbar]").GetAttribute("aria-valuenow"));
+        Assert.Equal(expectedOpacity, cut.Find(".rf-progress-arc__fill").GetAttribute("opacity"));
+    }
+
     /// <summary>Nonzero ranges and fractional values retain machine-readable invariant numbers.</summary>
     [Fact]
     public void RangeChangesUseInvariantNumbers()
