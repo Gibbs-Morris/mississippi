@@ -25,6 +25,11 @@
     "expected": "Classify the candidate as a duplicate and take no write action; report the existing coverage rather than rephrasing it into another item."
   },
   {
+    "id": "duplicate-and-conflict",
+    "prompt": "After checking every applicable guidance source, one source matches the proposed lesson while another applicable peer captured lesson contradicts it. No approved resolution exists, and the caller authorizes only bounded lesson capture.",
+    "expected": "Classify the overall result as Conflict before Duplicate; mention the matching source if useful, but reconcile the contradiction and follow the local conflict-recording route before writing."
+  },
+  {
     "id": "peer-contradiction",
     "prompt": "A validated candidate lesson recommends one correction for a scope, while an applicable peer captured lesson at equal authority recommends the contradictory correction for that same scope. No approved resolution exists, and the caller authorizes only bounded lesson capture.",
     "expected": "Detect the peer contradiction before writing, preserve the existing lesson, take no write action while the conflict is unresolved, and report the scope and evidence needed for reconciliation."
