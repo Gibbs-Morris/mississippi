@@ -7,7 +7,12 @@
   {
     "id": "assessment-only",
     "prompt": "Assess whether this event supports a reusable lesson, but do not edit. The user reports a retry that may have fixed a restore issue; no successful rerun output or artifact is supplied.",
-    "expected": "Return a no-write assessment because the correction is unverified, identify the missing evidence, and avoid presenting the suggested retry as a validated lesson."
+    "expected": "Return a no-write assessment because required successful-rerun evidence is missing, identify the missing evidence, and avoid presenting the suggested retry as a validated lesson."
+  },
+  {
+    "id": "documented-silent-success",
+    "prompt": "Use capture-validated-lesson for this supplied event. A real check failed and was corrected. The consuming project's documented success contract says the checker is silent on success, requires no report, and requires verified target execution, completion, and exit status 0. The correction was rerun under that contract and those facts are recorded.",
+    "expected": "Admit a bounded lesson when the documented contract and recorded execution, completion, and exit status 0 support the correction; treat intentional silence as valid, report that no report is required, and do not invent output."
   },
   {
     "id": "ordinary-troubleshooting",
