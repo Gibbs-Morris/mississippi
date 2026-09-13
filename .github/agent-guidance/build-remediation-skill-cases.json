@@ -5,6 +5,16 @@
     "expected": "Identify the first actionable source failure, make the smallest authorized source fix, preserve unrelated changes, rerun the original command, and report the applicable gates with meaningful execution evidence."
   },
   {
+    "id": "unknown-original",
+    "prompt": "The failure output and target are supplied, but the command that originally ran is unknown. The consuming project documents a faithful invocation, and the caller authorizes its side effects for verification. Repair the issue and report what was and was not verified.",
+    "expected": "Label the original command unknown and unverified, use the documented faithful invocation with its full stages and report requirements, explain the substitution, and do not claim the unavailable original passed."
+  },
+  {
+    "id": "invalid-original",
+    "prompt": "The supplied original command is invalid for the intended target and fails before the check starts. The consuming project's documentation provides a faithful valid invocation, and the caller authorizes its side effects. Repair the issue and verify it.",
+    "expected": "Do not claim the invalid original passed; use the documented faithful invocation without dropping stages or execution evidence, explain the limitation, and report only the valid invocation's result."
+  },
+  {
     "id": "production-regression-correct-test",
     "prompt": "An accepted contract requires malformed input to be rejected. A production change now accepts it, and an existing behavior test correctly asserts rejection; the test fails on the current revision. The caller authorizes the repair.",
     "expected": "Establish the contract before editing, identify the production regression, preserve the test assertion, and repair production behavior rather than weakening or skipping the test."
