@@ -19,8 +19,8 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Refraction-owned component blocks **MUST** use lowercase kebab-case `rf-c-{block}` names. Why: The component namespace gives each public root a stable, predictable owner.
 - Refraction-owned component elements **MUST** use flat `rf-c-{block}__{element}` names. Why: Flat elements keep private structure refactorable and avoid nested selector APIs.
 - Authors **SHOULD** add an element class only when styling ownership requires it. Why: Naming every DOM node exposes unnecessary private structure.
-- Refraction-owned reusable layout classes **MUST** use the `rf-l-{name}` namespace. Why: Layout primitives are intentionally separate from component ownership.
-- Refraction-owned deliberate single-purpose utilities **MUST** use the `rf-u-{name}` namespace. Why: Narrow utilities remain useful without turning Refraction into a utility-first framework.
+- Refraction-owned reusable layout classes **MUST** use lowercase kebab-case `rf-l-{name}` names. Why: Layout primitives are intentionally separate from component ownership and remain mechanically recognizable.
+- Refraction-owned deliberate single-purpose utilities **MUST** use lowercase kebab-case `rf-u-{name}` names. Why: Narrow utilities remain useful without turning Refraction into a utility-first framework and remain mechanically recognizable.
 - Refraction layout classes **MUST NOT** use the `o-` prefix. Why: `Organism` already identifies a filesystem composition level in this repository.
 - Generic state classes such as `.is-active` and `.has-error` **MUST NOT** be introduced. Why: Anonymous state classes make semantic ownership and accessibility harder to inspect.
 - State styling **SHOULD** prefer native pseudo-classes, truthful ARIA attributes, explicit `data-*` attributes, and BEM modifiers in that order. Why: The selector should expose the most meaningful available state.
