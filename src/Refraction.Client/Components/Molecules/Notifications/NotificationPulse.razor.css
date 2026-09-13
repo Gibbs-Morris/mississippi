@@ -59,6 +59,7 @@
     font: inherit;
     line-height: 1.2;
     max-width: 100%;
+    box-sizing: border-box;
     overflow-wrap: anywhere;
     white-space: normal;
     cursor: pointer;
