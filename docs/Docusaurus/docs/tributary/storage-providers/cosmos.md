@@ -109,6 +109,11 @@ registered with the effective lifetime of the last unkeyed `ISnapshotStorageProv
 
 Keyed `ISnapshotStorageProvider` descriptors are independent of this unkeyed lifetime selection. The default provider is
 therefore a shared singleton, while a pre-registered custom provider keeps its effective lifetime and alias behavior.
+The lifetime is selected when the Snapshot native callback executes. To override the provider registration, register the
+unkeyed provider on host services before `UseMississippi(...)`, or queue its `ConfigureSilo(...)` callback before
+`AddCosmosSnapshotStorageProvider(...)` in the same runtime composition. Replacing the provider afterward, including in
+a later `ConfigureSilo(...)` callback, is unsupported because the reader and writer alias lifetimes have already been
+selected. Use the complete [custom-provider shape](./index.md) when replacing Cosmos persistence entirely.
 
 The `CosmosContainerInitializer` runs when the host starts. It creates the configured database and container if they do
 not exist, and requires the container partition-key path `/snapshotPartitionKey`. An existing container with another

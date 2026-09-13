@@ -51,6 +51,11 @@ The default provider is registered with `TryAddSingleton`. The reader and writer
 share one provider instance across all three contracts. Scoped registrations share one provider, reader, and writer
 instance within each scope, with a different instance in another scope. Transient registrations remain transient and make
 no cross-contract identity promise. Keyed provider descriptors do not determine these unkeyed aliases.
+The lifetime is selected when the Snapshot native callback executes. A custom provider override must be registered on
+host services before `UseMississippi(...)`, or in a `ConfigureSilo(...)` callback queued before
+`AddCosmosSnapshotStorageProvider(...)`. Replacing the provider afterward, including from a later native callback, is
+unsupported because the reader and writer alias lifetimes are already fixed. Use the complete custom-provider shape
+below when replacing Cosmos persistence entirely.
 
 For a custom snapshot provider, use the advanced staged native hook and register the contracts explicitly. This is a
 registration shape; `MySnapshotStorageProvider` represents the application's implementation:
