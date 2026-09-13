@@ -20,6 +20,11 @@
     "expected": "Classify the candidate as a duplicate and take no write action; report the existing coverage rather than rephrasing it into another item."
   },
   {
+    "id": "peer-contradiction",
+    "prompt": "A validated candidate lesson recommends one correction for a scope, while an applicable peer captured lesson at equal authority recommends the contradictory correction for that same scope. No approved resolution exists, and the caller authorizes only bounded lesson capture.",
+    "expected": "Detect the peer contradiction before writing, preserve the existing lesson, take no write action while the conflict is unresolved, and report the scope and evidence needed for reconciliation."
+  },
+  {
     "id": "higher-policy-conflict",
     "prompt": "A validated workaround suggests disabling a repository quality gate. The consuming project's hand-written policy requires that gate and forbids weakening it. The user asks to record the workaround as a lesson.",
     "expected": "Classify the candidate as a conflict, keep higher-authority policy in force, do not add the lesson, and follow the local conflict-recording route if one is authorized."

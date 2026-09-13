@@ -44,21 +44,27 @@ the evidence, scope, or authority is insufficient.
 ## Check applicability and conflicts
 
 Compare the candidate with every applicable guidance source, including sources
-whose scope overlaps the proposed target and sources whose scope is uncertain.
+whose scope overlaps the proposed target, peer captured lessons at equal
+authority, and sources whose scope is uncertain. Establish each source's
+authority and any approved resolution before classifying the candidate.
 Classify the result as one of:
 
 - **Duplicate** — the existing guidance already states the supported lesson.
-- **Conflict** — the candidate contradicts a higher-authority or hand-written
-  requirement.
+- **Conflict** — the candidate contradicts any applicable guidance, including a
+  peer captured lesson at equal authority.
 - **New** — the evidence supports a bounded lesson not already covered.
 - **Insufficient evidence** — the event, correction, or reuse claim is not
   independently supported.
 
-Keep higher-authority and hand-written policy ahead of captured lessons. A
-duplicate, conflict, or insufficient-evidence result is a valid no-write
-outcome. Follow the consuming project's rule for recording a conflict for human
-review; do not silently rewrite policy to make a candidate fit. This workflow
-does not intake broad user rules or act as a general rule-manager process.
+Keep higher-authority and hand-written policy ahead of captured lessons, while
+still detecting contradictions between peer lessons. Reconcile a conflict with
+the existing guidance before writing: do not silently retire or rewrite peer
+content. An already-approved, valid resolution may authorize its bounded change
+without another approval; an unresolved conflict is a valid no-write outcome.
+Follow the consuming project's rule for recording a conflict for human review.
+If final verification exposes a contradiction, correct or safely remove only
+the new change. This workflow does not intake broad user rules or act as a
+general rule-manager process.
 
 ## Write within the authorized format
 
