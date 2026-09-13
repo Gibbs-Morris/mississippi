@@ -47,7 +47,13 @@ public sealed partial class NotificationDemo : ComponentBase
     [Parameter]
     public EventCallback RestoreRequested { get; set; }
 
+    private string DetailsHeadingId => $"{IdPrefix}-details-heading";
+
     private ElementReference DetailsRegion { get; set; }
+
+    private string DetailsRegionId => $"{IdPrefix}-details";
+
+    private string IdPrefix { get; } = $"notification-demo-{Guid.NewGuid():N}";
 
     private EventCallback PulseDismissRequested =>
         DismissRequested.HasDelegate ? EventCallback.Factory.Create(this, HandleDismissAsync) : default;
@@ -58,6 +64,8 @@ public sealed partial class NotificationDemo : ComponentBase
     private ElementReference RestoreButton { get; set; }
 
     private ElementReference SectionHeading { get; set; }
+
+    private string SectionHeadingId => $"{IdPrefix}-heading";
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(

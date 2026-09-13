@@ -181,10 +181,11 @@ public sealed class NotificationDemoTests : BunitContext
             .Add(c => c.ExpandRequested, _ => { }));
         IElement details = cut.Find("[data-testid=notification-details]");
         IElement expand = cut.Find(".rf-notification-pulse__expand");
-        Assert.Equal("notification-details", details.GetAttribute("id"));
+        string? detailsId = details.GetAttribute("id");
+        Assert.False(string.IsNullOrWhiteSpace(detailsId), details.OuterHtml);
         Assert.True(details.HasAttribute("hidden"));
         Assert.Equal("false", expand.GetAttribute("aria-expanded"));
-        Assert.Equal("notification-details", expand.GetAttribute("aria-controls"));
+        Assert.Equal(detailsId, expand.GetAttribute("aria-controls"));
     }
 
     /// <summary>The message stays in the status region while details render as a separate region.</summary>
@@ -201,9 +202,12 @@ public sealed class NotificationDemoTests : BunitContext
         Assert.Contains("The sample export is ready to review", status.TextContent, StringComparison.Ordinal);
         Assert.Empty(status.QuerySelectorAll("[data-testid=notification-details]"));
         Assert.Equal("region", details.GetAttribute("role"));
-        Assert.Equal("notification-details", details.GetAttribute("id"));
         Assert.False(details.HasAttribute("hidden"));
         Assert.Equal("-1", details.GetAttribute("tabindex"));
+        Assert.Equal(
+            cut.Find("[data-testid=notification-demo-heading]").Id,
+            cut.Find("[data-testid=notification-demo]").GetAttribute("aria-labelledby"));
+        Assert.Equal(cut.Find("h3").Id, details.GetAttribute("aria-labelledby"));
         Assert.Contains("Sample export details", details.TextContent, StringComparison.Ordinal);
     }
 
@@ -306,6 +310,53 @@ public sealed class NotificationDemoTests : BunitContext
             "The parent can show it again when ready.",
             cut.Find("[data-testid=notification-hidden]").TextContent,
             StringComparison.Ordinal);
+    }
+
+    /// <summary>Each demo instance owns distinct stable IDs for its relationships.</summary>
+    [Fact]
+    public void InstancesUseDistinctStableLabelRelationships()
+    {
+        using IRenderedComponent<NotificationDemo> first = Render<NotificationDemo>(p => p
+            .Add(c => c.IsVisible, true)
+            .Add(c => c.IsExpanded, false)
+            .Add(c => c.ExpandRequested, _ => { }));
+        using IRenderedComponent<NotificationDemo> second = Render<NotificationDemo>(p => p
+            .Add(c => c.IsVisible, true)
+            .Add(c => c.IsExpanded, false)
+            .Add(c => c.ExpandRequested, _ => { }));
+        IElement firstDemo = first.Find("[data-testid=notification-demo]");
+        IElement firstHeading = first.Find("[data-testid=notification-demo-heading]");
+        IElement firstDetails = first.Find("[data-testid=notification-details]");
+        IElement firstDetailsHeading = first.Find("h3");
+        IElement firstExpand = first.Find(".rf-notification-pulse__expand");
+        IElement secondDemo = second.Find("[data-testid=notification-demo]");
+        IElement secondHeading = second.Find("[data-testid=notification-demo-heading]");
+        IElement secondDetails = second.Find("[data-testid=notification-details]");
+        IElement secondDetailsHeading = second.Find("h3");
+        IElement secondExpand = second.Find(".rf-notification-pulse__expand");
+        string firstHeadingId = firstHeading.Id!;
+        string firstDetailsId = firstDetails.Id!;
+        string firstDetailsHeadingId = firstDetailsHeading.Id!;
+        string secondHeadingId = secondHeading.Id!;
+        string secondDetailsId = secondDetails.Id!;
+        string secondDetailsHeadingId = secondDetailsHeading.Id!;
+        Assert.NotEqual(firstHeadingId, secondHeadingId);
+        Assert.NotEqual(firstDetailsId, secondDetailsId);
+        Assert.NotEqual(firstDetailsHeadingId, secondDetailsHeadingId);
+        Assert.Equal(firstHeadingId, firstDemo.GetAttribute("aria-labelledby"));
+        Assert.Equal(firstDetailsId, firstExpand.GetAttribute("aria-controls"));
+        Assert.Equal(firstDetailsHeadingId, firstDetails.GetAttribute("aria-labelledby"));
+        Assert.Equal(secondHeadingId, secondDemo.GetAttribute("aria-labelledby"));
+        Assert.Equal(secondDetailsId, secondExpand.GetAttribute("aria-controls"));
+        Assert.Equal(secondDetailsHeadingId, secondDetails.GetAttribute("aria-labelledby"));
+        first.Render(p => p.Add(c => c.IsExpanded, true));
+        second.Render(p => p.Add(c => c.IsExpanded, true));
+        Assert.Equal(firstHeadingId, first.Find("[data-testid=notification-demo-heading]").Id);
+        Assert.Equal(firstDetailsId, first.Find("[data-testid=notification-details]").Id);
+        Assert.Equal(firstDetailsHeadingId, first.Find("h3").Id);
+        Assert.Equal(secondHeadingId, second.Find("[data-testid=notification-demo-heading]").Id);
+        Assert.Equal(secondDetailsId, second.Find("[data-testid=notification-details]").Id);
+        Assert.Equal(secondDetailsHeadingId, second.Find("h3").Id);
     }
 
     /// <summary>An older async completion cannot clear a newer focus request.</summary>
