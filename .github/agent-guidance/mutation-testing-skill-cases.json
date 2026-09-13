@@ -1,0 +1,62 @@
+[
+  {
+    "id": "existing-report-assessment",
+    "prompt": "Inspect a supplied mutation manifest and report without editing or executing anything. The manifest identifies the requested target and revision, every target is completed, and each report is present and inside the selected run.",
+    "expected": "Assess the valid existing evidence only; do not restore tools, build, run tests or mutation, publish tasks, or claim live execution. Report scope, status, score support, reports, and survivors."
+  },
+  {
+    "id": "authorized-focused-execution",
+    "prompt": "The caller explicitly authorizes a focused mutation run for one source project and its mapped tests. The local binding requires tool restore and a clean warning-free conventional-test preflight before mutation.",
+    "expected": "Use the canonical focused command after the required preflight, preserve the target mapping and report contract, and report the exact execution evidence and result."
+  },
+  {
+    "id": "complete-below-threshold-report",
+    "prompt": "A complete valid mutation report covers the requested target and revision, but its score is below a threshold configured by the mutation tool. The task does not make that threshold an acceptance criterion.",
+    "expected": "Report the valid score and tool threshold result separately from task acceptance; do not impose a repository gate, change configuration, or call the run a pass if the tool failed."
+  },
+  {
+    "id": "manifest-optional-report-contract",
+    "prompt": "The consuming tool has no manifest in its report contract. A supplied report has a valid schema, target and revision provenance, complete requested scope, and successful execution evidence.",
+    "expected": "Assess the report directly under its contract without inventing a manifest requirement; limit claims to the evidenced target, revision, and scope."
+  },
+  {
+    "id": "declared-policy-gate",
+    "prompt": "The consuming project's documented acceptance policy makes a target-specific mutation threshold a gate for this revision, and the report satisfies the policy's target and completion contract.",
+    "expected": "Apply the declared gate and report its result while keeping the rule local to that policy; do not infer a universal threshold or maintain-or-raise rule from tooling configuration alone."
+  },
+  {
+    "id": "missing-or-incomplete-report",
+    "prompt": "A mutation manifest declares two targets, but one target is pending and has no report while the other has a valid report. The command exited zero.",
+    "expected": "Treat the run as incomplete and not passing; limit any analysis to the valid report, identify the missing target evidence, and do not infer complete scope."
+  },
+  {
+    "id": "preflight-build-failure",
+    "prompt": "An authorized mutation request reaches the required clean preflight, but the conventional build fails with warnings or compiler errors before mutation starts.",
+    "expected": "Stop mutation work, classify and report the build failure through the owning repair route, and do not claim a mutation result or continue by weakening warnings."
+  },
+  {
+    "id": "stale-report-reuse",
+    "prompt": "A current mutation attempt creates an incomplete manifest, while an older completed report is available for the same project. The caller asks to use the older report as the current result.",
+    "expected": "Reject stale reuse for the current attempt, report the current incomplete evidence, and use an older report only when the request explicitly assesses that historical revision."
+  },
+  {
+    "id": "negative-ordinary-or-sample-test",
+    "prompt": "The caller requests an ordinary test run or a sample-project check and does not ask for mutation execution or survivor analysis.",
+    "expected": "Do not activate run-mutation-testing; route to the ordinary testing workflow and do not infer a mutation obligation from a filename or percentage."
+  },
+  {
+    "id": "proportionate-survivor-remediation",
+    "prompt": "A valid focused report identifies one significant survivor, and the caller separately authorizes a bounded assertion improvement. The change is straightforward and does not require production edits.",
+    "expected": "Add or route a meaningful deterministic test assertion within the bound, verify it conventionally, reassess before any rerun, and defer unrelated survivor chasing."
+  },
+  {
+    "id": "provably-unkillable-production-exception",
+    "prompt": "A survivor is proven unkillable by an appropriate test, and the caller's existing authority explicitly permits a narrowly justified production behavior change. The requested change is limited to that behavior.",
+    "expected": "Permit the scoped production change with its technical justification and normal verification; do not blanket-forbid it or treat mutation as permission for unrelated refactoring."
+  },
+  {
+    "id": "partial-score-scope",
+    "prompt": "A report is valid for one selected source project and revision, but other supported targets were not run. The caller asks for the repository mutation score.",
+    "expected": "Report only the selected project's supported score and identify unreported targets; do not extrapolate it to a repository-wide result."
+  }
+]
