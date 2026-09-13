@@ -3,95 +3,118 @@ id: aqueduct-getting-started
 title: Aqueduct Runtime Getting Started
 sidebar_label: Getting Started
 sidebar_position: 1
-description: Configure Aqueduct in an Orleans runtime host through the canonical Mississippi composition callback.
+description: Build and run a local Orleans host with Aqueduct through the Mississippi runtime composition API.
 ---
 
 # Aqueduct Runtime Getting Started
 
 ## Overview
 
-Use this page to add the Aqueduct SignalR backplane to an Orleans runtime host through the canonical
-`UseMississippi(...)` composition path.
+Build and run a local Orleans silo with Aqueduct's in-memory SignalR backplane through one verified source-checkout
+path.
 
-## What You Will Achieve
+## What you will achieve
 
-By the end of this page, you will know where `runtime.AddAqueduct(...)` belongs, how to choose the local memory
-stream path or an existing Orleans provider, and where to look when composition validation fails.
+You will create a small host that starts Orleans with localhost clustering, registers Aqueduct through
+`UseMississippi(...)`, and stops cleanly when you press Ctrl+C.
 
 ## Prerequisites
 
-- Reference `Mississippi.Sdk.Runtime`, or reference both `Mississippi.Aqueduct.Runtime` and
-  `Mississippi.Hosting.Runtime` from the Orleans host.
-- Decide whether the host will use the development memory stream setup or a stream provider configured by the host.
-- If the real task is end-to-end projection delivery, start with [Inlet](../../inlet/index.md) instead.
+- A Mississippi checkout with the `Mississippi.Sdk.Runtime` project used by this documentation.
+- The .NET SDK selected by that checkout's `global.json`. The verification for this page used SDK `10.0.400`.
+- PowerShell 7 or later.
+
+The temporary project below references the checkout's `Mississippi.Sdk.Runtime` project directly so its APIs match this
+documentation.
 
 ## Install
 
-Install `Mississippi.Sdk.Runtime` for the complete runtime composition surface. If the application deliberately uses
-focused packages, `Mississippi.Aqueduct.Runtime` supplies `AddAqueduct(...)` and `Mississippi.Hosting.Runtime` supplies
-the `UseMississippi(...)` terminal extension.
+Run these commands from the root of the checkout. The repository's `global.json` selects the SDK used by
+the commands; inspect `dotnet --version` before continuing.
 
-## Configure The Host
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+dotnet --version
+New-Item -ItemType Directory -Force .scratchpad/aqueduct-getting-started | Out-Null
+dotnet new console --framework net10.0 --output .scratchpad/aqueduct-getting-started --name AqueductGettingStarted
+dotnet add .scratchpad/aqueduct-getting-started/AqueductGettingStarted.csproj reference src/Sdk.Runtime/Sdk.Runtime.csproj
+```
 
-## First Verified Success
+The `dotnet add reference` command adds the checkout's `Mississippi.Sdk.Runtime` project to the temporary app, keeping
+the APIs used by the program aligned with this documentation.
 
-For local development or tests, compose Aqueduct with its memory stream registrations inside the runtime terminal
-callback:
+## Create the project
+
+Replace `Program.cs` in the temporary project with this complete host:
 
 ```csharp
+using System;
+
+using Microsoft.Extensions.Hosting;
+
 using Mississippi.Aqueduct.Runtime;
 using Mississippi.Hosting.Runtime;
 
+using Orleans.Hosting;
 
+
+HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 builder.UseOrleans(siloBuilder =>
 {
+    siloBuilder.UseLocalhostClustering();
+    siloBuilder.AddMemoryGrainStorage("signalr-grains");
     siloBuilder.UseMississippi(runtime =>
     {
         runtime.AddAqueduct(aqueduct => aqueduct.UseMemoryStreams());
         runtime.ApplyToSilo(siloBuilder);
     });
 });
+
+using IHost host = builder.Build();
+await host.RunAsync();
 ```
 
-`UseMemoryStreams()` selects the final `StreamProviderName` and registers Orleans memory streams together with the
-`PubSubStore` grain storage convention. It is the development and test path; a production host should configure its
-stream provider separately and select its name in the nested builder.
+## Verify it works
 
-The [Spring runtime host](../../samples/spring-sample/concepts/host-applications.md) provides a verified existing
-provider example. Its AppHost supplies `StreamProvider`, and the runtime selects that name with
-`aqueduct.StreamProviderName = "StreamProvider"`.
+Restore and compile the temporary project, then run it from the checkout root:
 
-## Choose The Runtime Provider
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+dotnet --version
+dotnet restore .scratchpad/aqueduct-getting-started/AqueductGettingStarted.csproj --use-lock-file
+dotnet build .scratchpad/aqueduct-getting-started/AqueductGettingStarted.csproj -c Release --no-incremental --no-restore -warnaserror
+dotnet run --project .scratchpad/aqueduct-getting-started/AqueductGettingStarted.csproj -c Release --no-build --no-restore
+```
 
-- Use `aqueduct.UseMemoryStreams()` when the host needs the built-in development stream registrations.
-- Use `aqueduct.UseMemoryStreams("ProviderName")` when development or test code needs a non-default provider name.
-- Set `aqueduct.StreamProviderName` when the host already owns an Orleans provider, then keep that name aligned with
-  the provider registration.
+The build must report `Build succeeded`, `0 Warning(s)`, and `0 Error(s)`. After startup, press Ctrl+C once. The
+normal Orleans and Generic Host logs should include these lines:
 
-The builder also has convenience overloads for an `IConfiguration` section and for explicit settings. See the
-[Aqueduct Reference](../reference/reference.md) for their exact parameter and key contracts.
+```text
+Orleans Silo started.
+Application started. Press Ctrl+C to shut down.
+Application is shutting down...
+Orleans Silo stopped.
+```
 
-## Verify It Works
+The verification run for this page reached all four lines and returned after the silo stopped through the normal host
+shutdown path. Ctrl+C performs the normal Orleans shutdown, including stopping the silo and its stream agents.
 
-Keep the complete Aqueduct callback inside one `UseMississippi(...)` call. At composition time, nonempty stream names
-are required, and a second `AddAqueduct(...)` call for the same runtime is rejected.
+## What happened
 
-For the staged callback lifecycle, advanced `ConfigureSilo(...)` plumbing, and stable diagnostic codes, continue to
-[How To Configure Aqueduct Runtime Composition](../how-to/how-to.md) and the [Aqueduct Reference](../reference/reference.md).
-
-## What Happened
-
-`UseMississippi(...)` attached one runtime composition, and the nested `AqueductBuilder` selected the stream provider
-and stream namespaces. With `UseMemoryStreams(...)`, the same composition also added the memory stream
-provider and `PubSubStore` registrations.
+`UseLocalhostClustering()` configured a local Orleans silo. `AddMemoryGrainStorage("signalr-grains")` supplied the
+storage used by Aqueduct grain state. The `UseMississippi(...)` callback staged the runtime composition, and
+`runtime.AddAqueduct(...)` enabled memory streams with the default provider name `mississippi-streaming`.
+`runtime.ApplyToSilo(siloBuilder)` is the recommended explicit native-configuration hook. The nested builder also
+registered the Orleans `PubSubStore` convention required by the memory stream setup.
 
 ## Summary
 
-Aqueduct runtime setup is a nested builder operation inside the Orleans host's canonical `UseMississippi(...)`
-callback. Choose memory streams for local development and tests, or select a host-owned provider by name.
+The source-checkout path above provides one executable local Aqueduct runtime setup. It starts and stops a real Orleans
+silo using the canonical nested composition path and the SDK project reference from the checkout.
 
 ## Next Steps
 
-- Follow [How To Configure Aqueduct Runtime Composition](../how-to/how-to.md) for the complete task sequence.
-- Read [Aqueduct Concepts](../concepts/concepts.md) for the nested scope and snapshot model.
-- Use [Aqueduct Reference](../reference/reference.md) for exact options and diagnostic codes.
+- Use [How To Configure Aqueduct Runtime Composition](../how-to/how-to.md) for host-owned providers and configuration
+  overloads.
+- Read [Aqueduct Reference](../reference/reference.md) for the complete runtime contract and diagnostics.
+- Read [Aqueduct Concepts](../concepts/concepts.md) for the composition lifecycle.
