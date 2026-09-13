@@ -38,13 +38,16 @@ and command shape rather than importing a workflow from another repository.
 For the observed run, capture the exact command, target, revision or state,
 exit status, and relevant stdout/stderr. If the original command is missing,
 record it as unknown; a documented or reconstructed invocation is a later
-reproduction, not evidence of what originally ran. A missing log, empty output,
-or command that did not reach the target is incomplete evidence; it is not a
-passing check. If the failure was only described, reproduce it when the target
-and command are clear and existing authority covers the command's side effects;
-otherwise use supplied evidence or authorized read-only diagnostics and label
-the reproduction unrun. Keep the original evidence separate from later
-attempts.
+reproduction, not evidence of what originally ran. A missing log or empty output
+does not by itself fail a check: verified target execution, completion, exit
+status zero, and a documented silent-success contract can suffice. Require a
+report or nonempty test execution only when local policy or the check contract
+requires it. A command that did not reach the target, or silence without
+verified execution, remains incomplete and is not a pass. If the failure was
+only described, reproduce it when the target and command are clear and existing
+authority covers the command's side effects; otherwise use supplied evidence or
+authorized read-only diagnostics and label the reproduction unrun. Keep the
+original evidence separate from later attempts.
 
 ## Protect reported evidence
 
@@ -110,10 +113,13 @@ or omit tests just to obtain a green result.
 
 Use narrower diagnostic runs only when they preserve the question being tested;
 label them as partial evidence. Check that the intended project actually
-executed, that the output is meaningful, and that the reported failure is
-reproducible before attributing it to source. If an external prerequisite is
-unavailable, record the boundary and use available static evidence rather than
-claiming a source fix or successful verification.
+executed and that the command completed under its documented success contract;
+require nonempty output or a report only when local policy or the check contract
+requires it. For an intentionally silent checker, verified target execution,
+completion, and exit status zero are meaningful evidence. Confirm that the
+reported failure is reproducible before attributing it to source. If an external
+prerequisite is unavailable, record the boundary and use available static
+evidence rather than claiming a source fix or successful verification.
 
 ## Make the smallest safe change
 
@@ -161,7 +167,7 @@ After the repair:
 1. When the original command is known, valid for the intended check, and its
    side effects are authorized for verification, rerun it and confirm that the
    original diagnostic is absent, the intended target executed, and the command
-   completed successfully with meaningful evidence. If the original command is
+   completed successfully under its documented success contract. If the original command is
    unavailable, invalid, or not authorized, do not claim that it passed; verify
    the documented or reconstructed faithful invocation instead when authorized,
    preserving the intended stages and execution/report requirements. Explain
@@ -181,5 +187,7 @@ Report the target and request mode, earliest failure and classification, exact
 evidence and commands, each change and its reason, verification results, and
 remaining limitations. Distinguish confirmed diagnosis, supported hypothesis,
 and unverified possibility. State whether the work is repaired, assessment-only,
-or deferred under local policy; do not infer completion from a quiet runner or
-an absent artifact.
+or deferred under local policy; do not infer completion from silence alone,
+unknown execution, or an absent required artifact. A documented silent success
+with verified target execution, completion, and exit status zero can establish a
+pass.
