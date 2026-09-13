@@ -1,6 +1,10 @@
 using System.Linq;
 
+using AngleSharp.Dom;
+
 using Bunit;
+
+using Microsoft.AspNetCore.Components;
 
 using Mississippi.Reservoir.Core;
 
@@ -50,6 +54,46 @@ public sealed class KitchenSinkPageTests : BunitContext
         Assert.Equal("ResetProfileAction", cut.Find("[data-testid=last-action]").TextContent);
         Assert.Equal("light", cut.Find("[data-rf-theme]").GetAttribute("data-rf-theme"));
         Assert.Empty(cut.FindAll("[role=alert]"));
+    }
+
+    /// <summary>Notification actions update the selected flow and move focus to the next stable target.</summary>
+    [Fact]
+    public void NotificationActionsUpdateStateAndFocusStableTargets()
+    {
+        Services.AddReservoir().AddShowcaseFeature();
+        using IRenderedComponent<KitchenSinkPage> cut = Render<KitchenSinkPage>();
+        Assert.Equal("true", cut.Find("[data-testid=state-notification-visible]").TextContent);
+        Assert.Equal("false", cut.Find("[data-testid=state-notification-expanded]").TextContent);
+        Assert.Empty(JSInterop.Invocations);
+        cut.Find("[data-testid=notification-pulse] .rf-notification-pulse__expand").Click();
+        IElement details = cut.Find("[data-testid=notification-details]");
+        ElementReference detailsFocus =
+            Assert.IsType<ElementReference>(JSInterop.VerifyFocusAsyncInvoke().Arguments[0]);
+        Assert.False(string.IsNullOrWhiteSpace(detailsFocus.Id), details.OuterHtml);
+        Assert.Equal("true", cut.Find("[data-testid=state-notification-expanded]").TextContent);
+        Assert.Equal(nameof(ExpandNotificationAction), cut.Find("[data-testid=last-action]").TextContent);
+        cut.Find("[data-testid=notification-pulse] .rf-notification-pulse__expand").Click();
+        Assert.Equal(2, JSInterop.VerifyFocusAsyncInvoke(2).Count);
+        cut.Find("[data-testid=notification-pulse] .rf-notification-pulse__dismiss").Click();
+        IElement restore = cut.Find("[data-testid=notification-restore]");
+        ElementReference restoreFocus =
+            Assert.IsType<ElementReference>(JSInterop.VerifyFocusAsyncInvoke(3)[2].Arguments[0]);
+        Assert.False(string.IsNullOrWhiteSpace(restoreFocus.Id), restore.OuterHtml);
+        Assert.Equal("false", cut.Find("[data-testid=state-notification-visible]").TextContent);
+        Assert.Equal("false", cut.Find("[data-testid=state-notification-expanded]").TextContent);
+        Assert.Equal(nameof(DismissNotificationAction), cut.Find("[data-testid=last-action]").TextContent);
+        cut.Find("[data-testid=notification-restore]").Click();
+        IElement heading = cut.Find("[data-testid=notification-demo-heading]");
+        ElementReference headingFocus =
+            Assert.IsType<ElementReference>(JSInterop.VerifyFocusAsyncInvoke(4)[3].Arguments[0]);
+        Assert.False(string.IsNullOrWhiteSpace(headingFocus.Id), heading.OuterHtml);
+        Assert.Equal("true", cut.Find("[data-testid=state-notification-visible]").TextContent);
+        Assert.Equal("false", cut.Find("[data-testid=state-notification-expanded]").TextContent);
+        Assert.Equal(nameof(RestoreNotificationAction), cut.Find("[data-testid=last-action]").TextContent);
+        cut.Find("[data-testid=notification-pulse] .rf-notification-pulse__expand").Click();
+        cut.Find("form button[type=button]").Click();
+        Assert.Equal("true", cut.Find("[data-testid=state-notification-visible]").TextContent);
+        Assert.Equal("true", cut.Find("[data-testid=state-notification-expanded]").TextContent);
     }
 
     /// <summary>Progress choices dispatch through Reservoir and survive form resets.</summary>

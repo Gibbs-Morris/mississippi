@@ -1,0 +1,44 @@
+@using Mississippi.Refraction.Client
+@using Mississippi.Refraction.Client.Components.Molecules.Notifications
+<section class="notification-demo" aria-labelledby="notification-demo-title" data-testid="notification-demo">
+    <p class="label">MOLECULE / NOTIFICATION PULSE</p>
+    <h2 id="notification-demo-title" tabindex="-1" @ref="SectionHeading" data-testid="notification-demo-heading">
+        Keep the team moving.
+    </h2>
+    @if (IsVisible)
+    {
+        <NotificationPulse State="@RefractionStates.Active"
+                           OnExpand="@HandleExpandAsync"
+                           OnDismiss="@HandleDismissAsync"
+                           data-testid="notification-pulse">
+            The sample export is ready to review. View the local preview when ready.
+        </NotificationPulse>
+        @if (IsExpanded)
+        {
+            <div class="notification-demo__details"
+                 role="region"
+                 tabindex="-1"
+                 aria-labelledby="notification-details-title"
+                 @ref="DetailsRegion"
+                 data-testid="notification-details">
+                <h3 id="notification-details-title">Sample export details</h3>
+                <p>This local sample export has no external operation behind it.</p>
+                <p>The page owns this expanded state and can connect the intent to its own workflow.</p>
+            </div>
+        }
+    }
+    else
+    {
+        <p class="notification-demo__hidden" data-testid="notification-hidden">
+            The notification is hidden. Restore it to review the message again.
+        </p>
+        <button type="button"
+                class="notification-demo__restore"
+                @ref="RestoreButton"
+                @onclick="@HandleRestoreAsync"
+                data-testid="notification-restore">
+            Restore notification
+        </button>
+    }
+    <p class="note">Expand, dismiss, and restore follow the same parent-owned Reservoir state path.</p>
+</section>
