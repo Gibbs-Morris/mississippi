@@ -2,9 +2,8 @@ name: Stryker
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
+  schedule:
+    - cron: '17 3 * * 0'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -17,8 +16,9 @@ env:
 
 jobs:
   Stryker:
-    name: "Stryker"
+    name: "Stryker (weekly report)"
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -76,13 +76,19 @@ jobs:
         run: |
           dotnet build "${SLN_PATH}" --configuration "${CONFIGURATION}" --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
 
-      - name: Run Stryker
+      - name: Run Stryker (report-only)
         run: |
-          pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
+          pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1 -ReportOnly
 
-      - name: Upload HTML Results
+      - name: Upload mutation reports
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: test-results-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
-          path: ${{ github.workspace }}/.scratchpad/mutation-test-results/**/**/*.html
+          name: mutation-results-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
+          path: |
+            ${{ github.workspace }}/.scratchpad/mutation-test-results/**/mutation-report.html
+            ${{ github.workspace }}/.scratchpad/mutation-test-results/**/mutation-report.json
+            ${{ github.workspace }}/.scratchpad/mutation-test-results/**/mutation-report.md
+            ${{ github.workspace }}/.scratchpad/mutation-test-results/**/project-results.json
+            ${{ github.workspace }}/.scratchpad/mutation-test-results/**/mutation-summary.json
+          if-no-files-found: error

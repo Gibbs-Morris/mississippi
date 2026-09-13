@@ -22,7 +22,7 @@ Describe 'Mutation automation' {
         Set-Content (Join-Path $repo 'samples/Other.L0Tests/Other.L0Tests.csproj') '<Project />'
         $solution = Join-Path $repo 'mississippi.slnx'
         Set-Content $solution '<Solution><Project Path="src/Widget/Widget.csproj" /><Folder Name="/Tests/"><Project Path="tests\Widget.L0Tests\Widget.L0Tests.csproj" /><Project Path="tests/Widget.L1Tests/Widget.L1Tests.csproj" /><Project Path="tests/Widget.L2Tests/Widget.L2Tests.csproj" /></Folder></Solution>'
-        Set-Content (Join-Path $repo 'stryker-config.json') '{"stryker-config":{}}'
+        Set-Content (Join-Path $repo 'stryker-config.json') '{"stryker-config":{"thresholds":{"high":80,"low":60,"break":50}}}'
         Set-Content (Join-Path $repo 'MSBuild.dll') ''
         $output = Join-Path $repo 'mutation-results'
         $completedOutput = Join-Path $repo 'completed'
@@ -50,6 +50,56 @@ Describe 'Mutation automation' {
             $ProjectPath -like '*Widget.csproj' -and $TestProjects.Count -eq 3 -and
             ($TestProjects -match 'L2Tests') -and $Configuration -eq 'Debug'
         }
+    }
+
+    It 'passes a zero break threshold to Stryker in report-only mode' {
+        $tests = @(Join-Path $repo 'tests/Widget.L0Tests/Widget.L0Tests.csproj')
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
+            if ($Arguments[0] -eq 'stryker') {
+                Set-Content (Join-Path $Arguments[8] 'mutation-report.json') '{"files":{}}'
+            }
+            else {
+                $repo
+            }
+        }
+        Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects $tests -OutputPath $output -ReportOnly | Out-Null
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
+            $Arguments[0] -eq 'stryker' -and $Arguments -contains '--break-at' -and
+            $Arguments[[Array]::IndexOf($Arguments, '--break-at') + 1] -eq '0'
+        }
+    }
+
+    It 'writes a completed warning summary for below-threshold reports in report-only mode' {
+        Set-Content (Join-Path $completedOutput 'mutation-report.json') '{"files":{"Widget.cs":{"mutants":[{"status":"Survived"}]}}}'
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation { $completedOutput }
+        $summaryFile = Join-Path $repo 'github-step-summary.md'
+        $previousSummaryFile = $env:GITHUB_STEP_SUMMARY
+        $env:GITHUB_STEP_SUMMARY = $summaryFile
+        try {
+            Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output -ReportOnly | Should -Be $output
+        }
+        finally {
+            $env:GITHUB_STEP_SUMMARY = $previousSummaryFile
+        }
+        $summary = Get-Content (Join-Path $output 'mutation-summary.json') -Raw | ConvertFrom-Json
+        $summary.ExecutionStatus | Should -Be 'COMPLETED'
+        $summary.MutationResult | Should -Be 'WARN'
+        $summary.CompleteReportCount | Should -Be 1
+        $summary.BelowBreakThresholdCount | Should -Be 1
+        (Get-Content $summaryFile -Raw) | Should -Match 'completed with warnings'
+        Should -Invoke Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
+            $ReportOnly
+        }
+    }
+
+    It 'keeps the full mutation workflow manual and weekly' {
+        $workflowPath = Join-Path $PSScriptRoot '../../../.github/workflows/stryker.yml'
+        $workflow = Get-Content -LiteralPath $workflowPath -Raw
+        $workflow | Should -Match "(?m)^  schedule:\s*$"
+        $workflow | Should -Match "cron: '17 3 \* \* 0'"
+        $workflow | Should -Not -Match '(?m)^  push:\s*$'
+        $workflow | Should -Match 'mutation-test-mississippi-solution\.ps1 -ReportOnly'
+        $workflow | Should -Match 'if-no-files-found: error'
     }
 
     It 'fails when a mutation process fails even if it is the only target' {
@@ -96,7 +146,7 @@ Describe 'Mutation automation' {
             $Arguments -contains 'Debug' -and $Arguments -contains 'Widget.csproj' -and
             $Arguments -contains (Join-Path $repo 'MSBuild.dll') -and
             $Arguments -contains '--test-runner' -and $Arguments -contains 'mtp' -and
-            $Arguments -contains '--concurrency' -and
+            $Arguments -notcontains '--break-at' -and $Arguments -contains '--concurrency' -and
             $Arguments[[array]::IndexOf($Arguments, '--concurrency') + 1] -eq '1'
         }
     }
