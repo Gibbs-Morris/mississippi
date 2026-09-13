@@ -1,17 +1,19 @@
 using System.Reflection;
 
+using AngleSharp.Dom;
+
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
-using Mississippi.Refraction.Client.Components.Atoms;
+using Mississippi.Refraction.Client.Components.Atoms.Activation;
 
 
-namespace Mississippi.Refraction.Client.L0Tests.Components.Atoms;
+namespace Mississippi.Refraction.Client.L0Tests.Components.Atoms.Activation;
 
 /// <summary>
-///     Smoke tests for <see cref="Emitter" /> component.
+///     Tests for <see cref="Emitter" /> component.
 /// </summary>
 public sealed class EmitterTests : BunitContext
 {
@@ -97,13 +99,14 @@ public sealed class EmitterTests : BunitContext
         // Arrange
         bool wasActivated = false;
         MouseEventArgs? receivedArgs = null;
-        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.Add(
-            c => c.OnActivate,
-            args =>
-            {
-                wasActivated = true;
-                receivedArgs = args;
-            }));
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched("aria-label", "Emit signal")
+            .Add(
+                c => c.OnActivate,
+                args =>
+                {
+                    wasActivated = true;
+                    receivedArgs = args;
+                }));
 
         // Act
         cut.Find(".rf-emitter").Click();
@@ -122,13 +125,14 @@ public sealed class EmitterTests : BunitContext
         // Arrange
         bool wasFocused = false;
         FocusEventArgs? receivedArgs = null;
-        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.Add(
-            c => c.OnFocus,
-            args =>
-            {
-                wasFocused = true;
-                receivedArgs = args;
-            }));
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched("aria-label", "Emit signal")
+            .Add(
+                c => c.OnFocus,
+                args =>
+                {
+                    wasFocused = true;
+                    receivedArgs = args;
+                }));
 
         // Act
         cut.Find(".rf-emitter").Focus();
@@ -145,7 +149,9 @@ public sealed class EmitterTests : BunitContext
     public void EmitterRendersAdditionalAttributes()
     {
         // Act
-        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched("data-testid", "emitter-1"));
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p
+            .AddUnmatched("aria-label", "Emit signal")
+            .AddUnmatched("data-testid", "emitter-1"));
 
         // Assert
         Assert.Equal("emitter-1", cut.Find(".rf-emitter").GetAttribute("data-testid"));
@@ -158,7 +164,9 @@ public sealed class EmitterTests : BunitContext
     public void EmitterRendersCustomState()
     {
         // Act
-        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.Add(c => c.State, RefractionStates.Active));
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p
+            .AddUnmatched("aria-label", "Emit signal")
+            .Add(c => c.State, RefractionStates.Active));
 
         // Assert
         string? dataState = cut.Find(".rf-emitter").GetAttribute("data-state");
@@ -172,24 +180,10 @@ public sealed class EmitterTests : BunitContext
     public void EmitterRendersSeedIndicator()
     {
         // Act
-        using IRenderedComponent<Emitter> cut = Render<Emitter>();
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched("aria-label", "Emit signal"));
 
         // Assert
         Assert.NotEmpty(cut.FindAll(".rf-emitter__seed"));
-    }
-
-    /// <summary>
-    ///     Emitter renders with button role for accessibility.
-    /// </summary>
-    [Fact]
-    public void EmitterRendersWithButtonRoleForAccessibility()
-    {
-        // Act
-        using IRenderedComponent<Emitter> cut = Render<Emitter>();
-
-        // Assert
-        string? role = cut.Find(".rf-emitter").GetAttribute("role");
-        Assert.Equal("button", role);
     }
 
     /// <summary>
@@ -199,7 +193,7 @@ public sealed class EmitterTests : BunitContext
     public void EmitterRendersWithDefaultState()
     {
         // Act
-        using IRenderedComponent<Emitter> cut = Render<Emitter>();
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched("aria-label", "Emit signal"));
 
         // Assert
         string? dataState = cut.Find(".rf-emitter").GetAttribute("data-state");
@@ -207,17 +201,21 @@ public sealed class EmitterTests : BunitContext
     }
 
     /// <summary>
-    ///     Emitter renders with tabindex for keyboard accessibility.
+    ///     Emitter renders native button semantics for accessibility.
     /// </summary>
     [Fact]
-    public void EmitterRendersWithTabindexForKeyboardAccessibility()
+    public void EmitterRendersWithNativeButtonSemantics()
     {
         // Act
-        using IRenderedComponent<Emitter> cut = Render<Emitter>();
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.Add(c => c.Label, "Emit signal"));
 
         // Assert
-        string? tabindex = cut.Find(".rf-emitter").GetAttribute("tabindex");
-        Assert.Equal("0", tabindex);
+        IElement button = cut.Find(".rf-emitter");
+        Assert.Equal("BUTTON", button.TagName);
+        Assert.Equal("button", button.GetAttribute("type"));
+        Assert.Equal("Emit signal", cut.Find(".rf-emitter__label").TextContent);
+        Assert.Equal("true", cut.Find(".rf-emitter__seed").GetAttribute("aria-hidden"));
+        Assert.False(button.HasAttribute("role"));
     }
 
     /// <summary>
@@ -231,5 +229,20 @@ public sealed class EmitterTests : BunitContext
 
         // Assert
         Assert.Equal(RefractionStates.Idle, emitter.State);
+    }
+
+    /// <summary>
+    ///     Emitter uses native keyboard focus without a synthetic tabindex.
+    /// </summary>
+    [Fact]
+    public void EmitterUsesNativeKeyboardFocus()
+    {
+        // Act
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched("aria-label", "Emit signal"));
+
+        // Assert
+        IElement button = cut.Find(".rf-emitter");
+        Assert.False(button.HasAttribute("tabindex"));
+        Assert.False(button.HasAttribute("onkeydown"));
     }
 }

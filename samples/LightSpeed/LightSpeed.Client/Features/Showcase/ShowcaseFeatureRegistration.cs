@@ -14,7 +14,9 @@ internal static class ShowcaseFeatureRegistration
     )
     {
         builder.AddFeatureState<ShowcaseState>(feature => feature
+            .AddReducer<ActivateEmitterAction>(ShowcaseReducers.ActivateEmitter)
             .AddReducer<ChangeEmailAction>(ShowcaseReducers.ChangeEmail)
+            .AddReducer<ChangeEmitterDisabledAction>(ShowcaseReducers.ChangeEmitterDisabled)
             .AddReducer<ChangeProgressAction>(ShowcaseReducers.ChangeProgress)
             .AddReducer<ChangeThemeAction>(ShowcaseReducers.ChangeTheme)
             .AddReducer<ValidateProfileAction>(ShowcaseReducers.Validate)

@@ -48,6 +48,11 @@ Choose percentages or **Unknown duration** in the progress demonstration to
 follow `ChangeProgressAction` through the same store. Form reset preserves the
 selected progress. The sample starts no background operation.
 
+Activate **Emit signal** in the emitter demonstration to follow
+`ActivateEmitterAction`. Toggle **Disable emitter** to dispatch
+`ChangeEmitterDisabledAction`; native button state and the activation count are
+controlled by the page and survive **Reset example**.
+
 The gallery identifies the verified input, theme, and progress surface separately from the
 library's prototype controls. It is not a whole-library accessibility
 certification. Components are organized into atomic folders, with page-level
