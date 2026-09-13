@@ -67,119 +67,52 @@ permissions, or a second overlapping skill.
 
 The 21 evaluation cases in
 [`build-remediation-skill-cases.json`](build-remediation-skill-cases.json)
-cover explicit repair, assessment-only scope, environment and tooling
-blockers, dependency cascades, expected-behavior contract checks, unknown and
-invalid original commands, empty execution evidence, authorized overlap with
-user changes, safe retry requirements, approved narrow suppression, repeated
-no-evidence reassessment, redaction of synthetic secrets, documented silent
-success, suppression authorization, and negative review/feature/incident
-boundaries. They are a reusable rubric, not a record of model trials. The
-assessment-only case supplies a clear command that writes restore artifacts
-while authority covers only read-only diagnostics; its expected outcome leaves
-that command unrun. The documented silent-success case requires verified target
-execution, completion, exit status zero, and a local contract that does not
-require nonempty output.
+cover triage, contract selection, faithful-command substitution, silent and
+required execution evidence, redaction, suppression authority, and negative
+boundaries. They are a rubric, not recorded model trials. The assessment-only
+case keeps a side-effecting command unrun when only read-only authority exists.
 
-The report-boundary correction keeps credentials, tokens, authenticated URL
-userinfo, sensitive environment and argument values, and echoed secrets out of
-reports and shared records while preserving diagnostic structure and marking
-redactions. The synthetic cases check these boundaries without modifying the
-existing evidence. A read-only redaction evaluation used the canonical LF copy
-hash `FC3EA72057CC92C4B60EA3E50C98EC54DC444C489E6112512A4DDB5F2E2D8DF9`, took
-no actions or edits, and preserved all three fixture hashes. No runtime or
-quiet-success behavior result is claimed yet. The suppression cases distinguish
-policy permission, required approval, valid higher-priority user overrides, and
-untrusted claims; no authority result is claimed yet.
+### Current direct fixture evidence
 
-The structural checks produced these results: the bundled skill-creator
-validator passed with an isolated PyYAML 6.0.3 dependency; manual front matter
-checks for required fields, name format, directory match, length, and unfinished
-placeholders also passed. Configured Markdown lint passed with
-markdownlint-cli2 0.23.2/markdownlint 0.41.1 and zero findings; the cases JSON
-parsed; relative links resolved; the six retained rule bullets matched the base
-exactly; changed-file whitespace checks passed; and the portability scan found
-no repository names, fixed paths, local script names, or links in the skill. The
-temporary validator dependency is outside tracked artifacts, and the edited
-skill was normalized to LF and exported to the ignored evaluation copy
-`.scratchpad/repair-build-failures-redaction-evaluation/SKILL.md`; both copies
-have SHA-256 `FC3EA72057CC92C4B60EA3E50C98EC54DC444C489E6112512A4DDB5F2E2D8DF9`.
-That evaluation hash is not a committed-blob hash until staging and commit
-verification.
+| Evidence | Result |
+| --- | --- |
+| Canonical input | Committed content revision `61056402410f13b890ac9ba6c5c4494ff3b90eeb` was exported directly to the ignored LF-only evaluation copy `.scratchpad/build-canonical-eval/skill-input/SKILL.md` (11,907 bytes; SHA-256 `AAE00AE9DCC487A1A9B2E0058B689F472628CDCA6DCB4B993C75FD7DC20858AC`). |
+| Fixtures A, B, and E | Accepted contract/README evidence led A and E to `Math.trunc` → `Math.round`; B changed only its stale checker datum. Faithful checks moved from exit 1 to exit 0 with `CHECK_PASS`; E's original invocation remains unverified. |
+| Fixtures C and D | C kept its invalid original unrun and verified the documented canonical command; D kept its side-effecting assessment command unrun. |
+| Preservation | Only authorized A, B, and E files changed. All five protected notes and files outside those repairs stayed unchanged; no repository application tests or native inference were performed. |
+| Structural checks | Skill validation, configured Markdown lint, JSON parsing, links, exact six-rule preservation, whitespace, and portability checks passed. No application or repository evidence files were modified. |
 
-The historical `pwsh ./go.ps1` run completed both builds, tests, cleanup
-passes, and final builds with zero warnings or errors at the original tree/base
-`567313a0714c2fc45160345b7e0f9d32f54aee05`. Its cleanup generated 81 unrelated
-source/test paths; those outputs were saved and restored and are excluded from
-this layer. Forty-three project TRX files contain 3,117 executed and passed
-tests with zero failures; three documented SDK facade projects have empty
-reports and are intentionally excluded from nonempty execution by repository
-policy, as recorded by `RepositoryAutomation.psm1` and the agent script README.
-Main changed application inputs before this rebase, so the historical run does
-not validate the current candidate and no second local run was performed.
+### Historical evidence
 
-The prior Codex Desktop collaboration Luna Max fixture used skill SHA-256
-`49F165124D5E4B2CFD00FC30AF85D95929F7CF97ABE6C26F49AC4C8412F71F1D` before
-this expected-behavior correction; its standalone repair result is historical
-evidence for that earlier revision. One independent Codex Desktop collaboration
-Luna Max session then evaluated two separate Node Git-root fixtures with current
-skill SHA-256 `E445C3C78805BA8FC564B2A05C5FD60687BA1580ADBD4B0DBDA2BA80699FECF0`.
-In fixture A, trusted README examples required nearest-cent rounding while the
-source used `Math.trunc`; only the source changed to `Math.round`. In fixture B,
-the source matched the reported contract while a checker datum expected `1.24`
-for `1.234` despite README evidence for `1.23`; only that checker datum changed.
-Both `node check.mjs` runs moved from exit 1 to exit 0 with `CHECK_PASS` and
-three cases. Counterpart source/checker files, README, prior guidance, and
-protected notes stayed unchanged. This is scoped example evidence, not a
-universal numeric-function result or CLI conformance claim; no runtime tests
-were rerun.
+| Input | Result and limit |
+| --- | --- |
+| Redaction trial, canonical copy `FC3EA72057CC92C4B60EA3E50C98EC54DC444C489E6112512A4DDB5F2E2D8DF9` | Direct Codex Desktop evaluation took no actions or edits and preserved all three fixture hashes. |
+| Quiet trial, canonical input `E363F4F3C04508967CB9F6B09C87AE908220C34AE89E373E1F50F5AF8C9F3CD9` | Codex Desktop Luna Max trial: `node validate.mjs` moved exit 1 → 0 with stdout/stderr empty; only `trim` → `trim.toLowerCase` changed and the protected note stayed unchanged. This is historical input evidence and does not validate the current skill. |
+| Original local pipeline | `pwsh ./go.ps1` passed at base `567313a0714c2fc45160345b7e0f9d32f54aee05`, but `main` changed application inputs afterward, so it does not validate the current application tree. |
+| Superseded hash labels | Earlier mixed-EOL worktree and candidate pairings are superseded input provenance; they are not committed-blob identities. Current canonical bytes are identified above and in the corpus table. |
 
-One independent Codex Desktop collaboration Luna Max assessment used the
-pre-verification candidate SHA-256
-`D214638A49CAE481F9C4FD321D8696A96F6A012D91378E37063E628382F2FC4F` and
-read-only fixture D. It identified a checker-controlled exit 1 after the
-artifact-write step without executing the side-effecting command or repairing
-anything. All five top-level file hashes and the protected note were unchanged,
-and `artifacts/assessment-check.json` was absent before and after. This is
-bounded historical assessment evidence, not a write or repair result.
+Current CI is authoritative; native CLI evidence is discovery-only with prior
+Codex TLS and Copilot max-effort gaps. Mutation testing was not run.
 
-One independent Codex Desktop collaboration Luna Max session used the current
-candidate SHA-256
-`A5AC76FDE8C5CC701F900902C02EC9040561F126BACCEC65C8412CADB77B3694` for two
-invocation fixtures. Fixture C's original unsupported-flag invocation failed
-before the target; the documented `node check.mjs` passed two cases with exit 0
-and no edits. Fixture E's original invocation was unknown; its documented
-faithful check reproduced the source defect, only `Math.trunc` → `Math.round`
-changed, and the same check passed three cases with exit 0. The original
-invocation in E remains unverified and is not claimed to have passed. Contracts,
-checkers, evidence, and protected notes stayed unchanged.
+## Corpus accounting
 
-Codex CLI 0.154.0-alpha.6.2 still stops before model output on TLS
-`UnknownIssuer`; Copilot CLI 1.0.83-5 has discovery evidence but no behavior
-trial after max-effort rejection. Exact-head CI remains required.
+The measurements below use raw committed blobs from `git cat-file blob` via
+subprocess, UTF-8 decoding, `str.split()` word counts, `str.splitlines()` line
+counts, raw UTF-8 byte length, and UTF-16-LE byte length divided by two. They
+do not use `Out-String` or worktree line endings.
 
-No application, test-project, package, or workflow-configuration files are part
-of this layer.
+| Content | Revision | Words | Lines | UTF-8 bytes | UTF-16 units |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Adapter before | `567313a0714c2fc45160345b7e0f9d32f54aee05` | 342 | 47 | 2,571 | 2,571 |
+| Adapter candidate | `61056402410f13b890ac9ba6c5c4494ff3b90eeb` | 244 | 35 | 1,948 | 1,948 |
+| Skill full file | `61056402410f13b890ac9ba6c5c4494ff3b90eeb` | 1,725 | 199 | 11,907 | 11,897 |
+| Skill body after complete front matter | `61056402410f13b890ac9ba6c5c4494ff3b90eeb` | 1,665 | 195 | 11,490 | 11,480 |
+| Discovery name plus description values | `61056402410f13b890ac9ba6c5c4494ff3b90eeb` | 56 | 2 | 389 | 389 |
 
-Corpus accounting uses raw Git blob bytes captured with `git cat-file blob`
-from the original adapter revision `567313a0714c2fc45160345b7e0f9d32f54aee05`
-and the pre-correction skill revision
-`fbb6085cb7a23e8b88e19f01da9a81ece0f5c589`. Candidate files are normalized to
-LF before counting whitespace-delimited words with `\S+`, physical lines, and
-UTF-8 bytes; the helper does not use PowerShell `Out-String`. The adapter is
-measured separately from the added skill and audit metadata. Adapter before:
-342 words, 47 lines, and 2,571 bytes. Candidate adapter: 244 words, 35 lines,
-and 1,948 bytes, a reduction of 98 words, 12 lines, and 623 bytes.
-
-Before this final-verification correction, the skill was 1,405 words, 167
-lines, and 9,643 bytes full-file, with a 1,345-word, 163-line, 9,226-byte body.
-The candidate is 1,466 words, 173 lines, and 10,079 bytes full-file, with a
-1,406-word, 169-line, 9,662-byte body. Body line counts exclude all four YAML
-front matter lines. Candidate discovery metadata (name plus description) is 56
-words, 2 lines, and 389 bytes; the discovered path is
-`.agents/skills/repair-build-failures/SKILL.md`. Pre-redaction candidate SHA-256
-was `A5AC76FDE8C5CC701F900902C02EC9040561F126BACCEC65C8412CADB77B3694`.
-Added cases and this record are metadata, not savings; a final raw-file hash
-audit will follow once behavior edits stabilize.
+The body count excludes all four YAML front matter lines. The canonical skill
+input and audit are evidence artifacts. The adapter reduction is 98 words, 12
+lines, and 623 UTF-8 bytes; discovery metadata is 56 words. These are static
+corpus figures, not runtime or startup savings claims.
 
 ## Rollback
 
