@@ -211,6 +211,79 @@ public sealed class NotificationDemoTests : BunitContext
         Assert.Contains("Sample export details", details.TextContent, StringComparison.Ordinal);
     }
 
+    /// <summary>A rejected expansion cannot replace dismissal focus for either restore target.</summary>
+    /// <param name="hasRestoreCallback">Whether the hidden state supplies a restore action.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task DismissalFocusSurvivesRejectedExpansion(
+        bool hasRestoreCallback
+    )
+    {
+        using SemaphoreSlim dismissStarted = new(0, 1);
+        using SemaphoreSlim dismissCompleted = new(0, 1);
+        using SemaphoreSlim expandStarted = new(0, 1);
+        using SemaphoreSlim expandCompleted = new(0, 1);
+        IRenderedComponent<NotificationDemo> cut = null!;
+        Func<Task> dismissCallback = async () =>
+        {
+            dismissStarted.Release();
+            await dismissCompleted.WaitAsync(TestContext.Current.CancellationToken);
+            cut.Render(parameters => parameters.Add(c => c.IsVisible, false));
+        };
+        Func<MouseEventArgs, Task> expandCallback = async _ =>
+        {
+            expandStarted.Release();
+            await expandCompleted.WaitAsync(TestContext.Current.CancellationToken);
+            throw new InvalidOperationException("Expansion was rejected.");
+        };
+        using (cut = hasRestoreCallback
+                   ? Render<NotificationDemo>(p => p
+                       .Add(c => c.IsVisible, true)
+                       .Add(c => c.IsExpanded, false)
+                       .Add(c => c.DismissRequested, dismissCallback)
+                       .Add(c => c.ExpandRequested, expandCallback)
+                       .Add(c => c.RestoreRequested, () => { }))
+                   : Render<NotificationDemo>(p => p
+                       .Add(c => c.IsVisible, true)
+                       .Add(c => c.IsExpanded, false)
+                       .Add(c => c.DismissRequested, dismissCallback)
+                       .Add(c => c.ExpandRequested, expandCallback)))
+        {
+            string? headingReference = cut.Find("[data-testid=notification-demo-heading]")
+                .GetAttribute("blazor:elementReference");
+            Assert.False(
+                string.IsNullOrWhiteSpace(headingReference),
+                cut.Find("[data-testid=notification-demo-heading]").OuterHtml);
+            IRenderedComponent<NotificationPulse> pulse = cut.FindComponent<NotificationPulse>();
+            Task dismissClick = cut.Find(".rf-notification-pulse__dismiss").ClickAsync();
+            await dismissStarted.WaitAsync(TestContext.Current.CancellationToken);
+            Task<InvalidOperationException> expandClick = StartExpectedFailureAsync(cut, pulse);
+            await expandStarted.WaitAsync(TestContext.Current.CancellationToken);
+            dismissCompleted.Release();
+            await dismissClick;
+            Assert.Empty(cut.FindAll(".rf-notification-pulse__expand"));
+            string expectedFocusReference;
+            if (hasRestoreCallback)
+            {
+                IElement restore = cut.Find("[data-testid=notification-restore]");
+                expectedFocusReference = restore.GetAttribute("blazor:elementReference")!;
+                Assert.False(string.IsNullOrWhiteSpace(expectedFocusReference), restore.OuterHtml);
+            }
+            else
+            {
+                expectedFocusReference = headingReference;
+            }
+
+            ElementReference focused = Assert.IsType<ElementReference>(JSInterop.VerifyFocusAsyncInvoke().Arguments[0]);
+            Assert.Equal(expectedFocusReference, focused.Id);
+            expandCompleted.Release();
+            await expandClick;
+            Assert.Single(JSInterop.Invocations);
+        }
+    }
+
     /// <summary>Dismissal without a restore callback falls back to the stable heading target.</summary>
     [Fact]
     public void DismissalWithoutRestoreCallbackFocusesHeadingAfterParentHidesNotification()

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
@@ -25,7 +26,7 @@ public sealed partial class NotificationDemo : ComponentBase
         Heading,
     }
 
-    private FocusRequest? pendingFocusRequest;
+    private readonly List<FocusRequest> pendingFocusRequests = [];
 
     /// <summary>Gets or sets the dismissal callback.</summary>
     [Parameter]
@@ -72,27 +73,31 @@ public sealed partial class NotificationDemo : ComponentBase
         bool firstRender
     )
     {
-        FocusRequest? request = pendingFocusRequest;
-        if (request is null)
+        ElementReference? focusTarget = null;
+        for (int index = pendingFocusRequests.Count - 1; index >= 0; index--)
         {
-            return;
+            FocusRequest request = pendingFocusRequests[index];
+            ElementReference? targetElement = request.Target switch
+            {
+                PendingFocus.Details when IsVisible && IsExpanded => DetailsRegion,
+                PendingFocus.Restore when !IsVisible => RestoreRequested.HasDelegate ? RestoreButton : SectionHeading,
+                PendingFocus.Heading when IsVisible && !IsExpanded => SectionHeading,
+                var _ => null,
+            };
+            if (targetElement.HasValue)
+            {
+                focusTarget ??= targetElement;
+                pendingFocusRequests.RemoveAt(index);
+            }
+            else if (request.CallbackCompleted)
+            {
+                pendingFocusRequests.RemoveAt(index);
+            }
         }
 
-        ElementReference? targetElement = request.Target switch
+        if (focusTarget.HasValue)
         {
-            PendingFocus.Details when IsVisible && IsExpanded => DetailsRegion,
-            PendingFocus.Restore when !IsVisible => RestoreRequested.HasDelegate ? RestoreButton : SectionHeading,
-            PendingFocus.Heading when IsVisible && !IsExpanded => SectionHeading,
-            var _ => null,
-        };
-        if (targetElement.HasValue)
-        {
-            pendingFocusRequest = null;
-            await targetElement.Value.FocusAsync();
-        }
-        else if (request.CallbackCompleted)
-        {
-            pendingFocusRequest = null;
+            await focusTarget.Value.FocusAsync();
         }
     }
 
@@ -113,7 +118,7 @@ public sealed partial class NotificationDemo : ComponentBase
     )
     {
         FocusRequest request = new(target);
-        pendingFocusRequest = request;
+        pendingFocusRequests.Add(request);
         try
         {
             await callback();
@@ -121,11 +126,7 @@ public sealed partial class NotificationDemo : ComponentBase
         }
         catch
         {
-            if (ReferenceEquals(pendingFocusRequest, request))
-            {
-                pendingFocusRequest = null;
-            }
-
+            pendingFocusRequests.Remove(request);
             throw;
         }
     }
