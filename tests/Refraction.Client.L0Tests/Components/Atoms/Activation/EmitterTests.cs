@@ -1,17 +1,19 @@
 using System.Reflection;
 
+using AngleSharp.Dom;
+
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
-using Mississippi.Refraction.Client.Components.Atoms;
+using Mississippi.Refraction.Client.Components.Atoms.Activation;
 
 
-namespace Mississippi.Refraction.Client.L0Tests.Components.Atoms;
+namespace Mississippi.Refraction.Client.L0Tests.Components.Atoms.Activation;
 
 /// <summary>
-///     Smoke tests for <see cref="Emitter" /> component.
+///     Tests for <see cref="Emitter" /> component.
 /// </summary>
 public sealed class EmitterTests : BunitContext
 {
@@ -179,20 +181,6 @@ public sealed class EmitterTests : BunitContext
     }
 
     /// <summary>
-    ///     Emitter renders with button role for accessibility.
-    /// </summary>
-    [Fact]
-    public void EmitterRendersWithButtonRoleForAccessibility()
-    {
-        // Act
-        using IRenderedComponent<Emitter> cut = Render<Emitter>();
-
-        // Assert
-        string? role = cut.Find(".rf-emitter").GetAttribute("role");
-        Assert.Equal("button", role);
-    }
-
-    /// <summary>
     ///     Emitter renders with default state.
     /// </summary>
     [Fact]
@@ -207,17 +195,21 @@ public sealed class EmitterTests : BunitContext
     }
 
     /// <summary>
-    ///     Emitter renders with tabindex for keyboard accessibility.
+    ///     Emitter renders native button semantics for accessibility.
     /// </summary>
     [Fact]
-    public void EmitterRendersWithTabindexForKeyboardAccessibility()
+    public void EmitterRendersWithNativeButtonSemantics()
     {
         // Act
-        using IRenderedComponent<Emitter> cut = Render<Emitter>();
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.Add(c => c.Label, "Emit signal"));
 
         // Assert
-        string? tabindex = cut.Find(".rf-emitter").GetAttribute("tabindex");
-        Assert.Equal("0", tabindex);
+        IElement button = cut.Find(".rf-emitter");
+        Assert.Equal("BUTTON", button.TagName);
+        Assert.Equal("button", button.GetAttribute("type"));
+        Assert.Equal("Emit signal", cut.Find(".rf-emitter__label").TextContent);
+        Assert.Equal("true", cut.Find(".rf-emitter__seed").GetAttribute("aria-hidden"));
+        Assert.False(button.HasAttribute("role"));
     }
 
     /// <summary>
@@ -231,5 +223,20 @@ public sealed class EmitterTests : BunitContext
 
         // Assert
         Assert.Equal(RefractionStates.Idle, emitter.State);
+    }
+
+    /// <summary>
+    ///     Emitter uses native keyboard focus without a synthetic tabindex.
+    /// </summary>
+    [Fact]
+    public void EmitterUsesNativeKeyboardFocus()
+    {
+        // Act
+        using IRenderedComponent<Emitter> cut = Render<Emitter>();
+
+        // Assert
+        IElement button = cut.Find(".rf-emitter");
+        Assert.False(button.HasAttribute("tabindex"));
+        Assert.False(button.HasAttribute("onkeydown"));
     }
 }

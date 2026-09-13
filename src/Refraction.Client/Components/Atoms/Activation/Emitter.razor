@@ -1,0 +1,14 @@
+<button @attributes="ForwardedAttributes"
+        class="@CssClass"
+        type="button"
+        data-state="@EffectiveState"
+        disabled="@IsEffectivelyDisabled"
+        aria-disabled="@AriaDisabled"
+        @onclick="HandleClickAsync"
+        @onfocus="HandleFocusAsync">
+    <span class="rf-emitter__seed" aria-hidden="true"></span>
+    @if (!string.IsNullOrWhiteSpace(Label))
+    {
+        <span class="rf-emitter__label">@Label</span>
+    }
+</button>

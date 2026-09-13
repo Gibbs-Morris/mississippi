@@ -42,6 +42,50 @@ public sealed class ShowcaseTests
         Assert.Equal(nameof(ChangeEmailAction), changed.LastAction);
     }
 
+    /// <summary>Emitter activation is immutable and records the latest action.</summary>
+    [Fact]
+    public void EmitterActivationIsImmutable()
+    {
+        ShowcaseState initial = new();
+        ShowcaseState changed = ShowcaseReducers.ActivateEmitter(initial, new());
+        Assert.NotSame(initial, changed);
+        Assert.Equal(0, initial.EmitterActivationCount);
+        Assert.Equal(1, changed.EmitterActivationCount);
+        Assert.Equal(1, changed.ActionCount);
+        Assert.Equal(nameof(ActivateEmitterAction), changed.LastAction);
+    }
+
+    /// <summary>Emitter disabled intent is immutable and updates the selected state.</summary>
+    [Fact]
+    public void EmitterDisabledChangesAreImmutable()
+    {
+        ShowcaseState initial = new();
+        ShowcaseState changed = ShowcaseReducers.ChangeEmitterDisabled(initial, new(true));
+        Assert.NotSame(initial, changed);
+        Assert.False(initial.IsEmitterDisabled);
+        Assert.True(changed.IsEmitterDisabled);
+        Assert.Equal(1, changed.ActionCount);
+        Assert.Equal(nameof(ChangeEmitterDisabledAction), changed.LastAction);
+    }
+
+    /// <summary>The registered emitter actions reach the selector view.</summary>
+    [Fact]
+    public void EmitterRegistrationConnectsActionsToState()
+    {
+        ServiceCollection services = new();
+        services.AddLogging();
+        services.AddReservoir().AddShowcaseFeature();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IStore store = provider.GetRequiredService<IStore>();
+        store.Dispatch(new ActivateEmitterAction());
+        store.Dispatch(new ChangeEmitterDisabledAction(true));
+        ShowcaseView view = ShowcaseSelectors.GetView(store.GetState<ShowcaseState>());
+        Assert.Equal(1, view.EmitterActivationCount);
+        Assert.True(view.IsEmitterDisabled);
+        Assert.Equal(2, view.ActionCount);
+        Assert.Equal(nameof(ChangeEmitterDisabledAction), view.LastAction);
+    }
+
     /// <summary>Invalid demo percentages do not produce misleading state.</summary>
     /// <param name="percent">An out-of-range selection.</param>
     [Theory]
@@ -102,11 +146,15 @@ public sealed class ShowcaseTests
             Email = "edited",
             IsSubmitted = true,
             ActionCount = 4,
+            EmitterActivationCount = 2,
+            IsEmitterDisabled = true,
         };
         ShowcaseState reset = ShowcaseReducers.Reset(state, new());
         Assert.Equal(RefractionThemeMode.Light, reset.ThemeMode);
         Assert.Equal("alex@contoso.example", reset.Email);
         Assert.False(reset.IsSubmitted);
+        Assert.Equal(2, reset.EmitterActivationCount);
+        Assert.True(reset.IsEmitterDisabled);
         Assert.Equal(5, reset.ActionCount);
         Assert.Equal(nameof(ResetProfileAction), reset.LastAction);
     }
