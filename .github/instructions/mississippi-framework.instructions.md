@@ -41,6 +41,7 @@ Governing thought: Build applications using the Mississippi framework with sourc
 
 ### State Management (Reservoir)
 
+- Full Mississippi WebAssembly clients **MUST** compose features inside one `builder.UseMississippi(client => ...)` callback using `ClientBuilder` from `Mississippi.Hosting.Client`. Why: Terminal attachment validates the composition before committing its registrations; the client and nested builders cannot be configured after attachment.
 - All client-side domain and business state **MUST** be managed via the Reservoir store using actions and reducers; ephemeral UI state (e.g., hover, focus, temporary form input) **MAY** remain component-local. Why: Enforces predictable Redux/Flux-style state management for state that matters while allowing practical UI patterns. See `.github/instructions/blazor-ux-guidelines.instructions.md`.
 - Contributors **SHOULD** review how Reservoir is implemented in `src/Reservoir/` before building features. Why: Understanding the store pattern ensures correct usage.
 - Dispatching actions and obtaining feature state **MUST** go through the store; ad-hoc or component-local state management **MUST NOT** be used for domain state. Why: Prevents scattered state that cannot be inspected or replayed.

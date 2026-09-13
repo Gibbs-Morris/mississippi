@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client.Abstractions;
+using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Core;
 
@@ -180,6 +182,22 @@ public sealed class InletClientRegistrationsTests
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => builder.AddProjectionPath<TestProjection>(null!));
+    }
+
+    /// <summary>
+    ///     Composite root extensions fail before changing parent services inside a feature callback.
+    /// </summary>
+    [Fact]
+    public void FeatureCallbackRejectsCompositeInletRegistrationBeforeMutation()
+    {
+        ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
+        ServiceDescriptor[] original = services.ToArray();
+        Assert.Throws<InvalidOperationException>(() =>
+            builder.AddFeatureState<ProjectionsFeatureState>(_ => builder.AddInletClient()));
+        Assert.Equal(original, services);
+        builder.AddInletClient();
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IProjectionRegistry));
     }
 
     /// <summary>

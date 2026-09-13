@@ -48,6 +48,12 @@ The `Services` property is marked advanced in the public contract. The normal di
 
 `IReservoirFeatureBuilder<TState>` is the feature-scoped public contract used inside `AddFeatureState<TState>(configure)`.
 
+Its staged service collection is writable during that callback and becomes read-only when the callback exits, including on failure. Complete feature registration inside the callback; retaining the feature builder does not extend its configuration lifetime.
+
+Configure the supplied feature builder inside the callback. Add other feature states and middleware through the root before or after it; reentrant root registration is rejected before it runs. Direct parent-service changes reject the feature commit instead of being overwritten, preserving those changes while the failed feature scope closes.
+
+Accessing the root builder's `Services` inside a feature callback also throws before returning the collection. This protects composite extensions, such as `AddInletClient()`, from partially registering parent services before a later root operation is rejected. Use the supplied feature builder's services for advanced feature configuration.
+
 | Member | Purpose |
 |--------|---------|
 | `Services` | Advanced access to the underlying `IServiceCollection` |
@@ -98,9 +104,11 @@ This reference covers the verified subsystem boundary and the current public reg
 
 Builder-based composition is the direction of the public Reservoir registration model going forward.
 
-Reservoir-only application startup should begin with `AddReservoir()` and then compose package or feature extensions on the returned `IReservoirBuilder`. Full Mississippi client apps should begin with `AddMississippiClient()` and use `client.Reservoir(...)` when they need Reservoir-level composition.
+Reservoir-only application startup should begin with `AddReservoir()` and then compose package or feature extensions on the returned `IReservoirBuilder`. Full Mississippi client apps should begin with `UseMississippi(...)` and use `client.Reservoir(...)` when they need Reservoir-level composition.
 
 ## Failure Behavior
+
+When the parent service collection is read-only, Reservoir rejects registration before invoking a new feature callback. Attempts to register through a completed parent or feature scope throw `InvalidOperationException`. In a full Mississippi client, terminal attachment closes the parent collection as described in [Client Composition](../../reference/client-composition.md).
 
 For runtime and API-level failure behavior, refer to the [Archived Reservoir Docs](../../archived/client-state-management/reservoir.md) and the [Reservoir Concepts](../concepts/concepts.md) page.
 
