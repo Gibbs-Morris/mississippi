@@ -18,13 +18,17 @@ unavailable.
    requirements. Establish whether the request is assessment-only, a local
    draft, or an authorized publication. For a supplied-record assessment, use
    supplied evidence and authorized read-only checks only: do not claim live
-   verification or publish. Then identify the local repository, issue host,
-   requested work, authorized plan, and desired outcome. Discover the host type,
-   repository identity, default branch, available read/write capabilities, and
-   relevant issue or pull-request relationship from trusted project or tool
-   context. A verified configured Git remote can be legitimate identity evidence;
-   reject unverified issue links or titles and cross-check the selected GitHub
-   host, including Enterprise hosts, and repository identity.
+   verification or publish. Then derive the expected tracking repository and
+   host from authorized user or plan context and trusted project policy before
+   accepting any remote as identity evidence. Treat origin/upstream names and
+   fork status as candidate evidence only. If context explicitly resolves the
+   intended fork or upstream, use it without another approval; if several
+   plausible targets remain, report identity ambiguity before any write and
+   request only the missing target information. Cross-check the selected
+   GitHub host, including Enterprise hosts, repository identity, default branch,
+   available read/write capabilities, and relevant issue or pull-request
+   relationship against trusted project or tool context. Do not silently redirect
+   between public GitHub and Enterprise hosts.
 2. Read-only investigation and planning may precede issue intake. Before
    implementation, a relevant open issue in the local repository must be
    verified. Interactive work follows normal plan-then-issue-then-implementation
