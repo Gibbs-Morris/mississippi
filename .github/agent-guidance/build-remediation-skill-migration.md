@@ -65,16 +65,16 @@ permissions, or a second overlapping skill.
 
 ## Validation record
 
-The 14 evaluation cases in
+The 16 evaluation cases in
 [`build-remediation-skill-cases.json`](build-remediation-skill-cases.json)
 cover explicit repair, assessment-only scope, environment and tooling
-blockers, dependency cascades, expected-behavior contract checks, empty
-execution evidence, authorized overlap with user changes, safe retry
-requirements, approved narrow suppression, repeated no-evidence reassessment,
-and negative review/feature/incident boundaries. They are a reusable rubric, not
-a record of model trials. The assessment-only case supplies a clear command
-that writes restore artifacts while authority covers only read-only diagnostics;
-its expected outcome leaves that command unrun.
+blockers, dependency cascades, expected-behavior contract checks, unknown and
+invalid original commands, empty execution evidence, authorized overlap with
+user changes, safe retry requirements, approved narrow suppression, repeated
+no-evidence reassessment, and negative review/feature/incident boundaries. They
+are a reusable rubric, not a record of model trials. The assessment-only case
+supplies a clear command that writes restore artifacts while authority covers
+only read-only diagnostics; its expected outcome leaves that command unrun.
 
 The structural checks produced these results: the bundled skill-creator
 validator passed with an isolated PyYAML 6.0.3 dependency; manual front matter
@@ -114,11 +114,24 @@ universal numeric-function result or CLI conformance claim; no runtime tests
 were rerun.
 
 One independent Codex Desktop collaboration Luna Max assessment used the
-current candidate and read-only fixture D. It identified a checker-controlled
-exit 1 after the artifact-write step without executing the side-effecting
-command or repairing anything. All five top-level file hashes and the protected
-note were unchanged, and `artifacts/assessment-check.json` was absent before
-and after. This is bounded assessment evidence, not a write or repair result.
+pre-verification candidate SHA-256
+`D214638A49CAE481F9C4FD321D8696A96F6A012D91378E37063E628382F2FC4F` and
+read-only fixture D. It identified a checker-controlled exit 1 after the
+artifact-write step without executing the side-effecting command or repairing
+anything. All five top-level file hashes and the protected note were unchanged,
+and `artifacts/assessment-check.json` was absent before and after. This is
+bounded historical assessment evidence, not a write or repair result.
+
+One independent Codex Desktop collaboration Luna Max session used the current
+candidate SHA-256
+`A5AC76FDE8C5CC701F900902C02EC9040561F126BACCEC65C8412CADB77B3694` for two
+invocation fixtures. Fixture C's original unsupported-flag invocation failed
+before the target; the documented `node check.mjs` passed two cases with exit 0
+and no edits. Fixture E's original invocation was unknown; its documented
+faithful check reproduced the source defect, only `Math.trunc` → `Math.round`
+changed, and the same check passed three cases with exit 0. The original
+invocation in E remains unverified and is not claimed to have passed. Contracts,
+checkers, evidence, and protected notes stayed unchanged.
 
 Codex CLI 0.154.0-alpha.6.2 still stops before model output on TLS
 `UnknownIssuer`; Copilot CLI 1.0.83-5 has discovery evidence but no behavior
@@ -130,21 +143,21 @@ of this layer.
 Corpus accounting uses raw Git blob bytes captured with `git cat-file blob`
 from the original adapter revision `567313a0714c2fc45160345b7e0f9d32f54aee05`
 and the pre-correction skill revision
-`80e461d1aa20d73fec258bc93e1e80557bb254f4`. Candidate files are normalized to
+`fbb6085cb7a23e8b88e19f01da9a81ece0f5c589`. Candidate files are normalized to
 LF before counting whitespace-delimited words with `\S+`, physical lines, and
 UTF-8 bytes; the helper does not use PowerShell `Out-String`. The adapter is
 measured separately from the added skill and audit metadata. Adapter before:
 342 words, 47 lines, and 2,571 bytes. Candidate adapter: 244 words, 35 lines,
 and 1,948 bytes, a reduction of 98 words, 12 lines, and 623 bytes.
 
-Before this early-reproduction correction, the skill was 1,384 words, 164
-lines, and 9,484 bytes full-file, with a 1,324-word, 160-line, 9,067-byte body.
-The candidate is 1,405 words, 167 lines, and 9,643 bytes full-file, with a
-1,345-word, 163-line, 9,226-byte body. Body line counts exclude all four YAML
+Before this final-verification correction, the skill was 1,405 words, 167
+lines, and 9,643 bytes full-file, with a 1,345-word, 163-line, 9,226-byte body.
+The candidate is 1,466 words, 173 lines, and 10,079 bytes full-file, with a
+1,406-word, 169-line, 9,662-byte body. Body line counts exclude all four YAML
 front matter lines. Candidate discovery metadata (name plus description) is 56
 words, 2 lines, and 389 bytes; the discovered path is
 `.agents/skills/repair-build-failures/SKILL.md`. Current candidate SHA-256 is
-`D214638A49CAE481F9C4FD321D8696A96F6A012D91378E37063E628382F2FC4F`. Added
+`A5AC76FDE8C5CC701F900902C02EC9040561F126BACCEC65C8412CADB77B3694`. Added
 cases and this record are metadata, not savings.
 
 ## Rollback

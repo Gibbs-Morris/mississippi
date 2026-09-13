@@ -146,9 +146,15 @@ record the required deferred work with its evidence.
 
 After the repair:
 
-1. Rerun the original consuming-project command and confirm that the original
-   diagnostic is absent, the intended target executed, and the command completed
-   successfully with meaningful evidence.
+1. When the original command is known, valid for the intended check, and its
+   side effects are authorized for verification, rerun it and confirm that the
+   original diagnostic is absent, the intended target executed, and the command
+   completed successfully with meaningful evidence. If the original command is
+   unavailable, invalid, or not authorized, do not claim that it passed; verify
+   the documented or reconstructed faithful invocation instead when authorized,
+   preserving the intended stages and execution/report requirements. Explain
+   the substitution and limitation rather than silently choosing an easier
+   check.
 2. Run every additional gate that the consuming project makes applicable to the
    changed area, such as locked restore, warning-as-error build, formatter or
    analyzer checks, focused tests, required test levels, and quality reports.
