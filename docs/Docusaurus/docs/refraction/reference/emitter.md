@@ -15,13 +15,13 @@ sidebar_position: 5
 
 | Parameter | Default | Contract |
 | --- | --- | --- |
-| `Label` | `null` | Optional visible button label. Icon-only callers must provide `aria-label` or `aria-labelledby`. |
+| `Label` | `null` | Optional visible button label. When blank, a nonblank string `aria-label` or `aria-labelledby` is required. |
 | `Class` | `null` | Additional classes composed with `rf-emitter` and any caller class attribute. |
 | `IsDisabled` | `false` | Disables the button when `true`. |
 | `State` | `RefractionStates.Idle` | Visual state hook. `Disabled` also disables the button; other values remain available to styling. |
 | `OnActivate` | empty | Receives the native `MouseEventArgs` when enabled. |
 | `OnFocus` | empty | Receives the native `FocusEventArgs` when enabled. |
-| `AdditionalAttributes` | `null` | Native attributes such as accessible names and test identifiers. Controlled attributes remain component-owned. |
+| `AdditionalAttributes` | `null` | Native attributes such as accessible names and test identifiers. `aria-label` and `aria-labelledby` must be strings; controlled attributes remain component-owned. |
 
 ## Native interaction and accessibility
 
@@ -30,9 +30,25 @@ role and Enter/Space keyboard activation. The component does not add keydown
 handlers that could invoke activation twice. Native focus replaces the
 prototype's explicit `tabindex`.
 
-The optional `Label` is visible inside the button. When it is omitted, callers
-must supply a meaningful native accessible name for the icon-only button. The
-seed is decorative and carries `aria-hidden="true"`.
+The optional `Label` is visible inside the button. Every rendered emitter must
+have a meaningful name: supply a nonblank `Label`, a string `aria-label`, or a
+string `aria-labelledby`. When `Label` is blank and no nonblank string ARIA name
+is supplied, `InvalidOperationException` is thrown during parameter
+application. Non-string ARIA naming values are rejected separately. The seed
+is decorative and carries `aria-hidden="true"`.
+
+Use `aria-labelledby` when an existing nonempty element supplies the name. The
+value must contain the ID or space-separated IDs of those labeling elements;
+the atom does not resolve IDs or inspect remote DOM content.
+
+When callers provide case variants of one naming attribute, the last value is
+validated and rendered. Keep one nonblank string value to make the effective
+accessible name clear.
+
+```razor
+<h2 id="emitter-title">Send an intent</h2>
+<Emitter aria-labelledby="emitter-title" />
+```
 
 `IsDisabled` and `State == RefractionStates.Disabled` combine into one effective
 disabled state. The rendered `disabled`, `aria-disabled`, and `data-state`
@@ -53,8 +69,11 @@ event wiring remain controlled by the component.
 Move imports from `Mississippi.Refraction.Client.Components.Atoms` to
 `Mississippi.Refraction.Client.Components.Atoms.Activation`. Replace any
 prototype assumptions about `role="button"`, `tabindex="0"`, or a generic
-wrapper with the native button contract. Provide `Label` for a visible action,
-or provide a specific `aria-label`/`aria-labelledby` for icon-only use.
+wrapper with the native button contract. Provide a nonblank `Label` for a
+visible action, or provide a nonblank string `aria-label`/`aria-labelledby` for
+icon-only use. For `aria-labelledby`, supply IDs of existing nonempty labeling
+elements; a missing valid source throws `InvalidOperationException`, and
+non-string ARIA naming values are rejected.
 
 The atom remains presentational: pages or container components own state and
 dispatch, while `OnActivate` and `OnFocus` report intent upward. The

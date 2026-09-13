@@ -99,13 +99,14 @@ public sealed class EmitterTests : BunitContext
         // Arrange
         bool wasActivated = false;
         MouseEventArgs? receivedArgs = null;
-        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.Add(
-            c => c.OnActivate,
-            args =>
-            {
-                wasActivated = true;
-                receivedArgs = args;
-            }));
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched("aria-label", "Emit signal")
+            .Add(
+                c => c.OnActivate,
+                args =>
+                {
+                    wasActivated = true;
+                    receivedArgs = args;
+                }));
 
         // Act
         cut.Find(".rf-emitter").Click();
@@ -124,13 +125,14 @@ public sealed class EmitterTests : BunitContext
         // Arrange
         bool wasFocused = false;
         FocusEventArgs? receivedArgs = null;
-        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.Add(
-            c => c.OnFocus,
-            args =>
-            {
-                wasFocused = true;
-                receivedArgs = args;
-            }));
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched("aria-label", "Emit signal")
+            .Add(
+                c => c.OnFocus,
+                args =>
+                {
+                    wasFocused = true;
+                    receivedArgs = args;
+                }));
 
         // Act
         cut.Find(".rf-emitter").Focus();
@@ -147,7 +149,9 @@ public sealed class EmitterTests : BunitContext
     public void EmitterRendersAdditionalAttributes()
     {
         // Act
-        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched("data-testid", "emitter-1"));
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p
+            .AddUnmatched("aria-label", "Emit signal")
+            .AddUnmatched("data-testid", "emitter-1"));
 
         // Assert
         Assert.Equal("emitter-1", cut.Find(".rf-emitter").GetAttribute("data-testid"));
@@ -160,7 +164,9 @@ public sealed class EmitterTests : BunitContext
     public void EmitterRendersCustomState()
     {
         // Act
-        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.Add(c => c.State, RefractionStates.Active));
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p
+            .AddUnmatched("aria-label", "Emit signal")
+            .Add(c => c.State, RefractionStates.Active));
 
         // Assert
         string? dataState = cut.Find(".rf-emitter").GetAttribute("data-state");
@@ -174,7 +180,7 @@ public sealed class EmitterTests : BunitContext
     public void EmitterRendersSeedIndicator()
     {
         // Act
-        using IRenderedComponent<Emitter> cut = Render<Emitter>();
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched("aria-label", "Emit signal"));
 
         // Assert
         Assert.NotEmpty(cut.FindAll(".rf-emitter__seed"));
@@ -187,7 +193,7 @@ public sealed class EmitterTests : BunitContext
     public void EmitterRendersWithDefaultState()
     {
         // Act
-        using IRenderedComponent<Emitter> cut = Render<Emitter>();
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched("aria-label", "Emit signal"));
 
         // Assert
         string? dataState = cut.Find(".rf-emitter").GetAttribute("data-state");
@@ -232,7 +238,7 @@ public sealed class EmitterTests : BunitContext
     public void EmitterUsesNativeKeyboardFocus()
     {
         // Act
-        using IRenderedComponent<Emitter> cut = Render<Emitter>();
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched("aria-label", "Emit signal"));
 
         // Assert
         IElement button = cut.Find(".rf-emitter");

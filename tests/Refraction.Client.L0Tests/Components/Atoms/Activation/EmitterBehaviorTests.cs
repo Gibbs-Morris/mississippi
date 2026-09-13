@@ -17,6 +17,53 @@ namespace Mississippi.Refraction.Client.L0Tests.Components.Atoms.Activation;
 /// </summary>
 public sealed class EmitterBehaviorTests : BunitContext
 {
+    /// <summary>Emitter replaces unmatched attributes and revalidates the replacement name.</summary>
+    [Fact]
+    public void EmitterAcceptsAriaNameAfterAttributeReplacement()
+    {
+        // Arrange
+        IReadOnlyDictionary<string, object> labelAttributes = new Dictionary<string, object>
+        {
+            ["aria-label"] = "Open palette",
+        };
+        using IRenderedComponent<Emitter> cut =
+            Render<Emitter>(p => p.Add(c => c.AdditionalAttributes, labelAttributes));
+        IReadOnlyDictionary<string, object> labelledByAttributes = new Dictionary<string, object>
+        {
+            ["aria-labelledby"] = "emitter-description",
+        };
+
+        // Act
+        cut.Render(p => p.Add(c => c.AdditionalAttributes, labelledByAttributes));
+
+        // Assert
+        IElement button = cut.Find("button.rf-emitter");
+        Assert.False(button.HasAttribute("aria-label"));
+        Assert.Equal("emitter-description", button.GetAttribute("aria-labelledby"));
+    }
+
+    /// <summary>Emitter accepts either native ARIA naming source, including case variants.</summary>
+    /// <param name="attributeName">The supplied ARIA naming attribute.</param>
+    /// <param name="value">The nonblank naming value.</param>
+    /// <param name="expectedAttributeName">The normalized DOM attribute name.</param>
+    [Theory]
+    [InlineData("aria-label", "Open palette", "aria-label")]
+    [InlineData("ARIA-LABEL", "Open palette", "aria-label")]
+    [InlineData("aria-labelledby", "emitter-description", "aria-labelledby")]
+    [InlineData("ARIA-LABELLEDBY", "emitter-description", "aria-labelledby")]
+    public void EmitterAcceptsAriaNameSource(
+        string attributeName,
+        string value,
+        string expectedAttributeName
+    )
+    {
+        // Act
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched(attributeName, value));
+
+        // Assert
+        Assert.Equal(value, cut.Find("button.rf-emitter").GetAttribute(expectedAttributeName));
+    }
+
     /// <summary>
     ///     Emitter permits a caller-provided accessible name when no visible label is rendered.
     /// </summary>
@@ -49,6 +96,7 @@ public sealed class EmitterBehaviorTests : BunitContext
         int activationCount = 0;
         int focusCount = 0;
         using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p
+            .AddUnmatched("aria-label", "Emit signal")
             .Add(c => c.IsDisabled, isDisabled)
             .Add(c => c.State, state)
             .Add(c => c.OnActivate, _ => activationCount++)
@@ -117,6 +165,7 @@ public sealed class EmitterBehaviorTests : BunitContext
         {
             ["data-note"] = "lower",
             ["DATA-NOTE"] = "upper",
+            ["aria-label"] = "Emit signal",
         };
 
         // Act
@@ -124,6 +173,24 @@ public sealed class EmitterBehaviorTests : BunitContext
 
         // Assert
         Assert.True(cut.Find("button.rf-emitter").HasAttribute("data-note"));
+    }
+
+    /// <summary>Emitter forwards the last case-insensitive naming value that it validates.</summary>
+    [Fact]
+    public void EmitterForwardsLastCaseInsensitiveNameValue()
+    {
+        // Arrange
+        IReadOnlyDictionary<string, object> attributes = new Dictionary<string, object>
+        {
+            ["aria-label"] = " ",
+            ["ARIA-LABEL"] = "Open palette",
+        };
+
+        // Act
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.Add(c => c.AdditionalAttributes, attributes));
+
+        // Assert
+        Assert.Equal("Open palette", cut.Find("button.rf-emitter").GetAttribute("aria-label"));
     }
 
     /// <summary>
@@ -158,9 +225,9 @@ public sealed class EmitterBehaviorTests : BunitContext
     {
         // Arrange
         MouseEventArgs? receivedArgs = null;
-        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.Add(
-            c => c.OnActivate,
-            args => receivedArgs = args));
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p
+            .AddUnmatched("aria-label", "Emit signal")
+            .Add(c => c.OnActivate, args => receivedArgs = args));
         MouseEventArgs expectedArgs = new()
         {
             Button = 1,
@@ -172,5 +239,123 @@ public sealed class EmitterBehaviorTests : BunitContext
 
         // Assert
         Assert.Same(expectedArgs, receivedArgs);
+    }
+
+    /// <summary>
+    ///     Emitter rejects a blank case variant that would replace a meaningful ARIA name in the DOM.
+    /// </summary>
+    [Fact]
+    public void EmitterRejectsBlankCaseVariantAfterMeaningfulName()
+    {
+        // Arrange
+        IReadOnlyDictionary<string, object> attributes = new Dictionary<string, object>
+        {
+            ["aria-label"] = "Open palette",
+            ["ARIA-LABEL"] = " ",
+        };
+
+        // Act
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() =>
+        {
+            using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.Add(
+                c => c.AdditionalAttributes,
+                attributes));
+        });
+
+        // Assert
+        Assert.Contains("aria-label", error.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Emitter rejects non-string native ARIA naming values.
+    /// </summary>
+    /// <param name="attributeName">The ARIA naming attribute.</param>
+    [Theory]
+    [InlineData("aria-label")]
+    [InlineData("aria-labelledby")]
+    public void EmitterRejectsNonStringAccessibleName(
+        string attributeName
+    )
+    {
+        // Act
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() =>
+        {
+            using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched(attributeName, true));
+        });
+
+        // Assert
+        Assert.Contains(attributeName, error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("string", error.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    ///     Emitter rejects whitespace-only visible labels without an accessible name.
+    /// </summary>
+    /// <param name="label">The blank label value.</param>
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("\t")]
+    public void EmitterRejectsWhitespaceLabelWithoutAccessibleName(
+        string label
+    )
+    {
+        // Act
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() =>
+        {
+            using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.Add(c => c.Label, label));
+        });
+
+        // Assert
+        Assert.Contains("accessible name", error.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Emitter rejects a render without a visible label or accessible name.
+    /// </summary>
+    [Fact]
+    public void EmitterRequiresAccessibleName()
+    {
+        // Act
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() =>
+        {
+            using IRenderedComponent<Emitter> cut = Render<Emitter>();
+        });
+
+        // Assert
+        Assert.Contains("Label", error.Message, StringComparison.Ordinal);
+        Assert.Contains("aria-label", error.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Emitter revalidates its accessible name when an update removes the name.
+    /// </summary>
+    [Fact]
+    public void EmitterRevalidatesAccessibleNameOnUpdate()
+    {
+        // Arrange
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.AddUnmatched("aria-label", "Open palette"));
+
+        // Act
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() =>
+            cut.Render(p => p.AddUnmatched("aria-label", " ")));
+
+        // Assert
+        Assert.Contains("accessible name", error.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>Emitter revalidates when a visible label is removed on update.</summary>
+    [Fact]
+    public void EmitterRevalidatesWhenVisibleLabelIsRemoved()
+    {
+        // Arrange
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p.Add(c => c.Label, "Emit signal"));
+
+        // Act
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() =>
+            cut.Render(p => p.Add(c => c.Label, " ")));
+
+        // Assert
+        Assert.Contains("accessible name", error.Message, StringComparison.Ordinal);
     }
 }

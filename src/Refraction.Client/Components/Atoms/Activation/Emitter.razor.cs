@@ -23,11 +23,21 @@ namespace Mississippi.Refraction.Client.Components.Atoms.Activation;
 ///         The public button can expose an optional visible label or remain icon-only when the caller
 ///         supplies a native accessible name. The decorative seed remains an 8px visual identity.
 ///     </para>
+///     <para>
+///         Every rendered emitter must have a nonblank visible label or a string
+///         <c>aria-label</c>/<c>aria-labelledby</c> attribute. An
+///         <see cref="InvalidOperationException" /> is thrown when the requirement is not met.
+///     </para>
 /// </remarks>
 public sealed partial class Emitter : ComponentBase
 {
+    private static readonly string[] AccessibleNameAttributeNames = { "aria-label", "aria-labelledby" };
+
     /// <summary>Gets or sets additional native button attributes.</summary>
-    /// <remarks>Controlled type, disabled, class, state and event attributes take precedence.</remarks>
+    /// <remarks>
+    ///     Controlled type, disabled, class, state and event attributes take precedence. The
+    ///     <c>aria-label</c> and <c>aria-labelledby</c> values must be strings when supplied.
+    /// </remarks>
     [Parameter(CaptureUnmatchedValues = true)]
     public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
 
@@ -39,7 +49,10 @@ public sealed partial class Emitter : ComponentBase
     [Parameter]
     public bool IsDisabled { get; set; }
 
-    /// <summary>Gets or sets the optional visible label. Icon-only callers must provide an accessible name.</summary>
+    /// <summary>
+    ///     Gets or sets the optional visible label. When blank, a nonblank string
+    ///     <c>aria-label</c> or <c>aria-labelledby</c> attribute is required.
+    /// </summary>
     [Parameter]
     public string? Label { get; set; }
 
@@ -83,12 +96,28 @@ public sealed partial class Emitter : ComponentBase
 
             Dictionary<string, object> attributes = AdditionalAttributes
                 .Where(attribute => !IsControlledAttribute(attribute.Key))
+                .Where(attribute => !IsAccessibleNameAttribute(attribute.Key))
                 .ToDictionary(attribute => attribute.Key, attribute => attribute.Value);
+            foreach (string attributeName in AccessibleNameAttributeNames)
+            {
+                KeyValuePair<string, object>? attribute = GetLastAttribute(attributeName);
+                if (attribute.HasValue)
+                {
+                    attributes[attribute.Value.Key] = attribute.Value.Value;
+                }
+            }
+
             return attributes.Count == 0 ? null : attributes;
         }
     }
 
     private bool IsEffectivelyDisabled => IsDisabled || (State == RefractionStates.Disabled);
+
+    private static bool IsAccessibleNameAttribute(
+        string name
+    ) =>
+        name.Equals("aria-label", StringComparison.OrdinalIgnoreCase) ||
+        name.Equals("aria-labelledby", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsControlledAttribute(
         string name
@@ -101,6 +130,26 @@ public sealed partial class Emitter : ComponentBase
         name.Equals("onfocus", StringComparison.OrdinalIgnoreCase) ||
         name.Equals("type", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>Validates that the rendered button has a meaningful accessible name.</summary>
+    /// <exception cref="InvalidOperationException">Thrown when no valid accessible name is supplied.</exception>
+    /// <inheritdoc />
+    protected override void OnParametersSet() => ValidateAccessibleName();
+
+    private KeyValuePair<string, object>? GetLastAttribute(
+        string name
+    )
+    {
+        if (AdditionalAttributes is null)
+        {
+            return null;
+        }
+
+        return AdditionalAttributes
+            .Where(attribute => string.Equals(attribute.Key, name, StringComparison.OrdinalIgnoreCase))
+            .Select(attribute => (KeyValuePair<string, object>?)attribute)
+            .LastOrDefault();
+    }
+
     /// <summary>Handles activation (click) events when enabled.</summary>
     private Task HandleClickAsync(
         MouseEventArgs e
@@ -112,4 +161,36 @@ public sealed partial class Emitter : ComponentBase
         FocusEventArgs e
     ) =>
         IsEffectivelyDisabled ? Task.CompletedTask : OnFocus.InvokeAsync(e);
+
+    private bool HasMeaningfulAccessibleNameAttribute(
+        string name
+    )
+    {
+        KeyValuePair<string, object>? attribute = GetLastAttribute(name);
+        return attribute.HasValue && attribute.Value.Value is string value && !string.IsNullOrWhiteSpace(value);
+    }
+
+    private void ValidateAccessibleName()
+    {
+        foreach (string attributeName in AccessibleNameAttributeNames)
+        {
+            KeyValuePair<string, object>? attribute = GetLastAttribute(attributeName);
+            if (attribute.HasValue && attribute.Value.Value is not null && attribute.Value.Value is not string)
+            {
+                throw new InvalidOperationException(
+                    $"Emitter {attributeName} must be a string when supplied. Provide a nonblank Label, aria-label, or aria-labelledby.");
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(Label) ||
+            HasMeaningfulAccessibleNameAttribute("aria-label") ||
+            HasMeaningfulAccessibleNameAttribute("aria-labelledby"))
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            "Emitter requires a nonblank Label, aria-label, or aria-labelledby accessible name. " +
+            "Icon-only emitters must provide a nonblank string aria-label or aria-labelledby attribute.");
+    }
 }
