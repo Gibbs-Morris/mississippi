@@ -95,5 +95,8 @@ Report the event and validated correction, evidence and conditions, admission
 classification, target and scope, exact change or deliberate no-write result,
 checks performed, and any remaining limitation. State whether the lesson was
 captured, declined as duplicate or conflict, deferred for evidence or authority,
-or left unverified. Do not claim a lesson is validated from a quiet command,
-missing output, or an unexecuted check.
+or left unverified. Apply the documented success contract: a deliberately silent
+checker may validate only when target execution, completion, and exit status zero
+are verified; require nonempty output or reports when local policy or the check
+requires them. Silence alone, unknown execution, or an unexecuted check is not
+validation.
