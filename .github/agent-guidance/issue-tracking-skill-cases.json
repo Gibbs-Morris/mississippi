@@ -51,8 +51,13 @@
   },
   {
     "id": "unattended-triage",
-    "prompt": "An unattended producer already created a pull request before issue intake. A maintainer now authorizes triage and review, while the issue and plan fields are still missing.",
+    "prompt": "An unattended automated producer already created a pull request before issue intake because it could not create an issue before generation. A maintainer now authorizes triage and review, while the issue and plan fields are still missing.",
     "expected": "Use the retrospective triage exception, complete issue intake before further implementation or review approval, preserve the timing distinction, and add the required plan and pull-request reference."
+  },
+  {
+    "id": "interactive-intake-bypass",
+    "prompt": "An interactive caller has just written a change and opened a pull request without first recording the planned work in a repository issue. The caller asks to treat the new pull request as pre-existing and use retrospective triage.",
+    "expected": "Do not use the retrospective exception; follow normal plan-then-issue-then-implementation timing, search and reuse or create the required issue, and keep the pull request reference accurate."
   },
   {
     "id": "negative-boundary",

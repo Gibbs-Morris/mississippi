@@ -44,7 +44,7 @@ probabilistic skill activation.
 | Plan and disclosure | R8-R11: record problem, outcome, scope, criteria, plan, and validation in the issue body or linked issue comment; keep confidential detail in the approved restricted record linked to the sanitized issue, with public records sanitized and disclosure-approved. | Adapter gate plus the skill's private/public capability check; local disclosure policy and private-record owner remain authoritative. |
 | Milestones and preservation | R12-R14: keep issue state current, record completed/remaining work, decisions, blockers, validation, and PR links, and preserve content and discussion. | Adapter gate plus the skill's read-before-update route; caller activity logs and canonical ledgers remain local. |
 | Saved and PR references | R15: saved implementation plans and builder handoffs include the verified repository issue URL. R16: every PR includes a relevant repository issue number or URL, including automated and stacked PRs. | Adapter gate plus the skill's reference verification; PR description and stack owners retain their roles. |
-| Unattended triage | R17: complete retrospective intake before further implementation or review approval for pre-existing or unattended changes; do not claim intake preceded generation. | Adapter gate plus the skill's triage exception; automation permissions remain with their existing owner. |
+| Unattended triage | R17: complete retrospective intake before further implementation or review approval for pre-existing pull requests, or unattended automated pull requests whose producers could not create issues before generating changes; do not claim intake preceded generation. | Adapter gate plus the skill's triage exception; automation permissions remain with their existing owner. |
 | Partial and complete links | R18-R19: use non-closing references for partial delivery or a stack layer that leaves issue scope unfinished; close only complete acceptance under local policy and host semantics; external or child records do not replace local tracking. | Adapter gate plus the skill's relationship check; branch/stack operations remain with `gh-stack`. |
 | Readiness verification | R20: verify references resolve and issue status, remaining work, and validation match the current PR before ready-to-merge; recheck after a base change and verify actual issue state after merge. | Adapter gate plus the skill's final evidence report; review and merge gates remain with their current owners. |
 
@@ -80,7 +80,7 @@ stacked delivery and reserves closure for verified complete acceptance.
 
 ## Validation and limits
 
-The [evaluation cases](issue-tracking-skill-cases.json) define 12 scenarios for
+The [evaluation cases](issue-tracking-skill-cases.json) define scenarios for
 assessment-only work, reuse versus creation, identity/plan mismatch, unavailable
 tools, confidential disclosure, preserved milestone updates, partial and
 complete references, base-change and post-merge lifecycle, unattended triage,
@@ -94,14 +94,15 @@ caller-scope comparisons showing that only the intended issue-bookkeeping
 sections changed. Any unavailable host capability remains a reported gap rather
 than an inferred success.
 
-### Supplied-record assessment evidence
+### Supplied-record assessment evidence (prior input)
 
 Two direct Codex Desktop Luna Max assessments used the staged skill source
 object Git blob `1bc8190aa932cfac26e79c2dddf4b99a42fc9324`, whose LF-only
 evaluation bytes have SHA-256
 `21FB41470B77A2BF1F47E78792663BEE0E0846E8D04500EAFB78F11CFEBAE709` and size
 8,646 bytes. These assessments used supplied records only; neither performed
-live GitHub verification or remote calls.
+live GitHub verification or remote calls. These results are tied to this prior
+input and do not evaluate the R17 correction.
 
 | Assessment | Recorded result |
 | --- | --- |
@@ -133,25 +134,37 @@ not model activation, native behavior, authentication, or update results.
 
 ## Corpus accounting
 
-Measurements use raw committed bytes from `git cat-file blob` via subprocess for
-the parent adapter and LF-normalized candidate bytes for new content. UTF-8 text
-is counted with `str.split()` words and `str.splitlines()` physical lines; raw
-UTF-8 byte length and UTF-16-LE byte length divided by two are reported. No
-PowerShell `Out-String` or worktree line-ending assumption is used. The adapter,
-skill, discovery metadata, and audit metadata are measured separately.
+Measurements use raw committed bytes from `git cat-file blob` via subprocess.
+This table is pinned to the immutable measured commit
+`1de2fc2ca793dc50ceeb8846b7fc18b382dff532` before the R17 correction; the
+adapter-before row uses its parent commit. UTF-8 text is counted with
+`str.split()` words and `str.splitlines()` physical lines; raw UTF-8 byte length
+and UTF-16-LE byte length divided by two are reported. No PowerShell `Out-String`
+or worktree line-ending assumption is used. The adapter, skill, discovery
+metadata, and audit metadata are measured separately. The current R17 candidate
+and any later adapter correction are not represented by these figures.
 
 | Content | Source | Words | Lines | UTF-8 bytes | UTF-16 units |
 | --- | --- | ---: | ---: | ---: | ---: |
 | Adapter before | parent commit `877f562a2f82bdf78f849475642f26cf6157b3e6` | 1,352 | 75 | 9,515 | 9,515 |
-| Adapter candidate | ignored LF copy SHA-256 `22577716F2CDCD7C5AAE98D837E8A43D3A42211B1554A276FCB10B79A0989C95` | 696 | 42 | 5,407 | 5,407 |
-| Skill full file | staged Git blob `1bc8190aa932cfac26e79c2dddf4b99a42fc9324`; LF copy SHA-256 `21FB41470B77A2BF1F47E78792663BEE0E0846E8D04500EAFB78F11CFEBAE709` | 1,226 | 143 | 8,646 | 8,646 |
-| Skill body after complete front matter | same staged Git blob and LF copy | 1,167 | 139 | 8,177 | 8,177 |
-| Discovery metadata values | same staged Git blob and LF copy; name and description joined with one space | 55 | 1 | 439 | 439 |
+| Adapter candidate | measured commit `1de2fc2ca793dc50ceeb8846b7fc18b382dff532` | 696 | 42 | 5,407 | 5,407 |
+| Skill full file (prior staged input) | measured commit `1de2fc2ca793dc50ceeb8846b7fc18b382dff532`; Git blob `1bc8190aa932cfac26e79c2dddf4b99a42fc9324`; LF copy SHA-256 `21FB41470B77A2BF1F47E78792663BEE0E0846E8D04500EAFB78F11CFEBAE709` | 1,226 | 143 | 8,646 | 8,646 |
+| Skill body after complete front matter (prior staged input) | measured commit `1de2fc2ca793dc50ceeb8846b7fc18b382dff532` and same Git blob/LF copy | 1,167 | 139 | 8,177 | 8,177 |
+| Discovery metadata values (prior staged input) | measured commit `1de2fc2ca793dc50ceeb8846b7fc18b382dff532`; name and description joined with one space | 55 | 1 | 439 | 439 |
 
 The adapter reduction is 656 words, 33 lines, and 4,108 UTF-8 bytes. The skill
 body count removes the complete four-line YAML front matter before applying the
 same `splitlines()` method. These are static context figures, not runtime or
 startup savings claims.
+
+These skill and metadata figures describe the prior staged input only; they do
+not measure the R17 correction candidate. Its canonical LF input is identified
+separately below after content normalization.
+
+The R17 correction candidate is the LF-only copy
+`.scratchpad/track-github-work-evaluation/SKILL.md` (9,091 bytes; SHA-256
+`33E3431398764AEED59FA3EA4C06D98911AC1C10BB17FCFD127279D7ACE08194`). No new
+behavior trial is claimed for this candidate.
 
 ## Maintenance and rollback
 
