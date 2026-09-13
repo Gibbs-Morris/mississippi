@@ -62,13 +62,19 @@ specific dependency.
 
 ## Validation and evaluation limits
 
-The [evaluation cases](validated-lesson-skill-cases.json) define 13 scenarios
+The [evaluation cases](validated-lesson-skill-cases.json) define 14 scenarios
 covering validated admission, assessment-only and unrun evidence, negative
 routing, duplicate and higher-policy conflict, denied scope, authorized
 overlap, untrusted injection, promotion and retirement controls, existing
-approval, and bounded no-write outcomes. They are a reusable rubric rather than
-recorded model trials; no runtime savings, activation rate, or latency claim is
-made.
+approval, peer contradiction, and bounded no-write outcomes. They are a reusable
+rubric rather than recorded model trials; no runtime savings, activation rate, or
+latency claim is made.
+
+The conflict correction treats every applicable guidance source, including an
+equal-authority peer captured lesson, as a possible contradiction. It requires
+reconciliation before writing, preserves approved valid resolutions without a
+second approval, and removes only a new change if final verification exposes a
+contradiction; unresolved peer conflicts remain no-write outcomes.
 
 Structural checks passed: the bundled skill-creator validator; configured
 Markdown lint; JSON parsing; relative-link resolution; exact comparison of the
@@ -79,7 +85,7 @@ the current repository configuration, and no pre-existing findings were
 encountered.
 
 One independent Codex Desktop collaboration-host Luna Max session evaluated
-three separate Git-root fixtures using final skill SHA-256
+three separate Git-root fixtures using pre-conflict skill SHA-256
 `97F4B5C9CD60257F0501EBAE9E2CC5B44FA1E1A8FFB6A22DB9AB7E1268D22856` and real
 recorded Pester events. The first admitted one bounded record at
 `records/field-notes.md` (output hash
@@ -88,7 +94,17 @@ second identified duplicate guidance and wrote nothing; the third identified a
 higher-policy conflict and wrote nothing. Inventories were 4→5, 5→5, and 4→4;
 baseline policies, evidence, and protected user-note hashes were unchanged.
 The resulting record was independently read and accepted for scope and
-evidence; no runtime tests were rerun.
+evidence; no runtime tests were rerun. Those three outcomes are historical for
+the pre-conflict skill. One independent Codex Desktop collaboration-host Luna
+Max session then evaluated two separate Git-root fixtures with current skill
+SHA-256 `299B0ADA675BBE35082896C5BFB5B08DFEC1D1E98F1C9FB74B07AEDA84060C28`:
+an equal-authority contradictory captured lesson was classified as Conflict
+with no write, and an existing matching lesson was classified as Duplicate with
+no write. Both authorized target files stayed absent, both five-file inventories
+remained unchanged, and every baseline hash, including protected notes, stayed
+unchanged. No runtime tests or native inference were performed. This is bounded
+current peer-conflict evidence, not a claim of general activation or host
+conformance.
 
 Native discovery was checked separately: Codex CLI 0.154.0-alpha.6.2
 `debug prompt-input` exited 0 without diagnostics in both the current worktree
@@ -96,7 +112,7 @@ and a separately initialized lesson-skill-discovery Git root, returning the
 skill from each corresponding `.agents/skills` location. Copilot CLI 1.0.83-5
 `skill list` exited 0 in both roots and reported a Project skill; its text did
 not expose a source path, but separate Git roots and source/copy hashes matching
-the final hash above were verified. These checks establish packaging/discovery, not general
+the pre-conflict hash above were verified. These checks establish packaging/discovery, not general
 activation or cross-host behavior. Codex TLS and Copilot max-effort support
 remain host gaps; no lower-effort fallback was authorized.
 
@@ -106,18 +122,21 @@ for this layer, and mutation testing was not run.
 
 ## Corpus accounting
 
-Counts use the parent files from `git show de3c12dc88db9169817b42d07b6deb30958894ef:<path>` and the final files,
-counting whitespace-delimited tokens with `\S+`, physical lines, and UTF-16
-characters with PowerShell. The self-improvement adapter decreases from 941
-words, 103 lines, and 7,046 characters to 536 words, 42 lines, and 4,162
-characters: 405 words, 61 lines, and 2,884 characters removed. The moved local
-format is measured separately at 205 words, 40 lines, and 1,550 characters.
+The existing corpus measurements below describe the pre-conflict parent content;
+the separate corpus-metrics review will refresh them for this correction. Counts
+use the parent files from `git show de3c12dc88db9169817b42d07b6deb30958894ef:<path>`
+and the prior candidate files, counting whitespace-delimited tokens with `\S+`,
+physical lines, and UTF-16 characters with PowerShell. The self-improvement
+adapter decreases from 941 words, 103 lines, and 7,046 characters to 536 words,
+42 lines, and 4,162 characters: 405 words, 61 lines, and 2,884 characters
+removed. The moved local format is measured separately at 205 words, 40 lines,
+and 1,550 characters.
 
-The portable skill body contains 699 words and 91 lines. Its discovery metadata
-contains 51 words (name 1, description 50); the full skill file is 754 words
-and 93 lines. The cases and this audit are added evidence metadata, not claimed
-startup savings. No application, package, workflow, or runtime files are part
-of this layer.
+The prior portable skill body contains 699 words and 91 lines. Its discovery
+metadata contains 51 words (name 1, description 50); the prior full skill file
+is 754 words and 93 lines. The cases and this audit are added evidence metadata,
+not claimed startup savings. No application, package, workflow, or runtime
+files are part of this layer.
 
 ## Rollback
 
