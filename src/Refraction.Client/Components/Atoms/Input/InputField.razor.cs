@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -5,7 +6,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
 
-namespace Mississippi.Refraction.Client.Components.Atoms;
+namespace Mississippi.Refraction.Client.Components.Atoms.Input;
 
 /// <summary>
 ///     InputField component - instrument-style input with HUD aesthetics.
@@ -16,31 +17,24 @@ namespace Mississippi.Refraction.Client.Components.Atoms;
 ///         via parameters and all user interactions are reported via EventCallbacks.
 ///         The component never mutates state internally.
 ///     </para>
-///     <para>Anatomy:</para>
-///     <list type="bullet">
-///         <item>
-///             <description>I0 Label: upper-left descriptor</description>
-///         </item>
-///         <item>
-///             <description>I1 Field: monospace input area</description>
-///         </item>
-///         <item>
-///             <description>I2 Constraint tick: optional unit or format indicator</description>
-///         </item>
-///         <item>
-///             <description>I3 Error slot: appears below on invalid state</description>
-///         </item>
-///     </list>
+///     <para>Public so applications can compose this presentational atom in Razor markup.</para>
 /// </remarks>
-public partial class InputField : ComponentBase
+public sealed partial class InputField : ComponentBase
 {
-    /// <summary>Gets or sets additional HTML attributes.</summary>
+    /// <summary>Gets or sets additional HTML attributes for the wrapper.</summary>
     [Parameter(CaptureUnmatchedValues = true)]
     public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
 
-    /// <summary>Gets or sets the input id.</summary>
+    /// <summary>Gets or sets the input ID; blank values use a stable, instance-specific ID.</summary>
     [Parameter]
     public string Id { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets additional HTML attributes for the native input.</summary>
+    /// <remarks>
+    ///     Explicit component attributes and event callbacks take precedence over dictionary entries.
+    /// </remarks>
+    [Parameter]
+    public IReadOnlyDictionary<string, object>? InputAttributes { get; set; }
 
     /// <summary>Gets or sets a value indicating whether the input is disabled.</summary>
     [Parameter]
@@ -81,6 +75,10 @@ public partial class InputField : ComponentBase
     /// <summary>Gets or sets the callback when value changes.</summary>
     [Parameter]
     public EventCallback<string> ValueChanged { get; set; }
+
+    private string EffectiveId => string.IsNullOrWhiteSpace(Id) ? GeneratedId : Id;
+
+    private string GeneratedId { get; } = $"rf-input-{Guid.NewGuid():N}";
 
     /// <summary>Handles blur event.</summary>
     private Task HandleBlurAsync(

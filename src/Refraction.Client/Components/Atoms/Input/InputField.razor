@@ -1,12 +1,11 @@
-@* InputField - instrument-style input (state-down, events-up) *@
-
 <div class="rf-input-field" data-state="@State" @attributes="AdditionalAttributes">
     @if (!string.IsNullOrEmpty(Label))
     {
-        <label class="rf-input-field__label" for="@Id">@Label</label>
+        <label class="rf-input-field__label" for="@EffectiveId">@Label</label>
     }
-    <input class="rf-input-field__input"
-           id="@Id"
+    <input @attributes="InputAttributes"
+           class="rf-input-field__input"
+           id="@EffectiveId"
            type="@Type"
            value="@Value"
            placeholder="@Placeholder"
