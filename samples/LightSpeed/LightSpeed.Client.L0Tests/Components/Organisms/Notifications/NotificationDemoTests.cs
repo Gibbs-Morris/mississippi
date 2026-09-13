@@ -137,9 +137,14 @@ public sealed class NotificationDemoTests : BunitContext
     }
 
     /// <summary>Restoration keeps its request through an old-state render, then focuses the stable heading.</summary>
+    /// <param name="isExpanded">Whether the accepted visible render keeps details expanded.</param>
     /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
-    public async Task AsyncRestorationKeepsPendingFocusAcrossOldStateAndFocusesHeading()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AsyncRestorationKeepsPendingFocusAcrossOldStateAndFocusesHeading(
+        bool isExpanded
+    )
     {
         using SemaphoreSlim callbackStarted = new(0, 1);
         using SemaphoreSlim callbackCompleted = new(0, 1);
@@ -148,7 +153,7 @@ public sealed class NotificationDemoTests : BunitContext
         {
             callbackStarted.Release();
             await callbackCompleted.WaitAsync(TestContext.Current.CancellationToken);
-            cut.Render(parameters => parameters.Add(c => c.IsVisible, true).Add(c => c.IsExpanded, false));
+            cut.Render(parameters => parameters.Add(c => c.IsVisible, true).Add(c => c.IsExpanded, isExpanded));
         };
         using (cut = Render<NotificationDemo>(p => p
                    .Add(c => c.IsVisible, false)

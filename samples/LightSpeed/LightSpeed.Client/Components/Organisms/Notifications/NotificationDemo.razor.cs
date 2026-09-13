@@ -81,7 +81,7 @@ public sealed partial class NotificationDemo : ComponentBase
             {
                 PendingFocus.Details when IsVisible && IsExpanded => DetailsRegion,
                 PendingFocus.Restore when !IsVisible => RestoreRequested.HasDelegate ? RestoreButton : SectionHeading,
-                PendingFocus.Heading when IsVisible && !IsExpanded => SectionHeading,
+                PendingFocus.Heading when IsVisible => SectionHeading,
                 var _ => null,
             };
             if (targetElement.HasValue)
