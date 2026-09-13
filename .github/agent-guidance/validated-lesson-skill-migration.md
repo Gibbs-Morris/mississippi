@@ -85,7 +85,7 @@ the current repository configuration, and no pre-existing findings were
 encountered.
 
 One independent Codex Desktop collaboration-host Luna Max session evaluated
-three separate Git-root fixtures using pre-conflict skill SHA-256
+three separate Git-root fixtures using the earlier skill SHA-256
 `97F4B5C9CD60257F0501EBAE9E2CC5B44FA1E1A8FFB6A22DB9AB7E1268D22856` and real
 recorded Pester events. The first admitted one bounded record at
 `records/field-notes.md` (output hash
@@ -95,7 +95,7 @@ higher-policy conflict and wrote nothing. Inventories were 4→5, 5→5, and 4�
 baseline policies, evidence, and protected user-note hashes were unchanged.
 The resulting record was independently read and accepted for scope and
 evidence; no runtime tests were rerun. Those three outcomes are historical for
-the pre-conflict skill. One independent Codex Desktop collaboration-host Luna
+the earlier skill. One independent Codex Desktop collaboration-host Luna
 Max session then evaluated two separate Git-root fixtures with current skill
 SHA-256 `299B0ADA675BBE35082896C5BFB5B08DFEC1D1E98F1C9FB74B07AEDA84060C28`:
 an equal-authority contradictory captured lesson was classified as Conflict
@@ -112,7 +112,7 @@ and a separately initialized lesson-skill-discovery Git root, returning the
 skill from each corresponding `.agents/skills` location. Copilot CLI 1.0.83-5
 `skill list` exited 0 in both roots and reported a Project skill; its text did
 not expose a source path, but separate Git roots and source/copy hashes matching
-the pre-conflict hash above were verified. These checks establish packaging/discovery, not general
+the historical hash above were verified. These checks establish packaging/discovery, not general
 activation or cross-host behavior. Codex TLS and Copilot max-effort support
 remain host gaps; no lower-effort fallback was authorized.
 
@@ -122,21 +122,25 @@ for this layer, and mutation testing was not run.
 
 ## Corpus accounting
 
-The existing corpus measurements below describe the pre-conflict parent content;
-the separate corpus-metrics review will refresh them for this correction. Counts
-use the parent files from `git show de3c12dc88db9169817b42d07b6deb30958894ef:<path>`
-and the prior candidate files, counting whitespace-delimited tokens with `\S+`,
-physical lines, and UTF-16 characters with PowerShell. The self-improvement
-adapter decreases from 941 words, 103 lines, and 7,046 characters to 536 words,
-42 lines, and 4,162 characters: 405 words, 61 lines, and 2,884 characters
-removed. The moved local format is measured separately at 205 words, 40 lines,
-and 1,550 characters.
+All measurements use raw bytes from `git cat-file blob` invoked through a
+subprocess. The algorithm UTF-8-decodes each blob, counts `str.split()` words
+and `str.splitlines()` lines, records raw byte length, and computes UTF-16 code
+units as the UTF-16-LE byte length divided by two; no PowerShell `Out-String` or
+worktree line-ending assumption is involved. For parent content revision
+`1f15295894db0eeee621d65397ea8a765fbc6d13` and measured content revision
+`4a26d019d011fc6c0ef8ba61afa0e41f72018f62`, the self-improvement adapter is
+941 words, 103 lines, 7,055 UTF-8 bytes, and 7,047 UTF-16 code units before,
+then 536 words, 42 lines, 4,133 bytes, and 4,133 code units after: a reduction
+of 405 words, 61 lines, 2,922 UTF-8 bytes, and 2,914 code units. The moved
+local format is 205 words, 40 lines, 1,550 UTF-8 bytes, and 1,550 code units.
 
-The prior portable skill body contains 699 words and 91 lines. Its discovery
-metadata contains 51 words (name 1, description 50); the prior full skill file
-is 754 words and 93 lines. The cases and this audit are added evidence metadata,
-not claimed startup savings. No application, package, workflow, or runtime
-files are part of this layer.
+The final skill is 815 words, 99 lines, 5,732 UTF-8 bytes, and 5,724 UTF-16
+code units full-file. After removing the complete four-line YAML front matter,
+its body is 760 words, 95 lines, 5,321 UTF-8 bytes, and 5,313 UTF-16 code units.
+Discovery metadata values (name plus description, joined with one space) are 51
+words, 383 UTF-8 bytes, and 383 code units; the skill path is separate. The
+cases and this audit are evidence metadata, not claimed startup savings. No
+application, package, workflow, or runtime files are part of this layer.
 
 ## Rollback
 
