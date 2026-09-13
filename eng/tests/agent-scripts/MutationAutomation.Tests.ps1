@@ -97,6 +97,7 @@ Describe 'Mutation automation' {
         $workflow = Get-Content -LiteralPath $workflowPath -Raw
         $workflow | Should -Match "(?m)^  schedule:\s*$"
         $workflow | Should -Match "cron: '17 3 \* \* 0'"
+        $workflow | Should -Match '(?m)^permissions:\s*\r?\n  contents: read\s*$'
         $workflow | Should -Not -Match '(?m)^  push:\s*$'
         $workflow | Should -Match 'mutation-test-mississippi-solution\.ps1 -ReportOnly'
         $workflow | Should -Match 'if-no-files-found: error'
