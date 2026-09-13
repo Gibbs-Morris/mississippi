@@ -92,8 +92,12 @@ until disclosure is approved. Public issue and pull-request content must use
 only disclosure-approved information and, for confidential work, a neutral
 sanitized local issue. The restricted record identifies that sanitized issue and
 holds the detail and progress. If the required private-record capability is
-unavailable, report the preparation gap rather than publishing sensitive detail
-or pretending the public record is complete.
+unavailable and a required restricted plan or progress record cannot be
+established or verified, leave implementation unstarted; reporting the gap does
+not satisfy the pre-implementation record requirement. Preserve an already
+valid, accessible approved record, and do not block unrelated authorized
+read-only or local-draft work. Never copy restricted detail publicly to bypass
+the missing record.
 
 ## Maintain milestones without erasing context
 
