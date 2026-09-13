@@ -24,6 +24,7 @@
     </Folder>
     <Folder Name="/Samples/LightSpeed/">
         <Project Path="samples\LightSpeed\LightSpeed.Client\LightSpeed.Client.csproj" />
+        <Project Path="samples\LightSpeed\LightSpeed.Client.L0Tests\LightSpeed.Client.L0Tests.csproj" />
         <Project Path="samples\LightSpeed\LightSpeed.Gateway\LightSpeed.Gateway.csproj" />
         <Project Path="samples\LightSpeed\LightSpeed.AppHost\LightSpeed.AppHost.csproj" />
     </Folder>

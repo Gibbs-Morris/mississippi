@@ -52,5 +52,7 @@ Refraction is the right entry point when the problem is the Blazor UX contract i
 
 ## Next Steps
 
+- [Explore Refraction in LightSpeed](./lightspeed.md) for the interactive component gallery.
+
 - Read [Refraction Concepts](../concepts/concepts.md).
 - Use [Refraction Reference](../reference/reference.md) for the currently verified package surface.

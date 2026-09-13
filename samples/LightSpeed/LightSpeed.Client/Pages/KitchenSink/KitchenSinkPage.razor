@@ -1,0 +1,47 @@
+@page "/kitchen-sink"
+@using Mississippi.Refraction.Client.Components.Atoms.Input
+@using MississippiSamples.LightSpeed.Client.Components.Molecules.Profile
+@using MississippiSamples.LightSpeed.Client.Components.Templates.Showcase
+@inherits StoreComponent
+<PageTitle>Kitchen sink — LightSpeed</PageTitle>
+<ShowcaseShell Title="Controls, with nothing hidden."
+               Subtitle="Edit the form, validate it, and inspect the resulting state. Every interaction follows the same Reservoir path."
+               ThemeMode="@View.ThemeMode" ThemeChanged="ChangeTheme" PagePath="/kitchen-sink">
+    <div class="demo-grid">
+        <section class="panel">
+            <ProfileForm View="@View" EmailChanged="ChangeEmail" Validate="ValidateProfile" Reset="ResetProfile"/>
+        </section>
+        <aside class="inspector" aria-label="Reservoir state inspector">
+            <p class="label">RESERVOIR / LIVE STATE</p>
+            <h2>Follow the change.</h2>
+            <dl>
+                <dt>Last action</dt>
+                <dd data-testid="last-action">@View.LastAction</dd>
+                <dt>Actions dispatched</dt>
+                <dd data-testid="action-count">@View.ActionCount</dd>
+                <dt>Selected theme</dt>
+                <dd>@View.ThemeMode</dd>
+                <dt>Email</dt>
+                <dd data-testid="state-email">@View.Email</dd>
+                <dt>Input state</dt>
+                <dd>@View.InputState</dd>
+            </dl>
+            <p class="note">Callback → page dispatch → reducer → selector → component.</p>
+        </aside>
+    </div>
+    <section class="states" aria-labelledby="states-title">
+        <div>
+            <p class="label">ATOM / INPUT FIELD</p>
+            <h2 id="states-title">Everyday states</h2>
+        </div>
+        <div class="state-grid">
+            <InputField Label="Read only" Value="Managed by your team" IsReadOnly="true"/>
+            <InputField Label="Disabled" Value="Available after setup" IsDisabled="true"/>
+        </div>
+    </section>
+    <section class="maturity" aria-labelledby="maturity-title">
+        <h2 id="maturity-title">What is ready to explore?</h2>
+        <p><strong>Verified here:</strong> input identity, helper/error feedback, focus behavior, theme scopes, and Reservoir integration.</p>
+        <p><strong>Prototypes in the library:</strong> Emitter, Reticle, CalloutLine, NotificationPulse, ProgressArc, CommandOrbit, TelemetryStrip, Pane, SchematicViewer, and SmokeConfirm. Their broader interaction and accessibility work is still in progress.</p>
+    </section>
+</ShowcaseShell>

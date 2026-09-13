@@ -1,0 +1,14 @@
+.overview-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 1.5rem; }
+.feature-card, .preview-card { padding: 2rem; border: 1px solid var(--rf-color-text-muted); }
+.feature-card { background: var(--rf-color-surface-elevated); }
+.preview-card { display: grid; align-content: center; gap: 1.5rem; background: var(--rf-color-surface-glass); }
+.label { color: var(--rf-color-text-accent); font: .75rem var(--rf-raw-font-mono); letter-spacing: .1em; }
+h2 { font-size: 2rem; letter-spacing: -.03em; margin: 1rem 0; }
+p { color: var(--rf-color-text-secondary); line-height: 1.65; }
+.launch { display: inline-flex; gap: 1rem; margin-top: 1rem; padding: .8rem 1rem; color: var(--rf-color-text-accent); border: 1px solid currentColor; text-decoration: none; }
+.launch:focus-visible { outline: 2px solid var(--rf-color-focus-ring); outline-offset: 3px; }
+.flow { display: flex; flex-wrap: wrap; gap: .5rem; }
+.flow span { padding: .45rem .6rem; border: 1px solid var(--rf-color-text-muted); font: .75rem var(--rf-raw-font-mono); color: var(--rf-color-text-secondary); }
+.principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3rem; }
+h3 { font-size: 1rem; }
+@media (max-width: 750px) { .overview-grid, .principles { grid-template-columns: minmax(0, 1fr); } .feature-card, .preview-card { padding: 1.5rem; } }

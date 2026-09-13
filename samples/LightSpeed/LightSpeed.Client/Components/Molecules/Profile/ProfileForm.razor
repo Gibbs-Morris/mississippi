@@ -1,0 +1,18 @@
+@using Mississippi.Refraction.Client.Components.Atoms.Input
+<form class="profile-form" novalidate @onsubmit="Validate" @onsubmit:preventDefault>
+    <div class="form-heading">
+        <span class="step">01</span>
+        <div>
+            <h2>Workspace profile</h2>
+            <p>A small form with a visible state trail.</p>
+        </div>
+    </div>
+    <InputField Label="Work email" Type="email" Value="@View.Email" ValueChanged="@EmailChanged"
+                State="@View.InputState" ErrorText="@View.ErrorText" HelperText="Use the address you share with your team."
+                InputAttributes="@EmailAttributes"/>
+    <div class="actions">
+        <button class="primary" type="submit">Validate profile</button>
+        <button type="button" @onclick="Reset">Reset example</button>
+    </div>
+    <p class="status" role="status">@View.StatusText</p>
+</form>

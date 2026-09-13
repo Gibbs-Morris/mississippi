@@ -1,0 +1,38 @@
+@page "/"
+@using Mississippi.Refraction.Client.Components.Atoms.Input
+@using MississippiSamples.LightSpeed.Client.Components.Templates.Showcase
+@inherits StoreComponent
+<PageTitle>LightSpeed — Refraction UI</PageTitle>
+<ShowcaseShell Title="A clear view. A predictable state."
+               Subtitle="Explore a Blazor interface built from small controls, adaptable themes, and a single direction for state."
+               ThemeMode="@View.ThemeMode" ThemeChanged="ChangeTheme">
+    <div class="overview-grid">
+        <section class="feature-card">
+            <p class="label">BUILT TO COMPOSE</p>
+            <h2>Make the interface yours.</h2>
+            <p>Switch the palette above. The same components adapt through shared design tokens.</p>
+            <a class="launch" href="/kitchen-sink">Open the kitchen sink <span aria-hidden="true">→</span></a>
+        </section>
+        <section class="preview-card" aria-label="Input preview">
+            <p class="label">ATOM / INPUT FIELD</p>
+            <InputField Label="Workspace" Value="Northstar operations" IsReadOnly="true" HelperText="A focused control with a clear contract."/>
+            <div class="flow">
+                <span>Intent</span><span>Reducer</span><span>Selected state</span>
+            </div>
+        </section>
+    </div>
+    <section class="principles" aria-label="Design principles">
+        <div>
+            <h3>Atomic by design</h3>
+            <p>Controls compose into forms and page templates.</p>
+        </div>
+        <div>
+            <h3>Adaptable presentation</h3>
+            <p>Dark, light, high contrast, and scoped branding.</p>
+        </div>
+        <div>
+            <h3>Visible state</h3>
+            <p>The kitchen sink shows each action and its result.</p>
+        </div>
+    </section>
+</ShowcaseShell>
