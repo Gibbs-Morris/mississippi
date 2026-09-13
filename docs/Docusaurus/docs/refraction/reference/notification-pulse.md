@@ -1,0 +1,71 @@
+---
+title: NotificationPulse
+description: Refraction's status message molecule with optional expansion and dismissal intents.
+sidebar_position: 6
+---
+
+# NotificationPulse
+
+`NotificationPulse` is a sealed presentational molecule in
+`Mississippi.Refraction.Client.Components.Molecules.Notifications`, supplied by
+`Mississippi.Refraction.Client`. It separates live status content from optional
+native action buttons and reports one-way intent to its parent.
+
+## Parameters
+
+| Parameter | Default | Contract |
+| --- | --- | --- |
+| `ChildContent` | `null` | Content rendered inside the stable status region. |
+| `Class` | `null` | Additional wrapper classes composed with `rf-notification-pulse`. |
+| `ExpandText` | `View details` | Visible expansion action text; must be nonblank when `OnExpand` is supplied. |
+| `DismissText` | `Dismiss notification` | Visible dismissal action text; must be nonblank when `OnDismiss` is supplied. |
+| `OnExpand` | empty | Optional `EventCallback<MouseEventArgs>` for one-way expansion intent. |
+| `OnDismiss` | empty | Optional `EventCallback` for dismissal intent. |
+| `State` | `RefractionStates.New` | Visual state hook. `Critical` changes the attention dot color. |
+| `AdditionalAttributes` | `null` | Native attributes forwarded to the wrapper; `class` and `data-state` remain component-owned. |
+
+## Status and actions
+
+The inner status content renders with `role="status"` and
+`aria-atomic="true"`. The attention dot is decorative and carries
+`aria-hidden="true"`. Action buttons are siblings outside that status region
+and appear only when their callbacks have delegates.
+
+Each action is a native `<button type="button">`. The browser supplies Enter
+and Space activation without duplicate key handlers. The wrapper has no
+component-owned click handler or tab stop, and the molecule does not add
+`aria-expanded` or disclosure state for a region that the parent owns.
+
+```razor
+<NotificationPulse State="@RefractionStates.New"
+                   OnExpand="@HandleExpand"
+                   OnDismiss="@HandleDismiss">
+    Export completed.
+</NotificationPulse>
+```
+
+Keep expansion, dismissal, and any details region in the parent. `Critical`
+remains a visual hook; this non-intrusive status molecule does not create an
+assertive alert, notification service, timer, or domain state.
+
+## Styling and composition
+
+The status content wraps long text and the optional actions retain visible
+focus rings and targets of at least 44px. Styles use Refraction surface, text,
+status, action, and focus tokens and wrap the action row at narrow widths.
+Unmatched attributes reach the wrapper, while its base class and `data-state`
+remain stable for composition and state styling.
+
+## Migration from the prototype
+
+Move imports from `Mississippi.Refraction.Client.Components.Atoms` to
+`Mississippi.Refraction.Client.Components.Molecules.Notifications`.
+`NotificationPulse` is sealed and now renders a status region plus optional
+native actions. Replace selectors that assumed the old root `role="status"`,
+`tabindex="0"`, or root click behavior. Supply `OnExpand` and/or `OnDismiss`
+when the parent owns those intents, and provide nonblank custom action text
+when replacing the defaults.
+
+The molecule remains presentational: parents own details, state, focus, and
+restoration behavior. When an action changes the surrounding view, the parent
+should move focus to the relevant heading or restore control.
