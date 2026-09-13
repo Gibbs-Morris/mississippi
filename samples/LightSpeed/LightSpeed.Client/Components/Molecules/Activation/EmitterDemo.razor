@@ -8,7 +8,12 @@
                  OnActivate="@Activated"
                  aria-describedby="emitter-description"/>
         <div>
-            <p class="activation-count" data-testid="emitter-activation-count">@ActivationSummary</p>
+            <p class="activation-count"
+               data-testid="emitter-activation-count"
+               role="status"
+               aria-atomic="true">
+                @ActivationSummary
+            </p>
             <p id="emitter-description" class="note">The page records this presentational activation in Reservoir.</p>
         </div>
     </div>

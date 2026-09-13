@@ -1,3 +1,5 @@
+using AngleSharp.Dom;
+
 using Bunit;
 
 using Microsoft.AspNetCore.Components.Web;
@@ -10,6 +12,23 @@ namespace MississippiSamples.LightSpeed.Client.L0Tests.Components.Molecules.Acti
 /// <summary>Verifies controlled emitter presentation and parent callback ownership.</summary>
 public sealed class EmitterDemoTests : BunitContext
 {
+    /// <summary>The activation count is an atomic status region that updates in place.</summary>
+    [Fact]
+    public void ActivationCountUsesAtomicStatusRegion()
+    {
+        using IRenderedComponent<EmitterDemo> cut = Render<EmitterDemo>(p => p.Add(c => c.ActivationCount, 1));
+        IElement status = cut.Find("[data-testid=emitter-activation-count]");
+        Assert.Equal("status", status.GetAttribute("role"));
+        Assert.Equal("true", status.GetAttribute("aria-atomic"));
+        Assert.Equal("1 activation", status.TextContent);
+        cut.Render(p => p.Add(c => c.ActivationCount, 2));
+        IElement updatedStatus = cut.Find("[data-testid=emitter-activation-count]");
+        Assert.Single(cut.FindAll("[data-testid=emitter-activation-count]"));
+        Assert.Equal("status", updatedStatus.GetAttribute("role"));
+        Assert.Equal("true", updatedStatus.GetAttribute("aria-atomic"));
+        Assert.Equal("2 activations", updatedStatus.TextContent);
+    }
+
     /// <summary>Activation emits typed intent without mutating the parent's count parameter.</summary>
     [Fact]
     public void ActivationEmitsIntentWithoutChangingParameters()
