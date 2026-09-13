@@ -306,6 +306,8 @@ State describes the selection, actions carry changes, reducers produce immutable
 
 ## Next Steps
 
+- [Test a feature and effect](./test-feature.md) with the Reservoir harness.
+
 - [Reservoir state flow](../concepts/state-flow.md) for the dispatch model.
 - [Selector reference](../reference/selectors.md) for composition and memoization.
 - [Reservoir registration reference](../reference/reference.md) for the builder APIs.

@@ -51,6 +51,9 @@ Use the registration reference for builder composition, then follow the focused 
 
 ## Learn More
 
+- [Test a Feature and Effect](./how-to/test-feature.md) - Inspect state, emitted actions, and cancellation
+- [Action Effects](./reference/action-effects.md) - Choose and register an effect contract
+
 - [Add a Reservoir Feature](./how-to/create-feature.md) - Define, register, dispatch, and select local state
 - [State Flow](./concepts/state-flow.md) - Understand reducer, notification, and effect timing
 - [Selectors](./reference/selectors.md) - Compose derived values and use memoization
