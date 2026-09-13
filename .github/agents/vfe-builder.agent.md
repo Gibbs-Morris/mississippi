@@ -49,6 +49,7 @@ Execute the approved implementation plan with test-driven development: red, gree
 - If a command fails, record command, failure output summary, likely cause, and next action.
 - Keep output shape deterministic: update build-log entries in chronological order with stable command-result fields.
 - Model preference is `GPT-5.4 (copilot)` with `GPT-5 (copilot)` fallback; record actual runtime model if visible to the orchestrator.
+- CSS and design-token implementation tasks follow the [CSS and design-token authoring standard](../instructions/css-design-tokens.instructions.md) for coding-worker model selection and reasoning; its scoped Luna-at-maximum requirement takes precedence over the general builder preference above.
 
 ## Workflow responsibilities
 
