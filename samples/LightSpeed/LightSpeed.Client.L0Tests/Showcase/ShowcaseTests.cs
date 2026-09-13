@@ -42,6 +42,36 @@ public sealed class ShowcaseTests
         Assert.Equal(nameof(ChangeEmailAction), changed.LastAction);
     }
 
+    /// <summary>Invalid demo percentages do not produce misleading state.</summary>
+    /// <param name="percent">An out-of-range selection.</param>
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(101)]
+    public void InvalidProgressPreservesState(
+        int percent
+    )
+    {
+        ShowcaseState state = new();
+        Assert.Same(state, ShowcaseReducers.ChangeProgress(state, new(percent)));
+    }
+
+    /// <summary>Completion changes preserve the original state and unrelated form data.</summary>
+    [Fact]
+    public void ProgressChangesAreImmutable()
+    {
+        ShowcaseState state = new()
+        {
+            Email = "custom@example.com",
+            IsSubmitted = true,
+        };
+        ShowcaseState changed = ShowcaseReducers.ChangeProgress(state, new(null));
+        Assert.Equal(25, state.ProgressPercent);
+        Assert.Null(changed.ProgressPercent);
+        Assert.Equal(state.Email, changed.Email);
+        Assert.True(changed.IsSubmitted);
+        Assert.Equal(1, changed.ActionCount);
+    }
+
     /// <summary>The registered store dispatches actions through the real reducer pipeline.</summary>
     [Fact]
     public void RegistrationConnectsActionsToState()

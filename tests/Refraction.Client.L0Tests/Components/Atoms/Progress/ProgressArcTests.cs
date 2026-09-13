@@ -4,10 +4,10 @@ using Bunit;
 
 using Microsoft.AspNetCore.Components;
 
-using Mississippi.Refraction.Client.Components.Atoms;
+using Mississippi.Refraction.Client.Components.Atoms.Progress;
 
 
-namespace Mississippi.Refraction.Client.L0Tests.Components.Atoms;
+namespace Mississippi.Refraction.Client.L0Tests.Components.Atoms.Progress;
 
 /// <summary>
 ///     Tests for <see cref="ProgressArc" /> component.

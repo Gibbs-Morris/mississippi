@@ -1,6 +1,7 @@
 @page "/kitchen-sink"
 @using Mississippi.Refraction.Client.Components.Atoms.Input
 @using MississippiSamples.LightSpeed.Client.Components.Molecules.Profile
+@using MississippiSamples.LightSpeed.Client.Components.Molecules.Progress
 @using MississippiSamples.LightSpeed.Client.Components.Templates.Showcase
 @inherits StoreComponent
 <PageTitle>Kitchen sink — LightSpeed</PageTitle>
@@ -25,6 +26,8 @@
                 <dd data-testid="state-email">@View.Email</dd>
                 <dt>Input state</dt>
                 <dd>@View.InputState</dd>
+                <dt>Progress</dt>
+                <dd data-testid="state-progress">@(View.ProgressPercent is null ? "Unknown" : $"{View.ProgressPercent}%")</dd>
             </dl>
             <p class="note">Callback → page dispatch → reducer → selector → component.</p>
         </aside>
@@ -39,9 +42,12 @@
             <InputField Label="Disabled" Value="Available after setup" IsDisabled="true"/>
         </div>
     </section>
+    <div class="states">
+        <ProgressDemo Percent="@View.ProgressPercent" PercentChanged="ChangeProgress"/>
+    </div>
     <section class="maturity" aria-labelledby="maturity-title">
         <h2 id="maturity-title">What is ready to explore?</h2>
-        <p><strong>Verified here:</strong> input identity, helper/error feedback, focus behavior, theme scopes, and Reservoir integration.</p>
-        <p><strong>Prototypes in the library:</strong> Emitter, Reticle, CalloutLine, NotificationPulse, ProgressArc, CommandOrbit, TelemetryStrip, Pane, SchematicViewer, and SmokeConfirm. Their broader interaction and accessibility work is still in progress.</p>
+        <p><strong>Verified here:</strong> input identity, helper/error feedback, focus behavior, theme scopes, progress arcs, and Reservoir integration.</p>
+        <p><strong>Prototypes in the library:</strong> Emitter, Reticle, CalloutLine, NotificationPulse, CommandOrbit, TelemetryStrip, Pane, SchematicViewer, and SmokeConfirm. Their broader interaction and accessibility work is still in progress.</p>
     </section>
 </ShowcaseShell>

@@ -22,6 +22,9 @@ internal sealed record ShowcaseState : IFeatureState
     /// <summary>Gets the latest demonstrated action.</summary>
     public string LastAction { get; init; } = "Ready";
 
+    /// <summary>Gets the demonstrated completion, or null for unknown duration.</summary>
+    public int? ProgressPercent { get; init; } = 25;
+
     /// <summary>Gets the selected theme.</summary>
     public RefractionThemeMode ThemeMode { get; init; } = RefractionThemeMode.Dark;
 }

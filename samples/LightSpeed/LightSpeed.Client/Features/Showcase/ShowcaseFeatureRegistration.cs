@@ -15,6 +15,7 @@ internal static class ShowcaseFeatureRegistration
     {
         builder.AddFeatureState<ShowcaseState>(feature => feature
             .AddReducer<ChangeEmailAction>(ShowcaseReducers.ChangeEmail)
+            .AddReducer<ChangeProgressAction>(ShowcaseReducers.ChangeProgress)
             .AddReducer<ChangeThemeAction>(ShowcaseReducers.ChangeTheme)
             .AddReducer<ValidateProfileAction>(ShowcaseReducers.Validate)
             .AddReducer<ResetProfileAction>(ShowcaseReducers.Reset));

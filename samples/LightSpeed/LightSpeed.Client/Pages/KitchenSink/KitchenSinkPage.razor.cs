@@ -16,6 +16,11 @@ public sealed partial class KitchenSinkPage
     ) =>
         Dispatch(new ChangeEmailAction(email));
 
+    private void ChangeProgress(
+        int? percent
+    ) =>
+        Dispatch(new ChangeProgressAction(percent));
+
     private void ChangeTheme(
         RefractionThemeMode mode
     ) =>
