@@ -61,5 +61,6 @@ The pages distinguish verified runtime behavior from host configuration that rem
 - [Aqueduct Getting Started](./getting-started/getting-started.md) - Start with the package and subsystem entry points
 - [Aqueduct Concepts](./concepts/concepts.md) - Understand the backplane boundary and how Aqueduct fits the stack
 - [Aqueduct Reference](./reference/reference.md) - Look up `AddAqueduct`, options, defaults, and diagnostics
+- [Aqueduct Runtime Migration](./migration/migration.md) - Move to the Next runtime composition contract
 - [Aqueduct Operations](./operations/operations.md) - Configure and operate the runtime backplane safely
 - [Archived Documentation](../archived/index.md) - Browse the preserved pre-reset docs set

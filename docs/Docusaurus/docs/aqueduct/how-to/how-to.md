@@ -114,35 +114,6 @@ See [Runtime Composition](../../reference/runtime-composition.md) for the stagin
   tests.
 - The host can build and start using its normal Orleans validation and connectivity checks.
 
-## Migrate From The Legacy Runtime Entry Point
-
-The runtime cutover removes the silo-level `UseAqueduct(...)` entry point and the host-capturing
-`AqueductSiloOptions` type. Keep the legacy form only while identifying the code to migrate:
-
-```csharp
-// Legacy runtime composition being migrated.
-siloBuilder.UseAqueduct(options =>
-{
-    options.StreamProviderName = "StreamProvider";
-});
-```
-
-Move the settings into the nested builder and keep the terminal attachment on `UseMississippi(...)`:
-
-```csharp
-siloBuilder.UseMississippi(runtime =>
-{
-    runtime.AddAqueduct(aqueduct =>
-        aqueduct.StreamProviderName = "StreamProvider");
-    runtime.ApplyToSilo(siloBuilder);
-});
-```
-
-For the legacy custom memory setup, replace the old provider-and-storage-name pair with
-`UseMemoryStreams("ProviderName")`. The new runtime builder uses the Orleans `PubSubStore` convention and does not
-accept a separate storage-name argument. Update callers and tests in the same change; the removed runtime symbols are
-not compatibility wrappers.
-
 ## Summary
 
 Configure Aqueduct once as a nested runtime builder, validate it through `UseMississippi(...)`, and apply native
@@ -154,3 +125,4 @@ provider registration remains host-owned.
 - Use [Aqueduct Reference](../reference/reference.md) for options, defaults, and diagnostics.
 - Read [Aqueduct Operations](../operations/operations.md) for provider and rollout considerations.
 - Use [Aqueduct Troubleshooting](../troubleshooting/troubleshooting.md) when composition or provider resolution fails.
+- Follow [Aqueduct Runtime Composition (Next)](../migration/migration.md) for the API cutover.

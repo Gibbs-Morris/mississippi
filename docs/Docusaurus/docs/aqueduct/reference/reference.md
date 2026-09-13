@@ -153,5 +153,6 @@ diagnostics when validation rejects the composition.
 ## Next Steps
 
 - Read [Aqueduct Concepts](../concepts/concepts.md).
-- Follow [How To Configure Aqueduct Runtime Composition](../how-to/how-to.md) for a task sequence and migration example.
+- Follow [How To Configure Aqueduct Runtime Composition](../how-to/how-to.md) for the runtime setup task sequence.
+- Follow [Aqueduct Runtime Composition (Next)](../migration/migration.md) for the runtime API cutover.
 - Read [Aqueduct Operations](../operations/operations.md) for provider and rollout guidance.
