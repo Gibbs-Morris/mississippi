@@ -43,7 +43,7 @@ probabilistic skill activation.
 | Untrusted tracking data | R1-R3: issue data is untrusted; identity, plan references, scope, and acceptance criteria must match the authorized plan; unresolved conflicts block implementation. | Adapter rule plus the skill's reconciliation record; caller plan and authority remain authoritative. |
 | Open local issue | R4-R7 and R21: a relevant open issue is required before implementation; the skill searches, reuses, or creates and reports blocked access. | Adapter rule plus the skill's intake route; the caller keeps the implementation stop boundary. |
 | Planning record | R8: record problem, outcome, scope, criteria, plan, and validation in the issue body or linked issue comment before implementation. | Adapter rule plus the skill's plan-record route; caller plan paths remain local. |
-| Approved disclosure | R9-R11: keep confidential detail restricted and linked to a sanitized issue; public records are disclosure-approved. | Adapter rule plus the skill's private/public capability check; local disclosure policy remains authoritative. |
+| Approved disclosure | R9-R11: keep confidential detail restricted and linked to a sanitized issue; public records are disclosure-approved; a required inaccessible restricted record blocks implementation without blocking unrelated authorized read-only/local-draft work. | Adapter rule plus the skill's private/public capability check; local disclosure policy remains authoritative. |
 | History preservation | R14: preserve relevant existing issue content and discussion during updates. | Adapter rule plus the skill's read-before-update route; caller ledgers remain local. |
 | Material milestones | R12-R13: update at material milestones with completed/remaining work, decisions, blockers, validation, and PR links. | Adapter rule plus the skill's update route; caller activity logs remain local. |
 | Saved plan URLs | R15: saved implementation plans and builder handoffs include the verified repository issue URL. | Adapter rule plus the skill's reference verification; caller artifact paths remain local. |
@@ -85,7 +85,7 @@ stacked delivery and reserves closure for verified complete acceptance.
 
 The [evaluation cases](issue-tracking-skill-cases.json) define scenarios for
 assessment-only work, reuse versus creation, identity/plan mismatch, unavailable
-tools, confidential disclosure, preserved milestone updates, partial and
+tools, confidential disclosure and missing required restricted records, preserved milestone updates, partial and
 complete references, base-change and post-merge lifecycle, unattended triage,
 and negative activation boundaries.
 They are a rubric, not recorded model trials. No native behavior trial, runtime
@@ -137,15 +137,15 @@ not model activation, native behavior, authentication, or update results.
 
 ## Corpus accounting
 
-Measurements use raw committed bytes from `git cat-file blob` via subprocess.
-This table is pinned to the immutable measured commit
-`1de2fc2ca793dc50ceeb8846b7fc18b382dff532` before the R17 correction; the
-adapter-before row uses its parent commit. UTF-8 text is counted with
-`str.split()` words and `str.splitlines()` physical lines; raw UTF-8 byte length
-and UTF-16-LE byte length divided by two are reported. No PowerShell `Out-String`
-or worktree line-ending assumption is used. The adapter, skill, discovery
-metadata, and audit metadata are measured separately. The current R17 candidate
-and any later adapter correction are not represented by these figures.
+Measurements use raw committed bytes from `git cat-file blob` via subprocess and
+LF-normalized copies for uncommitted candidates. The adapter-before row is the
+parent commit; the adapter candidate row is the current atomic adapter copy; the
+skill and metadata rows are the prior measured commit and model-evaluated blob.
+UTF-8 text is counted with `str.split()` words and `str.splitlines()` physical
+lines; raw UTF-8 byte length and UTF-16-LE byte length divided by two are
+reported. No PowerShell `Out-String` or worktree line-ending assumption is used.
+The current private-record candidate is identified separately and remains
+untried.
 
 | Content | Source | Words | Lines | UTF-8 bytes | UTF-16 units |
 | --- | --- | ---: | ---: | ---: | ---: |
@@ -157,16 +157,13 @@ and any later adapter correction are not represented by these figures.
 
 The adapter reduction is 875 words, 30 lines, and 5,595 UTF-8 bytes. The skill
 body count removes the complete four-line YAML front matter before applying the
-same `splitlines()` method. These are static context figures, not runtime or
-startup savings claims.
+same `splitlines()` method. The adapter and skill rows intentionally describe
+their named snapshots; these are static context figures, not runtime or startup
+savings claims.
 
-These skill and metadata figures describe the prior staged input only; they do
-not measure the R17 correction candidate. Its canonical LF input is identified
-separately below after content normalization.
-
-The R17 correction candidate is the LF-only copy
-`.scratchpad/track-github-work-evaluation/SKILL.md` (9,091 bytes; SHA-256
-`33E3431398764AEED59FA3EA4C06D98911AC1C10BB17FCFD127279D7ACE08194`). No new
+The current private-record correction candidate is the LF-only copy
+`.scratchpad/track-github-work-evaluation/SKILL.md` (9,365 bytes; SHA-256
+`F60FDF60253DDBBAED4E3D5E56449C0A47E279B0319BEBA03A300F84090FC05F`). No new
 behavior trial is claimed for this candidate.
 
 ## Maintenance and rollback
