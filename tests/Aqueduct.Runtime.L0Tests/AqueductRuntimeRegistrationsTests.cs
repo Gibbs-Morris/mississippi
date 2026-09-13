@@ -132,7 +132,6 @@ public sealed class AqueductRuntimeRegistrationsTests
                 captured = aqueduct;
                 aqueduct.StreamProviderName = "streams";
                 aqueduct.ServerStreamNamespace = "servers";
-                aqueduct.AllClientsStreamNamespace = "broadcasts";
             });
             Assert.Equal(0, calls);
             runtime.ApplyToSilo(silo);
@@ -144,7 +143,6 @@ public sealed class AqueductRuntimeRegistrationsTests
         AqueductOptions options = provider.GetRequiredService<IOptions<AqueductOptions>>().Value;
         Assert.Equal("streams", options.StreamProviderName);
         Assert.Equal("servers", options.ServerStreamNamespace);
-        Assert.Equal("broadcasts", options.AllClientsStreamNamespace);
     }
 
     /// <summary>Explicit values configure the same canonical options.</summary>
@@ -152,12 +150,11 @@ public sealed class AqueductRuntimeRegistrationsTests
     public void ExplicitSettingsAreApplied()
     {
         ServiceCollection services = [];
-        CreateSilo(services).UseMississippi(runtime => runtime.AddAqueduct("explicit", "server", "all"));
+        CreateSilo(services).UseMississippi(runtime => runtime.AddAqueduct("explicit", "server"));
         using ServiceProvider provider = services.BuildServiceProvider();
         AqueductOptions options = provider.GetRequiredService<IOptions<AqueductOptions>>().Value;
         Assert.Equal("explicit", options.StreamProviderName);
         Assert.Equal("server", options.ServerStreamNamespace);
-        Assert.Equal("all", options.AllClientsStreamNamespace);
     }
 
     /// <summary>Callback failures close nested scopes and allow a fresh root attempt.</summary>
@@ -243,19 +240,21 @@ public sealed class AqueductRuntimeRegistrationsTests
         Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<AqueductOptions>>().Value);
     }
 
-    /// <summary>Runtime composition preserves timing settings configured by the colocated gateway.</summary>
+    /// <summary>Runtime composition preserves gateway-only settings configured by the colocated gateway.</summary>
     [Fact]
-    public void RuntimeCompositionPreservesGatewayTimingSettings()
+    public void RuntimeCompositionPreservesGatewayOnlySettings()
     {
         ServiceCollection services = [];
         services.Configure<AqueductOptions>(options =>
         {
+            options.AllClientsStreamNamespace = "gateway-broadcasts";
             options.HeartbeatIntervalMinutes = 11;
             options.DeadServerTimeoutMultiplier = 17;
         });
         CreateSilo(services).UseMississippi(runtime => runtime.AddAqueduct());
         using ServiceProvider provider = services.BuildServiceProvider();
         AqueductOptions options = provider.GetRequiredService<IOptions<AqueductOptions>>().Value;
+        Assert.Equal("gateway-broadcasts", options.AllClientsStreamNamespace);
         Assert.Equal(11, options.HeartbeatIntervalMinutes);
         Assert.Equal(17, options.DeadServerTimeoutMultiplier);
     }

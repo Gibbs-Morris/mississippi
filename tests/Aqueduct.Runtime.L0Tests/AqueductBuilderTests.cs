@@ -16,7 +16,6 @@ public sealed class AqueductBuilderTests
         Assert.Equal(AqueductBuilderDiagnosticCodes.ConfigurationScopeClosed, Assert.Single(builder.Validate()).Code);
         Assert.Throws<BuilderValidationException>(() => builder.StreamProviderName = "late");
         Assert.Throws<BuilderValidationException>(() => builder.ServerStreamNamespace = "late");
-        Assert.Throws<BuilderValidationException>(() => builder.AllClientsStreamNamespace = "late");
         Assert.Throws<BuilderValidationException>(() => builder.UseMemoryStreams());
         Assert.Throws<BuilderValidationException>(() => builder.UseMemoryStreams("late"));
     }
@@ -28,7 +27,6 @@ public sealed class AqueductBuilderTests
         AqueductBuilder builder = new();
         Assert.Equal(AqueductStreamDefaults.StreamProviderName, builder.StreamProviderName);
         Assert.Equal(AqueductStreamDefaults.ServerStreamNamespace, builder.ServerStreamNamespace);
-        Assert.Equal(AqueductStreamDefaults.AllClientsStreamNamespace, builder.AllClientsStreamNamespace);
         Assert.Empty(builder.Validate());
     }
 
@@ -46,13 +44,11 @@ public sealed class AqueductBuilderTests
         {
             StreamProviderName = value!,
             ServerStreamNamespace = value!,
-            AllClientsStreamNamespace = value!,
         };
         Assert.Collection(
             builder.Validate(),
             diagnostic => Assert.Equal(AqueductBuilderDiagnosticCodes.StreamProviderRequired, diagnostic.Code),
-            diagnostic => Assert.Equal(AqueductBuilderDiagnosticCodes.ServerNamespaceRequired, diagnostic.Code),
-            diagnostic => Assert.Equal(AqueductBuilderDiagnosticCodes.BroadcastNamespaceRequired, diagnostic.Code));
+            diagnostic => Assert.Equal(AqueductBuilderDiagnosticCodes.ServerNamespaceRequired, diagnostic.Code));
     }
 
     /// <summary>Memory streams can select a provider without opening another configuration path.</summary>

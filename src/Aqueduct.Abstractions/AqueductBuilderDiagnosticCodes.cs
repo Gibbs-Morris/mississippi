@@ -6,9 +6,6 @@ namespace Mississippi.Aqueduct.Abstractions;
 /// <remarks>Public so applications can identify configuration failures without parsing messages.</remarks>
 public static class AqueductBuilderDiagnosticCodes
 {
-    /// <summary>Identifies an empty broadcast namespace.</summary>
-    public const string BroadcastNamespaceRequired = "MSB203";
-
     /// <summary>Identifies configuration through a closed Aqueduct scope.</summary>
     public const string ConfigurationScopeClosed = "MSB206";
 

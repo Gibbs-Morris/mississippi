@@ -86,27 +86,22 @@ public static class AqueductRuntimeRegistrations
                                           aqueduct.StreamProviderName;
             aqueduct.ServerStreamNamespace = configuration[nameof(AqueductOptions.ServerStreamNamespace)] ??
                                              aqueduct.ServerStreamNamespace;
-            aqueduct.AllClientsStreamNamespace = configuration[nameof(AqueductOptions.AllClientsStreamNamespace)] ??
-                                                 aqueduct.AllClientsStreamNamespace;
         });
     }
 
-    /// <summary>Configures Aqueduct with explicit stream and namespace settings.</summary>
+    /// <summary>Configures Aqueduct with explicit stream and server namespace settings.</summary>
     /// <param name="builder">The owning runtime builder.</param>
     /// <param name="streamProviderName">The existing stream provider.</param>
     /// <param name="serverStreamNamespace">The namespace for server-targeted messages.</param>
-    /// <param name="allClientsStreamNamespace">The namespace for broadcasts.</param>
     /// <returns>The runtime builder for chaining.</returns>
     public static IRuntimeBuilder AddAqueduct(
         this IRuntimeBuilder builder,
         string streamProviderName,
-        string serverStreamNamespace = AqueductStreamDefaults.ServerStreamNamespace,
-        string allClientsStreamNamespace = AqueductStreamDefaults.AllClientsStreamNamespace
+        string serverStreamNamespace = AqueductStreamDefaults.ServerStreamNamespace
     ) =>
         builder.AddAqueduct(aqueduct =>
         {
             aqueduct.StreamProviderName = streamProviderName;
             aqueduct.ServerStreamNamespace = serverStreamNamespace;
-            aqueduct.AllClientsStreamNamespace = allClientsStreamNamespace;
         });
 }

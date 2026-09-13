@@ -22,17 +22,6 @@ public sealed class AqueductBuilder
     {
     }
 
-    /// <summary>Gets or sets the namespace used to broadcast to all clients.</summary>
-    public string AllClientsStreamNamespace
-    {
-        get => Options.AllClientsStreamNamespace;
-        set
-        {
-            ThrowIfClosed();
-            Options.AllClientsStreamNamespace = value;
-        }
-    }
-
     /// <summary>Gets or sets the namespace used for server-targeted messages.</summary>
     public string ServerStreamNamespace
     {
@@ -122,11 +111,6 @@ public sealed class AqueductBuilder
             nameof(ServerStreamNamespace),
             AqueductBuilderDiagnosticCodes.ServerNamespaceRequired,
             diagnostics);
-        ValidateName(
-            AllClientsStreamNamespace,
-            nameof(AllClientsStreamNamespace),
-            AqueductBuilderDiagnosticCodes.BroadcastNamespaceRequired,
-            diagnostics);
         return diagnostics;
     }
 
@@ -146,7 +130,6 @@ public sealed class AqueductBuilder
         {
             StreamProviderName = StreamProviderName,
             ServerStreamNamespace = ServerStreamNamespace,
-            AllClientsStreamNamespace = AllClientsStreamNamespace,
         };
         if (ShouldUseMemoryStreams)
         {
@@ -159,12 +142,10 @@ public sealed class AqueductBuilder
             {
                 options.StreamProviderName = snapshot.StreamProviderName;
                 options.ServerStreamNamespace = snapshot.ServerStreamNamespace;
-                options.AllClientsStreamNamespace = snapshot.AllClientsStreamNamespace;
             })
             .Validate(
                 options => !string.IsNullOrWhiteSpace(options.StreamProviderName) &&
-                           !string.IsNullOrWhiteSpace(options.ServerStreamNamespace) &&
-                           !string.IsNullOrWhiteSpace(options.AllClientsStreamNamespace),
+                           !string.IsNullOrWhiteSpace(options.ServerStreamNamespace),
                 "Aqueduct requires nonempty stream names.")
             .ValidateOnStart();
         silo.Services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
