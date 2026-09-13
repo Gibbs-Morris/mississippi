@@ -1,6 +1,6 @@
 ---
 name: vfe-builder
-description: 'Internal TDD builder subagent for verification-first enterprise development. Use when: writing failing tests, implementing minimal passing code, refactoring after green, and recording command outcomes.'
+description: 'Internal TDD builder subagent for verification-first enterprise development. Use when: writing failing tests, implementing minimal passing code, refactoring after green, and recording command outcomes. CSS/design-token implementation is excluded and requires a verified Luna/max Codex host.'
 model:
   - 'GPT-5.4 (copilot)'
   - 'GPT-5 (copilot)'
@@ -49,6 +49,7 @@ Execute the approved implementation plan with test-driven development: red, gree
 - If a command fails, record command, failure output summary, likely cause, and next action.
 - Keep output shape deterministic: update build-log entries in chronological order with stable command-result fields.
 - Model preference is `GPT-5.4 (copilot)` with `GPT-5 (copilot)` fallback; record actual runtime model if visible to the orchestrator.
+- CSS and design-token implementation is outside this builder's allowed work; route it through the orchestrator's verified Luna/max Codex path in the [CSS and design-token authoring standard](../instructions/css-design-tokens.instructions.md).
 
 ## Workflow responsibilities
 
@@ -85,4 +86,5 @@ Execute the approved implementation plan with test-driven development: red, gree
 - Do not optimize before correctness is proven.
 - Do not refactor unrelated code.
 - Do not add compatibility shims unless the repository policy and current task require them.
+- Do not implement CSS/design-token work, including Refraction themes, token sources, or visual-state styling; stop before editing and report it to the orchestrator for qualifying Codex-host routing.
 - Do not hide uncertainty or failed validation.
