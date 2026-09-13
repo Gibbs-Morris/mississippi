@@ -124,6 +124,11 @@ Describe 'Mutation automation' {
             $completedOutput
         }
         Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output | Should -Be $output
+        $summary = Get-Content (Join-Path $output 'mutation-summary.json') -Raw | ConvertFrom-Json
+        $summary.ProjectCount | Should -Be 1
+        $summary.TargetProjectCount | Should -Be 2
+        $summary.SkippedProjectCount | Should -Be 1
+        $summary.CompleteReportCount | Should -Be 1
         Should -Invoke Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation -Exactly 1
         Should -Invoke Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation -Exactly 0 -ParameterFilter { $ProjectPath -like '*Package.csproj' }
     }
