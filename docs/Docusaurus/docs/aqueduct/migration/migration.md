@@ -21,11 +21,13 @@ storage name is handled separately below; this migration does not rename or tran
 ## Who should read this
 
 - Runtime host maintainers whose startup code uses `UseAqueduct(...)` or `AqueductSiloOptions`.
+- Gateway host maintainers whose gateway options were previously supplied by a colocated `UseAqueduct(...)` callback.
 - Teams moving a source checkout or package set to the `Next` runtime composition contract.
 
-This guide covers the Orleans runtime only. Gateway-side `AqueductOptions` remains a separate configuration surface;
-`HeartbeatIntervalMinutes` is consumed by the gateway heartbeat manager, while `DeadServerTimeoutMultiplier` currently
-has no production consumer. This runtime migration changes neither setting.
+The runtime builder now owns the provider and server namespace. Gateway-side `AqueductOptions` remains the configuration
+surface for the broadcast namespace and gateway heartbeat; `DeadServerTimeoutMultiplier` currently has no production
+consumer. When one host application contains both roles, move the shared values as shown below rather than assuming the
+runtime callback configures the gateway.
 
 ## Compatibility summary
 
@@ -46,10 +48,10 @@ The target runtime builder exposes two runtime stream identity settings:
 - `StreamProviderName`
 - `ServerStreamNamespace`
 
-Runtime heartbeat and dead-server timeout settings are not part of this builder. Leave
-`HeartbeatIntervalMinutes` in the gateway configuration that consumes it; `DeadServerTimeoutMultiplier` currently has
-no production consumer. `AllClientsStreamNamespace` remains a gateway setting for broadcasts and is not set or validated
-by the runtime builder.
+Runtime heartbeat and dead-server timeout settings are not part of this builder. If the legacy callback set
+`HeartbeatIntervalMinutes`, move that value to the gateway configuration that consumes it; `DeadServerTimeoutMultiplier`
+currently has no production consumer. `AllClientsStreamNamespace` remains a gateway setting for broadcasts and is not set
+or validated by the runtime builder.
 
 The target `UseMemoryStreams()` and `UseMemoryStreams("ProviderName")` methods configure memory streams and the
 `PubSubStore` convention. The old provider-and-storage-name overload is not mapped automatically.
@@ -61,8 +63,8 @@ The target `UseMemoryStreams()` and `UseMemoryStreams("ProviderName")` methods c
 2. Record provider-owned stream or storage identities used by the host, including `PubSubStore` when memory streams are
    selected. Aqueduct connection and group membership state is volatile in memory; preserve provider-owned persisted
    stream or subscription metadata separately where applicable.
-3. Find every runtime startup caller and prepare one target `UseMississippi(...)` callback per host. Keep gateway startup
-   changes separate from this runtime migration.
+3. Find every runtime and gateway startup caller. Prepare one target `UseMississippi(...)` callback per runtime, and
+   configure each gateway with matching provider and server namespace values plus its broadcast and heartbeat settings.
 4. Back up deployment manifests, runtime configuration, and provider-owned persisted state or stream metadata according
    to the provider's normal backup procedure. This API cutover does not define a backup or data-conversion format.
 5. Plan a coordinated maintenance window. Mixed runtime versions and mixed stream identities have not been established
@@ -75,8 +77,9 @@ The target `UseMemoryStreams()` and `UseMemoryStreams("ProviderName")` methods c
    unchanged.
 3. Start the runtime hosts and confirm that each one completes the target `UseMississippi(...)` composition without a
    `BuilderValidationException`.
-4. Start the gateway hosts with their existing gateway-side options and confirm that their provider and server namespace
-   settings match the recorded runtime identities and that their broadcast namespace matches the other gateways.
+4. Start the gateway hosts with their explicitly configured gateway-side options and confirm that their provider and
+   server namespace settings match the recorded runtime identities and that their broadcast namespace matches the other
+   gateways.
 5. Re-enable traffic only after all participating hosts report healthy through their normal Orleans and application
    checks.
 
@@ -102,6 +105,59 @@ siloBuilder.UseMississippi(runtime =>
 });
 ```
 
+### Move colocated gateway options explicitly
+
+The legacy silo callback also copied gateway values into the shared `AqueductOptions`. In a colocated host,
+`builder.Services` and the silo share the same service collection, so keep the nondefault provider and server namespace
+identical across both roles and move the broadcast namespace and heartbeat interval to the gateway's
+`AddAqueduct<THub>(...)` callback. `NotificationsHub` below represents the application's existing hub.
+
+Before:
+
+```csharp
+builder.UseOrleans(siloBuilder =>
+{
+    siloBuilder.UseAqueduct(options =>
+    {
+        options.StreamProviderName = "orders-provider";
+        options.ServerStreamNamespace = "orders-server";
+        options.AllClientsStreamNamespace = "orders-broadcast";
+        options.HeartbeatIntervalMinutes = 5;
+    });
+});
+
+builder.Services.AddAqueduct<NotificationsHub>();
+```
+
+After:
+
+```csharp
+builder.UseOrleans(siloBuilder =>
+{
+    siloBuilder.UseMississippi(runtime =>
+    {
+        runtime.AddAqueduct(aqueduct =>
+        {
+            aqueduct.StreamProviderName = "orders-provider";
+            aqueduct.ServerStreamNamespace = "orders-server";
+        });
+        runtime.ApplyToSilo(siloBuilder);
+    });
+});
+
+builder.Services.AddAqueduct<NotificationsHub>(options =>
+{
+    options.StreamProviderName = "orders-provider";
+    options.ServerStreamNamespace = "orders-server";
+    options.AllClientsStreamNamespace = "orders-broadcast";
+    options.HeartbeatIntervalMinutes = 5;
+});
+```
+
+The runtime callback does not set or validate `AllClientsStreamNamespace` or `HeartbeatIntervalMinutes`; the gateway
+callback configures them. `DeadServerTimeoutMultiplier` was copied by the legacy silo helper but has no production
+consumer in the current implementation, so do not add it to the runtime migration as a required setting.
+
 For development or tests, move the memory-stream call into the nested builder:
 
 ```csharp
@@ -114,7 +170,7 @@ When a non-default development provider name is required, use:
 runtime.AddAqueduct(aqueduct => aqueduct.UseMemoryStreams("ProviderName"));
 ```
 
-The target configuration overload reads these option-property keys from the supplied `IConfiguration`:
+The target runtime configuration overload reads these option-property keys from the supplied `IConfiguration`:
 
 | Key | Target setting |
 | --- | --- |
@@ -125,6 +181,11 @@ Missing keys keep their runtime defaults. `AllClientsStreamNamespace` remains a 
 configuration overload. Do not carry runtime heartbeat or dead-server timeout keys into this callback;
 `HeartbeatIntervalMinutes` remains a gateway setting and `DeadServerTimeoutMultiplier` currently has no production
 consumer.
+
+For a colocated gateway, use `services.AddAqueduct<THub>(options => ...)` or
+`services.Configure<AqueductOptions>(...)` on the gateway service collection for `AllClientsStreamNamespace`,
+`HeartbeatIntervalMinutes`, and any other gateway-owned options. Keep the provider and server namespace values in both
+role-specific configurations consistent.
 
 `runtime.ApplyToSilo(siloBuilder)` is the recommended explicit native-configuration hook. If it is omitted, the
 terminal `UseMississippi(...)` operation applies queued native configuration automatically.
