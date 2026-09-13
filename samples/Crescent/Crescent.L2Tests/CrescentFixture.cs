@@ -146,15 +146,6 @@ public sealed class CrescentFixture
             BrookCosmosDefaults.BlobLockingServiceKey,
             (_, _) => new BlobServiceClient(blobConnectionString));
 
-        // Configure Cosmos DB storage for snapshots
-        builder.Services.AddCosmosSnapshotStorageProvider(options =>
-        {
-            options.CosmosClientServiceKey = SnapshotCosmosDefaults.CosmosClientServiceKey;
-            options.DatabaseId = "aspire-l2tests";
-            options.ContainerId = "snapshots";
-            options.QueryBatchSize = 100;
-        });
-
         // Register Counter aggregate domain (events, handlers, reducers, projections)
         builder.Services.AddCounterAggregate();
 
@@ -183,6 +174,15 @@ public sealed class CrescentFixture
                     cosmos.DatabaseId = "aspire-l2tests";
                     cosmos.QueryBatchSize = 50;
                     cosmos.MaxEventsPerBatch = 50;
+                });
+
+                // Configure Cosmos DB storage for snapshots
+                runtime.AddCosmosSnapshotStorageProvider(snapshot =>
+                {
+                    snapshot.CosmosClientServiceKey = SnapshotCosmosDefaults.CosmosClientServiceKey;
+                    snapshot.DatabaseId = "aspire-l2tests";
+                    snapshot.ContainerId = "snapshots";
+                    snapshot.QueryBatchSize = 100;
                 });
                 runtime.AddEventSourcing();
             });

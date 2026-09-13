@@ -107,15 +107,6 @@ builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).A
 builder.Services.AddJsonSerialization();
 builder.Services.AddSnapshotCaching();
 
-// Configure Cosmos storage for Snapshots
-builder.Services.AddCosmosSnapshotStorageProvider(options =>
-{
-    options.CosmosClientServiceKey = sharedCosmosKey;
-    options.DatabaseId = "spring-db";
-    options.ContainerId = "snapshots";
-    options.QueryBatchSize = 100;
-});
-
 // Configure Orleans silo - Aspire injects clustering config via environment variables
 builder.UseOrleans(siloBuilder =>
 {
@@ -131,6 +122,15 @@ builder.UseOrleans(siloBuilder =>
             cosmos.ContainerId = "events";
             cosmos.QueryBatchSize = 50;
             cosmos.MaxEventsPerBatch = 50;
+        });
+
+        // Configure Cosmos storage for Snapshots
+        runtime.AddCosmosSnapshotStorageProvider(snapshot =>
+        {
+            snapshot.CosmosClientServiceKey = sharedCosmosKey;
+            snapshot.DatabaseId = "spring-db";
+            snapshot.ContainerId = "snapshots";
+            snapshot.QueryBatchSize = 100;
         });
         runtime.AddAqueduct(aqueduct => aqueduct.StreamProviderName = "StreamProvider");
         runtime.AddEventSourcing(options => options.OrleansStreamProviderName = "StreamProvider");

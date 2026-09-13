@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />
+    <ProjectReference Include="..\..\src\Hosting.Runtime\Hosting.Runtime.csproj" />
   </ItemGroup>
 </Project>
