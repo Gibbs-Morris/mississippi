@@ -10,7 +10,7 @@ description: Reference the current builder-based Inlet client registration surfa
 
 ## Overview
 
-Inlet is the Mississippi composition and source-generation layer.
+Inlet is the Mississippi composition and source-generation layer. For the relationship between domain metadata, generated types, and host registrations, see [Generated Application Contracts](./generated-contracts.md).
 
 ## Applies To
 
