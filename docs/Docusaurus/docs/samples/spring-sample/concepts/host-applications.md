@@ -33,8 +33,17 @@ The silo runs Orleans grains that execute commands, apply events, run effects, a
 ```csharp
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-// One call registers all domain aggregates, sagas, effects, and `EventReducer`s
-builder.Services.AddSpringDomainSilo();
+// Generated domain registrations
+builder.Services.AddAuthProofAggregate();
+builder.Services.AddBankAccountAggregate();
+builder.Services.AddTransactionInvestigationQueueAggregate();
+builder.Services.AddAuthProofProjection();
+builder.Services.AddBankAccountBalanceProjection();
+builder.Services.AddBankAccountLedgerProjection();
+builder.Services.AddFlaggedTransactionsProjection();
+builder.Services.AddMoneyTransferStatusProjection();
+builder.Services.AddAuthProofSaga();
+builder.Services.AddMoneyTransferSaga();
 
 // Infrastructure: notification service stub
 builder.Services.AddSingleton<INotificationService, StubNotificationService>();
@@ -53,7 +62,6 @@ builder.AddAzureCosmosClient("cosmos", /* ... */);
 builder.Services.AddInletSilo();
 builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 builder.Services.AddJsonSerialization();
-builder.Services.AddEventSourcingByService();
 builder.Services.AddSnapshotCaching();
 builder.Services.AddCosmosBrookStorageProvider(/* ... */);
 builder.Services.AddCosmosSnapshotStorageProvider(/* ... */);
@@ -61,11 +69,15 @@ builder.Services.AddCosmosSnapshotStorageProvider(/* ... */);
 // Orleans configuration
 builder.UseOrleans(siloBuilder =>
 {
-    siloBuilder.AddActivityPropagation();
     siloBuilder.UseAqueduct(options =>
         options.StreamProviderName = "StreamProvider");
-    siloBuilder.AddEventSourcing(options =>
-        options.OrleansStreamProviderName = "StreamProvider");
+    siloBuilder.UseMississippi(runtime =>
+    {
+        runtime.AddEventSourcing(options =>
+            options.OrleansStreamProviderName = "StreamProvider");
+        runtime.ConfigureSilo(configuredSilo => configuredSilo.AddActivityPropagation());
+        runtime.ApplyToSilo(siloBuilder);
+    });
 });
 
 WebApplication app = builder.Build();
@@ -73,7 +85,7 @@ app.MapGet("/health", /* ... */);
 await app.RunAsync();
 ```
 
-The single line `builder.Services.AddSpringDomainSilo()` registers every aggregate, saga, `CommandHandler`, `EventReducer`, effect, and projection defined in `Spring.Domain`. This method is **source-generated** by Mississippi - you do not write it manually.
+Spring uses generated aggregate, projection, and saga registration methods from its domain definitions. The runtime composition callback registers Brooks factories and options together, and stages the native Orleans configuration before terminal attachment. See [Runtime Composition](../../../reference/runtime-composition.md) for the attachment and validation contract.
 
 ([Spring.Runtime/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Runtime/Program.cs))
 

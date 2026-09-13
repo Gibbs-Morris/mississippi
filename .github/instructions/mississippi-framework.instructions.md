@@ -33,6 +33,7 @@ Governing thought: Build applications using the Mississippi framework with sourc
 
 ### Solution Structure
 
+- Orleans runtime hosts **MUST** compose Brooks through `silo.UseMississippi(runtime => runtime.AddEventSourcing(...))` using `RuntimeBuilder` from `Mississippi.Hosting.Runtime`. Why: The runtime builder unites Brooks service and option registration and validates terminal attachment.
 - New sample applications in this repository **MUST** follow the four-project structure: Runtime host (running in an Orleans silo), ASP.NET Gateway, Blazor WebAssembly Client, and Domain (see Scope and Audience). Why: Separates concerns and enables source generation.
 - An Aspire AppHost project **SHOULD** be included for local development orchestration. Why: Simplifies emulator setup for Cosmos, Azure Storage, and Orleans.
 - Runtime and Gateway host projects **MUST** contain only configuration, options, dependency wiring, and framework registration—not domain logic. Why: Keeps host projects thin.

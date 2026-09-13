@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <ProjectReference Include="..\Hosting.Runtime.Abstractions\Hosting.Runtime.Abstractions.csproj" />
     <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
     <ProjectReference Include="..\Brooks.Runtime.Storage.Abstractions\Brooks.Runtime.Storage.Abstractions.csproj" />
   </ItemGroup>
