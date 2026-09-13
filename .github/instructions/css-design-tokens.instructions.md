@@ -97,9 +97,9 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Implementation coding **MUST** use the installed GPT-5.6 Luna identifier (`gpt-5.6-luna`) at maximum supported reasoning. Why: Repetitive implementation work follows the approved model strategy.
 - Implementation-worker concurrency **MUST NOT** exceed eight per session. Why: Eight is the policy maximum rather than a requirement to manufacture parallel work.
 - The effective host concurrency ceiling **MAY** be lower than eight. Why: Host capacity remains a binding operational limit.
-- Worker model and concurrency defaults **MUST** remain centralized in one verified repository Codex configuration when the installed contract supports them. Why: One authority prevents conflicting per-agent settings.
-- The installed configuration contract **MUST** be verified before changing repository worker defaults. Why: Unsupported keys or stale assumptions can silently leave effective behavior unchanged.
-- Agent files **SHOULD** link this standard for CSS model routing rather than restating operational TOML keys. Why: The repository configuration remains the operational authority.
+- When repository worker defaults are configured, they **MUST** remain centralized in one verified repository Codex configuration. Why: One authority prevents conflicting per-agent settings.
+- Any configured worker defaults **MUST** be verified against the installed configuration contract before use or change. Why: Unsupported keys or stale assumptions can silently leave effective behavior unchanged.
+- Agent files **SHOULD** link this standard for CSS model routing rather than restating operational settings. Why: A configured repository source remains authoritative; otherwise the selected runtime assignment provides the evidence.
 - Each layer **MUST** inspect the relevant selectors, token references, state bindings, generated output, and rendered behavior before handoff. Why: Search, build evidence, and visual evidence catch different classes of styling regression.
 
 ## Scope and audience
@@ -221,6 +221,6 @@ This layer defines the forward-looking authoring contract. Token catalogs, gener
 - [Namespace and Folder Placement](namespace-folder-placement.instructions.md)
 - [PR Size and Stacked Delivery](pr-size-and-stacking.instructions.md)
 - [CSS migration issue #405](https://github.com/Gibbs-Morris/mississippi/issues/405)
-- [Repository Codex configuration](../../.codex/config.toml)
+- [Worker configuration follow-up issue #675](https://github.com/Gibbs-Morris/mississippi/issues/675)
 - [Official gh-stack skill](https://github.com/github/gh-stack/blob/main/skills/gh-stack/SKILL.md)
 - [DTCG format](https://www.designtokens.org/tr/2025.10/format/)
