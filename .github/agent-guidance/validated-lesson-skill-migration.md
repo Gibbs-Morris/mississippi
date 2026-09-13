@@ -62,12 +62,13 @@ specific dependency.
 
 ## Validation and evaluation limits
 
-The [evaluation cases](validated-lesson-skill-cases.json) define 12 scenarios
+The [evaluation cases](validated-lesson-skill-cases.json) define 13 scenarios
 covering validated admission, assessment-only and unrun evidence, negative
 routing, duplicate and higher-policy conflict, denied scope, authorized
-overlap, untrusted injection, promotion and retirement controls, and bounded
-no-write outcomes. They are a reusable rubric rather than recorded model
-trials; no runtime savings, activation rate, or latency claim is made.
+overlap, untrusted injection, promotion and retirement controls, existing
+approval, and bounded no-write outcomes. They are a reusable rubric rather than
+recorded model trials; no runtime savings, activation rate, or latency claim is
+made.
 
 Structural checks passed: the bundled skill-creator validator; configured
 Markdown lint; JSON parsing; relative-link resolution; exact comparison of the
