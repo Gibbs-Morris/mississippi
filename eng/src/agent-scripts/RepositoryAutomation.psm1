@@ -482,7 +482,97 @@ function Get-MutationReportMetrics {
     }
 }
 
-function Write-MutationRunSummary {
+function Get-MutationProjectStatus {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ExecutionStatus,
+        [Parameter(Mandatory)][bool]$ReportValid,
+        [Nullable[double]]$Score,
+        [double]$BreakThreshold
+    )
+
+    if ($ExecutionStatus -eq 'Skipped') { return 'SKIPPED' }
+    if (-not $ReportValid) { return 'NO_REPORT' }
+    if ($null -eq $Score) { return 'NO_SCORE' }
+    if ($BreakThreshold -gt 0 -and $Score -lt $BreakThreshold) { return 'BELOW_BREAK' }
+    return 'AT_OR_ABOVE_BREAK'
+}
+
+function Get-MutationProjectSummary {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$ProjectResult,
+        [double]$BreakThreshold
+    )
+
+    $projectName = [System.IO.Path]::GetFileNameWithoutExtension([string]$ProjectResult.Project)
+    $reportValid = $false
+    $reportError = $ProjectResult.ReportError
+    $metrics = $null
+    if ($ProjectResult.ReportPath -and (Test-Path -LiteralPath $ProjectResult.ReportPath -PathType Leaf)) {
+        try {
+            $metrics = Get-MutationReportMetrics -ReportPath $ProjectResult.ReportPath
+            $reportValid = $true
+        }
+        catch {
+            $reportError = $_.Exception.Message
+        }
+    }
+
+    $score = if ($metrics) { $metrics.Score } else { $null }
+    return [pscustomobject]@{
+        Project = $projectName
+        ExecutionStatus = if ($ProjectResult.Status -eq 'Failed') { 'FAILED' } else { 'COMPLETED' }
+        Status = Get-MutationProjectStatus -ExecutionStatus $ProjectResult.Status -ReportValid $reportValid -Score $score -BreakThreshold $BreakThreshold
+        Score = $score
+        ValidMutants = if ($metrics) { $metrics.Valid } else { 0 }
+        DetectedMutants = if ($metrics) { $metrics.Detected } else { 0 }
+        ReportPath = $ProjectResult.ReportPath
+        ReportValid = $reportValid
+        Error = $ProjectResult.Error
+        ReportError = $reportError
+    }
+}
+
+function Write-GitHubMutationSummary {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Summary)
+
+    if ([string]::IsNullOrWhiteSpace($env:GITHUB_STEP_SUMMARY)) { return }
+
+    $heading = switch ($Summary.MutationResult) {
+        'FAIL' { 'failed'; break }
+        'WARN' { 'completed with warnings'; break }
+        default { 'completed' }
+    }
+    $summaryLines = @(
+        "## Mutation testing: $heading"
+        ''
+        "- Execution: **$($Summary.ExecutionStatus)**"
+        "- Result: **$($Summary.MutationResult)**"
+        "- Complete reports: **$($Summary.CompleteReportCount)/$($Summary.ProjectCount)**"
+        "- Scored projects: **$($Summary.ScoredProjectCount)**"
+        "- Below break threshold ($($Summary.BreakThreshold)%): **$($Summary.BelowBreakThresholdCount)**"
+    )
+    if ($Summary.BelowBreakThresholdCount -gt 0) {
+        $summaryLines += ''
+        $summaryLines += '### Projects below the advisory threshold'
+        foreach ($project in $Summary.BelowBreakThresholdProjects) {
+            $summaryLines += "- $($project.Project): $($project.Score)%"
+        }
+    }
+    if ($Summary.FailedProjectCount -gt 0) {
+        $summaryLines += ''
+        $summaryLines += '### Projects with execution failures'
+        foreach ($project in $Summary.FailedProjects) {
+            $failureMessage = if ($project.Error) { $project.Error } else { $project.Status }
+            $summaryLines += "- $($project.Project): $failureMessage"
+        }
+    }
+    Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value $summaryLines -Encoding utf8
+}
+
+function Show-MutationRunSummary {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$OutputPath,
@@ -490,52 +580,9 @@ function Write-MutationRunSummary {
         [double]$BreakThreshold = 0
     )
 
-    $projectSummaries = @(
-        foreach ($projectResult in $ProjectResults) {
-            $projectName = [System.IO.Path]::GetFileNameWithoutExtension([string]$projectResult.Project)
-            $reportValid = $false
-            $reportError = $projectResult.ReportError
-            $metrics = $null
-            if ($projectResult.ReportPath -and (Test-Path -LiteralPath $projectResult.ReportPath -PathType Leaf)) {
-                try {
-                    $metrics = Get-MutationReportMetrics -ReportPath $projectResult.ReportPath
-                    $reportValid = $true
-                }
-                catch {
-                    $reportError = $_.Exception.Message
-                }
-            }
-
-            $status = if ($projectResult.Status -eq 'Skipped') {
-                'SKIPPED'
-            }
-            elseif (-not $reportValid) {
-                'NO_REPORT'
-            }
-            elseif ($null -eq $metrics.Score) {
-                'NO_SCORE'
-            }
-            elseif ($BreakThreshold -gt 0 -and $metrics.Score -lt $BreakThreshold) {
-                'BELOW_BREAK'
-            }
-            else {
-                'AT_OR_ABOVE_BREAK'
-            }
-
-            [pscustomobject]@{
-                Project = $projectName
-                ExecutionStatus = if ($projectResult.Status -eq 'Failed') { 'FAILED' } else { 'COMPLETED' }
-                Status = $status
-                Score = if ($metrics) { $metrics.Score } else { $null }
-                ValidMutants = if ($metrics) { $metrics.Valid } else { 0 }
-                DetectedMutants = if ($metrics) { $metrics.Detected } else { 0 }
-                ReportPath = $projectResult.ReportPath
-                ReportValid = $reportValid
-                Error = $projectResult.Error
-                ReportError = $reportError
-            }
-        }
-    )
+    $projectSummaries = @($ProjectResults | ForEach-Object {
+        Get-MutationProjectSummary -ProjectResult $_ -BreakThreshold $BreakThreshold
+    })
 
     $failedProjects = @($projectSummaries | Where-Object { $_.ExecutionStatus -eq 'FAILED' })
     $belowBreak = @($projectSummaries | Where-Object { $_.Status -eq 'BELOW_BREAK' })
@@ -577,34 +624,7 @@ function Write-MutationRunSummary {
         Write-Warning "Mutation analysis did not complete successfully for $($failedProjects.Count) project(s)."
     }
 
-    if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_STEP_SUMMARY)) {
-        $heading = if ($mutationResult -eq 'FAIL') { 'failed' } elseif ($mutationResult -eq 'WARN') { 'completed with warnings' } else { 'completed' }
-        $summaryLines = @(
-            "## Mutation testing: $heading"
-            ''
-            "- Execution: **$executionStatus**"
-            "- Result: **$mutationResult**"
-            "- Complete reports: **$($completeReports.Count)/$($ProjectResults.Count)**"
-            "- Scored projects: **$($scoredReports.Count)**"
-            "- Below break threshold ($BreakThreshold%): **$($belowBreak.Count)**"
-        )
-        if ($belowBreak.Count -gt 0) {
-            $summaryLines += ''
-            $summaryLines += '### Projects below the advisory threshold'
-            foreach ($project in $belowBreak) {
-                $summaryLines += "- $($project.Project): $($project.Score)%"
-            }
-        }
-        if ($failedProjects.Count -gt 0) {
-            $summaryLines += ''
-            $summaryLines += '### Projects with execution failures'
-            foreach ($project in $failedProjects) {
-                $error = if ($project.Error) { $project.Error } else { $project.Status }
-                $summaryLines += "- $($project.Project): $error"
-            }
-        }
-        Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value $summaryLines -Encoding utf8
-    }
+    Write-GitHubMutationSummary -Summary ([pscustomobject]$summary)
 
     return [pscustomobject]$summary
 }
@@ -711,6 +731,75 @@ function Get-MutationTargets {
     return @($targets.Values | Sort-Object Project)
 }
 
+function Set-MutationResultMetrics {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$ProjectResult,
+        [Parameter(Mandatory)][string]$ReportPath
+    )
+
+    $metrics = Get-MutationReportMetrics -ReportPath $ReportPath
+    $ProjectResult.MutationScore = $metrics.Score
+    $ProjectResult.ValidMutants = $metrics.Valid
+    $ProjectResult.DetectedMutants = $metrics.Detected
+}
+
+function Set-MutationFailureResult {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$ProjectResult,
+        [Parameter(Mandatory)][object]$Failure
+    )
+
+    $ProjectResult.Output = $Failure.Exception.Data['OutputPath']
+    $ProjectResult.ReportPath = $Failure.Exception.Data['ReportPath']
+    $ProjectResult.Status = 'Failed'
+    $ProjectResult.Error = $Failure.Exception.Message
+    $ProjectResult.ReportError = $Failure.Exception.Data['ReportError']
+    if ($ProjectResult.ReportPath -and (Test-Path -LiteralPath $ProjectResult.ReportPath -PathType Leaf)) {
+        try {
+            Set-MutationResultMetrics -ProjectResult $ProjectResult -ReportPath $ProjectResult.ReportPath
+        }
+        catch {
+            if (-not $ProjectResult.ReportError) { $ProjectResult.ReportError = $_.Exception.Message }
+        }
+    }
+}
+
+function Invoke-MutationTarget {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Target,
+        [Parameter(Mandatory)][object]$ProjectResult,
+        [Parameter(Mandatory)][string]$OutputPath,
+        [Parameter(Mandatory)][string]$Configuration,
+        [switch]$ReportOnly
+    )
+
+    if (-not $Target.HasSource) {
+        $ProjectResult.Status = 'Skipped'
+        $ProjectResult.Success = $true
+        $ProjectResult.Reason = 'No authored C# source'
+        return
+    }
+
+    try {
+        if ($Target.Tests.Count -eq 0) { throw "Authored source project has no declared test mapping: $($Target.Project)" }
+        $projectOutput = Invoke-StrykerMutationTestPerProject -ProjectPath $Target.Project -TestProjects $Target.Tests -OutputPath $OutputPath -Configuration $Configuration -ReportOnly:$ReportOnly
+        $reportPath = Get-MutationReportPath -OutputPath $projectOutput
+        Set-MutationResultMetrics -ProjectResult $ProjectResult -ReportPath $reportPath
+        $ProjectResult.Output = $projectOutput
+        $ProjectResult.ReportPath = $reportPath
+        $ProjectResult.Success = $true
+        $ProjectResult.Status = 'Completed'
+        Write-Host "  ✓ Completed: $([System.IO.Path]::GetFileNameWithoutExtension($Target.Project))" -ForegroundColor ([ConsoleColor]::Green)
+    }
+    catch {
+        Write-Warning "  ✗ Failed: $([System.IO.Path]::GetFileNameWithoutExtension($Target.Project)) - $($_.Exception.Message)"
+        Set-MutationFailureResult -ProjectResult $ProjectResult -Failure $_
+    }
+}
+
 function Invoke-StrykerMutationTest {
     [CmdletBinding()]
     param(
@@ -745,53 +834,13 @@ function Invoke-StrykerMutationTest {
     for ($index = 0; $index -lt $targets.Count; $index++) {
         $target = $targets[$index]
         $result = $projectResults[$index]
-        $sourceProject = $target.Project
-        if (-not $target.HasSource) {
-            $result.Status = 'Skipped'
-            $result.Success = $true
-            $result.Reason = 'No authored C# source'
-            ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content -LiteralPath $manifestPath
-            continue
-        }
-        try {
-            if ($target.Tests.Count -eq 0) { throw "Authored source project has no declared test mapping: $sourceProject" }
-            $projectOutput = Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects $target.Tests -OutputPath $outputFullPath -Configuration $Configuration -ReportOnly:$ReportOnly
-            $reportPath = Get-MutationReportPath -OutputPath $projectOutput
-            $metrics = Get-MutationReportMetrics -ReportPath $reportPath
-            $result.Output = $projectOutput
-            $result.ReportPath = $reportPath
-            $result.MutationScore = $metrics.Score
-            $result.ValidMutants = $metrics.Valid
-            $result.DetectedMutants = $metrics.Detected
-            $result.Success = $true
-            $result.Status = 'Completed'
-            Write-Host "  ✓ Completed: $([System.IO.Path]::GetFileNameWithoutExtension($sourceProject))" -ForegroundColor ([ConsoleColor]::Green)
-        }
-        catch {
-            Write-Warning "  ✗ Failed: $([System.IO.Path]::GetFileNameWithoutExtension($sourceProject)) - $($_.Exception.Message)"
-            $result.Output = $_.Exception.Data['OutputPath']
-            $result.ReportPath = $_.Exception.Data['ReportPath']
-            $result.Status = 'Failed'
-            $result.Error = $_.Exception.Message
-            $result.ReportError = $_.Exception.Data['ReportError']
-            if ($result.ReportPath -and (Test-Path -LiteralPath $result.ReportPath -PathType Leaf)) {
-                try {
-                    $metrics = Get-MutationReportMetrics -ReportPath $result.ReportPath
-                    $result.MutationScore = $metrics.Score
-                    $result.ValidMutants = $metrics.Valid
-                    $result.DetectedMutants = $metrics.Detected
-                }
-                catch {
-                    if (-not $result.ReportError) { $result.ReportError = $_.Exception.Message }
-                }
-            }
-        }
+        Invoke-MutationTarget -Target $target -ProjectResult $result -OutputPath $outputFullPath -Configuration $Configuration -ReportOnly:$ReportOnly
         ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content -LiteralPath $manifestPath
         Write-Host
     }
     ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content -LiteralPath $manifestPath
 
-    $null = Write-MutationRunSummary -OutputPath $outputFullPath -ProjectResults $projectResults -BreakThreshold $breakThreshold
+    $null = Show-MutationRunSummary -OutputPath $outputFullPath -ProjectResults $projectResults -BreakThreshold $breakThreshold
 
     # Check if any projects failed
     $failedProjects = @($projectResults | Where-Object { -not $_.Success })
