@@ -69,3 +69,15 @@ when replacing the defaults.
 The molecule remains presentational: parents own details, state, focus, and
 restoration behavior. When an action changes the surrounding view, the parent
 should move focus to the relevant heading or restore control.
+
+## Next Steps
+
+- Read the [Refraction overview](../index.md) for the state-down, events-up UI
+  model that this molecule follows.
+- Use the [Refraction Reference](./reference.md) to review package boundaries
+  and adjacent component contracts.
+- Run [Explore Refraction in LightSpeed](../getting-started/lightspeed.md) to
+  inspect existing component examples and page-owned state flow in a working
+  sample.
+- Read [Refraction Concepts](../concepts/concepts.md) when deciding whether a
+  behavior belongs in the component or its parent state flow.
