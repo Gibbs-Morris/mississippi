@@ -14,7 +14,7 @@ resolved after startup.
 ## Symptoms
 
 - `UseMississippi(...)` throws `BuilderValidationException` while an `AddAqueduct(...)` callback is running.
-- A diagnostic code from `MSB201` through `MSB207` appears in the exception.
+- One of the Aqueduct diagnostics `MSB201`–`MSB203`, `MSB206`, or `MSB207` appears in the exception.
 - The host starts composition but later cannot resolve the selected Orleans stream provider.
 
 ## What this usually means
