@@ -665,6 +665,25 @@
           "Newtonsoft.Json": "[13.0.4, )"
         }
       },
+      "Mississippi.Hosting.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.11, )"
+        }
+      },
+      "Mississippi.Hosting.Runtime": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Hosting.Runtime.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Hosting.Runtime.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Runtime": "[10.3.1, )",
+          "Mississippi.Hosting.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.Tributary.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -675,8 +694,6 @@
       "Mississippi.Tributary.Runtime.Storage.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.11, )",
-          "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.11, )",
           "Mississippi.Tributary.Abstractions": "[1.0.0, )"
         }
       },
@@ -688,6 +705,7 @@
           "Microsoft.Extensions.Options": "[10.0.11, )",
           "Mississippi.Common.Abstractions": "[1.0.0, )",
           "Mississippi.Common.Runtime.Storage.Cosmos": "[1.0.0, )",
+          "Mississippi.Hosting.Runtime.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Runtime.Storage.Abstractions": "[1.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }

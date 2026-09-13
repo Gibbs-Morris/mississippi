@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -45,15 +47,6 @@ public sealed class SnapshotContainerOperationsTests
             Options.Create(options),
             retryPolicy,
             NullLogger<SnapshotContainerOperations>.Instance);
-    }
-
-    private sealed class PassThroughRetryPolicy : IRetryPolicy
-    {
-        public Task<T> ExecuteAsync<T>(
-            Func<Task<T>> operation,
-            CancellationToken cancellationToken = default
-        ) =>
-            operation();
     }
 
     /// <summary>
@@ -133,6 +126,67 @@ public sealed class SnapshotContainerOperationsTests
         SnapshotContainerOperations ops = CreateOperations(container);
         bool result = await ops.DeleteDocumentAsync(TestPartitionKey, TestDocumentId, CancellationToken.None);
         Assert.True(result);
+    }
+
+    /// <summary>
+    ///     Ensures QuerySnapshotIdsAsync forwards dynamic page sizing and drains an empty intermediate page.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    public async Task QuerySnapshotIdsAsyncShouldForwardDynamicBatchSizeAndDrainEmptyPage()
+    {
+        Mock<Container> container = new();
+        Type dtoType =
+            typeof(SnapshotContainerOperations).GetNestedType("SnapshotIdVersionDto", BindingFlags.NonPublic) ??
+            throw new InvalidOperationException("Snapshot query DTO type was not found.");
+        MethodInfo queryMethod = typeof(SnapshotQueryTestAdapter).GetMethod(
+                                     nameof(SnapshotQueryTestAdapter.RunAsync),
+                                     BindingFlags.Static | BindingFlags.NonPublic) ??
+                                 throw new InvalidOperationException("Snapshot query test method was not found.");
+        List<IEnumerable<(string Id, long Version)>> pages =
+        [
+            new List<(string Id, long Version)>
+            {
+                ("snapshot-1", 1),
+            },
+            new List<(string Id, long Version)>(),
+            new List<(string Id, long Version)>
+            {
+                ("snapshot-2", 2),
+            },
+        ];
+        Func<Mock<Container>, SnapshotStorageOptions, SnapshotContainerOperations> operationsFactory =
+            (services, options) => CreateOperations(services, options: options);
+        Task<(int CapturedBatchSize, bool HasMoreResults, IReadOnlyList<(string Id, long Version)> Items)> queryTask =
+            (Task<(int CapturedBatchSize, bool HasMoreResults, IReadOnlyList<(string Id, long Version)> Items)>)(
+                queryMethod.MakeGenericMethod(dtoType)
+                    .Invoke(
+                        null,
+                        new object?[]
+                        {
+                            container,
+                            pages,
+                            operationsFactory,
+                            TestPartitionKey,
+                            TestContext.Current.CancellationToken,
+                        }) ??
+                throw new InvalidOperationException("Snapshot query test could not be started."));
+        (int CapturedBatchSize, bool HasMoreResults, IReadOnlyList<(string Id, long Version)> Items) result =
+            await queryTask;
+        Assert.Equal(-1, result.CapturedBatchSize);
+        Assert.Collection(
+            result.Items,
+            item =>
+            {
+                Assert.Equal("snapshot-1", item.Id);
+                Assert.Equal(1, item.Version);
+            },
+            item =>
+            {
+                Assert.Equal("snapshot-2", item.Id);
+                Assert.Equal(2, item.Version);
+            });
+        Assert.False(result.HasMoreResults);
     }
 
     /// <summary>
