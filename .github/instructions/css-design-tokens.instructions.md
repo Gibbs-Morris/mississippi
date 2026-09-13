@@ -37,8 +37,8 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - The supported token API for theming and customization **MUST** consist of semantic system tokens and deliberately exposed component tokens. Why: Consumers can theme stable concepts without coupling to DOM details.
 - Consumers **MUST NOT** depend on private BEM element selectors. Why: Internal elements may evolve without breaking supported customization.
 - Canonical token sources **MUST** be valid DTCG 2025.10 representations. Why: A standard source format enables validation and tooling without losing token meaning.
-- The supported DTCG 2025.10 subset **MUST** be documented. Why: Contributors need to know which standard constructs the repository intentionally accepts.
-- Token validation **MUST** reject unsupported DTCG constructs instead of silently reinterpreting them. Why: Silent reinterpretation can change token meaning during generation.
+- The supported DTCG 2025.10 subset **MUST** be documented in the [initial DTCG input profile](#initial-dtcg-input-profile). Why: Contributors need to know which standard constructs the repository intentionally accepts.
+- Token validation **MUST** reject constructs listed as unsupported in the [initial DTCG input profile](#initial-dtcg-input-profile) instead of silently reinterpreting them. Why: Silent reinterpretation can change token meaning during generation.
 - Canonical token sources **MUST** use the supported DTCG concepts, including `$type`, `$value`, `$description`, groups, and aliases or references. Why: These concepts preserve the value, meaning, grouping, and dependency relationships needed by the architecture.
 - Canonical token JSON **SHOULD** live under `src/Refraction.Client/Themes/Tokens/` in reference, system, and optional component catalogs. Why: A predictable source location keeps token ownership discoverable.
 - DTCG source paths **MUST** begin with `ref.*`, `sys.*`, or optional `comp.*`. Why: The canonical JSON uses semantic source namespaces rather than CSS output names.
@@ -126,6 +126,24 @@ The source/output distinction is illustrated by these mappings:
 | `ref.color.neo-blue.300` | `--rf-ref-color-neo-blue-300` |
 | `sys.color.action.primary` | `--rf-sys-color-action-primary` |
 | `comp.pane.accent-border` | `--rf-comp-pane-accent-border` |
+
+## Initial DTCG input profile
+
+This selected DTCG 2025.10 input profile defines the accepted source shape and value types:
+
+| Area | Profile |
+| --- | --- |
+| Documents | JSON groups may carry `$type`; nested groups inherit it and token-local `$type` overrides it. Tokens carry `$value`, with optional string `$description`. |
+| Paths | Source paths begin `ref.*`, `sys.*`, or `comp.*`; segments use lowercase kebab-case, with numeric segments for ordered scales. |
+| `color` | An sRGB object (`colorSpace: "srgb"`) with exactly three finite components in 0..1 and optional alpha in 0..1. CSS strings are not color values. |
+| `dimension` | An object with a finite value and unit `px` or `rem`. CSS strings are not dimension values. |
+| `duration` | An object with a finite non-negative value and unit `ms` or `s`. CSS strings are not duration values. |
+| `number` / `fontFamily` | A finite numeric value; a non-empty name or a non-empty array of names. |
+| `fontWeight` | A numeric value from 1 through 1000 or a lowercase alias defined by DTCG 2025.10. |
+| `cubicBezier` | Four finite numbers; x coordinates are 0..1 and y coordinates are unrestricted finite values. |
+| Aliases | A whole-token curly-brace alias such as `{ref.color.neo-blue.300}` may chain through targets. Type resolution uses explicit, inherited-group, and target-token types; cycles, unresolved targets, and type mismatches are errors. |
+| Catalog scope | Documents in one catalog scope merge distinct source paths. Duplicate JSON properties, duplicate paths, and flattened CSS-name collisions are errors. |
+| Rejected / conformance | Composite types, property-level references or JSON Pointer, `$root`, `$extends`, extensions, deprecation metadata, and unknown constructs; this is selected input support, not full-format DTCG tool conformance. |
 
 ## Illustrative future target
 
