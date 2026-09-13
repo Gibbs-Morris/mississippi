@@ -183,11 +183,20 @@ MUTATION_RESULT: PASS|FAIL
 - Coverage artifacts under `.scratchpad/coverage-test-results/<TestProjectName>/<run>/`.
 - Mutation reports under `.scratchpad/mutation-test-results/<run>/<SourceProject>/<invocation>/reports/`.
 - Target inventory and outcomes in `.scratchpad/mutation-test-results/<run>/project-results.json`.
-- Full-run status and project score summary in `.scratchpad/mutation-test-results/<run>/mutation-summary.json`.
 
-Exit code is `0` on successful execution and `1` otherwise. Without `-ReportOnly`, configured Stryker thresholds can make the command fail. With `-ReportOnly`, valid below-threshold reports produce `MUTATION_RESULT: WARN` and exit `0`; missing or incomplete reports, test failures, and tooling failures still exit non-zero. Tooling thresholds do not establish a mandatory repository mutation-score threshold or completion criterion, and failed or incomplete mutation runs are not passes.
+The focused script exits `0` when its tests, coverage, and optional mutation run complete successfully, and exits `1` for test, coverage, report, or configured mutation-threshold failures. It does not support `-ReportOnly`; use the full-solution entry point below for advisory score reporting. Failed or incomplete mutation runs are not passes.
 
 Happy building! 🚀
+
+### `mutation-test-mississippi-solution.ps1`
+
+Run the full Mississippi mutation analysis with advisory score reporting:
+
+```pwsh
+pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1 -ReportOnly
+```
+
+The `-ReportOnly` mode preserves native execution and complete-report failures, while valid below-threshold reports produce `MUTATION_RESULT: WARN` and exit `0`. It writes the target manifest and full-run status to `.scratchpad/mutation-test-results/<run>/project-results.json` and `mutation-summary.json`, and emits a GitHub step summary when running in Actions. The configured Stryker high/low thresholds remain available for report interpretation; no repository-wide mutation-score gate is introduced.
 
 ### RepositoryAutomation module
 
