@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
@@ -24,7 +25,7 @@ public sealed partial class NotificationDemo : ComponentBase
         Heading,
     }
 
-    private PendingFocus pendingFocus;
+    private FocusRequest? pendingFocusRequest;
 
     /// <summary>Gets or sets the dismissal callback.</summary>
     [Parameter]
@@ -63,40 +64,73 @@ public sealed partial class NotificationDemo : ComponentBase
         bool firstRender
     )
     {
-        PendingFocus nextFocus = pendingFocus;
-        pendingFocus = PendingFocus.None;
-        if ((nextFocus == PendingFocus.Details) && IsVisible && IsExpanded)
+        FocusRequest? request = pendingFocusRequest;
+        if (request is null)
         {
-            await DetailsRegion.FocusAsync().AsTask();
+            return;
         }
-        else if ((nextFocus == PendingFocus.Restore) && !IsVisible)
+
+        ElementReference? targetElement = request.Target switch
         {
-            ElementReference restoreTarget = RestoreRequested.HasDelegate ? RestoreButton : SectionHeading;
-            await restoreTarget.FocusAsync().AsTask();
+            PendingFocus.Details when IsVisible && IsExpanded => DetailsRegion,
+            PendingFocus.Restore when !IsVisible => RestoreRequested.HasDelegate ? RestoreButton : SectionHeading,
+            PendingFocus.Heading when IsVisible && !IsExpanded => SectionHeading,
+            var _ => null,
+        };
+        if (targetElement.HasValue)
+        {
+            pendingFocusRequest = null;
+            await targetElement.Value.FocusAsync();
         }
-        else if ((nextFocus == PendingFocus.Heading) && IsVisible && !IsExpanded)
+        else if (request.CallbackCompleted)
         {
-            await SectionHeading.FocusAsync().AsTask();
+            pendingFocusRequest = null;
         }
     }
 
-    private Task HandleDismissAsync()
-    {
-        pendingFocus = PendingFocus.Restore;
-        return DismissRequested.InvokeAsync();
-    }
+    private Task HandleDismissAsync() =>
+        InvokeFocusRequestAsync(PendingFocus.Restore, () => DismissRequested.InvokeAsync());
 
     private Task HandleExpandAsync(
         MouseEventArgs mouseEventArgs
+    ) =>
+        InvokeFocusRequestAsync(PendingFocus.Details, () => ExpandRequested.InvokeAsync(mouseEventArgs));
+
+    private Task HandleRestoreAsync() =>
+        InvokeFocusRequestAsync(PendingFocus.Heading, () => RestoreRequested.InvokeAsync());
+
+    private async Task InvokeFocusRequestAsync(
+        PendingFocus target,
+        Func<Task> callback
     )
     {
-        pendingFocus = PendingFocus.Details;
-        return ExpandRequested.InvokeAsync(mouseEventArgs);
+        FocusRequest request = new(target);
+        pendingFocusRequest = request;
+        try
+        {
+            await callback();
+            request.CallbackCompleted = true;
+        }
+        catch
+        {
+            if (ReferenceEquals(pendingFocusRequest, request))
+            {
+                pendingFocusRequest = null;
+            }
+
+            throw;
+        }
     }
 
-    private Task HandleRestoreAsync()
+    private sealed class FocusRequest
     {
-        pendingFocus = PendingFocus.Heading;
-        return RestoreRequested.InvokeAsync();
+        public FocusRequest(
+            PendingFocus target
+        ) =>
+            Target = target;
+
+        public bool CallbackCompleted { get; set; }
+
+        public PendingFocus Target { get; }
     }
 }
