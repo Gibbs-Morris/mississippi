@@ -51,6 +51,10 @@ Use the registration reference for builder composition, then follow the focused 
 
 ## Learn More
 
+- [Enable DevTools](./how-to/enable-devtools.md) - Inspect local actions and snapshots
+- [Navigation and Lifecycle](./reference/built-in-features.md) - Use built-in client features
+- [Middleware](./reference/middleware.md) - Understand dispatch interception
+
 - [Test a Feature and Effect](./how-to/test-feature.md) - Inspect state, emitted actions, and cancellation
 - [Action Effects](./reference/action-effects.md) - Choose and register an effect contract
 
