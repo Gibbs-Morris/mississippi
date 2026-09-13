@@ -34,7 +34,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - A parent **MUST NOT** target another Refraction component's private element selectors. Why: Parent-child composition should use public roots, parameters, variants, or tokens.
 - A component **MUST** own its internal layout while its parent owns external placement. Why: Components remain composable without hidden margins or page-specific positioning contracts.
 - Component rules **MUST NOT** prescribe external placement through incidental margins or page-specific offsets. Why: Placement belongs to the parent layout context.
-- The supported styling API **MUST** consist of semantic system tokens and deliberately exposed component tokens. Why: Consumers can theme stable concepts without coupling to DOM details.
+- The supported token API for theming and customization **MUST** consist of semantic system tokens and deliberately exposed component tokens. Why: Consumers can theme stable concepts without coupling to DOM details.
 - Consumers **MUST NOT** depend on private BEM element selectors. Why: Internal elements may evolve without breaking supported customization.
 - Canonical token sources **MUST** be valid DTCG 2025.10 representations. Why: A standard source format enables validation and tooling without losing token meaning.
 - The supported DTCG 2025.10 subset **MUST** be documented. Why: Contributors need to know which standard constructs the repository intentionally accepts.
@@ -115,7 +115,7 @@ Atomic Design folders and composition
 ref.* values -> sys.* semantic roles -> optional comp.* public hooks -> component CSS
 ```
 
-Private element selectors describe internal structure. Semantic system tokens and deliberately exposed component tokens describe the supported styling contract.
+Private element selectors describe internal structure. The supported token API for theming and customization consists of semantic system tokens and deliberately exposed component tokens; deliberate root, layout, and utility class contracts are documented separately.
 
 ## Token naming map
 
