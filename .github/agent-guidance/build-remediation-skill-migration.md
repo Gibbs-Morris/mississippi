@@ -65,16 +65,24 @@ permissions, or a second overlapping skill.
 
 ## Validation record
 
-The 16 evaluation cases in
+The 18 evaluation cases in
 [`build-remediation-skill-cases.json`](build-remediation-skill-cases.json)
 cover explicit repair, assessment-only scope, environment and tooling
 blockers, dependency cascades, expected-behavior contract checks, unknown and
 invalid original commands, empty execution evidence, authorized overlap with
 user changes, safe retry requirements, approved narrow suppression, repeated
-no-evidence reassessment, and negative review/feature/incident boundaries. They
-are a reusable rubric, not a record of model trials. The assessment-only case
-supplies a clear command that writes restore artifacts while authority covers
-only read-only diagnostics; its expected outcome leaves that command unrun.
+no-evidence reassessment, redaction of synthetic secrets, and negative
+review/feature/incident boundaries. They are a reusable rubric, not a record of
+model trials. The assessment-only case supplies a clear command that writes
+restore artifacts while authority covers only read-only diagnostics; its
+expected outcome leaves that command unrun.
+
+The report-boundary correction keeps credentials, tokens, authenticated URL
+userinfo, sensitive environment and argument values, and echoed secrets out of
+reports and shared records while preserving diagnostic structure and marking
+redactions. The synthetic cases check these boundaries without modifying the
+existing evidence. Redaction behavior remains pending a focused fixture; no
+model result is claimed yet.
 
 The structural checks produced these results: the bundled skill-creator
 validator passed with an isolated PyYAML 6.0.3 dependency; manual front matter
@@ -83,8 +91,13 @@ placeholders also passed. Configured Markdown lint passed with
 markdownlint-cli2 0.23.2/markdownlint 0.41.1 and zero findings; the cases JSON
 parsed; relative links resolved; the six retained rule bullets matched the base
 exactly; changed-file whitespace checks passed; and the portability scan found
-no repository names, fixed paths, local script names, or links in the skill.
-The temporary validator dependency is outside tracked artifacts.
+no repository names, fixed paths, local script names, or links in the skill. The
+temporary validator dependency is outside tracked artifacts, and the edited
+skill was normalized to LF and exported to the ignored evaluation copy
+`.scratchpad/repair-build-failures-redaction-evaluation/SKILL.md`; both copies
+have SHA-256 `FC3EA72057CC92C4B60EA3E50C98EC54DC444C489E6112512A4DDB5F2E2D8DF9`.
+That evaluation hash is not a committed-blob hash until staging and commit
+verification.
 
 The historical `pwsh ./go.ps1` run completed both builds, tests, cleanup
 passes, and final builds with zero warnings or errors at the original tree/base
@@ -156,9 +169,10 @@ The candidate is 1,466 words, 173 lines, and 10,079 bytes full-file, with a
 1,406-word, 169-line, 9,662-byte body. Body line counts exclude all four YAML
 front matter lines. Candidate discovery metadata (name plus description) is 56
 words, 2 lines, and 389 bytes; the discovered path is
-`.agents/skills/repair-build-failures/SKILL.md`. Current candidate SHA-256 is
-`A5AC76FDE8C5CC701F900902C02EC9040561F126BACCEC65C8412CADB77B3694`. Added
-cases and this record are metadata, not savings.
+`.agents/skills/repair-build-failures/SKILL.md`. Pre-redaction candidate SHA-256
+was `A5AC76FDE8C5CC701F900902C02EC9040561F126BACCEC65C8412CADB77B3694`.
+Added cases and this record are metadata, not savings; a final raw-file hash
+audit will follow once behavior edits stabilize.
 
 ## Rollback
 

@@ -46,6 +46,18 @@ otherwise use supplied evidence or authorized read-only diagnostics and label
 the reproduction unrun. Keep the original evidence separate from later
 attempts.
 
+## Protect reported evidence
+
+Before placing a command, environment, argument, URL, or output in a report or
+shared record, redact credentials, tokens, authenticated URL userinfo, sensitive
+environment or argument values, and echoed secret values. Keep diagnostic
+structure, target names, flags, exit codes, error codes, and useful non-sensitive
+reproduction context. Mark each redaction explicitly and say when redaction
+means the recorded text is not byte-exact; never imply exact output was retained.
+Do not alter an existing evidence file or create a raw-secret copy merely to
+support the report. When sensitivity is uncertain, preserve the minimum useful
+context and follow the consuming project's disclosure policy.
+
 ## Triage the earliest actionable failure
 
 When a run reports several diagnostics, follow the causal chain and select the
