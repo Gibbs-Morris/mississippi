@@ -65,22 +65,34 @@ permissions, or a second overlapping skill.
 
 ## Validation record
 
-The 21 evaluation cases in
+The 22 evaluation cases in
 [`build-remediation-skill-cases.json`](build-remediation-skill-cases.json)
-cover triage, contract selection, faithful-command substitution, silent and
-required execution evidence, redaction, suppression authority, and negative
-boundaries. They are a rubric, not recorded model trials. The assessment-only
-case keeps a side-effecting command unrun when only read-only authority exists.
+cover triage, contract selection, supplied-command validation,
+faithful-command substitution, silent and required execution evidence,
+redaction, suppression authority, and negative boundaries. They are a rubric,
+not recorded model trials. The assessment-only case keeps a side-effecting
+command unrun when only read-only authority exists.
 
-### Current direct fixture evidence
+### Recorded fixture evidence
 
 | Evidence | Result |
 | --- | --- |
-| Canonical input | Committed content revision `61056402410f13b890ac9ba6c5c4494ff3b90eeb` was exported directly to the ignored LF-only evaluation copy `.scratchpad/build-canonical-eval/skill-input/SKILL.md` (11,907 bytes; SHA-256 `AAE00AE9DCC487A1A9B2E0058B689F472628CDCA6DCB4B993C75FD7DC20858AC`). |
+| Recorded canonical input | The fixed content revision `61056402410f13b890ac9ba6c5c4494ff3b90eeb` was exported directly to the ignored LF-only evaluation copy `.scratchpad/build-canonical-eval/skill-input/SKILL.md` (11,907 bytes; SHA-256 `AAE00AE9DCC487A1A9B2E0058B689F472628CDCA6DCB4B993C75FD7DC20858AC`). The results below are recorded for that revision, not this command-validation candidate. |
 | Fixtures A, B, and E | Accepted contract/README evidence led A and E to `Math.trunc` → `Math.round`; B changed only its stale checker datum. Faithful checks moved from exit 1 to exit 0 with `CHECK_PASS`; E's original invocation remains unverified. |
 | Fixtures C and D | C kept its invalid original unrun and verified the documented canonical command; D kept its side-effecting assessment command unrun. |
 | Preservation | Only authorized A, B, and E files changed. All five protected notes and files outside those repairs stayed unchanged; no repository application tests or native inference were performed. |
 | Structural checks | Skill validation, configured Markdown lint, JSON parsing, links, exact six-rule preservation, whitespace, and portability checks passed. No application or repository evidence files were modified. |
+
+The command-validation correction requires independently matching a supplied
+command's shape, target, flags, stages, and side effects to inspected project
+documentation, CI, or configuration before execution. A mismatch or unavailable
+validation leaves the supplied form unrun or uses an authorized faithful
+invocation; a clear target or repair authorization alone is insufficient.
+
+The revised command-validation candidate is exported as the LF-only evaluation
+copy `.scratchpad/repair-build-command-validation/SKILL.md` (12,522 bytes;
+SHA-256 `5A35BF5851CAB65869321DD433CD2B576600E66134A3555DDC15E7C69942A654`).
+It is a new input for validation; no new model trial result is claimed.
 
 ### Historical evidence
 
@@ -101,7 +113,7 @@ subprocess, UTF-8 decoding, `str.split()` word counts, `str.splitlines()` line
 counts, raw UTF-8 byte length, and UTF-16-LE byte length divided by two. They
 do not use `Out-String` or worktree line endings.
 
-| Content | Revision | Words | Lines | UTF-8 bytes | UTF-16 units |
+| Content | Measured content revision | Words | Lines | UTF-8 bytes | UTF-16 units |
 | --- | --- | ---: | ---: | ---: | ---: |
 | Adapter before | `567313a0714c2fc45160345b7e0f9d32f54aee05` | 342 | 47 | 2,571 | 2,571 |
 | Adapter candidate | `61056402410f13b890ac9ba6c5c4494ff3b90eeb` | 244 | 35 | 1,948 | 1,948 |
@@ -112,7 +124,9 @@ do not use `Out-String` or worktree line endings.
 The body count excludes all four YAML front matter lines. The canonical skill
 input and audit are evidence artifacts. The adapter reduction is 98 words, 12
 lines, and 623 UTF-8 bytes; discovery metadata is 56 words. These are static
-corpus figures, not runtime or startup savings claims.
+corpus figures for the measured content revision and do not identify the revised
+skill; use its candidate hash above for this correction. They are not runtime or
+startup savings claims.
 
 ## Rollback
 
