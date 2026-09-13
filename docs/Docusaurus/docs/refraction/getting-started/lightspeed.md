@@ -82,5 +82,6 @@ state updates.
 - [InputField contract](../reference/input-field.md)
 - [ProgressArc contract](../reference/progress-arc.md)
 - [Emitter contract](../reference/emitter.md)
+- [NotificationPulse contract](../reference/notification-pulse.md)
 - [Scoped themes](../reference/themes.md)
 - [Reservoir overview](../../reservoir/index.md)
