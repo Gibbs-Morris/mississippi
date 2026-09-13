@@ -19,6 +19,11 @@ preserve caller changes, and verify execution evidence. The new skill owns that
 portable workflow. The repository adapter retains its rules and routes to the
 skill, including a direct-read fallback when automatic discovery is unavailable.
 
+The corrected workflow establishes intended behavior from the accepted contract
+and trustworthy evidence before choosing a production, assertion, or fixture
+change. It changes tests or fixtures only when evidence shows they are wrong and
+never weakens an assertion to accept a production regression.
+
 The skill is instruction-only: one `SKILL.md`, no scripts, optional resources,
 tool pre-approvals, repository names, solution names, fixed paths, or local
 command names. It discovers the consuming project's commands and policies at
@@ -60,13 +65,16 @@ permissions, or a second overlapping skill.
 
 ## Validation record
 
-The committed cases in
+The 14 evaluation cases in
 [`build-remediation-skill-cases.json`](build-remediation-skill-cases.json)
 cover explicit repair, assessment-only scope, environment and tooling
-blockers, dependency cascades, empty execution evidence, authorized overlap
-with user changes, safe retry requirements, approved narrow suppression,
-repeated no-evidence reassessment, and negative review/feature/incident
-boundaries. They are a reusable rubric, not a record of model trials.
+blockers, dependency cascades, expected-behavior contract checks, empty
+execution evidence, authorized overlap with user changes, safe retry
+requirements, approved narrow suppression, repeated no-evidence reassessment,
+and negative review/feature/incident boundaries. They are a reusable rubric, not
+a record of model trials. The historical host trial below predates the
+expected-behavior contract correction and does not validate this revised skill;
+fresh contract fixtures remain required.
 
 The structural checks produced these results: the bundled skill-creator
 validator passed with an isolated PyYAML 6.0.3 dependency; manual front matter
@@ -78,46 +86,58 @@ exactly; changed-file whitespace checks passed; and the portability scan found
 no repository names, fixed paths, local script names, or links in the skill.
 The temporary validator dependency is outside tracked artifacts.
 
-The canonical `pwsh ./go.ps1` run completed both builds, tests, cleanup passes,
-and final builds with zero warnings or errors. Its cleanup generated 81
-unrelated source/test paths; those outputs were saved and restored and are
-excluded from this layer. Forty-three project TRX files contain 3,117 executed
-and passed tests with zero failures; three documented SDK facade projects have
-empty reports and are intentionally excluded from nonempty execution by
-repository policy, as recorded by `RepositoryAutomation.psm1` and the agent
-script README. All other selected project reports executed nonempty. The local
-result does not establish exact published-head GitHub CI readiness.
+The historical `pwsh ./go.ps1` run completed both builds, tests, cleanup
+passes, and final builds with zero warnings or errors at the original tree/base
+`567313a0714c2fc45160345b7e0f9d32f54aee05`. Its cleanup generated 81 unrelated
+source/test paths; those outputs were saved and restored and are excluded from
+this layer. Forty-three project TRX files contain 3,117 executed and passed
+tests with zero failures; three documented SDK facade projects have empty
+reports and are intentionally excluded from nonempty execution by repository
+policy, as recorded by `RepositoryAutomation.psm1` and the agent script README.
+Main changed application inputs before this rebase, so the historical run does
+not validate the current candidate and no second local run was performed.
 
-Host evidence remains bounded. An independent Codex Desktop collaboration
-Luna Max fixture used the final skill SHA-256
-`49F165124D5E4B2CFD00FC30AF85D95929F7CF97ABE6C26F49AC4C8412F71F1D` in a
-standalone fixture with its own Git root. After setup access was isolated with
-fixture-local package configuration and application data, the checker reached
-the supplied source failure (`CS0103` for `BuildMarkerr`) and exited 1; the
-repair changed one expression in `Program.cs`, then the same checker exited 0
-with `TEST_EXECUTED`. The 106-byte user-notes hash
-`1703DFFF3847CAC0DC54204055D8013B8F10E4B7D120F7CB6E0B191AFD907761` and
-checker/project policy were unchanged; an independent rerun produced the same
-hash and exit 0. This is one application-host repair trial, not general skill
-activation or cross-host conformance. Codex CLI 0.154.0-alpha.6.2 stopped
-before model output on TLS `UnknownIssuer`; Copilot CLI 1.0.83-5 established
-copied-fixture discovery but rejected max effort, so no Copilot behavior trial
-is claimed. The cases remain a rubric, not recorded model trials.
+The prior Codex Desktop collaboration Luna Max fixture used skill SHA-256
+`49F165124D5E4B2CFD00FC30AF85D95929F7CF97ABE6C26F49AC4C8412F71F1D` before
+this expected-behavior correction; its standalone repair result is historical
+evidence for that earlier revision. One independent Codex Desktop collaboration
+Luna Max session then evaluated two separate Node Git-root fixtures with current
+skill SHA-256 `E445C3C78805BA8FC564B2A05C5FD60687BA1580ADBD4B0DBDA2BA80699FECF0`.
+In fixture A, trusted README examples required nearest-cent rounding while the
+source used `Math.trunc`; only the source changed to `Math.round`. In fixture B,
+the source matched the reported contract while a checker datum expected `1.24`
+for `1.234` despite README evidence for `1.23`; only that checker datum changed.
+Both `node check.mjs` runs moved from exit 1 to exit 0 with `CHECK_PASS` and
+three cases. Counterpart source/checker files, README, prior guidance, and
+protected notes stayed unchanged. This is scoped example evidence, not a
+universal numeric-function result or CLI conformance claim; no runtime tests
+were rerun.
+
+Codex CLI 0.154.0-alpha.6.2 still stops before model output on TLS
+`UnknownIssuer`; Copilot CLI 1.0.83-5 has discovery evidence but no behavior
+trial after max-effort rejection. Exact-head CI remains required.
 
 No application, test-project, package, or workflow-configuration files are part
 of this layer.
 
-Corpus accounting uses the base adapter from `git show <base>:` and the final
-adapter, counting whitespace-delimited tokens with `\S+`, physical lines, and
-UTF-16 characters with PowerShell. The adapter is measured separately from the
-added skill and audit metadata so discovery text is not presented as corpus
-savings. Before: 342 words, 47 lines, and 2,618 characters. Current adapter:
-244 words, 35 lines, and 1,970 characters, a reduction of 98 words, 12 lines,
-and 648 characters. Added skill content: 1,216 words and 150 lines. Its
-discovery metadata adds 56 words (the name is 1 word and the description is 55
-words; the discovered path is `.agents/skills/repair-build-failures/SKILL.md`).
-The full skill file is 1,276 words and 152 lines. Added cases and this record
-are metadata, not savings.
+Corpus accounting uses raw Git blob bytes captured with `git cat-file blob`
+from the original adapter revision `567313a0714c2fc45160345b7e0f9d32f54aee05`
+and the pre-correction skill revision
+`ece637bc7ae09a32ed00ad9bcfbd82786a0d5267`. Candidate files are normalized to
+LF before counting whitespace-delimited words with `\S+`, physical lines, and
+UTF-8 bytes; the helper does not use PowerShell `Out-String`. The adapter is
+measured separately from the added skill and audit metadata. Adapter before:
+342 words, 47 lines, and 2,571 bytes. Candidate adapter: 244 words, 35 lines,
+and 1,948 bytes, a reduction of 98 words, 12 lines, and 623 bytes.
+
+Before this contract correction, the skill was 1,276 words, 152 lines, and
+8,748 bytes full-file, with a 1,216-word, 148-line, 8,331-byte body. The
+candidate is 1,384 words, 164 lines, and 9,484 bytes full-file, with a
+1,324-word, 160-line, 9,067-byte body. Body line counts exclude all four YAML
+front matter lines. Candidate discovery metadata (name plus description) is 56
+words, 2 lines, and 389 bytes; the discovered path is
+`.agents/skills/repair-build-failures/SKILL.md`. Added cases and this record are
+metadata, not savings.
 
 ## Rollback
 

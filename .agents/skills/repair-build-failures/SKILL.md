@@ -69,6 +69,18 @@ Keep the classification provisional when evidence is mixed. An environment or
 tooling failure that prevents the target from running is not evidence of a
 source defect.
 
+## Establish the expected behavior
+
+Before choosing among a production-code, assertion, or fixture change, identify
+the intended behavior from the caller's requested or accepted contract and
+trustworthy supporting evidence. A failing test is not automatically stale, and
+production output is not automatically correct. If they disagree, determine
+which side contradicts the contract and record the evidence before editing. A
+test or fixture change is justified only when evidence shows that test or setup
+is wrong; preserve meaningful assertions and never weaken or skip one to accept
+a production regression. If the contract or evidence is insufficient, report
+the uncertainty instead of changing whichever input makes the run green.
+
 ## Reproduce with the consuming project
 
 Run the consuming project's documented or CI-equivalent command against the
