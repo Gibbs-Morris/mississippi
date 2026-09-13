@@ -92,3 +92,4 @@ jobs:
             ${{ github.workspace }}/.scratchpad/mutation-test-results/**/project-results.json
             ${{ github.workspace }}/.scratchpad/mutation-test-results/**/mutation-summary.json
           if-no-files-found: error
+          include-hidden-files: true

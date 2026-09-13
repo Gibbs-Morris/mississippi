@@ -100,6 +100,7 @@ Describe 'Mutation automation' {
         $workflow | Should -Not -Match '(?m)^  push:\s*$'
         $workflow | Should -Match 'mutation-test-mississippi-solution\.ps1 -ReportOnly'
         $workflow | Should -Match 'if-no-files-found: error'
+        $workflow | Should -Match 'include-hidden-files: true'
     }
 
     It 'fails when a mutation process fails even if it is the only target' {
