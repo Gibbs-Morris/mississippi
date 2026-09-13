@@ -120,8 +120,9 @@ The provider preserves the Tributary snapshot contracts and document mapping:
   `brookName|entityId|version|snapshotStorageName|reducersHash`, and its version is nonnegative.
 - `SnapshotStorageNameAttribute` supplies the stable snapshot name used by the type registry in the form
   `APP.MODULE.NAME.Vn`. Renaming a CLR type does not change that name when the attribute values stay the same.
-- `SnapshotEnvelope` preserves its alias and serialized member IDs `[Id(0..3)]`, including its payload, content type,
-  reducer hash, and payload-size fields.
+- `SnapshotEnvelope` preserves its Orleans alias and serialized member IDs `[Id(0..3)]`. Cosmos mapping stores its
+  payload, content type, and payload-size fields; it does not round-trip `SnapshotEnvelope.ReducerHash`. The document's
+  `reducersHash` is taken from `SnapshotStreamKey`.
 - The Cosmos document id is the invariant string form of the snapshot version. `snapshotPartitionKey` is the stream-key
   composite, `projectionType` is the stable snapshot storage name, `projectionId` is the entity id, and `reducersHash`
   is the stream's reducer hash.
