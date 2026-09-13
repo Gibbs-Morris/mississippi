@@ -19,8 +19,5 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
     {
         // Configure the SignalR backplane through the canonical runtime composition path.
         siloBuilder.UseMississippi(runtime => runtime.AddAqueduct(aqueduct => aqueduct.UseMemoryStreams()));
-
-        // Configure memory grain storage for grain state
-        siloBuilder.AddMemoryGrainStorage("signalr-grains");
     }
 }

@@ -62,7 +62,6 @@ HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 builder.UseOrleans(siloBuilder =>
 {
     siloBuilder.UseLocalhostClustering();
-    siloBuilder.AddMemoryGrainStorage("signalr-grains");
     siloBuilder.UseMississippi(runtime =>
     {
         runtime.AddAqueduct(aqueduct => aqueduct.UseMemoryStreams());
@@ -101,9 +100,9 @@ shutdown path. Ctrl+C performs the normal Orleans shutdown, including stopping t
 
 ## What happened
 
-`UseLocalhostClustering()` configured a local Orleans silo. `AddMemoryGrainStorage("signalr-grains")` supplied the
-storage used by Aqueduct grain state. The `UseMississippi(...)` callback staged the runtime composition, and
-`runtime.AddAqueduct(...)` enabled memory streams with the default provider name `mississippi-streaming`.
+`UseLocalhostClustering()` configured a local Orleans silo. The `UseMississippi(...)` callback staged the runtime
+composition, and `runtime.AddAqueduct(...)` enabled memory streams with the default provider name
+`mississippi-streaming`.
 `runtime.ApplyToSilo(siloBuilder)` is the recommended explicit native-configuration hook. The nested builder also
 registered the Orleans `PubSubStore` convention required by the memory stream setup.
 
