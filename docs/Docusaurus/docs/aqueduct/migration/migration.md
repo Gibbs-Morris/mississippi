@@ -1,14 +1,14 @@
 ---
 id: aqueduct-runtime-composition-migration
-title: "Migrate Aqueduct Runtime Composition (Next: 97945838 → 10cb90b1)"
+title: "Migrate Aqueduct Runtime Composition (Next: 6a2987de → 10cb90b1)"
 sidebar_label: Runtime Migration
 sidebar_position: 1
 description: Move an Orleans host to the Next Aqueduct runtime composition API while preserving stream identities.
 ---
 
-# Migrate Aqueduct Runtime Composition (Next: 97945838 → 10cb90b1)
+# Migrate Aqueduct Runtime Composition (Next: 6a2987de → 10cb90b1)
 
-This guide maps the source API shape verified at revision `979458386861732d2642581f5bbb60ad821bfc0e` to the target
+This guide maps the source API shape verified at revision `6a2987de2d559f9b5d6c1f4a11e0e33801cee4e9` to the target
 two-setting builder API verified at revision `10cb90b1b53d6839e016c88f96c793154b86504d`. The source uses the
 silo-level `UseAqueduct(...)` and `AqueductSiloOptions`; the target uses nested `runtime.AddAqueduct(...)`. These
 revisions identify API shapes in the repository and are not NuGet release numbers.
