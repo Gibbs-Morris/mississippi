@@ -554,6 +554,7 @@ function Write-GitHubMutationSummary {
         "- Execution: **$($Summary.ExecutionStatus)**"
         "- Result: **$($Summary.MutationResult)**"
         "- Complete reports: **$($Summary.CompleteReportCount)/$($Summary.ProjectCount)**"
+        "- Skipped projects: **$($Summary.SkippedProjectCount)**"
         "- Scored projects: **$($Summary.ScoredProjectCount)**"
         "- Below break threshold ($($Summary.BreakThreshold)%): **$($Summary.BelowBreakThresholdCount)**"
     )
@@ -589,6 +590,8 @@ function Show-MutationRunSummary {
 
     $failedProjects = @($projectSummaries | Where-Object { $_.ExecutionStatus -eq 'FAILED' })
     $belowBreak = @($projectSummaries | Where-Object { $_.Status -eq 'BELOW_BREAK' })
+    $skippedProjects = @($projectSummaries | Where-Object { $_.Status -eq 'SKIPPED' })
+    $reportEligibleProjects = @($projectSummaries | Where-Object { $_.Status -ne 'SKIPPED' })
     $completeReports = @($projectSummaries | Where-Object { $_.ReportValid })
     $scoredReports = @($projectSummaries | Where-Object { $null -ne $_.Score })
     $executionStatus = if ($failedProjects.Count -gt 0) { 'FAILED' } else { 'COMPLETED' }
@@ -599,7 +602,9 @@ function Show-MutationRunSummary {
         ExecutionStatus = $executionStatus
         MutationResult = $mutationResult
         BreakThreshold = $BreakThreshold
-        ProjectCount = $ProjectResults.Count
+        ProjectCount = $reportEligibleProjects.Count
+        TargetProjectCount = $ProjectResults.Count
+        SkippedProjectCount = $skippedProjects.Count
         CompleteReportCount = $completeReports.Count
         ScoredProjectCount = $scoredReports.Count
         BelowBreakThresholdCount = $belowBreak.Count
@@ -613,7 +618,7 @@ function Show-MutationRunSummary {
 
     Write-Host "MUTATION_EXECUTION: $executionStatus"
     Write-Host "MUTATION_RESULT: $mutationResult"
-    Write-Host "MUTATION_REPORTS: $($completeReports.Count)/$($ProjectResults.Count) complete"
+    Write-Host "MUTATION_REPORTS: $($completeReports.Count)/$($reportEligibleProjects.Count) complete (skipped: $($skippedProjects.Count))"
     Write-Host "MUTATION_SCORED_PROJECTS: $($scoredReports.Count)"
     Write-Host "MUTATION_BELOW_BREAK: $($belowBreak.Count) (threshold $BreakThreshold%)"
     if ($belowBreak.Count -gt 0) {
@@ -1195,7 +1200,7 @@ function Invoke-MississippiSolutionMutationTests {
     else {
         Write-Host 'SUCCESS: Mutation analysis completed.' -ForegroundColor ([ConsoleColor]::Green)
     }
-    Write-Host "Reports: $($summary.CompleteReportCount)/$($summary.ProjectCount) complete | Below break threshold: $($summary.BelowBreakThresholdCount)"
+    Write-Host "Reports: $($summary.CompleteReportCount)/$($summary.ProjectCount) complete (skipped: $($summary.SkippedProjectCount)) | Below break threshold: $($summary.BelowBreakThresholdCount)"
     Write-Host
     Write-Host '=== MISSISSIPPI SOLUTION MUTATION ANALYSIS COMPLETED ===' -ForegroundColor ([ConsoleColor]::Green)
 }
