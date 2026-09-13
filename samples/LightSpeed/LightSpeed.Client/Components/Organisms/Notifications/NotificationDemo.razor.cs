@@ -48,6 +48,12 @@ public sealed partial class NotificationDemo : ComponentBase
 
     private ElementReference DetailsRegion { get; set; }
 
+    private EventCallback PulseDismissRequested =>
+        DismissRequested.HasDelegate ? EventCallback.Factory.Create(this, HandleDismissAsync) : default;
+
+    private EventCallback<MouseEventArgs> PulseExpandRequested =>
+        ExpandRequested.HasDelegate ? EventCallback.Factory.Create<MouseEventArgs>(this, HandleExpandAsync) : default;
+
     private ElementReference RestoreButton { get; set; }
 
     private ElementReference SectionHeading { get; set; }
@@ -65,7 +71,8 @@ public sealed partial class NotificationDemo : ComponentBase
         }
         else if ((nextFocus == PendingFocus.Restore) && !IsVisible)
         {
-            await RestoreButton.FocusAsync().AsTask();
+            ElementReference restoreTarget = RestoreRequested.HasDelegate ? RestoreButton : SectionHeading;
+            await restoreTarget.FocusAsync().AsTask();
         }
         else if ((nextFocus == PendingFocus.Heading) && IsVisible && !IsExpanded)
         {
