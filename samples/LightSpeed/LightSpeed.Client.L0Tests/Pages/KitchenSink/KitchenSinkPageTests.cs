@@ -70,6 +70,7 @@ public sealed class KitchenSinkPageTests : BunitContext
         string? detailsReference = initialDetails.GetAttribute("blazor:elementReference");
         IElement initialHeading = notification.Find("[data-testid=notification-demo-heading]");
         string? headingReference = initialHeading.GetAttribute("blazor:elementReference");
+
         // bUnit may omit retained element-reference markers after a rerender, so capture them when nodes are created.
         string? restoreReference = null;
 

@@ -10,8 +10,8 @@
         <NotificationPulse State="@RefractionStates.Active"
                            IsExpanded="@IsExpanded"
                            DetailsId="notification-details"
-                           OnExpand="@HandleExpandAsync"
-                           OnDismiss="@HandleDismissAsync"
+                           OnExpand="@PulseExpandRequested"
+                           OnDismiss="@PulseDismissRequested"
                            data-testid="notification-pulse">
             The sample export is ready to review. View the local preview when ready.
         </NotificationPulse>
@@ -31,15 +31,25 @@
     else
     {
         <p class="notification-demo__hidden" data-testid="notification-hidden">
-            The notification is hidden. Restore it to review the message again.
+            @if (RestoreRequested.HasDelegate)
+            {
+                <text>The notification is hidden. Restore it to review the message again.</text>
+            }
+            else
+            {
+                <text>The notification is hidden. The parent can show it again when ready.</text>
+            }
         </p>
-        <button type="button"
-                class="notification-demo__restore"
-                @ref="RestoreButton"
-                @onclick="@HandleRestoreAsync"
-                data-testid="notification-restore">
-            Restore notification
-        </button>
+        @if (RestoreRequested.HasDelegate)
+        {
+            <button type="button"
+                    class="notification-demo__restore"
+                    @ref="RestoreButton"
+                    @onclick="@HandleRestoreAsync"
+                    data-testid="notification-restore">
+                Restore notification
+            </button>
+        }
     }
     <p class="note">Expand, dismiss, and restore follow the same parent-owned Reservoir state path.</p>
 </section>
