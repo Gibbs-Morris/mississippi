@@ -60,6 +60,12 @@ The runtime behavior is:
 8. Compensation walks backward through prior steps. When no earlier step remains, the effect yields `SagaCompensated`.
 9. If a compensation step returns failure or throws a non-cancellation exception, the effect yields terminal `SagaFailed`.
 
+Before executing a start or continuation boundary, the orchestration effect captures an immutable copy of the currently registered ordered step metadata. It compares the persisted `StepHash` against that copy and uses the same copy for step selection throughout the invocation. A missing or different hash, or a non-critical metadata hashing failure, produces terminal `SagaFailed` with error code `SAGA_STEP_HASH_MISMATCH`, without resolving or invoking a forward or compensation step. When metadata hashing throws, the failure log includes that exception; an ordinary hash mismatch is logged without an exception. Once the terminal event is persisted, the next reminder tick can observe the failure and remove its reminder. This also applies to reminder replay and prevents a deployment from interpreting an old step position using a changed workflow.
+
+The hash covers step order, index, name, Orleans type identity, stable assembly identity, and compensation availability. Assembly identity includes the name, culture, and public key token but excludes the version. This also covers assemblies referenced through generic arguments and element types. It does not detect changes inside a step implementation or in external configuration. Keep those semantics compatible while existing sagas are running; the hash is not a general workflow migration mechanism. A saga stopped by this guard is terminal and its reminder is removed when the next tick observes the failure.
+
+The workflow hash uses length-prefixed text fields and invariant numeric formatting. Custom names containing delimiters remain distinct from separate steps, and invalid Unicode names are rejected. Start commands capture their own metadata snapshot and return `InvalidState` without producing lifecycle events when that metadata cannot be hashed. This replaces the earlier delimiter-only hash format. Finish existing sagas on the earlier runtime before upgrading: a saga carrying the earlier hash will stop with `SAGA_STEP_HASH_MISMATCH` when the new runtime attempts to continue it. There is no automatic migration or resume for that terminal failure.
+
 ### Reminder-Based Resume
 
 Saga orchestration also has a durable wake-up path for lifecycle events that were recorded before a silo or pod stopped running the active grain.
