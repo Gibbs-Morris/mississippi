@@ -97,10 +97,9 @@ When compiling audit artifacts:
 
 When any agent reports a failure, retry, or non-obvious workaround during the workflow:
 
-- Identify the lesson: what went wrong and what to do instead
-- Determine the domain (build, testing, csharp, orleans, agent-workflow, etc.)
-- Run the conflict detection protocol from `self-improvement.instructions.md`: read overlapping instruction files, check for contradiction or redundancy
-- If clear: add a single concise RFC 2119 bullet to the appropriate `self-taught-<domain>.instructions.md` file (create the file from the template if it does not exist)
+- Use [capture-validated-lesson](../../.agents/skills/capture-validated-lesson/SKILL.md) for evidence admission, conflict assessment, and bounded lesson writing.
+- Read [self-improvement policy](../instructions/self-improvement.instructions.md) and the [local self-taught format](../agent-guidance/self-taught-format.md) for mandatory rules, scope checks, domains, and template.
+- If automatic skill discovery is unavailable, read the linked skill and local format directly; preserve this caller's authority and output boundaries.
 - If conflict: record the conflict in `.thinking/<task>/` for human review; do not add the lesson
 - Log the capture (or skip reason) in the activity log
 
