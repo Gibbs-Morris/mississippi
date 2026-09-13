@@ -1,5 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <PropertyGroup>
+        <!-- Retain the established namespace shared by this project's existing tests. -->
+        <RootNamespace>$(AssemblyName)</RootNamespace>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="Microsoft.Orleans.TestingHost" />
         <PackageReference Include="NSubstitute" />

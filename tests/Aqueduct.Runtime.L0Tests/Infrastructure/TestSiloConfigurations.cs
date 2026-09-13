@@ -1,4 +1,4 @@
-using Mississippi.Aqueduct.Abstractions;
+using Mississippi.Hosting.Runtime;
 
 using Orleans.Hosting;
 using Orleans.TestingHost;
@@ -17,10 +17,6 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
     )
     {
         // Configure memory streams for SignalR backplane
-        siloBuilder.AddMemoryStreams(AqueductStreamDefaults.StreamProviderName);
-
-        // Configure memory grain storage for grain state
-        siloBuilder.AddMemoryGrainStorage("signalr-grains");
-        siloBuilder.AddMemoryGrainStorage("PubSubStore");
+        siloBuilder.UseMississippi(runtime => runtime.AddAqueduct(aqueduct => aqueduct.UseMemoryStreams()));
     }
 }

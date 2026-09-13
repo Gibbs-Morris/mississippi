@@ -702,10 +702,12 @@
       "Mississippi.Aqueduct.Runtime": {
         "type": "Project",
         "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "[10.0.11, )",
           "Microsoft.Orleans.Sdk": "[10.3.1, )",
           "Microsoft.Orleans.Server": "[10.3.1, )",
           "Microsoft.Orleans.Streaming": "[10.3.1, )",
-          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )"
+          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
+          "Mississippi.Hosting.Runtime.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Brooks.Abstractions": {
@@ -726,6 +728,25 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.11, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.11, )",
           "Mississippi.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Hosting.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.11, )"
+        }
+      },
+      "Mississippi.Hosting.Runtime": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Hosting.Runtime.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Hosting.Runtime.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Runtime": "[10.3.1, )",
+          "Mississippi.Hosting.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Testing.Utilities": {

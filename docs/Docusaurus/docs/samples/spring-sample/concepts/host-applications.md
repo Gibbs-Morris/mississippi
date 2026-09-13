@@ -69,10 +69,10 @@ builder.Services.AddCosmosSnapshotStorageProvider(/* ... */);
 // Orleans configuration
 builder.UseOrleans(siloBuilder =>
 {
-    siloBuilder.UseAqueduct(options =>
-        options.StreamProviderName = "StreamProvider");
     siloBuilder.UseMississippi(runtime =>
     {
+        runtime.AddAqueduct(aqueduct =>
+            aqueduct.StreamProviderName = "StreamProvider");
         runtime.AddEventSourcing(options =>
             options.OrleansStreamProviderName = "StreamProvider");
         runtime.ConfigureSilo(configuredSilo => configuredSilo.AddActivityPropagation());
@@ -85,7 +85,12 @@ app.MapGet("/health", /* ... */);
 await app.RunAsync();
 ```
 
-Spring uses generated aggregate, projection, and saga registration methods from its domain definitions. The runtime composition callback registers Brooks factories and options together, and stages the native Orleans configuration before terminal attachment. See [Runtime Composition](../../../reference/runtime-composition.md) for the attachment and validation contract.
+Spring uses generated aggregate, projection, and saga registration methods from its domain definitions. The runtime
+composition callback registers Brooks and Aqueduct settings together, and stages the native Orleans configuration
+before terminal attachment. Aqueduct selects the `StreamProvider` that Spring.AppHost supplies; it does not provision a
+second provider. `runtime.ApplyToSilo(siloBuilder)` is explicit in this sample, although the runtime terminal can
+apply queued native callbacks automatically when the hook is omitted. See [Runtime Composition](../../../reference/runtime-composition.md)
+and [Aqueduct Reference](../../../aqueduct/reference/reference.md) for the attachment and validation contracts.
 
 ([Spring.Runtime/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Runtime/Program.cs))
 
@@ -105,7 +110,9 @@ These files are infrastructure/support concerns rather than domain business logi
 
 ## Spring.Gateway: The API Host
 
-The gateway host serves ASP.NET controllers, the Inlet SignalR hub, and the static files for the Blazor client. It also connects to the Orleans silo as a client.
+The gateway host serves ASP.NET controllers, the Inlet SignalR hub, and the static files for the Blazor client. It also
+connects to the Orleans silo as a client. Its `builder.Services.AddAqueduct<InletHub>(...)` call is the gateway-side
+hub integration; the runtime host uses the separate nested `runtime.AddAqueduct(...)` extension shown above.
 
 ```csharp
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);

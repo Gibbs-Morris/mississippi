@@ -14,6 +14,8 @@ sidebar_position: 41
 - `Mississippi.Hosting.Runtime.Abstractions` for runtime extension contracts and native integration diagnostic codes
 - `Mississippi.Hosting.Abstractions` for the shared builder and diagnostic contracts
 - `Mississippi.Brooks.Runtime` for the unified event-sourcing registration
+- `Mississippi.Aqueduct.Runtime` for the nested Aqueduct backplane composition
+- `Mississippi.Aqueduct.Abstractions` for Aqueduct options, defaults, and diagnostic codes
 
 ## Contract
 
@@ -25,8 +27,45 @@ sidebar_position: 41
 | `IMississippiBuilder.Services` | Provides advanced access to the staged runtime registrations |
 | `IMississippiBuilder.Validate()` | Returns structured attachment-readiness diagnostics without changing registrations |
 | `IRuntimeBuilder.AddEventSourcing(Action<BrookProviderOptions>?)` | Registers Brooks factories, stream identity support, and options together |
+| `IRuntimeBuilder.AddAqueduct(Action<AqueductBuilder>?)` | Queues one nested Aqueduct configuration for the runtime |
+| `IRuntimeBuilder.AddAqueduct(IConfiguration)` | Queues Aqueduct settings read from option property-name keys |
+| `IRuntimeBuilder.AddAqueduct(string, string)` | Queues explicit Aqueduct provider and server-namespace settings |
 
 `RuntimeBuilder` implements both `IRuntimeBuilder` and `IMississippiBuilder`. Runtime subsystem extensions can depend on the role contract without referencing the hosting implementation.
+
+## Aqueduct Composition
+
+Aqueduct is configured inside the runtime terminal callback. The nested builder is created when queued native
+configuration is applied, and it closes after the callback succeeds or fails:
+
+```csharp
+using Mississippi.Aqueduct.Runtime;
+using Mississippi.Hosting.Runtime;
+
+
+builder.UseOrleans(siloBuilder =>
+{
+    siloBuilder.UseMississippi(runtime =>
+    {
+        runtime.AddAqueduct(aqueduct =>
+            aqueduct.StreamProviderName = "StreamProvider");
+        runtime.ApplyToSilo(siloBuilder);
+    });
+});
+```
+
+`AqueductBuilder` exposes `StreamProviderName` and `ServerStreamNamespace`. Their defaults are `mississippi-streaming`
+and `mississippi-server`. Both runtime values must be nonempty. `AllClientsStreamNamespace` remains a gateway option;
+the runtime builder does not set or validate it.
+
+Use `aqueduct.UseMemoryStreams()` for development or tests. It uses the final selected provider name and registers
+the Orleans `PubSubStore` grain storage convention. `UseMemoryStreams("ProviderName")` selects a provider name before
+enabling the same registrations. A host-owned external provider must be configured separately and have a matching
+`StreamProviderName`.
+
+Only one `AddAqueduct(...)` call may be queued for a given runtime. The configuration overload reads
+`StreamProviderName` and `ServerStreamNamespace` from the supplied `IConfiguration`; omitted values keep their defaults.
+Configure `AllClientsStreamNamespace` on the gateway hosts that use it.
 
 ## Defaults and constraints
 
@@ -35,6 +74,10 @@ Empty runtime roots are valid. No placeholder aggregate, saga, or projection is 
 `ApplyToSilo(...)` is the recommended explicit integration hook at the end of configuration. It is optional: terminal attachment applies pending native callbacks automatically if the hook was omitted. It is not a second attachment API. Queue native configuration before explicit application; repeated application and configuration after application are rejected.
 
 Brooks uses `BrookStreamingDefaults.OrleansStreamProviderName` unless configured otherwise. The host still supplies Orleans stream providers and storage. Repeated `AddEventSourcing(...)` calls keep one canonical grain factory and compose option callbacks in order. A single existing unkeyed concrete singleton registration is preserved, including its factory callback and position. Duplicate or non-singleton unkeyed concrete registrations are replaced by one default singleton. Unkeyed public and internal grain-factory mappings remain authoritative and resolve the same concrete instance across service scopes. Keyed factory registrations remain caller-owned and are preserved for all three contracts. Existing custom stream-ID factories are preserved.
+
+The Aqueduct nested scope snapshots its two runtime stream option values before registering `IOptions<AqueductOptions>`.
+A captured nested builder cannot be changed after its scope closes. Aqueduct's runtime diagnostics are listed in the [Aqueduct
+Reference](../aqueduct/reference/reference.md).
 
 ## Behavior
 
@@ -74,6 +117,10 @@ Staging covers service descriptors. The forwarded configuration and existing ser
 | `MSB102` | Native configuration was applied twice | Apply explicitly once or rely on terminal automatic application |
 | `MSB103` | A native callback failed, leaving an incomplete scope | Correct the callback and retry with a fresh scope |
 | `MSB104` | Native configuration was queued after application | Move all `ConfigureSilo(...)` calls before `ApplyToSilo(...)` |
+| `MSB201` | Aqueduct stream provider name is empty or whitespace | Set `AqueductBuilder.StreamProviderName` to a nonempty value |
+| `MSB202` | Aqueduct server stream namespace is empty or whitespace | Set `AqueductBuilder.ServerStreamNamespace` to a nonempty value |
+| `MSB206` | Aqueduct configuration scope is closed | Configure a fresh `AddAqueduct(...)` callback |
+| `MSB207` | Aqueduct was configured more than once for one runtime | Combine settings in one `AddAqueduct(...)` call |
 
 Null host and callback arguments produce `ArgumentNullException`. Application callback exceptions propagate unchanged; validation prevents a caught native failure from being attached.
 
@@ -84,6 +131,8 @@ This excerpt follows Spring's runtime setup after its host-owned stream provider
 ```csharp
 builder.UseOrleans(silo => silo.UseMississippi(runtime =>
 {
+    runtime.AddAqueduct(aqueduct =>
+        aqueduct.StreamProviderName = "StreamProvider");
     runtime.AddEventSourcing(options =>
         options.OrleansStreamProviderName = "StreamProvider");
     runtime.ConfigureSilo(configuredSilo => configuredSilo.AddActivityPropagation());
@@ -93,7 +142,10 @@ builder.UseOrleans(silo => silo.UseMississippi(runtime =>
 
 ## Compatibility
 
-The runtime builder replaces the separate `IServiceCollection.AddEventSourcingByService()`, `ISiloBuilder.AddEventSourcing(...)`, and `HostApplicationBuilder.AddEventSourcing(...)` entrypoints. Use the single runtime builder extension inside `UseMississippi(...)`; no compatibility wrappers remain for those methods.
+The runtime builder replaces the separate `IServiceCollection.AddEventSourcingByService()`, `ISiloBuilder.AddEventSourcing(...)`, and `HostApplicationBuilder.AddEventSourcing(...)` entrypoints. Aqueduct runtime composition likewise replaces the silo-level `UseAqueduct(...)` and its `AqueductSiloOptions` host-capturing configuration object. Use the single runtime builder extension inside `UseMississippi(...)`; no compatibility wrappers remain for those runtime entrypoints.
+
+This page covers the runtime root and the Aqueduct runtime layer. Gateway security intent and typed aggregate,
+projection, or saga builders have separate host or domain contracts.
 
 ## Next Steps
 
