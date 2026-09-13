@@ -39,6 +39,21 @@ public sealed class NotificationDemoTests : BunitContext
         Assert.False(cut.Instance.IsExpanded);
     }
 
+    /// <summary>Visible collapsed state keeps the controlled details target available to the action.</summary>
+    [Fact]
+    public void CollapsedStateKeepsControlledDetailsTargetMounted()
+    {
+        using IRenderedComponent<NotificationDemo> cut = Render<NotificationDemo>(p => p
+            .Add(c => c.IsVisible, true)
+            .Add(c => c.IsExpanded, false));
+        IElement details = cut.Find("[data-testid=notification-details]");
+        IElement expand = cut.Find(".rf-notification-pulse__expand");
+        Assert.Equal("notification-details", details.GetAttribute("id"));
+        Assert.True(details.HasAttribute("hidden"));
+        Assert.Equal("false", expand.GetAttribute("aria-expanded"));
+        Assert.Equal("notification-details", expand.GetAttribute("aria-controls"));
+    }
+
     /// <summary>The message stays in the status region while details render as a separate region.</summary>
     [Fact]
     public void DetailsRenderOutsideLiveStatusContent()
@@ -53,6 +68,8 @@ public sealed class NotificationDemoTests : BunitContext
         Assert.Contains("The sample export is ready to review", status.TextContent, StringComparison.Ordinal);
         Assert.Empty(status.QuerySelectorAll("[data-testid=notification-details]"));
         Assert.Equal("region", details.GetAttribute("role"));
+        Assert.Equal("notification-details", details.GetAttribute("id"));
+        Assert.False(details.HasAttribute("hidden"));
         Assert.Equal("-1", details.GetAttribute("tabindex"));
         Assert.Contains("Sample export details", details.TextContent, StringComparison.Ordinal);
     }

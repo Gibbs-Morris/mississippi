@@ -39,6 +39,11 @@ public sealed partial class NotificationPulse : ComponentBase
     [Parameter]
     public string? Class { get; set; }
 
+    /// <summary>Gets or sets the ID of the parent-controlled details region.</summary>
+    /// <remarks>Must be nonblank when supplied with an expansion callback.</remarks>
+    [Parameter]
+    public string? DetailsId { get; set; }
+
     /// <summary>Gets or sets the visible dismiss action text.</summary>
     /// <remarks>Must be nonblank when <see cref="OnDismiss" /> has a delegate.</remarks>
     [Parameter]
@@ -48,6 +53,11 @@ public sealed partial class NotificationPulse : ComponentBase
     /// <remarks>Must be nonblank when <see cref="OnExpand" /> has a delegate.</remarks>
     [Parameter]
     public string ExpandText { get; set; } = "View details";
+
+    /// <summary>Gets or sets the optional parent-controlled expanded state.</summary>
+    /// <remarks>When supplied with <see cref="OnExpand" />, renders the current disclosure state.</remarks>
+    [Parameter]
+    public bool? IsExpanded { get; set; }
 
     /// <summary>Gets or sets the callback when notification is dismissed.</summary>
     [Parameter]
@@ -85,6 +95,19 @@ public sealed partial class NotificationPulse : ComponentBase
             new[] { "rf-notification-pulse", Class, AdditionalClasses }.Where(value =>
                 !string.IsNullOrWhiteSpace(value)));
 
+    private string? ExpandAriaExpanded
+    {
+        get
+        {
+            if (!IsExpanded.HasValue)
+            {
+                return null;
+            }
+
+            return IsExpanded.Value ? "true" : "false";
+        }
+    }
+
     private IReadOnlyDictionary<string, object>? ForwardedAttributes
     {
         get
@@ -112,6 +135,12 @@ public sealed partial class NotificationPulse : ComponentBase
         if (OnExpand.HasDelegate && string.IsNullOrWhiteSpace(ExpandText))
         {
             throw new ArgumentException("ExpandText must be nonblank when OnExpand is supplied.");
+        }
+
+        if (OnExpand.HasDelegate && DetailsId is not null && string.IsNullOrWhiteSpace(DetailsId))
+        {
+            throw new ArgumentException(
+                "DetailsId must be nonblank when OnExpand is supplied and DetailsId is provided.");
         }
 
         if (OnDismiss.HasDelegate && string.IsNullOrWhiteSpace(DismissText))

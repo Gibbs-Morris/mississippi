@@ -8,24 +8,25 @@
     @if (IsVisible)
     {
         <NotificationPulse State="@RefractionStates.Active"
+                           IsExpanded="@IsExpanded"
+                           DetailsId="notification-details"
                            OnExpand="@HandleExpandAsync"
                            OnDismiss="@HandleDismissAsync"
                            data-testid="notification-pulse">
             The sample export is ready to review. View the local preview when ready.
         </NotificationPulse>
-        @if (IsExpanded)
-        {
-            <div class="notification-demo__details"
-                 role="region"
-                 tabindex="-1"
-                 aria-labelledby="notification-details-title"
-                 @ref="DetailsRegion"
-                 data-testid="notification-details">
-                <h3 id="notification-details-title">Sample export details</h3>
-                <p>This local sample export has no external operation behind it.</p>
-                <p>The page owns this expanded state and can connect the intent to its own workflow.</p>
-            </div>
-        }
+        <div id="notification-details"
+             class="notification-demo__details"
+             role="region"
+             tabindex="-1"
+             hidden="@(!IsExpanded)"
+             aria-labelledby="notification-details-title"
+             @ref="DetailsRegion"
+             data-testid="notification-details">
+            <h3 id="notification-details-title">Sample export details</h3>
+            <p>This local sample export has no external operation behind it.</p>
+            <p>The page owns this expanded state and can connect the intent to its own workflow.</p>
+        </div>
     }
     else
     {
