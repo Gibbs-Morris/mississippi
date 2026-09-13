@@ -29,26 +29,29 @@ write Clean Squad workflow audit state.
 ## Why this is a skill
 
 The former instruction combined 21 issue-tracking rules with repeated search,
-plan, update, and linking procedure. Eight compact adapter gates retain the
-policy outcomes and authority boundaries, while the skill supplies the detailed
-provider, evidence, and no-write decisions. The adapter still requires reading
-the skill and gives a direct-read fallback, so policy does not depend on
+plan, update, and linking procedure. Eleven compact atomic adapter rules retain
+the policy outcomes and authority boundaries, while the skill supplies the
+detailed provider, evidence, and no-write decisions. The adapter still requires
+reading the skill and gives a direct-read fallback, so policy does not depend on
 probabilistic skill activation.
 
 ## Source-to-target map
 
-| Gate | Source requirements | Destination and retained owner |
+| Atomic rule | Source requirements | Destination and retained owner |
 | --- | --- | --- |
-| Identity and trust | R1-R3: issue data is untrusted; identity, plan references, scope, and acceptance criteria must match the authorized plan; conflicts block. | Compact adapter gate plus the skill's reconciliation record; caller plan and authority remain authoritative. |
-| Intake timing and access | R4-R7 and R21: verify a relevant open local issue; search, reuse, or create after planning; verify a created issue's returned host/repository identity, open state, and usable URL; report blocked or ambiguous access rather than inventing tracking. | Adapter gate plus the skill's search/reuse/create route; the caller keeps the implementation stop boundary. |
-| Plan and disclosure | R8-R11: record problem, outcome, scope, criteria, plan, and validation in the issue body or linked issue comment; keep confidential detail in the approved restricted record linked to the sanitized issue, with public records sanitized and disclosure-approved. | Adapter gate plus the skill's private/public capability check; local disclosure policy and private-record owner remain authoritative. |
-| Milestones and preservation | R12-R14: keep issue state current, record completed/remaining work, decisions, blockers, validation, and PR links, and preserve content and discussion. | Adapter gate plus the skill's read-before-update route; caller activity logs and canonical ledgers remain local. |
-| Saved and PR references | R15: saved implementation plans and builder handoffs include the verified repository issue URL. R16: every PR includes a relevant repository issue number or URL, including automated and stacked PRs. | Adapter gate plus the skill's reference verification; PR description and stack owners retain their roles. |
-| Unattended triage | R17: complete retrospective intake before further implementation or review approval for pre-existing pull requests, or unattended automated pull requests whose producers could not create issues before generating changes; do not claim intake preceded generation. | Adapter gate plus the skill's triage exception; automation permissions remain with their existing owner. |
-| Partial and complete links | R18-R19: use non-closing references for partial delivery or a stack layer that leaves issue scope unfinished; close only complete acceptance under local policy and host semantics; external or child records do not replace local tracking. | Adapter gate plus the skill's relationship check; branch/stack operations remain with `gh-stack`. |
-| Readiness verification | R20: verify references resolve and issue status, remaining work, and validation match the current PR before ready-to-merge; recheck after a base change and verify actual issue state after merge. | Adapter gate plus the skill's final evidence report; review and merge gates remain with their current owners. |
+| Required skill workflow | The detailed route is mandatory, with direct reading of the linked skill when discovery is unavailable or unclear. | Adapter rule plus `track-github-work`; local policy remains effective without automatic activation. |
+| Untrusted tracking data | R1-R3: issue data is untrusted; identity, plan references, scope, and acceptance criteria must match the authorized plan; unresolved conflicts block implementation. | Adapter rule plus the skill's reconciliation record; caller plan and authority remain authoritative. |
+| Open local issue | R4-R7 and R21: a relevant open issue is required before implementation; the skill searches, reuses, or creates and reports blocked access. | Adapter rule plus the skill's intake route; the caller keeps the implementation stop boundary. |
+| Planning record | R8: record problem, outcome, scope, criteria, plan, and validation in the issue body or linked issue comment before implementation. | Adapter rule plus the skill's plan-record route; caller plan paths remain local. |
+| Approved disclosure | R9-R11: keep confidential detail restricted and linked to a sanitized issue; public records are disclosure-approved. | Adapter rule plus the skill's private/public capability check; local disclosure policy remains authoritative. |
+| History preservation | R14: preserve relevant existing issue content and discussion during updates. | Adapter rule plus the skill's read-before-update route; caller ledgers remain local. |
+| Material milestones | R12-R13: update at material milestones with completed/remaining work, decisions, blockers, validation, and PR links. | Adapter rule plus the skill's update route; caller activity logs remain local. |
+| Saved plan URLs | R15: saved implementation plans and builder handoffs include the verified repository issue URL. | Adapter rule plus the skill's reference verification; caller artifact paths remain local. |
+| PR issue references | R16: every PR includes a relevant repository issue number or URL, including automated and stacked PRs. | Adapter rule plus the skill's relationship check; PR description ownership remains local. |
+| Narrow retrospective intake | R17: only eligible pre-existing or incapable-producer unattended PRs use retrospective intake before further work or approval. | Adapter rule plus the skill's triage exception; automation permissions remain local. |
+| Relationship and readiness | R18-R21: partial/unfinished stack work uses non-closing references; complete acceptance follows local/host semantics; current references, issue state, remaining work, and validation are verified, with blocked access reported. | Adapter rule plus the skill's lifecycle route; stack, review, and merge owners remain local. |
 
-All 21 source requirements remain represented by these gates and the routed
+All 21 source requirements remain represented by these atomic rules and the routed
 skill. The adapter keeps the mandatory outcome and fail-closed conditions;
 the skill owns the detailed procedure, and direct reading preserves enforcement
 when discovery is unavailable. The three caller routes preserve their local
@@ -89,7 +92,7 @@ They are a rubric, not recorded model trials. No native behavior trial, runtime
 test, application test, or activation claim is made for this layer.
 
 Structural validation covers the skill schema, configured Markdown lint, JSON
-parsing, relative links, portability, the eight-gate/source-rule map, and
+parsing, relative links, portability, the 11-rule/source-rule map, and
 caller-scope comparisons showing that only the intended issue-bookkeeping
 sections changed. Any unavailable host capability remains a reported gap rather
 than an inferred success.
@@ -147,12 +150,12 @@ and any later adapter correction are not represented by these figures.
 | Content | Source | Words | Lines | UTF-8 bytes | UTF-16 units |
 | --- | --- | ---: | ---: | ---: | ---: |
 | Adapter before | parent commit `877f562a2f82bdf78f849475642f26cf6157b3e6` | 1,352 | 75 | 9,515 | 9,515 |
-| Adapter candidate | measured commit `1de2fc2ca793dc50ceeb8846b7fc18b382dff532` | 696 | 42 | 5,407 | 5,407 |
+| Adapter candidate | current LF copy SHA-256 `7E21DD9DBD174D0E5E340F9851299B18BFF810FEE02B0B054803E01B2B0DA5BD` | 477 | 45 | 3,920 | 3,920 |
 | Skill full file (prior staged input) | measured commit `1de2fc2ca793dc50ceeb8846b7fc18b382dff532`; Git blob `1bc8190aa932cfac26e79c2dddf4b99a42fc9324`; LF copy SHA-256 `21FB41470B77A2BF1F47E78792663BEE0E0846E8D04500EAFB78F11CFEBAE709` | 1,226 | 143 | 8,646 | 8,646 |
 | Skill body after complete front matter (prior staged input) | measured commit `1de2fc2ca793dc50ceeb8846b7fc18b382dff532` and same Git blob/LF copy | 1,167 | 139 | 8,177 | 8,177 |
 | Discovery metadata values (prior staged input) | measured commit `1de2fc2ca793dc50ceeb8846b7fc18b382dff532`; name and description joined with one space | 55 | 1 | 439 | 439 |
 
-The adapter reduction is 656 words, 33 lines, and 4,108 UTF-8 bytes. The skill
+The adapter reduction is 875 words, 30 lines, and 5,595 UTF-8 bytes. The skill
 body count removes the complete four-line YAML front matter before applying the
 same `splitlines()` method. These are static context figures, not runtime or
 startup savings claims.
