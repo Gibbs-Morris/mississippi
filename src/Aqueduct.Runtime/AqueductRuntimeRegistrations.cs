@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 
 using Microsoft.Extensions.Configuration;
@@ -89,54 +88,25 @@ public static class AqueductRuntimeRegistrations
                                              aqueduct.ServerStreamNamespace;
             aqueduct.AllClientsStreamNamespace = configuration[nameof(AqueductOptions.AllClientsStreamNamespace)] ??
                                                  aqueduct.AllClientsStreamNamespace;
-            aqueduct.HeartbeatIntervalMinutes = ReadInteger(
-                configuration,
-                nameof(AqueductOptions.HeartbeatIntervalMinutes),
-                aqueduct.HeartbeatIntervalMinutes);
-            aqueduct.DeadServerTimeoutMultiplier = ReadInteger(
-                configuration,
-                nameof(AqueductOptions.DeadServerTimeoutMultiplier),
-                aqueduct.DeadServerTimeoutMultiplier);
         });
     }
 
-    /// <summary>Configures Aqueduct with explicit stream and heartbeat settings.</summary>
+    /// <summary>Configures Aqueduct with explicit stream and namespace settings.</summary>
     /// <param name="builder">The owning runtime builder.</param>
     /// <param name="streamProviderName">The existing stream provider.</param>
     /// <param name="serverStreamNamespace">The namespace for server-targeted messages.</param>
     /// <param name="allClientsStreamNamespace">The namespace for broadcasts.</param>
-    /// <param name="heartbeatIntervalMinutes">The positive heartbeat interval in minutes.</param>
-    /// <param name="deadServerTimeoutMultiplier">The positive dead-server timeout multiplier.</param>
     /// <returns>The runtime builder for chaining.</returns>
     public static IRuntimeBuilder AddAqueduct(
         this IRuntimeBuilder builder,
         string streamProviderName,
         string serverStreamNamespace = AqueductStreamDefaults.ServerStreamNamespace,
-        string allClientsStreamNamespace = AqueductStreamDefaults.AllClientsStreamNamespace,
-        int heartbeatIntervalMinutes = 1,
-        int deadServerTimeoutMultiplier = 3
+        string allClientsStreamNamespace = AqueductStreamDefaults.AllClientsStreamNamespace
     ) =>
         builder.AddAqueduct(aqueduct =>
         {
             aqueduct.StreamProviderName = streamProviderName;
             aqueduct.ServerStreamNamespace = serverStreamNamespace;
             aqueduct.AllClientsStreamNamespace = allClientsStreamNamespace;
-            aqueduct.HeartbeatIntervalMinutes = heartbeatIntervalMinutes;
-            aqueduct.DeadServerTimeoutMultiplier = deadServerTimeoutMultiplier;
         });
-
-    private static int ReadInteger(
-        IConfiguration configuration,
-        string key,
-        int fallback
-    )
-    {
-        string? value = configuration[key];
-        if (value is null)
-        {
-            return fallback;
-        }
-
-        return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed) ? parsed : 0;
-    }
 }

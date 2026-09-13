@@ -33,28 +33,6 @@ public sealed class AqueductBuilder
         }
     }
 
-    /// <summary>Gets or sets the positive dead-server timeout multiplier, which defaults to three.</summary>
-    public int DeadServerTimeoutMultiplier
-    {
-        get => Options.DeadServerTimeoutMultiplier;
-        set
-        {
-            ThrowIfClosed();
-            Options.DeadServerTimeoutMultiplier = value;
-        }
-    }
-
-    /// <summary>Gets or sets the positive heartbeat interval in minutes, which defaults to one.</summary>
-    public int HeartbeatIntervalMinutes
-    {
-        get => Options.HeartbeatIntervalMinutes;
-        set
-        {
-            ThrowIfClosed();
-            Options.HeartbeatIntervalMinutes = value;
-        }
-    }
-
     /// <summary>Gets or sets the namespace used for server-targeted messages.</summary>
     public string ServerStreamNamespace
     {
@@ -149,24 +127,6 @@ public sealed class AqueductBuilder
             nameof(AllClientsStreamNamespace),
             AqueductBuilderDiagnosticCodes.BroadcastNamespaceRequired,
             diagnostics);
-        if (HeartbeatIntervalMinutes <= 0)
-        {
-            diagnostics.Add(
-                new(
-                    AqueductBuilderDiagnosticCodes.InvalidHeartbeatInterval,
-                    "The Aqueduct heartbeat interval must be positive.",
-                    "Set HeartbeatIntervalMinutes to a positive number of minutes."));
-        }
-
-        if (DeadServerTimeoutMultiplier <= 0)
-        {
-            diagnostics.Add(
-                new(
-                    AqueductBuilderDiagnosticCodes.InvalidTimeoutMultiplier,
-                    "The Aqueduct dead-server timeout multiplier must be positive.",
-                    "Set DeadServerTimeoutMultiplier to a positive integer."));
-        }
-
         return diagnostics;
     }
 
@@ -187,8 +147,6 @@ public sealed class AqueductBuilder
             StreamProviderName = StreamProviderName,
             ServerStreamNamespace = ServerStreamNamespace,
             AllClientsStreamNamespace = AllClientsStreamNamespace,
-            HeartbeatIntervalMinutes = HeartbeatIntervalMinutes,
-            DeadServerTimeoutMultiplier = DeadServerTimeoutMultiplier,
         };
         if (ShouldUseMemoryStreams)
         {
@@ -202,16 +160,12 @@ public sealed class AqueductBuilder
                 options.StreamProviderName = snapshot.StreamProviderName;
                 options.ServerStreamNamespace = snapshot.ServerStreamNamespace;
                 options.AllClientsStreamNamespace = snapshot.AllClientsStreamNamespace;
-                options.HeartbeatIntervalMinutes = snapshot.HeartbeatIntervalMinutes;
-                options.DeadServerTimeoutMultiplier = snapshot.DeadServerTimeoutMultiplier;
             })
             .Validate(
                 options => !string.IsNullOrWhiteSpace(options.StreamProviderName) &&
                            !string.IsNullOrWhiteSpace(options.ServerStreamNamespace) &&
-                           !string.IsNullOrWhiteSpace(options.AllClientsStreamNamespace) &&
-                           (options.HeartbeatIntervalMinutes > 0) &&
-                           (options.DeadServerTimeoutMultiplier > 0),
-                "Aqueduct requires nonempty stream names and positive heartbeat settings.")
+                           !string.IsNullOrWhiteSpace(options.AllClientsStreamNamespace),
+                "Aqueduct requires nonempty stream names.")
             .ValidateOnStart();
         silo.Services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
     }

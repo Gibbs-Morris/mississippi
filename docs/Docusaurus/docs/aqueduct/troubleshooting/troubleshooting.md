@@ -25,7 +25,6 @@ separate host concern that occurs after composition and depends on the host's Or
 ## Probable causes
 
 - A stream provider name or stream namespace is empty or whitespace-only (`MSB201`–`MSB203`).
-- `HeartbeatIntervalMinutes` or `DeadServerTimeoutMultiplier` is zero or negative (`MSB204` or `MSB205`).
 - The same runtime received more than one `AddAqueduct(...)` call (`MSB207`).
 - A captured `AqueductBuilder` was changed after its callback completed (`MSB206`).
 - `StreamProviderName` does not match a provider configured by the Orleans host.
@@ -34,7 +33,7 @@ separate host concern that occurs after composition and depends on the host's Or
 ## How to confirm
 
 1. Read `BuilderValidationException.Diagnostics` and record each `Code`, `Message`, and `Remediation`.
-2. For `MSB201`–`MSB205`, inspect the values supplied to the one `AddAqueduct(...)` callback.
+2. For `MSB201`–`MSB203`, inspect the values supplied to the one `AddAqueduct(...)` callback.
 3. For `MSB206`, find the captured builder and move its property assignments into a fresh callback.
 4. For `MSB207`, combine all Aqueduct settings into one call for the runtime.
 5. For provider failures, compare the final `StreamProviderName` with the host's Orleans provider registration.

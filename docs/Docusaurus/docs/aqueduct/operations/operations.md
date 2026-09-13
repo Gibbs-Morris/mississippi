@@ -36,9 +36,8 @@ namespace, and all-clients stream namespace consistent across every host that pa
 
 ## Operational guidance
 
-Aqueduct validation runs during terminal composition. Empty or whitespace-only stream names and nonpositive heartbeat
-settings reject the attachment with structured diagnostics. A second `AddAqueduct(...)` call for the same runtime is
-also rejected.
+Aqueduct validation runs during terminal composition. Empty or whitespace-only stream names reject the attachment with
+structured diagnostics. A second `AddAqueduct(...)` call for the same runtime is also rejected.
 
 `UseMemoryStreams(...)` is intended for development and tests. A deployed host should configure the stream provider it
 needs through Orleans and set Aqueduct's `StreamProviderName` to that existing provider. The runtime builder does not

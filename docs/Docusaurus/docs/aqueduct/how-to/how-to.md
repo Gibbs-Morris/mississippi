@@ -86,9 +86,8 @@ Use this form when settings are stored under an `Aqueduct` configuration section
 runtime.AddAqueduct(builder.Configuration.GetSection("Aqueduct"));
 ```
 
-The overload reads `StreamProviderName`, `ServerStreamNamespace`, `AllClientsStreamNamespace`,
-`HeartbeatIntervalMinutes`, and `DeadServerTimeoutMultiplier`. Omitted values retain defaults. A malformed integer
-becomes invalid and is reported by the structured validation diagnostics.
+The overload reads `StreamProviderName`, `ServerStreamNamespace`, and `AllClientsStreamNamespace`. Omitted values retain
+their defaults.
 
 #### Explicit settings
 
@@ -98,9 +97,7 @@ Use this form when the values are known at composition time:
 runtime.AddAqueduct(
     "StreamProvider",
     serverStreamNamespace: "mississippi-server",
-    allClientsStreamNamespace: "mississippi-all-clients",
-    heartbeatIntervalMinutes: 1,
-    deadServerTimeoutMultiplier: 3);
+    allClientsStreamNamespace: "mississippi-all-clients");
 ```
 
 ### Keep advanced native configuration on the runtime root
@@ -113,7 +110,6 @@ See [Runtime Composition](../../reference/runtime-composition.md) for the stagin
 
 - The host has exactly one `UseMississippi(...)` callback for its runtime composition.
 - The nested callback selects a nonempty stream provider and nonempty stream namespaces.
-- `HeartbeatIntervalMinutes` and `DeadServerTimeoutMultiplier` are positive.
 - The selected stream provider exists on the host, unless `UseMemoryStreams(...)` created it for local development or
   tests.
 - The host can build and start using its normal Orleans validation and connectivity checks.

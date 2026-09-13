@@ -52,63 +52,25 @@ public sealed class AqueductRuntimeRegistrationsTests
         Assert.False(invoked);
     }
 
-    /// <summary>Configuration sections use defaults for omitted settings and validate malformed integers.</summary>
-    /// <param name="interval">The configured heartbeat value.</param>
-    /// <param name="isValid">Whether the configuration should attach.</param>
-    [Theory]
-    [InlineData("4", true)]
-    [InlineData("not-a-number", false)]
-    public void ConfigurationSectionIsValidated(
-        string interval,
-        bool isValid
-    )
+    /// <summary>Configuration sections use defaults for omitted stream settings.</summary>
+    [Fact]
+    public void ConfigurationSectionUsesDefaultsForOmittedSettings()
     {
         using ConfigurationRoot configuration = Assert.IsType<ConfigurationRoot>(
             new ConfigurationBuilder().AddInMemoryCollection(
                     new Dictionary<string, string?>
                     {
                         [nameof(AqueductOptions.StreamProviderName)] = "configured",
-                        [nameof(AqueductOptions.HeartbeatIntervalMinutes)] = interval,
                     })
                 .Build());
         ServiceCollection services = [];
         ISiloBuilder silo = CreateSilo(services);
-        if (isValid)
-        {
-            silo.UseMississippi(runtime => runtime.AddAqueduct(configuration));
-            using ServiceProvider provider = services.BuildServiceProvider();
-            AqueductOptions options = provider.GetRequiredService<IOptions<AqueductOptions>>().Value;
-            Assert.Equal("configured", options.StreamProviderName);
-            Assert.Equal(4, options.HeartbeatIntervalMinutes);
-            Assert.Equal(3, options.DeadServerTimeoutMultiplier);
-        }
-        else
-        {
-            BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
-                silo.UseMississippi(runtime => runtime.AddAqueduct(configuration)));
-            Assert.Equal(
-                AqueductBuilderDiagnosticCodes.InvalidHeartbeatInterval,
-                Assert.Single(exception.Diagnostics).Code);
-        }
-    }
-
-    /// <summary>Malformed timeout configuration produces the timeout diagnostic.</summary>
-    [Fact]
-    public void ConfigurationSectionRejectsMalformedTimeoutMultiplier()
-    {
-        using ConfigurationRoot configuration = Assert.IsType<ConfigurationRoot>(
-            new ConfigurationBuilder().AddInMemoryCollection(
-                    new Dictionary<string, string?>
-                    {
-                        [nameof(AqueductOptions.DeadServerTimeoutMultiplier)] = "not-a-number",
-                    })
-                .Build());
-        ServiceCollection services = [];
-        BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
-            CreateSilo(services).UseMississippi(runtime => runtime.AddAqueduct(configuration)));
-        Assert.Equal(
-            AqueductBuilderDiagnosticCodes.InvalidTimeoutMultiplier,
-            Assert.Single(exception.Diagnostics).Code);
+        silo.UseMississippi(runtime => runtime.AddAqueduct(configuration));
+        using ServiceProvider provider = services.BuildServiceProvider();
+        AqueductOptions options = provider.GetRequiredService<IOptions<AqueductOptions>>().Value;
+        Assert.Equal("configured", options.StreamProviderName);
+        Assert.Equal(AqueductStreamDefaults.ServerStreamNamespace, options.ServerStreamNamespace);
+        Assert.Equal(AqueductStreamDefaults.AllClientsStreamNamespace, options.AllClientsStreamNamespace);
     }
 
     /// <summary>One runtime call registers the built-in factory when no custom factory exists.</summary>
@@ -135,7 +97,6 @@ public sealed class AqueductRuntimeRegistrationsTests
         Assert.Same(custom, provider.GetRequiredService<IAqueductGrainFactory>());
         AqueductOptions options = provider.GetRequiredService<IOptions<AqueductOptions>>().Value;
         Assert.Equal(AqueductStreamDefaults.StreamProviderName, options.StreamProviderName);
-        Assert.Equal(1, options.HeartbeatIntervalMinutes);
     }
 
     /// <summary>Duplicate configuration fails before the second callback can run.</summary>
@@ -172,8 +133,6 @@ public sealed class AqueductRuntimeRegistrationsTests
                 aqueduct.StreamProviderName = "streams";
                 aqueduct.ServerStreamNamespace = "servers";
                 aqueduct.AllClientsStreamNamespace = "broadcasts";
-                aqueduct.HeartbeatIntervalMinutes = 5;
-                aqueduct.DeadServerTimeoutMultiplier = 7;
             });
             Assert.Equal(0, calls);
             runtime.ApplyToSilo(silo);
@@ -186,8 +145,6 @@ public sealed class AqueductRuntimeRegistrationsTests
         Assert.Equal("streams", options.StreamProviderName);
         Assert.Equal("servers", options.ServerStreamNamespace);
         Assert.Equal("broadcasts", options.AllClientsStreamNamespace);
-        Assert.Equal(5, options.HeartbeatIntervalMinutes);
-        Assert.Equal(7, options.DeadServerTimeoutMultiplier);
     }
 
     /// <summary>Explicit values configure the same canonical options.</summary>
@@ -195,14 +152,12 @@ public sealed class AqueductRuntimeRegistrationsTests
     public void ExplicitSettingsAreApplied()
     {
         ServiceCollection services = [];
-        CreateSilo(services).UseMississippi(runtime => runtime.AddAqueduct("explicit", "server", "all", 2, 4));
+        CreateSilo(services).UseMississippi(runtime => runtime.AddAqueduct("explicit", "server", "all"));
         using ServiceProvider provider = services.BuildServiceProvider();
         AqueductOptions options = provider.GetRequiredService<IOptions<AqueductOptions>>().Value;
         Assert.Equal("explicit", options.StreamProviderName);
         Assert.Equal("server", options.ServerStreamNamespace);
         Assert.Equal("all", options.AllClientsStreamNamespace);
-        Assert.Equal(2, options.HeartbeatIntervalMinutes);
-        Assert.Equal(4, options.DeadServerTimeoutMultiplier);
     }
 
     /// <summary>Callback failures close nested scopes and allow a fresh root attempt.</summary>
@@ -277,14 +232,31 @@ public sealed class AqueductRuntimeRegistrationsTests
             AqueductRuntimeRegistrations.AddAqueduct(null!, (IConfiguration)null!));
     }
 
-    /// <summary>Later options configuration cannot silently introduce invalid backplane settings.</summary>
+    /// <summary>Later options configuration cannot silently introduce an invalid stream name.</summary>
     [Fact]
-    public void OptionsValidationRejectsLaterInvalidConfiguration()
+    public void OptionsValidationRejectsLaterInvalidStreamName()
     {
         ServiceCollection services = [];
         CreateSilo(services).UseMississippi(runtime => runtime.AddAqueduct());
-        services.PostConfigure<AqueductOptions>(options => options.HeartbeatIntervalMinutes = 0);
+        services.PostConfigure<AqueductOptions>(options => options.StreamProviderName = " ");
         using ServiceProvider provider = services.BuildServiceProvider();
         Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<AqueductOptions>>().Value);
+    }
+
+    /// <summary>Runtime composition preserves timing settings configured by the colocated gateway.</summary>
+    [Fact]
+    public void RuntimeCompositionPreservesGatewayTimingSettings()
+    {
+        ServiceCollection services = [];
+        services.Configure<AqueductOptions>(options =>
+        {
+            options.HeartbeatIntervalMinutes = 11;
+            options.DeadServerTimeoutMultiplier = 17;
+        });
+        CreateSilo(services).UseMississippi(runtime => runtime.AddAqueduct());
+        using ServiceProvider provider = services.BuildServiceProvider();
+        AqueductOptions options = provider.GetRequiredService<IOptions<AqueductOptions>>().Value;
+        Assert.Equal(11, options.HeartbeatIntervalMinutes);
+        Assert.Equal(17, options.DeadServerTimeoutMultiplier);
     }
 }

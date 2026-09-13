@@ -74,15 +74,15 @@ The builder also has convenience overloads for an `IConfiguration` section and f
 ## Verify It Works
 
 Keep the complete Aqueduct callback inside one `UseMississippi(...)` call. At composition time, nonempty stream names
-and positive timing settings are required, and a second `AddAqueduct(...)` call for the same runtime is rejected.
+are required, and a second `AddAqueduct(...)` call for the same runtime is rejected.
 
 For the staged callback lifecycle, advanced `ConfigureSilo(...)` plumbing, and stable diagnostic codes, continue to
 [How To Configure Aqueduct Runtime Composition](../how-to/how-to.md) and the [Aqueduct Reference](../reference/reference.md).
 
 ## What Happened
 
-`UseMississippi(...)` attached one runtime composition, and the nested `AqueductBuilder` selected the stream provider,
-stream namespaces, and timing values. With `UseMemoryStreams(...)`, the same composition also added the memory stream
+`UseMississippi(...)` attached one runtime composition, and the nested `AqueductBuilder` selected the stream provider
+and stream namespaces. With `UseMemoryStreams(...)`, the same composition also added the memory stream
 provider and `PubSubStore` registrations.
 
 ## Summary

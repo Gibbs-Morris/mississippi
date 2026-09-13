@@ -52,7 +52,7 @@ The overloads are:
 | --- | --- |
 | `IRuntimeBuilder AddAqueduct(Action<AqueductBuilder>? configure = null)` | Queue one nested Aqueduct configuration for the runtime |
 | `IRuntimeBuilder AddAqueduct(IConfiguration configuration)` | Read option property-name keys from the supplied configuration |
-| `IRuntimeBuilder AddAqueduct(string streamProviderName, string serverStreamNamespace = ..., string allClientsStreamNamespace = ..., int heartbeatIntervalMinutes = 1, int deadServerTimeoutMultiplier = 3)` | Queue explicit stream and timing settings |
+| `IRuntimeBuilder AddAqueduct(string streamProviderName, string serverStreamNamespace = ..., string allClientsStreamNamespace = ...)` | Queue explicit stream and namespace settings |
 
 Only one `AddAqueduct(...)` call is valid for a given runtime builder. Combine settings in one call.
 
@@ -73,11 +73,8 @@ Only one `AddAqueduct(...)` call is valid for a given runtime builder. Combine s
 | `StreamProviderName` | Orleans stream provider used for SignalR delivery | `mississippi-streaming` |
 | `ServerStreamNamespace` | Namespace for server-targeted messages | `mississippi-server` |
 | `AllClientsStreamNamespace` | Namespace for broadcasts to all clients | `mississippi-all-clients` |
-| `HeartbeatIntervalMinutes` | Interval between server heartbeats, in minutes | `1` |
-| `DeadServerTimeoutMultiplier` | Positive multiplier used for dead-server timeout | `3` |
 
-Names must be nonempty and must not consist only of whitespace. The values are preserved as supplied. Both timing
-values must be positive.
+Names must be nonempty and must not consist only of whitespace. The values are preserved as supplied.
 
 ## Defaults
 
@@ -86,8 +83,6 @@ The defaults are provided by `AqueductStreamDefaults` and `AqueductOptions`:
 - `StreamProviderName`: `mississippi-streaming`
 - `ServerStreamNamespace`: `mississippi-server`
 - `AllClientsStreamNamespace`: `mississippi-all-clients`
-- `HeartbeatIntervalMinutes`: `1`
-- `DeadServerTimeoutMultiplier`: `3`
 
 ## Memory Streams
 
@@ -107,11 +102,8 @@ The `IConfiguration` overload reads these exact keys from the supplied configura
 | `StreamProviderName` | `AqueductBuilder.StreamProviderName` |
 | `ServerStreamNamespace` | `AqueductBuilder.ServerStreamNamespace` |
 | `AllClientsStreamNamespace` | `AqueductBuilder.AllClientsStreamNamespace` |
-| `HeartbeatIntervalMinutes` | `AqueductBuilder.HeartbeatIntervalMinutes` |
-| `DeadServerTimeoutMultiplier` | `AqueductBuilder.DeadServerTimeoutMultiplier` |
 
-Missing keys keep the defaults. Integer values use invariant parsing; a present value that cannot be parsed becomes
-invalid and is reported as a timing diagnostic during terminal composition.
+Missing keys keep the defaults.
 
 ## Behavior
 
@@ -139,8 +131,6 @@ current Aqueduct diagnostic codes are:
 | `MSB201` | `StreamProviderName` is empty or whitespace | Set a nonempty provider name |
 | `MSB202` | `ServerStreamNamespace` is empty or whitespace | Set a nonempty server namespace |
 | `MSB203` | `AllClientsStreamNamespace` is empty or whitespace | Set a nonempty broadcast namespace |
-| `MSB204` | `HeartbeatIntervalMinutes` is zero or negative | Set a positive interval |
-| `MSB205` | `DeadServerTimeoutMultiplier` is zero or negative | Set a positive multiplier |
 | `MSB206` | A captured nested builder scope is closed | Configure a fresh `AddAqueduct(...)` callback |
 | `MSB207` | Aqueduct was added more than once to one runtime | Combine settings in one `AddAqueduct(...)` call |
 
