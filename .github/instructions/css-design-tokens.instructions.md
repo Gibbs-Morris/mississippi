@@ -16,11 +16,11 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Refraction-owned classes and custom properties **MUST** use the `rf` namespace. Why: Namespace ownership prevents application CSS from colliding with Refraction APIs.
 - Application and sample CSS **MUST NOT** invent `rf-*` classes or `--rf-*` properties. Why: Consumers need a clear boundary between their styles and the design system.
 - Docusaurus CSS Modules and unrelated third-party styles **MUST** remain under their own conventions and be excluded from Refraction-specific naming and token rules. Why: External styling systems have separate ownership and build constraints.
-- Component blocks **MUST** use lowercase kebab-case `rf-c-{block}` names. Why: The component namespace gives each public root a stable, predictable owner.
-- Component elements **MUST** use flat `rf-c-{block}__{element}` names. Why: Flat elements keep private structure refactorable and avoid nested selector APIs.
+- Refraction-owned component blocks **MUST** use lowercase kebab-case `rf-c-{block}` names. Why: The component namespace gives each public root a stable, predictable owner.
+- Refraction-owned component elements **MUST** use flat `rf-c-{block}__{element}` names. Why: Flat elements keep private structure refactorable and avoid nested selector APIs.
 - Authors **SHOULD** add an element class only when styling ownership requires it. Why: Naming every DOM node exposes unnecessary private structure.
-- Reusable layout classes **MUST** use the `rf-l-{name}` namespace. Why: Layout primitives are intentionally separate from component ownership.
-- Deliberate single-purpose utilities **MUST** use the `rf-u-{name}` namespace. Why: Narrow utilities remain useful without turning Refraction into a utility-first framework.
+- Refraction-owned reusable layout classes **MUST** use the `rf-l-{name}` namespace. Why: Layout primitives are intentionally separate from component ownership.
+- Refraction-owned deliberate single-purpose utilities **MUST** use the `rf-u-{name}` namespace. Why: Narrow utilities remain useful without turning Refraction into a utility-first framework.
 - Refraction layout classes **MUST NOT** use the `o-` prefix. Why: `Organism` already identifies a filesystem composition level in this repository.
 - Generic state classes such as `.is-active` and `.has-error` **MUST NOT** be introduced. Why: Anonymous state classes make semantic ownership and accessibility harder to inspect.
 - State styling **SHOULD** prefer native pseudo-classes, truthful ARIA attributes, explicit `data-*` attributes, and BEM modifiers in that order. Why: The selector should expose the most meaningful available state.
@@ -99,7 +99,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 
 ## Scope and audience
 
-This standard covers Refraction and consumer-facing styling work in CSS, Razor markup and code-behind, token JSON, and theme definitions. The Blazor guidance in [blazor-ux-guidelines.instructions.md](blazor-ux-guidelines.instructions.md) owns component behavior and delegates these styling concerns here.
+This standard covers Refraction and consumer-facing styling work in CSS, Razor markup and code-behind, token JSON, and theme definitions. Refraction-specific naming and token ownership rules apply to Refraction-owned selectors; application-owned components keep their own namespace while following the general isolation and accessibility guidance. The Blazor guidance in [blazor-ux-guidelines.instructions.md](blazor-ux-guidelines.instructions.md) owns component behavior and delegates these styling concerns here.
 
 ## Architecture map
 
