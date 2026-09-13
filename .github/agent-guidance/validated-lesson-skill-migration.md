@@ -62,14 +62,15 @@ specific dependency.
 
 ## Validation and evaluation limits
 
-The [evaluation cases](validated-lesson-skill-cases.json) define 15 scenarios
+The [evaluation cases](validated-lesson-skill-cases.json) define 16 scenarios
 covering validated admission, assessment-only and unrun evidence, negative
 routing, duplicate and higher-policy conflict, denied scope, authorized
 overlap, untrusted injection, promotion and retirement controls, existing
-approval, peer contradiction, and bounded no-write outcomes. They are a reusable
-rubric rather than recorded model trials; no runtime savings, activation rate, or
-latency claim is made. The documented-silent case distinguishes missing required
-execution evidence from a verified silent success under the consuming contract.
+approval, mixed duplicate/conflict precedence, peer contradiction, and bounded
+no-write outcomes. They are a reusable rubric rather than recorded model trials;
+no runtime savings, activation rate, or latency claim is made. The
+documented-silent case distinguishes missing required execution evidence from a
+verified silent success under the consuming contract.
 
 Structural checks passed: the bundled skill-creator validator; configured
 Markdown lint; JSON parsing; relative-link resolution; exact comparison of the
@@ -79,9 +80,10 @@ scanning of the skill; and whitespace checks. The Scribe file was linted with
 the current repository configuration, and no pre-existing findings were
 encountered.
 
-### Current direct fixture evidence
+### Recorded fixed-input fixture evidence
 
-One direct Codex Desktop collaboration-host Luna Max session used the LF-only
+One direct Codex Desktop collaboration-host Luna Max session recorded results
+from the LF-only
 copy exported directly from commit
 `7fc373ea63b42cc20aef292240e06a1124681a04`. That blob remains identical at
 measured content revision `9c37990cf97263edf10b49d7291cf6d3698dae62`; the input
@@ -97,6 +99,19 @@ is 5,949 bytes with SHA-256
 
 All baseline files and protected notes retained their hashes. The positive record
 was read and accepted for scope and evidence. No runtime tests, native
+inference, external actions, or main-repository edits were performed. These are
+recorded fixed-input results, not a trial of the precedence correction.
+
+### Precedence correction trial
+
+One direct Codex Desktop collaboration-host Luna Max assessment used the staged
+skill input at `.scratchpad/lesson-conflict-precedence-eval/skill-input/SKILL.md`
+(6,232 LF-only bytes; SHA-256
+`DB54316F1B1DB4A50A40F61B7B07FBE3872A38A18EF7D89BFC2A875EA4C589F1`). It
+classified the overall result as **Conflict** after finding one matching and
+one contradictory equal-authority source; the duplicate match was reported but
+did not authorize a write. The target remained absent, and all seven file hashes
+including the protected note stayed unchanged. No runtime checks, native
 inference, external actions, or main-repository edits were performed.
 
 ### Historical evaluation inputs
@@ -133,15 +148,18 @@ one space.
 | --- | --- | ---: | ---: | ---: | ---: |
 | Adapter before | `cbe8fc71a8aa62a24b507295af82b6d12c491b29` | 941 | 103 | 7,055 | 7,047 |
 | Adapter candidate | `9c37990cf97263edf10b49d7291cf6d3698dae62` | 536 | 42 | 4,133 | 4,133 |
-| Skill full file | `9c37990cf97263edf10b49d7291cf6d3698dae62` | 844 | 102 | 5,949 | 5,941 |
-| Skill body after complete front matter | `9c37990cf97263edf10b49d7291cf6d3698dae62` | 789 | 98 | 5,538 | 5,530 |
-| Discovery metadata values | `9c37990cf97263edf10b49d7291cf6d3698dae62` | 51 | 1 | 383 | 383 |
+| Skill full file (staged Git blob) | `933e8102e16cf0940824db43829c0a79044da9bd` | 882 | 106 | 6,232 | 6,224 |
+| Skill body after complete front matter (staged Git blob) | `933e8102e16cf0940824db43829c0a79044da9bd` | 827 | 102 | 5,821 | 5,813 |
+| Discovery metadata values (staged Git blob) | `933e8102e16cf0940824db43829c0a79044da9bd` | 51 | 1 | 383 | 383 |
 
 The adapter reduction is 405 words, 61 lines, 2,922 UTF-8 bytes, and 2,914
 UTF-16 code units. The skill body count excludes all four YAML front matter
-lines. Cases and this audit are evidence metadata; no runtime or startup
-savings claim is made, and no application, package, workflow, or runtime files
-are part of this layer.
+lines. Git blob ID `933e8102e16cf0940824db43829c0a79044da9bd` identifies the
+staged skill source object, while SHA-256
+`DB54316F1B1DB4A50A40F61B7B07FBE3872A38A18EF7D89BFC2A875EA4C589F1` identifies
+the raw LF evaluation bytes. Cases and this audit are evidence metadata; no
+runtime or startup savings claim is made, and no application, package,
+workflow, or runtime files are part of this layer.
 
 ## Rollback
 
