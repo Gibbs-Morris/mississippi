@@ -50,27 +50,55 @@ builder.Services.AddSingleton<INotificationService, StubNotificationService>();
 
 // Infrastructure: telemetry, storage clients, event sourcing providers
 builder.Services.AddHttpClient();
-builder.Services.AddOpenTelemetry()
-    .WithTracing(/* ... */)
-    .WithMetrics(/* ... */);
+// Existing telemetry registrations are omitted from this concept excerpt.
 
 builder.AddKeyedAzureTableServiceClient("clustering");
 builder.AddKeyedAzureBlobServiceClient("grainstate");
-builder.AddAzureCosmosClient("cosmos", /* ... */);
+builder.AddAzureCosmosClient(
+    "cosmos",
+    configureClientOptions: options =>
+    {
+        options.ConnectionMode = ConnectionMode.Gateway;
+        options.LimitToEndpoint = true;
+    });
+
+// The host owns the clients used by Brooks and forwards them under the provider's keyed identities.
+builder.AddKeyedAzureBlobServiceClient("blobs");
+builder.Services.AddKeyedSingleton(
+    BrookCosmosDefaults.BlobLockingServiceKey,
+    (sp, _) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
+const string sharedCosmosKey = "spring-cosmos";
+builder.Services.AddKeyedSingleton(
+    sharedCosmosKey,
+    (sp, _) => sp.GetRequiredService<CosmosClient>());
 
 // Mississippi infrastructure
 builder.Services.AddInletSilo();
 builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 builder.Services.AddJsonSerialization();
 builder.Services.AddSnapshotCaching();
-builder.Services.AddCosmosBrookStorageProvider(/* ... */);
-builder.Services.AddCosmosSnapshotStorageProvider(/* ... */);
+
+// Snapshot storage remains a separate host-level provider.
+builder.Services.AddCosmosSnapshotStorageProvider(options =>
+{
+    options.CosmosClientServiceKey = sharedCosmosKey;
+    options.DatabaseId = "spring-db";
+    options.ContainerId = "snapshots";
+});
 
 // Orleans configuration
 builder.UseOrleans(siloBuilder =>
 {
     siloBuilder.UseMississippi(runtime =>
     {
+        runtime.AddCosmosBrookStorageProvider(cosmos =>
+        {
+            cosmos.CosmosClientServiceKey = sharedCosmosKey;
+            cosmos.DatabaseId = "spring-db";
+            cosmos.ContainerId = "events";
+            cosmos.QueryBatchSize = 50;
+            cosmos.MaxEventsPerBatch = 50;
+        });
         runtime.AddAqueduct(aqueduct =>
             aqueduct.StreamProviderName = "StreamProvider");
         runtime.AddEventSourcing(options =>
@@ -81,16 +109,23 @@ builder.UseOrleans(siloBuilder =>
 });
 
 WebApplication app = builder.Build();
-app.MapGet("/health", /* ... */);
+// The health endpoint mapping is omitted from this concept excerpt.
 await app.RunAsync();
 ```
 
-Spring uses generated aggregate, projection, and saga registration methods from its domain definitions. The runtime
-composition callback registers Brooks and Aqueduct settings together, and stages the native Orleans configuration
-before terminal attachment. Aqueduct selects the `StreamProvider` that Spring.AppHost supplies; it does not provision a
-second provider. `runtime.ApplyToSilo(siloBuilder)` is explicit in this sample, although the runtime terminal can
-apply queued native callbacks automatically when the hook is omitted. See [Runtime Composition](../../../reference/runtime-composition.md)
-and [Aqueduct Reference](../../../aqueduct/reference/reference.md) for the attachment and validation contracts.
+Spring uses generated aggregate, projection, and saga registration methods from its domain definitions. The host
+registers the Aspire-created Cosmos and Blob clients before the Orleans callback, then forwards them under the keyed
+identities expected by Brooks. `runtime.AddCosmosBrookStorageProvider(...)` snapshots the event-storage settings and
+stages the Brooks graph; host-owned mode does not create another SDK client during composition. Snapshot storage keeps
+its own host-level registration and resolves the same shared Cosmos client key while using a separate keyed snapshot
+container.
+
+The runtime composition callback registers Brooks, Aqueduct, and event-sourcing settings together, and stages native
+Orleans configuration before terminal attachment. Aqueduct selects the `StreamProvider` that Spring.AppHost supplies;
+it does not provision a second provider. `runtime.ApplyToSilo(siloBuilder)` is explicit in this sample, although the
+runtime terminal can apply queued native callbacks automatically when the hook is omitted. See [Runtime Composition](../../../reference/runtime-composition.md),
+[Brooks Cosmos Provider](../../../brooks/storage-providers/cosmos.md), and [Aqueduct Reference](../../../aqueduct/reference/reference.md)
+for the attachment, storage ownership, and validation contracts.
 
 ([Spring.Runtime/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Runtime/Program.cs))
 

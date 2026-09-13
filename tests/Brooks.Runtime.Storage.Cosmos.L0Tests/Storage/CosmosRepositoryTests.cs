@@ -634,6 +634,65 @@ public sealed class CosmosRepositoryTests
     }
 
     /// <summary>
+    ///     Verifies QueryEventsAsync forwards dynamic batch sizing and drains continuation pages.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task QueryEventsAsyncForwardsDynamicBatchSizeAndDrainsContinuationPagesAsync()
+    {
+        // Arrange
+        Mock<Container> container = new();
+        int capturedBatchSize = 0;
+        using FakeFeedIterator<EventDocument> iterator = new(
+            new List<List<EventDocument>>
+            {
+                new()
+                {
+                    new()
+                    {
+                        EventId = "e1",
+                        EventType = "A",
+                    },
+                },
+                new(),
+                new()
+                {
+                    new()
+                    {
+                        EventId = "e2",
+                        EventType = "B",
+                    },
+                },
+            });
+        container.Setup(c => c.GetItemQueryIterator<EventDocument>(
+                It.IsAny<QueryDefinition>(),
+                null,
+                It.Is<QueryRequestOptions>(o => CaptureMaxItemCount(o, out capturedBatchSize))))
+            .Returns(iterator);
+        Mock<IMapper<EventDocument, EventStorageModel>> eventMapper = new();
+        eventMapper.Setup(m => m.Map(It.IsAny<EventDocument>()))
+            .Returns<EventDocument>(d => new()
+            {
+                EventId = d.EventId,
+                EventType = d.EventType,
+            });
+        CosmosRepository sut = CreateRepository(container.Object, eventMapper: eventMapper.Object);
+        BrookRangeKey range = new("t", "i", 0, 10);
+
+        // Act
+        List<EventStorageModel> results = new();
+        await foreach (EventStorageModel m in sut.QueryEventsAsync(range, -1, TestContext.Current.CancellationToken))
+        {
+            results.Add(m);
+        }
+
+        // Assert
+        Assert.Equal(-1, capturedBatchSize);
+        Assert.Collection(results.Select(r => r.EventId), id => Assert.Equal("e1", id), id => Assert.Equal("e2", id));
+        Assert.False(iterator.HasMoreResults);
+    }
+
+    /// <summary>
     ///     Verifies QueryEventsAsync respects batch size and cancellation.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
