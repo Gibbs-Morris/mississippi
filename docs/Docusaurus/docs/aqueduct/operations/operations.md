@@ -3,83 +3,120 @@ id: aqueduct-operations
 title: Aqueduct Operations
 sidebar_label: Operations
 sidebar_position: 1
-description: Operate Aqueduct runtime composition with explicit provider, validation, and rollout boundaries.
+description: Change Aqueduct stream identities with a coordinated maintenance procedure and explicit recovery boundaries.
 ---
 
 # Aqueduct Operations
 
 ## Overview
 
-This page describes the operational decisions around configuring Aqueduct in an Orleans runtime host. It focuses on the
-provider boundary and composition-time validation; ordinary Orleans cluster operation remains host-specific.
+Changing an Aqueduct stream provider or stream namespace changes the routing identity used by the backplane. Treat
+that change as a coordinated maintenance operation across every participating runtime and gateway host.
 
 ## When this matters
 
-Use this page when preparing a local or deployed Orleans host that will carry the Aqueduct backplane, or when a rollout
-fails during composition.
+Use this page when changing `StreamProviderName`, `ServerStreamNamespace`, or `AllClientsStreamNamespace`, or when
+recovering after a restart or failover that removed in-memory connections, groups, or server-directory state.
+
+An API-only cutover that preserves the existing identities should follow the [Aqueduct Runtime Composition
+Migration](../migration/migration.md) guidance. The maintenance procedure below is for an identity or provider change.
 
 ## Prerequisites and assumptions
 
-- The host has one `UseMississippi(...)` runtime terminal callback.
-- The host either provides an Orleans stream provider or intentionally selects `UseMemoryStreams(...)` for local
-  development or tests.
-- When a gateway participates, verify that it uses the same provider and stream namespaces as the runtime.
+- Inventory the exact provider and namespace values on every runtime and gateway that participates in the backplane.
+- Identify all message producers, SignalR gateways, Orleans runtimes, and clients that must move together.
+- Confirm the provider-specific procedure for preserving or recovering any durable stream or subscription metadata.
+- Treat Aqueduct connection, group-membership, and server-directory state as volatile in-memory state. Aqueduct does not
+  persist that state through `IGrainStorage`.
+- Do not assume mixed runtime versions, mixed stream identities, a drain API, automatic replay, or zero-loss behavior;
+  those behaviors are not established by the current implementation.
 
 ## Recommended baseline
 
-Use `runtime.AddAqueduct(...)` inside the terminal callback. Configure host-owned external providers before that
-callback. For local development and tests, use `aqueduct.UseMemoryStreams()` so the final selected provider name is
-used for both Aqueduct options and Orleans memory stream registration.
+Keep the provider name and both stream namespaces unchanged for the ordinary runtime API cutover. Use one matching
+configuration set across all participating hosts and apply it through the documented runtime composition path.
 
-Do not make the runtime depend on an untracked provider name. Keep the selected `StreamProviderName`, server stream
-namespace, and all-clients stream namespace consistent across every host that participates in the backplane.
+If an identity must change, schedule a maintenance window that stops message production, new traffic, and all
+participating gateways and runtimes before any host receives the new values. The whole participating backplane is the
+blast radius: old and new identities address different streams, so a partially updated fleet can partition delivery.
 
-## Operational guidance
+## Procedure
 
-Aqueduct validation runs during terminal composition. Empty or whitespace-only stream names reject the attachment with
-structured diagnostics. A second `AddAqueduct(...)` call for the same runtime is also rejected.
-
-`UseMemoryStreams(...)` is intended for development and tests. A deployed host should configure the stream provider it
-needs through Orleans and set Aqueduct's `StreamProviderName` to that existing provider. The runtime builder does not
-select or provision an external provider.
-
-`UseMississippi(...)` stages service descriptors and applies queued native callbacks before publishing the runtime
-graph. Composition does not start Orleans or check network reachability, so those checks belong to the host's normal
-build and startup validation.
+1. Record the current provider and namespace values, deployment versions, provider-owned durable metadata locations,
+   and the clients or subscriptions that must be re-established.
+2. Stop application producers and stop accepting traffic that can create or use SignalR connections. Do not assume a
+   drain operation exists; keep traffic stopped for the identity change.
+3. Stop participating gateway hosts first, then stop all participating runtime hosts. Verify that no old host remains
+   able to publish or consume backplane messages.
+4. Apply one matching provider and namespace configuration set to every runtime and gateway deployment. Keep the
+   provider-owned durable metadata configuration explicit and unchanged unless the provider migration is intentional.
+5. Start all runtime hosts first. Wait for their normal Orleans health signal and verify that each runtime has the same
+   provider and namespace values.
+6. Start the gateway hosts. Allow each gateway to initialize its server and all-client stream subscriptions and register
+   its heartbeat with the server directory.
+7. Re-establish client connections, group membership, and application subscriptions. Treat all previous in-memory
+   membership as lost until these flows complete.
+8. Send controlled messages through the real connection, group, and broadcast paths. Verify receipt by the intended
+   clients and confirm host health before resuming normal traffic.
 
 ## Validation
 
-After changing provider or namespace settings:
+The change is ready for traffic only when all of the following are true:
 
-1. Run the host's normal build and composition checks.
-2. Start the Orleans host with the intended provider configuration.
-3. Confirm that the runtime and gateway resolve the same stream identities through their normal application checks.
-4. Review the structured diagnostics if composition fails before startup.
+- Every participating host reports the same provider and namespace configuration.
+- Runtime hosts report their normal Orleans started/healthy state.
+- Gateway logs show `Orleans streams initialized for hub`, `Heartbeat manager started`, and `Orleans backplane
+  initialized` for each active hub/server; investigate any `Heartbeat failed` warning.
+- Clients have reconnected, groups have been rejoined, and application subscriptions have been recreated.
+- Controlled direct-connection, group, and broadcast messages traverse the intended paths and are observed by the
+  intended clients.
+- No `MSB201`, `MSB202`, `MSB203`, `MSB206`, or `MSB207` composition diagnostics are present.
+- Provider-owned durable stream or subscription metadata has passed its provider-specific recovery check, when such
+  metadata exists.
 
 ## Failure modes and rollback
 
-An invalid builder scope fails before its staged graph is attached. Correct the values and retry with a fresh
-`UseMississippi(...)` composition. If publication itself damages the host service collection, the runtime composition
-reference requires a fresh host; do not treat a partially restored host as a safe rollback target.
+Changing identities can make messages on the previous streams invisible to hosts using the new streams. Messages in
+flight during shutdown can be lost, and Aqueduct does not provide automatic replay. Stopping hosts also loses the
+in-memory client, group, and server-directory state; clients must reconnect, rejoin groups, and recreate subscriptions.
+This volatile membership is separate from any durable metadata owned by an external stream provider.
 
-Changing stream identities can strand messages or split hosts across different backplane streams. Coordinate a provider
-or namespace change as a deployment decision and verify every participating host before sending traffic.
+If validation fails while traffic is still stopped, roll back as one coordinated unit:
+
+1. Stop the gateways and runtimes using the new configuration.
+2. Restore the previous binary, provider configuration, and exact provider/namespace identities on every participating
+   host.
+3. Start the previous runtime set first and verify its Orleans health and provider configuration.
+4. Start the previous gateway set and verify stream initialization and server registration.
+5. Reconnect clients, rejoin groups, recreate subscriptions, and repeat controlled direct, group, and broadcast message
+   checks.
+6. Resume traffic only after the previous configuration and real message paths are healthy.
+
+Recover provider-owned durable metadata through that provider's documented procedure. Do not treat volatile Aqueduct
+membership as recoverable storage, and do not resume traffic with old and new identity sets mixed.
 
 ## Telemetry to watch
 
-Monitor the Orleans cluster health and stream-provider signals already exposed by the host. Aqueduct's composition
-diagnostics are stable codes surfaced through `BuilderValidationException`; they are startup evidence rather than a
-steady-state telemetry contract.
+Watch the host's Orleans health and stream-provider signals, plus Aqueduct's structured logs:
+
+- `Orleans streams initialized for hub` confirms gateway stream subscriptions completed.
+- `Heartbeat manager started` confirms gateway server registration began.
+- `Orleans backplane initialized for hub` confirms the gateway completed backplane setup.
+- `Heartbeat failed for server` is a warning requiring investigation before traffic resumes.
+- Runtime and gateway health checks should remain healthy after clients reconnect and controlled messages succeed.
+
+These signals show initialization and liveness activity. They do not prove zero message loss or durable membership
+recovery.
 
 ## Summary
 
-Operate Aqueduct by keeping provider ownership explicit, composing it once through `RuntimeBuilder`, and validating the
-host after startup. Use memory streams only for local development or tests unless a separate deployment decision has
-established their suitability.
+Keep stream identities stable for ordinary API-only changes. For an intentional provider or namespace change, stop the
+whole participating fleet, apply one matching configuration, start runtimes before gateways, rebuild volatile state,
+validate real message paths, and roll back the complete set while traffic remains stopped if validation fails.
 
 ## Next Steps
 
-- Use [Aqueduct Reference](../reference/reference.md) for options, defaults, and diagnostics.
-- Read [Runtime Composition](../../reference/runtime-composition.md) for staging and failed-publication behavior.
-- Follow [Aqueduct Troubleshooting](../troubleshooting/troubleshooting.md) when startup reports a composition or
-  provider-resolution failure.
+- Follow [Aqueduct Runtime Composition (Next)](../migration/migration.md) for the API cutover and identity-preservation
+  constraints.
+- Use [Aqueduct Reference](../reference/reference.md) for options and diagnostic codes.
+- Read [Aqueduct Troubleshooting](../troubleshooting/troubleshooting.md) for composition and provider failures.
