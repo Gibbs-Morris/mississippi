@@ -80,6 +80,57 @@ public sealed class NotificationPulseBehaviorTests : BunitContext
     }
 
     /// <summary>
+    ///     NotificationPulse omits disclosure attributes when controlled state is not supplied.
+    /// </summary>
+    [Fact]
+    public void NotificationPulseOmitsControlledDetailsAttributesByDefault()
+    {
+        // Act
+        using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>(p => p.Add(
+            c => c.OnExpand,
+            _ => { }));
+
+        // Assert
+        IElement expand = cut.Find(".rf-notification-pulse__expand");
+        Assert.False(expand.HasAttribute("aria-expanded"));
+        Assert.False(expand.HasAttribute("aria-controls"));
+    }
+
+    /// <summary>
+    ///     NotificationPulse renders and updates optional parent-controlled disclosure attributes.
+    /// </summary>
+    [Fact]
+    public void NotificationPulseRendersControlledDetailsStateAndUpdatesIt()
+    {
+        // Arrange
+        using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>(p => p
+            .Add(c => c.IsExpanded, false)
+            .Add(c => c.DetailsId, "notification-details")
+            .Add(c => c.OnExpand, _ => { }));
+        IElement expand = cut.Find(".rf-notification-pulse__expand");
+
+        // Assert
+        Assert.Equal("false", expand.GetAttribute("aria-expanded"));
+        Assert.Equal("notification-details", expand.GetAttribute("aria-controls"));
+
+        // Act
+        cut.Render(p => p.Add(c => c.IsExpanded, true));
+
+        // Assert
+        IElement updatedExpand = cut.Find(".rf-notification-pulse__expand");
+        Assert.Equal("true", updatedExpand.GetAttribute("aria-expanded"));
+        Assert.Equal("notification-details", updatedExpand.GetAttribute("aria-controls"));
+
+        // Act
+        cut.Render(p => p.Add(c => c.IsExpanded, null).Add(c => c.DetailsId, null));
+
+        // Assert
+        IElement resetExpand = cut.Find(".rf-notification-pulse__expand");
+        Assert.False(resetExpand.HasAttribute("aria-expanded"));
+        Assert.False(resetExpand.HasAttribute("aria-controls"));
+    }
+
+    /// <summary>
     ///     NotificationPulse exposes independent native actions when their callbacks are supplied.
     /// </summary>
     [Fact]
@@ -102,6 +153,24 @@ public sealed class NotificationPulseBehaviorTests : BunitContext
         Assert.Equal("button", cut.Find(".rf-notification-pulse__expand").GetAttribute("type"));
         Assert.Equal("button", cut.Find(".rf-notification-pulse__dismiss").GetAttribute("type"));
         Assert.False(cut.Find(".rf-notification-pulse").HasAttribute("tabindex"));
+    }
+
+    /// <summary>
+    ///     NotificationPulse rejects a blank details ID when expansion is available.
+    /// </summary>
+    [Fact]
+    public void NotificationPulseRequiresNonBlankDetailsIdWhenExpansionCallbackSupplied()
+    {
+        // Act
+        ArgumentException error = Assert.Throws<ArgumentException>(() =>
+        {
+            using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>(p => p
+                .Add(c => c.DetailsId, " ")
+                .Add(c => c.OnExpand, _ => { }));
+        });
+
+        // Assert
+        Assert.Contains("DetailsId", error.Message, StringComparison.Ordinal);
     }
 
     /// <summary>

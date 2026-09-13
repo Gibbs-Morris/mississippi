@@ -22,6 +22,12 @@ internal sealed record ShowcaseState : IFeatureState
     /// <summary>Gets a value indicating whether the emitter is disabled.</summary>
     public bool IsEmitterDisabled { get; init; }
 
+    /// <summary>Gets a value indicating whether the notification details are expanded.</summary>
+    public bool IsNotificationExpanded { get; init; }
+
+    /// <summary>Gets a value indicating whether the notification is visible.</summary>
+    public bool IsNotificationVisible { get; init; } = true;
+
     /// <summary>Gets a value indicating whether validation was requested.</summary>
     public bool IsSubmitted { get; init; }
 
