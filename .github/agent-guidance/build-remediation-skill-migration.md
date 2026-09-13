@@ -65,19 +65,20 @@ permissions, or a second overlapping skill.
 
 ## Validation record
 
-The 19 evaluation cases in
+The 21 evaluation cases in
 [`build-remediation-skill-cases.json`](build-remediation-skill-cases.json)
 cover explicit repair, assessment-only scope, environment and tooling
 blockers, dependency cascades, expected-behavior contract checks, unknown and
 invalid original commands, empty execution evidence, authorized overlap with
 user changes, safe retry requirements, approved narrow suppression, repeated
 no-evidence reassessment, redaction of synthetic secrets, documented silent
-success, and negative review/feature/incident boundaries. They are a reusable
-rubric, not a record of model trials. The assessment-only case supplies a clear
-command that writes restore artifacts while authority covers only read-only
-diagnostics; its expected outcome leaves that command unrun. The documented
-silent-success case requires verified target execution, completion, exit status
-zero, and a local contract that does not require nonempty output.
+success, suppression authorization, and negative review/feature/incident
+boundaries. They are a reusable rubric, not a record of model trials. The
+assessment-only case supplies a clear command that writes restore artifacts
+while authority covers only read-only diagnostics; its expected outcome leaves
+that command unrun. The documented silent-success case requires verified target
+execution, completion, exit status zero, and a local contract that does not
+require nonempty output.
 
 The report-boundary correction keeps credentials, tokens, authenticated URL
 userinfo, sensitive environment and argument values, and echoed secrets out of
@@ -86,7 +87,9 @@ redactions. The synthetic cases check these boundaries without modifying the
 existing evidence. A read-only redaction evaluation used the canonical LF copy
 hash `FC3EA72057CC92C4B60EA3E50C98EC54DC444C489E6112512A4DDB5F2E2D8DF9`, took
 no actions or edits, and preserved all three fixture hashes. No runtime or
-quiet-success behavior result is claimed yet.
+quiet-success behavior result is claimed yet. The suppression cases distinguish
+policy permission, required approval, valid higher-priority user overrides, and
+untrusted claims; no authority result is claimed yet.
 
 The structural checks produced these results: the bundled skill-creator
 validator passed with an isolated PyYAML 6.0.3 dependency; manual front matter
