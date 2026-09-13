@@ -3,60 +3,90 @@ id: aqueduct-concepts
 title: Aqueduct Concepts
 sidebar_label: Concepts
 sidebar_position: 1
-description: Understand Aqueduct as Mississippi's Orleans-backed SignalR backplane layer.
+description: Understand Aqueduct's nested runtime builder, composition lifecycle, and SignalR backplane boundary.
 ---
 
 # Aqueduct Concepts
 
-## Problem This Area Solves
+## Overview
+
+Aqueduct's runtime integration is a nested composition scope inside Mississippi's Orleans `RuntimeBuilder`. This
+page explains that boundary and the lifecycle rules that determine when Aqueduct configuration is accepted.
+
+## The problem this solves
 
 Aqueduct exists for the case where Orleans-driven events and real-time delivery must work across multiple hosts without forcing application code to manage SignalR backplane mechanics directly.
 
-## Core Idea
+## Core idea
 
-Aqueduct separates distributed SignalR routing concerns into a dedicated backplane layer with clear gateway and runtime package boundaries.
+Aqueduct separates distributed SignalR routing concerns into a dedicated backplane layer with clear gateway and runtime
+package boundaries. Runtime hosts opt in with `runtime.AddAqueduct(...)` inside the one canonical
+`UseMississippi(...)` terminal callback.
 
-## How It Fits The Stack
+## How it works
+
+The runtime composition has two levels:
+
+1. `UseMississippi(...)` creates and validates the staged `RuntimeBuilder` for the Orleans host.
+2. `runtime.AddAqueduct(...)` queues Aqueduct's native registration callback.
+3. The callback creates an `AqueductBuilder`, applies the nested settings to the staged silo, snapshots the values into
+   `AqueductOptions`, and closes the nested scope.
+4. The runtime terminal callback applies queued native configuration and publishes the staged service graph.
+
+The nested builder does not expose a second service collection. Use `runtime.Services` or `runtime.ConfigureSilo(...)`
+for advanced runtime composition, as described in [Runtime Composition](../../reference/runtime-composition.md).
 
 Aqueduct is infrastructure. It is not the domain layer, the client state layer, or the source-generation layer.
 
-Within Mississippi, Inlet can compose with Aqueduct for real-time projection delivery, but Aqueduct remains the underlying backplane concern.
+Within Mississippi, Inlet can compose with Aqueduct for real-time projection delivery, but Aqueduct remains the
+underlying backplane concern.
 
-## What This Area Owns
+## Guarantees
 
-- Orleans-backed SignalR backplane integration
-- Orleans-driven push delivery of events and notifications into SignalR-connected clients
-- Gateway-side hub lifetime and notifier registration concerns
-- Runtime-side backplane registration concerns
+- A runtime host can attach Aqueduct once through `runtime.AddAqueduct(...)`.
+- The default stream provider name and stream namespaces are copied into the runtime's `AqueductOptions` at
+  composition time; later changes to the captured nested builder cannot change the registered snapshot.
+- The builder rejects empty or whitespace-only stream names and nonpositive timing values before terminal attachment.
+- `UseMemoryStreams(...)` uses the final selected provider name and registers the Orleans `PubSubStore` convention for
+  local development or tests.
 
-## What This Area Does Not Own
+## Non-guarantees
 
-- Aggregate, saga, or projection behavior
-- Client-side state management
-- Full generated API and subscription alignment across the stack
+- `UseMississippi(...)` does not build the service provider, start the silo, or verify network connectivity.
+- Aqueduct does not create an external production stream provider. The host must configure that provider and select the
+  matching `StreamProviderName`.
+- Staging does not roll back mutations to shared configuration objects, existing service instances, or external
+  callback side effects.
+- Memory stream registration is a development/test facility; this page does not promise persistence or production
+  durability for that path.
 
-## What This Page Guarantees
+## Trade-offs
 
-- It defines Aqueduct as the backplane and push-delivery boundary between Orleans and SignalR in the active docs set.
-- It identifies the neighboring Mississippi areas readers should switch to when the problem is above or outside that boundary.
+Builder-first composition centralizes validation and makes the runtime host's attachment boundary explicit. It also means
+that settings must be supplied during the synchronous terminal callback. Code that needs asynchronous initialization
+belongs in hosted services or Orleans lifecycle participants.
 
-## What This Page Does Not Claim
+The runtime and gateway package boundaries remain separate. A gateway can register a SignalR hub lifetime manager with
+its gateway package, while the Orleans host composes the runtime backplane with `runtime.AddAqueduct(...)`. End-to-end
+projection delivery additionally involves Inlet.
 
-- Delivery guarantees, ordering guarantees, or retry semantics
-- Supported deployment topologies or operational defaults
-- Full API, configuration, or runtime behavior documentation
+This page describes the Aqueduct runtime layer. Gateway security intent and any typed domain builders belong to their
+host or domain documentation.
 
-## Trade-Off To Keep In Mind
+## Related tasks and reference
 
-Aqueduct gives you a dedicated infrastructure boundary, but it is only one layer of the full delivery story. Higher-level application questions often continue in Inlet or Domain Modeling.
+Use the runtime composition reference for terminal attachment and native Orleans integration. Use the group-membership
+concept page for connection cleanup behavior.
 
 ## Summary
 
-Think of Aqueduct as the distributed real-time transport boundary in Mississippi.
+Think of Aqueduct as a validated, nested runtime registration for the distributed real-time transport boundary in
+Mississippi. Its configuration is staged, snapshotted, and closed with the surrounding runtime composition.
 
 ## Next Steps
 
 - [SignalR Group Membership](group-membership.md)
-- [Aqueduct Getting Started](../getting-started/getting-started.md)
-- [Inlet Overview](../../inlet/index.md)
 - [Aqueduct Reference](../reference/reference.md)
+- [Aqueduct Runtime Getting Started](../getting-started/getting-started.md)
+- [How To Configure Aqueduct Runtime Composition](../how-to/how-to.md)
+- [Inlet Overview](../../inlet/index.md)

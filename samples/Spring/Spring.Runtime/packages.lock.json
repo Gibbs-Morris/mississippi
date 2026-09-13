@@ -521,7 +521,8 @@
           "Microsoft.Orleans.Sdk": "[10.3.1, )",
           "Microsoft.Orleans.Server": "[10.3.1, )",
           "Microsoft.Orleans.Streaming": "[10.3.1, )",
-          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )"
+          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
+          "Mississippi.Hosting.Runtime.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Brooks.Abstractions": {

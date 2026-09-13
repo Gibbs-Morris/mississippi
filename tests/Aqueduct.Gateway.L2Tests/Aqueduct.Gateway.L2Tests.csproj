@@ -1,4 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Retain the established namespace shared by this project's existing tests. -->
+    <RootNamespace>$(AssemblyName)</RootNamespace>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Aspire Testing Infrastructure -->
     <PackageReference Include="Aspire.Hosting.Testing" />
@@ -18,5 +24,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Aqueduct.Gateway.L2Tests.AppHost\Aqueduct.Gateway.L2Tests.AppHost.csproj" />
+    <ProjectReference Include="..\..\src\Hosting.Runtime\Hosting.Runtime.csproj" />
   </ItemGroup>
 </Project>

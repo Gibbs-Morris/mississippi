@@ -3,49 +3,84 @@ id: aqueduct-operations
 title: Aqueduct Operations
 sidebar_label: Operations
 sidebar_position: 1
-description: Current operational scope for Aqueduct and the evidence gaps that still need dedicated runtime guidance.
+description: Operate Aqueduct runtime composition with explicit provider, validation, and rollout boundaries.
 ---
 
 # Aqueduct Operations
 
-## Operational Goal
+## Overview
 
-The operational concern for Aqueduct is keeping the Orleans-backed SignalR backplane correctly placed between gateway and runtime hosts.
+This page describes the operational decisions around configuring Aqueduct in an Orleans runtime host. It focuses on the
+provider boundary and composition-time validation; ordinary Orleans cluster operation remains host-specific.
 
-## When This Matters
+## When this matters
 
-Use this page when your question is operational rather than conceptual, but you need to stay within currently verified documentation.
+Use this page when preparing a local or deployed Orleans host that will carry the Aqueduct backplane, or when a rollout
+fails during composition.
 
-## Prerequisites And Assumptions
+## Prerequisites and assumptions
 
-- You already understand the [Aqueduct overview](../index.md).
-- You know whether you are looking at gateway-side hosting, runtime-side hosting, or a higher-level Inlet scenario.
+- The host has one `UseMississippi(...)` runtime terminal callback.
+- The host either provides an Orleans stream provider or intentionally selects `UseMemoryStreams(...)` for local
+  development or tests.
+- When a gateway participates, verify that it uses the same provider and stream namespaces as the runtime.
 
-## Current Verified Operational Scope
+## Recommended baseline
 
-The active docs currently verify that Aqueduct owns gateway-side hub lifetime management, notifier registration, and runtime-side backplane registration.
+Use `runtime.AddAqueduct(...)` inside the terminal callback. Configure host-owned external providers before that
+callback. For local development and tests, use `aqueduct.UseMemoryStreams()` so the final selected provider name is
+used for both Aqueduct options and Orleans memory stream registration.
 
-## Current Scope
+Do not make the runtime depend on an untracked provider name. Keep the selected `StreamProviderName`, server stream
+namespace, and all-clients stream namespace consistent across every host that participates in the backplane.
 
-This page covers the operational boundary for Aqueduct gateway and runtime hosting. For package-level details, see the [Aqueduct Reference](../reference/reference.md).
+## Operational guidance
+
+Aqueduct validation runs during terminal composition. Empty or whitespace-only stream names and nonpositive heartbeat
+settings reject the attachment with structured diagnostics. A second `AddAqueduct(...)` call for the same runtime is
+also rejected.
+
+`UseMemoryStreams(...)` is intended for development and tests. A deployed host should configure the stream provider it
+needs through Orleans and set Aqueduct's `StreamProviderName` to that existing provider. The runtime builder does not
+select or provision an external provider.
+
+`UseMississippi(...)` stages service descriptors and applies queued native callbacks before publishing the runtime
+graph. Composition does not start Orleans or check network reachability, so those checks belong to the host's normal
+build and startup validation.
 
 ## Validation
 
-For now, validate your understanding by confirming that the problem is truly about the backplane boundary and not about projection generation, domain behavior, or client state.
+After changing provider or namespace settings:
 
-## Failure Modes And Rollback
+1. Run the host's normal build and composition checks.
+2. Start the Orleans host with the intended provider configuration.
+3. Confirm that the runtime and gateway resolve the same stream identities through their normal application checks.
+4. Review the structured diagnostics if composition fails before startup.
 
-Refer to the [Aqueduct Reference](../reference/reference.md) for failure behavior at the package level. Orleans cluster diagnostics apply to any silo hosting Aqueduct components.
+## Failure modes and rollback
 
-## Telemetry To Watch
+An invalid builder scope fails before its staged graph is attached. Correct the values and retry with a fresh
+`UseMississippi(...)` composition. If publication itself damages the host service collection, the runtime composition
+reference requires a fresh host; do not treat a partially restored host as a safe rollback target.
 
-Monitor standard Orleans silo metrics and cluster health dashboards for any silo hosting Aqueduct backplane components.
+Changing stream identities can strand messages or split hosts across different backplane streams. Coordinate a provider
+or namespace change as a deployment decision and verify every participating host before sending traffic.
+
+## Telemetry to watch
+
+Monitor the Orleans cluster health and stream-provider signals already exposed by the host. Aqueduct's composition
+diagnostics are stable codes surfaced through `BuilderValidationException`; they are startup evidence rather than a
+steady-state telemetry contract.
 
 ## Summary
 
-This page establishes the operational boundary for Aqueduct gateway and runtime hosting.
+Operate Aqueduct by keeping provider ownership explicit, composing it once through `RuntimeBuilder`, and validating the
+host after startup. Use memory streams only for local development or tests unless a separate deployment decision has
+established their suitability.
 
 ## Next Steps
 
-- Use [Aqueduct Reference](../reference/reference.md) for the currently verified package surface.
-- Use [Archived Documentation](../../archived/index.md) for additional preserved material on Aqueduct operations.
+- Use [Aqueduct Reference](../reference/reference.md) for options, defaults, and diagnostics.
+- Read [Runtime Composition](../../reference/runtime-composition.md) for staging and failed-publication behavior.
+- Follow [Aqueduct Troubleshooting](../troubleshooting/troubleshooting.md) when startup reports a composition or
+  provider-resolution failure.

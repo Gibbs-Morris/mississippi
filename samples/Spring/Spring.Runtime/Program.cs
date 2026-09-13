@@ -129,13 +129,11 @@ builder.Services.AddCosmosSnapshotStorageProvider(options =>
 // Configure Orleans silo - Aspire injects clustering config via environment variables
 builder.UseOrleans(siloBuilder =>
 {
-    // Configure Aqueduct to use the Aspire-configured stream provider for SignalR backplane
-    siloBuilder.UseAqueduct(options => options.StreamProviderName = "StreamProvider");
-
     // Configure event sourcing to use the Aspire-configured stream provider
     // Must match the stream provider name configured in AppHost via WithMemoryStreaming
     siloBuilder.UseMississippi(runtime =>
     {
+        runtime.AddAqueduct(aqueduct => aqueduct.StreamProviderName = "StreamProvider");
         runtime.AddEventSourcing(options => options.OrleansStreamProviderName = "StreamProvider");
         runtime.ConfigureSilo(configuredSilo => configuredSilo.AddActivityPropagation());
         runtime.ApplyToSilo(siloBuilder);

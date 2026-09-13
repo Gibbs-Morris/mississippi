@@ -30,10 +30,11 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
         siloBuilder.AddMemoryGrainStorage("PubSubStore");
 
         // Tell Brooks which stream provider to use
-        siloBuilder.UseMississippi(runtime => runtime.AddEventSourcing());
-
-        // Configure Aqueduct for IAqueductGrainFactory
-        siloBuilder.UseAqueduct();
+        siloBuilder.UseMississippi(runtime =>
+        {
+            runtime.AddEventSourcing();
+            runtime.AddAqueduct();
+        });
         siloBuilder.ConfigureServices(services =>
         {
             // Register InletSilo services (IProjectionBrookRegistry)
