@@ -34,6 +34,12 @@ OnExpand is supplied.` When `OnDismiss` has a delegate, the corresponding
 `DismissText` condition throws with `DismissText must be nonblank when OnDismiss
 is supplied.`
 
+When `OnExpand` has a delegate and `DetailsId` is supplied, a blank or
+whitespace-only value throws `ArgumentException` with `DetailsId must be
+nonblank when OnExpand is supplied and DetailsId is provided.` A null
+`DetailsId` omits `aria-controls`; a nonblank value is not checked for a
+matching or unique DOM target.
+
 These checks run in `OnParametersSet`, so Blazor raises the exception while it
 applies the initial or updated parameter set, before that set is rendered. The
 exception uses a message-only constructor; consumers should not rely on a
