@@ -14,6 +14,9 @@ Configure the Aqueduct runtime backplane once inside the Orleans host's `UseMiss
 `AqueductBuilder` owns Aqueduct settings; the outer `RuntimeBuilder` remains the place for other runtime features and
 advanced native Orleans plumbing.
 
+The runtime builder controls the stream provider and server namespace. The gateway keeps ownership of the broadcast
+namespace used among gateways.
+
 ## When to use this
 
 Use this page when an Orleans silo needs Aqueduct's runtime grains, stream options, and SignalR backplane registration.
@@ -86,8 +89,8 @@ Use this form when settings are stored under an `Aqueduct` configuration section
 runtime.AddAqueduct(builder.Configuration.GetSection("Aqueduct"));
 ```
 
-The overload reads `StreamProviderName`, `ServerStreamNamespace`, and `AllClientsStreamNamespace`. Omitted values retain
-their defaults.
+The overload reads `StreamProviderName` and `ServerStreamNamespace`. Omitted values retain their runtime defaults;
+`AllClientsStreamNamespace` remains a gateway setting for broadcasts.
 
 #### Explicit settings
 
@@ -96,8 +99,7 @@ Use this form when the values are known at composition time:
 ```csharp
 runtime.AddAqueduct(
     "StreamProvider",
-    serverStreamNamespace: "mississippi-server",
-    allClientsStreamNamespace: "mississippi-all-clients");
+    serverStreamNamespace: "mississippi-server");
 ```
 
 ### Keep advanced native configuration on the runtime root
@@ -109,7 +111,8 @@ See [Runtime Composition](../../reference/runtime-composition.md) for the stagin
 ## Verify the result
 
 - The host has exactly one `UseMississippi(...)` callback for its runtime composition.
-- The nested callback selects a nonempty stream provider and nonempty stream namespaces.
+- The nested callback selects a nonempty stream provider and server namespace. Configure the gateway broadcast namespace
+  separately on participating gateways.
 - The selected stream provider exists on the host, unless `UseMemoryStreams(...)` created it for local development or
   tests.
 - The host can build and start using its normal Orleans validation. Provider resolution alone does not check external

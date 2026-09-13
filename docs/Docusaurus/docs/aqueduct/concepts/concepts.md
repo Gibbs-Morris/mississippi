@@ -44,9 +44,10 @@ underlying backplane concern.
 ## Guarantees
 
 - A runtime host can attach Aqueduct once through `runtime.AddAqueduct(...)`.
-- The default stream provider name and stream namespaces are copied into the runtime's `AqueductOptions` at
-  composition time; later changes to the captured nested builder cannot change the registered snapshot.
-- The builder rejects empty or whitespace-only stream names before terminal attachment.
+- The default stream provider name and server namespace are copied into the runtime's `AqueductOptions` at composition
+  time; later changes to the captured nested builder cannot change the registered snapshot.
+- The builder rejects an empty or whitespace-only provider name or server namespace before terminal attachment.
+- `AllClientsStreamNamespace` remains a gateway option for broadcasts; the runtime builder does not set or validate it.
 - `UseMemoryStreams(...)` uses the final selected provider name and registers the Orleans `PubSubStore` convention for
   local development or tests.
 

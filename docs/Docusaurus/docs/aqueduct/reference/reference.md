@@ -52,7 +52,7 @@ The overloads are:
 | --- | --- |
 | `IRuntimeBuilder AddAqueduct(Action<AqueductBuilder>? configure = null)` | Queue one nested Aqueduct configuration for the runtime |
 | `IRuntimeBuilder AddAqueduct(IConfiguration configuration)` | Read option property-name keys from the supplied configuration |
-| `IRuntimeBuilder AddAqueduct(string streamProviderName, string serverStreamNamespace = ..., string allClientsStreamNamespace = ...)` | Queue explicit stream and namespace settings |
+| `IRuntimeBuilder AddAqueduct(string streamProviderName, string serverStreamNamespace = ...)` | Queue explicit provider and server-namespace settings |
 
 Only one `AddAqueduct(...)` call is valid for a given runtime builder. Combine settings in one call.
 
@@ -66,23 +66,23 @@ Only one `AddAqueduct(...)` call is valid for a given runtime builder. Combine s
 
 ## Options
 
-`AqueductBuilder` exposes these settings inside the `AddAqueduct(...)` callback:
+`AqueductBuilder` exposes these runtime settings inside the `AddAqueduct(...)` callback:
 
 | Property | Meaning | Default |
 | --- | --- | --- |
 | `StreamProviderName` | Orleans stream provider used for SignalR delivery | `mississippi-streaming` |
 | `ServerStreamNamespace` | Namespace for server-targeted messages | `mississippi-server` |
-| `AllClientsStreamNamespace` | Namespace for broadcasts to all clients | `mississippi-all-clients` |
 
 Names must be nonempty and must not consist only of whitespace. The values are preserved as supplied.
+`AllClientsStreamNamespace` remains a gateway option for broadcasts and is not set or validated by the runtime builder.
 
 ## Defaults
 
 The defaults are provided by `AqueductStreamDefaults` and `AqueductOptions`:
 
-- `StreamProviderName`: `mississippi-streaming`
-- `ServerStreamNamespace`: `mississippi-server`
-- `AllClientsStreamNamespace`: `mississippi-all-clients`
+- Runtime `StreamProviderName`: `mississippi-streaming`
+- Runtime `ServerStreamNamespace`: `mississippi-server`
+- Gateway `AllClientsStreamNamespace`: `mississippi-all-clients`
 
 ## Memory Streams
 
@@ -101,13 +101,13 @@ The `IConfiguration` overload reads these exact keys from the supplied configura
 | --- | --- |
 | `StreamProviderName` | `AqueductBuilder.StreamProviderName` |
 | `ServerStreamNamespace` | `AqueductBuilder.ServerStreamNamespace` |
-| `AllClientsStreamNamespace` | `AqueductBuilder.AllClientsStreamNamespace` |
 
-Missing keys keep the defaults.
+Missing keys keep the runtime defaults. `AllClientsStreamNamespace` is configured on the gateway hosts that use it;
+the runtime configuration overload does not read it.
 
 ## Behavior
 
-The nested configuration is applied to the runtime's staged silo, then copied into a snapshot used to configure
+The nested configuration is applied to the runtime's staged silo, then the two runtime settings are copied into a snapshot used to configure
 `IOptions<AqueductOptions>`. Capturing an `AqueductBuilder` beyond its callback is unsupported: the scope closes after
 success or failure, and later property changes throw `BuilderValidationException` with `MSB206`.
 
@@ -130,7 +130,6 @@ current Aqueduct diagnostic codes are:
 | --- | --- | --- |
 | `MSB201` | `StreamProviderName` is empty or whitespace | Set a nonempty provider name |
 | `MSB202` | `ServerStreamNamespace` is empty or whitespace | Set a nonempty server namespace |
-| `MSB203` | `AllClientsStreamNamespace` is empty or whitespace | Set a nonempty broadcast namespace |
 | `MSB206` | A captured nested builder scope is closed | Configure a fresh `AddAqueduct(...)` callback |
 | `MSB207` | Aqueduct was added more than once to one runtime | Combine settings in one `AddAqueduct(...)` call |
 

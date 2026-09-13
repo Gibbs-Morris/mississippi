@@ -1,15 +1,15 @@
 ---
 id: aqueduct-runtime-composition-migration
-title: "Migrate Aqueduct Runtime Composition (Next: 97945838 → 9d3a400e)"
+title: "Migrate Aqueduct Runtime Composition (Next: 97945838 → 10cb90b1)"
 sidebar_label: Runtime Migration
 sidebar_position: 1
 description: Move an Orleans host to the Next Aqueduct runtime composition API while preserving stream identities.
 ---
 
-# Migrate Aqueduct Runtime Composition (Next: 97945838 → 9d3a400e)
+# Migrate Aqueduct Runtime Composition (Next: 97945838 → 10cb90b1)
 
 This guide maps the source API shape verified at revision `979458386861732d2642581f5bbb60ad821bfc0e` to the target
-three-setting builder API verified at revision `9d3a400edf7682efd859284de26da884aba7571b`. The source uses the
+two-setting builder API verified at revision `10cb90b1b53d6839e016c88f96c793154b86504d`. The source uses the
 silo-level `UseAqueduct(...)` and `AqueductSiloOptions`; the target uses nested `runtime.AddAqueduct(...)`. These
 revisions identify API shapes in the repository and are not NuGet release numbers.
 
@@ -33,30 +33,31 @@ has no production consumer. This runtime migration changes neither setting.
   compatibility wrapper is provided.
 - Mixed versions of the runtime and gateway composition are not verified. Keep participating hosts on one compatible
   source/package set and use the coordinated procedure below.
-- The API move does not change event, snapshot, or message serialization types. Stream-provider and stream-namespace
-  identity still has to remain consistent across participating hosts.
+- The API move does not change event, snapshot, or message serialization types. Provider and server-namespace identity
+  still has to remain consistent across participating runtimes and gateways; gateway broadcast identity remains
+  consistent among gateways.
 - The target memory-stream helper uses the `PubSubStore` convention. It has no parameter for an arbitrary old storage
   name, so a custom old PubSub storage identity needs a separate data and deployment decision.
 
 ## Breaking changes
 
-The target runtime builder exposes three stream identity settings:
+The target runtime builder exposes two runtime stream identity settings:
 
 - `StreamProviderName`
 - `ServerStreamNamespace`
-- `AllClientsStreamNamespace`
 
 Runtime heartbeat and dead-server timeout settings are not part of this builder. Leave
 `HeartbeatIntervalMinutes` in the gateway configuration that consumes it; `DeadServerTimeoutMultiplier` currently has
-no production consumer.
+no production consumer. `AllClientsStreamNamespace` remains a gateway setting for broadcasts and is not set or validated
+by the runtime builder.
 
 The target `UseMemoryStreams()` and `UseMemoryStreams("ProviderName")` methods configure memory streams and the
 `PubSubStore` convention. The old provider-and-storage-name overload is not mapped automatically.
 
 ## Required preparation
 
-1. Record the current `StreamProviderName`, `ServerStreamNamespace`, and `AllClientsStreamNamespace` values for every
-   participating host.
+1. Record the current `StreamProviderName` and `ServerStreamNamespace` values for every participating runtime and
+   gateway, and record `AllClientsStreamNamespace` for every participating gateway.
 2. Record provider-owned stream or storage identities used by the host, including `PubSubStore` when memory streams are
    selected. Aqueduct connection and group membership state is volatile in memory; preserve provider-owned persisted
    stream or subscription metadata separately where applicable.
@@ -74,8 +75,8 @@ The target `UseMemoryStreams()` and `UseMemoryStreams("ProviderName")` methods c
    unchanged.
 3. Start the runtime hosts and confirm that each one completes the target `UseMississippi(...)` composition without a
    `BuilderValidationException`.
-4. Start the gateway hosts with their existing gateway-side options and confirm that their provider and namespace
-   settings match the recorded runtime identities.
+4. Start the gateway hosts with their existing gateway-side options and confirm that their provider and server namespace
+   settings match the recorded runtime identities and that their broadcast namespace matches the other gateways.
 5. Re-enable traffic only after all participating hosts report healthy through their normal Orleans and application
    checks.
 
@@ -119,9 +120,9 @@ The target configuration overload reads these option-property keys from the supp
 | --- | --- |
 | `StreamProviderName` | `AqueductBuilder.StreamProviderName` |
 | `ServerStreamNamespace` | `AqueductBuilder.ServerStreamNamespace` |
-| `AllClientsStreamNamespace` | `AqueductBuilder.AllClientsStreamNamespace` |
 
-Missing keys keep their defaults. Do not carry runtime heartbeat or dead-server timeout keys into this callback;
+Missing keys keep their runtime defaults. `AllClientsStreamNamespace` remains a gateway setting and is not read by this
+configuration overload. Do not carry runtime heartbeat or dead-server timeout keys into this callback;
 `HeartbeatIntervalMinutes` remains a gateway setting and `DeadServerTimeoutMultiplier` currently has no production
 consumer.
 
@@ -131,8 +132,9 @@ terminal `UseMississippi(...)` operation applies queued native configuration aut
 ## Data, state, and serialization implications
 
 This is an API and composition migration. It does not rename events, snapshots, Orleans grain contracts, or serialized
-message types. Preserve the exact provider and namespace strings so old and new deployments address the same stream
-identities after the coordinated change.
+message types. Preserve the exact provider and server namespace strings across runtimes and gateways, and preserve the
+gateway broadcast namespace among gateways, so old and new deployments address the same stream identities after the
+coordinated change.
 
 The target memory path registers `PubSubStore`. It does not copy, rename, or translate data from a custom old PubSub
 storage name. Aqueduct connection and group membership state is in memory rather than a persisted storage contract.
@@ -153,9 +155,10 @@ dotnet test --project tests/Aqueduct.Runtime.L0Tests/Aqueduct.Runtime.L0Tests.cs
 ```
 
 The build must finish without warnings or errors, and the test run must have zero failed or skipped tests. Run the
-affected runtime-host and gateway-host checks as well. Confirm that every host uses one `AddAqueduct(...)` call, that
-all three stream identities are nonempty and consistent, and that startup reports no `MSB201`, `MSB202`, `MSB203`,
-`MSB206`, or `MSB207` diagnostics.
+affected runtime-host and gateway-host checks as well. Confirm that every runtime host uses one `AddAqueduct(...)` call,
+that the provider and server namespace are nonempty and consistent across runtimes and gateways, that participating
+gateways agree on the broadcast namespace, and that startup reports no `MSB201`, `MSB202`, `MSB206`, or `MSB207`
+diagnostics.
 
 ## Rollback
 

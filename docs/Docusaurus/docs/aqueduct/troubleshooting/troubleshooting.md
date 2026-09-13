@@ -14,7 +14,7 @@ resolved after startup.
 ## Symptoms
 
 - `UseMississippi(...)` throws `BuilderValidationException` while an `AddAqueduct(...)` callback is running.
-- One of the Aqueduct diagnostics `MSB201`–`MSB203`, `MSB206`, or `MSB207` appears in the exception.
+- One of the Aqueduct diagnostics `MSB201`, `MSB202`, `MSB206`, or `MSB207` appears in the exception.
 - The host starts composition but later cannot resolve the selected Orleans stream provider.
 
 ## What this usually means
@@ -24,7 +24,7 @@ separate host concern that occurs after composition and depends on the host's Or
 
 ## Probable causes
 
-- A stream provider name or stream namespace is empty or whitespace-only (`MSB201`–`MSB203`).
+- A stream provider name or server stream namespace is empty or whitespace-only (`MSB201` or `MSB202`).
 - The same runtime received more than one `AddAqueduct(...)` call (`MSB207`).
 - A captured `AqueductBuilder` was changed after its callback completed (`MSB206`).
 - `StreamProviderName` does not match a provider configured by the Orleans host.
@@ -33,7 +33,7 @@ separate host concern that occurs after composition and depends on the host's Or
 ## How to confirm
 
 1. Read `BuilderValidationException.Diagnostics` and record each `Code`, `Message`, and `Remediation`.
-2. For `MSB201`–`MSB203`, inspect the values supplied to the one `AddAqueduct(...)` callback.
+2. For `MSB201` or `MSB202`, inspect the provider and server namespace values supplied to the one `AddAqueduct(...)` callback.
 3. For `MSB206`, find the captured builder and move its property assignments into a fresh callback.
 4. For `MSB207`, combine all Aqueduct settings into one call for the runtime.
 5. For provider failures, compare the final `StreamProviderName` with the host's Orleans provider registration.
@@ -48,15 +48,15 @@ host, configure the external provider through Orleans and select that existing n
 
 ## Verify the fix
 
-Build and start the host using its normal Orleans checks. Confirm that every participating host selects the intended
-provider and stream namespaces. A successful composition alone does not prove network connectivity or a running Orleans
-cluster.
+Build and start the host using its normal Orleans checks. Confirm that every participating runtime and gateway selects
+the intended provider and server namespace, and that participating gateways agree on their broadcast namespace. A
+successful composition alone does not prove network connectivity or a running Orleans cluster.
 
 ## Prevention
 
 Keep one `AddAqueduct(...)` call per runtime, configure values inside the terminal callback, and use the named
-`AqueductBuilderDiagnosticCodes` constants when handling diagnostics programmatically. Keep host-owned provider names
-in one configuration source so runtime and gateway settings can be reviewed together.
+`AqueductBuilderDiagnosticCodes` constants when handling diagnostics programmatically. Keep the shared provider and
+server namespace values in one configuration source, and keep the gateway broadcast namespace consistent among gateways.
 
 ## Summary
 

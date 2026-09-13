@@ -29,7 +29,7 @@ sidebar_position: 41
 | `IRuntimeBuilder.AddEventSourcing(Action<BrookProviderOptions>?)` | Registers Brooks factories, stream identity support, and options together |
 | `IRuntimeBuilder.AddAqueduct(Action<AqueductBuilder>?)` | Queues one nested Aqueduct configuration for the runtime |
 | `IRuntimeBuilder.AddAqueduct(IConfiguration)` | Queues Aqueduct settings read from option property-name keys |
-| `IRuntimeBuilder.AddAqueduct(string, string, string)` | Queues explicit Aqueduct provider and namespace settings |
+| `IRuntimeBuilder.AddAqueduct(string, string)` | Queues explicit Aqueduct provider and server-namespace settings |
 
 `RuntimeBuilder` implements both `IRuntimeBuilder` and `IMississippiBuilder`. Runtime subsystem extensions can depend on the role contract without referencing the hosting implementation.
 
@@ -54,8 +54,9 @@ builder.UseOrleans(siloBuilder =>
 });
 ```
 
-`AqueductBuilder` exposes `StreamProviderName`, `ServerStreamNamespace`, and `AllClientsStreamNamespace`. Their defaults
-are `mississippi-streaming`, `mississippi-server`, and `mississippi-all-clients`. Stream names must be nonempty.
+`AqueductBuilder` exposes `StreamProviderName` and `ServerStreamNamespace`. Their defaults are `mississippi-streaming`
+and `mississippi-server`. Both runtime values must be nonempty. `AllClientsStreamNamespace` remains a gateway option;
+the runtime builder does not set or validate it.
 
 Use `aqueduct.UseMemoryStreams()` for development or tests. It uses the final selected provider name and registers
 the Orleans `PubSubStore` grain storage convention. `UseMemoryStreams("ProviderName")` selects a provider name before
@@ -63,8 +64,8 @@ enabling the same registrations. A host-owned external provider must be configur
 `StreamProviderName`.
 
 Only one `AddAqueduct(...)` call may be queued for a given runtime. The configuration overload reads
-`StreamProviderName`, `ServerStreamNamespace`, and `AllClientsStreamNamespace` from the supplied `IConfiguration`; omitted
-values keep their defaults.
+`StreamProviderName` and `ServerStreamNamespace` from the supplied `IConfiguration`; omitted values keep their defaults.
+Configure `AllClientsStreamNamespace` on the gateway hosts that use it.
 
 ## Defaults and constraints
 
@@ -74,8 +75,8 @@ Empty runtime roots are valid. No placeholder aggregate, saga, or projection is 
 
 Brooks uses `BrookStreamingDefaults.OrleansStreamProviderName` unless configured otherwise. The host still supplies Orleans stream providers and storage. Repeated `AddEventSourcing(...)` calls keep one canonical grain factory and compose option callbacks in order. A single existing unkeyed concrete singleton registration is preserved, including its factory callback and position. Duplicate or non-singleton unkeyed concrete registrations are replaced by one default singleton. Unkeyed public and internal grain-factory mappings remain authoritative and resolve the same concrete instance across service scopes. Keyed factory registrations remain caller-owned and are preserved for all three contracts. Existing custom stream-ID factories are preserved.
 
-The Aqueduct nested scope snapshots its three stream option values before registering `IOptions<AqueductOptions>`. A captured
-nested builder cannot be changed after its scope closes. Aqueduct's runtime diagnostics are listed in the [Aqueduct
+The Aqueduct nested scope snapshots its two runtime stream option values before registering `IOptions<AqueductOptions>`.
+A captured nested builder cannot be changed after its scope closes. Aqueduct's runtime diagnostics are listed in the [Aqueduct
 Reference](../aqueduct/reference/reference.md).
 
 ## Behavior
@@ -118,7 +119,6 @@ Staging covers service descriptors. The forwarded configuration and existing ser
 | `MSB104` | Native configuration was queued after application | Move all `ConfigureSilo(...)` calls before `ApplyToSilo(...)` |
 | `MSB201` | Aqueduct stream provider name is empty or whitespace | Set `AqueductBuilder.StreamProviderName` to a nonempty value |
 | `MSB202` | Aqueduct server stream namespace is empty or whitespace | Set `AqueductBuilder.ServerStreamNamespace` to a nonempty value |
-| `MSB203` | Aqueduct all-clients stream namespace is empty or whitespace | Set `AqueductBuilder.AllClientsStreamNamespace` to a nonempty value |
 | `MSB206` | Aqueduct configuration scope is closed | Configure a fresh `AddAqueduct(...)` callback |
 | `MSB207` | Aqueduct was configured more than once for one runtime | Combine settings in one `AddAqueduct(...)` call |
 
