@@ -105,7 +105,7 @@ evaluation bytes have SHA-256
 `21FB41470B77A2BF1F47E78792663BEE0E0846E8D04500EAFB78F11CFEBAE709` and size
 8,646 bytes. These assessments used supplied records only; neither performed
 live GitHub verification or remote calls. These results are tied to this prior
-input and do not evaluate the R17 correction.
+input and do not evaluate later corrections.
 
 | Assessment | Recorded result |
 | --- | --- |
@@ -140,31 +140,47 @@ not model activation, native behavior, authentication, or update results.
 Measurements use raw committed bytes from `git cat-file blob` via subprocess and
 LF-normalized copies for uncommitted candidates. The adapter-before row is the
 parent commit; the adapter candidate row is the current atomic adapter copy; the
-skill and metadata rows are the prior measured commit and model-evaluated blob.
+skill and metadata rows are the current staged source object. Prior model
+evidence remains tied to its original blob above.
 UTF-8 text is counted with `str.split()` words and `str.splitlines()` physical
 lines; raw UTF-8 byte length and UTF-16-LE byte length divided by two are
 reported. No PowerShell `Out-String` or worktree line-ending assumption is used.
-The current private-record candidate is identified separately and remains
-untried.
+The current source object and its bounded assessment are identified separately
+below.
 
 | Content | Source | Words | Lines | UTF-8 bytes | UTF-16 units |
 | --- | --- | ---: | ---: | ---: | ---: |
 | Adapter before | parent commit `877f562a2f82bdf78f849475642f26cf6157b3e6` | 1,352 | 75 | 9,515 | 9,515 |
 | Adapter candidate | current LF copy SHA-256 `7E21DD9DBD174D0E5E340F9851299B18BFF810FEE02B0B054803E01B2B0DA5BD` | 477 | 45 | 3,920 | 3,920 |
-| Skill full file (prior staged input) | measured commit `1de2fc2ca793dc50ceeb8846b7fc18b382dff532`; Git blob `1bc8190aa932cfac26e79c2dddf4b99a42fc9324`; LF copy SHA-256 `21FB41470B77A2BF1F47E78792663BEE0E0846E8D04500EAFB78F11CFEBAE709` | 1,226 | 143 | 8,646 | 8,646 |
-| Skill body after complete front matter (prior staged input) | measured commit `1de2fc2ca793dc50ceeb8846b7fc18b382dff532` and same Git blob/LF copy | 1,167 | 139 | 8,177 | 8,177 |
-| Discovery metadata values (prior staged input) | measured commit `1de2fc2ca793dc50ceeb8846b7fc18b382dff532`; name and description joined with one space | 55 | 1 | 439 | 439 |
+| Skill full file (current staged input) | Git blob `fb0c33fff006cc7c412845851f36941f847cd337`; LF copy SHA-256 `071D901E31D72F929800093C4AC46034B26E9D611B436EAE9E34834B47FF967C` | 1,364 | 157 | 9,648 | 9,648 |
+| Skill body after complete front matter (current staged input) | same Git blob and LF copy | 1,305 | 153 | 9,179 | 9,179 |
+| Discovery metadata values (current staged input) | same Git blob; name and description joined with one space | 55 | 1 | 439 | 439 |
 
 The adapter reduction is 875 words, 30 lines, and 5,595 UTF-8 bytes. The skill
 body count removes the complete four-line YAML front matter before applying the
 same `splitlines()` method. The adapter and skill rows intentionally describe
-their named snapshots; these are static context figures, not runtime or startup
-savings claims.
+their named snapshots; prior model results remain tied to blob
+`1bc8190aa932cfac26e79c2dddf4b99a42fc9324`. These are static context figures,
+not runtime or startup savings claims.
 
-The current private-record correction candidate is the LF-only copy
-`.scratchpad/track-github-work-evaluation/SKILL.md` (9,365 bytes; SHA-256
-`F60FDF60253DDBBAED4E3D5E56449C0A47E279B0319BEBA03A300F84090FC05F`). No new
-behavior trial is claimed for this candidate.
+### Current canonical-target assessment evidence
+
+One direct Codex Desktop Luna Max session used the current staged skill source
+object Git blob `fb0c33fff006cc7c412845851f36941f847cd337`, whose LF evaluation
+bytes have SHA-256
+`071D901E31D72F929800093C4AC46034B26E9D611B436EAE9E34834B47FF967C` and size
+9,648 bytes. This assessment used supplied records and local remote metadata
+only; it made no network calls or fixture/Git/issue/PR writes.
+
+| Fixture | Recorded result |
+| --- | --- |
+| Explicit upstream plan | Selected the upstream target named by the plan; the local `upstream` URL was only candidate transport evidence and the `origin` was the other candidate. Live identity, capabilities, default branch, and issue state remained unverified. |
+| Explicit fork plan | Selected the contributor target named by the plan; the local `origin` URL was only candidate transport evidence and `upstream` was the other candidate. Live identity, capabilities, default branch, and issue state remained unverified. |
+| Unresolved targets | Selected no target because both supplied records remained plausible and origin/upstream names did not resolve authority; canonical intake, implementation, or publication remained blocked pending target information. |
+
+All three fixture roots stayed clean and their input, protected-note, and local
+Git-configuration hashes were preserved. This is bounded canonical-target
+assessment evidence, not live provider or CLI conformance.
 
 ## Maintenance and rollback
 
