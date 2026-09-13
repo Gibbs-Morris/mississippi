@@ -67,8 +67,10 @@ public sealed class KitchenSinkPageTests : BunitContext
         using IRenderedComponent<KitchenSinkPage> cut = Render<KitchenSinkPage>();
         IRenderedComponent<NotificationDemo> notification = cut.FindComponent<NotificationDemo>();
         IElement initialDetails = notification.Find("[data-testid=notification-details]");
+        string detailsId = initialDetails.Id!;
         string? detailsReference = initialDetails.GetAttribute("blazor:elementReference");
         IElement initialHeading = notification.Find("[data-testid=notification-demo-heading]");
+        string headingId = initialHeading.Id!;
         string? headingReference = initialHeading.GetAttribute("blazor:elementReference");
 
         // bUnit may omit retained element-reference markers after a rerender, so capture them when nodes are created.
@@ -90,13 +92,15 @@ public sealed class KitchenSinkPageTests : BunitContext
 
         Assert.False(string.IsNullOrWhiteSpace(detailsReference), initialDetails.OuterHtml);
         Assert.False(string.IsNullOrWhiteSpace(headingReference), initialHeading.OuterHtml);
+        Assert.Equal(detailsId, notification.Find(".rf-notification-pulse__expand").GetAttribute("aria-controls"));
+        Assert.Equal(headingId, notification.Find("[data-testid=notification-demo]").GetAttribute("aria-labelledby"));
         notification.OnMarkupUpdated += CaptureRestoreReference;
         Assert.Equal("true", cut.Find("[data-testid=state-notification-visible]").TextContent);
         Assert.Equal("false", cut.Find("[data-testid=state-notification-expanded]").TextContent);
         Assert.Empty(JSInterop.Invocations);
         cut.Find("[data-testid=notification-pulse] .rf-notification-pulse__expand").Click();
         IElement details = notification.Find("[data-testid=notification-details]");
-        Assert.Equal("notification-details", details.Id);
+        Assert.Equal(detailsId, details.Id);
         ElementReference detailsFocus =
             Assert.IsType<ElementReference>(JSInterop.VerifyFocusAsyncInvoke().Arguments[0]);
         Assert.Equal(detailsReference, detailsFocus.Id);
@@ -104,7 +108,7 @@ public sealed class KitchenSinkPageTests : BunitContext
         Assert.Equal(nameof(ExpandNotificationAction), cut.Find("[data-testid=last-action]").TextContent);
         cut.Find("[data-testid=notification-pulse] .rf-notification-pulse__expand").Click();
         IElement repeatedDetails = notification.Find("[data-testid=notification-details]");
-        Assert.Equal("notification-details", repeatedDetails.Id);
+        Assert.Equal(detailsId, repeatedDetails.Id);
         ElementReference repeatedDetailsFocus =
             Assert.IsType<ElementReference>(JSInterop.VerifyFocusAsyncInvoke(2)[1].Arguments[0]);
         Assert.Equal(detailsReference, repeatedDetailsFocus.Id);
@@ -119,7 +123,7 @@ public sealed class KitchenSinkPageTests : BunitContext
         Assert.Equal(nameof(DismissNotificationAction), cut.Find("[data-testid=last-action]").TextContent);
         cut.Find("[data-testid=notification-restore]").Click();
         IElement heading = notification.Find("[data-testid=notification-demo-heading]");
-        Assert.Equal("notification-demo-title", heading.Id);
+        Assert.Equal(headingId, heading.Id);
         ElementReference headingFocus =
             Assert.IsType<ElementReference>(JSInterop.VerifyFocusAsyncInvoke(4)[3].Arguments[0]);
         Assert.Equal(headingReference, headingFocus.Id);
