@@ -136,12 +136,19 @@ public static class SnapshotStorageProviderRegistrations
         services.AddMapper<SnapshotStorageModel, SnapshotDocument, SnapshotStorageToDocumentMapper>();
         services.AddMapper<SnapshotDocument, SnapshotEnvelope, SnapshotDocumentToEnvelopeMapper>();
 
-        // Preserve the generic helper's shared provider identity while owning its descriptors here.
+        // Preserve the default provider registration and mirror the effective descriptor lifetime for its aliases.
         services.TryAddSingleton<ISnapshotStorageProvider, SnapshotStorageProvider>();
-        services.AddSingleton<ISnapshotStorageReader>(provider =>
-            provider.GetRequiredService<ISnapshotStorageProvider>());
-        services.AddSingleton<ISnapshotStorageWriter>(provider =>
-            provider.GetRequiredService<ISnapshotStorageProvider>());
+        ServiceDescriptor providerDescriptor = GetEffectiveProviderDescriptor(services);
+        services.Add(
+            ServiceDescriptor.Describe(
+                typeof(ISnapshotStorageReader),
+                provider => provider.GetRequiredService<ISnapshotStorageProvider>(),
+                providerDescriptor.Lifetime));
+        services.Add(
+            ServiceDescriptor.Describe(
+                typeof(ISnapshotStorageWriter),
+                provider => provider.GetRequiredService<ISnapshotStorageProvider>(),
+                providerDescriptor.Lifetime));
         services.AddHostedService<CosmosContainerInitializer>();
         services.AddKeyedSingleton<Container>(
             SnapshotCosmosDefaults.CosmosContainerServiceKey,
@@ -217,6 +224,23 @@ public static class SnapshotStorageProviderRegistrations
         target.CosmosClientServiceKey = source.CosmosClientServiceKey;
         target.DatabaseId = source.DatabaseId;
         target.QueryBatchSize = source.QueryBatchSize;
+    }
+
+    private static ServiceDescriptor GetEffectiveProviderDescriptor(
+        IServiceCollection services
+    )
+    {
+        for (int index = services.Count - 1; index >= 0; index--)
+        {
+            ServiceDescriptor descriptor = services[index];
+            if ((descriptor.ServiceType == typeof(ISnapshotStorageProvider)) && !descriptor.IsKeyedService)
+            {
+                return descriptor;
+            }
+        }
+
+        throw new InvalidOperationException(
+            "The unkeyed ISnapshotStorageProvider descriptor was not registered before its aliases.");
     }
 
     private sealed class CosmosContainerInitializer : IHostedService

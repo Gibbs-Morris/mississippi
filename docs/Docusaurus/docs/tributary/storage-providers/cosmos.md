@@ -98,11 +98,17 @@ without constructing the client.
 
 The extension stages the snapshot container operations, Cosmos repository, retry policy, five mappers, keyed `Container`,
 and hosted container initializer. The provider reports the `cosmos-db` format identifier. `ISnapshotStorageProvider` uses
-`TryAddSingleton`, so an existing provider descriptor is preserved. `ISnapshotStorageReader` and
-`ISnapshotStorageWriter` are singleton factories that resolve the provider.
-The default provider and a pre-registered singleton custom provider therefore share one instance across all three
-contracts. A pre-registered custom provider with another lifetime keeps that lifetime; the composition does not turn it
-into a singleton.
+`TryAddSingleton`, so an existing unkeyed provider descriptor is preserved. The reader and writer aliases are factories
+registered with the effective lifetime of the last unkeyed `ISnapshotStorageProvider` descriptor:
+
+| Effective provider lifetime | Reader/writer alias lifetime | Identity behavior |
+| --- | --- | --- |
+| Singleton | Singleton | Provider, reader, and writer resolve the same instance. |
+| Scoped | Scoped | They share one provider instance within a scope; another scope gets another instance. |
+| Transient | Transient | Each alias remains transient; no cross-contract identity is promised. |
+
+Keyed `ISnapshotStorageProvider` descriptors are independent of this unkeyed lifetime selection. The default provider is
+therefore a shared singleton, while a pre-registered custom provider keeps its effective lifetime and alias behavior.
 
 The `CosmosContainerInitializer` runs when the host starts. It creates the configured database and container if they do
 not exist, and requires the container partition-key path `/snapshotPartitionKey`. An existing container with another

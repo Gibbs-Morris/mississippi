@@ -140,6 +140,48 @@ public sealed class SnapshotStorageProviderRegistrationsTests
     }
 
     /// <summary>
+    ///     Verifies aliases follow the last unkeyed provider descriptor while keyed registrations remain independent.
+    /// </summary>
+    [Fact]
+    public void AliasesUseEffectiveLastUnkeyedProviderDescriptor()
+    {
+        ServiceCollection services = new();
+        FakeSnapshotStorageProvider firstProvider = new();
+        services.AddSingleton<ISnapshotStorageProvider>(firstProvider);
+        services.AddScoped<ISnapshotStorageProvider, FakeSnapshotStorageProvider>();
+        FakeSnapshotStorageProvider keyedProvider = new();
+        services.AddKeyedSingleton<ISnapshotStorageProvider>("keyed", keyedProvider);
+        AddHostOwnedClient(services);
+        ComposeSnapshot(services);
+        ServiceDescriptor reader = Assert.Single(
+            services,
+            candidate => candidate.ServiceType == typeof(ISnapshotStorageReader));
+        ServiceDescriptor writer = Assert.Single(
+            services,
+            candidate => candidate.ServiceType == typeof(ISnapshotStorageWriter));
+        Assert.Equal(ServiceLifetime.Scoped, reader.Lifetime);
+        Assert.Equal(ServiceLifetime.Scoped, writer.Lifetime);
+        Assert.Contains(
+            services,
+            candidate => candidate.IsKeyedService &&
+                         (candidate.ServiceType == typeof(ISnapshotStorageProvider)) &&
+                         Equals(candidate.ServiceKey, "keyed"));
+        using ServiceProvider provider = services.BuildServiceProvider(
+            new ServiceProviderOptions
+            {
+                ValidateScopes = true,
+            });
+        using IServiceScope scope = provider.CreateScope();
+        ISnapshotStorageProvider effectiveProvider =
+            scope.ServiceProvider.GetRequiredService<ISnapshotStorageProvider>();
+        Assert.Same(keyedProvider, scope.ServiceProvider.GetRequiredKeyedService<ISnapshotStorageProvider>("keyed"));
+        Assert.NotSame(firstProvider, effectiveProvider);
+        Assert.NotSame(keyedProvider, effectiveProvider);
+        Assert.Same(effectiveProvider, scope.ServiceProvider.GetRequiredService<ISnapshotStorageReader>());
+        Assert.Same(effectiveProvider, scope.ServiceProvider.GetRequiredService<ISnapshotStorageWriter>());
+    }
+
+    /// <summary>
     ///     Verifies a keyed AnyKey registration satisfies a callback-selected client key.
     /// </summary>
     [Fact]
@@ -579,20 +621,39 @@ public sealed class SnapshotStorageProviderRegistrationsTests
     }
 
     /// <summary>
-    ///     Verifies a pre-registered non-singleton provider descriptor keeps its original lifetime.
+    ///     Verifies scoped aliases share the scoped provider within a scope and resolve a new provider in another scope.
     /// </summary>
     [Fact]
-    public void PreRegisteredNonSingletonProviderLifetimeIsPreserved()
+    public void PreRegisteredScopedProviderUsesScopedAliasesPerScope()
     {
         ServiceCollection services = new();
-        services.AddTransient<ISnapshotStorageProvider, FakeSnapshotStorageProvider>();
+        services.AddScoped<ISnapshotStorageProvider, FakeSnapshotStorageProvider>();
         AddHostOwnedClient(services);
         ComposeSnapshot(services);
-        ServiceDescriptor descriptor = Assert.Single(
+        ServiceDescriptor reader = Assert.Single(
             services,
-            candidate => candidate.ServiceType == typeof(ISnapshotStorageProvider));
-        Assert.Equal(ServiceLifetime.Transient, descriptor.Lifetime);
-        Assert.Equal(typeof(FakeSnapshotStorageProvider), descriptor.ImplementationType);
+            candidate => candidate.ServiceType == typeof(ISnapshotStorageReader));
+        ServiceDescriptor writer = Assert.Single(
+            services,
+            candidate => candidate.ServiceType == typeof(ISnapshotStorageWriter));
+        Assert.Equal(ServiceLifetime.Scoped, reader.Lifetime);
+        Assert.Equal(ServiceLifetime.Scoped, writer.Lifetime);
+        using ServiceProvider provider = services.BuildServiceProvider(
+            new ServiceProviderOptions
+            {
+                ValidateScopes = true,
+            });
+        using IServiceScope firstScope = provider.CreateScope();
+        ISnapshotStorageProvider firstProvider =
+            firstScope.ServiceProvider.GetRequiredService<ISnapshotStorageProvider>();
+        Assert.Same(firstProvider, firstScope.ServiceProvider.GetRequiredService<ISnapshotStorageReader>());
+        Assert.Same(firstProvider, firstScope.ServiceProvider.GetRequiredService<ISnapshotStorageWriter>());
+        using IServiceScope secondScope = provider.CreateScope();
+        ISnapshotStorageProvider secondProvider =
+            secondScope.ServiceProvider.GetRequiredService<ISnapshotStorageProvider>();
+        Assert.NotSame(firstProvider, secondProvider);
+        Assert.Same(secondProvider, secondScope.ServiceProvider.GetRequiredService<ISnapshotStorageReader>());
+        Assert.Same(secondProvider, secondScope.ServiceProvider.GetRequiredService<ISnapshotStorageWriter>());
     }
 
     /// <summary>
@@ -615,6 +676,38 @@ public sealed class SnapshotStorageProviderRegistrationsTests
             candidate => candidate.ServiceType == typeof(ISnapshotStorageProvider));
         Assert.Equal(ServiceLifetime.Singleton, descriptor.Lifetime);
         Assert.Same(customProvider, descriptor.ImplementationInstance);
+    }
+
+    /// <summary>
+    ///     Verifies a pre-registered transient provider gives its reader and writer aliases transient lifetimes.
+    /// </summary>
+    [Fact]
+    public void PreRegisteredTransientProviderUsesTransientAliases()
+    {
+        ServiceCollection services = new();
+        services.AddTransient<ISnapshotStorageProvider, FakeSnapshotStorageProvider>();
+        AddHostOwnedClient(services);
+        ComposeSnapshot(services);
+        ServiceDescriptor descriptor = Assert.Single(
+            services,
+            candidate => candidate.ServiceType == typeof(ISnapshotStorageProvider));
+        Assert.Equal(ServiceLifetime.Transient, descriptor.Lifetime);
+        Assert.Equal(typeof(FakeSnapshotStorageProvider), descriptor.ImplementationType);
+        ServiceDescriptor reader = Assert.Single(
+            services,
+            candidate => candidate.ServiceType == typeof(ISnapshotStorageReader));
+        ServiceDescriptor writer = Assert.Single(
+            services,
+            candidate => candidate.ServiceType == typeof(ISnapshotStorageWriter));
+        Assert.Equal(ServiceLifetime.Transient, reader.Lifetime);
+        Assert.Equal(ServiceLifetime.Transient, writer.Lifetime);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.NotSame(
+            provider.GetRequiredService<ISnapshotStorageReader>(),
+            provider.GetRequiredService<ISnapshotStorageReader>());
+        Assert.NotSame(
+            provider.GetRequiredService<ISnapshotStorageWriter>(),
+            provider.GetRequiredService<ISnapshotStorageWriter>());
     }
 
     /// <summary>

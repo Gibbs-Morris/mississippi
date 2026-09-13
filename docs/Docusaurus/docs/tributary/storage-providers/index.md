@@ -46,10 +46,11 @@ The provider also supports connection-string-owned composition. That overload re
 the final selected key. Host-owned and connection-string-owned modes differ in client ownership; they share the same
 snapshot contracts and provider graph.
 
-The default provider is registered with `TryAddSingleton`. The reader and writer registrations resolve that provider,
-so the default provider and a pre-registered singleton custom provider share one instance across all three contracts. A
-pre-registered custom provider with another lifetime remains under its existing descriptor; the Cosmos composition does
-not normalize that lifetime.
+The default provider is registered with `TryAddSingleton`. The reader and writer aliases use the effective unkeyed
+`ISnapshotStorageProvider` descriptor's lifetime and resolve that provider through factories. Singleton registrations
+share one provider instance across all three contracts. Scoped registrations share one provider, reader, and writer
+instance within each scope, with a different instance in another scope. Transient registrations remain transient and make
+no cross-contract identity promise. Keyed provider descriptors do not determine these unkeyed aliases.
 
 For a custom snapshot provider, use the advanced staged native hook and register the contracts explicitly. This is a
 registration shape; `MySnapshotStorageProvider` represents the application's implementation:
@@ -90,8 +91,8 @@ framework.
 - Composition and options resolution validate option values and keyed registration availability; they do not prove
   credentials, network connectivity, database access, or partition-key compatibility. Cosmos access and partition-key
   checks occur in the hosted initializer at startup.
-- Composition does not normalize a custom provider's non-singleton lifetime or supply its persistence, retry, or recovery
-  behavior.
+- Composition does not supply a custom provider's persistence, retry, or recovery behavior. A transient custom provider
+  has no cross-contract identity guarantee, and scoped sharing applies only within one dependency-injection scope.
 - The storage abstraction does not make Cosmos equivalent to another backend. Provider-specific query, throughput,
   failure, and durability behavior remains outside these shared contracts.
 - Staged runtime publication has failure and restoration boundaries described by the runtime composition page; callers
