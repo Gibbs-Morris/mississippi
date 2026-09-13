@@ -162,6 +162,11 @@ The runtime-builder entry point replaces the old provider-specific `IServiceColl
 | `services.AddCosmosBrookStorageProvider(...)` | `runtime.AddCosmosBrookStorageProvider(...)` inside `UseMississippi(...)` |
 | `services.RegisterBrookStorageProvider<TProvider>()` for a custom provider | Advanced `runtime.ConfigureSilo(staged => ...)` service registration |
 
+The nested builder starts with its own defaults and does not import values from an earlier
+`services.Configure<BrookStorageOptions>(...)` registration. Move those values into the nested callback or the
+supplied `IConfiguration` section. Standard `PostConfigure<BrookStorageOptions>` processing still runs in its normal
+later options pipeline.
+
 The generic helper is no longer part of the storage-abstractions composition contract. A custom provider must register
 the Brooks storage contracts explicitly through the staged runtime service collection; it is responsible for its own
 repository, durability, concurrency, and lifecycle behavior. Snapshot Cosmos composition is separate and is not changed
