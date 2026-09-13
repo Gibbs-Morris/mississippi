@@ -24,6 +24,12 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Refraction layout classes **MUST NOT** use the `o-` prefix. Why: `Organism` already identifies a filesystem composition level in this repository.
 - Generic state classes such as `.is-active` and `.has-error` **MUST NOT** be introduced. Why: Anonymous state classes make semantic ownership and accessibility harder to inspect.
 - State styling **SHOULD** prefer native pseudo-classes, truthful ARIA attributes, explicit `data-*` attributes, and BEM modifiers in that order. Why: The selector should expose the most meaningful available state.
+- Refraction component modifier syntax **MUST** use only `rf-c-{block}--{modifier}` or `rf-c-{block}__{element}--{modifier}` with lowercase kebab-case segments. Why: A small grammar keeps component state explicit without expanding utility APIs.
+- Every modifier **MUST** accompany its corresponding base block or element class. Why: A modifier without its owner is ambiguous and difficult to compose.
+- Layout and utility classes **MUST NOT** define BEM modifiers. Why: Layout and utility contracts stay narrow and predictable.
+- BEM modifiers **SHOULD** be used only when native, ARIA, and `data-*` state mechanisms are unsuitable, with the reason documented. Why: Modifiers remain a deliberate fallback rather than a generic state channel.
+- BEM modifier visibility **MUST** default to private. Why: Private selectors remain implementation details rather than theming or customization APIs.
+- Deliberate public block modifier contracts **MUST** be explicitly documented. Why: Private element modifiers remain internal under the existing BEM API boundary.
 - Typed `State`, `Variant`, `Size`, and `Tone` values **SHOULD** bind to explicit `data-*` attributes when CSS needs them. Why: Stable data bindings avoid generated class permutations and preserve typed component state.
 - CSS state **MUST** agree with the component's semantic and accessibility state. Why: Visual feedback must not contradict what assistive technology receives.
 - Reusable components **MUST** keep their `.razor`, `.razor.cs`, and `.razor.css` files colocated in one component folder, with tests in the matching component area. Why: Vertical ownership keeps markup, behavior, and presentation reviewable together.
