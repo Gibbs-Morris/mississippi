@@ -1,12 +1,12 @@
 ---
 id: aqueduct-runtime-composition-migration
-title: Migrate Aqueduct Runtime Composition (Next)
+title: "Migrate Aqueduct Runtime Composition (Next: 97945838 → 9d3a400e)"
 sidebar_label: Runtime Migration
 sidebar_position: 1
 description: Move an Orleans host to the Next Aqueduct runtime composition API while preserving stream identities.
 ---
 
-# Migrate Aqueduct Runtime Composition (Next)
+# Migrate Aqueduct Runtime Composition (Next: 97945838 → 9d3a400e)
 
 This guide maps the source API shape verified at revision `979458386861732d2642581f5bbb60ad821bfc0e` to the target
 three-setting builder API verified at revision `9d3a400edf7682efd859284de26da884aba7571b`. The source uses the
