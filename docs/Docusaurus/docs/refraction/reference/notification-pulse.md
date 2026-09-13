@@ -49,12 +49,78 @@ and Space activation without duplicate key handlers. The wrapper has no
 component-owned click handler or tab stop, and the molecule does not add
 `aria-expanded` or disclosure state for a region that the parent owns.
 
-```razor
-<NotificationPulse State="@RefractionStates.New"
-                   OnExpand="@HandleExpand"
-                   OnDismiss="@HandleDismiss">
-    Export completed.
-</NotificationPulse>
+The parent owns visibility, status text, and the response to each typed intent.
+This split Razor and code-behind example keeps those responsibilities explicit:
+
+```razor title="ExportNotification.razor"
+@namespace Example.Components
+@using Microsoft.AspNetCore.Components.Web
+@using Mississippi.Refraction.Client
+@using Mississippi.Refraction.Client.Components.Molecules.Notifications
+
+@if (isVisible)
+{
+    <NotificationPulse State="@notificationState"
+                       ExpandText="View details"
+                       DismissText="Dismiss notification"
+                       OnExpand="@HandleExpandAsync"
+                       OnDismiss="@HandleDismissAsync">
+        <p>@statusMessage</p>
+    </NotificationPulse>
+}
+else
+{
+    <button type="button" @onclick="@HandleRestoreAsync">Restore notification</button>
+}
+```
+
+```csharp title="ExportNotification.razor.cs"
+using System.Threading.Tasks;
+
+using Microsoft.AspNetCore.Components.Web;
+
+using Mississippi.Refraction.Client;
+
+
+namespace Example.Components;
+
+/// <summary>Shows parent-owned notification state and actions.</summary>
+public sealed partial class ExportNotification
+{
+    private bool isVisible = true;
+
+    private string notificationState = RefractionStates.New;
+
+    private string statusMessage = "Export completed. Review the result before dismissing it.";
+
+    private Task HandleExpandAsync(
+        MouseEventArgs mouseEventArgs
+    )
+    {
+        _ = mouseEventArgs;
+        notificationState = RefractionStates.Expanded;
+        statusMessage = "Export completed: 24 rows exported.";
+        return Task.CompletedTask;
+    }
+
+    private Task HandleDismissAsync()
+    {
+        isVisible = false;
+        notificationState = RefractionStates.Acknowledged;
+        return Task.CompletedTask;
+    }
+
+    private Task HandleRestoreAsync(
+        MouseEventArgs mouseEventArgs
+    )
+    {
+        _ = mouseEventArgs;
+        isVisible = true;
+        notificationState = RefractionStates.New;
+        statusMessage = "Export completed. Review the result before dismissing it.";
+        return Task.CompletedTask;
+    }
+}
 ```
 
 Keep expansion, dismissal, and any details region in the parent. `Critical`
