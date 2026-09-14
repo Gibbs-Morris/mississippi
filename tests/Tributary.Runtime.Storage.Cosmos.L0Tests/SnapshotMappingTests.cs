@@ -61,6 +61,31 @@ public sealed class SnapshotMappingTests
     }
 
     /// <summary>
+    ///     Ensures a snapshot written and read through the production mapper chain preserves its reducer hash.
+    /// </summary>
+    [Fact]
+    public void SnapshotMapperChainShouldRoundTripReducerHash()
+    {
+        SnapshotEnvelope expected = new()
+        {
+            Data = ImmutableArray.Create((byte)10, (byte)11),
+            DataContentType = "application/json",
+            DataSizeBytes = 2,
+            ReducerHash = StreamKey.ReducersHash,
+        };
+        SnapshotKey key = new(StreamKey, 100);
+        SnapshotWriteModel writeModel = new(key, expected);
+        SnapshotStorageModel storage = new SnapshotWriteModelToStorageMapper().Map(writeModel);
+        SnapshotDocument document = new SnapshotStorageToDocumentMapper().Map(storage);
+        SnapshotStorageModel readStorage = new SnapshotDocumentToStorageMapper().Map(document);
+        SnapshotEnvelope actual = new SnapshotStorageToEnvelopeMapper().Map(readStorage);
+        Assert.Equal(expected.Data.ToArray(), actual.Data.ToArray());
+        Assert.Equal(expected.DataContentType, actual.DataContentType);
+        Assert.Equal(expected.DataSizeBytes, actual.DataSizeBytes);
+        Assert.Equal(expected.ReducerHash, actual.ReducerHash);
+    }
+
+    /// <summary>
     ///     Ensures storage models map to documents and populate identifiers.
     /// </summary>
     [Fact]
@@ -107,33 +132,6 @@ public sealed class SnapshotMappingTests
         Assert.Equal("bin", envelope.DataContentType);
         Assert.Equal(2, envelope.DataSizeBytes);
         Assert.Equal(StreamKey.ReducersHash, envelope.ReducerHash);
-    }
-
-    /// <summary>
-    ///     Ensures a snapshot written and read through the production mapper chain preserves its reducer hash.
-    /// </summary>
-    [Fact]
-    public void SnapshotMapperChainShouldRoundTripReducerHash()
-    {
-        SnapshotEnvelope expected = new()
-        {
-            Data = ImmutableArray.Create((byte)10, (byte)11),
-            DataContentType = "application/json",
-            DataSizeBytes = 2,
-            ReducerHash = StreamKey.ReducersHash,
-        };
-        SnapshotKey key = new(StreamKey, 100);
-        SnapshotWriteModel writeModel = new(key, expected);
-
-        SnapshotStorageModel storage = new SnapshotWriteModelToStorageMapper().Map(writeModel);
-        SnapshotDocument document = new SnapshotStorageToDocumentMapper().Map(storage);
-        SnapshotStorageModel readStorage = new SnapshotDocumentToStorageMapper().Map(document);
-        SnapshotEnvelope actual = new SnapshotStorageToEnvelopeMapper().Map(readStorage);
-
-        Assert.Equal(expected.Data.ToArray(), actual.Data.ToArray());
-        Assert.Equal(expected.DataContentType, actual.DataContentType);
-        Assert.Equal(expected.DataSizeBytes, actual.DataSizeBytes);
-        Assert.Equal(expected.ReducerHash, actual.ReducerHash);
     }
 
     /// <summary>
