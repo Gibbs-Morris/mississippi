@@ -1,5 +1,7 @@
 using System;
 
+using Mississippi.Tributary.Abstractions.Attributes;
+
 
 namespace Mississippi.DomainModeling.Runtime.L0Tests;
 
@@ -13,6 +15,12 @@ public class SnapshotTypeRegistryTests
     /// </summary>
     /// <param name="Value">A dummy value for testing.</param>
     private sealed record AnotherState(int Value = 0);
+
+    /// <summary>
+    ///     Snapshot type with an invalid retention attribute.
+    /// </summary>
+    [SnapshotRetention(0)]
+    private sealed record InvalidRetentionState;
 
     /// <summary>
     ///     Test state record for registration tests.
@@ -43,6 +51,18 @@ public class SnapshotTypeRegistryTests
         registry.Register("TestState", typeof(TestState));
         Type? resolved = registry.ResolveType("TestState");
         Assert.Equal(typeof(TestState), resolved);
+    }
+
+    /// <summary>
+    ///     Verifies that invalid retention metadata is surfaced during snapshot registration.
+    /// </summary>
+    [Fact]
+    public void RegisterSurfacesInvalidRetentionAttribute()
+    {
+        SnapshotTypeRegistry registry = new();
+        Assert.Throws<ArgumentOutOfRangeException>(() => registry.Register(
+            "InvalidRetentionState",
+            typeof(InvalidRetentionState)));
     }
 
     /// <summary>
