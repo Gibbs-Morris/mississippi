@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using Mississippi.Brooks.Abstractions.Attributes;
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Generators.Abstractions;
+using Mississippi.Tributary.Abstractions.Attributes;
 
 using Orleans;
 
@@ -22,6 +23,7 @@ namespace MississippiSamples.Spring.Domain.Projections.BankAccountLedger;
 [ProjectionPath("bank-account-ledger")]
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
 [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTLEDGER")]
+[SnapshotRetention(100)]
 [GenerateProjectionEndpoints]
 [GenerateMcpReadTool(
     Title = "Get Bank Account Ledger",

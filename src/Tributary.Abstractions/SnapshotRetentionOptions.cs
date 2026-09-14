@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Reflection;
 
 using Mississippi.Brooks.Abstractions.Attributes;
+using Mississippi.Tributary.Abstractions.Attributes;
 
 
 namespace Mississippi.Tributary.Abstractions;
@@ -16,11 +19,11 @@ namespace Mississippi.Tributary.Abstractions;
 ///         (floor division of version by modulus) and replays only the delta events.
 ///     </para>
 ///     <para>
-///         For example, with a modulus of 100:
+///         For example, with a modulus of 50:
 ///         <list type="bullet">
-///             <item>Version 364 → base snapshot at 300, replay 64 events</item>
-///             <item>Version 199 → base snapshot at 100, replay 99 events</item>
-///             <item>Version 50 → no base snapshot, replay all 50 events from start</item>
+///             <item>Version 364 → base snapshot at 350, replay 14 events</item>
+///             <item>Version 199 → base snapshot at 150, replay 49 events</item>
+///             <item>Version 50 → base snapshot at 0, replay events after position 0</item>
 ///         </list>
 ///     </para>
 ///     <para>
@@ -31,16 +34,27 @@ namespace Mississippi.Tributary.Abstractions;
 /// </remarks>
 public sealed class SnapshotRetentionOptions
 {
+    private static readonly ConcurrentDictionary<Type, SnapshotTypeMetadata> SnapshotTypeMetadataCache = new();
+
     /// <summary>
     ///     Gets or sets the default snapshot retention modulus.
     ///     Snapshots are retained at positions divisible by this value.
     /// </summary>
-    /// <value>The default modulus for snapshot retention. Defaults to 100.</value>
+    /// <value>The default modulus for snapshot retention. Defaults to 50.</value>
     /// <remarks>
-    ///     A modulus of 100 means snapshots are retained at positions 0, 100, 200, 300, etc.
+    ///     A modulus of 50 means snapshots are retained at positions 0, 50, 100, 150, etc.
     ///     This limits event replay to at most <c>modulus - 1</c> events when building state.
     /// </remarks>
-    public int DefaultRetainModulus { get; set; } = 100;
+    public int DefaultRetainModulus { get; set; } = 50;
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether every reconstructed snapshot is persisted.
+    /// </summary>
+    /// <value><c>true</c> to persist every reconstructed snapshot; otherwise, <c>false</c>. Defaults to <c>false</c>.</value>
+    /// <remarks>
+    ///     This setting changes persistence eligibility only. It does not change the replay interval.
+    /// </remarks>
+    public bool ShouldPersistAllSnapshots { get; set; }
 
     /// <summary>
     ///     Gets the collection of per-state-type retention modulus overrides.
@@ -56,6 +70,29 @@ public sealed class SnapshotRetentionOptions
     /// </remarks>
     public Dictionary<string, int> StateTypeOverrides { get; } = new(StringComparer.Ordinal);
 
+    private static int EnsurePositiveModulus(
+        int modulus,
+        string source
+    )
+    {
+        if (modulus <= 0)
+        {
+            throw new InvalidOperationException(
+                $"Snapshot retention modulus from '{source}' must be greater than zero, but was {modulus}.");
+        }
+
+        return modulus;
+    }
+
+    private static SnapshotTypeMetadata GetSnapshotTypeMetadata(
+        Type stateType
+    ) =>
+        SnapshotTypeMetadataCache.GetOrAdd(
+            stateType,
+            static type => new(
+                type.GetCustomAttribute<SnapshotStorageNameAttribute>(false)?.StorageName,
+                type.GetCustomAttribute<SnapshotRetentionAttribute>(false)?.Modulus));
+
     /// <summary>
     ///     Calculates the base snapshot version for a given target version.
     /// </summary>
@@ -66,12 +103,12 @@ public sealed class SnapshotRetentionOptions
     ///     Returns 0 if the target version is less than or equal to the modulus.
     /// </returns>
     /// <remarks>
-    ///     For example, with a modulus of 100:
+    ///     For example, with a modulus of 50:
     ///     <list type="bullet">
-    ///         <item>Target 364 → base 300</item>
-    ///         <item>Target 199 → base 100</item>
-    ///         <item>Target 100 → base 0 (not 100, to prevent self-reference)</item>
-    ///         <item>Target 99 → base 0</item>
+    ///         <item>Target 364 → base 350</item>
+    ///         <item>Target 199 → base 150</item>
+    ///         <item>Target 50 → base 0 (not 50, to prevent self-reference)</item>
+    ///         <item>Target 49 → base 0</item>
     ///     </list>
     /// </remarks>
     public long GetBaseSnapshotVersion<TSnapshot>(
@@ -133,29 +170,69 @@ public sealed class SnapshotRetentionOptions
     /// <param name="stateType">The state type to get the modulus for.</param>
     /// <returns>
     ///     The configured modulus for the state type if an override exists;
-    ///     otherwise, <see cref="DefaultRetainModulus" />.
+    ///     otherwise, the state type's <see cref="SnapshotRetentionAttribute.Modulus" /> or
+    ///     <see cref="DefaultRetainModulus" />.
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="stateType" /> is null.</exception>
     /// <remarks>
-    ///     Looks up by <see cref="SnapshotStorageNameAttribute.StorageName" /> first if the type
-    ///     is decorated with the attribute; falls back to <see cref="Type.FullName" /> for
-    ///     backward compatibility.
+    ///     Looks up overrides in this order: stable <see cref="SnapshotStorageNameAttribute.StorageName" />,
+    ///     <see cref="Type.FullName" />, <see cref="SnapshotRetentionAttribute.Modulus" />, then
+    ///     <see cref="DefaultRetainModulus" />. Attribute metadata is discovered once per type and cached.
     /// </remarks>
     public int GetRetainModulus(
         Type stateType
     )
     {
         ArgumentNullException.ThrowIfNull(stateType);
+        SnapshotTypeMetadata metadata = GetSnapshotTypeMetadata(stateType);
 
-        // Prefer the stable snapshot name when available
-        if (SnapshotStorageNameHelper.TryGetStorageName(stateType, out string? snapshotName) &&
-            StateTypeOverrides.TryGetValue(snapshotName!, out int modulusBySnapshotName))
+        // Prefer the stable snapshot name when available.
+        if (metadata.SnapshotStorageName is not null &&
+            StateTypeOverrides.TryGetValue(metadata.SnapshotStorageName, out int modulusBySnapshotName))
         {
-            return modulusBySnapshotName;
+            return EnsurePositiveModulus(modulusBySnapshotName, metadata.SnapshotStorageName);
         }
 
-        // Fall back to CLR type name for backward compatibility
+        // Fall back to CLR type name for backward compatibility.
         string typeName = stateType.FullName ?? stateType.Name;
-        return StateTypeOverrides.TryGetValue(typeName, out int modulus) ? modulus : DefaultRetainModulus;
+        if (StateTypeOverrides.TryGetValue(typeName, out int modulusByTypeName))
+        {
+            return EnsurePositiveModulus(modulusByTypeName, typeName);
+        }
+
+        return EnsurePositiveModulus(metadata.AttributeModulus ?? DefaultRetainModulus, typeName);
     }
+
+    /// <summary>
+    ///     Determines whether a snapshot version is eligible for persistence.
+    /// </summary>
+    /// <typeparam name="TSnapshot">The state type being persisted.</typeparam>
+    /// <param name="version">The zero-based brook position of the reconstructed state.</param>
+    /// <returns><c>true</c> when the version is selected by the policy; otherwise, <c>false</c>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="version" /> is negative.</exception>
+    public bool ShouldPersistSnapshot<TSnapshot>(
+        long version
+    ) =>
+        ShouldPersistSnapshot(typeof(TSnapshot), version);
+
+    /// <summary>
+    ///     Determines whether a snapshot version is eligible for persistence.
+    /// </summary>
+    /// <param name="stateType">The state type being persisted.</param>
+    /// <param name="version">The zero-based brook position of the reconstructed state.</param>
+    /// <returns><c>true</c> when the version is selected by the policy; otherwise, <c>false</c>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="stateType" /> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="version" /> is negative.</exception>
+    public bool ShouldPersistSnapshot(
+        Type stateType,
+        long version
+    )
+    {
+        ArgumentNullException.ThrowIfNull(stateType);
+        ArgumentOutOfRangeException.ThrowIfNegative(version);
+        int modulus = GetRetainModulus(stateType);
+        return ShouldPersistAllSnapshots || ((version % modulus) == 0);
+    }
+
+    private sealed record SnapshotTypeMetadata(string? SnapshotStorageName, int? AttributeModulus);
 }

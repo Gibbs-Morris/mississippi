@@ -52,13 +52,33 @@ internal static class SnapshotMetrics
     private static readonly Counter<long> PersistCount = SnapshotMeter.CreateCounter<long>(
         "snapshot.persist.count",
         "persists",
-        "Number of snapshots persisted.");
+        "Number of snapshot persistence attempts.");
 
     // Persistence metrics
     private static readonly Histogram<double> PersistDuration = SnapshotMeter.CreateHistogram<double>(
         "snapshot.persist.duration",
         "ms",
         "Time to persist snapshot.");
+
+    private static readonly Counter<long> PersistFailed = SnapshotMeter.CreateCounter<long>(
+        "snapshot.persist.failed",
+        "failures",
+        "Number of snapshot persistence failures.");
+
+    private static readonly Counter<long> PersistRequested = SnapshotMeter.CreateCounter<long>(
+        "snapshot.persist.requested",
+        "requests",
+        "Number of reconstructed snapshots eligible for persistence.");
+
+    private static readonly Counter<long> PersistSkipped = SnapshotMeter.CreateCounter<long>(
+        "snapshot.persist.skipped",
+        "skips",
+        "Number of reconstructed snapshots skipped by the retention policy.");
+
+    private static readonly Counter<long> PersistSucceeded = SnapshotMeter.CreateCounter<long>(
+        "snapshot.persist.succeeded",
+        "successes",
+        "Number of successful snapshot persistence operations.");
 
     // Rebuild metrics
     private static readonly Histogram<double> RebuildDuration = SnapshotMeter.CreateHistogram<double>(
@@ -163,6 +183,33 @@ internal static class SnapshotMetrics
         tags.Add("result", success ? "success" : "failure");
         PersistCount.Add(1, tags);
         PersistDuration.Record(durationMs, tags);
+        (success ? PersistSucceeded : PersistFailed).Add(1, tags);
+    }
+
+    /// <summary>
+    ///     Record an eligible snapshot persistence request before serialization and persister resolution.
+    /// </summary>
+    /// <param name="snapshotType">The snapshot type name.</param>
+    internal static void RecordPersistRequested(
+        string snapshotType
+    )
+    {
+        TagList tags = default;
+        tags.Add(SnapshotTypeTag, snapshotType);
+        PersistRequested.Add(1, tags);
+    }
+
+    /// <summary>
+    ///     Record a reconstructed snapshot skipped by the retention policy.
+    /// </summary>
+    /// <param name="snapshotType">The snapshot type name.</param>
+    internal static void RecordPersistSkipped(
+        string snapshotType
+    )
+    {
+        TagList tags = default;
+        tags.Add(SnapshotTypeTag, snapshotType);
+        PersistSkipped.Add(1, tags);
     }
 
     /// <summary>

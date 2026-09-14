@@ -30,6 +30,7 @@ The aggregate state is a `sealed record` that represents the current snapshot of
 ```csharp
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
 [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTSTATE")]
+[SnapshotRetention(20)]
 [GenerateAggregateEndpoints]
 [GenerateSerializer]
 [Alias("Spring.Domain.BankAccount.BankAccountAggregate")]
@@ -49,6 +50,7 @@ Key attributes:
 |-----------|---------|
 | `[BrookName]` | Names the event stream - all events for this aggregate are stored under `SPRING/BANKING/ACCOUNT` |
 | `[SnapshotStorageName]` | Names the snapshot storage container for efficient state recovery |
+| `[SnapshotRetention(20)]` | Persists reconstructed aggregate snapshots at positions divisible by 20 |
 | `[GenerateAggregateEndpoints]` | Source-generates API controllers, Orleans grains, and client-side dispatchers |
 | `[GenerateSerializer]` | Orleans serialization support |
 | `[Alias]` | Stable serialization identity for Orleans version tolerance |
@@ -56,6 +58,8 @@ Key attributes:
 The `[Id(n)]` attributes on properties define the Orleans serialization field order. They are required for all serialized types.
 
 ([BankAccountAggregate.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/BankAccountAggregate.cs))
+
+The aggregate's retention attribute applies to this state type and all of its entities. A configuration override keyed by `SPRING.BANKING.ACCOUNTSTATE.V1` takes precedence over the attribute.
 
 ## Step 2: Define Commands
 

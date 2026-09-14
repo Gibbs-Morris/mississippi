@@ -30,7 +30,7 @@ Tributary is the Mississippi reducer and snapshot layer.
 
 ## Defaults And Constraints
 
-This reference covers the verified subsystem boundary, representative packages, and reducer and snapshot contracts for Tributary.
+This reference covers the verified subsystem boundary, representative packages, and reducer and snapshot contracts for Tributary. See the [Snapshot Retention Reference](./snapshot-retention.md) for checkpoint intervals, attributes, configuration precedence, and persistence eligibility.
 
 ## Failure Behavior
 
