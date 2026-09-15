@@ -47,9 +47,9 @@ namespace Mississippi.Tributary.Runtime;
 ///         </list>
 ///     </para>
 ///     <para>
-///         After state is built (from storage or rebuilt), a one-way call is made to an
-///         <see cref="ISnapshotPersisterGrain" /> for background persistence if the snapshot
-///         was rebuilt.
+///         After state is rebuilt, a one-way call is made to an <see cref="ISnapshotPersisterGrain" />
+///         only when the version is selected by <see cref="SnapshotRetentionOptions" />. Intermediate
+///         versions are skipped before serialization unless save-all is enabled.
 ///     </para>
 ///     <para>
 ///         The brook name is read from the grain key, eliminating the need for custom derived

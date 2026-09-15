@@ -24,7 +24,9 @@ namespace Mississippi.Tributary.Abstractions;
 ///     </para>
 ///     <para>
 ///         After the state is built, a one-way call is made to an <see cref="ISnapshotPersisterGrain" />
-///         to persist the snapshot asynchronously without blocking the caller.
+///         when the version is selected by <see cref="SnapshotRetentionOptions" />. Intermediate versions
+///         are not serialized or sent to a persister unless save-all is enabled, and the call remains
+///         asynchronous so it does not block the caller.
 ///     </para>
 /// </remarks>
 [Alias("Mississippi.Tributary.Abstractions.ISnapshotCacheGrain`1")]
