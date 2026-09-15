@@ -265,10 +265,11 @@ internal sealed class SnapshotCacheGrain<TSnapshot>
 
         string keyString = snapshotKey;
         string snapshotTypeName = typeof(TSnapshot).Name;
+        string snapshotStorageName = snapshotKey.Stream.SnapshotStorageName;
         bool shouldPersist = RetentionOptions.ShouldPersistAllSnapshots || ((snapshotKey.Version % retainModulus) == 0);
         if (!shouldPersist)
         {
-            SnapshotMetrics.RecordPersistSkipped(snapshotTypeName);
+            SnapshotMetrics.RecordPersistSkipped(snapshotStorageName);
             Logger.PersistenceSkipped(
                 snapshotTypeName,
                 snapshotKey.Version,
@@ -277,7 +278,7 @@ internal sealed class SnapshotCacheGrain<TSnapshot>
             return;
         }
 
-        SnapshotMetrics.RecordPersistRequested(snapshotTypeName);
+        SnapshotMetrics.RecordPersistRequested(snapshotStorageName);
         Logger.RequestingPersistence(keyString);
         SnapshotEnvelope envelope = SnapshotStateConverter.ToEnvelope(state, reducerHash);
 
