@@ -105,7 +105,7 @@ builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).A
 
 // Add event sourcing infrastructure
 builder.Services.AddJsonSerialization();
-builder.Services.AddSnapshotCaching();
+builder.Services.AddSnapshotCaching(builder.Configuration.GetSection("Mississippi:SnapshotCaching"));
 
 // Configure Orleans silo - Aspire injects clustering config via environment variables
 builder.UseOrleans(siloBuilder =>
