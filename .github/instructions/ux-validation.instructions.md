@@ -14,7 +14,8 @@ Governing thought: User-visible changes are validated against the rendered brows
 - Agents **MUST** capture one or more screenshots from the final rendered output at every affected viewport or interaction state needed to validate the change, after all implementation fixes. Why: Visual evidence records what users actually see.
 - Agents **MUST** inspect the screenshots against the intended behavior and record the route or state, viewport, and relevant Playwright command in the PR. Why: Reviewers need reproducible evidence rather than an assertion that the UI was checked.
 - PRs containing a UX change **MUST** include the final screenshots as rendered image attachments or Markdown images in the PR description or a top-level PR comment, with a concise caption for each. Why: The evidence must be available to reviewers in the PR.
-- If the application cannot be run, Playwright cannot execute, or the screenshots cannot be posted, agents **MUST** report the exact limitation and the unvalidated states in the PR and **MUST NOT** claim that UX validation passed. Why: Missing evidence must remain visible.
+- If the application cannot be run, Playwright cannot execute, or the screenshots cannot be posted, agents **MUST** report the exact limitation and the unvalidated states in the PR. Why: Missing evidence must remain visible.
+- Agents **MUST NOT** claim that UX validation passed when the application cannot run, Playwright cannot execute, or the screenshots cannot be posted. Why: An unavailable validation path cannot establish a pass.
 - Screenshot evidence **SHOULD** cover responsive, keyboard, focus, loading, empty, and error states when those states are affected by the change. Why: A single happy-path image can miss the changed experience.
 
 ## Scope and Audience
