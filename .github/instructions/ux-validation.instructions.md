@@ -10,8 +10,8 @@ Governing thought: User-visible changes are validated against the rendered brows
 
 ## Rules (RFC 2119)
 
-- Agents **MUST** use Playwright against the final running application whenever a change affects user-visible layout, styling, interaction, navigation, content presentation, accessibility behavior, or browser-facing loading, empty, or error states. Why: Compilation and source inspection cannot prove rendered UX.
-- Agents **MUST** capture one or more screenshots from the final rendered output at every affected viewport or interaction state needed to validate the change, after all implementation fixes. Why: Visual evidence records what users actually see.
+- Agents **MUST** use Playwright against the final running application whenever a change affects user-visible layout, styling, interaction, navigation, content presentation, accessibility behavior, or browser-facing loading, empty, or error states and the final application/browser path is available. Why: Compilation and source inspection cannot prove rendered UX.
+- Agents **MUST** capture one or more screenshots from the final rendered output at every affected viewport or interaction state needed to validate the change when the final application/browser path is available and Playwright executes successfully. Why: Visual evidence records what users actually see.
 - Agents **MUST** inspect the screenshots against the intended behavior. Why: Visual comparison is required to validate the rendered UX.
 - Agents **MUST** record the route or state, viewport, and relevant Playwright command in the PR. Why: Reviewers need reproducible evidence rather than an assertion that the UI was checked.
 - PRs containing a UX change **MUST** include the final screenshots as rendered image attachments or Markdown images in the PR description or a top-level PR comment, with a concise caption for each. Why: The evidence must be available to reviewers in the PR.
