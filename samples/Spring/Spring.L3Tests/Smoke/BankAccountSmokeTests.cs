@@ -25,18 +25,28 @@ public sealed class BankAccountSmokeTests
     )
     {
         string? directory = Environment.GetEnvironmentVariable("SPRING_TEST_ARTIFACTS");
-        if (string.IsNullOrWhiteSpace(directory))
+
+        async Task SaveScreenshotAsync(
+            string fileName
+        )
         {
-            return;
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                await page.ScreenshotAsync(
+                    new()
+                    {
+                        Path = Path.Join(directory, fileName),
+                        FullPage = true,
+                    });
+            }
         }
 
-        Directory.CreateDirectory(directory);
-        await page.ScreenshotAsync(
-            new()
-            {
-                Path = Path.Join(directory, "shell-dark-desktop.png"),
-                FullPage = true,
-            });
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        await SaveScreenshotAsync("shell-dark-desktop.png");
         ILocator lightThemeButton = page.GetByRole(
             AriaRole.Button,
             new()
@@ -46,12 +56,7 @@ public sealed class BankAccountSmokeTests
             });
         await lightThemeButton.ClickAsync();
         Assert.Equal("light", await page.Locator("[data-rf-theme]").GetAttributeAsync("data-rf-theme"));
-        await page.ScreenshotAsync(
-            new()
-            {
-                Path = Path.Join(directory, "shell-light-desktop.png"),
-                FullPage = true,
-            });
+        await SaveScreenshotAsync("shell-light-desktop.png");
         ILocator highContrastThemeButton = page.GetByRole(
             AriaRole.Button,
             new()
@@ -62,12 +67,7 @@ public sealed class BankAccountSmokeTests
         await highContrastThemeButton.ClickAsync();
         Assert.Equal("high-contrast", await page.Locator("[data-rf-theme]").GetAttributeAsync("data-rf-theme"));
         await page.SetViewportSizeAsync(390, 844);
-        await page.ScreenshotAsync(
-            new()
-            {
-                Path = Path.Join(directory, "shell-high-contrast-mobile.png"),
-                FullPage = true,
-            });
+        await SaveScreenshotAsync("shell-high-contrast-mobile.png");
         await page.GetByRole(
                 AriaRole.Link,
                 new()
