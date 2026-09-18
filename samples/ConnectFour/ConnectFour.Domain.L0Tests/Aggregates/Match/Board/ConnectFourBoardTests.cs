@@ -190,6 +190,24 @@ public sealed class ConnectFourBoardTests
     }
 
     /// <summary>
+    ///     Invalid columns and rows are rejected by direct coordinate conversion.
+    /// </summary>
+    /// <param name="column">The zero-based column.</param>
+    /// <param name="row">The zero-based row.</param>
+    [Theory]
+    [InlineData(-1, 0)]
+    [InlineData(7, 0)]
+    [InlineData(0, -1)]
+    [InlineData(0, 6)]
+    public void InvalidCoordinatesThrowArgumentOutOfRangeException(
+        int column,
+        int row
+    )
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => ConnectFourBoard.ToIndex(column, row));
+    }
+
+    /// <summary>
     ///     Empty and partially populated boards are not full.
     /// </summary>
     [Fact]
