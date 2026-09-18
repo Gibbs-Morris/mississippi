@@ -60,6 +60,19 @@ public sealed class MainLayoutTests : BunitContext
                               (invocation.Arguments.Count == 2) &&
                               Equals(invocation.Arguments[0], "data-rf-theme") &&
                               Equals(invocation.Arguments[1], "light"));
+            cut.FindAll("button")
+                .Single(button => button.TextContent.Contains("High contrast", StringComparison.Ordinal))
+                .Click();
+            Assert.Equal(RefractionThemeMode.HighContrast, store.ThemeMode);
+            Assert.Equal(
+                "high-contrast",
+                cut.Find("[data-rf-theme]").GetAttribute("data-rf-theme"));
+            Assert.Contains(
+                JSInterop.Invocations,
+                invocation => (invocation.Identifier == "document.documentElement.setAttribute") &&
+                              (invocation.Arguments.Count == 2) &&
+                              Equals(invocation.Arguments[0], "data-rf-theme") &&
+                              Equals(invocation.Arguments[1], "high-contrast"));
             cut.Instance.Dispose();
         }
 
