@@ -19,17 +19,17 @@ internal sealed record MatchForfeited
     ///     Gets the identity of the player who forfeited.
     /// </summary>
     [Id(0)]
-    public string ForfeitingPlayerId { get; init; } = string.Empty;
+    public required string ForfeitingPlayerId { get; init; }
 
     /// <summary>
     ///     Gets the recorded forfeit time.
     /// </summary>
     [Id(2)]
-    public DateTimeOffset OccurredAt { get; init; }
+    public required DateTimeOffset OccurredAt { get; init; }
 
     /// <summary>
     ///     Gets the identity of the player who wins by forfeit.
     /// </summary>
     [Id(1)]
-    public string WinnerPlayerId { get; init; } = string.Empty;
+    public required string WinnerPlayerId { get; init; }
 }

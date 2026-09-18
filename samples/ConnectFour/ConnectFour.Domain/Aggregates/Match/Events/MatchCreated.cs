@@ -19,11 +19,11 @@ internal sealed record MatchCreated
     ///     Gets the recorded creation time.
     /// </summary>
     [Id(1)]
-    public DateTimeOffset CreatedAt { get; init; }
+    public required DateTimeOffset CreatedAt { get; init; }
 
     /// <summary>
     ///     Gets the identity of the player assigned to red.
     /// </summary>
     [Id(0)]
-    public string PlayerId { get; init; } = string.Empty;
+    public required string PlayerId { get; init; }
 }

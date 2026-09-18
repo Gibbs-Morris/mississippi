@@ -19,11 +19,11 @@ internal sealed record PlayerJoined
     ///     Gets the recorded join time.
     /// </summary>
     [Id(1)]
-    public DateTimeOffset JoinedAt { get; init; }
+    public required DateTimeOffset JoinedAt { get; init; }
 
     /// <summary>
     ///     Gets the identity of the player assigned to yellow.
     /// </summary>
     [Id(0)]
-    public string PlayerId { get; init; } = string.Empty;
+    public required string PlayerId { get; init; }
 }
