@@ -1,0 +1,140 @@
+.spring-shell {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 0 clamp(1rem, 4vw, 3rem);
+    background: var(--rf-color-surface-void);
+    color: var(--rf-color-text-primary);
+    font-family: var(--rf-raw-font-sans);
+}
+
+.topbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.25rem;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--rf-color-text-muted);
+}
+
+.wordmark {
+    color: var(--rf-color-text-primary);
+    text-decoration: none;
+}
+
+.wordmark-primary {
+    display: block;
+    font-weight: 750;
+    letter-spacing: 0.14em;
+}
+
+.wordmark-secondary {
+    display: block;
+    margin-top: 0.2rem;
+    color: var(--rf-color-text-secondary);
+    font-size: 0.75rem;
+}
+
+.navigation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-left: auto;
+}
+
+.navigation ::deep a {
+    padding: 0.45rem 0;
+    color: var(--rf-color-text-secondary);
+    text-decoration: none;
+}
+
+.navigation ::deep a.active {
+    border-bottom: 2px solid currentColor;
+    color: var(--rf-color-text-accent);
+}
+
+.theme-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.theme-options button {
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--rf-color-text-muted);
+    background: transparent;
+    color: var(--rf-color-text-primary);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.theme-options button[aria-pressed="true"] {
+    border-color: var(--rf-color-action-primary);
+    background: var(--rf-color-surface-elevated);
+    color: var(--rf-color-text-accent);
+}
+
+.spring-shell ::deep main {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 4.5rem) 0;
+}
+
+.spring-shell ::deep h1:focus,
+.spring-shell ::deep main:focus {
+    outline: 2px solid var(--rf-color-focus-ring);
+    outline-offset: 4px;
+}
+
+.spring-shell ::deep button:focus-visible,
+.spring-shell ::deep a:focus-visible,
+.spring-shell ::deep select:focus-visible,
+.spring-shell ::deep input:focus-visible,
+.spring-shell ::deep textarea:focus-visible {
+    outline: 2px solid var(--rf-color-focus-ring);
+    outline-offset: 3px;
+}
+
+.spring-shell footer {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 1.5rem 0 2rem;
+    border-top: 1px solid var(--rf-color-text-muted);
+    color: var(--rf-color-text-secondary);
+    font-size: 0.8rem;
+}
+
+.skip-link {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 10;
+    padding: 0.75rem;
+    transform: translateY(-180%);
+    background: var(--rf-color-surface-elevated);
+    color: var(--rf-color-text-primary);
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+}
+
+@media (max-width: 800px) {
+    .navigation {
+        order: 3;
+        flex-basis: 100%;
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 390px) {
+    .spring-shell {
+        padding: 0 1rem;
+    }
+
+    .navigation {
+        gap: 0.65rem;
+    }
+}

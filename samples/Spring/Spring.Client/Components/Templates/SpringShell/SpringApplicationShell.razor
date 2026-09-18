@@ -1,0 +1,40 @@
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using Mississippi.Refraction.Client.Infrastructure.Theming
+@namespace MississippiSamples.Spring.Client.Components.Templates.SpringShell
+
+<CascadingRefractionProvider ThemeMode="@ThemeMode" Class="spring-theme">
+    <a class="skip-link" href="#main-content" @onclick="FocusContentAsync">Skip to content</a>
+    <div class="spring-shell">
+        <header class="topbar">
+            <a class="wordmark" href="/">
+                <span class="wordmark-primary">SPRING</span>
+                <span class="wordmark-secondary">by Mississippi</span>
+            </a>
+            <nav class="navigation" aria-label="Main navigation">
+                <NavLink href="/" Match="NavLinkMatch.All">Overview</NavLink>
+                <NavLink href="/accounts">Accounts</NavLink>
+                <NavLink href="/operations">Operations</NavLink>
+                <NavLink href="/investigations">Investigations</NavLink>
+                <NavLink href="/auth-proof">Auth proof</NavLink>
+                <a href="/scalar/v1" target="_blank" rel="noopener noreferrer">API docs</a>
+            </nav>
+            <div class="theme-options" role="group" aria-label="Color theme">
+                @foreach (RefractionThemeMode mode in ThemeModes)
+                {
+                    <button type="button"
+                            aria-pressed="@(mode == ThemeMode ? "true" : "false")"
+                            @onclick="() => ThemeChanged.InvokeAsync(mode)">
+                        @GetModeLabel(mode)
+                    </button>
+                }
+            </div>
+        </header>
+        <main id="main-content" tabindex="-1" @ref="MainContent">
+            @ChildContent
+        </main>
+        <footer>
+            State down. Intent up. Mississippi event sourcing in a bank account sample.
+        </footer>
+    </div>
+</CascadingRefractionProvider>

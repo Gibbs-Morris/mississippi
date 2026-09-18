@@ -600,6 +600,9 @@
           "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.Refraction.Client": {
+        "type": "Project"
+      },
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
       },
@@ -643,6 +646,7 @@
         "dependencies": {
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.11, )",
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.11, )",
+          "Mississippi.Refraction.Client": "[1.0.0, )",
           "Mississippi.Sdk.Client": "[1.0.0, )",
           "Mississippi.Spring.Domain": "[1.0.0, )"
         }
