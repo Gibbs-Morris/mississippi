@@ -28,9 +28,7 @@ public sealed class SpringApplicationShellTests : BunitContext
             .AddChildContent("<p>Example controls</p>"));
         string? mainReference = cut.Find("#main-content").GetAttribute("blazor:elementReference");
         Assert.False(string.IsNullOrWhiteSpace(mainReference), cut.Find("#main-content").OuterHtml);
-
         cut.Find(".skip-link").Click();
-
         ElementReference focused = Assert.IsType<ElementReference>(JSInterop.VerifyFocusAsyncInvoke().Arguments[0]);
         Assert.Equal(mainReference, focused.Id);
         Assert.Equal("Example controls", cut.Find("#main-content > p").TextContent);
