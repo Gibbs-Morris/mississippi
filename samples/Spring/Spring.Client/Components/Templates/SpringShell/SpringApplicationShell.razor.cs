@@ -11,6 +11,7 @@ namespace MississippiSamples.Spring.Client.Components.Templates.SpringShell;
 /// <summary>
 ///     Provides the presentational shell for the Spring sample.
 /// </summary>
+/// <remarks>Public so Spring pages can compose this presentational shell in Razor.</remarks>
 public sealed partial class SpringApplicationShell : ComponentBase
 {
     private static IReadOnlyList<RefractionThemeMode> ThemeModes { get; } =
