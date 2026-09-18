@@ -36,6 +36,19 @@ public sealed class ConnectFourBoardTests
     }
 
     /// <summary>
+    ///     Applying an empty color is rejected as an invalid placement.
+    /// </summary>
+    [Fact]
+    public void ApplyingEmptyColorThrows()
+    {
+        Assert.Throws<ArgumentException>(() => ConnectFourBoard.ApplyDisc(
+            ConnectFourBoard.Empty,
+            0,
+            0,
+            DiscColor.Empty));
+    }
+
+    /// <summary>
     ///     Both diagonal fixtures find a four-cell red line without wrapping at an edge.
     /// </summary>
     /// <param name="fixture">The diagonal fixture index.</param>
