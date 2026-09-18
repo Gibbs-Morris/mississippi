@@ -92,6 +92,24 @@ public sealed class ConnectFourBoardTests
     }
 
     /// <summary>
+    ///     An empty disc color is rejected without changing the board.
+    /// </summary>
+    [Fact]
+    public void EmptyDiscColorRejectsDropWithoutChangingBoard()
+    {
+        ImmutableArray<DiscColor> initial = ConnectFourBoard.Empty;
+        Assert.False(
+            ConnectFourBoard.TryDropDisc(
+                initial,
+                3,
+                DiscColor.Empty,
+                out ImmutableArray<DiscColor> unchanged,
+                out int row));
+        Assert.Equal(-1, row);
+        Assert.Equal(initial, unchanged);
+    }
+
+    /// <summary>
     ///     A full column rejects a further drop and does not change the board.
     /// </summary>
     [Fact]
@@ -137,6 +155,29 @@ public sealed class ConnectFourBoardTests
                 ConnectFourBoard.ToIndex(0, 0),
             ],
             result.WinningCells);
+    }
+
+    /// <summary>
+    ///     An out-of-range column is rejected without changing the board.
+    /// </summary>
+    /// <param name="column">The invalid zero-based column.</param>
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(7)]
+    public void OutOfRangeColumnRejectsDropWithoutChangingBoard(
+        int column
+    )
+    {
+        ImmutableArray<DiscColor> initial = ConnectFourBoard.Empty;
+        Assert.False(
+            ConnectFourBoard.TryDropDisc(
+                initial,
+                column,
+                DiscColor.Red,
+                out ImmutableArray<DiscColor> unchanged,
+                out int row));
+        Assert.Equal(-1, row);
+        Assert.Equal(initial, unchanged);
     }
 
     /// <summary>
