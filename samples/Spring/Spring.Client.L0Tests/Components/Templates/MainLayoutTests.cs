@@ -27,17 +27,32 @@ public sealed class MainLayoutTests : BunitContext
     {
         using TrackingInletStore store = new();
         Services.AddSingleton<IInletStore>(store);
+        using IDisposable documentThemeInterop = JSInterop.SetupVoid(
+            "document.documentElement.setAttribute",
+            _ => true);
         using (IRenderedComponent<MainLayout> cut = Render<MainLayout>())
         {
             Assert.Contains(store.Actions, action => action is RequestSignalRConnectionAction);
             Assert.Equal(1, store.ActiveSubscriptions);
             Assert.Equal("dark", cut.Find("[data-rf-theme]").GetAttribute("data-rf-theme"));
+            Assert.Contains(
+                JSInterop.Invocations,
+                invocation => (invocation.Identifier == "document.documentElement.setAttribute") &&
+                              (invocation.Arguments.Count == 2) &&
+                              Equals(invocation.Arguments[0], "data-rf-theme") &&
+                              Equals(invocation.Arguments[1], "dark"));
             cut.FindAll("button")
                 .Single(button => button.TextContent.Contains("Light", StringComparison.Ordinal))
                 .Click();
             Assert.Contains(store.Actions, action => action is SetThemeModeAction { Mode: RefractionThemeMode.Light });
             Assert.Equal(RefractionThemeMode.Light, store.ThemeMode);
             Assert.Equal("light", cut.Find("[data-rf-theme]").GetAttribute("data-rf-theme"));
+            Assert.Contains(
+                JSInterop.Invocations,
+                invocation => (invocation.Identifier == "document.documentElement.setAttribute") &&
+                              (invocation.Arguments.Count == 2) &&
+                              Equals(invocation.Arguments[0], "data-rf-theme") &&
+                              Equals(invocation.Arguments[1], "light"));
             cut.Instance.Dispose();
         }
 

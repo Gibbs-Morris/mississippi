@@ -1,6 +1,8 @@
 using System;
+using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.SignalRConnection;
@@ -25,7 +27,12 @@ public sealed partial class MainLayout
     : LayoutComponentBase,
       IDisposable
 {
+    private RefractionThemeMode? appliedDocumentTheme;
+
     private IDisposable? storeSubscription;
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; } = default!;
 
     /// <summary>
     ///     Gets or sets the inlet store for dispatching actions.
@@ -36,11 +43,37 @@ public sealed partial class MainLayout
     private RefractionThemeMode ThemeMode =>
         Store.Select<ThemePreferencesState, RefractionThemeMode>(ThemePreferencesSelectors.GetThemeMode);
 
+    private static string GetThemeName(
+        RefractionThemeMode mode
+    ) =>
+        mode switch
+        {
+            RefractionThemeMode.Dark => "dark",
+            RefractionThemeMode.Light => "light",
+            RefractionThemeMode.HighContrast => "high-contrast",
+            var _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unsupported theme mode."),
+        };
+
     /// <inheritdoc />
     public void Dispose()
     {
         storeSubscription?.Dispose();
         storeSubscription = null;
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(
+        bool firstRender
+    )
+    {
+        if (firstRender || (appliedDocumentTheme != ThemeMode))
+        {
+            await JSRuntime.InvokeVoidAsync(
+                "document.documentElement.setAttribute",
+                "data-rf-theme",
+                GetThemeName(ThemeMode));
+            appliedDocumentTheme = ThemeMode;
+        }
     }
 
     /// <inheritdoc />

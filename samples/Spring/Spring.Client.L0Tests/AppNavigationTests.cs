@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 
 using Bunit;
@@ -32,6 +33,9 @@ public sealed class AppNavigationTests : BunitContext
             .AddReservoirBlazorBuiltIns()
             .AddInletClient()
             .AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Off);
+        using IDisposable documentThemeInterop = JSInterop.SetupVoid(
+            "document.documentElement.setAttribute",
+            _ => true);
         NavigationManager navigation = Services.GetRequiredService<NavigationManager>();
         using IRenderedComponent<App> cut = Render<App>();
         Assert.Equal("Bank Account Demo", cut.Find("h1").TextContent);

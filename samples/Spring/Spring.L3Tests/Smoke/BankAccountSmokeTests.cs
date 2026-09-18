@@ -47,6 +47,7 @@ public sealed class BankAccountSmokeTests
         }
 
         await SaveScreenshotAsync("shell-dark-desktop.png");
+        Assert.Equal("dark", await page.Locator("html").GetAttributeAsync("data-rf-theme"));
         ILocator lightThemeButton = page.GetByRole(
             AriaRole.Button,
             new()
@@ -56,6 +57,7 @@ public sealed class BankAccountSmokeTests
             });
         await lightThemeButton.ClickAsync();
         Assert.Equal("light", await page.Locator("[data-rf-theme]").GetAttributeAsync("data-rf-theme"));
+        Assert.Equal("light", await page.Locator("html").GetAttributeAsync("data-rf-theme"));
         await SaveScreenshotAsync("shell-light-desktop.png");
         ILocator highContrastThemeButton = page.GetByRole(
             AriaRole.Button,
@@ -66,6 +68,7 @@ public sealed class BankAccountSmokeTests
             });
         await highContrastThemeButton.ClickAsync();
         Assert.Equal("high-contrast", await page.Locator("[data-rf-theme]").GetAttributeAsync("data-rf-theme"));
+        Assert.Equal("high-contrast", await page.Locator("html").GetAttributeAsync("data-rf-theme"));
         await page.SetViewportSizeAsync(390, 844);
         await SaveScreenshotAsync("shell-high-contrast-mobile.png");
         await page.GetByRole(
