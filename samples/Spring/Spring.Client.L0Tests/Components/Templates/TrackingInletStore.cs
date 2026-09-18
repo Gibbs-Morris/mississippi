@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Refraction.Client.Infrastructure.Theming;
-using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.Events;
 using Mississippi.Reservoir.Abstractions.State;
