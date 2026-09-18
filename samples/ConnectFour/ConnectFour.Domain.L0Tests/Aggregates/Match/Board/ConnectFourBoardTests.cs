@@ -192,6 +192,21 @@ public sealed class ConnectFourBoardTests
     }
 
     /// <summary>
+    ///     Malformed board lengths are rejected before indexing.
+    /// </summary>
+    /// <param name="length">The malformed board length.</param>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(43)]
+    public void MalformedBoardLengthThrowsArgumentException(
+        int length
+    )
+    {
+        ImmutableArray<DiscColor> malformedBoard = ImmutableArray.CreateRange(new DiscColor[length]);
+        Assert.Throws<ArgumentException>(() => ConnectFourBoard.IsFull(malformedBoard));
+    }
+
+    /// <summary>
     ///     A winning query whose origin cell has another color returns no line.
     /// </summary>
     [Fact]
