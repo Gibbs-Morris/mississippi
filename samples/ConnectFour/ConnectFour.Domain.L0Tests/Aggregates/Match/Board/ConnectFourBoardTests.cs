@@ -102,6 +102,15 @@ public sealed class ConnectFourBoardTests
     }
 
     /// <summary>
+    ///     An empty color cannot produce a winning line.
+    /// </summary>
+    [Fact]
+    public void EmptyColorWinningQueryReturnsNoLine()
+    {
+        Assert.Empty(ConnectFourBoard.FindWinningCells(ConnectFourBoard.Empty, 0, 0, DiscColor.Empty));
+    }
+
+    /// <summary>
     ///     An empty disc color is rejected without changing the board.
     /// </summary>
     [Fact]
@@ -165,6 +174,16 @@ public sealed class ConnectFourBoardTests
                 ConnectFourBoard.ToIndex(0, 0),
             ],
             result.WinningCells);
+    }
+
+    /// <summary>
+    ///     A winning query whose origin cell has another color returns no line.
+    /// </summary>
+    [Fact]
+    public void MismatchedOriginColorWinningQueryReturnsNoLine()
+    {
+        ImmutableArray<DiscColor> board = ConnectFourBoard.ApplyDisc(ConnectFourBoard.Empty, 1, 0, DiscColor.Yellow);
+        Assert.Empty(ConnectFourBoard.FindWinningCells(board, 1, 0, DiscColor.Red));
     }
 
     /// <summary>
