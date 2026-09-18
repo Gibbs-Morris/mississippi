@@ -17,7 +17,7 @@ namespace MississippiSamples.ConnectFour.Domain.Aggregates.Match;
 [SnapshotStorageName("CONNECTFOUR", "GAME", "MATCHSTATE", version: 1)]
 [GenerateSerializer]
 [Alias("MississippiSamples.ConnectFour.Domain.Aggregates.Match.MatchAggregate")]
-public sealed record MatchAggregate
+internal sealed record MatchAggregate
 {
     /// <summary>
     ///     Gets the board cells in row-major order, with row zero at the bottom.
