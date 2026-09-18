@@ -1,3 +1,5 @@
+using System.IO;
+
 using MississippiSamples.Spring.L3Tests.Pages;
 
 
@@ -17,6 +19,67 @@ public sealed class BankAccountSmokeTests
         Fixture = fixture;
 
     private SpringBrowserFixture Fixture { get; }
+
+    private static async Task SaveShellEvidenceAsync(
+        IPage page
+    )
+    {
+        string? directory = Environment.GetEnvironmentVariable("SPRING_TEST_ARTIFACTS");
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(directory);
+        await page.ScreenshotAsync(
+            new()
+            {
+                Path = Path.Join(directory, "shell-dark-desktop.png"),
+                FullPage = true,
+            });
+        ILocator lightThemeButton = page.GetByRole(
+            AriaRole.Button,
+            new()
+            {
+                Name = "Light",
+                Exact = true,
+            });
+        await lightThemeButton.ClickAsync();
+        Assert.Equal("light", await page.Locator("[data-rf-theme]").GetAttributeAsync("data-rf-theme"));
+        await page.ScreenshotAsync(
+            new()
+            {
+                Path = Path.Join(directory, "shell-light-desktop.png"),
+                FullPage = true,
+            });
+        ILocator highContrastThemeButton = page.GetByRole(
+            AriaRole.Button,
+            new()
+            {
+                Name = "High contrast",
+                Exact = true,
+            });
+        await highContrastThemeButton.ClickAsync();
+        Assert.Equal("high-contrast", await page.Locator("[data-rf-theme]").GetAttributeAsync("data-rf-theme"));
+        await page.SetViewportSizeAsync(390, 844);
+        await page.ScreenshotAsync(
+            new()
+            {
+                Path = Path.Join(directory, "shell-high-contrast-mobile.png"),
+                FullPage = true,
+            });
+        await page.GetByRole(
+                AriaRole.Link,
+                new()
+                {
+                    Name = "Skip to content",
+                    Exact = true,
+                })
+            .PressAsync("Enter");
+        Assert.Contains("/operations", page.Url, StringComparison.Ordinal);
+        Assert.Equal("main-content", await page.EvaluateAsync<string>("document.activeElement?.id ?? ''"));
+        await page.SetViewportSizeAsync(1440, 900);
+    }
 
     /// <summary>
     ///     Verifies the complete bank account flow via UI: open, deposit, withdraw,
@@ -42,9 +105,13 @@ public sealed class BankAccountSmokeTests
 
             // Demo accounts are pre-opened with £500 each
             OperationsPage operationsPage = await BankAccountScenario.PrepareAsync(Fixture, page, ProjectionTimeout);
-            bool hasStyles = await page.Locator("link[rel='stylesheet']")
+            bool hasRefractionTokens = await page.Locator("link[href*='RefractionTokens.css']")
                 .EvaluateAsync<bool>("link => link.sheet !== null && link.sheet.cssRules.length > 0");
-            Assert.True(hasStyles, "the generated CSS isolation bundle must load successfully");
+            bool hasScopedStyles = await page.Locator("link[href$='.styles.css']")
+                .EvaluateAsync<bool>("link => link.sheet !== null && link.sheet.cssRules.length > 0");
+            Assert.True(hasRefractionTokens, "the Refraction token stylesheet must load successfully");
+            Assert.True(hasScopedStyles, "the generated CSS isolation bundle must load successfully");
+            await SaveShellEvidenceAsync(page);
 
             // Wait for projection to show the balance via SignalR
             await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
