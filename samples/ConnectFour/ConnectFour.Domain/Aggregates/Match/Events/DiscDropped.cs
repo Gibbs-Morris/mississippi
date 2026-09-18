@@ -20,41 +20,41 @@ internal sealed record DiscDropped
     ///     Gets the color assigned to the player for this move.
     /// </summary>
     [Id(0)]
-    public DiscColor Color { get; init; }
+    public required DiscColor Color { get; init; }
 
     /// <summary>
     ///     Gets the zero-based column receiving the disc.
     /// </summary>
     [Id(2)]
-    public int Column { get; init; }
+    public required int Column { get; init; }
 
     /// <summary>
     ///     Gets the accepted one-based move number.
     /// </summary>
     [Id(4)]
-    public int MoveNumber { get; init; }
+    public required int MoveNumber { get; init; }
 
     /// <summary>
     ///     Gets the recorded move time.
     /// </summary>
     [Id(6)]
-    public DateTimeOffset OccurredAt { get; init; }
+    public required DateTimeOffset OccurredAt { get; init; }
 
     /// <summary>
     ///     Gets the identity of the player making the move.
     /// </summary>
     [Id(1)]
-    public string PlayerId { get; init; } = string.Empty;
+    public required string PlayerId { get; init; }
 
     /// <summary>
     ///     Gets the zero-based row selected by gravity.
     /// </summary>
     [Id(3)]
-    public int Row { get; init; }
+    public required int Row { get; init; }
 
     /// <summary>
     ///     Gets the winning cell indexes created by this move, if any.
     /// </summary>
     [Id(5)]
-    public ImmutableArray<int> WinningCells { get; init; } = [];
+    public required ImmutableArray<int> WinningCells { get; init; }
 }
