@@ -49,6 +49,26 @@ public sealed class ConnectFourBoardTests
     }
 
     /// <summary>
+    ///     Default and empty immutable arrays normalize to a fresh empty board.
+    /// </summary>
+    [Fact]
+    public void DefaultAndEmptyBoardsNormalizeToEmptyBoard()
+    {
+        ImmutableArray<DiscColor> defaultBoard = default;
+        Assert.False(ConnectFourBoard.IsFull(defaultBoard));
+        Assert.False(ConnectFourBoard.IsFull(ImmutableArray<DiscColor>.Empty));
+        Assert.True(
+            ConnectFourBoard.TryDropDisc(
+                defaultBoard,
+                0,
+                DiscColor.Red,
+                out ImmutableArray<DiscColor> updatedBoard,
+                out int row));
+        Assert.Equal(0, row);
+        Assert.Equal(ConnectFourBoard.CellCount, updatedBoard.Length);
+    }
+
+    /// <summary>
     ///     Both diagonal fixtures find a four-cell red line without wrapping at an edge.
     /// </summary>
     /// <param name="fixture">The diagonal fixture index.</param>
