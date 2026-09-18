@@ -64,9 +64,7 @@ public sealed class MainLayoutTests : BunitContext
                 .Single(button => button.TextContent.Contains("High contrast", StringComparison.Ordinal))
                 .Click();
             Assert.Equal(RefractionThemeMode.HighContrast, store.ThemeMode);
-            Assert.Equal(
-                "high-contrast",
-                cut.Find("[data-rf-theme]").GetAttribute("data-rf-theme"));
+            Assert.Equal("high-contrast", cut.Find("[data-rf-theme]").GetAttribute("data-rf-theme"));
             Assert.Contains(
                 JSInterop.Invocations,
                 invocation => (invocation.Identifier == "document.documentElement.setAttribute") &&
