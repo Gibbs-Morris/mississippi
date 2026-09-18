@@ -15,8 +15,8 @@ internal static class ThemePreferencesFeatureRegistration
         this IReservoirBuilder builder
     )
     {
-        builder.AddFeatureState<ThemePreferencesState>(feature => feature
-            .AddReducer<SetThemeModeAction>(ThemePreferencesReducers.SetThemeMode));
+        builder.AddFeatureState<ThemePreferencesState>(feature =>
+            feature.AddReducer<SetThemeModeAction>(ThemePreferencesReducers.SetThemeMode));
         return builder;
     }
 }

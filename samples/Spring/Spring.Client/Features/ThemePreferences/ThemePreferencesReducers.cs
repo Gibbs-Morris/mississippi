@@ -17,6 +17,9 @@ internal static class ThemePreferencesReducers
         SetThemeModeAction action
     ) =>
         Enum.IsDefined(action.Mode)
-            ? state with { ThemeMode = action.Mode }
+            ? state with
+            {
+                ThemeMode = action.Mode,
+            }
             : state;
 }

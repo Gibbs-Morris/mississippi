@@ -39,6 +39,5 @@ public sealed partial class SpringApplicationShell : ComponentBase
     ) =>
         mode == RefractionThemeMode.HighContrast ? "High contrast" : mode.ToString();
 
-    private Task FocusContentAsync() =>
-        MainContent.FocusAsync().AsTask();
+    private Task FocusContentAsync() => MainContent.FocusAsync().AsTask();
 }
