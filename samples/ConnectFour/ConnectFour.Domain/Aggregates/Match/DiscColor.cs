@@ -8,7 +8,7 @@ namespace MississippiSamples.ConnectFour.Domain.Aggregates.Match;
 /// </summary>
 [GenerateSerializer]
 [Alias("MississippiSamples.ConnectFour.Domain.Aggregates.Match.DiscColor")]
-public enum DiscColor
+internal enum DiscColor
 {
     /// <summary>
     ///     The cell is empty.
