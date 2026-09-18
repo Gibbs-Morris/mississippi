@@ -29,6 +29,8 @@ public sealed partial class MainLayout
 {
     private RefractionThemeMode? appliedDocumentTheme;
 
+    private RefractionThemeMode? renderedThemeMode;
+
     private IDisposable? storeSubscription;
 
     [Inject]
@@ -80,6 +82,7 @@ public sealed partial class MainLayout
     protected override void OnInitialized()
     {
         base.OnInitialized();
+        renderedThemeMode = ThemeMode;
         storeSubscription?.Dispose();
         storeSubscription = Store.Subscribe(OnStoreChanged);
 
@@ -92,5 +95,15 @@ public sealed partial class MainLayout
     ) =>
         Store.Dispatch(new SetThemeModeAction(mode));
 
-    private void OnStoreChanged() => _ = InvokeAsync(StateHasChanged);
+    private void OnStoreChanged()
+    {
+        RefractionThemeMode themeMode = ThemeMode;
+        if (renderedThemeMode == themeMode)
+        {
+            return;
+        }
+
+        renderedThemeMode = themeMode;
+        _ = InvokeAsync(StateHasChanged);
+    }
 }
