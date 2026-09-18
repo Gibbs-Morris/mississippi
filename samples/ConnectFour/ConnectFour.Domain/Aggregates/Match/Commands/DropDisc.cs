@@ -11,7 +11,7 @@ namespace MississippiSamples.ConnectFour.Domain.Aggregates.Match.Commands;
 /// <param name="ExpectedMoveNumber">The number of accepted moves observed before this request.</param>
 [GenerateSerializer]
 [Alias("MississippiSamples.ConnectFour.Domain.Aggregates.Match.Commands.DropDisc")]
-public sealed record DropDisc(
+internal sealed record DropDisc(
     [property: Id(0)] string ActorId,
     [property: Id(1)] int Column,
     [property: Id(2)] int ExpectedMoveNumber
