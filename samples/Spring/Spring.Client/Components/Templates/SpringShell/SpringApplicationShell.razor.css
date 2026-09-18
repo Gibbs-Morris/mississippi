@@ -76,14 +76,14 @@
     color: var(--rf-color-text-accent);
 }
 
-.spring-shell ::deep main {
+.spring-shell ::deep #main-content {
     max-width: 1320px;
     margin: 0 auto;
     padding: clamp(2rem, 5vw, 4.5rem) 0;
 }
 
 .spring-shell ::deep h1:focus,
-.spring-shell ::deep main:focus {
+.spring-shell ::deep #main-content:focus {
     outline: 2px solid var(--rf-color-focus-ring);
     outline-offset: 4px;
 }
