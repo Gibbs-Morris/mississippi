@@ -17,11 +17,9 @@ public sealed class ThemePreferencesReducersTests
     public void SetThemeModeAcceptsSupportedMode()
     {
         ThemePreferencesState state = new();
-
         ThemePreferencesState result = ThemePreferencesReducers.SetThemeMode(
             state,
-            new SetThemeModeAction(RefractionThemeMode.HighContrast));
-
+            new(RefractionThemeMode.HighContrast));
         Assert.Equal(RefractionThemeMode.HighContrast, result.ThemeMode);
     }
 
@@ -32,11 +30,9 @@ public sealed class ThemePreferencesReducersTests
     public void SetThemeModeRejectsUnsupportedMode()
     {
         ThemePreferencesState state = new();
-
         ThemePreferencesState result = ThemePreferencesReducers.SetThemeMode(
             state,
-            new SetThemeModeAction((RefractionThemeMode)int.MaxValue));
-
+            new((RefractionThemeMode)int.MaxValue));
         Assert.Same(state, result);
     }
 }
