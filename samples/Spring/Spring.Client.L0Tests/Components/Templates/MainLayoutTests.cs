@@ -35,12 +35,19 @@ public sealed class MainLayoutTests : BunitContext
             Assert.Contains(store.Actions, action => action is RequestSignalRConnectionAction);
             Assert.Equal(1, store.ActiveSubscriptions);
             Assert.Equal("dark", cut.Find("[data-rf-theme]").GetAttribute("data-rf-theme"));
+            int initialThemeSyncCount = JSInterop.Invocations.Count(
+                invocation => invocation.Identifier == "document.documentElement.setAttribute");
             Assert.Contains(
                 JSInterop.Invocations,
                 invocation => (invocation.Identifier == "document.documentElement.setAttribute") &&
                               (invocation.Arguments.Count == 2) &&
                               Equals(invocation.Arguments[0], "data-rf-theme") &&
                               Equals(invocation.Arguments[1], "dark"));
+            store.Dispatch(new RequestSignalRConnectionAction());
+            Assert.Equal(
+                initialThemeSyncCount,
+                JSInterop.Invocations.Count(
+                    invocation => invocation.Identifier == "document.documentElement.setAttribute"));
             cut.FindAll("button")
                 .Single(button => button.TextContent.Contains("Light", StringComparison.Ordinal))
                 .Click();

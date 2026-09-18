@@ -2,6 +2,8 @@ using System.IO;
 
 using MississippiSamples.Spring.L3Tests.Pages;
 
+using static Microsoft.Playwright.Assertions;
+
 
 namespace MississippiSamples.Spring.L3Tests.Smoke;
 
@@ -47,7 +49,7 @@ public sealed class BankAccountSmokeTests
         }
 
         await SaveScreenshotAsync("shell-dark-desktop.png");
-        Assert.Equal("dark", await page.Locator("html").GetAttributeAsync("data-rf-theme"));
+        await Expect(page.Locator("html")).ToHaveAttributeAsync("data-rf-theme", "dark");
         ILocator lightThemeButton = page.GetByRole(
             AriaRole.Button,
             new()
@@ -56,8 +58,8 @@ public sealed class BankAccountSmokeTests
                 Exact = true,
             });
         await lightThemeButton.ClickAsync();
-        Assert.Equal("light", await page.Locator(".spring-theme[data-rf-theme]").GetAttributeAsync("data-rf-theme"));
-        Assert.Equal("light", await page.Locator("html").GetAttributeAsync("data-rf-theme"));
+        await Expect(page.Locator(".spring-theme[data-rf-theme]")).ToHaveAttributeAsync("data-rf-theme", "light");
+        await Expect(page.Locator("html")).ToHaveAttributeAsync("data-rf-theme", "light");
         await SaveScreenshotAsync("shell-light-desktop.png");
         ILocator highContrastThemeButton = page.GetByRole(
             AriaRole.Button,
@@ -67,10 +69,9 @@ public sealed class BankAccountSmokeTests
                 Exact = true,
             });
         await highContrastThemeButton.ClickAsync();
-        Assert.Equal(
-            "high-contrast",
-            await page.Locator(".spring-theme[data-rf-theme]").GetAttributeAsync("data-rf-theme"));
-        Assert.Equal("high-contrast", await page.Locator("html").GetAttributeAsync("data-rf-theme"));
+        await Expect(page.Locator(".spring-theme[data-rf-theme]"))
+            .ToHaveAttributeAsync("data-rf-theme", "high-contrast");
+        await Expect(page.Locator("html")).ToHaveAttributeAsync("data-rf-theme", "high-contrast");
         await page.SetViewportSizeAsync(390, 844);
         await SaveScreenshotAsync("shell-high-contrast-mobile.png");
         await page.GetByRole(
