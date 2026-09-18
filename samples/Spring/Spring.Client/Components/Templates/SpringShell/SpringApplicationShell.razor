@@ -2,7 +2,10 @@
 @namespace MississippiSamples.Spring.Client.Components.Templates.SpringShell
 
 <CascadingRefractionProvider ThemeMode="@ThemeMode" Class="spring-theme">
-    <a class="skip-link" href="#main-content" @onclick="FocusContentAsync">Skip to content</a>
+    <a class="skip-link"
+       href="#main-content"
+       @onclick="FocusContentAsync"
+       @onclick:preventDefault="true">Skip to content</a>
     <div class="spring-shell">
         <header class="topbar">
             <a class="wordmark" href="/">
