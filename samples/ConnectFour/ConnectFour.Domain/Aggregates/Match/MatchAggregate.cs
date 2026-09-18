@@ -2,7 +2,6 @@ using System;
 using System.Collections.Immutable;
 
 using Mississippi.Brooks.Abstractions.Attributes;
-using Mississippi.Inlet.Generators.Abstractions;
 
 using MississippiSamples.ConnectFour.Domain.Aggregates.Match.Board;
 
@@ -15,8 +14,7 @@ namespace MississippiSamples.ConnectFour.Domain.Aggregates.Match;
 ///     Event-sourced state for one Connect Four match.
 /// </summary>
 [BrookName("CONNECTFOUR", "GAME", "MATCH")]
-[SnapshotStorageName("CONNECTFOUR", "GAME", "MATCHSTATE", 1)]
-[GenerateAggregateEndpoints(RoutePrefix = "matches")]
+[SnapshotStorageName("CONNECTFOUR", "GAME", "MATCHSTATE")]
 [GenerateSerializer]
 [Alias("MississippiSamples.ConnectFour.Domain.Aggregates.Match.MatchAggregate")]
 public sealed record MatchAggregate
