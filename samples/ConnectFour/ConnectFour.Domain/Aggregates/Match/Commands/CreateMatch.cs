@@ -9,4 +9,4 @@ namespace MississippiSamples.ConnectFour.Domain.Aggregates.Match.Commands;
 /// <param name="ActorId">The fixed local-demo player identity creating the match.</param>
 [GenerateSerializer]
 [Alias("MississippiSamples.ConnectFour.Domain.Aggregates.Match.Commands.CreateMatch")]
-public sealed record CreateMatch([property: Id(0)] string ActorId);
+internal sealed record CreateMatch([property: Id(0)] string ActorId);
