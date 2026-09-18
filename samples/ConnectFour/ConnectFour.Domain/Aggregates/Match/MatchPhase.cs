@@ -8,7 +8,7 @@ namespace MississippiSamples.ConnectFour.Domain.Aggregates.Match;
 /// </summary>
 [GenerateSerializer]
 [Alias("MississippiSamples.ConnectFour.Domain.Aggregates.Match.MatchPhase")]
-public enum MatchPhase
+internal enum MatchPhase
 {
     /// <summary>
     ///     No match has been created for the aggregate identity.
