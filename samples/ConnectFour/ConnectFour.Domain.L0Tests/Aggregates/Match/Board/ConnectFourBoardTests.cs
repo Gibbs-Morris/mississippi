@@ -177,6 +177,21 @@ public sealed class ConnectFourBoardTests
     }
 
     /// <summary>
+    ///     Empty and partially populated boards are not full.
+    /// </summary>
+    [Fact]
+    public void IsFullReturnsFalseForEmptyAndPartialBoards()
+    {
+        Assert.False(ConnectFourBoard.IsFull(ConnectFourBoard.Empty));
+        ImmutableArray<DiscColor> partialBoard = ConnectFourBoard.ApplyDisc(
+            ConnectFourBoard.Empty,
+            0,
+            0,
+            DiscColor.Red);
+        Assert.False(ConnectFourBoard.IsFull(partialBoard));
+    }
+
+    /// <summary>
     ///     A winning query whose origin cell has another color returns no line.
     /// </summary>
     [Fact]
