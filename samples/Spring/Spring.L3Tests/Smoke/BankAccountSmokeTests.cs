@@ -56,7 +56,7 @@ public sealed class BankAccountSmokeTests
                 Exact = true,
             });
         await lightThemeButton.ClickAsync();
-        Assert.Equal("light", await page.Locator("[data-rf-theme]").GetAttributeAsync("data-rf-theme"));
+        Assert.Equal("light", await page.Locator(".spring-theme[data-rf-theme]").GetAttributeAsync("data-rf-theme"));
         Assert.Equal("light", await page.Locator("html").GetAttributeAsync("data-rf-theme"));
         await SaveScreenshotAsync("shell-light-desktop.png");
         ILocator highContrastThemeButton = page.GetByRole(
@@ -67,7 +67,9 @@ public sealed class BankAccountSmokeTests
                 Exact = true,
             });
         await highContrastThemeButton.ClickAsync();
-        Assert.Equal("high-contrast", await page.Locator("[data-rf-theme]").GetAttributeAsync("data-rf-theme"));
+        Assert.Equal(
+            "high-contrast",
+            await page.Locator(".spring-theme[data-rf-theme]").GetAttributeAsync("data-rf-theme"));
         Assert.Equal("high-contrast", await page.Locator("html").GetAttributeAsync("data-rf-theme"));
         await page.SetViewportSizeAsync(390, 844);
         await SaveScreenshotAsync("shell-high-contrast-mobile.png");
