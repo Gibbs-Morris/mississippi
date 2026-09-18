@@ -26,6 +26,16 @@ public sealed class ConnectFourBoardTests
     }
 
     /// <summary>
+    ///     Applying a disc to an occupied cell is rejected instead of overwriting it.
+    /// </summary>
+    [Fact]
+    public void ApplyingDiscToOccupiedCellThrows()
+    {
+        ImmutableArray<DiscColor> board = ConnectFourBoard.ApplyDisc(ConnectFourBoard.Empty, 0, 0, DiscColor.Red);
+        Assert.Throws<InvalidOperationException>(() => ConnectFourBoard.ApplyDisc(board, 0, 0, DiscColor.Yellow));
+    }
+
+    /// <summary>
     ///     Both diagonal fixtures find a four-cell red line without wrapping at an edge.
     /// </summary>
     /// <param name="fixture">The diagonal fixture index.</param>
