@@ -101,6 +101,12 @@ Describe 'Repository prerequisite doctor' {
         @($report.Checks | Where-Object Name -EQ 'dotnet-sdk').State | Should -Be 'ready'
     }
 
+    It 'accepts a prerelease SDK selected exactly by global.json' {
+        InModuleScope AgentDoctor {
+            Test-DoctorSdkCompatibility -Expected '10.0.100-preview.1' -Actual '10.0.100-preview.1' -RollForward 'patch' | Should -BeTrue
+        }
+    }
+
     It 'rejects an unsupported Docs Node version' {
         $probes = @{} + $readyProbes
         $probes['node-version'] = [pscustomobject]@{ Available = $true; Output = 'v18.20.0'; ExitCode = 0; Error = '' }

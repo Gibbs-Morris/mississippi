@@ -123,20 +123,19 @@ function Resolve-DoctorCommand {
     $commands = @(Get-Command $FilePath -All -ErrorAction SilentlyContinue)
     if ($commands.Count -eq 0) { return $null }
 
-    $scriptCommand = @($commands | Where-Object { [System.IO.Path]::GetExtension($_.Source) -ieq '.ps1' } | Select-Object -First 1)
-    if ($scriptCommand.Count -gt 0) {
+    $selected = @($commands | Where-Object { $_.CommandType -in @('Application', 'ExternalScript') } | Select-Object -First 1)
+    if ($selected.Count -eq 0) { return $null }
+    if ([System.IO.Path]::GetExtension($selected[0].Source) -ieq '.ps1') {
         $hostCommand = @(Get-Command pwsh -ErrorAction SilentlyContinue | Select-Object -First 1)
         if ($hostCommand.Count -gt 0) {
             return [pscustomobject]@{
                 FilePath = $hostCommand[0].Source
-                PrefixArguments = @('-NoProfile', '-File', $scriptCommand[0].Source)
+                PrefixArguments = @('-NoProfile', '-File', $selected[0].Source)
             }
         }
     }
 
-    $applicationCommand = @($commands | Where-Object { $_.CommandType -eq 'Application' } | Select-Object -First 1)
-    $selected = if ($applicationCommand.Count -gt 0) { $applicationCommand[0] } else { $commands[0] }
-    return [pscustomobject]@{ FilePath = $selected.Source; PrefixArguments = @() }
+    return [pscustomobject]@{ FilePath = $selected[0].Source; PrefixArguments = @() }
 }
 
 function Get-DoctorProbeDetails {
@@ -155,8 +154,11 @@ function Test-DoctorSdkCompatibility {
         [string]$RollForward = 'patch'
     )
 
-    $expectedMatch = [regex]::Match($Expected.Trim(), '^(?<Major>\d+)\.(?<Minor>\d+)\.(?<Build>\d+)(?:\.(?<Revision>\d+))?$')
-    $actualMatch = [regex]::Match($Actual.Trim(), '^(?<Major>\d+)\.(?<Minor>\d+)\.(?<Build>\d+)(?:\.(?<Revision>\d+))?$')
+    if ($Actual.Trim() -eq $Expected.Trim()) { return $true }
+    $expectedCore = ($Expected.Trim() -split '-', 2)[0]
+    $actualCore = ($Actual.Trim() -split '-', 2)[0]
+    $expectedMatch = [regex]::Match($expectedCore, '^(?<Major>\d+)\.(?<Minor>\d+)\.(?<Build>\d+)(?:\.(?<Revision>\d+))?$')
+    $actualMatch = [regex]::Match($actualCore, '^(?<Major>\d+)\.(?<Minor>\d+)\.(?<Build>\d+)(?:\.(?<Revision>\d+))?$')
     if (-not $expectedMatch.Success -or -not $actualMatch.Success) {
         return $false
     }
