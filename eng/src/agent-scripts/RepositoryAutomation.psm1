@@ -130,7 +130,7 @@ function Invoke-RepositoryProcess {
         }
     }
 
-    if ($TimeoutSeconds -le 0 -and -not $PassThru) {
+    if ($TimeoutSeconds -le 0 -and -not $PassThru -and [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
         & $FilePath @Arguments
         $exitCode = $LASTEXITCODE
         if ($exitCode -ne 0) {
@@ -157,9 +157,15 @@ function Invoke-RepositoryProcess {
         $stderrTask = $process.StandardError.ReadToEndAsync()
         $finished = if ($TimeoutSeconds -gt 0) { $process.WaitForExit($TimeoutSeconds * 1000) } else { $process.WaitForExit(); $true }
         $timedOut = -not $finished
+        $terminationErrors = [System.Collections.Generic.List[string]]::new()
+        $terminated = $true
         if ($timedOut) {
-            try { $process.Kill($true) } catch { try { $process.Kill() } catch { } }
-            $process.WaitForExit(1000) | Out-Null
+            try { $process.Kill($true) }
+            catch {
+                $terminationErrors.Add($_.Exception.Message)
+                try { $process.Kill() } catch { $terminationErrors.Add($_.Exception.Message) }
+            }
+            $terminated = $process.WaitForExit(1000)
         }
         $stdoutTask.Wait(1000) | Out-Null
         $stderrTask.Wait(1000) | Out-Null
@@ -173,6 +179,8 @@ function Invoke-RepositoryProcess {
             ExitCode = if ($timedOut) { 124 } else { $process.ExitCode }
             TimedOut = $timedOut
             Cancelled = $false
+            TerminationFailed = $timedOut -and (-not $terminated -or $terminationErrors.Count -gt 0)
+            TerminationErrors = @($terminationErrors)
             StdOut = $stdout
             StdErr = $stderr
             Success = -not $timedOut -and $process.ExitCode -eq 0
@@ -181,9 +189,21 @@ function Invoke-RepositoryProcess {
         if (-not $result.Success) {
             $message = if ($timedOut) { "Command '$FilePath' timed out after $TimeoutSeconds seconds." } elseif ($ErrorMessage) { $ErrorMessage } else { "Command '$FilePath' failed with exit code $($result.ExitCode)." }
             if ($stderr) { $message += " Native error output: $stderr" }
+            if ($result.TerminationFailed) { $message += " Process termination was not verified: $($result.TerminationErrors -join '; ')" }
             throw $message
         }
         if ($stdout) { Write-Output $stdout }
+    }
+    catch {
+        if ($PassThru) {
+            return [pscustomobject][ordered]@{
+                FilePath = $FilePath; Arguments = @($Arguments); StartedUtc = $startedUtc
+                EndedUtc = (Get-Date).ToUniversalTime().ToString('o'); ExitCode = -1
+                TimedOut = $false; Cancelled = $false; TerminationFailed = $false
+                TerminationErrors = @(); StdOut = ''; StdErr = $_.Exception.Message; Success = $false
+            }
+        }
+        throw
     }
     finally {
         $process.Dispose()
