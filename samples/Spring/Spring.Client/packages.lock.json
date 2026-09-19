@@ -611,6 +611,13 @@
       "Mississippi.Inlet.Generators.Abstractions": {
         "type": "Project"
       },
+      "Mississippi.Refraction.Client": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components": "[10.0.11, )",
+          "Microsoft.AspNetCore.Components.Web": "[10.0.11, )"
+        }
+      },
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project",
         "dependencies": {

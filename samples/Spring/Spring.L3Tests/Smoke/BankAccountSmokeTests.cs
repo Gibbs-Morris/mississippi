@@ -1,4 +1,8 @@
+using System.IO;
+
 using MississippiSamples.Spring.L3Tests.Pages;
+
+using static Microsoft.Playwright.Assertions;
 
 
 namespace MississippiSamples.Spring.L3Tests.Smoke;
@@ -17,6 +21,71 @@ public sealed class BankAccountSmokeTests
         Fixture = fixture;
 
     private SpringBrowserFixture Fixture { get; }
+
+    private static async Task SaveShellEvidenceAsync(
+        IPage page
+    )
+    {
+        string? directory = Environment.GetEnvironmentVariable("SPRING_TEST_ARTIFACTS");
+
+        async Task SaveScreenshotAsync(
+            string fileName
+        )
+        {
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                await page.ScreenshotAsync(
+                    new()
+                    {
+                        Path = Path.Join(directory, fileName),
+                        FullPage = true,
+                    });
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        await SaveScreenshotAsync("shell-dark-desktop.png");
+        await Expect(page.Locator("html")).ToHaveAttributeAsync("data-rf-theme", "dark");
+        ILocator lightThemeButton = page.GetByRole(
+            AriaRole.Button,
+            new()
+            {
+                Name = "Light",
+                Exact = true,
+            });
+        await lightThemeButton.ClickAsync();
+        await Expect(page.Locator(".spring-theme[data-rf-theme]")).ToHaveAttributeAsync("data-rf-theme", "light");
+        await Expect(page.Locator("html")).ToHaveAttributeAsync("data-rf-theme", "light");
+        await SaveScreenshotAsync("shell-light-desktop.png");
+        ILocator highContrastThemeButton = page.GetByRole(
+            AriaRole.Button,
+            new()
+            {
+                Name = "High contrast",
+                Exact = true,
+            });
+        await highContrastThemeButton.ClickAsync();
+        await Expect(page.Locator(".spring-theme[data-rf-theme]"))
+            .ToHaveAttributeAsync("data-rf-theme", "high-contrast");
+        await Expect(page.Locator("html")).ToHaveAttributeAsync("data-rf-theme", "high-contrast");
+        await page.SetViewportSizeAsync(390, 844);
+        await SaveScreenshotAsync("shell-high-contrast-mobile.png");
+        await page.GetByRole(
+                AriaRole.Link,
+                new()
+                {
+                    Name = "Skip to content",
+                    Exact = true,
+                })
+            .PressAsync("Enter");
+        Assert.Contains("/operations", page.Url, StringComparison.Ordinal);
+        Assert.Equal("main-content", await page.EvaluateAsync<string>("document.activeElement?.id ?? ''"));
+        await page.SetViewportSizeAsync(1440, 900);
+    }
 
     /// <summary>
     ///     Verifies the complete bank account flow via UI: open, deposit, withdraw,
@@ -42,9 +111,13 @@ public sealed class BankAccountSmokeTests
 
             // Demo accounts are pre-opened with £500 each
             OperationsPage operationsPage = await BankAccountScenario.PrepareAsync(Fixture, page, ProjectionTimeout);
-            bool hasStyles = await page.Locator("link[rel='stylesheet']")
+            bool hasRefractionTokens = await page.Locator("link[href*='RefractionTokens.css']")
                 .EvaluateAsync<bool>("link => link.sheet !== null && link.sheet.cssRules.length > 0");
-            Assert.True(hasStyles, "the generated CSS isolation bundle must load successfully");
+            bool hasScopedStyles = await page.Locator("link[href$='.styles.css']")
+                .EvaluateAsync<bool>("link => link.sheet !== null && link.sheet.cssRules.length > 0");
+            Assert.True(hasRefractionTokens, "the Refraction token stylesheet must load successfully");
+            Assert.True(hasScopedStyles, "the generated CSS isolation bundle must load successfully");
+            await SaveShellEvidenceAsync(page);
 
             // Wait for projection to show the balance via SignalR
             await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
