@@ -175,6 +175,8 @@ Describe 'Repository automation quality gates' {
 
         Invoke-SolutionsPipeline -RepoRoot $TestDrive | Out-Null
 
+        @($calls | Where-Object { $_ -eq 'mississippi-cleanup' }).Count | Should -Be 1
+        @($calls | Where-Object { $_ -eq 'sample-cleanup' }).Count | Should -Be 1
         $calls.IndexOf('mississippi-cleanup') | Should -BeLessThan $calls.IndexOf('mississippi-tests')
         $calls.IndexOf('sample-cleanup') | Should -BeLessThan $calls.IndexOf('sample-tests')
         $calls.IndexOf('final-build') | Should -BeGreaterThan $calls.IndexOf('sample-tests')
