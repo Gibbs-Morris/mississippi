@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
@@ -22,11 +23,12 @@ public sealed class DevToolsInitializationCheckerServiceTests
         DevToolsInitializationTracker tracker,
         ReservoirDevToolsOptions options,
         TimeProvider timeProvider,
-        IHostEnvironment? hostEnvironment = null
+        IHostEnvironment? hostEnvironment = null,
+        ILogger<DevToolsInitializationCheckerService>? logger = null
     ) =>
         new(
             tracker,
-            NullLogger<DevToolsInitializationCheckerService>.Instance,
+            logger ?? NullLogger<DevToolsInitializationCheckerService>.Instance,
             timeProvider,
             Options.Create(options),
             hostEnvironment,
@@ -41,6 +43,20 @@ public sealed class DevToolsInitializationCheckerServiceTests
             BindingFlags.Instance | BindingFlags.NonPublic)!;
         return (Task)method.Invoke(service, [CancellationToken.None])!;
     }
+
+    private static void VerifyLog(
+        Mock<ILogger<DevToolsInitializationCheckerService>> logger,
+        LogLevel level,
+        int eventId
+    ) =>
+        logger.Verify(
+            logging => logging.Log(
+                level,
+                It.Is<EventId>(id => id.Id == eventId),
+                It.Is<It.IsAnyType>((_, _) => true),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
 
     /// <summary>
     ///     When DevTools is DevelopmentOnly and host environment is production, checker should not run.
@@ -288,6 +304,8 @@ public sealed class DevToolsInitializationCheckerServiceTests
     {
         DevToolsInitializationTracker tracker = new();
         FakeTimeProvider fakeTime = new();
+        Mock<ILogger<DevToolsInitializationCheckerService>> logger = new();
+        logger.Setup(l => l.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         using DevToolsInitializationCheckerService sut = CreateService(
             tracker,
             new()
@@ -295,11 +313,13 @@ public sealed class DevToolsInitializationCheckerServiceTests
                 Enablement = ReservoirDevToolsEnablement.Always,
                 ThrowOnMissingInitializer = false,
             },
-            fakeTime);
+            fakeTime,
+            logger: logger.Object);
         Task execution = InvokeExecuteAsync(sut);
         fakeTime.Advance(TimeSpan.FromSeconds(1));
         await execution;
         Assert.False(tracker.WasInitialized);
+        VerifyLog(logger, LogLevel.Warning, 1);
     }
 
     /// <summary>
@@ -371,29 +391,26 @@ public sealed class DevToolsInitializationCheckerServiceTests
     public async Task PublicConstructorRunsInitializedAlwaysEnabledCheck()
     {
         // Arrange
-        DevToolsInitializationTracker tracker = new()
-        {
-            WasInitialized = true,
-        };
+        DevToolsInitializationTracker tracker = new();
         FakeTimeProvider fakeTime = new();
+        Mock<ILogger<DevToolsInitializationCheckerService>> logger = new();
+        logger.Setup(l => l.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         ReservoirDevToolsOptions options = new()
         {
             Enablement = ReservoirDevToolsEnablement.Always,
+            ThrowOnMissingInitializer = false,
         };
-        using DevToolsInitializationCheckerService sut = new(
-            tracker,
-            NullLogger<DevToolsInitializationCheckerService>.Instance,
-            fakeTime,
-            Options.Create(options));
+        using DevToolsInitializationCheckerService sut = new(tracker, logger.Object, fakeTime, Options.Create(options));
 
         // Act
-        await sut.StartAsync(CancellationToken.None);
+        Task execution = InvokeExecuteAsync(sut);
         fakeTime.Advance(DevToolsInitializationCheckerService.DefaultCheckDelay);
-        await Task.Delay(50, TestContext.Current.CancellationToken);
-        await sut.StopAsync(CancellationToken.None);
+        await execution;
 
         // Assert
-        Assert.True(tracker.WasInitialized);
+        Assert.False(tracker.WasInitialized);
+        VerifyLog(logger, LogLevel.Debug, 2);
+        VerifyLog(logger, LogLevel.Warning, 1);
     }
 
     /// <summary>
