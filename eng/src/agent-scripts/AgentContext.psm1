@@ -172,8 +172,7 @@ function Get-ContextPathComparison {
         }
     }
     catch {
-        # A failed probe is safer as case-sensitive: it cannot select a path
-        # that the filesystem did not prove equivalent.
+        Write-Verbose "Unable to prove filesystem case comparison: $($_.Exception.Message)"
     }
 
     return [System.StringComparison]::Ordinal
