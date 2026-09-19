@@ -27,7 +27,7 @@ function Remove-NonRenderedMarkdown {
             continue
         }
         if ($insideFence) {
-            $closingPattern = '^\s*' + [regex]::Escape($fenceCharacter) + '{' + $fenceLength + ',}\s*$'
+            $closingPattern = '^[ ]{0,3}' + [regex]::Escape($fenceCharacter) + '{' + $fenceLength + ',}[ \t]*$'
             if ($line -match $closingPattern) { $insideFence = $false }
             ''
             continue
@@ -98,7 +98,8 @@ function Get-PrIssueReferences {
 
     $withoutFullUrls = [regex]::Replace($Content, $fullUrlPattern, '')
     $withoutLinkDestinations = [regex]::Replace($withoutFullUrls, '\]\([^)\r\n]*\)', ']')
-    foreach ($match in [regex]::Matches($withoutLinkDestinations, '(?<![\w/])#(?<Number>\d+)\b')) {
+    $withoutUriComponents = [regex]::Replace($withoutLinkDestinations, '(?i)\b[A-Za-z][A-Za-z0-9+.-]*://[^\s<>()]+', '')
+    foreach ($match in [regex]::Matches($withoutUriComponents, '(?<![\w/])#(?<Number>\d+)\b')) {
         $number = [int]$match.Groups['Number'].Value
         if (@($references | Where-Object Number -EQ $number).Count -eq 0) {
             $references.Add([pscustomobject]@{ Number = $number; Text = $match.Value })

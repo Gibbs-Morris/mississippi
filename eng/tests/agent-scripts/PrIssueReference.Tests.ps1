@@ -71,6 +71,14 @@ Refs #741
         $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
     }
 
+    It 'does not close a fence indented beyond three spaces' {
+        $body = "```md`r`nRefs #741`r`n    ``` `r`nRefs #741"
+        $outcome = Invoke-ReferenceValidator -Body $body
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'ignores variable-width inline code spans' {
         $outcome = Invoke-ReferenceValidator -Body '``Refs #741``'
 
@@ -94,6 +102,13 @@ Refs #741
 
     It 'ignores shorthand tokens in Markdown link destinations' {
         $outcome = Invoke-ReferenceValidator -Body '[tracking details](#741)'
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
+    It 'ignores shorthand tokens embedded in bare URLs' {
+        $outcome = Invoke-ReferenceValidator -Body 'https://example.test/?issue=#741'
 
         $outcome.ExitCode | Should -Not -Be 0
         $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
