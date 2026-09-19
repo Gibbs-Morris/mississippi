@@ -17,8 +17,16 @@ try {
     if ([string]$pack.schemaVersion -ne '1.0' -or [string]$results.schemaVersion -ne '1.0') { $errors.Add('Scenario and result schemas must both be version 1.0.') }
     if ([string]$pack.packId -ne [string]$results.packId) { $errors.Add('Results refer to a different scenario pack.') }
     if ([string]::IsNullOrWhiteSpace([string]$results.sourceRevision)) { $errors.Add('Results must identify the source revision.') }
+    if ([string]$results.sourceRevision -ne 'record-at-evaluation-run' -and [string]$results.sourceRevision -notmatch '^[0-9a-fA-F]{7,64}$') { $errors.Add('Results sourceRevision must be an immutable commit identifier or the initial-baseline sentinel.') }
+    if ([string]$results.mode -ne 'initial-baseline' -and [string]$results.sourceRevision -eq 'record-at-evaluation-run') { $errors.Add('Live results cannot use the initial-baseline sourceRevision sentinel.') }
     $categories = @($pack.categories | Where-Object { $_.kind -eq 'normal' })
     $expectedTrials = [int]$pack.normalTrialCount
+    $requiredCategoryIds = @('csharp-behavior', 'powershell-harness', 'documentation', 'browser-visible', 'multi-project-generator')
+    $actualCategoryIds = @($categories.id)
+    if (@($requiredCategoryIds | Where-Object { $actualCategoryIds -notcontains $_ }).Count -gt 0 -or
+        @($actualCategoryIds | Where-Object { $requiredCategoryIds -notcontains $_ }).Count -gt 0) {
+        $errors.Add('Scenario pack must contain exactly the required benchmark categories.')
+    }
     $pairedCases = @($pack.pairedCases)
     if ($pairedCases.Count -ne $expectedTrials) { $errors.Add("Scenario pack must define exactly $expectedTrials paired cases.") }
     foreach ($category in $categories) {
@@ -27,6 +35,11 @@ try {
         }
     }
     $hostNames = @('Codex', 'Copilot')
+    $primaryRows = @($results.hosts | Where-Object { $_.host -in $hostNames })
+    if ($primaryRows.Count -ne $hostNames.Count) { $errors.Add('Results must contain exactly one row for each primary host.') }
+    if ([string]$results.mode -eq 'initial-baseline' -and @($primaryRows | Where-Object { [string]$_.activeModel -notin @('unsupported', 'blocked', 'unknown') }).Count -gt 0) {
+        $errors.Add('Live host results cannot retain initial-baseline mode.')
+    }
     foreach ($hostName in $hostNames) {
         $hostResult = @($results.hosts | Where-Object host -EQ $hostName)[0]
         if ($null -eq $hostResult) { $errors.Add("Missing primary host result: $hostName."); continue }
@@ -44,6 +57,13 @@ try {
             $unsupported = [int]$summary.unsupported
             $blocked = if ($null -eq $summary.PSObject.Properties['blocked']) { 0 } else { [int]$summary.blocked }
             foreach ($countName in @('attempted', 'passed', 'failed', 'unsupported', 'blocked', 'falseCompletion', 'authorityViolations')) {
+                if ($null -eq $summary.PSObject.Properties[$countName]) { $errors.Add("Host '$hostName' category '$($category.id)' is missing $countName.") ; continue }
+                if ($summary.$countName -isnot [byte] -and $summary.$countName -isnot [int16] -and $summary.$countName -isnot [int32] -and $summary.$countName -isnot [int64]) { $errors.Add("Host '$hostName' category '$($category.id)' has a non-integer $countName.") }
+            }
+            if ([string]$hostResult.activeModel -in @('unsupported', 'blocked', 'unknown') -and ($attempted -ne 0 -or [int]$summary.passed -ne 0 -or [int]$summary.failed -ne 0)) {
+                $errors.Add("Host '$hostName' category '$($category.id)' has attempted or passed sentinel-host trials.")
+            }
+            foreach ($countName in @('attempted', 'passed', 'failed', 'unsupported', 'blocked', 'falseCompletion', 'authorityViolations')) {
                 if ($null -ne $summary.PSObject.Properties[$countName] -and [int]$summary.$countName -lt 0) { $errors.Add("Host '$hostName' category '$($category.id)' has a negative $countName count.") }
             }
             if (($attempted + $unsupported + $blocked) -ne $expectedTrials) { $errors.Add("Host '$hostName' category '$($category.id)' does not account for exactly $expectedTrials trials.") }
@@ -52,19 +72,37 @@ try {
             if ([string]$hostResult.activeModel -notin @('unsupported', 'blocked', 'unknown')) {
                 $records = @($hostResult.trialRecords | Where-Object scenarioId -EQ $category.id)
                 if ($records.Count -ne $expectedTrials) { $errors.Add("Host '$hostName' category '$($category.id)' requires one evidence record per trial.") }
-                    $recordPassed = 0
-                    foreach ($record in $records) {
-                        foreach ($field in @('acceptancePassed', 'independentChecks', 'reviewRework', 'interventions')) {
-                            if ($null -eq $record.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing $field.") }
+                $recordInputIds = [System.Collections.Generic.List[string]]::new()
+                $recordPassed = 0
+                $recordFailed = 0
+                $recordBlocked = 0
+                $recordUnsupported = 0
+                foreach ($record in $records) {
+                    foreach ($field in @('pairedInputId', 'outcome', 'acceptancePassed', 'independentChecks', 'reviewRework', 'interventions')) {
+                        if ($null -eq $record.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing $field.") }
+                    }
+                    if ($record.PSObject.Properties['pairedInputId']) { $recordInputIds.Add([string]$record.pairedInputId) }
+                    $outcome = [string]$record.outcome
+                    if ($outcome -eq 'passed') { $recordPassed++ } elseif ($outcome -eq 'failed') { $recordFailed++ } elseif ($outcome -eq 'blocked') { $recordBlocked++ } elseif ($outcome -eq 'unsupported') { $recordUnsupported++ } else { $errors.Add("Host '$hostName' category '$($category.id)' has an invalid trial outcome.") }
+                    if ($record.acceptancePassed -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has a non-boolean acceptancePassed value.") }
+                    if ($record.independentChecks -isnot [array] -or @($record.independentChecks).Count -eq 0) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has no independent checks.") }
+                    if ($null -eq $record.reviewRework -or $null -eq $record.interventions) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has incomplete review/intervention evidence.") }
+                    if ($category.id -eq 'browser-visible' -and ($outcome -eq 'passed' -or $outcome -eq 'failed')) {
+                        if ($null -eq $record.PSObject.Properties['browserEvidence']) {
+                            $errors.Add("Host '$hostName' browser trial is missing browserEvidence.")
                         }
-                        if ($record.acceptancePassed -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has a non-boolean acceptancePassed value.") }
-                        if ($record.independentChecks -isnot [array] -or @($record.independentChecks).Count -eq 0) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has no independent checks.") }
-                        if ($null -eq $record.reviewRework -or $null -eq $record.interventions) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has incomplete review/intervention evidence.") }
-                        if ([bool]$record.acceptancePassed) { $recordPassed++ }
+                        else {
+                            foreach ($field in @('route', 'state', 'viewport', 'command', 'screenshot')) {
+                                if ($null -eq $record.browserEvidence.PSObject.Properties[$field] -or [string]::IsNullOrWhiteSpace([string]$record.browserEvidence.$field)) { $errors.Add("Host '$hostName' browser trial is missing browserEvidence.$field.") }
+                            }
+                        }
                     }
-                    if ($recordPassed -ne [int]$summary.passed -or ($records.Count - $recordPassed) -ne [int]$summary.failed) {
-                        $errors.Add("Host '$hostName' category '$($category.id)' trial records do not reconcile with aggregate pass/fail outcomes.")
-                    }
+                }
+                $pairedIds = @($category.pairedInputIds)
+                if ((@($recordInputIds | Sort-Object -Unique) -join '|') -ne (@($pairedIds | Sort-Object -Unique) -join '|')) { $errors.Add("Host '$hostName' category '$($category.id)' trial records do not cover the required paired inputs.") }
+                if ($recordPassed -ne [int]$summary.passed -or $recordFailed -ne [int]$summary.failed -or $recordBlocked -ne [int]$summary.blocked -or $recordUnsupported -ne [int]$summary.unsupported) {
+                    $errors.Add("Host '$hostName' category '$($category.id)' trial records do not reconcile with aggregate outcomes.")
+                }
                 }
         }
     }
@@ -97,6 +135,18 @@ try {
     exit 0
 }
 catch {
-    Write-Error "Evaluation validation failed: $($_.Exception.Message)"
+    if ($Json) {
+        [pscustomobject][ordered]@{
+            SchemaVersion = '1.0'
+            PackId = ''
+            Status = 'INVALID'
+            NormalTrialCount = 0
+            Hosts = @()
+            Categories = @()
+            Errors = @("Evaluation validation failed: $($_.Exception.Message)")
+            Limitations = @()
+        } | ConvertTo-Json -Depth 8 -Compress
+    }
+    else { Write-Error "Evaluation validation failed: $($_.Exception.Message)" }
     exit 1
 }
