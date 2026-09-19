@@ -22,7 +22,7 @@
 
 Follow the [mutation-testing policy](../../../.github/instructions/mutation-testing.instructions.md): use `test-project-quality.ps1 -SkipMutation` for routine test and coverage validation, report available mutation results and significant gaps, and keep improvements proportionate. There is no mandatory repository mutation-score threshold or ordinary mutation completion gate; costly historical gaps belong in dedicated follow-up work unless explicitly requested.
 
-`pwsh ./go.ps1` builds both solutions, runs L0/L1 tests, summarizes Mississippi coverage, applies cleanup, and performs a final build with warnings as errors. Add `-IncludeMutation` to run Mississippi mutation tests and refresh survivor tasks. Separate CI jobs cover additional checks listed below.
+`pwsh ./go.ps1` builds both solutions, applies cleanup, runs L0/L1 tests against the cleaned tree, summarizes Mississippi coverage, and performs a final build with warnings as errors. Add `-IncludeMutation` to run Mississippi mutation tests and refresh survivor tasks. Separate CI jobs cover additional checks listed below. `-SkipCleanup` is provisional and is not final handoff evidence.
 
 Cleanup uses a fresh cache under `.scratchpad/cleanup-caches/` for each invocation, avoiding reuse of a previous source-generator analysis model. The cache path is logged and retained for troubleshooting.
 
@@ -49,7 +49,7 @@ The default summary command and `go.ps1 -IncludeMutation` generate survivor repo
 | **unit-test-sample-solution.ps1** | Run sample L0/L1 tests (no mutation testing). | `pwsh ./eng/src/agent-scripts/unit-test-sample-solution.ps1` |
 | **integration-test-sample-solution.ps1** | Run sample L2 tests; requires their infrastructure. | `pwsh ./eng/src/agent-scripts/integration-test-sample-solution.ps1` |
 | **clean-up-sample-solution.ps1** | Run ReSharper cleanup over the sample projects. | `pwsh ./eng/src/agent-scripts/clean-up-sample-solution.ps1` |
-| **summarize-coverage-gaps.ps1** | Merge Cobertura coverage reports and emit `.scratchpad/tasks` entries for low-coverage files. | `pwsh ./eng/src/agent-scripts/summarize-coverage-gaps.ps1 -EmitTasks` |
+| **summarize-coverage-gaps.ps1** | Summarize an explicit Cobertura report and emit `.scratchpad/tasks` entries for low-coverage files. | `pwsh ./eng/src/agent-scripts/summarize-coverage-gaps.ps1 -CoverageReportPath ./.scratchpad/coverage-test-results/<run>/coverage.cobertura.xml -EmitTasks` |
 | **summarize-mutation-survivors.ps1** | Parse the latest Stryker run (or rerun it) and sync survivor tasks into `.scratchpad/tasks`. | `pwsh ./eng/src/agent-scripts/summarize-mutation-survivors.ps1 -SkipMutationRun -GenerateTasks` |
 | **final-build-solutions.ps1** | Build both solutions with `--warnaserror` as the final zero-warning gate. | `pwsh ./eng/src/agent-scripts/final-build-solutions.ps1` |
 | **orchestrate-solutions.ps1** | Build, run L0/L1 tests, summarize coverage, clean up, and rebuild both solutions; mutation and its summary require `-IncludeMutation`. | `pwsh ./eng/src/agent-scripts/orchestrate-solutions.ps1 -IncludeMutation` |
@@ -86,7 +86,14 @@ The supporting Pester harness lives in `eng/tests/agent-scripts/`:
 | Script | Purpose |
 | --- | --- |
 | **run-scratchpad-task-tests.ps1** | Runs the Pester suite that covers the scratchpad helpers. |
+| **run-issue-spec-tests.ps1** | Runs the Pester suite that validates implementation-ready issue bodies. |
+| **doctor.ps1** | Reports read-only prerequisite readiness for core, docs, Spring, or GitHub task profiles. |
+| **run-agent-doctor-tests.ps1** | Runs the Pester suite that validates prerequisite diagnostics. |
+| **get-agent-context.ps1** | Produces a read-only JSON or text inventory of selected agent guidance and its selection evidence. |
+| **run-agent-context-tests.ps1** | Runs the Pester suite that validates conservative agent-context selection. |
 | **verify-scratchpad-task-scripts.ps1** | End-to-end flow that creates → claims → completes/defers tasks using a temporary scratchpad. |
+| **get-validation-plan.ps1** | Produces a read-only structured validation plan from explicit base/head revisions, changed paths, and risk hints. |
+| **run-validation-plan-tests.ps1** | Runs the Pester suite that validates validation-plan selection and catalogue drift. |
 | (orchestrator) `../orchestrate-powershell-tests.ps1` | Runs all PowerShell test suites (Pester and script e2e) and exits non-zero on failure. |
 
 ---
@@ -184,6 +191,12 @@ Happy building! 🚀
 ### RepositoryAutomation module
 
 All command-line scripts in this folder are thin shims over the shared PowerShell module `RepositoryAutomation.psm1`. The module exposes advanced functions for build/test/cleanup orchestration so automation can be reused from other scripts, Pester tests, and CI workflows without spawning nested shells.
+
+When inspecting an untrusted checkout, a host must invoke `get-agent-context.ps1`
+from a trusted pinned copy and pass `-TrustedModulePath` for the trusted
+`AgentContext.psm1`; the checkout being inspected is data, not executable
+startup code. A local same-checkout invocation remains available for ordinary
+developer work.
 
 | Function | Responsibility |
 | --- | --- |

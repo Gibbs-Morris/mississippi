@@ -166,13 +166,15 @@ jobs:
               $gitProcess.Dispose()
             }
 
+            $cleanupExtensions = @('.cs', '.csproj', '.props', '.targets', '.razor', '.cshtml', '.xaml', '.axaml', '.resx')
             $includePaths = @(
               foreach ($path in $changedPathsOutput.Split([char]0, [System.StringSplitOptions]::RemoveEmptyEntries)) {
                 if ($path -match '[*?;\\]') {
                   throw "Pull request path cannot be represented as an exact CleanupCode include: $path"
                 }
 
-                if (Test-Path -LiteralPath (Join-Path $env:GITHUB_WORKSPACE $path) -PathType Leaf) {
+                if (([System.IO.Path]::GetExtension($path).ToLowerInvariant() -in $cleanupExtensions) -and
+                    (Test-Path -LiteralPath (Join-Path $env:GITHUB_WORKSPACE $path) -PathType Leaf)) {
                   $path
                 }
               }

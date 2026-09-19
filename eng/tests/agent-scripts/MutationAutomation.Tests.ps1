@@ -264,7 +264,8 @@ Describe 'Mutation automation' {
 
     It 'runs the failure-preserving summary flow from the full pipeline' {
         Mock Invoke-MississippiSolutionBuild {} -ModuleName RepositoryAutomation
-        Mock Invoke-MississippiSolutionUnitTests {} -ModuleName RepositoryAutomation
+        Mock Invoke-MississippiSolutionCleanup {} -ModuleName RepositoryAutomation
+        Mock Invoke-MississippiSolutionUnitTests { [pscustomobject]@{ CoverageReportPath = (Join-Path $repo 'coverage.cobertura.xml') } } -ModuleName RepositoryAutomation
         Mock Invoke-RepositoryProcess {
             if ($Arguments -like '*summarize-mutation-survivors.ps1') { throw 'mutation score gate failed after summary' }
         } -ModuleName RepositoryAutomation

@@ -703,7 +703,8 @@ function Invoke-MississippiSolutionUnitTests {
     param(
         [string]$Configuration = 'Release',
         [string]$RepoRoot = (Get-RepositoryRoot),
-        [string[]]$TestLevels = @('L0Tests', 'L1Tests')
+        [string[]]$TestLevels = @('L0Tests', 'L1Tests'),
+        [switch]$PassThru
     )
 
     $solutionPath = Join-Path $RepoRoot 'mississippi.slnx'
@@ -730,7 +731,7 @@ function Invoke-MississippiSolutionUnitTests {
     Write-Host "Results directory: $runDirectory"
     Write-Host 'Logger: xUnit TRX reports, one per test module'
 
-    $coverageFiles = Get-ChildItem -Path $runDirectory -Recurse -Filter '*cobertura*.xml' -ErrorAction SilentlyContinue
+    $coverageFiles = @(Get-ChildItem -Path $runDirectory -Recurse -Filter '*cobertura*.xml' -ErrorAction SilentlyContinue)
     if (-not $coverageFiles -or $coverageFiles.Count -eq 0) {
         throw "Unit tests completed but no coverage reports were produced in '$runDirectory'."
     }
@@ -758,6 +759,14 @@ function Invoke-MississippiSolutionUnitTests {
     $resultsFile = Join-Path $runDirectory '*/test_results*.trx'
     Write-Host "All tests passed | Results saved to: $resultsFile"
     Write-Host 'Coverage report ready for summarize-coverage-gaps.ps1' -ForegroundColor ([ConsoleColor]::Green)
+    if ($PassThru) {
+        return [pscustomobject][ordered]@{
+            ResultsDirectory = $runDirectory
+            CoverageReportPath = $finalCoveragePath
+            TestLevels = @($TestLevels)
+            Configuration = $Configuration
+        }
+    }
 }
 
 function Invoke-SampleSolutionUnitTests {
@@ -938,32 +947,43 @@ function Invoke-SolutionsPipeline {
     if (-not $IncludeMutation) {
         Write-Host 'Mutation testing skipped (use -IncludeMutation to enable)'
     }
+    if ($SkipCleanup) {
+        Write-Host 'Cleanup skipped; validation results are provisional for this intermediate run.' -ForegroundColor ([ConsoleColor]::Yellow)
+    }
     Write-Host
 
     $step = 1
 
     Write-AutomationBanner -Message '=== MISSISSIPPI SOLUTION PIPELINE ===' -ForegroundColor ([ConsoleColor]::Cyan)
     Invoke-AutomationStep -Name 'Build Mississippi Solution' -StepNumber ($step++) -Action { Invoke-MississippiSolutionBuild -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
-    Invoke-AutomationStep -Name 'Run Mississippi Unit Tests' -StepNumber ($step++) -Action { Invoke-MississippiSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
-    Invoke-AutomationStep -Name 'Summarize Coverage Gaps' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $coverageScript, '-EmitTasks') | Out-Host }
-    if ($IncludeMutation) {
-        Invoke-AutomationStep -Name 'Run and Summarize Mississippi Mutation Tests' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $mutationSummaryScript, '-Configuration', $Configuration, '-GenerateTasks') | Out-Host }
-    }
     if (-not $SkipCleanup) {
         Invoke-AutomationStep -Name 'Cleanup Mississippi Code Style' -StepNumber ($step++) -Action { Invoke-MississippiSolutionCleanup -RepoRoot $RepoRoot } -SilentSuccess
+    }
+    $mississippiTestResult = Invoke-AutomationStep -Name 'Run Mississippi Unit Tests' -StepNumber ($step++) -Action { Invoke-MississippiSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot -PassThru } -SilentSuccess
+    if ($null -eq $mississippiTestResult -or [string]::IsNullOrWhiteSpace([string]$mississippiTestResult.CoverageReportPath)) {
+        throw 'Mississippi unit-test operation did not return an aggregated coverage report path.'
+    }
+    Invoke-AutomationStep -Name 'Summarize Coverage Gaps' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $coverageScript, '-CoverageReportPath', $mississippiTestResult.CoverageReportPath, '-EmitTasks') | Out-Host }
+    if ($IncludeMutation) {
+        Invoke-AutomationStep -Name 'Run and Summarize Mississippi Mutation Tests' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $mutationSummaryScript, '-Configuration', $Configuration, '-GenerateTasks') | Out-Host }
     }
 
     Write-AutomationBanner -Message '=== SAMPLE SOLUTION PIPELINE ===' -ForegroundColor ([ConsoleColor]::Cyan)
     Invoke-AutomationStep -Name 'Build Sample Solution' -StepNumber ($step++) -Action { Invoke-SampleSolutionBuild -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
-    Invoke-AutomationStep -Name 'Run Sample Unit Tests' -StepNumber ($step++) -Action { Invoke-SampleSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
     if (-not $SkipCleanup) {
         Invoke-AutomationStep -Name 'Cleanup Sample Code Style' -StepNumber ($step++) -Action { Invoke-SampleSolutionCleanup -RepoRoot $RepoRoot } -SilentSuccess
     }
+    Invoke-AutomationStep -Name 'Run Sample Unit Tests' -StepNumber ($step++) -Action { Invoke-SampleSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
 
     Invoke-AutomationStep -Name 'Final Build with Warnings as Errors' -StepNumber ($step++) -Action { Invoke-FinalSolutionsBuild -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
 
     Write-Host '=== PIPELINE COMPLETED SUCCESSFULLY ===' -ForegroundColor ([ConsoleColor]::Green)
-    Write-Host 'All steps completed without errors. Solutions are ready for deployment.'
+    if ($SkipCleanup) {
+        Write-Host 'Local build, test, coverage and final-build checks completed; cleanup was intentionally skipped, so this is not final handoff evidence.'
+    }
+    else {
+        Write-Host 'Local build, test, coverage, cleanup and final-build checks completed. Deployment, browser and external CI checks are outside this command.'
+    }
 }
 
 function Get-SpringTestResult {

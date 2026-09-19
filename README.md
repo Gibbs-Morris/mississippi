@@ -96,6 +96,7 @@ Common script entry points:
 - `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 [-Configuration Debug|Release]` – run L0/L1 tests with coverage for Mississippi projects.
 - `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` – execute Stryker.NET mutation testing.
 - `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` – apply the repository’s ReSharper cleanup and analyzer inspections.
+- `pwsh ./doctor.ps1 -Profile Core|Docs|Spring|GitHub` – report read-only prerequisite readiness; it does not run tests or install tools.
 
 ## Samples
 
@@ -207,7 +208,7 @@ The PowerShell entry points (`build-*.ps1`, `unit-test-*.ps1`, `clean-up-*.ps1`,
 
 ## CI / Local pipeline options
 
-The top-level `go.ps1` forwards to `orchestrate-solutions.ps1`. By default it builds both solutions, runs their L0/L1 tests, summarizes Mississippi coverage, applies ReSharper cleanup, and performs a final build with warnings as errors. Mutation testing is opt-in with `-IncludeMutation`; `-SkipCleanup` skips formatting changes during an intermediate validation run.
+The top-level `go.ps1` forwards to `orchestrate-solutions.ps1`. By default it builds both solutions, applies ReSharper cleanup, runs their L0/L1 tests against the cleaned tree, summarizes Mississippi coverage, and performs a final build with warnings as errors. Mutation testing is opt-in with `-IncludeMutation`; `-SkipCleanup` skips formatting changes during an intermediate provisional validation run and is not final handoff evidence.
 
 Usage examples:
 

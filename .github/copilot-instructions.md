@@ -35,6 +35,7 @@ These rules apply to Copilot chat/search responses for this repository.
 ## At-a-Glance Quick-Start
 
 - Use all global guardrails and the instruction scopes relevant to the task, including C#/naming/logging/testing guidance when applicable.
+- For repeatable scoped startup, use `pwsh ./eng/src/agent-scripts/get-agent-context.ps1 -RepositoryRoot .` with the task's changed/reviewed paths, content domains, and workflow role; treat its selection reasons and unresolved states as evidence, then retain the direct file-read fallback when it is unavailable.
 - Build/test with `pwsh ./go.ps1`; tidy with `pwsh ./clean-up.ps1`.
 - **When you see StyleCop/formatting warnings (SA1xxx), run cleanup first**—don't manually fix indentation/spacing.
 - Manage packages with `dotnet add/remove package`; never add `Version` attributes.

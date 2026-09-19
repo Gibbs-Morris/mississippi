@@ -95,6 +95,14 @@ $instructionFiles.FullName
 Select-String -LiteralPath $instructionFiles.FullName -Pattern '^[ \t]*applyTo:' -List
 ```
 
+For a repeatable machine-readable inventory and conservative selection index,
+run `pwsh ./eng/src/agent-scripts/get-agent-context.ps1 -RepositoryRoot .`
+with the changed, intended, reviewed, content-domain, and workflow-role inputs
+that apply to the task. Consume its reasons, hashes, byte/word counts, and
+unresolved states as preparation evidence, then still read the selected bodies
+and apply this procedure. If the helper is unavailable, use the file-tool or
+PowerShell fallback above; the helper never replaces direct inspection.
+
 The file inventory includes candidates even when the scope search returns no
 match. The scope search reports candidate lines; it does not parse YAML.
 Check each candidate against the opening YAML frontmatter's `---` delimiters.

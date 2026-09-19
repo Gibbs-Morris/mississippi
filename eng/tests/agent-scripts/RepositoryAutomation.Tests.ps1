@@ -155,11 +155,74 @@ Describe 'Repository automation quality gates' {
     }
     It 'stops the pipeline when the coverage summarizer exits unsuccessfully' {
         Mock Invoke-MississippiSolutionBuild {} -ModuleName RepositoryAutomation
-        Mock Invoke-MississippiSolutionUnitTests {} -ModuleName RepositoryAutomation
+        Mock Invoke-MississippiSolutionUnitTests { [pscustomobject]@{ CoverageReportPath = (Join-Path $TestDrive 'coverage.cobertura.xml') } } -ModuleName RepositoryAutomation
         Mock Invoke-SampleSolutionBuild {} -ModuleName RepositoryAutomation
         Mock Invoke-RepositoryProcess { throw 'summarizer exited 1' } -ModuleName RepositoryAutomation
         { Invoke-SolutionsPipeline -RepoRoot $TestDrive -SkipCleanup } | Should -Throw '*summarizer exited 1*'
         Should -Invoke Invoke-SampleSolutionBuild -ModuleName RepositoryAutomation -Times 0 -Exactly
+    }
+
+    It 'runs cleanup before authoritative solution tests' {
+        $calls = [System.Collections.Generic.List[string]]::new()
+        Mock Invoke-MississippiSolutionBuild { $calls.Add('mississippi-build') } -ModuleName RepositoryAutomation
+        Mock Invoke-MississippiSolutionCleanup { $calls.Add('mississippi-cleanup') } -ModuleName RepositoryAutomation
+        Mock Invoke-MississippiSolutionUnitTests {
+            $calls.Add('mississippi-tests')
+            [pscustomobject]@{ CoverageReportPath = Join-Path $TestDrive 'coverage.cobertura.xml' }
+        } -ModuleName RepositoryAutomation
+        Mock Invoke-SampleSolutionBuild { $calls.Add('sample-build') } -ModuleName RepositoryAutomation
+        Mock Invoke-SampleSolutionCleanup { $calls.Add('sample-cleanup') } -ModuleName RepositoryAutomation
+        Mock Invoke-SampleSolutionUnitTests { $calls.Add('sample-tests') } -ModuleName RepositoryAutomation
+        Mock Invoke-FinalSolutionsBuild { $calls.Add('final-build') } -ModuleName RepositoryAutomation
+        Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
+
+        Invoke-SolutionsPipeline -RepoRoot $TestDrive | Out-Null
+
+        @($calls | Where-Object { $_ -eq 'mississippi-cleanup' }).Count | Should -Be 1
+        @($calls | Where-Object { $_ -eq 'sample-cleanup' }).Count | Should -Be 1
+        $calls.IndexOf('mississippi-cleanup') | Should -BeLessThan $calls.IndexOf('mississippi-tests')
+        $calls.IndexOf('sample-cleanup') | Should -BeLessThan $calls.IndexOf('sample-tests')
+        $calls.IndexOf('final-build') | Should -BeGreaterThan $calls.IndexOf('sample-tests')
+    }
+
+    It 'forwards the exact Mississippi coverage report to the summarizer' {
+        $coveragePath = Join-Path $TestDrive 'exact-run/coverage.cobertura.xml'
+        Mock Invoke-MississippiSolutionBuild {} -ModuleName RepositoryAutomation
+        Mock Invoke-MississippiSolutionUnitTests { [pscustomobject]@{ CoverageReportPath = $coveragePath } } -ModuleName RepositoryAutomation
+        Mock Invoke-SampleSolutionBuild {} -ModuleName RepositoryAutomation
+        Mock Invoke-SampleSolutionUnitTests {} -ModuleName RepositoryAutomation
+        Mock Invoke-FinalSolutionsBuild {} -ModuleName RepositoryAutomation
+        Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
+
+        Invoke-SolutionsPipeline -RepoRoot $TestDrive -SkipCleanup | Out-Null
+
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -ParameterFilter {
+            $Arguments -contains '-CoverageReportPath' -and $Arguments -contains $coveragePath
+        }
+    }
+
+    It 'returns the exact aggregated coverage path through PassThru' {
+        $repo = Join-Path $TestDrive 'passthru-repository'
+        New-Item -ItemType Directory -Path $repo -Force | Out-Null
+        $runDirectory = Join-Path $repo 'run-1'
+        Mock Invoke-DotnetToolRestore {} -ModuleName RepositoryAutomation
+        Mock Invoke-SolutionRestore {} -ModuleName RepositoryAutomation
+        Mock Invoke-SolutionTests {
+            New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $runDirectory 'module.cobertura.xml') -Value '<coverage />'
+            [pscustomobject]@{ ResultsDirectory = $runDirectory }
+        } -ModuleName RepositoryAutomation
+        Mock Invoke-RepositoryProcess {
+            $targetArgument = @($Arguments | Where-Object { $_ -like '-targetdir:*' })[0]
+            $targetDirectory = $targetArgument.Substring('-targetdir:'.Length)
+            New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $targetDirectory 'Cobertura.xml') -Value '<coverage />'
+        } -ModuleName RepositoryAutomation
+
+        $result = Invoke-MississippiSolutionUnitTests -RepoRoot $repo -PassThru
+
+        $result.CoverageReportPath | Should -Be (Join-Path $runDirectory 'coverage.cobertura.xml')
+        Test-Path -LiteralPath $result.CoverageReportPath -PathType Leaf | Should -BeTrue
     }
 
     It 'streams compiler diagnostics before a failing build step throws' {
