@@ -703,7 +703,8 @@ function Invoke-MississippiSolutionUnitTests {
     param(
         [string]$Configuration = 'Release',
         [string]$RepoRoot = (Get-RepositoryRoot),
-        [string[]]$TestLevels = @('L0Tests', 'L1Tests')
+        [string[]]$TestLevels = @('L0Tests', 'L1Tests'),
+        [switch]$PassThru
     )
 
     $solutionPath = Join-Path $RepoRoot 'mississippi.slnx'
@@ -730,7 +731,7 @@ function Invoke-MississippiSolutionUnitTests {
     Write-Host "Results directory: $runDirectory"
     Write-Host 'Logger: xUnit TRX reports, one per test module'
 
-    $coverageFiles = Get-ChildItem -Path $runDirectory -Recurse -Filter '*cobertura*.xml' -ErrorAction SilentlyContinue
+    $coverageFiles = @(Get-ChildItem -Path $runDirectory -Recurse -Filter '*cobertura*.xml' -ErrorAction SilentlyContinue)
     if (-not $coverageFiles -or $coverageFiles.Count -eq 0) {
         throw "Unit tests completed but no coverage reports were produced in '$runDirectory'."
     }
@@ -758,6 +759,14 @@ function Invoke-MississippiSolutionUnitTests {
     $resultsFile = Join-Path $runDirectory '*/test_results*.trx'
     Write-Host "All tests passed | Results saved to: $resultsFile"
     Write-Host 'Coverage report ready for summarize-coverage-gaps.ps1' -ForegroundColor ([ConsoleColor]::Green)
+    if ($PassThru) {
+        return [pscustomobject][ordered]@{
+            ResultsDirectory = $runDirectory
+            CoverageReportPath = $finalCoveragePath
+            TestLevels = @($TestLevels)
+            Configuration = $Configuration
+        }
+    }
 }
 
 function Invoke-SampleSolutionUnitTests {
@@ -950,8 +959,11 @@ function Invoke-SolutionsPipeline {
     if (-not $SkipCleanup) {
         Invoke-AutomationStep -Name 'Cleanup Mississippi Code Style' -StepNumber ($step++) -Action { Invoke-MississippiSolutionCleanup -RepoRoot $RepoRoot } -SilentSuccess
     }
-    Invoke-AutomationStep -Name 'Run Mississippi Unit Tests' -StepNumber ($step++) -Action { Invoke-MississippiSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
-    Invoke-AutomationStep -Name 'Summarize Coverage Gaps' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $coverageScript, '-EmitTasks') | Out-Host }
+    $mississippiTestResult = Invoke-AutomationStep -Name 'Run Mississippi Unit Tests' -StepNumber ($step++) -Action { Invoke-MississippiSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot -PassThru } -SilentSuccess
+    if ($null -eq $mississippiTestResult -or [string]::IsNullOrWhiteSpace([string]$mississippiTestResult.CoverageReportPath)) {
+        throw 'Mississippi unit-test operation did not return an aggregated coverage report path.'
+    }
+    Invoke-AutomationStep -Name 'Summarize Coverage Gaps' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $coverageScript, '-CoverageReportPath', $mississippiTestResult.CoverageReportPath, '-EmitTasks') | Out-Host }
     if ($IncludeMutation) {
         Invoke-AutomationStep -Name 'Run and Summarize Mississippi Mutation Tests' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $mutationSummaryScript, '-Configuration', $Configuration, '-GenerateTasks') | Out-Host }
     }

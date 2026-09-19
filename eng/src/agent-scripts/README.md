@@ -49,7 +49,7 @@ The default summary command and `go.ps1 -IncludeMutation` generate survivor repo
 | **unit-test-sample-solution.ps1** | Run sample L0/L1 tests (no mutation testing). | `pwsh ./eng/src/agent-scripts/unit-test-sample-solution.ps1` |
 | **integration-test-sample-solution.ps1** | Run sample L2 tests; requires their infrastructure. | `pwsh ./eng/src/agent-scripts/integration-test-sample-solution.ps1` |
 | **clean-up-sample-solution.ps1** | Run ReSharper cleanup over the sample projects. | `pwsh ./eng/src/agent-scripts/clean-up-sample-solution.ps1` |
-| **summarize-coverage-gaps.ps1** | Merge Cobertura coverage reports and emit `.scratchpad/tasks` entries for low-coverage files. | `pwsh ./eng/src/agent-scripts/summarize-coverage-gaps.ps1 -EmitTasks` |
+| **summarize-coverage-gaps.ps1** | Summarize an explicit Cobertura report and emit `.scratchpad/tasks` entries for low-coverage files. | `pwsh ./eng/src/agent-scripts/summarize-coverage-gaps.ps1 -CoverageReportPath ./.scratchpad/coverage-test-results/<run>/coverage.cobertura.xml -EmitTasks` |
 | **summarize-mutation-survivors.ps1** | Parse the latest Stryker run (or rerun it) and sync survivor tasks into `.scratchpad/tasks`. | `pwsh ./eng/src/agent-scripts/summarize-mutation-survivors.ps1 -SkipMutationRun -GenerateTasks` |
 | **final-build-solutions.ps1** | Build both solutions with `--warnaserror` as the final zero-warning gate. | `pwsh ./eng/src/agent-scripts/final-build-solutions.ps1` |
 | **orchestrate-solutions.ps1** | Build, run L0/L1 tests, summarize coverage, clean up, and rebuild both solutions; mutation and its summary require `-IncludeMutation`. | `pwsh ./eng/src/agent-scripts/orchestrate-solutions.ps1 -IncludeMutation` |
