@@ -292,19 +292,19 @@ function Remove-MarkdownHtmlBlocks { # NOSONAR - bounded raw-HTML block scanner 
             $insideHtmlBlock = $true
             continue
         }
-        $processingInstructionMatch = [regex]::Match($line, '(?i)^[ \t]{0,3}<\?')
+        $processingInstructionMatch = [regex]::Match($line, '(?i)^ {0,3}<\?')
         if ($processingInstructionMatch.Success) {
             $lines.Add($htmlBoundary)
             if ($line -notmatch '\?>') { $tokenTerminator = '\?>' }
             continue
         }
-        $cdataMatch = [regex]::Match($line, '^[ \t]{0,3}<!\[CDATA\[')
+        $cdataMatch = [regex]::Match($line, '^ {0,3}<!\[CDATA\[')
         if ($cdataMatch.Success) {
             $lines.Add($htmlBoundary)
             if ($line -notmatch '\]\]>') { $tokenTerminator = '\]\]>' }
             continue
         }
-        $declarationMatch = [regex]::Match($line, '^[ \t]{0,3}<![A-Z]')
+        $declarationMatch = [regex]::Match($line, '^ {0,3}<![A-Z]')
         if ($declarationMatch.Success) {
             $lines.Add($htmlBoundary)
             if ($line -notmatch '>') { $tokenTerminator = '>' }

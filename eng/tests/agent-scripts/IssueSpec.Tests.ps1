@@ -321,6 +321,14 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Valid | Should -BeTrue
     }
 
+    It 'does not classify tab-indented token text as raw HTML' {
+        $content = ([char]9).ToString() + '<?target' + [Environment]::NewLine + [Environment]::NewLine + $validBug
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'does not let fenced token examples mask visible contract headings' {
         $fencedToken = '```html' + [Environment]::NewLine + '<?target' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '```' + [Environment]::NewLine
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content ($fencedToken + $validBug))
