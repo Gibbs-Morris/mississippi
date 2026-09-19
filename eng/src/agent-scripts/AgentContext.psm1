@@ -294,7 +294,9 @@ function Get-ContextFilesByFilter {
                 }
                 if ($excludedDirectories -notcontains $child.Name) { $pending.Enqueue($child.FullName) }
             }
-            elseif ($child.Name -like $Filter) {
+            else {
+                $matchesFilter = if ($Filter -eq 'AGENTS.md') { [string]::Equals($child.Name, $Filter, [System.StringComparison]::Ordinal) } else { $child.Name -like $Filter }
+                if (-not $matchesFilter) { continue }
                 if ($isReparsePoint) {
                     $null = $Errors.Add("Skipped reparse-point guidance file '$($child.FullName)'.")
                     continue
@@ -436,7 +438,7 @@ function Get-AgentContext {
         if ($candidate.Kind -eq 'AGENTS') {
             $entryDirectory = if ($relative -eq 'AGENTS.md') { '' } else { $relative.Substring(0, $relative.Length - '/AGENTS.md'.Length) }
             $entryPrefix = if ($entryDirectory) { "$entryDirectory/" } else { '' }
-            $isSelected = $relative -eq 'AGENTS.md' -or @($requested | Where-Object {
+            $isSelected = [string]::Equals($relative, 'AGENTS.md', [System.StringComparison]::Ordinal) -or @($requested | Where-Object {
                 $_.Path.Equals($entryDirectory, [System.StringComparison]::OrdinalIgnoreCase) -or
                 ($entryPrefix -and $_.Path.StartsWith($entryPrefix, [System.StringComparison]::OrdinalIgnoreCase))
             }).Count -gt 0

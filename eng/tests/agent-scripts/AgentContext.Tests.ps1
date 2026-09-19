@@ -11,8 +11,9 @@ Describe 'Agent context selection' {
         Import-Module -Name $modulePath -Force
 
         $fixtureRoot = Join-Path $TestDrive 'context-repository'
-        New-Item -ItemType Directory -Path (Join-Path $fixtureRoot '.github/instructions'), (Join-Path $fixtureRoot '.github/agents'), (Join-Path $fixtureRoot '.scratchpad/deep'), (Join-Path $fixtureRoot 'nested/feature'), (Join-Path $fixtureRoot 'foo'), (Join-Path $fixtureRoot 'foobar'), (Join-Path $fixtureRoot 'src'), (Join-Path $fixtureRoot 'docs/Docusaurus/docs/adr') -Force | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $fixtureRoot '.github/instructions'), (Join-Path $fixtureRoot '.github/agents'), (Join-Path $fixtureRoot '.scratchpad/deep'), (Join-Path $fixtureRoot 'nested/feature'), (Join-Path $fixtureRoot 'foo'), (Join-Path $fixtureRoot 'foobar'), (Join-Path $fixtureRoot 'src'), (Join-Path $fixtureRoot 'case-probe'), (Join-Path $fixtureRoot 'docs/Docusaurus/docs/adr') -Force | Out-Null
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'AGENTS.md') -Value '# Root guidance'
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'case-probe/agents.md') -Value '# Lowercase non-entrypoint'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'nested/AGENTS.md') -Value '# Nested guidance'
         Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/copilot-instructions.md') -Value @'
 ---
@@ -234,6 +235,12 @@ metadata:
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'foobar/example.cs'
 
         $context.Selected.Path | Should -Not -Contain 'foo/AGENTS.md'
+    }
+
+    It 'discovers AGENTS filenames case-sensitively' {
+        $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+
+        $context.Entries.Path | Should -Not -Contain 'case-probe/agents.md'
     }
 
     It 'supports character classes in instruction globs' {
