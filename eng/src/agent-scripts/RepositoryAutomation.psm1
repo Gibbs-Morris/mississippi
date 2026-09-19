@@ -141,13 +141,19 @@ function Invoke-RepositoryProcess {
     }
 
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-    $startInfo.FileName = $FilePath
+    $processFilePath = $FilePath
+    $processArguments = @($Arguments)
+    if ($IsWindows -and [System.IO.Path]::GetExtension($FilePath) -iin @('.cmd', '.bat')) {
+        $processFilePath = $env:ComSpec
+        $processArguments = @('/d', '/c', $FilePath) + @($Arguments)
+    }
+    $startInfo.FileName = $processFilePath
     $startInfo.UseShellExecute = $false
     $startInfo.CreateNoWindow = $true
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError = $true
     if ($WorkingDirectory) { $startInfo.WorkingDirectory = $WorkingDirectory }
-    foreach ($argument in @($Arguments)) { $null = $startInfo.ArgumentList.Add($argument) }
+    foreach ($argument in $processArguments) { $null = $startInfo.ArgumentList.Add($argument) }
     $process = [System.Diagnostics.Process]::new()
     $process.StartInfo = $startInfo
     $startedUtc = (Get-Date).ToUniversalTime().ToString('o')
@@ -160,6 +166,7 @@ function Invoke-RepositoryProcess {
         $terminationErrors = [System.Collections.Generic.List[string]]::new()
         $terminated = $true
         if ($timedOut) {
+            $terminationErrors.Add('Descendant process termination was not verified.')
             try { $process.Kill($true) }
             catch {
                 $terminationErrors.Add($_.Exception.Message)
@@ -190,11 +197,13 @@ function Invoke-RepositoryProcess {
         if ($PassThru) { return $result }
         if (-not $result.Success) {
             $message = if ($timedOut) { "Command '$FilePath' timed out after $TimeoutSeconds seconds." } elseif ($result.CaptureIncomplete) { "Command '$FilePath' exited before native output capture completed." } elseif ($ErrorMessage) { $ErrorMessage } else { "Command '$FilePath' failed with exit code $($result.ExitCode)." }
+            if ($stdout) { $message += " Native output: $stdout" }
             if ($stderr) { $message += " Native error output: $stderr" }
             if ($result.TerminationFailed) { $message += " Process termination was not verified: $($result.TerminationErrors -join '; ')" }
             throw $message
         }
         if ($stdout) { Write-Output $stdout }
+        if ($stderr) { Write-Output $stderr }
     }
     catch {
         if ($PassThru) {
