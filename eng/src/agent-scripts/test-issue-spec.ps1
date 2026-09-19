@@ -31,7 +31,7 @@ function Get-MarkdownSections { # NOSONAR - section extraction intentionally mod
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Content)
 
-    $allHeadings = [regex]::Matches($Content, '(?m)^[ \t]{0,3}(?<Level>#{1,6})[ \t]+(?<Title>[^\r\n]+)[ \t]*\r?$')
+    $allHeadings = [regex]::Matches($Content, '(?m)^[ \t]{0,3}(?<Level>#{1,6})[ \t]+(?<Title>[^\r\n]+)[ \t]*\r?$') # NOSONAR - one bounded heading grammar is clearer than splitting the structural parser.
     $matches = @($allHeadings | Where-Object { $requiredSections -contains $_.Groups['Title'].Value.Trim() })
     $sections = [ordered]@{}
     for ($index = 0; $index -lt $matches.Count; $index++) {
