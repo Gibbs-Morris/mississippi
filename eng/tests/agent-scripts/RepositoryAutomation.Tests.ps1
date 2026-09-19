@@ -20,6 +20,136 @@ Describe 'RepositoryAutomation helpers' {
         (New-AutomationRunDirectory -Root $testRoot -Prefix 'test') | Should -Not -Be $runDirectory
     }
 
+    It 'leases one worktree exclusively and permits reentrant reuse' {
+        $leaseRoot = Join-Path $TestDrive 'lease-repository'
+        $coordinationRoot = Join-Path $TestDrive 'lease-coordination'
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-one' -LeaseDirectory $coordinationRoot
+        try {
+            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-two' -LeaseDirectory $coordinationRoot } | Should -Throw '*execution lease is held*'
+            $nestedLease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -ExistingLease $lease -LeaseDirectory $coordinationRoot
+            try { $nestedLease.OperationId | Should -Be 'owner-one' } finally { Exit-RepositoryExecutionLease -Lease $nestedLease }
+            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-four' -LeaseDirectory $coordinationRoot } | Should -Throw '*execution lease is held*'
+        }
+        finally {
+            Exit-RepositoryExecutionLease -Lease $lease
+        }
+
+        $released = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-three' -LeaseDirectory $coordinationRoot
+        try { $released.OperationId | Should -Be 'owner-three' } finally { Exit-RepositoryExecutionLease -Lease $released }
+    }
+
+    It 'uses one lease identity for a worktree alias' {
+        $realRoot = Join-Path $TestDrive 'lease-real'
+        $aliasRoot = Join-Path $TestDrive 'lease-alias'
+        New-Item -ItemType Directory -Path $realRoot -Force | Out-Null
+        $aliasCreated = $false
+        try {
+            New-Item -ItemType Junction -Path $aliasRoot -Target $realRoot -ErrorAction Stop | Out-Null
+            $aliasCreated = $true
+            $coordinationRoot = Join-Path $TestDrive 'alias-coordination'
+            $lease = Enter-RepositoryExecutionLease -RepoRoot $realRoot -OperationId 'physical-owner' -LeaseDirectory $coordinationRoot
+            try {
+                { Enter-RepositoryExecutionLease -RepoRoot $aliasRoot -OperationId 'alias-owner' -LeaseDirectory $coordinationRoot } | Should -Throw '*execution lease is held*'
+            }
+            finally {
+                Exit-RepositoryExecutionLease -Lease $lease
+            }
+        }
+        catch {
+            if (-not $aliasCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create directory junctions.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $aliasRoot -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'rejects a reentrant lease from a different worktree' {
+        $firstRoot = Join-Path $TestDrive 'lease-first'
+        $secondRoot = Join-Path $TestDrive 'lease-second'
+        $coordinationRoot = Join-Path $TestDrive 'different-worktree-coordination'
+        New-Item -ItemType Directory -Path $firstRoot, $secondRoot -Force | Out-Null
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $firstRoot -OperationId 'first' -LeaseDirectory $coordinationRoot
+        try {
+            { Enter-RepositoryExecutionLease -RepoRoot $secondRoot -ExistingLease $lease -LeaseDirectory $coordinationRoot } | Should -Throw '*belongs to*'
+        }
+        finally {
+            Exit-RepositoryExecutionLease -Lease $lease
+        }
+    }
+
+    It 'resolves relative and chained symlink targets before deriving lease identity' {
+        $chainRoot = Join-Path $TestDrive 'lease-chain'
+        $realRoot = Join-Path $chainRoot 'real'
+        $linkTwo = Join-Path $chainRoot 'link-two'
+        $linkOne = Join-Path $chainRoot 'link-one'
+        New-Item -ItemType Directory -Path $realRoot -Force | Out-Null
+        $linksCreated = $false
+        try {
+            New-Item -ItemType SymbolicLink -Path $linkTwo -Target $realRoot -ErrorAction Stop | Out-Null
+            New-Item -ItemType SymbolicLink -Path $linkOne -Target 'link-two' -ErrorAction Stop | Out-Null
+            $linksCreated = $true
+
+            $coordinationRoot = Join-Path $TestDrive 'chain-coordination'
+            $realLeasePath = Get-RepositoryExecutionLeasePath -RepoRoot $realRoot -LeaseDirectory $coordinationRoot
+            $aliasLeasePath = Get-RepositoryExecutionLeasePath -RepoRoot $linkOne -LeaseDirectory $coordinationRoot
+
+            $aliasLeasePath | Should -Be $realLeasePath
+        }
+        catch {
+            if (-not $linksCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create chained symbolic links.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $linkOne -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $linkTwo -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $chainRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'resolves symlinked ancestors inside multi-component targets' {
+        $root = Join-Path $TestDrive 'multi-component-chain'
+        $realRoot = Join-Path $root 'real'
+        $realSubdirectory = Join-Path $realRoot 'subdir'
+        $middle = Join-Path $root 'middle'
+        $outer = Join-Path $root 'outer'
+        New-Item -ItemType Directory -Path $realSubdirectory -Force | Out-Null
+        $linksCreated = $false
+        try {
+            New-Item -ItemType SymbolicLink -Path $middle -Target $realRoot -ErrorAction Stop | Out-Null
+            New-Item -ItemType SymbolicLink -Path $outer -Target (Join-Path $middle 'subdir') -ErrorAction Stop | Out-Null
+            $linksCreated = $true
+
+            $coordinationRoot = Join-Path $TestDrive 'multi-component-coordination'
+            $realLeasePath = Get-RepositoryExecutionLeasePath -RepoRoot $realSubdirectory -LeaseDirectory $coordinationRoot
+            $aliasLeasePath = Get-RepositoryExecutionLeasePath -RepoRoot $outer -LeaseDirectory $coordinationRoot
+
+            $aliasLeasePath | Should -Be $realLeasePath
+        }
+        catch {
+            if (-not $linksCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create multi-component symbolic links.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $outer -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $middle -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It 'invokes automation steps and returns the result' {
         $result = Invoke-AutomationStep -Name 'Sample' -SilentSuccess -Action { 1 + 1 }
         $result | Should -Be 2

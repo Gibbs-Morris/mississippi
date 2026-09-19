@@ -24,6 +24,194 @@ function Get-RepositoryRoot {
     throw "Unable to locate repository root from '$StartPath'."
 }
 
+function Get-RepositoryPathComparison {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$RepoRoot)
+
+    if ($IsWindows) { return [System.StringComparison]::OrdinalIgnoreCase }
+    if (-not $IsMacOS) { return [System.StringComparison]::Ordinal }
+
+    $probeName = '.mississippi-case-probe-' + [guid]::NewGuid().ToString('N')
+    $probePath = Join-Path $RepoRoot $probeName
+    try {
+        New-Item -ItemType Directory -LiteralPath $probePath -Force -ErrorAction Stop | Out-Null
+        if (Test-Path -LiteralPath (Join-Path $RepoRoot $probeName.ToUpperInvariant())) {
+            return [System.StringComparison]::OrdinalIgnoreCase
+        }
+    }
+    catch {
+        # An unproven macOS volume remains case-sensitive for identity.
+    }
+    finally {
+        Remove-Item -LiteralPath $probePath -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    return [System.StringComparison]::Ordinal
+}
+
+function Get-RepositoryExecutionLeasePath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [string]$LeaseDirectory
+    )
+
+    $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
+    $keyRoot = if ((Get-RepositoryPathComparison -RepoRoot $canonicalRoot) -eq [System.StringComparison]::OrdinalIgnoreCase) { $canonicalRoot.ToLowerInvariant() } else { $canonicalRoot }
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($keyRoot)
+    $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
+    $fileName = (($hash | ForEach-Object { $_.ToString('x2') }) -join '') + '.lease'
+    $leaseDirectory = if ([string]::IsNullOrWhiteSpace($LeaseDirectory)) { Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases' } else { [System.IO.Path]::GetFullPath($LeaseDirectory) }
+    if (Test-Path -LiteralPath $leaseDirectory) {
+        $leaseItem = Get-Item -LiteralPath $leaseDirectory -Force -ErrorAction Stop
+        if (-not $leaseItem.PSIsContainer -or [bool]($leaseItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            throw "Lease directory is not a trusted private directory: '$leaseDirectory'."
+        }
+    }
+    else {
+        New-Item -ItemType Directory -Path $leaseDirectory -Force | Out-Null
+    }
+    return Join-Path $leaseDirectory $fileName
+}
+
+function Resolve-RepositoryExecutionRoot {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$RepoRoot)
+
+    function Resolve-ReparsePathComponent {
+        param(
+            [Parameter(Mandatory)][string]$Path,
+            [System.Collections.Generic.HashSet[string]]$SeenTargets
+        )
+
+        if ($null -eq $SeenTargets) {
+            $comparison = if ((Get-RepositoryPathComparison -RepoRoot ([System.IO.Path]::GetFullPath($RepoRoot))) -eq [System.StringComparison]::OrdinalIgnoreCase) { [System.StringComparer]::OrdinalIgnoreCase } else { [System.StringComparer]::Ordinal }
+            $SeenTargets = [System.Collections.Generic.HashSet[string]]::new($comparison)
+        }
+
+        $fullPath = [System.IO.Path]::GetFullPath($Path)
+        $root = [System.IO.Path]::GetPathRoot($fullPath)
+        $segments = @($fullPath.Substring($root.Length).Split([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) | Where-Object { $_ })
+        $current = $root
+        for ($index = 0; $index -lt $segments.Count; $index++) {
+            $candidate = Join-Path $current $segments[$index]
+            $item = Get-Item -LiteralPath $candidate -Force -ErrorAction Stop
+            if (-not [bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+                $current = $item.FullName
+                continue
+            }
+
+            if (-not $SeenTargets.Add([System.IO.Path]::GetFullPath($candidate))) {
+                throw "Worktree path resolution loop detected at '$candidate'."
+            }
+            $target = @($item.Target | Select-Object -First 1)[0]
+            if ([string]::IsNullOrWhiteSpace([string]$target)) {
+                throw "Unable to resolve worktree path component '$candidate'."
+            }
+            if (-not [System.IO.Path]::IsPathRooted([string]$target)) {
+                $target = Join-Path (Split-Path -Parent $candidate) ([string]$target)
+            }
+            $resolvedTarget = [System.IO.Path]::GetFullPath([string]$target)
+            $remaining = @(
+                if ($index -lt ($segments.Count - 1)) {
+                    $segments[($index + 1)..($segments.Count - 1)]
+                }
+            )
+            if (@($remaining).Count -gt 0) {
+                $resolvedTarget = Join-Path $resolvedTarget ($remaining -join [System.IO.Path]::DirectorySeparatorChar)
+            }
+            return Resolve-ReparsePathComponent -Path $resolvedTarget -SeenTargets $SeenTargets
+        }
+
+        return $current
+    }
+
+    return Resolve-ReparsePathComponent -Path ([System.IO.Path]::GetFullPath($RepoRoot))
+}
+
+function Enter-RepositoryExecutionLease {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [string]$OperationId = ([guid]::NewGuid().ToString('N')),
+        [object]$ExistingLease,
+        [string]$LeaseDirectory
+    )
+
+    if ($null -ne $ExistingLease) {
+        if ($null -eq $ExistingLease.Stream -or $ExistingLease.Stream.SafeFileHandle.IsClosed -or -not $ExistingLease.Stream.CanRead) {
+            throw 'Existing repository execution lease handle is closed or unavailable.'
+        }
+        $requestedRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
+        $existingRoot = Resolve-RepositoryExecutionRoot -RepoRoot ([string]$ExistingLease.RepositoryRoot)
+        $comparison = Get-RepositoryPathComparison -RepoRoot $requestedRoot
+        if (-not [string]::Equals($requestedRoot, $existingRoot, $comparison)) {
+            throw "Existing lease belongs to '$existingRoot', not requested worktree '$requestedRoot'."
+        }
+        return [pscustomobject]@{
+            Path = $ExistingLease.Path
+            OperationId = $ExistingLease.OperationId
+            RepositoryRoot = $ExistingLease.RepositoryRoot
+            Stream = $ExistingLease.Stream
+            OwnsStream = $false
+        }
+    }
+    if ([string]::IsNullOrWhiteSpace($LeaseDirectory) -and $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true') {
+        throw 'Cross-account shared worktrees require an explicit trusted -LeaseDirectory.'
+    }
+    $leasePath = Get-RepositoryExecutionLeasePath -RepoRoot $RepoRoot -LeaseDirectory $LeaseDirectory
+    $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
+    if (Test-Path -LiteralPath $leasePath) {
+        $leaseItem = Get-Item -LiteralPath $leasePath -Force -ErrorAction Stop
+        if ($leaseItem.PSIsContainer -or [bool]($leaseItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            throw "Lease path is not a regular file: '$leasePath'."
+        }
+    }
+    $metadata = [ordered]@{
+        operationId = $OperationId
+        repositoryRoot = $canonicalRoot
+        processId = $PID
+        startedUtc = (Get-Date).ToUniversalTime().ToString('o')
+    } | ConvertTo-Json -Compress
+
+    $stream = $null
+    try {
+        $stream = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::Read)
+    }
+    catch [System.IO.IOException] {
+        $errorCode = $_.Exception.HResult -band 0xFFFF
+        if ($errorCode -notin @(32, 33)) { throw }
+        $owner = ''
+        try { $owner = (Get-Content -LiteralPath $leasePath -Raw -ErrorAction Stop).Trim() } catch { }
+        throw "Worktree execution lease is held for '$canonicalRoot'. Current owner: $owner. Use a separate worktree or wait for the active operation."
+    }
+
+    try {
+        $stream.SetLength(0)
+        $metadataBytes = [System.Text.Encoding]::UTF8.GetBytes($metadata)
+        $stream.Write($metadataBytes, 0, $metadataBytes.Length)
+        $stream.Flush($true)
+        return [pscustomobject]@{
+            Path = $leasePath
+            OperationId = $OperationId
+            RepositoryRoot = $canonicalRoot
+            Stream = $stream
+            OwnsStream = $true
+        }
+    }
+    catch {
+        $stream.Dispose()
+        throw
+    }
+}
+
+function Exit-RepositoryExecutionLease {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Lease)
+
+    if ($Lease.OwnsStream -and $null -ne $Lease.Stream) { $Lease.Stream.Dispose() }
+}
+
 function ConvertTo-ConsoleColor {
     param(
         [object]$Value,
@@ -928,6 +1116,8 @@ function Invoke-SolutionsPipeline {
         [switch]$IncludeMutation
     )
 
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $RepoRoot -OperationId "pipeline-$([guid]::NewGuid().ToString('N'))"
+    try {
     $automationScriptsRoot = Join-Path (Join-Path (Join-Path $RepoRoot 'eng') 'src') 'agent-scripts'
     $coverageScript = Join-Path $automationScriptsRoot 'summarize-coverage-gaps.ps1'
     $mutationSummaryScript = Join-Path $automationScriptsRoot 'summarize-mutation-survivors.ps1'
@@ -971,6 +1161,10 @@ function Invoke-SolutionsPipeline {
     }
     else {
         Write-Host 'Local build, test, coverage, cleanup and final-build checks completed. Deployment, browser and external CI checks are outside this command.'
+    }
+    }
+    finally {
+        Exit-RepositoryExecutionLease -Lease $executionLease
     }
 }
 
@@ -1095,7 +1289,7 @@ function Invoke-SpringValidation {
     }
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation
+Export-ModuleMember -Function Get-RepositoryRoot, Get-RepositoryExecutionLeasePath, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation
 
 
 

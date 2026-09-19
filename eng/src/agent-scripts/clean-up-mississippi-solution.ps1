@@ -8,12 +8,17 @@ Import-Module -Name $modulePath -Force
 
 $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 
+$executionLease = $null
 try {
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "cleanup-mississippi-$([guid]::NewGuid().ToString('N'))"
     Invoke-MississippiSolutionCleanup -RepoRoot $repoRoot
 }
 catch {
     Write-Error "=== MISSISSIPPI SOLUTION CLEANUP FAILED ===: $($_.Exception.Message)"
     exit 1
+}
+finally {
+    if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
 }
 
 exit 0
