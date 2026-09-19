@@ -55,9 +55,7 @@ schemas in [assets](assets/review-result.schema.json).
 Use the deterministic collector before asking any reviewer for findings:
 
 ```text
-python .agents/skills/code-review-council/scripts/collect_scope.py \
-  --mode <codebase|branch|worktree|pull-request> \
-  --output <scope.json>
+pwsh .agents/skills/code-review-council/scripts/collect-scope.ps1 -Mode <codebase|branch|worktree|pull-request> -Output <scope.json>
 ```
 
 For a branch, provide `--base` and `--head`. For a worktree, choose
@@ -89,11 +87,7 @@ result makes the council `INCOMPLETE`, not clean.
 Write reviewer results as JSONL and validate them against the same snapshot:
 
 ```text
-python .agents/skills/code-review-council/scripts/validate_review.py \
-  --scope <scope.json> \
-  --reviewers <reviewers.jsonl> \
-  --adjudication <dispositions.json> \
-  --output <review.json>
+pwsh .agents/skills/code-review-council/scripts/validate-review.ps1 -Scope <scope.json> -Reviewers <reviewers.jsonl> -Adjudication <dispositions.json> -Output <review.json>
 ```
 
 The coordinator then verifies every proposed finding against the actual frozen
@@ -124,10 +118,7 @@ Report-only is the default. If the caller explicitly authorises publication,
 use the guarded publisher described in [publication.md](references/publication.md):
 
 ```text
-python .agents/skills/code-review-council/scripts/publish_review.py \
-  --review <review.json> \
-  --provider mock \
-  --ledger <ledger.json>
+pwsh .agents/skills/code-review-council/scripts/publish-review.ps1 -Review <review.json> -Provider mock -Ledger <ledger.json>
 ```
 
 The GitHub provider requires an explicit `--execute`, revalidates the live PR
@@ -140,10 +131,8 @@ requests changes, resolves threads, merges, or closes a PR.
 Run the offline deterministic evaluation and helper tests:
 
 ```text
-python .agents/skills/code-review-council/scripts/run_evaluation.py \
-  --fixtures .agents/skills/code-review-council/fixtures/evaluation.json \
-  --output <evaluation-results.json>
-python .agents/skills/code-review-council/scripts/test_skill.py
+pwsh .agents/skills/code-review-council/scripts/run-evaluation.ps1 -Fixtures .agents/skills/code-review-council/fixtures/evaluation.json -Output <evaluation-results.json>
+pwsh .agents/skills/code-review-council/scripts/test-skill.ps1
 ```
 
 The evaluation compares an ordinary single reviewer, one reviewer with all

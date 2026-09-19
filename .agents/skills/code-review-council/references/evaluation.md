@@ -54,9 +54,7 @@ scored without changing the expected truth or the evaluator’s rules.
 Run it with:
 
 ```text
-python .agents/skills/code-review-council/scripts/run_evaluation.py \
-  --fixtures .agents/skills/code-review-council/fixtures/evaluation.json \
-  --output evaluation-results.json
+pwsh .agents/skills/code-review-council/scripts/run-evaluation.ps1 -Fixtures .agents/skills/code-review-council/fixtures/evaluation.json -Output evaluation-results.json
 ```
 
 The report must state which model, host, concurrency, and publication paths
