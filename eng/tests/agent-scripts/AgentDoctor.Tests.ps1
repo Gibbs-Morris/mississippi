@@ -20,7 +20,7 @@ Describe 'Repository prerequisite doctor' {
 
         $readyProbes = @{
             'dotnet-version' = [pscustomobject]@{ Available = $true; Output = '10.0.401'; ExitCode = 0; Error = '' }
-            'dotnet-tool:example' = [pscustomobject]@{ Available = $true; Output = 'example 1.0.0'; ExitCode = 0; Error = '' }
+            'dotnet-tools' = [pscustomobject]@{ Available = $true; Output = 'Resolver metadata and executable paths verified.'; ExitCode = 0; Error = '' }
             'git-root' = [pscustomobject]@{ Available = $true; Output = $fixtureRoot; ExitCode = 0; Error = '' }
             'docker-ostype' = [pscustomobject]@{ Available = $true; Output = 'linux'; ExitCode = 0; Error = '' }
             'node-version' = [pscustomobject]@{ Available = $true; Output = 'v22.0.0'; ExitCode = 0; Error = '' }
@@ -93,7 +93,7 @@ Describe 'Repository prerequisite doctor' {
 
     It 'distinguishes declared but unrestored local tools' {
         $probes = @{} + $readyProbes
-        $probes['dotnet-tool:example'] = [pscustomobject]@{ Available = $true; Output = 'Run "dotnet tool restore" to make the "example" command available.'; ExitCode = 1; Error = '' }
+        $probes['dotnet-tools'] = [pscustomobject]@{ Available = $true; Output = 'Run "dotnet tool restore" to restore local tool metadata.'; ExitCode = 1; Error = '' }
         $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Core -ProbeOverrides $probes
 
         @($report.Checks | Where-Object Name -EQ 'dotnet-tools').State | Should -Be 'missing'
