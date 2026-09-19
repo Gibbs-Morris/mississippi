@@ -60,6 +60,12 @@ function Format-PlanArgument {
     return "'$(($Value -replace "'", "''"))'"
 }
 
+function Test-PlanPathMatch {
+    param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][string]$Pattern)
+    $options = if ([OperatingSystem]::IsWindows()) { [System.Text.RegularExpressions.RegexOptions]::IgnoreCase } else { [System.Text.RegularExpressions.RegexOptions]::None }
+    return [regex]::IsMatch($Path, $Pattern, $options)
+}
+
 try {
     $root = (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
     $catalogPath = Join-Path $root 'eng/src/agent-scripts/validation-command-catalog.json'
@@ -78,36 +84,45 @@ try {
         else { $normalizedPaths.Add($relative) }
     }
 
-    $markdownPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:md|mdx)$' })
-    $isMarkdownConfig = @($normalizedPaths | Where-Object { $_ -match '(^|/)(?:\.markdownlint-cli2\.jsonc|\.markdownlintignore)$' -or $_ -eq '.github/linters/.markdown-lint.yml' }).Count -gt 0
+    $markdownPaths = @($normalizedPaths | Where-Object { Test-PlanPathMatch -Path $_ -Pattern '\.(?:md|mdx)$' })
+    $isMarkdownConfig = @($normalizedPaths | Where-Object { (Test-PlanPathMatch -Path $_ -Pattern '(^|/)(?:\.markdownlint-cli2\.jsonc|\.markdownlintignore)$') -or $_ -eq '.github/linters/.markdown-lint.yml' }).Count -gt 0
     $hasMarkdownGlobCharacter = @($markdownPaths | Where-Object { $_ -match '[*?\[\]]' }).Count -gt 0
     $markdownCheckPaths = if ($isMarkdownConfig -or $hasMarkdownGlobCharacter) { @('.') } elseif ($markdownPaths.Count -gt 0) { $markdownPaths } else { @() }
     $selected = [System.Collections.Generic.List[object]]::new()
-    $powerShellPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:ps1|psm1|psd1)$' })
+    $powerShellPaths = @($normalizedPaths | Where-Object { Test-PlanPathMatch -Path $_ -Pattern '\.(?:ps1|psm1|psd1)$' })
     $validatedPowerShellPaths = @(
         'eng/src/agent-scripts/RepositoryAutomation.psm1',
         'eng/src/agent-scripts/get-validation-plan.ps1',
         'eng/tests/agent-scripts/ValidationPlan.Tests.ps1',
         'eng/tests/agent-scripts/PowerShellTestHarness.Tests.ps1',
+        'eng/tests/agent-scripts/run-spring-validation-tests.ps1',
+        'eng/tests/agent-scripts/run-scratchpad-task-tests.ps1',
+        'eng/tests/agent-scripts/run-summarize-coverage-gaps-tests.ps1',
+        'eng/tests/agent-scripts/run-task-automation-tests.ps1',
+        'eng/tests/agent-scripts/verify-scratchpad-task-scripts.ps1',
+        'eng/tests/agent-scripts/RepositoryAutomation.Tests.ps1',
+        'eng/tests/agent-scripts/MutationAutomation.Tests.ps1',
+        'eng/tests/agent-scripts/MutationSummary.Tests.ps1',
+        'eng/tests/agent-scripts/PrFeedbackSkill.Tests.ps1',
         'eng/tests/agent-scripts/run-validation-plan-tests.ps1',
         'eng/tests/orchestrate-powershell-tests.ps1'
     )
     $unvalidatedPowerShellPaths = @($powerShellPaths | Where-Object { $validatedPowerShellPaths -notcontains $_ })
     $isPowerShell = $powerShellPaths.Count -gt 0 -or @($normalizedPaths | Where-Object { $_ -eq 'eng/src/agent-scripts/validation-command-catalog.json' }).Count -gt 0
     $isMarkdown = $markdownPaths.Count -gt 0
-    $isDocusaurus = @($normalizedPaths | Where-Object { $_ -match '^docs/Docusaurus/' }).Count -gt 0
-    $browserPaths = @($normalizedPaths | Where-Object { $_ -match '(?:\.razor\.cs|\.(?:razor|css|html?|m?js|jsx|tsx?))$' -or $_ -match '(?:^|/)wwwroot/' -or $_ -match '^(?:src|samples)/[^/]+\.Client/.+\.cs$' })
-    $springBrowserPaths = @($browserPaths | Where-Object { $_ -match '^samples/Spring/' })
-    $nonSpringBrowserPaths = @($browserPaths | Where-Object { $_ -notmatch '^samples/Spring/' -and $_ -notmatch '^docs/Docusaurus/' })
-    $isSpringPath = @($normalizedPaths | Where-Object { $_ -match '^samples/Spring/' }).Count -gt 0
-    $nonSpringApplicationPaths = @($normalizedPaths | Where-Object { $_ -notmatch '^samples/Spring/' -and $_ -notmatch '^docs/Docusaurus/' })
+    $isDocusaurus = @($normalizedPaths | Where-Object { Test-PlanPathMatch -Path $_ -Pattern '^docs/Docusaurus/' }).Count -gt 0
+    $browserPaths = @($normalizedPaths | Where-Object { (Test-PlanPathMatch -Path $_ -Pattern '(?:\.razor\.cs|\.(?:razor|css|html?|m?js|jsx|tsx?))$') -or (Test-PlanPathMatch -Path $_ -Pattern '(?:^|/)wwwroot/') -or (Test-PlanPathMatch -Path $_ -Pattern '^(?:src|samples)/[^/]+\.Client/.+\.cs$') })
+    $springBrowserPaths = @($browserPaths | Where-Object { Test-PlanPathMatch -Path $_ -Pattern '^samples/Spring/' })
+    $nonSpringBrowserPaths = @($browserPaths | Where-Object { -not (Test-PlanPathMatch -Path $_ -Pattern '^samples/Spring/') -and -not (Test-PlanPathMatch -Path $_ -Pattern '^docs/Docusaurus/') })
+    $isSpringPath = @($normalizedPaths | Where-Object { Test-PlanPathMatch -Path $_ -Pattern '^samples/Spring/' }).Count -gt 0
+    $nonSpringApplicationPaths = @($normalizedPaths | Where-Object { (Test-PlanPathMatch -Path $_ -Pattern '^(?:src|samples)/') -and -not (Test-PlanPathMatch -Path $_ -Pattern '^samples/Spring/') -and -not (Test-PlanPathMatch -Path $_ -Pattern '^docs/Docusaurus/') })
     $isBrowser = $springBrowserPaths.Count -gt 0 -or $isSpringPath
-    $isDotnet = @($normalizedPaths | Where-Object { $_ -match '\.(?:cs|csproj|slnx)$' -or $_ -match '(?:Directory\.Build|Directory\.Packages|global\.json)' }).Count -gt 0
+    $isDotnet = @($normalizedPaths | Where-Object { (Test-PlanPathMatch -Path $_ -Pattern '\.(?:cs|csproj|slnx)$') -or (Test-PlanPathMatch -Path $_ -Pattern '(?:Directory\.Build|Directory\.Packages|global\.json)') }).Count -gt 0
     $unmappedPaths = @($normalizedPaths | Where-Object {
-        $_ -notmatch '\.(?:ps1|psm1|psd1|md|mdx|razor|css|cs|csproj|slnx)$' -and
-        $_ -notmatch '(?:Directory\.Build|Directory\.Packages|global\.json)' -and
-        $_ -notmatch '^samples/Spring/' -and
-        $_ -notmatch '^docs/Docusaurus/'
+        -not (Test-PlanPathMatch -Path $_ -Pattern '\.(?:ps1|psm1|psd1|md|mdx|razor|css|cs|csproj|slnx)$') -and
+        -not (Test-PlanPathMatch -Path $_ -Pattern '(?:Directory\.Build|Directory\.Packages|global\.json)') -and
+        -not (Test-PlanPathMatch -Path $_ -Pattern '^samples/Spring/') -and
+        -not (Test-PlanPathMatch -Path $_ -Pattern '^docs/Docusaurus/')
     })
     $riskChecks = @{
         browser = 'spring-doctor,spring-smoke'
@@ -170,6 +185,10 @@ try {
             $unresolved.Add("Infrastructure risk hint requires an application-specific L2 gate; no safe generic L2 mapping exists for the supplied paths.")
             continue
         }
+        if ($riskHint -eq 'infrastructure' -and $nonSpringApplicationPaths.Count -gt 0) {
+            $unresolved.Add("Infrastructure risk hint is ambiguous across Spring and non-Spring application paths: $($nonSpringApplicationPaths -join ', ').")
+            continue
+        }
         if ($riskChecks.Keys -contains $riskHint) {
             foreach ($checkId in ($riskChecks[$riskHint] -split ',')) {
                 $riskCheck = @($catalog.checks | Where-Object { $_.id -eq [string]$checkId } | Select-Object -First 1)
@@ -192,6 +211,8 @@ try {
     if ([string]::IsNullOrWhiteSpace($BaseRevision)) { $unresolved.Add('BaseRevision is required; no default base is assumed.') }
     if ([string]::IsNullOrWhiteSpace($HeadRevision)) { $unresolved.Add('HeadRevision is required; no default head is assumed.') }
     if ($normalizedPaths.Count -eq 0) { $unresolved.Add('No changed paths were supplied; provide explicit changed paths for a deterministic plan.') }
+
+    $selected = @($selected | Sort-Object @{Expression = { switch ([string]$_.Mode) { 'prerequisite' { 0 }; 'iteration' { 1 }; 'final' { 2 }; default { 3 } } }}, Id)
 
     $result = [pscustomobject][ordered]@{
         SchemaVersion = '1.0'

@@ -108,6 +108,13 @@ Describe 'Deterministic validation plan' {
         $outcome.Result.SelectedChecks.Id | Should -Contain 'powershell-tests'
     }
 
+    It 'covers directly orchestrated PowerShell runner paths' {
+        $outcome = Invoke-Plan -Paths @('eng/tests/agent-scripts/run-spring-validation-tests.ps1')
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Unresolved | Should -Not -Match 'outside the maintained parser/test gate'
+    }
+
     It 'reports an explicit gap for arbitrary PowerShell tooling paths' {
         $outcome = Invoke-Plan -Paths @('tools/foo.ps1')
 
@@ -182,6 +189,36 @@ Describe 'Deterministic validation plan' {
 
         $outcome.ExitCode | Should -Be 1
         $outcome.Result.Unresolved | Should -Match 'ambiguous across Spring and non-Spring application paths'
+    }
+
+    It 'does not treat repository documentation as another browser application' {
+        $outcome = Invoke-Plan -Paths @('samples/Spring/Spring.Client/Pages/Index.razor', 'README.md') -RiskHints @('browser')
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Unresolved | Should -Not -Match 'ambiguous across Spring'
+    }
+
+    It 'fails closed for infrastructure risk across mixed applications' {
+        $outcome = Invoke-Plan -Paths @('samples/Spring/Spring.Domain/Account.cs', 'src/Reservoir/State.cs') -RiskHints @('infrastructure')
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Unresolved | Should -Match 'ambiguous across Spring and non-Spring'
+    }
+
+    It 'rejects case-only application path matches on case-sensitive hosts' {
+        if ($IsWindows) {
+            Set-ItResult -Skipped -Because 'Case-only path distinctions are not applicable on Windows.'
+            return
+        }
+        $outcome = Invoke-Plan -Paths @('samples/spring/config.json')
+
+        $outcome.Result.Unresolved | Should -Match 'Unknown mapping|No application-specific'
+    }
+
+    It 'emits Spring prerequisites before final gates' {
+        $outcome = Invoke-Plan -Paths @('samples/Spring/Spring.Domain/Account.cs')
+
+        $outcome.Result.SelectedChecks[0].Id | Should -Be 'spring-doctor'
     }
 
     It 'treats Razor code-behind as browser-facing' {
