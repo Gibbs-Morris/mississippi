@@ -150,6 +150,13 @@ Describe 'Repository prerequisite doctor' {
         $text | Should -Match 'Remediation: Start Docker with Linux containers'
     }
 
+    It 'omits remediation from successful checks' {
+        $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Core -ProbeOverrides $readyProbes
+        $text = Format-AgentDoctorText -Report $report | Out-String
+
+        $text | Should -Not -Match 'Remediation:'
+    }
+
     It 'bounds a hanging external probe' {
         $probe = InModuleScope AgentDoctor {
             Invoke-DoctorProbe -Name 'timeout-test' -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', 'Start-Sleep -Seconds 3') -TimeoutSeconds 1
