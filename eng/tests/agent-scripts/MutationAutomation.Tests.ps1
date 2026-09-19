@@ -92,6 +92,26 @@ Describe 'Mutation automation' {
         }
     }
 
+    It 'warns when a valid report has no mutation score' {
+        Set-Content (Join-Path $completedOutput 'mutation-report.json') '{"files":{"Widget.cs":{"mutants":[{"status":"Ignored"}]}}}'
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation { $completedOutput }
+        $summaryFile = Join-Path $repo 'github-step-summary.md'
+        $previousSummaryFile = $env:GITHUB_STEP_SUMMARY
+        $env:GITHUB_STEP_SUMMARY = $summaryFile
+        try {
+            Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output -ReportOnly | Should -Be $output
+        }
+        finally {
+            $env:GITHUB_STEP_SUMMARY = $previousSummaryFile
+        }
+        $summary = Get-Content (Join-Path $output 'mutation-summary.json') -Raw | ConvertFrom-Json
+        $summary.ExecutionStatus | Should -Be 'COMPLETED_WITH_WARNINGS'
+        $summary.MutationResult | Should -Be 'WARN'
+        $summary.NoScoreProjectCount | Should -Be 1
+        $summary.ScoredProjectCount | Should -Be 0
+        (Get-Content $summaryFile -Raw) | Should -Match 'Unscored projects'
+    }
+
     It 'compares the raw mutation score before rounding the displayed score' {
         $mutants = [System.Collections.Generic.List[object]]::new()
         for ($index = 0; $index -lt 5000; $index++) { $mutants.Add(@{ status = 'Killed' }) }

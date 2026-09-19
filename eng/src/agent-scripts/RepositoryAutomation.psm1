@@ -565,6 +565,7 @@ function Write-GitHubMutationSummary {
         "- Skipped projects: **$($Summary.SkippedProjectCount)**"
         "- Threshold-only exits: **$($Summary.ThresholdFailureCount)**"
         "- Scored projects: **$($Summary.ScoredProjectCount)**"
+        "- Unscored projects: **$($Summary.NoScoreProjectCount)**"
         "- Below break threshold ($($Summary.BreakThreshold)%): **$($Summary.BelowBreakThresholdCount)**"
     )
     if ($Summary.BelowBreakThresholdCount -gt 0) {
@@ -572,6 +573,14 @@ function Write-GitHubMutationSummary {
         $summaryLines += '### Projects below the advisory threshold'
         foreach ($project in $Summary.BelowBreakThresholdProjects) {
             $summaryLines += "- $($project.Project): $($project.Score)%"
+        }
+    }
+    if ($Summary.NoScoreProjectCount -gt 0) {
+        $summaryLines += ''
+        $summaryLines += '### Projects without a mutation score'
+        foreach ($project in $Summary.NoScoreProjects) {
+            $reason = if ($project.ReportError) { $project.ReportError } else { 'No valid mutants were scored' }
+            $summaryLines += "- $($project.Project): $reason"
         }
     }
     if ($Summary.FailedProjectCount -gt 0) {
@@ -600,12 +609,14 @@ function Show-MutationRunSummary {
     $failedProjects = @($projectSummaries | Where-Object { $_.ExecutionStatus -eq 'FAILED' })
     $thresholdFailures = @($projectSummaries | Where-Object { $_.ExecutionStatus -eq 'COMPLETED_WITH_THRESHOLD_FAILURE' })
     $belowBreak = @($projectSummaries | Where-Object { $_.Status -eq 'BELOW_BREAK' })
+    $noScoreProjects = @($projectSummaries | Where-Object { $_.Status -eq 'NO_SCORE' })
     $skippedProjects = @($projectSummaries | Where-Object { $_.Status -eq 'SKIPPED' })
     $reportEligibleProjects = @($projectSummaries | Where-Object { $_.Status -ne 'SKIPPED' })
     $completeReports = @($projectSummaries | Where-Object { $_.ReportValid })
     $scoredReports = @($projectSummaries | Where-Object { $null -ne $_.Score })
-    $executionStatus = if ($failedProjects.Count -gt 0) { 'FAILED' } elseif ($thresholdFailures.Count -gt 0) { 'COMPLETED_WITH_WARNINGS' } else { 'COMPLETED' }
-    $mutationResult = if ($executionStatus -eq 'FAILED') { 'FAIL' } elseif ($belowBreak.Count -gt 0) { 'WARN' } else { 'PASS' }
+    $hasWarnings = $thresholdFailures.Count -gt 0 -or $belowBreak.Count -gt 0 -or $noScoreProjects.Count -gt 0
+    $executionStatus = if ($failedProjects.Count -gt 0) { 'FAILED' } elseif ($thresholdFailures.Count -gt 0 -or $noScoreProjects.Count -gt 0) { 'COMPLETED_WITH_WARNINGS' } else { 'COMPLETED' }
+    $mutationResult = if ($executionStatus -eq 'FAILED') { 'FAIL' } elseif ($hasWarnings) { 'WARN' } else { 'PASS' }
 
     $summary = [ordered]@{
         SchemaVersion = 1
@@ -620,9 +631,11 @@ function Show-MutationRunSummary {
         BelowBreakThresholdCount = $belowBreak.Count
         FailedProjectCount = $failedProjects.Count
         ThresholdFailureCount = $thresholdFailures.Count
+        NoScoreProjectCount = $noScoreProjects.Count
         BelowBreakThresholdProjects = @($belowBreak | Select-Object Project, Score)
         FailedProjects = @($failedProjects | Select-Object Project, Status, ReportValid, Error, ReportError)
         ThresholdFailureProjects = @($thresholdFailures | Select-Object Project, Score, RawScore)
+        NoScoreProjects = @($noScoreProjects | Select-Object Project, ReportError)
         Projects = $projectSummaries
     }
     $summaryPath = Join-Path $OutputPath 'mutation-summary.json'
@@ -632,6 +645,7 @@ function Show-MutationRunSummary {
     Write-Host "MUTATION_RESULT: $mutationResult"
     Write-Host "MUTATION_REPORTS: $($completeReports.Count)/$($reportEligibleProjects.Count) complete (skipped: $($skippedProjects.Count))"
     Write-Host "MUTATION_SCORED_PROJECTS: $($scoredReports.Count)"
+    Write-Host "MUTATION_UNSCORED_PROJECTS: $($noScoreProjects.Count)"
     Write-Host "MUTATION_BELOW_BREAK: $($belowBreak.Count) (threshold $BreakThreshold%)"
     Write-Host "MUTATION_THRESHOLD_FAILURES: $($thresholdFailures.Count)"
     if ($belowBreak.Count -gt 0) {
@@ -639,6 +653,13 @@ function Show-MutationRunSummary {
         Write-Warning "$warningMessage Threshold: $BreakThreshold%."
         if ($env:GITHUB_ACTIONS -eq 'true') {
             Write-Host "::warning title=Mutation score warning::$warningMessage"
+        }
+    }
+    if ($noScoreProjects.Count -gt 0) {
+        $warningMessage = "Mutation analysis completed, but $($noScoreProjects.Count) project(s) produced no mutation score."
+        Write-Warning $warningMessage
+        if ($env:GITHUB_ACTIONS -eq 'true') {
+            Write-Host "::warning title=Mutation score unavailable::$warningMessage"
         }
     }
     if ($failedProjects.Count -gt 0) {
