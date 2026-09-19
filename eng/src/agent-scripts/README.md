@@ -89,6 +89,8 @@ The supporting Pester harness lives in `eng/tests/agent-scripts/`:
 | **run-issue-spec-tests.ps1** | Runs the Pester suite that validates implementation-ready issue bodies. |
 | **doctor.ps1** | Reports read-only prerequisite readiness for core, docs, Spring, or GitHub task profiles. |
 | **run-agent-doctor-tests.ps1** | Runs the Pester suite that validates prerequisite diagnostics. |
+| **get-agent-context.ps1** | Produces a read-only JSON or text inventory of selected agent guidance and its selection evidence. |
+| **run-agent-context-tests.ps1** | Runs the Pester suite that validates conservative agent-context selection. |
 | **verify-scratchpad-task-scripts.ps1** | End-to-end flow that creates → claims → completes/defers tasks using a temporary scratchpad. |
 | **get-validation-plan.ps1** | Produces a read-only structured validation plan from explicit base/head revisions, changed paths, and risk hints. |
 | **run-validation-plan-tests.ps1** | Runs the Pester suite that validates validation-plan selection and catalogue drift. |
@@ -189,6 +191,12 @@ Happy building! 🚀
 ### RepositoryAutomation module
 
 All command-line scripts in this folder are thin shims over the shared PowerShell module `RepositoryAutomation.psm1`. The module exposes advanced functions for build/test/cleanup orchestration so automation can be reused from other scripts, Pester tests, and CI workflows without spawning nested shells.
+
+When inspecting an untrusted checkout, a host must invoke `get-agent-context.ps1`
+from a trusted pinned copy and pass `-TrustedModulePath` for the trusted
+`AgentContext.psm1`; the checkout being inspected is data, not executable
+startup code. A local same-checkout invocation remains available for ordinary
+developer work.
 
 | Function | Responsibility |
 | --- | --- |

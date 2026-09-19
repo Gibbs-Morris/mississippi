@@ -26,6 +26,7 @@ $testRunners = @(
     @{ Name = 'run-validation-plan-tests.ps1';   Type = 'Pester' },
     @{ Name = 'run-issue-spec-tests.ps1';        Type = 'Pester' },
     @{ Name = 'run-agent-doctor-tests.ps1';      Type = 'Pester' },
+    @{ Name = 'run-agent-context-tests.ps1';    Type = 'Pester' },
     @{ Name = 'verify-scratchpad-task-scripts.ps1';    Type = 'Script' }
 )
 
