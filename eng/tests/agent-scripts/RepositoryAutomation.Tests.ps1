@@ -26,7 +26,9 @@ Describe 'RepositoryAutomation helpers' {
         $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-one'
         try {
             { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-two' } | Should -Throw '*execution lease is held*'
-            (Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -ExistingLease $lease).OperationId | Should -Be 'owner-one'
+            $nestedLease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -ExistingLease $lease
+            try { $nestedLease.OperationId | Should -Be 'owner-one' } finally { Exit-RepositoryExecutionLease -Lease $nestedLease }
+            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-four' } | Should -Throw '*execution lease is held*'
         }
         finally {
             Exit-RepositoryExecutionLease -Lease $lease
@@ -34,6 +36,35 @@ Describe 'RepositoryAutomation helpers' {
 
         $released = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-three'
         try { $released.OperationId | Should -Be 'owner-three' } finally { Exit-RepositoryExecutionLease -Lease $released }
+    }
+
+    It 'uses one lease identity for a worktree alias' {
+        $realRoot = Join-Path $TestDrive 'lease-real'
+        $aliasRoot = Join-Path $TestDrive 'lease-alias'
+        New-Item -ItemType Directory -Path $realRoot -Force | Out-Null
+        $aliasCreated = $false
+        try {
+            New-Item -ItemType Junction -Path $aliasRoot -Target $realRoot -ErrorAction Stop | Out-Null
+            $aliasCreated = $true
+            $lease = Enter-RepositoryExecutionLease -RepoRoot $realRoot -OperationId 'physical-owner'
+            try {
+                { Enter-RepositoryExecutionLease -RepoRoot $aliasRoot -OperationId 'alias-owner' } | Should -Throw '*execution lease is held*'
+            }
+            finally {
+                Exit-RepositoryExecutionLease -Lease $lease
+            }
+        }
+        catch {
+            if (-not $aliasCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create directory junctions.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $aliasRoot -Force -ErrorAction SilentlyContinue
+        }
     }
 
     It 'invokes automation steps and returns the result' {
