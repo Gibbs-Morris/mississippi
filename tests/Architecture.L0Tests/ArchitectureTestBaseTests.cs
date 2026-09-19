@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 
 using Xunit;
@@ -19,8 +20,8 @@ public sealed class ArchitectureTestBaseTests
         List<string> loadedPaths = new();
         string[] paths =
         [
-            @"C:\run.L0Tests.1\Mississippi.Core.dll",
-            @"C:\run\Mississippi.Architecture.L0Tests.dll"
+            Path.Combine("run.L0Tests.1", "Mississippi.Core.dll"),
+            Path.Combine("run", "Mississippi.Architecture.L0Tests.dll")
         ];
 
         Assembly[] assemblies = ArchitectureTestBase.LoadMississippiAssemblies(
