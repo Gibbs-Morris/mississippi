@@ -181,7 +181,7 @@ function ConvertTo-ContextRelativePath {
         if ($relative.StartsWith('./', [System.StringComparison]::Ordinal)) {
             $relative = $relative.Substring(2)
         }
-        if ([string]::IsNullOrWhiteSpace($relative) -or $relative -eq '..' -or $relative.StartsWith('../', [System.StringComparison]::Ordinal)) {
+        if ([string]::IsNullOrWhiteSpace($relative) -or [System.IO.Path]::IsPathRooted($relative) -or $relative -eq '..' -or $relative.StartsWith('../', [System.StringComparison]::Ordinal)) {
             return $null
         }
         return $relative

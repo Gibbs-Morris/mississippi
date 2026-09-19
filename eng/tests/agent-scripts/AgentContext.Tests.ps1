@@ -190,6 +190,20 @@ applyTo: '**/[abc.md'
         @($context.Selected | Where-Object Path -EQ '.github/instructions/markdown.instructions.md').Reasons | Should -Contain 'path:changed:docs/guide.md'
     }
 
+    It 'rejects rooted paths returned from cross-volume conversion' {
+        if (-not $IsWindows) {
+            Set-ItResult -Skipped -Because 'Cross-volume rooted relative paths are Windows-specific.'
+            return
+        }
+
+        $currentDrive = ([System.IO.Path]::GetPathRoot($fixtureRoot)).Substring(0, 1).ToUpperInvariant()
+        $otherDrive = if ($currentDrive -eq 'Z') { 'Y' } else { 'Z' }
+        $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath "${otherDrive}:\outside\file.cs"
+
+        $context.Complete | Should -BeFalse
+        $context.Unresolved | Should -Contain "changed path is outside the repository or invalid: '${otherDrive}:\outside\file.cs'."
+    }
+
     It 'matches AGENTS guidance on directory boundaries' {
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'foobar/example.cs'
 
