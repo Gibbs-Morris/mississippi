@@ -148,12 +148,20 @@ Describe 'Implementation-ready issue contract' {
     }
 
     It 'rejects duplicate and unknown validation evidence IDs' {
-        $content = $validBug + [Environment]::NewLine + '- [AC1] Duplicate mapping.' + [Environment]::NewLine + '- [AC99] Unknown mapping.'
+        $content = $validBug + [Environment]::NewLine + '- [AC1] Test: duplicate mapping; expected: duplicate.' + [Environment]::NewLine + '- [AC99] Test: unknown mapping; expected: unknown.'
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
 
         $outcome.ExitCode | Should -Be 1
         $outcome.Result.Errors | Should -Contain "Duplicate validation evidence mapping ID: 'AC1'."
         $outcome.Result.Errors | Should -Contain "Validation evidence map contains unknown acceptance criterion ID: 'AC99'."
+    }
+
+    It 'rejects evidence mappings without a kind and expected result' {
+        $content = $validBug -replace '- \[AC1\] Test: parser invalid-input test; expected: validation error and no storage call\.', '- [AC1] pending'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Validation evidence entry for 'AC1' must include Command, Test, or Manual observation evidence and an expected result."
     }
 
     It 'rejects unresolved blocking decisions' {

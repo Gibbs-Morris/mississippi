@@ -200,7 +200,13 @@ function Get-IssueSpecResult {
     if ($sections.Contains('Validation evidence map')) {
         $evidence = [string]$sections['Validation evidence map']
         $evidenceIds = [System.Collections.Generic.List[string]]::new()
-        $evidenceMatches = [regex]::Matches($evidence, '(?im)^\s*(?:[-*]|\d+\.)\s*\[(?<Id>AC\d+)\]\s+.+$')
+        $evidenceMatches = [regex]::Matches($evidence, '(?im)^\s*(?:[-*]|\d+\.)\s*\[(?<Id>AC\d+)\]\s*(?<Kind>Command|Test|Manual\s+observation)\s*:\s*(?<Evidence>[^;\r\n]+?)\s*;\s*expected\s*:\s*(?<Expected>[^\r\n]+?)\s*$')
+        foreach ($line in @($evidence -split '\r?\n' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })) {
+            $lineId = [regex]::Match($line, '\[(?<Id>AC\d+)\]').Groups['Id'].Value.ToUpperInvariant()
+            if ($lineId -and $line -notmatch '(?im)^\s*(?:[-*]|\d+\.)\s*\[AC\d+\]\s*(?:Command|Test|Manual\s+observation)\s*:\s*[^;\r\n]+?\s*;\s*expected\s*:\s*[^\r\n]+?\s*$') {
+                Add-IssueSpecError -Errors $errors -Message "Validation evidence entry for '$lineId' must include Command, Test, or Manual observation evidence and an expected result."
+            }
+        }
         foreach ($evidenceMatch in $evidenceMatches) {
             $evidenceId = $evidenceMatch.Groups['Id'].Value.ToUpperInvariant()
             if ($evidenceIds.Contains($evidenceId)) {
