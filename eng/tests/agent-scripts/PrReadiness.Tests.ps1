@@ -8,35 +8,31 @@ $ErrorActionPreference = 'Stop'
 Describe 'PR readiness snapshot' {
     BeforeAll {
         $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..'))
-        $powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
-        $scriptPath = Join-Path $repoRoot 'eng/src/agent-scripts/get-pr-readiness.ps1'
+        Import-Module (Join-Path $repoRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1') -Force
         function Invoke-Readiness {
             param([Parameter(Mandatory)][object]$Snapshot)
-            $json = $Snapshot | ConvertTo-Json -Depth 10 -Compress
-            $output = & $powerShellPath -NoProfile -File $scriptPath -RepositoryOwner Gibbs-Morris -RepositoryName mississippi -PullRequestNumber 744 -SnapshotJson $json -Json 2>&1 | Out-String
-            [pscustomobject]@{ ExitCode = $LASTEXITCODE; Result = $output | ConvertFrom-Json }
+            Get-PrReadinessReport -Snapshot $Snapshot
         }
         $readySnapshot = [pscustomobject]@{
             DataComplete = $true; HeadAtStart = 'head'; HeadAtEnd = 'head'; BaseAtStart = 'base'; BaseAtEnd = 'base';
             Checks = @([pscustomobject]@{Name='build';State='pass';Required=$true}); ReviewThreads=@(); Approvals=1;
+            PullRequestState='open'; IsDraft=$false; MergeableState='clean'; ReviewDecision='APPROVED'; PollingCompleted=$true;
             IssueReferenceVerified=$true; DescriptionReviewed=$true; PullRequestUrl='https://github.com/Gibbs-Morris/mississippi/pull/744'
         }
     }
 
     It 'reports ready only when mechanical and semantic evidence is complete' {
         $outcome = Invoke-Readiness -Snapshot $readySnapshot
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Status | Should -Be 'READY'
-        $outcome.Result.MechanicalGateReady | Should -BeTrue
+        $outcome.Status | Should -Be 'READY'
+        $outcome.MechanicalGateReady | Should -BeTrue
     }
 
     It 'distinguishes mechanical readiness from semantic review' {
         $snapshot = $readySnapshot.PSObject.Copy()
         $snapshot.IssueReferenceVerified = $false
         $outcome = Invoke-Readiness -Snapshot $snapshot
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Status | Should -Be 'MECHANICALLY_READY_SEMANTIC_REVIEW_REQUIRED'
-        $outcome.Result.SemanticReviewRequired | Should -BeTrue
+        $outcome.Status | Should -Be 'MECHANICALLY_READY_SEMANTIC_REVIEW_REQUIRED'
+        $outcome.SemanticReviewRequired | Should -BeTrue
     }
 
     It 'fails closed for pending checks, stale heads and unresolved threads' {
@@ -46,8 +42,54 @@ Describe 'PR readiness snapshot' {
         $snapshot.ReviewThreads = @([pscustomobject]@{IsResolved=$false;IsOutdated=$false})
         $snapshot.Approvals = 0
         $outcome = Invoke-Readiness -Snapshot $snapshot
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Status | Should -Be 'INCOMPLETE'
-        @($outcome.Result.Blockers).Count | Should -BeGreaterThan 2
+        $outcome.Status | Should -Be 'INCOMPLETE'
+        @($outcome.Blockers).Count | Should -BeGreaterThan 2
+    }
+
+    It 'rejects lifecycle, mergeability, current-review and polling failures' {
+        $snapshot = $readySnapshot.PSObject.Copy()
+        $snapshot.IsDraft = $true
+        $snapshot.MergeableState = 'dirty'
+        $snapshot.ReviewDecision = 'CHANGES_REQUESTED'
+        $snapshot.PollingCompleted = $false
+
+        $outcome = Invoke-Readiness -Snapshot $snapshot
+
+        $outcome.Status | Should -Be 'INCOMPLETE'
+        ($outcome.Blockers -join "`n") | Should -Match 'draft|mergeability|requests changes|polling'
+    }
+
+    It 'collects the live paths through an injectable GitHub provider and re-fetches the base and head' {
+        $pullStart = [pscustomobject]@{ head = [pscustomobject]@{ sha = 'head-start' }; base = [pscustomobject]@{ sha = 'base-start' }; state = 'open'; draft = $false; mergeable_state = 'clean'; html_url = 'https://github.com/Gibbs-Morris/mississippi/pull/744' }
+        $pullEnd = [pscustomobject]@{ head = [pscustomobject]@{ sha = 'head-end' }; base = [pscustomobject]@{ sha = 'base-end' }; state = 'open'; draft = $false; mergeable_state = 'clean'; html_url = $pullStart.html_url }
+        $checkPage = [pscustomobject]@{ check_runs = @([pscustomobject]@{ name = 'CodeQL'; status = 'completed'; conclusion = 'success' }) }
+        $reviewPage = @([pscustomobject]@{ id = 1; user = [pscustomobject]@{ login = 'reviewer' }; state = 'APPROVED'; submitted_at = '2026-09-19T00:00:00Z' })
+        $thread = [pscustomobject]@{ id = 'thread-1'; isResolved = $true; isOutdated = $false; comments = [pscustomobject]@{ nodes = @() } }
+        $graphqlPage = [pscustomobject]@{ data = [pscustomobject]@{ repository = [pscustomobject]@{ pullRequest = [pscustomobject]@{ reviewDecision = 'APPROVED'; reviewThreads = [pscustomobject]@{ nodes = @($thread); pageInfo = [pscustomobject]@{ hasNextPage = $false; endCursor = $null } } } } } }
+        $pullResponses = [System.Collections.Generic.Queue[object]]::new()
+        $pullResponses.Enqueue($pullStart)
+        $pullResponses.Enqueue($pullEnd)
+        $fakeProvider = {
+            param([string[]]$Arguments)
+            $joined = $Arguments -join ' '
+            if ($joined -match 'pulls/744$') {
+                return $pullResponses.Dequeue()
+            }
+            if ($joined -match 'check-runs') { return $checkPage }
+            if ($joined -match 'reviews') { return $reviewPage }
+            if ($joined -match 'graphql') { return $graphqlPage }
+            throw "Unexpected provider query: $joined"
+        }.GetNewClosure()
+
+        $snapshot = Get-PrReadinessSnapshot -RepositoryOwner Gibbs-Morris -RepositoryName mississippi -PullRequestNumber 744 -GhJsonProvider $fakeProvider
+
+        $snapshot.DataComplete | Should -BeTrue
+        $snapshot.HeadAtStart | Should -Be 'head-start'
+        $snapshot.HeadAtEnd | Should -Be 'head-end'
+        $snapshot.BaseAtStart | Should -Be 'base-start'
+        $snapshot.BaseAtEnd | Should -Be 'base-end'
+        $snapshot.ReviewDecision | Should -Be 'APPROVED'
+        $snapshot.Approvals | Should -Be 1
+        @($snapshot.ReviewThreads).Count | Should -Be 1
     }
 }

@@ -2755,6 +2755,171 @@ function Install-SpringBrowser {
     Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments $browserArguments
 }
 
+function Get-PrReadinessGhJson {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string[]]$Arguments)
+
+    $output = & gh @Arguments 2>&1 | Out-String
+    if ($LASTEXITCODE -ne 0) { throw "GitHub read failed: $($output.Trim())" }
+    return ConvertFrom-Json -InputObject $output
+}
+
+function Get-PrReadinessExpectedCheckPatterns {
+    return @(
+        '^CodeQL$',
+        '^SonarCloud$',
+        '^SonarCloud Code Analysis$',
+        '^Build \(ubuntu-latest\)$',
+        '^Build \(ubuntu-latest, (?:mississippi|samples)\.slnx\)$',
+        '^L0 Unit Tests \(ubuntu-latest, (?:mississippi|samples)\.slnx\)$',
+        '^L1 Light Infrastructure Tests \(ubuntu-latest, (?:mississippi|samples)\.slnx\)$',
+        '^L2 Integration Tests \(Aspire\) \(ubuntu-latest, (?:mississippi|samples)\.slnx\)$',
+        '^cleanup \(ubuntu-latest, (?:mississippi|samples)\.slnx\)$',
+        '^AppHost locked restore \(ubuntu-latest\)$',
+        '^AppHost locked restore \(windows-latest\)$',
+        '^pwsh-tests \(ubuntu-latest\)$',
+        '^pwsh-tests \(windows-latest\)$',
+        '^Markdown Lint$',
+        '^L3 Spring E2E \(Smoke\)$',
+        '^pr-metrics$',
+        '^label-by-(?:files|semver)$',
+        '^Analyze \(csharp\)$',
+        '^Analyze \(actions\)$',
+        '^Analyze \(javascript-typescript\)$',
+        '^submit-nuget$'
+    )
+}
+
+function Get-PrReadinessCheckState {
+    param([Parameter(Mandatory)][object]$CheckRun)
+
+    if ([string]$CheckRun.conclusion -eq 'success') { return 'pass' }
+    if ([string]$CheckRun.status -eq 'completed') { return 'fail' }
+    return 'pending'
+}
+
+function Get-PrReadinessSnapshot {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepositoryOwner,
+        [Parameter(Mandatory)][string]$RepositoryName,
+        [Parameter(Mandatory)][int]$PullRequestNumber,
+        [scriptblock]$GhJsonProvider
+    )
+
+    $getJson = if ($null -ne $GhJsonProvider) {
+        { param([string[]]$Arguments) & $GhJsonProvider $Arguments }
+    }
+    else {
+        { param([string[]]$Arguments) Get-PrReadinessGhJson -Arguments $Arguments }
+    }
+    $pullPath = "repos/$RepositoryOwner/$RepositoryName/pulls/$PullRequestNumber"
+    $pull = & $getJson @('api', $pullPath)
+    $headAtStart = [string]$pull.head.sha
+    $baseAtStart = [string]$pull.base.sha
+    $checkPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$headAtStart/check-runs", '--paginate', '--slurp'))
+    $checkRuns = @($checkPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | ForEach-Object { @($_.check_runs) })
+    $checks = [System.Collections.Generic.List[object]]::new()
+    foreach ($checkRun in $checkRuns) {
+        $checks.Add([pscustomobject]@{
+            Name = [string]$checkRun.name
+            State = Get-PrReadinessCheckState -CheckRun $checkRun
+            Required = $false
+            ExpectedIdentity = $false
+        })
+    }
+    $expectedPatterns = @(Get-PrReadinessExpectedCheckPatterns)
+    foreach ($pattern in $expectedPatterns) {
+        if (@($checks | Where-Object { $_.Name -match $pattern }).Count -eq 0) {
+            $checks.Add([pscustomobject]@{ Name = "required:$pattern"; State = 'missing'; Required = $true; ExpectedIdentity = $true })
+        }
+        else {
+            foreach ($check in @($checks | Where-Object { $_.Name -match $pattern })) { $check.Required = $true; $check.ExpectedIdentity = $true }
+        }
+    }
+
+    $reviewsPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/pulls/$PullRequestNumber/reviews", '--paginate', '--slurp'))
+    $reviews = @($reviewsPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } })
+    $latestReviewByAuthor = @{}
+    foreach ($review in @($reviews | Sort-Object submitted_at)) {
+        $author = if ($null -ne $review.user.login) { [string]$review.user.login } else { "review-$($review.id)" }
+        $latestReviewByAuthor[$author] = $review
+    }
+    $currentReviews = @($latestReviewByAuthor.Values)
+    $approvals = @($currentReviews | Where-Object { $_.state -eq 'APPROVED' }).Count
+    $reviewDecision = if (@($currentReviews | Where-Object { $_.state -eq 'CHANGES_REQUESTED' }).Count -gt 0) { 'CHANGES_REQUESTED' } elseif ($approvals -gt 0) { 'APPROVED' } else { '' }
+
+    $threadQuery = 'query($owner:String!,$repo:String!,$number:Int!,$cursor:String){repository(owner:$owner,name:$repo){pullRequest(number:$number){reviewDecision reviewThreads(first:100,after:$cursor){nodes{id isResolved isOutdated comments(first:20){nodes{databaseId body author{login} path line url}}} pageInfo{hasNextPage endCursor}}}}}'
+    $threads = [System.Collections.Generic.List[object]]::new()
+    $cursor = $null
+    $graphqlReviewDecision = ''
+    do {
+        $graphqlArguments = @('api', 'graphql', '-f', "query=$threadQuery", '-F', "owner=$RepositoryOwner", '-F', "repo=$RepositoryName", '-F', "number=$PullRequestNumber", '-F', $(if ($null -eq $cursor) { 'cursor=null' } else { "cursor=$cursor" }))
+        $threadPage = & $getJson $graphqlArguments
+        $graphqlReviewDecision = [string]$threadPage.data.repository.pullRequest.reviewDecision
+        foreach ($thread in @($threadPage.data.repository.pullRequest.reviewThreads.nodes)) { $threads.Add($thread) }
+        $hasNextPage = [bool]$threadPage.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage
+        $cursor = [string]$threadPage.data.repository.pullRequest.reviewThreads.pageInfo.endCursor
+    } while ($hasNextPage)
+    if (-not [string]::IsNullOrWhiteSpace($graphqlReviewDecision)) { $reviewDecision = $graphqlReviewDecision }
+
+    $pullAtEnd = & $getJson @('api', $pullPath)
+    [pscustomobject][ordered]@{
+        DataComplete = $true
+        HeadAtStart = $headAtStart
+        HeadAtEnd = [string]$pullAtEnd.head.sha
+        BaseAtStart = $baseAtStart
+        BaseAtEnd = [string]$pullAtEnd.base.sha
+        PullRequestState = [string]$pullAtEnd.state
+        IsDraft = [bool]$pullAtEnd.draft
+        MergeableState = [string]$pullAtEnd.mergeable_state
+        ReviewDecision = $reviewDecision
+        Checks = @($checks)
+        ReviewThreads = @($threads | ForEach-Object { [pscustomobject]@{ IsResolved = [bool]$_.isResolved; IsOutdated = [bool]$_.isOutdated } })
+        Approvals = $approvals
+        IssueReferenceVerified = $false
+        DescriptionReviewed = $false
+        PollingCompleted = $false
+        PullRequestUrl = [string]$pullAtEnd.html_url
+    }
+}
+
+function Get-PrReadinessReport {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Snapshot)
+
+    $blockers = [System.Collections.Generic.List[string]]::new()
+    if (-not $Snapshot.DataComplete) { $blockers.Add('Required GitHub data is incomplete or inaccessible.') }
+    if ($Snapshot.HeadAtStart -ne $Snapshot.HeadAtEnd) { $blockers.Add('PR head changed during collection; snapshot is stale.') }
+    if ($Snapshot.BaseAtStart -ne $Snapshot.BaseAtEnd) { $blockers.Add('PR base changed during collection; snapshot is stale.') }
+    $state = if ($null -ne $Snapshot.PSObject.Properties['PullRequestState']) { [string]$Snapshot.PullRequestState } else { 'open' }
+    $draft = if ($null -ne $Snapshot.PSObject.Properties['IsDraft']) { [bool]$Snapshot.IsDraft } else { $false }
+    $mergeableState = if ($null -ne $Snapshot.PSObject.Properties['MergeableState']) { [string]$Snapshot.MergeableState } else { 'clean' }
+    if ($state -ne 'open') { $blockers.Add("Pull request is not open (state: $state).") }
+    if ($draft) { $blockers.Add('Pull request is still a draft.') }
+    if ($mergeableState -notin @('clean', 'blocked')) { $blockers.Add("Pull request cannot currently advance (mergeability: $mergeableState).") }
+    if ([string]$Snapshot.ReviewDecision -eq 'CHANGES_REQUESTED') { $blockers.Add('A reviewer currently requests changes.') }
+    foreach ($check in @($Snapshot.Checks | Where-Object { $_.Required -and $_.State -ne 'pass' })) { $blockers.Add("Required check '$($check.Name)' is $($check.State).") }
+    foreach ($thread in @($Snapshot.ReviewThreads | Where-Object { -not $_.IsResolved -or $_.IsOutdated })) { $blockers.Add('An unresolved or outdated review thread remains.') }
+    if ([int]$Snapshot.Approvals -lt 1) { $blockers.Add('Required current review approval evidence is missing.') }
+    if (-not $Snapshot.PollingCompleted) { $blockers.Add('Required post-push review polling evidence is incomplete.') }
+    $mechanicalReady = $blockers.Count -eq 0
+    $semanticReady = [bool]$Snapshot.IssueReferenceVerified -and [bool]$Snapshot.DescriptionReviewed
+    [pscustomobject][ordered]@{
+        SchemaVersion = '1.0'
+        Status = if ($mechanicalReady -and $semanticReady) { 'READY' } elseif ($mechanicalReady) { 'MECHANICALLY_READY_SEMANTIC_REVIEW_REQUIRED' } else { 'INCOMPLETE' }
+        MechanicalGateReady = $mechanicalReady
+        SemanticReviewRequired = -not $semanticReady
+        Head = $Snapshot.HeadAtEnd
+        Base = $Snapshot.BaseAtEnd
+        PullRequestUrl = $Snapshot.PullRequestUrl
+        Blockers = @($blockers)
+        Checks = @($Snapshot.Checks)
+        Approvals = [int]$Snapshot.Approvals
+        ReviewThreads = @($Snapshot.ReviewThreads)
+    }
+}
+
 function Invoke-SpringValidation {
     [CmdletBinding()]
     param(
@@ -2845,7 +3010,7 @@ function Invoke-SpringValidation {
     }
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Resolve-RepositoryExecutionPath, Get-RepositoryExecutionLeasePath, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease, Invoke-RepositoryProcess, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation
+Export-ModuleMember -Function Get-RepositoryRoot, Resolve-RepositoryExecutionPath, Get-RepositoryExecutionLeasePath, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease, Invoke-RepositoryProcess, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation, Get-PrReadinessGhJson, Get-PrReadinessExpectedCheckPatterns, Get-PrReadinessSnapshot, Get-PrReadinessReport
 
 
 
