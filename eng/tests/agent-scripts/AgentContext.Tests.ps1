@@ -65,6 +65,13 @@ applyTo: 'docs/Docusaurus/docs/adr/[0-9][0-9][0-9][0-9]-*.md'
 
 # ADR route
 '@
+        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/documentation-route.instructions.md') -Value @'
+---
+applyTo: 'docs/Docusaurus/docs/**/*.{md,mdx}'
+---
+
+# Documentation route
+'@
         Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/malformed.instructions.md') -Value @'
 applyTo: '**/*.cs'
 
@@ -146,6 +153,12 @@ applyTo: '**/*.cs'
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -WorkflowRole build
 
         $context.Selected.Path | Should -Contain '.github/instructions/build-route.instructions.md'
+    }
+
+    It 'routes documentation domains through nested documentation probes' {
+        $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ContentDomain docs
+
+        $context.Selected.Path | Should -Contain '.github/instructions/documentation-route.instructions.md'
     }
 
     It 'reports missing required context instead of returning an empty pass' {
