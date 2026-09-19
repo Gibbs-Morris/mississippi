@@ -11,6 +11,8 @@ Describe 'Issue-driven goal workflow' {
         $powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
         $scriptPath = Join-Path $repoRoot 'eng/src/agent-scripts/invoke-github-issue-goal.ps1'
         $checkpoint = Join-Path $TestDrive 'goals/741/checkpoint.json'
+        $headCommit = (& git -C $repoRoot rev-parse HEAD).Trim()
+        $baseCommit = (& git -C $repoRoot rev-parse HEAD~1).Trim()
         $validIssueBody = Get-Content -LiteralPath (Join-Path $repoRoot 'eng/tests/agent-scripts/fixtures/issue-spec-bug-fix.md') -Raw
         function New-IssueJson {
             param([Parameter(Mandatory)][string]$Body)
@@ -26,8 +28,8 @@ Describe 'Issue-driven goal workflow' {
             param(
                 [ValidateSet('start', 'resume')][string]$Action = 'start',
                 [string]$Body = $validIssueBody,
-                [string]$Head = 'head-fixture',
-                [string]$Base = 'base-fixture',
+                [string]$Head = $headCommit,
+                [string]$Base = $baseCommit,
                 [string]$Operation = '',
                 [switch]$EvidenceValidated
             )
@@ -56,6 +58,8 @@ Describe 'Issue-driven goal workflow' {
         $saved = Get-Content -LiteralPath $checkpoint -Raw | ConvertFrom-Json
         $saved.Contract.IssueTextIsData | Should -BeTrue
         $saved.Contract.CommandsExecutedFromIssueText | Should -BeFalse
+        @($saved.Contract.AcceptanceCriteria).Count | Should -Be 3
+        $saved.Contract.DependenciesAndReadiness | Should -Not -BeNullOrEmpty
         $saved.MergeBoundary | Should -Be 'PR_READY_NOT_MERGED'
     }
 
@@ -80,7 +84,7 @@ Describe 'Issue-driven goal workflow' {
 
     It 'invalidates evidence when the source revision changes' {
         $null = Invoke-Goal
-        $outcome = Invoke-Goal -Action resume -Head 'new-head-fixture'
+        $outcome = Invoke-Goal -Action resume -Head 'HEAD~1'
 
         $outcome.ExitCode | Should -Be 0
         $outcome.Result.Status | Should -Be 'evidence-stale'
@@ -89,8 +93,8 @@ Describe 'Issue-driven goal workflow' {
 
     It 'promotes a changed baseline only after explicit revalidation' {
         $null = Invoke-Goal
-        $null = Invoke-Goal -Action resume -Head 'new-head-fixture'
-        $outcome = Invoke-Goal -Action resume -Head 'new-head-fixture' -EvidenceValidated
+        $null = Invoke-Goal -Action resume -Head 'HEAD~1'
+        $outcome = Invoke-Goal -Action resume -Head 'HEAD~1' -EvidenceValidated
 
         $outcome.Result.EvidenceFresh | Should -BeTrue
     }
@@ -103,6 +107,14 @@ Describe 'Issue-driven goal workflow' {
         $outcome.ExitCode | Should -Be 2
         $outcome.Result.Status | Should -Be 'operation-running'
         $outcome.Result.NextAction | Should -Match 'job-123'
+    }
+
+    It 'rejects a running operation without an authoritative handle' {
+        $outcome = Invoke-Goal -Operation '{"Status":"running","Name":"validation"}'
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Status | Should -Be 'ERROR'
+        $outcome.Result.Error | Should -Match 'nonempty authoritative handle'
     }
 
     It 'returns a structured JSON error for a missing resume checkpoint' {
