@@ -233,6 +233,11 @@ Refs #741
         Assert-NoReferenceBody -Body $body
     }
 
+    It 'ignores escaped shortcut labels' {
+        $body = '\[work]' + [Environment]::NewLine + '[work]: https://github.com/Gibbs-Morris/mississippi/issues/741'
+        Assert-NoReferenceBody -Body $body
+    }
+
     It 'ignores issue URLs used as Markdown image destinations' {
         Assert-NoReferenceBody -Body '![tracking](https://github.com/Gibbs-Morris/mississippi/issues/741)'
     }

@@ -218,12 +218,18 @@ function Get-PrIssueReferences { # NOSONAR - bounded reference extraction intent
     }
     $usedLabels = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
     foreach ($used in [regex]::Matches($Content, '\[[^\]\r\n]+\]\[(?<Label>[^\]\r\n]*)\]')) {
+        $backslashCount = 0
+        for ($escapeIndex = $used.Index - 1; $escapeIndex -ge 0 -and $Content[$escapeIndex] -eq '\'; $escapeIndex--) { $backslashCount++ }
+        if (($backslashCount % 2) -eq 1) { continue }
         $label = [regex]::Replace($used.Groups['Label'].Value.Trim(), '\s+', ' ')
         if ([string]::IsNullOrWhiteSpace($label)) { $label = [regex]::Match($used.Value, '^\[(?<Text>[^\]\r\n]+)\]\[\]$').Groups['Text'].Value.Trim(); $label = [regex]::Replace($label, '\s+', ' ') }
         if ($label) { $null = $usedLabels.Add($label) }
     }
     foreach ($used in [regex]::Matches($Content, '(?<!\!)\[(?<Label>[^\]\r\n]+)\](?![ \t]*(?:\(|\[|:))')) {
         $prefix = $Content.Substring(0, $used.Index)
+        $backslashCount = 0
+        for ($escapeIndex = $used.Index - 1; $escapeIndex -ge 0 -and $Content[$escapeIndex] -eq '\'; $escapeIndex--) { $backslashCount++ }
+        if (($backslashCount % 2) -eq 1) { continue }
         if ($prefix -match '(?m)(?:^|\r?\n)[ \t]*[-*+][ \t]+$' -and $used.Groups['Label'].Value -match '^[ xX]$') { continue }
         $null = $usedLabels.Add([regex]::Replace($used.Groups['Label'].Value.Trim(), '\s+', ' '))
     }
