@@ -242,6 +242,118 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
     }
 
+    It 'caps total repeated source references before explanation processing' {
+        $references = ((1..513 | ForEach-Object { '- `README.md` — repeated reference.' }) -join [Environment]::NewLine)
+        $content = $validBug -replace '- `README.md` — public validation and test entry points\.', $references
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain 'Relevant source and contracts may contain at most 512 total path references.'
+    }
+
+    It 'does not enter a fence for a backtick in its info string' {
+        $invalidFenceInfo = '```text`' + [Environment]::NewLine + $validBug
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $invalidFenceInfo)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'resumes after token-terminated raw HTML declarations' {
+        $content = $validBug -replace 'The input parser accepts an empty identifier', ('<?target?>' + [Environment]::NewLine + 'The input parser accepts an empty identifier')
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'resumes after multiline token-terminated raw HTML declarations' {
+        $tokens = '<?target' + [Environment]::NewLine + '?>' + [Environment]::NewLine + '<![CDATA[' + [Environment]::NewLine + ']]>' + [Environment]::NewLine + '<!DECL' + [Environment]::NewLine + '>' + [Environment]::NewLine
+        $content = $validBug -replace 'The input parser accepts an empty identifier', ($tokens + 'The input parser accepts an empty identifier')
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'does not classify lowercase declaration text as a raw HTML declaration' {
+        $content = '<!doctype' + [Environment]::NewLine + [Environment]::NewLine + $validBug
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'distinguishes odd and even backslash runs before code delimiters' {
+        $backtick = [string][char]96
+        $odd = '\' + $backtick + '<!--' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '-->' + $backtick
+        $even = '\\' + $backtick + '<!--' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '-->' + $backtick
+        $oddOutcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $odd)
+        $evenOutcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $even)
+
+        $oddOutcome.ExitCode | Should -Be 1
+        $evenOutcome.ExitCode | Should -Be 0
+        $evenOutcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'does not let inline code spans cross raw HTML blocks' {
+        $backtick = [char]96
+        $content = [string]$backtick + [Environment]::NewLine + '<script>' + [Environment]::NewLine + 'ignored' + [Environment]::NewLine + '</script>' + [Environment]::NewLine + '<!--' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '-->' + [Environment]::NewLine + [string]$backtick
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
+    }
+
+    It 'ignores raw token-looking lines inside an HTML comment' {
+        $comment = '<!--' + [Environment]::NewLine + '<?target' + [Environment]::NewLine + '?>' + [Environment]::NewLine + '-->' + [Environment]::NewLine
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content ($comment + $validBug))
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'does not classify lowercase cdata text as a raw token' {
+        $content = '<![cdata[' + [Environment]::NewLine + [Environment]::NewLine + $validBug
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'does not classify tab-indented token text as raw HTML' {
+        $content = ([char]9).ToString() + '<?target' + [Environment]::NewLine + [Environment]::NewLine + $validBug
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'does not let fenced token examples mask visible contract headings' {
+        $fencedToken = '```html' + [Environment]::NewLine + '<?target' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '```' + [Environment]::NewLine
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content ($fencedToken + $validBug))
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'treats a raw HTML-only required section as empty' {
+        $content = $validBug -replace '(?ms)(?<=^## Problem\r?\n).*?(?=^## Observable outcome)', ('<script>' + [Environment]::NewLine + 'hidden' + [Environment]::NewLine + '</script>' + [Environment]::NewLine)
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Required section '## Problem' is empty."
+    }
+
+    It 'treats an empty fenced required section as empty' {
+        $emptyFence = '```text' + [Environment]::NewLine + '   ' + [Environment]::NewLine + '```' + [Environment]::NewLine
+        $content = $validBug -replace '(?ms)(?<=^## Problem\r?\n).*?(?=^## Observable outcome)', $emptyFence
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Required section '## Problem' is empty."
+    }
+
     It 'rejects a missing validation section' {
         $content = $validBug -replace '(?ms)^## Validation plan.*?(?=^## Risks and delivery boundary)', ''
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)

@@ -73,6 +73,25 @@ function Add-IssueSpecError {
     $null = $Errors.Add($Message)
 }
 
+function Get-MarkdownFenceOpening {
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Line)
+
+    $match = [regex]::Match($Line, '^[ \t]{0,3}(?<Fence>`{3,}|~{3,})')
+    if (-not $match.Success) { return $null }
+    $value = $match.Groups['Fence'].Value
+    if ($value[0] -eq [char]96 -and $Line.Substring($match.Index + $match.Length).Contains([char]96)) { return $null }
+    return [pscustomobject]@{ Character = $value.Substring(0, 1); Length = $value.Length }
+}
+
+function Test-MarkdownFenceClosing {
+    param(
+        [Parameter(Mandatory)][AllowEmptyString()][string]$Line,
+        [Parameter(Mandatory)][string]$Character,
+        [Parameter(Mandatory)][int]$Length
+    )
+    return $Line -match ('^[ \t]{0,3}' + [regex]::Escape($Character) + '{' + $Length + ',}[ \t]*$')
+}
+
 function Remove-MarkdownFencedBlocks {
     [CmdletBinding()]
     param(
@@ -83,28 +102,28 @@ function Remove-MarkdownFencedBlocks {
     $insideFence = $false
     $fenceCharacter = ''
     $fenceLength = 0
+    $fenceContentMarker = [char]0x1f
     $lines = [System.Collections.Generic.List[string]]::new()
     foreach ($line in ($Content -split '\r?\n')) {
-        if (-not $insideFence -and $line -match ('^[ \t]{0,3}(?<Fence>' + [regex]::Escape([char]96) + '{3,}|~{3,})')) {
+        $openingFence = if (-not $insideFence) { Get-MarkdownFenceOpening -Line $line } else { $null }
+        if ($null -ne $openingFence) {
             $insideFence = $true
-            $fenceCharacter = $Matches.Fence.Substring(0, 1)
-            $fenceLength = $Matches.Fence.Length
+            $fenceCharacter = $openingFence.Character
+            $fenceLength = $openingFence.Length
             $lines.Add('')
             continue
         }
-        if ($insideFence -and $line -match ('^[ \t]{0,3}' + [regex]::Escape($fenceCharacter) + '{' + $fenceLength + ',}[ \t]*$')) {
+        if ($insideFence -and (Test-MarkdownFenceClosing -Line $line -Character $fenceCharacter -Length $fenceLength)) {
             $lines.Add('')
             $insideFence = $false
             continue
         }
-        if ($insideFence -and $MaskContent) {
-            $lines.Add('')
-            continue
-        }
-        if ($insideFence -and $line -match '^\s*#{1,6}[ \t]+') {
-            # Keep rendered commands and prose, but remove structural-looking
-            # headings from fenced examples before section discovery.
-            $lines.Add('')
+        if ($insideFence) {
+            if ($MaskContent -or $line -match '^\s*#{1,6}[ \t]+') {
+                $lines.Add('')
+                continue
+            }
+            $lines.Add($fenceContentMarker + $line)
             continue
         }
         $lines.Add($line)
@@ -160,13 +179,31 @@ function Remove-MarkdownHtmlComments { # NOSONAR - bounded comment/code scanner 
     $builder = [System.Text.StringBuilder]::new()
     $index = 0
     while ($index -lt $Content.Length) {
-        if ($Content[$index] -eq '`' -and ($index -eq 0 -or $Content[$index - 1] -ne '\')) {
+        if ($Content[$index] -eq [char]0x1e) {
+            $null = $builder.Append($Content[$index])
+            $index++
+            continue
+        }
+        $isUnescapedDelimiter = $false
+        if ($Content[$index] -eq '`') {
+            $precedingBackslashes = 0
+            $backslashIndex = $index - 1
+            while ($backslashIndex -ge 0 -and $Content[$backslashIndex] -eq '\') {
+                $precedingBackslashes++
+                $backslashIndex--
+            }
+            $isUnescapedDelimiter = $precedingBackslashes % 2 -eq 0
+        }
+        if ($isUnescapedDelimiter) {
             $start = $index
             while ($index -lt $Content.Length -and $Content[$index] -eq '`') { $index++ }
             $delimiterLength = $index - $start
             $cursor = $index
             $closing = -1
             while ($cursor -lt $Content.Length) {
+                if ($Content[$cursor] -eq [char]0x1e) {
+                    break
+                }
                 if ($Content[$cursor] -ne [char]96) {
                     $cursor++
                     continue
@@ -203,27 +240,47 @@ function Remove-MarkdownHtmlBlocks { # NOSONAR - bounded raw-HTML block scanner 
 
     $blockTagNames = 'address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|h1|h2|h3|h4|h5|h6|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|ol|p|pre|script|search|section|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul'
     $lines = [System.Collections.Generic.List[string]]::new()
+    $htmlBoundary = [char]0x1e
     $rawTag = ''
     $insideHtmlBlock = $false
+    $tokenTerminator = ''
+    $insideHtmlComment = $false
     foreach ($line in ($Content -split '\r?\n')) {
         if ($rawTag) {
-            $lines.Add('')
+            $lines.Add($htmlBoundary)
             if ($line -match ('(?i)</' + [regex]::Escape($rawTag) + '[ \t>]' )) {
                 $rawTag = ''
             }
             continue
         }
+        if ($tokenTerminator) {
+            $lines.Add($htmlBoundary)
+            if ($line -match $tokenTerminator) {
+                $tokenTerminator = ''
+            }
+            continue
+        }
         if ($insideHtmlBlock) {
-            $lines.Add('')
+            $lines.Add($htmlBoundary)
             if ([string]::IsNullOrWhiteSpace($line)) {
                 $insideHtmlBlock = $false
             }
             continue
         }
+        if ($insideHtmlComment) {
+            $lines.Add($htmlBoundary)
+            if ($line.Contains('-->')) { $insideHtmlComment = $false }
+            continue
+        }
+        if ($line -match '^[ \t]{0,3}<!--') {
+            $lines.Add($htmlBoundary)
+            if (-not $line.Contains('-->')) { $insideHtmlComment = $true }
+            continue
+        }
 
         $rawTagMatch = [regex]::Match($line, '(?i)^[ \t]{0,3}<(?<Tag>pre|script|style|textarea)\b')
         if ($rawTagMatch.Success) {
-            $lines.Add('')
+            $lines.Add($htmlBoundary)
             $tag = $rawTagMatch.Groups['Tag'].Value
             if ($line -notmatch ('(?i)</' + [regex]::Escape($tag) + '[ \t>]' )) {
                 $rawTag = $tag
@@ -231,17 +288,30 @@ function Remove-MarkdownHtmlBlocks { # NOSONAR - bounded raw-HTML block scanner 
             continue
         }
         if ($line -match ('(?i)^[ \t]{0,3}<(?:(?:' + $blockTagNames + ')\b)')) {
-            $lines.Add('')
+            $lines.Add($htmlBoundary)
             $insideHtmlBlock = $true
             continue
         }
-        if ($line -match '(?i)^[ \t]{0,3}<\?(?:[^\r\n]*)$|^[ \t]{0,3}<!\[CDATA\[|^[ \t]{0,3}<![A-Z]') {
-            $lines.Add('')
-            $insideHtmlBlock = $true
+        $processingInstructionMatch = [regex]::Match($line, '(?i)^ {0,3}<\?')
+        if ($processingInstructionMatch.Success) {
+            $lines.Add($htmlBoundary)
+            if ($line -notmatch '\?>') { $tokenTerminator = '\?>' }
+            continue
+        }
+        $cdataMatch = [regex]::Match($line, '^ {0,3}<!\[CDATA\[')
+        if ($cdataMatch.Success) {
+            $lines.Add($htmlBoundary)
+            if ($line -notmatch '\]\]>') { $tokenTerminator = '\]\]>' }
+            continue
+        }
+        $declarationMatch = [regex]::Match($line, '^ {0,3}<![A-Z]')
+        if ($declarationMatch.Success) {
+            $lines.Add($htmlBoundary)
+            if ($line -notmatch '>') { $tokenTerminator = '>' }
             continue
         }
         if ($line -match '(?i)^[ \t]{0,3}(?:</?[A-Za-z][^>\r\n]*>|<[A-Za-z][^>\r\n]*/>)\s*$') {
-            $lines.Add('')
+            $lines.Add($htmlBoundary)
             $insideHtmlBlock = $true
             continue
         }
@@ -323,6 +393,8 @@ function Test-IssueSectionContent {
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
 
     $withoutHeadings = [regex]::Replace($Content, '(?m)^[ \t]{0,3}#{1,6}[ \t]*[^\r\n]*$', '')
+    $withoutHeadings = $withoutHeadings.Replace([string][char]0x1e, '')
+    $withoutHeadings = $withoutHeadings.Replace([string][char]0x1f, '')
     return -not [string]::IsNullOrWhiteSpace($withoutHeadings)
 }
 
@@ -337,8 +409,8 @@ function Get-IssueSpecResult { # NOSONAR - this validator intentionally aggregat
     $warnings = [System.Collections.Generic.List[string]]::new()
     $content = Get-Content -LiteralPath $IssuePath -Raw -ErrorAction Stop
     $trackedPaths = Get-RepositoryTrackedPaths -Root $RepositoryRoot
-    $structuralContent = Remove-MarkdownHtmlBlocks -Content (Remove-MarkdownHtmlComments -Content (Remove-MarkdownFencedBlocks -Content $content))
-    $nonRenderedContent = Remove-MarkdownHtmlBlocks -Content (Remove-MarkdownHtmlComments -Content (Remove-MarkdownFencedBlocks -Content $content -MaskContent))
+    $structuralContent = Remove-MarkdownHtmlComments -Content (Remove-MarkdownHtmlBlocks -Content (Remove-MarkdownFencedBlocks -Content $content))
+    $nonRenderedContent = Remove-MarkdownHtmlComments -Content (Remove-MarkdownHtmlBlocks -Content (Remove-MarkdownFencedBlocks -Content $content -MaskContent))
     $nonRenderedContent = Remove-MarkdownIndentedCode -Content $nonRenderedContent
     $sections = Get-MarkdownSections -Content $structuralContent
     $nonRenderedSections = Get-MarkdownSections -Content $nonRenderedContent
@@ -432,10 +504,14 @@ function Get-IssueSpecResult { # NOSONAR - this validator intentionally aggregat
         if ($sourcePaths.Count -eq 0) {
             Add-IssueSpecError -Errors $errors -Message 'Relevant source and contracts must list backtick-wrapped repository-relative paths.'
         }
+        $sourcePathMatchLimit = 512
+        if ($sourcePaths.Count -gt $sourcePathMatchLimit) {
+            Add-IssueSpecError -Errors $errors -Message "Relevant source and contracts may contain at most $sourcePathMatchLimit total path references."
+        }
         $validatedSourcePaths = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
         $sourcePathLimit = 256
         $sourcePathLimitExceeded = $false
-        foreach ($pathMatch in $sourcePaths) {
+        foreach ($pathMatch in @($sourcePaths | Select-Object -First $sourcePathMatchLimit)) {
             $candidate = $pathMatch.Groups['Path'].Value.Trim()
             if ($validatedSourcePaths.Add($candidate)) {
                 if ($validatedSourcePaths.Count -gt $sourcePathLimit) {
