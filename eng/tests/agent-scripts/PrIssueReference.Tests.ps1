@@ -74,8 +74,30 @@ Describe 'PR issue reference validator' {
         $outcome.Result.Valid | Should -BeTrue
     }
 
+    It 'accepts collapsed reference-style issue links' {
+        $body = '[tracking issue][]' + [Environment]::NewLine + [Environment]::NewLine + '[tracking issue]: https://github.com/Gibbs-Morris/mississippi/issues/741'
+        $outcome = Invoke-ReferenceValidator -Body $body
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'ignores balanced Markdown link destinations while scanning shorthand' {
         $outcome = Invoke-ReferenceValidator -Body '[tracking](https://example.test/a(b)#741)'
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
+    It 'ignores escaped parentheses inside Markdown link destinations' {
+        $outcome = Invoke-ReferenceValidator -Body '[tracking](https://example.test/a\)#741)'
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
+    It 'ignores issue URLs nested inside an external URL' {
+        $outcome = Invoke-ReferenceValidator -Body 'Context: https://example.test/?next=https://github.com/Gibbs-Morris/mississippi/issues/741'
 
         $outcome.ExitCode | Should -Not -Be 0
         $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
@@ -86,6 +108,20 @@ Describe 'PR issue reference validator' {
 
         $outcome.ExitCode | Should -Not -Be 0
         $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
+    It 'ignores nested quoted indented code blocks' {
+        $outcome = Invoke-ReferenceValidator -Body '> >     Refs #741'
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
+    It 'accepts an issue URL in an ordinary Markdown link' {
+        $outcome = Invoke-ReferenceValidator -Body '[tracking issue](https://github.com/Gibbs-Morris/mississippi/issues/741)'
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
     }
 
     It 'preserves a reference after inline comment opener code' {
@@ -244,6 +280,13 @@ Refs #741
 
         $outcome.ExitCode | Should -Not -Be 0
         $outcome.Output | Should -Match 'could not resolve any constituent pull requests'
+    }
+
+    It 'publishes PR-isolated status contexts' {
+        $workflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github/workflows/pr-issue-reference.yml') -Raw
+
+        $workflow | Should -Match 'PR Issue Reference / PR #'
+        $workflow | Should -Match 'PR_NUMBER'
     }
 
     It 'fails the merge group when one constituent PR has no open issue' {

@@ -35,6 +35,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
           REPOSITORY_NAME: ${{ github.event.repository.name }}
         run: |
@@ -42,6 +43,9 @@ jobs:
           $mergeValidator = './eng/src/agent-scripts/validate-merge-group-pr-issue-reference.ps1'
           $repository = $env:GITHUB_REPOSITORY
           $targetSha = if ($env:GITHUB_EVENT_NAME -eq 'pull_request_target') { $env:PR_HEAD_SHA } else { $env:GITHUB_SHA }
+          # A head SHA can be shared by multiple PRs. Include the PR identity
+          # in the status context so one description cannot satisfy another.
+          $statusContext = if ($env:GITHUB_EVENT_NAME -eq 'pull_request_target') { "PR Issue Reference / PR #$($env:PR_NUMBER)" } else { 'PR Issue Reference / merge-group' }
           $state = 'failure'
           $description = 'Pull request issue-reference validation failed.'
           try {
@@ -66,7 +70,7 @@ jobs:
             throw
           }
           finally {
-            $statusOutput = gh api --method POST "repos/$repository/statuses/$targetSha" -f state=$state -f context='PR Issue Reference' -f description=$description -f target_url="$env:GITHUB_SERVER_URL/$repository/actions/runs/$env:GITHUB_RUN_ID" 2>&1 | Out-String
+            $statusOutput = gh api --method POST "repos/$repository/statuses/$targetSha" -f state=$state -f context="$statusContext" -f description=$description -f target_url="$env:GITHUB_SERVER_URL/$repository/actions/runs/$env:GITHUB_RUN_ID" 2>&1 | Out-String
             if ($LASTEXITCODE -ne 0) {
               Write-Error "Unable to publish PR Issue Reference status: $($statusOutput.Trim())"
               if ($state -eq 'success') { throw 'Required PR Issue Reference status could not be published.' }
