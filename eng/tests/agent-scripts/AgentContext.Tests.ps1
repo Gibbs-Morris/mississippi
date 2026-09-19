@@ -276,6 +276,31 @@ applyTo: '**/[abc.md'
         $context.PSObject.Properties.Name | Should -Not -Contain 'Latency'
     }
 
+    It 'accepts SHA-256 Git revisions' {
+        if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+            Set-ItResult -Skipped -Because 'Git is required for revision evidence.'
+            return
+        }
+
+        $gitRoot = Join-Path $TestDrive 'sha256-repository'
+        New-Item -ItemType Directory -Path $gitRoot -Force | Out-Null
+        & git init --quiet --object-format=sha256 $gitRoot 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Set-ItResult -Skipped -Because 'The installed Git does not support SHA-256 repositories.'
+            return
+        }
+
+        & git -C $gitRoot config user.email 'agent-context@example.invalid'
+        & git -C $gitRoot config user.name 'Agent Context Test'
+        Set-Content -LiteralPath (Join-Path $gitRoot 'README.md') -Value '# SHA-256 fixture'
+        & git -C $gitRoot add -- README.md
+        & git -C $gitRoot commit --quiet -m 'Create SHA-256 fixture'
+
+        $context = Get-AgentContext -RepositoryRoot $gitRoot
+
+        $context.SourceRevision | Should -Match '^[0-9a-f]{64}$'
+    }
+
     It 'produces a concise text index and JSON wrapper output' {
         $text = & $powerShellPath -NoProfile -File $scriptPath -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs' -OutputFormat Text 2>&1 | Out-String
         $textExit = $LASTEXITCODE

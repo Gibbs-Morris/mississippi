@@ -232,7 +232,7 @@ function Get-ContextSourceRevision {
         $revisionOutput = @(& git -c "safe.directory=$gitRoot" -C $RepositoryRoot rev-parse HEAD 2>$null)
         $gitExitCode = $LASTEXITCODE
         $revision = (($revisionOutput | Select-Object -First 1) -as [string]).Trim()
-        if ($gitExitCode -eq 0 -and $revision -match '^[0-9a-fA-F]{7,40}$') { return $revision }
+        if ($gitExitCode -eq 0 -and $revision -match '^[0-9a-fA-F]{7,64}$') { return $revision }
     }
     catch {
         # An unversioned or git-inaccessible fixture remains explicit as unknown.
