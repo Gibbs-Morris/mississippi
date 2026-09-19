@@ -130,12 +130,20 @@ Describe 'Deterministic validation plan' {
     }
 
     It 'applies supported risk hints to check selection' {
-        $outcome = Invoke-Plan -Paths @('README.txt') -RiskHints @('browser', 'infrastructure')
+        $outcome = Invoke-Plan -Paths @('samples/Spring/Spring.Client/Pages/Index.razor') -RiskHints @('browser', 'infrastructure')
 
         $outcome.ExitCode | Should -Be 0
         $outcome.Result.SelectedChecks.Id | Should -Contain 'spring-doctor'
         $outcome.Result.SelectedChecks.Id | Should -Contain 'spring-smoke'
-        @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'spring-doctor').Reasons | Should -Match "Risk hint 'browser'"
+        ((@($outcome.Result.SelectedChecks | Where-Object Id -EQ 'spring-doctor')[0].Reasons) -join "`n") | Should -Match "Risk hint 'browser'"
+    }
+
+    It 'does not map a generic browser risk hint to unrelated Spring' {
+        $outcome = Invoke-Plan -Paths @('src/Reservoir/State.cs') -RiskHints @('browser')
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.SelectedChecks.Id | Should -Not -Contain 'spring-smoke'
+        $outcome.Result.Unresolved | Should -Match 'requires an application-specific browser context'
     }
 
     It 'fails closed for unsupported risk hints' {

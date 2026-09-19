@@ -35,7 +35,11 @@ function Add-PlanCheck {
         [Parameter(Mandatory)][AllowEmptyCollection()][string[]]$MarkdownPaths
     )
 
-    if (@($Selected | Where-Object Id -EQ $Check.id).Count -gt 0) { return }
+    $existing = @($Selected | Where-Object Id -EQ $Check.id)
+    if ($existing.Count -gt 0) {
+        if (@($existing[0].Reasons) -notcontains $Reason) { $existing[0].Reasons = @($existing[0].Reasons) + $Reason }
+        return
+    }
     $arguments = @($Check.arguments | ForEach-Object { if ($_ -eq '{{CHANGED_MARKDOWN_PATHS}}') { $MarkdownPaths } else { $_ } })
     $Selected.Add([pscustomobject][ordered]@{
         Id = $Check.id
@@ -117,6 +121,22 @@ try {
         $unresolved.Add("No application-specific browser validation gate is configured for non-Spring browser paths: $($nonSpringBrowserPaths -join ', ').")
     }
     foreach ($riskHint in $normalizedRiskHints) {
+        if ($riskHint -eq 'browser') {
+            if ($isSpringPath) {
+                foreach ($checkId in @('spring-doctor', 'spring-smoke')) {
+                    $riskCheck = @($catalog.checks | Where-Object { $_.id -eq $checkId } | Select-Object -First 1)
+                    Add-PlanCheck -Selected $selected -Check $riskCheck[0] -Reason "Risk hint '$riskHint' selects this check for Spring paths." -MarkdownPaths @($markdownCheckPaths)
+                }
+            }
+            elseif ($isDocusaurus) {
+                $riskCheck = @($catalog.checks | Where-Object { $_.id -eq 'docusaurus-final' } | Select-Object -First 1)
+                Add-PlanCheck -Selected $selected -Check $riskCheck[0] -Reason "Risk hint '$riskHint' selects the Docusaurus browser gate." -MarkdownPaths @($markdownCheckPaths)
+            }
+            else {
+                $unresolved.Add("Browser risk hint requires an application-specific browser context; no safe gate was selected for the supplied paths.")
+            }
+            continue
+        }
         if ($riskChecks.Keys -contains $riskHint) {
             foreach ($checkId in ($riskChecks[$riskHint] -split ',')) {
                 $riskCheck = @($catalog.checks | Where-Object { $_.id -eq [string]$checkId } | Select-Object -First 1)
