@@ -180,7 +180,9 @@ try {
         [string]$contractResult.DependenciesAndReadiness
     }
     else {
-        $dependencyMatches = @([regex]::Matches($currentBody, '(?ms)^#{2,3}[ \t]+Dependencies and readiness[ \t]*\r?\n(?<Body>.*?)(?=^#{2,3}[ \t]+|\z)'))
+        $structuredBody = [regex]::Replace($currentBody, '(?ms)' + [char]96 + '{3}.*?' + [char]96 + '{3}', '')
+        $structuredBody = [regex]::Replace($structuredBody, '(?s)<!--.*?-->', '')
+        $dependencyMatches = @([regex]::Matches($structuredBody, '(?ms)^#{2,3}[ \t]+Dependencies and readiness[ \t]*\r?\n(?<Body>.*?)(?=^#{2,3}[ \t]+|\z)'))
         if ($dependencyMatches.Count -gt 0) { $dependencyMatches[-1].Groups['Body'].Value.Trim() } else { '' }
     }
     $validatedDigest = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['ValidatedIssueBodyDigest']) { [string]$previous.ValidatedIssueBodyDigest } else { '' }
