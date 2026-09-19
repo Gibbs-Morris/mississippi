@@ -921,6 +921,21 @@ function Invoke-MississippiSolutionMutationTests {
     Write-Host 'Test quality validated | Mutation score meets project standards'
 }
 
+function Get-ValidationPipelineTestCount {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$RepoRoot)
+    $count = 0
+    $resultsRoot = Join-Path $RepoRoot '.scratchpad/coverage-test-results'
+    foreach ($trx in @(Get-ChildItem -LiteralPath $resultsRoot -Recurse -Filter '*.trx' -File -ErrorAction SilentlyContinue)) {
+        try {
+            [xml]$xml = Get-Content -LiteralPath $trx.FullName -Raw
+            $count += [int]$xml.TestRun.ResultSummary.Counters.executed
+        }
+        catch { }
+    }
+    return $count
+}
+
 function Invoke-SolutionsPipeline {
     [CmdletBinding()]
     param(
@@ -934,6 +949,7 @@ function Invoke-SolutionsPipeline {
     $coverageScript = Join-Path $automationScriptsRoot 'summarize-coverage-gaps.ps1'
     $mutationSummaryScript = Join-Path $automationScriptsRoot 'summarize-mutation-survivors.ps1'
     $evidenceRun = New-ValidationEvidenceRun -RepositoryRoot $RepoRoot -Scope 'full-solutions-pipeline' -Arguments @('Configuration', $Configuration, 'SkipCleanup', [string]$SkipCleanup, 'IncludeMutation', [string]$IncludeMutation)
+    $testExecutionReached = $false
 
     try {
     Write-AutomationBanner -Message '=== STARTING COMPLETE BUILD AND TEST PIPELINE ===' -ForegroundColor ([ConsoleColor]::Magenta) -InsertBlankLine
@@ -954,6 +970,7 @@ function Invoke-SolutionsPipeline {
     if (-not $SkipCleanup) {
         Invoke-AutomationStep -Name 'Cleanup Mississippi Code Style' -StepNumber ($step++) -Action { Invoke-MississippiSolutionCleanup -RepoRoot $RepoRoot } -SilentSuccess
     }
+    $testExecutionReached = $true
     Invoke-AutomationStep -Name 'Run Mississippi Unit Tests' -StepNumber ($step++) -Action { Invoke-MississippiSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
     Invoke-AutomationStep -Name 'Summarize Coverage Gaps' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $coverageScript, '-EmitTasks') | Out-Host }
     if ($IncludeMutation) {
@@ -962,6 +979,8 @@ function Invoke-SolutionsPipeline {
 
     Write-AutomationBanner -Message '=== SAMPLE SOLUTION PIPELINE ===' -ForegroundColor ([ConsoleColor]::Cyan)
     Invoke-AutomationStep -Name 'Build Sample Solution' -StepNumber ($step++) -Action { Invoke-SampleSolutionBuild -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
+    $testExecutionReached = $true
+    Invoke-AutomationStep -Name 'Run Sample Unit Tests' -StepNumber ($step++) -Action { Invoke-SampleSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
     if (-not $SkipCleanup) {
         Invoke-AutomationStep -Name 'Cleanup Sample Code Style' -StepNumber ($step++) -Action { Invoke-SampleSolutionCleanup -RepoRoot $RepoRoot } -SilentSuccess
     }
@@ -976,10 +995,11 @@ function Invoke-SolutionsPipeline {
     else {
         Write-Host 'Local build, test, coverage, cleanup and final-build checks completed. Deployment, browser and external CI checks are outside this command.'
     }
-    Complete-ValidationEvidenceRun -Run $evidenceRun -Status PASS -Phase 'complete' -Executed $true -TestCount 1 -ExitCode 0 | Out-Null
+    $pipelineArtifacts = @(Get-ChildItem -LiteralPath (Join-Path $RepoRoot '.scratchpad/coverage-test-results') -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in @('.trx', '.xml') } | Select-Object -ExpandProperty FullName)
+    Complete-ValidationEvidenceRun -Run $evidenceRun -Status PASS -Phase 'complete' -Executed $testExecutionReached -TestCount (Get-ValidationPipelineTestCount -RepoRoot $RepoRoot) -ExitCode 0 -ArtifactPath $pipelineArtifacts | Out-Null
     }
     catch {
-        Complete-ValidationEvidenceRun -Run $evidenceRun -Status FAIL -Phase 'pipeline' -Executed $true -TestCount 0 -ExitCode 1 -ErrorMessage $_.Exception.Message | Out-Null
+        Complete-ValidationEvidenceRun -Run $evidenceRun -Status FAIL -Phase 'pipeline' -Executed $testExecutionReached -TestCount (Get-ValidationPipelineTestCount -RepoRoot $RepoRoot) -ExitCode 1 -ErrorMessage $_.Exception.Message | Out-Null
         throw
     }
 }
@@ -1102,7 +1122,7 @@ function Invoke-SpringValidation {
         $summaryPath = Join-Path $runDirectory 'summary.json'
         $summary | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $summaryPath -Encoding utf8
         $evidenceStatus = if ($summary.status -eq 'PASS') { 'PASS' } elseif ($summary.status -eq 'READY') { 'READY' } else { 'FAIL' }
-        Complete-ValidationEvidenceRun -Run $evidenceRun -Status $evidenceStatus -Phase ([string]$summary.phase) -Executed ($evidenceStatus -eq 'PASS') -TestCount ([int]$summary.passed) -ExitCode $(if ($evidenceStatus -eq 'PASS' -or $evidenceStatus -eq 'READY') { 0 } else { 1 }) -ArtifactPath @($summaryPath) -ErrorMessage ([string]$summary.error) | Out-Null
+        Complete-ValidationEvidenceRun -Run $evidenceRun -Status $evidenceStatus -Phase ([string]$summary.phase) -Executed ($evidenceStatus -eq 'PASS') -TestCount ([int]$summary.passed) -ExitCode $(if ($evidenceStatus -eq 'PASS' -or $evidenceStatus -eq 'READY') { 0 } else { 1 }) -ArtifactPath @($summaryPath) -MirrorPath (Join-Path $runDirectory 'validation-evidence.json') -ErrorMessage ([string]$summary.error) | Out-Null
         Write-Output "RESULT: $($summary.status) | LEVEL: $TestLevel | SUITE: $Suite | PHASE: $($summary.phase) | PASSED: $($summary.passed)"
         Write-Output "SUMMARY: $summaryPath"
     }
