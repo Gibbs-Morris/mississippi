@@ -178,6 +178,11 @@ function Remove-MarkdownHtmlComments { # NOSONAR - bounded comment/code scanner 
     $builder = [System.Text.StringBuilder]::new()
     $index = 0
     while ($index -lt $Content.Length) {
+        if ($Content[$index] -eq [char]0x1e) {
+            $null = $builder.Append($Content[$index])
+            $index++
+            continue
+        }
         $isUnescapedDelimiter = $false
         if ($Content[$index] -eq '`') {
             $precedingBackslashes = 0
@@ -195,6 +200,9 @@ function Remove-MarkdownHtmlComments { # NOSONAR - bounded comment/code scanner 
             $cursor = $index
             $closing = -1
             while ($cursor -lt $Content.Length) {
+                if ($Content[$cursor] -eq [char]0x1e) {
+                    break
+                }
                 if ($Content[$cursor] -ne [char]96) {
                     $cursor++
                     continue
@@ -231,35 +239,47 @@ function Remove-MarkdownHtmlBlocks { # NOSONAR - bounded raw-HTML block scanner 
 
     $blockTagNames = 'address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|h1|h2|h3|h4|h5|h6|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|ol|p|pre|script|search|section|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul'
     $lines = [System.Collections.Generic.List[string]]::new()
+    $htmlBoundary = [char]0x1e
     $rawTag = ''
     $insideHtmlBlock = $false
     $tokenTerminator = ''
+    $insideHtmlComment = $false
     foreach ($line in ($Content -split '\r?\n')) {
         if ($rawTag) {
-            $lines.Add('')
+            $lines.Add($htmlBoundary)
             if ($line -match ('(?i)</' + [regex]::Escape($rawTag) + '[ \t>]' )) {
                 $rawTag = ''
             }
             continue
         }
         if ($tokenTerminator) {
-            $lines.Add('')
+            $lines.Add($htmlBoundary)
             if ($line -match $tokenTerminator) {
                 $tokenTerminator = ''
             }
             continue
         }
         if ($insideHtmlBlock) {
-            $lines.Add('')
+            $lines.Add($htmlBoundary)
             if ([string]::IsNullOrWhiteSpace($line)) {
                 $insideHtmlBlock = $false
             }
             continue
         }
+        if ($insideHtmlComment) {
+            $lines.Add($htmlBoundary)
+            if ($line.Contains('-->')) { $insideHtmlComment = $false }
+            continue
+        }
+        if ($line -match '^[ \t]{0,3}<!--') {
+            $lines.Add($htmlBoundary)
+            if (-not $line.Contains('-->')) { $insideHtmlComment = $true }
+            continue
+        }
 
         $rawTagMatch = [regex]::Match($line, '(?i)^[ \t]{0,3}<(?<Tag>pre|script|style|textarea)\b')
         if ($rawTagMatch.Success) {
-            $lines.Add('')
+            $lines.Add($htmlBoundary)
             $tag = $rawTagMatch.Groups['Tag'].Value
             if ($line -notmatch ('(?i)</' + [regex]::Escape($tag) + '[ \t>]' )) {
                 $rawTag = $tag
@@ -267,30 +287,30 @@ function Remove-MarkdownHtmlBlocks { # NOSONAR - bounded raw-HTML block scanner 
             continue
         }
         if ($line -match ('(?i)^[ \t]{0,3}<(?:(?:' + $blockTagNames + ')\b)')) {
-            $lines.Add('')
+            $lines.Add($htmlBoundary)
             $insideHtmlBlock = $true
             continue
         }
         $processingInstructionMatch = [regex]::Match($line, '(?i)^[ \t]{0,3}<\?')
         if ($processingInstructionMatch.Success) {
-            $lines.Add('')
+            $lines.Add($htmlBoundary)
             if ($line -notmatch '\?>') { $tokenTerminator = '\?>' }
             continue
         }
-        $cdataMatch = [regex]::Match($line, '(?i)^[ \t]{0,3}<!\[CDATA\[')
+        $cdataMatch = [regex]::Match($line, '^[ \t]{0,3}<!\[CDATA\[')
         if ($cdataMatch.Success) {
-            $lines.Add('')
+            $lines.Add($htmlBoundary)
             if ($line -notmatch '\]\]>') { $tokenTerminator = '\]\]>' }
             continue
         }
         $declarationMatch = [regex]::Match($line, '^[ \t]{0,3}<![A-Z]')
         if ($declarationMatch.Success) {
-            $lines.Add('')
+            $lines.Add($htmlBoundary)
             if ($line -notmatch '>') { $tokenTerminator = '>' }
             continue
         }
         if ($line -match '(?i)^[ \t]{0,3}(?:</?[A-Za-z][^>\r\n]*>|<[A-Za-z][^>\r\n]*/>)\s*$') {
-            $lines.Add('')
+            $lines.Add($htmlBoundary)
             $insideHtmlBlock = $true
             continue
         }

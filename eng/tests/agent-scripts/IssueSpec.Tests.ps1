@@ -284,6 +284,31 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Valid | Should -BeTrue
     }
 
+    It 'does not let inline code spans cross raw HTML blocks' {
+        $backtick = [char]96
+        $content = [string]$backtick + [Environment]::NewLine + '<script>' + [Environment]::NewLine + 'ignored' + [Environment]::NewLine + '</script>' + [Environment]::NewLine + '<!--' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '-->' + [Environment]::NewLine + [string]$backtick
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
+    }
+
+    It 'ignores raw token-looking lines inside an HTML comment' {
+        $comment = '<!--' + [Environment]::NewLine + '<?target' + [Environment]::NewLine + '?>' + [Environment]::NewLine + '-->' + [Environment]::NewLine
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content ($comment + $validBug))
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'does not classify lowercase cdata text as a raw token' {
+        $content = '<![cdata[' + [Environment]::NewLine + [Environment]::NewLine + $validBug
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'rejects a missing validation section' {
         $content = $validBug -replace '(?ms)^## Validation plan.*?(?=^## Risks and delivery boundary)', ''
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
