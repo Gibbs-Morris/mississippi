@@ -94,7 +94,7 @@ Common script entry points:
 
 - `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1 [-Configuration Debug|Release]` – build the Mississippi solution.
 - `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 [-Configuration Debug|Release]` – run L0/L1 tests with coverage for Mississippi projects.
-- `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` – execute Stryker.NET mutation testing.
+- `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1 -ReportOnly` – execute Stryker.NET mutation testing with advisory score warnings.
 - `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` – apply the repository’s ReSharper cleanup and analyzer inspections.
 
 ## Samples
@@ -168,12 +168,13 @@ The framework includes comprehensive testing:
 pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
 
 # Optional mutation testing (Stryker)
-pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
+# Complete the analysis while treating configured score thresholds as warnings
+pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1 -ReportOnly
 ```
 
 Test results and coverage reports are generated in the `.scratchpad/coverage-test-results` directory, and mutation runs write reports under `.scratchpad/mutation-test-results`.
 
-Mutation testing is being adopted gradually. There is no mandatory repository mutation-score threshold, and mutation results are not an ordinary completion criterion. Prioritize correct delivery and meaningful unit-test coverage, add straightforward assertion improvements, and report significant gaps for dedicated follow-up. Avoid significant time or token expenditure chasing survivors unless explicitly requested. See the [mutation-testing policy](.github/instructions/mutation-testing.instructions.md).
+Mutation testing is being adopted gradually. There is no mandatory repository mutation-score threshold, and mutation results are not an ordinary completion criterion. `-ReportOnly` completes the full analysis and reports configured score shortfalls as warnings while still failing for test, tooling, or incomplete-report errors. Prioritize correct delivery and meaningful unit-test coverage, add straightforward assertion improvements, and report significant gaps for dedicated follow-up. Avoid significant time or token expenditure chasing survivors unless explicitly requested. See the [mutation-testing policy](.github/instructions/mutation-testing.instructions.md).
 
 For a fast loop on a single test project, use the helper script:
 
