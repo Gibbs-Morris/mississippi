@@ -160,6 +160,18 @@ Describe 'Repository prerequisite doctor' {
         $probe.Error | Should -Match 'timed out after 1 seconds'
     }
 
+    It 'resolves PowerShell command shims through a compatible host' {
+        if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+            Set-ItResult -Skipped -Because 'npm is required to exercise the command-shim resolution path.'
+            return
+        }
+
+        $resolved = InModuleScope AgentDoctor { Resolve-DoctorCommand -FilePath 'npm' }
+
+        $resolved.FilePath | Should -Not -Match '\.ps1$'
+        $resolved.PrefixArguments | Should -Contain '-NoProfile'
+    }
+
     It 'does not mutate the checkout while probing' {
         $marker = Join-Path $fixtureRoot 'marker.txt'
         Set-Content -LiteralPath $marker -Value 'unchanged'
