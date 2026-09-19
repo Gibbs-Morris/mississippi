@@ -10,7 +10,9 @@ namespace MississippiSamples.ConnectFour.Domain.Aggregates.Match.Events;
 /// <summary>
 ///     Records creation of a match by its first player.
 /// </summary>
-[EventStorageName("CONNECTFOUR", "GAME", "MATCHCREATED")]
+
+// ReSharper disable once RedundantArgumentDefaultValue
+[EventStorageName("CONNECTFOUR", "GAME", "MATCHCREATED", MatchStorageVersions.V1)]
 [GenerateSerializer]
 [Alias("MississippiSamples.ConnectFour.Domain.Aggregates.Match.Events.MatchCreated")]
 internal sealed record MatchCreated

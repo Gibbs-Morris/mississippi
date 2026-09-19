@@ -14,7 +14,9 @@ namespace MississippiSamples.ConnectFour.Domain.Aggregates.Match;
 ///     Event-sourced state for one Connect Four match.
 /// </summary>
 [BrookName("CONNECTFOUR", "GAME", "MATCH")]
-[SnapshotStorageName("CONNECTFOUR", "GAME", "MATCHSTATE")]
+
+// ReSharper disable once RedundantArgumentDefaultValue
+[SnapshotStorageName("CONNECTFOUR", "GAME", "MATCHSTATE", MatchStorageVersions.V1)]
 [GenerateSerializer]
 [Alias("MississippiSamples.ConnectFour.Domain.Aggregates.Match.MatchAggregate")]
 internal sealed record MatchAggregate

@@ -10,7 +10,9 @@ namespace MississippiSamples.ConnectFour.Domain.Aggregates.Match.Events;
 /// <summary>
 ///     Records a player claiming the yellow seat.
 /// </summary>
-[EventStorageName("CONNECTFOUR", "GAME", "PLAYERJOINED")]
+
+// ReSharper disable once RedundantArgumentDefaultValue
+[EventStorageName("CONNECTFOUR", "GAME", "PLAYERJOINED", MatchStorageVersions.V1)]
 [GenerateSerializer]
 [Alias("MississippiSamples.ConnectFour.Domain.Aggregates.Match.Events.PlayerJoined")]
 internal sealed record PlayerJoined
