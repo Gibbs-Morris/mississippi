@@ -38,6 +38,7 @@ Describe 'Deterministic validation plan' {
         $markdown = @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'markdown-lint')[0]
         $markdown.Arguments | Should -Contain 'docs/Docusaurus/docs/guide.md'
         $markdown.Executable | Should -Be 'npx'
+        $markdown.Arguments | Should -Contain 'markdownlint-cli2@0.17.2'
     }
 
     It 'selects the Docusaurus gate for Docusaurus changes' {
