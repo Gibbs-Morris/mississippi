@@ -38,7 +38,7 @@ public abstract class ArchitectureTestBase
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "Best-effort assembly loading")]
+        Justification = "Aggregate every assembly-load failure and fail closed after discovery")]
     private static Assembly[] GetMississippiAssemblies()
     {
         string baseDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -46,6 +46,7 @@ public abstract class ArchitectureTestBase
         // Load all Mississippi.*.dll assemblies from the output directory
         string[] assemblyPaths = Directory.GetFiles(baseDir, "Mississippi.*.dll");
         List<Assembly> assemblies = new();
+        List<string> failures = new();
         foreach (string path in assemblyPaths)
         {
             if (path.Contains(".L0Tests.", StringComparison.Ordinal) ||
@@ -60,10 +61,21 @@ public abstract class ArchitectureTestBase
             {
                 assemblies.Add(Assembly.LoadFrom(path));
             }
-            catch
+            catch (Exception exception)
             {
-                // Skip assemblies that can't be loaded
+                failures.Add($"{Path.GetFileName(path)}: {exception.Message}");
             }
+        }
+
+        if (failures.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Architecture assembly discovery failed for {failures.Count} assembly(s):{Environment.NewLine}{string.Join(Environment.NewLine, failures)}");
+        }
+
+        if (assemblies.Count == 0)
+        {
+            throw new InvalidOperationException($"Architecture assembly discovery found no Mississippi assemblies in '{baseDir}'.");
         }
 
         return assemblies.ToArray();
