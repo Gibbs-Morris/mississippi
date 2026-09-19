@@ -71,6 +71,13 @@ function Remove-MarkdownFencedBlocks {
     return ($lines -join [Environment]::NewLine)
 }
 
+function Remove-MarkdownHtmlComments {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Content)
+
+    return [regex]::Replace($Content, '(?s)<!--.*?(?:-->|$)', '')
+}
+
 function Test-RepositoryRelativePath {
     [CmdletBinding()]
     param(
@@ -98,7 +105,7 @@ function Get-IssueSpecResult {
     $errors = [System.Collections.Generic.List[string]]::new()
     $warnings = [System.Collections.Generic.List[string]]::new()
     $content = Get-Content -LiteralPath $IssuePath -Raw -ErrorAction Stop
-    $structuralContent = Remove-MarkdownFencedBlocks -Content $content
+    $structuralContent = Remove-MarkdownHtmlComments -Content (Remove-MarkdownFencedBlocks -Content $content)
     $sections = Get-MarkdownSections -Content $structuralContent
 
     $versionMatch = [regex]::Match($structuralContent, '(?im)^\s*Contract version:\s*(?<Value>\d+\.\d+)\s*$')

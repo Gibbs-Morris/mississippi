@@ -115,6 +115,14 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
     }
 
+    It 'ignores contract content inside HTML comments' {
+        $commentedOnly = '<!--' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '-->'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $commentedOnly)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
+    }
+
     It 'rejects a missing validation section' {
         $content = $validBug -replace '(?ms)^## Validation plan.*?(?=^## Risks and delivery boundary)', ''
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
