@@ -71,6 +71,14 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Valid | Should -BeTrue
     }
 
+    It 'rejects mixed canonical heading levels' {
+        $mixed = $validBug -replace '(?m)^## Observable outcome', '### Observable outcome'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $mixed)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain 'Required sections must use one consistent Markdown heading level.'
+    }
+
     It 'accepts the submitted contract version field from the GitHub issue form' {
         $formBody = $validBug -replace '(?m)^Contract version:\s*1\.0\r?\n', "### Contract version`r`n`r`n1.0`r`n`r`n"
         $formBody = $formBody -replace '(?m)^## ', '### '
@@ -121,6 +129,14 @@ Describe 'Implementation-ready issue contract' {
 
         $outcome.ExitCode | Should -Be 1
         $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
+    }
+
+    It 'preserves inline HTML-comment tokens as code' {
+        $content = $validBug -replace 'Keep the existing exception type\.', 'Keep the existing exception type. The parser token is `<!--`.'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
     }
 
     It 'does not close a bare fence on its opening line' {
@@ -246,6 +262,22 @@ Describe 'Implementation-ready issue contract' {
 
         $outcome.ExitCode | Should -Be 1
         $outcome.Result.Errors | Should -Contain "Referenced repository-relative path does not exist: 'missing/not-found.cs'."
+    }
+
+    It 'requires an explanation for every referenced source path' {
+        $content = $validBug -replace '`README.md` — public validation and test entry points\.', '`README.md`'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Referenced repository-relative path must include an explanation: 'README.md'."
+    }
+
+    It 'allows an explicit no-blockers readiness statement' {
+        $content = $validBug -replace 'Keep the existing exception type\.', 'Keep the existing exception type. There are no blocking TODOs.'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
     }
 
     It 'accepts existing repository directories as source boundaries' {

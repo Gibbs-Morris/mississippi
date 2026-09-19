@@ -84,7 +84,31 @@ function Remove-MarkdownHtmlComments {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Content)
 
-    return [regex]::Replace($Content, '(?s)<!--.*?(?:-->|$)', '')
+    $builder = [System.Text.StringBuilder]::new()
+    $index = 0
+    while ($index -lt $Content.Length) {
+        if ($Content[$index] -eq '`') {
+            $start = $index
+            while ($index -lt $Content.Length -and $Content[$index] -eq '`') { $index++ }
+            $delimiterLength = $index - $start
+            $closing = $Content.IndexOf(('`' * $delimiterLength), $index, [System.StringComparison]::Ordinal)
+            if ($closing -ge 0) {
+                $null = $builder.Append($Content.Substring($start, $closing + $delimiterLength - $start))
+                $index = $closing + $delimiterLength
+                continue
+            }
+            $null = $builder.Append($Content.Substring($start))
+            break
+        }
+        if ($index + 4 -le $Content.Length -and $Content.Substring($index, 4) -eq '<!--') {
+            $closingComment = $Content.IndexOf('-->', $index + 4, [System.StringComparison]::Ordinal)
+            $index = if ($closingComment -ge 0) { $closingComment + 3 } else { $Content.Length }
+            continue
+        }
+        $null = $builder.Append($Content[$index])
+        $index++
+    }
+    return $builder.ToString()
 }
 
 function Test-RepositoryRelativePath {
@@ -162,7 +186,11 @@ function Get-IssueSpecResult {
         }
     }
 
-    $headingMatches = [regex]::Matches($structuralContent, '(?m)^#{2,3}\s+(?<Title>[^\r\n]+)\s*$')
+    $headingMatches = [regex]::Matches($structuralContent, '(?m)^(?<Level>#{2,3})\s+(?<Title>[^\r\n]+)\s*$')
+    $requiredHeadingLevels = @($headingMatches | Where-Object { $requiredSections -contains $_.Groups['Title'].Value.Trim() } | ForEach-Object { $_.Groups['Level'].Value.Length } | Sort-Object -Unique)
+    if ($requiredHeadingLevels.Count -gt 1) {
+        Add-IssueSpecError -Errors $errors -Message 'Required sections must use one consistent Markdown heading level.'
+    }
     foreach ($group in @($headingMatches | ForEach-Object { $_.Groups['Title'].Value.Trim() } | Group-Object)) {
         if ($group.Count -gt 1 -and $requiredSections -contains $group.Name) {
             Add-IssueSpecError -Errors $errors -Message "Duplicate required section heading: '## $($group.Name)'."
@@ -184,9 +212,10 @@ function Get-IssueSpecResult {
         if ($currentIndex -ge 0) { $previousIndex = $currentIndex }
     }
 
+    $blockingContent = $structuralContent -replace '(?im)\bno\s+(?:unresolved\s+)?blocking\s+(?:TBD|TODO|FIXME)s?\b', ''
     $hasBlockingMarker =
-        $structuralContent -match '(?im)\b(?:TBD|TODO|FIXME)\b\s*(?::|[-–—])?\s*(?:\([^)]*blocking[^)]*\)|\[[^]]*blocking[^]]*\]|blocking\b)' -or
-        $structuralContent -match '(?im)\bblocking\b\s*[:\-]\s*(?:TBD|TODO|FIXME)\b'
+        $blockingContent -match '(?im)\b(?:TBD|TODO|FIXME)\b\s*(?::|[-–—])?\s*(?:\([^)]*blocking[^)]*\)|\[[^]]*blocking[^]]*\]|blocking\b)' -or
+        $blockingContent -match '(?im)\bblocking\b\s*[:\-]\s*(?:TBD|TODO|FIXME)\b'
     if ($hasBlockingMarker) {
         Add-IssueSpecError -Errors $errors -Message 'Unresolved blocking TBD/TODO marker is not allowed.'
     }
@@ -195,8 +224,9 @@ function Get-IssueSpecResult {
     }
 
     if ($sections.Contains('Relevant source and contracts')) {
+        $sourceSection = [string]$sections['Relevant source and contracts']
         $sourcePaths = [regex]::Matches(
-            [string]$sections['Relevant source and contracts'],
+            $sourceSection,
             '`(?<Path>[^`]+)`'
         )
         if ($sourcePaths.Count -eq 0) {
@@ -206,6 +236,14 @@ function Get-IssueSpecResult {
             $candidate = $pathMatch.Groups['Path'].Value.Trim()
             if (-not (Test-RepositoryRelativePath -Candidate $candidate -Root $RepositoryRoot)) {
                 Add-IssueSpecError -Errors $errors -Message "Referenced repository-relative path does not exist: '$candidate'."
+            }
+            $lineStart = $sourceSection.LastIndexOf("`n", $pathMatch.Index) + 1
+            $lineEnd = $sourceSection.IndexOf("`n", $pathMatch.Index)
+            if ($lineEnd -lt 0) { $lineEnd = $sourceSection.Length }
+            $line = $sourceSection.Substring($lineStart, $lineEnd - $lineStart).Replace($pathMatch.Value, '')
+            $line = $line -replace '^[ \t\-*:;,\.—–]+|[ \t\-*:;,\.—–]+$', ''
+            if ([string]::IsNullOrWhiteSpace($line)) {
+                Add-IssueSpecError -Errors $errors -Message "Referenced repository-relative path must include an explanation: '$candidate'."
             }
         }
     }
