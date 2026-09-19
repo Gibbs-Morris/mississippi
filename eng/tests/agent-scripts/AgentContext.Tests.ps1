@@ -15,111 +15,74 @@ Describe 'Agent context selection' {
 
         $fixtureRoot = Join-Path $TestDrive 'context-repository'
         New-Item -ItemType Directory -Path (Join-Path $fixtureRoot '.github/instructions'), (Join-Path $fixtureRoot '.github/agents'), (Join-Path $fixtureRoot '.scratchpad/deep'), (Join-Path $fixtureRoot 'nested/feature'), (Join-Path $fixtureRoot 'foo'), (Join-Path $fixtureRoot 'foobar'), (Join-Path $fixtureRoot 'src'), (Join-Path $fixtureRoot 'case-probe'), (Join-Path $fixtureRoot 'docs/Docusaurus/docs/adr') -Force | Out-Null
-        Set-Content -LiteralPath (Join-Path $fixtureRoot 'AGENTS.md') -Value '# Root guidance'
-        Set-Content -LiteralPath (Join-Path $fixtureRoot 'case-probe/agents.md') -Value '# Lowercase non-entrypoint'
-        Set-Content -LiteralPath (Join-Path $fixtureRoot 'nested/AGENTS.md') -Value '# Nested guidance'
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/copilot-instructions.md') -Value @'
+        function Set-FixtureContent {
+            param([Parameter(Mandatory)][string]$RelativePath, [Parameter(Mandatory)][AllowEmptyString()][string]$Content)
+            Set-Content -LiteralPath (Join-Path $fixtureRoot $RelativePath) -Value $Content
+        }
+
+        function Set-FixtureInstruction {
+            param(
+                [Parameter(Mandatory)][string]$RelativePath,
+                [Parameter(Mandatory)][string]$ApplyTo,
+                [Parameter(Mandatory)][string]$Heading,
+                [string]$Body = ''
+            )
+            $content = "---`napplyTo: $ApplyTo`n---`n`n# $Heading"
+            if ($Body) { $content += "`n`n$Body" }
+            Set-FixtureContent -RelativePath $RelativePath -Content $content
+        }
+
+        Set-FixtureContent 'AGENTS.md' '# Root guidance'
+        Set-FixtureContent 'case-probe/agents.md' '# Lowercase non-entrypoint'
+        Set-FixtureContent 'nested/AGENTS.md' '# Nested guidance'
+        Set-FixtureContent '.github/copilot-instructions.md' @'
 ---
 applyTo: '**'
 ---
 
 # Copilot entrypoint
 '@
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/global.instructions.md') -Value @'
----
-applyTo: '**'
----
-
-# Global guidance
-
+        Set-FixtureInstruction '.github/instructions/global.instructions.md' "'**'" 'Global guidance' @'
 See [the shared route](../skills/example/SKILL.md#section).
 Ignore [a file URI](file:///etc/policy.md) and [an FTP URI](ftp://example.com/policy.md).
 See [the titled route](../skills/example/SKILL.md "Shared route").
 See [the angle route](<../skills/example/my skill/SKILL.md>).
 '@
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/csharp.instructions.md') -Value @'
----
-applyTo: '**/*.cs'
----
-
-# C# guidance
-'@
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/inline-comment.instructions.md') -Value @'
----
-applyTo: '**/*.cs' # C# guidance with an inline comment
----
-
-# Inline-comment guidance
-'@
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/markdown.instructions.md') -Value @'
----
-applyTo: '**/*.{md,mdx}'
----
-
-# Markdown guidance
-'@
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/planner-route.instructions.md') -Value @'
----
-applyTo: '.github/agents/*planner*.agent.md'
----
-
-# Planner route
-'@
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/build-route.instructions.md') -Value @'
----
-applyTo: '.github/agents/*build*.agent.md'
----
-
-# Build route
-'@
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/adr-route.instructions.md') -Value @'
----
-applyTo: 'docs/Docusaurus/docs/adr/[0-9][0-9][0-9][0-9]-*.md'
----
-
-# ADR route
-'@
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/documentation-route.instructions.md') -Value @'
----
-applyTo: 'docs/Docusaurus/docs/**/*.{md,mdx}'
----
-
-# Documentation route
-'@
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/style-route.instructions.md') -Value @'
----
-applyTo: '**/*.css'
----
-
-# Style route
-'@
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/malformed.instructions.md') -Value @'
+        Set-FixtureInstruction '.github/instructions/csharp.instructions.md' "'**/*.cs'" 'C# guidance'
+        Set-FixtureInstruction '.github/instructions/inline-comment.instructions.md' "'**/*.cs' # C# guidance with an inline comment" 'Inline-comment guidance'
+        Set-FixtureInstruction '.github/instructions/markdown.instructions.md' "'**/*.{md,mdx}'" 'Markdown guidance'
+        Set-FixtureInstruction '.github/instructions/planner-route.instructions.md' "'.github/agents/*planner*.agent.md'" 'Planner route'
+        Set-FixtureInstruction '.github/instructions/build-route.instructions.md' "'.github/agents/*build*.agent.md'" 'Build route'
+        Set-FixtureInstruction '.github/instructions/adr-route.instructions.md' "'docs/Docusaurus/docs/adr/[0-9][0-9][0-9][0-9]-*.md'" 'ADR route'
+        Set-FixtureInstruction '.github/instructions/documentation-route.instructions.md' "'docs/Docusaurus/docs/**/*.{md,mdx}'" 'Documentation route'
+        Set-FixtureInstruction '.github/instructions/style-route.instructions.md' "'**/*.css'" 'Style route'
+        Set-FixtureContent '.github/instructions/malformed.instructions.md' @'
 applyTo: '**/*.cs'
 
 # Missing frontmatter
 '@
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/unbalanced.instructions.md') -Value @'
+        Set-FixtureContent '.github/instructions/unbalanced.instructions.md' @'
 ---
 applyTo: '**/*.{cs,razor'
 ---
 
 # Unbalanced scope
 '@
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/unbalanced-class.instructions.md') -Value @'
+        Set-FixtureContent '.github/instructions/unbalanced-class.instructions.md' @'
 ---
 applyTo: '**/[abc.md'
 ---
 
 # Unbalanced class
 '@
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/reversed-braces.instructions.md') -Value @'
+        Set-FixtureContent '.github/instructions/reversed-braces.instructions.md' @'
 ---
 applyTo: '**/}reversed{.md'
 ---
 
 # Reversed braces
 '@
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/nested-applyto.instructions.md') -Value @'
+        Set-FixtureContent '.github/instructions/nested-applyto.instructions.md' @'
 ---
 metadata:
   applyTo: '**/*.cs'
@@ -128,16 +91,16 @@ metadata:
 # Nested metadata
 '@
         $expensivePattern = ('{a,b}' * 13) -join ''
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/expensive-expansion.instructions.md') -Value "---`napplyTo: '**/*.$expensivePattern'`n---`n`n# Expensive expansion"
-        Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Example.cs') -Value 'class Example { }'
-        Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/guide.md') -Value '# Guide'
-        Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/AGENTS.md') -Value '# Documentation guidance'
-        Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/Docusaurus/docs/adr/0001-example.md') -Value '# ADR'
-        Set-Content -LiteralPath (Join-Path $fixtureRoot 'nested/feature/example.ps1') -Value 'Write-Output data'
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.scratchpad/AGENTS.md') -Value '# Excluded guidance'
-        Set-Content -LiteralPath (Join-Path $fixtureRoot 'foo/AGENTS.md') -Value '# Foo guidance'
-        Set-Content -LiteralPath (Join-Path $fixtureRoot 'foobar/example.cs') -Value 'class Sibling { }'
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/agents/example-planner.agent.md') -Value '# Planner'
+        Set-FixtureContent '.github/instructions/expensive-expansion.instructions.md' "---`napplyTo: '**/*.$expensivePattern'`n---`n`n# Expensive expansion"
+        Set-FixtureContent 'src/Example.cs' 'class Example { }'
+        Set-FixtureContent 'docs/guide.md' '# Guide'
+        Set-FixtureContent 'docs/AGENTS.md' '# Documentation guidance'
+        Set-FixtureContent 'docs/Docusaurus/docs/adr/0001-example.md' '# ADR'
+        Set-FixtureContent 'nested/feature/example.ps1' 'Write-Output data'
+        Set-FixtureContent '.scratchpad/AGENTS.md' '# Excluded guidance'
+        Set-FixtureContent 'foo/AGENTS.md' '# Foo guidance'
+        Set-FixtureContent 'foobar/example.cs' 'class Sibling { }'
+        Set-FixtureContent '.github/agents/example-planner.agent.md' '# Planner'
     }
 
     It 'selects globals, matching paths, domains, roles, and nested entrypoints' {
