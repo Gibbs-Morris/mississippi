@@ -190,20 +190,21 @@ Solution-level draft spec (no implementation code). Must include:
 A **GitHub-issue-safe** draft that contains only the material the future builder needs from the issue itself.
 
 It must include these exact top-level sections, in this order:
-1. `## Summary`
-2. `## Original request`
-3. `## Problem`
-4. `## Goals`
-5. `## Non-goals`
-6. `## User experience`
-7. `## Developer experience`
-8. `## Key decisions`
-9. `## Design and contract expectations`
-10. `## Constraints`
-11. `## Acceptance criteria`
-12. `## Open questions / dependencies`
+1. `## Problem`
+2. `## Observable outcome`
+3. `## Scope`
+4. `## Relevant source and contracts`
+5. `## Decisions and non-goals`
+6. `## Dependencies and readiness`
+7. `## Acceptance criteria`
+8. `## Implementation outline`
+9. `## Validation plan`
+10. `## Risks and delivery boundary`
+11. `## Validation evidence map`
 
-It must **not** include workflow/process details.
+The original request must be preserved within `## Problem` or `## Scope`.
+Repository-relative implementation and validation detail is required; exclude
+machine-specific paths, private audit records, and internal refinement history.
 
 ## Interactive workflow (chat behavior)
 
@@ -286,7 +287,7 @@ Then update the spec accordingly.
 ## Issue update rules
 
 When updating the GitHub issue:
-- Preserve the original problem statement in `## Original request`.
+- Preserve the original problem statement within `## Problem` or `## Scope`.
 - Make the issue readable to both humans and machines by using the exact heading order from `05-issue-body-draft.md`.
 - Prefer concise, directive language.
 - Capture decisions, constraints, intent, and acceptance outcomes.
