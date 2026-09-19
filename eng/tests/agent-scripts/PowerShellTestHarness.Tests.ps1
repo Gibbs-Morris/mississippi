@@ -31,7 +31,8 @@ Describe 'PowerShell test orchestration' {
             'run-scratchpad-task-tests.ps1',
             'run-summarize-coverage-gaps-tests.ps1',
             'run-task-automation-tests.ps1',
-            'run-validation-plan-tests.ps1'
+            'run-validation-plan-tests.ps1',
+            'run-issue-spec-tests.ps1'
         )
         $targetRunner = Join-Path $fixtureRunners $pesterRunners[0]
     }
@@ -52,7 +53,7 @@ Describe 'PowerShell test orchestration' {
 
     It 'runs every required suite successfully' {
         $results = & $orchestrator -PassThru 6>$null
-        $results.Count | Should -Be 7
+        $results.Count | Should -Be 8
         @($results | Where-Object Status -NE 'Passed').Count | Should -Be 0
     }
 
@@ -98,7 +99,8 @@ Describe 'Standalone Pester runners' {
             @{ Runner = 'run-scratchpad-task-tests.ps1'; TestFile = 'scratchpad-task-scripts.Tests.ps1' },
             @{ Runner = 'run-summarize-coverage-gaps-tests.ps1'; TestFile = 'summarize-coverage-gaps.Tests.ps1' },
             @{ Runner = 'run-task-automation-tests.ps1'; TestFile = 'TaskAutomation.Tests.ps1' },
-            @{ Runner = 'run-validation-plan-tests.ps1'; TestFile = 'ValidationPlan.Tests.ps1' }
+            @{ Runner = 'run-validation-plan-tests.ps1'; TestFile = 'ValidationPlan.Tests.ps1' },
+            @{ Runner = 'run-issue-spec-tests.ps1'; TestFile = 'IssueSpec.Tests.ps1' }
         )) {
             foreach ($scenario in @(
                 @{ Case = 'passing'; Body = "Describe 'Suite' { It 'passes' { 1 | Should -Be 1 } }"; ExitCode = 0 },
