@@ -49,6 +49,14 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Valid | Should -BeTrue
     }
 
+    It 'accepts headings emitted by the GitHub issue form' {
+        $formBody = $validBug -replace '(?m)^## ', '### '
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $formBody)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'rejects a missing validation section' {
         $content = $validBug -replace '(?ms)^## Validation plan.*?(?=^## Risks and delivery boundary)', ''
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
