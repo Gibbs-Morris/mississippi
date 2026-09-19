@@ -132,7 +132,7 @@ function Get-IssueSpecResult {
     if ($sections.Contains('Relevant source and contracts')) {
         $sourcePaths = [regex]::Matches(
             [string]$sections['Relevant source and contracts'],
-            '(?m)^\s*[-*]\s*`(?<Path>[^`]+)`'
+            '(?m)^\s*(?:[-*]|\d+\.)\s*`(?<Path>[^`]+)`'
         )
         if ($sourcePaths.Count -eq 0) {
             Add-IssueSpecError -Errors $errors -Message 'Relevant source and contracts must list backtick-wrapped repository-relative paths.'

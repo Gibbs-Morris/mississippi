@@ -148,6 +148,14 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Valid | Should -BeTrue
     }
 
+    It 'validates ordered source-path entries instead of ignoring them' {
+        $content = $validBug -replace '(?m)^## Decisions and non-goals', "1. ``missing/not-found.cs`` — an ordered source entry.`r`n`r`n## Decisions and non-goals"
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Referenced repository-relative path does not exist: 'missing/not-found.cs'."
+    }
+
     It 'accepts ordered acceptance and evidence lists' {
         $content = $validBug -replace '(?m)^- \[AC', '1. [AC'
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
