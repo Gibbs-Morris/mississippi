@@ -180,6 +180,14 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Errors | Should -Contain "Referenced repository-relative path does not exist: 'missing/not-found.cs'."
     }
 
+    It 'validates prose-form source paths instead of ignoring them' {
+        $content = $validBug -replace '(?m)^## Decisions and non-goals', "Also update ``missing/not-found.cs`` for the contract.`r`n`r`n## Decisions and non-goals"
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Referenced repository-relative path does not exist: 'missing/not-found.cs'."
+    }
+
     It 'accepts ordered acceptance and evidence lists' {
         $content = $validBug -replace '(?m)^- \[AC', '1. [AC'
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
