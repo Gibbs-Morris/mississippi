@@ -309,6 +309,22 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Valid | Should -BeTrue
     }
 
+    It 'does not let fenced token examples mask visible contract headings' {
+        $fencedToken = '```html' + [Environment]::NewLine + '<?target' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '```' + [Environment]::NewLine
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content ($fencedToken + $validBug))
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'treats a raw HTML-only required section as empty' {
+        $content = $validBug -replace '(?ms)(?<=^## Problem\r?\n).*?(?=^## Observable outcome)', ('<script>' + [Environment]::NewLine + 'hidden' + [Environment]::NewLine + '</script>' + [Environment]::NewLine)
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Required section '## Problem' is empty."
+    }
+
     It 'rejects a missing validation section' {
         $content = $validBug -replace '(?ms)^## Validation plan.*?(?=^## Risks and delivery boundary)', ''
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)

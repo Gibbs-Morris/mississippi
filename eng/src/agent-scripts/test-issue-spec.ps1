@@ -102,6 +102,7 @@ function Remove-MarkdownFencedBlocks {
     $insideFence = $false
     $fenceCharacter = ''
     $fenceLength = 0
+    $fenceContentMarker = [char]0x1f
     $lines = [System.Collections.Generic.List[string]]::new()
     foreach ($line in ($Content -split '\r?\n')) {
         $openingFence = if (-not $insideFence) { Get-MarkdownFenceOpening -Line $line } else { $null }
@@ -122,7 +123,7 @@ function Remove-MarkdownFencedBlocks {
                 $lines.Add('')
                 continue
             }
-            $lines.Add($line)
+            $lines.Add($fenceContentMarker + $line)
             continue
         }
         $lines.Add($line)
@@ -392,6 +393,7 @@ function Test-IssueSectionContent {
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
 
     $withoutHeadings = [regex]::Replace($Content, '(?m)^[ \t]{0,3}#{1,6}[ \t]*[^\r\n]*$', '')
+    $withoutHeadings = $withoutHeadings.Replace([string][char]0x1e, '')
     return -not [string]::IsNullOrWhiteSpace($withoutHeadings)
 }
 
