@@ -22,7 +22,7 @@ namespace MississippiSamples.Spring.Domain.Aggregates.TransactionInvestigationQu
 ///     </para>
 /// </remarks>
 [BrookName("SPRING", "COMPLIANCE", "INVESTIGATION")]
-[SnapshotStorageName("SPRING", "COMPLIANCE", "INVESTIGATIONSTATE")]
+[SnapshotStorageName("SPRING", "COMPLIANCE", "INVESTIGATIONSTATE", 1)]
 [GenerateAggregateEndpoints]
 [GenerateSerializer]
 [Alias(

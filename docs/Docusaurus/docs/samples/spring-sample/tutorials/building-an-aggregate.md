@@ -29,7 +29,7 @@ The aggregate state is a `sealed record` that represents the current snapshot of
 
 ```csharp
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
-[SnapshotStorageName("SPRING", "BANKING", "ACCOUNTSTATE")]
+[SnapshotStorageName("SPRING", "BANKING", "ACCOUNTSTATE", 1)]
 [GenerateAggregateEndpoints]
 [GenerateSerializer]
 [Alias("Spring.Domain.BankAccount.BankAccountAggregate")]
@@ -109,7 +109,7 @@ Events are immutable facts that record what happened. They are `internal` becaus
 ### AccountOpened
 
 ```csharp
-[EventStorageName("SPRING", "BANKING", "ACCOUNTOPENED")]
+[EventStorageName("SPRING", "BANKING", "ACCOUNTOPENED", 1)]
 [GenerateSerializer]
 [Alias("Spring.Domain.BankAccount.Events.AccountOpened")]
 internal sealed record AccountOpened
@@ -122,7 +122,7 @@ internal sealed record AccountOpened
 ### FundsDeposited
 
 ```csharp
-[EventStorageName("SPRING", "BANKING", "FUNDSDEPOSITED")]
+[EventStorageName("SPRING", "BANKING", "FUNDSDEPOSITED", 1)]
 [GenerateSerializer]
 [Alias("Spring.Domain.BankAccount.Events.FundsDeposited")]
 internal sealed record FundsDeposited
@@ -134,7 +134,7 @@ internal sealed record FundsDeposited
 ### FundsWithdrawn
 
 ```csharp
-[EventStorageName("SPRING", "BANKING", "FUNDSWITHDRAWN")]
+[EventStorageName("SPRING", "BANKING", "FUNDSWITHDRAWN", 1)]
 [GenerateSerializer]
 [Alias("Spring.Domain.BankAccount.Events.FundsWithdrawn")]
 internal sealed record FundsWithdrawn

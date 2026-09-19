@@ -114,7 +114,7 @@ An event is an immutable fact that something happened. Events are the source of 
 Events are `internal sealed record` types decorated with `[EventStorageName]` to define their storage identity. Events are internal because external consumers read projections, not raw events.
 
 ```csharp
-[EventStorageName("SPRING", "BANKING", "FUNDSDEPOSITED")]
+[EventStorageName("SPRING", "BANKING", "FUNDSDEPOSITED", 1)]
 [GenerateSerializer]
 internal sealed record FundsDeposited
 {
