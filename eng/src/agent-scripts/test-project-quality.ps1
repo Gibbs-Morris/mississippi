@@ -10,7 +10,9 @@ param(
 
     [string]$SourceProject,
 
-    [switch]$NoBuild
+    [switch]$NoBuild,
+
+    [string]$LeaseDirectory
 )
 
 Set-StrictMode -Version Latest
@@ -180,8 +182,11 @@ Write-Host ""
 $testFailed = $false
 $mutationFailed = $false
 Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
+$repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+$executionLease = $null
 
 try {
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "quality-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
     if (Test-Path ".config/dotnet-tools.json") {
         Write-Host "[1/7] Restoring dotnet tools..." -ForegroundColor Cyan
         dotnet tool restore
@@ -306,6 +311,9 @@ catch {
         Write-Host "RESULT: FAIL"
     } catch {}
     exit 1
+}
+finally {
+    if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
 }
 
 
