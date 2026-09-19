@@ -128,11 +128,7 @@ Describe 'Mutation automation' {
 
     It 'separates a strict threshold exit from an execution failure in the summary' {
         Set-Content (Join-Path $completedOutput 'mutation-report.json') '{"files":{"Widget.cs":{"mutants":[{"status":"Survived"}]}}}'
-        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation {
-            $failure = [InvalidOperationException]::new('Stryker score threshold failed')
-            $failure.Data['ReportPath'] = Join-Path $completedOutput 'mutation-report.json'
-            throw $failure
-        }
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation { $completedOutput }
         { Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output } | Should -Throw '*mutation testing failed*'
         $summary = Get-Content (Join-Path $output 'mutation-summary.json') -Raw | ConvertFrom-Json
         $summary.ExecutionStatus | Should -Be 'COMPLETED_WITH_WARNINGS'
@@ -140,6 +136,22 @@ Describe 'Mutation automation' {
         $summary.FailedProjectCount | Should -Be 0
         $summary.ThresholdFailureCount | Should -Be 1
         $summary.Projects[0].Status | Should -Be 'BELOW_BREAK'
+    }
+
+    It 'keeps strict native failures as execution failures' {
+        Set-Content (Join-Path $completedOutput 'mutation-report.json') '{"files":{"Widget.cs":{"mutants":[{"status":"Survived"}]}}}'
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation {
+            $failure = [InvalidOperationException]::new('Stryker reporter failed')
+            $failure.Data['ReportPath'] = Join-Path $completedOutput 'mutation-report.json'
+            throw $failure
+        }
+        { Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output } | Should -Throw '*mutation testing failed*'
+        $summary = Get-Content (Join-Path $output 'mutation-summary.json') -Raw | ConvertFrom-Json
+        $summary.ExecutionStatus | Should -Be 'FAILED'
+        $summary.MutationResult | Should -Be 'FAIL'
+        $summary.FailedProjectCount | Should -Be 1
+        $summary.ThresholdFailureCount | Should -Be 0
+        $summary.Projects[0].ExecutionStatus | Should -Be 'FAILED'
     }
 
     It 'keeps report-only native failures as execution failures' {
@@ -219,7 +231,8 @@ Describe 'Mutation automation' {
             $Arguments -contains 'Debug' -and $Arguments -contains 'Widget.csproj' -and
             $Arguments -contains (Join-Path $repo 'MSBuild.dll') -and
             $Arguments -contains '--test-runner' -and $Arguments -contains 'mtp' -and
-            $Arguments -notcontains '--break-at' -and $Arguments -contains '--concurrency' -and
+            $Arguments -contains '--break-at' -and $Arguments[[array]::IndexOf($Arguments, '--break-at') + 1] -eq '0' -and
+            $Arguments -contains '--concurrency' -and
             $Arguments[[array]::IndexOf($Arguments, '--concurrency') + 1] -eq '1'
         }
     }

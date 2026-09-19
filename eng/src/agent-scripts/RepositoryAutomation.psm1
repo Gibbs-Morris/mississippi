@@ -693,10 +693,8 @@ function Invoke-StrykerMutationTestPerProject {
     foreach ($testProject in $TestProjects) {
         $arguments += @('--test-project', $testProject)
     }
-    if ($ReportOnly) {
-        # Preserve the configured high/low colors while keeping advisory score thresholds out of the exit code.
-        $arguments += @('--break-at', '0')
-    }
+    # Keep native exits focused on execution/report generation; apply score thresholds after validating the report.
+    $arguments += @('--break-at', '0')
     # MTP reuses test servers; serialize mutants to isolate process-global state and integration fixtures.
     $arguments += @('--concurrency', '1')
     # Stryker's multiple-test-project mode runs from the source project directory.
@@ -791,9 +789,7 @@ function Set-MutationFailureResult {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][object]$ProjectResult,
-        [Parameter(Mandatory)][object]$Failure,
-        [double]$BreakThreshold,
-        [switch]$ReportOnly
+        [Parameter(Mandatory)][object]$Failure
     )
 
     $ProjectResult.Output = $Failure.Exception.Data['OutputPath']
@@ -808,11 +804,6 @@ function Set-MutationFailureResult {
         catch {
             if (-not $ProjectResult.ReportError) { $ProjectResult.ReportError = $_.Exception.Message }
         }
-    }
-    if (-not $ReportOnly -and $ProjectResult.RawMutationScore -ne $null -and $BreakThreshold -gt 0 -and
-        $ProjectResult.RawMutationScore -lt $BreakThreshold -and -not $ProjectResult.ReportError) {
-        $ProjectResult.Status = 'ThresholdFailed'
-        $ProjectResult.ThresholdFailure = $true
     }
 }
 
@@ -841,13 +832,22 @@ function Invoke-MutationTarget {
         Set-MutationResultMetrics -ProjectResult $ProjectResult -ReportPath $reportPath
         $ProjectResult.Output = $projectOutput
         $ProjectResult.ReportPath = $reportPath
+        if (-not $ReportOnly -and $BreakThreshold -gt 0 -and $ProjectResult.RawMutationScore -ne $null -and
+            $ProjectResult.RawMutationScore -lt $BreakThreshold) {
+            $ProjectResult.Status = 'ThresholdFailed'
+            $ProjectResult.ThresholdFailure = $true
+            $ProjectResult.Success = $false
+            $ProjectResult.Error = "Mutation score $($ProjectResult.RawMutationScore)% is below the configured break threshold $BreakThreshold%."
+            Write-Warning "  ! Threshold not met: $([System.IO.Path]::GetFileNameWithoutExtension($Target.Project)) - score $($ProjectResult.RawMutationScore)% (threshold $BreakThreshold%)"
+            return
+        }
         $ProjectResult.Success = $true
         $ProjectResult.Status = 'Completed'
         Write-Host "  ✓ Completed: $([System.IO.Path]::GetFileNameWithoutExtension($Target.Project))" -ForegroundColor ([ConsoleColor]::Green)
     }
     catch {
         Write-Warning "  ✗ Failed: $([System.IO.Path]::GetFileNameWithoutExtension($Target.Project)) - $($_.Exception.Message)"
-        Set-MutationFailureResult -ProjectResult $ProjectResult -Failure $_ -BreakThreshold $BreakThreshold -ReportOnly:$ReportOnly
+        Set-MutationFailureResult -ProjectResult $ProjectResult -Failure $_
     }
 }
 
