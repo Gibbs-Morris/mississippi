@@ -47,6 +47,14 @@ Describe 'Deterministic validation plan' {
         @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'docusaurus-final').Arguments | Should -Contain './docs/Docusaurus/test-docusaurus.ps1'
     }
 
+    It 'does not report a browser gap when the Docusaurus gate covers CSS' {
+        $outcome = Invoke-Plan -Paths @('docs/Docusaurus/src/pages/index.module.css')
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.SelectedChecks.Id | Should -Contain 'docusaurus-final'
+        $outcome.Result.Unresolved | Should -Not -Match 'No application-specific browser validation gate'
+    }
+
     It 'selects Spring doctor and smoke for browser-facing changes' {
         $outcome = Invoke-Plan -Paths @('samples/Spring/Spring.Client/Pages/Index.razor')
 
