@@ -175,7 +175,8 @@ function Get-AgentDoctorReport {
     $globalJsonPath = Join-Path $root 'global.json'
     $globalJson = $null
     $globalJsonReady = $false
-    if (Test-Path -LiteralPath $globalJsonPath -PathType Leaf) {
+    $needsDotnetProfile = $profiles -contains 'Core' -or $profiles -contains 'Spring'
+    if ($needsDotnetProfile -and (Test-Path -LiteralPath $globalJsonPath -PathType Leaf)) {
         try {
             $globalJson = Get-Content -LiteralPath $globalJsonPath -Raw | ConvertFrom-Json
             $sdkVersion = if ($null -ne $globalJson.sdk) { [string]$globalJson.sdk.version } else { '' }
@@ -192,7 +193,7 @@ function Get-AgentDoctorReport {
         }
         catch { Add-DoctorCheck -Checks $checks -Name 'global.json' -State unsupported -Required $true -Details $_.Exception.Message -Remediation 'Repair global.json before starting a task.' }
     }
-    else {
+    elseif ($needsDotnetProfile) {
         Add-DoctorCheck -Checks $checks -Name 'global.json' -State missing -Required $true -Details 'SDK selection file is missing.' -Remediation 'Restore global.json from the repository.'
     }
 
@@ -223,6 +224,11 @@ function Get-AgentDoctorReport {
                 $toolData = Get-Content -LiteralPath $toolsManifest -Raw | ConvertFrom-Json
                 $toolProperties = @($toolData.tools.PSObject.Properties)
                 if ($toolProperties.Count -eq 0) { throw [System.IO.InvalidDataException]::new('Local tool manifest must contain a nonempty tools object.') }
+                foreach ($toolProperty in $toolProperties) {
+                    if ($null -eq $toolProperty.Value -or [string]::IsNullOrWhiteSpace([string]$toolProperty.Value.version)) {
+                        throw [System.IO.InvalidDataException]::new("Local tool '$($toolProperty.Name)' must declare a version.")
+                    }
+                }
                 Add-DoctorCheck -Checks $checks -Name 'dotnet-tools-manifest' -State ready -Required $true -Details "Pinned tool manifest contains $($toolProperties.Count) tools."
             }
             catch {
@@ -336,8 +342,9 @@ function Get-AgentDoctorReport {
 
     if ($profiles -contains 'GitHub') {
         $remote = Invoke-DoctorProbe -Name 'git-remote' -FilePath 'git' -Arguments @('-C', $root, 'config', '--get', 'remote.origin.url') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
-        $remoteSlug = (($remote.Output.Trim() -replace '\.git$','') -replace '^git@github\.com:', '' -replace '^https://github\.com/', '')
-        $remoteSlug = $remoteSlug.TrimEnd('/')
+        $remoteSlug = ''
+        if ($remote.Output -match '^(?:https?://)(?:[^/@]+(?::[^/@]*)?@)?github\.com/(?<slug>[^/]+/[^/]+?)(?:\.git)?/?$') { $remoteSlug = $Matches.slug }
+        elseif ($remote.Output -match '^git@github\.com:(?<slug>[^/]+/[^/]+?)(?:\.git)?$') { $remoteSlug = $Matches.slug }
         $gh = Invoke-DoctorProbe -Name 'github-repository' -FilePath 'gh' -Arguments @('repo', 'view', $remoteSlug, '--json', 'nameWithOwner') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
         $githubState = if (-not $remote.Available) { 'missing' } elseif ($remote.ExitCode -ne 0) { 'unknown' } elseif (-not $gh.Available) { 'missing' } elseif ($gh.ExitCode -eq 0) { 'ready' } else { 'unknown' }
         $githubDetails = if (-not $remote.Available -or $remote.ExitCode -ne 0) { Get-DoctorProbeDetails -Probe $remote } elseif ($gh.ExitCode -eq 0) { 'Repository identity resolved without exposing credentials.' } else { Get-DoctorProbeDetails -Probe $gh }
