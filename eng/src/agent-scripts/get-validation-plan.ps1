@@ -6,7 +6,7 @@ param(
     [Parameter(Mandatory)][AllowEmptyString()][string]$HeadRevision,
     [string[]]$ChangedPath = @(),
     [string[]]$RiskHint = @(),
-    [string]$RepositoryRoot = (Get-Location).Path,
+    [string]$RepositoryRoot = (Join-Path $PSScriptRoot '../../..'),
     [ValidateSet('Text', 'Json')][string]$OutputFormat = 'Text'
 )
 

@@ -83,6 +83,20 @@ Describe 'Deterministic validation plan' {
         $outcome.Result.SelectedChecks.Id | Should -Contain 'powershell-tests'
     }
 
+    It 'derives the repository root from the planner script when omitted' {
+        Push-Location -LiteralPath (Join-Path $repoRoot 'eng')
+        try {
+            $json = & $powerShellPath -NoProfile -File $scriptPath -BaseRevision base-sha -HeadRevision head-sha -ChangedPath README.md -OutputFormat Json 2>&1 | Out-String
+            $exitCode = $LASTEXITCODE
+        }
+        finally {
+            Pop-Location
+        }
+
+        $exitCode | Should -Be 0
+        ($json | ConvertFrom-Json).RepositoryRoot | Should -Be ([System.IO.Path]::GetFullPath($repoRoot))
+    }
+
     It 'applies supported risk hints to check selection' {
         $outcome = Invoke-Plan -Paths @('README.txt') -RiskHints @('browser', 'infrastructure')
 
