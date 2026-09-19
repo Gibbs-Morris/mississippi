@@ -1015,7 +1015,11 @@ function Get-PrReadinessGhJson {
 }
 
 function Get-PrReadinessExpectedCheckPatterns {
-    return @(
+    [CmdletBinding()]
+    param([string[]]$ChangedPaths = @())
+
+    $patterns = [System.Collections.Generic.List[string]]::new()
+    foreach ($pattern in @(
         '^CodeQL$',
         '^SonarCloud$',
         '^SonarCloud Code Analysis$',
@@ -1042,7 +1046,13 @@ function Get-PrReadinessExpectedCheckPatterns {
         '^Analyze \(actions\)$',
         '^Analyze \(javascript-typescript\)$',
         '^submit-nuget$'
-    )
+    )) { $patterns.Add($pattern) }
+
+    $docsApplicable = @($ChangedPaths | Where-Object { $_ -match '^(?:docs/|\.github/workflows/docusaurus\.yml$)' }).Count -gt 0
+    if ($docsApplicable) { $patterns.Add('^Build Docusaurus Site$') }
+    $csprojApplicable = @($ChangedPaths | Where-Object { $_ -match '^src/.+\.csproj$' }).Count -gt 0
+    if ($csprojApplicable) { $patterns.Add('^Validate src csproj descriptions$') }
+    return @($patterns)
 }
 
 function Get-PrReadinessCheckState {
@@ -1060,7 +1070,7 @@ function Get-PrReadinessSnapshot {
         [Parameter(Mandatory)][string]$RepositoryName,
         [Parameter(Mandatory)][int]$PullRequestNumber,
         [scriptblock]$GhJsonProvider,
-        [string]$PollingEvidenceJson
+        [ValidateRange(0, 86400)][int]$PollingSeconds = 0
     )
 
     $getJson = if ($null -ne $GhJsonProvider) {
@@ -1073,6 +1083,8 @@ function Get-PrReadinessSnapshot {
     $pull = & $getJson @('api', $pullPath)
     $headAtStart = [string]$pull.head.sha
     $baseAtStart = [string]$pull.base.sha
+    $filePages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/pulls/$PullRequestNumber/files", '--paginate', '--slurp'))
+    $changedPaths = @($filePages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | ForEach-Object { @($_.filename) } | Where-Object { $_ })
     $checkPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$headAtStart/check-runs", '--paginate', '--slurp'))
     $checkRuns = @($checkPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | ForEach-Object { @($_.check_runs) })
     $checks = [System.Collections.Generic.List[object]]::new()
@@ -1084,7 +1096,7 @@ function Get-PrReadinessSnapshot {
             ExpectedIdentity = $false
         })
     }
-    $expectedPatterns = @(Get-PrReadinessExpectedCheckPatterns)
+    $expectedPatterns = @(Get-PrReadinessExpectedCheckPatterns -ChangedPaths $changedPaths)
     foreach ($pattern in $expectedPatterns) {
         if (@($checks | Where-Object { $_.Name -match $pattern }).Count -eq 0) {
             $checks.Add([pscustomobject]@{ Name = "required:$pattern"; State = 'missing'; Required = $true; ExpectedIdentity = $true })
@@ -1097,7 +1109,7 @@ function Get-PrReadinessSnapshot {
     $reviewsPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/pulls/$PullRequestNumber/reviews", '--paginate', '--slurp'))
     $reviews = @($reviewsPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } })
     $latestReviewByAuthor = @{}
-    foreach ($review in @($reviews | Sort-Object submitted_at)) {
+    foreach ($review in @($reviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object submitted_at)) {
         $author = if ($null -ne $review.user.login) { [string]$review.user.login } else { "review-$($review.id)" }
         $latestReviewByAuthor[$author] = $review
     }
@@ -1119,12 +1131,44 @@ function Get-PrReadinessSnapshot {
     } while ($hasNextPage)
     if (-not [string]::IsNullOrWhiteSpace($graphqlReviewDecision)) { $reviewDecision = $graphqlReviewDecision }
 
+    if ($PollingSeconds -gt 0) { Start-Sleep -Seconds $PollingSeconds }
     $pullAtEnd = & $getJson @('api', $pullPath)
-    $pollingCompleted = $false
-    if (-not [string]::IsNullOrWhiteSpace($PollingEvidenceJson)) {
-        $polling = ConvertFrom-Json -InputObject $PollingEvidenceJson
-        $pollingCompleted = [int]$polling.WaitedSeconds -ge 300 -and [string]$polling.Head -eq [string]$pullAtEnd.head.sha -and [string]$polling.Status -eq 'completed'
+    $finalHead = [string]$pullAtEnd.head.sha
+    $finalCheckPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$finalHead/check-runs", '--paginate', '--slurp'))
+    $finalCheckRuns = @($finalCheckPages | ForEach-Object { @($_.check_runs) })
+    $checkFingerprintStart = (@($checkRuns | ForEach-Object { "$($_.name)=$([string](Get-PrReadinessCheckState -CheckRun $_))" } | Sort-Object) -join '|')
+    $checkFingerprintEnd = (@($finalCheckRuns | ForEach-Object { "$($_.name)=$([string](Get-PrReadinessCheckState -CheckRun $_))" } | Sort-Object) -join '|')
+
+    $finalReviewsPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/pulls/$PullRequestNumber/reviews", '--paginate', '--slurp'))
+    $finalReviews = @($finalReviewsPages | ForEach-Object { @($_) })
+    $reviewFingerprintStart = (@($reviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object user.login, state, id | ForEach-Object { "$($_.user.login)=$($_.state)#$($_.id)" }) -join '|')
+    $reviewFingerprintEnd = (@($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object user.login, state, id | ForEach-Object { "$($_.user.login)=$($_.state)#$($_.id)" }) -join '|')
+    $finalLatestReviewByAuthor = @{}
+    foreach ($review in @($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object submitted_at)) {
+        $author = if ($null -ne $review.user.login) { [string]$review.user.login } else { "review-$($review.id)" }
+        $finalLatestReviewByAuthor[$author] = $review
     }
+    $approvals = @($finalLatestReviewByAuthor.Values | Where-Object { $_.state -eq 'APPROVED' }).Count
+
+    $finalThreads = [System.Collections.Generic.List[object]]::new()
+    $finalCursor = $null
+    $finalHasNextPage = $false
+    do {
+        $finalGraphqlArguments = @('api', 'graphql', '-f', "query=$threadQuery", '-F', "owner=$RepositoryOwner", '-F', "repo=$RepositoryName", '-F', "number=$PullRequestNumber", '-F', $(if ($null -eq $finalCursor) { 'cursor=null' } else { "cursor=$finalCursor" }))
+        $finalThreadPage = & $getJson $finalGraphqlArguments
+        if (-not [string]::IsNullOrWhiteSpace([string]$finalThreadPage.data.repository.pullRequest.reviewDecision)) {
+            $reviewDecision = [string]$finalThreadPage.data.repository.pullRequest.reviewDecision
+        }
+        foreach ($thread in @($finalThreadPage.data.repository.pullRequest.reviewThreads.nodes)) { $finalThreads.Add($thread) }
+        $finalHasNextPage = [bool]$finalThreadPage.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage
+        $finalCursor = [string]$finalThreadPage.data.repository.pullRequest.reviewThreads.pageInfo.endCursor
+    } while ($finalHasNextPage)
+    $threadFingerprintStart = (@($threads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated)" }) -join '|')
+    $threadFingerprintEnd = (@($finalThreads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated)" }) -join '|')
+    $mutableEvidenceStable = $checkFingerprintStart -eq $checkFingerprintEnd -and
+        $reviewFingerprintStart -eq $reviewFingerprintEnd -and
+        $threadFingerprintStart -eq $threadFingerprintEnd
+    $pollingCompleted = $PollingSeconds -ge 300
     [pscustomobject][ordered]@{
         DataComplete = $true
         HeadAtStart = $headAtStart
@@ -1136,11 +1180,12 @@ function Get-PrReadinessSnapshot {
         MergeableState = [string]$pullAtEnd.mergeable_state
         ReviewDecision = $reviewDecision
         Checks = @($checks)
-        ReviewThreads = @($threads | ForEach-Object { [pscustomobject]@{ IsResolved = [bool]$_.isResolved; IsOutdated = [bool]$_.isOutdated } })
+        ReviewThreads = @($finalThreads | ForEach-Object { [pscustomobject]@{ IsResolved = [bool]$_.isResolved; IsOutdated = [bool]$_.isOutdated } })
         Approvals = $approvals
         IssueReferenceVerified = $false
         DescriptionReviewed = $false
         PollingCompleted = $pollingCompleted
+        EvidenceStable = $mutableEvidenceStable
         PullRequestUrl = [string]$pullAtEnd.html_url
     }
 }
@@ -1164,6 +1209,9 @@ function Get-PrReadinessReport {
     foreach ($thread in @($Snapshot.ReviewThreads | Where-Object { -not $_.IsResolved })) { $blockers.Add('An unresolved review thread remains.') }
     if ([int]$Snapshot.Approvals -lt 1) { $blockers.Add('Required current review approval evidence is missing.') }
     if (-not $Snapshot.PollingCompleted) { $blockers.Add('Required post-push review polling evidence is incomplete.') }
+    if ($null -ne $Snapshot.PSObject.Properties['EvidenceStable'] -and -not [bool]$Snapshot.EvidenceStable) {
+        $blockers.Add('Mutable checks, reviews, or threads changed during collection; rerun the readiness snapshot.')
+    }
     $mechanicalReady = $blockers.Count -eq 0
     $semanticReady = [bool]$Snapshot.IssueReferenceVerified -and [bool]$Snapshot.DescriptionReviewed
     [pscustomobject][ordered]@{
