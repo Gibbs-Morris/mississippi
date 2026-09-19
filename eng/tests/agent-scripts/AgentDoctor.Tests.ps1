@@ -39,6 +39,11 @@ Describe 'Repository prerequisite doctor' {
         $report.PSObject.Properties.Name | Should -Not -Contain 'TestsPassed'
     }
 
+    It 'requires PowerShell 7 or later' {
+        (InModuleScope AgentDoctor { Test-DoctorPowerShellVersion -Version ([version]'6.2') }) | Should -BeFalse
+        (InModuleScope AgentDoctor { Test-DoctorPowerShellVersion -Version ([version]'7.0') }) | Should -BeTrue
+    }
+
     It 'reports docs readiness independently of Docker' {
         $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Docs -ProbeOverrides $readyProbes
 
