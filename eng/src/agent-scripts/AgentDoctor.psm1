@@ -31,6 +31,7 @@ function Invoke-DoctorProbe {
         [Parameter(Mandatory)][string]$FilePath,
         [string[]]$Arguments = @(),
         [string]$WorkingDirectory = '',
+        [ValidateRange(1, 300)][int]$TimeoutSeconds = 15,
         [hashtable]$ProbeOverrides = @{}
     )
 
@@ -42,18 +43,61 @@ function Invoke-DoctorProbe {
         return [pscustomobject]@{ Available = $false; Output = ''; ExitCode = 127; Error = "Command '$FilePath' was not found." }
     }
     $locationPushed = $false
+    $process = $null
     try {
         if ($WorkingDirectory) {
             Push-Location -LiteralPath $WorkingDirectory
             $locationPushed = $true
         }
-        $output = & $command.Source @Arguments 2>&1 | Out-String
-        return [pscustomobject]@{ Available = $true; Output = $output.Trim(); ExitCode = $LASTEXITCODE; Error = '' }
+
+        $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+        $startInfo.FileName = $command.Source
+        $startInfo.UseShellExecute = $false
+        $startInfo.CreateNoWindow = $true
+        $startInfo.RedirectStandardOutput = $true
+        $startInfo.RedirectStandardError = $true
+        if ($WorkingDirectory) { $startInfo.WorkingDirectory = $WorkingDirectory }
+        foreach ($argument in $Arguments) { $null = $startInfo.ArgumentList.Add($argument) }
+
+        $process = [System.Diagnostics.Process]::new()
+        $process.StartInfo = $startInfo
+        if (-not $process.Start()) {
+            return [pscustomobject]@{ Available = $true; Output = ''; ExitCode = 1; Error = "Command '$FilePath' could not be started."; TimedOut = $false }
+        }
+
+        $standardOutputTask = $process.StandardOutput.ReadToEndAsync()
+        $standardErrorTask = $process.StandardError.ReadToEndAsync()
+        $completed = $process.WaitForExit($TimeoutSeconds * 1000)
+        if (-not $completed) {
+            try { $process.Kill($true) } catch { }
+            $process.WaitForExit()
+            $timedOutOutput = [System.Collections.Generic.List[string]]::new()
+            $timedOutStdout = $standardOutputTask.GetAwaiter().GetResult()
+            $timedOutStderr = $standardErrorTask.GetAwaiter().GetResult()
+            if ($timedOutStdout) { $timedOutOutput.Add($timedOutStdout.TrimEnd()) }
+            if ($timedOutStderr) { $timedOutOutput.Add($timedOutStderr.TrimEnd()) }
+            return [pscustomobject]@{
+                Available = $true
+                Output = ($timedOutOutput -join [Environment]::NewLine).Trim()
+                ExitCode = 124
+                Error = "Command '$FilePath' timed out after $TimeoutSeconds seconds."
+                TimedOut = $true
+            }
+        }
+
+        $process.WaitForExit()
+        $outputParts = [System.Collections.Generic.List[string]]::new()
+        $stdout = $standardOutputTask.GetAwaiter().GetResult()
+        $stderr = $standardErrorTask.GetAwaiter().GetResult()
+        if ($stdout) { $outputParts.Add($stdout.TrimEnd()) }
+        if ($stderr) { $outputParts.Add($stderr.TrimEnd()) }
+        return [pscustomobject]@{ Available = $true; Output = ($outputParts -join [Environment]::NewLine).Trim(); ExitCode = $process.ExitCode; Error = ''; TimedOut = $false }
     }
     catch {
-        return [pscustomobject]@{ Available = $true; Output = ''; ExitCode = 1; Error = $_.Exception.Message }
+        return [pscustomobject]@{ Available = $true; Output = ''; ExitCode = 1; Error = $_.Exception.Message; TimedOut = $false }
     }
     finally {
+        if ($null -ne $process) { $process.Dispose() }
         if ($locationPushed) { Pop-Location }
     }
 }
