@@ -224,6 +224,10 @@ developer work.
 
 > Tip: use `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1 -Configuration Debug` for a leased build. If you call `Invoke-MississippiSolutionBuild` directly, acquire and release a lease around it; keep the module loaded while that lease is active.
 
+### Source-bound validation evidence
+
+`ValidationEvidence.psm1` writes atomic `.scratchpad/validation-evidence/<run-id>/evidence.json` records for the full pipeline, focused project quality, and Spring validation paths. Each record contains the schema version, run identity, base/head revisions, dirty-tree state, selected input SHA-256 hashes, status (`PASS`, `FAIL`, `INCOMPLETE`, `SKIPPED`, or prerequisite `READY`), exit/test counts, and relative artifact references. `Test-ValidationEvidence` re-fingerprints the selected inputs and fails closed for stale source, missing artifacts, malformed reports, or a prerequisite/skipped result presented as executed PASS. Reports contain no environment dump or credentials; machine-specific paths remain relative where possible.
+
 ## xUnit v3 runner and reports
 
 Actual test projects use xUnit Core Framework v3 through `xunit.v3` 4.0.0 and Microsoft.Testing.Platform 2.3.3. Shared fixture libraries use extensibility contracts; assertion-only harnesses use `xunit.v3.assert`. Library projects do not become executables.
