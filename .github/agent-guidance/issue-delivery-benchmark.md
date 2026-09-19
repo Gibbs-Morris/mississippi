@@ -21,11 +21,15 @@ separately and cover the result/authority invariants.
 
 An authorized manual evaluator must record, for every trial:
 
-- configured, client-accepted, and demonstrably active model/effort separately;
-- fresh repository/issue input, scenario ID, host/version, and source revision;
-- acceptance result, independent hidden checks, review rework, interventions,
+- configured, client-accepted, and demonstrably active model and effort separately;
+- a new context ID and isolated worktree ID for every trial, a clean repository
+  state, fresh repository/issue input, scenario ID, host/version, and the same
+  recorded source revision;
+- acceptance result, every declared independent check ID with its individual
+  result, review rework, interventions,
   tokens/time only when directly measured, and failure/unsupported reason;
-- false-completion and authorization-violation counts, including zero values;
+- false-completion and authorization-violation counts on every trial record and
+  in the aggregate summary, including zero values;
 - browser route/state/viewport and Playwright screenshot/evidence where relevant.
 
 A service outage, missing credential, unsupported host, or unavailable browser
