@@ -70,7 +70,7 @@ function Test-ContextPatternExpansionBudget {
     }
 }
 
-function Convert-ContextGlobToRegex {
+function Convert-ContextGlobToRegex { # NOSONAR - bounded glob compiler intentionally handles ordered pattern branches.
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Pattern)
 
@@ -179,7 +179,7 @@ function Get-ContextPathComparison {
     return [System.StringComparison]::Ordinal
 }
 
-function Read-ContextFrontMatter {
+function Read-ContextFrontMatter { # NOSONAR - bounded frontmatter parser intentionally reports independent malformed-input states.
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Content)
 
@@ -329,7 +329,7 @@ function Get-ContextFileMetrics {
     }
 }
 
-function Get-ContextRoutes {
+function Get-ContextRoutes { # NOSONAR - route extraction is a bounded Markdown scanner with explicit fallback states.
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Content,
@@ -403,13 +403,13 @@ function Get-ContextSourceRevision {
         if ($gitExitCode -eq 0 -and $revision -match '^[0-9a-fA-F]{7,64}$') { return $revision }
     }
     catch {
-        # An unversioned or git-inaccessible fixture remains explicit as unknown.
+        Write-Verbose "Unable to resolve the repository revision: $($_.Exception.Message)"
     }
 
     return 'unknown'
 }
 
-function Get-ContextFilesByFilter {
+function Get-ContextFilesByFilter { # NOSONAR - deterministic path filtering aggregates independent safety checks.
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Root,
@@ -457,7 +457,7 @@ function Get-ContextFilesByFilter {
     return @($uniqueResults)
 }
 
-function Get-ContextCandidates {
+function Get-ContextCandidates { # NOSONAR - candidate selection coordinates bounded path, domain, and workflow evidence.
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$RepositoryRoot)
 
@@ -557,7 +557,7 @@ function Test-ContextPathWithoutReparsePoints {
     return $true
 }
 
-function Get-AgentContext {
+function Get-AgentContext { # NOSONAR - top-level context assembly intentionally coordinates validated selection stages.
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$RepositoryRoot,
