@@ -198,6 +198,30 @@ Describe 'Repository automation quality gates' {
         }
     }
 
+    It 'returns the exact aggregated coverage path through PassThru' {
+        $repo = Join-Path $TestDrive 'passthru-repository'
+        New-Item -ItemType Directory -Path $repo -Force | Out-Null
+        $runDirectory = Join-Path $repo 'run-1'
+        Mock Invoke-DotnetToolRestore {} -ModuleName RepositoryAutomation
+        Mock Invoke-SolutionRestore {} -ModuleName RepositoryAutomation
+        Mock Invoke-SolutionTests {
+            New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $runDirectory 'module.cobertura.xml') -Value '<coverage />'
+            [pscustomobject]@{ ResultsDirectory = $runDirectory }
+        } -ModuleName RepositoryAutomation
+        Mock Invoke-RepositoryProcess {
+            $targetArgument = @($Arguments | Where-Object { $_ -like '-targetdir:*' })[0]
+            $targetDirectory = $targetArgument.Substring('-targetdir:'.Length)
+            New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $targetDirectory 'Cobertura.xml') -Value '<coverage />'
+        } -ModuleName RepositoryAutomation
+
+        $result = Invoke-MississippiSolutionUnitTests -RepoRoot $repo -PassThru
+
+        $result.CoverageReportPath | Should -Be (Join-Path $runDirectory 'coverage.cobertura.xml')
+        Test-Path -LiteralPath $result.CoverageReportPath -PathType Leaf | Should -BeTrue
+    }
+
     It 'streams compiler diagnostics before a failing build step throws' {
         $solution = Join-Path $TestDrive 'failure.slnx'
         Set-Content $solution '<Solution />'

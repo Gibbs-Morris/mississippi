@@ -731,7 +731,7 @@ function Invoke-MississippiSolutionUnitTests {
     Write-Host "Results directory: $runDirectory"
     Write-Host 'Logger: xUnit TRX reports, one per test module'
 
-    $coverageFiles = Get-ChildItem -Path $runDirectory -Recurse -Filter '*cobertura*.xml' -ErrorAction SilentlyContinue
+    $coverageFiles = @(Get-ChildItem -Path $runDirectory -Recurse -Filter '*cobertura*.xml' -ErrorAction SilentlyContinue)
     if (-not $coverageFiles -or $coverageFiles.Count -eq 0) {
         throw "Unit tests completed but no coverage reports were produced in '$runDirectory'."
     }
