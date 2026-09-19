@@ -179,7 +179,7 @@ function Get-ContextRoutes {
     param([Parameter(Mandatory)][string]$Content)
 
     $routes = [System.Collections.Generic.List[string]]::new()
-    foreach ($match in [regex]::Matches($Content, '\]\((?<Route>[^)#]+)\)')) {
+    foreach ($match in [regex]::Matches($Content, '\]\((?<Route>[^)]+)\)')) {
         $route = $match.Groups['Route'].Value.Trim()
         if ($route -and $route -notmatch '^(?:https?|mailto):' -and $route -match '(?:\.md|\.mdx|SKILL\.md)(?:$|#)') {
             if (-not $routes.Contains($route)) { $routes.Add($route) }

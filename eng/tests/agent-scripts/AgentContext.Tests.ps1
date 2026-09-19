@@ -28,7 +28,7 @@ applyTo: '**'
 
 # Global guidance
 
-See [the shared route](../skills/example/SKILL.md).
+See [the shared route](../skills/example/SKILL.md#section).
 '@
         Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/csharp.instructions.md') -Value @'
 ---
@@ -135,7 +135,7 @@ applyTo: '**/*.cs'
         $global.ContentHash | Should -Match '^SHA256:[0-9a-f]{64}$'
         $global.ByteCount | Should -BeGreaterThan 0
         $global.WordCount | Should -BeGreaterThan 0
-        $global.ReferencedRoutes | Should -Contain '../skills/example/SKILL.md'
+        $global.ReferencedRoutes | Should -Contain '../skills/example/SKILL.md#section'
         $context.PSObject.Properties.Name | Should -Not -Contain 'TokenCount'
         $context.PSObject.Properties.Name | Should -Not -Contain 'Latency'
     }
