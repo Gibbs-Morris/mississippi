@@ -31,7 +31,8 @@ function Get-MarkdownSections {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Content)
 
-    $matches = [regex]::Matches($Content, '(?m)^#{2,3}\s+(?<Title>[^\r\n]+)\s*$')
+    $knownTitles = ($requiredSections | ForEach-Object { [regex]::Escape($_) }) -join '|'
+    $matches = [regex]::Matches($Content, "(?m)^#{2,3}\s+(?<Title>$knownTitles)\s*$")
     $sections = [ordered]@{}
     for ($index = 0; $index -lt $matches.Count; $index++) {
         $match = $matches[$index]

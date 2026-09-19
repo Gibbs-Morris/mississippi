@@ -66,6 +66,15 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Valid | Should -BeTrue
     }
 
+    It 'preserves nested headings inside required sections' {
+        $nestedBody = $validBug -replace '(?m)^## Problem', "## Problem`r`n### Current behavior`r`nThe current parser accepts empty input."
+        $nestedBody = $nestedBody -replace '(?m)^## Acceptance criteria', "## Acceptance criteria`r`n### Observable cases"
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $nestedBody)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'rejects required sections in the wrong order' {
         $reordered = $validBug -replace '(?m)^## Problem', '## Temporary problem'
         $reordered = $reordered -replace '(?m)^## Observable outcome', '## Problem'
