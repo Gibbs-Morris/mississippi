@@ -86,6 +86,8 @@ The supporting Pester harness lives in `eng/tests/agent-scripts/`:
 | Script | Purpose |
 | --- | --- |
 | **run-scratchpad-task-tests.ps1** | Runs the Pester suite that covers the scratchpad helpers. |
+| **doctor.ps1** | Reports read-only prerequisite readiness for core, docs, Spring, or GitHub task profiles. |
+| **run-agent-doctor-tests.ps1** | Runs the Pester suite that validates prerequisite diagnostics. |
 | **verify-scratchpad-task-scripts.ps1** | End-to-end flow that creates → claims → completes/defers tasks using a temporary scratchpad. |
 | (orchestrator) `../orchestrate-powershell-tests.ps1` | Runs all PowerShell test suites (Pester and script e2e) and exits non-zero on failure. |
 
