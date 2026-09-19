@@ -99,6 +99,14 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Errors | Should -Contain 'Required sections must appear in the contract order.'
     }
 
+    It 'rejects duplicate canonical section headings' {
+        $content = $validBug + [Environment]::NewLine + '## Problem' + [Environment]::NewLine + 'Conflicting duplicate.'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Duplicate required section heading: '## Problem'."
+    }
+
     It 'rejects a missing validation section' {
         $content = $validBug -replace '(?ms)^## Validation plan.*?(?=^## Risks and delivery boundary)', ''
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)

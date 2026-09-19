@@ -106,6 +106,11 @@ function Get-IssueSpecResult {
     }
 
     $headingMatches = [regex]::Matches($content, '(?m)^#{2,3}\s+(?<Title>[^\r\n]+)\s*$')
+    foreach ($group in @($headingMatches | ForEach-Object { $_.Groups['Title'].Value.Trim() } | Group-Object)) {
+        if ($group.Count -gt 1 -and $requiredSections -contains $group.Name) {
+            Add-IssueSpecError -Errors $errors -Message "Duplicate required section heading: '## $($group.Name)'."
+        }
+    }
     $previousIndex = -1
     foreach ($section in $requiredSections) {
         $currentIndex = -1
