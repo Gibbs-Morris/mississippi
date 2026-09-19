@@ -31,6 +31,9 @@ and a clean zero-finding case.
 
 Development and held-out cases are tagged separately. The held-out set must be
 scored without changing the expected truth or the evaluator’s rules.
+The JSON result preserves separate `by_set.development` and
+`by_set.held-out` metric objects so aggregate scores cannot hide held-out
+regressions.
 
 ## Metrics
 

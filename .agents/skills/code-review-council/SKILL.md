@@ -68,6 +68,9 @@ inputs and failure behavior.
 The collector returns `READY`, `NO_CHANGES`, or `BLOCKED`. A changed revision,
 missing PR evidence, unresolved index, invalid path, or failed Git operation
 invalidates the run. Never review a stale manifest.
+For worktree mode, write the manifest outside the reviewed repository; the
+collector rejects an in-repository output path to keep its own artifact out of
+the evidence set.
 
 ### 2. Dispatch isolated reviewers
 
