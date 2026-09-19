@@ -295,7 +295,7 @@ Refs #741
     It 'publishes PR-isolated status contexts' {
         $workflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github/workflows/pr-issue-reference.yml') -Raw
 
-        $workflow | Should -Match "context='PR Issue Reference'"
+        $workflow | Should -Match '\$statusContext = ''PR Issue Reference'''
         $workflow | Should -Match 'PR_NUMBER'
     }
 
