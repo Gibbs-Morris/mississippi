@@ -124,6 +124,20 @@ public sealed class SnapshotRegistrationsTests
     }
 
     /// <summary>
+    ///     Verifies that blank state type override keys fail options validation.
+    /// </summary>
+    [Fact]
+    public void AddSnapshotCachingRejectsBlankOverrideKey()
+    {
+        ServiceCollection services = new();
+        services.AddSnapshotCaching(options => options.StateTypeOverrides[" "] = 10);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        OptionsValidationException exception = Assert.Throws<OptionsValidationException>(() =>
+            provider.GetRequiredService<IOptions<SnapshotRetentionOptions>>().Value);
+        Assert.Contains("empty state type key", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Verifies that an invalid default interval fails options validation.
     /// </summary>
     [Fact]
