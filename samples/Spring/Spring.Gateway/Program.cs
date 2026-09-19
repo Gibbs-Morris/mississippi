@@ -73,11 +73,7 @@ builder.Services.AddControllers();
 // Add OpenAPI documentation
 builder.Services.AddOpenApi(options =>
 {
-    options.AddDocumentTransformer((
-        document,
-        _,
-        _
-    ) =>
+    options.AddDocumentTransformer((document, _, _) =>
     {
         document.Info.Title = "Spring Bank API";
         document.Info.Version = "v1";

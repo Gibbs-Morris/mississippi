@@ -246,11 +246,7 @@ public sealed class MemoizeTests
         ThirdState state3 = new(true);
         int callCount = 0;
         Func<TestState, OtherState, ThirdState, string> selector =
-            Memoize.Create<TestState, OtherState, ThirdState, string>((
-                s1,
-                s2,
-                s3
-            ) =>
+            Memoize.Create<TestState, OtherState, ThirdState, string>((s1, s2, s3) =>
             {
                 Interlocked.Increment(ref callCount);
                 return $"{s2.Name}:{s1.Counter}:{s3.IsActive}";
@@ -287,11 +283,7 @@ public sealed class MemoizeTests
         ThirdState state3 = new(true);
         int callCount = 0;
         Func<TestState, OtherState, ThirdState, string> selector =
-            Memoize.Create<TestState, OtherState, ThirdState, string>((
-                s1,
-                s2,
-                s3
-            ) =>
+            Memoize.Create<TestState, OtherState, ThirdState, string>((s1, s2, s3) =>
             {
                 callCount++;
                 return $"{s2.Name}:{s1.Counter}:{s3.IsActive}";
@@ -319,11 +311,7 @@ public sealed class MemoizeTests
         ThirdState state3B = new(false);
         int callCount = 0;
         Func<TestState, OtherState, ThirdState, string> selector =
-            Memoize.Create<TestState, OtherState, ThirdState, string>((
-                s1,
-                s2,
-                s3
-            ) =>
+            Memoize.Create<TestState, OtherState, ThirdState, string>((s1, s2, s3) =>
             {
                 callCount++;
                 return $"{s2.Name}:{s1.Counter}:{s3.IsActive}";
@@ -349,10 +337,7 @@ public sealed class MemoizeTests
         TestState state1 = new(5);
         OtherState state2 = new("test");
         int callCount = 0;
-        Func<TestState, OtherState, string> selector = Memoize.Create<TestState, OtherState, string>((
-            s1,
-            s2
-        ) =>
+        Func<TestState, OtherState, string> selector = Memoize.Create<TestState, OtherState, string>((s1, s2) =>
         {
             Interlocked.Increment(ref callCount);
             return $"{s2.Name}:{s1.Counter}";
@@ -387,10 +372,7 @@ public sealed class MemoizeTests
         TestState state1 = new(5);
         OtherState state2 = new("test");
         int callCount = 0;
-        Func<TestState, OtherState, string> selector = Memoize.Create<TestState, OtherState, string>((
-            s1,
-            s2
-        ) =>
+        Func<TestState, OtherState, string> selector = Memoize.Create<TestState, OtherState, string>((s1, s2) =>
         {
             callCount++;
             return $"{s2.Name}:{s1.Counter}";
@@ -416,10 +398,7 @@ public sealed class MemoizeTests
         TestState state1B = new(10);
         OtherState state2 = new("test");
         int callCount = 0;
-        Func<TestState, OtherState, string> selector = Memoize.Create<TestState, OtherState, string>((
-            s1,
-            s2
-        ) =>
+        Func<TestState, OtherState, string> selector = Memoize.Create<TestState, OtherState, string>((s1, s2) =>
         {
             callCount++;
             return $"{s2.Name}:{s1.Counter}";
@@ -444,10 +423,7 @@ public sealed class MemoizeTests
         OtherState state2A = new("alpha");
         OtherState state2B = new("beta");
         int callCount = 0;
-        Func<TestState, OtherState, string> selector = Memoize.Create<TestState, OtherState, string>((
-            s1,
-            s2
-        ) =>
+        Func<TestState, OtherState, string> selector = Memoize.Create<TestState, OtherState, string>((s1, s2) =>
         {
             callCount++;
             return $"{s2.Name}:{s1.Counter}";
@@ -470,10 +446,8 @@ public sealed class MemoizeTests
         // Arrange
         TestState state1 = new(5);
         OtherState state2 = new("test");
-        Func<TestState, OtherState, string> selector = Memoize.Create<TestState, OtherState, string>((
-                s1,
-                s2
-            ) => $"{s2.Name}:{s1.Counter}");
+        Func<TestState, OtherState, string> selector =
+            Memoize.Create<TestState, OtherState, string>((s1, s2) => $"{s2.Name}:{s1.Counter}");
 
         // Act
         string result = selector(state1, state2);

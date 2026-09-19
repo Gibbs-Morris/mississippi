@@ -420,17 +420,12 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
-        IncrementalValueProvider<List<SagaInfo>> sagaProvider = context.CompilationProvider.Select((
-                compilation,
-                _
-            ) => GetSagasFromCompilation(compilation))
+        IncrementalValueProvider<List<SagaInfo>> sagaProvider = context.CompilationProvider
+            .Select((compilation, _) => GetSagasFromCompilation(compilation))
             .WithTrackingName("SagaControllerGenerator_Sagas");
         context.RegisterSourceOutput(
             sagaProvider,
-            (
-                spc,
-                sagas
-            ) =>
+            (spc, sagas) =>
             {
                 foreach (SagaInfo saga in sagas)
                 {

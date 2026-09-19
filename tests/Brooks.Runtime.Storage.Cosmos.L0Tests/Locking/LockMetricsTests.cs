@@ -27,22 +27,14 @@ public sealed class LockMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == LockMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagDict = [];
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -71,22 +63,14 @@ public sealed class LockMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == LockMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagDict = [];
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -96,12 +80,7 @@ public sealed class LockMetricsTests
 
             measurements.Add(new(instrument.Name, measurement, 0, 0, tagDict));
         });
-        listener.SetMeasurementEventCallback<double>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagDict = [];
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -111,12 +90,7 @@ public sealed class LockMetricsTests
 
             measurements.Add(new(instrument.Name, 0, measurement, 0, tagDict));
         });
-        listener.SetMeasurementEventCallback<int>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<int>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagDict = [];
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -148,22 +122,14 @@ public sealed class LockMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == LockMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<double>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagDict = [];
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -192,22 +158,14 @@ public sealed class LockMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == LockMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagDict = [];
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -236,22 +194,14 @@ public sealed class LockMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == LockMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagDict = [];
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -261,12 +211,7 @@ public sealed class LockMetricsTests
 
             measurements.Add(new(instrument.Name, measurement, 0, 0, tagDict));
         });
-        listener.SetMeasurementEventCallback<double>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagDict = [];
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -276,12 +221,7 @@ public sealed class LockMetricsTests
 
             measurements.Add(new(instrument.Name, 0, measurement, 0, tagDict));
         });
-        listener.SetMeasurementEventCallback<int>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<int>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagDict = [];
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -313,22 +253,14 @@ public sealed class LockMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == LockMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<int>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<int>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagDict = [];
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -357,22 +289,14 @@ public sealed class LockMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == LockMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagDict = [];
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -401,22 +325,14 @@ public sealed class LockMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == LockMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<double>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagDict = [];
             foreach (KeyValuePair<string, object?> tag in tags)

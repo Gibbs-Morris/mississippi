@@ -22,9 +22,6 @@ public sealed class SagaCompletedReducer<TSaga> : EventReducerBase<SagaCompleted
         ArgumentNullException.ThrowIfNull(eventData);
         return SagaStateMutator.CreateUpdated(
             state,
-            (
-                map,
-                instance
-            ) => map.SetProperty(instance, nameof(ISagaState.Phase), SagaPhase.Completed));
+            (map, instance) => map.SetProperty(instance, nameof(ISagaState.Phase), SagaPhase.Completed));
     }
 }

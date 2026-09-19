@@ -50,10 +50,8 @@ public sealed class BrookCursorGrainUnitTests
                 LogLevel.Error,
                 It.Is<EventId>(id =>
                     (id.Id == 1) && (id.Name == nameof(BrookCursorGrainLoggerExtensions.InvalidPrimaryKey))),
-                It.Is<It.IsAnyType>((
-                    state,
-                    _
-                ) => state.ToString() == "Failed to parse brook cursor grain primary key 'invalid-key'."),
+                It.Is<It.IsAnyType>((state, _) =>
+                    state.ToString() == "Failed to parse brook cursor grain primary key 'invalid-key'."),
                 It.Is<Exception>(ex => ex is FormatException),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);

@@ -28,10 +28,7 @@ public sealed class DelegateEventReducerTests
     [Fact]
     public void ReduceShouldAllowNullStateAndProjection()
     {
-        DelegateEventReducer<string, string?> eventReducer = new((
-            _,
-            @event
-        ) => @event);
+        DelegateEventReducer<string, string?> eventReducer = new((_, @event) => @event);
         string? projection = eventReducer.Reduce(null!, "e0");
         Assert.Equal("e0", projection);
     }
@@ -42,10 +39,7 @@ public sealed class DelegateEventReducerTests
     [Fact]
     public void ReduceShouldRejectMutatingSameInstance()
     {
-        DelegateEventReducer<string, MutableProjection> eventReducer = new((
-            state,
-            @event
-        ) =>
+        DelegateEventReducer<string, MutableProjection> eventReducer = new((state, @event) =>
         {
             state.Value = @event;
             return state;
@@ -63,10 +57,7 @@ public sealed class DelegateEventReducerTests
     [Fact]
     public void ReduceShouldReturnProjectionFromDelegate()
     {
-        DelegateEventReducer<int, string> eventReducer = new((
-                state,
-                @event
-            ) => $"{state}-v{@event}");
+        DelegateEventReducer<int, string> eventReducer = new((state, @event) => $"{state}-v{@event}");
         string result = eventReducer.Reduce("s0", 42);
         Assert.Equal("s0-v42", result);
     }
@@ -77,10 +68,7 @@ public sealed class DelegateEventReducerTests
     [Fact]
     public void ReduceShouldThrowWhenEventIsNull()
     {
-        DelegateEventReducer<string, string> eventReducer = new((
-            state,
-            @event
-        ) => state + @event);
+        DelegateEventReducer<string, string> eventReducer = new((state, @event) => state + @event);
         Assert.Throws<ArgumentNullException>(() => eventReducer.Reduce("s0", null!));
     }
 
@@ -90,10 +78,7 @@ public sealed class DelegateEventReducerTests
     [Fact]
     public void TryReduceShouldRejectMutatingSameInstance()
     {
-        DelegateEventReducer<string, MutableProjection> eventReducer = new((
-            state,
-            @event
-        ) =>
+        DelegateEventReducer<string, MutableProjection> eventReducer = new((state, @event) =>
         {
             state.Value = @event;
             return state;
@@ -111,10 +96,7 @@ public sealed class DelegateEventReducerTests
     [Fact]
     public void TryReduceShouldReturnProjectionFromDelegate()
     {
-        DelegateEventReducer<int, string> eventReducer = new((
-                state,
-                @event
-            ) => $"{state}-v{@event}");
+        DelegateEventReducer<int, string> eventReducer = new((state, @event) => $"{state}-v{@event}");
         bool reduced = eventReducer.TryReduce("s0", 7, out string projection);
         Assert.True(reduced);
         Assert.Equal("s0-v7", projection);

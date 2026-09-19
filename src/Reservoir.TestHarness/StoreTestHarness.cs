@@ -117,10 +117,7 @@ public sealed class StoreTestHarness<TState>
         where TAction : IAction
     {
         ArgumentNullException.ThrowIfNull(reducer);
-        reducers.Add((
-            state,
-            action
-        ) => action is TAction typed ? reducer(state, typed) : state);
+        reducers.Add((state, action) => action is TAction typed ? reducer(state, typed) : state);
         return this;
     }
 

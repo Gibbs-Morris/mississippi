@@ -238,11 +238,9 @@ public sealed class SelectorExtensionsTests : IDisposable
         store.Dispatch(new ThirdAction(true));
 
         // Act
-        string result = store.Select<TestFeatureState, OtherFeatureState, ThirdFeatureState, string>((
-                test,
-                other,
-                third
-            ) => $"{other.Name}:{test.Counter}:{third.IsActive}");
+        string result =
+            store.Select<TestFeatureState, OtherFeatureState, ThirdFeatureState, string>((test, other, third) =>
+                $"{other.Name}:{test.Counter}:{third.IsActive}");
 
         // Assert
         Assert.Equal("test:5:True", result);
@@ -270,11 +268,8 @@ public sealed class SelectorExtensionsTests : IDisposable
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            nullStore!.Select<TestFeatureState, OtherFeatureState, ThirdFeatureState, string>((
-                s1,
-                s2,
-                s3
-            ) => string.Empty));
+            nullStore!.Select<TestFeatureState, OtherFeatureState, ThirdFeatureState, string>((s1, s2, s3) =>
+                string.Empty));
     }
 
     /// <summary>
@@ -288,10 +283,8 @@ public sealed class SelectorExtensionsTests : IDisposable
         store.Dispatch(new OtherAction("test"));
 
         // Act
-        string result = store.Select<TestFeatureState, OtherFeatureState, string>((
-                test,
-                other
-            ) => $"{other.Name}:{test.Counter}");
+        string result =
+            store.Select<TestFeatureState, OtherFeatureState, string>((test, other) => $"{other.Name}:{test.Counter}");
 
         // Assert
         Assert.Equal("test:5", result);
@@ -317,10 +310,8 @@ public sealed class SelectorExtensionsTests : IDisposable
         IStore? nullStore = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => nullStore!.Select<TestFeatureState, OtherFeatureState, string>((
-            s1,
-            s2
-        ) => string.Empty));
+        Assert.Throws<ArgumentNullException>(() =>
+            nullStore!.Select<TestFeatureState, OtherFeatureState, string>((s1, s2) => string.Empty));
     }
 
     /// <summary>

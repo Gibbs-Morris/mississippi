@@ -197,10 +197,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
     {
         foreach (SagaRegistrationInfo saga in sagaMap.Values)
         {
-            saga.Steps.Sort((
-                a,
-                b
-            ) => a.StepIndex.CompareTo(b.StepIndex));
+            saga.Steps.Sort((a, b) => a.StepIndex.CompareTo(b.StepIndex));
             bool hasStepAttributes = sagaStatesWithStepAttributes.Contains(saga.SagaStateType);
             ValidateSteps(saga, diagnostics, hasStepAttributes);
             sagas.Add(saga);
@@ -673,10 +670,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
     {
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)> source =
             context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<SagaGenerationResult> sagasProvider = source.Select((
-            pair,
-            _
-        ) =>
+        IncrementalValueProvider<SagaGenerationResult> sagasProvider = source.Select((pair, _) =>
         {
             if (!HasRegistrationDependencies(pair.Compilation))
             {
@@ -701,10 +695,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         });
         context.RegisterSourceOutput(
             sagasProvider,
-            (
-                spc,
-                result
-            ) =>
+            (spc, result) =>
             {
                 foreach (Diagnostic diagnostic in result.Diagnostics)
                 {
