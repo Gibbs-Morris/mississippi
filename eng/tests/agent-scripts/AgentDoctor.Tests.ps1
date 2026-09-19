@@ -212,8 +212,11 @@ Describe 'Repository prerequisite doctor' {
 
         $resolved = InModuleScope AgentDoctor { Resolve-DoctorCommand -FilePath 'npm' }
 
-        $resolved.FilePath | Should -Not -Match '\.ps1$'
-        $resolved.PrefixArguments | Should -Contain '-NoProfile'
+        $commands = @(Get-Command npm -All -ErrorAction SilentlyContinue)
+        if (@($commands | Where-Object { [System.IO.Path]::GetExtension($_.Source) -ieq '.ps1' }).Count -gt 0) {
+            $resolved.FilePath | Should -Not -Match '\.ps1$'
+            $resolved.PrefixArguments | Should -Contain '-NoProfile'
+        }
     }
 
     It 'does not mutate the checkout while probing' {
