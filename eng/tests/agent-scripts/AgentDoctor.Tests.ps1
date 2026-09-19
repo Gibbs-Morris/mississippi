@@ -52,6 +52,25 @@ Describe 'Repository prerequisite doctor' {
         @($report.Checks | Where-Object Name -EQ 'spring-profile').State | Should -Be 'not-required'
     }
 
+    It 'rejects docs manifests with mismatched dependency declarations' {
+        $packagePath = Join-Path $fixtureRoot 'docs/Docusaurus/package.json'
+        $lockPath = Join-Path $fixtureRoot 'docs/Docusaurus/package-lock.json'
+        $originalPackage = Get-Content -LiteralPath $packagePath -Raw
+        $originalLock = Get-Content -LiteralPath $lockPath -Raw
+        try {
+            Set-Content -LiteralPath $packagePath -Value '{"dependencies":{"@example/docs":"1.0.0"}}'
+            Set-Content -LiteralPath $lockPath -Value '{"lockfileVersion":3,"packages":{"":{"dependencies":{"@example/docs":"2.0.0"}}}}'
+            $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Docs -ProbeOverrides $readyProbes
+        }
+        finally {
+            Set-Content -LiteralPath $packagePath -Value $originalPackage
+            Set-Content -LiteralPath $lockPath -Value $originalLock
+        }
+
+        @($report.Checks | Where-Object Name -EQ 'docs-manifests').State | Should -Be 'unsupported'
+        @($report.Checks | Where-Object Name -EQ 'docs-manifests').Details | Should -Match 'dependency declarations disagree'
+    }
+
     It 'treats repository paths with wildcard characters literally' {
         $wildcardRoot = Join-Path $TestDrive 'doctor[fixture]'
         [System.IO.Directory]::CreateDirectory((Join-Path $wildcardRoot '.config')) | Out-Null
@@ -74,6 +93,18 @@ Describe 'Repository prerequisite doctor' {
         $report.Status | Should -Be 'INCOMPLETE'
         @($report.Checks | Where-Object Name -EQ 'docker-linux').State | Should -Be 'unsupported'
         $report.RequiredFailures | Should -Contain 'docker-linux'
+    }
+
+    It 'does not require Core-only tools or Git for the Spring profile' {
+        $probes = @{} + $readyProbes
+        $probes.Remove('dotnet-tools')
+        $probes.Remove('git-root')
+        $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Spring -ProbeOverrides $probes
+
+        @($report.Checks | Where-Object Name -EQ 'dotnet-tools').Count | Should -Be 0
+        @($report.Checks | Where-Object Name -EQ 'git-worktree').Count | Should -Be 0
+        $report.RequiredFailures | Should -Not -Contain 'dotnet-tools'
+        $report.RequiredFailures | Should -Not -Contain 'git-worktree'
     }
 
     It 'distinguishes an SDK mismatch' {
@@ -184,6 +215,30 @@ Describe 'Repository prerequisite doctor' {
         }
 
         @($report.Checks | Where-Object Name -EQ 'dotnet-tools').State | Should -Be 'ready'
+    }
+
+    It 'reports a resolver cache that is not a directory as unknown' {
+        $manifestPath = Join-Path $fixtureRoot '.config/dotnet-tools.json'
+        $originalManifest = Get-Content -LiteralPath $manifestPath -Raw
+        $originalHome = $env:DOTNET_CLI_HOME
+        $toolHome = Join-Path $TestDrive 'invalid-resolver-home'
+        $resolverRoot = Join-Path $toolHome '.dotnet/toolResolverCache/1'
+        try {
+            New-Item -ItemType Directory -Path (Split-Path -Parent $resolverRoot) -Force | Out-Null
+            Set-Content -LiteralPath $resolverRoot -Value 'not a directory'
+            Set-Content -LiteralPath $manifestPath -Value '{"version":1,"tools":{"Example.Package":{"version":"1.0.0","commands":["example-cli"]}}}'
+            $env:DOTNET_CLI_HOME = $toolHome
+            $probes = @{} + $readyProbes
+            $probes.Remove('dotnet-tools')
+            $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Core -ProbeOverrides $probes
+        }
+        finally {
+            Set-Content -LiteralPath $manifestPath -Value $originalManifest
+            if ($null -eq $originalHome) { Remove-Item Env:DOTNET_CLI_HOME -ErrorAction SilentlyContinue } else { $env:DOTNET_CLI_HOME = $originalHome }
+        }
+
+        @($report.Checks | Where-Object Name -EQ 'dotnet-tools').State | Should -Be 'unknown'
+        @($report.Checks | Where-Object Name -EQ 'dotnet-tools').Details | Should -Match 'not a directory'
     }
 
     It 'reports denied GitHub access as unknown without exposing credentials' {
