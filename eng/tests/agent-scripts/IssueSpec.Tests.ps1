@@ -233,6 +233,15 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
     }
 
+    It 'masks compact custom raw HTML blocks through the terminating blank line' {
+        $compact = $validBug -replace '\r?\n\r?\n', [Environment]::NewLine
+        $content = '<x-task>' + [Environment]::NewLine + $compact + [Environment]::NewLine + '</x-task>'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
+    }
+
     It 'rejects a missing validation section' {
         $content = $validBug -replace '(?ms)^## Validation plan.*?(?=^## Risks and delivery boundary)', ''
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)

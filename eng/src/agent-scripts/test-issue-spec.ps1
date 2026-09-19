@@ -242,6 +242,7 @@ function Remove-MarkdownHtmlBlocks { # NOSONAR - bounded raw-HTML block scanner 
         }
         if ($line -match '(?i)^[ \t]{0,3}(?:</?[A-Za-z][^>\r\n]*>|<[A-Za-z][^>\r\n]*/>)\s*$') {
             $lines.Add('')
+            $insideHtmlBlock = $true
             continue
         }
         $lines.Add($line)
