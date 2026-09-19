@@ -55,6 +55,22 @@ function Add-IssueSpecError {
     $null = $Errors.Add($Message)
 }
 
+function Remove-MarkdownFencedBlocks {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Content)
+
+    $insideFence = $false
+    $lines = foreach ($line in ($Content -split '\r?\n')) {
+        if ($line -match '^\s*(```|~~~)') {
+            $insideFence = -not $insideFence
+            ''
+        }
+        elseif ($insideFence) { '' }
+        else { $line }
+    }
+    return ($lines -join [Environment]::NewLine)
+}
+
 function Test-RepositoryRelativePath {
     [CmdletBinding()]
     param(
@@ -82,11 +98,12 @@ function Get-IssueSpecResult {
     $errors = [System.Collections.Generic.List[string]]::new()
     $warnings = [System.Collections.Generic.List[string]]::new()
     $content = Get-Content -LiteralPath $IssuePath -Raw -ErrorAction Stop
-    $sections = Get-MarkdownSections -Content $content
+    $structuralContent = Remove-MarkdownFencedBlocks -Content $content
+    $sections = Get-MarkdownSections -Content $structuralContent
 
-    $versionMatch = [regex]::Match($content, '(?im)^\s*Contract version:\s*(?<Value>\d+\.\d+)\s*$')
+    $versionMatch = [regex]::Match($structuralContent, '(?im)^\s*Contract version:\s*(?<Value>\d+\.\d+)\s*$')
     if (-not $versionMatch.Success) {
-        $versionMatch = [regex]::Match($content, '(?im)^#{2,3}\s+Contract version\s*\r?\n\s*(?<Value>\d+\.\d+)\s*$')
+        $versionMatch = [regex]::Match($structuralContent, '(?im)^#{2,3}\s+Contract version\s*\r?\n\s*(?<Value>\d+\.\d+)\s*$')
     }
     $version = if ($versionMatch.Success) { $versionMatch.Groups['Value'].Value } else { '' }
     if (-not $versionMatch.Success) {
@@ -105,7 +122,7 @@ function Get-IssueSpecResult {
         }
     }
 
-    $headingMatches = [regex]::Matches($content, '(?m)^#{2,3}\s+(?<Title>[^\r\n]+)\s*$')
+    $headingMatches = [regex]::Matches($structuralContent, '(?m)^#{2,3}\s+(?<Title>[^\r\n]+)\s*$')
     foreach ($group in @($headingMatches | ForEach-Object { $_.Groups['Title'].Value.Trim() } | Group-Object)) {
         if ($group.Count -gt 1 -and $requiredSections -contains $group.Name) {
             Add-IssueSpecError -Errors $errors -Message "Duplicate required section heading: '## $($group.Name)'."

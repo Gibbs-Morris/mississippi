@@ -107,6 +107,14 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Errors | Should -Contain "Duplicate required section heading: '## Problem'."
     }
 
+    It 'ignores headings inside fenced Markdown blocks' {
+        $fencedOnly = '```md' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '```'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $fencedOnly)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
+    }
+
     It 'rejects a missing validation section' {
         $content = $validBug -replace '(?ms)^## Validation plan.*?(?=^## Risks and delivery boundary)', ''
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
