@@ -115,6 +115,14 @@ Describe 'Deterministic validation plan' {
         $markdown.Arguments | Should -Contain '.'
     }
 
+    It 'uses repository-wide Markdown lint for mixed config and document changes' {
+        $outcome = Invoke-Plan -Paths @('.markdownlintignore', 'docs/guide.md')
+
+        $markdown = @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'markdown-lint')[0]
+        $markdown.Arguments | Should -Contain '.'
+        $markdown.Arguments | Should -Not -Contain 'docs/guide.md'
+    }
+
     It 'derives the repository root from the planner script when omitted' {
         Push-Location -LiteralPath (Join-Path $repoRoot 'eng')
         try {

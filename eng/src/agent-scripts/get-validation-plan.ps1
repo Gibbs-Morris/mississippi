@@ -69,7 +69,7 @@ try {
 
     $markdownPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:md|mdx)$' })
     $isMarkdownConfig = @($normalizedPaths | Where-Object { $_ -match '(^|/)(?:\.markdownlint-cli2\.jsonc|\.markdownlintignore)$' -or $_ -eq '.github/linters/.markdown-lint.yml' }).Count -gt 0
-    $markdownCheckPaths = if ($markdownPaths.Count -gt 0) { $markdownPaths } elseif ($isMarkdownConfig) { @('.') } else { @() }
+    $markdownCheckPaths = if ($isMarkdownConfig) { @('.') } elseif ($markdownPaths.Count -gt 0) { $markdownPaths } else { @() }
     $selected = [System.Collections.Generic.List[object]]::new()
     $isPowerShell = @($normalizedPaths | Where-Object { $_ -match '\.(?:ps1|psm1|psd1)$' -or $_ -eq 'eng/src/agent-scripts/validation-command-catalog.json' }).Count -gt 0
     $isMarkdown = $markdownPaths.Count -gt 0
