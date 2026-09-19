@@ -100,6 +100,18 @@ Describe 'Repository prerequisite doctor' {
         ($report | ConvertTo-Json -Depth 8) | Should -Not -Match 'token|secret|credential'
     }
 
+    It 'preserves native output when a probe exits unsuccessfully' {
+        $probes = @{} + $readyProbes
+        $probes['git-root'] = [pscustomobject]@{ Available = $true; Output = 'fatal: not a git repository'; ExitCode = 128; Error = '' }
+        $probes['github-repository'] = [pscustomobject]@{ Available = $true; Output = 'gh: authentication required'; ExitCode = 1; Error = '' }
+
+        $coreReport = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Core -ProbeOverrides $probes
+        $githubReport = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile GitHub -ProbeOverrides $probes
+
+        @($coreReport.Checks | Where-Object Name -EQ 'git-worktree').Details | Should -Be 'fatal: not a git repository'
+        @($githubReport.Checks | Where-Object Name -EQ 'github-repository').Details | Should -Be 'gh: authentication required'
+    }
+
     It 'does not mutate the checkout while probing' {
         $marker = Join-Path $fixtureRoot 'marker.txt'
         Set-Content -LiteralPath $marker -Value 'unchanged'
