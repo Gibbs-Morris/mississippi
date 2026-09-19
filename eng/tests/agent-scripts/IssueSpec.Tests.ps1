@@ -200,13 +200,18 @@ Describe 'Implementation-ready issue contract' {
         )
 
         $contract | Should -Match 'Contract version: 1\.0'
-        $form | Should -Match 'Contract version: 1\.0'
+        $form | Should -Match 'label: Contract version'
         $form | Should -Match 'id: contract-version'
         $form | Should -Match 'value:\s*["'']?1\.0["'']?'
         foreach ($label in $requiredLabels) {
             $contract | Should -Match ([regex]::Escape("- ``## $label``"))
+        }
+        foreach ($label in @('Problem', 'Observable outcome', 'Scope', 'Relevant source and contracts', 'Decisions and non-goals', 'Acceptance criteria', 'Implementation outline', 'Validation plan', 'Risks and delivery boundary')) {
             $form | Should -Match ([regex]::Escape("label: $label"))
         }
+        $form | Should -Match '## Dependencies and readiness'
+        $form | Should -Match '## Validation evidence map'
+        [regex]::Matches($form, '(?m)^\s*- type: ').Count | Should -BeLessOrEqual 10
     }
 
     It 'retains repository paths and validation detail in the issue refiner' {
