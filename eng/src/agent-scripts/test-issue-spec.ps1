@@ -154,7 +154,7 @@ function Get-IssueSpecResult {
     if ($content -match '(?im)\b(?:TBD|TODO|FIXME)\b\s*(?:\(|\[)?\s*blocking') {
         Add-IssueSpecError -Errors $errors -Message 'Unresolved blocking TBD/TODO marker is not allowed.'
     }
-    if ($content -match '(?im)\{\{[^}]+\}\}|^\s*[-*]\s*\[(?:insert|describe|add|todo|tbd)[^\]]*\]') {
+    if ($structuralContent -match '(?im)\{\{[^}]+\}\}|^\s*[-*]\s*\[(?:insert|describe|add|todo|tbd)[^\]]*\]') {
         Add-IssueSpecError -Errors $errors -Message 'Template placeholder remains in the issue body.'
     }
 

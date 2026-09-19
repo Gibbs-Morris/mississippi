@@ -123,6 +123,14 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
     }
 
+    It 'ignores placeholders inside fenced Markdown examples' {
+        $content = $validBug + [Environment]::NewLine + '```text' + [Environment]::NewLine + '{{name}}' + [Environment]::NewLine + '```'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'rejects a missing validation section' {
         $content = $validBug -replace '(?ms)^## Validation plan.*?(?=^## Risks and delivery boundary)', ''
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
