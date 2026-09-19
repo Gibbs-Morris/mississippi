@@ -34,7 +34,7 @@ flowchart TB
 Before following this tutorial, read these pages:
 
 - [Spring Sample App](../index.md)
-- [Building an Aggregate](./building-an-aggregate.md)
+- [Add an Aggregate Command](./building-an-aggregate.md)
 - [Building a Saga](./building-a-saga.md)
 
 ## Step 1: Define the Projection State

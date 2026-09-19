@@ -1,463 +1,490 @@
 ---
 id: spring-building-an-aggregate
-title: "Building an Aggregate: BankAccount"
-sidebar_label: Building an Aggregate
+title: Add a Command to the BankAccount Aggregate
+sidebar_label: Add an Aggregate Command
 sidebar_position: 3
-description: Step-by-step walkthrough of defining the BankAccount aggregate with commands, handlers, events, EventReducers, and effects.
+description: Add and test an account-closure command, event, aggregate reducer, and projection reducer in the Spring application.
 ---
 
-# Building an Aggregate: BankAccount
+# Add a Command to the BankAccount Aggregate
 
 ## Overview
 
-This page walks through building the `BankAccount` aggregate in the Spring sample from scratch. By the end, you will understand the exact files needed to define a fully working event-sourced aggregate with Mississippi.
+Add an account-closure operation to Spring and verify it with executable tests. You will create six files: a command, an event, a handler, two reducers, and a test class. You will also update the existing projection's source description. The existing generators then connect the new operation to Spring's runtime, gateway, and client projects.
 
-The BankAccount aggregate supports three operations: opening an account, depositing funds, and withdrawing funds. It also demonstrates two kinds of effects: a synchronous compliance check and a fire-and-forget notification.
+The closure policy is application logic for this exercise: require a reason, require an open account, and require a zero balance. Its value is explicit review: a developer or AI assistant can trace each condition to a test, each accepted closure to an event, and that event to both write and read state.
 
-## Before You Begin
+## Before you begin
 
-Before following this tutorial, make sure you have read these pages:
+- Use a disposable checkout of the Mississippi repository with the existing `samples/Spring` application. Keep this exercise on its own branch or worktree.
+- Install PowerShell 7 and the .NET SDK selected by the checkout's `global.json`.
+- Start with the six file paths below available for creation. Run every command from the repository root.
+- Read the existing [BankAccountAggregate](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/BankAccountAggregate.cs) and [BankAccountBalanceProjection](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Projections/BankAccountBalance/BankAccountBalanceProjection.cs). Both already expose `IsOpen` and `Balance`.
 
-- [Spring Sample App](../index.md)
-- [Key Concepts](../concepts/key-concepts.md)
+The following are complete files to create in that working project. This exercise adds your own business behavior using the current framework contracts; keep the existing Spring project and generator configuration described in the [capability map](../../../reference/capability-map.md#build-time-generator-references).
 
-You will get the most value from this page if you also have the Spring domain code open under `samples/Spring/Spring.Domain/Aggregates/BankAccount/`.
+## Step 1: Create the Command
 
-## Step 1: Define the Aggregate State
-
-The aggregate state is a `sealed record` that represents the current snapshot of the entity. It does not contain behavior - just data. `EventReducer`s are responsible for producing new state from events.
+Create `samples/Spring/Spring.Domain/Aggregates/BankAccount/Commands/CloseAccount.cs` with this content:
 
 ```csharp
-[BrookName("SPRING", "BANKING", "ACCOUNT")]
-[SnapshotStorageName("SPRING", "BANKING", "ACCOUNTSTATE")]
-[GenerateAggregateEndpoints]
+using Mississippi.Inlet.Generators.Abstractions;
+
+using Orleans;
+
+
+namespace MississippiSamples.Spring.Domain.Aggregates.BankAccount.Commands;
+
+/// <summary>
+///     Requests account closure through generated gateway and client code.
+/// </summary>
+[GenerateCommand(Route = "close")]
+[GenerateMcpToolMetadata(
+    Title = "Close Bank Account",
+    Description = "Closes an open bank account with a zero balance and records the closure reason.",
+    Destructive = true,
+    Idempotent = false,
+    ReadOnly = false,
+    OpenWorld = false)]
 [GenerateSerializer]
-[Alias("Spring.Domain.BankAccount.BankAccountAggregate")]
-public sealed record BankAccountAggregate
+[Alias("MississippiSamples.Spring.Domain.Aggregates.BankAccount.Commands.CloseAccount")]
+public sealed record CloseAccount
 {
-    [Id(0)] public decimal Balance { get; init; }
-    [Id(1)] public bool IsOpen { get; init; }
-    [Id(2)] public string HolderName { get; init; } = string.Empty;
-    [Id(3)] public int DepositCount { get; init; }
-    [Id(4)] public int WithdrawalCount { get; init; }
+    /// <summary>
+    ///     Gets the business reason for closing the account.
+    /// </summary>
+    [Id(0)]
+    [GenerateMcpParameterDescription("Business reason for closing this zero-balance account. Must be nonblank.")]
+    public required string Reason { get; init; }
 }
 ```
 
-Key attributes:
+The command names intent and carries the reason. `[GenerateCommand]` gives it the `close` route segment. The command is public because it appears in the generated gateway controller's public constructor signature through `IMapper<CloseAccountDto, CloseAccount>`. Spring's [friend-assembly declarations](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Spring.Domain.csproj) support internal handlers and events; the client generators produce their own transport artifacts. Orleans serialization uses the explicit alias and member ID.
 
-| Attribute | Purpose |
-|-----------|---------|
-| `[BrookName]` | Names the event stream - all events for this aggregate are stored under `SPRING/BANKING/ACCOUNT` |
-| `[SnapshotStorageName]` | Names the snapshot storage container for efficient state recovery |
-| `[GenerateAggregateEndpoints]` | Source-generates API controllers, Orleans grains, and client-side dispatchers |
-| `[GenerateSerializer]` | Orleans serialization support |
-| `[Alias]` | Stable serialization identity for Orleans version tolerance |
+The MCP metadata makes the generated tool's purpose and inputs explicit to AI clients. The handler below enforces the account and balance conditions.
 
-The `[Id(n)]` attributes on properties define the Orleans serialization field order. They are required for all serialized types.
+## Step 2: Create the Accepted Event
 
-([BankAccountAggregate.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/BankAccountAggregate.cs))
-
-## Step 2: Define Commands
-
-Commands are simple records that describe what the caller wants to happen. Each command gets its own file and maps to one handler.
-
-### OpenAccount
+Create `samples/Spring/Spring.Domain/Aggregates/BankAccount/Events/AccountClosed.cs`:
 
 ```csharp
-[GenerateCommand(Route = "open")]
-[GenerateSerializer]
-[Alias("Spring.Domain.BankAccount.Commands.OpenAccount")]
-public sealed record OpenAccount(
-    [property: Id(0)] string HolderName,
-    [property: Id(1)] decimal InitialDeposit = 0);
-```
+using Mississippi.Brooks.Abstractions.Attributes;
 
-### DepositFunds
+using Orleans;
 
-```csharp
-[GenerateCommand(Route = "deposit")]
+
+namespace MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
+
+/// <summary>
+///     Records an accepted account closure.
+/// </summary>
+[EventStorageName("SPRING", "BANKING", "ACCOUNTCLOSED", 1)]
 [GenerateSerializer]
-[Alias("Spring.Domain.BankAccount.Commands.DepositFunds")]
-public sealed record DepositFunds
+[Alias("MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events.AccountClosed")]
+internal sealed record AccountClosed
 {
-    [Id(0)] public decimal Amount { get; init; }
+    /// <summary>
+    ///     Gets the recorded closure reason.
+    /// </summary>
+    [Id(0)]
+    public required string Reason { get; init; }
 }
 ```
 
-### WithdrawFunds
+`AccountClosed` records an accepted fact. Its versioned storage name identifies the event payload in persisted history. The handler below decides when that fact may be recorded.
+
+## Step 3: Create the Business-Rule Handler
+
+Create `samples/Spring/Spring.Domain/Aggregates/BankAccount/Handlers/CloseAccountHandler.cs`:
 
 ```csharp
-[GenerateCommand(Route = "withdraw")]
-[GenerateSerializer]
-[Alias("Spring.Domain.BankAccount.Commands.WithdrawFunds")]
-public sealed record WithdrawFunds
+using System.Collections.Generic;
+
+using Mississippi.DomainModeling.Abstractions;
+
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Commands;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
+
+
+namespace MississippiSamples.Spring.Domain.Aggregates.BankAccount.Handlers;
+
+/// <summary>
+///     Validates account closure before emitting an accepted event.
+/// </summary>
+internal sealed class CloseAccountHandler : CommandHandlerBase<CloseAccount, BankAccountAggregate>
 {
-    [Id(0)] public decimal Amount { get; init; }
-}
-```
-
-The `[GenerateCommand(Route = "...")]` attribute tells the source generator to create an API endpoint for this command. The `Route` value becomes part of the REST path.
-
-([OpenAccount.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Commands/OpenAccount.cs) |
-[DepositFunds.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Commands/DepositFunds.cs) |
-[WithdrawFunds.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Commands/WithdrawFunds.cs))
-
-## Step 3: Define Events
-
-Events are immutable facts that record what happened. They are `internal` because external consumers read projections, not raw events.
-
-### AccountOpened
-
-```csharp
-[EventStorageName("SPRING", "BANKING", "ACCOUNTOPENED")]
-[GenerateSerializer]
-[Alias("Spring.Domain.BankAccount.Events.AccountOpened")]
-internal sealed record AccountOpened
-{
-    [Id(0)] public string HolderName { get; init; } = string.Empty;
-    [Id(1)] public decimal InitialDeposit { get; init; }
-}
-```
-
-### FundsDeposited
-
-```csharp
-[EventStorageName("SPRING", "BANKING", "FUNDSDEPOSITED")]
-[GenerateSerializer]
-[Alias("Spring.Domain.BankAccount.Events.FundsDeposited")]
-internal sealed record FundsDeposited
-{
-    [Id(0)] public decimal Amount { get; init; }
-}
-```
-
-### FundsWithdrawn
-
-```csharp
-[EventStorageName("SPRING", "BANKING", "FUNDSWITHDRAWN")]
-[GenerateSerializer]
-[Alias("Spring.Domain.BankAccount.Events.FundsWithdrawn")]
-internal sealed record FundsWithdrawn
-{
-    [Id(0)] public decimal Amount { get; init; }
-}
-```
-
-The `[EventStorageName]` attribute defines how the event is identified in storage. This identity is permanent - renaming the C# type does not break stored events.
-
-([AccountOpened.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Events/AccountOpened.cs) |
-[FundsDeposited.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Events/FundsDeposited.cs) |
-[FundsWithdrawn.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Events/FundsWithdrawn.cs))
-
-## Step 4: Define CommandHandlers
-
-`CommandHandler`s validate business rules and decide which events to emit. Each `CommandHandler` extends `CommandHandlerBase<TCommand, TSnapshot>` and implements `HandleCore`.
-
-### OpenAccountHandler
-
-```csharp
-internal sealed class OpenAccountHandler : CommandHandlerBase<OpenAccount, BankAccountAggregate>
-{
+    /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
-        OpenAccount command,
-        BankAccountAggregate? state)
+        CloseAccount command,
+        BankAccountAggregate? state
+    )
     {
-        if (state?.IsOpen == true)
-            return OperationResult.Fail<IReadOnlyList<object>>(
-                AggregateErrorCodes.AlreadyExists,
-                "Account is already open.");
-
-        if (string.IsNullOrWhiteSpace(command.HolderName))
+        if (string.IsNullOrWhiteSpace(command.Reason))
+        {
             return OperationResult.Fail<IReadOnlyList<object>>(
                 AggregateErrorCodes.InvalidCommand,
-                "Account holder name is required.");
+                "A closure reason is required.");
+        }
 
-        if (command.InitialDeposit < 0)
+        if (state?.IsOpen != true)
+        {
             return OperationResult.Fail<IReadOnlyList<object>>(
-                AggregateErrorCodes.InvalidCommand,
-                "Initial deposit cannot be negative.");
+                AggregateErrorCodes.InvalidState,
+                "Account must be open before closing.");
+        }
+
+        if (state.Balance != 0m)
+        {
+            return OperationResult.Fail<IReadOnlyList<object>>(
+                AggregateErrorCodes.InvalidState,
+                "The balance must be zero before closing.");
+        }
 
         return OperationResult.Ok<IReadOnlyList<object>>(
             new object[]
             {
-                new AccountOpened
+                new AccountClosed
                 {
-                    HolderName = command.HolderName,
-                    InitialDeposit = command.InitialDeposit,
+                    Reason = command.Reason,
                 },
             });
     }
 }
 ```
 
-### WithdrawFundsHandler
+Validate command data first, then aggregate state. A missing reason is `InvalidCommand` even when the account is new. A valid request against an unopened, closed, or funded account is `InvalidState`. A successful result contains one event; the aggregate runtime owns persistence.
 
-The withdrawal handler demonstrates richer business rules - the account must be open, the amount must be positive, and there must be sufficient funds:
+### Checkpoint: Predict the Decision
+
+| Reason | Account state | Outcome |
+| --- | --- | --- |
+| Missing, empty, or whitespace | Any state, including new | `InvalidCommand` |
+| Customer request | New or already closed | `InvalidState` |
+| Customer request | Open with nonzero balance | `InvalidState` |
+| Customer request | Open with zero balance | One `AccountClosed` event carrying the reason |
+
+Give an AI assistant this table as an acceptance contract. A generic request to set `IsOpen` to false would hide these rules; the named command keeps the decision in one handler.
+
+## Step 4: Update Aggregate State with a Reducer
+
+Create `samples/Spring/Spring.Domain/Aggregates/BankAccount/Reducers/AccountClosedReducer.cs`:
 
 ```csharp
-internal sealed class WithdrawFundsHandler : CommandHandlerBase<WithdrawFunds, BankAccountAggregate>
+using System;
+
+using Mississippi.Tributary.Abstractions;
+
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
+
+
+namespace MississippiSamples.Spring.Domain.Aggregates.BankAccount.Reducers;
+
+/// <summary>
+///     Applies an accepted closure to aggregate state.
+/// </summary>
+internal sealed class AccountClosedReducer : EventReducerBase<AccountClosed, BankAccountAggregate>
 {
-    protected override OperationResult<IReadOnlyList<object>> HandleCore(
-        WithdrawFunds command,
-        BankAccountAggregate? state)
+    /// <inheritdoc />
+    protected override BankAccountAggregate ReduceCore(
+        BankAccountAggregate? state,
+        AccountClosed eventData
+    )
     {
-        if (state?.IsOpen != true)
-            return OperationResult.Fail<IReadOnlyList<object>>(
-                AggregateErrorCodes.InvalidState,
-                "Account must be open before withdrawing funds.");
-
-        if (command.Amount <= 0)
-            return OperationResult.Fail<IReadOnlyList<object>>(
-                AggregateErrorCodes.InvalidCommand,
-                "Withdrawal amount must be positive.");
-
-        if (state.Balance < command.Amount)
-            return OperationResult.Fail<IReadOnlyList<object>>(
-                AggregateErrorCodes.InvalidCommand,
-                "Insufficient funds for withdrawal.");
-
-        return OperationResult.Ok<IReadOnlyList<object>>(
-            new object[] { new FundsWithdrawn { Amount = command.Amount } });
+        ArgumentNullException.ThrowIfNull(eventData);
+        return (state ?? new()) with
+        {
+            IsOpen = false,
+        };
     }
 }
 ```
 
-Key pattern: `CommandHandler`s return `OperationResult.Fail(...)` or `OperationResult.Ok(...)`. They never throw exceptions for business rule violations. They never modify state directly.
+The reducer applies the accepted event by returning a new record with `IsOpen` set to false. It uses a default state when no initial state is supplied and preserves the other fields when state exists. Keep acceptance checks in the handler so reconstruction applies recorded facts consistently.
 
-([OpenAccountHandler.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Handlers/OpenAccountHandler.cs) |
-[DepositFundsHandler.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Handlers/DepositFundsHandler.cs) |
-[WithdrawFundsHandler.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Handlers/WithdrawFundsHandler.cs))
+Pure reducers make replay predictable: the same initial state, ordered events, and reducer implementation produce the same state. Keep external calls and time-dependent decisions outside this transition.
 
-## Checkpoint 1
+## Step 5: Update the Read Model
 
-At this point, your aggregate should have:
-
-- one state record with brook and snapshot attributes
-- command records for open, deposit, and withdraw
-- internal event records for each state change
-- one handler per command that returns events instead of mutating state directly
-
-## Step 5: Define EventReducers
-
-`EventReducer`s are pure functions that compute new state from an event. Each event type gets its own `EventReducer`. `EventReducer`s extend `EventReducerBase<TEvent, TProjection>`.
-
-### AccountOpenedReducer
+Create `samples/Spring/Spring.Domain/Projections/BankAccountBalance/Reducers/AccountClosedProjectionReducer.cs`:
 
 ```csharp
-internal sealed class AccountOpenedReducer : EventReducerBase<AccountOpened, BankAccountAggregate>
+using System;
+
+using Mississippi.Tributary.Abstractions;
+
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
+
+
+namespace MississippiSamples.Spring.Domain.Projections.BankAccountBalance.Reducers;
+
+/// <summary>
+///     Applies an accepted closure to the balance read model.
+/// </summary>
+internal sealed class AccountClosedProjectionReducer : EventReducerBase<AccountClosed, BankAccountBalanceProjection>
 {
-    protected override BankAccountAggregate ReduceCore(
-        BankAccountAggregate state,
-        AccountOpened @event)
+    /// <inheritdoc />
+    protected override BankAccountBalanceProjection ReduceCore(
+        BankAccountBalanceProjection? state,
+        AccountClosed eventData
+    )
     {
-        ArgumentNullException.ThrowIfNull(@event);
+        ArgumentNullException.ThrowIfNull(eventData);
         return (state ?? new()) with
+        {
+            IsOpen = false,
+        };
+    }
+}
+```
+
+The balance projection exposes account status to clients. Applying the same closure event keeps its `IsOpen` value aligned with aggregate state. You define the read-model transition; the existing projection path, generated DTOs, and delivery code continue to carry that state.
+
+Aggregate and projection types share the brook family selected by `[BrookName("SPRING", "BANKING", "ACCOUNT")]`. Their snapshot storage names identify their separate state shapes. Database and container names remain host configuration.
+
+Update the remarks in `samples/Spring/Spring.Domain/Projections/BankAccountBalance/BankAccountBalanceProjection.cs`. Replace the line listing only `AccountOpened`, `FundsDeposited`, and `FundsWithdrawn` with this description so it remains accurate as the view gains another reducer:
+
+```csharp
+///         Its reducers apply the account events relevant to this view.
+```
+
+## Step 6: Create the Acceptance Tests
+
+Create `samples/Spring/Spring.Domain.L0Tests/Aggregates/BankAccount/AccountClosureTests.cs`. The existing test project's [global imports](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain.L0Tests/GlobalUsings.cs) supply xUnit.
+
+```csharp
+using System.Collections.Generic;
+
+using Mississippi.DomainModeling.Abstractions;
+
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Handlers;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Reducers;
+using MississippiSamples.Spring.Domain.Projections.BankAccountBalance;
+using MississippiSamples.Spring.Domain.Projections.BankAccountBalance.Reducers;
+
+
+namespace MississippiSamples.Spring.Domain.L0Tests.Aggregates.BankAccount;
+
+/// <summary>
+///     Verifies closure decisions and the write/read state transitions.
+/// </summary>
+public sealed class AccountClosureTests
+{
+    /// <summary>
+    ///     A closed account rejects another closure.
+    /// </summary>
+    [Fact]
+    public void ClosedAccountIsRejected()
+    {
+        OperationResult<IReadOnlyList<object>> result = new CloseAccountHandler().Handle(
+            new()
+            {
+                Reason = "Customer request",
+            },
+            new()
+            {
+                HolderName = "Existing account",
+                IsOpen = false,
+            });
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     An accepted closure updates both models without mutating their inputs.
+    /// </summary>
+    [Fact]
+    public void ClosureEmitsAnEventAndUpdatesBothModels()
+    {
+        BankAccountAggregate aggregate = new()
         {
             IsOpen = true,
-            HolderName = @event.HolderName,
-            Balance = @event.InitialDeposit,
+            HolderName = "Tutorial holder",
         };
-    }
-}
-```
-
-### FundsDepositedReducer
-
-```csharp
-internal sealed class FundsDepositedReducer : EventReducerBase<FundsDeposited, BankAccountAggregate>
-{
-    protected override BankAccountAggregate ReduceCore(
-        BankAccountAggregate state,
-        FundsDeposited @event)
-    {
-        ArgumentNullException.ThrowIfNull(@event);
-        return (state ?? new()) with
+        OperationResult<IReadOnlyList<object>> result = new CloseAccountHandler().Handle(
+            new()
+            {
+                Reason = "Customer request",
+            },
+            aggregate);
+        Assert.True(result.Success);
+        IReadOnlyList<object>? events = result.Value;
+        Assert.NotNull(events);
+        AccountClosed closed = Assert.IsType<AccountClosed>(Assert.Single(events));
+        Assert.Equal("Customer request", closed.Reason);
+        BankAccountAggregate nextAggregate = new AccountClosedReducer().Reduce(aggregate, closed);
+        Assert.False(nextAggregate.IsOpen);
+        Assert.True(aggregate.IsOpen);
+        Assert.Equal(aggregate.Balance, nextAggregate.Balance);
+        Assert.Equal(aggregate.HolderName, nextAggregate.HolderName);
+        BankAccountBalanceProjection projection = new()
         {
-            Balance = (state?.Balance ?? 0) + @event.Amount,
-            DepositCount = (state?.DepositCount ?? 0) + 1,
+            IsOpen = true,
+            HolderName = aggregate.HolderName,
         };
+        BankAccountBalanceProjection nextProjection = new AccountClosedProjectionReducer().Reduce(projection, closed);
+        Assert.False(nextProjection.IsOpen);
+        Assert.True(projection.IsOpen);
+        Assert.Equal(projection.Balance, nextProjection.Balance);
+        Assert.Equal(projection.HolderName, nextProjection.HolderName);
     }
-}
-```
 
-### FundsWithdrawnReducer
-
-```csharp
-internal sealed class FundsWithdrawnReducer : EventReducerBase<FundsWithdrawn, BankAccountAggregate>
-{
-    protected override BankAccountAggregate ReduceCore(
-        BankAccountAggregate state,
-        FundsWithdrawn @event)
+    /// <summary>
+    ///     Invalid command data takes precedence over a missing aggregate.
+    /// </summary>
+    /// <param name="reason">The invalid closure reason.</param>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void InvalidReasonIsCheckedBeforeState(
+        string? reason
+    )
     {
-        ArgumentNullException.ThrowIfNull(@event);
-        return (state ?? new()) with
+        OperationResult<IReadOnlyList<object>> result = new CloseAccountHandler().Handle(
+            new()
+            {
+                Reason = reason!,
+            },
+            null);
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     An account must have zero balance before it can close.
+    /// </summary>
+    /// <param name="balance">The nonzero account balance.</param>
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(1)]
+    public void NonzeroBalanceIsRejected(
+        int balance
+    )
+    {
+        OperationResult<IReadOnlyList<object>> result = new CloseAccountHandler().Handle(
+            new()
+            {
+                Reason = "Customer request",
+            },
+            new()
+            {
+                IsOpen = true,
+                Balance = balance,
+            });
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Both reducers can apply a recorded closure to default initial state.
+    /// </summary>
+    [Fact]
+    public void ReducersAcceptDefaultInitialState()
+    {
+        AccountClosed closed = new()
         {
-            Balance = (state?.Balance ?? 0) - @event.Amount,
-            WithdrawalCount = (state?.WithdrawalCount ?? 0) + 1,
+            Reason = "Customer request",
         };
+        BankAccountAggregate aggregate = new AccountClosedReducer().Reduce(null!, closed);
+        BankAccountBalanceProjection projection = new AccountClosedProjectionReducer().Reduce(null!, closed);
+        Assert.False(aggregate.IsOpen);
+        Assert.False(projection.IsOpen);
+        Assert.Equal(0m, aggregate.Balance);
+        Assert.Equal(0m, projection.Balance);
+    }
+
+    /// <summary>
+    ///     A valid reason still requires an existing open account.
+    /// </summary>
+    [Fact]
+    public void UnopenedAccountIsRejected()
+    {
+        OperationResult<IReadOnlyList<object>> result = new CloseAccountHandler().Handle(
+            new()
+            {
+                Reason = "Customer request",
+            },
+            null);
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
     }
 }
 ```
 
-Event reducers use C# `with` expressions to create new immutable state. The original state is never mutated. This guarantees deterministic replay - replaying the same events always produces the same state.
+These tests check rejection boundaries, command-first validation, the exact accepted event, immutable updates to both models, and reduction from default initial state. They execute the business code without starting Orleans or storage emulators.
 
-([AccountOpenedReducer.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Reducers/AccountOpenedReducer.cs) |
-[FundsDepositedReducer.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Reducers/FundsDepositedReducer.cs) |
-[FundsWithdrawnReducer.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Reducers/FundsWithdrawnReducer.cs))
+## Step 7: Run the Tests and Build Generated Integration
 
-## Step 6: Add Effects
+Run the domain quality command after creating all six files:
 
-Effects react to events after persistence, and Spring demonstrates both execution modes: blocking (simple) and fire-and-forget.
-
-### Simple Effect: HighValueTransactionEffect
-
-This effect monitors deposits and flags amounts over £10,000 for AML investigation. In the Spring sample it runs on the aggregate event-effect pipeline after the deposit event has been persisted, and the effect code dispatches a follow-up command to the investigation queue.
-
-```csharp
-internal sealed class HighValueTransactionEffect
-    : SimpleEventEffectBase<FundsDeposited, BankAccountAggregate>
-{
-    internal const decimal AmlThreshold = 10_000m;
-
-    public HighValueTransactionEffect(
-        IAggregateGrainFactory aggregateGrainFactory,
-        ILogger<HighValueTransactionEffect> logger,
-        TimeProvider? timeProvider = null)
-    {
-        AggregateGrainFactory = aggregateGrainFactory;
-        Logger = logger;
-        TimeProvider = timeProvider ?? TimeProvider.System;
-    }
-
-    // ...
-
-    protected override async Task HandleSimpleAsync(
-        FundsDeposited eventData,
-        BankAccountAggregate currentState,
-        string brookKey,
-        long eventPosition,
-        CancellationToken cancellationToken)
-    {
-        if (eventData.Amount <= AmlThreshold)
-            return;
-
-        // Dispatch FlagTransaction command to another aggregate
-        string accountId = BrookKey.FromString(brookKey).EntityId;
-        FlagTransaction command = new()
-        {
-            AccountId = accountId,
-            Amount = eventData.Amount,
-            Timestamp = TimeProvider.GetUtcNow(),
-        };
-
-        IGenericAggregateGrain<TransactionInvestigationQueueAggregate> grain =
-            AggregateGrainFactory
-                .GetGenericAggregate<TransactionInvestigationQueueAggregate>("global");
-
-        await grain.ExecuteAsync(command, cancellationToken);
-    }
-}
+```powershell
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject samples/Spring/Spring.Domain.L0Tests/Spring.Domain.L0Tests.csproj -SourceProject samples/Spring/Spring.Domain/Spring.Domain.csproj -SkipMutation
 ```
 
-This effect demonstrates **cross-aggregate command dispatch** - one aggregate's event triggers a command to a different aggregate. The `TransactionInvestigationQueueAggregate` is a separate aggregate that maintains a compliance queue.
+Require exit code 0, `RESULT: PASS`, a nonzero `TEST_TOTAL`, and matching `TEST_PASSED` and `TEST_TOTAL`. Inspect the emitted TRX report and confirm that all nine `AccountClosureTests` cases executed successfully.
 
-### Fire-and-Forget Effect: WithdrawalNotificationEffect
+Build the consuming sample projects:
 
-This effect sends a notification after every withdrawal. It runs in a separate worker grain - the withdrawal command returns immediately without waiting for the notification.
-
-```csharp
-internal sealed class WithdrawalNotificationEffect
-    : FireAndForgetEventEffectBase<FundsWithdrawn, BankAccountAggregate>
-{
-    public WithdrawalNotificationEffect(
-        INotificationService notificationService,
-        ILogger<WithdrawalNotificationEffect> logger)
-    {
-        NotificationService = notificationService;
-        Logger = logger;
-    }
-
-    // ...
-
-    public override async Task HandleAsync(
-        FundsWithdrawn eventData,
-        BankAccountAggregate aggregateState,
-        string brookKey,
-        long eventPosition,
-        CancellationToken cancellationToken)
-    {
-        string accountId = BrookKey.FromString(brookKey).EntityId;
-        await NotificationService.SendWithdrawalAlertAsync(
-            accountId,
-            eventData.Amount,
-            aggregateState.Balance,
-            cancellationToken);
-    }
-}
+```powershell
+pwsh ./build.ps1 -SkipMississippi -Configuration Release
 ```
 
-The `INotificationService` is an interface defined in `Spring.Domain`. The implementation (`StubNotificationService` that logs instead of sending) lives in `Spring.Runtime`. This demonstrates how domain logic depends only on abstractions.
+Require exit code 0, `ALL REQUESTED BUILDS COMPLETED SUCCESSFULLY`, and zero warnings and errors. This compiles the runtime, gateway, and client with the new domain types. Spring's existing `AddBankAccountAggregate()` and projection registration calls use the updated generated registrations after the build.
 
-([HighValueTransactionEffect.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Effects/HighValueTransactionEffect.cs) |
-[WithdrawalNotificationEffect.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Effects/WithdrawalNotificationEffect.cs) |
-[INotificationService.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Services/INotificationService.cs))
+The [aggregate registration generator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Runtime.Generators/AggregateSiloRegistrationGenerator.cs) discovers the command, handler, event, and aggregate reducer. The [projection registration generator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Runtime.Generators/ProjectionSiloRegistrationGenerator.cs) discovers the projection reducer. The reusable aggregate grain executes the operation; source generation supplies integration around it.
 
-## The Complete Aggregate File Structure
+### Checkpoint: Trace the Result
 
-```text
-Aggregates/BankAccount/
-├── BankAccountAggregate.cs          # State record
-├── Commands/
-│   ├── OpenAccount.cs               # Command record
-│   ├── DepositFunds.cs              # Command record
-│   └── WithdrawFunds.cs             # Command record
-├── Events/
-│   ├── AccountOpened.cs             # Event record
-│   ├── FundsDeposited.cs            # Event record
-│   └── FundsWithdrawn.cs            # Event record
-├── Handlers/
-│   ├── OpenAccountHandler.cs        # Business rule validation
-│   ├── DepositFundsHandler.cs       # Business rule validation
-│   └── WithdrawFundsHandler.cs      # Business rule validation
-├── Reducers/
-│   ├── AccountOpenedReducer.cs      # State transition
-│   ├── FundsDepositedReducer.cs     # State transition
-│   └── FundsWithdrawnReducer.cs     # State transition
-└── Effects/
-    ├── HighValueTransactionEffect.cs            # Sync side effect
-    ├── HighValueTransactionEffectLoggerExtensions.cs
-    ├── WithdrawalNotificationEffect.cs          # Async side effect
-    └── WithdrawalNotificationEffectLoggerExtensions.cs
-```
-
-Every file has a single responsibility. Adding a new operation (such as "close account") means adding one command, one event, one handler, and one `EventReducer` - the existing code does not change.
-
-## The Command Flow
+This diagram connects the rule you wrote to the two state transitions you tested.
 
 ```mermaid
 flowchart TB
-    API["API Request\n(DepositFunds)"] --> Handler["DepositFundsHandler\n(validate rules)"]
-    Handler -->|fail| Error["OperationResult.Fail"]
-    Handler -->|pass| Event["FundsDeposited\n(stored to brook)"]
-    Event --> Reducer["FundsDepositedReducer\n(update aggregate state)"]
-    Event --> Effect1["HighValueTransactionEffect\n(sync: AML check)"]
-    Event --> ProjReducer["Projection EventReducers\n(update read models)"]
+    A[CloseAccount command] --> B[Handler validates reason and account state]
+    B -->|Accepted| C[AccountClosed event]
+    B -->|Rejected| D[Operation result with error]
+    C --> E[Aggregate reducer closes write state]
+    C --> F[Projection reducer closes read state]
 ```
 
-## Checkpoint 2
+When adding a UI interaction, use the generated command action and observe the projection through the [client synchronization path](../../../concepts/read-models-and-client-sync.md). Command completion and the client-visible projection update are separate observations.
 
-Before moving on, verify these tutorial outcomes in the Spring sample source:
+For local AI tool exploration, Spring maps the HTTP `/mcp` endpoint only in Development. Follow the [local MCP how-to](../how-to/mcp-server-vscode-testing.md) for that environment and setup.
 
-- the aggregate file structure matches the layout shown above
-- each event type has a matching reducer
-- the aggregate demonstrates both a synchronous effect and a fire-and-forget effect
-- command flow still matches the diagram on this page
+## Clean Up the Exercise
+
+Keep the six new files and the projection remark update when continuing development. To restore the tutorial checkout, remove only the files you created and restore the original event-list remark in `BankAccountBalanceProjection.cs`, then rebuild the sample:
+
+```powershell
+Remove-Item -LiteralPath @(
+    'samples/Spring/Spring.Domain/Aggregates/BankAccount/Commands/CloseAccount.cs',
+    'samples/Spring/Spring.Domain/Aggregates/BankAccount/Events/AccountClosed.cs',
+    'samples/Spring/Spring.Domain/Aggregates/BankAccount/Handlers/CloseAccountHandler.cs',
+    'samples/Spring/Spring.Domain/Aggregates/BankAccount/Reducers/AccountClosedReducer.cs',
+    'samples/Spring/Spring.Domain/Projections/BankAccountBalance/Reducers/AccountClosedProjectionReducer.cs',
+    'samples/Spring/Spring.Domain.L0Tests/Aggregates/BankAccount/AccountClosureTests.cs'
+)
+$projectionPath = 'samples/Spring/Spring.Domain/Projections/BankAccountBalance/BankAccountBalanceProjection.cs'
+$projectionSource = Get-Content -LiteralPath $projectionPath -Raw
+$updatedRemark = 'Its reducers apply the account events relevant to this view.'
+$originalRemark = 'It subscribes to events from the BankAccount aggregate: AccountOpened, FundsDeposited, FundsWithdrawn.'
+Set-Content -LiteralPath $projectionPath -NoNewline -Value $projectionSource.Replace($updatedRemark, $originalRemark)
+pwsh ./build.ps1 -SkipMississippi -Configuration Release
+```
+
+## Framework Contracts
+
+- [CommandHandlerBase](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/CommandHandlerBase.cs) accepts a command and current state and returns events or a failure result.
+- [OperationResult](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/OperationResult.cs) carries success values or error codes and messages.
+- [EventReducerBase](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/EventReducerBase.cs) applies an event and checks that reference state is replaced.
 
 ## Summary
 
-An aggregate in Mississippi is a set of small, focused files with strict responsibilities. Commands describe intent. Handlers validate rules and produce events. `EventReducer`s apply events to state. Effects run side actions. Source generators create all the infrastructure (API endpoints, Orleans grains, client dispatchers) from annotations on these types.
+You added a business operation with explicit validation, an accepted event, write and read reducers, and executable acceptance tests. These are small artifacts an AI assistant can implement against a defined policy while generators connect the supported application surfaces.
 
 ## Next Steps
 
-- [Building a Saga](./building-a-saga.md) - Coordinate a money transfer across two BankAccount aggregates
-- [Building Projections](./building-projections.md) - Create read-optimized views of the BankAccount event stream
+- [Build projections](./building-projections.md) for more views of the same events.
+- [Build a saga](./building-a-saga.md) to coordinate work across accounts.
+- [Build with an AI assistant](../../../how-to/build-with-ai.md) to specify another operation and its verification.
