@@ -179,7 +179,11 @@ function Get-AgentDoctorReport {
         try {
             $globalJson = Get-Content -LiteralPath $globalJsonPath -Raw | ConvertFrom-Json
             $sdkVersion = if ($null -ne $globalJson.sdk) { [string]$globalJson.sdk.version } else { '' }
-            if ([string]::IsNullOrWhiteSpace($sdkVersion)) {
+            $hasLocalSdkPaths = $null -ne $globalJson.sdk -and $null -ne $globalJson.sdk.PSObject.Properties['paths']
+            if ($hasLocalSdkPaths) {
+                Add-DoctorCheck -Checks $checks -Name 'global.json' -State unsupported -Required $true -Details 'global.json uses checkout-local SDK search paths, which the read-only doctor will not execute.' -Remediation 'Remove sdk.paths or run validation from a trusted SDK installation.'
+            }
+            elseif ([string]::IsNullOrWhiteSpace($sdkVersion)) {
                 Add-DoctorCheck -Checks $checks -Name 'global.json' -State unsupported -Required $true -Details 'global.json does not declare sdk.version.' -Remediation 'Add the repository SDK version to global.json.'
             }
             else {
@@ -240,7 +244,8 @@ function Get-AgentDoctorReport {
             Add-DoctorCheck -Checks $checks -Name 'dotnet-tools' -State unsupported -Required $true -Details 'Local tools cannot be verified because the tool manifest is unavailable.' -Remediation 'Repair .config/dotnet-tools.json before running dotnet tool restore.'
         }
         else {
-            $resolverRoot = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.dotnet/toolResolverCache/1'
+            $dotnetHome = if ([string]::IsNullOrWhiteSpace($env:DOTNET_CLI_HOME)) { [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile) } else { $env:DOTNET_CLI_HOME }
+            $resolverRoot = Join-Path $dotnetHome '.dotnet/toolResolverCache/1'
             $toolFailures = [System.Collections.Generic.List[string]]::new()
             $hasMissingTool = $false
             $hasUnknownTool = $false
@@ -257,9 +262,13 @@ function Get-AgentDoctorReport {
                 try {
                     $records = @(Get-Content -LiteralPath $cacheFile[0].FullName -Raw -ErrorAction Stop | ConvertFrom-Json)
                     $matchingRecord = @($records | Where-Object {
-                        [string]$_.Version -eq $expectedVersion -and
-                        -not [string]::IsNullOrWhiteSpace([string]$_.PathToExecutable) -and
-                        (Test-Path -LiteralPath ([string]$_.PathToExecutable) -PathType Leaf)
+                        if ([string]$_.Version -ne $expectedVersion) { return $false }
+                        $paths = @()
+                        if ($null -ne $_.PSObject.Properties['PathToExecutable']) { $paths += [string]$_.PathToExecutable }
+                        foreach ($commandRecord in @($_.Commands)) {
+                            if ($null -ne $commandRecord.PSObject.Properties['PathToExecutable']) { $paths += [string]$commandRecord.PathToExecutable }
+                        }
+                        @($paths | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and (Test-Path -LiteralPath $_ -PathType Leaf) }).Count -gt 0
                     })
                     if ($matchingRecord.Count -eq 0) {
                         $toolFailures.Add("${packageId}@${expectedVersion}: restored executable metadata is missing.")
@@ -293,7 +302,13 @@ function Get-AgentDoctorReport {
         $nodeRemediation = if ($nodeState -eq 'ready') { '' } elseif ($nodeState -eq 'unsupported') { 'Install Node.js 20 or later for the documentation profile.' } else { 'Install Node.js 20 or later and verify node --version.' }
         Add-DoctorCheck -Checks $checks -Name 'node' -State $nodeState -Required $true -Details $nodeDetails -Remediation $nodeRemediation
         Add-DoctorCheck -Checks $checks -Name 'npm' -State $(if ($npm.Available -and $npm.ExitCode -eq 0) { 'ready' } elseif (-not $npm.Available) { 'missing' } else { 'unknown' }) -Required $true -Details (Get-DoctorProbeDetails -Probe $npm) -Remediation 'Install npm for the documentation profile.'
-        Add-DoctorCheck -Checks $checks -Name 'docs-manifests' -State $(if ((Test-Path -LiteralPath $packageJson -PathType Leaf) -and (Test-Path -LiteralPath $lockFile -PathType Leaf)) { 'ready' } else { 'missing' }) -Required $true -Details "package.json=$((Test-Path -LiteralPath $packageJson -PathType Leaf)); package-lock.json=$((Test-Path -LiteralPath $lockFile -PathType Leaf))." -Remediation 'Restore the Docusaurus package manifests.'
+        $docsManifestState = 'missing'
+        $docsManifestDetails = "package.json=$((Test-Path -LiteralPath $packageJson -PathType Leaf)); package-lock.json=$((Test-Path -LiteralPath $lockFile -PathType Leaf))."
+        if ((Test-Path -LiteralPath $packageJson -PathType Leaf) -and (Test-Path -LiteralPath $lockFile -PathType Leaf)) {
+            try { Get-Content -LiteralPath $packageJson -Raw | ConvertFrom-Json | Out-Null; Get-Content -LiteralPath $lockFile -Raw | ConvertFrom-Json | Out-Null; $docsManifestState = 'ready' }
+            catch { $docsManifestState = 'unsupported'; $docsManifestDetails = $_.Exception.Message }
+        }
+        Add-DoctorCheck -Checks $checks -Name 'docs-manifests' -State $docsManifestState -Required $true -Details $docsManifestDetails -Remediation 'Restore valid Docusaurus package manifests.'
     }
     else { Add-DoctorCheck -Checks $checks -Name 'docs-profile' -State not-required -Required $false -Details 'Documentation prerequisites were not requested.' }
 
@@ -303,6 +318,17 @@ function Get-AgentDoctorReport {
         Add-DoctorCheck -Checks $checks -Name 'docker-linux' -State $dockerState -Required $true -Details (Get-DoctorProbeDetails -Probe $docker) -Remediation 'Start Docker with Linux containers and grant this user access.'
         $appHost = Join-Path $root 'samples/Spring/Spring.AppHost/Spring.AppHost.csproj'
         Add-DoctorCheck -Checks $checks -Name 'spring-apphost' -State $(if (Test-Path -LiteralPath $appHost -PathType Leaf) { 'ready' } else { 'missing' }) -Required $true -Details $appHost -Remediation 'Restore the Spring AppHost project.'
+        $packageProps = Join-Path $root 'Directory.Packages.props'
+        $aspireState = 'missing'
+        $aspireDetails = 'Directory.Packages.props or Aspire.Hosting.AppHost is missing.'
+        if (Test-Path -LiteralPath $packageProps -PathType Leaf) {
+            try {
+                [xml]$packageXml = Get-Content -LiteralPath $packageProps -Raw
+                $aspire = @($packageXml.Project.ItemGroup.PackageVersion | Where-Object Include -EQ 'Aspire.Hosting.AppHost')[0]
+                if ($null -ne $aspire -and -not [string]::IsNullOrWhiteSpace([string]$aspire.Version)) { $aspireState = 'ready'; $aspireDetails = [string]$aspire.Version } else { $aspireState = 'unsupported' }
+            } catch { $aspireState = 'unsupported'; $aspireDetails = $_.Exception.Message }
+        }
+        Add-DoctorCheck -Checks $checks -Name 'spring-aspire-package' -State $aspireState -Required $true -Details $aspireDetails -Remediation 'Restore a valid Aspire.Hosting.AppHost PackageVersion.'
         $playwright = Join-Path $root 'artifacts/tools/playwright'
         Add-DoctorCheck -Checks $checks -Name 'playwright-browsers' -State $(if (Test-Path -LiteralPath $playwright -PathType Container) { 'ready' } else { 'unknown' }) -Required $false -Details 'Browser binaries are checked separately by the L3 setup.' -Remediation 'Run test-spring.ps1 once for the L3 profile if browser binaries are needed.'
     }
@@ -310,7 +336,9 @@ function Get-AgentDoctorReport {
 
     if ($profiles -contains 'GitHub') {
         $remote = Invoke-DoctorProbe -Name 'git-remote' -FilePath 'git' -Arguments @('-C', $root, 'config', '--get', 'remote.origin.url') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
-        $gh = Invoke-DoctorProbe -Name 'github-repository' -FilePath 'gh' -Arguments @('repo', 'view', '--json', 'nameWithOwner') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
+        $remoteSlug = (($remote.Output.Trim() -replace '\.git$','') -replace '^git@github\.com:', '' -replace '^https://github\.com/', '')
+        $remoteSlug = $remoteSlug.TrimEnd('/')
+        $gh = Invoke-DoctorProbe -Name 'github-repository' -FilePath 'gh' -Arguments @('repo', 'view', $remoteSlug, '--json', 'nameWithOwner') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
         $githubState = if (-not $remote.Available) { 'missing' } elseif ($remote.ExitCode -ne 0) { 'unknown' } elseif (-not $gh.Available) { 'missing' } elseif ($gh.ExitCode -eq 0) { 'ready' } else { 'unknown' }
         $githubDetails = if (-not $remote.Available -or $remote.ExitCode -ne 0) { Get-DoctorProbeDetails -Probe $remote } elseif ($gh.ExitCode -eq 0) { 'Repository identity resolved without exposing credentials.' } else { Get-DoctorProbeDetails -Probe $gh }
         Add-DoctorCheck -Checks $checks -Name 'github-repository' -State $githubState -Required $true -Details $githubDetails -Remediation 'Authenticate gh with read access to the current repository and verify Git is installed.'
