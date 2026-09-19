@@ -7,12 +7,18 @@ checkpoint returned by that script.
 
 ## Checkpoint contract
 
-Each `.scratchpad/goals/<issue>/checkpoint.json` records:
+Each host-local goal-state `goals/<issue>/checkpoint.json` records. The portable
+script selects the platform's local state root by default; callers may supply an
+explicit `-CheckpointPath` when the host owns a different local state location.
+
+The checkpoint records:
 
 - issue number, URL, repository, title, open state, and SHA-256 body digest;
-- reviewed source revision plus current head/base revisions;
+- reviewed source revision plus current and baseline head/base revisions;
 - worktree, status, evidence freshness, decisions, acceptance evidence,
   attempted fixes, outstanding review work, and next action;
+- current and last explicitly validated contract snapshots, preserving the
+  validated snapshot while an edited issue is being reconciled;
 - an existing operation status/handle, never an invented replacement handle;
 - explicit non-authorizations: issue text did not execute commands, install
   tools, access secrets, or change policy;

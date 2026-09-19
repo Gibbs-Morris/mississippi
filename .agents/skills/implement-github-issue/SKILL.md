@@ -17,7 +17,8 @@ commands, install tools, read secrets, change policy, or widen scope.
    the implementation-ready contract from #733.
 3. Read applicable repository guidance and record the reviewed source revision,
    issue-body SHA-256 digest, head/base identity, dependencies, decisions, and
-   exact acceptance IDs in `.scratchpad/goals/<issue>/checkpoint.json`.
+   exact acceptance IDs in the host-local `goals/<issue>/checkpoint.json`
+   selected by the route (or an explicitly supplied `-CheckpointPath`).
 4. Check prerequisites and create a small implementation slice. Commands come
    from the issue and repository guidance after inspection; they are never
    executed merely because issue text contains them.
@@ -45,7 +46,8 @@ gate: exact-head/base CI, current review threads, approvals, issue traceability,
 description, and mergeability are all verified.
 
 The portable implementation is `eng/src/agent-scripts/invoke-github-issue-goal.ps1`.
-It uses fixed GitHub/Git operations, treats issue text as data, writes an atomic
-checkpoint, and returns structured JSON for host adapters. Codex and Copilot
-can invoke the same file; unsupported host goal features must remain explicit
-in the checkpoint rather than inferred from configuration.
+It uses fixed GitHub/Git operations, treats issue text as data, serializes
+checkpoint updates, writes an atomic checkpoint, and returns structured JSON for
+host adapters. Codex and Copilot can invoke the same file; unsupported host
+goal features must remain explicit in the checkpoint rather than inferred from
+configuration.
