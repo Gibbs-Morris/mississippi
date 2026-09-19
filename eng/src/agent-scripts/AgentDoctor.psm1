@@ -186,37 +186,50 @@ function Get-AgentDoctorReport {
             Add-DoctorCheck -Checks $checks -Name 'dotnet-tools-manifest' -State missing -Required $true -Details 'Pinned local tool manifest is missing.' -Remediation 'Restore .config/dotnet-tools.json.'
         }
 
-        if ($null -eq $toolData) {
+        if ($ProbeOverrides.ContainsKey('dotnet-tools')) {
+            $toolProbe = $ProbeOverrides['dotnet-tools']
+            $toolProbeDetails = Get-DoctorProbeDetails -Probe $toolProbe
+            $toolState = if ($toolProbe.Available -and $toolProbe.ExitCode -eq 0) { 'ready' } elseif (-not $toolProbe.Available -or $toolProbeDetails -match '(?i)restore|not installed|not available|not found') { 'missing' } else { 'unknown' }
+            Add-DoctorCheck -Checks $checks -Name 'dotnet-tools' -State $toolState -Required $true -Details $toolProbeDetails -Remediation $(if ($toolState -eq 'ready') { '' } else { 'Run dotnet tool restore from the repository root and retry the doctor.' })
+        }
+        elseif ($null -eq $toolData) {
             Add-DoctorCheck -Checks $checks -Name 'dotnet-tools' -State unsupported -Required $true -Details 'Local tools cannot be verified because the tool manifest is unavailable.' -Remediation 'Repair .config/dotnet-tools.json before running dotnet tool restore.'
         }
         else {
-            $toolCommands = @(
-                foreach ($tool in @($toolData.tools.PSObject.Properties)) {
-                    foreach ($commandName in @($tool.Value.commands)) {
-                        if (-not [string]::IsNullOrWhiteSpace([string]$commandName)) { [string]$commandName }
+            $resolverRoot = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.dotnet/toolResolverCache/1'
+            $toolFailures = [System.Collections.Generic.List[string]]::new()
+            $hasMissingTool = $false
+            $hasUnknownTool = $false
+            foreach ($tool in @($toolData.tools.PSObject.Properties)) {
+                $packageId = [string]$tool.Name
+                $expectedVersion = [string]$tool.Value.version
+                $cacheFile = @(Get-ChildItem -LiteralPath $resolverRoot -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ieq $packageId } | Select-Object -First 1)
+                if ($cacheFile.Count -eq 0) {
+                    $toolFailures.Add("${packageId}@${expectedVersion}: resolver metadata is missing.")
+                    $hasMissingTool = $true
+                    continue
+                }
+
+                try {
+                    $records = @(Get-Content -LiteralPath $cacheFile[0].FullName -Raw -ErrorAction Stop | ConvertFrom-Json)
+                    $matchingRecord = @($records | Where-Object {
+                        [string]$_.Version -eq $expectedVersion -and
+                        -not [string]::IsNullOrWhiteSpace([string]$_.PathToExecutable) -and
+                        (Test-Path -LiteralPath ([string]$_.PathToExecutable) -PathType Leaf)
+                    })
+                    if ($matchingRecord.Count -eq 0) {
+                        $toolFailures.Add("${packageId}@${expectedVersion}: restored executable metadata is missing.")
+                        $hasMissingTool = $true
                     }
                 }
-            )
-            if ($toolCommands.Count -eq 0) {
-                Add-DoctorCheck -Checks $checks -Name 'dotnet-tools' -State unsupported -Required $true -Details 'The local tool manifest declares no runnable commands.' -Remediation 'Declare at least one local tool command and run dotnet tool restore.'
-            }
-            else {
-                $toolFailures = [System.Collections.Generic.List[string]]::new()
-                $hasMissingTool = $false
-                $hasUnknownTool = $false
-                foreach ($toolCommand in $toolCommands) {
-                    $toolProbe = Invoke-DoctorProbe -Name "dotnet-tool:$toolCommand" -FilePath 'dotnet' -Arguments @('tool', 'run', $toolCommand, '--version') -WorkingDirectory $root -TimeoutSeconds 10 -ProbeOverrides $ProbeOverrides
-                    if (-not $toolProbe.Available -or $toolProbe.ExitCode -ne 0) {
-                        $toolDetails = Get-DoctorProbeDetails -Probe $toolProbe
-                        $toolFailures.Add("${toolCommand}: $toolDetails")
-                        if (-not $toolProbe.Available -or $toolDetails -match '(?i)restore|not installed|not available|not found') { $hasMissingTool = $true }
-                        else { $hasUnknownTool = $true }
-                    }
+                catch {
+                    $toolFailures.Add("${packageId}@${expectedVersion}: resolver metadata is unreadable: $($_.Exception.Message)")
+                    $hasUnknownTool = $true
                 }
-                $toolState = if ($hasMissingTool) { 'missing' } elseif ($hasUnknownTool) { 'unknown' } else { 'ready' }
-                $toolDetails = if ($toolFailures.Count -eq 0) { "Verified $($toolCommands.Count) local tool command(s) are runnable." } else { $toolFailures -join '; ' }
-                Add-DoctorCheck -Checks $checks -Name 'dotnet-tools' -State $toolState -Required $true -Details $toolDetails -Remediation $(if ($toolState -eq 'ready') { '' } else { 'Run dotnet tool restore from the repository root and retry the doctor.' })
             }
+            $toolState = if ($hasMissingTool) { 'missing' } elseif ($hasUnknownTool) { 'unknown' } else { 'ready' }
+            $toolDetails = if ($toolFailures.Count -eq 0) { "Verified $(@($toolData.tools.PSObject.Properties).Count) local tool resolver records and executable paths without running tool code." } else { $toolFailures -join '; ' }
+            Add-DoctorCheck -Checks $checks -Name 'dotnet-tools' -State $toolState -Required $true -Details $toolDetails -Remediation $(if ($toolState -eq 'ready') { '' } else { 'Run dotnet tool restore from the repository root and retry the doctor.' })
         }
 
         $git = Invoke-DoctorProbe -Name 'git-root' -FilePath 'git' -Arguments @('-C', $root, 'rev-parse', '--show-toplevel') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
