@@ -27,7 +27,7 @@ $requiredSections = @(
     'Validation evidence map'
 )
 
-function Get-MarkdownSections {
+function Get-MarkdownSections { # NOSONAR - section extraction intentionally models Markdown peer-heading rules in one bounded pass.
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Content)
 
