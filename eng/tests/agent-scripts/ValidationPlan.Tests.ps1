@@ -16,8 +16,14 @@ Describe 'Deterministic validation plan' {
         function Invoke-Plan {
             param([string[]]$Paths, [string[]]$RiskHints = @(), [AllowEmptyString()][string]$Base = 'base-sha', [AllowEmptyString()][string]$Head = 'head-sha')
             $arguments = @('-NoProfile', '-File', $scriptPath, '-RepositoryRoot', $repoRoot, '-BaseRevision', $Base, '-HeadRevision', $Head, '-OutputFormat', 'Json')
-            if (@($Paths).Count -gt 0) { $arguments += @('-ChangedPathJson', (@($Paths) | ConvertTo-Json -Compress)) }
-            if (@($RiskHints).Count -gt 0) { $arguments += @('-RiskHintJson', (@($RiskHints) | ConvertTo-Json -Compress)) }
+            if (@($Paths).Count -gt 0) {
+                $changedJson = ConvertTo-Json -InputObject ([string[]]@($Paths)) -Compress
+                $arguments += @('-ChangedPathJson', $changedJson)
+            }
+            if (@($RiskHints).Count -gt 0) {
+                $riskJson = ConvertTo-Json -InputObject ([string[]]@($RiskHints)) -Compress
+                $arguments += @('-RiskHintJson', $riskJson)
+            }
             $json = & $powerShellPath @arguments 2>&1 | Out-String
             [pscustomobject]@{ ExitCode = $LASTEXITCODE; Result = $json | ConvertFrom-Json; Output = $json }
         }
@@ -212,7 +218,7 @@ Describe 'Deterministic validation plan' {
         }
         $outcome = Invoke-Plan -Paths @('samples/spring/config.json')
 
-        $outcome.Result.Unresolved | Should -Match 'Unknown mapping|No application-specific'
+        @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'core-iteration').Reasons | Should -Match 'Unknown mapping'
     }
 
     It 'emits Spring prerequisites before final gates' {
@@ -287,6 +293,34 @@ Describe 'Deterministic validation plan' {
 
         $outcome.ExitCode | Should -Be 1
         $outcome.Result.Unresolved | Should -Contain 'Changed path is empty or invalid.'
+    }
+
+    It 'rejects non-array changed-path JSON' {
+        $json = & $powerShellPath -NoProfile -File $scriptPath -RepositoryRoot $repoRoot -BaseRevision base-sha -HeadRevision head-sha -ChangedPathJson '123' -OutputFormat Json 2>&1 | Out-String
+        $exitCode = $LASTEXITCODE
+        $result = $json | ConvertFrom-Json
+
+        $exitCode | Should -Be 1
+        ($result.Unresolved -join [Environment]::NewLine) | Should -Match 'ChangedPathJson must be a JSON array of strings'
+    }
+
+    It 'keeps workflow changes incomplete without a workflow-specific gate' {
+        $outcome = Invoke-Plan -Paths @('.github/workflows/l2-tests.yml')
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Unresolved | Should -Match 'Workflow paths have no catalog-specific validation gate'
+    }
+
+    It 'preserves case-sensitive PowerShell allowlists on Unix' {
+        if ($IsWindows) {
+            Set-ItResult -Skipped -Because 'Case-only path distinctions are not applicable on Windows.'
+            return
+        }
+
+        $outcome = Invoke-Plan -Paths @('eng/src/agent-scripts/repositoryautomation.psm1')
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Unresolved | Should -Match 'outside the maintained parser/test gate'
     }
 
     It 'rejects a rooted cross-volume path on Windows' {

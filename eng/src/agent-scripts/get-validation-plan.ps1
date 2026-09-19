@@ -21,7 +21,7 @@ function ConvertTo-PlanRelativePath {
         $fullRoot = [System.IO.Path]::GetFullPath($Root).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
         $fullPath = if ([System.IO.Path]::IsPathRooted($Path)) { [System.IO.Path]::GetFullPath($Path) } else { [System.IO.Path]::GetFullPath((Join-Path $fullRoot $Path)) }
         $relative = [System.IO.Path]::GetRelativePath($fullRoot, $fullPath)
-        if ([OperatingSystem]::IsWindows()) { $relative = $relative.Replace('\', '/') }
+        if ($IsWindows) { $relative = $relative.Replace('\', '/') }
         if ([System.IO.Path]::IsPathRooted($relative) -or $relative -match '^[A-Za-z]:[\\/]' -or $relative -eq '..' -or $relative.StartsWith('../', [System.StringComparison]::Ordinal)) { return $null }
         return $relative
     }
@@ -62,7 +62,7 @@ function Format-PlanArgument {
 
 function Test-PlanPathMatch {
     param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][string]$Pattern)
-    $options = if ([OperatingSystem]::IsWindows()) { [System.Text.RegularExpressions.RegexOptions]::IgnoreCase } else { [System.Text.RegularExpressions.RegexOptions]::None }
+    $options = if ($IsWindows) { [System.Text.RegularExpressions.RegexOptions]::IgnoreCase } else { [System.Text.RegularExpressions.RegexOptions]::None }
     return [regex]::IsMatch($Path, $Pattern, $options)
 }
 
@@ -72,8 +72,36 @@ try {
     $catalog = Get-Content -LiteralPath $catalogPath -Raw -ErrorAction Stop | ConvertFrom-Json
     $unresolved = [System.Collections.Generic.List[string]]::new()
     $normalizedPaths = [System.Collections.Generic.List[string]]::new()
-    $inputChangedPaths = if (-not [string]::IsNullOrWhiteSpace($ChangedPathJson)) { @(ConvertFrom-Json -InputObject $ChangedPathJson) } else { @($ChangedPath) }
-    $inputRiskHints = if (-not [string]::IsNullOrWhiteSpace($RiskHintJson)) { @(ConvertFrom-Json -InputObject $RiskHintJson) } else { @($RiskHint) }
+    $inputChangedPaths = @($ChangedPath)
+    if (-not [string]::IsNullOrWhiteSpace($ChangedPathJson)) {
+        try {
+            $decodedChangedPaths = ConvertFrom-Json -InputObject $ChangedPathJson -NoEnumerate
+            if ($decodedChangedPaths -isnot [System.Array]) { throw 'JSON value is not an array.' }
+            foreach ($path in $decodedChangedPaths) {
+                if ($path -isnot [string]) { throw 'JSON array contains a non-string value.' }
+            }
+            $inputChangedPaths = @($decodedChangedPaths)
+        }
+        catch {
+            $unresolved.Add("ChangedPathJson must be a JSON array of strings: $($_.Exception.Message)")
+            $inputChangedPaths = @()
+        }
+    }
+    $inputRiskHints = @($RiskHint)
+    if (-not [string]::IsNullOrWhiteSpace($RiskHintJson)) {
+        try {
+            $decodedRiskHints = ConvertFrom-Json -InputObject $RiskHintJson -NoEnumerate
+            if ($decodedRiskHints -isnot [System.Array]) { throw 'JSON value is not an array.' }
+            foreach ($hint in $decodedRiskHints) {
+                if ($hint -isnot [string]) { throw 'JSON array contains a non-string value.' }
+            }
+            $inputRiskHints = @($decodedRiskHints)
+        }
+        catch {
+            $unresolved.Add("RiskHintJson must be a JSON array of strings: $($_.Exception.Message)")
+            $inputRiskHints = @()
+        }
+    }
     foreach ($path in $inputChangedPaths) {
         if ($null -eq $path -or [string]::IsNullOrWhiteSpace([string]$path)) {
             $unresolved.Add('Changed path is empty or invalid.')
@@ -107,7 +135,11 @@ try {
         'eng/tests/agent-scripts/run-validation-plan-tests.ps1',
         'eng/tests/orchestrate-powershell-tests.ps1'
     )
-    $unvalidatedPowerShellPaths = @($powerShellPaths | Where-Object { $validatedPowerShellPaths -notcontains $_ })
+    $pathComparison = if ($IsWindows) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
+    $unvalidatedPowerShellPaths = @($powerShellPaths | Where-Object {
+        $candidatePath = $_
+        @($validatedPowerShellPaths | Where-Object { [string]::Equals($_, $candidatePath, $pathComparison) }).Count -eq 0
+    })
     $isPowerShell = $powerShellPaths.Count -gt 0 -or @($normalizedPaths | Where-Object { $_ -eq 'eng/src/agent-scripts/validation-command-catalog.json' }).Count -gt 0
     $isMarkdown = $markdownPaths.Count -gt 0
     $isDocusaurus = @($normalizedPaths | Where-Object { Test-PlanPathMatch -Path $_ -Pattern '^docs/Docusaurus/' }).Count -gt 0
@@ -140,6 +172,7 @@ try {
         }
     }
     $isUnknown = $unmappedPaths.Count -gt 0
+    $workflowPaths = @($normalizedPaths | Where-Object { Test-PlanPathMatch -Path $_ -Pattern '^\.github/workflows/.+\.ya?ml$' })
 
     Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'core-final') -Reason 'Required shared final gate.' -MarkdownPaths $markdownPaths
     # core-final invokes go.ps1 without -SkipCleanup, so it already owns the authoritative cleanup pass.
@@ -160,6 +193,9 @@ try {
     }
     if ($unvalidatedPowerShellPaths.Count -gt 0) {
         $unresolved.Add("PowerShell paths are outside the maintained parser/test gate: $($unvalidatedPowerShellPaths -join ', ').")
+    }
+    if ($workflowPaths.Count -gt 0) {
+        $unresolved.Add("Workflow paths have no catalog-specific validation gate; verify GitHub Actions independently: $($workflowPaths -join ', ').")
     }
     foreach ($riskHint in $normalizedRiskHints) {
         if ($riskHint -eq 'browser') {
