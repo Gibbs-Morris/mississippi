@@ -64,16 +64,18 @@ function Remove-MarkdownFencedBlocks {
 
     $insideFence = $false
     $fenceCharacter = ''
+    $fenceLength = 0
     $lines = foreach ($line in ($Content -split '\r?\n')) {
         if (-not $insideFence -and $line -match '^\s*(?<Fence>`{3,}|~{3,})') {
             $insideFence = $true
             $fenceCharacter = $Matches.Fence.Substring(0, 1)
+            $fenceLength = $Matches.Fence.Length
             ''
             continue
         }
         elseif ($insideFence) { '' }
         else { $line }
-        if ($insideFence -and $line -match ('^\s*' + [regex]::Escape($fenceCharacter) + '{3,}\s*$')) {
+        if ($insideFence -and $line -match ('^[ \t]{0,3}' + [regex]::Escape($fenceCharacter) + '{' + $fenceLength + ',}[ \t]*$')) {
             $insideFence = $false
         }
     }
@@ -97,8 +99,8 @@ function Remove-MarkdownHtmlComments {
                 $index = $closing + $delimiterLength
                 continue
             }
-            $null = $builder.Append($Content.Substring($start))
-            break
+            $null = $builder.Append($Content.Substring($start, $delimiterLength))
+            continue
         }
         if ($index + 4 -le $Content.Length -and $Content.Substring($index, 4) -eq '<!--') {
             $closingComment = $Content.IndexOf('-->', $index + 4, [System.StringComparison]::Ordinal)
@@ -125,14 +127,15 @@ function Test-RepositoryRelativePath {
     }
 
     try {
-        $rootPath = (Resolve-Path -LiteralPath $Root -ErrorAction Stop).Path
-        $candidatePath = (Resolve-Path -LiteralPath (Join-Path $rootPath $Candidate) -ErrorAction Stop).Path
-        $rootFullPath = [System.IO.Path]::GetFullPath($rootPath).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
-        $candidateFullPath = [System.IO.Path]::GetFullPath($candidatePath).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
-        $comparison = if ($IsWindows) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
-        return $candidateFullPath.Equals($rootFullPath, $comparison) -or
-            $candidateFullPath.StartsWith($rootFullPath + [System.IO.Path]::DirectorySeparatorChar, $comparison) -or
-            $candidateFullPath.StartsWith($rootFullPath + [System.IO.Path]::AltDirectorySeparatorChar, $comparison)
+        $current = (Resolve-Path -LiteralPath $Root -ErrorAction Stop).Path
+        foreach ($segment in ($Candidate.Replace('\', '/') -split '/')) {
+            if ([string]::IsNullOrEmpty($segment) -or $segment -eq '.') { continue }
+            if ($segment -eq '..') { return $false }
+            $child = @(Get-ChildItem -LiteralPath $current -Force -ErrorAction Stop | Where-Object { $_.Name -ceq $segment } | Select-Object -First 1)
+            if ($child.Count -eq 0) { return $false }
+            $current = $child[0].FullName
+        }
+        return $true
     }
     catch {
         return $false
@@ -240,7 +243,7 @@ function Get-IssueSpecResult {
             $lineStart = $sourceSection.LastIndexOf("`n", $pathMatch.Index) + 1
             $lineEnd = $sourceSection.IndexOf("`n", $pathMatch.Index)
             if ($lineEnd -lt 0) { $lineEnd = $sourceSection.Length }
-            $line = $sourceSection.Substring($lineStart, $lineEnd - $lineStart).Replace($pathMatch.Value, '')
+            $line = [regex]::Replace($sourceSection.Substring($lineStart, $lineEnd - $lineStart), '`[^`]+`', '')
             $line = $line -replace '^[ \t\-*:;,\.—–]+|[ \t\-*:;,\.—–]+$', ''
             if ([string]::IsNullOrWhiteSpace($line)) {
                 Add-IssueSpecError -Errors $errors -Message "Referenced repository-relative path must include an explanation: '$candidate'."
@@ -259,6 +262,10 @@ function Get-IssueSpecResult {
         }
         foreach ($criterion in $criteria) {
             $id = $criterion.Groups['Id'].Value.ToUpperInvariant()
+            if ([string]::IsNullOrWhiteSpace($criterion.Groups['Text'].Value)) {
+                Add-IssueSpecError -Errors $errors -Message "Acceptance criterion '$id' must contain a nonempty observable outcome."
+                continue
+            }
             if ($acceptanceIds.Contains($id)) {
                 Add-IssueSpecError -Errors $errors -Message "Duplicate acceptance criterion ID: '$id'."
             }
