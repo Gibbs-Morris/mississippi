@@ -163,7 +163,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - bounded Markdown renderer appr
     return $builder.ToString()
 }
 
-function Test-UrlInsideMarkdownLinkTitle {
+function Test-UrlInsideMarkdownLinkTitle { # NOSONAR - bounded Markdown link-title detector intentionally tracks delimiter and escape state.
     param(
         [Parameter(Mandatory)][string]$Content,
         [Parameter(Mandatory)][int]$UrlIndex
