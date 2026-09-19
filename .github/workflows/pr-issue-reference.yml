@@ -1,0 +1,89 @@
+name: PR Issue Reference
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize]
+  merge_group:
+    types: [checks_requested]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+  statuses: write
+
+jobs:
+  validate-issue-reference:
+    name: Validate repository issue reference
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate pull request issue reference
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          $repository = $env:GITHUB_REPOSITORY
+          $targetSha = $env:GITHUB_SHA
+          $statusContext = 'PR Issue Reference'
+          $trustedRef = if ($env:GITHUB_EVENT_NAME -eq 'pull_request_target') { $env:PR_BASE_SHA } else { $env:DEFAULT_BRANCH }
+          $validator = Join-Path $env:RUNNER_TEMP 'validate-pr-issue-reference.ps1'
+          $mergeValidator = Join-Path $env:RUNNER_TEMP 'validate-merge-group-pr-issue-reference.ps1'
+          function Save-TrustedScript {
+            param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][string]$Destination)
+
+            $encoded = gh api "repos/$repository/contents/$Path?ref=$trustedRef" --header 'Accept: application/vnd.github+json' --jq '.content' 2>&1 | Out-String
+            if ($LASTEXITCODE -ne 0) { throw "Unable to fetch trusted validator '$Path': $($encoded.Trim())" }
+            try { $bytes = [Convert]::FromBase64String(($encoded -replace '\s', '')) }
+            catch { throw "Trusted validator '$Path' was not valid base64: $($_.Exception.Message)" }
+            [System.IO.File]::WriteAllBytes($Destination, $bytes)
+          }
+          Save-TrustedScript -Path 'eng/src/agent-scripts/validate-pr-issue-reference.ps1' -Destination $validator
+          Save-TrustedScript -Path 'eng/src/agent-scripts/validate-merge-group-pr-issue-reference.ps1' -Destination $mergeValidator
+          if ($env:GITHUB_EVENT_NAME -eq 'pull_request_target') {
+            $mergeSha = gh api "repos/$repository/pulls/$env:PR_NUMBER" --jq '.merge_commit_sha' 2>$null
+            if ($LASTEXITCODE -eq 0 -and $mergeSha -match '^[0-9a-fA-F]{40}$') { $targetSha = $mergeSha }
+            else { $targetSha = $env:PR_HEAD_SHA }
+          }
+          $state = 'failure'
+          $description = 'Pull request issue-reference validation failed.'
+          try {
+            $pendingOutput = gh api --method POST "repos/$repository/statuses/$targetSha" -f state=pending -f context="$statusContext" -f description='Repository issue-reference validation is running.' -f target_url="$env:GITHUB_SERVER_URL/$repository/actions/runs/$env:GITHUB_RUN_ID" 2>&1 | Out-String
+            if ($LASTEXITCODE -ne 0) { throw "Unable to publish pending PR Issue Reference status: $($pendingOutput.Trim())" }
+            if ($env:GITHUB_EVENT_NAME -eq 'pull_request_target') {
+              $output = & pwsh -NoProfile -File $validator -Body $env:PR_BODY -RepositoryOwner $env:REPOSITORY_OWNER -RepositoryName $env:REPOSITORY_NAME -Json 2>&1 | Out-String
+              Write-Output $output
+              if ($LASTEXITCODE -ne 0) { throw 'Pull request issue-reference validation failed.' }
+            }
+            else {
+              $pullRequestsPath = Join-Path $env:RUNNER_TEMP 'merge-group-pull-requests.json'
+              gh api "repos/$repository/commits/$env:GITHUB_SHA/pulls" --header 'Accept: application/vnd.github+json' --paginate --slurp | Set-Content -LiteralPath $pullRequestsPath -Encoding utf8
+              if ($LASTEXITCODE -ne 0) { throw 'Unable to resolve merge-group pull requests.' }
+              $output = & pwsh -NoProfile -File $mergeValidator -PullRequestsPath $pullRequestsPath -ValidatorPath $validator -RepositoryOwner $env:REPOSITORY_OWNER -RepositoryName $env:REPOSITORY_NAME 2>&1 | Out-String
+              Write-Output $output
+              if ($LASTEXITCODE -ne 0) { throw 'Merge-group issue-reference validation failed.' }
+            }
+            $state = 'success'
+            $description = 'Repository issue-reference validation passed.'
+          }
+          catch {
+            Write-Error $_.Exception.Message
+            throw
+          }
+          finally {
+            $statusOutput = gh api --method POST "repos/$repository/statuses/$targetSha" -f state=$state -f context="$statusContext" -f description=$description -f target_url="$env:GITHUB_SERVER_URL/$repository/actions/runs/$env:GITHUB_RUN_ID" 2>&1 | Out-String
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "Unable to publish PR Issue Reference status: $($statusOutput.Trim())"
+              if ($state -eq 'success') { throw 'Required PR Issue Reference status could not be published.' }
+            }
+          }
