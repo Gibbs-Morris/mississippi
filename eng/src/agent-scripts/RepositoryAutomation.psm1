@@ -107,7 +107,10 @@ function Invoke-RepositoryProcess {
         [Parameter(Mandatory)][string]$FilePath,
         [string[]]$Arguments,
         [string]$ErrorMessage,
-        [switch]$SuppressCommandEcho
+        [switch]$SuppressCommandEcho,
+        [ValidateRange(0, 86400)][int]$TimeoutSeconds = 0,
+        [string]$WorkingDirectory,
+        [switch]$PassThru
     )
 
     $escapedArgs = if ($Arguments) {
@@ -127,13 +130,64 @@ function Invoke-RepositoryProcess {
         }
     }
 
-    & $FilePath @Arguments
-    $exitCode = $LASTEXITCODE
-    if ($exitCode -ne 0) {
-        $message = if ($ErrorMessage) { $ErrorMessage } else { "Command '$FilePath' failed with exit code $exitCode." }
-        throw $message
+    if ($TimeoutSeconds -le 0 -and -not $PassThru) {
+        & $FilePath @Arguments
+        $exitCode = $LASTEXITCODE
+        if ($exitCode -ne 0) {
+            $message = if ($ErrorMessage) { $ErrorMessage } else { "Command '$FilePath' failed with exit code $exitCode." }
+            throw $message
+        }
+        return
     }
 
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = $FilePath
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    if ($WorkingDirectory) { $startInfo.WorkingDirectory = $WorkingDirectory }
+    foreach ($argument in @($Arguments)) { $null = $startInfo.ArgumentList.Add($argument) }
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    $startedUtc = (Get-Date).ToUniversalTime().ToString('o')
+    try {
+        if (-not $process.Start()) { throw "Command '$FilePath' could not be started." }
+        $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+        $stderrTask = $process.StandardError.ReadToEndAsync()
+        $finished = if ($TimeoutSeconds -gt 0) { $process.WaitForExit($TimeoutSeconds * 1000) } else { $process.WaitForExit(); $true }
+        $timedOut = -not $finished
+        if ($timedOut) {
+            try { $process.Kill($true) } catch { try { $process.Kill() } catch { } }
+            $process.WaitForExit(1000) | Out-Null
+        }
+        $stdoutTask.Wait(1000) | Out-Null
+        $stderrTask.Wait(1000) | Out-Null
+        $stdout = if ($stdoutTask.IsCompleted) { $stdoutTask.GetAwaiter().GetResult().Trim() } else { '' }
+        $stderr = if ($stderrTask.IsCompleted) { $stderrTask.GetAwaiter().GetResult().Trim() } else { '' }
+        $result = [pscustomobject][ordered]@{
+            FilePath = $FilePath
+            Arguments = @($Arguments)
+            StartedUtc = $startedUtc
+            EndedUtc = (Get-Date).ToUniversalTime().ToString('o')
+            ExitCode = if ($timedOut) { 124 } else { $process.ExitCode }
+            TimedOut = $timedOut
+            Cancelled = $false
+            StdOut = $stdout
+            StdErr = $stderr
+            Success = -not $timedOut -and $process.ExitCode -eq 0
+        }
+        if ($PassThru) { return $result }
+        if (-not $result.Success) {
+            $message = if ($timedOut) { "Command '$FilePath' timed out after $TimeoutSeconds seconds." } elseif ($ErrorMessage) { $ErrorMessage } else { "Command '$FilePath' failed with exit code $($result.ExitCode)." }
+            if ($stderr) { $message += " Native error output: $stderr" }
+            throw $message
+        }
+        if ($stdout) { Write-Output $stdout }
+    }
+    finally {
+        $process.Dispose()
+    }
 }
 
 function Invoke-DotnetToolRestore {
