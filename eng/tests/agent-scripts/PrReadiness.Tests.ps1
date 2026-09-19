@@ -85,11 +85,23 @@ Describe 'PR readiness snapshot' {
         $patterns | Should -Contain '^Build \(ubuntu-latest, samples\.slnx\)$'
     }
 
+    It 'adds only path-applicable workflow checks' {
+        $docsPatterns = @(Get-PrReadinessExpectedCheckPatterns -ChangedPaths @('docs/Docusaurus/docs/guide.md'))
+        $projectPatterns = @(Get-PrReadinessExpectedCheckPatterns -ChangedPaths @('src/Example/Example.csproj'))
+
+        $docsPatterns | Should -Contain '^Build Docusaurus Site$'
+        $projectPatterns | Should -Contain '^Validate src csproj descriptions$'
+    }
+
     It 'collects the live paths through an injectable GitHub provider and re-fetches the base and head' {
         $pullStart = [pscustomobject]@{ head = [pscustomobject]@{ sha = 'head-start' }; base = [pscustomobject]@{ sha = 'base-start' }; state = 'open'; draft = $false; mergeable_state = 'clean'; html_url = 'https://github.com/Gibbs-Morris/mississippi/pull/744' }
         $pullEnd = [pscustomobject]@{ head = [pscustomobject]@{ sha = 'head-end' }; base = [pscustomobject]@{ sha = 'base-end' }; state = 'open'; draft = $false; mergeable_state = 'clean'; html_url = $pullStart.html_url }
         $checkPage = [pscustomobject]@{ check_runs = @([pscustomobject]@{ name = 'CodeQL'; status = 'completed'; conclusion = 'success' }) }
-        $reviewPage = @([pscustomobject]@{ id = 1; user = [pscustomobject]@{ login = 'reviewer' }; state = 'APPROVED'; submitted_at = '2026-09-19T00:00:00Z' })
+        $reviewPage = @(
+            [pscustomobject]@{ id = 1; user = [pscustomobject]@{ login = 'reviewer' }; state = 'APPROVED'; submitted_at = '2026-09-19T00:00:00Z' },
+            [pscustomobject]@{ id = 2; user = [pscustomobject]@{ login = 'reviewer' }; state = 'COMMENTED'; submitted_at = '2026-09-19T00:01:00Z' }
+        )
+        $filesPage = @([pscustomobject]@{ filename = 'README.md' })
         $thread = [pscustomobject]@{ id = 'thread-1'; isResolved = $true; isOutdated = $false; comments = [pscustomobject]@{ nodes = @() } }
         $graphqlPage = [pscustomobject]@{ data = [pscustomobject]@{ repository = [pscustomobject]@{ pullRequest = [pscustomobject]@{ reviewDecision = 'APPROVED'; reviewThreads = [pscustomobject]@{ nodes = @($thread); pageInfo = [pscustomobject]@{ hasNextPage = $false; endCursor = $null } } } } } }
         $pullResponses = [System.Collections.Generic.Queue[object]]::new()
@@ -103,6 +115,7 @@ Describe 'PR readiness snapshot' {
             }
             if ($joined -match 'check-runs') { return $checkPage }
             if ($joined -match 'reviews') { return $reviewPage }
+            if ($joined -match 'pulls/744/files') { return $filesPage }
             if ($joined -match 'graphql') { return $graphqlPage }
             throw "Unexpected provider query: $joined"
         }.GetNewClosure()
