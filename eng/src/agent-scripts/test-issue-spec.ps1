@@ -27,7 +27,7 @@ $requiredSections = @(
     'Validation evidence map'
 )
 
-function Get-MarkdownSections {
+function Get-MarkdownSections { #NOSONAR
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Content)
 
@@ -48,10 +48,10 @@ function Get-MarkdownSections {
         }
         $offset += $rawLine.Length + 1
     }
-    $matches = @($allHeadings | Where-Object { $requiredSections -contains $_.Title })
+    $requiredHeadingMatches = @($allHeadings | Where-Object { $requiredSections -contains $_.Title })
     $sections = [ordered]@{}
-    for ($index = 0; $index -lt $matches.Count; $index++) {
-        $match = $matches[$index]
+    for ($index = 0; $index -lt $requiredHeadingMatches.Count; $index++) {
+        $match = $requiredHeadingMatches[$index]
         $start = $match.Index + $match.Length
         $level = $match.Level
         $nextPeer = @($allHeadings | Where-Object { $_.Index -gt $start -and $_.Level -le $level } | Select-Object -First 1)
