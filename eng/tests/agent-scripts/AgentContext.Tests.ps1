@@ -223,6 +223,22 @@ metadata:
         $inline.Reasons | Should -Contain 'path:changed:src/Example.cs'
     }
 
+    It 'parses tab-delimited YAML inline comments' {
+        $tabPath = Join-Path $fixtureRoot '.github/instructions/tab-comment.instructions.md'
+        $tabContent = "---" + [Environment]::NewLine + "applyTo: '**/*.cs'" + [char]9 + '# C# guidance' + [Environment]::NewLine + "---" + [Environment]::NewLine + [Environment]::NewLine + '# Tab comment'
+        Set-Content -LiteralPath $tabPath -Value $tabContent
+        try {
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+            $tab = @($context.Selected | Where-Object Path -EQ '.github/instructions/tab-comment.instructions.md')[0]
+
+            $tab.ScopeStatus | Should -Be 'valid'
+            $tab.Reasons | Should -Contain 'path:changed:src/Example.cs'
+        }
+        finally {
+            Remove-Item -LiteralPath $tabPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It 'supports brace globs and treats deleted changed paths as data' {
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'docs/deleted.md'
 
@@ -331,6 +347,25 @@ applyTo: '**'
         $known.Selected.Path | Should -Contain '.github/instructions/style-route.instructions.md'
         $unknown.Complete | Should -BeFalse
         $unknown.Unresolved | Should -Contain "Unsupported content domain hint: 'mystery'."
+    }
+
+    It 'uses source-root probes for domain-only language selection' {
+        $domainPath = Join-Path $fixtureRoot '.github/instructions/src-domain.instructions.md'
+        Set-Content -LiteralPath $domainPath -Value @'
+---
+applyTo: 'src/**/*.cs'
+---
+
+# Source-domain guidance
+'@
+        try {
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ContentDomain csharp
+
+            $context.Selected.Path | Should -Contain '.github/instructions/src-domain.instructions.md'
+        }
+        finally {
+            Remove-Item -LiteralPath $domainPath -Force -ErrorAction SilentlyContinue
+        }
     }
 
     It 'selects the full guidance inventory for global rule maintenance' {

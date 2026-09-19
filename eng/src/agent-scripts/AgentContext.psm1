@@ -212,7 +212,8 @@ function Read-ContextFrontMatter {
         $value = $value.Substring(1, $closingQuoteIndex - 1)
     }
     else {
-        $commentIndex = $value.IndexOf(' #', [System.StringComparison]::Ordinal)
+        $commentMatch = [regex]::Match($value, '[\t ]+#')
+        $commentIndex = if ($commentMatch.Success) { $commentMatch.Index } else { -1 }
         if ($commentIndex -ge 0) {
             $value = $value.Substring(0, $commentIndex).Trim()
         }
@@ -272,18 +273,49 @@ function ConvertTo-ContextRelativePath {
     }
 }
 
+function Get-ContextFileSnapshot {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    $encoding = [System.Text.UTF8Encoding]::new($false, $true)
+    if ($bytes.Length -ge 2 -and $bytes[0] -eq 0xFF -and $bytes[1] -eq 0xFE) {
+        $encoding = [System.Text.UnicodeEncoding]::new($false, $true, $true)
+    }
+    elseif ($bytes.Length -ge 2 -and $bytes[0] -eq 0xFE -and $bytes[1] -eq 0xFF) {
+        $encoding = [System.Text.UnicodeEncoding]::new($true, $true, $true)
+    }
+
+    $content = $encoding.GetString($bytes)
+    if ($content.Length -gt 0 -and $content[0] -eq [char]0xFEFF) {
+        $content = $content.Substring(1)
+    }
+
+    return [pscustomobject]@{
+        Bytes = $bytes
+        Content = $content
+    }
+}
+
 function Get-ContextFileMetrics {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Path,
-        [Parameter(Mandatory)][string]$Content
+        [Parameter(Mandatory)][string]$Content,
+        [Parameter(Mandatory)][byte[]]$Bytes
     )
 
-    $hash = (Get-FileHash -LiteralPath $Path -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $hash = ([System.BitConverter]::ToString($sha256.ComputeHash($Bytes)) -replace '-', '').ToLowerInvariant()
+    }
+    finally {
+        $sha256.Dispose()
+    }
     $words = @($Content -split '\s+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }).Count
     return [pscustomobject]@{
         ContentHash = "SHA256:$hash"
-        ByteCount = (Get-Item -LiteralPath $Path -ErrorAction Stop).Length
+        ByteCount = $Bytes.Length
         WordCount = $words
     }
 }
@@ -555,9 +587,9 @@ function Get-AgentContext {
     $fullInventory = @($requested | Where-Object { $_.Path -cmatch '^\.github/instructions/.*\.instructions\.md$' -or $_.Path -cmatch '(^|/)AGENTS\.md$' -or $_.Path -ceq '.github/copilot-instructions.md' }).Count -gt 0
     $pathComparison = Get-ContextPathComparison -RepositoryRoot $resolvedRoot
     $domainProbePaths = @{
-        'csharp' = @('__domain__.cs')
-        'c#' = @('__domain__.cs')
-        'powershell' = @('__domain__.ps1')
+        'csharp' = @('__domain__.cs', 'src/__domain__.cs', 'tests/__domain__.cs', 'samples/__domain__.cs')
+        'c#' = @('__domain__.cs', 'src/__domain__.cs', 'tests/__domain__.cs', 'samples/__domain__.cs')
+        'powershell' = @('__domain__.ps1', 'eng/src/__domain__.ps1', 'tests/__domain__.ps1')
         'docs' = @('docs/Docusaurus/docs/__domain__.md', 'docs/Docusaurus/docs/__domain__.mdx', 'docs/Docusaurus/docs/adr/0001-example.md')
         'documentation' = @('docs/Docusaurus/docs/__domain__.md', 'docs/Docusaurus/docs/__domain__.mdx', 'docs/Docusaurus/docs/adr/0001-example.md')
         'markdown' = @('__domain__.md', 'docs/Docusaurus/docs/__domain__.md')
@@ -592,8 +624,12 @@ function Get-AgentContext {
         $relative = ConvertTo-ContextRelativePath -RepositoryRoot $resolvedRoot -Path $candidate.FullName
         if ($null -eq $relative) { continue }
         $content = $null
+        $snapshot = $null
         $readError = $null
-        try { $content = Get-Content -LiteralPath $candidate.FullName -Raw -ErrorAction Stop }
+        try {
+            $snapshot = Get-ContextFileSnapshot -Path $candidate.FullName
+            $content = $snapshot.Content
+        }
         catch { $readError = $_.Exception.Message }
 
         $frontMatter = if ($candidate.Kind -eq 'instruction' -or $candidate.Kind -eq 'entrypoint') {
@@ -683,7 +719,10 @@ function Get-AgentContext {
             $unresolved.Add("Unable to read selected context '$relative': $readError")
         }
         if ($isSelected -and $reasons.Count -eq 0) { $reasons.Add('selected') }
-        $metrics = if ($null -ne $content) { Get-ContextFileMetrics -Path $candidate.FullName -Content $content } else { $null }
+        $metrics = if ($null -ne $snapshot) {
+            Get-ContextFileMetrics -Path $candidate.FullName -Content $content -Bytes $snapshot.Bytes
+        }
+        else { $null }
         $entries.Add([pscustomobject][ordered]@{
             Path = $relative
             Kind = $candidate.Kind
