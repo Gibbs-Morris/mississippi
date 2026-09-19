@@ -36,7 +36,6 @@ function Get-PrIssueReferences {
         $kind = $match.Groups['Kind'].Value.ToLowerInvariant()
         $number = [int]$match.Groups['Number'].Value
         if (-not ([string]::Equals($matchOwner, $Owner, [System.StringComparison]::OrdinalIgnoreCase) -and [string]::Equals($matchRepo, $Name, [System.StringComparison]::OrdinalIgnoreCase))) {
-            $Errors.Add("Cross-repository reference is not allowed: '$($match.Value)'.")
             continue
         }
         if ($kind -eq 'pull') {

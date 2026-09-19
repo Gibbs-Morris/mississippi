@@ -45,12 +45,18 @@ Refs #741
     }
 
     It 'rejects missing, cross-repository and pull-request references' {
-        $outcome = Invoke-ReferenceValidator -Body 'Refs #999; see https://github.com/other/repo/issues/741 and https://github.com/Gibbs-Morris/mississippi/pull/743.'
+        $outcome = Invoke-ReferenceValidator -Body 'Refs #741 and #999; see https://github.com/other/repo/issues/741 and https://github.com/Gibbs-Morris/mississippi/pull/743.'
 
         $outcome.ExitCode | Should -Not -Be 0
         ($outcome.Result.Errors -join "`n") | Should -Match 'does not exist'
-        ($outcome.Result.Errors -join "`n") | Should -Match 'Cross-repository'
         ($outcome.Result.Errors -join "`n") | Should -Match 'Pull request URL'
+    }
+
+    It 'rejects external-only context without a local issue' {
+        $outcome = Invoke-ReferenceValidator -Body 'Context: https://github.com/other/repo/issues/741.'
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
     }
 
     It 'rejects closed issues' {
