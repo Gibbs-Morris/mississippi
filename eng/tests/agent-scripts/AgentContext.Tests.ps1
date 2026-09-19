@@ -243,6 +243,21 @@ metadata:
         $context.Entries.Path | Should -Not -Contain 'case-probe/agents.md'
     }
 
+    It 'reports a missing Copilot entrypoint as unresolved' {
+        $copilotPath = Join-Path $fixtureRoot '.github/copilot-instructions.md'
+        $backupPath = Join-Path $fixtureRoot '.github/copilot-instructions.backup.md'
+        Move-Item -LiteralPath $copilotPath -Destination $backupPath
+        try {
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+
+            $context.Complete | Should -BeFalse
+            $context.Unresolved | Should -Contain "Required Copilot entrypoint is missing or unreadable: '$copilotPath'."
+        }
+        finally {
+            Move-Item -LiteralPath $backupPath -Destination $copilotPath
+        }
+    }
+
     It 'supports character classes in instruction globs' {
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'docs/Docusaurus/docs/adr/0001-example.md'
 

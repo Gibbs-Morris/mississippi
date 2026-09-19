@@ -352,6 +352,9 @@ function Get-ContextCandidates {
             $null = $scanErrors.Add("Unable to inspect Copilot entrypoint '$copilotPath': $($_.Exception.Message)")
         }
     }
+    else {
+        $null = $scanErrors.Add("Required Copilot entrypoint is missing or unreadable: '$copilotPath'.")
+    }
 
     return [pscustomobject]@{ Files = @($files | Sort-Object FullName -Unique); Errors = @($scanErrors) }
 }
