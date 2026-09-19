@@ -123,10 +123,12 @@ function Test-ContextGlob {
     foreach ($expanded in (Expand-ContextPattern -Pattern $Pattern)) {
         $regex = '^' + (Convert-ContextGlobToRegex -Pattern $expanded) + '$'
         $options = [System.Text.RegularExpressions.RegexOptions]::NonBacktracking
-        if ([OperatingSystem]::IsWindows()) { $options = $options -bor [System.Text.RegularExpressions.RegexOptions]::IgnoreCase }
-        if ([regex]::IsMatch($Path, $regex, $options)) {
-            return $true
+        if ($IsWindows) { $options = $options -bor [System.Text.RegularExpressions.RegexOptions]::IgnoreCase }
+        try {
+            $boundedRegex = [regex]::new($regex, $options, [TimeSpan]::FromMilliseconds(100))
+            if ($boundedRegex.IsMatch($Path)) { return $true }
         }
+        catch { return $false }
     }
 
     return $false
@@ -158,6 +160,9 @@ function Read-ContextFrontMatter {
     }
 
     $value = ($applyToLines[0] -creplace '^\s*applyTo\s*:\s*', '').Trim()
+    if ($value -match '^(?:>|\|)[-+]?\s*$') {
+        return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'applyTo block-scalar values require direct inspection.' }
+    }
     if ($value.Length -gt 0 -and ($value[0] -eq '''' -or $value[0] -eq '"')) {
         $quote = $value[0]
         $closingQuoteIndex = $value.IndexOf($quote, 1)
@@ -215,7 +220,7 @@ function ConvertTo-ContextRelativePath {
     try {
         $rootFullPath = [System.IO.Path]::GetFullPath($RepositoryRoot)
         $root = if ([string]::Equals($rootFullPath, [System.IO.Path]::GetPathRoot($rootFullPath), [System.StringComparison]::OrdinalIgnoreCase)) { $rootFullPath } else { $rootFullPath.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) }
-        $fullPath = if ([System.IO.Path]::IsPathRooted($Path)) { [System.IO.Path]::GetFullPath($Path) } else { [System.IO.Path]::GetFullPath((Join-Path $root $Path.Trim())) }
+        $fullPath = if ([System.IO.Path]::IsPathRooted($Path)) { [System.IO.Path]::GetFullPath($Path) } else { [System.IO.Path]::GetFullPath((Join-Path $root $Path)) }
         $relative = [System.IO.Path]::GetRelativePath($root, $fullPath)
         $relative = $relative.Replace('\', '/')
         if ($relative.StartsWith('./', [System.StringComparison]::Ordinal)) {
@@ -256,7 +261,7 @@ function Get-ContextRoutes {
     )
 
     $routes = [System.Collections.Generic.List[string]]::new()
-    foreach ($match in [regex]::Matches($Content, '\]\((?<Route><[^>]+>|[^)]+)\)')) {
+    foreach ($match in [regex]::Matches($Content, '\]\((?<Route>[^)\r\n]*(?:\([^)\r\n]*\)[^)\r\n]*)*)\)')) {
         $route = $match.Groups['Route'].Value.Trim()
         $destinationMatch = if ($route.StartsWith('<', [System.StringComparison]::Ordinal)) {
             [regex]::Match($route, '^<(?<Destination>[^>]+)>(?:\s+(?:"[^"]*"|''[^'']*''))?$')
@@ -325,7 +330,8 @@ function Get-ContextFilesByFilter {
                     $null = $Errors.Add("Skipped reparse-point guidance directory '$($child.FullName)'.")
                     continue
                 }
-                if ($excludedDirectories -notcontains $child.Name) { $pending.Enqueue($child.FullName) }
+                $excluded = if ($IsWindows) { $excludedDirectories -contains $child.Name } else { @($excludedDirectories | Where-Object { $_ -ceq $child.Name }).Count -gt 0 }
+                if (-not $excluded) { $pending.Enqueue($child.FullName) }
             }
             else {
                 $matchesFilter = if ($Filter -eq 'AGENTS.md') { [string]::Equals($child.Name, $Filter, [System.StringComparison]::Ordinal) } else { $child.Name -clike $Filter }
@@ -379,6 +385,9 @@ function Get-ContextCandidates {
     $entrypointFiles = Get-ContextFilesByFilter -Root $RepositoryRoot -Filter 'AGENTS.md' -Errors $scanErrors
     foreach ($file in $entrypointFiles) {
         $files.Add([pscustomobject]@{ FullName = $file.FullName; Kind = 'AGENTS' })
+    }
+    if (@($entrypointFiles | Where-Object { $_.FullName -eq (Join-Path $RepositoryRoot 'AGENTS.md') }).Count -eq 0) {
+        $null = $scanErrors.Add("Required root AGENTS entrypoint is missing or unreadable: '$(Join-Path $RepositoryRoot 'AGENTS.md')'.")
     }
 
     $copilotPath = Join-Path $RepositoryRoot '.github/copilot-instructions.md'
@@ -481,7 +490,8 @@ function Get-AgentContext {
     $candidateResult = Get-ContextCandidates -RepositoryRoot $resolvedRoot
     foreach ($scanError in @($candidateResult.Errors)) { $unresolved.Add($scanError) }
     $sourceRevision = Get-ContextSourceRevision -RepositoryRoot $resolvedRoot
-    $fullInventory = @($requested | Where-Object { $_.Path -match '^\.github/instructions/.*\.instructions\.md$' -or $_.Path -in @('AGENTS.md', '.github/copilot-instructions.md') }).Count -gt 0
+    $fullInventory = @($requested | Where-Object { $_.Path -match '^\.github/instructions/.*\.instructions\.md$' -or $_.Path -match '(^|/)AGENTS\.md$' -or $_.Path -eq '.github/copilot-instructions.md' }).Count -gt 0
+    $pathComparison = if ($IsWindows) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
     $domainProbePaths = @{
         'csharp' = @('__domain__.cs')
         'c#' = @('__domain__.cs')
@@ -495,6 +505,9 @@ function Get-AgentContext {
         'testing' = @('tests/__domain__.cs')
         'serialization' = @('__domain__.cs')
         'orleans' = @('__domain__.cs')
+    }
+    foreach ($domain in @($ContentDomain)) {
+        if (-not $domainProbePaths.ContainsKey($domain.ToLowerInvariant())) { $unresolved.Add("Unsupported content domain hint: '$domain'.") }
     }
     $entrypointProbePaths = [System.Collections.Generic.List[string]]::new()
     foreach ($request in @($requested | Where-Object { $_.Kind -ne 'required' })) {
@@ -538,9 +551,9 @@ function Get-AgentContext {
         elseif ($candidate.Kind -eq 'AGENTS') {
             $entryDirectory = if ($relative -eq 'AGENTS.md') { '' } else { $relative.Substring(0, $relative.Length - '/AGENTS.md'.Length) }
             $entryPrefix = if ($entryDirectory) { "$entryDirectory/" } else { '' }
-            $isSelected = [string]::Equals($relative, 'AGENTS.md', [System.StringComparison]::Ordinal) -or @($entrypointProbePaths | Where-Object {
-                $_.Equals($entryDirectory, [System.StringComparison]::OrdinalIgnoreCase) -or
-                ($entryPrefix -and $_.StartsWith($entryPrefix, [System.StringComparison]::OrdinalIgnoreCase))
+            $isSelected = [string]::Equals($relative, 'AGENTS.md', $pathComparison) -or @($entrypointProbePaths | Where-Object {
+                $_.Equals($entryDirectory, $pathComparison) -or
+                ($entryPrefix -and $_.StartsWith($entryPrefix, $pathComparison))
             }).Count -gt 0
             if ($isSelected) { $reasons.Add('scoped-entrypoint') }
         }
@@ -549,7 +562,8 @@ function Get-AgentContext {
             $reasons.Add('host-entrypoint')
         }
         else {
-            if ($frontMatter.Status -eq 'valid' -and $frontMatter.Patterns -contains '**') {
+            $expandedPatterns = @($frontMatter.Patterns | ForEach-Object { Expand-ContextPattern -Pattern $_ })
+            if ($frontMatter.Status -eq 'valid' -and $expandedPatterns -contains '**') {
                 $isSelected = $true
                 $reasons.Add('global-scope')
             }
@@ -585,7 +599,8 @@ function Get-AgentContext {
                     $roleTokens.Add($roleToken.Substring(0, $roleToken.Length - 2))
                 }
                 foreach ($roleVariant in $roleTokens) {
-                    $roleProbes = @(".github/agents/*$roleVariant*.agent.md", ".github/agents/*$roleVariant*.md")
+                    $roleProbes = @($candidateResult.Files | Where-Object Kind -EQ 'entrypoint' | ForEach-Object { ConvertTo-ContextRelativePath -RepositoryRoot $resolvedRoot -Path $_.FullName } | Where-Object { $_ -and $_ -match [regex]::Escape($roleVariant) })
+                    if (@($roleProbes).Count -eq 0) { $roleProbes = @(".github/agents/$roleVariant.agent.md", ".github/agents/$roleVariant.md") }
                     $scopeMatchesRole = $false
                     foreach ($scopePattern in @($frontMatter.Patterns)) {
                         foreach ($roleProbe in $roleProbes) {
