@@ -132,8 +132,23 @@ function Read-ContextFrontMatter {
     }
 
     $value = ($applyToLines[0] -replace '^\s*applyTo\s*:\s*', '').Trim()
-    if ($value.Length -ge 2 -and (($value[0] -eq '''' -and $value[$value.Length - 1] -eq '''') -or ($value[0] -eq '"' -and $value[$value.Length - 1] -eq '"'))) {
-        $value = $value.Substring(1, $value.Length - 2)
+    if ($value.Length -gt 0 -and ($value[0] -eq '''' -or $value[0] -eq '"')) {
+        $quote = $value[0]
+        $closingQuoteIndex = $value.IndexOf($quote, 1)
+        if ($closingQuoteIndex -lt 0) {
+            return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'applyTo contains an unclosed quoted scalar.' }
+        }
+        $trailing = $value.Substring($closingQuoteIndex + 1).Trim()
+        if ($trailing -and -not $trailing.StartsWith('#', [System.StringComparison]::Ordinal)) {
+            return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'applyTo contains unsupported trailing syntax.' }
+        }
+        $value = $value.Substring(1, $closingQuoteIndex - 1)
+    }
+    else {
+        $commentIndex = $value.IndexOf(' #', [System.StringComparison]::Ordinal)
+        if ($commentIndex -ge 0) {
+            $value = $value.Substring(0, $commentIndex).Trim()
+        }
     }
     if (@($value.ToCharArray() | Where-Object { $_ -eq '{' }).Count -ne @($value.ToCharArray() | Where-Object { $_ -eq '}' }).Count) {
         return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'applyTo contains unbalanced braces.' }

@@ -37,6 +37,13 @@ applyTo: '**/*.cs'
 
 # C# guidance
 '@
+        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/inline-comment.instructions.md') -Value @'
+---
+applyTo: '**/*.cs' # C# guidance with an inline comment
+---
+
+# Inline-comment guidance
+'@
         Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/markdown.instructions.md') -Value @'
 ---
 applyTo: '**/*.{md,mdx}'
@@ -157,6 +164,14 @@ applyTo: '**/[abc.md'
 
         $unbalanced.ScopeStatus | Should -Be 'unknown'
         $unbalanced.ScopeNote | Should -Match 'character classes'
+    }
+
+    It 'parses inline comments in quoted applyTo scalars' {
+        $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+        $inline = @($context.Selected | Where-Object Path -EQ '.github/instructions/inline-comment.instructions.md')[0]
+
+        $inline.ScopeStatus | Should -Be 'valid'
+        $inline.Reasons | Should -Contain 'path:changed:src/Example.cs'
     }
 
     It 'supports brace globs and treats deleted changed paths as data' {
