@@ -181,14 +181,9 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
         {
             OpCode opcode;
             byte first = il[offset++];
-            if (first == 0xFE)
-            {
-                opcode = MultiByteOpCodes[il[offset++]];
-            }
-            else
-            {
-                opcode = SingleByteOpCodes[first];
-            }
+            opcode = first == 0xFE
+                ? MultiByteOpCodes[il[offset++]]
+                : SingleByteOpCodes[first];
 
             if (opcode == OpCodes.Ldarg_0 || opcode == OpCodes.Ldarg_1 || opcode == OpCodes.Ldarg_2 || opcode == OpCodes.Ldarg_3 || opcode == OpCodes.Ldarg_S || opcode == OpCodes.Ldarg)
             {
@@ -254,14 +249,9 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
         {
             OpCode opcode;
             byte first = il[offset++];
-            if (first == 0xFE)
-            {
-                opcode = MultiByteOpCodes[il[offset++]];
-            }
-            else
-            {
-                opcode = SingleByteOpCodes[first];
-            }
+            opcode = first == 0xFE
+                ? MultiByteOpCodes[il[offset++]]
+                : SingleByteOpCodes[first];
 
             if (opcode == OpCodes.Ldarg_1 || opcode == OpCodes.Ldarg_2 || opcode == OpCodes.Ldarg_3 ||
                 opcode == OpCodes.Ldarg_S || opcode == OpCodes.Ldarg)
@@ -286,6 +276,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                 {
                     // An unresolved token cannot prove a setter call.
                 }
+
                 parameterLoaded = false;
             }
             else if (opcode != OpCodes.Nop && opcode != OpCodes.Ldarg_0 && opcode != OpCodes.Ldarg_1 &&

@@ -30,7 +30,7 @@ public sealed class CSharpArchitectureRuleTests
             [typeof(InjectedFieldFixture), typeof(InjectedPropertyFixture), typeof(SettableInjectedPropertyFixture), typeof(OrdinaryStateFixture), typeof(PrimaryConstructorFixture), typeof(FactoryAssignmentFixture), typeof(WrappedInjectedFieldFixture)]);
 
         Assert.Contains(violations, value => value.EndsWith("InjectedFieldFixture.clock", System.StringComparison.Ordinal));
-        Assert.DoesNotContain(violations, value => value.Contains("InjectedPropertyFixture.", System.StringComparison.Ordinal));
+        Assert.DoesNotContain(violations, value => value.StartsWith(typeof(InjectedPropertyFixture).FullName + ".", System.StringComparison.Ordinal));
         Assert.Contains(violations, value => value.Contains("SettableInjectedPropertyFixture", System.StringComparison.Ordinal));
         Assert.DoesNotContain(violations, value => value.Contains("OrdinaryStateFixture", System.StringComparison.Ordinal));
         Assert.Contains(violations, value => value.Contains("PrimaryConstructorFixture", System.StringComparison.Ordinal));
