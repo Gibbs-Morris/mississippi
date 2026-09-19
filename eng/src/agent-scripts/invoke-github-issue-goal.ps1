@@ -12,6 +12,14 @@ param(
     [string]$HeadRevision,
     [string]$BaseRevision,
     [string]$OperationStateJson,
+    [string]$ExpectedIssueBodyDigest,
+    [string]$ExpectedHeadRevision,
+    [string]$ExpectedBaseRevision,
+    [string[]]$ExpectedAcceptanceCriteria,
+    [string[]]$Decisions,
+    [string[]]$AcceptanceEvidence,
+    [string[]]$AttemptedFixes,
+    [string[]]$OutstandingReviewWork,
     [switch]$MergeAuthorized,
     [switch]$EvidenceValidated,
     [switch]$Json
@@ -22,15 +30,42 @@ $ErrorActionPreference = 'Stop'
 
 function Get-GoalRevision {
     param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][string]$Name)
-    $value = @(& git -c "safe.directory=$($Root.Replace('\', '/'))" -C $Root rev-parse $Name 2>$null | Select-Object -First 1)
-    $revision = ([string]$value).Trim()
+    $safeRoot = $Root.Replace([char]92, [char]47)
+    $value = @(& git -c ("safe.directory=" + $safeRoot) -C $Root rev-parse $Name 2>$null)
     $exitCode = if (Get-Variable -Name LASTEXITCODE -ErrorAction SilentlyContinue) { [int]$LASTEXITCODE } else { 0 }
+    $revision = ([string]($value | Select-Object -First 1)).Trim()
     if ($exitCode -ne 0 -or $revision -notmatch '^[0-9a-fA-F]{7,64}$') { throw "Unable to resolve Git revision '$Name'." }
     return $revision
 }
 
 function Get-GoalWorktreeFingerprint {
-    param([Parameter(Mandatory)][string]$Root)
+    param(
+        [Parameter(Mandatory)][string]$Root,
+        [AllowEmptyCollection()][string[]]$ExcludePaths = @()
+    )
+
+    $pathComparer = if ($env:OS -eq 'Windows_NT') { [StringComparer]::OrdinalIgnoreCase } else { [StringComparer]::Ordinal }
+    $excludedPaths = [System.Collections.Generic.HashSet[string]]::new($pathComparer)
+    foreach ($excludePath in $ExcludePaths) {
+        if (-not [string]::IsNullOrWhiteSpace($excludePath)) {
+            $null = $excludedPaths.Add([System.IO.Path]::GetFullPath($excludePath))
+        }
+    }
+
+    $indexRaw = ((& git -c "safe.directory=$($Root.Replace('\', '/'))" -C $Root ls-files --stage -z 2>$null) -join '')
+    $indexExitCode = if (Get-Variable -Name LASTEXITCODE -ErrorAction SilentlyContinue) { [int]$LASTEXITCODE } else { 0 }
+    if ($indexExitCode -ne 0) { throw 'Unable to resolve the current index fingerprint.' }
+    $indexHashes = @{}
+    foreach ($indexEntry in @($indexRaw -split [char]0 | Where-Object { -not [string]::IsNullOrEmpty($_) })) {
+        $tabIndex = $indexEntry.IndexOf([char]9)
+        if ($tabIndex -lt 0) { continue }
+        $metadata = $indexEntry.Substring(0, $tabIndex).Split(' ')
+        if ($metadata.Count -ge 2) {
+            $indexPath = $indexEntry.Substring($tabIndex + 1).Replace('\', '/')
+            $indexHashes[$indexPath] = $metadata[1]
+        }
+    }
+
     $statusRaw = ((& git -c "safe.directory=$($Root.Replace('\', '/'))" -C $Root status --porcelain=v1 --untracked-files=all -z 2>$null) -join '')
     $status = @($statusRaw -split [char]0 | Where-Object { -not [string]::IsNullOrEmpty($_) })
     $exitCode = if (Get-Variable -Name LASTEXITCODE -ErrorAction SilentlyContinue) { [int]$LASTEXITCODE } else { 0 }
@@ -42,11 +77,14 @@ function Get-GoalWorktreeFingerprint {
         $statusEntries.Add([string]$entry)
         $relative = ([string]$entry).Substring(3).Trim('"')
         if ($relative -match '^(?<Old>.+) -> (?<New>.+)$') { $relative = $Matches.New }
-        $full = Join-Path $Root $relative
+        $relative = $relative.Replace('\', '/')
+        $full = [System.IO.Path]::GetFullPath((Join-Path $Root $relative))
+        if ($excludedPaths.Contains($full)) { continue }
+        $indexHash = if ($indexHashes.ContainsKey($relative)) { [string]$indexHashes[$relative] } else { 'absent' }
         if (Test-Path -LiteralPath $full -PathType Leaf) {
-            $fileHashes.Add($relative + ':' + (Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant())
+            $fileHashes.Add($relative + ':index=' + $indexHash + ':worktree=' + (Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant())
         }
-        else { $fileHashes.Add($relative + ':missing') }
+        else { $fileHashes.Add($relative + ':index=' + $indexHash + ':worktree=missing') }
     }
     $content = (($statusEntries -join [Environment]::NewLine) + [Environment]::NewLine + ($fileHashes -join [Environment]::NewLine))
     $hash = [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($content))
@@ -55,13 +93,27 @@ function Get-GoalWorktreeFingerprint {
 
 function Get-GoalIssue {
     param([Parameter(Mandatory)][string]$Owner, [Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][int]$Number, [AllowEmptyString()][string]$Json)
-    if (-not [string]::IsNullOrWhiteSpace($Json)) { return ConvertFrom-Json -InputObject $Json }
-    $output = & gh api "repos/$Owner/$Name/issues/$Number" --header 'Accept: application/vnd.github+json' 2>&1 | Out-String
-    if ($LASTEXITCODE -ne 0) { throw "Unable to read issue #${Number}: $($output.Trim())" }
-    $issue = ConvertFrom-Json -InputObject $output
-    $commentsOutput = & gh api "repos/$Owner/$Name/issues/$Number/comments" --header 'Accept: application/vnd.github+json' --paginate 2>&1 | Out-String
-    if ($LASTEXITCODE -eq 0) {
-        $issue | Add-Member -NotePropertyName comments -NotePropertyValue (ConvertFrom-Json -InputObject $commentsOutput) -Force
+    $issue = $null
+    if (-not [string]::IsNullOrWhiteSpace($Json)) {
+        $issue = ConvertFrom-Json -InputObject $Json
+    }
+    else {
+        $output = & gh api "repos/$Owner/$Name/issues/$Number" --header 'Accept: application/vnd.github+json' 2>&1 | Out-String
+        if ($LASTEXITCODE -ne 0) { throw "Unable to read issue #${Number}: $($output.Trim())" }
+        $issue = ConvertFrom-Json -InputObject $output
+    }
+
+    $commentBodies = @()
+    if ($null -ne $issue.PSObject.Properties['comments']) {
+        $commentBodies = @($issue.comments | Where-Object { $null -ne $_.PSObject.Properties['body'] -and -not [string]::IsNullOrWhiteSpace([string]$_.body) })
+    }
+    if ($commentBodies.Count -eq 0) {
+        $commentsOutput = & gh api "repos/$Owner/$Name/issues/$Number/comments" --header 'Accept: application/vnd.github+json' --paginate --slurp 2>&1 | Out-String
+        if ($LASTEXITCODE -eq 0) {
+            $commentPages = @(ConvertFrom-Json -InputObject $commentsOutput)
+            $comments = @($commentPages | ForEach-Object { @($_) })
+            $issue | Add-Member -NotePropertyName comments -NotePropertyValue $comments -Force
+        }
     }
     return $issue
 }
@@ -76,7 +128,51 @@ function Get-GoalBodyDigest {
 function Get-GoalCheckpointPath {
     param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][int]$Number, [AllowEmptyString()][string]$Requested)
     if (-not [string]::IsNullOrWhiteSpace($Requested)) { return [System.IO.Path]::GetFullPath($Requested) }
-    return [System.IO.Path]::GetFullPath((Join-Path $Root ".scratchpad/goals/$Number/checkpoint.json"))
+    $stateRoot = if ($env:OS -eq 'Windows_NT' -and -not [string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
+        Join-Path $env:LOCALAPPDATA 'Mississippi'
+    }
+    elseif (-not [string]::IsNullOrWhiteSpace($env:XDG_STATE_HOME)) {
+        Join-Path $env:XDG_STATE_HOME 'mississippi'
+    }
+    else {
+        Join-Path ([System.IO.Path]::GetTempPath()) 'mississippi'
+    }
+    return [System.IO.Path]::GetFullPath((Join-Path $stateRoot "goals/$Number/checkpoint.json"))
+}
+
+function Get-GoalCollection {
+    param([AllowNull()][object]$Object, [Parameter(Mandatory)][string]$Name)
+    if ($null -eq $Object -or $null -eq $Object.PSObject.Properties[$Name]) { return @() }
+    return @($Object.$Name)
+}
+
+function Merge-GoalCollection {
+    param(
+        [AllowEmptyCollection()][object[]]$Existing = @(),
+        [AllowEmptyCollection()][string[]]$Added = @()
+    )
+    return @(@($Existing) + @($Added) | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | ForEach-Object { [string]$_ } | Select-Object -Unique)
+}
+
+function Expand-GoalStringCollection {
+    param([AllowNull()][string[]]$Values)
+    $expanded = [System.Collections.Generic.List[string]]::new()
+    foreach ($value in @($Values)) {
+        if ([string]::IsNullOrWhiteSpace($value)) { continue }
+        if ($value.TrimStart().StartsWith('[')) {
+            try {
+                foreach ($item in @(ConvertFrom-Json -InputObject $value)) {
+                    if (-not [string]::IsNullOrWhiteSpace([string]$item)) { $expanded.Add([string]$item) }
+                }
+                continue
+            }
+            catch {
+                # Preserve a non-JSON milestone string as one entry.
+            }
+        }
+        $expanded.Add($value)
+    }
+    return @($expanded)
 }
 
 function Get-GoalOperationState {
@@ -103,8 +199,44 @@ function Test-GoalIssueContract {
     finally { Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue }
 }
 
+function Remove-GoalMarkdownFencedBlocks {
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
+
+    $insideFence = $false
+    $fenceCharacter = ''
+    $fenceLength = 0
+    $lines = [System.Collections.Generic.List[string]]::new()
+    foreach ($line in ($Content -split '\r?\n')) {
+        if (-not $insideFence -and $line -match '^[ \t]{0,3}(?<Fence>`{3,}|~{3,})') {
+            $insideFence = $true
+            $fenceCharacter = $Matches.Fence.Substring(0, 1)
+            $fenceLength = $Matches.Fence.Length
+            $lines.Add('')
+            continue
+        }
+        if ($insideFence -and $line -match ('^[ \t]{0,3}' + [regex]::Escape($fenceCharacter) + '{' + $fenceLength + ',}[ \t]*$')) {
+            $lines.Add('')
+            $insideFence = $false
+            continue
+        }
+        $lines.Add($(if ($insideFence) { '' } else { $line }))
+    }
+    return ($lines -join [Environment]::NewLine)
+}
+
+$checkpointLockStream = $null
 try {
     $root = (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
+    $checkpoint = Get-GoalCheckpointPath -Root $root -Number $IssueNumber -Requested $CheckpointPath
+    $checkpointDirectory = Split-Path -Parent $checkpoint
+    New-Item -ItemType Directory -Path $checkpointDirectory -Force | Out-Null
+    $checkpointLockPath = "$checkpoint.lock"
+    $checkpointLockStream = [System.IO.File]::Open(
+        $checkpointLockPath,
+        [System.IO.FileMode]::OpenOrCreate,
+        [System.IO.FileAccess]::ReadWrite,
+        [System.IO.FileShare]::None)
+    $temporaryCheckpoint = "$checkpoint.$PID.tmp"
     $issue = Get-GoalIssue -Owner $RepositoryOwner -Name $RepositoryName -Number $IssueNumber -Json $IssueJson
     if ([int]$issue.number -ne $IssueNumber) { throw "Issue identity mismatch: expected #$IssueNumber." }
     $expectedRepository = "$RepositoryOwner/$RepositoryName"
@@ -117,12 +249,18 @@ try {
     if ([string]$issue.state -ne 'open') { throw "Issue #$IssueNumber is not open." }
     if ($null -ne $issue.PSObject.Properties['pull_request']) { throw "Reference #$IssueNumber is a pull request, not an issue." }
 
-    $checkpoint = Get-GoalCheckpointPath -Root $root -Number $IssueNumber -Requested $CheckpointPath
-    $currentBody = if ($null -eq $issue.body) { '' } else { [string]$issue.body }
-    $currentDigest = Get-GoalBodyDigest -Body $currentBody
-    $currentHead = if ([string]::IsNullOrWhiteSpace($HeadRevision)) { Get-GoalRevision -Root $root -Name 'HEAD' } else { Get-GoalRevision -Root $root -Name $HeadRevision }
+    $issueBody = if ($null -eq $issue.body) { '' } else { [string]$issue.body }
+    $issueBodyDigest = Get-GoalBodyDigest -Body $issueBody
+    $checkedOutHead = Get-GoalRevision -Root $root -Name 'HEAD'
+    $currentHead = if ([string]::IsNullOrWhiteSpace($HeadRevision)) { $checkedOutHead } else { Get-GoalRevision -Root $root -Name $HeadRevision }
+    if ($currentHead -ne $checkedOutHead) {
+        throw "HeadRevision '$HeadRevision' does not resolve to the checked-out HEAD '$checkedOutHead'."
+    }
     $currentBase = if ([string]::IsNullOrWhiteSpace($BaseRevision)) { Get-GoalRevision -Root $root -Name 'origin/main' } else { Get-GoalRevision -Root $root -Name $BaseRevision }
     if ([string]::IsNullOrWhiteSpace($BaseRevision)) { throw 'BaseRevision must be supplied explicitly, including the immediate parent for stacked work.' }
+    $currentBody = $issueBody
+    $contractBodyDigest = $issueBodyDigest
+    $contractSource = 'issue-body'
     $contractResult = $null
     try {
         $contractResult = Test-GoalIssueContract -Root $root -Body $currentBody
@@ -134,7 +272,8 @@ try {
             try {
                 $contractResult = Test-GoalIssueContract -Root $root -Body $fallbackBody
                 $currentBody = $fallbackBody
-                $currentDigest = Get-GoalBodyDigest -Body $currentBody
+                $contractBodyDigest = Get-GoalBodyDigest -Body $currentBody
+                $contractSource = 'issue-comment'
                 break
             }
             catch {
@@ -169,18 +308,39 @@ try {
             if ($operation.Status -notin @('running', 'completed', 'failed')) {
                 throw "Unsupported operation transition '$($operation.Status)'."
             }
-            if ($operation.Status -ne 'running' -and $operation.Handle -ne [string]$previous.Operation.Handle) {
-                throw 'Operation completion does not match the saved authoritative handle.'
+            if ($operation.Handle -ne [string]$previous.Operation.Handle) {
+                throw 'Operation update does not match the saved authoritative handle.'
             }
         }
     }
 
-    $currentWorktreeFingerprint = Get-GoalWorktreeFingerprint -Root $root
+    if ($null -eq $previous) {
+        if (-not [string]::IsNullOrWhiteSpace($ExpectedIssueBodyDigest) -and $ExpectedIssueBodyDigest -ne $issueBodyDigest) {
+            throw 'The issue body does not match the authorized local plan digest.'
+        }
+        if (-not [string]::IsNullOrWhiteSpace($ExpectedHeadRevision) -and (Get-GoalRevision -Root $root -Name $ExpectedHeadRevision) -ne $currentHead) {
+            throw 'The checked-out head does not match the authorized local plan revision.'
+        }
+        if (-not [string]::IsNullOrWhiteSpace($ExpectedBaseRevision) -and (Get-GoalRevision -Root $root -Name $ExpectedBaseRevision) -ne $currentBase) {
+            throw 'The selected base does not match the authorized local plan revision.'
+        }
+        $actualAcceptance = @($contractResult.AcceptanceCriteria | ForEach-Object { [string]$_ } | Sort-Object -Unique)
+        $expectedAcceptance = @(Expand-GoalStringCollection -Values $ExpectedAcceptanceCriteria | Sort-Object -Unique)
+        if ($expectedAcceptance.Count -gt 0 -and (($actualAcceptance -join '|') -ne ($expectedAcceptance -join '|'))) {
+            throw 'The issue acceptance criteria do not match the authorized local plan.'
+        }
+    }
+
+    if ($EvidenceValidated -and $operation.Status -eq 'failed') {
+        throw 'Failed operation evidence cannot be marked as validated.'
+    }
+
+    $currentWorktreeFingerprint = Get-GoalWorktreeFingerprint -Root $root -ExcludePaths @($checkpoint, $temporaryCheckpoint, $checkpointLockPath)
     $dependenciesAndReadiness = if ($null -ne $contractResult.PSObject.Properties['DependenciesAndReadiness']) {
         [string]$contractResult.DependenciesAndReadiness
     }
     else {
-        $structuredBody = [regex]::Replace($currentBody, '(?ms)' + [char]96 + '{3}.*?' + [char]96 + '{3}', '')
+        $structuredBody = Remove-GoalMarkdownFencedBlocks -Content $currentBody
         $structuredBody = [regex]::Replace($structuredBody, '(?s)<!--.*?-->', '')
         $dependencyMatches = @([regex]::Matches($structuredBody, '(?ms)^#{2,3}[ \t]+Dependencies and readiness[ \t]*\r?\n(?<Body>.*?)(?=^#{2,3}[ \t]+|\z)'))
         if ($dependencyMatches.Count -gt 0) { $dependencyMatches[-1].Groups['Body'].Value.Trim() } else { '' }
@@ -189,19 +349,42 @@ try {
     $validatedHead = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['ValidatedHeadRevision']) { [string]$previous.ValidatedHeadRevision } else { '' }
     $validatedBase = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['ValidatedBaseRevision']) { [string]$previous.ValidatedBaseRevision } else { '' }
     $validatedWorktree = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['ValidatedWorktreeFingerprint']) { [string]$previous.ValidatedWorktreeFingerprint } else { '' }
-    $scopeBaseline = if ($null -ne $previous -and -not [string]::IsNullOrWhiteSpace($validatedDigest)) { $validatedDigest } elseif ($null -ne $previous) { [string]$previous.IssueBodyDigest } else { '' }
-    $headBaseline = if (-not [string]::IsNullOrWhiteSpace($validatedHead)) { $validatedHead } elseif ($null -ne $previous) { [string]$previous.HeadRevision } else { '' }
-    $baseBaseline = if (-not [string]::IsNullOrWhiteSpace($validatedBase)) { $validatedBase } elseif ($null -ne $previous) { [string]$previous.BaseRevision } else { '' }
-    $worktreeBaseline = if (-not [string]::IsNullOrWhiteSpace($validatedWorktree)) { $validatedWorktree } elseif ($null -ne $previous -and $null -ne $previous.PSObject.Properties['WorktreeFingerprint']) { [string]$previous.WorktreeFingerprint } else { '' }
-    $scopeChanged = $null -ne $previous -and $scopeBaseline -ne $currentDigest
+    $scopeBaseline = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['BaselineIssueBodyDigest']) { [string]$previous.BaselineIssueBodyDigest } elseif ($null -ne $previous) { [string]$previous.IssueBodyDigest } else { '' }
+    $headBaseline = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['BaselineHeadRevision']) { [string]$previous.BaselineHeadRevision } elseif (-not [string]::IsNullOrWhiteSpace($validatedHead)) { $validatedHead } elseif ($null -ne $previous) { [string]$previous.HeadRevision } else { '' }
+    $baseBaseline = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['BaselineBaseRevision']) { [string]$previous.BaselineBaseRevision } elseif (-not [string]::IsNullOrWhiteSpace($validatedBase)) { $validatedBase } elseif ($null -ne $previous) { [string]$previous.BaseRevision } else { '' }
+    $worktreeBaseline = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['BaselineWorktreeFingerprint']) { [string]$previous.BaselineWorktreeFingerprint } elseif (-not [string]::IsNullOrWhiteSpace($validatedWorktree)) { $validatedWorktree } elseif ($null -ne $previous -and $null -ne $previous.PSObject.Properties['WorktreeFingerprint']) { [string]$previous.WorktreeFingerprint } else { '' }
+    $scopeChanged = $null -ne $previous -and $scopeBaseline -ne $issueBodyDigest
     $revisionChanged = $null -ne $previous -and (($headBaseline -ne $currentHead) -or ($baseBaseline -ne $currentBase))
     $worktreeChanged = $null -ne $previous -and $worktreeBaseline -ne $currentWorktreeFingerprint
     $activeOperation = $operation.Status -eq 'running'
-    $operationCompleted = $null -ne $previous -and [string]$previous.Operation.Status -eq 'running' -and $operation.Status -in @('completed', 'failed')
-    $status = if ($scopeChanged) { 'scope-changed' } elseif ($activeOperation) { 'operation-running' } elseif ($EvidenceValidated -and $null -ne $previous) { 'revalidated' } elseif ($revisionChanged -or $worktreeChanged) { 'evidence-stale' } elseif ($null -eq $previous) { 'started' } else { 'resumed' }
+    $operationCompleted = $null -ne $previous -and $null -ne $previous.PSObject.Properties['Operation'] -and [string]$previous.Operation.Status -eq 'running' -and $operation.Status -in @('completed', 'failed')
+    $status = if ($activeOperation) { 'operation-running' } elseif ($scopeChanged) { 'scope-changed' } elseif ($revisionChanged -or $worktreeChanged) { 'evidence-stale' } elseif ($null -eq $previous) { 'started' } else { 'resumed' }
     $evidenceFresh = -not $activeOperation -and (($EvidenceValidated) -or (-not $scopeChanged -and -not $revisionChanged -and -not $worktreeChanged -and ($null -ne $previous -and [bool]$previous.EvidenceFresh)))
-    $nextAction = if ($scopeChanged) { 'reconcile-edited-issue-before-implementation' } elseif ($activeOperation) { "wait-for-existing-operation:$($operation.Handle)" } elseif ($EvidenceValidated) { 'continue-implementation-or-review' } elseif ($operationCompleted) { 'inspect-completed-operation-result' } elseif ($revisionChanged -or $worktreeChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($null -eq $previous) { 'inspect-guidance-and-prerequisites' } else { [string]$previous.NextAction }
+    $nextAction = if ($activeOperation) { "wait-for-existing-operation:$($operation.Handle)" } elseif ($scopeChanged) { 'reconcile-edited-issue-before-implementation' } elseif ($EvidenceValidated) { 'continue-implementation-or-review' } elseif ($operationCompleted) { 'inspect-completed-operation-result' } elseif ($revisionChanged -or $worktreeChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($null -eq $previous) { 'inspect-guidance-and-prerequisites' } else { [string]$previous.NextAction }
     if ([string]::IsNullOrWhiteSpace($nextAction)) { $nextAction = 'inspect-guidance-and-prerequisites' }
+
+    $currentContract = [ordered]@{
+        IssueTextIsData = $true
+        CommandsExecutedFromIssueText = $false
+        ToolsInstalledFromIssueText = $false
+        SecretsAccessedFromIssueText = $false
+        AcceptanceCriteria = @($contractResult.AcceptanceCriteria)
+        DependenciesAndReadiness = $dependenciesAndReadiness
+    }
+    $previousValidatedContract = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['ValidatedContract']) {
+        $previous.ValidatedContract
+    }
+    elseif ($null -ne $previous -and [bool]$previous.EvidenceFresh -and $null -ne $previous.PSObject.Properties['Contract']) {
+        $previous.Contract
+    }
+    else {
+        [ordered]@{}
+    }
+    $validatedContract = if ($EvidenceValidated -or $evidenceFresh) { $currentContract } else { $previousValidatedContract }
+    $baselineIssueBodyDigest = if ($EvidenceValidated -or $evidenceFresh -or $null -eq $previous) { $issueBodyDigest } else { $scopeBaseline }
+    $baselineHeadRevision = if ($EvidenceValidated -or $evidenceFresh -or $null -eq $previous) { $currentHead } else { $headBaseline }
+    $baselineBaseRevision = if ($EvidenceValidated -or $evidenceFresh -or $null -eq $previous) { $currentBase } else { $baseBaseline }
+    $baselineWorktreeFingerprint = if ($EvidenceValidated -or $evidenceFresh -or $null -eq $previous) { $currentWorktreeFingerprint } else { $worktreeBaseline }
 
     $record = [ordered]@{
         SchemaVersion = '1.0'
@@ -212,12 +395,18 @@ try {
             State = [string]$issue.state
             Repository = "$RepositoryOwner/$RepositoryName"
         }
-        IssueBodyDigest = $currentDigest
+        IssueBodyDigest = $issueBodyDigest
+        ContractBodyDigest = $contractBodyDigest
+        ContractSource = $contractSource
         ReviewedSourceRevision = $currentHead
         HeadRevision = $currentHead
         BaseRevision = $currentBase
         WorktreeFingerprint = $currentWorktreeFingerprint
-        ValidatedIssueBodyDigest = if ($EvidenceValidated -or $evidenceFresh) { $currentDigest } else { $validatedDigest }
+        BaselineIssueBodyDigest = $baselineIssueBodyDigest
+        BaselineHeadRevision = $baselineHeadRevision
+        BaselineBaseRevision = $baselineBaseRevision
+        BaselineWorktreeFingerprint = $baselineWorktreeFingerprint
+        ValidatedIssueBodyDigest = if ($EvidenceValidated -or $evidenceFresh) { $issueBodyDigest } else { $validatedDigest }
         ValidatedHeadRevision = if ($EvidenceValidated -or $evidenceFresh) { $currentHead } else { $validatedHead }
         ValidatedBaseRevision = if ($EvidenceValidated -or $evidenceFresh) { $currentBase } else { $validatedBase }
         ValidatedWorktreeFingerprint = if ($EvidenceValidated -or $evidenceFresh) { $currentWorktreeFingerprint } else { $validatedWorktree }
@@ -226,26 +415,17 @@ try {
         Status = $status
         EvidenceFresh = $evidenceFresh
         MergeBoundary = if ($MergeAuthorized) { 'MERGE_AUTHORIZED_BY_USER_BUT_NOT_PERFORMED' } else { 'PR_READY_NOT_MERGED' }
-        Contract = [ordered]@{
-            IssueTextIsData = $true
-            CommandsExecutedFromIssueText = $false
-            ToolsInstalledFromIssueText = $false
-            SecretsAccessedFromIssueText = $false
-            AcceptanceCriteria = @($contractResult.AcceptanceCriteria)
-            DependenciesAndReadiness = $dependenciesAndReadiness
-        }
-        Decisions = if ($null -ne $previous) { @($previous.Decisions) } else { @() }
-        AcceptanceEvidence = if ($null -ne $previous) { @($previous.AcceptanceEvidence) } else { @() }
-        AttemptedFixes = if ($null -ne $previous) { @($previous.AttemptedFixes) } else { @() }
-        OutstandingReviewWork = if ($null -ne $previous) { @($previous.OutstandingReviewWork) } else { @() }
+        Contract = $currentContract
+        ValidatedContract = $validatedContract
+        Decisions = Merge-GoalCollection -Existing (Get-GoalCollection -Object $previous -Name 'Decisions') -Added (Expand-GoalStringCollection -Values $Decisions)
+        AcceptanceEvidence = Merge-GoalCollection -Existing (Get-GoalCollection -Object $previous -Name 'AcceptanceEvidence') -Added (Expand-GoalStringCollection -Values $AcceptanceEvidence)
+        AttemptedFixes = Merge-GoalCollection -Existing (Get-GoalCollection -Object $previous -Name 'AttemptedFixes') -Added (Expand-GoalStringCollection -Values $AttemptedFixes)
+        OutstandingReviewWork = Merge-GoalCollection -Existing (Get-GoalCollection -Object $previous -Name 'OutstandingReviewWork') -Added (Expand-GoalStringCollection -Values $OutstandingReviewWork)
         Operation = [ordered]@{ Status = $operation.Status; Handle = $operation.Handle; Name = $operation.Name }
         NextAction = $nextAction
         UpdatedUtc = (Get-Date).ToUniversalTime().ToString('o')
     }
 
-    $checkpointDirectory = Split-Path -Parent $checkpoint
-    New-Item -ItemType Directory -Path $checkpointDirectory -Force | Out-Null
-    $temporaryCheckpoint = "$checkpoint.$PID.tmp"
     $record | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $temporaryCheckpoint -Encoding utf8
     Move-Item -LiteralPath $temporaryCheckpoint -Destination $checkpoint -Force
 
@@ -259,7 +439,7 @@ try {
         NextAction = $nextAction
         MergeBoundary = $record.MergeBoundary
         Operation = $record.Operation
-        IssueBodyDigest = $currentDigest
+        IssueBodyDigest = $issueBodyDigest
         HeadRevision = $currentHead
         BaseRevision = $currentBase
     }
@@ -273,4 +453,9 @@ catch {
     }
     else { Write-Error "Goal route failed: $($_.Exception.Message)" }
     exit 1
+}
+finally {
+    if ($null -ne $checkpointLockStream) {
+        $checkpointLockStream.Dispose()
+    }
 }
