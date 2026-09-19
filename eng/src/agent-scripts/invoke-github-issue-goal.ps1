@@ -38,7 +38,7 @@ function Get-GoalWorktreeFingerprint {
     $statusEntries = [System.Collections.Generic.List[string]]::new()
     $fileHashes = [System.Collections.Generic.List[string]]::new()
     foreach ($entry in $status) {
-        if ([string]$entry.Length -lt 4) { continue }
+        if ($entry.Length -lt 4) { continue }
         $statusEntries.Add([string]$entry)
         $relative = ([string]$entry).Substring(3).Trim('"')
         if ($relative -match '^(?<Old>.+) -> (?<New>.+)$') { $relative = $Matches.New }
@@ -58,7 +58,12 @@ function Get-GoalIssue {
     if (-not [string]::IsNullOrWhiteSpace($Json)) { return ConvertFrom-Json -InputObject $Json }
     $output = & gh api "repos/$Owner/$Name/issues/$Number" --header 'Accept: application/vnd.github+json' 2>&1 | Out-String
     if ($LASTEXITCODE -ne 0) { throw "Unable to read issue #${Number}: $($output.Trim())" }
-    return ConvertFrom-Json -InputObject $output
+    $issue = ConvertFrom-Json -InputObject $output
+    $commentsOutput = & gh api "repos/$Owner/$Name/issues/$Number/comments" --header 'Accept: application/vnd.github+json' --paginate 2>&1 | Out-String
+    if ($LASTEXITCODE -eq 0) {
+        $issue | Add-Member -NotePropertyName comments -NotePropertyValue (ConvertFrom-Json -InputObject $commentsOutput) -Force
+    }
+    return $issue
 }
 
 function Get-GoalBodyDigest {
@@ -102,6 +107,13 @@ try {
     $root = (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
     $issue = Get-GoalIssue -Owner $RepositoryOwner -Name $RepositoryName -Number $IssueNumber -Json $IssueJson
     if ([int]$issue.number -ne $IssueNumber) { throw "Issue identity mismatch: expected #$IssueNumber." }
+    $expectedRepository = "$RepositoryOwner/$RepositoryName"
+    if ($null -ne $issue.PSObject.Properties['html_url'] -and [string]$issue.html_url -notmatch "/$([regex]::Escape($expectedRepository))/issues/$IssueNumber(?:$|[/?#])") {
+        throw "Issue repository mismatch: expected '$expectedRepository'."
+    }
+    if ($null -ne $issue.PSObject.Properties['repository_url'] -and [string]$issue.repository_url -notmatch "/$([regex]::Escape($expectedRepository))$") {
+        throw "Issue repository mismatch: expected '$expectedRepository'."
+    }
     if ([string]$issue.state -ne 'open') { throw "Issue #$IssueNumber is not open." }
     if ($null -ne $issue.PSObject.Properties['pull_request']) { throw "Reference #$IssueNumber is a pull request, not an issue." }
 
@@ -111,7 +123,26 @@ try {
     $currentHead = if ([string]::IsNullOrWhiteSpace($HeadRevision)) { Get-GoalRevision -Root $root -Name 'HEAD' } else { Get-GoalRevision -Root $root -Name $HeadRevision }
     $currentBase = if ([string]::IsNullOrWhiteSpace($BaseRevision)) { Get-GoalRevision -Root $root -Name 'origin/main' } else { Get-GoalRevision -Root $root -Name $BaseRevision }
     if ([string]::IsNullOrWhiteSpace($BaseRevision)) { throw 'BaseRevision must be supplied explicitly, including the immediate parent for stacked work.' }
-    $contractResult = Test-GoalIssueContract -Root $root -Body $currentBody
+    $contractResult = $null
+    try {
+        $contractResult = Test-GoalIssueContract -Root $root -Body $currentBody
+    }
+    catch {
+        $issueComments = if ($null -ne $issue.PSObject.Properties['comments']) { @($issue.comments) } else { @() }
+        $fallbackBodies = @($issueComments | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_.body) } | Sort-Object created_at -Descending | ForEach-Object { [string]$_.body })
+        foreach ($fallbackBody in $fallbackBodies) {
+            try {
+                $contractResult = Test-GoalIssueContract -Root $root -Body $fallbackBody
+                $currentBody = $fallbackBody
+                $currentDigest = Get-GoalBodyDigest -Body $currentBody
+                break
+            }
+            catch {
+                # Try the next newest contract comment.
+            }
+        }
+        if ($null -eq $contractResult) { throw }
+    }
     $operation = Get-GoalOperationState -Json $OperationStateJson
     if ($operation.Status -eq 'running' -and [string]::IsNullOrWhiteSpace($operation.Handle)) {
         throw 'Running operation state requires a nonempty authoritative handle.'
@@ -134,6 +165,14 @@ try {
         if ([string]::IsNullOrWhiteSpace($OperationStateJson) -and $null -ne $previous.Operation) {
             $operation = [pscustomobject]@{ Status = [string]$previous.Operation.Status; Handle = [string]$previous.Operation.Handle; Name = [string]$previous.Operation.Name }
         }
+        if ($null -ne $previous.Operation -and [string]$previous.Operation.Status -eq 'running') {
+            if ($operation.Status -notin @('running', 'completed', 'failed')) {
+                throw "Unsupported operation transition '$($operation.Status)'."
+            }
+            if ($operation.Status -ne 'running' -and $operation.Handle -ne [string]$previous.Operation.Handle) {
+                throw 'Operation completion does not match the saved authoritative handle.'
+            }
+        }
     }
 
     $currentWorktreeFingerprint = Get-GoalWorktreeFingerprint -Root $root
@@ -141,8 +180,8 @@ try {
         [string]$contractResult.DependenciesAndReadiness
     }
     else {
-        $dependencyMatch = [regex]::Match($currentBody, '(?ms)^#{2,3}[ \t]+Dependencies and readiness[ \t]*\r?\n(?<Body>.*?)(?=^#{2,3}[ \t]+|\z)')
-        if ($dependencyMatch.Success) { $dependencyMatch.Groups['Body'].Value.Trim() } else { '' }
+        $dependencyMatches = @([regex]::Matches($currentBody, '(?ms)^#{2,3}[ \t]+Dependencies and readiness[ \t]*\r?\n(?<Body>.*?)(?=^#{2,3}[ \t]+|\z)'))
+        if ($dependencyMatches.Count -gt 0) { $dependencyMatches[-1].Groups['Body'].Value.Trim() } else { '' }
     }
     $validatedDigest = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['ValidatedIssueBodyDigest']) { [string]$previous.ValidatedIssueBodyDigest } else { '' }
     $validatedHead = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['ValidatedHeadRevision']) { [string]$previous.ValidatedHeadRevision } else { '' }
@@ -157,7 +196,7 @@ try {
     $worktreeChanged = $null -ne $previous -and $worktreeBaseline -ne $currentWorktreeFingerprint
     $activeOperation = $operation.Status -eq 'running'
     $operationCompleted = $null -ne $previous -and [string]$previous.Operation.Status -eq 'running' -and $operation.Status -in @('completed', 'failed')
-    $status = if ($scopeChanged) { 'scope-changed' } elseif ($activeOperation) { 'operation-running' } elseif ($EvidenceValidated) { 'revalidated' } elseif ($revisionChanged -or $worktreeChanged) { 'evidence-stale' } elseif ($null -eq $previous) { 'started' } else { 'resumed' }
+    $status = if ($scopeChanged) { 'scope-changed' } elseif ($activeOperation) { 'operation-running' } elseif ($EvidenceValidated -and $null -ne $previous) { 'revalidated' } elseif ($revisionChanged -or $worktreeChanged) { 'evidence-stale' } elseif ($null -eq $previous) { 'started' } else { 'resumed' }
     $evidenceFresh = -not $activeOperation -and (($EvidenceValidated) -or (-not $scopeChanged -and -not $revisionChanged -and -not $worktreeChanged -and ($null -ne $previous -and [bool]$previous.EvidenceFresh)))
     $nextAction = if ($scopeChanged) { 'reconcile-edited-issue-before-implementation' } elseif ($activeOperation) { "wait-for-existing-operation:$($operation.Handle)" } elseif ($EvidenceValidated) { 'continue-implementation-or-review' } elseif ($operationCompleted) { 'inspect-completed-operation-result' } elseif ($revisionChanged -or $worktreeChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($null -eq $previous) { 'inspect-guidance-and-prerequisites' } else { [string]$previous.NextAction }
     if ([string]::IsNullOrWhiteSpace($nextAction)) { $nextAction = 'inspect-guidance-and-prerequisites' }
