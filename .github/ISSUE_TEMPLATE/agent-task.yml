@@ -74,7 +74,7 @@ body:
     id: risks-and-delivery-boundary
     attributes:
       label: Risks and delivery boundary
-      description: Record material risks and the merge boundary. The response is prefilled with the required Validation evidence map section; preserve that heading and map every acceptance ID to evidence and an expected result.
+      description: Record risks and merge boundary. Keep the prefilled Validation evidence map heading and map each acceptance ID to evidence and expected result.
       value: |
         ## Validation evidence map
     validations:

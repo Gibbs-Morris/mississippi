@@ -66,6 +66,7 @@ function Remove-MarkdownFencedBlocks {
             $insideFence = $true
             $fenceCharacter = $Matches.Fence.Substring(0, 1)
             ''
+            continue
         }
         elseif ($insideFence) { '' }
         else { $line }

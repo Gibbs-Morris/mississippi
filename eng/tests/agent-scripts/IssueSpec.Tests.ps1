@@ -295,6 +295,9 @@ Describe 'Implementation-ready issue contract' {
         $form | Should -Match 'value:\s*\|\s*\r?\n\s*## Dependencies and readiness'
         $form | Should -Match 'value:\s*\|\s*\r?\n\s*## Validation evidence map'
         [regex]::Matches($form, '(?m)^\s*- type: ').Count | Should -BeLessOrEqual 10
+        foreach ($description in [regex]::Matches($form, '(?m)^\s+description:\s*(?<Text>.+)$')) {
+            $description.Groups['Text'].Value.Length | Should -BeLessOrEqual 200
+        }
     }
 
     It 'retains repository paths and validation detail in the issue refiner' {
