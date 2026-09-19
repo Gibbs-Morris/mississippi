@@ -434,7 +434,8 @@ applyTo: 'src/**/*.cs'
         $junctionCreated = $false
         try {
             Move-Item -LiteralPath $instructionRoot -Destination $backupRoot
-            New-Item -ItemType Junction -Path $instructionRoot -Target $backupRoot -ErrorAction Stop | Out-Null
+            $linkType = if ($IsWindows) { 'Junction' } else { 'SymbolicLink' }
+            New-Item -ItemType $linkType -Path $instructionRoot -Target $backupRoot -ErrorAction Stop | Out-Null
             $junctionCreated = $true
             $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
 
