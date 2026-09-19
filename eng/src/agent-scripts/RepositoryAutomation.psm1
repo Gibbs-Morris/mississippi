@@ -29,11 +29,20 @@ function Get-RepositoryExecutionLeasePath {
     param([Parameter(Mandatory)][string]$RepoRoot)
 
     $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
-    $bytes = [System.Text.Encoding]::UTF8.GetBytes($canonicalRoot.ToLowerInvariant())
+    $keyRoot = if ([OperatingSystem]::IsWindows()) { $canonicalRoot.ToLowerInvariant() } else { $canonicalRoot }
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($keyRoot)
     $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
     $fileName = (($hash | ForEach-Object { $_.ToString('x2') }) -join '') + '.lease'
-    $leaseDirectory = Join-Path ([System.IO.Path]::GetTempPath()) 'mississippi-execution-leases'
-    New-Item -ItemType Directory -Path $leaseDirectory -Force | Out-Null
+    $leaseDirectory = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases'
+    if (Test-Path -LiteralPath $leaseDirectory) {
+        $leaseItem = Get-Item -LiteralPath $leaseDirectory -Force -ErrorAction Stop
+        if (-not $leaseItem.PSIsContainer -or [bool]($leaseItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            throw "Lease directory is not a trusted private directory: '$leaseDirectory'."
+        }
+    }
+    else {
+        New-Item -ItemType Directory -Path $leaseDirectory -Force | Out-Null
+    }
     return Join-Path $leaseDirectory $fileName
 }
 
@@ -41,15 +50,23 @@ function Resolve-RepositoryExecutionRoot {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$RepoRoot)
 
-    $current = (Resolve-Path -LiteralPath $RepoRoot -ErrorAction Stop).Path
+    $fullPath = [System.IO.Path]::GetFullPath($RepoRoot)
+    $root = [System.IO.Path]::GetPathRoot($fullPath)
+    $segments = $fullPath.Substring($root.Length).Split([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) | Where-Object { $_ }
+    $current = $root
     $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-    for ($iteration = 0; $iteration -lt 8; $iteration++) {
-        if (-not $seen.Add($current)) { break }
-        $item = Get-Item -LiteralPath $current -Force -ErrorAction Stop
-        if (-not [bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) { break }
-        $target = @($item.Target | Select-Object -First 1)[0]
-        if ([string]::IsNullOrWhiteSpace([string]$target)) { break }
-        $current = (Resolve-Path -LiteralPath $target -ErrorAction Stop).Path
+    foreach ($segment in $segments) {
+        $candidate = Join-Path $current $segment
+        $item = Get-Item -LiteralPath $candidate -Force -ErrorAction Stop
+        if ([bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            $target = @($item.Target | Select-Object -First 1)[0]
+            if ([string]::IsNullOrWhiteSpace([string]$target)) { throw "Unable to resolve worktree path component '$candidate'." }
+            $current = (Resolve-Path -LiteralPath $target -ErrorAction Stop).Path
+        }
+        else {
+            $current = $item.FullName
+        }
+        if (-not $seen.Add($current)) { throw "Worktree path resolution loop detected at '$current'." }
     }
     return $current
 }
