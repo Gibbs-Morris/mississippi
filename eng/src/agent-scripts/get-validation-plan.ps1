@@ -96,7 +96,7 @@ try {
     $isUnknown = $unmappedPaths.Count -gt 0
 
     Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'core-final') -Reason 'Required shared final gate.' -MarkdownPaths $markdownPaths
-    Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'full-cleanup') -Reason 'Required final cleanup gate.' -MarkdownPaths $markdownPaths
+    # core-final invokes go.ps1 without -SkipCleanup, so it already owns the authoritative cleanup pass.
     if ($isPowerShell) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'powershell-tests') -Reason 'PowerShell source or harness path changed.' -MarkdownPaths $markdownPaths }
     if ($isDotnet -or $isUnknown) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'core-iteration') -Reason $(if ($isUnknown) { "Unknown mapping selects the broad .NET iteration gate conservatively for: $($unmappedPaths -join ', ')." } else { ' .NET source or project path changed.' }) -MarkdownPaths $markdownPaths }
     if ($isMarkdown) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'markdown-lint') -Reason 'Markdown or MDX content changed.' -MarkdownPaths $markdownPaths }

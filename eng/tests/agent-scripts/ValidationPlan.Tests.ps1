@@ -91,6 +91,7 @@ Describe 'Deterministic validation plan' {
 
         $outcome.ExitCode | Should -Be 0
         @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'core-iteration').Reasons | Should -Match 'Unknown mapping'
+        $outcome.Result.SelectedChecks.Id | Should -Not -Contain 'full-cleanup'
     }
 
     It 'retains unknown handling when mapped and unmapped paths are mixed' {
