@@ -83,9 +83,9 @@ function Invoke-DoctorProbe {
             $timedOutStdout = if ($standardOutputTask.IsCompleted) { $standardOutputTask.GetAwaiter().GetResult() } else { '' }
             $timedOutStderr = if ($standardErrorTask.IsCompleted) { $standardErrorTask.GetAwaiter().GetResult() } else { '' }
             if ($timedOutStdout) { $timedOutOutput.Add($timedOutStdout.TrimEnd()) }
-            if ($timedOutStderr) { $timedOutOutput.Add($timedOutStderr.TrimEnd()) }
             $timeoutDetails = "Command '$FilePath' timed out after $TimeoutSeconds seconds."
             if (-not $terminated) { $timeoutDetails += ' The process did not terminate during the 1 second grace period.' }
+            if ($timedOutStderr) { $timeoutDetails += " Native error output: $($timedOutStderr.TrimEnd())" }
             if ($terminationErrors.Count -gt 0) { $timeoutDetails += " Termination error: $($terminationErrors -join '; ')" }
             return [pscustomobject]@{
                 Available = $true
@@ -97,12 +97,9 @@ function Invoke-DoctorProbe {
         }
 
         $process.WaitForExit()
-        $outputParts = [System.Collections.Generic.List[string]]::new()
         $stdout = $standardOutputTask.GetAwaiter().GetResult()
         $stderr = $standardErrorTask.GetAwaiter().GetResult()
-        if ($stdout) { $outputParts.Add($stdout.TrimEnd()) }
-        if ($stderr) { $outputParts.Add($stderr.TrimEnd()) }
-        return [pscustomobject]@{ Available = $true; Output = ($outputParts -join [Environment]::NewLine).Trim(); ExitCode = $process.ExitCode; Error = ''; TimedOut = $false }
+        return [pscustomobject]@{ Available = $true; Output = $stdout.Trim(); ExitCode = $process.ExitCode; Error = $stderr.Trim(); TimedOut = $false }
     }
     catch {
         return [pscustomobject]@{ Available = $true; Output = ''; ExitCode = 1; Error = $_.Exception.Message; TimedOut = $false }
@@ -143,6 +140,7 @@ function Resolve-DoctorCommand {
 function Get-DoctorProbeDetails {
     param([Parameter(Mandatory)][object]$Probe)
 
+    if ($Probe.ExitCode -eq 0 -and -not [string]::IsNullOrWhiteSpace([string]$Probe.Output)) { return [string]$Probe.Output }
     if (-not [string]::IsNullOrWhiteSpace([string]$Probe.Error)) { return [string]$Probe.Error }
     if (-not [string]::IsNullOrWhiteSpace([string]$Probe.Output)) { return [string]$Probe.Output }
     return 'Probe returned no diagnostic output.'

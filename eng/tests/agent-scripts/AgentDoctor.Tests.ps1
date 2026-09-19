@@ -160,6 +160,15 @@ Describe 'Repository prerequisite doctor' {
         @($githubReport.Checks | Where-Object Name -EQ 'github-repository').Details | Should -Be 'gh: authentication required'
     }
 
+    It 'keeps stderr separate from semantic probe output' {
+        $probe = InModuleScope AgentDoctor {
+            Invoke-DoctorProbe -Name 'stderr-test' -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', "[Console]::Error.WriteLine('warning'); Write-Output 'value'")
+        }
+
+        $probe.Output | Should -Be 'value'
+        $probe.Error | Should -Be 'warning'
+    }
+
     It 'includes remediation in the text report for incomplete checks' {
         $probes = @{} + $readyProbes
         $probes['docker-ostype'] = [pscustomobject]@{ Available = $true; Output = 'windows'; ExitCode = 0; Error = '' }
