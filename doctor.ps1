@@ -9,7 +9,7 @@ Checks declared repository prerequisites and returns READY only for prerequisite
 
 [CmdletBinding()]
 param(
-    [string]$RepositoryRoot = (Get-Location).Path,
+    [string]$RepositoryRoot = $PSScriptRoot,
     [ValidateSet('Core', 'Docs', 'Spring', 'GitHub', 'All')][string]$Profile = 'Core',
     [ValidateSet('Text', 'Json')][string]$OutputFormat = 'Text'
 )
