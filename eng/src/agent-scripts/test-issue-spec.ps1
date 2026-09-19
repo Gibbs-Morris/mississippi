@@ -84,6 +84,9 @@ function Get-IssueSpecResult {
     $sections = Get-MarkdownSections -Content $content
 
     $versionMatch = [regex]::Match($content, '(?im)^\s*Contract version:\s*(?<Value>\d+\.\d+)\s*$')
+    if (-not $versionMatch.Success) {
+        $versionMatch = [regex]::Match($content, '(?im)^#{2,3}\s+Contract version\s*\r?\n\s*(?<Value>\d+\.\d+)\s*$')
+    }
     $version = if ($versionMatch.Success) { $versionMatch.Groups['Value'].Value } else { '' }
     if (-not $versionMatch.Success) {
         Add-IssueSpecError -Errors $errors -Message 'Missing Contract version: major.minor.'

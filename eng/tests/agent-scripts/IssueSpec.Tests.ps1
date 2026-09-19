@@ -57,6 +57,15 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Valid | Should -BeTrue
     }
 
+    It 'accepts the submitted contract version field from the GitHub issue form' {
+        $formBody = $validBug -replace '(?m)^Contract version:\s*1\.0\r?\n', "### Contract version`r`n`r`n1.0`r`n`r`n"
+        $formBody = $formBody -replace '(?m)^## ', '### '
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $formBody)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'rejects required sections in the wrong order' {
         $reordered = $validBug -replace '(?m)^## Problem', '## Temporary problem'
         $reordered = $reordered -replace '(?m)^## Observable outcome', '## Problem'
@@ -128,6 +137,8 @@ Describe 'Implementation-ready issue contract' {
 
         $contract | Should -Match 'Contract version: 1\.0'
         $form | Should -Match 'Contract version: 1\.0'
+        $form | Should -Match 'id: contract-version'
+        $form | Should -Match 'value: 1\.0'
         foreach ($label in $requiredLabels) {
             $contract | Should -Match ([regex]::Escape("- ``## $label``"))
             $form | Should -Match ([regex]::Escape("label: $label"))
