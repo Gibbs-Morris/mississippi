@@ -32,7 +32,7 @@ function Get-MarkdownSections {
     param([Parameter(Mandatory)][string]$Content)
 
     $knownTitles = ($requiredSections | ForEach-Object { [regex]::Escape($_) }) -join '|'
-    $allHeadings = [regex]::Matches($Content, '(?m)^(?<Level>#{1,6})[ \t]+(?<Title>[^\r\n]+)[ \t]*\r?$')
+    $allHeadings = [regex]::Matches($Content, '(?m)^[ \t]{0,3}(?<Level>#{1,6})[ \t]+(?<Title>[^\r\n]+)[ \t]*\r?$')
     $matches = @($allHeadings | Where-Object { $requiredSections -contains $_.Groups['Title'].Value.Trim() })
     $sections = [ordered]@{}
     for ($index = 0; $index -lt $matches.Count; $index++) {
@@ -196,6 +196,18 @@ function Test-RepositoryRelativePath {
     }
 
     try {
+        $gitRoot = (Resolve-Path -LiteralPath $Root -ErrorAction Stop).Path
+        $gitPath = $Candidate.Replace('\', '/')
+        $trackedExact = @(& git -c "safe.directory=$($gitRoot.Replace('\', '/'))" -C $gitRoot ls-files --error-unmatch -- $gitPath 2>$null)
+        if (@($trackedExact).Count -gt 0) { return $true }
+        $trackedChildren = @(& git -c "safe.directory=$($gitRoot.Replace('\', '/'))" -C $gitRoot ls-files -- "$gitPath/*" 2>$null)
+        if (@($trackedChildren).Count -gt 0) { return $true }
+    }
+    catch {
+        return $false
+    }
+
+    try {
         $current = (Resolve-Path -LiteralPath $Root -ErrorAction Stop).Path
         foreach ($segment in ($Candidate.Replace('\', '/') -split '/')) {
             if ([string]::IsNullOrEmpty($segment) -or $segment -eq '.') { continue }
@@ -231,7 +243,10 @@ function Get-IssueSpecResult {
     $content = Get-Content -LiteralPath $IssuePath -Raw -ErrorAction Stop
     $structuralContent = Remove-MarkdownHtmlComments -Content (Remove-MarkdownFencedBlocks -Content $content)
     $nonRenderedContent = Remove-MarkdownHtmlComments -Content (Remove-MarkdownFencedBlocks -Content $content -MaskContent)
+    $structuralContent = [regex]::Replace($structuralContent, '(?is)<(?:pre|script|style|textarea)\b.*?</(?:pre|script|style|textarea)>', '')
+    $nonRenderedContent = [regex]::Replace($nonRenderedContent, '(?is)<(?:pre|script|style|textarea)\b.*?</(?:pre|script|style|textarea)>', '')
     $sections = Get-MarkdownSections -Content $structuralContent
+    $nonRenderedSections = Get-MarkdownSections -Content $nonRenderedContent
 
     $firstRequiredSectionIndex = $nonRenderedContent.Length
     foreach ($requiredSection in $requiredSections) {
@@ -242,11 +257,11 @@ function Get-IssueSpecResult {
     }
     $prologueContent = $nonRenderedContent.Substring(0, $firstRequiredSectionIndex)
     $prologueVersionValues = @()
-    $prologueVersionValues += @([regex]::Matches($prologueContent, '(?im)^[ \t]*Contract version:[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
-    $prologueVersionValues += @([regex]::Matches($prologueContent, '(?im)^#{2,3}[ \t]+Contract version[ \t]*\r?\n(?:[ \t]*\r?\n)*[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
+    $prologueVersionValues += @([regex]::Matches($prologueContent, '(?im)^[ \t]{0,3}Contract version:[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
+    $prologueVersionValues += @([regex]::Matches($prologueContent, '(?im)^[ \t]{0,3}#{2,3}[ \t]+Contract version[ \t]*\r?\n(?:[ \t]*\r?\n)*[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
     $allVersionValues = @()
-    $allVersionValues += @([regex]::Matches($nonRenderedContent, '(?im)^[ \t]*Contract version:[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
-    $allVersionValues += @([regex]::Matches($nonRenderedContent, '(?im)^#{2,3}[ \t]+Contract version[ \t]*\r?\n(?:[ \t]*\r?\n)*[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
+    $allVersionValues += @([regex]::Matches($nonRenderedContent, '(?im)^[ \t]{0,3}Contract version:[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
+    $allVersionValues += @([regex]::Matches($nonRenderedContent, '(?im)^[ \t]{0,3}#{2,3}[ \t]+Contract version[ \t]*\r?\n(?:[ \t]*\r?\n)*[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
     $versionValues = $prologueVersionValues
     $version = if ($versionValues.Count -gt 0) { $versionValues[0] } else { '' }
     if ($versionValues.Count -eq 0) {
@@ -271,7 +286,10 @@ function Get-IssueSpecResult {
         }
     }
 
-    $headingMatches = [regex]::Matches($structuralContent, '(?m)^(?<Level>#{2,3})[ \t]+(?<Title>[^\r\n]+)[ \t]*\r?$')
+    $headingMatches = [regex]::Matches($structuralContent, '(?m)^[ \t]{0,3}(?<Level>#{1,6})[ \t]+(?<Title>[^\r\n]+)[ \t]*\r?$')
+    if (@($headingMatches | Where-Object { $requiredSections -contains $_.Groups['Title'].Value.Trim() -and [int]$_.Groups['Level'].Value.Length -notin @(2, 3) }).Count -gt 0) {
+        Add-IssueSpecError -Errors $errors -Message 'Required sections must use level 2 or level 3 Markdown headings.'
+    }
     $requiredHeadingLevels = @($headingMatches | Where-Object { $requiredSections -contains $_.Groups['Title'].Value.Trim() } | ForEach-Object { $_.Groups['Level'].Value.Length } | Sort-Object -Unique)
     if ($requiredHeadingLevels.Count -gt 1) {
         Add-IssueSpecError -Errors $errors -Message 'Required sections must use one consistent Markdown heading level.'
@@ -300,8 +318,8 @@ function Get-IssueSpecResult {
     $blockingContent = Remove-MarkdownInlineCode -Content $nonRenderedContent
     $blockingContent = $blockingContent -replace '(?im)\bno\s+(?:unresolved\s+)?blocking\s+(?:TBD|TODO|FIXME)s?\b', ''
     $hasBlockingMarker =
-        $blockingContent -match '(?im)\b(?:TBD|TODO|FIXME)\b\s*(?::|[-–—])?\s*(?:\([^)]*blocking[^)]*\)|\[[^]]*blocking[^]]*\]|blocking\b)' -or
-        $blockingContent -match '(?im)\bblocking\b\s*[:\-]\s*(?:TBD|TODO|FIXME)\b'
+        $blockingContent -match '(?im)\b(?:TBD|TODO|FIXME)\b[^\r\n]{0,200}\bblocking\b' -or
+        $blockingContent -match '(?im)\bblocking\b[^\r\n]{0,200}\b(?:TBD|TODO|FIXME)\b'
     if ($hasBlockingMarker) {
         Add-IssueSpecError -Errors $errors -Message 'Unresolved blocking TBD/TODO marker is not allowed.'
     }
@@ -339,7 +357,7 @@ function Get-IssueSpecResult {
     $acceptanceIds = [System.Collections.Generic.List[string]]::new()
     if ($sections.Contains('Acceptance criteria')) {
         $criteria = [regex]::Matches(
-            [string]$sections['Acceptance criteria'],
+            [string]$nonRenderedSections['Acceptance criteria'],
             '(?im)^\s*(?:[-*]|\d+\.)\s*\[(?<Id>AC\d+)\]\s+(?<Text>.+?)\s*$'
         )
         if ($criteria.Count -eq 0) {
@@ -361,7 +379,7 @@ function Get-IssueSpecResult {
     }
 
     if ($sections.Contains('Validation evidence map')) {
-        $evidence = [string]$sections['Validation evidence map']
+        $evidence = [string]$nonRenderedSections['Validation evidence map']
         $evidenceIds = [System.Collections.Generic.List[string]]::new()
         $evidenceLinePattern = '(?im)^\s*(?:[-*]|\d+\.)\s*\[(?<Id>AC\d+)\]\s*(?<Kind>Command|Test|Manual\s+observation)\s*:\s*(?<Evidence>[^\r\n]*?)\s*;\s*expected\s*:\s*(?<Expected>[^\r\n]*)\s*$'
         $evidenceMatches = [regex]::Matches($evidence, $evidenceLinePattern)
