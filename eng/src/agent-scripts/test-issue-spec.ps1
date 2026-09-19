@@ -32,7 +32,7 @@ function Get-MarkdownSections {
     param([Parameter(Mandatory)][string]$Content)
 
     $knownTitles = ($requiredSections | ForEach-Object { [regex]::Escape($_) }) -join '|'
-    $allHeadings = [regex]::Matches($Content, '(?m)^(?<Level>#{2,3})\s+(?<Title>[^\r\n]+)\s*$')
+    $allHeadings = [regex]::Matches($Content, '(?m)^(?<Level>#{2,3})[ \t]+(?<Title>[^\r\n]+)[ \t]*\r?$')
     $matches = @($allHeadings | Where-Object { $requiredSections -contains $_.Groups['Title'].Value.Trim() })
     $sections = [ordered]@{}
     for ($index = 0; $index -lt $matches.Count; $index++) {
@@ -60,26 +60,82 @@ function Add-IssueSpecError {
 
 function Remove-MarkdownFencedBlocks {
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Content)
+    param(
+        [Parameter(Mandatory)][string]$Content,
+        [switch]$MaskContent
+    )
 
     $insideFence = $false
     $fenceCharacter = ''
     $fenceLength = 0
-    $lines = foreach ($line in ($Content -split '\r?\n')) {
-        if (-not $insideFence -and $line -match '^\s*(?<Fence>`{3,}|~{3,})') {
+    $lines = [System.Collections.Generic.List[string]]::new()
+    foreach ($line in ($Content -split '\r?\n')) {
+        if (-not $insideFence -and $line -match ('^\s*(?<Fence>' + [regex]::Escape([char]96) + '{3,}|~{3,})')) {
             $insideFence = $true
             $fenceCharacter = $Matches.Fence.Substring(0, 1)
             $fenceLength = $Matches.Fence.Length
-            ''
+            $lines.Add('')
             continue
         }
-        elseif ($insideFence) { '' }
-        else { $line }
         if ($insideFence -and $line -match ('^[ \t]{0,3}' + [regex]::Escape($fenceCharacter) + '{' + $fenceLength + ',}[ \t]*$')) {
+            $lines.Add('')
             $insideFence = $false
+            continue
         }
+        if ($insideFence -and $MaskContent) {
+            $lines.Add('')
+            continue
+        }
+        if ($insideFence -and $line -match '^\s*#{1,6}[ \t]+') {
+            # Keep rendered commands and prose, but remove structural-looking
+            # headings from fenced examples before section discovery.
+            $lines.Add('')
+            continue
+        }
+        $lines.Add($line)
     }
     return ($lines -join [Environment]::NewLine)
+}
+
+function Remove-MarkdownInlineCode {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Content)
+
+    $delimiterCharacter = [char]96
+    $builder = [System.Text.StringBuilder]::new()
+    $index = 0
+    while ($index -lt $Content.Length) {
+        if ($Content[$index] -ne $delimiterCharacter) {
+            $null = $builder.Append($Content[$index])
+            $index++
+            continue
+        }
+
+        $start = $index
+        while ($index -lt $Content.Length -and $Content[$index] -eq $delimiterCharacter) { $index++ }
+        $delimiterLength = $index - $start
+        $cursor = $index
+        $closing = -1
+        while ($cursor -lt $Content.Length) {
+            if ($Content[$cursor] -ne $delimiterCharacter) {
+                $cursor++
+                continue
+            }
+            $runStart = $cursor
+            while ($cursor -lt $Content.Length -and $Content[$cursor] -eq $delimiterCharacter) { $cursor++ }
+            if ($cursor - $runStart -eq $delimiterLength) {
+                $closing = $runStart
+                break
+            }
+        }
+        if ($closing -lt 0) {
+            $null = $builder.Append($Content.Substring($start, $delimiterLength))
+            continue
+        }
+        $index = $cursor
+    }
+
+    return $builder.ToString()
 }
 
 function Remove-MarkdownHtmlComments {
@@ -93,10 +149,23 @@ function Remove-MarkdownHtmlComments {
             $start = $index
             while ($index -lt $Content.Length -and $Content[$index] -eq '`') { $index++ }
             $delimiterLength = $index - $start
-            $closing = $Content.IndexOf(('`' * $delimiterLength), $index, [System.StringComparison]::Ordinal)
+            $cursor = $index
+            $closing = -1
+            while ($cursor -lt $Content.Length) {
+                if ($Content[$cursor] -ne [char]96) {
+                    $cursor++
+                    continue
+                }
+                $runStart = $cursor
+                while ($cursor -lt $Content.Length -and $Content[$cursor] -eq [char]96) { $cursor++ }
+                if ($cursor - $runStart -eq $delimiterLength) {
+                    $closing = $runStart
+                    break
+                }
+            }
             if ($closing -ge 0) {
-                $null = $builder.Append($Content.Substring($start, $closing + $delimiterLength - $start))
-                $index = $closing + $delimiterLength
+                $null = $builder.Append($Content.Substring($start, $cursor - $start))
+                $index = $cursor
                 continue
             }
             $null = $builder.Append($Content.Substring($start, $delimiterLength))
@@ -161,19 +230,32 @@ function Get-IssueSpecResult {
     $warnings = [System.Collections.Generic.List[string]]::new()
     $content = Get-Content -LiteralPath $IssuePath -Raw -ErrorAction Stop
     $structuralContent = Remove-MarkdownHtmlComments -Content (Remove-MarkdownFencedBlocks -Content $content)
+    $nonRenderedContent = Remove-MarkdownHtmlComments -Content (Remove-MarkdownFencedBlocks -Content $content -MaskContent)
     $sections = Get-MarkdownSections -Content $structuralContent
 
-    $versionValues = @()
-    $versionValues += @([regex]::Matches($structuralContent, '(?im)^\s*Contract version:\s*(?<Value>\d+\.\d+)\s*$') | ForEach-Object { $_.Groups['Value'].Value })
-    $versionValues += @([regex]::Matches($structuralContent, '(?im)^#{2,3}\s+Contract version\s*\r?\n\s*(?<Value>\d+\.\d+)\s*$') | ForEach-Object { $_.Groups['Value'].Value })
+    $firstRequiredSectionIndex = $structuralContent.Length
+    foreach ($requiredSection in $requiredSections) {
+        $sectionHeading = [regex]::Match($structuralContent, '(?m)^[ \t]{0,3}#{2,3}[ \t]+' + [regex]::Escape($requiredSection) + '[ \t]*\r?$')
+        if ($sectionHeading.Success -and $sectionHeading.Index -lt $firstRequiredSectionIndex) {
+            $firstRequiredSectionIndex = $sectionHeading.Index
+        }
+    }
+    $prologueContent = $structuralContent.Substring(0, $firstRequiredSectionIndex)
+    $prologueVersionValues = @()
+    $prologueVersionValues += @([regex]::Matches($prologueContent, '(?im)^[ \t]*Contract version:[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
+    $prologueVersionValues += @([regex]::Matches($prologueContent, '(?im)^#{2,3}[ \t]+Contract version[ \t]*\r?\n(?:[ \t]*\r?\n)*[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
+    $allVersionValues = @()
+    $allVersionValues += @([regex]::Matches($structuralContent, '(?im)^[ \t]*Contract version:[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
+    $allVersionValues += @([regex]::Matches($structuralContent, '(?im)^#{2,3}[ \t]+Contract version[ \t]*\r?\n(?:[ \t]*\r?\n)*[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
+    $versionValues = $prologueVersionValues
     $version = if ($versionValues.Count -gt 0) { $versionValues[0] } else { '' }
     if ($versionValues.Count -eq 0) {
         Add-IssueSpecError -Errors $errors -Message 'Missing Contract version: major.minor.'
     }
-    elseif (@($versionValues | Sort-Object -Unique).Count -ne 1) {
+    elseif (@($allVersionValues | Sort-Object -Unique).Count -ne 1) {
         Add-IssueSpecError -Errors $errors -Message 'Contract version is declared more than once with conflicting values.'
     }
-    elseif ($versionValues.Count -gt 1) {
+    elseif ($allVersionValues.Count -gt 1) {
         Add-IssueSpecError -Errors $errors -Message 'Contract version must be declared exactly once.'
     }
     elseif ($version -ne '1.0') {
@@ -189,7 +271,7 @@ function Get-IssueSpecResult {
         }
     }
 
-    $headingMatches = [regex]::Matches($structuralContent, '(?m)^(?<Level>#{2,3})\s+(?<Title>[^\r\n]+)\s*$')
+    $headingMatches = [regex]::Matches($structuralContent, '(?m)^(?<Level>#{2,3})[ \t]+(?<Title>[^\r\n]+)[ \t]*\r?$')
     $requiredHeadingLevels = @($headingMatches | Where-Object { $requiredSections -contains $_.Groups['Title'].Value.Trim() } | ForEach-Object { $_.Groups['Level'].Value.Length } | Sort-Object -Unique)
     if ($requiredHeadingLevels.Count -gt 1) {
         Add-IssueSpecError -Errors $errors -Message 'Required sections must use one consistent Markdown heading level.'
@@ -215,14 +297,15 @@ function Get-IssueSpecResult {
         if ($currentIndex -ge 0) { $previousIndex = $currentIndex }
     }
 
-    $blockingContent = $structuralContent -replace '(?im)\bno\s+(?:unresolved\s+)?blocking\s+(?:TBD|TODO|FIXME)s?\b', ''
+    $blockingContent = Remove-MarkdownInlineCode -Content $nonRenderedContent
+    $blockingContent = $blockingContent -replace '(?im)\bno\s+(?:unresolved\s+)?blocking\s+(?:TBD|TODO|FIXME)s?\b', ''
     $hasBlockingMarker =
         $blockingContent -match '(?im)\b(?:TBD|TODO|FIXME)\b\s*(?::|[-–—])?\s*(?:\([^)]*blocking[^)]*\)|\[[^]]*blocking[^]]*\]|blocking\b)' -or
         $blockingContent -match '(?im)\bblocking\b\s*[:\-]\s*(?:TBD|TODO|FIXME)\b'
     if ($hasBlockingMarker) {
         Add-IssueSpecError -Errors $errors -Message 'Unresolved blocking TBD/TODO marker is not allowed.'
     }
-    if ($structuralContent -match '(?im)\{\{[^}]+\}\}|^\s*[-*]\s*\[(?:insert|describe|add|todo|tbd)[^\]]*\]') {
+    if ($nonRenderedContent -match '(?im)\{\{[^}]+\}\}|^\s*[-*]\s*\[(?:insert|describe|add|todo|tbd)[^\]]*\]') {
         Add-IssueSpecError -Errors $errors -Message 'Template placeholder remains in the issue body.'
     }
 
@@ -244,6 +327,7 @@ function Get-IssueSpecResult {
             $lineEnd = $sourceSection.IndexOf("`n", $pathMatch.Index)
             if ($lineEnd -lt 0) { $lineEnd = $sourceSection.Length }
             $line = [regex]::Replace($sourceSection.Substring($lineStart, $lineEnd - $lineStart), '`[^`]+`', '')
+            $line = $line -replace '^[ \t]*(?:[-*+]|\d+[.)])(?:[ \t]+|\z)', ''
             $line = $line -replace '^[ \t\-*:;,\.—–]+|[ \t\-*:;,\.—–]+$', ''
             if ([string]::IsNullOrWhiteSpace($line)) {
                 Add-IssueSpecError -Errors $errors -Message "Referenced repository-relative path must include an explanation: '$candidate'."

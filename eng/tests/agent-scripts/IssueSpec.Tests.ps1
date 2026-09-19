@@ -71,6 +71,14 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Valid | Should -BeTrue
     }
 
+    It 'does not treat a heading split across lines as a canonical section' {
+        $splitHeading = $validBug -replace '(?m)^## Problem', ('##' + [Environment]::NewLine + 'Problem')
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $splitHeading)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
+    }
+
     It 'rejects mixed canonical heading levels' {
         $mixed = $validBug -replace '(?m)^## Observable outcome', '### Observable outcome'
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $mixed)
@@ -139,9 +147,29 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Valid | Should -BeTrue
     }
 
+    It 'counts a fenced command as rendered section content' {
+        $backtick = [char]96
+        $fence = [string]::new($backtick, 3)
+        $replacement = '## Validation plan' + [Environment]::NewLine + $fence + 'powershell' + [Environment]::NewLine + 'dotnet test tests/Example/Example.csproj' + [Environment]::NewLine + $fence + [Environment]::NewLine + [Environment]::NewLine
+        $content = [regex]::Replace($validBug, '(?ms)^## Validation plan.*?(?=^## Risks and delivery boundary)', $replacement)
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'does not close a bare fence on its opening line' {
         $bareFence = '```' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '```'
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $bareFence)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
+    }
+
+    It 'requires an exact maximal inline-code delimiter run' {
+        $backtick = [char]96
+        $hidden = [string]::new($backtick, 2) + '<!--' + [Environment]::NewLine + $validBug + [Environment]::NewLine + [string]::new($backtick, 3)
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $hidden)
 
         $outcome.ExitCode | Should -Be 1
         $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
@@ -229,6 +257,15 @@ Describe 'Implementation-ready issue contract' {
         $outcome.ExitCode | Should -Be 0
     }
 
+    It 'requires the contract version before the first required section' {
+        $content = $validBug -replace '(?m)^Contract version: 1\.0\r?\n', [string]::Empty
+        $content = $content -replace '(?m)^## Validation plan', ('## Validation plan' + [Environment]::NewLine + 'Contract version: 1.0')
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain 'Missing Contract version: major.minor.'
+    }
+
     It 'rejects duplicate contract version declarations' {
         $content = $validBug + [Environment]::NewLine + 'Contract version: 2.0'
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
@@ -272,12 +309,33 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Errors | Should -Contain "Referenced repository-relative path must include an explanation: 'README.md'."
     }
 
+    It 'ignores blocker-looking text inside inline code' {
+        $backtick = [char]96
+        $inlineMarker = [string]::new($backtick, 1) + 'TODO: blocking' + [string]::new($backtick, 1)
+        $content = $validBug -replace 'Keep the existing exception type.', ('Keep the existing exception type. The literal syntax ' + $inlineMarker + ' is data.')
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'allows an explicit no-blockers readiness statement' {
         $content = $validBug -replace 'Keep the existing exception type\.', 'Keep the existing exception type. There are no blocking TODOs.'
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
 
         $outcome.ExitCode | Should -Be 0
         $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'rejects ordered source entries that contain only a path' {
+        $backtick = [char]96
+        $original = '- ' + $backtick + 'README.md' + $backtick + ' — public validation and test entry points.'
+        $replacement = '1. ' + $backtick + 'README.md' + $backtick
+        $content = $validBug.Replace($original, $replacement)
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Referenced repository-relative path must include an explanation: 'README.md'."
     }
 
     It 'accepts existing repository directories as source boundaries' {
