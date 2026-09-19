@@ -78,6 +78,13 @@ Describe 'Mutation summary report aggregation' {
         $LASTEXITCODE | Should -Be 0
     }
 
+    It 'retains valid reports from strict threshold runs for survivor analysis' {
+        $manifest[0].Status = 'ThresholdFailed'
+        ConvertTo-Json -InputObject @{ Scope = 'Solution'; Projects = $manifest } -Depth 6 | Set-Content $manifestPath
+        & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -File $summaryScript -SkipMutationRun | Out-Null
+        $LASTEXITCODE | Should -Be 0
+    }
+
     It 'generates summaries and tasks before propagating a failed score gate' {
         $mutationScript = Join-Path $scriptDirectory 'fake-mutation.ps1'
         @'
