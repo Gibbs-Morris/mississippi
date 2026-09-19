@@ -174,6 +174,7 @@ function Get-AgentDoctorReport {
         }
 
         $toolsManifest = Join-Path $root '.config/dotnet-tools.json'
+        $toolData = $null
         if (Test-Path -LiteralPath $toolsManifest -PathType Leaf) {
             try {
                 $toolData = Get-Content -LiteralPath $toolsManifest -Raw | ConvertFrom-Json
@@ -183,6 +184,39 @@ function Get-AgentDoctorReport {
         }
         else {
             Add-DoctorCheck -Checks $checks -Name 'dotnet-tools-manifest' -State missing -Required $true -Details 'Pinned local tool manifest is missing.' -Remediation 'Restore .config/dotnet-tools.json.'
+        }
+
+        if ($null -eq $toolData) {
+            Add-DoctorCheck -Checks $checks -Name 'dotnet-tools' -State unsupported -Required $true -Details 'Local tools cannot be verified because the tool manifest is unavailable.' -Remediation 'Repair .config/dotnet-tools.json before running dotnet tool restore.'
+        }
+        else {
+            $toolCommands = @(
+                foreach ($tool in @($toolData.tools.PSObject.Properties)) {
+                    foreach ($commandName in @($tool.Value.commands)) {
+                        if (-not [string]::IsNullOrWhiteSpace([string]$commandName)) { [string]$commandName }
+                    }
+                }
+            )
+            if ($toolCommands.Count -eq 0) {
+                Add-DoctorCheck -Checks $checks -Name 'dotnet-tools' -State unsupported -Required $true -Details 'The local tool manifest declares no runnable commands.' -Remediation 'Declare at least one local tool command and run dotnet tool restore.'
+            }
+            else {
+                $toolFailures = [System.Collections.Generic.List[string]]::new()
+                $hasMissingTool = $false
+                $hasUnknownTool = $false
+                foreach ($toolCommand in $toolCommands) {
+                    $toolProbe = Invoke-DoctorProbe -Name "dotnet-tool:$toolCommand" -FilePath 'dotnet' -Arguments @('tool', 'run', $toolCommand, '--version') -WorkingDirectory $root -TimeoutSeconds 10 -ProbeOverrides $ProbeOverrides
+                    if (-not $toolProbe.Available -or $toolProbe.ExitCode -ne 0) {
+                        $toolDetails = Get-DoctorProbeDetails -Probe $toolProbe
+                        $toolFailures.Add("${toolCommand}: $toolDetails")
+                        if (-not $toolProbe.Available -or $toolDetails -match '(?i)restore|not installed|not available|not found') { $hasMissingTool = $true }
+                        else { $hasUnknownTool = $true }
+                    }
+                }
+                $toolState = if ($hasMissingTool) { 'missing' } elseif ($hasUnknownTool) { 'unknown' } else { 'ready' }
+                $toolDetails = if ($toolFailures.Count -eq 0) { "Verified $($toolCommands.Count) local tool command(s) are runnable." } else { $toolFailures -join '; ' }
+                Add-DoctorCheck -Checks $checks -Name 'dotnet-tools' -State $toolState -Required $true -Details $toolDetails -Remediation $(if ($toolState -eq 'ready') { '' } else { 'Run dotnet tool restore from the repository root and retry the doctor.' })
+            }
         }
 
         $git = Invoke-DoctorProbe -Name 'git-root' -FilePath 'git' -Arguments @('-C', $root, 'rev-parse', '--show-toplevel') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides

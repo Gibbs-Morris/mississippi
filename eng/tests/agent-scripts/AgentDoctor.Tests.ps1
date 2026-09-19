@@ -13,13 +13,14 @@ Describe 'Repository prerequisite doctor' {
         $fixtureRoot = Join-Path $TestDrive 'doctor-repository'
         New-Item -ItemType Directory -Path (Join-Path $fixtureRoot '.config'), (Join-Path $fixtureRoot 'docs/Docusaurus'), (Join-Path $fixtureRoot 'samples/Spring/Spring.AppHost') -Force | Out-Null
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'global.json') -Value '{"sdk":{"version":"10.0.400","rollForward":"patch"}}'
-        Set-Content -LiteralPath (Join-Path $fixtureRoot '.config/dotnet-tools.json') -Value '{"version":1,"tools":{"example":{"version":"1.0.0"}}}'
+        Set-Content -LiteralPath (Join-Path $fixtureRoot '.config/dotnet-tools.json') -Value '{"version":1,"tools":{"example":{"version":"1.0.0","commands":["example"]}}}'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/Docusaurus/package.json') -Value '{}'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/Docusaurus/package-lock.json') -Value '{}'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'samples/Spring/Spring.AppHost/Spring.AppHost.csproj') -Value '<Project />'
 
         $readyProbes = @{
             'dotnet-version' = [pscustomobject]@{ Available = $true; Output = '10.0.401'; ExitCode = 0; Error = '' }
+            'dotnet-tool:example' = [pscustomobject]@{ Available = $true; Output = 'example 1.0.0'; ExitCode = 0; Error = '' }
             'git-root' = [pscustomobject]@{ Available = $true; Output = $fixtureRoot; ExitCode = 0; Error = '' }
             'docker-ostype' = [pscustomobject]@{ Available = $true; Output = 'linux'; ExitCode = 0; Error = '' }
             'node-version' = [pscustomobject]@{ Available = $true; Output = 'v22.0.0'; ExitCode = 0; Error = '' }
@@ -88,6 +89,16 @@ Describe 'Repository prerequisite doctor' {
         $report.Status | Should -Be 'INCOMPLETE'
         @($report.Checks | Where-Object Name -EQ 'global.json').State | Should -Be 'unsupported'
         $report.RequiredFailures | Should -Contain 'global.json'
+    }
+
+    It 'distinguishes declared but unrestored local tools' {
+        $probes = @{} + $readyProbes
+        $probes['dotnet-tool:example'] = [pscustomobject]@{ Available = $true; Output = 'Run "dotnet tool restore" to make the "example" command available.'; ExitCode = 1; Error = '' }
+        $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Core -ProbeOverrides $probes
+
+        @($report.Checks | Where-Object Name -EQ 'dotnet-tools').State | Should -Be 'missing'
+        @($report.Checks | Where-Object Name -EQ 'dotnet-tools').Details | Should -Match 'dotnet tool restore'
+        $report.RequiredFailures | Should -Contain 'dotnet-tools'
     }
 
     It 'reports denied GitHub access as unknown without exposing credentials' {
