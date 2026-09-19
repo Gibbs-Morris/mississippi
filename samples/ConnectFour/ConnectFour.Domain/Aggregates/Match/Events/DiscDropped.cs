@@ -11,7 +11,7 @@ namespace MississippiSamples.ConnectFour.Domain.Aggregates.Match.Events;
 /// <summary>
 ///     Records one accepted disc placement.
 /// </summary>
-[EventStorageName("CONNECTFOUR", "GAME", "DISCDROPPED", version: MatchStorageVersions.V1)]
+[EventStorageName("CONNECTFOUR", "GAME", "DISCDROPPED", MatchStorageVersions.V1)]
 [GenerateSerializer]
 [Alias("MississippiSamples.ConnectFour.Domain.Aggregates.Match.Events.DiscDropped")]
 internal sealed record DiscDropped
