@@ -1,0 +1,9 @@
+.emitter-demo { display: grid; gap: var(--rf-raw-space-4); }
+.label { color: var(--rf-color-text-accent); font: .75rem var(--rf-raw-font-mono); letter-spacing: .1em; }
+h2 { margin: 0; font-size: 1.35rem; }
+.emitter-preview { display: flex; align-items: center; gap: 1.5rem; }
+.activation-count { margin: 0; color: var(--rf-color-text-primary); font: 1rem var(--rf-raw-font-mono); }
+.note { margin: .4rem 0 0; color: var(--rf-color-text-secondary); font-size: .8rem; line-height: 1.6; }
+.toggle { display: flex; align-items: center; gap: .6rem; min-height: 44px; color: var(--rf-color-text-primary); }
+.toggle input { width: 1rem; height: 1rem; accent-color: var(--rf-color-action-primary); }
+@media (max-width: 520px) { .emitter-preview { align-items: flex-start; flex-direction: column; gap: .75rem; } }

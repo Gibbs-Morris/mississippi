@@ -6,7 +6,7 @@ sidebar_position: 2
 
 # Explore Refraction in LightSpeed
 
-LightSpeed demonstrates Refraction inputs, progress arcs, and scoped themes with
+LightSpeed demonstrates Refraction inputs, progress arcs, an accessible emitter, and scoped themes with
 Reservoir client state. Its kitchen sink shows the selected state after each action.
 
 ## What you will achieve
@@ -42,10 +42,14 @@ In **Completion at a glance**, select a percentage or **Unknown duration**.
 The arc and the inspector follow the same action. Resetting the form preserves
 this selection; no background operation starts.
 
+In **Send an intent**, activate **Emit signal** and observe the activation count.
+Toggle **Disable emitter**, try the button again, and reset the example. The
+button stays disabled and its activation count survives the reset.
+
 ## Verify it works
 
 The form displays an associated error for an empty submitted address.
-The state inspector updates its email, action count, and last action.
+The state inspector updates its email, emitter count, action count, and last action.
 Theme choices persist between the overview and kitchen-sink routes in the same
 browser session. Reloading starts a new in-memory store.
 
@@ -65,5 +69,6 @@ feature, with a visible action and state trail.
 
 - [InputField contract](../reference/input-field.md)
 - [ProgressArc contract](../reference/progress-arc.md)
+- [Emitter contract](../reference/emitter.md)
 - [Scoped themes](../reference/themes.md)
 - [Reservoir overview](../../reservoir/index.md)

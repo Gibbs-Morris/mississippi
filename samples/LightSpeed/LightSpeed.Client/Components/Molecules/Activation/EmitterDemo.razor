@@ -1,0 +1,25 @@
+@using Mississippi.Refraction.Client.Components.Atoms.Activation
+<section class="emitter-demo" aria-labelledby="emitter-demo-title">
+    <p class="label">ATOM / EMITTER</p>
+    <h2 id="emitter-demo-title">Send an intent.</h2>
+    <div class="emitter-preview">
+        <Emitter Label="Emit signal"
+                 IsDisabled="@IsDisabled"
+                 OnActivate="@Activated"
+                 aria-describedby="emitter-description"/>
+        <div>
+            <p class="activation-count"
+               data-testid="emitter-activation-count"
+               role="status"
+               aria-atomic="true">
+                @ActivationSummary
+            </p>
+            <p id="emitter-description" class="note">The page records this presentational activation in Reservoir.</p>
+        </div>
+    </div>
+    <label class="toggle">
+        <input type="checkbox" name="emitter-disabled" checked="@IsDisabled" @onchange="HandleDisabledChangedAsync"/>
+        Disable emitter
+    </label>
+    <p class="note">Use the native button with a visible label, or provide an aria name for icon-only composition.</p>
+</section>

@@ -1,0 +1,52 @@
+.rf-emitter {
+    appearance: none;
+    background-color: var(--rf-color-surface-elevated);
+    border: var(--rf-raw-stroke-hairline) solid var(--rf-color-action-primary);
+    color: var(--rf-color-text-primary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--rf-raw-space-2);
+    min-width: 44px;
+    min-height: 44px;
+    padding: var(--rf-raw-space-2) var(--rf-raw-space-3);
+    font: inherit;
+    line-height: 1.2;
+}
+
+.rf-emitter:hover:not(:disabled) {
+    background-color: var(--rf-color-surface-glass);
+    border-color: var(--rf-color-action-hover);
+}
+
+.rf-emitter:active:not(:disabled) {
+    border-color: var(--rf-color-action-pressed);
+    box-shadow: inset 0 0 0 var(--rf-raw-stroke-default) var(--rf-color-action-pressed);
+}
+
+.rf-emitter:focus-visible {
+    outline: var(--rf-focus-ring-width) solid var(--rf-color-focus-ring);
+    outline-offset: var(--rf-focus-ring-offset);
+}
+
+.rf-emitter:disabled,
+.rf-emitter[data-state="disabled"] {
+    background-color: var(--rf-color-surface-void);
+    border-color: var(--rf-color-text-muted);
+    color: var(--rf-color-text-muted);
+    cursor: not-allowed;
+}
+
+.rf-emitter__seed {
+    width: 8px;
+    height: 8px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background-color: var(--rf-color-action-primary);
+}
+
+.rf-emitter:disabled .rf-emitter__seed,
+.rf-emitter[data-state="disabled"] .rf-emitter__seed {
+    background-color: var(--rf-color-text-muted);
+}

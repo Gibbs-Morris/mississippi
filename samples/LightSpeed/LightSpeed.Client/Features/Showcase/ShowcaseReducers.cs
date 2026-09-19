@@ -6,6 +6,21 @@ namespace MississippiSamples.LightSpeed.Client.Features.Showcase;
 /// <summary>Applies local showcase intent without side effects.</summary>
 internal static class ShowcaseReducers
 {
+    /// <summary>Records a presentational emitter activation.</summary>
+    /// <param name="state">Current state.</param>
+    /// <param name="action">The activation.</param>
+    /// <returns>A new state.</returns>
+    public static ShowcaseState ActivateEmitter(
+        ShowcaseState state,
+        ActivateEmitterAction action
+    ) =>
+        state with
+        {
+            EmitterActivationCount = state.EmitterActivationCount + 1,
+            ActionCount = state.ActionCount + 1,
+            LastAction = nameof(ActivateEmitterAction),
+        };
+
     /// <summary>Changes the email value.</summary>
     /// <param name="state">Current state.</param>
     /// <param name="action">The edit.</param>
@@ -19,6 +34,21 @@ internal static class ShowcaseReducers
             Email = action.Email,
             ActionCount = state.ActionCount + 1,
             LastAction = nameof(ChangeEmailAction),
+        };
+
+    /// <summary>Changes whether the presentational emitter accepts activation.</summary>
+    /// <param name="state">Current state.</param>
+    /// <param name="action">The disabled-state change.</param>
+    /// <returns>A new state.</returns>
+    public static ShowcaseState ChangeEmitterDisabled(
+        ShowcaseState state,
+        ChangeEmitterDisabledAction action
+    ) =>
+        state with
+        {
+            IsEmitterDisabled = action.IsDisabled,
+            ActionCount = state.ActionCount + 1,
+            LastAction = nameof(ChangeEmitterDisabledAction),
         };
 
     /// <summary>Changes the demo completion without affecting the form.</summary>
@@ -67,6 +97,8 @@ internal static class ShowcaseReducers
         {
             ThemeMode = state.ThemeMode,
             ProgressPercent = state.ProgressPercent,
+            EmitterActivationCount = state.EmitterActivationCount,
+            IsEmitterDisabled = state.IsEmitterDisabled,
             ActionCount = state.ActionCount + 1,
             LastAction = nameof(ResetProfileAction),
         };
