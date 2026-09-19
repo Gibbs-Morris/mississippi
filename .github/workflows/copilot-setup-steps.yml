@@ -5,9 +5,13 @@ on:
   push:
     paths:
       - .github/workflows/copilot-setup-steps.yml
+      - setup.ps1
+      - eng/src/agent-scripts/AgentDoctor.psm1
   pull_request:
     paths:
       - .github/workflows/copilot-setup-steps.yml
+      - setup.ps1
+      - eng/src/agent-scripts/AgentDoctor.psm1
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -41,53 +45,16 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Cache npm packages
+      - name: Cache npm and NuGet packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          path: |
+            ~/.npm
+            ~/.nuget/packages
+          key: ${{ runner.os }}-agent-setup-${{ hashFiles('**/package-lock.json', '**/packages.lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-npm-
+            ${{ runner.os }}-agent-setup-
 
-      - name: Install markdownlint CLI
-        run: |
-          set -euo pipefail
-          npm install -g markdownlint-cli@0.45.0
-
-      - name: Cache GitVersion tools
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.gitversion
-          key: ${{ runner.os }}-gitversion
-          restore-keys: ${{ runner.os }}-gitversion
-
-      - name: Cache NuGet packages
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-
-      - name: Check for dotnet tools manifest
-        id: check-tools-manifest
-        run: |
-          set -euo pipefail
-          if [ -f ".config/dotnet-tools.json" ]; then
-            echo "manifest_exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "manifest_exists=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Restore .NET tools
-        if: steps.check-tools-manifest.outputs.manifest_exists == 'true'
-        run: |
-          set -euo pipefail
-          dotnet tool restore
-
-      - name: Prime GitVersion tool cache
-        if: steps.check-tools-manifest.outputs.manifest_exists == 'true'
-        run: |
-          set -euo pipefail
-          dotnet tool run dotnet-gitversion /version
-        continue-on-error: true
+      - name: Run canonical shared setup
+        shell: pwsh
+        run: ./setup.ps1 -Profile CoreDocs -InstallPester -NonInteractive
