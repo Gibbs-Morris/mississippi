@@ -125,10 +125,19 @@ function Test-ContextGlob {
         # Keep the matcher compatible with the repository's PowerShell 7.0
         # baseline. NonBacktracking was added after the minimum runtime.
         $options = [System.Text.RegularExpressions.RegexOptions]::None
-        if ($IsWindows) { $options = $options -bor [System.Text.RegularExpressions.RegexOptions]::IgnoreCase }
+        $comparison = if ($IsWindows) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
+        $comparisonVariable = Get-Variable -Name ContextPathComparison -Scope Script -ErrorAction SilentlyContinue
+        if ($null -ne $comparisonVariable) { $comparison = [System.StringComparison]$comparisonVariable.Value }
+        if ($comparison -eq [System.StringComparison]::OrdinalIgnoreCase) {
+            $options = $options -bor [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+        }
         try {
             $boundedRegex = [regex]::new($regex, $options, [TimeSpan]::FromMilliseconds(100))
             if ($boundedRegex.IsMatch($Path)) { return $true }
+        }
+        catch [System.Text.RegularExpressions.RegexMatchTimeoutException] {
+            $script:ContextGlobTimedOut = $true
+            return $false
         }
         catch { return $false }
     }
@@ -329,6 +338,8 @@ function Get-ContextRoutes {
     )
 
     $routes = [System.Collections.Generic.List[string]]::new()
+    $scanBudget = [Math]::Max(1000, [Math]::Min(1000000, ($Content.Length * 4) + 1000))
+    $scanOperations = 0
     for ($index = 0; $index -lt ($Content.Length - 1); $index++) {
         if ($Content[$index] -ne ']' -or $Content[$index + 1] -ne '(') { continue }
 
@@ -336,6 +347,8 @@ function Get-ContextRoutes {
         $depth = 1
         $routeEnd = -1
         for ($cursor = $routeStart; $cursor -lt $Content.Length; $cursor++) {
+            $scanOperations++
+            if ($scanOperations -gt $scanBudget) { return @($routes | Sort-Object) }
             if ($Content[$cursor] -eq '\' -and $cursor + 1 -lt $Content.Length) {
                 $cursor++
                 continue
@@ -557,6 +570,8 @@ function Get-AgentContext {
     )
 
     $resolvedRoot = (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
+    $script:ContextPathComparison = Get-ContextPathComparison -RepositoryRoot $resolvedRoot
+    $script:ContextGlobTimedOut = $false
     $unresolved = [System.Collections.Generic.List[string]]::new()
     $requested = [System.Collections.Generic.List[object]]::new()
     foreach ($group in @(
@@ -605,6 +620,7 @@ function Get-AgentContext {
         'testing' = @('tests/__domain__.cs')
         'serialization' = @('__domain__.cs')
         'orleans' = @('__domain__.cs')
+        'aspire' = @('src/Aspire/__domain__.cs', 'samples/Aspire/__domain__.cs', 'tests/Aspire/__domain__.cs')
     }
     foreach ($domain in @($ContentDomain)) {
         if (-not $domainProbePaths.ContainsKey($domain.ToLowerInvariant())) { $unresolved.Add("Unsupported content domain hint: '$domain'.") }
@@ -719,6 +735,12 @@ function Get-AgentContext {
             }
         }
 
+        if ($script:ContextGlobTimedOut) {
+            $isSelected = $true
+            $reasons.Add('scope-match-timeout')
+            $unresolved.Add("Unable to evaluate one or more scopes for '$relative' within the regex safety budget.")
+            $script:ContextGlobTimedOut = $false
+        }
         if ($readError) {
             $isSelected = $true
             $reasons.Add('read-failed')
