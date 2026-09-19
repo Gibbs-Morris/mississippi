@@ -237,6 +237,24 @@ Describe 'Repository automation quality gates' {
         Should -Invoke Out-Host -ModuleName RepositoryAutomation -Times 1 -Exactly
     }
 
+    It 'preserves the original exception identity and data when logging a failed automation step' {
+        $original = [InvalidOperationException]::new('Build failed')
+        $original.Data['FailureId'] = 'original-build-failure'
+        $failure = $null
+
+        try {
+            Invoke-AutomationStep -Name Build -Action { throw $original }
+        }
+        catch {
+            $failure = $_.Exception
+        }
+
+        $failure | Should -Not -BeNullOrEmpty
+        [object]::ReferenceEquals($failure, $original) | Should -BeTrue
+        $failure.GetType() | Should -Be ([InvalidOperationException])
+        $failure.Data['FailureId'] | Should -Be 'original-build-failure'
+    }
+
     It 'preserves compiler output in an artifact even when the build fails' {
         $solution = Join-Path $TestDrive 'logged.slnx'
         Set-Content $solution '<Solution />'
