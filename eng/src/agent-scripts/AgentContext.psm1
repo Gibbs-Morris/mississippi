@@ -142,14 +142,8 @@ function ConvertTo-ContextRelativePath {
 
     try {
         $root = [System.IO.Path]::GetFullPath($RepositoryRoot).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
-        if ([System.IO.Path]::IsPathRooted($Path)) {
-            $fullPath = [System.IO.Path]::GetFullPath($Path)
-            $relative = [System.IO.Path]::GetRelativePath($root, $fullPath)
-        }
-        else {
-            $relative = $Path.Trim()
-        }
-
+        $fullPath = if ([System.IO.Path]::IsPathRooted($Path)) { [System.IO.Path]::GetFullPath($Path) } else { [System.IO.Path]::GetFullPath((Join-Path $root $Path.Trim())) }
+        $relative = [System.IO.Path]::GetRelativePath($root, $fullPath)
         $relative = $relative.Replace('\', '/')
         if ($relative.StartsWith('./', [System.StringComparison]::Ordinal)) {
             $relative = $relative.Substring(2)

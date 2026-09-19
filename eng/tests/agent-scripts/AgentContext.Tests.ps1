@@ -105,6 +105,14 @@ applyTo: '**/*.cs'
         $context.Unresolved | Should -HaveCount 0
     }
 
+    It 'normalizes internal traversal before matching scopes' {
+        $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/../docs/guide.md'
+
+        $context.Complete | Should -BeTrue
+        $context.Selected.Path | Should -Contain '.github/instructions/markdown.instructions.md'
+        @($context.Selected | Where-Object Path -EQ '.github/instructions/markdown.instructions.md').Reasons | Should -Contain 'path:changed:docs/guide.md'
+    }
+
     It 'reports missing required context instead of returning an empty pass' {
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -RequiredPath 'missing/required.md'
 
