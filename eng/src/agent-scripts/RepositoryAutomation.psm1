@@ -2896,6 +2896,8 @@ function Get-PrReadinessSnapshot {
     $finalReviews = @($finalReviewsPages | ForEach-Object { @($_) })
     $reviewFingerprintStart = (@($reviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object user.login, state, id | ForEach-Object { "$($_.user.login)=$($_.state)#$($_.id)" }) -join '|')
     $reviewFingerprintEnd = (@($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object user.login, state, id | ForEach-Object { "$($_.user.login)=$($_.state)#$($_.id)" }) -join '|')
+    $commentFingerprintStart = (@($reviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace([string]$_.body) } | Sort-Object id | ForEach-Object { "$($_.id)=$($_.body.Length)" }) -join '|')
+    $commentFingerprintEnd = (@($finalReviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace([string]$_.body) } | Sort-Object id | ForEach-Object { "$($_.id)=$($_.body.Length)" }) -join '|')
     $finalLatestReviewByAuthor = @{}
     foreach ($review in @($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object submitted_at)) {
         $author = if ($null -ne $review.user.login) { [string]$review.user.login } else { "review-$($review.id)" }
@@ -2920,6 +2922,7 @@ function Get-PrReadinessSnapshot {
     $threadFingerprintEnd = (@($finalThreads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated):$(@($_.comments.nodes | ForEach-Object { $_.databaseId }) -join ',')" }) -join '|')
     $mutableEvidenceStable = $checkFingerprintStart -eq $checkFingerprintEnd -and
         $reviewFingerprintStart -eq $reviewFingerprintEnd -and
+        $commentFingerprintStart -eq $commentFingerprintEnd -and
         $threadFingerprintStart -eq $threadFingerprintEnd
     $generalComments = @()
     try {
@@ -2949,6 +2952,7 @@ function Get-PrReadinessSnapshot {
         PollingCompleted = $pollingCompleted
         EvidenceStable = $mutableEvidenceStable
         GeneralFeedbackCount = @($generalComments).Count
+        ReviewFeedbackCount = @($finalReviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace([string]$_.body) }).Count
         PullRequestUrl = [string]$pullAtEnd.html_url
     }
 }
@@ -2977,6 +2981,9 @@ function Get-PrReadinessReport {
     }
     if ($null -ne $Snapshot.PSObject.Properties['GeneralFeedbackCount'] -and [int]$Snapshot.GeneralFeedbackCount -gt 0) {
         $blockers.Add('General PR discussion comments require review disposition.')
+    }
+    if ($null -ne $Snapshot.PSObject.Properties['ReviewFeedbackCount'] -and [int]$Snapshot.ReviewFeedbackCount -gt 0) {
+        $blockers.Add('Comment-only review feedback requires review disposition.')
     }
     $mechanicalReady = $blockers.Count -eq 0
     $semanticReady = [bool]$Snapshot.IssueReferenceVerified -and [bool]$Snapshot.DescriptionReviewed
