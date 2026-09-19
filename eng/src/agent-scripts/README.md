@@ -87,6 +87,8 @@ The supporting Pester harness lives in `eng/tests/agent-scripts/`:
 | --- | --- |
 | **run-scratchpad-task-tests.ps1** | Runs the Pester suite that covers the scratchpad helpers. |
 | **run-issue-spec-tests.ps1** | Runs the Pester suite that validates implementation-ready issue bodies. |
+| **doctor.ps1** | Reports read-only prerequisite readiness for core, docs, Spring, or GitHub task profiles. |
+| **run-agent-doctor-tests.ps1** | Runs the Pester suite that validates prerequisite diagnostics. |
 | **verify-scratchpad-task-scripts.ps1** | End-to-end flow that creates → claims → completes/defers tasks using a temporary scratchpad. |
 | **get-validation-plan.ps1** | Produces a read-only structured validation plan from explicit base/head revisions, changed paths, and risk hints. |
 | **run-validation-plan-tests.ps1** | Runs the Pester suite that validates validation-plan selection and catalogue drift. |
