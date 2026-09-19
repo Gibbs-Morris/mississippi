@@ -19,6 +19,9 @@ internal static class ShowcaseFeatureRegistration
             .AddReducer<ChangeEmitterDisabledAction>(ShowcaseReducers.ChangeEmitterDisabled)
             .AddReducer<ChangeProgressAction>(ShowcaseReducers.ChangeProgress)
             .AddReducer<ChangeThemeAction>(ShowcaseReducers.ChangeTheme)
+            .AddReducer<ExpandNotificationAction>(ShowcaseReducers.ExpandNotification)
+            .AddReducer<DismissNotificationAction>(ShowcaseReducers.DismissNotification)
+            .AddReducer<RestoreNotificationAction>(ShowcaseReducers.RestoreNotification)
             .AddReducer<ValidateProfileAction>(ShowcaseReducers.Validate)
             .AddReducer<ResetProfileAction>(ShowcaseReducers.Reset));
         return builder;

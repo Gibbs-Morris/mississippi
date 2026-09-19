@@ -17,8 +17,10 @@ native action buttons and reports one-way intent to its parent.
 | --- | --- | --- |
 | `ChildContent` | `null` | Content rendered inside the stable status region. |
 | `Class` | `null` | Additional wrapper classes composed with `rf-notification-pulse`. |
+| `DetailsId` | `null` | Optional ID for the parent-controlled details region; must be nonblank when supplied with `OnExpand`. |
 | `ExpandText` | `View details` | Visible expansion action text; must be nonblank when `OnExpand` is supplied. |
 | `DismissText` | `Dismiss notification` | Visible dismissal action text; must be nonblank when `OnDismiss` is supplied. |
+| `IsExpanded` | `null` | Optional parent-controlled disclosure state rendered as lowercase `aria-expanded` when `OnExpand` is supplied. |
 | `OnExpand` | empty | Optional `EventCallback<MouseEventArgs>` for one-way expansion intent. |
 | `OnDismiss` | empty | Optional `EventCallback` for dismissal intent. |
 | `State` | `RefractionStates.New` | Visual state hook. `Critical` changes the attention dot color. |
@@ -31,6 +33,12 @@ an `ArgumentException` with the message `ExpandText must be nonblank when
 OnExpand is supplied.` When `OnDismiss` has a delegate, the corresponding
 `DismissText` condition throws with `DismissText must be nonblank when OnDismiss
 is supplied.`
+
+When `OnExpand` has a delegate and `DetailsId` is supplied, a blank or
+whitespace-only value throws `ArgumentException` with `DetailsId must be
+nonblank when OnExpand is supplied and DetailsId is provided.` A null
+`DetailsId` omits `aria-controls`; a nonblank value is not checked for a
+matching or unique DOM target.
 
 These checks run in `OnParametersSet`, so Blazor raises the exception while it
 applies the initial or updated parameter set, before that set is rendered. The
@@ -46,11 +54,14 @@ and appear only when their callbacks have delegates.
 
 Each action is a native `<button type="button">`. The browser supplies Enter
 and Space activation without duplicate key handlers. The wrapper has no
-component-owned click handler or tab stop, and the molecule does not add
-`aria-expanded` or disclosure state for a region that the parent owns.
+component-owned click handler or tab stop. The molecule does not toggle or
+invent disclosure state. When the parent supplies both `IsExpanded` and a
+nonblank `DetailsId` with `OnExpand`, the expand button exposes the current
+lowercase `aria-expanded` value and an `aria-controls` reference.
 
 The parent owns visibility, status text, and the response to each typed intent.
-This split Razor and code-behind example keeps those responsibilities explicit:
+The following split Razor and code-behind example shows the default one-way
+intent form and keeps those responsibilities explicit:
 
 ```razor title="ExportNotification.razor"
 @namespace Example.Components
@@ -123,9 +134,14 @@ public sealed partial class ExportNotification
 }
 ```
 
-Keep expansion, dismissal, and any details region in the parent. `Critical`
-remains a visual hook; this non-intrusive status molecule does not create an
-assertive alert, notification service, timer, or domain state.
+For controlled disclosure, keep a stable per-instance `DetailsId` target
+mounted, including while it is hidden, and pass matching `IsExpanded` and
+`DetailsId` values with `OnExpand`. The parent owns the state transition and
+focus destination after an accepted change. See the
+[LightSpeed notification walkthrough](../getting-started/lightspeed.md) for
+the complete parent-owned workflow. `Critical` remains a visual hook; this
+non-intrusive status molecule does not create an assertive alert, notification
+service, timer, or domain state.
 
 ## Styling and composition
 
