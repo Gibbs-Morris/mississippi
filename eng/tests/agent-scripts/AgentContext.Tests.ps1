@@ -277,6 +277,35 @@ applyTo: '**/[abc.md'
         }
     }
 
+    It 'rejects a reparse-point instruction root' {
+        $instructionRoot = Join-Path $fixtureRoot '.github/instructions'
+        $backupRoot = Join-Path $fixtureRoot '.github/instructions-original'
+        $junctionCreated = $false
+        try {
+            Move-Item -LiteralPath $instructionRoot -Destination $backupRoot
+            New-Item -ItemType Junction -Path $instructionRoot -Target $backupRoot -ErrorAction Stop | Out-Null
+            $junctionCreated = $true
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+
+            $context.Complete | Should -BeFalse
+            $context.Unresolved | Should -Contain "Skipped reparse-point instruction root '$instructionRoot'."
+        }
+        catch {
+            if (-not $junctionCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create directory junctions.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $instructionRoot -Force -ErrorAction SilentlyContinue
+            if (Test-Path -LiteralPath $backupRoot -PathType Container) {
+                Move-Item -LiteralPath $backupRoot -Destination $instructionRoot
+            }
+        }
+    }
+
     It 'reports missing required context instead of returning an empty pass' {
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -RequiredPath 'missing/required.md'
 

@@ -290,8 +290,19 @@ function Get-ContextCandidates {
     $scanErrors = [System.Collections.Generic.List[string]]::new()
     $instructionRoot = Join-Path $RepositoryRoot '.github/instructions'
     if (Test-Path -LiteralPath $instructionRoot -PathType Container) {
-        $instructionFiles = Get-ContextFilesByFilter -Root $instructionRoot -Filter '*.instructions.md' -Errors $scanErrors
-        foreach ($file in $instructionFiles) { $files.Add([pscustomobject]@{ FullName = $file.FullName; Kind = 'instruction' }) }
+        try {
+            $instructionItem = Get-Item -LiteralPath $instructionRoot -Force -ErrorAction Stop
+            if ([bool]($instructionItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+                $null = $scanErrors.Add("Skipped reparse-point instruction root '$instructionRoot'.")
+            }
+            else {
+                $instructionFiles = Get-ContextFilesByFilter -Root $instructionRoot -Filter '*.instructions.md' -Errors $scanErrors
+                foreach ($file in $instructionFiles) { $files.Add([pscustomobject]@{ FullName = $file.FullName; Kind = 'instruction' }) }
+            }
+        }
+        catch {
+            $null = $scanErrors.Add("Unable to inspect instruction root '$instructionRoot': $($_.Exception.Message)")
+        }
     }
 
     $entrypointFiles = Get-ContextFilesByFilter -Root $RepositoryRoot -Filter 'AGENTS.md' -Errors $scanErrors
