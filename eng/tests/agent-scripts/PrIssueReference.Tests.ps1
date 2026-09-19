@@ -12,7 +12,7 @@ Describe 'PR issue reference validator' {
         $scriptPath = Join-Path $repoRoot 'eng/src/agent-scripts/validate-pr-issue-reference.ps1'
         $mergeScriptPath = Join-Path $repoRoot 'eng/src/agent-scripts/validate-merge-group-pr-issue-reference.ps1'
         $knownIssues = @(
-            [pscustomobject]@{ number = 741; title = 'Coverage binding'; state = 'open'; type = 'issue' }
+            [pscustomobject]@{ number = 741; title = 'Coverage binding'; state = 'open' }
             [pscustomobject]@{ number = 742; title = 'Worktree lease'; state = 'closed'; type = 'issue' }
             [pscustomobject]@{ number = 743; title = 'Native command bounds'; state = 'open'; type = 'pull_request' }
         ) | ConvertTo-Json -Compress
@@ -103,6 +103,13 @@ Describe 'PR issue reference validator' {
         $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
     }
 
+    It 'does not recover a local shorthand from an external issue URL fragment' {
+        $outcome = Invoke-ReferenceValidator -Body 'Context: https://github.com/other/repo/issues/999#741'
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
     It 'ignores quoted indented code blocks' {
         $outcome = Invoke-ReferenceValidator -Body ">     Refs #741"
 
@@ -119,6 +126,13 @@ Describe 'PR issue reference validator' {
 
     It 'accepts an issue URL in an ordinary Markdown link' {
         $outcome = Invoke-ReferenceValidator -Body '[tracking issue](https://github.com/Gibbs-Morris/mississippi/issues/741)'
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'accepts a rendered HTML anchor to a same-repository issue' {
+        $outcome = Invoke-ReferenceValidator -Body '<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking issue</a>'
 
         $outcome.ExitCode | Should -Be 0
         $outcome.Result.Valid | Should -BeTrue
@@ -238,6 +252,14 @@ Refs #741
         $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
     }
 
+    It 'does not treat task-list markers as shortcut references' {
+        $body = "Checklist:`n- [x] done`n`n[x]: https://github.com/Gibbs-Morris/mississippi/issues/741"
+        $outcome = Invoke-ReferenceValidator -Body $body
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
     It 'ignores issue URLs used as Markdown image destinations' {
         $outcome = Invoke-ReferenceValidator -Body '![tracking](https://github.com/Gibbs-Morris/mississippi/issues/741)'
 
@@ -258,6 +280,14 @@ Refs #741
 
         $outcome.ExitCode | Should -Not -Be 0
         ($outcome.Result.Errors -join "`n") | Should -Match 'maximum supported is 20'
+    }
+
+    It 'preserves references after exhausting the Markdown link scan budget' {
+        $body = ((1..100 | ForEach-Object { '[broken](' }) -join '') + ' Refs #741'
+        $outcome = Invoke-ReferenceValidator -Body $body
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
     }
 
     It 'rejects closed issues' {

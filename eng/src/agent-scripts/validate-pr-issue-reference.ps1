@@ -53,7 +53,10 @@ function Remove-MarkdownLinkDestinations {
             $cursor = $index + 2
             while ($cursor -lt $Content.Length -and $depth -gt 0) {
                 $operations++
-                if ($operations -gt $operationBudget) { return $builder.ToString() }
+                if ($operations -gt $operationBudget) {
+                    $null = $builder.Append($Content.Substring($index))
+                    return $builder.ToString()
+                }
                 if ($Content[$cursor] -eq '\' -and $cursor + 1 -lt $Content.Length) {
                     $cursor += 2
                     continue
@@ -99,7 +102,10 @@ function Remove-NonRenderedMarkdown {
     }
     $withoutFences = $withoutFences -join [Environment]::NewLine
     $withoutComments = Remove-MarkdownHtmlComments -Content $withoutFences
+    $anchorHrefPattern = '(?is)<a\b[^>]*\bhref\s*=\s*(?:"(?<Href>[^"]+)"|''(?<Href>[^'']+)''|(?<Href>[^\s>]+))[^>]*>'
+    $anchorHrefs = @([regex]::Matches($withoutComments, $anchorHrefPattern) | ForEach-Object { $_.Groups['Href'].Value })
     $withoutComments = [regex]::Replace($withoutComments, '(?m)<(?!https?://|mailto:)(?:[^>\"''\r\n]|\"[^\"]*\"|''[^'']*'')*>', '')
+    if ($anchorHrefs.Count -gt 0) { $withoutComments += [Environment]::NewLine + ($anchorHrefs -join [Environment]::NewLine) }
     $withoutComments = [regex]::Replace($withoutComments, '(?m)^(?: {4}|\t)[^\r\n]*(?:\r?\n|$)', '')
     $withoutComments = [regex]::Replace($withoutComments, '(?m)^(?:[ ]{0,3}>[ \t]?)+[ ]{4,}[^\r\n]*(?:\r?\n|$)', '')
     $builder = [System.Text.StringBuilder]::new()
@@ -165,6 +171,8 @@ function Get-PrIssueReferences {
         if ($label) { $null = $usedLabels.Add($label) }
     }
     foreach ($used in [regex]::Matches($Content, '(?<!\!)\[(?<Label>[^\]\r\n]+)\](?![ \t]*(?:\(|\[|:))')) {
+        $prefix = $Content.Substring(0, $used.Index)
+        if ($prefix -match '(?m)(?:^|\r?\n)[ \t]*[-*+][ \t]+$' -and $used.Groups['Label'].Value -match '^[ xX]$') { continue }
         $null = $usedLabels.Add([regex]::Replace($used.Groups['Label'].Value.Trim(), '\s+', ' '))
     }
     $contentForExtraction = $Content
@@ -174,7 +182,7 @@ function Get-PrIssueReferences {
         $replacement = if ($usedLabels.Contains($definitionLabel)) { " $($definition.Groups['Destination'].Value) " } else { '' }
         $contentForExtraction = $contentForExtraction.Replace($definition.Value, $replacement)
     }
-    $fullUrlPattern = '(?<![A-Za-z0-9+./?=&%_-])https://github\.com/(?<Owner>[^/\s]+)/(?<Repo>[^/#\s]+)/(?<Kind>issues|pull)/(?<Number>\d+)(?=[/?#\s>)\].,;!?]|$)'
+    $fullUrlPattern = '(?<![A-Za-z0-9+./?=&%_-])https://github\.com/(?<Owner>[^/\s]+)/(?<Repo>[^/#\s]+)/(?<Kind>issues|pull)/(?<Number>\d+)(?:[/?#][^\s<>()]*)?(?=[\s>)\].,;!?]|$)'
     foreach ($match in [regex]::Matches($contentForExtraction, $fullUrlPattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)) {
         $matchOwner = $match.Groups['Owner'].Value
         $matchRepo = $match.Groups['Repo'].Value
@@ -250,7 +258,9 @@ foreach ($reference in @($references | Select-Object -First $maximumReferences))
         }
         $issue = $record[0]
         $hasPullRequestProperty = $null -ne $issue.PSObject.Properties['pull_request']
-        if ($hasPullRequestProperty -or [string]$issue.type -eq 'pull_request') {
+        $issueTypeProperty = $issue.PSObject.Properties['type']
+        $isPullRequest = $hasPullRequestProperty -or ($null -ne $issueTypeProperty -and [string]$issueTypeProperty.Value -eq 'pull_request')
+        if ($isPullRequest) {
             $referenceErrors.Add("Referenced number #$($reference.Number) is a pull request, not an issue.")
             continue
         }
