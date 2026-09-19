@@ -85,7 +85,7 @@ function Remove-MarkdownFencedBlocks {
     $fenceLength = 0
     $lines = [System.Collections.Generic.List[string]]::new()
     foreach ($line in ($Content -split '\r?\n')) {
-        if (-not $insideFence -and $line -match ('^\s*(?<Fence>' + [regex]::Escape([char]96) + '{3,}|~{3,})')) {
+        if (-not $insideFence -and $line -match ('^[ \t]{0,3}(?<Fence>' + [regex]::Escape([char]96) + '{3,}|~{3,})')) {
             $insideFence = $true
             $fenceCharacter = $Matches.Fence.Substring(0, 1)
             $fenceLength = $Matches.Fence.Length
@@ -197,45 +197,124 @@ function Remove-MarkdownHtmlComments { # NOSONAR - bounded comment/code scanner 
     return $builder.ToString()
 }
 
+function Remove-MarkdownHtmlBlocks {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
+
+    $blockTagNames = 'address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|h1|h2|h3|h4|h5|h6|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|ol|p|pre|script|search|section|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul'
+    $lines = [System.Collections.Generic.List[string]]::new()
+    $rawTag = ''
+    $insideHtmlBlock = $false
+    foreach ($line in ($Content -split '\r?\n')) {
+        if ($rawTag) {
+            $lines.Add('')
+            if ($line -match ('(?i)</' + [regex]::Escape($rawTag) + '[ \t>]' )) {
+                $rawTag = ''
+            }
+            continue
+        }
+        if ($insideHtmlBlock) {
+            $lines.Add('')
+            if ([string]::IsNullOrWhiteSpace($line)) {
+                $insideHtmlBlock = $false
+            }
+            continue
+        }
+
+        $rawTagMatch = [regex]::Match($line, '(?i)^[ \t]{0,3}<(?<Tag>pre|script|style|textarea)\b')
+        if ($rawTagMatch.Success) {
+            $lines.Add('')
+            $tag = $rawTagMatch.Groups['Tag'].Value
+            if ($line -notmatch ('(?i)</' + [regex]::Escape($tag) + '[ \t>]' )) {
+                $rawTag = $tag
+            }
+            continue
+        }
+        if ($line -match ('(?i)^[ \t]{0,3}<(?:(?:' + $blockTagNames + ')\b)')) {
+            $lines.Add('')
+            $insideHtmlBlock = $true
+            continue
+        }
+        if ($line -match '(?i)^[ \t]{0,3}<\?(?:[^\r\n]*)$|^[ \t]{0,3}<!\[CDATA\[|^[ \t]{0,3}<![A-Z]') {
+            $lines.Add('')
+            $insideHtmlBlock = $true
+            continue
+        }
+        if ($line -match '(?i)^[ \t]{0,3}(?:</?[A-Za-z][^>\r\n]*>|<[A-Za-z][^>\r\n]*/>)\s*$') {
+            $lines.Add('')
+            continue
+        }
+        $lines.Add($line)
+    }
+    return ($lines -join [Environment]::NewLine)
+}
+
+function Remove-MarkdownIndentedCode {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
+
+    $lines = [System.Collections.Generic.List[string]]::new()
+    foreach ($line in ($Content -split '\r?\n')) {
+        if ($line -match '^(?: {4,}|\t)') {
+            $lines.Add('')
+            continue
+        }
+        $lines.Add($line)
+    }
+    return ($lines -join [Environment]::NewLine)
+}
+
+function Get-RepositoryTrackedPaths {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Root)
+
+    $gitRoot = (Resolve-Path -LiteralPath $Root -ErrorAction Stop).Path
+    $gitRootArgument = $gitRoot.Replace('\', '/')
+    $trackedPaths = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $gitOutput = @(& git -c "safe.directory=$gitRootArgument" -C $gitRoot --literal-pathspecs ls-files 2>$null)
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Unable to enumerate tracked repository paths.'
+    }
+
+    foreach ($path in $gitOutput) {
+        $segments = @($path.ToString().Replace('\', '/') -split '/' | Where-Object { $_ -and $_ -ne '.' })
+        if ($segments.Count -gt 0) {
+            $null = $trackedPaths.Add(($segments -join '/'))
+        }
+    }
+    return ,$trackedPaths
+}
+
 function Test-RepositoryRelativePath {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Candidate,
-        [Parameter(Mandatory)][string]$Root
+        [Parameter(Mandatory)][System.Collections.Generic.HashSet[string]]$TrackedPaths
     )
 
     if ([string]::IsNullOrWhiteSpace($Candidate) -or
         [System.IO.Path]::IsPathRooted($Candidate) -or
-        $Candidate -match '^[A-Za-z]:') {
+        $Candidate -match '^[A-Za-z]:|^[\\/]') {
         return $false
     }
 
-    try {
-        $gitRoot = (Resolve-Path -LiteralPath $Root -ErrorAction Stop).Path
-        $gitPath = $Candidate.Replace('\', '/')
-        $trackedExact = @(& git -c "safe.directory=$($gitRoot.Replace('\', '/'))" -C $gitRoot --literal-pathspecs ls-files --error-unmatch -- $gitPath 2>$null)
-        if (@($trackedExact).Count -gt 0) { return $true }
-        $trackedChildren = @(& git -c "safe.directory=$($gitRoot.Replace('\', '/'))" -C $gitRoot --literal-pathspecs ls-files -- "$gitPath/*" 2>$null)
-        if (@($trackedChildren).Count -gt 0) { return $true }
+    $segments = [System.Collections.Generic.List[string]]::new()
+    foreach ($segment in ($Candidate.Replace('\', '/') -split '/')) {
+        if ([string]::IsNullOrEmpty($segment) -or $segment -eq '.') { continue }
+        if ($segment -eq '..') { return $false }
+        $segments.Add($segment)
     }
-    catch {
-        return $false
-    }
+    if ($segments.Count -eq 0) { return $false }
 
-    try {
-        $current = (Resolve-Path -LiteralPath $Root -ErrorAction Stop).Path
-        foreach ($segment in ($Candidate.Replace('\', '/') -split '/')) {
-            if ([string]::IsNullOrEmpty($segment) -or $segment -eq '.') { continue }
-            if ($segment -eq '..') { return $false }
-            $child = @(Get-ChildItem -LiteralPath $current -Force -ErrorAction Stop | Where-Object { $_.Name -ceq $segment } | Select-Object -First 1)
-            if ($child.Count -eq 0) { return $false }
-            $current = $child[0].FullName
+    $gitPath = $segments -join '/'
+    if ($TrackedPaths.Contains($gitPath)) { return $true }
+    $childPrefix = "$gitPath/"
+    foreach ($trackedPath in $TrackedPaths) {
+        if ($trackedPath.StartsWith($childPrefix, [StringComparison]::Ordinal)) {
+            return $true
         }
-        return $true
     }
-    catch {
-        return $false
-    }
+    return $false
 }
 
 function Test-IssueSectionContent {
@@ -256,10 +335,10 @@ function Get-IssueSpecResult { # NOSONAR - this validator intentionally aggregat
     $errors = [System.Collections.Generic.List[string]]::new()
     $warnings = [System.Collections.Generic.List[string]]::new()
     $content = Get-Content -LiteralPath $IssuePath -Raw -ErrorAction Stop
-    $structuralContent = Remove-MarkdownHtmlComments -Content (Remove-MarkdownFencedBlocks -Content $content)
-    $nonRenderedContent = Remove-MarkdownHtmlComments -Content (Remove-MarkdownFencedBlocks -Content $content -MaskContent)
-    $structuralContent = [regex]::Replace($structuralContent, '(?is)<(?:pre|script|style|textarea)\b.*?</(?:pre|script|style|textarea)>', '')
-    $nonRenderedContent = [regex]::Replace($nonRenderedContent, '(?is)<(?:pre|script|style|textarea)\b.*?</(?:pre|script|style|textarea)>', '')
+    $trackedPaths = Get-RepositoryTrackedPaths -Root $RepositoryRoot
+    $structuralContent = Remove-MarkdownHtmlBlocks -Content (Remove-MarkdownHtmlComments -Content (Remove-MarkdownFencedBlocks -Content $content))
+    $nonRenderedContent = Remove-MarkdownHtmlBlocks -Content (Remove-MarkdownHtmlComments -Content (Remove-MarkdownFencedBlocks -Content $content -MaskContent))
+    $nonRenderedContent = Remove-MarkdownIndentedCode -Content $nonRenderedContent
     $sections = Get-MarkdownSections -Content $structuralContent
     $nonRenderedSections = Get-MarkdownSections -Content $nonRenderedContent
 
@@ -343,8 +422,8 @@ function Get-IssueSpecResult { # NOSONAR - this validator intentionally aggregat
         Add-IssueSpecError -Errors $errors -Message 'Template placeholder remains in the issue body.'
     }
 
-    if ($sections.Contains('Relevant source and contracts')) {
-        $sourceSection = [string]$sections['Relevant source and contracts']
+    if ($nonRenderedSections.Contains('Relevant source and contracts')) {
+        $sourceSection = Remove-MarkdownIndentedCode -Content ([string]$nonRenderedSections['Relevant source and contracts'])
         $sourcePaths = [regex]::Matches(
             $sourceSection,
             '`(?<Path>[^`]+)`'
@@ -352,10 +431,19 @@ function Get-IssueSpecResult { # NOSONAR - this validator intentionally aggregat
         if ($sourcePaths.Count -eq 0) {
             Add-IssueSpecError -Errors $errors -Message 'Relevant source and contracts must list backtick-wrapped repository-relative paths.'
         }
+        $validatedSourcePaths = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+        $sourcePathLimit = 256
+        $sourcePathLimitExceeded = $false
         foreach ($pathMatch in $sourcePaths) {
             $candidate = $pathMatch.Groups['Path'].Value.Trim()
-            if (-not (Test-RepositoryRelativePath -Candidate $candidate -Root $RepositoryRoot)) {
-                Add-IssueSpecError -Errors $errors -Message "Referenced repository-relative path does not exist: '$candidate'."
+            if ($validatedSourcePaths.Add($candidate)) {
+                if ($validatedSourcePaths.Count -gt $sourcePathLimit) {
+                    $sourcePathLimitExceeded = $true
+                    break
+                }
+                if (-not (Test-RepositoryRelativePath -Candidate $candidate -TrackedPaths $trackedPaths)) {
+                    Add-IssueSpecError -Errors $errors -Message "Referenced repository-relative path does not exist: '$candidate'."
+                }
             }
             $lineStart = $sourceSection.LastIndexOf("`n", $pathMatch.Index) + 1
             $lineEnd = $sourceSection.IndexOf("`n", $pathMatch.Index)
@@ -367,12 +455,16 @@ function Get-IssueSpecResult { # NOSONAR - this validator intentionally aggregat
                 Add-IssueSpecError -Errors $errors -Message "Referenced repository-relative path must include an explanation: '$candidate'."
             }
         }
+        if ($sourcePathLimitExceeded) {
+            Add-IssueSpecError -Errors $errors -Message "Relevant source and contracts may contain at most $sourcePathLimit distinct repository-relative paths."
+        }
     }
 
     $acceptanceIds = [System.Collections.Generic.List[string]]::new()
     if ($sections.Contains('Acceptance criteria')) {
+        $criteriaContent = Remove-MarkdownIndentedCode -Content ([string]$nonRenderedSections['Acceptance criteria'])
         $criteria = [regex]::Matches(
-            [string]$nonRenderedSections['Acceptance criteria'],
+            $criteriaContent,
             '(?im)^\s*(?:[-*]|\d+\.)\s*\[(?<Id>AC\d+)\]\s+(?<Text>.+?)\s*$'
         )
         if ($criteria.Count -eq 0) {
@@ -394,7 +486,7 @@ function Get-IssueSpecResult { # NOSONAR - this validator intentionally aggregat
     }
 
     if ($sections.Contains('Validation evidence map')) {
-        $evidence = [string]$nonRenderedSections['Validation evidence map']
+        $evidence = Remove-MarkdownIndentedCode -Content ([string]$nonRenderedSections['Validation evidence map'])
         $evidenceIds = [System.Collections.Generic.List[string]]::new()
         $evidenceLinePattern = '(?im)^\s*(?:[-*]|\d+\.)\s*\[(?<Id>AC\d+)\]\s*(?<Kind>Command|Test|Manual\s+observation)\s*:\s*(?<Evidence>[^\r\n]*?)\s*;\s*expected\s*:\s*(?<Expected>[^\r\n]*)\s*$'
         $evidenceMatches = [regex]::Matches($evidence, $evidenceLinePattern)

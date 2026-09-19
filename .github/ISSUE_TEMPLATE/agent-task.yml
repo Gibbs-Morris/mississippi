@@ -54,7 +54,7 @@ body:
     id: acceptance-criteria
     attributes:
       label: Acceptance criteria
-      description: Use unique stable IDs such as [AC1], [AC2], and make each criterion observable.
+      description: 'Use one Markdown list entry per criterion with a unique stable ID, such as `- [AC1] Observable outcome`.'
     validations:
       required: true
   - type: textarea
@@ -75,7 +75,7 @@ body:
     id: risks-and-delivery-boundary
     attributes:
       label: Risks and delivery boundary
-      description: Record risks and merge boundary. Use one list entry per acceptance ID in the form `- [AC1] Test: exact command or test; expected: observable result.`
+      description: 'Record risks and merge boundary. Use one list entry per acceptance ID in the form `- [AC1] Test: exact command or test; expected: observable result.`'
       value: |
         ### Validation evidence map
     validations:

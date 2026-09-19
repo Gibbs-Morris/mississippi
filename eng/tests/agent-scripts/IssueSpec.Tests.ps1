@@ -183,6 +183,14 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
     }
 
+    It 'does not treat a four-space-indented fence as a Markdown fence' {
+        $indentedFence = '    ```md' + [Environment]::NewLine + $validBug
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $indentedFence)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'ignores contract content inside HTML comments' {
         $commentedOnly = '<!--' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '-->'
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $commentedOnly)
@@ -197,6 +205,32 @@ Describe 'Implementation-ready issue contract' {
 
         $outcome.ExitCode | Should -Be 0
         $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'ignores repository paths inside fenced source examples' {
+        $content = $validBug -replace '(?m)^## Decisions and non-goals', ('```text' + [Environment]::NewLine + '`missing/not-found.cs` — example only.' + [Environment]::NewLine + '```' + [Environment]::NewLine + [Environment]::NewLine + '## Decisions and non-goals')
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'ignores acceptance and evidence entries inside indented code' {
+        $content = $validBug -replace '(?m)^- \[AC1\]', ('    - [AC99] Code example only.' + [Environment]::NewLine + '- [AC1]')
+        $content = $content -replace '(?m)^- \[AC1\] Test:', ('    - [AC99] Test: code example; expected: ignored.' + [Environment]::NewLine + '- [AC1] Test:')
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'ignores headings inside raw HTML blocks' {
+        $compact = $validBug -replace '\r?\n\r?\n', [Environment]::NewLine
+        $content = '<div>' + [Environment]::NewLine + $compact + [Environment]::NewLine + '</div>'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
     }
 
     It 'rejects a missing validation section' {

@@ -2,7 +2,7 @@ name: Implementation Issue Contract
 
 on:
   issues:
-    types: [opened, edited, labeled]
+    types: [opened, edited, labeled, reopened]
 
 permissions:
   contents: read
@@ -10,7 +10,10 @@ permissions:
 
 jobs:
   validate:
-    if: contains(github.event.issue.labels.*.name, 'agent-task') || startsWith(github.event.issue.title, '[Task]')
+    if: >-
+      contains(github.event.issue.labels.*.name, 'agent-task') ||
+      startsWith(github.event.issue.title, '[Task]') ||
+      contains(github.event.issue.body, 'Contract version: 1.0')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout trusted validator
