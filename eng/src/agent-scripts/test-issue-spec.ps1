@@ -27,7 +27,7 @@ $requiredSections = @(
     'Validation evidence map'
 )
 
-function Get-MarkdownSections { #NOSONAR
+function Get-MarkdownSections { # NOSONAR - bounded Markdown heading parser intentionally tracks heading state.
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Content)
 
@@ -197,7 +197,7 @@ function Remove-MarkdownHtmlComments { # NOSONAR - bounded comment/code scanner 
     return $builder.ToString()
 }
 
-function Remove-MarkdownHtmlBlocks {
+function Remove-MarkdownHtmlBlocks { # NOSONAR - bounded raw-HTML block scanner intentionally tracks parser state.
     [CmdletBinding()]
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
 
