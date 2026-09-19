@@ -149,14 +149,64 @@ function Get-DoctorProbeDetails {
 }
 
 function Test-DoctorSdkCompatibility {
-    param([string]$Expected, [string]$Actual)
-    if ($Actual -eq $Expected) { return $true }
-    $expectedMatch = [regex]::Match($Expected, '^(?<Prefix>\d+\.\d+\.)(?<Feature>\d)\d\d$')
-    $actualMatch = [regex]::Match($Actual, '^(?<Prefix>\d+\.\d+\.)(?<Feature>\d)\d\d$')
-    if ($expectedMatch.Success -and $actualMatch.Success) {
-        return $expectedMatch.Groups['Prefix'].Value -eq $actualMatch.Groups['Prefix'].Value -and $expectedMatch.Groups['Feature'].Value -eq $actualMatch.Groups['Feature'].Value
+    param(
+        [string]$Expected,
+        [string]$Actual,
+        [string]$RollForward = 'patch'
+    )
+
+    $expectedMatch = [regex]::Match($Expected.Trim(), '^(?<Major>\d+)\.(?<Minor>\d+)\.(?<Build>\d+)(?:\.(?<Revision>\d+))?$')
+    $actualMatch = [regex]::Match($Actual.Trim(), '^(?<Major>\d+)\.(?<Minor>\d+)\.(?<Build>\d+)(?:\.(?<Revision>\d+))?$')
+    if (-not $expectedMatch.Success -or -not $actualMatch.Success) {
+        return $false
     }
-    return $false
+
+    $expectedMajor = [int]$expectedMatch.Groups['Major'].Value
+    $expectedMinor = [int]$expectedMatch.Groups['Minor'].Value
+    $actualMajor = [int]$actualMatch.Groups['Major'].Value
+    $actualMinor = [int]$actualMatch.Groups['Minor'].Value
+    $expectedBuild = [int]$expectedMatch.Groups['Build'].Value
+    $actualBuild = [int]$actualMatch.Groups['Build'].Value
+    $expectedFeatureBand = if ($expectedBuild -ge 100) { [Math]::Floor($expectedBuild / 100) * 100 } else { $expectedBuild }
+    $actualFeatureBand = if ($actualBuild -ge 100) { [Math]::Floor($actualBuild / 100) * 100 } else { $actualBuild }
+    $expectedPatch = if ($expectedMatch.Groups['Revision'].Success) { [int]$expectedMatch.Groups['Revision'].Value } elseif ($expectedBuild -ge 100) { $expectedBuild % 100 } else { 0 }
+    $actualPatch = if ($actualMatch.Groups['Revision'].Success) { [int]$actualMatch.Groups['Revision'].Value } elseif ($actualBuild -ge 100) { $actualBuild % 100 } else { 0 }
+    $policy = if ([string]::IsNullOrWhiteSpace($RollForward)) { 'patch' } else { $RollForward.ToLowerInvariant() }
+    switch ($policy) {
+        'disable' { return $actualMajor -eq $expectedMajor -and $actualMinor -eq $expectedMinor -and $actualBuild -eq $expectedBuild -and $actualPatch -eq $expectedPatch }
+        'patch' { return $actualMajor -eq $expectedMajor -and $actualMinor -eq $expectedMinor -and $actualFeatureBand -eq $expectedFeatureBand -and $actualPatch -ge $expectedPatch }
+        'latestpatch' { return $actualMajor -eq $expectedMajor -and $actualMinor -eq $expectedMinor -and $actualFeatureBand -eq $expectedFeatureBand -and $actualPatch -ge $expectedPatch }
+        'feature' { return $actualMajor -eq $expectedMajor -and $actualMinor -eq $expectedMinor -and ($actualFeatureBand -gt $expectedFeatureBand -or ($actualFeatureBand -eq $expectedFeatureBand -and $actualPatch -ge $expectedPatch)) }
+        'latestfeature' { return $actualMajor -eq $expectedMajor -and $actualMinor -eq $expectedMinor -and ($actualFeatureBand -gt $expectedFeatureBand -or ($actualFeatureBand -eq $expectedFeatureBand -and $actualPatch -ge $expectedPatch)) }
+        'minor' { return $actualMajor -eq $expectedMajor -and ($actualMinor -gt $expectedMinor -or ($actualMinor -eq $expectedMinor -and ($actualFeatureBand -gt $expectedFeatureBand -or ($actualFeatureBand -eq $expectedFeatureBand -and $actualPatch -ge $expectedPatch)))) }
+        'latestminor' { return $actualMajor -eq $expectedMajor -and ($actualMinor -gt $expectedMinor -or ($actualMinor -eq $expectedMinor -and ($actualFeatureBand -gt $expectedFeatureBand -or ($actualFeatureBand -eq $expectedFeatureBand -and $actualPatch -ge $expectedPatch)))) }
+        'major' { return $actualMajor -gt $expectedMajor -or ($actualMajor -eq $expectedMajor -and ($actualMinor -gt $expectedMinor -or ($actualMinor -eq $expectedMinor -and $actualFeatureBand -ge $expectedFeatureBand))) }
+        'latestmajor' { return $actualMajor -gt $expectedMajor -or ($actualMajor -eq $expectedMajor -and ($actualMinor -gt $expectedMinor -or ($actualMinor -eq $expectedMinor -and $actualFeatureBand -ge $expectedFeatureBand))) }
+        default { return $false }
+    }
+}
+
+function ConvertTo-DoctorGitHubRemote {
+    param([Parameter(Mandatory)][string]$Remote)
+
+    $value = $Remote.Trim()
+    $match = [regex]::Match($value, '^(?:https?://)(?:[^/@]+(?::[^/@]*)?@)?(?<host>[^/]+)/(?<slug>[^/]+/[^/]+?)(?:\.git)?/?$')
+    if (-not $match.Success) {
+        $match = [regex]::Match($value, '^git@(?<host>[^:]+):(?<slug>[^/]+/[^/]+?)(?:\.git)?$')
+    }
+    if (-not $match.Success) {
+        $match = [regex]::Match($value, '^ssh://(?:[^@/]+@)?(?<host>[^/:]+)(?::\d+)?/(?<slug>[^/]+/[^/]+?)(?:\.git)?/?$')
+    }
+    if (-not $match.Success) {
+        return [pscustomobject]@{ Parsed = $false; Host = ''; Target = '' }
+    }
+
+    $hostName = $match.Groups['host'].Value.ToLowerInvariant()
+    [pscustomobject]@{
+        Parsed = $true
+        Host = $hostName
+        Target = "$hostName/$($match.Groups['slug'].Value)"
+    }
 }
 
 function Get-AgentDoctorReport {
@@ -164,7 +214,8 @@ function Get-AgentDoctorReport {
     param(
         [string]$RepositoryRoot = (Get-Location).Path,
         [ValidateSet('Core', 'Docs', 'Spring', 'GitHub', 'All')][string]$Profile = 'Core',
-        [hashtable]$ProbeOverrides = @{}
+        [hashtable]$ProbeOverrides = @{},
+        [string[]]$TrustedGitHubHost = @()
     )
 
     $root = Get-DoctorRepositoryRoot -RepositoryRoot $RepositoryRoot
@@ -214,7 +265,8 @@ function Get-AgentDoctorReport {
             else {
                 $expectedSdk = [string]$globalJson.sdk.version
                 $actualSdk = $dotnet.Output.Trim()
-                $compatible = Test-DoctorSdkCompatibility -Expected $expectedSdk -Actual $actualSdk
+                $rollForward = if ($null -ne $globalJson.sdk.PSObject.Properties['rollForward']) { [string]$globalJson.sdk.rollForward } else { 'patch' }
+                $compatible = Test-DoctorSdkCompatibility -Expected $expectedSdk -Actual $actualSdk -RollForward $rollForward
                 Add-DoctorCheck -Checks $checks -Name 'dotnet-sdk' -State $(if ($compatible) { 'ready' } else { 'unsupported' }) -Required $true -Details "Selected SDK reports $actualSdk; global.json requests $expectedSdk." -Remediation $(if ($compatible) { '' } else { 'Install the requested SDK feature band or use an approved roll-forward.' })
             }
         }
@@ -229,6 +281,9 @@ function Get-AgentDoctorReport {
                 foreach ($toolProperty in $toolProperties) {
                     if ($null -eq $toolProperty.Value -or [string]::IsNullOrWhiteSpace([string]$toolProperty.Value.version)) {
                         throw [System.IO.InvalidDataException]::new("Local tool '$($toolProperty.Name)' must declare a version.")
+                    }
+                    if (@($toolProperty.Value.commands | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }).Count -eq 0) {
+                        throw [System.IO.InvalidDataException]::new("Local tool '$($toolProperty.Name)' must declare at least one command.")
                     }
                 }
                 Add-DoctorCheck -Checks $checks -Name 'dotnet-tools-manifest' -State ready -Required $true -Details "Pinned tool manifest contains $($toolProperties.Count) tools."
@@ -260,32 +315,34 @@ function Get-AgentDoctorReport {
             foreach ($tool in @($toolData.tools.PSObject.Properties)) {
                 $packageId = [string]$tool.Name
                 $expectedVersion = [string]$tool.Value.version
-                $cacheFile = @(Get-ChildItem -LiteralPath $resolverRoot -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ieq $packageId } | Select-Object -First 1)
-                if ($cacheFile.Count -eq 0) {
-                    $toolFailures.Add("${packageId}@${expectedVersion}: resolver metadata is missing.")
-                    $hasMissingTool = $true
-                    continue
-                }
-
-                try {
-                    $records = @(Get-Content -LiteralPath $cacheFile[0].FullName -Raw -ErrorAction Stop | ConvertFrom-Json)
-                    $matchingRecord = @($records | Where-Object {
-                        if ([string]$_.Version -ne $expectedVersion) { return $false }
-                        $paths = @()
-                        if ($null -ne $_.PSObject.Properties['PathToExecutable']) { $paths += [string]$_.PathToExecutable }
-                        foreach ($commandRecord in @($_.Commands)) {
-                            if ($null -ne $commandRecord.PSObject.Properties['PathToExecutable']) { $paths += [string]$commandRecord.PathToExecutable }
-                        }
-                        @($paths | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and (Test-Path -LiteralPath $_ -PathType Leaf) }).Count -gt 0
-                    })
-                    if ($matchingRecord.Count -eq 0) {
-                        $toolFailures.Add("${packageId}@${expectedVersion}: restored executable metadata is missing.")
+                foreach ($commandName in @($tool.Value.commands | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })) {
+                    $cacheFile = @(Get-ChildItem -LiteralPath $resolverRoot -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ieq [string]$commandName } | Select-Object -First 1)
+                    if ($cacheFile.Count -eq 0) {
+                        $toolFailures.Add("${packageId}@${expectedVersion} ($commandName): resolver metadata is missing.")
                         $hasMissingTool = $true
+                        continue
                     }
-                }
-                catch {
-                    $toolFailures.Add("${packageId}@${expectedVersion}: resolver metadata is unreadable: $($_.Exception.Message)")
-                    $hasUnknownTool = $true
+
+                    try {
+                        $records = @(Get-Content -LiteralPath $cacheFile[0].FullName -Raw -ErrorAction Stop | ConvertFrom-Json)
+                        $matchingRecord = @($records | Where-Object {
+                            if ([string]$_.Version -ne $expectedVersion) { return $false }
+                            $paths = @()
+                            if ($null -ne $_.PSObject.Properties['PathToExecutable']) { $paths += [string]$_.PathToExecutable }
+                            foreach ($commandRecord in @($_.Commands)) {
+                                if ($null -ne $commandRecord.PSObject.Properties['PathToExecutable']) { $paths += [string]$commandRecord.PathToExecutable }
+                            }
+                            @($paths | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and (Test-Path -LiteralPath $_ -PathType Leaf) }).Count -gt 0
+                        })
+                        if ($matchingRecord.Count -eq 0) {
+                            $toolFailures.Add("${packageId}@${expectedVersion} ($commandName): restored executable metadata is missing.")
+                            $hasMissingTool = $true
+                        }
+                    }
+                    catch {
+                        $toolFailures.Add("${packageId}@${expectedVersion} ($commandName): resolver metadata is unreadable: $($_.Exception.Message)")
+                        $hasUnknownTool = $true
+                    }
                 }
             }
             $toolState = if ($hasMissingTool) { 'missing' } elseif ($hasUnknownTool) { 'unknown' } else { 'ready' }
@@ -344,13 +401,16 @@ function Get-AgentDoctorReport {
 
     if ($profiles -contains 'GitHub') {
         $remote = Invoke-DoctorProbe -Name 'git-remote' -FilePath 'git' -Arguments @('-C', $root, 'config', '--get', 'remote.origin.url') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
-        $remoteTarget = ''
-        if ($remote.Output -match '^(?:https?://)(?:[^/@]+(?::[^/@]*)?@)?(?<host>[^/]+)/(?<slug>[^/]+/[^/]+?)(?:\.git)?/?$') { $remoteTarget = "$($Matches.host)/$($Matches.slug)" }
-        elseif ($remote.Output -match '^git@(?<host>[^:]+):(?<slug>[^/]+/[^/]+?)(?:\.git)?$') { $remoteTarget = "$($Matches.host)/$($Matches.slug)" }
-        $gh = Invoke-DoctorProbe -Name 'github-repository' -FilePath 'gh' -Arguments @('repo', 'view', $remoteTarget, '--json', 'nameWithOwner') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
-        $githubState = if (-not $remote.Available) { 'missing' } elseif ($remote.ExitCode -ne 0) { 'unknown' } elseif (-not $gh.Available) { 'missing' } elseif ($gh.ExitCode -eq 0) { 'ready' } else { 'unknown' }
-        $githubDetails = if (-not $remote.Available -or $remote.ExitCode -ne 0) { Get-DoctorProbeDetails -Probe $remote } elseif ($gh.ExitCode -eq 0) { 'Repository identity resolved without exposing credentials.' } else { Get-DoctorProbeDetails -Probe $gh }
-        Add-DoctorCheck -Checks $checks -Name 'github-repository' -State $githubState -Required $true -Details $githubDetails -Remediation 'Authenticate gh with read access to the current repository and verify Git is installed.'
+        $remoteInfo = if ($remote.Available -and $remote.ExitCode -eq 0) { ConvertTo-DoctorGitHubRemote -Remote $remote.Output } else { [pscustomobject]@{ Parsed = $false; Host = ''; Target = '' } }
+        $trustedHosts = @('github.com') + @($TrustedGitHubHost | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_.ToLowerInvariant() })
+        $trusted = $remoteInfo.Parsed -and $trustedHosts -contains $remoteInfo.Host
+        $gh = $null
+        if ($remote.Available -and $remote.ExitCode -eq 0 -and $remoteInfo.Parsed -and $trusted) {
+            $gh = Invoke-DoctorProbe -Name 'github-repository' -FilePath 'gh' -Arguments @('repo', 'view', $remoteInfo.Target, '--json', 'nameWithOwner') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
+        }
+        $githubState = if (-not $remote.Available) { 'missing' } elseif ($remote.ExitCode -ne 0) { 'unknown' } elseif (-not $remoteInfo.Parsed) { 'unsupported' } elseif (-not $trusted) { 'unsupported' } elseif (-not $gh.Available) { 'missing' } elseif ($gh.ExitCode -eq 0) { 'ready' } else { 'unknown' }
+        $githubDetails = if (-not $remote.Available -or $remote.ExitCode -ne 0) { Get-DoctorProbeDetails -Probe $remote } elseif (-not $remoteInfo.Parsed) { 'Git remote is not a supported GitHub HTTPS, SSH, or scp-style URL.' } elseif (-not $trusted) { "GitHub remote host '$($remoteInfo.Host)' is not trusted for credentialed probes." } elseif ($gh.ExitCode -eq 0) { 'Repository identity resolved without exposing credentials.' } else { Get-DoctorProbeDetails -Probe $gh }
+        Add-DoctorCheck -Checks $checks -Name 'github-repository' -State $githubState -Required $true -Details $githubDetails -Remediation 'Authenticate gh with read access to the current repository; for an approved GitHub Enterprise host, pass -TrustedGitHubHost explicitly.'
     }
     else { Add-DoctorCheck -Checks $checks -Name 'github-profile' -State not-required -Required $false -Details 'GitHub delivery prerequisites were not requested.' }
 

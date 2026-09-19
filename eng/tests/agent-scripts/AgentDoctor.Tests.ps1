@@ -85,6 +85,22 @@ Describe 'Repository prerequisite doctor' {
         $report.RequiredFailures | Should -Contain 'dotnet-sdk'
     }
 
+    It 'honors a latest-feature SDK roll-forward' {
+        $globalJsonPath = Join-Path $fixtureRoot 'global.json'
+        $originalGlobalJson = Get-Content -LiteralPath $globalJsonPath -Raw
+        try {
+            Set-Content -LiteralPath $globalJsonPath -Value '{"sdk":{"version":"10.0.400","rollForward":"latestFeature"}}'
+            $probes = @{} + $readyProbes
+            $probes['dotnet-version'] = [pscustomobject]@{ Available = $true; Output = '10.0.500'; ExitCode = 0; Error = '' }
+            $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Core -ProbeOverrides $probes
+        }
+        finally {
+            Set-Content -LiteralPath $globalJsonPath -Value $originalGlobalJson
+        }
+
+        @($report.Checks | Where-Object Name -EQ 'dotnet-sdk').State | Should -Be 'ready'
+    }
+
     It 'rejects an unsupported Docs Node version' {
         $probes = @{} + $readyProbes
         $probes['node-version'] = [pscustomobject]@{ Available = $true; Output = 'v18.20.0'; ExitCode = 0; Error = '' }
@@ -138,6 +154,32 @@ Describe 'Repository prerequisite doctor' {
         @($report.Checks | Where-Object Name -EQ 'dotnet-tools').State | Should -Be 'unsupported'
     }
 
+    It 'indexes restored tool metadata by declared command name' {
+        $manifestPath = Join-Path $fixtureRoot '.config/dotnet-tools.json'
+        $originalManifest = Get-Content -LiteralPath $manifestPath -Raw
+        $originalHome = $env:DOTNET_CLI_HOME
+        $toolHome = Join-Path $TestDrive 'dotnet-home'
+        $resolverRoot = Join-Path $toolHome '.dotnet/toolResolverCache/1'
+        $executable = Join-Path $toolHome 'example-cli.exe'
+        try {
+            New-Item -ItemType Directory -Path $resolverRoot -Force | Out-Null
+            Set-Content -LiteralPath $executable -Value 'fixture executable'
+            $record = @([pscustomobject]@{ Version = '1.0.0'; Commands = @([pscustomobject]@{ PathToExecutable = $executable }) })
+            $record | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $resolverRoot 'example-cli')
+            Set-Content -LiteralPath $manifestPath -Value '{"version":1,"tools":{"Example.Package":{"version":"1.0.0","commands":["example-cli"]}}}'
+            $env:DOTNET_CLI_HOME = $toolHome
+            $probes = @{} + $readyProbes
+            $probes.Remove('dotnet-tools')
+            $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Core -ProbeOverrides $probes
+        }
+        finally {
+            Set-Content -LiteralPath $manifestPath -Value $originalManifest
+            if ($null -eq $originalHome) { Remove-Item Env:DOTNET_CLI_HOME -ErrorAction SilentlyContinue } else { $env:DOTNET_CLI_HOME = $originalHome }
+        }
+
+        @($report.Checks | Where-Object Name -EQ 'dotnet-tools').State | Should -Be 'ready'
+    }
+
     It 'reports denied GitHub access as unknown without exposing credentials' {
         $probes = @{} + $readyProbes
         $probes['github-repository'] = [pscustomobject]@{ Available = $true; Output = ''; ExitCode = 1; Error = 'permission denied' }
@@ -155,6 +197,31 @@ Describe 'Repository prerequisite doctor' {
 
         @($report.Checks | Where-Object Name -EQ 'github-repository').State | Should -Be 'missing'
         @($report.Checks | Where-Object Name -EQ 'github-repository').Details | Should -Match "Command 'git' was not found"
+    }
+
+    It 'parses URI-style SSH GitHub remotes' {
+        $remote = InModuleScope AgentDoctor { ConvertTo-DoctorGitHubRemote -Remote 'ssh://git@github.com/owner/repo.git' }
+
+        $remote.Parsed | Should -BeTrue
+        $remote.Host | Should -Be 'github.com'
+        $remote.Target | Should -Be 'github.com/owner/repo'
+    }
+
+    It 'rejects an untrusted GitHub remote before invoking gh' {
+        $probes = @{} + $readyProbes
+        $probes['git-remote'] = [pscustomobject]@{ Available = $true; Output = 'https://attacker.invalid/example/repo.git'; ExitCode = 0; Error = '' }
+        $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile GitHub -ProbeOverrides $probes
+
+        @($report.Checks | Where-Object Name -EQ 'github-repository').State | Should -Be 'unsupported'
+        @($report.Checks | Where-Object Name -EQ 'github-repository').Details | Should -Match 'not trusted'
+    }
+
+    It 'requires explicit trust for an enterprise SSH remote' {
+        $probes = @{} + $readyProbes
+        $probes['git-remote'] = [pscustomobject]@{ Available = $true; Output = 'ssh://git@ghe.example/owner/repo.git'; ExitCode = 0; Error = '' }
+        $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile GitHub -TrustedGitHubHost 'ghe.example' -ProbeOverrides $probes
+
+        @($report.Checks | Where-Object Name -EQ 'github-repository').State | Should -Be 'ready'
     }
 
     It 'preserves native output when a probe exits unsuccessfully' {
