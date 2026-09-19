@@ -39,6 +39,14 @@ Describe 'Source-bound validation evidence' {
         $result.Errors | Should -Contain 'Evidence inputs are stale or changed.'
     }
 
+    It 'refuses PASS when the source changes during the run' {
+        $run = New-ValidationEvidenceRun -RepositoryRoot $fixtureRoot -Scope 'fixture' -InputPath @($inputFile)
+        Add-Content -LiteralPath $inputFile -Value 'class CleanupChanged { }'
+        Complete-ValidationEvidenceRun -Run $run -Status PASS -Phase complete -Executed $true -TestCount 1 -ExitCode 0 | Out-Null
+
+        (Get-Content -LiteralPath $run.Path -Raw | ConvertFrom-Json).Status | Should -Be 'INCOMPLETE'
+    }
+
     It 'fails closed when a required artifact is missing' {
         $run = New-ValidationEvidenceRun -RepositoryRoot $fixtureRoot -Scope 'fixture' -InputPath @($inputFile)
         Complete-ValidationEvidenceRun -Run $run -Status PASS -Phase complete -Executed $true -TestCount 1 -ExitCode 0 -ArtifactPath @(Join-Path $fixtureRoot 'missing.trx') | Out-Null
@@ -68,5 +76,17 @@ Describe 'Source-bound validation evidence' {
 
         $result.Valid | Should -BeFalse
         $result.Errors | Should -Contain 'Evidence is missing or unreadable.'
+    }
+
+    It 'rejects malformed referenced JSON artifacts' {
+        $run = New-ValidationEvidenceRun -RepositoryRoot $fixtureRoot -Scope 'fixture' -InputPath @($inputFile)
+        $artifact = Join-Path $fixtureRoot 'summary.json'
+        Set-Content -LiteralPath $artifact -Value '{broken'
+        Complete-ValidationEvidenceRun -Run $run -Status PASS -Phase complete -Executed $true -TestCount 1 -ExitCode 0 -ArtifactPath @($artifact) | Out-Null
+
+        $result = Test-ValidationEvidence -Path $run.Path
+
+        $result.Valid | Should -BeFalse
+        ($result.Errors -join "`n") | Should -Match 'malformed or unreadable'
     }
 }

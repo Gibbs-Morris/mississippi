@@ -32,8 +32,17 @@ function Get-ValidationSourceFingerprint {
     $paths = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
     if (@($InputPath).Count -gt 0) {
         foreach ($path in @($InputPath)) {
-            $relative = Get-ValidationRelativePath -RepositoryRoot $root -Path ([string]$path)
-            if ($null -ne $relative) { $null = $paths.Add($relative) }
+            $fullInput = if ([System.IO.Path]::IsPathRooted([string]$path)) { [System.IO.Path]::GetFullPath([string]$path) } else { [System.IO.Path]::GetFullPath((Join-Path $root ([string]$path))) }
+            if (Test-Path -LiteralPath $fullInput -PathType Container) {
+                foreach ($file in Get-ChildItem -LiteralPath $fullInput -Recurse -File -Force) {
+                    $relative = Get-ValidationRelativePath -RepositoryRoot $root -Path $file.FullName
+                    if ($null -ne $relative) { $null = $paths.Add($relative) }
+                }
+            }
+            else {
+                $relative = Get-ValidationRelativePath -RepositoryRoot $root -Path ([string]$path)
+                if ($null -ne $relative) { $null = $paths.Add($relative) }
+            }
         }
     }
     else {
@@ -104,6 +113,8 @@ function New-ValidationEvidenceRun {
         ExitCode = $null
         Artifacts = @()
         Error = $null
+        SourceChangedDuringRun = $false
+        ArtifactMetadata = @()
         StartedUtc = (Get-Date).ToUniversalTime().ToString('o')
         EndedUtc = $null
         EvidencePath = $path
@@ -122,6 +133,7 @@ function Complete-ValidationEvidenceRun {
         [int]$TestCount = 0,
         [Nullable[int]]$ExitCode,
         [string[]]$ArtifactPath = @(),
+        [string]$MirrorPath,
         [AllowEmptyString()][string]$ErrorMessage
     )
 
@@ -134,8 +146,20 @@ function Complete-ValidationEvidenceRun {
     $record.Error = if ([string]::IsNullOrWhiteSpace($ErrorMessage)) { $null } else { $ErrorMessage }
     $record.Artifacts = @($ArtifactPath | ForEach-Object { Get-ValidationRelativePath -RepositoryRoot $record.RepositoryRoot -Path $_ })
     $record.SourceAfter = Get-ValidationSourceFingerprint -RepositoryRoot $record.RepositoryRoot -InputPath $Run.InputPath
+    $record.SourceChangedDuringRun = [string]$record.SourceBefore.Fingerprint -ne [string]$record.SourceAfter.Fingerprint
+    $record.ArtifactMetadata = @($record.Artifacts | ForEach-Object {
+        $artifactPath = Join-Path $record.RepositoryRoot $_
+        if (-not (Test-Path -LiteralPath $artifactPath -PathType Leaf)) { return }
+        [pscustomobject]@{ Path = $_; SHA256 = 'SHA256:' + (Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant(); Length = (Get-Item -LiteralPath $artifactPath).Length }
+    })
+    if ($Status -eq 'PASS' -and $record.SourceChangedDuringRun) {
+        $record.Status = 'INCOMPLETE'
+        $record.ExitCode = 1
+        $record.Error = 'Validation inputs changed during the run; PASS requires revalidation of the final source tree.'
+    }
     $record.EndedUtc = (Get-Date).ToUniversalTime().ToString('o')
     Write-ValidationEvidence -Record $record -Path $Run.Path | Out-Null
+    if (-not [string]::IsNullOrWhiteSpace($MirrorPath)) { Write-ValidationEvidence -Record $record -Path $MirrorPath | Out-Null }
     return $record
 }
 
@@ -146,12 +170,33 @@ function Test-ValidationEvidence {
     $errors = [System.Collections.Generic.List[string]]::new()
     try { $record = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json }
     catch { return [pscustomobject]@{ Valid = $false; Fresh = $false; Errors = @('Evidence is missing or unreadable.'); Record = $null } }
+    $requiredProperties = @('SchemaVersion', 'Status', 'RepositoryRoot', 'SourceBefore', 'Artifacts', 'ArtifactMetadata')
+    foreach ($property in $requiredProperties) {
+        if ($null -eq $record.PSObject.Properties[$property]) { $errors.Add("Evidence is missing required field '$property'.") }
+    }
+    if ($errors.Count -gt 0) { return [pscustomobject]@{ Valid = $false; Fresh = $false; Errors = @($errors); Record = $record } }
     if ([string]$record.SchemaVersion -ne '1.0') { $errors.Add('Unsupported evidence schema.') }
     if ([string]$record.Status -notin @('PASS', 'FAIL', 'INCOMPLETE', 'SKIPPED', 'READY')) { $errors.Add('Evidence status is invalid.') }
     if ([string]$record.Status -eq 'PASS' -and (-not [bool]$record.Executed -or [int]$record.TestCount -lt 1)) { $errors.Add('PASS requires executed tests and a nonzero test count.') }
     if ([string]$record.Status -in @('PASS', 'FAIL') -and $null -eq $record.SourceAfter) { $errors.Add('Completed evidence has no final source fingerprint.') }
+    if ([string]$record.Status -eq 'PASS' -and @($record.Artifacts).Count -eq 0) { $errors.Add('PASS requires at least one recorded artifact.') }
+    if ([string]$record.Status -eq 'PASS' -and [bool]$record.SourceChangedDuringRun) { $errors.Add('PASS evidence was changed by a later cleanup or source edit.') }
     foreach ($artifact in @($record.Artifacts)) {
         if ([string]::IsNullOrWhiteSpace([string]$artifact) -or -not (Test-Path -LiteralPath (Join-Path $record.RepositoryRoot $artifact) -PathType Leaf)) { $errors.Add("Required artifact is missing: '$artifact'.") }
+    }
+    foreach ($metadata in @($record.ArtifactMetadata)) {
+        $artifactPath = Join-Path $record.RepositoryRoot ([string]$metadata.Path)
+        if (-not (Test-Path -LiteralPath $artifactPath -PathType Leaf)) { continue }
+        try {
+            $currentHash = 'SHA256:' + (Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($currentHash -ne [string]$metadata.SHA256) { $errors.Add("Artifact content changed: '$($metadata.Path)'.") }
+            switch ([System.IO.Path]::GetExtension($artifactPath).ToLowerInvariant()) {
+                '.json' { Get-Content -LiteralPath $artifactPath -Raw | ConvertFrom-Json | Out-Null }
+                '.xml' { [xml]$xml = Get-Content -LiteralPath $artifactPath -Raw; if ($null -eq $xml.DocumentElement) { throw 'XML document has no root element.' } }
+                '.trx' { [xml]$trx = Get-Content -LiteralPath $artifactPath -Raw; if ($null -eq $trx.TestRun) { throw 'TRX document has no TestRun element.' } }
+            }
+        }
+        catch { $errors.Add("Artifact is malformed or unreadable: '$($metadata.Path)'.") }
     }
     try {
         $current = Get-ValidationSourceFingerprint -RepositoryRoot $record.RepositoryRoot -InputPath @($record.SourceBefore.Files.Path)
