@@ -27,6 +27,64 @@ function Get-RepositoryRoot {
     throw "Unable to locate repository root from '$StartPath'."
 }
 
+function Get-RepositoryExecutionLeasePath {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$RepoRoot)
+
+    $canonicalRoot = (Resolve-Path -LiteralPath $RepoRoot -ErrorAction Stop).Path
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($canonicalRoot.ToLowerInvariant())
+    $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
+    $fileName = (($hash | ForEach-Object { $_.ToString('x2') }) -join '') + '.lease'
+    $leaseDirectory = Join-Path $canonicalRoot '.scratchpad/execution-leases'
+    New-Item -ItemType Directory -Path $leaseDirectory -Force | Out-Null
+    return Join-Path $leaseDirectory $fileName
+}
+
+function Enter-RepositoryExecutionLease {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [string]$OperationId = ([guid]::NewGuid().ToString('N')),
+        [object]$ExistingLease
+    )
+
+    if ($null -ne $ExistingLease) { return $ExistingLease }
+    $leasePath = Get-RepositoryExecutionLeasePath -RepoRoot $RepoRoot
+    $canonicalRoot = (Resolve-Path -LiteralPath $RepoRoot -ErrorAction Stop).Path
+    $metadata = [ordered]@{
+        operationId = $OperationId
+        repositoryRoot = $canonicalRoot
+        processId = $PID
+        startedUtc = (Get-Date).ToUniversalTime().ToString('o')
+    } | ConvertTo-Json -Compress
+
+    try {
+        $stream = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::Read)
+        $stream.SetLength(0)
+        $metadataBytes = [System.Text.Encoding]::UTF8.GetBytes($metadata)
+        $stream.Write($metadataBytes, 0, $metadataBytes.Length)
+        $stream.Flush($true)
+        return [pscustomobject]@{
+            Path = $leasePath
+            OperationId = $OperationId
+            RepositoryRoot = $canonicalRoot
+            Stream = $stream
+        }
+    }
+    catch [System.IO.IOException] {
+        $owner = ''
+        try { $owner = (Get-Content -LiteralPath $leasePath -Raw -ErrorAction Stop).Trim() } catch { }
+        throw "Worktree execution lease is held for '$canonicalRoot'. Current owner: $owner. Use a separate worktree or wait for the active operation."
+    }
+}
+
+function Exit-RepositoryExecutionLease {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Lease)
+
+    if ($null -ne $Lease.Stream) { $Lease.Stream.Dispose() }
+}
+
 function ConvertTo-ConsoleColor {
     param(
         [object]$Value,
@@ -1290,6 +1348,8 @@ function Invoke-SolutionsPipeline {
         [switch]$IncludeMutation
     )
 
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $RepoRoot -OperationId "pipeline-$([guid]::NewGuid().ToString('N'))"
+    try {
     $automationScriptsRoot = Join-Path (Join-Path (Join-Path $RepoRoot 'eng') 'src') 'agent-scripts'
     $coverageScript = Join-Path $automationScriptsRoot 'summarize-coverage-gaps.ps1'
     $mutationSummaryScript = Join-Path $automationScriptsRoot 'summarize-mutation-survivors.ps1'
@@ -1336,6 +1396,9 @@ function Invoke-SolutionsPipeline {
     }
     else {
         Write-Host 'Local build, test, coverage, cleanup and final-build checks completed. Deployment, browser and external CI checks are outside this command.'
+    }
+    finally {
+        Exit-RepositoryExecutionLease -Lease $executionLease
     }
 }
 
@@ -1460,7 +1523,7 @@ function Invoke-SpringValidation {
     }
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation
+Export-ModuleMember -Function Get-RepositoryRoot, Get-RepositoryExecutionLeasePath, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation
 
 
 

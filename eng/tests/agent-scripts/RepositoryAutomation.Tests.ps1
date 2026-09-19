@@ -20,6 +20,22 @@ Describe 'RepositoryAutomation helpers' {
         (New-AutomationRunDirectory -Root $testRoot -Prefix 'test') | Should -Not -Be $runDirectory
     }
 
+    It 'leases one worktree exclusively and permits reentrant reuse' {
+        $leaseRoot = Join-Path $TestDrive 'lease-repository'
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-one'
+        try {
+            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-two' } | Should -Throw '*execution lease is held*'
+            (Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -ExistingLease $lease).OperationId | Should -Be 'owner-one'
+        }
+        finally {
+            Exit-RepositoryExecutionLease -Lease $lease
+        }
+
+        $released = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-three'
+        try { $released.OperationId | Should -Be 'owner-three' } finally { Exit-RepositoryExecutionLease -Lease $released }
+    }
+
     It 'invokes automation steps and returns the result' {
         $result = Invoke-AutomationStep -Name 'Sample' -SilentSuccess -Action { 1 + 1 }
         $result | Should -Be 2
