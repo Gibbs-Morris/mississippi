@@ -626,6 +626,31 @@ See [the release policy][release].
         }
     }
 
+    It 'does not fail an unrelated context on unselected route syntax' {
+        $routePath = Join-Path $fixtureRoot '.github/instructions/unselected-reference-route.instructions.md'
+        Set-Content -LiteralPath $routePath -Value @'
+---
+applyTo: '**/*.cs'
+---
+
+See [the release policy][release].
+
+[release]: ../../policies/release.md
+'@
+        try {
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'docs/guide.md'
+            $route = @($context.Entries | Where-Object Path -EQ '.github/instructions/unselected-reference-route.instructions.md')[0]
+
+            $route.Selected | Should -BeFalse
+            $route.RouteScanComplete | Should -BeFalse
+            $context.Complete | Should -BeTrue
+            $context.Unresolved | Should -Not -Match 'unselected-reference-route'
+        }
+        finally {
+            Remove-Item -LiteralPath $routePath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It 'reports route scanner budget exhaustion as unresolved' {
         $routePath = Join-Path $fixtureRoot '.github/instructions/route-budget.instructions.md'
         $malformedLinks = (1..100 | ForEach-Object { '[broken](' }) -join ''

@@ -805,7 +805,7 @@ function Get-AgentContext { # NOSONAR - top-level context assembly intentionally
         else {
             [pscustomobject]@{ Routes = @(); Complete = $true; Reason = '' }
         }
-        if (-not $routeResult.Complete) {
+        if (-not $routeResult.Complete -and $isSelected) {
             $unresolved.Add("Unable to fully discover Markdown routes in '$relative': $($routeResult.Reason)")
         }
         $entries.Add([pscustomobject][ordered]@{
