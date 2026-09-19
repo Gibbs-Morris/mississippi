@@ -31,6 +31,20 @@ Describe 'PR issue reference validator' {
         @($outcome.Result.ResolvedIssues).Count | Should -Be 1
     }
 
+    It 'accepts a qualified same-repository issue reference' {
+        $outcome = Invoke-ReferenceValidator -Body 'Refs Gibbs-Morris/mississippi#741.'
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'ignores a same-repository pull request link when an issue is present' {
+        $outcome = Invoke-ReferenceValidator -Body 'Refs #741; parent PR: https://github.com/Gibbs-Morris/mississippi/pull/743.'
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'ignores fenced and HTML-comment examples' {
         $body = @'
 ```md
@@ -44,12 +58,11 @@ Refs #741
         $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
     }
 
-    It 'rejects missing, cross-repository and pull-request references' {
-        $outcome = Invoke-ReferenceValidator -Body 'Refs #741 and #999; see https://github.com/other/repo/issues/741 and https://github.com/Gibbs-Morris/mississippi/pull/743.'
+    It 'rejects missing references while ignoring cross-repository context' {
+        $outcome = Invoke-ReferenceValidator -Body 'Refs #999; see https://github.com/other/repo/issues/741.'
 
         $outcome.ExitCode | Should -Not -Be 0
         ($outcome.Result.Errors -join "`n") | Should -Match 'does not exist'
-        ($outcome.Result.Errors -join "`n") | Should -Match 'Pull request URL'
     }
 
     It 'rejects external-only context without a local issue' {
@@ -100,6 +113,13 @@ Refs #741
         $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
     }
 
+    It 'ignores issue-looking tokens in raw HTML attributes' {
+        $outcome = Invoke-ReferenceValidator -Body '<span title="#741">tracking</span>'
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
     It 'ignores shorthand tokens in Markdown link destinations' {
         $outcome = Invoke-ReferenceValidator -Body '[tracking details](#741)'
 
@@ -119,7 +139,7 @@ Refs #741
         $outcome = Invoke-ReferenceValidator -Body $body
 
         $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Match 'maximum supported is 20'
+        ($outcome.Result.Errors -join "`n") | Should -Match 'maximum supported is 20'
     }
 
     It 'rejects closed issues' {

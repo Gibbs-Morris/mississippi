@@ -19,7 +19,7 @@ function Remove-NonRenderedMarkdown {
     $fenceCharacter = ''
     $fenceLength = 0
     $withoutFences = foreach ($line in ($Content -split '\r?\n')) {
-        if (-not $insideFence -and $line -match '^\s*(?<Fence>`{3,}|~{3,})') {
+        if (-not $insideFence -and $line -match '^[ ]{0,3}(?<Fence>`{3,}|~{3,})') {
             $insideFence = $true
             $fenceCharacter = $Matches.Fence.Substring(0, 1)
             $fenceLength = $Matches.Fence.Length
@@ -36,6 +36,7 @@ function Remove-NonRenderedMarkdown {
     }
     $withoutFences = $withoutFences -join [Environment]::NewLine
     $withoutComments = [regex]::Replace($withoutFences, '(?s)<!--.*?(?:-->|$)', '')
+    $withoutComments = [regex]::Replace($withoutComments, '(?m)<[^>]*>', '')
     $withoutComments = [regex]::Replace($withoutComments, '(?m)^(?: {4}|\t)[^\r\n]*(?:\r?\n|$)', '')
     $builder = [System.Text.StringBuilder]::new()
     $index = 0
@@ -76,7 +77,8 @@ function Get-PrIssueReferences {
         [Parameter(Mandatory)][AllowEmptyString()][string]$Content,
         [Parameter(Mandatory)][string]$Owner,
         [Parameter(Mandatory)][string]$Name,
-        [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$Errors
+        [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$Errors,
+        [int]$MaximumReferences = 20
     )
 
     $references = [System.Collections.Generic.List[object]]::new()
@@ -89,19 +91,24 @@ function Get-PrIssueReferences {
         if (-not ([string]::Equals($matchOwner, $Owner, [System.StringComparison]::OrdinalIgnoreCase) -and [string]::Equals($matchRepo, $Name, [System.StringComparison]::OrdinalIgnoreCase))) {
             continue
         }
-        if ($kind -eq 'pull') {
-            $Errors.Add("Pull request URL is not an issue reference: '$($match.Value)'.")
-            continue
-        }
+        if ($kind -eq 'pull') { continue }
+        if ($references.Count -ge $MaximumReferences) { $Errors.Add("Too many repository issue references were supplied; maximum supported is $MaximumReferences."); return @($references) }
         $references.Add([pscustomobject]@{ Number = $number; Text = $match.Value })
     }
 
     $withoutFullUrls = [regex]::Replace($Content, $fullUrlPattern, '')
     $withoutLinkDestinations = [regex]::Replace($withoutFullUrls, '\]\([^)\r\n]*\)', ']')
     $withoutUriComponents = [regex]::Replace($withoutLinkDestinations, '(?i)\b[A-Za-z][A-Za-z0-9+.-]*://[^\s<>()]+', '')
+    foreach ($match in [regex]::Matches($withoutUriComponents, '(?i)(?<![\w/])(?<Owner>[A-Za-z0-9_.-]+)/(?<Repo>[A-Za-z0-9_.-]+)#(?<QualifiedNumber>\d+)\b')) {
+        if ([string]::Equals($match.Groups['Owner'].Value, $Owner, [System.StringComparison]::OrdinalIgnoreCase) -and [string]::Equals($match.Groups['Repo'].Value, $Name, [System.StringComparison]::OrdinalIgnoreCase)) {
+            if ($references.Count -ge $MaximumReferences) { $Errors.Add("Too many repository issue references were supplied; maximum supported is $MaximumReferences."); return @($references) }
+            $references.Add([pscustomobject]@{ Number = [int]$match.Groups['QualifiedNumber'].Value; Text = $match.Value })
+        }
+    }
     foreach ($match in [regex]::Matches($withoutUriComponents, '(?<![\w/])#(?<Number>\d+)\b')) {
         $number = [int]$match.Groups['Number'].Value
         if (@($references | Where-Object Number -EQ $number).Count -eq 0) {
+            if ($references.Count -ge $MaximumReferences) { $Errors.Add("Too many repository issue references were supplied; maximum supported is $MaximumReferences."); return @($references) }
             $references.Add([pscustomobject]@{ Number = $number; Text = $match.Value })
         }
     }
