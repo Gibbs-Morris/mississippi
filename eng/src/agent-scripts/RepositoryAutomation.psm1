@@ -26,14 +26,17 @@ function Get-RepositoryRoot {
 
 function Get-RepositoryExecutionLeasePath {
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$RepoRoot)
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [string]$LeaseDirectory
+    )
 
     $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
     $keyRoot = if ([OperatingSystem]::IsWindows()) { $canonicalRoot.ToLowerInvariant() } else { $canonicalRoot }
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($keyRoot)
     $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
     $fileName = (($hash | ForEach-Object { $_.ToString('x2') }) -join '') + '.lease'
-    $leaseDirectory = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases'
+    $leaseDirectory = if ([string]::IsNullOrWhiteSpace($LeaseDirectory)) { Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases' } else { [System.IO.Path]::GetFullPath($LeaseDirectory) }
     if (Test-Path -LiteralPath $leaseDirectory) {
         $leaseItem = Get-Item -LiteralPath $leaseDirectory -Force -ErrorAction Stop
         if (-not $leaseItem.PSIsContainer -or [bool]($leaseItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
@@ -91,10 +94,17 @@ function Enter-RepositoryExecutionLease {
     param(
         [Parameter(Mandatory)][string]$RepoRoot,
         [string]$OperationId = ([guid]::NewGuid().ToString('N')),
-        [object]$ExistingLease
+        [object]$ExistingLease,
+        [string]$LeaseDirectory
     )
 
     if ($null -ne $ExistingLease) {
+        $requestedRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
+        $existingRoot = Resolve-RepositoryExecutionRoot -RepoRoot ([string]$ExistingLease.RepositoryRoot)
+        $comparison = if ([OperatingSystem]::IsWindows()) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
+        if (-not [string]::Equals($requestedRoot, $existingRoot, $comparison)) {
+            throw "Existing lease belongs to '$existingRoot', not requested worktree '$requestedRoot'."
+        }
         return [pscustomobject]@{
             Path = $ExistingLease.Path
             OperationId = $ExistingLease.OperationId
@@ -103,7 +113,10 @@ function Enter-RepositoryExecutionLease {
             OwnsStream = $false
         }
     }
-    $leasePath = Get-RepositoryExecutionLeasePath -RepoRoot $RepoRoot
+    if ([string]::IsNullOrWhiteSpace($LeaseDirectory) -and $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true') {
+        throw 'Cross-account shared worktrees require an explicit trusted -LeaseDirectory.'
+    }
+    $leasePath = Get-RepositoryExecutionLeasePath -RepoRoot $RepoRoot -LeaseDirectory $LeaseDirectory
     $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
     $metadata = [ordered]@{
         operationId = $OperationId
@@ -117,6 +130,8 @@ function Enter-RepositoryExecutionLease {
         $stream = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::Read)
     }
     catch [System.IO.IOException] {
+        $errorCode = $_.Exception.HResult -band 0xFFFF
+        if ($errorCode -notin @(32, 33)) { throw }
         $owner = ''
         try { $owner = (Get-Content -LiteralPath $leasePath -Raw -ErrorAction Stop).Trim() } catch { }
         throw "Worktree execution lease is held for '$canonicalRoot'. Current owner: $owner. Use a separate worktree or wait for the active operation."
