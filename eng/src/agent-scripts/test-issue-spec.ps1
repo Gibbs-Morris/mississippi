@@ -96,12 +96,31 @@ function Test-RepositoryRelativePath {
 
     if ([string]::IsNullOrWhiteSpace($Candidate) -or
         [System.IO.Path]::IsPathRooted($Candidate) -or
-        $Candidate -match '(^|[\\/])\.\.?([\\/]|$)' -or
         $Candidate -match '^[A-Za-z]:') {
         return $false
     }
 
-    return Test-Path -LiteralPath (Join-Path $Root $Candidate)
+    try {
+        $rootPath = (Resolve-Path -LiteralPath $Root -ErrorAction Stop).Path
+        $candidatePath = (Resolve-Path -LiteralPath (Join-Path $rootPath $Candidate) -ErrorAction Stop).Path
+        $rootFullPath = [System.IO.Path]::GetFullPath($rootPath).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+        $candidateFullPath = [System.IO.Path]::GetFullPath($candidatePath).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+        $comparison = if ($IsWindows) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
+        return $candidateFullPath.Equals($rootFullPath, $comparison) -or
+            $candidateFullPath.StartsWith($rootFullPath + [System.IO.Path]::DirectorySeparatorChar, $comparison) -or
+            $candidateFullPath.StartsWith($rootFullPath + [System.IO.Path]::AltDirectorySeparatorChar, $comparison)
+    }
+    catch {
+        return $false
+    }
+}
+
+function Test-IssueSectionContent {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
+
+    $withoutHeadings = [regex]::Replace($Content, '(?m)^[ \t]{0,3}#{1,6}\s*[^\r\n]*$', '')
+    return -not [string]::IsNullOrWhiteSpace($withoutHeadings)
 }
 
 function Get-IssueSpecResult {
@@ -138,7 +157,7 @@ function Get-IssueSpecResult {
         if (-not $sections.Contains($section)) {
             Add-IssueSpecError -Errors $errors -Message "Missing required section '## $section'."
         }
-        elseif ([string]::IsNullOrWhiteSpace([string]$sections[$section])) {
+        elseif (-not (Test-IssueSectionContent -Content ([string]$sections[$section]))) {
             Add-IssueSpecError -Errors $errors -Message "Required section '## $section' is empty."
         }
     }
@@ -214,15 +233,21 @@ function Get-IssueSpecResult {
     if ($sections.Contains('Validation evidence map')) {
         $evidence = [string]$sections['Validation evidence map']
         $evidenceIds = [System.Collections.Generic.List[string]]::new()
-        $evidenceMatches = [regex]::Matches($evidence, '(?im)^\s*(?:[-*]|\d+\.)\s*\[(?<Id>AC\d+)\]\s*(?<Kind>Command|Test|Manual\s+observation)\s*:\s*(?<Evidence>.+?)\s*;\s*expected\s*:\s*(?<Expected>[^\r\n]+?)\s*$')
+        $evidenceLinePattern = '(?im)^\s*(?:[-*]|\d+\.)\s*\[(?<Id>AC\d+)\]\s*(?<Kind>Command|Test|Manual\s+observation)\s*:\s*(?<Evidence>[^\r\n]*?)\s*;\s*expected\s*:\s*(?<Expected>[^\r\n]*)\s*$'
+        $evidenceMatches = [regex]::Matches($evidence, $evidenceLinePattern)
         foreach ($line in @($evidence -split '\r?\n' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })) {
             $lineId = [regex]::Match($line, '\[(?<Id>AC\d+)\]').Groups['Id'].Value.ToUpperInvariant()
-            if ($lineId -and $line -notmatch '(?im)^\s*(?:[-*]|\d+\.)\s*\[AC\d+\]\s*(?:Command|Test|Manual\s+observation)\s*:\s*.+?\s*;\s*expected\s*:\s*[^\r\n]+?\s*$') {
+            if ($lineId -and $line -notmatch $evidenceLinePattern) {
                 Add-IssueSpecError -Errors $errors -Message "Validation evidence entry for '$lineId' must include Command, Test, or Manual observation evidence and an expected result."
             }
         }
         foreach ($evidenceMatch in $evidenceMatches) {
             $evidenceId = $evidenceMatch.Groups['Id'].Value.ToUpperInvariant()
+            if ([string]::IsNullOrWhiteSpace($evidenceMatch.Groups['Evidence'].Value) -or
+                [string]::IsNullOrWhiteSpace($evidenceMatch.Groups['Expected'].Value)) {
+                Add-IssueSpecError -Errors $errors -Message "Validation evidence entry for '$evidenceId' must include nonempty evidence and expected result."
+                continue
+            }
             if ($evidenceIds.Contains($evidenceId)) {
                 Add-IssueSpecError -Errors $errors -Message "Duplicate validation evidence mapping ID: '$evidenceId'."
             }

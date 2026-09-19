@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   validate:
-    if: startsWith(github.event.issue.title, '[Task]')
+    if: contains(github.event.issue.labels.*.name, 'agent-task') || startsWith(github.event.issue.title, '[Task]')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout trusted validator

@@ -3,6 +3,7 @@ description: Capture a repository-grounded handoff for a fresh implementation ta
 title: "[Task] "
 labels:
   - codex
+  - agent-task
 body:
   - type: input
     id: contract-version

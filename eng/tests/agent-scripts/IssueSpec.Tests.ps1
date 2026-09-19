@@ -188,6 +188,24 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Errors | Should -Contain "Validation evidence entry for 'AC1' must include Command, Test, or Manual observation evidence and an expected result."
     }
 
+    It 'rejects evidence mappings with whitespace-only values' {
+        $content = $validBug -replace '- \[AC1\] Test: parser invalid-input test; expected: validation error and no storage call\.', '- [AC1] Test:    ; expected:    '
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Validation evidence entry for 'AC1' must include nonempty evidence and expected result."
+    }
+
+    It 'rejects required form sections that contain only their prefilled heading' {
+        $content = $validBug -replace '(?ms)^## Decisions and non-goals.*?(?=^## Acceptance criteria)', "## Decisions and non-goals`r`n### Dependencies and readiness`r`n`r`n## Acceptance criteria"
+        $content = $content -replace '(?ms)^## Risks and delivery boundary.*?(?=^## Validation evidence map)', "## Risks and delivery boundary`r`n`r`n## Validation evidence map"
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Required section '## Decisions and non-goals' is empty."
+        $outcome.Result.Errors | Should -Contain "Required section '## Risks and delivery boundary' is empty."
+    }
+
     It 'accepts semicolons inside command evidence' {
         $content = $validBug -replace 'focused test command; expected:', "pwsh -Command 'Build; Test'; expected:"
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
@@ -232,6 +250,14 @@ Describe 'Implementation-ready issue contract' {
 
     It 'accepts existing repository directories as source boundaries' {
         $content = $validBug -replace '`README.md`', '`eng/src/agent-scripts`'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'accepts a normalized current-directory path segment' {
+        $content = $validBug -replace '`README.md`', '`./README.md`'
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
 
         $outcome.ExitCode | Should -Be 0
