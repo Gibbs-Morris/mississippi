@@ -46,6 +46,28 @@ function Expand-ContextPattern {
     return @($expanded)
 }
 
+function Test-ContextPatternExpansionBudget {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Pattern,
+        [int]$MaxExpansions = 4096
+    )
+
+    [long]$estimatedExpansions = 1
+    $remaining = $Pattern
+    while ($true) {
+        $brace = [regex]::Match($remaining, '\{(?<Values>[^{}]+)\}')
+        if (-not $brace.Success) { return $true }
+
+        $alternativeCount = @($brace.Groups['Values'].Value -split ',').Count
+        if ($alternativeCount -gt 0 -and $estimatedExpansions -gt [math]::Floor($MaxExpansions / $alternativeCount)) {
+            return $false
+        }
+        $estimatedExpansions *= $alternativeCount
+        $remaining = $remaining.Substring($brace.Index + $brace.Length)
+    }
+}
+
 function Convert-ContextGlobToRegex {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Pattern)
@@ -160,6 +182,9 @@ function Read-ContextFrontMatter {
     foreach ($pattern in $patterns) {
         if (@($pattern.ToCharArray() | Where-Object { $_ -eq '[' }).Count -ne @($pattern.ToCharArray() | Where-Object { $_ -eq ']' }).Count) {
             return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'applyTo contains unbalanced character classes.' }
+        }
+        if (-not (Test-ContextPatternExpansionBudget -Pattern $pattern)) {
+            return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'applyTo brace expansion exceeds the safety limit.' }
         }
     }
 

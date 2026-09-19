@@ -113,6 +113,8 @@ metadata:
 
 # Nested metadata
 '@
+        $expensivePattern = ('{a,b}' * 13) -join ''
+        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/expensive-expansion.instructions.md') -Value "---`napplyTo: '**/*.$expensivePattern'`n---`n`n# Expensive expansion"
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Example.cs') -Value 'class Example { }'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/guide.md') -Value '# Guide'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/Docusaurus/docs/adr/0001-example.md') -Value '# ADR'
@@ -180,6 +182,14 @@ metadata:
 
         $nested.ScopeStatus | Should -Be 'unknown'
         $nested.ScopeNote | Should -Match 'exactly one applyTo'
+    }
+
+    It 'rejects excessive brace expansion before matching' {
+        $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+        $expensive = @($context.Selected | Where-Object Path -EQ '.github/instructions/expensive-expansion.instructions.md')[0]
+
+        $expensive.ScopeStatus | Should -Be 'unknown'
+        $expensive.ScopeNote | Should -Match 'expansion exceeds'
     }
 
     It 'parses inline comments in quoted applyTo scalars' {
