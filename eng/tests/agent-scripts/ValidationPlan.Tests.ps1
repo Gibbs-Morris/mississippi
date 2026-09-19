@@ -221,10 +221,11 @@ Describe 'Deterministic validation plan' {
         @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'core-iteration').Reasons | Should -Match 'Unknown mapping'
     }
 
-    It 'emits Spring prerequisites before final gates' {
+    It 'emits fast iteration before Spring prerequisites and final gates' {
         $outcome = Invoke-Plan -Paths @('samples/Spring/Spring.Domain/Account.cs')
 
-        $outcome.Result.SelectedChecks[0].Id | Should -Be 'spring-doctor'
+        $outcome.Result.SelectedChecks[0].Id | Should -Be 'core-iteration'
+        $outcome.Result.SelectedChecks.Id | Should -Contain 'spring-doctor'
     }
 
     It 'treats Razor code-behind as browser-facing' {

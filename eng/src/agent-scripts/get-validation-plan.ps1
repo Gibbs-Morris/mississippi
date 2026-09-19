@@ -138,12 +138,14 @@ try {
     $pathComparison = if ($IsWindows) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
     $unvalidatedPowerShellPaths = @($powerShellPaths | Where-Object {
         $candidatePath = $_
-        @($validatedPowerShellPaths | Where-Object { [string]::Equals($_, $candidatePath, $pathComparison) }).Count -eq 0
+        @($validatedPowerShellPaths | Where-Object { [string]::Equals($_, $candidatePath, $pathComparison) }).Count -eq 0 -and
+            $candidatePath -notmatch '^eng/tests/agent-scripts/(?:run-[^/]+|[^/]+\.Tests)\.ps1$'
     })
     $isPowerShell = $powerShellPaths.Count -gt 0 -or @($normalizedPaths | Where-Object { $_ -eq 'eng/src/agent-scripts/validation-command-catalog.json' }).Count -gt 0
     $isMarkdown = $markdownPaths.Count -gt 0
     $isDocusaurus = @($normalizedPaths | Where-Object { Test-PlanPathMatch -Path $_ -Pattern '^docs/Docusaurus/' }).Count -gt 0
-    $browserPaths = @($normalizedPaths | Where-Object { (Test-PlanPathMatch -Path $_ -Pattern '(?:\.razor\.cs|\.(?:razor|css|html?|m?js|jsx|tsx?))$') -or (Test-PlanPathMatch -Path $_ -Pattern '(?:^|/)wwwroot/') -or (Test-PlanPathMatch -Path $_ -Pattern '^(?:src|samples)/[^/]+\.Client/.+\.cs$') })
+    $superLinterConfigPaths = @($normalizedPaths | Where-Object { $_ -eq '.github/linters/.markdown-lint.yml' })
+    $browserPaths = @($normalizedPaths | Where-Object { (Test-PlanPathMatch -Path $_ -Pattern '(?:\.razor\.cs|\.(?:razor|css|html?|m?js|jsx|tsx?))$') -or (Test-PlanPathMatch -Path $_ -Pattern '(?:^|/)wwwroot/') -or (Test-PlanPathMatch -Path $_ -Pattern '^(?:src/[^/]+\.Client|samples/[^/]+/[^/]+\.Client)/.+\.cs$') })
     $springBrowserPaths = @($browserPaths | Where-Object { Test-PlanPathMatch -Path $_ -Pattern '^samples/Spring/' })
     $nonSpringBrowserPaths = @($browserPaths | Where-Object { -not (Test-PlanPathMatch -Path $_ -Pattern '^samples/Spring/') -and -not (Test-PlanPathMatch -Path $_ -Pattern '^docs/Docusaurus/') })
     $isSpringPath = @($normalizedPaths | Where-Object { Test-PlanPathMatch -Path $_ -Pattern '^samples/Spring/' }).Count -gt 0
@@ -179,6 +181,7 @@ try {
     if ($isPowerShell) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'powershell-tests') -Reason 'PowerShell source or harness path changed.' -MarkdownPaths $markdownPaths }
     if ($isDotnet -or $isUnknown) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'core-iteration') -Reason $(if ($isUnknown) { "Unknown mapping selects the broad .NET iteration gate conservatively for: $($unmappedPaths -join ', ')." } else { ' .NET source or project path changed.' }) -MarkdownPaths $markdownPaths }
     if ($isMarkdown -or $isMarkdownConfig) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'markdown-lint') -Reason 'Markdown, MDX, or Markdown-lint configuration changed.' -MarkdownPaths $markdownCheckPaths }
+    if ($superLinterConfigPaths.Count -gt 0) { $unresolved.Add('No local validation gate consumes .github/linters/.markdown-lint.yml as the GitHub Super-Linter configuration.') }
     if ($isDocusaurus) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'docusaurus-final') -Reason 'Docusaurus content or site configuration changed.' -MarkdownPaths $markdownPaths }
     if ($isBrowser) {
         Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'spring-doctor') -Reason 'Browser-facing or Spring path changed.' -MarkdownPaths $markdownPaths
@@ -207,6 +210,9 @@ try {
                     $riskCheck = @($catalog.checks | Where-Object { $_.id -eq $checkId } | Select-Object -First 1)
                     Add-PlanCheck -Selected $selected -Check $riskCheck[0] -Reason "Risk hint '$riskHint' selects this check for Spring paths." -MarkdownPaths @($markdownCheckPaths)
                 }
+            }
+            elseif ($isDocusaurus -and $nonSpringApplicationPaths.Count -gt 0) {
+                $unresolved.Add("Browser risk hint is ambiguous across Docusaurus and application paths: $($nonSpringApplicationPaths -join ', ').")
             }
             elseif ($isDocusaurus) {
                 $riskCheck = @($catalog.checks | Where-Object { $_.id -eq 'docusaurus-final' } | Select-Object -First 1)
@@ -248,7 +254,20 @@ try {
     if ([string]::IsNullOrWhiteSpace($HeadRevision)) { $unresolved.Add('HeadRevision is required; no default head is assumed.') }
     if ($normalizedPaths.Count -eq 0) { $unresolved.Add('No changed paths were supplied; provide explicit changed paths for a deterministic plan.') }
 
-    $selected = @($selected | Sort-Object @{Expression = { switch ([string]$_.Mode) { 'prerequisite' { 0 }; 'iteration' { 1 }; 'final' { 2 }; default { 3 } } }}, Id)
+    $selected = @($selected | Sort-Object @{Expression = {
+        switch ([string]$_.Id) {
+            'core-iteration' { 0 }
+            'powershell-tests' { 0 }
+            'spring-doctor' { 1 }
+            'spring-smoke' { 2 }
+            'spring-l2-full' { 3 }
+            'spring-l3-full' { 4 }
+            'docusaurus-final' { 4 }
+            'markdown-lint' { 4 }
+            'core-final' { 5 }
+            default { 6 }
+        }
+    }}, Id)
 
     $result = [pscustomobject][ordered]@{
         SchemaVersion = '1.0'
