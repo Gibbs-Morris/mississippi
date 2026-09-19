@@ -96,6 +96,7 @@ Common script entry points:
 - `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 [-Configuration Debug|Release]` – run L0/L1 tests with coverage for Mississippi projects.
 - `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` – execute Stryker.NET mutation testing.
 - `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` – apply the repository’s ReSharper cleanup and analyzer inspections.
+- `pwsh ./doctor.ps1 -Profile Core|Docs|Spring|GitHub` – report read-only prerequisite readiness; it does not run tests or install tools.
 
 ## Samples
 
