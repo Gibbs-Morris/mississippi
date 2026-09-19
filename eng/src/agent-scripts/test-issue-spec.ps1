@@ -151,7 +151,10 @@ function Get-IssueSpecResult {
         if ($currentIndex -ge 0) { $previousIndex = $currentIndex }
     }
 
-    if ($content -match '(?im)\b(?:TBD|TODO|FIXME)\b\s*(?:\(|\[)?\s*blocking') {
+    $hasBlockingMarker =
+        $structuralContent -match '(?im)\b(?:TBD|TODO|FIXME)\b\s*(?::|[-–—])?\s*(?:\([^)]*blocking[^)]*\)|\[[^]]*blocking[^]]*\]|blocking\b)' -or
+        $structuralContent -match '(?im)\bblocking\b\s*[:\-]\s*(?:TBD|TODO|FIXME)\b'
+    if ($hasBlockingMarker) {
         Add-IssueSpecError -Errors $errors -Message 'Unresolved blocking TBD/TODO marker is not allowed.'
     }
     if ($structuralContent -match '(?im)\{\{[^}]+\}\}|^\s*[-*]\s*\[(?:insert|describe|add|todo|tbd)[^\]]*\]') {

@@ -164,6 +164,17 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Errors | Should -Contain 'Unresolved blocking TBD/TODO marker is not allowed.'
     }
 
+    It 'rejects colon-form blocking markers in either order' {
+        $todoFirst = $validBug -replace '(The parser project and its L0 test project are available in the current solution\.)', ('$1' + [Environment]::NewLine + 'TODO: blocking - choose an unapproved deployment target.')
+        $blockingFirst = $validBug -replace '(The parser project and its L0 test project are available in the current solution\.)', ('$1' + [Environment]::NewLine + 'BLOCKING: TODO - choose an unapproved deployment target.')
+
+        $todoOutcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $todoFirst)
+        $blockingOutcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $blockingFirst)
+
+        $todoOutcome.Result.Errors | Should -Contain 'Unresolved blocking TBD/TODO marker is not allowed.'
+        $blockingOutcome.Result.Errors | Should -Contain 'Unresolved blocking TBD/TODO marker is not allowed.'
+    }
+
     It 'rejects a missing repository-relative path' {
         $content = $validBug -replace '`README.md`', '`missing/not-found.cs`'
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
