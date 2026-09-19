@@ -22,6 +22,7 @@ $testRunners = @(
     @{ Name = 'run-spring-validation-tests.ps1'; Type = 'Pester' },
     @{ Name = 'run-scratchpad-task-tests.ps1';   Type = 'Pester' },
     @{ Name = 'run-summarize-coverage-gaps-tests.ps1'; Type = 'Pester' },
+    @{ Name = 'run-pr-issue-reference-tests.ps1'; Type = 'Pester' },
     @{ Name = 'run-task-automation-tests.ps1';   Type = 'Pester' },
     @{ Name = 'run-validation-plan-tests.ps1';   Type = 'Pester' },
     @{ Name = 'run-issue-spec-tests.ps1';        Type = 'Pester' },
