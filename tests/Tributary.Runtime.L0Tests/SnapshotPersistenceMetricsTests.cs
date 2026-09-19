@@ -16,6 +16,7 @@ public sealed class SnapshotPersistenceMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
+        object syncLock = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotMetrics.MeterName)
@@ -31,11 +32,17 @@ public sealed class SnapshotPersistenceMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, tagMap));
+            lock (syncLock)
+            {
+                measurements.Add(new(instrument.Name, measurement, tagMap));
+            }
         });
         listener.Start();
         action();
-        return measurements;
+        lock (syncLock)
+        {
+            return [.. measurements];
+        }
     }
 
     private static bool HasSnapshotType(
