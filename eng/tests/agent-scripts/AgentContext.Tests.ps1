@@ -183,6 +183,13 @@ applyTo: '**/*.{cs,razor'
         $context.Unresolved | Should -Contain "Required context path is missing or unreadable: 'missing/required.md'."
     }
 
+    It 'reads required context files before reporting complete' {
+        $context = Get-AgentContext -RepositoryRoot $fixtureRoot -RequiredPath 'src/Example.cs'
+
+        $context.Complete | Should -BeTrue
+        $context.Unresolved | Should -HaveCount 0
+    }
+
     It 'emits hashes, byte counts, word counts, and explicit route references' {
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
         $global = @($context.Selected | Where-Object Path -EQ '.github/instructions/global.instructions.md')[0]

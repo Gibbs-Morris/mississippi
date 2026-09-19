@@ -278,8 +278,15 @@ function Get-AgentContext {
             }
             else {
                 $requested.Add([pscustomobject]@{ Kind = $group.Name; Path = $relative })
-                if ($group.Name -eq 'required' -and -not (Test-Path -LiteralPath (Join-Path $resolvedRoot $relative) -PathType Leaf)) {
-                    $unresolved.Add("Required context path is missing or unreadable: '$relative'.")
+                if ($group.Name -eq 'required') {
+                    $requiredFullPath = Join-Path $resolvedRoot $relative
+                    if (-not (Test-Path -LiteralPath $requiredFullPath -PathType Leaf)) {
+                        $unresolved.Add("Required context path is missing or unreadable: '$relative'.")
+                    }
+                    else {
+                        try { $null = Get-Content -LiteralPath $requiredFullPath -Raw -ErrorAction Stop }
+                        catch { $unresolved.Add("Required context path is missing or unreadable: '$relative'.") }
+                    }
                 }
             }
         }
