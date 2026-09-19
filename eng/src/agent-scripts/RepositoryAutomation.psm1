@@ -1475,10 +1475,11 @@ function Invoke-SolutionsPipeline {
         [string]$Configuration = 'Release',
         [string]$RepoRoot = (Get-RepositoryRoot),
         [switch]$SkipCleanup,
-        [switch]$IncludeMutation
+        [switch]$IncludeMutation,
+        [string]$LeaseDirectory
     )
 
-    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $RepoRoot -OperationId "pipeline-$([guid]::NewGuid().ToString('N'))"
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $RepoRoot -OperationId "pipeline-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
     try {
     $automationScriptsRoot = Join-Path (Join-Path (Join-Path $RepoRoot 'eng') 'src') 'agent-scripts'
     $coverageScript = Join-Path $automationScriptsRoot 'summarize-coverage-gaps.ps1'

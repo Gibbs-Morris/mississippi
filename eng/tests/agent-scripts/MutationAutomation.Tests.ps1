@@ -405,7 +405,7 @@ Describe 'Mutation automation' {
         Mock Invoke-RepositoryProcess {
             if ($Arguments -like '*summarize-mutation-survivors.ps1') { throw 'mutation score gate failed after summary' }
         } -ModuleName RepositoryAutomation
-        { Invoke-SolutionsPipeline -RepoRoot $repo -IncludeMutation -Configuration Debug } |
+        { Invoke-SolutionsPipeline -RepoRoot $repo -IncludeMutation -Configuration Debug -LeaseDirectory (Join-Path $TestDrive 'pipeline-leases') } |
             Should -Throw '*mutation score gate failed after summary*'
         Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
             $Arguments -like '*summarize-mutation-survivors.ps1' -and $Arguments -contains 'Debug' -and
