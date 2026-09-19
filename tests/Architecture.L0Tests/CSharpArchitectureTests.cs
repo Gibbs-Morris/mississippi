@@ -46,7 +46,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             foreach (FieldInfo field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
             {
                 if (field.IsStatic || field.Name.EndsWith("k__BackingField", StringComparison.Ordinal) ||
-                    (!field.FieldType.IsInterface && !field.FieldType.IsAbstract))
+                    !IsDependencyFieldType(field.FieldType))
                 {
                     continue;
                 }
@@ -209,6 +209,9 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                 parameterLoaded = false;
             }
             else if (opcode != OpCodes.Nop &&
+                     opcode != OpCodes.Dup &&
+                     opcode != OpCodes.Brtrue && opcode != OpCodes.Brtrue_S &&
+                     opcode != OpCodes.Brfalse && opcode != OpCodes.Brfalse_S &&
                      opcode != OpCodes.Ldarg_0 && opcode != OpCodes.Ldarg_1 && opcode != OpCodes.Ldarg_2 && opcode != OpCodes.Ldarg_3 &&
                      opcode != OpCodes.Ldarg_S && opcode != OpCodes.Ldarg)
             {
@@ -226,11 +229,22 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
         return opcode.OperandType switch
         {
             OperandType.InlineNone => 0,
-            OperandType.ShortInlineI or OperandType.ShortInlineR or OperandType.ShortInlineBrTarget or OperandType.ShortInlineVar => 1,
-            OperandType.InlineVar or OperandType.InlineI or OperandType.InlineBrTarget or OperandType.InlineField or OperandType.InlineI8 or OperandType.InlineMethod or OperandType.InlineSig or OperandType.InlineString or OperandType.InlineTok or OperandType.InlineType or OperandType.InlineR => opcode.OperandType == OperandType.InlineI8 || opcode.OperandType == OperandType.InlineR ? 8 : 4,
+            OperandType.ShortInlineI or OperandType.ShortInlineBrTarget or OperandType.ShortInlineVar => 1,
+            OperandType.ShortInlineR => 4,
+            OperandType.InlineVar => 2,
+            OperandType.InlineI or OperandType.InlineBrTarget or OperandType.InlineField or OperandType.InlineMethod or OperandType.InlineSig or OperandType.InlineString or OperandType.InlineTok or OperandType.InlineType => 4,
+            OperandType.InlineI8 or OperandType.InlineR => 8,
             OperandType.InlineSwitch => 4 + (4 * BitConverter.ToInt32(il, offset)),
             _ => 0,
         };
+    }
+
+    private static bool IsDependencyFieldType(Type fieldType)
+    {
+        return fieldType.IsInterface ||
+               fieldType.IsAbstract ||
+               (fieldType.IsGenericType &&
+                fieldType.GetGenericArguments().Any(argument => argument.IsInterface || argument.IsAbstract));
     }
 
     private static OpCode[] CreateSingleByteOpCodes()
