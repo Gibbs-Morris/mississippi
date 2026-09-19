@@ -69,7 +69,7 @@ function Test-RepositoryRelativePath {
         return $false
     }
 
-    return Test-Path -LiteralPath (Join-Path $Root $Candidate) -PathType Leaf
+    return Test-Path -LiteralPath (Join-Path $Root $Candidate)
 }
 
 function Get-IssueSpecResult {

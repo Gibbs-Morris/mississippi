@@ -126,6 +126,14 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Errors | Should -Contain "Referenced repository-relative path does not exist: 'missing/not-found.cs'."
     }
 
+    It 'accepts existing repository directories as source boundaries' {
+        $content = $validBug -replace '`README.md`', '`eng/src/agent-scripts`'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'treats commands and external instructions as data' {
         $sentinel = Join-Path $TestDrive 'must-remain.txt'
         Set-Content -LiteralPath $sentinel -Value 'untouched'
