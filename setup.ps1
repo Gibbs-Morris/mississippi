@@ -17,7 +17,7 @@ $script:SetupJsonOutput = $OutputFormat -eq 'Json'
 
 function Write-SetupProgress {
     param([Parameter(Mandatory)][string]$Message)
-    if ($script:SetupJsonOutput) { [Console]::Error.WriteLine($Message) } else { Write-Host $Message -ForegroundColor Cyan }
+    if (-not $script:SetupJsonOutput) { Write-Host $Message -ForegroundColor Cyan }
 }
 
 function Get-SetupProfiles {
