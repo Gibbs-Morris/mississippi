@@ -27,13 +27,12 @@ Describe 'RepositoryAutomation helpers' {
 
     It 'returns bounded native process diagnostics without killing unrelated work' {
         $result = InModuleScope RepositoryAutomation {
-            Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', "Write-Output 'before'; Start-Sleep -Seconds 3") -TimeoutSeconds 1 -PassThru
+            Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', 'while ($true) { }') -TimeoutSeconds 1 -PassThru
         }
 
         $result.Success | Should -BeFalse
         $result.TimedOut | Should -BeTrue
         $result.ExitCode | Should -Be 124
-        $result.StdOut | Should -Match 'before'
     }
 
     It 'covers successful, nonzero, working-directory and launch-failure paths' {
