@@ -135,6 +135,9 @@ function Read-ContextFrontMatter {
     if ($value.Length -ge 2 -and (($value[0] -eq '''' -and $value[$value.Length - 1] -eq '''') -or ($value[0] -eq '"' -and $value[$value.Length - 1] -eq '"'))) {
         $value = $value.Substring(1, $value.Length - 2)
     }
+    if (@($value.ToCharArray() | Where-Object { $_ -eq '{' }).Count -ne @($value.ToCharArray() | Where-Object { $_ -eq '}' }).Count) {
+        return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'applyTo contains unbalanced braces.' }
+    }
     $patterns = @(Split-ApplyToPatterns -Value $value)
     if ($patterns.Count -eq 0 -or $patterns -contains '') {
         return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'applyTo contains no usable pattern.' }
