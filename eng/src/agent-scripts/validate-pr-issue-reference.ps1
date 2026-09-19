@@ -48,7 +48,10 @@ function Remove-MarkdownLinkDestinations {
     $operations = 0
     $operationBudget = [Math]::Max(1000, [Math]::Min(1000000, ($Content.Length * 4) + 1000))
     while ($index -lt $Content.Length) {
-        if ($index + 1 -lt $Content.Length -and $Content[$index] -eq ']' -and $Content[$index + 1] -eq '(') {
+        $backslashCount = 0
+        for ($escapeIndex = $index - 1; $escapeIndex -ge 0 -and $Content[$escapeIndex] -eq '\'; $escapeIndex--) { $backslashCount++ }
+        $isEscapedBracket = ($backslashCount % 2) -eq 1
+        if (-not $isEscapedBracket -and $index + 1 -lt $Content.Length -and $Content[$index] -eq ']' -and $Content[$index + 1] -eq '(') {
             $depth = 1
             $cursor = $index + 2
             while ($cursor -lt $Content.Length -and $depth -gt 0) {
@@ -188,7 +191,7 @@ function Get-PrIssueReferences {
         $replacement = if ($usedLabels.Contains($definitionLabel)) { " $($definition.Groups['Destination'].Value) " } else { '' }
         $contentForExtraction = $contentForExtraction.Replace($definition.Value, $replacement)
     }
-    $fullUrlPattern = '(?<![A-Za-z0-9+./?=&%_#-])https://github\.com/(?<Owner>[^/\s]+)/(?<Repo>[^/#\s]+)/(?<Kind>issues|pull)/(?<Number>\d+)(?:[/?#][^\s<>()]*)?(?=[\s>)\].,;!?]|$)'
+    $fullUrlPattern = '(?<![A-Za-z0-9+./?=&%_#:-])https://github\.com/(?<Owner>[^/\s]+)/(?<Repo>[^/#\s]+)/(?<Kind>issues|pull)/(?<Number>\d+)(?:[/?#][^\s<>()]*)?(?=[\s>)\].,;!?]|$)'
     foreach ($match in [regex]::Matches($contentForExtraction, $fullUrlPattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)) {
         $matchOwner = $match.Groups['Owner'].Value
         $matchRepo = $match.Groups['Repo'].Value
@@ -198,7 +201,7 @@ function Get-PrIssueReferences {
             continue
         }
         $prefix = $contentForExtraction.Substring(0, $match.Index)
-        if ($prefix -match '!\[[^\]\r\n]*\]\($') { continue }
+        if ($prefix -match '!\[[^\]\r\n]*\]\(\s*<?$') { continue }
         if ($kind -eq 'pull') { continue }
         if (-not (& $addReference -Number $number -Text $match.Value)) { return @($references) }
     }

@@ -29,6 +29,7 @@ jobs:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
           REPOSITORY_NAME: ${{ github.event.repository.name }}
@@ -36,7 +37,8 @@ jobs:
           $repository = $env:GITHUB_REPOSITORY
           $targetSha = $env:GITHUB_SHA
           $statusContext = 'PR Issue Reference'
-          $trustedRef = if ($env:GITHUB_EVENT_NAME -eq 'pull_request_target') { $env:PR_BASE_SHA } else { $env:DEFAULT_BRANCH }
+          $trustedRef = if ($env:GITHUB_EVENT_NAME -eq 'pull_request_target') { $env:PR_BASE_SHA } else { $env:MERGE_GROUP_BASE_SHA }
+          if ([string]::IsNullOrWhiteSpace($trustedRef)) { throw 'The trusted validator base SHA was missing from the event payload.' }
           $validator = Join-Path $env:RUNNER_TEMP 'validate-pr-issue-reference.ps1'
           $mergeValidator = Join-Path $env:RUNNER_TEMP 'validate-merge-group-pr-issue-reference.ps1'
           function Save-TrustedScript {

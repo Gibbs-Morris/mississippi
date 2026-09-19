@@ -117,6 +117,13 @@ Describe 'PR issue reference validator' {
         $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
     }
 
+    It 'ignores repository issue URLs nested after an external URI colon' {
+        $outcome = Invoke-ReferenceValidator -Body '[tracking](https://example.test/redirect:https://github.com/Gibbs-Morris/mississippi/issues/741)'
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
     It 'ignores quoted indented code blocks' {
         $outcome = Invoke-ReferenceValidator -Body ">     Refs #741"
 
@@ -284,6 +291,20 @@ Refs #741
         $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
     }
 
+    It 'ignores issue URLs in angle-enclosed Markdown image destinations' {
+        $outcome = Invoke-ReferenceValidator -Body '![tracking](<https://github.com/Gibbs-Morris/mississippi/issues/741>)'
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
+    It 'preserves references after escaped closing brackets' {
+        $outcome = Invoke-ReferenceValidator -Body '\](Refs #741)'
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'ignores shorthand tokens embedded in bare URLs' {
         $outcome = Invoke-ReferenceValidator -Body 'https://example.test/?issue=#741'
 
@@ -344,6 +365,8 @@ Refs #741
 
         $workflow | Should -Match '\$statusContext = ''PR Issue Reference'''
         $workflow | Should -Match 'PR_NUMBER'
+        $workflow | Should -Match 'MERGE_GROUP_BASE_SHA'
+        $workflow | Should -Not -Match 'actions/checkout'
     }
 
     It 'fails the merge group when one constituent PR has no open issue' {
