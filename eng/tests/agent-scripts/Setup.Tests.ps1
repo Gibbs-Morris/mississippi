@@ -63,4 +63,23 @@ Describe 'Canonical repository setup' {
         $workflow | Should -Match 'setup\.ps1'
         $workflow | Should -Not -Match 'dotnet tool restore'
     }
+
+    It 'executes the Docs profile with controlled node and npm shims' {
+        $shimRoot = Join-Path $TestDrive 'setup-shims'
+        New-Item -ItemType Directory -Path $shimRoot -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $shimRoot 'node.ps1') -Value "Write-Output 'v22.0.0'"
+        Set-Content -LiteralPath (Join-Path $shimRoot 'npm.ps1') -Value 'exit 0'
+        $originalPath = $env:PATH
+        $env:PATH = $shimRoot + [IO.Path]::PathSeparator + $originalPath
+        try {
+            $output = & $powerShellPath -NoProfile -File $scriptPath -RepositoryRoot $repoRoot -Profile Docs -OutputFormat Json 2>&1 | Out-String
+            $exitCode = $LASTEXITCODE
+        }
+        finally {
+            $env:PATH = $originalPath
+        }
+
+        $exitCode | Should -Be 0
+        ($output | ConvertFrom-Json).Status | Should -Be 'READY'
+    }
 }
