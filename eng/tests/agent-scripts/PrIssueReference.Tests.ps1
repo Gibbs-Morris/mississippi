@@ -110,6 +110,13 @@ Describe 'PR issue reference validator' {
         $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
     }
 
+    It 'ignores repository issue URLs nested after an external URL fragment' {
+        $outcome = Invoke-ReferenceValidator -Body '[tracking](https://example.test/#https://github.com/Gibbs-Morris/mississippi/issues/741)'
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
     It 'ignores quoted indented code blocks' {
         $outcome = Invoke-ReferenceValidator -Body ">     Refs #741"
 
@@ -215,6 +222,16 @@ Refs #741
         $outcome.ExitCode | Should -Not -Be 0
         $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
         return
+    }
+
+    It 'does not treat backticks in fence info strings as a code fence opener' {
+        $backtick = [char]96
+        $fence = [string]::new($backtick, 3)
+        $body = $fence + 'md' + $backtick + [Environment]::NewLine + 'Refs #741' + [Environment]::NewLine + $fence
+        $outcome = Invoke-ReferenceValidator -Body $body
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
     }
 
     It 'ignores variable-width inline code spans' {

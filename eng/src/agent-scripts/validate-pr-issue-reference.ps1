@@ -85,10 +85,16 @@ function Remove-NonRenderedMarkdown {
     $fenceLength = 0
     $withoutFences = foreach ($line in ($Content -split '\r?\n')) {
         $containerLine = $line -replace '^(?:[ ]{0,3}>[ \t]?)+', ''
-        if (-not $insideFence -and $containerLine -match '^[ ]{0,3}(?<Fence>`{3,}|~{3,})') {
+        $openingFence = [regex]::Match($containerLine, '^[ ]{0,3}(?<Fence>`{3,}|~{3,})(?<Info>.*)$')
+        if (-not $insideFence -and $openingFence.Success) {
+            $candidateFenceCharacter = $openingFence.Groups['Fence'].Value.Substring(0, 1)
+            if ($candidateFenceCharacter -eq '`' -and $openingFence.Groups['Info'].Value.Contains('`')) {
+                $line
+                continue
+            }
             $insideFence = $true
-            $fenceCharacter = $Matches.Fence.Substring(0, 1)
-            $fenceLength = $Matches.Fence.Length
+            $fenceCharacter = $candidateFenceCharacter
+            $fenceLength = $openingFence.Groups['Fence'].Value.Length
             ''
             continue
         }
@@ -182,7 +188,7 @@ function Get-PrIssueReferences {
         $replacement = if ($usedLabels.Contains($definitionLabel)) { " $($definition.Groups['Destination'].Value) " } else { '' }
         $contentForExtraction = $contentForExtraction.Replace($definition.Value, $replacement)
     }
-    $fullUrlPattern = '(?<![A-Za-z0-9+./?=&%_-])https://github\.com/(?<Owner>[^/\s]+)/(?<Repo>[^/#\s]+)/(?<Kind>issues|pull)/(?<Number>\d+)(?:[/?#][^\s<>()]*)?(?=[\s>)\].,;!?]|$)'
+    $fullUrlPattern = '(?<![A-Za-z0-9+./?=&%_#-])https://github\.com/(?<Owner>[^/\s]+)/(?<Repo>[^/#\s]+)/(?<Kind>issues|pull)/(?<Number>\d+)(?:[/?#][^\s<>()]*)?(?=[\s>)\].,;!?]|$)'
     foreach ($match in [regex]::Matches($contentForExtraction, $fullUrlPattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)) {
         $matchOwner = $match.Groups['Owner'].Value
         $matchRepo = $match.Groups['Repo'].Value
