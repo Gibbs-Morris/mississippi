@@ -84,6 +84,13 @@ applyTo: '**/*.{cs,razor'
 
 # Unbalanced scope
 '@
+        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/unbalanced-class.instructions.md') -Value @'
+---
+applyTo: '**/[abc.md'
+---
+
+# Unbalanced class
+'@
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Example.cs') -Value 'class Example { }'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/guide.md') -Value '# Guide'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/Docusaurus/docs/adr/0001-example.md') -Value '# ADR'
@@ -135,6 +142,14 @@ applyTo: '**/*.{cs,razor'
 
         $unbalanced.ScopeStatus | Should -Be 'unknown'
         $unbalanced.ScopeNote | Should -Match 'unbalanced braces'
+    }
+
+    It 'keeps unmatched character-class metadata selected for direct inspection' {
+        $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+        $unbalanced = @($context.Selected | Where-Object Path -EQ '.github/instructions/unbalanced-class.instructions.md')[0]
+
+        $unbalanced.ScopeStatus | Should -Be 'unknown'
+        $unbalanced.ScopeNote | Should -Match 'character classes'
     }
 
     It 'supports brace globs and treats deleted changed paths as data' {

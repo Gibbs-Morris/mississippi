@@ -142,6 +142,11 @@ function Read-ContextFrontMatter {
     if ($patterns.Count -eq 0 -or $patterns -contains '') {
         return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'applyTo contains no usable pattern.' }
     }
+    foreach ($pattern in $patterns) {
+        if (@($pattern.ToCharArray() | Where-Object { $_ -eq '[' }).Count -ne @($pattern.ToCharArray() | Where-Object { $_ -eq ']' }).Count) {
+            return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'applyTo contains unbalanced character classes.' }
+        }
+    }
 
     return [pscustomobject]@{ Status = 'valid'; Patterns = $patterns; Reason = '' }
 }
