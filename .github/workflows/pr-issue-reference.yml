@@ -3,6 +3,8 @@ name: PR Issue Reference
 on:
   pull_request_target:
     types: [opened, edited, reopened, synchronize]
+  merge_group:
+    types: [checks_requested]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -32,12 +34,20 @@ jobs:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
           REPOSITORY_NAME: ${{ github.event.repository.name }}
         run: |
-          $output = & pwsh -NoProfile -File ./eng/src/agent-scripts/validate-pr-issue-reference.ps1 `
-            -Body $env:PR_BODY `
-            -RepositoryOwner $env:REPOSITORY_OWNER `
-            -RepositoryName $env:REPOSITORY_NAME `
-            -Json 2>&1 | Out-String
-          Write-Output $output
-          if ($LASTEXITCODE -ne 0) {
-            throw 'Pull request issue-reference validation failed.'
+          $validator = './eng/src/agent-scripts/validate-pr-issue-reference.ps1'
+          $repository = $env:GITHUB_REPOSITORY
+          if ($env:GITHUB_EVENT_NAME -eq 'pull_request_target') {
+            $output = & pwsh -NoProfile -File $validator -Body $env:PR_BODY -RepositoryOwner $env:REPOSITORY_OWNER -RepositoryName $env:REPOSITORY_NAME -Json 2>&1 | Out-String
+            Write-Output $output
+            if ($LASTEXITCODE -ne 0) { throw 'Pull request issue-reference validation failed.' }
+            exit 0
+          }
+
+          $pullRequests = @(gh api "repos/$repository/commits/$env:GITHUB_SHA/pulls" --header 'Accept: application/vnd.github+json' | ConvertFrom-Json)
+          if ($pullRequests.Count -eq 0) { throw 'Merge-group issue-reference validation could not resolve any constituent pull requests.' }
+          foreach ($pullRequest in $pullRequests) {
+            Write-Host "Validating merge-group pull request #$($pullRequest.number)"
+            $output = & pwsh -NoProfile -File $validator -Body ([string]$pullRequest.body) -RepositoryOwner $env:REPOSITORY_OWNER -RepositoryName $env:REPOSITORY_NAME -Json 2>&1 | Out-String
+            Write-Output $output
+            if ($LASTEXITCODE -ne 0) { throw "Pull request issue-reference validation failed for #$($pullRequest.number)." }
           }
