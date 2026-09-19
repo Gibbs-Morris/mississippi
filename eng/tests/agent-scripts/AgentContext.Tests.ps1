@@ -34,6 +34,7 @@ applyTo: '**'
 
 See [the shared route](../skills/example/SKILL.md#section).
 Ignore [a file URI](file:///etc/policy.md) and [an FTP URI](ftp://example.com/policy.md).
+See [the titled route](../skills/example/SKILL.md "Shared route").
 '@
         Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/csharp.instructions.md') -Value @'
 ---
@@ -122,6 +123,7 @@ metadata:
         Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/expensive-expansion.instructions.md') -Value "---`napplyTo: '**/*.$expensivePattern'`n---`n`n# Expensive expansion"
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Example.cs') -Value 'class Example { }'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/guide.md') -Value '# Guide'
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/AGENTS.md') -Value '# Documentation guidance'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/Docusaurus/docs/adr/0001-example.md') -Value '# ADR'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'nested/feature/example.ps1') -Value 'Write-Output data'
         Set-Content -LiteralPath (Join-Path $fixtureRoot '.scratchpad/AGENTS.md') -Value '# Excluded guidance'
@@ -245,6 +247,31 @@ metadata:
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
 
         $context.Entries.Path | Should -Not -Contain 'case-probe/agents.md'
+    }
+
+    It 'selects nested AGENTS guidance from a domain-only probe' {
+        $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ContentDomain docs
+
+        $context.Selected.Path | Should -Contain 'docs/AGENTS.md'
+    }
+
+    It 'does not discover instruction files with the wrong filename case' {
+        $wrongCase = Join-Path $fixtureRoot '.github/instructions/wrong-case.INSTRUCTIONS.MD'
+        Set-Content -LiteralPath $wrongCase -Value @'
+---
+applyTo: '**'
+---
+
+# Wrong case
+'@
+        try {
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+
+            $context.Entries.Path | Should -Not -Contain '.github/instructions/wrong-case.INSTRUCTIONS.MD'
+        }
+        finally {
+            Remove-Item -LiteralPath $wrongCase -Force -ErrorAction SilentlyContinue
+        }
     }
 
     It 'reports a missing Copilot entrypoint as unresolved' {
@@ -410,6 +437,30 @@ metadata:
         $context.Unresolved | Should -HaveCount 0
     }
 
+    It 'rejects required context that traverses a reparse point' {
+        $linkRoot = Join-Path $fixtureRoot 'required-link'
+        $linkCreated = $false
+        try {
+            New-Item -ItemType SymbolicLink -Path $linkRoot -Target (Join-Path $fixtureRoot 'src') -ErrorAction Stop | Out-Null
+            $linkCreated = $true
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -RequiredPath 'required-link/Example.cs'
+
+            $context.Complete | Should -BeFalse
+            $context.Unresolved | Should -Contain "Required context path is missing or unreadable: 'required-link/Example.cs'."
+        }
+        catch {
+            if (-not $linkCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create symbolic links.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $linkRoot -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It 'emits hashes, byte counts, word counts, and explicit route references' {
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
         $global = @($context.Selected | Where-Object Path -EQ '.github/instructions/global.instructions.md')[0]
@@ -418,6 +469,7 @@ metadata:
         $global.ByteCount | Should -BeGreaterThan 0
         $global.WordCount | Should -BeGreaterThan 0
         $global.ReferencedRoutes | Should -Contain '../skills/example/SKILL.md#section'
+        $global.ReferencedRoutes | Should -Contain '../skills/example/SKILL.md'
         $global.ReferencedRoutes | Should -Not -Contain 'file:///etc/policy.md'
         $global.ReferencedRoutes | Should -Not -Contain 'ftp://example.com/policy.md'
         $context.PSObject.Properties.Name | Should -Not -Contain 'TokenCount'

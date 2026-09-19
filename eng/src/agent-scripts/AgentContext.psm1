@@ -248,11 +248,14 @@ function Get-ContextRoutes {
     $routes = [System.Collections.Generic.List[string]]::new()
     foreach ($match in [regex]::Matches($Content, '\]\((?<Route>[^)]+)\)')) {
         $route = $match.Groups['Route'].Value.Trim()
-        $routePath = ($route -split '#', 2)[0]
-        if ($route -and $route -notmatch '^(?:[A-Za-z][A-Za-z0-9+.-]*:|//)' -and $route -match '(?:\.md|\.mdx|SKILL\.md)(?:$|#)' -and -not [System.IO.Path]::IsPathRooted($routePath)) {
+        $destinationMatch = [regex]::Match($route, '^(?<Destination>\S+?)(?:\s+(?:"[^"]*"|''[^'']*''))?$')
+        if (-not $destinationMatch.Success) { continue }
+        $destination = $destinationMatch.Groups['Destination'].Value
+        $routePath = ($destination -split '#', 2)[0]
+        if ($destination -and $destination -notmatch '^(?:[A-Za-z][A-Za-z0-9+.-]*:|//)' -and $destination -match '(?:\.md|\.mdx|SKILL\.md)(?:$|#)' -and -not [System.IO.Path]::IsPathRooted($routePath)) {
             $candidatePath = Join-Path (Split-Path -Parent $SourcePath) $routePath
             if ($null -ne (ConvertTo-ContextRelativePath -RepositoryRoot $RepositoryRoot -Path $candidatePath)) {
-                if (-not $routes.Contains($route)) { $routes.Add($route) }
+                if (-not $routes.Contains($destination)) { $routes.Add($destination) }
             }
         }
     }
@@ -308,7 +311,7 @@ function Get-ContextFilesByFilter {
                 if ($excludedDirectories -notcontains $child.Name) { $pending.Enqueue($child.FullName) }
             }
             else {
-                $matchesFilter = if ($Filter -eq 'AGENTS.md') { [string]::Equals($child.Name, $Filter, [System.StringComparison]::Ordinal) } else { $child.Name -like $Filter }
+                $matchesFilter = if ($Filter -eq 'AGENTS.md') { [string]::Equals($child.Name, $Filter, [System.StringComparison]::Ordinal) } else { $child.Name -clike $Filter }
                 if (-not $matchesFilter) { continue }
                 if ($isReparsePoint) {
                     $null = $Errors.Add("Skipped reparse-point guidance file '$($child.FullName)'.")
@@ -381,6 +384,30 @@ function Get-ContextCandidates {
     return [pscustomobject]@{ Files = @($uniqueFiles); Errors = @($scanErrors) }
 }
 
+function Test-ContextPathWithoutReparsePoints {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepositoryRoot,
+        [Parameter(Mandatory)][string]$RelativePath
+    )
+
+    $current = $RepositoryRoot
+    foreach ($segment in ($RelativePath -split '[\\/]')) {
+        if ([string]::IsNullOrWhiteSpace($segment) -or $segment -eq '.') { continue }
+        if ($segment -eq '..') { return $false }
+        $current = Join-Path $current $segment
+        try {
+            $item = Get-Item -LiteralPath $current -Force -ErrorAction Stop
+            if ([bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) { return $false }
+        }
+        catch {
+            return $false
+        }
+    }
+
+    return $true
+}
+
 function Get-AgentContext {
     [CmdletBinding()]
     param(
@@ -411,7 +438,8 @@ function Get-AgentContext {
                 $requested.Add([pscustomobject]@{ Kind = $group.Name; Path = $relative })
                 if ($group.Name -eq 'required') {
                     $requiredFullPath = Join-Path $resolvedRoot $relative
-                    if (-not (Test-Path -LiteralPath $requiredFullPath -PathType Leaf)) {
+                    if (-not (Test-Path -LiteralPath $requiredFullPath -PathType Leaf) -or
+                        -not (Test-ContextPathWithoutReparsePoints -RepositoryRoot $resolvedRoot -RelativePath $relative)) {
                         $unresolved.Add("Required context path is missing or unreadable: '$relative'.")
                     }
                     else {
@@ -440,6 +468,21 @@ function Get-AgentContext {
         'serialization' = @('__domain__.cs')
         'orleans' = @('__domain__.cs')
     }
+    $entrypointProbePaths = [System.Collections.Generic.List[string]]::new()
+    foreach ($request in @($requested | Where-Object { $_.Kind -ne 'required' })) {
+        $entrypointProbePaths.Add($request.Path)
+    }
+    foreach ($domain in @($ContentDomain)) {
+        $domainKey = $domain.ToLowerInvariant()
+        if ($domainProbePaths.ContainsKey($domainKey)) {
+            foreach ($probe in @($domainProbePaths[$domainKey])) { $entrypointProbePaths.Add($probe) }
+        }
+    }
+    foreach ($role in @($WorkflowRole)) {
+        $roleToken = $role.ToLowerInvariant()
+        $entrypointProbePaths.Add(".github/agents/example-$roleToken.agent.md")
+        $entrypointProbePaths.Add(".github/agents/example-$roleToken.md")
+    }
 
     $entries = [System.Collections.Generic.List[object]]::new()
     foreach ($candidate in @($candidateResult.Files)) {
@@ -463,9 +506,9 @@ function Get-AgentContext {
         if ($candidate.Kind -eq 'AGENTS') {
             $entryDirectory = if ($relative -eq 'AGENTS.md') { '' } else { $relative.Substring(0, $relative.Length - '/AGENTS.md'.Length) }
             $entryPrefix = if ($entryDirectory) { "$entryDirectory/" } else { '' }
-            $isSelected = [string]::Equals($relative, 'AGENTS.md', [System.StringComparison]::Ordinal) -or @($requested | Where-Object {
-                $_.Path.Equals($entryDirectory, [System.StringComparison]::OrdinalIgnoreCase) -or
-                ($entryPrefix -and $_.Path.StartsWith($entryPrefix, [System.StringComparison]::OrdinalIgnoreCase))
+            $isSelected = [string]::Equals($relative, 'AGENTS.md', [System.StringComparison]::Ordinal) -or @($entrypointProbePaths | Where-Object {
+                $_.Equals($entryDirectory, [System.StringComparison]::OrdinalIgnoreCase) -or
+                ($entryPrefix -and $_.StartsWith($entryPrefix, [System.StringComparison]::OrdinalIgnoreCase))
             }).Count -gt 0
             if ($isSelected) { $reasons.Add('scoped-entrypoint') }
         }
