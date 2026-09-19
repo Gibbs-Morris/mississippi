@@ -467,14 +467,15 @@ function Get-ContextCandidates { # NOSONAR - candidate selection coordinates bou
     # Do not require Container in this first probe. Some PowerShell/.NET
     # providers report a directory symlink as a non-container even though it
     # exists; the reparse-point check must still classify it as unsafe.
-    $instructionRootExists = Test-Path -LiteralPath $instructionRoot
+    $instructionRootItem = Get-Item -LiteralPath $instructionRoot -Force -ErrorAction SilentlyContinue
+    $instructionRootExists = $null -ne $instructionRootItem
     $instructionRootSafe = $instructionRootExists -and (Test-ContextPathWithoutReparsePoints -RepositoryRoot $RepositoryRoot -RelativePath '.github/instructions')
     if ($instructionRootExists -and -not $instructionRootSafe) {
         $null = $scanErrors.Add("Skipped reparse-point instruction root '$instructionRoot'.")
     }
     elseif ($instructionRootExists) {
         try {
-            $instructionItem = Get-Item -LiteralPath $instructionRoot -Force -ErrorAction Stop
+            $instructionItem = $instructionRootItem
             if (-not $instructionItem.PSIsContainer) {
                 $null = $scanErrors.Add("Required instruction root is missing or not a directory: '$instructionRoot'.")
             }
