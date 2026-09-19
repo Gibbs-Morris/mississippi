@@ -25,5 +25,9 @@ incomplete rather than being reported as clean.
 ## Limitations
 
 - No live Codex reviewer or GitHub publication was executed by this offline runner.
+- A fresh `codex exec --ephemeral --sandbox read-only` smoke invocation reached
+  host startup but could not obtain model output because the environment rejected
+  the `api.openai.com` certificate (`UnknownIssuer`); reviewer execution,
+  concurrency, and live latency are therefore not claimed.
 - Fixture latency and token values are simulated observations for comparison only.
 - A live promotion decision requires real traces, host capability metadata, and current CI/review evidence.
