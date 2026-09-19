@@ -31,24 +31,19 @@ function Get-RepositoryPathComparison {
     if ($IsWindows) { return [System.StringComparison]::OrdinalIgnoreCase }
     if (-not $IsMacOS) { return [System.StringComparison]::Ordinal }
 
+    $probeName = '.mississippi-case-probe-' + [guid]::NewGuid().ToString('N')
+    $probePath = Join-Path $RepoRoot $probeName
     try {
-        $probe = @(
-            Get-ChildItem -LiteralPath $RepoRoot -Force -ErrorAction Stop |
-                Where-Object { $_.Name -match '[A-Za-z]' } |
-                Select-Object -First 1
-        )
-        if ($probe.Count -eq 1) {
-            $alternateName = -join ($probe[0].Name.ToCharArray() | ForEach-Object {
-                    if ([char]::IsUpper($_)) { [char]::ToLowerInvariant($_) } else { [char]::ToUpperInvariant($_) }
-                })
-            if ($alternateName -and $alternateName -cne $probe[0].Name -and
-                (Test-Path -LiteralPath (Join-Path $RepoRoot $alternateName))) {
-                return [System.StringComparison]::OrdinalIgnoreCase
-            }
+        New-Item -ItemType Directory -LiteralPath $probePath -Force -ErrorAction Stop | Out-Null
+        if (Test-Path -LiteralPath (Join-Path $RepoRoot $probeName.ToUpperInvariant())) {
+            return [System.StringComparison]::OrdinalIgnoreCase
         }
     }
     catch {
         # An unproven macOS volume remains case-sensitive for identity.
+    }
+    finally {
+        Remove-Item -LiteralPath $probePath -Recurse -Force -ErrorAction SilentlyContinue
     }
 
     return [System.StringComparison]::Ordinal
@@ -144,6 +139,9 @@ function Enter-RepositoryExecutionLease {
     )
 
     if ($null -ne $ExistingLease) {
+        if ($null -eq $ExistingLease.Stream -or $ExistingLease.Stream.SafeFileHandle.IsClosed -or -not $ExistingLease.Stream.CanRead) {
+            throw 'Existing repository execution lease handle is closed or unavailable.'
+        }
         $requestedRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
         $existingRoot = Resolve-RepositoryExecutionRoot -RepoRoot ([string]$ExistingLease.RepositoryRoot)
         $comparison = Get-RepositoryPathComparison -RepoRoot $requestedRoot
@@ -163,6 +161,12 @@ function Enter-RepositoryExecutionLease {
     }
     $leasePath = Get-RepositoryExecutionLeasePath -RepoRoot $RepoRoot -LeaseDirectory $LeaseDirectory
     $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
+    if (Test-Path -LiteralPath $leasePath) {
+        $leaseItem = Get-Item -LiteralPath $leasePath -Force -ErrorAction Stop
+        if ($leaseItem.PSIsContainer -or [bool]($leaseItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            throw "Lease path is not a regular file: '$leasePath'."
+        }
+    }
     $metadata = [ordered]@{
         operationId = $OperationId
         repositoryRoot = $canonicalRoot
@@ -1157,6 +1161,7 @@ function Invoke-SolutionsPipeline {
     }
     else {
         Write-Host 'Local build, test, coverage, cleanup and final-build checks completed. Deployment, browser and external CI checks are outside this command.'
+    }
     }
     finally {
         Exit-RepositoryExecutionLease -Lease $executionLease
