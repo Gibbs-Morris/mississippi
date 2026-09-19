@@ -540,6 +540,11 @@ $timer.Stop()
         }
         $working.Success | Should -BeTrue
         $working.StdOut | Should -Match 'native-working-directory'
+        $workingOnly = InModuleScope RepositoryAutomation -Parameters @{ WorkDir = $directory } {
+            param($WorkDir)
+            Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', '[Environment]::CurrentDirectory') -WorkingDirectory $WorkDir
+        }
+        $workingOnly | Should -Match 'native-working-directory'
 
         $launch = InModuleScope RepositoryAutomation { Invoke-RepositoryProcess -FilePath 'missing-native-command' -PassThru }
         $launch.Success | Should -BeFalse
