@@ -78,15 +78,22 @@ try {
                 $recordBlocked = 0
                 $recordUnsupported = 0
                 foreach ($record in $records) {
-                    foreach ($field in @('pairedInputId', 'outcome', 'acceptancePassed', 'independentChecks', 'reviewRework', 'interventions')) {
+                    foreach ($field in @('pairedInputId', 'outcome')) {
                         if ($null -eq $record.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing $field.") }
                     }
                     if ($record.PSObject.Properties['pairedInputId']) { $recordInputIds.Add([string]$record.pairedInputId) }
                     $outcome = [string]$record.outcome
                     if ($outcome -eq 'passed') { $recordPassed++ } elseif ($outcome -eq 'failed') { $recordFailed++ } elseif ($outcome -eq 'blocked') { $recordBlocked++ } elseif ($outcome -eq 'unsupported') { $recordUnsupported++ } else { $errors.Add("Host '$hostName' category '$($category.id)' has an invalid trial outcome.") }
-                    if ($record.acceptancePassed -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has a non-boolean acceptancePassed value.") }
-                    if ($record.independentChecks -isnot [array] -or @($record.independentChecks).Count -eq 0) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has no independent checks.") }
-                    if ($null -eq $record.reviewRework -or $null -eq $record.interventions) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has incomplete review/intervention evidence.") }
+                    if ($outcome -in @('passed', 'failed')) {
+                        foreach ($field in @('acceptancePassed', 'independentChecks', 'reviewRework', 'interventions')) {
+                            if ($null -eq $record.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing $field.") }
+                        }
+                        if ($record.acceptancePassed -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has a non-boolean acceptancePassed value.") }
+                        if ($record.independentChecks -isnot [array] -or @($record.independentChecks).Count -eq 0) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has no independent checks.") }
+                        if ($null -eq $record.reviewRework -or $null -eq $record.interventions) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has incomplete review/intervention evidence.") }
+                    }
+                    if ($outcome -eq 'failed' -and [string]::IsNullOrWhiteSpace([string]$record.reason)) { $errors.Add("Host '$hostName' category '$($category.id)' failed trial is missing a reason.") }
+                    if ($outcome -in @('blocked', 'unsupported') -and [string]::IsNullOrWhiteSpace([string]$record.reason)) { $errors.Add("Host '$hostName' category '$($category.id)' blocked or unsupported trial is missing a reason.") }
                     if ($category.id -eq 'browser-visible' -and ($outcome -eq 'passed' -or $outcome -eq 'failed')) {
                         if ($null -eq $record.PSObject.Properties['browserEvidence']) {
                             $errors.Add("Host '$hostName' browser trial is missing browserEvidence.")
