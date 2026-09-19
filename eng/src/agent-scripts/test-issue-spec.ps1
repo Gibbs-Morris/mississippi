@@ -85,10 +85,16 @@ function Remove-MarkdownFencedBlocks {
     $fenceLength = 0
     $lines = [System.Collections.Generic.List[string]]::new()
     foreach ($line in ($Content -split '\r?\n')) {
-        if (-not $insideFence -and $line -match ('^[ \t]{0,3}(?<Fence>' + [regex]::Escape([char]96) + '{3,}|~{3,})')) {
+        $openingFence = [regex]::Match($line, '^[ \t]{0,3}(?<Fence>`{3,}|~{3,})')
+        if (-not $insideFence -and $openingFence.Success) {
+            $openingFenceValue = $openingFence.Groups['Fence'].Value
+            if ($openingFenceValue[0] -eq [char]96 -and $line.Substring($openingFence.Index + $openingFence.Length).Contains([char]96)) {
+                $lines.Add($line)
+                continue
+            }
             $insideFence = $true
-            $fenceCharacter = $Matches.Fence.Substring(0, 1)
-            $fenceLength = $Matches.Fence.Length
+            $fenceCharacter = $openingFenceValue.Substring(0, 1)
+            $fenceLength = $openingFenceValue.Length
             $lines.Add('')
             continue
         }
@@ -160,7 +166,13 @@ function Remove-MarkdownHtmlComments { # NOSONAR - bounded comment/code scanner 
     $builder = [System.Text.StringBuilder]::new()
     $index = 0
     while ($index -lt $Content.Length) {
-        if ($Content[$index] -eq '`' -and ($index -eq 0 -or $Content[$index - 1] -ne '\')) {
+        $precedingBackslashes = 0
+        $backslashIndex = $index - 1
+        while ($backslashIndex -ge 0 -and $Content[$backslashIndex] -eq '\') {
+            $precedingBackslashes++
+            $backslashIndex--
+        }
+        if ($Content[$index] -eq '`' -and ($precedingBackslashes % 2 -eq 0)) {
             $start = $index
             while ($index -lt $Content.Length -and $Content[$index] -eq '`') { $index++ }
             $delimiterLength = $index - $start
@@ -205,11 +217,19 @@ function Remove-MarkdownHtmlBlocks { # NOSONAR - bounded raw-HTML block scanner 
     $lines = [System.Collections.Generic.List[string]]::new()
     $rawTag = ''
     $insideHtmlBlock = $false
+    $tokenTerminator = ''
     foreach ($line in ($Content -split '\r?\n')) {
         if ($rawTag) {
             $lines.Add('')
             if ($line -match ('(?i)</' + [regex]::Escape($rawTag) + '[ \t>]' )) {
                 $rawTag = ''
+            }
+            continue
+        }
+        if ($tokenTerminator) {
+            $lines.Add('')
+            if ($line -match $tokenTerminator) {
+                $tokenTerminator = ''
             }
             continue
         }
@@ -235,9 +255,22 @@ function Remove-MarkdownHtmlBlocks { # NOSONAR - bounded raw-HTML block scanner 
             $insideHtmlBlock = $true
             continue
         }
-        if ($line -match '(?i)^[ \t]{0,3}<\?(?:[^\r\n]*)$|^[ \t]{0,3}<!\[CDATA\[|^[ \t]{0,3}<![A-Z]') {
+        $processingInstructionMatch = [regex]::Match($line, '(?i)^[ \t]{0,3}<\?')
+        if ($processingInstructionMatch.Success) {
             $lines.Add('')
-            $insideHtmlBlock = $true
+            if ($line -notmatch '\?>') { $tokenTerminator = '\?>' }
+            continue
+        }
+        $cdataMatch = [regex]::Match($line, '(?i)^[ \t]{0,3}<!\[CDATA\[')
+        if ($cdataMatch.Success) {
+            $lines.Add('')
+            if ($line -notmatch '\]\]>') { $tokenTerminator = '\]\]>' }
+            continue
+        }
+        $declarationMatch = [regex]::Match($line, '(?i)^[ \t]{0,3}<![A-Z]')
+        if ($declarationMatch.Success) {
+            $lines.Add('')
+            if ($line -notmatch '>') { $tokenTerminator = '>' }
             continue
         }
         if ($line -match '(?i)^[ \t]{0,3}(?:</?[A-Za-z][^>\r\n]*>|<[A-Za-z][^>\r\n]*/>)\s*$') {
@@ -432,10 +465,14 @@ function Get-IssueSpecResult { # NOSONAR - this validator intentionally aggregat
         if ($sourcePaths.Count -eq 0) {
             Add-IssueSpecError -Errors $errors -Message 'Relevant source and contracts must list backtick-wrapped repository-relative paths.'
         }
+        $sourcePathMatchLimit = 512
+        if ($sourcePaths.Count -gt $sourcePathMatchLimit) {
+            Add-IssueSpecError -Errors $errors -Message "Relevant source and contracts may contain at most $sourcePathMatchLimit total path references."
+        }
         $validatedSourcePaths = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
         $sourcePathLimit = 256
         $sourcePathLimitExceeded = $false
-        foreach ($pathMatch in $sourcePaths) {
+        foreach ($pathMatch in @($sourcePaths | Select-Object -First $sourcePathMatchLimit)) {
             $candidate = $pathMatch.Groups['Path'].Value.Trim()
             if ($validatedSourcePaths.Add($candidate)) {
                 if ($validatedSourcePaths.Count -gt $sourcePathLimit) {
