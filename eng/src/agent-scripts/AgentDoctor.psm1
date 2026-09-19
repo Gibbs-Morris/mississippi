@@ -113,6 +113,11 @@ function Invoke-DoctorProbe {
     }
 }
 
+function Test-DoctorPowerShellVersion {
+    param([Parameter(Mandatory)][version]$Version)
+    return $Version -ge [version]'7.0'
+}
+
 function Resolve-DoctorCommand {
     param([Parameter(Mandatory)][string]$FilePath)
 
@@ -165,6 +170,9 @@ function Get-AgentDoctorReport {
     $root = Get-DoctorRepositoryRoot -RepositoryRoot $RepositoryRoot
     $checks = [System.Collections.Generic.List[object]]::new()
     $profiles = if ($Profile -eq 'All') { @('Core', 'Docs', 'Spring', 'GitHub') } else { @($Profile) }
+    $powerShellVersion = [version]$PSVersionTable.PSVersion
+    $powerShellReady = Test-DoctorPowerShellVersion -Version $powerShellVersion
+    Add-DoctorCheck -Checks $checks -Name 'powershell' -State $(if ($powerShellReady) { 'ready' } else { 'unsupported' }) -Required $true -Details "PowerShell $powerShellVersion is $($(if ($powerShellReady) { 'supported' } else { 'below the required 7.0 minimum' }))." -Remediation $(if ($powerShellReady) { '' } else { 'Run the doctor with PowerShell 7.0 or later (pwsh).' })
 
     $globalJsonPath = Join-Path $root 'global.json'
     $globalJson = $null
