@@ -32,7 +32,7 @@ function Get-MarkdownSections {
     param([Parameter(Mandatory)][string]$Content)
 
     $knownTitles = ($requiredSections | ForEach-Object { [regex]::Escape($_) }) -join '|'
-    $allHeadings = [regex]::Matches($Content, '(?m)^(?<Level>#{2,3})[ \t]+(?<Title>[^\r\n]+)[ \t]*\r?$')
+    $allHeadings = [regex]::Matches($Content, '(?m)^(?<Level>#{1,6})[ \t]+(?<Title>[^\r\n]+)[ \t]*\r?$')
     $matches = @($allHeadings | Where-Object { $requiredSections -contains $_.Groups['Title'].Value.Trim() })
     $sections = [ordered]@{}
     for ($index = 0; $index -lt $matches.Count; $index++) {
@@ -215,7 +215,7 @@ function Test-IssueSectionContent {
     [CmdletBinding()]
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
 
-    $withoutHeadings = [regex]::Replace($Content, '(?m)^[ \t]{0,3}#{1,6}\s*[^\r\n]*$', '')
+    $withoutHeadings = [regex]::Replace($Content, '(?m)^[ \t]{0,3}#{1,6}[ \t]*[^\r\n]*$', '')
     return -not [string]::IsNullOrWhiteSpace($withoutHeadings)
 }
 
@@ -233,20 +233,20 @@ function Get-IssueSpecResult {
     $nonRenderedContent = Remove-MarkdownHtmlComments -Content (Remove-MarkdownFencedBlocks -Content $content -MaskContent)
     $sections = Get-MarkdownSections -Content $structuralContent
 
-    $firstRequiredSectionIndex = $structuralContent.Length
+    $firstRequiredSectionIndex = $nonRenderedContent.Length
     foreach ($requiredSection in $requiredSections) {
-        $sectionHeading = [regex]::Match($structuralContent, '(?m)^[ \t]{0,3}#{2,3}[ \t]+' + [regex]::Escape($requiredSection) + '[ \t]*\r?$')
+        $sectionHeading = [regex]::Match($nonRenderedContent, '(?m)^[ \t]{0,3}#{2,3}[ \t]+' + [regex]::Escape($requiredSection) + '[ \t]*\r?$')
         if ($sectionHeading.Success -and $sectionHeading.Index -lt $firstRequiredSectionIndex) {
             $firstRequiredSectionIndex = $sectionHeading.Index
         }
     }
-    $prologueContent = $structuralContent.Substring(0, $firstRequiredSectionIndex)
+    $prologueContent = $nonRenderedContent.Substring(0, $firstRequiredSectionIndex)
     $prologueVersionValues = @()
     $prologueVersionValues += @([regex]::Matches($prologueContent, '(?im)^[ \t]*Contract version:[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
     $prologueVersionValues += @([regex]::Matches($prologueContent, '(?im)^#{2,3}[ \t]+Contract version[ \t]*\r?\n(?:[ \t]*\r?\n)*[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
     $allVersionValues = @()
-    $allVersionValues += @([regex]::Matches($structuralContent, '(?im)^[ \t]*Contract version:[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
-    $allVersionValues += @([regex]::Matches($structuralContent, '(?im)^#{2,3}[ \t]+Contract version[ \t]*\r?\n(?:[ \t]*\r?\n)*[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
+    $allVersionValues += @([regex]::Matches($nonRenderedContent, '(?im)^[ \t]*Contract version:[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
+    $allVersionValues += @([regex]::Matches($nonRenderedContent, '(?im)^#{2,3}[ \t]+Contract version[ \t]*\r?\n(?:[ \t]*\r?\n)*[ \t]*(?<Value>\d+\.\d+)[ \t]*\r?$') | ForEach-Object { $_.Groups['Value'].Value })
     $versionValues = $prologueVersionValues
     $version = if ($versionValues.Count -gt 0) { $versionValues[0] } else { '' }
     if ($versionValues.Count -eq 0) {
@@ -305,7 +305,8 @@ function Get-IssueSpecResult {
     if ($hasBlockingMarker) {
         Add-IssueSpecError -Errors $errors -Message 'Unresolved blocking TBD/TODO marker is not allowed.'
     }
-    if ($nonRenderedContent -match '(?im)\{\{[^}]+\}\}|^\s*[-*]\s*\[(?:insert|describe|add|todo|tbd)[^\]]*\]') {
+    $placeholderContent = Remove-MarkdownInlineCode -Content $nonRenderedContent
+    if ($placeholderContent -match '(?im)\{\{[^}]+\}\}|^\s*[-*]\s*\[(?:insert|describe|add|todo|tbd)[^\]]*\]') {
         Add-IssueSpecError -Errors $errors -Message 'Template placeholder remains in the issue body.'
     }
 
