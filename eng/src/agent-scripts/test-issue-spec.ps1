@@ -73,6 +73,25 @@ function Add-IssueSpecError {
     $null = $Errors.Add($Message)
 }
 
+function Get-MarkdownFenceOpening {
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Line)
+
+    $match = [regex]::Match($Line, '^[ \t]{0,3}(?<Fence>`{3,}|~{3,})')
+    if (-not $match.Success) { return $null }
+    $value = $match.Groups['Fence'].Value
+    if ($value[0] -eq [char]96 -and $Line.Substring($match.Index + $match.Length).Contains([char]96)) { return $null }
+    return [pscustomobject]@{ Character = $value.Substring(0, 1); Length = $value.Length }
+}
+
+function Test-MarkdownFenceClosing {
+    param(
+        [Parameter(Mandatory)][AllowEmptyString()][string]$Line,
+        [Parameter(Mandatory)][string]$Character,
+        [Parameter(Mandatory)][int]$Length
+    )
+    return $Line -match ('^[ \t]{0,3}' + [regex]::Escape($Character) + '{' + $Length + ',}[ \t]*$')
+}
+
 function Remove-MarkdownFencedBlocks {
     [CmdletBinding()]
     param(
@@ -85,32 +104,31 @@ function Remove-MarkdownFencedBlocks {
     $fenceLength = 0
     $lines = [System.Collections.Generic.List[string]]::new()
     foreach ($line in ($Content -split '\r?\n')) {
-        $openingFence = [regex]::Match($line, '^[ \t]{0,3}(?<Fence>`{3,}|~{3,})')
-        if (-not $insideFence -and $openingFence.Success) {
-            $openingFenceValue = $openingFence.Groups['Fence'].Value
-            if ($openingFenceValue[0] -eq [char]96 -and $line.Substring($openingFence.Index + $openingFence.Length).Contains([char]96)) {
-                $lines.Add($line)
-                continue
-            }
+        $openingFence = if (-not $insideFence) { Get-MarkdownFenceOpening -Line $line } else { $null }
+        if ($null -ne $openingFence) {
             $insideFence = $true
-            $fenceCharacter = $openingFenceValue.Substring(0, 1)
-            $fenceLength = $openingFenceValue.Length
+            $fenceCharacter = $openingFence.Character
+            $fenceLength = $openingFence.Length
             $lines.Add('')
             continue
         }
-        if ($insideFence -and $line -match ('^[ \t]{0,3}' + [regex]::Escape($fenceCharacter) + '{' + $fenceLength + ',}[ \t]*$')) {
+        if ($insideFence -and (Test-MarkdownFenceClosing -Line $line -Character $fenceCharacter -Length $fenceLength)) {
             $lines.Add('')
             $insideFence = $false
             continue
         }
-        if ($insideFence -and $MaskContent) {
-            $lines.Add('')
+        if ($insideFence) {
+            if ($MaskContent -or $line -match '^\s*#{1,6}[ \t]+') {
+                $lines.Add('')
+                continue
+            }
+            $lines.Add($line)
             continue
         }
-        if ($insideFence -and $line -match '^\s*#{1,6}[ \t]+') {
+        if ($line -match '^\s*#{1,6}[ \t]+') {
             # Keep rendered commands and prose, but remove structural-looking
             # headings from fenced examples before section discovery.
-            $lines.Add('')
+            $lines.Add($line)
             continue
         }
         $lines.Add($line)
