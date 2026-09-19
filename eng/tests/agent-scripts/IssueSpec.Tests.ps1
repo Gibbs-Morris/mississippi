@@ -89,6 +89,14 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Valid | Should -BeTrue
     }
 
+    It 'stops required sections at unknown peer headings' {
+        $content = $validBug -replace '(?ms)^## Acceptance criteria.*?(?=^## Implementation outline)', "## Acceptance criteria`r`n## Appendix`r`n- [AC1] This belongs to the appendix.`r`n`r`n## Implementation outline"
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Required section '## Acceptance criteria' is empty."
+    }
+
     It 'rejects required sections in the wrong order' {
         $reordered = $validBug -replace '(?m)^## Problem', '## Temporary problem'
         $reordered = $reordered -replace '(?m)^## Observable outcome', '## Problem'

@@ -32,12 +32,15 @@ function Get-MarkdownSections {
     param([Parameter(Mandatory)][string]$Content)
 
     $knownTitles = ($requiredSections | ForEach-Object { [regex]::Escape($_) }) -join '|'
-    $matches = [regex]::Matches($Content, "(?m)^#{2,3}\s+(?<Title>$knownTitles)\s*$")
+    $allHeadings = [regex]::Matches($Content, '(?m)^(?<Level>#{2,3})\s+(?<Title>[^\r\n]+)\s*$')
+    $matches = @($allHeadings | Where-Object { $requiredSections -contains $_.Groups['Title'].Value.Trim() })
     $sections = [ordered]@{}
     for ($index = 0; $index -lt $matches.Count; $index++) {
         $match = $matches[$index]
         $start = $match.Index + $match.Length
-        $end = if ($index + 1 -lt $matches.Count) { $matches[$index + 1].Index } else { $Content.Length }
+        $level = $match.Groups['Level'].Value.Length
+        $nextPeer = @($allHeadings | Where-Object { $_.Index -gt $start -and $_.Groups['Level'].Value.Length -le $level } | Select-Object -First 1)
+        $end = if ($nextPeer.Count -gt 0) { $nextPeer[0].Index } else { $Content.Length }
         $title = $match.Groups['Title'].Value.Trim()
         $sections[$title] = $Content.Substring($start, $end - $start).Trim()
     }
