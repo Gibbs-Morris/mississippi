@@ -45,7 +45,8 @@ jobs:
             exit 0
           }
 
-          $pullRequests = @(gh api "repos/$repository/commits/$env:GITHUB_SHA/pulls" --header 'Accept: application/vnd.github+json' | ConvertFrom-Json)
+          $pages = @(gh api "repos/$repository/commits/$env:GITHUB_SHA/pulls" --header 'Accept: application/vnd.github+json' --paginate --slurp | ConvertFrom-Json)
+          $pullRequests = @($pages | ForEach-Object { @($_) })
           if ($pullRequests.Count -eq 0) { throw 'Merge-group issue-reference validation could not resolve any constituent pull requests.' }
           foreach ($pullRequest in $pullRequests) {
             Write-Host "Validating merge-group pull request #$($pullRequest.number)"

@@ -36,12 +36,43 @@ function Remove-NonRenderedMarkdown {
     }
     $withoutFences = $withoutFences -join [Environment]::NewLine
     $withoutComments = [regex]::Replace($withoutFences, '(?s)<!--.*?(?:-->|$)', '')
-    return [regex]::Replace($withoutComments, '`[^`\r\n]*`', '')
+    $builder = [System.Text.StringBuilder]::new()
+    $index = 0
+    while ($index -lt $withoutComments.Length) {
+        if ($withoutComments[$index] -ne '`') {
+            $null = $builder.Append($withoutComments[$index])
+            $index++
+            continue
+        }
+
+        $start = $index
+        while ($index -lt $withoutComments.Length -and $withoutComments[$index] -eq '`') { $index++ }
+        $delimiterLength = $index - $start
+        $closingIndex = $index
+        $closingLength = 0
+        while ($closingIndex -lt $withoutComments.Length) {
+            if ($withoutComments[$closingIndex] -ne '`') { $closingIndex++; continue }
+            $candidate = $closingIndex
+            while ($candidate -lt $withoutComments.Length -and $withoutComments[$candidate] -eq '`') { $candidate++ }
+            if (($candidate - $closingIndex) -ge $delimiterLength) {
+                $closingLength = $candidate - $closingIndex
+                break
+            }
+            $closingIndex = $candidate
+        }
+        if ($closingLength -ge $delimiterLength) {
+            $index = $closingIndex + $closingLength
+        }
+        else {
+            $null = $builder.Append($withoutComments.Substring($start, $delimiterLength))
+        }
+    }
+    return $builder.ToString()
 }
 
 function Get-PrIssueReferences {
     param(
-        [Parameter(Mandatory)][string]$Content,
+        [Parameter(Mandatory)][AllowEmptyString()][string]$Content,
         [Parameter(Mandatory)][string]$Owner,
         [Parameter(Mandatory)][string]$Name,
         [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$Errors
@@ -100,12 +131,17 @@ $warnings = [System.Collections.Generic.List[string]]::new()
 $renderedBody = Remove-NonRenderedMarkdown -Content $Body
 $references = @(Get-PrIssueReferences -Content $renderedBody -Owner $RepositoryOwner -Name $RepositoryName -Errors $errors)
 $resolvedIssues = [System.Collections.Generic.List[object]]::new()
+$maximumReferences = 20
 
 if ($references.Count -eq 0) {
     $errors.Add('No repository issue reference was found in the rendered pull request description.')
 }
+elseif ($references.Count -gt $maximumReferences) {
+    $errors.Add("Too many repository issue references were supplied ($($references.Count)); maximum supported is $maximumReferences.")
+}
 
-foreach ($reference in $references) {
+foreach ($reference in @($references | Select-Object -First $maximumReferences)) {
+    if ($references.Count -gt $maximumReferences) { break }
     try {
         $record = @(Get-PrIssueRecord -Number $reference.Number -Owner $RepositoryOwner -Name $RepositoryName -KnownIssuesJson $KnownIssuesJson)
         if ($record.Count -eq 0) {

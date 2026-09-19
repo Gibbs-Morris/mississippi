@@ -71,6 +71,21 @@ Refs #741
         $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
     }
 
+    It 'ignores variable-width inline code spans' {
+        $outcome = Invoke-ReferenceValidator -Body '``Refs #741``'
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
+    It 'caps API resolution work for excessive references' {
+        $body = (1..25 | ForEach-Object { "Refs #$($_)" }) -join ' '
+        $outcome = Invoke-ReferenceValidator -Body $body
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Match 'maximum supported is 20'
+    }
+
     It 'rejects closed issues' {
         $outcome = Invoke-ReferenceValidator -Body 'Refs #742'
 
