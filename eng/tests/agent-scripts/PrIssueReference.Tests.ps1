@@ -29,49 +29,47 @@ Describe 'PR issue reference validator' {
             $output = & $powerShellPath -NoProfile -File $mergeScriptPath -PullRequestsJson $pullRequestsJson -RepositoryOwner Gibbs-Morris -RepositoryName mississippi -KnownIssuesJson $knownIssues 2>&1 | Out-String
             [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output }
         }
+
+        function Assert-ValidReferenceBody {
+            param([Parameter(Mandatory)][AllowEmptyString()][string]$Body)
+            $outcome = Invoke-ReferenceValidator -Body $Body
+            $outcome.ExitCode | Should -Be 0
+            $outcome.Result.Valid | Should -BeTrue
+            return $outcome
+        }
+
+        function Assert-NoReferenceBody {
+            param([Parameter(Mandatory)][AllowEmptyString()][string]$Body)
+            $outcome = Invoke-ReferenceValidator -Body $Body
+            $outcome.ExitCode | Should -Not -Be 0
+            $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+            return $outcome
+        }
     }
 
     It 'accepts a local shorthand and same-repository issue URL' {
-        $outcome = Invoke-ReferenceValidator -Body 'Refs #741 and https://github.com/Gibbs-Morris/mississippi/issues/741.'
-
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Valid | Should -BeTrue
+        $outcome = Assert-ValidReferenceBody -Body 'Refs #741 and https://github.com/Gibbs-Morris/mississippi/issues/741.'
         @($outcome.Result.ResolvedIssues).Count | Should -Be 1
     }
 
     It 'accepts a qualified same-repository issue reference' {
-        $outcome = Invoke-ReferenceValidator -Body 'Refs Gibbs-Morris/mississippi#741.'
-
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Valid | Should -BeTrue
+        Assert-ValidReferenceBody -Body 'Refs Gibbs-Morris/mississippi#741.'
     }
 
     It 'ignores a same-repository pull request link when an issue is present' {
-        $outcome = Invoke-ReferenceValidator -Body 'Refs #741; parent PR: https://github.com/Gibbs-Morris/mississippi/pull/743.'
-
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Valid | Should -BeTrue
+        Assert-ValidReferenceBody -Body 'Refs #741; parent PR: https://github.com/Gibbs-Morris/mississippi/pull/743.'
     }
 
     It 'accepts a Markdown URI autolink to a same-repository issue' {
-        $outcome = Invoke-ReferenceValidator -Body '<https://github.com/Gibbs-Morris/mississippi/issues/741>'
-
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Valid | Should -BeTrue
+        Assert-ValidReferenceBody -Body '<https://github.com/Gibbs-Morris/mississippi/issues/741>'
     }
 
     It 'rejects a full issue URL with an invalid numeric boundary' {
-        $outcome = Invoke-ReferenceValidator -Body 'https://github.com/Gibbs-Morris/mississippi/issues/741abc'
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body 'https://github.com/Gibbs-Morris/mississippi/issues/741abc'
     }
 
     It 'accepts a used Markdown reference definition' {
-        $outcome = Invoke-ReferenceValidator -Body "[tracking issue][work]`r`n`r`n[work]: https://github.com/Gibbs-Morris/mississippi/issues/741"
-
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Valid | Should -BeTrue
+        Assert-ValidReferenceBody -Body "[tracking issue][work]`r`n`r`n[work]: https://github.com/Gibbs-Morris/mississippi/issues/741"
     }
 
     It 'accepts collapsed reference-style issue links' {
@@ -83,94 +81,55 @@ Describe 'PR issue reference validator' {
     }
 
     It 'ignores balanced Markdown link destinations while scanning shorthand' {
-        $outcome = Invoke-ReferenceValidator -Body '[tracking](https://example.test/a(b)#741)'
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body '[tracking](https://example.test/a(b)#741)'
     }
 
     It 'ignores escaped parentheses inside Markdown link destinations' {
-        $outcome = Invoke-ReferenceValidator -Body '[tracking](https://example.test/a\)#741)'
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body '[tracking](https://example.test/a\)#741)'
     }
 
     It 'ignores issue URLs nested inside an external URL' {
-        $outcome = Invoke-ReferenceValidator -Body 'Context: https://example.test/?next=https://github.com/Gibbs-Morris/mississippi/issues/741'
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body 'Context: https://example.test/?next=https://github.com/Gibbs-Morris/mississippi/issues/741'
     }
 
     It 'does not recover a local shorthand from an external issue URL fragment' {
-        $outcome = Invoke-ReferenceValidator -Body 'Context: https://github.com/other/repo/issues/999#741'
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body 'Context: https://github.com/other/repo/issues/999#741'
     }
 
     It 'ignores repository issue URLs nested after an external URL fragment' {
-        $outcome = Invoke-ReferenceValidator -Body '[tracking](https://example.test/#https://github.com/Gibbs-Morris/mississippi/issues/741)'
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body '[tracking](https://example.test/#https://github.com/Gibbs-Morris/mississippi/issues/741)'
     }
 
     It 'ignores repository issue URLs nested after an external URI colon' {
-        $outcome = Invoke-ReferenceValidator -Body '[tracking](https://example.test/redirect:https://github.com/Gibbs-Morris/mississippi/issues/741)'
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body '[tracking](https://example.test/redirect:https://github.com/Gibbs-Morris/mississippi/issues/741)'
     }
 
     It 'ignores quoted indented code blocks' {
-        $outcome = Invoke-ReferenceValidator -Body ">     Refs #741"
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body ">     Refs #741"
     }
 
     It 'ignores nested quoted indented code blocks' {
-        $outcome = Invoke-ReferenceValidator -Body '> >     Refs #741'
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body '> >     Refs #741'
     }
 
     It 'accepts an issue URL in an ordinary Markdown link' {
-        $outcome = Invoke-ReferenceValidator -Body '[tracking issue](https://github.com/Gibbs-Morris/mississippi/issues/741)'
-
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Valid | Should -BeTrue
+        Assert-ValidReferenceBody -Body '[tracking issue](https://github.com/Gibbs-Morris/mississippi/issues/741)'
     }
 
     It 'accepts a rendered HTML anchor to a same-repository issue' {
-        $outcome = Invoke-ReferenceValidator -Body '<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking issue</a>'
-
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Valid | Should -BeTrue
+        Assert-ValidReferenceBody -Body '<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking issue</a>'
     }
 
     It 'preserves a reference after inline comment opener code' {
-        $outcome = Invoke-ReferenceValidator -Body 'The token `<!--` is code. Refs #741.'
-
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Valid | Should -BeTrue
+        Assert-ValidReferenceBody -Body 'The token `<!--` is code. Refs #741.'
     }
 
     It 'ignores an unused Markdown reference definition' {
-        $outcome = Invoke-ReferenceValidator -Body '[tracking]: https://github.com/Gibbs-Morris/mississippi/issues/741'
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body '[tracking]: https://github.com/Gibbs-Morris/mississippi/issues/741'
     }
 
     It 'allows a closed ancillary issue when an open issue is present' {
-        $outcome = Invoke-ReferenceValidator -Body 'Refs #741; supersedes #742.'
-
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Valid | Should -BeTrue
+        Assert-ValidReferenceBody -Body 'Refs #741; supersedes #742.'
     }
 
     It 'returns structured output for an empty body' {
@@ -202,10 +161,7 @@ Refs #741
     }
 
     It 'rejects external-only context without a local issue' {
-        $outcome = Invoke-ReferenceValidator -Body 'Context: https://github.com/other/repo/issues/741.'
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body 'Context: https://github.com/other/repo/issues/741.'
     }
 
     It 'ignores variable-length Markdown fences' {
@@ -214,20 +170,14 @@ Refs #741
 Refs #741
 `````
 '@
-        $outcome = Invoke-ReferenceValidator -Body $body
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body $body
     }
 
     It 'does not close a fence indented beyond three spaces' {
         $backtick = [char]96
         $fence = [string]::new($backtick, 3)
         $body = $fence + 'md' + [Environment]::NewLine + 'Refs #741' + [Environment]::NewLine + '    ' + $fence
-        $outcome = Invoke-ReferenceValidator -Body $body
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body $body
         return
     }
 
@@ -235,81 +185,48 @@ Refs #741
         $backtick = [char]96
         $fence = [string]::new($backtick, 3)
         $body = $fence + 'md' + $backtick + [Environment]::NewLine + 'Refs #741' + [Environment]::NewLine + $fence
-        $outcome = Invoke-ReferenceValidator -Body $body
-
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Valid | Should -BeTrue
+        Assert-ValidReferenceBody -Body $body
     }
 
     It 'ignores variable-width inline code spans' {
-        $outcome = Invoke-ReferenceValidator -Body '``Refs #741``'
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body '``Refs #741``'
     }
 
     It 'does not hide text when the inline-code closing run length differs' {
-        $outcome = Invoke-ReferenceValidator -Body '``Refs #741```'
-
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Valid | Should -BeTrue
+        Assert-ValidReferenceBody -Body '``Refs #741```'
     }
 
     It 'ignores indented Markdown code blocks' {
-        $outcome = Invoke-ReferenceValidator -Body "    Refs #741"
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body "    Refs #741"
     }
 
     It 'ignores issue-looking tokens in raw HTML attributes' {
-        $outcome = Invoke-ReferenceValidator -Body '<span title="#741">tracking</span>'
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body '<span title="#741">tracking</span>'
     }
 
     It 'ignores shorthand tokens in Markdown link destinations' {
-        $outcome = Invoke-ReferenceValidator -Body '[tracking details](#741)'
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body '[tracking details](#741)'
     }
 
     It 'does not treat task-list markers as shortcut references' {
         $body = "Checklist:`n- [x] done`n`n[x]: https://github.com/Gibbs-Morris/mississippi/issues/741"
-        $outcome = Invoke-ReferenceValidator -Body $body
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body $body
     }
 
     It 'ignores issue URLs used as Markdown image destinations' {
-        $outcome = Invoke-ReferenceValidator -Body '![tracking](https://github.com/Gibbs-Morris/mississippi/issues/741)'
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body '![tracking](https://github.com/Gibbs-Morris/mississippi/issues/741)'
     }
 
     It 'ignores issue URLs in angle-enclosed Markdown image destinations' {
-        $outcome = Invoke-ReferenceValidator -Body '![tracking](<https://github.com/Gibbs-Morris/mississippi/issues/741>)'
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body '![tracking](<https://github.com/Gibbs-Morris/mississippi/issues/741>)'
     }
 
     It 'preserves references after escaped closing brackets' {
-        $outcome = Invoke-ReferenceValidator -Body '\](Refs #741)'
-
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Valid | Should -BeTrue
+        Assert-ValidReferenceBody -Body '\](Refs #741)'
     }
 
     It 'ignores shorthand tokens embedded in bare URLs' {
-        $outcome = Invoke-ReferenceValidator -Body 'https://example.test/?issue=#741'
-
-        $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        Assert-NoReferenceBody -Body 'https://example.test/?issue=#741'
     }
 
     It 'caps API resolution work for excessive references' {
