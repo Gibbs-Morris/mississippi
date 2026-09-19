@@ -15,7 +15,7 @@ namespace MississippiSamples.Spring.Domain.Aggregates.MoneyTransferSaga;
 ///     Saga state for orchestrating money transfers between bank accounts.
 /// </summary>
 [BrookName("SPRING", "BANKING", "TRANSFER")]
-[SnapshotStorageName("SPRING", "BANKING", "TRANSFERSTATE")]
+[SnapshotStorageName("SPRING", "BANKING", "TRANSFERSTATE", 1)]
 [GenerateSagaEndpoints(
     InputType = typeof(StartMoneyTransferCommand),
     RoutePrefix = "money-transfer",
