@@ -68,7 +68,14 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def write_json(path: Path, value: dict[str, Any]) -> None:
-    path = safe_io_path(path, must_exist=False, label="output")
+    candidate = Path(path).expanduser()
+    if ".." in candidate.parts:
+        raise ValidationError(f"output path traversal is not allowed: {path!s}")
+    resolved = candidate.resolve()
+    allowed_roots = (Path.cwd().resolve(), Path(tempfile.gettempdir()).resolve())
+    if not any(resolved == root or root in resolved.parents for root in allowed_roots):
+        raise ValidationError(f"output path must be within the worktree or temporary directory: {path!s}")
+    path = resolved
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
