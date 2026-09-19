@@ -1,4 +1,7 @@
+#!/usr/bin/env pwsh
+
 Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
 
 function Get-RepositoryRoot {
     [CmdletBinding()]
@@ -96,7 +99,7 @@ function Invoke-AutomationStep {
         return $result
     }
     catch {
-        Write-Error "FAILURE: $Name : $($_.Exception.Message)"
+        Write-Error "FAILURE: $Name : $($_.Exception.Message)" -ErrorAction Continue
         throw
     }
 }
