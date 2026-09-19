@@ -50,22 +50,37 @@ function Resolve-RepositoryExecutionRoot {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$RepoRoot)
 
+    function Resolve-ReparsePathComponent {
+        param([Parameter(Mandatory)][string]$Path)
+
+        $candidate = [System.IO.Path]::GetFullPath($Path)
+        $comparison = if ([OperatingSystem]::IsWindows()) { [System.StringComparer]::OrdinalIgnoreCase } else { [System.StringComparer]::Ordinal }
+        $seenTargets = [System.Collections.Generic.HashSet[string]]::new($comparison)
+        while ($true) {
+            $item = Get-Item -LiteralPath $candidate -Force -ErrorAction Stop
+            if (-not [bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+                return $item.FullName
+            }
+
+            if (-not $seenTargets.Add($candidate)) { throw "Worktree path resolution loop detected at '$candidate'." }
+            $target = @($item.Target | Select-Object -First 1)[0]
+            if ([string]::IsNullOrWhiteSpace([string]$target)) { throw "Unable to resolve worktree path component '$candidate'." }
+            if (-not [System.IO.Path]::IsPathRooted([string]$target)) {
+                $target = Join-Path (Split-Path -Parent $candidate) ([string]$target)
+            }
+            $candidate = [System.IO.Path]::GetFullPath([string]$target)
+        }
+    }
+
     $fullPath = [System.IO.Path]::GetFullPath($RepoRoot)
     $root = [System.IO.Path]::GetPathRoot($fullPath)
     $segments = $fullPath.Substring($root.Length).Split([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) | Where-Object { $_ }
     $current = $root
-    $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    $comparison = if ([OperatingSystem]::IsWindows()) { [System.StringComparer]::OrdinalIgnoreCase } else { [System.StringComparer]::Ordinal }
+    $seen = [System.Collections.Generic.HashSet[string]]::new($comparison)
     foreach ($segment in $segments) {
         $candidate = Join-Path $current $segment
-        $item = Get-Item -LiteralPath $candidate -Force -ErrorAction Stop
-        if ([bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
-            $target = @($item.Target | Select-Object -First 1)[0]
-            if ([string]::IsNullOrWhiteSpace([string]$target)) { throw "Unable to resolve worktree path component '$candidate'." }
-            $current = (Resolve-Path -LiteralPath $target -ErrorAction Stop).Path
-        }
-        else {
-            $current = $item.FullName
-        }
+        $current = Resolve-ReparsePathComponent -Path $candidate
         if (-not $seen.Add($current)) { throw "Worktree path resolution loop detected at '$current'." }
     }
     return $current
