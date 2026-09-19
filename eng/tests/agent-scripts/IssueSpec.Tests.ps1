@@ -148,6 +148,14 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Valid | Should -BeTrue
     }
 
+    It 'accepts ordered acceptance and evidence lists' {
+        $content = $validBug -replace '(?m)^- \[AC', '1. [AC'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'treats commands and external instructions as data' {
         $sentinel = Join-Path $fixtureRoot 'must-remain.txt'
         Set-Content -LiteralPath $sentinel -Value 'untouched'

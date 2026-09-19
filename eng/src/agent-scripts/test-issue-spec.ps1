@@ -149,7 +149,7 @@ function Get-IssueSpecResult {
     if ($sections.Contains('Acceptance criteria')) {
         $criteria = [regex]::Matches(
             [string]$sections['Acceptance criteria'],
-            '(?im)^\s*[-*]\s*\[(?<Id>AC\d+)\]\s+(?<Text>.+?)\s*$'
+            '(?im)^\s*(?:[-*]|\d+\.)\s*\[(?<Id>AC\d+)\]\s+(?<Text>.+?)\s*$'
         )
         if ($criteria.Count -eq 0) {
             Add-IssueSpecError -Errors $errors -Message 'Acceptance criteria must contain stable IDs such as [AC1].'
@@ -168,7 +168,7 @@ function Get-IssueSpecResult {
     if ($sections.Contains('Validation evidence map')) {
         $evidence = [string]$sections['Validation evidence map']
         $evidenceIds = [System.Collections.Generic.List[string]]::new()
-        $evidenceMatches = [regex]::Matches($evidence, '(?im)^\s*[-*]\s*\[(?<Id>AC\d+)\]\s+.+$')
+        $evidenceMatches = [regex]::Matches($evidence, '(?im)^\s*(?:[-*]|\d+\.)\s*\[(?<Id>AC\d+)\]\s+.+$')
         foreach ($evidenceMatch in $evidenceMatches) {
             $evidenceId = $evidenceMatch.Groups['Id'].Value.ToUpperInvariant()
             if ($evidenceIds.Contains($evidenceId)) {
