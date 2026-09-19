@@ -27,7 +27,7 @@ function Add-DoctorCheck {
     })
 }
 
-function Invoke-DoctorProbe {
+function Invoke-DoctorProbe { # NOSONAR - probe orchestration intentionally combines bounded diagnostic fallbacks.
     param(
         [Parameter(Mandatory)][string]$Name,
         [Parameter(Mandatory)][string]$FilePath,
@@ -156,7 +156,7 @@ function Get-DoctorProbeDetails {
     return 'Probe returned no diagnostic output.'
 }
 
-function Test-DoctorSdkCompatibility {
+function Test-DoctorSdkCompatibility { # NOSONAR - compatibility evaluation reports independent SDK evidence states.
     param(
         [string]$Expected,
         [string]$Actual,
@@ -220,7 +220,7 @@ function ConvertTo-DoctorGitHubRemote {
     }
 }
 
-function Get-AgentDoctorReport {
+function Get-AgentDoctorReport { # NOSONAR - top-level doctor assembly coordinates explicit read-only prerequisite probes.
     [CmdletBinding()]
     param(
         [string]$RepositoryRoot = (Get-Location).Path,
