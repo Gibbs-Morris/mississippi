@@ -167,8 +167,9 @@ function Invoke-RepositoryProcess {
             }
             $terminated = $process.WaitForExit(1000)
         }
-        $stdoutTask.Wait(1000) | Out-Null
-        $stderrTask.Wait(1000) | Out-Null
+        $stdoutCompleted = $stdoutTask.Wait(1000)
+        $stderrCompleted = $stderrTask.Wait(1000)
+        $captureIncomplete = -not ($stdoutCompleted -and $stderrCompleted -and $stdoutTask.IsCompleted -and $stderrTask.IsCompleted)
         $stdout = if ($stdoutTask.IsCompleted) { $stdoutTask.GetAwaiter().GetResult().TrimEnd([char]0x0D, [char]0x0A) } else { '' }
         $stderr = if ($stderrTask.IsCompleted) { $stderrTask.GetAwaiter().GetResult().TrimEnd([char]0x0D, [char]0x0A) } else { '' }
         $result = [pscustomobject][ordered]@{
@@ -181,13 +182,14 @@ function Invoke-RepositoryProcess {
             Cancelled = $false
             TerminationFailed = $timedOut -and (-not $terminated -or $terminationErrors.Count -gt 0)
             TerminationErrors = @($terminationErrors)
+            CaptureIncomplete = $captureIncomplete
             StdOut = $stdout
             StdErr = $stderr
-            Success = -not $timedOut -and $process.ExitCode -eq 0
+            Success = -not $timedOut -and -not $captureIncomplete -and $process.ExitCode -eq 0
         }
         if ($PassThru) { return $result }
         if (-not $result.Success) {
-            $message = if ($timedOut) { "Command '$FilePath' timed out after $TimeoutSeconds seconds." } elseif ($ErrorMessage) { $ErrorMessage } else { "Command '$FilePath' failed with exit code $($result.ExitCode)." }
+            $message = if ($timedOut) { "Command '$FilePath' timed out after $TimeoutSeconds seconds." } elseif ($result.CaptureIncomplete) { "Command '$FilePath' exited before native output capture completed." } elseif ($ErrorMessage) { $ErrorMessage } else { "Command '$FilePath' failed with exit code $($result.ExitCode)." }
             if ($stderr) { $message += " Native error output: $stderr" }
             if ($result.TerminationFailed) { $message += " Process termination was not verified: $($result.TerminationErrors -join '; ')" }
             throw $message
@@ -199,7 +201,7 @@ function Invoke-RepositoryProcess {
             return [pscustomobject][ordered]@{
                 FilePath = $FilePath; Arguments = @($Arguments); StartedUtc = $startedUtc
                 EndedUtc = (Get-Date).ToUniversalTime().ToString('o'); ExitCode = -1
-                TimedOut = $false; Cancelled = $false; TerminationFailed = $false
+                TimedOut = $false; Cancelled = $false; TerminationFailed = $false; CaptureIncomplete = $false
                 TerminationErrors = @(); StdOut = ''; StdErr = $_.Exception.Message; Success = $false
             }
         }
