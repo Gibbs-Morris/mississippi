@@ -340,6 +340,8 @@ function Get-AgentContext {
         'docs' = @('docs/Docusaurus/docs/__domain__.md', 'docs/Docusaurus/docs/__domain__.mdx', 'docs/Docusaurus/docs/adr/0001-example.md')
         'documentation' = @('docs/Docusaurus/docs/__domain__.md', 'docs/Docusaurus/docs/__domain__.mdx', 'docs/Docusaurus/docs/adr/0001-example.md')
         'markdown' = @('__domain__.md', 'docs/Docusaurus/docs/__domain__.md')
+        'css' = @('__domain__.css')
+        'razor' = @('__domain__.razor')
         'blazor' = @('__domain__.razor')
         'testing' = @('tests/__domain__.cs')
         'serialization' = @('__domain__.cs')
@@ -394,7 +396,12 @@ function Get-AgentContext {
                 }
             }
             foreach ($domain in @($ContentDomain)) {
-                $probes = @($domainProbePaths[$domain.ToLowerInvariant()])
+                $domainKey = $domain.ToLowerInvariant()
+                if (-not $domainProbePaths.ContainsKey($domainKey)) {
+                    $unresolved.Add("Unsupported content domain hint: '$domain'.")
+                    continue
+                }
+                $probes = @($domainProbePaths[$domainKey])
                 foreach ($probe in $probes) {
                     if ($frontMatter.Status -eq 'valid' -and @($frontMatter.Patterns | Where-Object { Test-ContextGlob -Pattern $_ -Path $probe }).Count -gt 0) {
                         $isSelected = $true

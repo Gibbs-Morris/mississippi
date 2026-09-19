@@ -72,6 +72,13 @@ applyTo: 'docs/Docusaurus/docs/**/*.{md,mdx}'
 
 # Documentation route
 '@
+        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/style-route.instructions.md') -Value @'
+---
+applyTo: '**/*.css'
+---
+
+# Style route
+'@
         Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/malformed.instructions.md') -Value @'
 applyTo: '**/*.cs'
 
@@ -190,6 +197,16 @@ applyTo: '**/[abc.md'
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ContentDomain docs
 
         $context.Selected.Path | Should -Contain '.github/instructions/documentation-route.instructions.md'
+    }
+
+    It 'supports known style domains and reports unknown domains' {
+        $known = Get-AgentContext -RepositoryRoot $fixtureRoot -ContentDomain css
+        $unknown = Get-AgentContext -RepositoryRoot $fixtureRoot -ContentDomain mystery
+
+        $known.Complete | Should -BeTrue
+        $known.Selected.Path | Should -Contain '.github/instructions/style-route.instructions.md'
+        $unknown.Complete | Should -BeFalse
+        $unknown.Unresolved | Should -Contain "Unsupported content domain hint: 'mystery'."
     }
 
     It 'prunes excluded trees before discovery' {
