@@ -39,6 +39,35 @@ Describe 'RepositoryAutomation helpers' {
         try { $released.OperationId | Should -Be 'owner-three' } finally { Exit-RepositoryExecutionLease -Lease $released }
     }
 
+    It 'makes shared lease files writable by participating accounts on Unix' {
+        if ($IsWindows) {
+            Set-ItResult -Skipped -Because 'Unix lease permissions are not available on Windows.'
+            return
+        }
+
+        $previousSharedWorktree = $env:MISSISSIPPI_SHARED_WORKTREE
+        $leaseRoot = Join-Path $TestDrive 'shared-lease-repository'
+        $coordinationRoot = Join-Path $TestDrive 'shared-lease-coordination'
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        try {
+            $env:MISSISSIPPI_SHARED_WORKTREE = 'true'
+            $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'shared-owner' -LeaseDirectory $coordinationRoot
+            try {
+                $directoryMode = [System.IO.File]::GetUnixFileMode($coordinationRoot)
+                ([int]$directoryMode -band [int][System.IO.UnixFileMode]::OtherWrite) | Should -Not -Be 0
+                $fileMode = [System.IO.File]::GetUnixFileMode($lease.Path)
+                ([int]$fileMode -band [int][System.IO.UnixFileMode]::OtherWrite) | Should -Not -Be 0
+            }
+            finally {
+                Exit-RepositoryExecutionLease -Lease $lease
+            }
+        }
+        finally {
+            if ($null -eq $previousSharedWorktree) { Remove-Item Env:MISSISSIPPI_SHARED_WORKTREE -ErrorAction SilentlyContinue }
+            else { $env:MISSISSIPPI_SHARED_WORKTREE = $previousSharedWorktree }
+        }
+    }
+
     It 'uses one lease identity for a worktree alias' {
         $realRoot = Join-Path $TestDrive 'lease-real'
         $aliasRoot = Join-Path $TestDrive 'lease-alias'

@@ -3,6 +3,45 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$sharedExecutionLeaseDirectoryMode = [System.IO.UnixFileMode]::UserRead -bor
+    [System.IO.UnixFileMode]::UserWrite -bor
+    [System.IO.UnixFileMode]::UserExecute -bor
+    [System.IO.UnixFileMode]::GroupRead -bor
+    [System.IO.UnixFileMode]::GroupWrite -bor
+    [System.IO.UnixFileMode]::GroupExecute -bor
+    [System.IO.UnixFileMode]::OtherRead -bor
+    [System.IO.UnixFileMode]::OtherWrite -bor
+    [System.IO.UnixFileMode]::OtherExecute -bor
+    [System.IO.UnixFileMode]::StickyBit
+$sharedExecutionLeaseFileMode = [System.IO.UnixFileMode]::UserRead -bor
+    [System.IO.UnixFileMode]::UserWrite -bor
+    [System.IO.UnixFileMode]::GroupRead -bor
+    [System.IO.UnixFileMode]::GroupWrite -bor
+    [System.IO.UnixFileMode]::OtherRead -bor
+    [System.IO.UnixFileMode]::OtherWrite
+
+function Set-RepositoryExecutionLeaseUnixMode {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][System.IO.UnixFileMode]$Mode
+    )
+
+    if ($IsWindows) { return }
+
+    try {
+        [System.IO.File]::SetUnixFileMode($Path, $Mode)
+        $actualMode = [System.IO.File]::GetUnixFileMode($Path)
+    }
+    catch {
+        throw "Unable to set shared execution lease permissions on '$Path': $($_.Exception.Message)"
+    }
+
+    if (([int]$actualMode -band [int]$Mode) -ne [int]$Mode) {
+        throw "Shared execution lease permissions on '$Path' are insufficient for all participating accounts."
+    }
+}
+
 function Get-RepositoryRoot {
     [CmdletBinding()]
     param(
@@ -64,6 +103,7 @@ function Get-RepositoryExecutionLeasePath {
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($keyRoot)
     $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
     $fileName = (($hash | ForEach-Object { $_.ToString('x2') }) -join '') + '.lease'
+    $sharedLease = $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true'
     $leaseDirectory = if ([string]::IsNullOrWhiteSpace($LeaseDirectory)) { Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases' } else { [System.IO.Path]::GetFullPath($LeaseDirectory) }
     if (Test-Path -LiteralPath $leaseDirectory) {
         $leaseItem = Get-Item -LiteralPath $leaseDirectory -Force -ErrorAction Stop
@@ -73,6 +113,9 @@ function Get-RepositoryExecutionLeasePath {
     }
     else {
         New-Item -ItemType Directory -Path $leaseDirectory -Force | Out-Null
+    }
+    if ($sharedLease) {
+        Set-RepositoryExecutionLeaseUnixMode -Path $leaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
     }
     return Join-Path $leaseDirectory $fileName
 }
@@ -177,9 +220,24 @@ function Enter-RepositoryExecutionLease {
         startedUtc = (Get-Date).ToUniversalTime().ToString('o')
     } | ConvertTo-Json -Compress
 
+    $sharedLease = $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true'
     $stream = $null
     try {
-        $stream = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::Read)
+        $streamOptions = [System.IO.FileStreamOptions]::new()
+        $streamOptions.Mode = [System.IO.FileMode]::OpenOrCreate
+        $streamOptions.Access = [System.IO.FileAccess]::ReadWrite
+        $streamOptions.Share = [System.IO.FileShare]::Read
+        if ($sharedLease) { $streamOptions.UnixCreateMode = $sharedExecutionLeaseFileMode }
+        $stream = [System.IO.FileStream]::new($leasePath, $streamOptions)
+        if ($sharedLease) {
+            Set-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $sharedExecutionLeaseFileMode
+        }
+    }
+    catch [System.UnauthorizedAccessException] {
+        if ($sharedLease) {
+            throw "Shared execution lease '$leasePath' is not writable by this account. Ensure existing lease files in the shared directory are writable by all participating accounts."
+        }
+        throw
     }
     catch [System.IO.IOException] {
         $errorCode = $_.Exception.HResult -band 0xFFFF
