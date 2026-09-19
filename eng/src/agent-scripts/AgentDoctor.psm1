@@ -58,6 +58,14 @@ function Invoke-DoctorProbe {
     }
 }
 
+function Get-DoctorProbeDetails {
+    param([Parameter(Mandatory)][object]$Probe)
+
+    if (-not [string]::IsNullOrWhiteSpace([string]$Probe.Error)) { return [string]$Probe.Error }
+    if (-not [string]::IsNullOrWhiteSpace([string]$Probe.Output)) { return [string]$Probe.Output }
+    return 'Probe returned no diagnostic output.'
+}
+
 function Test-DoctorSdkCompatibility {
     param([string]$Expected, [string]$Actual)
     if ($Actual -eq $Expected) { return $true }
@@ -107,7 +115,7 @@ function Get-AgentDoctorReport {
             Add-DoctorCheck -Checks $checks -Name 'dotnet-sdk' -State missing -Required $true -Details $dotnet.Error -Remediation 'Install the SDK selected by global.json.'
         }
         elseif ($dotnet.ExitCode -ne 0) {
-            Add-DoctorCheck -Checks $checks -Name 'dotnet-sdk' -State unknown -Required $true -Details ($dotnet.Error ?? $dotnet.Output) -Remediation 'Run dotnet --version from the repository root and repair SDK selection.'
+            Add-DoctorCheck -Checks $checks -Name 'dotnet-sdk' -State unknown -Required $true -Details (Get-DoctorProbeDetails -Probe $dotnet) -Remediation 'Run dotnet --version from the repository root and repair SDK selection.'
         }
         else {
             if (-not $globalJsonReady) {
@@ -134,7 +142,7 @@ function Get-AgentDoctorReport {
         }
 
         $git = Invoke-DoctorProbe -Name 'git-root' -FilePath 'git' -Arguments @('-C', $root, 'rev-parse', '--show-toplevel') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
-        Add-DoctorCheck -Checks $checks -Name 'git-worktree' -State $(if ($git.Available -and $git.ExitCode -eq 0) { 'ready' } elseif (-not $git.Available) { 'missing' } else { 'unknown' }) -Required $true -Details $(if ($git.ExitCode -eq 0) { $git.Output } else { $git.Error }) -Remediation $(if ($git.ExitCode -eq 0) { '' } else { 'Run the doctor from a readable Git checkout.' })
+        Add-DoctorCheck -Checks $checks -Name 'git-worktree' -State $(if ($git.Available -and $git.ExitCode -eq 0) { 'ready' } elseif (-not $git.Available) { 'missing' } else { 'unknown' }) -Required $true -Details (Get-DoctorProbeDetails -Probe $git) -Remediation $(if ($git.ExitCode -eq 0) { '' } else { 'Run the doctor from a readable Git checkout.' })
         $pester = @(Get-Module -ListAvailable -Name Pester | Where-Object { $_.Version -ge [version]'5.0.0' } | Sort-Object Version -Descending | Select-Object -First 1)
         Add-DoctorCheck -Checks $checks -Name 'pester' -State $(if ($pester.Count -gt 0) { 'ready' } else { 'missing' }) -Required $true -Details $(if ($pester.Count -gt 0) { "Pester $($pester[0].Version) is available." } else { 'Pester 5 or later is not available.' }) -Remediation 'Install Pester 5 or later for PowerShell validation.'
     }
@@ -146,10 +154,10 @@ function Get-AgentDoctorReport {
         $npm = Invoke-DoctorProbe -Name 'npm-version' -FilePath 'npm' -Arguments @('--version') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
         $nodeVersionMatch = if ($node.Available -and $node.ExitCode -eq 0) { [regex]::Match($node.Output.Trim(), '^v?(?<Major>\d+)(?:\.(?<Minor>\d+))?(?:\.(?<Patch>\d+))?') } else { $null }
         $nodeState = if (-not $node.Available) { 'missing' } elseif ($node.ExitCode -ne 0) { 'unknown' } elseif (-not $nodeVersionMatch.Success) { 'unknown' } elseif ([int]$nodeVersionMatch.Groups['Major'].Value -lt 20) { 'unsupported' } else { 'ready' }
-        $nodeDetails = if ($node.Output) { $node.Output } else { $node.Error }
+        $nodeDetails = Get-DoctorProbeDetails -Probe $node
         $nodeRemediation = if ($nodeState -eq 'ready') { '' } elseif ($nodeState -eq 'unsupported') { 'Install Node.js 20 or later for the documentation profile.' } else { 'Install Node.js 20 or later and verify node --version.' }
         Add-DoctorCheck -Checks $checks -Name 'node' -State $nodeState -Required $true -Details $nodeDetails -Remediation $nodeRemediation
-        Add-DoctorCheck -Checks $checks -Name 'npm' -State $(if ($npm.Available -and $npm.ExitCode -eq 0) { 'ready' } elseif (-not $npm.Available) { 'missing' } else { 'unknown' }) -Required $true -Details $npm.Output -Remediation 'Install npm for the documentation profile.'
+        Add-DoctorCheck -Checks $checks -Name 'npm' -State $(if ($npm.Available -and $npm.ExitCode -eq 0) { 'ready' } elseif (-not $npm.Available) { 'missing' } else { 'unknown' }) -Required $true -Details (Get-DoctorProbeDetails -Probe $npm) -Remediation 'Install npm for the documentation profile.'
         Add-DoctorCheck -Checks $checks -Name 'docs-manifests' -State $(if ((Test-Path $packageJson -PathType Leaf) -and (Test-Path $lockFile -PathType Leaf)) { 'ready' } else { 'missing' }) -Required $true -Details "package.json=$((Test-Path $packageJson -PathType Leaf)); package-lock.json=$((Test-Path $lockFile -PathType Leaf))." -Remediation 'Restore the Docusaurus package manifests.'
     }
     else { Add-DoctorCheck -Checks $checks -Name 'docs-profile' -State not-required -Required $false -Details 'Documentation prerequisites were not requested.' }
@@ -157,7 +165,7 @@ function Get-AgentDoctorReport {
     if ($profiles -contains 'Spring') {
         $docker = Invoke-DoctorProbe -Name 'docker-ostype' -FilePath 'docker' -Arguments @('info', '--format', '{{.OSType}}') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
         $dockerState = if (-not $docker.Available) { 'missing' } elseif ($docker.ExitCode -ne 0) { 'unknown' } elseif ($docker.Output.Trim() -eq 'linux') { 'ready' } else { 'unsupported' }
-        Add-DoctorCheck -Checks $checks -Name 'docker-linux' -State $dockerState -Required $true -Details $docker.Output -Remediation 'Start Docker with Linux containers and grant this user access.'
+        Add-DoctorCheck -Checks $checks -Name 'docker-linux' -State $dockerState -Required $true -Details (Get-DoctorProbeDetails -Probe $docker) -Remediation 'Start Docker with Linux containers and grant this user access.'
         $appHost = Join-Path $root 'samples/Spring/Spring.AppHost/Spring.AppHost.csproj'
         Add-DoctorCheck -Checks $checks -Name 'spring-apphost' -State $(if (Test-Path $appHost -PathType Leaf) { 'ready' } else { 'missing' }) -Required $true -Details $appHost -Remediation 'Restore the Spring AppHost project.'
         $playwright = Join-Path $root 'artifacts/tools/playwright'
@@ -168,7 +176,7 @@ function Get-AgentDoctorReport {
     if ($profiles -contains 'GitHub') {
         $remote = Invoke-DoctorProbe -Name 'git-remote' -FilePath 'git' -Arguments @('-C', $root, 'config', '--get', 'remote.origin.url') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
         $gh = Invoke-DoctorProbe -Name 'github-repository' -FilePath 'gh' -Arguments @('repo', 'view', '--json', 'nameWithOwner') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
-        Add-DoctorCheck -Checks $checks -Name 'github-repository' -State $(if (-not $remote.Available -or $remote.ExitCode -ne 0) { 'unknown' } elseif (-not $gh.Available) { 'missing' } elseif ($gh.ExitCode -eq 0) { 'ready' } else { 'unknown' }) -Required $true -Details $(if ($gh.ExitCode -eq 0) { 'Repository identity resolved without exposing credentials.' } else { $gh.Error }) -Remediation 'Authenticate gh with read access to the current repository.'
+        Add-DoctorCheck -Checks $checks -Name 'github-repository' -State $(if (-not $remote.Available -or $remote.ExitCode -ne 0) { 'unknown' } elseif (-not $gh.Available) { 'missing' } elseif ($gh.ExitCode -eq 0) { 'ready' } else { 'unknown' }) -Required $true -Details $(if ($gh.ExitCode -eq 0) { 'Repository identity resolved without exposing credentials.' } else { Get-DoctorProbeDetails -Probe $gh }) -Remediation 'Authenticate gh with read access to the current repository.'
     }
     else { Add-DoctorCheck -Checks $checks -Name 'github-profile' -State not-required -Required $false -Details 'GitHub delivery prerequisites were not requested.' }
 
