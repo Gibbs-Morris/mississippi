@@ -11,7 +11,7 @@ Describe 'Agent context selection' {
         Import-Module -Name $modulePath -Force
 
         $fixtureRoot = Join-Path $TestDrive 'context-repository'
-        New-Item -ItemType Directory -Path (Join-Path $fixtureRoot '.github/instructions'), (Join-Path $fixtureRoot '.github/agents'), (Join-Path $fixtureRoot 'nested/feature'), (Join-Path $fixtureRoot 'foo'), (Join-Path $fixtureRoot 'foobar'), (Join-Path $fixtureRoot 'src'), (Join-Path $fixtureRoot 'docs/Docusaurus/docs/adr') -Force | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $fixtureRoot '.github/instructions'), (Join-Path $fixtureRoot '.github/agents'), (Join-Path $fixtureRoot '.scratchpad/deep'), (Join-Path $fixtureRoot 'nested/feature'), (Join-Path $fixtureRoot 'foo'), (Join-Path $fixtureRoot 'foobar'), (Join-Path $fixtureRoot 'src'), (Join-Path $fixtureRoot 'docs/Docusaurus/docs/adr') -Force | Out-Null
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'AGENTS.md') -Value '# Root guidance'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'nested/AGENTS.md') -Value '# Nested guidance'
         Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/copilot-instructions.md') -Value @'
@@ -88,6 +88,7 @@ applyTo: '**/*.{cs,razor'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/guide.md') -Value '# Guide'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/Docusaurus/docs/adr/0001-example.md') -Value '# ADR'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'nested/feature/example.ps1') -Value 'Write-Output data'
+        Set-Content -LiteralPath (Join-Path $fixtureRoot '.scratchpad/AGENTS.md') -Value '# Excluded guidance'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'foo/AGENTS.md') -Value '# Foo guidance'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'foobar/example.cs') -Value 'class Sibling { }'
         Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/agents/example-planner.agent.md') -Value '# Planner'
@@ -174,6 +175,13 @@ applyTo: '**/*.{cs,razor'
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ContentDomain docs
 
         $context.Selected.Path | Should -Contain '.github/instructions/documentation-route.instructions.md'
+    }
+
+    It 'prunes excluded trees before discovery' {
+        $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+
+        $context.Entries.Path | Should -Not -Contain '.scratchpad/AGENTS.md'
+        $context.Unresolved | Should -HaveCount 0
     }
 
     It 'reports missing required context instead of returning an empty pass' {

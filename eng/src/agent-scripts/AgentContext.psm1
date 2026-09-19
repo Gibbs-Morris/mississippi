@@ -221,6 +221,38 @@ function Get-ContextSourceRevision {
     return 'unknown'
 }
 
+function Get-ContextFilesByFilter {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Root,
+        [Parameter(Mandatory)][string]$Filter,
+        [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$Errors
+    )
+
+    $results = [System.Collections.Generic.List[object]]::new()
+    $pending = [System.Collections.Generic.Queue[string]]::new()
+    $pending.Enqueue($Root)
+    $excludedDirectories = @('.git', 'bin', 'obj', 'node_modules', '.scratchpad')
+    while ($pending.Count -gt 0) {
+        $current = $pending.Dequeue()
+        try { $children = @(Get-ChildItem -LiteralPath $current -Force -ErrorAction Stop) }
+        catch {
+            $null = $Errors.Add("Unable to enumerate '$current': $($_.Exception.Message)")
+            continue
+        }
+        foreach ($child in $children) {
+            if ($child.PSIsContainer) {
+                if ($excludedDirectories -notcontains $child.Name) { $pending.Enqueue($child.FullName) }
+            }
+            elseif ($child.Name -like $Filter) {
+                $results.Add($child)
+            }
+        }
+    }
+
+    return @($results | Sort-Object FullName -Unique)
+}
+
 function Get-ContextCandidates {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$RepositoryRoot)
@@ -229,16 +261,12 @@ function Get-ContextCandidates {
     $scanErrors = [System.Collections.Generic.List[string]]::new()
     $instructionRoot = Join-Path $RepositoryRoot '.github/instructions'
     if (Test-Path -LiteralPath $instructionRoot -PathType Container) {
-        $errors = @()
-        $instructionFiles = @(Get-ChildItem -LiteralPath $instructionRoot -Recurse -File -Filter '*.instructions.md' -Force -ErrorAction SilentlyContinue -ErrorVariable errors)
-        foreach ($errorRecord in $errors) { $scanErrors.Add("Unable to enumerate instructions: $($errorRecord.Exception.Message)") }
+        $instructionFiles = Get-ContextFilesByFilter -Root $instructionRoot -Filter '*.instructions.md' -Errors $scanErrors
         foreach ($file in $instructionFiles) { $files.Add([pscustomobject]@{ FullName = $file.FullName; Kind = 'instruction' }) }
     }
 
-    $errors = @()
-    $entrypointFiles = @(Get-ChildItem -LiteralPath $RepositoryRoot -Recurse -File -Filter 'AGENTS.md' -Force -ErrorAction SilentlyContinue -ErrorVariable errors)
-    foreach ($errorRecord in $errors) { $scanErrors.Add("Unable to enumerate AGENTS.md files: $($errorRecord.Exception.Message)") }
-    foreach ($file in $entrypointFiles | Where-Object { $_.FullName -notmatch '[\\/](?:\.git|bin|obj|node_modules|\.scratchpad)(?:[\\/]|$)' }) {
+    $entrypointFiles = Get-ContextFilesByFilter -Root $RepositoryRoot -Filter 'AGENTS.md' -Errors $scanErrors
+    foreach ($file in $entrypointFiles) {
         $files.Add([pscustomobject]@{ FullName = $file.FullName; Kind = 'AGENTS' })
     }
 
