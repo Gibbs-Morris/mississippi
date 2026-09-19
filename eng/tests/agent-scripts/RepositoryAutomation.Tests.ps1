@@ -67,6 +67,38 @@ Describe 'RepositoryAutomation helpers' {
         }
     }
 
+    It 'resolves relative and chained symlink targets before deriving lease identity' {
+        $chainRoot = Join-Path $TestDrive 'lease-chain'
+        $realRoot = Join-Path $chainRoot 'real'
+        $linkTwo = Join-Path $chainRoot 'link-two'
+        $linkOne = Join-Path $chainRoot 'link-one'
+        New-Item -ItemType Directory -Path $realRoot -Force | Out-Null
+        $linksCreated = $false
+        try {
+            New-Item -ItemType SymbolicLink -Path $linkTwo -Target $realRoot -ErrorAction Stop | Out-Null
+            New-Item -ItemType SymbolicLink -Path $linkOne -Target 'link-two' -ErrorAction Stop | Out-Null
+            $linksCreated = $true
+
+            $realLeasePath = Get-RepositoryExecutionLeasePath -RepoRoot $realRoot
+            $aliasLeasePath = Get-RepositoryExecutionLeasePath -RepoRoot $linkOne
+
+            $aliasLeasePath | Should -Be $realLeasePath
+        }
+        catch {
+            if (-not $linksCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create chained symbolic links.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $linkOne -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $linkTwo -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $chainRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It 'invokes automation steps and returns the result' {
         $result = Invoke-AutomationStep -Name 'Sample' -SilentSuccess -Action { 1 + 1 }
         $result | Should -Be 2
