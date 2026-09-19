@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,6 +31,16 @@ public sealed class DevToolsInitializationCheckerServiceTests
             Options.Create(options),
             hostEnvironment,
             TimeSpan.FromSeconds(1)); // Use short delay for tests
+
+    private static Task InvokeExecuteAsync(
+        DevToolsInitializationCheckerService service
+    )
+    {
+        MethodInfo method = typeof(DevToolsInitializationCheckerService).GetMethod(
+            "ExecuteAsync",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+        return (Task)method.Invoke(service, [CancellationToken.None])!;
+    }
 
     /// <summary>
     ///     When DevTools is DevelopmentOnly and host environment is production, checker should not run.
@@ -214,6 +225,84 @@ public sealed class DevToolsInitializationCheckerServiceTests
     }
 
     /// <summary>
+    ///     Executes the initialized path through the hosted service implementation.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteAsyncReturnsWhenAlreadyInitialized()
+    {
+        DevToolsInitializationTracker tracker = new()
+        {
+            WasInitialized = true,
+        };
+        FakeTimeProvider fakeTime = new();
+        using DevToolsInitializationCheckerService sut = CreateService(
+            tracker,
+            new()
+            {
+                Enablement = ReservoirDevToolsEnablement.Always,
+            },
+            fakeTime);
+        Task execution = InvokeExecuteAsync(sut);
+        fakeTime.Advance(TimeSpan.FromSeconds(1));
+        await execution;
+        Assert.True(tracker.WasInitialized);
+    }
+
+    /// <summary>
+    ///     Executes the exception path when missing initialization must fail.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteAsyncThrowsWhenInitializerIsMissing()
+    {
+        DevToolsInitializationTracker tracker = new();
+        FakeTimeProvider fakeTime = new();
+        using DevToolsInitializationCheckerService sut = CreateService(
+            tracker,
+            new()
+            {
+                Enablement = ReservoirDevToolsEnablement.Always,
+                ThrowOnMissingInitializer = true,
+            },
+            fakeTime);
+        Task execution = InvokeExecuteAsync(sut);
+        fakeTime.Advance(TimeSpan.FromSeconds(1));
+        try
+        {
+            await execution;
+            Assert.Fail("Expected the missing initializer to throw.");
+        }
+        catch (InvalidOperationException)
+        {
+            // Expected when the initializer is missing and throwing is enabled.
+        }
+    }
+
+    /// <summary>
+    ///     Executes the warning path when missing initialization is explicitly allowed.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteAsyncWarnsWhenThrowingIsDisabled()
+    {
+        DevToolsInitializationTracker tracker = new();
+        FakeTimeProvider fakeTime = new();
+        using DevToolsInitializationCheckerService sut = CreateService(
+            tracker,
+            new()
+            {
+                Enablement = ReservoirDevToolsEnablement.Always,
+                ThrowOnMissingInitializer = false,
+            },
+            fakeTime);
+        Task execution = InvokeExecuteAsync(sut);
+        fakeTime.Advance(TimeSpan.FromSeconds(1));
+        await execution;
+        Assert.False(tracker.WasInitialized);
+    }
+
+    /// <summary>
     ///     When initialized properly, no warning or exception regardless of ThrowOnMissingInitializer setting.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
@@ -271,6 +360,39 @@ public sealed class DevToolsInitializationCheckerServiceTests
         await sut.StopAsync(CancellationToken.None);
 
         // Assert - tracker shows initialization was called
+        Assert.True(tracker.WasInitialized);
+    }
+
+    /// <summary>
+    ///     The public constructor uses the default delay and completes after initialization.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task PublicConstructorRunsInitializedAlwaysEnabledCheck()
+    {
+        // Arrange
+        DevToolsInitializationTracker tracker = new()
+        {
+            WasInitialized = true,
+        };
+        FakeTimeProvider fakeTime = new();
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
+        using DevToolsInitializationCheckerService sut = new(
+            tracker,
+            NullLogger<DevToolsInitializationCheckerService>.Instance,
+            fakeTime,
+            Options.Create(options));
+
+        // Act
+        await sut.StartAsync(CancellationToken.None);
+        fakeTime.Advance(DevToolsInitializationCheckerService.DefaultCheckDelay);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await sut.StopAsync(CancellationToken.None);
+
+        // Assert
         Assert.True(tracker.WasInitialized);
     }
 
