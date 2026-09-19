@@ -134,6 +134,15 @@ function Resolve-DoctorCommand {
             }
         }
     }
+    if ($IsWindows -and [System.IO.Path]::GetExtension($selected[0].Source) -iin @('.cmd', '.bat')) {
+        $cmd = @(Get-Command cmd.exe -ErrorAction SilentlyContinue | Select-Object -First 1)
+        if ($cmd.Count -gt 0) {
+            return [pscustomobject]@{
+                FilePath = $cmd[0].Source
+                PrefixArguments = @('/d', '/c', $selected[0].Source)
+            }
+        }
+    }
 
     return [pscustomobject]@{ FilePath = $selected[0].Source; PrefixArguments = @() }
 }
@@ -386,8 +395,12 @@ function Get-AgentDoctorReport {
 
         $git = Invoke-DoctorProbe -Name 'git-root' -FilePath 'git' -Arguments @('-C', $root, 'rev-parse', '--show-toplevel') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
         Add-DoctorCheck -Checks $checks -Name 'git-worktree' -State $(if ($git.Available -and $git.ExitCode -eq 0) { 'ready' } elseif (-not $git.Available) { 'missing' } else { 'unknown' }) -Required $true -Details (Get-DoctorProbeDetails -Probe $git) -Remediation $(if ($git.ExitCode -eq 0) { '' } else { 'Run the doctor from a readable Git checkout.' })
-        $pester = @(Get-Module -ListAvailable -Name Pester | Where-Object { $_.Version -ge [version]'5.0.0' } | Sort-Object Version -Descending | Select-Object -First 1)
-        Add-DoctorCheck -Checks $checks -Name 'pester' -State $(if ($pester.Count -gt 0) { 'ready' } else { 'missing' }) -Required $false -Details $(if ($pester.Count -gt 0) { "Pester $($pester[0].Version) is available." } else { 'Pester 5 or later is not available.' }) -Remediation 'Install Pester 5 or later only when running the PowerShell validation harness.'
+        $pesterError = ''
+        try { $pester = @(Get-Module -ListAvailable -Name Pester -ErrorAction Stop | Where-Object { $_.Version -ge [version]'5.0.0' } | Sort-Object Version -Descending | Select-Object -First 1) }
+        catch { $pester = @(); $pesterError = $_.Exception.Message }
+        $pesterState = if ($pesterError) { 'unknown' } elseif ($pester.Count -gt 0) { 'ready' } else { 'missing' }
+        $pesterDetails = if ($pesterError) { $pesterError } elseif ($pester.Count -gt 0) { "Pester $($pester[0].Version) is available." } else { 'Pester 5 or later is not available.' }
+        Add-DoctorCheck -Checks $checks -Name 'pester' -State $pesterState -Required $false -Details $pesterDetails -Remediation 'Install Pester 5 or later only when running the PowerShell validation harness.'
         }
     }
 
@@ -409,7 +422,7 @@ function Get-AgentDoctorReport {
                 $packageData = Get-Content -LiteralPath $packageJson -Raw | ConvertFrom-Json -AsHashtable
                 $lockData = Get-Content -LiteralPath $lockFile -Raw | ConvertFrom-Json -AsHashtable
                 $packageDependencies = @{}
-                foreach ($groupName in @('dependencies', 'devDependencies')) {
+                foreach ($groupName in @('dependencies', 'devDependencies', 'optionalDependencies')) {
                     $group = if ($packageData -is [System.Collections.IDictionary] -and $packageData.Contains($groupName)) { $packageData[$groupName] } else { $null }
                     if ($group -is [System.Collections.IDictionary]) {
                         foreach ($dependencyName in $group.Keys) {
@@ -422,7 +435,7 @@ function Get-AgentDoctorReport {
                     $lockRoot = $lockData['packages']['']
                 }
                 $lockDependencies = @{}
-                foreach ($groupName in @('dependencies', 'devDependencies')) {
+                foreach ($groupName in @('dependencies', 'devDependencies', 'optionalDependencies')) {
                     $group = if ($lockRoot -is [System.Collections.IDictionary] -and $lockRoot.Contains($groupName)) { $lockRoot[$groupName] } else { $null }
                     if ($group -is [System.Collections.IDictionary]) {
                         foreach ($dependencyName in $group.Keys) {
