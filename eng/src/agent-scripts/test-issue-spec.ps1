@@ -27,20 +27,36 @@ $requiredSections = @(
     'Validation evidence map'
 )
 
-function Get-MarkdownSections { # NOSONAR - section extraction intentionally models Markdown peer-heading rules in one bounded pass.
+function Get-MarkdownSections {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Content)
 
-    $allHeadings = [regex]::Matches($Content, '(?m)^[ \t]{0,3}(?<Level>#{1,6})[ \t]+(?<Title>[^\r\n]+)[ \t]*\r?$') # NOSONAR - one bounded heading grammar is clearer than splitting the structural parser.
-    $matches = @($allHeadings | Where-Object { $requiredSections -contains $_.Groups['Title'].Value.Trim() })
+    $allHeadings = [System.Collections.Generic.List[object]]::new()
+    $offset = 0
+    foreach ($rawLine in $Content.Split([char]10)) {
+        $line = $rawLine.TrimEnd([char]13)
+        $leading = $line.Length - $line.TrimStart(' ').Length
+        $trimmed = $line.TrimStart(' ')
+        $hashCount = 0
+        while ($hashCount -lt $trimmed.Length -and $trimmed[$hashCount] -eq '#') { $hashCount++ }
+        if ($leading -le 3 -and $hashCount -ge 1 -and $hashCount -le 6 -and
+            $hashCount -lt $trimmed.Length -and ($trimmed[$hashCount] -eq ' ' -or $trimmed[$hashCount] -eq [char]9)) {
+            $title = $trimmed.Substring($hashCount).Trim()
+            if ($title) {
+                $allHeadings.Add([pscustomobject]@{ Index = $offset; Length = $line.Length; Level = $hashCount; Title = $title })
+            }
+        }
+        $offset += $rawLine.Length + 1
+    }
+    $matches = @($allHeadings | Where-Object { $requiredSections -contains $_.Title })
     $sections = [ordered]@{}
     for ($index = 0; $index -lt $matches.Count; $index++) {
         $match = $matches[$index]
         $start = $match.Index + $match.Length
-        $level = $match.Groups['Level'].Value.Length
-        $nextPeer = @($allHeadings | Where-Object { $_.Index -gt $start -and $_.Groups['Level'].Value.Length -le $level } | Select-Object -First 1)
+        $level = $match.Level
+        $nextPeer = @($allHeadings | Where-Object { $_.Index -gt $start -and $_.Level -le $level } | Select-Object -First 1)
         $end = if ($nextPeer.Count -gt 0) { $nextPeer[0].Index } else { $Content.Length }
-        $title = $match.Groups['Title'].Value.Trim()
+        $title = $match.Title
         $sections[$title] = $Content.Substring($start, $end - $start).Trim()
     }
 
