@@ -10,7 +10,7 @@ namespace MississippiSamples.ConnectFour.Domain.Aggregates.Match.Events;
 /// <summary>
 ///     Records creation of a match by its first player.
 /// </summary>
-[EventStorageName("CONNECTFOUR", "GAME", "MATCHCREATED", MatchStorageVersions.V1)]
+[EventStorageName("CONNECTFOUR", "GAME", "MATCHCREATED")]
 [GenerateSerializer]
 [Alias("MississippiSamples.ConnectFour.Domain.Aggregates.Match.Events.MatchCreated")]
 internal sealed record MatchCreated
