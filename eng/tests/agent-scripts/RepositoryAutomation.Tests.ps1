@@ -508,6 +508,17 @@ $timer.Stop()
         $result = Invoke-AutomationStep -Name 'Sample' -SilentSuccess -Action { 1 + 1 }
         $result | Should -Be 2
     }
+
+    It 'returns bounded native process diagnostics without killing unrelated work' {
+        $result = InModuleScope RepositoryAutomation {
+            Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', "Write-Output 'before'; Start-Sleep -Seconds 3") -TimeoutSeconds 1 -PassThru
+        }
+
+        $result.Success | Should -BeFalse
+        $result.TimedOut | Should -BeTrue
+        $result.ExitCode | Should -Be 124
+        $result.StdOut | Should -Match 'before'
+    }
 }
 
 Describe 'Repository automation quality gates' {
