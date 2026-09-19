@@ -70,7 +70,7 @@ function Get-PrIssueRecord {
         return @($known | Where-Object { [int]$_.number -eq $Number } | Select-Object -First 1)
     }
 
-    $apiOutput = & gh api "repos/$Owner/$Name/issues/$Number" --header 'Accept: application/vnd.github+json' --silent 2>&1 | Out-String
+    $apiOutput = & gh api "repos/$Owner/$Name/issues/$Number" --header 'Accept: application/vnd.github+json' 2>&1 | Out-String
     if ($LASTEXITCODE -ne 0) {
         throw "Unable to resolve issue #$Number through the GitHub API: $($apiOutput.Trim())"
     }
