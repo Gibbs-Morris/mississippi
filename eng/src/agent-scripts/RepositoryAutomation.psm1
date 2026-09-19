@@ -169,8 +169,8 @@ function Invoke-RepositoryProcess {
         }
         $stdoutTask.Wait(1000) | Out-Null
         $stderrTask.Wait(1000) | Out-Null
-        $stdout = if ($stdoutTask.IsCompleted) { $stdoutTask.GetAwaiter().GetResult().Trim() } else { '' }
-        $stderr = if ($stderrTask.IsCompleted) { $stderrTask.GetAwaiter().GetResult().Trim() } else { '' }
+        $stdout = if ($stdoutTask.IsCompleted) { $stdoutTask.GetAwaiter().GetResult().TrimEnd([char]0x0D, [char]0x0A) } else { '' }
+        $stderr = if ($stderrTask.IsCompleted) { $stderrTask.GetAwaiter().GetResult().TrimEnd([char]0x0D, [char]0x0A) } else { '' }
         $result = [pscustomobject][ordered]@{
             FilePath = $FilePath
             Arguments = @($Arguments)

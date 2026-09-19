@@ -40,6 +40,9 @@ Describe 'RepositoryAutomation helpers' {
         $success.Success | Should -BeTrue
         $success.StdOut | Should -Be 'ok'
 
+        $whitespace = InModuleScope RepositoryAutomation { Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', "Write-Output '  leading and trailing  '") -PassThru }
+        $whitespace.StdOut | Should -Be '  leading and trailing  '
+
         $failed = InModuleScope RepositoryAutomation { Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', "[Console]::Error.WriteLine('bad'); exit 3") -PassThru }
         $failed.Success | Should -BeFalse
         $failed.ExitCode | Should -Be 3
