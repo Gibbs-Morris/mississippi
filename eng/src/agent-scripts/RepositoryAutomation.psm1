@@ -31,13 +31,30 @@ function Get-RepositoryExecutionLeasePath {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$RepoRoot)
 
-    $canonicalRoot = (Resolve-Path -LiteralPath $RepoRoot -ErrorAction Stop).Path
+    $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($canonicalRoot.ToLowerInvariant())
     $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
     $fileName = (($hash | ForEach-Object { $_.ToString('x2') }) -join '') + '.lease'
-    $leaseDirectory = Join-Path $canonicalRoot '.scratchpad/execution-leases'
+    $leaseDirectory = Join-Path ([System.IO.Path]::GetTempPath()) 'mississippi-execution-leases'
     New-Item -ItemType Directory -Path $leaseDirectory -Force | Out-Null
     return Join-Path $leaseDirectory $fileName
+}
+
+function Resolve-RepositoryExecutionRoot {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$RepoRoot)
+
+    $current = (Resolve-Path -LiteralPath $RepoRoot -ErrorAction Stop).Path
+    $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    for ($iteration = 0; $iteration -lt 8; $iteration++) {
+        if (-not $seen.Add($current)) { break }
+        $item = Get-Item -LiteralPath $current -Force -ErrorAction Stop
+        if (-not [bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) { break }
+        $target = @($item.Target | Select-Object -First 1)[0]
+        if ([string]::IsNullOrWhiteSpace([string]$target)) { break }
+        $current = (Resolve-Path -LiteralPath $target -ErrorAction Stop).Path
+    }
+    return $current
 }
 
 function Enter-RepositoryExecutionLease {
@@ -48,9 +65,17 @@ function Enter-RepositoryExecutionLease {
         [object]$ExistingLease
     )
 
-    if ($null -ne $ExistingLease) { return $ExistingLease }
+    if ($null -ne $ExistingLease) {
+        return [pscustomobject]@{
+            Path = $ExistingLease.Path
+            OperationId = $ExistingLease.OperationId
+            RepositoryRoot = $ExistingLease.RepositoryRoot
+            Stream = $ExistingLease.Stream
+            OwnsStream = $false
+        }
+    }
     $leasePath = Get-RepositoryExecutionLeasePath -RepoRoot $RepoRoot
-    $canonicalRoot = (Resolve-Path -LiteralPath $RepoRoot -ErrorAction Stop).Path
+    $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
     $metadata = [ordered]@{
         operationId = $OperationId
         repositoryRoot = $canonicalRoot
@@ -58,8 +83,17 @@ function Enter-RepositoryExecutionLease {
         startedUtc = (Get-Date).ToUniversalTime().ToString('o')
     } | ConvertTo-Json -Compress
 
+    $stream = $null
     try {
         $stream = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::Read)
+    }
+    catch [System.IO.IOException] {
+        $owner = ''
+        try { $owner = (Get-Content -LiteralPath $leasePath -Raw -ErrorAction Stop).Trim() } catch { }
+        throw "Worktree execution lease is held for '$canonicalRoot'. Current owner: $owner. Use a separate worktree or wait for the active operation."
+    }
+
+    try {
         $stream.SetLength(0)
         $metadataBytes = [System.Text.Encoding]::UTF8.GetBytes($metadata)
         $stream.Write($metadataBytes, 0, $metadataBytes.Length)
@@ -69,12 +103,12 @@ function Enter-RepositoryExecutionLease {
             OperationId = $OperationId
             RepositoryRoot = $canonicalRoot
             Stream = $stream
+            OwnsStream = $true
         }
     }
-    catch [System.IO.IOException] {
-        $owner = ''
-        try { $owner = (Get-Content -LiteralPath $leasePath -Raw -ErrorAction Stop).Trim() } catch { }
-        throw "Worktree execution lease is held for '$canonicalRoot'. Current owner: $owner. Use a separate worktree or wait for the active operation."
+    catch {
+        $stream.Dispose()
+        throw
     }
 }
 
@@ -82,7 +116,7 @@ function Exit-RepositoryExecutionLease {
     [CmdletBinding()]
     param([Parameter(Mandatory)][object]$Lease)
 
-    if ($null -ne $Lease.Stream) { $Lease.Stream.Dispose() }
+    if ($Lease.OwnsStream -and $null -ne $Lease.Stream) { $Lease.Stream.Dispose() }
 }
 
 function ConvertTo-ConsoleColor {
