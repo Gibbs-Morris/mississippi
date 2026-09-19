@@ -20,9 +20,9 @@ $modulePath = Join-Path $PSScriptRoot 'AgentContext.psm1'
 Import-Module -Name $modulePath -Force
 
 try {
-    $contextParameters = @{}
+    $contextParameters = @{ RepositoryRoot = $RepositoryRoot }
     foreach ($name in @('RepositoryRoot', 'ChangedPath', 'IntendedPath', 'ReviewedPath', 'RequiredPath', 'ContentDomain', 'WorkflowRole')) {
-        if ($PSBoundParameters.ContainsKey($name)) { $contextParameters[$name] = $PSBoundParameters[$name] }
+        if ($name -ne 'RepositoryRoot' -and $PSBoundParameters.ContainsKey($name)) { $contextParameters[$name] = $PSBoundParameters[$name] }
     }
     $context = Get-AgentContext @contextParameters
     if ($OutputFormat -eq 'Json') {

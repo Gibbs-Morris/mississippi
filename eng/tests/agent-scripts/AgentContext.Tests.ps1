@@ -138,4 +138,18 @@ applyTo: '**/*.cs'
         ($json | ConvertFrom-Json).SchemaVersion | Should -Be '1.0'
         ($json | ConvertFrom-Json).Entries.Count | Should -BeGreaterThan 0
     }
+
+    It 'uses the current directory when the wrapper omits RepositoryRoot' {
+        Push-Location -LiteralPath $fixtureRoot
+        try {
+            $json = & $powerShellPath -NoProfile -File $scriptPath -ChangedPath 'src/Example.cs' -OutputFormat Json 2>&1 | Out-String
+            $exitCode = $LASTEXITCODE
+        }
+        finally {
+            Pop-Location
+        }
+
+        $exitCode | Should -Be 0
+        ($json | ConvertFrom-Json).Complete | Should -BeTrue
+    }
 }
