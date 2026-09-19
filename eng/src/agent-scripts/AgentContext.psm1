@@ -126,7 +126,7 @@ function Read-ContextFrontMatter {
         return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'Unclosed YAML frontmatter.' }
     }
 
-    $applyToLines = @($lines[1..($closingIndex - 1)] | Where-Object { $_ -match '^\s*applyTo\s*:' })
+    $applyToLines = @($lines[1..($closingIndex - 1)] | Where-Object { $_ -match '^applyTo\s*:' })
     if ($applyToLines.Count -ne 1) {
         return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'Frontmatter must contain exactly one applyTo field.' }
     }

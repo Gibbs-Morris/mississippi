@@ -105,6 +105,14 @@ applyTo: '**/[abc.md'
 
 # Unbalanced class
 '@
+        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/nested-applyto.instructions.md') -Value @'
+---
+metadata:
+  applyTo: '**/*.cs'
+---
+
+# Nested metadata
+'@
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Example.cs') -Value 'class Example { }'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/guide.md') -Value '# Guide'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/Docusaurus/docs/adr/0001-example.md') -Value '# ADR'
@@ -164,6 +172,14 @@ applyTo: '**/[abc.md'
 
         $unbalanced.ScopeStatus | Should -Be 'unknown'
         $unbalanced.ScopeNote | Should -Match 'character classes'
+    }
+
+    It 'does not treat nested applyTo keys as top-level scope metadata' {
+        $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+        $nested = @($context.Selected | Where-Object Path -EQ '.github/instructions/nested-applyto.instructions.md')[0]
+
+        $nested.ScopeStatus | Should -Be 'unknown'
+        $nested.ScopeNote | Should -Match 'exactly one applyTo'
     }
 
     It 'parses inline comments in quoted applyTo scalars' {
