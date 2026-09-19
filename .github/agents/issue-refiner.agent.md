@@ -273,7 +273,8 @@ Then update the spec accordingly.
 1) Create `./spec/<task>/SPEC.md` as the **standalone internal final spec**.
 2) Create `./spec/<task>/ISSUE-BODY.md` as the **issue-ready final spec**.
 3) Move everything else into `./spec/<task>/audit/` and prefix with `audit-...`.
-4) Update the original GitHub issue:
+4) Immediately before updating GitHub, run `pwsh ./eng/src/agent-scripts/test-issue-spec.ps1 -Path ./spec/<task>/ISSUE-BODY.md -RepositoryRoot . -Json` from the repository root. Require process exit code `0` and JSON `Valid: true`; if either check fails, repair the draft and rerun the validator. Do not update or overwrite the GitHub issue while validation is failing.
+5) Update the original GitHub issue:
    - **Primary path**: use GitHub MCP issue update tools.
    - **Fallback path**: use `gh api` or the GitHub REST API `PATCH /repos/{owner}/{repo}/issues/{issue_number}`.
    - Prefer updating the **issue body**.
