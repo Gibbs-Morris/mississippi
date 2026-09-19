@@ -239,7 +239,7 @@ function Get-ContextRoutes {
     $routes = [System.Collections.Generic.List[string]]::new()
     foreach ($match in [regex]::Matches($Content, '\]\((?<Route>[^)]+)\)')) {
         $route = $match.Groups['Route'].Value.Trim()
-        if ($route -and $route -notmatch '^(?:https?|mailto):' -and $route -match '(?:\.md|\.mdx|SKILL\.md)(?:$|#)') {
+        if ($route -and $route -notmatch '^(?:[A-Za-z][A-Za-z0-9+.-]*:|//)' -and $route -match '(?:\.md|\.mdx|SKILL\.md)(?:$|#)') {
             if (-not $routes.Contains($route)) { $routes.Add($route) }
         }
     }

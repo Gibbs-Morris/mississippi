@@ -30,6 +30,7 @@ applyTo: '**'
 # Global guidance
 
 See [the shared route](../skills/example/SKILL.md#section).
+Ignore [a file URI](file:///etc/policy.md) and [an FTP URI](ftp://example.com/policy.md).
 '@
         Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/csharp.instructions.md') -Value @'
 ---
@@ -414,6 +415,8 @@ metadata:
         $global.ByteCount | Should -BeGreaterThan 0
         $global.WordCount | Should -BeGreaterThan 0
         $global.ReferencedRoutes | Should -Contain '../skills/example/SKILL.md#section'
+        $global.ReferencedRoutes | Should -Not -Contain 'file:///etc/policy.md'
+        $global.ReferencedRoutes | Should -Not -Contain 'ftp://example.com/policy.md'
         $context.PSObject.Properties.Name | Should -Not -Contain 'TokenCount'
         $context.PSObject.Properties.Name | Should -Not -Contain 'Latency'
     }
