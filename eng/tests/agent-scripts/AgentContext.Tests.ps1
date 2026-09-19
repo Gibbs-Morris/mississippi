@@ -216,6 +216,25 @@ applyTo: '**/[abc.md'
         $context.Unresolved | Should -HaveCount 0
     }
 
+    It 'skips reparse-point guidance directories' {
+        if (-not $IsWindows) {
+            Set-ItResult -Skipped -Because 'Directory junctions are Windows reparse points.'
+            return
+        }
+
+        $linkPath = Join-Path $fixtureRoot 'linked-guidance'
+        New-Item -ItemType Junction -Path $linkPath -Target (Join-Path $fixtureRoot 'foo') | Out-Null
+        try {
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+
+            $context.Unresolved | Should -Contain "Skipped reparse-point guidance directory '$linkPath'."
+            $context.Entries.Path | Should -Not -Contain 'linked-guidance/AGENTS.md'
+        }
+        finally {
+            Remove-Item -LiteralPath $linkPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It 'reports missing required context instead of returning an empty pass' {
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -RequiredPath 'missing/required.md'
 

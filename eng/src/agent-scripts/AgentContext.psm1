@@ -252,6 +252,10 @@ function Get-ContextFilesByFilter {
                 continue
             }
             if ($child.PSIsContainer) {
+                if ($isReparsePoint) {
+                    $null = $Errors.Add("Skipped reparse-point guidance directory '$($child.FullName)'.")
+                    continue
+                }
                 if ($excludedDirectories -notcontains $child.Name) { $pending.Enqueue($child.FullName) }
             }
             elseif ($child.Name -like $Filter) {
