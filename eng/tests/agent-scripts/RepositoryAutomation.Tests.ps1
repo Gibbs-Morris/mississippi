@@ -550,6 +550,22 @@ $timer.Stop()
         $launch.Success | Should -BeFalse
         $launch.StdErr | Should -Match 'missing-native-command'
     }
+
+    It 'fails closed when a descendant keeps a captured stream open' {
+        $result = InModuleScope RepositoryAutomation {
+            Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @(
+                '-NoProfile',
+                '-Command',
+                '$child = Start-Process -FilePath pwsh -ArgumentList "-NoProfile","-Command","Start-Sleep -Seconds 4" -NoNewWindow -PassThru; Write-Output $child.Id'
+            ) -PassThru
+        }
+
+        if ($result.StdOut -match '^\d+$') {
+            Stop-Process -Id ([int]$result.StdOut.Trim()) -Force -ErrorAction SilentlyContinue
+        }
+        $result.Success | Should -BeFalse
+        $result.CaptureIncomplete | Should -BeTrue
+    }
 }
 
 Describe 'Repository automation quality gates' {
