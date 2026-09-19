@@ -1,0 +1,92 @@
+.rf-notification-pulse {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--rf-raw-space-4);
+    min-width: 0;
+    padding: var(--rf-raw-space-3) var(--rf-raw-space-4);
+    background-color: var(--rf-color-surface-glass);
+    border: var(--rf-raw-stroke-hairline) solid var(--rf-color-text-muted);
+    color: var(--rf-color-text-primary);
+}
+
+.rf-notification-pulse__status {
+    display: flex;
+    align-items: baseline;
+    gap: var(--rf-raw-space-2);
+    flex: 1 1 18rem;
+    min-width: 0;
+}
+
+.rf-notification-pulse__dot {
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    margin-top: 0.25rem;
+    border-radius: 50%;
+    background-color: var(--rf-color-status-warning);
+}
+
+.rf-notification-pulse[data-state="critical"] .rf-notification-pulse__dot {
+    background-color: var(--rf-color-status-error);
+}
+
+.rf-notification-pulse__content {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-family: var(--rf-raw-font-mono);
+    font-size: var(--rf-raw-text-sm);
+    line-height: 1.4;
+    color: var(--rf-color-text-secondary);
+}
+
+.rf-notification-pulse__actions {
+    display: flex;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    gap: var(--rf-raw-space-2);
+    max-width: 100%;
+    min-width: 0;
+}
+
+.rf-notification-pulse__action {
+    min-width: 44px;
+    min-height: 44px;
+    padding: var(--rf-raw-space-2) var(--rf-raw-space-3);
+    border: var(--rf-raw-stroke-hairline) solid var(--rf-color-action-primary);
+    background-color: transparent;
+    color: var(--rf-color-text-primary);
+    font: inherit;
+    line-height: 1.2;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    cursor: pointer;
+}
+
+.rf-notification-pulse__action:hover {
+    background-color: var(--rf-color-surface-elevated);
+    border-color: var(--rf-color-action-hover);
+}
+
+.rf-notification-pulse__action:active {
+    border-color: var(--rf-color-action-pressed);
+    box-shadow: inset 0 0 var(--rf-raw-stroke-default) var(--rf-color-action-pressed);
+}
+
+.rf-notification-pulse__action:focus-visible {
+    outline: var(--rf-focus-ring-width) solid var(--rf-color-focus-ring);
+    outline-offset: var(--rf-focus-ring-offset);
+}
+
+@media (max-width: 480px) {
+    .rf-notification-pulse__status,
+    .rf-notification-pulse__actions {
+        flex-basis: 100%;
+    }
+
+    .rf-notification-pulse__action {
+        flex: 1 1 12rem;
+    }
+}
