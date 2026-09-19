@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 using ArchUnitNET.Loader;
@@ -21,10 +22,15 @@ namespace Mississippi.Architecture.L0Tests;
 public abstract class ArchitectureTestBase
 {
     /// <summary>
+    ///     Gets the loaded Mississippi assemblies used by reflection-backed architecture diagnostics.
+    /// </summary>
+    protected static IReadOnlyList<Assembly> MississippiAssemblies { get; } = GetMississippiAssemblies();
+
+    /// <summary>
     ///     Gets the cached architecture model containing all Mississippi assemblies.
     /// </summary>
     protected static ArchUnitArchitecture ArchitectureModel { get; } = new ArchLoader()
-        .LoadAssemblies(GetMississippiAssemblies())
+        .LoadAssemblies(MississippiAssemblies.ToArray())
         .Build();
 
     [SuppressMessage(
