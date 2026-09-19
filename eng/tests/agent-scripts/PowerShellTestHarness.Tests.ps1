@@ -30,10 +30,10 @@ Describe 'PowerShell test orchestration' {
             'run-spring-validation-tests.ps1',
             'run-scratchpad-task-tests.ps1',
             'run-summarize-coverage-gaps-tests.ps1',
+            'run-pr-issue-reference-tests.ps1',
             'run-task-automation-tests.ps1',
             'run-validation-plan-tests.ps1',
             'run-issue-spec-tests.ps1',
-            'run-agent-doctor-tests.ps1'
             'run-agent-doctor-tests.ps1',
             'run-agent-context-tests.ps1'
         )
@@ -56,7 +56,7 @@ Describe 'PowerShell test orchestration' {
 
     It 'runs every required suite successfully' {
         $results = & $orchestrator -PassThru 6>$null
-        $results.Count | Should -Be 10
+        $results.Count | Should -Be 11
         @($results | Where-Object Status -NE 'Passed').Count | Should -Be 0
     }
 
