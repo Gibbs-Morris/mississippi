@@ -166,7 +166,10 @@ Describe 'Repository automation quality gates' {
         $calls = [System.Collections.Generic.List[string]]::new()
         Mock Invoke-MississippiSolutionBuild { $calls.Add('mississippi-build') } -ModuleName RepositoryAutomation
         Mock Invoke-MississippiSolutionCleanup { $calls.Add('mississippi-cleanup') } -ModuleName RepositoryAutomation
-        Mock Invoke-MississippiSolutionUnitTests { $calls.Add('mississippi-tests') } -ModuleName RepositoryAutomation
+        Mock Invoke-MississippiSolutionUnitTests {
+            $calls.Add('mississippi-tests')
+            [pscustomobject]@{ CoverageReportPath = Join-Path $TestDrive 'coverage.cobertura.xml' }
+        } -ModuleName RepositoryAutomation
         Mock Invoke-SampleSolutionBuild { $calls.Add('sample-build') } -ModuleName RepositoryAutomation
         Mock Invoke-SampleSolutionCleanup { $calls.Add('sample-cleanup') } -ModuleName RepositoryAutomation
         Mock Invoke-SampleSolutionUnitTests { $calls.Add('sample-tests') } -ModuleName RepositoryAutomation
