@@ -451,7 +451,10 @@ function Get-ContextCandidates {
     $files = [System.Collections.Generic.List[object]]::new()
     $scanErrors = [System.Collections.Generic.List[string]]::new()
     $instructionRoot = Join-Path $RepositoryRoot '.github/instructions'
-    $instructionRootExists = Test-Path -LiteralPath $instructionRoot -PathType Container
+    # Do not require Container in this first probe. Some PowerShell/.NET
+    # providers report a directory symlink as a non-container even though it
+    # exists; the reparse-point check must still classify it as unsafe.
+    $instructionRootExists = Test-Path -LiteralPath $instructionRoot
     $instructionRootSafe = $instructionRootExists -and (Test-ContextPathWithoutReparsePoints -RepositoryRoot $RepositoryRoot -RelativePath '.github/instructions')
     if ($instructionRootExists -and -not $instructionRootSafe) {
         $null = $scanErrors.Add("Skipped reparse-point instruction root '$instructionRoot'.")
@@ -459,7 +462,10 @@ function Get-ContextCandidates {
     elseif ($instructionRootExists) {
         try {
             $instructionItem = Get-Item -LiteralPath $instructionRoot -Force -ErrorAction Stop
-            if ([bool]($instructionItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            if (-not $instructionItem.PSIsContainer) {
+                $null = $scanErrors.Add("Required instruction root is missing or not a directory: '$instructionRoot'.")
+            }
+            elseif ([bool]($instructionItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
                 $null = $scanErrors.Add("Skipped reparse-point instruction root '$instructionRoot'.")
             }
             else {
