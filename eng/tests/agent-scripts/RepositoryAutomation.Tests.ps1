@@ -116,6 +116,40 @@ Describe 'RepositoryAutomation helpers' {
         }
     }
 
+    It 'resolves symlinked ancestors inside multi-component targets' {
+        $root = Join-Path $TestDrive 'multi-component-chain'
+        $realRoot = Join-Path $root 'real'
+        $realSubdirectory = Join-Path $realRoot 'subdir'
+        $middle = Join-Path $root 'middle'
+        $outer = Join-Path $root 'outer'
+        New-Item -ItemType Directory -Path $realSubdirectory -Force | Out-Null
+        $linksCreated = $false
+        try {
+            New-Item -ItemType SymbolicLink -Path $middle -Target $realRoot -ErrorAction Stop | Out-Null
+            New-Item -ItemType SymbolicLink -Path $outer -Target (Join-Path $middle 'subdir') -ErrorAction Stop | Out-Null
+            $linksCreated = $true
+
+            $coordinationRoot = Join-Path $TestDrive 'multi-component-coordination'
+            $realLeasePath = Get-RepositoryExecutionLeasePath -RepoRoot $realSubdirectory -LeaseDirectory $coordinationRoot
+            $aliasLeasePath = Get-RepositoryExecutionLeasePath -RepoRoot $outer -LeaseDirectory $coordinationRoot
+
+            $aliasLeasePath | Should -Be $realLeasePath
+        }
+        catch {
+            if (-not $linksCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create multi-component symbolic links.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $outer -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $middle -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It 'invokes automation steps and returns the result' {
         $result = Invoke-AutomationStep -Name 'Sample' -SilentSuccess -Action { 1 + 1 }
         $result | Should -Be 2
