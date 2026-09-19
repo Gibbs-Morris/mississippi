@@ -1,0 +1,260 @@
+{
+  "schemaVersion": 1,
+  "planName": "shared-copilot-codex-skills",
+  "planDate": "2026-09-01",
+  "masterPlanPR": null,
+  "pilotGate": {
+    "subPlan": "06",
+    "outcomes": [
+      "go unlocks only approved downstream leaves",
+      "revise invalidates affected plans until amended and re-reviewed",
+      "stop defers or closes the affected workstream"
+    ]
+  },
+  "subPlans": [
+    {
+      "id": "01",
+      "slug": "inventory-classification",
+      "title": "Inventory and classification",
+      "file": "sub-plans/01-inventory-classification.md",
+      "dependsOn": [],
+      "parallelGroup": null,
+      "branch": "epic/shared-copilot-codex-skills/01-inventory-classification",
+      "semver": "skip"
+    },
+    {
+      "id": "02",
+      "slug": "surface-contract",
+      "title": "Surface contract and root cutover",
+      "file": "sub-plans/02-surface-contract.md",
+      "dependsOn": ["01"],
+      "parallelGroup": null,
+      "branch": "epic/shared-copilot-codex-skills/02-surface-contract",
+      "semver": "skip"
+    },
+    {
+      "id": "03",
+      "slug": "authoring-security-standard",
+      "title": "Portable authoring and security standard",
+      "file": "sub-plans/03-authoring-security-standard.md",
+      "dependsOn": ["01", "02"],
+      "parallelGroup": null,
+      "branch": "epic/shared-copilot-codex-skills/03-authoring-security-standard",
+      "semver": "skip"
+    },
+    {
+      "id": "04",
+      "slug": "evaluation-harness",
+      "title": "Evaluation and validation harness",
+      "file": "sub-plans/04-evaluation-harness.md",
+      "dependsOn": ["02", "03"],
+      "parallelGroup": null,
+      "branch": "epic/shared-copilot-codex-skills/04-evaluation-harness",
+      "semver": "skip"
+    },
+    {
+      "id": "05",
+      "slug": "repair-build-failures-pilot",
+      "title": "Build-failure remediation pilot",
+      "file": "sub-plans/05-repair-build-failures-pilot.md",
+      "dependsOn": ["04"],
+      "parallelGroup": null,
+      "branch": "epic/shared-copilot-codex-skills/05-repair-build-failures-pilot",
+      "semver": "skip"
+    },
+    {
+      "id": "06",
+      "slug": "pilot-decision-gate",
+      "title": "Pilot evidence decision gate",
+      "file": "sub-plans/06-pilot-decision-gate.md",
+      "dependsOn": ["05"],
+      "parallelGroup": null,
+      "branch": "epic/shared-copilot-codex-skills/06-pilot-decision-gate",
+      "semver": "skip"
+    },
+    {
+      "id": "07a",
+      "slug": "verify-change",
+      "title": "Verify-change skill",
+      "file": "sub-plans/07a-verify-change.md",
+      "dependsOn": ["04", "06"],
+      "parallelGroup": "07",
+      "branch": "epic/shared-copilot-codex-skills/07a-verify-change",
+      "semver": "skip"
+    },
+    {
+      "id": "07b",
+      "slug": "improve-legacy-tests",
+      "title": "Improve-legacy-tests skill",
+      "file": "sub-plans/07b-improve-legacy-tests.md",
+      "dependsOn": ["04", "06"],
+      "parallelGroup": "07",
+      "branch": "epic/shared-copilot-codex-skills/07b-improve-legacy-tests",
+      "semver": "skip"
+    },
+    {
+      "id": "07c",
+      "slug": "run-mutation-testing",
+      "title": "Run-mutation-testing skill",
+      "file": "sub-plans/07c-run-mutation-testing.md",
+      "dependsOn": ["04", "06"],
+      "parallelGroup": "07",
+      "branch": "epic/shared-copilot-codex-skills/07c-run-mutation-testing",
+      "semver": "skip"
+    },
+    {
+      "id": "07d",
+      "slug": "prepare-pull-request",
+      "title": "Prepare-pull-request skill",
+      "file": "sub-plans/07d-prepare-pull-request.md",
+      "dependsOn": ["04", "06"],
+      "parallelGroup": "07",
+      "branch": "epic/shared-copilot-codex-skills/07d-prepare-pull-request",
+      "semver": "skip"
+    },
+    {
+      "id": "07e",
+      "slug": "review-change",
+      "title": "Review-change skill",
+      "file": "sub-plans/07e-review-change.md",
+      "dependsOn": ["04", "06"],
+      "parallelGroup": "07",
+      "branch": "epic/shared-copilot-codex-skills/07e-review-change",
+      "semver": "skip"
+    },
+    {
+      "id": "07f",
+      "slug": "research-codebase",
+      "title": "Research-codebase skill",
+      "file": "sub-plans/07f-research-codebase.md",
+      "dependsOn": ["04", "06"],
+      "parallelGroup": "07",
+      "branch": "epic/shared-copilot-codex-skills/07f-research-codebase",
+      "semver": "skip"
+    },
+    {
+      "id": "07g",
+      "slug": "refine-requirements",
+      "title": "Refine-requirements skill",
+      "file": "sub-plans/07g-refine-requirements.md",
+      "dependsOn": ["04", "06"],
+      "parallelGroup": "07",
+      "branch": "epic/shared-copilot-codex-skills/07g-refine-requirements",
+      "semver": "skip"
+    },
+    {
+      "id": "07h",
+      "slug": "author-adr",
+      "title": "Author-ADR skill",
+      "file": "sub-plans/07h-author-adr.md",
+      "dependsOn": ["04", "06"],
+      "parallelGroup": "07",
+      "branch": "epic/shared-copilot-codex-skills/07h-author-adr",
+      "semver": "skip"
+    },
+    {
+      "id": "07i",
+      "slug": "create-c4-diagram",
+      "title": "Create-C4-diagram skill",
+      "file": "sub-plans/07i-create-c4-diagram.md",
+      "dependsOn": ["04", "06"],
+      "parallelGroup": "07",
+      "branch": "epic/shared-copilot-codex-skills/07i-create-c4-diagram",
+      "semver": "skip"
+    },
+    {
+      "id": "08a",
+      "slug": "documentation-boundaries",
+      "title": "Documentation skill boundaries",
+      "file": "sub-plans/08a-documentation-boundaries.md",
+      "dependsOn": ["04", "06"],
+      "parallelGroup": "08",
+      "branch": "epic/shared-copilot-codex-skills/08a-documentation-boundaries",
+      "semver": "skip"
+    },
+    {
+      "id": "08b",
+      "slug": "documentation-migration",
+      "title": "Approved documentation migration",
+      "file": "sub-plans/08b-documentation-migration.md",
+      "dependsOn": ["08a"],
+      "parallelGroup": "08",
+      "branch": "epic/shared-copilot-codex-skills/08b-documentation-migration",
+      "semver": "skip"
+    },
+    {
+      "id": "09a",
+      "slug": "agent-classification",
+      "title": "Custom-agent classification",
+      "file": "sub-plans/09a-agent-classification.md",
+      "dependsOn": ["01", "06"],
+      "parallelGroup": null,
+      "branch": "epic/shared-copilot-codex-skills/09a-agent-classification",
+      "semver": "skip"
+    },
+    {
+      "id": "09b",
+      "slug": "reviewer-procedure-extraction",
+      "title": "Reviewer procedure extraction",
+      "file": "sub-plans/09b-reviewer-procedure-extraction.md",
+      "dependsOn": ["09a", "07e"],
+      "parallelGroup": null,
+      "branch": "epic/shared-copilot-codex-skills/09b-reviewer-procedure-extraction",
+      "semver": "skip"
+    },
+    {
+      "id": "09c",
+      "slug": "planning-procedure-extraction",
+      "title": "Planning and specification procedure extraction",
+      "file": "sub-plans/09c-planning-procedure-extraction.md",
+      "dependsOn": ["09a", "07f", "07g", "07h", "07i"],
+      "parallelGroup": null,
+      "branch": "epic/shared-copilot-codex-skills/09c-planning-procedure-extraction",
+      "semver": "skip"
+    },
+    {
+      "id": "09d",
+      "slug": "agent-shell-rationalization",
+      "title": "Agent shell rationalization",
+      "file": "sub-plans/09d-agent-shell-rationalization.md",
+      "dependsOn": ["08b", "09b", "09c"],
+      "parallelGroup": null,
+      "branch": "epic/shared-copilot-codex-skills/09d-agent-shell-rationalization",
+      "semver": "skip"
+    },
+    {
+      "id": "10a",
+      "slug": "mandatory-guidance",
+      "title": "Mandatory AGENTS guidance",
+      "file": "sub-plans/10a-mandatory-guidance.md",
+      "dependsOn": ["07a", "07b", "07c", "07d", "07e", "07f", "07g", "07h", "07i", "08b", "09d"],
+      "parallelGroup": null,
+      "branch": "epic/shared-copilot-codex-skills/10a-mandatory-guidance",
+      "semver": "skip"
+    },
+    {
+      "id": "10b",
+      "slug": "copilot-adapters",
+      "title": "Thin Copilot adapters",
+      "file": "sub-plans/10b-copilot-adapters.md",
+      "dependsOn": ["10a"],
+      "parallelGroup": null,
+      "branch": "epic/shared-copilot-codex-skills/10b-copilot-adapters",
+      "semver": "skip"
+    },
+    {
+      "id": "11",
+      "slug": "final-verification",
+      "title": "Final verification and migration metrics",
+      "file": "sub-plans/11-final-verification.md",
+      "dependsOn": [
+        "01", "02", "03", "04", "05", "06",
+        "07a", "07b", "07c", "07d", "07e", "07f", "07g", "07h", "07i",
+        "08a", "08b", "09a", "09b", "09c", "09d", "10a", "10b"
+      ],
+      "parallelGroup": null,
+      "branch": "epic/shared-copilot-codex-skills/11-final-verification",
+      "semver": "skip"
+    }
+  ]
+}
