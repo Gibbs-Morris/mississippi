@@ -96,7 +96,7 @@ try {
         $doctorProfile = if ($selectedProfile -eq 'Browser') { 'Spring' } else { $selectedProfile }
         $pre = Get-AgentDoctorReport -RepositoryRoot $root -Profile $doctorProfile
         Write-SetupProgress -Message "PRECHECK: $selectedProfile $($pre.Status)"
-        foreach ($step in @($plan.Steps | Where-Object { $_.Name -like '*restore*' -or $_.Name -eq 'install-pester' })) {
+        foreach ($step in @($plan.Steps | Where-Object { $_.Name -like '*restore*' -or $_.Name -in @('install-pester', 'install-markdownlint') })) {
             if ($selectedProfile -eq 'Core' -and ($step.Name -eq 'restore-tools' -or $step.Name -eq 'restore-core-solution' -or $step.Name -eq 'restore-sample-solution')) { Invoke-SetupStep -Step $step }
             elseif ($selectedProfile -eq 'Docs' -and ($step.Name -eq 'restore-docs' -or $step.Name -eq 'install-markdownlint')) { Invoke-SetupStep -Step $step }
         }
