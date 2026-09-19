@@ -104,7 +104,7 @@ function Remove-MarkdownInlineCode { # NOSONAR - bounded Markdown delimiter scan
     $builder = [System.Text.StringBuilder]::new()
     $index = 0
     while ($index -lt $Content.Length) {
-        if ($Content[$index] -ne $delimiterCharacter) {
+        if ($Content[$index] -ne $delimiterCharacter -or ($index -gt 0 -and $Content[$index - 1] -eq '\')) {
             $null = $builder.Append($Content[$index])
             $index++
             continue
@@ -144,7 +144,7 @@ function Remove-MarkdownHtmlComments { # NOSONAR - bounded comment/code scanner 
     $builder = [System.Text.StringBuilder]::new()
     $index = 0
     while ($index -lt $Content.Length) {
-        if ($Content[$index] -eq '`') {
+        if ($Content[$index] -eq '`' -and ($index -eq 0 -or $Content[$index - 1] -ne '\')) {
             $start = $index
             while ($index -lt $Content.Length -and $Content[$index] -eq '`') { $index++ }
             $delimiterLength = $index - $start
@@ -197,9 +197,9 @@ function Test-RepositoryRelativePath {
     try {
         $gitRoot = (Resolve-Path -LiteralPath $Root -ErrorAction Stop).Path
         $gitPath = $Candidate.Replace('\', '/')
-        $trackedExact = @(& git -c "safe.directory=$($gitRoot.Replace('\', '/'))" -C $gitRoot ls-files --error-unmatch -- $gitPath 2>$null)
+        $trackedExact = @(& git -c "safe.directory=$($gitRoot.Replace('\', '/'))" -C $gitRoot --literal-pathspecs ls-files --error-unmatch -- $gitPath 2>$null)
         if (@($trackedExact).Count -gt 0) { return $true }
-        $trackedChildren = @(& git -c "safe.directory=$($gitRoot.Replace('\', '/'))" -C $gitRoot ls-files -- "$gitPath/*" 2>$null)
+        $trackedChildren = @(& git -c "safe.directory=$($gitRoot.Replace('\', '/'))" -C $gitRoot --literal-pathspecs ls-files -- "$gitPath/*" 2>$null)
         if (@($trackedChildren).Count -gt 0) { return $true }
     }
     catch {
