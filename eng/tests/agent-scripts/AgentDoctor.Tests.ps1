@@ -52,6 +52,20 @@ Describe 'Repository prerequisite doctor' {
         @($report.Checks | Where-Object Name -EQ 'spring-profile').State | Should -Be 'not-required'
     }
 
+    It 'treats repository paths with wildcard characters literally' {
+        $wildcardRoot = Join-Path $TestDrive 'doctor[fixture]'
+        [System.IO.Directory]::CreateDirectory((Join-Path $wildcardRoot '.config')) | Out-Null
+        [System.IO.Directory]::CreateDirectory((Join-Path $wildcardRoot 'docs/Docusaurus')) | Out-Null
+        Set-Content -LiteralPath (Join-Path $wildcardRoot 'global.json') -Value '{"sdk":{"version":"10.0.400"}}'
+        Set-Content -LiteralPath (Join-Path $wildcardRoot '.config/dotnet-tools.json') -Value '{"version":1,"tools":{"example":{"version":"1.0.0","commands":["example"]}}}'
+        Set-Content -LiteralPath (Join-Path $wildcardRoot 'docs/Docusaurus/package.json') -Value '{}'
+        Set-Content -LiteralPath (Join-Path $wildcardRoot 'docs/Docusaurus/package-lock.json') -Value '{}'
+
+        $report = Get-AgentDoctorReport -RepositoryRoot $wildcardRoot -Profile Docs -ProbeOverrides $readyProbes
+
+        @($report.Checks | Where-Object Name -EQ 'docs-manifests').State | Should -Be 'ready'
+    }
+
     It 'reports Spring Docker failure as an explicit prerequisite failure' {
         $probes = @{} + $readyProbes
         $probes['docker-ostype'] = [pscustomobject]@{ Available = $true; Output = 'windows'; ExitCode = 0; Error = '' }

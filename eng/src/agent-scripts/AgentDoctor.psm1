@@ -295,7 +295,7 @@ function Get-AgentDoctorReport {
         $nodeRemediation = if ($nodeState -eq 'ready') { '' } elseif ($nodeState -eq 'unsupported') { 'Install Node.js 20 or later for the documentation profile.' } else { 'Install Node.js 20 or later and verify node --version.' }
         Add-DoctorCheck -Checks $checks -Name 'node' -State $nodeState -Required $true -Details $nodeDetails -Remediation $nodeRemediation
         Add-DoctorCheck -Checks $checks -Name 'npm' -State $(if ($npm.Available -and $npm.ExitCode -eq 0) { 'ready' } elseif (-not $npm.Available) { 'missing' } else { 'unknown' }) -Required $true -Details (Get-DoctorProbeDetails -Probe $npm) -Remediation 'Install npm for the documentation profile.'
-        Add-DoctorCheck -Checks $checks -Name 'docs-manifests' -State $(if ((Test-Path $packageJson -PathType Leaf) -and (Test-Path $lockFile -PathType Leaf)) { 'ready' } else { 'missing' }) -Required $true -Details "package.json=$((Test-Path $packageJson -PathType Leaf)); package-lock.json=$((Test-Path $lockFile -PathType Leaf))." -Remediation 'Restore the Docusaurus package manifests.'
+        Add-DoctorCheck -Checks $checks -Name 'docs-manifests' -State $(if ((Test-Path -LiteralPath $packageJson -PathType Leaf) -and (Test-Path -LiteralPath $lockFile -PathType Leaf)) { 'ready' } else { 'missing' }) -Required $true -Details "package.json=$((Test-Path -LiteralPath $packageJson -PathType Leaf)); package-lock.json=$((Test-Path -LiteralPath $lockFile -PathType Leaf))." -Remediation 'Restore the Docusaurus package manifests.'
     }
     else { Add-DoctorCheck -Checks $checks -Name 'docs-profile' -State not-required -Required $false -Details 'Documentation prerequisites were not requested.' }
 
@@ -304,9 +304,9 @@ function Get-AgentDoctorReport {
         $dockerState = if (-not $docker.Available) { 'missing' } elseif ($docker.ExitCode -ne 0) { 'unknown' } elseif ($docker.Output.Trim() -eq 'linux') { 'ready' } else { 'unsupported' }
         Add-DoctorCheck -Checks $checks -Name 'docker-linux' -State $dockerState -Required $true -Details (Get-DoctorProbeDetails -Probe $docker) -Remediation 'Start Docker with Linux containers and grant this user access.'
         $appHost = Join-Path $root 'samples/Spring/Spring.AppHost/Spring.AppHost.csproj'
-        Add-DoctorCheck -Checks $checks -Name 'spring-apphost' -State $(if (Test-Path $appHost -PathType Leaf) { 'ready' } else { 'missing' }) -Required $true -Details $appHost -Remediation 'Restore the Spring AppHost project.'
+        Add-DoctorCheck -Checks $checks -Name 'spring-apphost' -State $(if (Test-Path -LiteralPath $appHost -PathType Leaf) { 'ready' } else { 'missing' }) -Required $true -Details $appHost -Remediation 'Restore the Spring AppHost project.'
         $playwright = Join-Path $root 'artifacts/tools/playwright'
-        Add-DoctorCheck -Checks $checks -Name 'playwright-browsers' -State $(if (Test-Path $playwright -PathType Container) { 'ready' } else { 'unknown' }) -Required $false -Details 'Browser binaries are checked separately by the L3 setup.' -Remediation 'Run test-spring.ps1 once for the L3 profile if browser binaries are needed.'
+        Add-DoctorCheck -Checks $checks -Name 'playwright-browsers' -State $(if (Test-Path -LiteralPath $playwright -PathType Container) { 'ready' } else { 'unknown' }) -Required $false -Details 'Browser binaries are checked separately by the L3 setup.' -Remediation 'Run test-spring.ps1 once for the L3 profile if browser binaries are needed.'
     }
     else { Add-DoctorCheck -Checks $checks -Name 'spring-profile' -State not-required -Required $false -Details 'Spring prerequisites were not requested.' }
 
