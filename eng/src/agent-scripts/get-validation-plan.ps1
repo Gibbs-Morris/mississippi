@@ -71,7 +71,9 @@ try {
     $isMarkdownConfig = @($normalizedPaths | Where-Object { $_ -match '(^|/)(?:\.markdownlint-cli2\.jsonc|\.markdownlintignore)$' -or $_ -eq '.github/linters/.markdown-lint.yml' }).Count -gt 0
     $markdownCheckPaths = if ($isMarkdownConfig) { @('.') } elseif ($markdownPaths.Count -gt 0) { $markdownPaths } else { @() }
     $selected = [System.Collections.Generic.List[object]]::new()
-    $isPowerShell = @($normalizedPaths | Where-Object { $_ -match '\.(?:ps1|psm1|psd1)$' -or $_ -eq 'eng/src/agent-scripts/validation-command-catalog.json' }).Count -gt 0
+    $powerShellPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:ps1|psm1|psd1)$' })
+    $unvalidatedPowerShellPaths = @($powerShellPaths | Where-Object { $_ -notmatch '^(?:eng/src/agent-scripts|eng/tests/agent-scripts)/' })
+    $isPowerShell = $powerShellPaths.Count -gt 0 -or @($normalizedPaths | Where-Object { $_ -eq 'eng/src/agent-scripts/validation-command-catalog.json' }).Count -gt 0
     $isMarkdown = $markdownPaths.Count -gt 0
     $isDocusaurus = @($normalizedPaths | Where-Object { $_ -match '^docs/Docusaurus/' }).Count -gt 0
     $browserPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:razor|css|html?|m?js|jsx|tsx?)$' -or $_ -match '(?:^|/)wwwroot/' })
@@ -119,6 +121,9 @@ try {
     }
     if ($nonSpringBrowserPaths.Count -gt 0) {
         $unresolved.Add("No application-specific browser validation gate is configured for non-Spring browser paths: $($nonSpringBrowserPaths -join ', ').")
+    }
+    if ($unvalidatedPowerShellPaths.Count -gt 0) {
+        $unresolved.Add("PowerShell paths are outside the maintained parser/test gate: $($unvalidatedPowerShellPaths -join ', ').")
     }
     foreach ($riskHint in $normalizedRiskHints) {
         if ($riskHint -eq 'browser') {

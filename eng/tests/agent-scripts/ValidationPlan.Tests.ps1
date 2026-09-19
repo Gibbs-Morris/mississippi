@@ -107,6 +107,14 @@ Describe 'Deterministic validation plan' {
         $outcome.Result.SelectedChecks.Id | Should -Contain 'powershell-tests'
     }
 
+    It 'reports an explicit gap for arbitrary PowerShell tooling paths' {
+        $outcome = Invoke-Plan -Paths @('tools/foo.ps1')
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.SelectedChecks.Id | Should -Contain 'powershell-tests'
+        $outcome.Result.Unresolved | Should -Match 'outside the maintained parser/test gate'
+    }
+
     It 'selects Markdown lint for Markdown-lint configuration changes' {
         $outcome = Invoke-Plan -Paths @('.markdownlintignore')
 
@@ -166,7 +174,7 @@ Describe 'Deterministic validation plan' {
         Set-Content -LiteralPath $sentinel -Value 'unchanged'
         $outcome = Invoke-Plan -Paths @('old/removed.ps1', 'eng/tests/orchestrate-powershell-tests.ps1')
 
-        $outcome.ExitCode | Should -Be 0
+        $outcome.ExitCode | Should -Be 1
         (Get-Content -LiteralPath $sentinel -Raw).Trim() | Should -Be 'unchanged'
         $outcome.Result.ChangedPaths | Should -Contain 'old/removed.ps1'
     }
