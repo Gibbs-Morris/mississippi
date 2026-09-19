@@ -301,7 +301,18 @@ function Get-ContextCandidates {
 
     $copilotPath = Join-Path $RepositoryRoot '.github/copilot-instructions.md'
     if (Test-Path -LiteralPath $copilotPath -PathType Leaf) {
-        $files.Add([pscustomobject]@{ FullName = $copilotPath; Kind = 'entrypoint' })
+        try {
+            $copilotItem = Get-Item -LiteralPath $copilotPath -Force -ErrorAction Stop
+            if ([bool]($copilotItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+                $null = $scanErrors.Add("Skipped reparse-point Copilot entrypoint '$copilotPath'.")
+            }
+            else {
+                $files.Add([pscustomobject]@{ FullName = $copilotPath; Kind = 'entrypoint' })
+            }
+        }
+        catch {
+            $null = $scanErrors.Add("Unable to inspect Copilot entrypoint '$copilotPath': $($_.Exception.Message)")
+        }
     }
 
     return [pscustomobject]@{ Files = @($files | Sort-Object FullName -Unique); Errors = @($scanErrors) }

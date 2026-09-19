@@ -250,6 +250,33 @@ applyTo: '**/[abc.md'
         }
     }
 
+    It 'rejects a reparse-point Copilot entrypoint' {
+        $copilotPath = Join-Path $fixtureRoot '.github/copilot-instructions.md'
+        $originalContent = Get-Content -LiteralPath $copilotPath -Raw
+        $linkCreated = $false
+        try {
+            Remove-Item -LiteralPath $copilotPath -Force
+            New-Item -ItemType SymbolicLink -Path $copilotPath -Target (Join-Path $fixtureRoot 'AGENTS.md') -ErrorAction Stop | Out-Null
+            $linkCreated = $true
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+
+            $context.Complete | Should -BeFalse
+            $context.Unresolved | Should -Contain "Skipped reparse-point Copilot entrypoint '$copilotPath'."
+        }
+        catch {
+            if (-not $linkCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create file symbolic links.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $copilotPath -Force -ErrorAction SilentlyContinue
+            Set-Content -LiteralPath $copilotPath -Value $originalContent
+        }
+    }
+
     It 'reports missing required context instead of returning an empty pass' {
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -RequiredPath 'missing/required.md'
 
