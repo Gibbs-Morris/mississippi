@@ -53,6 +53,15 @@ function Add-PlanCheck {
     })
 }
 
+function Format-PlanArgument {
+    param([AllowEmptyString()][string]$Value)
+
+    if ($Value -match '[\s,;|&<>"''`]') {
+        return "'$(($Value -replace "'", "''"))'"
+    }
+    return $Value
+}
+
 try {
     $root = (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
     $catalogPath = Join-Path $root 'eng/src/agent-scripts/validation-command-catalog.json'
@@ -180,7 +189,10 @@ try {
         Write-Output "VALIDATION_PLAN: $(if ($result.Complete) { 'COMPLETE' } else { 'INCOMPLETE' })"
         Write-Output "BASE: $BaseRevision"
         Write-Output "HEAD: $HeadRevision"
-        foreach ($check in @($result.SelectedChecks)) { Write-Output "$($check.Id) [$($check.Mode)] -> $($check.Executable) $($check.Arguments -join ' ') | $($check.Reasons -join '; ')" }
+        foreach ($check in @($result.SelectedChecks)) {
+            $formattedArguments = @($check.Arguments | ForEach-Object { Format-PlanArgument -Value ([string]$_) }) -join ' '
+            Write-Output "$($check.Id) [$($check.Mode)] -> $($check.Executable) $formattedArguments | $($check.Reasons -join '; ')"
+        }
         foreach ($item in @($result.Unresolved)) { Write-Output "UNRESOLVED: $item" }
     }
     if ($result.Complete) { exit 0 }

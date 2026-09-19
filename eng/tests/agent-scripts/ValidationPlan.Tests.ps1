@@ -187,6 +187,12 @@ Describe 'Deterministic validation plan' {
         @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'markdown-lint').Arguments | Should -Contain 'docs/api,legacy.md'
     }
 
+    It 'quotes spaced arguments in text output' {
+        $json = & $powerShellPath -NoProfile -File $scriptPath -RepositoryRoot $repoRoot -BaseRevision base-sha -HeadRevision head-sha -ChangedPathJson '["docs/My Guide.md"]' -OutputFormat Text 2>&1 | Out-String
+
+        $json | Should -Match "'docs/My Guide.md'"
+    }
+
     It 'fails closed when base, head, or changed paths are omitted' {
         $outcome = Invoke-Plan -Paths @() -Base ' ' -Head ' '
 
