@@ -469,9 +469,11 @@ function Get-MutationReportMetrics {
 
     $detected = $counts['Killed'] + $counts['Timeout']
     $valid = $detected + $counts['Survived'] + $counts['NoCoverage']
-    $score = if ($valid -gt 0) { [Math]::Round($detected / $valid * 100, 2) } else { $null }
+    $rawScore = if ($valid -gt 0) { $detected / $valid * 100 } else { $null }
+    $score = if ($null -ne $rawScore) { [Math]::Round($rawScore, 2) } else { $null }
     return [pscustomobject]@{
         Score = $score
+        RawScore = $rawScore
         Valid = $valid
         Detected = $detected
         Killed = $counts['Killed']
@@ -523,11 +525,13 @@ function Get-MutationProjectSummary {
     }
 
     $score = if ($metrics) { $metrics.Score } else { $null }
+    $rawScore = if ($metrics) { $metrics.RawScore } else { $null }
     return [pscustomobject]@{
         Project = $projectName
         ExecutionStatus = if ($ProjectResult.Status -eq 'Failed') { 'FAILED' } else { 'COMPLETED' }
-        Status = Get-MutationProjectStatus -ExecutionStatus $ProjectResult.Status -ReportValid $reportValid -Score $score -BreakThreshold $BreakThreshold
+        Status = Get-MutationProjectStatus -ExecutionStatus $ProjectResult.Status -ReportValid $reportValid -Score $rawScore -BreakThreshold $BreakThreshold
         Score = $score
+        RawScore = $rawScore
         ValidMutants = if ($metrics) { $metrics.Valid } else { 0 }
         DetectedMutants = if ($metrics) { $metrics.Detected } else { 0 }
         ReportPath = $ProjectResult.ReportPath

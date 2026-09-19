@@ -92,6 +92,20 @@ Describe 'Mutation automation' {
         }
     }
 
+    It 'compares the raw mutation score before rounding the displayed score' {
+        $mutants = [System.Collections.Generic.List[object]]::new()
+        for ($index = 0; $index -lt 5000; $index++) { $mutants.Add(@{ status = 'Killed' }) }
+        for ($index = 0; $index -lt 5001; $index++) { $mutants.Add(@{ status = 'Survived' }) }
+        @{ files = @{ 'Widget.cs' = @{ mutants = $mutants } } } |
+            ConvertTo-Json -Depth 6 | Set-Content (Join-Path $completedOutput 'mutation-report.json')
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation { $completedOutput }
+        Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output -ReportOnly | Should -Be $output
+        $summary = Get-Content (Join-Path $output 'mutation-summary.json') -Raw | ConvertFrom-Json
+        $summary.BelowBreakThresholdCount | Should -Be 1
+        $summary.Projects[0].Score | Should -Be 50
+        $summary.Projects[0].RawScore | Should -BeLessThan 50
+    }
+
     It 'keeps the full mutation workflow manual and weekly' {
         $workflowPath = Join-Path $PSScriptRoot '../../../.github/workflows/stryker.yml'
         $workflow = Get-Content -LiteralPath $workflowPath -Raw
