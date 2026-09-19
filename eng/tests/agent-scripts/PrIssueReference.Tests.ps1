@@ -205,6 +205,12 @@ Refs #741
         Assert-ValidReferenceBody -Body '``Refs #741```'
     }
 
+    It 'preserves references after escaped backticks' {
+        $backtick = [char]96
+        $body = '\' + $backtick + 'Refs #741' + $backtick
+        Assert-ValidReferenceBody -Body $body
+    }
+
     It 'ignores indented Markdown code blocks' {
         Assert-NoReferenceBody -Body "    Refs #741"
     }

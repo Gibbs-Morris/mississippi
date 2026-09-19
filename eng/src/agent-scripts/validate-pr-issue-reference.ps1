@@ -48,10 +48,14 @@ function Remove-MarkdownLinkDestinations { # NOSONAR - bounded Markdown destinat
     $operations = 0
     $operationBudget = [Math]::Max(1000, [Math]::Min(1000000, ($Content.Length * 4) + 1000))
     while ($index -lt $Content.Length) {
-        $backslashCount = 0
-        for ($escapeIndex = $index - 1; $escapeIndex -ge 0 -and $Content[$escapeIndex] -eq '\'; $escapeIndex--) { $backslashCount++ }
-        $isEscapedBracket = ($backslashCount % 2) -eq 1
-        if (-not $isEscapedBracket -and $index + 1 -lt $Content.Length -and $Content[$index] -eq ']' -and $Content[$index + 1] -eq '(') {
+        if ($index + 1 -lt $Content.Length -and $Content[$index] -eq ']' -and $Content[$index + 1] -eq '(') {
+            $backslashCount = 0
+            for ($escapeIndex = $index - 1; $escapeIndex -ge 0 -and $Content[$escapeIndex] -eq '\'; $escapeIndex--) { $backslashCount++ }
+            if (($backslashCount % 2) -eq 1) {
+                $null = $builder.Append($Content[$index])
+                $index++
+                continue
+            }
             $depth = 1
             $cursor = $index + 2
             while ($cursor -lt $Content.Length -and $depth -gt 0) {
@@ -121,6 +125,14 @@ function Remove-NonRenderedMarkdown { # NOSONAR - bounded Markdown renderer appr
     $index = 0
     while ($index -lt $withoutComments.Length) {
         if ($withoutComments[$index] -ne '`') {
+            $null = $builder.Append($withoutComments[$index])
+            $index++
+            continue
+        }
+
+        $backslashCount = 0
+        for ($escapeIndex = $index - 1; $escapeIndex -ge 0 -and $withoutComments[$escapeIndex] -eq '\'; $escapeIndex--) { $backslashCount++ }
+        if (($backslashCount % 2) -eq 1) {
             $null = $builder.Append($withoutComments[$index])
             $index++
             continue
