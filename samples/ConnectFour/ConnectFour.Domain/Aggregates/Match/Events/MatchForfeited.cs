@@ -10,7 +10,9 @@ namespace MississippiSamples.ConnectFour.Domain.Aggregates.Match.Events;
 /// <summary>
 ///     Records a seated player forfeiting an in-progress match.
 /// </summary>
-[EventStorageName("CONNECTFOUR", "GAME", "MATCHFORFEITED")]
+
+// ReSharper disable once RedundantArgumentDefaultValue
+[EventStorageName("CONNECTFOUR", "GAME", "MATCHFORFEITED", MatchStorageVersions.V1)]
 [GenerateSerializer]
 [Alias("MississippiSamples.ConnectFour.Domain.Aggregates.Match.Events.MatchForfeited")]
 internal sealed record MatchForfeited
