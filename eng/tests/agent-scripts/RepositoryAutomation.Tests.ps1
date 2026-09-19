@@ -519,6 +519,30 @@ $timer.Stop()
         $result.ExitCode | Should -Be 124
         $result.StdOut | Should -Match 'before'
     }
+
+    It 'covers successful, nonzero, working-directory and launch-failure paths' {
+        $success = InModuleScope RepositoryAutomation { Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', "Write-Output 'ok'") -PassThru }
+        $success.Success | Should -BeTrue
+        $success.StdOut | Should -Be 'ok'
+
+        $failed = InModuleScope RepositoryAutomation { Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', "[Console]::Error.WriteLine('bad'); exit 3") -PassThru }
+        $failed.Success | Should -BeFalse
+        $failed.ExitCode | Should -Be 3
+        $failed.StdErr | Should -Match 'bad'
+
+        $directory = Join-Path $TestDrive 'native-working-directory'
+        New-Item -ItemType Directory -Path $directory -Force | Out-Null
+        $working = InModuleScope RepositoryAutomation -Parameters @{ WorkDir = $directory } {
+            param($WorkDir)
+            Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', '[Environment]::CurrentDirectory') -WorkingDirectory $WorkDir -PassThru
+        }
+        $working.Success | Should -BeTrue
+        $working.StdOut | Should -Match 'native-working-directory'
+
+        $launch = InModuleScope RepositoryAutomation { Invoke-RepositoryProcess -FilePath 'missing-native-command' -PassThru }
+        $launch.Success | Should -BeFalse
+        $launch.StdErr | Should -Match 'missing-native-command'
+    }
 }
 
 Describe 'Repository automation quality gates' {
