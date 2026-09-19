@@ -277,11 +277,23 @@ Describe 'Implementation-ready issue contract' {
     }
 
     It 'does not classify lowercase declaration text as a raw HTML declaration' {
-        $content = '<!doctype html>' + [Environment]::NewLine + [Environment]::NewLine + $validBug
+        $content = '<!doctype' + [Environment]::NewLine + [Environment]::NewLine + $validBug
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
 
         $outcome.ExitCode | Should -Be 0
         $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'distinguishes odd and even backslash runs before code delimiters' {
+        $backtick = [string][char]96
+        $odd = '\' + $backtick + '<!--' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '-->' + $backtick
+        $even = '\\' + $backtick + '<!--' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '-->' + $backtick
+        $oddOutcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $odd)
+        $evenOutcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $even)
+
+        $oddOutcome.ExitCode | Should -Be 1
+        $evenOutcome.ExitCode | Should -Be 0
+        $evenOutcome.Result.Valid | Should -BeTrue
     }
 
     It 'does not let inline code spans cross raw HTML blocks' {
