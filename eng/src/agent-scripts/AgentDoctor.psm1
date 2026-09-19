@@ -38,7 +38,7 @@ function Invoke-DoctorProbe {
     if ($ProbeOverrides.ContainsKey($Name)) {
         return $ProbeOverrides[$Name]
     }
-    $command = Get-Command $FilePath -ErrorAction SilentlyContinue
+    $command = Resolve-DoctorCommand -FilePath $FilePath
     if ($null -eq $command) {
         return [pscustomobject]@{ Available = $false; Output = ''; ExitCode = 127; Error = "Command '$FilePath' was not found." }
     }
@@ -51,13 +51,13 @@ function Invoke-DoctorProbe {
         }
 
         $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-        $startInfo.FileName = $command.Source
+        $startInfo.FileName = $command.FilePath
         $startInfo.UseShellExecute = $false
         $startInfo.CreateNoWindow = $true
         $startInfo.RedirectStandardOutput = $true
         $startInfo.RedirectStandardError = $true
         if ($WorkingDirectory) { $startInfo.WorkingDirectory = $WorkingDirectory }
-        foreach ($argument in $Arguments) { $null = $startInfo.ArgumentList.Add($argument) }
+        foreach ($argument in @($command.PrefixArguments) + $Arguments) { $null = $startInfo.ArgumentList.Add($argument) }
 
         $process = [System.Diagnostics.Process]::new()
         $process.StartInfo = $startInfo
@@ -100,6 +100,28 @@ function Invoke-DoctorProbe {
         if ($null -ne $process) { $process.Dispose() }
         if ($locationPushed) { Pop-Location }
     }
+}
+
+function Resolve-DoctorCommand {
+    param([Parameter(Mandatory)][string]$FilePath)
+
+    $commands = @(Get-Command $FilePath -All -ErrorAction SilentlyContinue)
+    if ($commands.Count -eq 0) { return $null }
+
+    $scriptCommand = @($commands | Where-Object { [System.IO.Path]::GetExtension($_.Source) -ieq '.ps1' } | Select-Object -First 1)
+    if ($scriptCommand.Count -gt 0) {
+        $hostCommand = @(Get-Command pwsh -ErrorAction SilentlyContinue | Select-Object -First 1)
+        if ($hostCommand.Count -gt 0) {
+            return [pscustomobject]@{
+                FilePath = $hostCommand[0].Source
+                PrefixArguments = @('-NoProfile', '-File', $scriptCommand[0].Source)
+            }
+        }
+    }
+
+    $applicationCommand = @($commands | Where-Object { $_.CommandType -eq 'Application' } | Select-Object -First 1)
+    $selected = if ($applicationCommand.Count -gt 0) { $applicationCommand[0] } else { $commands[0] }
+    return [pscustomobject]@{ FilePath = $selected.Source; PrefixArguments = @() }
 }
 
 function Get-DoctorProbeDetails {
