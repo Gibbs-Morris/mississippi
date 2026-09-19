@@ -12,7 +12,8 @@ Checks declared repository prerequisites and returns READY only for prerequisite
 param(
     [string]$RepositoryRoot = $PSScriptRoot,
     [ValidateSet('Core', 'Docs', 'Spring', 'GitHub', 'All')][string]$Profile = 'Core',
-    [ValidateSet('Text', 'Json')][string]$OutputFormat = 'Text'
+    [ValidateSet('Text', 'Json')][string]$OutputFormat = 'Text',
+    [string[]]$TrustedGitHubHost = @()
 )
 
 Set-StrictMode -Version Latest
@@ -20,7 +21,7 @@ $ErrorActionPreference = 'Stop'
 
 Import-Module (Join-Path $PSScriptRoot 'eng/src/agent-scripts/AgentDoctor.psm1') -Force
 try {
-    $report = Get-AgentDoctorReport -RepositoryRoot $RepositoryRoot -Profile $Profile
+    $report = Get-AgentDoctorReport -RepositoryRoot $RepositoryRoot -Profile $Profile -TrustedGitHubHost $TrustedGitHubHost
     if ($OutputFormat -eq 'Json') { $report | ConvertTo-Json -Depth 8 -Compress } else { Format-AgentDoctorText -Report $report }
     if ($report.IsPrerequisiteReady) { exit 0 }
     exit 1
