@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gibbs-morris.github.io/mississippi/code-review-council/review-result.schema.json",
+  "title": "Code Review Council final result",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "status",
+    "snapshot_id",
+    "reviewers",
+    "findings",
+    "dispositions",
+    "execution",
+    "publication"
+  ],
+  "properties": {
+    "schema_version": {"const": "code-review-council/v1"},
+    "status": {"enum": ["PASS", "BLOCKED", "INCOMPLETE", "NO_CHANGES"]},
+    "snapshot_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "reviewers": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/reviewer"}
+    },
+    "findings": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/finding"}
+    },
+    "dispositions": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/disposition"}
+    },
+    "execution": {"type": "object"},
+    "publication": {"type": "object"}
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "reviewer": {
+      "type": "object",
+      "required": ["review_id", "persona_id", "snapshot_id", "status"],
+      "properties": {
+        "review_id": {"type": "string", "minLength": 1},
+        "persona_id": {"type": "string", "minLength": 1},
+        "snapshot_id": {"type": "string"},
+        "status": {"enum": ["complete", "not_applicable", "failed"]},
+        "reason": {"type": ["string", "null"]},
+        "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}}
+      },
+      "additionalProperties": true
+    },
+    "finding": {
+      "type": "object",
+      "required": [
+        "fingerprint",
+        "persona_ids",
+        "category",
+        "severity",
+        "snapshot_id",
+        "path",
+        "line",
+        "scenario",
+        "trigger",
+        "impact",
+        "evidence",
+        "remediation",
+        "uncertainty",
+        "change_relation"
+      ],
+      "properties": {
+        "fingerprint": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "persona_ids": {"type": "array", "items": {"type": "string"}},
+        "category": {"type": "string", "minLength": 1},
+        "severity": {"enum": ["P0", "P1", "P2", "P3"]},
+        "snapshot_id": {"type": "string"},
+        "path": {"type": "string", "minLength": 1},
+        "symbol": {"type": "string"},
+        "line": {"type": "integer", "minimum": 1},
+        "scenario": {"type": "string", "minLength": 1},
+        "trigger": {"type": "string", "minLength": 1},
+        "impact": {"type": "string", "minLength": 1},
+        "evidence": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "remediation": {"type": "string", "minLength": 1},
+        "uncertainty": {"type": "string"},
+        "change_relation": {
+          "enum": ["introduced", "worsened", "pre-existing", "out-of-scope", "unknown"]
+        },
+        "disposition": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "disposition": {
+      "type": "object",
+      "required": ["fingerprint", "disposition", "rationale", "snapshot_id"],
+      "properties": {
+        "fingerprint": {"type": "string"},
+        "disposition": {
+          "enum": [
+            "validated",
+            "duplicate",
+            "rejected",
+            "pre-existing",
+            "out-of-scope",
+            "unresolved"
+          ]
+        },
+        "duplicate_of": {"type": ["string", "null"]},
+        "rationale": {"type": "string", "minLength": 1},
+        "snapshot_id": {"type": "string"}
+      },
+      "additionalProperties": true
+    }
+  }
+}
