@@ -414,10 +414,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
 
         // Use the compilation provider to scan referenced assemblies
         IncrementalValueProvider<(List<ProjectionInfo> Projections, string TargetRootNamespace)> projectionsProvider =
-            compilationAndOptions.Select((
-                source,
-                _
-            ) =>
+            compilationAndOptions.Select((source, _) =>
             {
                 List<ProjectionInfo> projections = GetProjectionsFromCompilation(source.Compilation);
                 source.Options.GlobalOptions.TryGetValue(
@@ -436,10 +433,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         // Register source output
         context.RegisterSourceOutput(
             projectionsProvider,
-            static (
-                spc,
-                data
-            ) =>
+            static (spc, data) =>
             {
                 HashSet<string> generatedNestedTypes = new();
                 foreach (ProjectionInfo projection in data.Projections)

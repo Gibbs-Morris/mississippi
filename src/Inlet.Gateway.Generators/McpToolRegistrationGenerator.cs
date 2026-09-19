@@ -235,29 +235,24 @@ public sealed class McpToolRegistrationGenerator : IIncrementalGenerator
     {
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<McpRegistrationModel?> registrationProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
-        {
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.RootNamespaceProperty,
-                out string? rootNamespace);
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.AssemblyNameProperty,
-                out string? assemblyName);
-            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                rootNamespace,
-                assemblyName,
-                source.Compilation);
-            return GetRegistrationModel(source.Compilation, targetRootNamespace);
-        });
+        IncrementalValueProvider<McpRegistrationModel?> registrationProvider =
+            compilationAndOptions.Select((source, _) =>
+            {
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.RootNamespaceProperty,
+                    out string? rootNamespace);
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.AssemblyNameProperty,
+                    out string? assemblyName);
+                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                    rootNamespace,
+                    assemblyName,
+                    source.Compilation);
+                return GetRegistrationModel(source.Compilation, targetRootNamespace);
+            });
         context.RegisterSourceOutput(
             registrationProvider,
-            static (
-                spc,
-                model
-            ) =>
+            static (spc, model) =>
             {
                 if (model is null)
                 {

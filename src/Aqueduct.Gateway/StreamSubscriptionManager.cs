@@ -115,19 +115,14 @@ internal sealed class StreamSubscriptionManager
             // Subscribe to server-specific stream
             StreamId serverStreamId = StreamId.Create(Options.Value.ServerStreamNamespace, ServerId);
             IAsyncStream<ServerMessage> serverStream = streamProvider.GetStream<ServerMessage>(serverStreamId);
-            await serverStream.SubscribeAsync(async (
-                    message,
-                    token
-                ) => await onServerMessage(message).ConfigureAwait(false))
+            await serverStream
+                .SubscribeAsync(async (message, token) => await onServerMessage(message).ConfigureAwait(false))
                 .ConfigureAwait(false);
 
             // Subscribe to hub broadcast stream
             StreamId allStreamId = StreamId.Create(Options.Value.AllClientsStreamNamespace, hubName);
             allStream = streamProvider.GetStream<AllMessage>(allStreamId);
-            await allStream.SubscribeAsync(async (
-                    message,
-                    token
-                ) => await onAllMessage(message).ConfigureAwait(false))
+            await allStream.SubscribeAsync(async (message, token) => await onAllMessage(message).ConfigureAwait(false))
                 .ConfigureAwait(false);
             initialized = true;
             Logger.StreamsInitialized(hubName, ServerId);

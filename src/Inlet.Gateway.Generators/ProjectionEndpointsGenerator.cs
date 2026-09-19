@@ -903,10 +903,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     {
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<List<ProjectionInfo>> projectionsProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
+        IncrementalValueProvider<List<ProjectionInfo>> projectionsProvider = compilationAndOptions.Select((source, _) =>
         {
             source.Options.GlobalOptions.TryGetValue(
                 TargetNamespaceResolver.RootNamespaceProperty,
@@ -924,10 +921,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         // Register source output
         context.RegisterSourceOutput(
             projectionsProvider,
-            static (
-                spc,
-                projections
-            ) =>
+            static (spc, projections) =>
             {
                 HashSet<string> generatedNestedTypes = new();
                 foreach (ProjectionInfo projection in projections)

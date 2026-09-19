@@ -27,22 +27,14 @@ public sealed class SnapshotStorageMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotStorageMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -77,22 +69,14 @@ public sealed class SnapshotStorageMetricsTests
         const string snapshotType = "PruneTestSnapshot";
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotStorageMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -121,22 +105,14 @@ public sealed class SnapshotStorageMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotStorageMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -165,22 +141,14 @@ public sealed class SnapshotStorageMetricsTests
         using MeterListener listener = new();
         List<MetricMeasurement> longMeasurements = [];
         List<MetricMeasurement> doubleMeasurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotStorageMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -190,12 +158,7 @@ public sealed class SnapshotStorageMetricsTests
 
             longMeasurements.Add(new(instrument.Name, measurement, 0, tagMap));
         });
-        listener.SetMeasurementEventCallback<double>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -229,22 +192,14 @@ public sealed class SnapshotStorageMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotStorageMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -254,12 +209,7 @@ public sealed class SnapshotStorageMetricsTests
 
             measurements.Add(new(instrument.Name, measurement, 0, tagMap));
         });
-        listener.SetMeasurementEventCallback<double>((
-            _,
-            _,
-            _,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((_, _, _, _) =>
         {
             // Ignore histogram
         });
@@ -282,22 +232,14 @@ public sealed class SnapshotStorageMetricsTests
         const string snapshotType = "WriteNoSizeSnapshot";
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotStorageMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -307,12 +249,7 @@ public sealed class SnapshotStorageMetricsTests
 
             measurements.Add(new(instrument.Name, measurement, 0, tagMap));
         });
-        listener.SetMeasurementEventCallback<double>((
-            _,
-            _,
-            _,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((_, _, _, _) =>
         {
             // Ignore histogram
         });
@@ -335,22 +272,14 @@ public sealed class SnapshotStorageMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotStorageMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -360,12 +289,7 @@ public sealed class SnapshotStorageMetricsTests
 
             measurements.Add(new(instrument.Name, measurement, 0, tagMap));
         });
-        listener.SetMeasurementEventCallback<double>((
-            _,
-            _,
-            _,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((_, _, _, _) =>
         {
             // Ignore histogram
         });
@@ -387,22 +311,14 @@ public sealed class SnapshotStorageMetricsTests
         using MeterListener listener = new();
         List<MetricMeasurement> longMeasurements = [];
         List<MetricMeasurement> doubleMeasurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotStorageMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -412,12 +328,7 @@ public sealed class SnapshotStorageMetricsTests
 
             longMeasurements.Add(new(instrument.Name, measurement, 0, tagMap));
         });
-        listener.SetMeasurementEventCallback<double>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)

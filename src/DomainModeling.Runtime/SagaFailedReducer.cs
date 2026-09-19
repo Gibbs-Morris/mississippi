@@ -22,9 +22,6 @@ public sealed class SagaFailedReducer<TSaga> : EventReducerBase<SagaFailed, TSag
         ArgumentNullException.ThrowIfNull(eventData);
         return SagaStateMutator.CreateUpdated(
             state,
-            (
-                map,
-                instance
-            ) => map.SetProperty(instance, nameof(ISagaState.Phase), SagaPhase.Failed));
+            (map, instance) => map.SetProperty(instance, nameof(ISagaState.Phase), SagaPhase.Failed));
     }
 }

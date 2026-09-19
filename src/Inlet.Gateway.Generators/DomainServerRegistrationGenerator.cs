@@ -276,10 +276,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
         IncrementalValueProvider<(IReadOnlyList<DomainRegistrationModel> Domains, string TargetRootNamespace)>
-            domainsProvider = compilationAndOptions.Select((
-                source,
-                _
-            ) =>
+            domainsProvider = compilationAndOptions.Select((source, _) =>
             {
                 source.Options.GlobalOptions.TryGetValue(
                     TargetNamespaceResolver.RootNamespaceProperty,
@@ -296,10 +293,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
             });
         context.RegisterSourceOutput(
             domainsProvider,
-            static (
-                spc,
-                result
-            ) =>
+            static (spc, result) =>
             {
                 if (result.Domains.Count == 0)
                 {

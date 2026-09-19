@@ -281,10 +281,7 @@ public sealed class CommandClientReducersGenerator : IIncrementalGenerator
     {
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<List<AggregateInfo>> aggregatesProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
+        IncrementalValueProvider<List<AggregateInfo>> aggregatesProvider = compilationAndOptions.Select((source, _) =>
         {
             List<CommandModel> commands = GetCommandsFromCompilation(source.Compilation);
             source.Options.GlobalOptions.TryGetValue(
@@ -301,10 +298,7 @@ public sealed class CommandClientReducersGenerator : IIncrementalGenerator
         });
         context.RegisterSourceOutput(
             aggregatesProvider,
-            static (
-                spc,
-                aggregates
-            ) =>
+            static (spc, aggregates) =>
             {
                 foreach (AggregateInfo aggregate in aggregates)
                 {
