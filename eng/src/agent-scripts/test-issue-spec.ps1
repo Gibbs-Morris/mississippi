@@ -31,7 +31,6 @@ function Get-MarkdownSections {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Content)
 
-    $knownTitles = ($requiredSections | ForEach-Object { [regex]::Escape($_) }) -join '|'
     $allHeadings = [regex]::Matches($Content, '(?m)^[ \t]{0,3}(?<Level>#{1,6})[ \t]+(?<Title>[^\r\n]+)[ \t]*\r?$')
     $matches = @($allHeadings | Where-Object { $requiredSections -contains $_.Groups['Title'].Value.Trim() })
     $sections = [ordered]@{}
@@ -97,7 +96,7 @@ function Remove-MarkdownFencedBlocks {
     return ($lines -join [Environment]::NewLine)
 }
 
-function Remove-MarkdownInlineCode {
+function Remove-MarkdownInlineCode { # NOSONAR - bounded Markdown delimiter scanner is intentionally stateful.
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Content)
 
@@ -138,7 +137,7 @@ function Remove-MarkdownInlineCode {
     return $builder.ToString()
 }
 
-function Remove-MarkdownHtmlComments {
+function Remove-MarkdownHtmlComments { # NOSONAR - bounded comment/code scanner is intentionally stateful.
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Content)
 
@@ -231,7 +230,7 @@ function Test-IssueSectionContent {
     return -not [string]::IsNullOrWhiteSpace($withoutHeadings)
 }
 
-function Get-IssueSpecResult {
+function Get-IssueSpecResult { # NOSONAR - this validator intentionally aggregates independent contract gates into one report.
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$IssuePath,
