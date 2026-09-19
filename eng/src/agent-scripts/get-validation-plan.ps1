@@ -6,6 +6,8 @@ param(
     [Parameter(Mandatory)][AllowEmptyString()][string]$HeadRevision,
     [string[]]$ChangedPath = @(),
     [string[]]$RiskHint = @(),
+    [string]$ChangedPathJson,
+    [string]$RiskHintJson,
     [string]$RepositoryRoot = (Join-Path $PSScriptRoot '../../..'),
     [ValidateSet('Text', 'Json')][string]$OutputFormat = 'Text'
 )
@@ -53,12 +55,12 @@ try {
     $catalog = Get-Content -LiteralPath $catalogPath -Raw -ErrorAction Stop | ConvertFrom-Json
     $unresolved = [System.Collections.Generic.List[string]]::new()
     $normalizedPaths = [System.Collections.Generic.List[string]]::new()
-    foreach ($pathValue in @($ChangedPath)) {
-        foreach ($path in @($pathValue -split ',' | Where-Object { $_ -ne '' })) {
-            $relative = ConvertTo-PlanRelativePath -Root $root -Path $path
-            if ($null -eq $relative) { $unresolved.Add("Changed path is outside the repository or invalid: '$path'.") }
-            else { $normalizedPaths.Add($relative) }
-        }
+    $inputChangedPaths = if (-not [string]::IsNullOrWhiteSpace($ChangedPathJson)) { @(ConvertFrom-Json -InputObject $ChangedPathJson) } else { @($ChangedPath) }
+    $inputRiskHints = if (-not [string]::IsNullOrWhiteSpace($RiskHintJson)) { @(ConvertFrom-Json -InputObject $RiskHintJson) } else { @($RiskHint) }
+    foreach ($path in $inputChangedPaths) {
+        $relative = ConvertTo-PlanRelativePath -Root $root -Path ([string]$path)
+        if ($null -eq $relative) { $unresolved.Add("Changed path is outside the repository or invalid: '$path'.") }
+        else { $normalizedPaths.Add($relative) }
     }
 
     $markdownPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:md|mdx)$' })
@@ -87,7 +89,7 @@ try {
         powershell = 'powershell-tests'
         'public-contract' = 'core-final'
     }
-    $normalizedRiskHints = @($RiskHint | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim().ToLowerInvariant() } | Where-Object { $_ })
+    $normalizedRiskHints = @($inputRiskHints | ForEach-Object { ([string]$_).Trim().ToLowerInvariant() } | Where-Object { $_ })
     foreach ($riskHint in $normalizedRiskHints) {
         if ($riskChecks.Keys -notcontains $riskHint) {
             $unresolved.Add("Unsupported risk hint '$riskHint'.")

@@ -16,8 +16,8 @@ Describe 'Deterministic validation plan' {
         function Invoke-Plan {
             param([string[]]$Paths, [string[]]$RiskHints = @(), [AllowEmptyString()][string]$Base = 'base-sha', [AllowEmptyString()][string]$Head = 'head-sha')
             $arguments = @('-NoProfile', '-File', $scriptPath, '-RepositoryRoot', $repoRoot, '-BaseRevision', $Base, '-HeadRevision', $Head, '-OutputFormat', 'Json')
-            if (@($Paths).Count -gt 0) { $arguments += @('-ChangedPath', (@($Paths) -join ',')) }
-            if (@($RiskHints).Count -gt 0) { $arguments += @('-RiskHint', (@($RiskHints) -join ',')) }
+            if (@($Paths).Count -gt 0) { $arguments += @('-ChangedPathJson', (@($Paths) | ConvertTo-Json -Compress)) }
+            if (@($RiskHints).Count -gt 0) { $arguments += @('-RiskHintJson', (@($RiskHints) | ConvertTo-Json -Compress)) }
             $json = & $powerShellPath @arguments 2>&1 | Out-String
             [pscustomobject]@{ ExitCode = $LASTEXITCODE; Result = $json | ConvertFrom-Json; Output = $json }
         }
@@ -145,6 +145,14 @@ Describe 'Deterministic validation plan' {
         $outcome.ExitCode | Should -Be 0
         (Get-Content -LiteralPath $sentinel -Raw).Trim() | Should -Be 'unchanged'
         $outcome.Result.ChangedPaths | Should -Contain 'old/removed.ps1'
+    }
+
+    It 'preserves commas in literal changed paths' {
+        $outcome = Invoke-Plan -Paths @('docs/api,legacy.md')
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.ChangedPaths | Should -Contain 'docs/api,legacy.md'
+        @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'markdown-lint').Arguments | Should -Contain 'docs/api,legacy.md'
     }
 
     It 'fails closed when base, head, or changed paths are omitted' {
