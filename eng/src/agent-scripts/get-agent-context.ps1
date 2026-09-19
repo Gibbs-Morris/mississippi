@@ -9,6 +9,7 @@ param(
     [string[]]$RequiredPath = @(),
     [string[]]$ContentDomain = @(),
     [string[]]$WorkflowRole = @(),
+    [string]$TrustedModulePath,
     [ValidateSet('Text', 'Json')]
     [string]$OutputFormat = 'Text'
 )
@@ -16,7 +17,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$modulePath = Join-Path $PSScriptRoot 'AgentContext.psm1'
+$modulePath = if ([string]::IsNullOrWhiteSpace($TrustedModulePath)) { Join-Path $PSScriptRoot 'AgentContext.psm1' } else { (Resolve-Path -LiteralPath $TrustedModulePath -ErrorAction Stop).Path }
 Import-Module -Name $modulePath -Force
 
 try {

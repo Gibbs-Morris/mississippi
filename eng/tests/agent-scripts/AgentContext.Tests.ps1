@@ -35,6 +35,7 @@ applyTo: '**'
 See [the shared route](../skills/example/SKILL.md#section).
 Ignore [a file URI](file:///etc/policy.md) and [an FTP URI](ftp://example.com/policy.md).
 See [the titled route](../skills/example/SKILL.md "Shared route").
+See [the angle route](<../skills/example/my skill/SKILL.md>).
 '@
         Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/csharp.instructions.md') -Value @'
 ---
@@ -111,6 +112,13 @@ applyTo: '**/[abc.md'
 
 # Unbalanced class
 '@
+        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/reversed-braces.instructions.md') -Value @'
+---
+applyTo: '**/}reversed{.md'
+---
+
+# Reversed braces
+'@
         Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/nested-applyto.instructions.md') -Value @'
 ---
 metadata:
@@ -173,6 +181,14 @@ metadata:
 
         $unbalanced.ScopeStatus | Should -Be 'unknown'
         $unbalanced.ScopeNote | Should -Match 'unbalanced braces'
+    }
+
+    It 'keeps structurally reversed brace metadata selected for direct inspection' {
+        $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'docs/guide.md'
+        $reversed = @($context.Selected | Where-Object Path -EQ '.github/instructions/reversed-braces.instructions.md')[0]
+
+        $reversed.ScopeStatus | Should -Be 'unknown'
+        $reversed.ScopeNote | Should -Match 'reversed braces'
     }
 
     It 'keeps unmatched character-class metadata selected for direct inspection' {
@@ -317,6 +333,13 @@ applyTo: '**'
         $unknown.Unresolved | Should -Contain "Unsupported content domain hint: 'mystery'."
     }
 
+    It 'selects the full guidance inventory for global rule maintenance' {
+        $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath '.github/instructions/csharp.instructions.md'
+
+        @($context.Entries | Where-Object { $_.Kind -eq 'instruction' -and $_.Selected }).Count | Should -Be (@($context.Entries | Where-Object Kind -EQ 'instruction').Count)
+        @($context.Selected | Where-Object Path -EQ '.github/instructions/style-route.instructions.md').Reasons | Should -Contain 'full-inventory'
+    }
+
     It 'prunes excluded trees before discovery' {
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
 
@@ -399,6 +422,32 @@ applyTo: '**'
         }
     }
 
+    It 'rejects a reparse-point ancestor of fixed guidance paths' {
+        if (-not $IsWindows) {
+            Set-ItResult -Skipped -Because 'Directory junctions are Windows-specific.'
+            return
+        }
+
+        $githubPath = Join-Path $fixtureRoot '.github'
+        $backupPath = Join-Path $fixtureRoot '.github-original'
+        $created = $false
+        try {
+            Move-Item -LiteralPath $githubPath -Destination $backupPath
+            New-Item -ItemType Junction -Path $githubPath -Target $backupPath | Out-Null
+            $created = $true
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+
+            $context.Complete | Should -BeFalse
+        }
+        catch {
+            if (-not $created) { Set-ItResult -Skipped -Because 'The test host cannot create directory junctions.' } else { throw }
+        }
+        finally {
+            Remove-Item -LiteralPath $githubPath -Force -ErrorAction SilentlyContinue
+            if (Test-Path -LiteralPath $backupPath -PathType Container) { Move-Item -LiteralPath $backupPath -Destination $githubPath }
+        }
+    }
+
     It 'ignores unrelated reparse-point files during discovery' {
         $linkPath = Join-Path $fixtureRoot 'docs/latest.md'
         $linkCreated = $false
@@ -470,6 +519,7 @@ applyTo: '**'
         $global.WordCount | Should -BeGreaterThan 0
         $global.ReferencedRoutes | Should -Contain '../skills/example/SKILL.md#section'
         $global.ReferencedRoutes | Should -Contain '../skills/example/SKILL.md'
+        $global.ReferencedRoutes | Should -Contain '../skills/example/my skill/SKILL.md'
         $global.ReferencedRoutes | Should -Not -Contain 'file:///etc/policy.md'
         $global.ReferencedRoutes | Should -Not -Contain 'ftp://example.com/policy.md'
         $context.PSObject.Properties.Name | Should -Not -Contain 'TokenCount'

@@ -192,6 +192,12 @@ Happy building! 🚀
 
 All command-line scripts in this folder are thin shims over the shared PowerShell module `RepositoryAutomation.psm1`. The module exposes advanced functions for build/test/cleanup orchestration so automation can be reused from other scripts, Pester tests, and CI workflows without spawning nested shells.
 
+When inspecting an untrusted checkout, a host must invoke `get-agent-context.ps1`
+from a trusted pinned copy and pass `-TrustedModulePath` for the trusted
+`AgentContext.psm1`; the checkout being inspected is data, not executable
+startup code. A local same-checkout invocation remains available for ordinary
+developer work.
+
 | Function | Responsibility |
 | --- | --- |
 | `Get-RepositoryRoot` | Resolve the repo root by walking upward from any start path (used by all scripts and tests). |

@@ -122,7 +122,9 @@ function Test-ContextGlob {
 
     foreach ($expanded in (Expand-ContextPattern -Pattern $Pattern)) {
         $regex = '^' + (Convert-ContextGlobToRegex -Pattern $expanded) + '$'
-        if ([regex]::IsMatch($Path, $regex, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)) {
+        $options = [System.Text.RegularExpressions.RegexOptions]::NonBacktracking
+        if ([OperatingSystem]::IsWindows()) { $options = $options -bor [System.Text.RegularExpressions.RegexOptions]::IgnoreCase }
+        if ([regex]::IsMatch($Path, $regex, $options)) {
             return $true
         }
     }
@@ -174,7 +176,15 @@ function Read-ContextFrontMatter {
             $value = $value.Substring(0, $commentIndex).Trim()
         }
     }
-    if (@($value.ToCharArray() | Where-Object { $_ -eq '{' }).Count -ne @($value.ToCharArray() | Where-Object { $_ -eq '}' }).Count) {
+    $braceDepth = 0
+    foreach ($character in $value.ToCharArray()) {
+        if ($character -eq '{') { $braceDepth++ }
+        elseif ($character -eq '}') {
+            $braceDepth--
+            if ($braceDepth -lt 0) { return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'applyTo contains reversed braces.' } }
+        }
+    }
+    if ($braceDepth -ne 0) {
         return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'applyTo contains unbalanced braces.' }
     }
     $patterns = @(Split-ApplyToPatterns -Value $value)
@@ -246,15 +256,22 @@ function Get-ContextRoutes {
     )
 
     $routes = [System.Collections.Generic.List[string]]::new()
-    foreach ($match in [regex]::Matches($Content, '\]\((?<Route>[^)]+)\)')) {
+    foreach ($match in [regex]::Matches($Content, '\]\((?<Route><[^>]+>|[^)]+)\)')) {
         $route = $match.Groups['Route'].Value.Trim()
-        $destinationMatch = [regex]::Match($route, '^(?<Destination>\S+?)(?:\s+(?:"[^"]*"|''[^'']*''))?$')
+        $destinationMatch = if ($route.StartsWith('<', [System.StringComparison]::Ordinal)) {
+            [regex]::Match($route, '^<(?<Destination>[^>]+)>(?:\s+(?:"[^"]*"|''[^'']*''))?$')
+        }
+        else {
+            [regex]::Match($route, '^(?<Destination>\S+?)(?:\s+(?:"[^"]*"|''[^'']*''))?$')
+        }
         if (-not $destinationMatch.Success) { continue }
         $destination = $destinationMatch.Groups['Destination'].Value
         $routePath = ($destination -split '#', 2)[0]
         if ($destination -and $destination -notmatch '^(?:[A-Za-z][A-Za-z0-9+.-]*:|//)' -and $destination -match '(?:\.md|\.mdx|SKILL\.md)(?:$|#)' -and -not [System.IO.Path]::IsPathRooted($routePath)) {
             $candidatePath = Join-Path (Split-Path -Parent $SourcePath) $routePath
-            if ($null -ne (ConvertTo-ContextRelativePath -RepositoryRoot $RepositoryRoot -Path $candidatePath)) {
+            $candidateRelative = ConvertTo-ContextRelativePath -RepositoryRoot $RepositoryRoot -Path $candidatePath
+            $safeRoute = -not (Test-Path -LiteralPath $candidatePath) -or (Test-ContextPathWithoutReparsePoints -RepositoryRoot $RepositoryRoot -RelativePath $candidateRelative)
+            if ($null -ne $candidateRelative -and $safeRoute) {
                 if (-not $routes.Contains($destination)) { $routes.Add($destination) }
             }
         }
@@ -335,7 +352,12 @@ function Get-ContextCandidates {
     $files = [System.Collections.Generic.List[object]]::new()
     $scanErrors = [System.Collections.Generic.List[string]]::new()
     $instructionRoot = Join-Path $RepositoryRoot '.github/instructions'
-    if (Test-Path -LiteralPath $instructionRoot -PathType Container) {
+    $instructionRootExists = Test-Path -LiteralPath $instructionRoot -PathType Container
+    $instructionRootSafe = $instructionRootExists -and (Test-ContextPathWithoutReparsePoints -RepositoryRoot $RepositoryRoot -RelativePath '.github/instructions')
+    if ($instructionRootExists -and -not $instructionRootSafe) {
+        $null = $scanErrors.Add("Skipped reparse-point instruction root '$instructionRoot'.")
+    }
+    elseif ($instructionRootExists) {
         try {
             $instructionItem = Get-Item -LiteralPath $instructionRoot -Force -ErrorAction Stop
             if ([bool]($instructionItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
@@ -360,7 +382,12 @@ function Get-ContextCandidates {
     }
 
     $copilotPath = Join-Path $RepositoryRoot '.github/copilot-instructions.md'
-    if (Test-Path -LiteralPath $copilotPath -PathType Leaf) {
+    $copilotExists = Test-Path -LiteralPath $copilotPath -PathType Leaf
+    $copilotPathSafe = $copilotExists -and (Test-ContextPathWithoutReparsePoints -RepositoryRoot $RepositoryRoot -RelativePath '.github/copilot-instructions.md')
+    if ($copilotExists -and -not $copilotPathSafe) {
+        $null = $scanErrors.Add("Skipped reparse-point Copilot entrypoint '$copilotPath'.")
+    }
+    elseif ($copilotExists) {
         try {
             $copilotItem = Get-Item -LiteralPath $copilotPath -Force -ErrorAction Stop
             if ([bool]($copilotItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
@@ -454,6 +481,7 @@ function Get-AgentContext {
     $candidateResult = Get-ContextCandidates -RepositoryRoot $resolvedRoot
     foreach ($scanError in @($candidateResult.Errors)) { $unresolved.Add($scanError) }
     $sourceRevision = Get-ContextSourceRevision -RepositoryRoot $resolvedRoot
+    $fullInventory = @($requested | Where-Object { $_.Path -match '^\.github/instructions/.*\.instructions\.md$' -or $_.Path -in @('AGENTS.md', '.github/copilot-instructions.md') }).Count -gt 0
     $domainProbePaths = @{
         'csharp' = @('__domain__.cs')
         'c#' = @('__domain__.cs')
@@ -503,7 +531,11 @@ function Get-AgentContext {
 
         $reasons = [System.Collections.Generic.List[string]]::new()
         $isSelected = $false
-        if ($candidate.Kind -eq 'AGENTS') {
+        if ($fullInventory) {
+            $isSelected = $true
+            $reasons.Add('full-inventory')
+        }
+        elseif ($candidate.Kind -eq 'AGENTS') {
             $entryDirectory = if ($relative -eq 'AGENTS.md') { '' } else { $relative.Substring(0, $relative.Length - '/AGENTS.md'.Length) }
             $entryPrefix = if ($entryDirectory) { "$entryDirectory/" } else { '' }
             $isSelected = [string]::Equals($relative, 'AGENTS.md', [System.StringComparison]::Ordinal) -or @($entrypointProbePaths | Where-Object {
@@ -620,10 +652,11 @@ function Format-AgentContextText {
     $lines.Add("CANDIDATE_FILES: $($Context.CandidateCount)")
     $lines.Add("SELECTED_FILES: $($Context.SelectedFileCount)")
     foreach ($entry in @($Context.Selected)) {
-        $reasons = ($entry.Reasons -join ',')
-        $lines.Add("$($entry.Path) | scope=$($entry.ScopeStatus) | reasons=$reasons | bytes=$($entry.ByteCount) | words=$($entry.WordCount) | hash=$($entry.ContentHash)")
+        $safePath = ([string]$entry.Path -replace '[\x00-\x1F\x7F]', '?')
+        $reasons = (($entry.Reasons -join ',') -replace '[\x00-\x1F\x7F]', '?')
+        $lines.Add("$safePath | scope=$($entry.ScopeStatus) | reasons=$reasons | bytes=$($entry.ByteCount) | words=$($entry.WordCount) | hash=$($entry.ContentHash)")
     }
-    foreach ($unresolved in @($Context.Unresolved)) { $lines.Add("UNRESOLVED: $unresolved") }
+    foreach ($unresolved in @($Context.Unresolved)) { $lines.Add("UNRESOLVED: $(([string]$unresolved -replace '[\x00-\x1F\x7F]', '?'))") }
     return @($lines)
 }
 
