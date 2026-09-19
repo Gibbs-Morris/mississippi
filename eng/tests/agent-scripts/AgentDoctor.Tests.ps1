@@ -112,6 +112,15 @@ Describe 'Repository prerequisite doctor' {
         @($githubReport.Checks | Where-Object Name -EQ 'github-repository').Details | Should -Be 'gh: authentication required'
     }
 
+    It 'includes remediation in the text report for incomplete checks' {
+        $probes = @{} + $readyProbes
+        $probes['docker-ostype'] = [pscustomobject]@{ Available = $true; Output = 'windows'; ExitCode = 0; Error = '' }
+        $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Spring -ProbeOverrides $probes
+        $text = Format-AgentDoctorText -Report $report | Out-String
+
+        $text | Should -Match 'Remediation: Start Docker with Linux containers'
+    }
+
     It 'does not mutate the checkout while probing' {
         $marker = Join-Path $fixtureRoot 'marker.txt'
         Set-Content -LiteralPath $marker -Value 'unchanged'

@@ -198,7 +198,10 @@ function Format-AgentDoctorText {
         "DOCTOR: $($Report.Status)"
         "PROFILE: $($Report.Profile)"
         "REPOSITORY: $($Report.RepositoryRoot)"
-        $(foreach ($check in @($Report.Checks)) { "[$($check.State)] $($check.Name): $($check.Details)" })
+        $(foreach ($check in @($Report.Checks)) {
+            $remediation = if ([string]::IsNullOrWhiteSpace([string]$check.Remediation)) { '' } else { " Remediation: $($check.Remediation)" }
+            "[$($check.State)] $($check.Name): $($check.Details)$remediation"
+        })
         $(foreach ($failure in @($Report.RequiredFailures)) { "REQUIRED_FAILURE: $failure" })
     )
 }
