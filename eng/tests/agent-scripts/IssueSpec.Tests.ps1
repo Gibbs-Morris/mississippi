@@ -115,6 +115,14 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
     }
 
+    It 'tracks the fence character while ignoring structural examples' {
+        $mixedFences = '```md' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '~~~' + [Environment]::NewLine + '## Still code' + [Environment]::NewLine + '```'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $mixedFences)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
+    }
+
     It 'ignores contract content inside HTML comments' {
         $commentedOnly = '<!--' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '-->'
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $commentedOnly)
@@ -162,6 +170,21 @@ Describe 'Implementation-ready issue contract' {
 
         $outcome.ExitCode | Should -Be 1
         $outcome.Result.Errors | Should -Contain "Validation evidence entry for 'AC1' must include Command, Test, or Manual observation evidence and an expected result."
+    }
+
+    It 'accepts semicolons inside command evidence' {
+        $content = $validBug -replace 'focused test command; expected:', "pwsh -Command 'Build; Test'; expected:"
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+    }
+
+    It 'rejects duplicate contract version declarations' {
+        $content = $validBug + [Environment]::NewLine + 'Contract version: 2.0'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain 'Contract version is declared more than once with conflicting values.'
     }
 
     It 'rejects unresolved blocking decisions' {
@@ -269,6 +292,8 @@ Describe 'Implementation-ready issue contract' {
         }
         $form | Should -Match '## Dependencies and readiness'
         $form | Should -Match '## Validation evidence map'
+        $form | Should -Match 'value:\s*\|\s*\r?\n\s*## Dependencies and readiness'
+        $form | Should -Match 'value:\s*\|\s*\r?\n\s*## Validation evidence map'
         [regex]::Matches($form, '(?m)^\s*- type: ').Count | Should -BeLessOrEqual 10
     }
 

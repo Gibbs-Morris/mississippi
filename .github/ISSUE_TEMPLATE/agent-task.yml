@@ -44,7 +44,9 @@ body:
     id: decisions-and-non-goals
     attributes:
       label: Decisions and non-goals
-      description: Record settled choices and exclusions. Include a separate `## Dependencies and readiness` heading in this response for prerequisites and unresolved blocking decisions.
+      description: Record settled choices and exclusions. The response is prefilled with the required Dependencies and readiness section; preserve that heading and complete its content.
+      value: |
+        ## Dependencies and readiness
     validations:
       required: true
   - type: textarea
@@ -72,6 +74,8 @@ body:
     id: risks-and-delivery-boundary
     attributes:
       label: Risks and delivery boundary
-      description: Record material risks and the merge boundary. Include a separate `## Validation evidence map` heading mapping every acceptance ID to evidence and an expected result.
+      description: Record material risks and the merge boundary. The response is prefilled with the required Validation evidence map section; preserve that heading and map every acceptance ID to evidence and an expected result.
+      value: |
+        ## Validation evidence map
     validations:
       required: true

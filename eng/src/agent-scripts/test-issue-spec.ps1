@@ -60,13 +60,18 @@ function Remove-MarkdownFencedBlocks {
     param([Parameter(Mandatory)][string]$Content)
 
     $insideFence = $false
+    $fenceCharacter = ''
     $lines = foreach ($line in ($Content -split '\r?\n')) {
-        if ($line -match '^\s*(```|~~~)') {
-            $insideFence = -not $insideFence
+        if (-not $insideFence -and $line -match '^\s*(?<Fence>`{3,}|~{3,})') {
+            $insideFence = $true
+            $fenceCharacter = $Matches.Fence.Substring(0, 1)
             ''
         }
         elseif ($insideFence) { '' }
         else { $line }
+        if ($insideFence -and $line -match ('^\s*' + [regex]::Escape($fenceCharacter) + '{3,}\s*$')) {
+            $insideFence = $false
+        }
     }
     return ($lines -join [Environment]::NewLine)
 }
@@ -108,13 +113,18 @@ function Get-IssueSpecResult {
     $structuralContent = Remove-MarkdownHtmlComments -Content (Remove-MarkdownFencedBlocks -Content $content)
     $sections = Get-MarkdownSections -Content $structuralContent
 
-    $versionMatch = [regex]::Match($structuralContent, '(?im)^\s*Contract version:\s*(?<Value>\d+\.\d+)\s*$')
-    if (-not $versionMatch.Success) {
-        $versionMatch = [regex]::Match($structuralContent, '(?im)^#{2,3}\s+Contract version\s*\r?\n\s*(?<Value>\d+\.\d+)\s*$')
-    }
-    $version = if ($versionMatch.Success) { $versionMatch.Groups['Value'].Value } else { '' }
-    if (-not $versionMatch.Success) {
+    $versionValues = @()
+    $versionValues += @([regex]::Matches($structuralContent, '(?im)^\s*Contract version:\s*(?<Value>\d+\.\d+)\s*$') | ForEach-Object { $_.Groups['Value'].Value })
+    $versionValues += @([regex]::Matches($structuralContent, '(?im)^#{2,3}\s+Contract version\s*\r?\n\s*(?<Value>\d+\.\d+)\s*$') | ForEach-Object { $_.Groups['Value'].Value })
+    $version = if ($versionValues.Count -gt 0) { $versionValues[0] } else { '' }
+    if ($versionValues.Count -eq 0) {
         Add-IssueSpecError -Errors $errors -Message 'Missing Contract version: major.minor.'
+    }
+    elseif (@($versionValues | Sort-Object -Unique).Count -ne 1) {
+        Add-IssueSpecError -Errors $errors -Message 'Contract version is declared more than once with conflicting values.'
+    }
+    elseif ($versionValues.Count -gt 1) {
+        Add-IssueSpecError -Errors $errors -Message 'Contract version must be declared exactly once.'
     }
     elseif ($version -ne '1.0') {
         Add-IssueSpecError -Errors $errors -Message "Unsupported contract version '$version'; expected '1.0'."
@@ -200,10 +210,10 @@ function Get-IssueSpecResult {
     if ($sections.Contains('Validation evidence map')) {
         $evidence = [string]$sections['Validation evidence map']
         $evidenceIds = [System.Collections.Generic.List[string]]::new()
-        $evidenceMatches = [regex]::Matches($evidence, '(?im)^\s*(?:[-*]|\d+\.)\s*\[(?<Id>AC\d+)\]\s*(?<Kind>Command|Test|Manual\s+observation)\s*:\s*(?<Evidence>[^;\r\n]+?)\s*;\s*expected\s*:\s*(?<Expected>[^\r\n]+?)\s*$')
+        $evidenceMatches = [regex]::Matches($evidence, '(?im)^\s*(?:[-*]|\d+\.)\s*\[(?<Id>AC\d+)\]\s*(?<Kind>Command|Test|Manual\s+observation)\s*:\s*(?<Evidence>.+?)\s*;\s*expected\s*:\s*(?<Expected>[^\r\n]+?)\s*$')
         foreach ($line in @($evidence -split '\r?\n' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })) {
             $lineId = [regex]::Match($line, '\[(?<Id>AC\d+)\]').Groups['Id'].Value.ToUpperInvariant()
-            if ($lineId -and $line -notmatch '(?im)^\s*(?:[-*]|\d+\.)\s*\[AC\d+\]\s*(?:Command|Test|Manual\s+observation)\s*:\s*[^;\r\n]+?\s*;\s*expected\s*:\s*[^\r\n]+?\s*$') {
+            if ($lineId -and $line -notmatch '(?im)^\s*(?:[-*]|\d+\.)\s*\[AC\d+\]\s*(?:Command|Test|Manual\s+observation)\s*:\s*.+?\s*;\s*expected\s*:\s*[^\r\n]+?\s*$') {
                 Add-IssueSpecError -Errors $errors -Message "Validation evidence entry for '$lineId' must include Command, Test, or Manual observation evidence and an expected result."
             }
         }
