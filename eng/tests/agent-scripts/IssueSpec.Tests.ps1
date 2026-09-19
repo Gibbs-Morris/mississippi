@@ -115,6 +115,14 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
     }
 
+    It 'does not close a bare fence on its opening line' {
+        $bareFence = '```' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '```'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $bareFence)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Missing required section '## Problem'."
+    }
+
     It 'tracks the fence character while ignoring structural examples' {
         $mixedFences = '```md' + [Environment]::NewLine + $validBug + [Environment]::NewLine + '~~~' + [Environment]::NewLine + '## Still code' + [Environment]::NewLine + '```'
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $mixedFences)
