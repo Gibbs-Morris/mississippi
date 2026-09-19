@@ -64,6 +64,8 @@ try {
     }
 
     $markdownPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:md|mdx)$' })
+    $isMarkdownConfig = @($normalizedPaths | Where-Object { $_ -match '(^|/)(?:\.markdownlint-cli2\.jsonc|\.markdownlintignore)$' -or $_ -eq '.github/linters/.markdown-lint.yml' }).Count -gt 0
+    $markdownCheckPaths = if ($markdownPaths.Count -gt 0) { $markdownPaths } elseif ($isMarkdownConfig) { @('.') } else { @() }
     $selected = [System.Collections.Generic.List[object]]::new()
     $isPowerShell = @($normalizedPaths | Where-Object { $_ -match '\.(?:ps1|psm1|psd1)$' -or $_ -eq 'eng/src/agent-scripts/validation-command-catalog.json' }).Count -gt 0
     $isMarkdown = $markdownPaths.Count -gt 0
@@ -101,7 +103,7 @@ try {
     # core-final invokes go.ps1 without -SkipCleanup, so it already owns the authoritative cleanup pass.
     if ($isPowerShell) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'powershell-tests') -Reason 'PowerShell source or harness path changed.' -MarkdownPaths $markdownPaths }
     if ($isDotnet -or $isUnknown) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'core-iteration') -Reason $(if ($isUnknown) { "Unknown mapping selects the broad .NET iteration gate conservatively for: $($unmappedPaths -join ', ')." } else { ' .NET source or project path changed.' }) -MarkdownPaths $markdownPaths }
-    if ($isMarkdown) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'markdown-lint') -Reason 'Markdown or MDX content changed.' -MarkdownPaths $markdownPaths }
+    if ($isMarkdown -or $isMarkdownConfig) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'markdown-lint') -Reason 'Markdown, MDX, or Markdown-lint configuration changed.' -MarkdownPaths $markdownCheckPaths }
     if ($isDocusaurus) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'docusaurus-final') -Reason 'Docusaurus content or site configuration changed.' -MarkdownPaths $markdownPaths }
     if ($isBrowser) {
         Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'spring-doctor') -Reason 'Browser-facing or Spring path changed.' -MarkdownPaths $markdownPaths

@@ -107,6 +107,14 @@ Describe 'Deterministic validation plan' {
         $outcome.Result.SelectedChecks.Id | Should -Contain 'powershell-tests'
     }
 
+    It 'selects Markdown lint for Markdown-lint configuration changes' {
+        $outcome = Invoke-Plan -Paths @('.markdownlintignore')
+
+        $outcome.ExitCode | Should -Be 0
+        $markdown = @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'markdown-lint')[0]
+        $markdown.Arguments | Should -Contain '.'
+    }
+
     It 'derives the repository root from the planner script when omitted' {
         Push-Location -LiteralPath (Join-Path $repoRoot 'eng')
         try {
