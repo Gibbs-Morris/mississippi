@@ -14,6 +14,7 @@ permissions:
   contents: read
   issues: read
   pull-requests: read
+  statuses: write
 
 jobs:
   validate-issue-reference:
@@ -33,24 +34,39 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_BODY: ${{ github.event.pull_request.body }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
           REPOSITORY_NAME: ${{ github.event.repository.name }}
         run: |
           $validator = './eng/src/agent-scripts/validate-pr-issue-reference.ps1'
+          $mergeValidator = './eng/src/agent-scripts/validate-merge-group-pr-issue-reference.ps1'
           $repository = $env:GITHUB_REPOSITORY
-          if ($env:GITHUB_EVENT_NAME -eq 'pull_request_target') {
-            $output = & pwsh -NoProfile -File $validator -Body $env:PR_BODY -RepositoryOwner $env:REPOSITORY_OWNER -RepositoryName $env:REPOSITORY_NAME -Json 2>&1 | Out-String
-            Write-Output $output
-            if ($LASTEXITCODE -ne 0) { throw 'Pull request issue-reference validation failed.' }
-            exit 0
+          $targetSha = if ($env:GITHUB_EVENT_NAME -eq 'pull_request_target') { $env:PR_HEAD_SHA } else { $env:GITHUB_SHA }
+          $state = 'failure'
+          $description = 'Pull request issue-reference validation failed.'
+          try {
+            if ($env:GITHUB_EVENT_NAME -eq 'pull_request_target') {
+              $output = & pwsh -NoProfile -File $validator -Body $env:PR_BODY -RepositoryOwner $env:REPOSITORY_OWNER -RepositoryName $env:REPOSITORY_NAME -Json 2>&1 | Out-String
+              Write-Output $output
+              if ($LASTEXITCODE -ne 0) { throw 'Pull request issue-reference validation failed.' }
+            }
+            else {
+              $pullRequestsJson = gh api "repos/$repository/commits/$env:GITHUB_SHA/pulls" --header 'Accept: application/vnd.github+json' --paginate --slurp | Out-String
+              $output = & pwsh -NoProfile -File $mergeValidator -PullRequestsJson $pullRequestsJson -RepositoryOwner $env:REPOSITORY_OWNER -RepositoryName $env:REPOSITORY_NAME 2>&1 | Out-String
+              Write-Output $output
+              if ($LASTEXITCODE -ne 0) { throw 'Merge-group issue-reference validation failed.' }
+            }
+            $state = 'success'
+            $description = 'Repository issue-reference validation passed.'
           }
-
-          $pages = @(gh api "repos/$repository/commits/$env:GITHUB_SHA/pulls" --header 'Accept: application/vnd.github+json' --paginate --slurp | ConvertFrom-Json)
-          $pullRequests = @($pages | ForEach-Object { @($_) })
-          if ($pullRequests.Count -eq 0) { throw 'Merge-group issue-reference validation could not resolve any constituent pull requests.' }
-          foreach ($pullRequest in $pullRequests) {
-            Write-Host "Validating merge-group pull request #$($pullRequest.number)"
-            $output = & pwsh -NoProfile -File $validator -Body ([string]$pullRequest.body) -RepositoryOwner $env:REPOSITORY_OWNER -RepositoryName $env:REPOSITORY_NAME -Json 2>&1 | Out-String
-            Write-Output $output
-            if ($LASTEXITCODE -ne 0) { throw "Pull request issue-reference validation failed for #$($pullRequest.number)." }
+          catch {
+            Write-Error $_.Exception.Message
+            throw
+          }
+          finally {
+            $statusOutput = gh api --method POST "repos/$repository/statuses/$targetSha" -f state=$state -f context='PR Issue Reference' -f description=$description -f target_url="$env:GITHUB_SERVER_URL/$repository/actions/runs/$env:GITHUB_RUN_ID" 2>&1 | Out-String
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "Unable to publish PR Issue Reference status: $($statusOutput.Trim())"
+              if ($state -eq 'success') { throw 'Required PR Issue Reference status could not be published.' }
+            }
           }

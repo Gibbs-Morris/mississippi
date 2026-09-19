@@ -13,7 +13,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 function Remove-NonRenderedMarkdown {
-    param([Parameter(Mandatory)][string]$Content)
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
 
     $insideFence = $false
     $fenceCharacter = ''
@@ -36,7 +36,7 @@ function Remove-NonRenderedMarkdown {
     }
     $withoutFences = $withoutFences -join [Environment]::NewLine
     $withoutComments = [regex]::Replace($withoutFences, '(?s)<!--.*?(?:-->|$)', '')
-    $withoutComments = [regex]::Replace($withoutComments, '(?m)<[^>]*>', '')
+    $withoutComments = [regex]::Replace($withoutComments, '(?m)<(?!https?://|mailto:)[^>\r\n]*>', '')
     $withoutComments = [regex]::Replace($withoutComments, '(?m)^(?: {4}|\t)[^\r\n]*(?:\r?\n|$)', '')
     $builder = [System.Text.StringBuilder]::new()
     $index = 0
@@ -82,8 +82,21 @@ function Get-PrIssueReferences {
     )
 
     $references = [System.Collections.Generic.List[object]]::new()
+    $seenNumbers = [System.Collections.Generic.HashSet[int]]::new()
+    $addReference = {
+        param([int]$Number, [string]$Text)
+        if ($seenNumbers.Contains($Number)) { return $true }
+        if ($seenNumbers.Count -ge $MaximumReferences) {
+            $Errors.Add("Too many repository issue references were supplied; maximum supported is $MaximumReferences.")
+            return $false
+        }
+        $null = $seenNumbers.Add($Number)
+        $references.Add([pscustomobject]@{ Number = $Number; Text = $Text })
+        return $true
+    }
+    $contentForExtraction = [regex]::Replace($Content, '(?m)^[ \t]{0,3}\[[^\]\r\n]+\]:[ \t]*(?:<[^>\r\n]+>|\S+)(?:[ \t]+.*)?$', '')
     $fullUrlPattern = 'https://github\.com/(?<Owner>[^/\s]+)/(?<Repo>[^/#\s]+)/(?<Kind>issues|pull)/(?<Number>\d+)'
-    foreach ($match in [regex]::Matches($Content, $fullUrlPattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)) {
+    foreach ($match in [regex]::Matches($contentForExtraction, $fullUrlPattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)) {
         $matchOwner = $match.Groups['Owner'].Value
         $matchRepo = $match.Groups['Repo'].Value
         $kind = $match.Groups['Kind'].Value.ToLowerInvariant()
@@ -92,25 +105,20 @@ function Get-PrIssueReferences {
             continue
         }
         if ($kind -eq 'pull') { continue }
-        if ($references.Count -ge $MaximumReferences) { $Errors.Add("Too many repository issue references were supplied; maximum supported is $MaximumReferences."); return @($references) }
-        $references.Add([pscustomobject]@{ Number = $number; Text = $match.Value })
+        if (-not (& $addReference -Number $number -Text $match.Value)) { return @($references) }
     }
 
-    $withoutFullUrls = [regex]::Replace($Content, $fullUrlPattern, '')
+    $withoutFullUrls = [regex]::Replace($contentForExtraction, $fullUrlPattern, '')
     $withoutLinkDestinations = [regex]::Replace($withoutFullUrls, '\]\([^)\r\n]*\)', ']')
     $withoutUriComponents = [regex]::Replace($withoutLinkDestinations, '(?i)\b[A-Za-z][A-Za-z0-9+.-]*://[^\s<>()]+', '')
     foreach ($match in [regex]::Matches($withoutUriComponents, '(?i)(?<![\w/])(?<Owner>[A-Za-z0-9_.-]+)/(?<Repo>[A-Za-z0-9_.-]+)#(?<QualifiedNumber>\d+)\b')) {
         if ([string]::Equals($match.Groups['Owner'].Value, $Owner, [System.StringComparison]::OrdinalIgnoreCase) -and [string]::Equals($match.Groups['Repo'].Value, $Name, [System.StringComparison]::OrdinalIgnoreCase)) {
-            if ($references.Count -ge $MaximumReferences) { $Errors.Add("Too many repository issue references were supplied; maximum supported is $MaximumReferences."); return @($references) }
-            $references.Add([pscustomobject]@{ Number = [int]$match.Groups['QualifiedNumber'].Value; Text = $match.Value })
+            if (-not (& $addReference -Number ([int]$match.Groups['QualifiedNumber'].Value) -Text $match.Value)) { return @($references) }
         }
     }
     foreach ($match in [regex]::Matches($withoutUriComponents, '(?<![\w/])#(?<Number>\d+)\b')) {
         $number = [int]$match.Groups['Number'].Value
-        if (@($references | Where-Object Number -EQ $number).Count -eq 0) {
-            if ($references.Count -ge $MaximumReferences) { $Errors.Add("Too many repository issue references were supplied; maximum supported is $MaximumReferences."); return @($references) }
-            $references.Add([pscustomobject]@{ Number = $number; Text = $match.Value })
-        }
+        if (-not (& $addReference -Number $number -Text $match.Value)) { return @($references) }
     }
 
     return @($references | Sort-Object Number -Unique)
@@ -141,6 +149,7 @@ $warnings = [System.Collections.Generic.List[string]]::new()
 $renderedBody = Remove-NonRenderedMarkdown -Content $Body
 $references = @(Get-PrIssueReferences -Content $renderedBody -Owner $RepositoryOwner -Name $RepositoryName -Errors $errors)
 $resolvedIssues = [System.Collections.Generic.List[object]]::new()
+$referenceErrors = [System.Collections.Generic.List[string]]::new()
 $maximumReferences = 20
 
 if ($references.Count -eq 0) {
@@ -155,24 +164,31 @@ foreach ($reference in @($references | Select-Object -First $maximumReferences))
     try {
         $record = @(Get-PrIssueRecord -Number $reference.Number -Owner $RepositoryOwner -Name $RepositoryName -KnownIssuesJson $KnownIssuesJson)
         if ($record.Count -eq 0) {
-            $errors.Add("Referenced issue #$($reference.Number) does not exist in $RepositoryOwner/$RepositoryName.")
+            $referenceErrors.Add("Referenced issue #$($reference.Number) does not exist in $RepositoryOwner/$RepositoryName.")
             continue
         }
         $issue = $record[0]
         $hasPullRequestProperty = $null -ne $issue.PSObject.Properties['pull_request']
         if ($hasPullRequestProperty -or [string]$issue.type -eq 'pull_request') {
-            $errors.Add("Referenced number #$($reference.Number) is a pull request, not an issue.")
+            $referenceErrors.Add("Referenced number #$($reference.Number) is a pull request, not an issue.")
             continue
         }
         if ([string]$issue.state -ne 'open') {
-            $errors.Add("Referenced issue #$($reference.Number) is not open; update the PR to an active repository issue.")
+            $referenceErrors.Add("Referenced issue #$($reference.Number) is not open; update the PR to an active repository issue.")
             continue
         }
         $resolvedIssues.Add([pscustomobject]@{ Number = $reference.Number; Title = [string]$issue.title; State = [string]$issue.state })
     }
     catch {
-        $errors.Add($_.Exception.Message)
+        $referenceErrors.Add($_.Exception.Message)
     }
+}
+
+if ($resolvedIssues.Count -eq 0) {
+    foreach ($referenceError in $referenceErrors) { $errors.Add($referenceError) }
+}
+else {
+    foreach ($referenceError in $referenceErrors) { $warnings.Add($referenceError) }
 }
 
 $result = [pscustomobject][ordered]@{

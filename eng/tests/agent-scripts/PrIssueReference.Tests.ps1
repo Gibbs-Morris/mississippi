@@ -10,6 +10,7 @@ Describe 'PR issue reference validator' {
         $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..'))
         $powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
         $scriptPath = Join-Path $repoRoot 'eng/src/agent-scripts/validate-pr-issue-reference.ps1'
+        $mergeScriptPath = Join-Path $repoRoot 'eng/src/agent-scripts/validate-merge-group-pr-issue-reference.ps1'
         $knownIssues = @(
             [pscustomobject]@{ number = 741; title = 'Coverage binding'; state = 'open'; type = 'issue' }
             [pscustomobject]@{ number = 742; title = 'Worktree lease'; state = 'closed'; type = 'issue' }
@@ -17,9 +18,16 @@ Describe 'PR issue reference validator' {
         ) | ConvertTo-Json -Compress
 
         function Invoke-ReferenceValidator {
-            param([Parameter(Mandatory)][string]$Body)
+            param([Parameter(Mandatory)][AllowEmptyString()][string]$Body)
             $output = & $powerShellPath -NoProfile -File $scriptPath -Body $Body -RepositoryOwner Gibbs-Morris -RepositoryName mississippi -KnownIssuesJson $knownIssues -Json 2>&1 | Out-String
             [pscustomobject]@{ ExitCode = $LASTEXITCODE; Result = $output | ConvertFrom-Json; Output = $output }
+        }
+
+        function Invoke-MergeGroupValidator {
+            param([AllowEmptyCollection()][object[]]$PullRequests)
+            $pullRequestsJson = if (@($PullRequests).Count -eq 0) { '[]' } else { ConvertTo-Json -InputObject @($PullRequests) -Depth 10 -Compress }
+            $output = & $powerShellPath -NoProfile -File $mergeScriptPath -PullRequestsJson $pullRequestsJson -RepositoryOwner Gibbs-Morris -RepositoryName mississippi -KnownIssuesJson $knownIssues 2>&1 | Out-String
+            [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output }
         }
     }
 
@@ -43,6 +51,35 @@ Describe 'PR issue reference validator' {
 
         $outcome.ExitCode | Should -Be 0
         $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'accepts a Markdown URI autolink to a same-repository issue' {
+        $outcome = Invoke-ReferenceValidator -Body '<https://github.com/Gibbs-Morris/mississippi/issues/741>'
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'ignores an unused Markdown reference definition' {
+        $outcome = Invoke-ReferenceValidator -Body '[tracking]: https://github.com/Gibbs-Morris/mississippi/issues/741'
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
+    It 'allows a closed ancillary issue when an open issue is present' {
+        $outcome = Invoke-ReferenceValidator -Body 'Refs #741; supersedes #742.'
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'returns structured output for an empty body' {
+        $outcome = Invoke-ReferenceValidator -Body ''
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Valid | Should -BeFalse
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
     }
 
     It 'ignores fenced and HTML-comment examples' {
@@ -154,5 +191,34 @@ Refs #741
 
         $outcome.ExitCode | Should -Not -Be 0
         $outcome.Result.Errors | Should -Match 'pull request, not an issue'
+    }
+
+    It 'validates every constituent pull request in a merge-group fixture' {
+        $fixture = @(
+            [pscustomobject]@{ number = 101; body = 'Refs #741' },
+            [pscustomobject]@{ number = 102; body = 'Refs Gibbs-Morris/mississippi#741' }
+        )
+        $outcome = Invoke-MergeGroupValidator -PullRequests $fixture
+
+        $outcome.ExitCode | Should -Be 0
+        (@($outcome.Output -split "`r?`n" | Select-String 'Validating merge-group pull request')).Count | Should -Be 2
+    }
+
+    It 'fails closed for an empty merge group' {
+        $outcome = Invoke-MergeGroupValidator -PullRequests @()
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Output | Should -Match 'could not resolve any constituent pull requests'
+    }
+
+    It 'fails the merge group when one constituent PR has no open issue' {
+        $fixture = @(
+            [pscustomobject]@{ number = 101; body = 'Refs #741' },
+            [pscustomobject]@{ number = 102; body = 'Refs #742' }
+        )
+        $outcome = Invoke-MergeGroupValidator -PullRequests $fixture
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Output | Should -Match 'failed for #102'
     }
 }
