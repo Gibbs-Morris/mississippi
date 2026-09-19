@@ -1,0 +1,163 @@
+.rf-smoke-confirm {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.rf-smoke-confirm[data-state="latent"] {
+    display: none;
+}
+
+.rf-smoke-confirm__veil {
+    position: absolute;
+    inset: 0;
+    background-color: hsla(0, 0%, 0%, 0.6);
+}
+
+.rf-smoke-confirm__pane {
+    position: relative;
+    box-sizing: border-box;
+    width: min(400px, calc(100vw - (2 * var(--rf-raw-space-6))));
+    max-height: calc(100vh - (2 * var(--rf-raw-space-6)));
+    overflow: auto;
+    padding: var(--rf-raw-space-6);
+    background-color: var(--rf-color-surface-elevated);
+    border: var(--rf-raw-stroke-default) solid var(--rf-color-status-error);
+    color: var(--rf-color-text-primary);
+    text-align: center;
+}
+
+.rf-smoke-confirm__title {
+    margin: 0 0 var(--rf-raw-space-2);
+    color: var(--rf-color-text-primary);
+    font-family: var(--rf-raw-font-mono);
+    font-size: var(--rf-raw-text-lg);
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.rf-smoke-confirm__consequence {
+    margin: 0 0 var(--rf-raw-space-6);
+    color: var(--rf-color-text-secondary);
+    font-family: var(--rf-raw-font-mono);
+    font-size: var(--rf-raw-text-sm);
+    overflow-wrap: anywhere;
+}
+
+.rf-smoke-confirm__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--rf-raw-space-4);
+    justify-content: center;
+    max-width: 100%;
+}
+
+.rf-smoke-confirm__cancel,
+.rf-smoke-confirm__confirm {
+    box-sizing: border-box;
+    flex: 1 1 10rem;
+    min-width: 44px;
+    min-height: 44px;
+    max-width: 100%;
+    padding: var(--rf-raw-space-2) var(--rf-raw-space-4);
+    border: var(--rf-raw-stroke-hairline) solid var(--rf-color-text-muted);
+    background-color: transparent;
+    color: var(--rf-color-text-primary);
+    font: inherit;
+    font-family: var(--rf-raw-font-mono);
+    font-size: var(--rf-raw-text-sm);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    cursor: pointer;
+}
+
+.rf-smoke-confirm__confirm {
+    border-color: var(--rf-color-status-error);
+}
+
+.rf-smoke-confirm__cancel:hover:not(:disabled),
+.rf-smoke-confirm__confirm:hover:not(:disabled) {
+    background-color: var(--rf-color-surface-glass);
+    border-color: var(--rf-color-action-hover);
+}
+
+.rf-smoke-confirm__cancel:active:not(:disabled),
+.rf-smoke-confirm__confirm:active:not(:disabled) {
+    border-color: var(--rf-color-action-pressed);
+    box-shadow: inset 0 0 var(--rf-raw-stroke-default) var(--rf-color-action-pressed);
+}
+
+.rf-smoke-confirm__cancel:focus-visible,
+.rf-smoke-confirm__confirm:focus-visible {
+    outline: var(--rf-focus-ring-width) solid var(--rf-color-focus-ring);
+    outline-offset: var(--rf-focus-ring-offset);
+}
+
+.rf-smoke-confirm__cancel:disabled,
+.rf-smoke-confirm__confirm:disabled {
+    border-color: var(--rf-color-text-muted);
+    color: var(--rf-color-text-muted);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+@media (max-width: 480px) {
+    .rf-smoke-confirm__pane {
+        padding: var(--rf-raw-space-4);
+    }
+
+    .rf-smoke-confirm__actions {
+        flex-direction: column;
+    }
+
+    .rf-smoke-confirm__cancel,
+    .rf-smoke-confirm__confirm {
+        flex-basis: auto;
+        width: 100%;
+    }
+}
+
+@media (forced-colors: active) {
+    .rf-smoke-confirm__veil {
+        background-color: Canvas;
+        opacity: 0.8;
+    }
+
+    .rf-smoke-confirm__pane {
+        background-color: Canvas;
+        border-color: CanvasText;
+        color: CanvasText;
+    }
+
+    .rf-smoke-confirm__title,
+    .rf-smoke-confirm__consequence {
+        color: CanvasText;
+    }
+
+    .rf-smoke-confirm__cancel,
+    .rf-smoke-confirm__confirm {
+        background-color: ButtonFace;
+        border-color: ButtonText;
+        color: ButtonText;
+    }
+
+    .rf-smoke-confirm__confirm {
+        border-color: LinkText;
+        color: LinkText;
+    }
+
+    .rf-smoke-confirm__cancel:disabled,
+    .rf-smoke-confirm__confirm:disabled {
+        border-color: GrayText;
+        color: GrayText;
+    }
+
+    .rf-smoke-confirm__cancel:focus-visible,
+    .rf-smoke-confirm__confirm:focus-visible {
+        outline-color: Highlight;
+    }
+}
