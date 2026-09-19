@@ -83,8 +83,18 @@ function Get-AgentDoctorReport {
 
     $globalJsonPath = Join-Path $root 'global.json'
     $globalJson = $null
+    $globalJsonReady = $false
     if (Test-Path -LiteralPath $globalJsonPath -PathType Leaf) {
-        try { $globalJson = Get-Content -LiteralPath $globalJsonPath -Raw | ConvertFrom-Json }
+        try {
+            $globalJson = Get-Content -LiteralPath $globalJsonPath -Raw | ConvertFrom-Json
+            $sdkVersion = if ($null -ne $globalJson.sdk) { [string]$globalJson.sdk.version } else { '' }
+            if ([string]::IsNullOrWhiteSpace($sdkVersion)) {
+                Add-DoctorCheck -Checks $checks -Name 'global.json' -State unsupported -Required $true -Details 'global.json does not declare sdk.version.' -Remediation 'Add the repository SDK version to global.json.'
+            }
+            else {
+                $globalJsonReady = $true
+            }
+        }
         catch { Add-DoctorCheck -Checks $checks -Name 'global.json' -State unsupported -Required $true -Details $_.Exception.Message -Remediation 'Repair global.json before starting a task.' }
     }
     else {
@@ -100,10 +110,15 @@ function Get-AgentDoctorReport {
             Add-DoctorCheck -Checks $checks -Name 'dotnet-sdk' -State unknown -Required $true -Details ($dotnet.Error ?? $dotnet.Output) -Remediation 'Run dotnet --version from the repository root and repair SDK selection.'
         }
         else {
-            $expectedSdk = if ($globalJson) { [string]$globalJson.sdk.version } else { '' }
-            $actualSdk = $dotnet.Output.Trim()
-            $compatible = Test-DoctorSdkCompatibility -Expected $expectedSdk -Actual $actualSdk
-            Add-DoctorCheck -Checks $checks -Name 'dotnet-sdk' -State $(if ($compatible) { 'ready' } else { 'unsupported' }) -Required $true -Details "Selected SDK reports $actualSdk; global.json requests $expectedSdk." -Remediation $(if ($compatible) { '' } else { 'Install the requested SDK feature band or use an approved roll-forward.' })
+            if (-not $globalJsonReady) {
+                Add-DoctorCheck -Checks $checks -Name 'dotnet-sdk' -State unknown -Required $true -Details 'The selected SDK cannot be compared because global.json does not declare sdk.version.' -Remediation 'Repair global.json before starting a task.'
+            }
+            else {
+                $expectedSdk = [string]$globalJson.sdk.version
+                $actualSdk = $dotnet.Output.Trim()
+                $compatible = Test-DoctorSdkCompatibility -Expected $expectedSdk -Actual $actualSdk
+                Add-DoctorCheck -Checks $checks -Name 'dotnet-sdk' -State $(if ($compatible) { 'ready' } else { 'unsupported' }) -Required $true -Details "Selected SDK reports $actualSdk; global.json requests $expectedSdk." -Remediation $(if ($compatible) { '' } else { 'Install the requested SDK feature band or use an approved roll-forward.' })
+            }
         }
 
         $toolsManifest = Join-Path $root '.config/dotnet-tools.json'
