@@ -137,6 +137,11 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body $body
     }
 
+    It 'ignores a hidden continuation-line reference title' {
+        $body = "[work]: https://example.test`n  (See https://github.com/Gibbs-Morris/mississippi/issues/741)"
+        Assert-NoReferenceBody -Body $body
+    }
+
     It 'allows a closed ancillary issue when an open issue is present' {
         Assert-ValidReferenceBody -Body 'Refs #741; supersedes #742.'
     }
@@ -297,7 +302,8 @@ Refs #741
 
         $workflow | Should -Match '\$statusContext = ''PR Issue Reference'''
         $workflow | Should -Match 'PR_NUMBER'
-        $workflow | Should -Match 'MERGE_GROUP_BASE_SHA'
+        $workflow | Should -Match 'DEFAULT_BRANCH'
+        $workflow | Should -Match 'commits/\$env:DEFAULT_BRANCH'
         $workflow | Should -Not -Match 'actions/checkout'
     }
 

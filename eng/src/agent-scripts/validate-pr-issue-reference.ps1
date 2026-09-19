@@ -228,7 +228,7 @@ function Get-PrIssueReferences { # NOSONAR - bounded reference extraction intent
         $null = $usedLabels.Add([regex]::Replace($used.Groups['Label'].Value.Trim(), '\s+', ' '))
     }
     $contentForExtraction = $Content
-    $definitionPattern = '(?m)^[ \t]{0,3}\[(?<Label>[^\]\r\n]+)\]:[ \t]*(?:(?<Destination><[^>\r\n]+>|\S+)(?:[ \t]+[^\r\n]*)?|(?:\r?\n)[ \t]+(?<Destination><[^>\r\n]+>|\S+)(?:[ \t]+[^\r\n]*)?)'
+    $definitionPattern = '(?m)^[ \t]{0,3}\[(?<Label>[^\]\r\n]+)\]:[ \t]*(?:(?<Destination><[^>\r\n]+>|\S+)(?:[ \t]+[^\r\n]*)?|(?:\r?\n)[ \t]+(?<Destination><[^>\r\n]+>|\S+)(?:[ \t]+[^\r\n]*)?)(?:\r?\n[ \t]+(?:\([^\)\r\n]*\)|"[^"]*"|''[^'']*''))?'
     foreach ($definition in [regex]::Matches($Content, $definitionPattern)) {
         $definitionLabel = [regex]::Replace($definition.Groups['Label'].Value.Trim(), '\s+', ' ')
         $replacement = if ($usedLabels.Contains($definitionLabel)) { " $($definition.Groups['Destination'].Value) " } else { '' }
