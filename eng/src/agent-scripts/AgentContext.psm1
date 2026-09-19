@@ -53,6 +53,8 @@ function Test-ContextPatternExpansionBudget {
         [int]$MaxExpansions = 4096
     )
 
+    $braceCount = @($Pattern.ToCharArray() | Where-Object { $_ -eq '{' }).Count
+    if ($braceCount -gt 12) { return $false }
     [long]$estimatedExpansions = 1
     $remaining = $Pattern
     while ($true) {
@@ -148,12 +150,12 @@ function Read-ContextFrontMatter {
         return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'Unclosed YAML frontmatter.' }
     }
 
-    $applyToLines = @($lines[1..($closingIndex - 1)] | Where-Object { $_ -match '^applyTo\s*:' })
+    $applyToLines = @($lines[1..($closingIndex - 1)] | Where-Object { $_ -cmatch '^applyTo\s*:' })
     if ($applyToLines.Count -ne 1) {
         return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'Frontmatter must contain exactly one applyTo field.' }
     }
 
-    $value = ($applyToLines[0] -replace '^\s*applyTo\s*:\s*', '').Trim()
+    $value = ($applyToLines[0] -creplace '^\s*applyTo\s*:\s*', '').Trim()
     if ($value.Length -gt 0 -and ($value[0] -eq '''' -or $value[0] -eq '"')) {
         $quote = $value[0]
         $closingQuoteIndex = $value.IndexOf($quote, 1)
@@ -186,6 +188,8 @@ function Read-ContextFrontMatter {
         if (-not (Test-ContextPatternExpansionBudget -Pattern $pattern)) {
             return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'applyTo brace expansion exceeds the safety limit.' }
         }
+        try { [regex]::new('^' + (Convert-ContextGlobToRegex -Pattern $pattern) + '$') | Out-Null }
+        catch { return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'applyTo produces an invalid regular expression.' } }
     }
 
     return [pscustomobject]@{ Status = 'valid'; Patterns = $patterns; Reason = '' }
@@ -199,7 +203,8 @@ function ConvertTo-ContextRelativePath {
     )
 
     try {
-        $root = [System.IO.Path]::GetFullPath($RepositoryRoot).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+        $rootFullPath = [System.IO.Path]::GetFullPath($RepositoryRoot)
+        $root = if ([string]::Equals($rootFullPath, [System.IO.Path]::GetPathRoot($rootFullPath), [System.StringComparison]::OrdinalIgnoreCase)) { $rootFullPath } else { $rootFullPath.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) }
         $fullPath = if ([System.IO.Path]::IsPathRooted($Path)) { [System.IO.Path]::GetFullPath($Path) } else { [System.IO.Path]::GetFullPath((Join-Path $root $Path.Trim())) }
         $relative = [System.IO.Path]::GetRelativePath($root, $fullPath)
         $relative = $relative.Replace('\', '/')
@@ -234,13 +239,21 @@ function Get-ContextFileMetrics {
 
 function Get-ContextRoutes {
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Content)
+    param(
+        [Parameter(Mandatory)][string]$Content,
+        [Parameter(Mandatory)][string]$RepositoryRoot,
+        [Parameter(Mandatory)][string]$SourcePath
+    )
 
     $routes = [System.Collections.Generic.List[string]]::new()
     foreach ($match in [regex]::Matches($Content, '\]\((?<Route>[^)]+)\)')) {
         $route = $match.Groups['Route'].Value.Trim()
-        if ($route -and $route -notmatch '^(?:[A-Za-z][A-Za-z0-9+.-]*:|//)' -and $route -match '(?:\.md|\.mdx|SKILL\.md)(?:$|#)') {
-            if (-not $routes.Contains($route)) { $routes.Add($route) }
+        $routePath = ($route -split '#', 2)[0]
+        if ($route -and $route -notmatch '^(?:[A-Za-z][A-Za-z0-9+.-]*:|//)' -and $route -match '(?:\.md|\.mdx|SKILL\.md)(?:$|#)' -and -not [System.IO.Path]::IsPathRooted($routePath)) {
+            $candidatePath = Join-Path (Split-Path -Parent $SourcePath) $routePath
+            if ($null -ne (ConvertTo-ContextRelativePath -RepositoryRoot $RepositoryRoot -Path $candidatePath)) {
+                if (-not $routes.Contains($route)) { $routes.Add($route) }
+            }
         }
     }
 
@@ -306,7 +319,10 @@ function Get-ContextFilesByFilter {
         }
     }
 
-    return @($results | Sort-Object FullName -Unique)
+    $uniqueResults = [System.Collections.Generic.List[object]]::new()
+    $seenResults = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($result in @($results | Sort-Object FullName)) { if ($seenResults.Add([string]$result.FullName)) { $uniqueResults.Add($result) } }
+    return @($uniqueResults)
 }
 
 function Get-ContextCandidates {
@@ -330,6 +346,9 @@ function Get-ContextCandidates {
         catch {
             $null = $scanErrors.Add("Unable to inspect instruction root '$instructionRoot': $($_.Exception.Message)")
         }
+    }
+    else {
+        $null = $scanErrors.Add("Required instruction root is missing or not a directory: '$instructionRoot'.")
     }
 
     $entrypointFiles = Get-ContextFilesByFilter -Root $RepositoryRoot -Filter 'AGENTS.md' -Errors $scanErrors
@@ -356,7 +375,10 @@ function Get-ContextCandidates {
         $null = $scanErrors.Add("Required Copilot entrypoint is missing or unreadable: '$copilotPath'.")
     }
 
-    return [pscustomobject]@{ Files = @($files | Sort-Object FullName -Unique); Errors = @($scanErrors) }
+    $uniqueFiles = [System.Collections.Generic.List[object]]::new()
+    $seenFiles = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($file in @($files | Sort-Object FullName)) { if ($seenFiles.Add([string]$file.FullName)) { $uniqueFiles.Add($file) } }
+    return [pscustomobject]@{ Files = @($uniqueFiles); Errors = @($scanErrors) }
 }
 
 function Get-AgentContext {
@@ -521,7 +543,7 @@ function Get-AgentContext {
             ContentHash = if ($null -ne $metrics) { $metrics.ContentHash } else { $null }
             ByteCount = if ($null -ne $metrics) { $metrics.ByteCount } else { $null }
             WordCount = if ($null -ne $metrics) { $metrics.WordCount } else { $null }
-            ReferencedRoutes = if ($null -ne $content) { @(Get-ContextRoutes -Content $content) } else { @() }
+            ReferencedRoutes = if ($null -ne $content) { @(Get-ContextRoutes -Content $content -RepositoryRoot $resolvedRoot -SourcePath $candidate.FullName) } else { @() }
         })
     }
 

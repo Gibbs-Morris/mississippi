@@ -1,5 +1,8 @@
+#!/usr/bin/env pwsh
+
 #requires -Module Pester
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 Describe 'Agent context selection' {
