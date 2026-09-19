@@ -262,10 +262,6 @@ function Get-ContextFilesByFilter {
         }
         foreach ($child in $children) {
             $isReparsePoint = [bool]($child.Attributes -band [System.IO.FileAttributes]::ReparsePoint)
-            if ($isReparsePoint -and -not $child.PSIsContainer) {
-                $null = $Errors.Add("Skipped reparse-point guidance file '$($child.FullName)'.")
-                continue
-            }
             if ($child.PSIsContainer) {
                 if ($isReparsePoint) {
                     $null = $Errors.Add("Skipped reparse-point guidance directory '$($child.FullName)'.")
@@ -274,6 +270,10 @@ function Get-ContextFilesByFilter {
                 if ($excludedDirectories -notcontains $child.Name) { $pending.Enqueue($child.FullName) }
             }
             elseif ($child.Name -like $Filter) {
+                if ($isReparsePoint) {
+                    $null = $Errors.Add("Skipped reparse-point guidance file '$($child.FullName)'.")
+                    continue
+                }
                 $results.Add($child)
             }
         }

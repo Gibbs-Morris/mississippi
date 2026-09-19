@@ -306,6 +306,30 @@ applyTo: '**/[abc.md'
         }
     }
 
+    It 'ignores unrelated reparse-point files during discovery' {
+        $linkPath = Join-Path $fixtureRoot 'docs/latest.md'
+        $linkCreated = $false
+        try {
+            New-Item -ItemType SymbolicLink -Path $linkPath -Target (Join-Path $fixtureRoot 'docs/guide.md') -ErrorAction Stop | Out-Null
+            $linkCreated = $true
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+
+            $context.Complete | Should -BeTrue
+            $context.Unresolved | Should -Not -Contain "Skipped reparse-point guidance file '$linkPath'."
+        }
+        catch {
+            if (-not $linkCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create file symbolic links.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $linkPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It 'reports missing required context instead of returning an empty pass' {
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -RequiredPath 'missing/required.md'
 
