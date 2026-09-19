@@ -1,5 +1,7 @@
 Set-StrictMode -Version Latest
 
+Import-Module (Join-Path $PSScriptRoot 'ValidationEvidence.psm1') -Force
+
 function Get-RepositoryRoot {
     [CmdletBinding()]
     param(
@@ -919,6 +921,21 @@ function Invoke-MississippiSolutionMutationTests {
     Write-Host 'Test quality validated | Mutation score meets project standards'
 }
 
+function Get-ValidationPipelineTestCount {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$RepoRoot)
+    $count = 0
+    $resultsRoot = Join-Path $RepoRoot '.scratchpad/coverage-test-results'
+    foreach ($trx in @(Get-ChildItem -LiteralPath $resultsRoot -Recurse -Filter '*.trx' -File -ErrorAction SilentlyContinue)) {
+        try {
+            [xml]$xml = Get-Content -LiteralPath $trx.FullName -Raw
+            $count += [int]$xml.TestRun.ResultSummary.Counters.executed
+        }
+        catch { }
+    }
+    return $count
+}
+
 function Invoke-SolutionsPipeline {
     [CmdletBinding()]
     param(
@@ -931,7 +948,10 @@ function Invoke-SolutionsPipeline {
     $automationScriptsRoot = Join-Path (Join-Path (Join-Path $RepoRoot 'eng') 'src') 'agent-scripts'
     $coverageScript = Join-Path $automationScriptsRoot 'summarize-coverage-gaps.ps1'
     $mutationSummaryScript = Join-Path $automationScriptsRoot 'summarize-mutation-survivors.ps1'
+    $evidenceRun = New-ValidationEvidenceRun -RepositoryRoot $RepoRoot -Scope 'full-solutions-pipeline' -Arguments @('Configuration', $Configuration, 'SkipCleanup', [string]$SkipCleanup, 'IncludeMutation', [string]$IncludeMutation)
+    $testExecutionReached = $false
 
+    try {
     Write-AutomationBanner -Message '=== STARTING COMPLETE BUILD AND TEST PIPELINE ===' -ForegroundColor ([ConsoleColor]::Magenta) -InsertBlankLine
     Write-Host 'Pipeline will execute Mississippi solution followed by Sample solution'
     Write-Host 'Each step must complete successfully before proceeding to the next'
@@ -950,6 +970,7 @@ function Invoke-SolutionsPipeline {
     if (-not $SkipCleanup) {
         Invoke-AutomationStep -Name 'Cleanup Mississippi Code Style' -StepNumber ($step++) -Action { Invoke-MississippiSolutionCleanup -RepoRoot $RepoRoot } -SilentSuccess
     }
+    $testExecutionReached = $true
     Invoke-AutomationStep -Name 'Run Mississippi Unit Tests' -StepNumber ($step++) -Action { Invoke-MississippiSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
     Invoke-AutomationStep -Name 'Summarize Coverage Gaps' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $coverageScript, '-EmitTasks') | Out-Host }
     if ($IncludeMutation) {
@@ -958,6 +979,8 @@ function Invoke-SolutionsPipeline {
 
     Write-AutomationBanner -Message '=== SAMPLE SOLUTION PIPELINE ===' -ForegroundColor ([ConsoleColor]::Cyan)
     Invoke-AutomationStep -Name 'Build Sample Solution' -StepNumber ($step++) -Action { Invoke-SampleSolutionBuild -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
+    $testExecutionReached = $true
+    Invoke-AutomationStep -Name 'Run Sample Unit Tests' -StepNumber ($step++) -Action { Invoke-SampleSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
     if (-not $SkipCleanup) {
         Invoke-AutomationStep -Name 'Cleanup Sample Code Style' -StepNumber ($step++) -Action { Invoke-SampleSolutionCleanup -RepoRoot $RepoRoot } -SilentSuccess
     }
@@ -971,6 +994,13 @@ function Invoke-SolutionsPipeline {
     }
     else {
         Write-Host 'Local build, test, coverage, cleanup and final-build checks completed. Deployment, browser and external CI checks are outside this command.'
+    }
+    $pipelineArtifacts = @(Get-ChildItem -LiteralPath (Join-Path $RepoRoot '.scratchpad/coverage-test-results') -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in @('.trx', '.xml') } | Select-Object -ExpandProperty FullName)
+    Complete-ValidationEvidenceRun -Run $evidenceRun -Status PASS -Phase 'complete' -Executed $testExecutionReached -TestCount (Get-ValidationPipelineTestCount -RepoRoot $RepoRoot) -ExitCode 0 -ArtifactPath $pipelineArtifacts | Out-Null
+    }
+    catch {
+        Complete-ValidationEvidenceRun -Run $evidenceRun -Status FAIL -Phase 'pipeline' -Executed $testExecutionReached -TestCount (Get-ValidationPipelineTestCount -RepoRoot $RepoRoot) -ExitCode 1 -ErrorMessage $_.Exception.Message | Out-Null
+        throw
     }
 }
 
@@ -1021,7 +1051,8 @@ function Invoke-SpringValidation {
     $RepoRoot = (Resolve-Path -LiteralPath $RepoRoot).Path
     $runDirectory = New-AutomationRunDirectory -Root (Join-Path $RepoRoot 'artifacts/spring') -Prefix "$TestLevel-$Suite-$([guid]::NewGuid().ToString('N'))"
     $project = Join-Path $RepoRoot "samples/Spring/Spring.${TestLevel}Tests/Spring.${TestLevel}Tests.csproj"
-    $summary = [ordered]@{ schemaVersion = 1; status = 'FAIL'; phase = 'selection'; testLevel = $TestLevel; suite = $Suite; project = $project; passed = 0; artifacts = $runDirectory }
+    $evidenceRun = New-ValidationEvidenceRun -RepositoryRoot $RepoRoot -Scope "spring:${TestLevel}:$Suite" -InputPath @($project) -Arguments @('TestLevel', $TestLevel, 'Suite', $Suite, 'Configuration', $Configuration)
+    $summary = [ordered]@{ schemaVersion = 1; status = 'FAIL'; phase = 'selection'; testLevel = $TestLevel; suite = $Suite; project = $project; passed = 0; artifacts = $runDirectory; error = $null }
     $timer = [System.Diagnostics.Stopwatch]::StartNew()
     $previousPath = $env:PATH
     $previousArtifacts = $env:SPRING_TEST_ARTIFACTS
@@ -1090,12 +1121,14 @@ function Invoke-SpringValidation {
         $summary.durationSeconds = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
         $summaryPath = Join-Path $runDirectory 'summary.json'
         $summary | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $summaryPath -Encoding utf8
+        $evidenceStatus = if ($summary.status -eq 'PASS') { 'PASS' } elseif ($summary.status -eq 'READY') { 'READY' } else { 'FAIL' }
+        Complete-ValidationEvidenceRun -Run $evidenceRun -Status $evidenceStatus -Phase ([string]$summary.phase) -Executed ($evidenceStatus -eq 'PASS') -TestCount ([int]$summary.passed) -ExitCode $(if ($evidenceStatus -eq 'PASS' -or $evidenceStatus -eq 'READY') { 0 } else { 1 }) -ArtifactPath @($summaryPath) -MirrorPath (Join-Path $runDirectory 'validation-evidence.json') -ErrorMessage ([string]$summary.error) | Out-Null
         Write-Output "RESULT: $($summary.status) | LEVEL: $TestLevel | SUITE: $Suite | PHASE: $($summary.phase) | PASSED: $($summary.passed)"
         Write-Output "SUMMARY: $summaryPath"
     }
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation
+Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation, Get-ValidationSourceFingerprint, New-ValidationEvidenceRun, Complete-ValidationEvidenceRun, Write-ValidationEvidence, Test-ValidationEvidence
 
 
 
