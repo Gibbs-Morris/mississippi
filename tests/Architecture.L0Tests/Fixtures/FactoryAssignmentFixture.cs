@@ -1,4 +1,4 @@
-namespace Mississippi.Architecture.L0Tests;
+namespace Mississippi.Architecture.L0Tests.Fixtures;
 
 /// <summary>Positive fixture whose interface field receives unrelated factory state.</summary>
 internal sealed class FactoryAssignmentFixture

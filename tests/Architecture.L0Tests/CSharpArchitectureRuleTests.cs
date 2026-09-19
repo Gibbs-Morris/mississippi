@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 
-using Xunit;
+using Mississippi.Architecture.L0Tests.Fixtures;
 
+using Xunit;
 
 namespace Mississippi.Architecture.L0Tests;
 
@@ -20,15 +21,17 @@ public sealed class CSharpArchitectureRuleTests
         IClockFixture clock = null!;
         _ = new InjectedFieldFixture(clock).GetClock();
         _ = new InjectedPropertyFixture(clock).Clock;
+        _ = new SettableInjectedPropertyFixture(clock).Clock;
         _ = new OrdinaryStateFixture(new List<string>()).Count;
         _ = new PrimaryConstructorFixture(clock).GetClock();
         _ = new FactoryAssignmentFixture(clock).GetClock();
         _ = new WrappedInjectedFieldFixture(new Lazy<IClockFixture>(() => clock)).GetClock();
         IReadOnlyList<string> violations = CSharpArchitectureTests.FindConstructorInjectedFields(
-            [typeof(InjectedFieldFixture), typeof(InjectedPropertyFixture), typeof(OrdinaryStateFixture), typeof(PrimaryConstructorFixture), typeof(FactoryAssignmentFixture), typeof(WrappedInjectedFieldFixture)]);
+            [typeof(InjectedFieldFixture), typeof(InjectedPropertyFixture), typeof(SettableInjectedPropertyFixture), typeof(OrdinaryStateFixture), typeof(PrimaryConstructorFixture), typeof(FactoryAssignmentFixture), typeof(WrappedInjectedFieldFixture)]);
 
         Assert.Contains(violations, value => value.EndsWith("InjectedFieldFixture.clock", System.StringComparison.Ordinal));
-        Assert.DoesNotContain(violations, value => value.Contains("InjectedPropertyFixture", System.StringComparison.Ordinal));
+        Assert.DoesNotContain(violations, value => value.Contains("InjectedPropertyFixture.", System.StringComparison.Ordinal));
+        Assert.Contains(violations, value => value.Contains("SettableInjectedPropertyFixture", System.StringComparison.Ordinal));
         Assert.DoesNotContain(violations, value => value.Contains("OrdinaryStateFixture", System.StringComparison.Ordinal));
         Assert.Contains(violations, value => value.Contains("PrimaryConstructorFixture", System.StringComparison.Ordinal));
         Assert.DoesNotContain(violations, value => value.Contains("FactoryAssignmentFixture", System.StringComparison.Ordinal));

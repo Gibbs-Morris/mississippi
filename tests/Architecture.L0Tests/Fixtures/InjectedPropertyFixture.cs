@@ -1,4 +1,4 @@
-namespace Mississippi.Architecture.L0Tests;
+namespace Mississippi.Architecture.L0Tests.Fixtures;
 
 /// <summary>Positive fixture that stores an injected dependency in a get-only property.</summary>
 internal sealed class InjectedPropertyFixture

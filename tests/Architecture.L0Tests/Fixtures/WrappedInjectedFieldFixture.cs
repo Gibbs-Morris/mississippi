@@ -1,6 +1,6 @@
 using System;
 
-namespace Mississippi.Architecture.L0Tests;
+namespace Mississippi.Architecture.L0Tests.Fixtures;
 
 /// <summary>
 ///     Controlled fixture for wrapped interface dependency detection.

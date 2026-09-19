@@ -1,4 +1,4 @@
-namespace Mississippi.Architecture.L0Tests;
+namespace Mississippi.Architecture.L0Tests.Fixtures;
 
 /// <summary>Negative fixture for compiler-generated primary-constructor capture storage.</summary>
 internal sealed class PrimaryConstructorFixture(IClockFixture clock)
