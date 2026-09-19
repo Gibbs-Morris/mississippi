@@ -14,7 +14,7 @@ namespace MississippiSamples.ConnectFour.Domain.Aggregates.Match;
 ///     Event-sourced state for one Connect Four match.
 /// </summary>
 [BrookName("CONNECTFOUR", "GAME", "MATCH")]
-[SnapshotStorageName("CONNECTFOUR", "GAME", "MATCHSTATE", version: MatchStorageVersions.V1)]
+[SnapshotStorageName("CONNECTFOUR", "GAME", "MATCHSTATE")]
 [GenerateSerializer]
 [Alias("MississippiSamples.ConnectFour.Domain.Aggregates.Match.MatchAggregate")]
 internal sealed record MatchAggregate
