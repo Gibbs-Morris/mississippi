@@ -1,4 +1,4 @@
-namespace Mississippi.Architecture.L0Tests;
+namespace Mississippi.Architecture.L0Tests.Fixtures;
 
 /// <summary>Negative fixture that stores an injected dependency in a field.</summary>
 internal sealed class InjectedFieldFixture

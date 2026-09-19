@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 
 
-namespace Mississippi.Architecture.L0Tests;
+namespace Mississippi.Architecture.L0Tests.Fixtures;
 
 /// <summary>Positive fixture representing ordinary concrete implementation state.</summary>
 internal sealed class OrdinaryStateFixture

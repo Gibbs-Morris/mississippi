@@ -1,4 +1,4 @@
-namespace Mississippi.Architecture.L0Tests;
+namespace Mississippi.Architecture.L0Tests.Fixtures;
 
 /// <summary>Readonly struct used by the readonly advisory fixture.</summary>
 internal readonly struct ReadonlyFixture

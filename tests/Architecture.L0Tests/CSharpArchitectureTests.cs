@@ -45,15 +45,31 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
 
             foreach (FieldInfo field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
             {
-                if (field.IsStatic || field.Name.EndsWith("k__BackingField", StringComparison.Ordinal) ||
-                    !IsDependencyFieldType(field.FieldType))
+                if (field.IsStatic || !IsDependencyFieldType(field.FieldType))
                 {
                     continue;
                 }
 
+                PropertyInfo? property = null;
+                if (field.Name.EndsWith("k__BackingField", StringComparison.Ordinal))
+                {
+                    int propertyEnd = field.Name.IndexOf('>', StringComparison.Ordinal);
+                    string propertyName = field.Name.StartsWith('<') && propertyEnd > 1
+                        ? field.Name.Substring(1, propertyEnd - 1)
+                        : string.Empty;
+                    property = type.GetProperty(
+                        propertyName,
+                        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                    if (property?.SetMethod is null)
+                    {
+                        continue;
+                    }
+                }
+
                 foreach (ConstructorInfo constructor in type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 {
-                    if (ConstructorStoresParameter(constructor, field))
+                    if (ConstructorStoresParameter(constructor, field) ||
+                        (property?.SetMethod is not null && ConstructorCallsSetter(constructor, property.SetMethod)))
                     {
                         violations.Add($"{type.FullName}.{field.Name}");
                         break;
@@ -214,6 +230,67 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                      opcode != OpCodes.Brfalse && opcode != OpCodes.Brfalse_S &&
                      opcode != OpCodes.Ldarg_0 && opcode != OpCodes.Ldarg_1 && opcode != OpCodes.Ldarg_2 && opcode != OpCodes.Ldarg_3 &&
                      opcode != OpCodes.Ldarg_S && opcode != OpCodes.Ldarg)
+            {
+                parameterLoaded = false;
+            }
+
+            offset += GetOperandSize(opcode, il, offset);
+        }
+
+        return false;
+    }
+
+    private static bool ConstructorCallsSetter(ConstructorInfo constructor, MethodInfo setter)
+    {
+        byte[]? il = constructor.GetMethodBody()?.GetILAsByteArray();
+        if (il is null)
+        {
+            return false;
+        }
+
+        bool parameterLoaded = false;
+        int offset = 0;
+        while (offset < il.Length)
+        {
+            OpCode opcode;
+            byte first = il[offset++];
+            if (first == 0xFE)
+            {
+                opcode = MultiByteOpCodes[il[offset++]];
+            }
+            else
+            {
+                opcode = SingleByteOpCodes[first];
+            }
+
+            if (opcode == OpCodes.Ldarg_1 || opcode == OpCodes.Ldarg_2 || opcode == OpCodes.Ldarg_3 ||
+                opcode == OpCodes.Ldarg_S || opcode == OpCodes.Ldarg)
+            {
+                parameterLoaded = true;
+            }
+
+            if ((opcode == OpCodes.Call || opcode == OpCodes.Callvirt) && offset + 4 <= il.Length)
+            {
+                try
+                {
+                    MethodBase? called = constructor.Module.ResolveMethod(
+                        BitConverter.ToInt32(il, offset),
+                        constructor.DeclaringType?.GetGenericArguments(),
+                        Type.EmptyTypes);
+                    if (parameterLoaded && called == setter)
+                    {
+                        return true;
+                    }
+                }
+                catch (ArgumentException)
+                {
+                    // An unresolved token cannot prove a setter call.
+                }
+                parameterLoaded = false;
+            }
+            else if (opcode != OpCodes.Nop && opcode != OpCodes.Ldarg_0 && opcode != OpCodes.Ldarg_1 &&
+                     opcode != OpCodes.Ldarg_2 && opcode != OpCodes.Ldarg_3 && opcode != OpCodes.Ldarg_S &&
+                     opcode != OpCodes.Ldarg && opcode != OpCodes.Dup)
             {
                 parameterLoaded = false;
             }
