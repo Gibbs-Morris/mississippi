@@ -46,7 +46,7 @@ body:
       label: Decisions and non-goals
       description: Record settled choices and exclusions. The response is prefilled with the required Dependencies and readiness section; preserve that heading and complete its content.
       value: |
-        ## Dependencies and readiness
+        ### Dependencies and readiness
     validations:
       required: true
   - type: textarea
@@ -76,6 +76,6 @@ body:
       label: Risks and delivery boundary
       description: Record risks and merge boundary. Keep the prefilled Validation evidence map heading and map each acceptance ID to evidence and expected result.
       value: |
-        ## Validation evidence map
+        ### Validation evidence map
     validations:
       required: true

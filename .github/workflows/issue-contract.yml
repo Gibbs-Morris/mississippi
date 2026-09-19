@@ -1,0 +1,31 @@
+name: Implementation Issue Contract
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  validate:
+    if: startsWith(github.event.issue.title, '[Task]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted validator
+        uses: actions/checkout@3d3c42e5aac5ba805825ad76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Validate submitted issue contract
+        shell: pwsh
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          $issuePath = Join-Path $env:RUNNER_TEMP 'implementation-issue.md'
+          Set-Content -LiteralPath $issuePath -Value $env:ISSUE_BODY -Encoding utf8
+          & pwsh -NoProfile -File ./eng/src/agent-scripts/test-issue-spec.ps1 -Path $issuePath -RepositoryRoot $env:GITHUB_WORKSPACE
+          if ($LASTEXITCODE -ne 0) { throw 'Implementation issue contract validation failed.' }
