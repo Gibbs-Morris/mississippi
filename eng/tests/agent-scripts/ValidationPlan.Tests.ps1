@@ -77,6 +77,12 @@ Describe 'Deterministic validation plan' {
         @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'core-iteration').Reasons | Should -Match 'new-tool/generated.surface'
     }
 
+    It 'selects PowerShell tests for catalog-only changes' {
+        $outcome = Invoke-Plan -Paths @('eng/src/agent-scripts/validation-command-catalog.json')
+
+        $outcome.Result.SelectedChecks.Id | Should -Contain 'powershell-tests'
+    }
+
     It 'applies supported risk hints to check selection' {
         $outcome = Invoke-Plan -Paths @('README.txt') -RiskHints @('browser', 'infrastructure')
 
