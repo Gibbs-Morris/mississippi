@@ -24,24 +24,31 @@ function Get-GoalRevision {
     param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][string]$Name)
     $value = @(& git -c "safe.directory=$($Root.Replace('\', '/'))" -C $Root rev-parse $Name 2>$null | Select-Object -First 1)
     $revision = ([string]$value).Trim()
-    if ($LASTEXITCODE -ne 0 -or $revision -notmatch '^[0-9a-fA-F]{7,64}$') { throw "Unable to resolve Git revision '$Name'." }
+    $exitCode = if (Get-Variable -Name LASTEXITCODE -ErrorAction SilentlyContinue) { [int]$LASTEXITCODE } else { 0 }
+    if ($exitCode -ne 0 -or $revision -notmatch '^[0-9a-fA-F]{7,64}$') { throw "Unable to resolve Git revision '$Name'." }
     return $revision
 }
 
 function Get-GoalWorktreeFingerprint {
     param([Parameter(Mandatory)][string]$Root)
-    $status = @(& git -c "safe.directory=$($Root.Replace('\', '/'))" -C $Root status --porcelain=v1 --untracked-files=all 2>$null)
-    if ($LASTEXITCODE -ne 0) { throw 'Unable to resolve the current worktree fingerprint.' }
-    $fileHashes = foreach ($line in $status) {
-        if ([string]$line.Length -lt 4) { continue }
-        $relative = ([string]$line).Substring(3).Trim('"')
+    $statusRaw = ((& git -c "safe.directory=$($Root.Replace('\', '/'))" -C $Root status --porcelain=v1 --untracked-files=all -z 2>$null) -join '')
+    $status = @($statusRaw -split [char]0 | Where-Object { -not [string]::IsNullOrEmpty($_) })
+    $exitCode = if (Get-Variable -Name LASTEXITCODE -ErrorAction SilentlyContinue) { [int]$LASTEXITCODE } else { 0 }
+    if ($exitCode -ne 0) { throw 'Unable to resolve the current worktree fingerprint.' }
+    $statusEntries = [System.Collections.Generic.List[string]]::new()
+    $fileHashes = [System.Collections.Generic.List[string]]::new()
+    foreach ($entry in $status) {
+        if ([string]$entry.Length -lt 4) { continue }
+        $statusEntries.Add([string]$entry)
+        $relative = ([string]$entry).Substring(3).Trim('"')
+        if ($relative -match '^(?<Old>.+) -> (?<New>.+)$') { $relative = $Matches.New }
         $full = Join-Path $Root $relative
         if (Test-Path -LiteralPath $full -PathType Leaf) {
-            "${relative}:$((Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant())"
+            $fileHashes.Add($relative + ':' + (Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant())
         }
-        else { "${relative}:missing" }
+        else { $fileHashes.Add($relative + ':missing') }
     }
-    $content = (($status -join "`n") + "`n" + ($fileHashes -join "`n"))
+    $content = (($statusEntries -join [Environment]::NewLine) + [Environment]::NewLine + ($fileHashes -join [Environment]::NewLine))
     $hash = [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($content))
     return 'SHA256:' + (($hash | ForEach-Object { $_.ToString('x2') }) -join '')
 }
@@ -72,9 +79,9 @@ function Get-GoalOperationState {
     if ([string]::IsNullOrWhiteSpace($Json)) { return [pscustomobject]@{ Status = 'none'; Handle = ''; Name = '' } }
     $state = ConvertFrom-Json -InputObject $Json
     return [pscustomobject]@{
-        Status = [string]$state.Status
-        Handle = if ($null -eq $state.Handle) { '' } else { [string]$state.Handle }
-        Name = if ($null -eq $state.Name) { '' } else { [string]$state.Name }
+        Status = if ($null -eq $state.PSObject.Properties['Status']) { '' } else { [string]$state.Status }
+        Handle = if ($null -eq $state.PSObject.Properties['Handle'] -or $null -eq $state.Handle) { '' } else { [string]$state.Handle }
+        Name = if ($null -eq $state.PSObject.Properties['Name'] -or $null -eq $state.Name) { '' } else { [string]$state.Name }
     }
 }
 
@@ -86,6 +93,7 @@ function Test-GoalIssueContract {
         $validator = Join-Path $Root 'eng/src/agent-scripts/test-issue-spec.ps1'
         $output = & pwsh -NoProfile -File $validator -Path $temporary -RepositoryRoot $Root -Json 2>&1 | Out-String
         if ($LASTEXITCODE -ne 0) { throw "Issue contract validation failed: $($output.Trim())" }
+        return $output | ConvertFrom-Json
     }
     finally { Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue }
 }
@@ -100,11 +108,14 @@ try {
     $checkpoint = Get-GoalCheckpointPath -Root $root -Number $IssueNumber -Requested $CheckpointPath
     $currentBody = if ($null -eq $issue.body) { '' } else { [string]$issue.body }
     $currentDigest = Get-GoalBodyDigest -Body $currentBody
-    $currentHead = if ([string]::IsNullOrWhiteSpace($HeadRevision)) { Get-GoalRevision -Root $root -Name 'HEAD' } else { $HeadRevision }
-    $currentBase = if ([string]::IsNullOrWhiteSpace($BaseRevision)) { Get-GoalRevision -Root $root -Name 'origin/main' } else { $BaseRevision }
+    $currentHead = if ([string]::IsNullOrWhiteSpace($HeadRevision)) { Get-GoalRevision -Root $root -Name 'HEAD' } else { Get-GoalRevision -Root $root -Name $HeadRevision }
+    $currentBase = if ([string]::IsNullOrWhiteSpace($BaseRevision)) { Get-GoalRevision -Root $root -Name 'origin/main' } else { Get-GoalRevision -Root $root -Name $BaseRevision }
     if ([string]::IsNullOrWhiteSpace($BaseRevision)) { throw 'BaseRevision must be supplied explicitly, including the immediate parent for stacked work.' }
-    Test-GoalIssueContract -Root $root -Body $currentBody
+    $contractResult = Test-GoalIssueContract -Root $root -Body $currentBody
     $operation = Get-GoalOperationState -Json $OperationStateJson
+    if ($operation.Status -eq 'running' -and [string]::IsNullOrWhiteSpace($operation.Handle)) {
+        throw 'Running operation state requires a nonempty authoritative handle.'
+    }
 
     if ($Action -eq 'resume' -and -not (Test-Path -LiteralPath $checkpoint -PathType Leaf)) {
         throw "Cannot resume issue #$IssueNumber because checkpoint '$checkpoint' does not exist."
@@ -126,6 +137,13 @@ try {
     }
 
     $currentWorktreeFingerprint = Get-GoalWorktreeFingerprint -Root $root
+    $dependenciesAndReadiness = if ($null -ne $contractResult.PSObject.Properties['DependenciesAndReadiness']) {
+        [string]$contractResult.DependenciesAndReadiness
+    }
+    else {
+        $dependencyMatch = [regex]::Match($currentBody, '(?ms)^#{2,3}[ \t]+Dependencies and readiness[ \t]*\r?\n(?<Body>.*?)(?=^#{2,3}[ \t]+|\z)')
+        if ($dependencyMatch.Success) { $dependencyMatch.Groups['Body'].Value.Trim() } else { '' }
+    }
     $validatedDigest = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['ValidatedIssueBodyDigest']) { [string]$previous.ValidatedIssueBodyDigest } else { '' }
     $validatedHead = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['ValidatedHeadRevision']) { [string]$previous.ValidatedHeadRevision } else { '' }
     $validatedBase = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['ValidatedBaseRevision']) { [string]$previous.ValidatedBaseRevision } else { '' }
@@ -139,9 +157,9 @@ try {
     $worktreeChanged = $null -ne $previous -and $worktreeBaseline -ne $currentWorktreeFingerprint
     $activeOperation = $operation.Status -eq 'running'
     $operationCompleted = $null -ne $previous -and [string]$previous.Operation.Status -eq 'running' -and $operation.Status -in @('completed', 'failed')
-    $status = if ($scopeChanged) { 'scope-changed' } elseif ($activeOperation) { 'operation-running' } elseif ($revisionChanged -or $worktreeChanged) { 'evidence-stale' } elseif ($null -eq $previous) { 'started' } else { 'resumed' }
+    $status = if ($scopeChanged) { 'scope-changed' } elseif ($activeOperation) { 'operation-running' } elseif ($EvidenceValidated) { 'revalidated' } elseif ($revisionChanged -or $worktreeChanged) { 'evidence-stale' } elseif ($null -eq $previous) { 'started' } else { 'resumed' }
     $evidenceFresh = -not $activeOperation -and (($EvidenceValidated) -or (-not $scopeChanged -and -not $revisionChanged -and -not $worktreeChanged -and ($null -ne $previous -and [bool]$previous.EvidenceFresh)))
-    $nextAction = if ($scopeChanged) { 'reconcile-edited-issue-before-implementation' } elseif ($activeOperation) { "wait-for-existing-operation:$($operation.Handle)" } elseif ($operationCompleted) { 'inspect-completed-operation-result' } elseif ($revisionChanged -or $worktreeChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($null -eq $previous) { 'inspect-guidance-and-prerequisites' } else { [string]$previous.NextAction }
+    $nextAction = if ($scopeChanged) { 'reconcile-edited-issue-before-implementation' } elseif ($activeOperation) { "wait-for-existing-operation:$($operation.Handle)" } elseif ($EvidenceValidated) { 'continue-implementation-or-review' } elseif ($operationCompleted) { 'inspect-completed-operation-result' } elseif ($revisionChanged -or $worktreeChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($null -eq $previous) { 'inspect-guidance-and-prerequisites' } else { [string]$previous.NextAction }
     if ([string]::IsNullOrWhiteSpace($nextAction)) { $nextAction = 'inspect-guidance-and-prerequisites' }
 
     $record = [ordered]@{
@@ -172,6 +190,8 @@ try {
             CommandsExecutedFromIssueText = $false
             ToolsInstalledFromIssueText = $false
             SecretsAccessedFromIssueText = $false
+            AcceptanceCriteria = @($contractResult.AcceptanceCriteria)
+            DependenciesAndReadiness = $dependenciesAndReadiness
         }
         Decisions = if ($null -ne $previous) { @($previous.Decisions) } else { @() }
         AcceptanceEvidence = if ($null -ne $previous) { @($previous.AcceptanceEvidence) } else { @() }
