@@ -181,13 +181,20 @@ Describe 'Implementation-ready issue contract' {
     }
 
     It 'treats commands and external instructions as data' {
-        $sentinel = Join-Path $fixtureRoot 'must-remain.txt'
+        $workingDirectory = Join-Path $TestDrive 'malicious-working-directory'
+        New-Item -ItemType Directory -Path $workingDirectory -Force | Out-Null
+        $sentinel = Join-Path $workingDirectory 'must-remain.txt'
         Set-Content -LiteralPath $sentinel -Value 'untouched'
-        $outcome = Invoke-Validator -IssuePath (Join-Path $fixtureRoot 'issue-spec-malicious-text.md') -WorkingDirectory $fixtureRoot
+        try {
+            $outcome = Invoke-Validator -IssuePath (Join-Path $fixtureRoot 'issue-spec-malicious-text.md') -WorkingDirectory $workingDirectory
 
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Valid | Should -BeTrue
-        Test-Path -LiteralPath $sentinel | Should -BeTrue
+            $outcome.ExitCode | Should -Be 0
+            $outcome.Result.Valid | Should -BeTrue
+            Test-Path -LiteralPath $sentinel | Should -BeTrue
+        }
+        finally {
+            Remove-Item -LiteralPath $workingDirectory -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 
     It 'keeps the contract version and required fields aligned with the issue form' {
