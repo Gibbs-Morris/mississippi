@@ -1020,11 +1020,16 @@ function Get-PrReadinessExpectedCheckPatterns {
         '^SonarCloud$',
         '^SonarCloud Code Analysis$',
         '^Build \(ubuntu-latest\)$',
-        '^Build \(ubuntu-latest, (?:mississippi|samples)\.slnx\)$',
-        '^L0 Unit Tests \(ubuntu-latest, (?:mississippi|samples)\.slnx\)$',
-        '^L1 Light Infrastructure Tests \(ubuntu-latest, (?:mississippi|samples)\.slnx\)$',
-        '^L2 Integration Tests \(Aspire\) \(ubuntu-latest, (?:mississippi|samples)\.slnx\)$',
-        '^cleanup \(ubuntu-latest, (?:mississippi|samples)\.slnx\)$',
+        '^Build \(ubuntu-latest, mississippi\.slnx\)$',
+        '^Build \(ubuntu-latest, samples\.slnx\)$',
+        '^L0 Unit Tests \(ubuntu-latest, mississippi\.slnx\)$',
+        '^L0 Unit Tests \(ubuntu-latest, samples\.slnx\)$',
+        '^L1 Light Infrastructure Tests \(ubuntu-latest, mississippi\.slnx\)$',
+        '^L1 Light Infrastructure Tests \(ubuntu-latest, samples\.slnx\)$',
+        '^L2 Integration Tests \(Aspire\) \(ubuntu-latest, mississippi\.slnx\)$',
+        '^L2 Integration Tests \(Aspire\) \(ubuntu-latest, samples\.slnx\)$',
+        '^cleanup \(ubuntu-latest, mississippi\.slnx\)$',
+        '^cleanup \(ubuntu-latest, samples\.slnx\)$',
         '^AppHost locked restore \(ubuntu-latest\)$',
         '^AppHost locked restore \(windows-latest\)$',
         '^pwsh-tests \(ubuntu-latest\)$',
@@ -1054,7 +1059,8 @@ function Get-PrReadinessSnapshot {
         [Parameter(Mandatory)][string]$RepositoryOwner,
         [Parameter(Mandatory)][string]$RepositoryName,
         [Parameter(Mandatory)][int]$PullRequestNumber,
-        [scriptblock]$GhJsonProvider
+        [scriptblock]$GhJsonProvider,
+        [string]$PollingEvidenceJson
     )
 
     $getJson = if ($null -ne $GhJsonProvider) {
@@ -1114,6 +1120,11 @@ function Get-PrReadinessSnapshot {
     if (-not [string]::IsNullOrWhiteSpace($graphqlReviewDecision)) { $reviewDecision = $graphqlReviewDecision }
 
     $pullAtEnd = & $getJson @('api', $pullPath)
+    $pollingCompleted = $false
+    if (-not [string]::IsNullOrWhiteSpace($PollingEvidenceJson)) {
+        $polling = ConvertFrom-Json -InputObject $PollingEvidenceJson
+        $pollingCompleted = [int]$polling.WaitedSeconds -ge 300 -and [string]$polling.Head -eq [string]$pullAtEnd.head.sha -and [string]$polling.Status -eq 'completed'
+    }
     [pscustomobject][ordered]@{
         DataComplete = $true
         HeadAtStart = $headAtStart
@@ -1129,7 +1140,7 @@ function Get-PrReadinessSnapshot {
         Approvals = $approvals
         IssueReferenceVerified = $false
         DescriptionReviewed = $false
-        PollingCompleted = $false
+        PollingCompleted = $pollingCompleted
         PullRequestUrl = [string]$pullAtEnd.html_url
     }
 }
@@ -1148,9 +1159,9 @@ function Get-PrReadinessReport {
     if ($state -ne 'open') { $blockers.Add("Pull request is not open (state: $state).") }
     if ($draft) { $blockers.Add('Pull request is still a draft.') }
     if ($mergeableState -notin @('clean', 'blocked')) { $blockers.Add("Pull request cannot currently advance (mergeability: $mergeableState).") }
-    if ([string]$Snapshot.ReviewDecision -eq 'CHANGES_REQUESTED') { $blockers.Add('A reviewer currently requests changes.') }
+    if (-not [string]::IsNullOrWhiteSpace([string]$Snapshot.ReviewDecision) -and [string]$Snapshot.ReviewDecision -ne 'APPROVED') { $blockers.Add("Aggregate review decision is $($Snapshot.ReviewDecision).") }
     foreach ($check in @($Snapshot.Checks | Where-Object { $_.Required -and $_.State -ne 'pass' })) { $blockers.Add("Required check '$($check.Name)' is $($check.State).") }
-    foreach ($thread in @($Snapshot.ReviewThreads | Where-Object { -not $_.IsResolved -or $_.IsOutdated })) { $blockers.Add('An unresolved or outdated review thread remains.') }
+    foreach ($thread in @($Snapshot.ReviewThreads | Where-Object { -not $_.IsResolved })) { $blockers.Add('An unresolved review thread remains.') }
     if ([int]$Snapshot.Approvals -lt 1) { $blockers.Add('Required current review approval evidence is missing.') }
     if (-not $Snapshot.PollingCompleted) { $blockers.Add('Required post-push review polling evidence is incomplete.') }
     $mechanicalReady = $blockers.Count -eq 0

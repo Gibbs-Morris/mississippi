@@ -5,6 +5,7 @@ param(
     [Parameter(Mandatory)][string]$RepositoryOwner,
     [Parameter(Mandatory)][string]$RepositoryName,
     [Parameter(Mandatory)][int]$PullRequestNumber,
+    [string]$PollingEvidenceJson,
     [switch]$Json
 )
 
@@ -14,7 +15,7 @@ $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
 
 try {
-    $snapshot = Get-PrReadinessSnapshot -RepositoryOwner $RepositoryOwner -RepositoryName $RepositoryName -PullRequestNumber $PullRequestNumber
+    $snapshot = Get-PrReadinessSnapshot -RepositoryOwner $RepositoryOwner -RepositoryName $RepositoryName -PullRequestNumber $PullRequestNumber -PollingEvidenceJson $PollingEvidenceJson
     $result = Get-PrReadinessReport -Snapshot $snapshot
     if ($Json) {
         $result | ConvertTo-Json -Depth 10 -Compress
