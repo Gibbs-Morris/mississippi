@@ -106,6 +106,22 @@ Describe 'Mutation automation' {
         $summary.Projects[0].RawScore | Should -BeLessThan 50
     }
 
+    It 'separates a strict threshold exit from an execution failure in the summary' {
+        Set-Content (Join-Path $completedOutput 'mutation-report.json') '{"files":{"Widget.cs":{"mutants":[{"status":"Survived"}]}}}'
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation {
+            $failure = [InvalidOperationException]::new('Stryker score threshold failed')
+            $failure.Data['ReportPath'] = Join-Path $completedOutput 'mutation-report.json'
+            throw $failure
+        }
+        { Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output } | Should -Throw '*mutation testing failed*'
+        $summary = Get-Content (Join-Path $output 'mutation-summary.json') -Raw | ConvertFrom-Json
+        $summary.ExecutionStatus | Should -Be 'COMPLETED_WITH_WARNINGS'
+        $summary.MutationResult | Should -Be 'WARN'
+        $summary.FailedProjectCount | Should -Be 0
+        $summary.ThresholdFailureCount | Should -Be 1
+        $summary.Projects[0].Status | Should -Be 'BELOW_BREAK'
+    }
+
     It 'keeps the full mutation workflow manual and weekly' {
         $workflowPath = Join-Path $PSScriptRoot '../../../.github/workflows/stryker.yml'
         $workflow = Get-Content -LiteralPath $workflowPath -Raw
