@@ -104,6 +104,10 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body '[tracking](https://example.test/redirect:https://github.com/Gibbs-Morris/mississippi/issues/741)'
     }
 
+    It 'ignores repository issue URLs in Markdown link titles' {
+        Assert-NoReferenceBody -Body '[tracking](https://example.test "See https://github.com/Gibbs-Morris/mississippi/issues/741.")'
+    }
+
     It 'ignores quoted indented code blocks' {
         Assert-NoReferenceBody -Body ">     Refs #741"
     }
@@ -126,6 +130,11 @@ Describe 'PR issue reference validator' {
 
     It 'ignores an unused Markdown reference definition' {
         Assert-NoReferenceBody -Body '[tracking]: https://github.com/Gibbs-Morris/mississippi/issues/741'
+    }
+
+    It 'ignores an unused multiline Markdown reference definition' {
+        $body = "[unused]:`n  https://github.com/Gibbs-Morris/mississippi/issues/741"
+        Assert-NoReferenceBody -Body $body
     }
 
     It 'allows a closed ancillary issue when an open issue is present' {

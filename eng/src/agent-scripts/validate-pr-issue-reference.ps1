@@ -151,6 +151,37 @@ function Remove-NonRenderedMarkdown { # NOSONAR - bounded Markdown renderer appr
     return $builder.ToString()
 }
 
+function Test-UrlInsideMarkdownLinkTitle {
+    param(
+        [Parameter(Mandatory)][string]$Content,
+        [Parameter(Mandatory)][int]$UrlIndex
+    )
+
+    if ($UrlIndex -le 1) { return $false }
+    $beforeUrl = $Content.Substring(0, $UrlIndex)
+    $openerIndex = $beforeUrl.LastIndexOf('](', [System.StringComparison]::Ordinal)
+    if ($openerIndex -lt 0) { return $false }
+    $backslashCount = 0
+    for ($escapeIndex = $openerIndex - 1; $escapeIndex -ge 0 -and $Content[$escapeIndex] -eq '\'; $escapeIndex--) { $backslashCount++ }
+    if (($backslashCount % 2) -eq 1) { return $false }
+
+    $routePrefix = $beforeUrl.Substring($openerIndex + 2).TrimStart()
+    $depth = 0
+    $titleStart = -1
+    for ($index = 0; $index -lt $routePrefix.Length; $index++) {
+        if ($routePrefix[$index] -eq '(') { $depth++; continue }
+        if ($routePrefix[$index] -eq ')' -and $depth -gt 0) { $depth--; continue }
+        if ($depth -eq 0 -and [char]::IsWhiteSpace($routePrefix[$index])) {
+            $titleStart = $index
+            break
+        }
+    }
+    if ($titleStart -lt 0) { return $false }
+    $title = $routePrefix.Substring($titleStart).TrimStart()
+    if ([string]::IsNullOrEmpty($title)) { return $false }
+    return $title[0] -eq '"' -or $title[0] -eq '''' -or $title[0] -eq '('
+}
+
 function Get-PrIssueReferences { # NOSONAR - bounded reference extraction intentionally coordinates rendered Markdown and repository validation states.
     param(
         [Parameter(Mandatory)][AllowEmptyString()][string]$Content,
@@ -185,7 +216,7 @@ function Get-PrIssueReferences { # NOSONAR - bounded reference extraction intent
         $null = $usedLabels.Add([regex]::Replace($used.Groups['Label'].Value.Trim(), '\s+', ' '))
     }
     $contentForExtraction = $Content
-    $definitionPattern = '(?m)^[ \t]{0,3}\[(?<Label>[^\]\r\n]+)\]:[ \t]*(?<Destination><[^>\r\n]+>|\S+)(?:[ \t]+.*)?$'
+    $definitionPattern = '(?m)^[ \t]{0,3}\[(?<Label>[^\]\r\n]+)\]:[ \t]*(?:(?<Destination><[^>\r\n]+>|\S+)(?:[ \t]+[^\r\n]*)?|(?:\r?\n)[ \t]+(?<Destination><[^>\r\n]+>|\S+)(?:[ \t]+[^\r\n]*)?)'
     foreach ($definition in [regex]::Matches($Content, $definitionPattern)) {
         $definitionLabel = [regex]::Replace($definition.Groups['Label'].Value.Trim(), '\s+', ' ')
         $replacement = if ($usedLabels.Contains($definitionLabel)) { " $($definition.Groups['Destination'].Value) " } else { '' }
@@ -200,6 +231,7 @@ function Get-PrIssueReferences { # NOSONAR - bounded reference extraction intent
         if (-not ([string]::Equals($matchOwner, $Owner, [System.StringComparison]::OrdinalIgnoreCase) -and [string]::Equals($matchRepo, $Name, [System.StringComparison]::OrdinalIgnoreCase))) {
             continue
         }
+        if (Test-UrlInsideMarkdownLinkTitle -Content $contentForExtraction -UrlIndex $match.Index) { continue }
         $prefix = $contentForExtraction.Substring(0, $match.Index)
         if ($prefix -match '!\[[^\]\r\n]*\]\(\s*<?$') { continue }
         if ($kind -eq 'pull') { continue }
