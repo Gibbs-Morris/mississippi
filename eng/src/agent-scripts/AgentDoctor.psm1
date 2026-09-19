@@ -273,6 +273,7 @@ function Get-AgentDoctorReport {
             }
         }
 
+        if ($profiles -contains 'Core') {
         $toolsManifest = Join-Path $root '.config/dotnet-tools.json'
         $toolData = $null
         if (Test-Path -LiteralPath $toolsManifest -PathType Leaf) {
@@ -311,6 +312,26 @@ function Get-AgentDoctorReport {
         else {
             $dotnetHome = if ([string]::IsNullOrWhiteSpace($env:DOTNET_CLI_HOME)) { [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile) } else { $env:DOTNET_CLI_HOME }
             $resolverRoot = Join-Path $dotnetHome '.dotnet/toolResolverCache/1'
+            $resolverCacheFiles = @()
+            $resolverCacheState = 'missing'
+            $resolverCacheError = ''
+            try {
+                $resolverItem = Get-Item -LiteralPath $resolverRoot -Force -ErrorAction Stop
+                if (-not $resolverItem.PSIsContainer) {
+                    $resolverCacheState = 'unknown'
+                    $resolverCacheError = 'Resolver cache path is not a directory.'
+                }
+                else {
+                    $resolverCacheFiles = @(Get-ChildItem -LiteralPath $resolverRoot -File -Force -ErrorAction Stop)
+                    $resolverCacheState = 'ready'
+                }
+            }
+            catch {
+                if ([System.IO.Directory]::Exists($resolverRoot)) {
+                    $resolverCacheState = 'unknown'
+                    $resolverCacheError = $_.Exception.Message
+                }
+            }
             $toolFailures = [System.Collections.Generic.List[string]]::new()
             $hasMissingTool = $false
             $hasUnknownTool = $false
@@ -318,9 +339,20 @@ function Get-AgentDoctorReport {
                 $packageId = [string]$tool.Name
                 $expectedVersion = [string]$tool.Value.version
                 foreach ($commandName in @($tool.Value.commands | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })) {
-                    $cacheFile = @(Get-ChildItem -LiteralPath $resolverRoot -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ieq [string]$commandName } | Select-Object -First 1)
+                    $toolLabel = ([string]$packageId) + '@' + $expectedVersion + ' (' + [string]$commandName + ')'
+                    if ($resolverCacheState -eq 'missing') {
+                        $toolFailures.Add($toolLabel + ': resolver metadata is missing.')
+                        $hasMissingTool = $true
+                        continue
+                    }
+                    if ($resolverCacheState -eq 'unknown') {
+                        $toolFailures.Add($toolLabel + ': resolver cache is unreadable: ' + $resolverCacheError)
+                        $hasUnknownTool = $true
+                        continue
+                    }
+                    $cacheFile = @($resolverCacheFiles | Where-Object { $_.Name -ieq [string]$commandName } | Select-Object -First 1)
                     if ($cacheFile.Count -eq 0) {
-                        $toolFailures.Add("${packageId}@${expectedVersion} ($commandName): resolver metadata is missing.")
+                        $toolFailures.Add($toolLabel + ': resolver metadata is missing.')
                         $hasMissingTool = $true
                         continue
                     }
@@ -356,6 +388,7 @@ function Get-AgentDoctorReport {
         Add-DoctorCheck -Checks $checks -Name 'git-worktree' -State $(if ($git.Available -and $git.ExitCode -eq 0) { 'ready' } elseif (-not $git.Available) { 'missing' } else { 'unknown' }) -Required $true -Details (Get-DoctorProbeDetails -Probe $git) -Remediation $(if ($git.ExitCode -eq 0) { '' } else { 'Run the doctor from a readable Git checkout.' })
         $pester = @(Get-Module -ListAvailable -Name Pester | Where-Object { $_.Version -ge [version]'5.0.0' } | Sort-Object Version -Descending | Select-Object -First 1)
         Add-DoctorCheck -Checks $checks -Name 'pester' -State $(if ($pester.Count -gt 0) { 'ready' } else { 'missing' }) -Required $false -Details $(if ($pester.Count -gt 0) { "Pester $($pester[0].Version) is available." } else { 'Pester 5 or later is not available.' }) -Remediation 'Install Pester 5 or later only when running the PowerShell validation harness.'
+        }
     }
 
     if ($profiles -contains 'Docs') {
@@ -372,7 +405,49 @@ function Get-AgentDoctorReport {
         $docsManifestState = 'missing'
         $docsManifestDetails = "package.json=$((Test-Path -LiteralPath $packageJson -PathType Leaf)); package-lock.json=$((Test-Path -LiteralPath $lockFile -PathType Leaf))."
         if ((Test-Path -LiteralPath $packageJson -PathType Leaf) -and (Test-Path -LiteralPath $lockFile -PathType Leaf)) {
-            try { Get-Content -LiteralPath $packageJson -Raw | ConvertFrom-Json | Out-Null; Get-Content -LiteralPath $lockFile -Raw | ConvertFrom-Json | Out-Null; $docsManifestState = 'ready' }
+            try {
+                $packageData = Get-Content -LiteralPath $packageJson -Raw | ConvertFrom-Json -AsHashtable
+                $lockData = Get-Content -LiteralPath $lockFile -Raw | ConvertFrom-Json -AsHashtable
+                $packageDependencies = @{}
+                foreach ($groupName in @('dependencies', 'devDependencies')) {
+                    $group = if ($packageData -is [System.Collections.IDictionary] -and $packageData.Contains($groupName)) { $packageData[$groupName] } else { $null }
+                    if ($group -is [System.Collections.IDictionary]) {
+                        foreach ($dependencyName in $group.Keys) {
+                            $packageDependencies[[string]$dependencyName] = [string]$group[$dependencyName]
+                        }
+                    }
+                }
+                $lockRoot = $null
+                if ($lockData -is [System.Collections.IDictionary] -and $lockData.Contains('packages') -and $lockData['packages'] -is [System.Collections.IDictionary] -and $lockData['packages'].Contains('')) {
+                    $lockRoot = $lockData['packages']['']
+                }
+                $lockDependencies = @{}
+                foreach ($groupName in @('dependencies', 'devDependencies')) {
+                    $group = if ($lockRoot -is [System.Collections.IDictionary] -and $lockRoot.Contains($groupName)) { $lockRoot[$groupName] } else { $null }
+                    if ($group -is [System.Collections.IDictionary]) {
+                        foreach ($dependencyName in $group.Keys) {
+                            $lockDependencies[[string]$dependencyName] = [string]$group[$dependencyName]
+                        }
+                    }
+                }
+                $mismatches = [System.Collections.Generic.List[string]]::new()
+                foreach ($dependencyName in $packageDependencies.Keys) {
+                    if (-not $lockDependencies.ContainsKey($dependencyName)) {
+                        $mismatches.Add("$dependencyName is absent from package-lock.json.")
+                    }
+                    elseif ($lockDependencies[$dependencyName] -cne $packageDependencies[$dependencyName]) {
+                        $mismatches.Add("$dependencyName declares '$($packageDependencies[$dependencyName])' in package.json but '$($lockDependencies[$dependencyName])' in package-lock.json.")
+                    }
+                }
+                if ($mismatches.Count -gt 0) {
+                    throw ('package.json and package-lock.json dependency declarations disagree: ' + ($mismatches -join ' '))
+                }
+                if ($packageDependencies.Count -gt 0 -and $null -eq $lockRoot) {
+                    throw 'package-lock.json does not contain the packages root needed to verify dependency declarations.'
+                }
+                $docsManifestState = 'ready'
+                $docsManifestDetails = "package.json and package-lock.json dependency declarations agree for $($packageDependencies.Count) packages."
+            }
             catch { $docsManifestState = 'unsupported'; $docsManifestDetails = $_.Exception.Message }
         }
         Add-DoctorCheck -Checks $checks -Name 'docs-manifests' -State $docsManifestState -Required $true -Details $docsManifestDetails -Remediation 'Restore valid Docusaurus package manifests.'
