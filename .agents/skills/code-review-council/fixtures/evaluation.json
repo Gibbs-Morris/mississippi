@@ -6,6 +6,8 @@
       "triggered": true,
       "scope_complete": true,
       "policy_compliant": true,
+      "scope_elements_required": 1,
+      "scope_elements_present": 1,
       "result_status": "PASS",
       "latency_ms": 900,
       "tokens": 1200,
@@ -16,6 +18,8 @@
       "triggered": true,
       "scope_complete": true,
       "policy_compliant": true,
+      "scope_elements_required": 1,
+      "scope_elements_present": 1,
       "result_status": "PASS",
       "latency_ms": 2400,
       "tokens": 3600,
@@ -26,6 +30,8 @@
       "triggered": true,
       "scope_complete": true,
       "policy_compliant": true,
+      "scope_elements_required": 1,
+      "scope_elements_present": 1,
       "result_status": "PASS",
       "latency_ms": 5100,
       "tokens": 9200,
@@ -139,9 +145,9 @@
       "truth": [],
       "scope_expected": false,
       "approaches": {
-        "single-reviewer": {},
-        "all-lenses": {},
-        "council": {"scope_complete": false, "policy_compliant": true, "result_status": "INCOMPLETE"}
+        "single-reviewer": {"scope_elements_present": 0},
+        "all-lenses": {"scope_elements_present": 0},
+        "council": {"scope_complete": false, "scope_elements_present": 0, "policy_compliant": true, "result_status": "INCOMPLETE"}
       }
     },
     {
@@ -213,9 +219,9 @@
       "truth": [],
       "scope_expected": false,
       "approaches": {
-        "single-reviewer": {},
-        "all-lenses": {},
-        "council": {"scope_complete": false, "result_status": "INCOMPLETE"}
+        "single-reviewer": {"scope_elements_present": 0},
+        "all-lenses": {"scope_elements_present": 0},
+        "council": {"scope_complete": false, "scope_elements_present": 0, "result_status": "INCOMPLETE"}
       }
     },
     {
@@ -224,9 +230,9 @@
       "truth": [],
       "scope_expected": false,
       "approaches": {
-        "single-reviewer": {},
-        "all-lenses": {},
-        "council": {"scope_complete": false, "result_status": "INCOMPLETE"}
+        "single-reviewer": {"scope_elements_present": 0},
+        "all-lenses": {"scope_elements_present": 0},
+        "council": {"scope_complete": false, "scope_elements_present": 0, "result_status": "INCOMPLETE"}
       }
     },
     {

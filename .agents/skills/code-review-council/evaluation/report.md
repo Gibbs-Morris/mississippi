@@ -8,19 +8,22 @@ This is an offline deterministic fixture evaluation. It does not measure live mo
 
 ## Overall results
 
-| Approach | Precision | Recall | P0/P1 recall | False blockers | Policy |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| `single-reviewer` | 0.4286 | 0.2500 | 0.2500 | 0.2308 | 0.9583 |
-| `all-lenses` | 0.6923 | 0.7500 | 0.7500 | 0.2308 | 0.9583 |
-| `council` | 1.0000 | 1.0000 | 1.0000 | 0.0000 | 0.9167 |
+| Approach | Precision | Recall | P0/P1 recall | False blockers | Scope completeness | Policy |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `single-reviewer` | 0.4286 | 0.2500 | 0.2500 | 0.2308 | 0.8750 | 0.9583 |
+| `all-lenses` | 0.6923 | 0.7500 | 0.7500 | 0.2308 | 0.8750 | 0.9583 |
+| `council` | 1.0000 | 1.0000 | 1.0000 | 0.0000 | 0.8750 | 0.9167 |
 
 ## Interpretation
 
 On these authored fixtures, the council path retained all seeded findings and
 avoided false blockers, invalid anchors, and duplicate publication. It also
-used more fixture tokens and latency than either baseline. The policy score is
-lower because unsupported-model and reviewer-failure cases correctly remain
-incomplete rather than being reported as clean.
+used more fixture tokens and latency than either baseline. Scope completeness
+is 0.8750 because revision-change, truncated-diff, and unresolved-index cases
+correctly report missing evidence instead of treating an incomplete snapshot
+as complete. The policy score is lower because unsupported-model and
+reviewer-failure cases correctly remain incomplete rather than being reported
+as clean.
 
 ## Limitations
 

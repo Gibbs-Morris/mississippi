@@ -21,7 +21,15 @@ import validate_review  # noqa: E402
 
 
 PERSONAS = validate_review.PERSONA_IDS
-SNAPSHOT_ID = "sha256:" + ("0" * 64)
+SCOPE_MATERIAL = {
+    "mode": "branch",
+    "base": "a" * 40,
+    "head": "b" * 40,
+    "merge_base": "a" * 40,
+    "changed_files": [{"status": "M", "path": "src/example.cs"}],
+    "patch": {"sha256": "c" * 64, "bytes": 1},
+}
+SNAPSHOT_ID = "sha256:" + validate_review.sha256_json(SCOPE_MATERIAL)
 FINGERPRINT = "sha256:" + ("1" * 64)
 
 
@@ -61,6 +69,7 @@ class CodeReviewCouncilTests(unittest.TestCase):
                 scope["selected"]["staged"]["patch"]["sha256"],
                 scope["selected"]["unstaged"]["patch"]["sha256"],
             )
+            self.assertTrue(scope["selected"]["staged"]["patch"]["content_base64"])
 
     def test_committed_and_pull_request_modes_pin_revisions(self) -> None:
         with tempfile.TemporaryDirectory(prefix="code-review-council-") as directory:
@@ -155,6 +164,7 @@ class CodeReviewCouncilTests(unittest.TestCase):
                 "repository": {"root": str(root)},
                 "captured_at_utc": "2026-09-19T00:00:00Z",
                 "changed_files": [{"status": "M", "path": "src/example.cs"}],
+                "snapshot_material": SCOPE_MATERIAL,
             }
             finding = {
                 "fingerprint": FINGERPRINT,
@@ -181,6 +191,11 @@ class CodeReviewCouncilTests(unittest.TestCase):
                         "persona_id": persona,
                         "snapshot_id": SNAPSHOT_ID,
                         "status": "complete",
+                        "requested_model": None,
+                        "effective_model": None,
+                        "requested_concurrency": None,
+                        "effective_concurrency": None,
+                        "completed_at_utc": "2026-09-19T00:00:00Z",
                         "findings": [finding] if persona == "domain-purist" else [],
                     }
                 )
@@ -213,6 +228,26 @@ class CodeReviewCouncilTests(unittest.TestCase):
                 0,
             )
             self.assertEqual(json.loads(output_path.read_text(encoding="utf-8"))["status"], "PASS")
+            scope["changed_files"][0]["path"] = "tampered.cs"
+            scope_path.write_text(json.dumps(scope), encoding="utf-8")
+            self.assertEqual(
+                validate_review.main(
+                    [
+                        "--scope",
+                        str(scope_path),
+                        "--reviewers",
+                        str(reviewers_path),
+                        "--adjudication",
+                        str(adjudication_path),
+                        "--output",
+                        str(output_path),
+                    ]
+                ),
+                2,
+            )
+            self.assertEqual(json.loads(output_path.read_text(encoding="utf-8"))["status"], "INCOMPLETE")
+            scope["changed_files"][0]["path"] = "src/example.cs"
+            scope_path.write_text(json.dumps(scope), encoding="utf-8")
             reviewers_path.write_text("\n".join(json.dumps(reviewer) for reviewer in reviewers[:-1]) + "\n", encoding="utf-8")
             self.assertEqual(
                 validate_review.main(
@@ -231,6 +266,51 @@ class CodeReviewCouncilTests(unittest.TestCase):
             )
             self.assertEqual(json.loads(output_path.read_text(encoding="utf-8"))["status"], "INCOMPLETE")
 
+    def test_no_changes_is_terminal_without_reviewer_fabrication(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="code-review-council-") as directory:
+            root = Path(directory)
+            material = {
+                "mode": "branch",
+                "base": "a" * 40,
+                "head": "a" * 40,
+                "merge_base": "a" * 40,
+                "changed_files": [],
+                "patch": {"sha256": "0" * 64, "bytes": 0, "encoding": "base64", "content_base64": ""},
+            }
+            scope = {
+                "schema_version": validate_review.SCHEMA_VERSION,
+                "mode": "branch",
+                "status": "NO_CHANGES",
+                "snapshot_id": "sha256:" + validate_review.sha256_json(material),
+                "repository": {"root": str(root)},
+                "captured_at_utc": "2026-09-19T00:00:00Z",
+                "changed_files": [],
+                "snapshot_material": material,
+            }
+            scope_path = root / "scope.json"
+            reviewers_path = root / "reviewers.jsonl"
+            adjudication_path = root / "adjudication.json"
+            output_path = root / "review.json"
+            scope_path.write_text(json.dumps(scope), encoding="utf-8")
+            reviewers_path.write_text("", encoding="utf-8")
+            adjudication_path.write_text(json.dumps({"dispositions": []}), encoding="utf-8")
+            self.assertEqual(
+                validate_review.main(
+                    [
+                        "--scope",
+                        str(scope_path),
+                        "--reviewers",
+                        str(reviewers_path),
+                        "--adjudication",
+                        str(adjudication_path),
+                        "--output",
+                        str(output_path),
+                    ]
+                ),
+                0,
+            )
+            self.assertEqual(json.loads(output_path.read_text(encoding="utf-8"))["status"], "NO_CHANGES")
+
     def test_mock_publication_is_idempotent(self) -> None:
         with tempfile.TemporaryDirectory(prefix="code-review-council-") as directory:
             root = Path(directory)
@@ -240,7 +320,7 @@ class CodeReviewCouncilTests(unittest.TestCase):
                 "schema_version": publish_review.SCHEMA_VERSION,
                 "status": "PASS",
                 "snapshot_id": SNAPSHOT_ID,
-                "scope_manifest": {"base": "a" * 40, "head": "b" * 40, "changed_files": []},
+                "scope_manifest": {"snapshot_id": SNAPSHOT_ID, "base": "a" * 40, "head": "b" * 40, "changed_files": []},
                 "findings": [],
                 "errors": [],
             }

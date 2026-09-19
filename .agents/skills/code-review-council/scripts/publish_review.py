@@ -9,6 +9,7 @@ import json
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -23,6 +24,7 @@ class PublicationError(RuntimeError):
 
 
 def load_json(path: Path) -> Any:
+    path = safe_io_path(path, must_exist=True, label="input")
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
@@ -30,8 +32,33 @@ def load_json(path: Path) -> Any:
 
 
 def write_json(path: Path, value: dict[str, Any]) -> None:
+    path = safe_io_path(path, must_exist=False, label="output")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def safe_io_path(value: str | Path, *, must_exist: bool, label: str) -> Path:
+    candidate = Path(value).expanduser()
+    if ".." in candidate.parts:
+        raise PublicationError(f"{label} path traversal is not allowed: {value!s}")
+    try:
+        resolved = candidate.resolve(strict=must_exist)
+    except OSError as error:
+        raise PublicationError(f"cannot resolve {label} path: {value!s}") from error
+    allowed_roots = (Path.cwd().resolve(), Path(tempfile.gettempdir()).resolve())
+    if not any(resolved == root or root in resolved.parents for root in allowed_roots):
+        raise PublicationError(f"{label} path must be within the worktree or temporary directory: {value!s}")
+    if must_exist and not resolved.is_file():
+        raise PublicationError(f"{label} path is not a regular file: {value!s}")
+    return resolved
+
+
+def markdown_inline(value: Any) -> str:
+    text = str(value)
+    text = text.replace("\\", "\\\\").replace("\r", "").replace("\n", " ")
+    for character in ("`", "*", "_", "[", "]", "<", ">", "@"):
+        text = text.replace(character, f"\\{character}")
+    return text
 
 
 def stable_key(review: dict[str, Any]) -> str:
@@ -55,6 +82,7 @@ def marker(key: str) -> str:
 
 def markdown_body(review: dict[str, Any], key: str, markdown_path: Path | None) -> str:
     if markdown_path:
+        markdown_path = safe_io_path(markdown_path, must_exist=True, label="Markdown input")
         try:
             content = markdown_path.read_text(encoding="utf-8").strip()
         except OSError as error:
@@ -74,8 +102,8 @@ def markdown_body(review: dict[str, Any], key: str, markdown_path: Path | None) 
             for finding in findings:
                 lines.extend(
                     [
-                        f"- **{finding.get('severity', '?')}** `{finding.get('path', '?')}:{finding.get('line', '?')}` — {finding.get('scenario', '')}",
-                        f"  - Disposition: `{finding.get('disposition', 'unknown')}`",
+                        f"- **{markdown_inline(finding.get('severity', '?'))}** `{markdown_inline(finding.get('path', '?'))}:{finding.get('line', '?')}` - {markdown_inline(finding.get('scenario', ''))}",
+                        f"  - Disposition: `{markdown_inline(finding.get('disposition', 'unknown'))}`",
                     ]
                 )
         else:
@@ -102,11 +130,14 @@ def validate_review(review: Any) -> tuple[dict[str, Any], str, str]:
     scope = review.get("scope_manifest")
     if not isinstance(scope, dict):
         raise PublicationError("review scope_manifest is required")
+    if scope.get("snapshot_id") != snapshot_id:
+        raise PublicationError("review snapshot_id does not match scope_manifest.snapshot_id")
     key = stable_key(review)
     return review, key, markdown_body(review, key, None)
 
 
 def load_ledger(path: Path) -> dict[str, Any]:
+    path = safe_io_path(path, must_exist=False, label="ledger")
     if not path.exists():
         return {"schema_version": SCHEMA_VERSION, "published": []}
     value = load_json(path)
@@ -156,6 +187,56 @@ def gh_api(endpoint: str, *arguments: str, input_value: dict[str, Any] | None = 
         raise PublicationError(f"gh api returned invalid JSON: {error}") from error
 
 
+def flatten_pages(value: Any) -> list[Any]:
+    if not isinstance(value, list):
+        return []
+    flattened: list[Any] = []
+    for page in value:
+        if isinstance(page, list):
+            flattened.extend(page)
+        else:
+            flattened.append(page)
+    return flattened
+
+
+def patch_ranges(patch: str) -> list[tuple[int, int]]:
+    ranges: list[tuple[int, int]] = []
+    for line in patch.splitlines():
+        match = re.match(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@", line)
+        if not match:
+            continue
+        old_start, old_count, new_start, new_count = match.groups()
+        ranges.extend(
+            (
+                (int(old_start), int(old_count or "1")),
+                (int(new_start), int(new_count or "1")),
+            )
+        )
+    return ranges
+
+
+def validate_live_anchors(review: dict[str, Any], files: list[dict[str, Any]]) -> None:
+    by_path: dict[str, dict[str, Any]] = {}
+    for file in files:
+        if not isinstance(file, dict):
+            continue
+        if isinstance(file.get("filename"), str):
+            by_path[file["filename"]] = file
+        if isinstance(file.get("previous_filename"), str):
+            by_path[file["previous_filename"]] = file
+    for finding in review.get("findings", []):
+        path = finding.get("path") if isinstance(finding, dict) else None
+        line = finding.get("line") if isinstance(finding, dict) else None
+        file = by_path.get(path)
+        if file is None:
+            raise PublicationError(f"finding anchor is absent from the live PR diff: {path!r}")
+        patch = file.get("patch")
+        if not isinstance(patch, str):
+            raise PublicationError(f"live PR diff has no patch for anchored path: {path!r}")
+        if not isinstance(line, int) or not any(start <= line < start + count for start, count in patch_ranges(patch)):
+            raise PublicationError(f"finding line is absent from the live PR hunks: {path}:{line}")
+
+
 def pr_scope(review: dict[str, Any]) -> tuple[str, str, set[str]]:
     scope = review["scope_manifest"]
     base = scope.get("base")
@@ -165,9 +246,11 @@ def pr_scope(review: dict[str, Any]) -> tuple[str, str, set[str]]:
     if not isinstance(head, str) or not re.fullmatch(r"[0-9a-f]{40}", head):
         raise PublicationError("scope manifest does not contain a full head SHA")
     paths = {
-        entry["path"]
+        path
         for entry in scope.get("changed_files", [])
-        if isinstance(entry, dict) and isinstance(entry.get("path"), str)
+        if isinstance(entry, dict)
+        for path in (entry.get("path"), entry.get("old_path"))
+        if isinstance(path, str)
     }
     return base, head, paths
 
@@ -227,9 +310,16 @@ def publish_github(
     live_head = live_pr.get("head", {}).get("sha")
     if live_base != scope_base or live_head != scope_head:
         raise PublicationError("pull-request base or head changed since the reviewed snapshot")
+    live_files = flatten_pages(gh_api(f"repos/{repo}/pulls/{number}/files", "--paginate", "--slurp"))
+    validate_live_anchors(review, [file for file in live_files if isinstance(file, dict)])
+    publisher = gh_api("user").get("login")
     comments = gh_api(f"repos/{repo}/issues/{number}/comments", "--paginate", "--slurp")
-    flattened = [comment for page in comments for comment in page] if isinstance(comments, list) else []
-    if any(marker(key) in str(comment.get("body", "")) for comment in flattened if isinstance(comment, dict)):
+    flattened = flatten_pages(comments)
+    if any(
+        marker(key) in str(comment.get("body", "")) and comment.get("user", {}).get("login") == publisher
+        for comment in flattened
+        if isinstance(comment, dict)
+    ):
         return {"status": "already-published", "provider": "github", "idempotency_key": key}
     gh_api(
         f"repos/{repo}/issues/{number}/comments",

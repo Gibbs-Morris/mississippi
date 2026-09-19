@@ -4,12 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
 import re
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -40,13 +42,39 @@ def iso_now() -> str:
 def safe_path(path: str) -> str:
     """Return a portable repository-relative path or reject traversal."""
 
-    candidate = path.replace("\\", "/")
+    candidate = path.replace("\\", "/") if os.sep == "\\" else path
     if not candidate or candidate.startswith("/") or re.match(r"^[A-Za-z]:/", candidate):
         raise CollectionError(f"absolute or empty path is not allowed: {path!r}")
     parts = [part for part in candidate.split("/") if part not in ("", ".")]
     if any(part == ".." for part in parts):
         raise CollectionError(f"path escapes repository root: {path!r}")
     return "/".join(parts)
+
+
+def safe_io_path(value: str | Path, *, must_exist: bool, label: str, require_file: bool = True) -> Path:
+    """Constrain CLI file paths to the worktree or OS temporary directory."""
+
+    candidate = Path(value).expanduser()
+    if ".." in candidate.parts:
+        raise CollectionError(f"{label} path traversal is not allowed: {value!s}")
+    try:
+        resolved = candidate.resolve(strict=must_exist)
+    except OSError as error:
+        raise CollectionError(f"cannot resolve {label} path: {value!s}") from error
+    allowed_roots = (Path.cwd().resolve(), Path(tempfile.gettempdir()).resolve())
+    if not any(resolved == root or root in resolved.parents for root in allowed_roots):
+        raise CollectionError(f"{label} path must be within the worktree or temporary directory: {value!s}")
+    if must_exist and require_file and not resolved.is_file():
+        raise CollectionError(f"{label} path is not a regular file: {value!s}")
+    if must_exist and not require_file and not resolved.is_dir():
+        raise CollectionError(f"{label} path is not a directory: {value!s}")
+    return resolved
+
+
+def validate_revision(value: str) -> str:
+    if not value or value.startswith("-") or not re.fullmatch(r"[A-Za-z0-9_./~^:@+,-]+", value):
+        raise CollectionError(f"revision contains unsupported characters: {value!r}")
+    return value
 
 
 def run_git(repo: Path, *arguments: str, check: bool = True) -> bytes:
@@ -59,7 +87,7 @@ def run_git(repo: Path, *arguments: str, check: bool = True) -> bytes:
 
 
 def resolve_repository(value: str) -> Path:
-    requested = Path(value).expanduser().resolve()
+    requested = safe_io_path(value, must_exist=True, label="repository", require_file=False)
     if not requested.exists() or not requested.is_dir():
         raise CollectionError(f"repository path does not exist: {requested}")
     top_level = run_git(requested, "rev-parse", "--show-toplevel").decode().strip()
@@ -70,13 +98,16 @@ def resolve_repository(value: str) -> Path:
 
 
 def resolve_commit(repo: Path, revision: str) -> str:
-    resolved = run_git(repo, "rev-parse", "--verify", f"{revision}^{{commit}}").decode().strip()
+    revision = validate_revision(revision)
+    resolved = run_git(repo, "rev-parse", "--verify", "--end-of-options", f"{revision}^{{commit}}").decode().strip()
     if not SHA_PATTERN.fullmatch(resolved):
         raise CollectionError(f"revision did not resolve to a full commit SHA: {revision!r}")
     return resolved
 
 
 def object_exists(repo: Path, revision: str) -> bool:
+    if not SHA_PATTERN.fullmatch(revision):
+        return False
     command = [
         "git",
         "-c",
@@ -99,16 +130,19 @@ def parse_tree(repo: Path, revision: str) -> list[dict[str, Any]]:
         if separator != b"\t":
             raise CollectionError("Git returned an invalid tree record")
         fields = header.decode("ascii", errors="strict").split()
-        if len(fields) != 4 or fields[1] != "blob":
+        if len(fields) != 4 or fields[1] not in ("blob", "commit"):
             continue
         path = safe_path(os.fsdecode(path_bytes))
-        entries.append(
-            {
-                "path": path,
-                "blob_sha": fields[2],
-                "size": None if fields[3] == "-" else int(fields[3]),
-            }
-        )
+        if fields[1] == "commit":
+            entries.append({"path": path, "gitlink_sha": fields[2], "type": "gitlink"})
+        else:
+            entries.append(
+                {
+                    "path": path,
+                    "blob_sha": fields[2],
+                    "size": None if fields[3] == "-" else int(fields[3]),
+                }
+            )
     return sorted(entries, key=lambda entry: entry["path"])
 
 
@@ -151,7 +185,12 @@ def patch_component(repo: Path, *revisions: str, cached: bool = False) -> dict[s
         arguments.append("--cached")
     arguments.extend(revisions)
     content = run_git(repo, *arguments)
-    return {"sha256": sha256_bytes(content), "bytes": len(content)}
+    return {
+        "sha256": sha256_bytes(content),
+        "bytes": len(content),
+        "encoding": "base64",
+        "content_base64": base64.b64encode(content).decode("ascii"),
+    }
 
 
 def parse_status(repo: Path) -> list[dict[str, Any]]:
@@ -300,6 +339,7 @@ def collect_worktree(repo: Path, changes: str) -> dict[str, Any]:
 
 
 def validate_pr_snapshot(repo: Path, source: Path) -> dict[str, Any]:
+    source = safe_io_path(source, must_exist=True, label="pull-request snapshot")
     try:
         snapshot = json.loads(source.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
@@ -321,6 +361,16 @@ def validate_pr_snapshot(repo: Path, source: Path) -> dict[str, Any]:
         safe_path(changed["path"])
     if not isinstance(snapshot["diff"], str):
         raise CollectionError("pull-request diff must be captured as text")
+    has_files = bool(snapshot["changed_files"])
+    has_diff = bool(snapshot["diff"].strip())
+    if has_files != has_diff:
+        raise CollectionError("pull-request changed_files and diff disagree about whether changes exist")
+    for changed in snapshot["changed_files"]:
+        candidate_paths = [changed["path"]]
+        if changed.get("old_path"):
+            candidate_paths.append(changed["old_path"])
+        if not any(path in snapshot["diff"] or f"a/{path}" in snapshot["diff"] or f"b/{path}" in snapshot["diff"] for path in candidate_paths):
+            raise CollectionError(f"pull-request diff does not contain changed path: {changed['path']}")
     local_availability = {
         "base": object_exists(repo, snapshot["base_sha"]),
         "head": object_exists(repo, snapshot["head_sha"]),
@@ -330,7 +380,7 @@ def validate_pr_snapshot(repo: Path, source: Path) -> dict[str, Any]:
     manifest = base_manifest(repo, "pull-request")
     manifest.update(
         {
-            "status": "READY" if snapshot["changed_files"] else "NO_CHANGES",
+            "status": "READY" if has_files else "NO_CHANGES",
             "base": snapshot["base_sha"],
             "head": snapshot["head_sha"],
             "pull_request": snapshot_copy,
@@ -343,6 +393,7 @@ def validate_pr_snapshot(repo: Path, source: Path) -> dict[str, Any]:
 
 
 def write_json(path: Path, value: dict[str, Any]) -> None:
+    path = safe_io_path(path, must_exist=False, label="output")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 

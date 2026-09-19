@@ -39,13 +39,28 @@
   "$defs": {
     "reviewer": {
       "type": "object",
-      "required": ["review_id", "persona_id", "snapshot_id", "status"],
+      "required": [
+        "review_id",
+        "persona_id",
+        "snapshot_id",
+        "status",
+        "requested_model",
+        "effective_model",
+        "requested_concurrency",
+        "effective_concurrency",
+        "completed_at_utc"
+      ],
       "properties": {
         "review_id": {"type": "string", "minLength": 1},
         "persona_id": {"type": "string", "minLength": 1},
         "snapshot_id": {"type": "string"},
         "status": {"enum": ["complete", "not_applicable", "failed"]},
         "reason": {"type": ["string", "null"]},
+        "requested_model": {"type": ["string", "null"]},
+        "effective_model": {"type": ["string", "null"]},
+        "requested_concurrency": {"type": ["integer", "null"], "minimum": 1},
+        "effective_concurrency": {"type": ["integer", "null"], "minimum": 1},
+        "completed_at_utc": {"type": "string", "minLength": 1},
         "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}}
       },
       "additionalProperties": true

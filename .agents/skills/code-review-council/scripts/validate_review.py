@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
+import tempfile
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -38,6 +40,7 @@ class ValidationError(RuntimeError):
 
 
 def load_json(path: Path) -> Any:
+    path = safe_io_path(path, must_exist=True, label="input")
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
@@ -45,6 +48,7 @@ def load_json(path: Path) -> Any:
 
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
+    path = safe_io_path(path, must_exist=True, label="reviewer input")
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
     except OSError as error:
@@ -64,8 +68,30 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def write_json(path: Path, value: dict[str, Any]) -> None:
+    path = safe_io_path(path, must_exist=False, label="output")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def safe_io_path(value: str | Path, *, must_exist: bool, label: str) -> Path:
+    candidate = Path(value).expanduser()
+    if ".." in candidate.parts:
+        raise ValidationError(f"{label} path traversal is not allowed: {value!s}")
+    try:
+        resolved = candidate.resolve(strict=must_exist)
+    except OSError as error:
+        raise ValidationError(f"cannot resolve {label} path: {value!s}") from error
+    allowed_roots = (Path.cwd().resolve(), Path(tempfile.gettempdir()).resolve())
+    if not any(resolved == root or root in resolved.parents for root in allowed_roots):
+        raise ValidationError(f"{label} path must be within the worktree or temporary directory: {value!s}")
+    if must_exist and not resolved.is_file():
+        raise ValidationError(f"{label} path is not a regular file: {value!s}")
+    return resolved
+
+
+def sha256_json(value: Any) -> str:
+    encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def required_text(value: Any, field: str, errors: list[str]) -> None:
@@ -166,6 +192,29 @@ def validate_scope(scope: Any) -> tuple[dict[str, Any], list[str]]:
         errors.append("scope status is invalid")
     if not isinstance(scope.get("repository"), dict):
         errors.append("scope repository is missing")
+    material = scope.get("snapshot_material")
+    if not isinstance(material, dict):
+        errors.append("scope snapshot_material is missing")
+    elif isinstance(snapshot_id, str) and SNAPSHOT_PATTERN.fullmatch(snapshot_id):
+        if f"sha256:{sha256_json(material)}" != snapshot_id:
+            errors.append("scope snapshot_id does not match snapshot_material")
+        mirrored = {
+            "mode": "mode",
+            "revision": "revision",
+            "base": "base",
+            "head": "head",
+            "merge_base": "merge_base",
+            "changed_files": "changed_files",
+            "files": "files",
+            "statuses": "statuses",
+            "selected": "selected",
+            "unresolved_index": "unresolved_index",
+        }
+        for material_key, manifest_key in mirrored.items():
+            if material_key in material and manifest_key in scope and material[material_key] != scope[manifest_key]:
+                errors.append(f"scope mirrored field differs from snapshot_material: {manifest_key}")
+        if "snapshot" in material and scope.get("pull_request") != material["snapshot"]:
+            errors.append("scope pull_request differs from snapshot_material")
     return scope, errors
 
 
@@ -176,6 +225,8 @@ def validate_reviewers(
     candidates: list[dict[str, Any]] = []
     snapshot_id = scope.get("snapshot_id")
     allowed_paths = scope_paths(scope)
+    if scope.get("status") == "NO_CHANGES" and not records:
+        return by_persona, candidates
     for index, reviewer in enumerate(records, start=1):
         location = f"reviewer[{index}]"
         persona = reviewer.get("persona_id")
@@ -190,6 +241,13 @@ def validate_reviewers(
             errors.append(f"{location}.review_id is missing")
         if reviewer.get("snapshot_id") != snapshot_id:
             errors.append(f"{location}.snapshot_id does not match the scope snapshot")
+        for field in ("requested_model", "effective_model", "requested_concurrency", "effective_concurrency", "completed_at_utc"):
+            if field not in reviewer:
+                errors.append(f"{location}.{field} is missing")
+        if reviewer.get("requested_model") is not None and reviewer.get("effective_model") not in (None, reviewer.get("requested_model")):
+            errors.append(f"{location} requested_model and effective_model differ")
+        if reviewer.get("requested_concurrency") is not None and reviewer.get("effective_concurrency") not in (None, reviewer.get("requested_concurrency")):
+            errors.append(f"{location} requested_concurrency and effective_concurrency differ")
         status = reviewer.get("status")
         if status not in REVIEWER_STATUSES:
             errors.append(f"{location}.status is invalid")
@@ -266,6 +324,19 @@ def validate_dispositions(
             if duplicate_of not in candidates or duplicate_of == fingerprint:
                 errors.append(f"{location}.duplicate_of must name another candidate")
         result[fingerprint] = entry
+    for fingerprint, entry in result.items():
+        if entry.get("disposition") != "duplicate":
+            continue
+        seen: set[str] = set()
+        current = fingerprint
+        while result.get(current, {}).get("disposition") == "duplicate":
+            if current in seen:
+                errors.append(f"duplicate disposition cycle includes {fingerprint}")
+                break
+            seen.add(current)
+            current = result[current].get("duplicate_of")
+        if current not in result or result[current].get("disposition") == "duplicate":
+            errors.append(f"duplicate disposition for {fingerprint} has no canonical target")
     missing = sorted(set(candidates) - set(result))
     errors.extend(f"missing disposition for {fingerprint}" for fingerprint in missing)
     return result
@@ -280,14 +351,14 @@ def status_for(
 ) -> str:
     if errors:
         return "INCOMPLETE"
+    if scope.get("status") == "NO_CHANGES":
+        return "NO_CHANGES"
     if scope.get("status") == "BLOCKED":
         return "INCOMPLETE"
     if any(reviewer.get("status") == "failed" for reviewer in reviewers.values()):
         return "INCOMPLETE"
     if any(entry.get("disposition") == "unresolved" for entry in dispositions.values()):
         return "INCOMPLETE"
-    if scope.get("status") == "NO_CHANGES":
-        return "NO_CHANGES"
     for fingerprint, entry in dispositions.items():
         candidate = candidates[fingerprint]
         if entry.get("disposition") == "validated" and candidate.get("severity") in ("P0", "P1"):
@@ -397,10 +468,11 @@ def main(argv: Iterable[str] | None = None) -> int:
         adjudication = load_json(arguments.adjudication)
         result = build_result(scope, reviewers, adjudication)
     except ValidationError as error:
+        error_snapshot = f"sha256:{hashlib.sha256(str(error).encode('utf-8')).hexdigest()}"
         result = {
             "schema_version": SCHEMA_VERSION,
             "status": "INCOMPLETE",
-            "snapshot_id": None,
+            "snapshot_id": error_snapshot,
             "reviewers": [],
             "findings": [],
             "dispositions": [],
@@ -410,8 +482,9 @@ def main(argv: Iterable[str] | None = None) -> int:
         }
     write_json(arguments.output, result)
     if arguments.markdown_output:
-        arguments.markdown_output.parent.mkdir(parents=True, exist_ok=True)
-        arguments.markdown_output.write_text(markdown_report(result), encoding="utf-8")
+        markdown_path = safe_io_path(arguments.markdown_output, must_exist=False, label="Markdown output")
+        markdown_path.parent.mkdir(parents=True, exist_ok=True)
+        markdown_path.write_text(markdown_report(result), encoding="utf-8")
     print(result["status"])
     return 0 if result["status"] in ("PASS", "NO_CHANGES") else 2
 

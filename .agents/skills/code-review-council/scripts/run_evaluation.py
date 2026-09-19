@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
@@ -37,6 +38,7 @@ REQUIRED_CASES = {
     "unavailable-parallelism",
     "malicious-instructions",
     "clean-zero-findings",
+    "adjacent-unrelated-request",
 }
 
 
@@ -45,6 +47,7 @@ class EvaluationError(RuntimeError):
 
 
 def load_fixture(path: Path) -> dict[str, Any]:
+    path = safe_io_path(path, must_exist=True, label="fixture")
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
@@ -96,6 +99,13 @@ def metric_summary(fixture: dict[str, Any], cases: list[dict[str, Any]], approac
     for case in cases:
         if not isinstance(case, dict):
             raise EvaluationError("case is not an object")
+        if not isinstance(case.get("truth"), list) or any(not isinstance(item, str) for item in case["truth"]):
+            raise EvaluationError(f"case {case.get('id')} truth must be a list of finding IDs")
+        high = case.get("high_severity_truth", [])
+        if not isinstance(high, list) or any(item not in case["truth"] for item in high):
+            raise EvaluationError(f"case {case.get('id')} high_severity_truth must be a subset of truth")
+        if not isinstance(case.get("trigger_expected", True), bool):
+            raise EvaluationError(f"case {case.get('id')} trigger_expected must be boolean")
         approaches = case.get("approaches", {})
         if approach_name not in approaches or not isinstance(approaches[approach_name], dict):
             raise EvaluationError(f"case {case.get('id')} has no {approach_name} approach")
@@ -116,9 +126,12 @@ def metric_summary(fixture: dict[str, Any], cases: list[dict[str, Any]], approac
         if not truth and (approach.get("result_status") == "BLOCKED" or any(finding.get("blocked") for finding in findings)):
             counts["false_blockers"] += 1
         totals["clean_cases"] += int(not truth)
-        expected_scope = case.get("scope_expected", True)
-        totals["scope_cases"] += 1
-        counts["scope_matches"] += int(approach.get("scope_complete") == expected_scope)
+        required_scope = approach.get("scope_elements_required", case.get("scope_elements_required", 1))
+        present_scope = approach.get("scope_elements_present", case.get("scope_elements_present", required_scope if approach.get("scope_complete") else 0))
+        if not isinstance(required_scope, int) or required_scope < 1 or not isinstance(present_scope, int) or present_scope < 0 or present_scope > required_scope:
+            raise EvaluationError(f"case {case.get('id')} has invalid scope completeness counts")
+        totals["scope_elements_required"] += required_scope
+        counts["scope_elements_present"] += present_scope
         totals["policy_cases"] += 1
         counts["policy_matches"] += int(bool(approach.get("policy_compliant")))
         totals["trigger_cases"] += 1
@@ -156,7 +169,7 @@ def metric_summary(fixture: dict[str, Any], cases: list[dict[str, Any]], approac
         "invalid_anchor_rate": round(counts["invalid_anchors"] / counts["anchored_findings"], 4)
         if counts["anchored_findings"]
         else 0.0,
-        "scope_completeness": round(counts["scope_matches"] / totals["scope_cases"], 4),
+        "scope_completeness": round(counts["scope_elements_present"] / totals["scope_elements_required"], 4),
         "policy_compliance": round(counts["policy_matches"] / totals["policy_cases"], 4),
         "skill_trigger_accuracy": round(counts["trigger_matches"] / totals["trigger_cases"], 4),
         "latency_ms_total": int(totals["latency_ms"]),
@@ -233,6 +246,22 @@ def parse_arguments(argv: Iterable[str]) -> argparse.Namespace:
     return parser.parse_args(list(argv))
 
 
+def safe_io_path(value: str | Path, *, must_exist: bool, label: str) -> Path:
+    candidate = Path(value).expanduser()
+    if ".." in candidate.parts:
+        raise EvaluationError(f"{label} path traversal is not allowed: {value!s}")
+    try:
+        resolved = candidate.resolve(strict=must_exist)
+    except OSError as error:
+        raise EvaluationError(f"cannot resolve {label} path: {value!s}") from error
+    allowed_roots = (Path.cwd().resolve(), Path(tempfile.gettempdir()).resolve())
+    if not any(resolved == root or root in resolved.parents for root in allowed_roots):
+        raise EvaluationError(f"{label} path must be within the worktree or temporary directory: {value!s}")
+    if must_exist and not resolved.is_file():
+        raise EvaluationError(f"{label} path is not a regular file: {value!s}")
+    return resolved
+
+
 def main(argv: Iterable[str] | None = None) -> int:
     arguments = parse_arguments(sys.argv[1:] if argv is None else argv)
     try:
@@ -240,11 +269,13 @@ def main(argv: Iterable[str] | None = None) -> int:
     except EvaluationError as error:
         print(f"INCOMPLETE: {error}", file=sys.stderr)
         return 2
-    arguments.output.parent.mkdir(parents=True, exist_ok=True)
-    arguments.output.write_text(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    output_path = safe_io_path(arguments.output, must_exist=False, label="output")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if arguments.markdown_output:
-        arguments.markdown_output.parent.mkdir(parents=True, exist_ok=True)
-        arguments.markdown_output.write_text(markdown_report(result), encoding="utf-8")
+        markdown_path = safe_io_path(arguments.markdown_output, must_exist=False, label="Markdown output")
+        markdown_path.parent.mkdir(parents=True, exist_ok=True)
+        markdown_path.write_text(markdown_report(result), encoding="utf-8")
     print(json.dumps(result["overall"], ensure_ascii=False, sort_keys=True))
     return 0
 
