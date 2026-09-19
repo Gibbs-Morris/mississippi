@@ -122,7 +122,9 @@ function Test-ContextGlob {
 
     foreach ($expanded in (Expand-ContextPattern -Pattern $Pattern)) {
         $regex = '^' + (Convert-ContextGlobToRegex -Pattern $expanded) + '$'
-        $options = [System.Text.RegularExpressions.RegexOptions]::NonBacktracking
+        # Keep the matcher compatible with the repository's PowerShell 7.0
+        # baseline. NonBacktracking was added after the minimum runtime.
+        $options = [System.Text.RegularExpressions.RegexOptions]::None
         if ($IsWindows) { $options = $options -bor [System.Text.RegularExpressions.RegexOptions]::IgnoreCase }
         try {
             $boundedRegex = [regex]::new($regex, $options, [TimeSpan]::FromMilliseconds(100))
@@ -132,6 +134,40 @@ function Test-ContextGlob {
     }
 
     return $false
+}
+
+function Get-ContextPathComparison {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$RepositoryRoot)
+
+    if ($IsWindows) { return [System.StringComparison]::OrdinalIgnoreCase }
+    if (-not $IsMacOS) { return [System.StringComparison]::Ordinal }
+
+    # macOS may use either a case-sensitive or case-insensitive volume. Probe
+    # the mounted repository instead of assuming that the operating system
+    # determines the filesystem semantics.
+    try {
+        $probe = @(
+            Get-ChildItem -LiteralPath $RepositoryRoot -Force -ErrorAction Stop |
+                Where-Object { $_.Name -match '[A-Za-z]' } |
+                Select-Object -First 1
+        )
+        if ($probe.Count -eq 1) {
+            $alternateName = -join ($probe[0].Name.ToCharArray() | ForEach-Object {
+                    if ([char]::IsUpper($_)) { [char]::ToLowerInvariant($_) } else { [char]::ToUpperInvariant($_) }
+                })
+            if ($alternateName -and $alternateName -cne $probe[0].Name -and
+                (Test-Path -LiteralPath (Join-Path $RepositoryRoot $alternateName))) {
+                return [System.StringComparison]::OrdinalIgnoreCase
+            }
+        }
+    }
+    catch {
+        # A failed probe is safer as case-sensitive: it cannot select a path
+        # that the filesystem did not prove equivalent.
+    }
+
+    return [System.StringComparison]::Ordinal
 }
 
 function Read-ContextFrontMatter {
@@ -261,8 +297,31 @@ function Get-ContextRoutes {
     )
 
     $routes = [System.Collections.Generic.List[string]]::new()
-    foreach ($match in [regex]::Matches($Content, '\]\((?<Route>[^)\r\n]*(?:\([^)\r\n]*\)[^)\r\n]*)*)\)')) {
-        $route = $match.Groups['Route'].Value.Trim()
+    for ($index = 0; $index -lt ($Content.Length - 1); $index++) {
+        if ($Content[$index] -ne ']' -or $Content[$index + 1] -ne '(') { continue }
+
+        $routeStart = $index + 2
+        $depth = 1
+        $routeEnd = -1
+        for ($cursor = $routeStart; $cursor -lt $Content.Length; $cursor++) {
+            if ($Content[$cursor] -eq '\' -and $cursor + 1 -lt $Content.Length) {
+                $cursor++
+                continue
+            }
+            if ($Content[$cursor] -eq '(') { $depth++ }
+            elseif ($Content[$cursor] -eq ')') {
+                $depth--
+                if ($depth -eq 0) {
+                    $routeEnd = $cursor
+                    break
+                }
+            }
+            elseif ($Content[$cursor] -match '[\r\n]') {
+                break
+            }
+        }
+        if ($routeEnd -lt 0) { continue }
+        $route = $Content.Substring($routeStart, $routeEnd - $routeStart).Trim()
         $destinationMatch = if ($route.StartsWith('<', [System.StringComparison]::Ordinal)) {
             [regex]::Match($route, '^<(?<Destination>[^>]+)>(?:\s+(?:"[^"]*"|''[^'']*''))?$')
         }
@@ -280,6 +339,7 @@ function Get-ContextRoutes {
                 if (-not $routes.Contains($destination)) { $routes.Add($destination) }
             }
         }
+        $index = $routeEnd
     }
 
     return @($routes | Sort-Object)
@@ -316,6 +376,7 @@ function Get-ContextFilesByFilter {
     $pending = [System.Collections.Generic.Queue[string]]::new()
     $pending.Enqueue($Root)
     $excludedDirectories = @('.git', 'bin', 'obj', 'node_modules', '.scratchpad')
+    $pathComparison = Get-ContextPathComparison -RepositoryRoot $Root
     while ($pending.Count -gt 0) {
         $current = $pending.Dequeue()
         try { $children = @(Get-ChildItem -LiteralPath $current -Force -ErrorAction Stop) }
@@ -330,7 +391,7 @@ function Get-ContextFilesByFilter {
                     $null = $Errors.Add("Skipped reparse-point guidance directory '$($child.FullName)'.")
                     continue
                 }
-                $excluded = if ($IsWindows) { $excludedDirectories -contains $child.Name } else { @($excludedDirectories | Where-Object { $_ -ceq $child.Name }).Count -gt 0 }
+                $excluded = @($excludedDirectories | Where-Object { [string]::Equals($_, $child.Name, $pathComparison) }).Count -gt 0
                 if (-not $excluded) { $pending.Enqueue($child.FullName) }
             }
             else {
@@ -386,7 +447,8 @@ function Get-ContextCandidates {
     foreach ($file in $entrypointFiles) {
         $files.Add([pscustomobject]@{ FullName = $file.FullName; Kind = 'AGENTS' })
     }
-    if (@($entrypointFiles | Where-Object { $_.FullName -eq (Join-Path $RepositoryRoot 'AGENTS.md') }).Count -eq 0) {
+    $pathComparison = Get-ContextPathComparison -RepositoryRoot $RepositoryRoot
+    if (@($entrypointFiles | Where-Object { [string]::Equals($_.FullName, (Join-Path $RepositoryRoot 'AGENTS.md'), $pathComparison) }).Count -eq 0) {
         $null = $scanErrors.Add("Required root AGENTS entrypoint is missing or unreadable: '$(Join-Path $RepositoryRoot 'AGENTS.md')'.")
     }
 
@@ -490,8 +552,8 @@ function Get-AgentContext {
     $candidateResult = Get-ContextCandidates -RepositoryRoot $resolvedRoot
     foreach ($scanError in @($candidateResult.Errors)) { $unresolved.Add($scanError) }
     $sourceRevision = Get-ContextSourceRevision -RepositoryRoot $resolvedRoot
-    $fullInventory = @($requested | Where-Object { $_.Path -match '^\.github/instructions/.*\.instructions\.md$' -or $_.Path -match '(^|/)AGENTS\.md$' -or $_.Path -eq '.github/copilot-instructions.md' }).Count -gt 0
-    $pathComparison = if ($IsWindows) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
+    $fullInventory = @($requested | Where-Object { $_.Path -cmatch '^\.github/instructions/.*\.instructions\.md$' -or $_.Path -cmatch '(^|/)AGENTS\.md$' -or $_.Path -ceq '.github/copilot-instructions.md' }).Count -gt 0
+    $pathComparison = Get-ContextPathComparison -RepositoryRoot $resolvedRoot
     $domainProbePaths = @{
         'csharp' = @('__domain__.cs')
         'c#' = @('__domain__.cs')

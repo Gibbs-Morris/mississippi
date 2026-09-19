@@ -479,6 +479,21 @@ applyTo: '**'
         $context.Unresolved | Should -Contain "Required context path is missing or unreadable: 'missing/required.md'."
     }
 
+    It 'reports a missing root AGENTS entrypoint' {
+        $rootAgentsPath = Join-Path $fixtureRoot 'AGENTS.md'
+        $backupPath = Join-Path $fixtureRoot 'AGENTS.backup.md'
+        Move-Item -LiteralPath $rootAgentsPath -Destination $backupPath
+        try {
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+
+            $context.Complete | Should -BeFalse
+            $context.Unresolved | Should -Contain "Required root AGENTS entrypoint is missing or unreadable: '$rootAgentsPath'."
+        }
+        finally {
+            Move-Item -LiteralPath $backupPath -Destination $rootAgentsPath
+        }
+    }
+
     It 'reads required context files before reporting complete' {
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -RequiredPath 'src/Example.cs'
 
@@ -524,6 +539,74 @@ applyTo: '**'
         $global.ReferencedRoutes | Should -Not -Contain 'ftp://example.com/policy.md'
         $context.PSObject.Properties.Name | Should -Not -Contain 'TokenCount'
         $context.PSObject.Properties.Name | Should -Not -Contain 'Latency'
+    }
+
+    It 'parses balanced parentheses in local Markdown routes' {
+        $routePath = Join-Path $fixtureRoot '.github/instructions/balanced-route.instructions.md'
+        Set-Content -LiteralPath $routePath -Value @'
+---
+applyTo: '**'
+---
+
+See [the release policy](../../policies/release(v2).md).
+'@
+        try {
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+            $route = @($context.Selected | Where-Object Path -EQ '.github/instructions/balanced-route.instructions.md')[0]
+
+            $route.ReferencedRoutes | Should -Contain '../../policies/release(v2).md'
+        }
+        finally {
+            Remove-Item -LiteralPath $routePath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'selects block-scalar applyTo metadata for direct inspection' {
+        $blockPath = Join-Path $fixtureRoot '.github/instructions/block-scalar.instructions.md'
+        Set-Content -LiteralPath $blockPath -Value @'
+---
+applyTo: >-
+  **/*.cs
+---
+
+# Block scalar
+'@
+        try {
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+            $block = @($context.Selected | Where-Object Path -EQ '.github/instructions/block-scalar.instructions.md')[0]
+
+            $block.ScopeStatus | Should -Be 'unknown'
+            $block.ScopeNote | Should -Match 'block-scalar'
+        }
+        finally {
+            Remove-Item -LiteralPath $blockPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'selects the full inventory when a nested AGENTS file changes' {
+        $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'docs/AGENTS.md'
+
+        @($context.Entries | Where-Object { $_.Kind -eq 'instruction' -and $_.Selected }).Count |
+            Should -Be (@($context.Entries | Where-Object Kind -EQ 'instruction').Count)
+    }
+
+    It 'matches workflow roles against prefixed concrete agent scopes' {
+        $routePath = Join-Path $fixtureRoot '.github/instructions/cs-reviewer-route.instructions.md'
+        Set-Content -LiteralPath $routePath -Value @'
+---
+applyTo: '.github/agents/cs-*.agent.md'
+---
+
+# C# reviewer route
+'@
+        try {
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -WorkflowRole 'cs-reviewer-pedantic'
+
+            $context.Selected.Path | Should -Contain '.github/instructions/cs-reviewer-route.instructions.md'
+        }
+        finally {
+            Remove-Item -LiteralPath $routePath -Force -ErrorAction SilentlyContinue
+        }
     }
 
     It 'accepts SHA-256 Git revisions' {
