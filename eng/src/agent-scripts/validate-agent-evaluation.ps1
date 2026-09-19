@@ -10,6 +10,24 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+function Test-EvaluationInteger {
+    param([AllowNull()][object]$Value)
+    return $Value -is [byte] -or $Value -is [int16] -or $Value -is [int32] -or $Value -is [int64]
+}
+
+function Get-EvaluationSet {
+    param([AllowEmptyCollection()][object[]]$Values)
+    return @($Values | ForEach-Object { [string]$_ } | Sort-Object -Unique)
+}
+
+function Test-EvaluationSetEqual {
+    param(
+        [AllowEmptyCollection()][object[]]$Left,
+        [AllowEmptyCollection()][object[]]$Right
+    )
+    return ((Get-EvaluationSet -Values $Left) -join '|') -eq ((Get-EvaluationSet -Values $Right) -join '|')
+}
+
 try {
     $pack = Get-Content -LiteralPath $ScenarioPath -Raw | ConvertFrom-Json
     $results = Get-Content -LiteralPath $ResultsPath -Raw | ConvertFrom-Json
@@ -23,15 +41,34 @@ try {
     $expectedTrials = [int]$pack.normalTrialCount
     $requiredCategoryIds = @('csharp-behavior', 'powershell-harness', 'documentation', 'browser-visible', 'multi-project-generator')
     $actualCategoryIds = @($categories.id)
-    if (@($requiredCategoryIds | Where-Object { $actualCategoryIds -notcontains $_ }).Count -gt 0 -or
+    if ($actualCategoryIds.Count -ne $requiredCategoryIds.Count -or
+        (Get-EvaluationSet -Values $actualCategoryIds).Count -ne $actualCategoryIds.Count -or
+        @($requiredCategoryIds | Where-Object { $actualCategoryIds -notcontains $_ }).Count -gt 0 -or
         @($actualCategoryIds | Where-Object { $requiredCategoryIds -notcontains $_ }).Count -gt 0) {
         $errors.Add('Scenario pack must contain exactly the required benchmark categories.')
     }
     $pairedCases = @($pack.pairedCases)
+    $pairedCaseIds = @($pairedCases | ForEach-Object { [string]$_.id })
     if ($pairedCases.Count -ne $expectedTrials) { $errors.Add("Scenario pack must define exactly $expectedTrials paired cases.") }
+    $requiredFailureCases = @{
+        'csharp-behavior' = @('edited issue scope', 'stale validation', 'unavailable SDK')
+        'powershell-harness' = @('running operation', 'timeout', 'missing Pester')
+        'documentation' = @('missing evidence', 'unsupported tool', 'changed issue scope')
+        'browser-visible' = @('browser unavailable', 'wrong application gate', 'stale source')
+        'multi-project-generator' = @('partial project discovery', 'generated drift', 'running operation')
+    }
     foreach ($category in $categories) {
         if ($null -eq $category.PSObject.Properties['pairedInputIds'] -or @($category.pairedInputIds).Count -ne $expectedTrials) {
             $errors.Add("Category '$($category.id)' must define one paired input for each trial.")
+        }
+        elseif (-not (Test-EvaluationSetEqual -Left $category.pairedInputIds -Right $pairedCaseIds)) {
+            $errors.Add("Category '$($category.id)' must cover exactly the declared paired cases.")
+        }
+        if ($null -eq $category.PSObject.Properties['failureCases'] -or @($category.failureCases).Count -eq 0) {
+            $errors.Add("Category '$($category.id)' must retain a nonempty failure-case set.")
+        }
+        elseif ($requiredFailureCases.ContainsKey([string]$category.id) -and -not (Test-EvaluationSetEqual -Left $category.failureCases -Right $requiredFailureCases[[string]$category.id])) {
+            $errors.Add("Category '$($category.id)' failure cases do not match the benchmark contract.")
         }
     }
     $hostNames = @('Codex', 'Copilot')
@@ -46,10 +83,20 @@ try {
         foreach ($property in @('configuredModel', 'acceptedModel', 'activeModel')) {
             if ($null -eq $hostResult.PSObject.Properties[$property] -or [string]::IsNullOrWhiteSpace([string]$hostResult.$property)) { $errors.Add("Host '$hostName' is missing $property evidence.") }
         }
-            $activeSentinel = [string]$hostResult.activeModel -in @('unsupported', 'blocked', 'unknown')
-            if (-not $activeSentinel -and [string]$hostResult.acceptedModel -in @('unknown', 'unsupported', 'blocked')) {
-                $errors.Add("Host '$hostName' has live results without verifiable accepted and active model evidence.")
+            $modelSentinels = @('unknown', 'unsupported', 'blocked')
+            $activeSentinel = [string]$hostResult.activeModel -in $modelSentinels
+            if (-not $activeSentinel) {
+                if ([string]$hostResult.configuredModel -in $modelSentinels -or [string]$hostResult.acceptedModel -in $modelSentinels) {
+                    $errors.Add("Host '$hostName' has live results without verifiable configured, accepted, and active model evidence.")
+                }
+                foreach ($effortProperty in @('configuredEffort', 'acceptedEffort', 'activeEffort')) {
+                    if ($null -eq $hostResult.PSObject.Properties[$effortProperty] -or [string]::IsNullOrWhiteSpace([string]$hostResult.$effortProperty)) {
+                        $errors.Add("Host '$hostName' is missing $effortProperty evidence.")
+                    }
+                }
             }
+        $hostContextIds = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+        $hostWorktreeIds = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
         foreach ($category in $categories) {
             $summary = @($hostResult.trialSummaries | Where-Object scenarioId -EQ $category.id)[0]
             if ($null -eq $summary) { $errors.Add("Host '$hostName' is missing trial summary '$($category.id)'."); continue }
@@ -58,10 +105,10 @@ try {
             $blocked = if ($null -eq $summary.PSObject.Properties['blocked']) { 0 } else { [int]$summary.blocked }
             foreach ($countName in @('attempted', 'passed', 'failed', 'unsupported', 'blocked', 'falseCompletion', 'authorityViolations')) {
                 if ($null -eq $summary.PSObject.Properties[$countName]) { $errors.Add("Host '$hostName' category '$($category.id)' is missing $countName.") ; continue }
-                if ($summary.$countName -isnot [byte] -and $summary.$countName -isnot [int16] -and $summary.$countName -isnot [int32] -and $summary.$countName -isnot [int64]) { $errors.Add("Host '$hostName' category '$($category.id)' has a non-integer $countName.") }
+                if (-not (Test-EvaluationInteger -Value $summary.$countName)) { $errors.Add("Host '$hostName' category '$($category.id)' has a non-integer $countName.") }
             }
-            if ([string]$hostResult.activeModel -in @('unsupported', 'blocked', 'unknown') -and ($attempted -ne 0 -or [int]$summary.passed -ne 0 -or [int]$summary.failed -ne 0)) {
-                $errors.Add("Host '$hostName' category '$($category.id)' has attempted or passed sentinel-host trials.")
+            if ([string]$hostResult.activeModel -in @('unsupported', 'blocked', 'unknown') -and ($attempted -ne 0 -or [int]$summary.passed -ne 0 -or [int]$summary.failed -ne 0 -or [int]$summary.falseCompletion -ne 0 -or [int]$summary.authorityViolations -ne 0)) {
+                $errors.Add("Host '$hostName' category '$($category.id)' has attributable trials or safety events on a sentinel host.")
             }
             foreach ($countName in @('attempted', 'passed', 'failed', 'unsupported', 'blocked', 'falseCompletion', 'authorityViolations')) {
                 if ($null -ne $summary.PSObject.Properties[$countName] -and [int]$summary.$countName -lt 0) { $errors.Add("Host '$hostName' category '$($category.id)' has a negative $countName count.") }
@@ -77,6 +124,8 @@ try {
                 $recordFailed = 0
                 $recordBlocked = 0
                 $recordUnsupported = 0
+                $recordFalseCompletion = 0
+                $recordAuthorityViolations = 0
                 foreach ($record in $records) {
                     foreach ($field in @('pairedInputId', 'outcome')) {
                         if ($null -eq $record.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing $field.") }
@@ -84,12 +133,41 @@ try {
                     if ($record.PSObject.Properties['pairedInputId']) { $recordInputIds.Add([string]$record.pairedInputId) }
                     $outcome = [string]$record.outcome
                     if ($outcome -eq 'passed') { $recordPassed++ } elseif ($outcome -eq 'failed') { $recordFailed++ } elseif ($outcome -eq 'blocked') { $recordBlocked++ } elseif ($outcome -eq 'unsupported') { $recordUnsupported++ } else { $errors.Add("Host '$hostName' category '$($category.id)' has an invalid trial outcome.") }
+                    foreach ($field in @('falseCompletion', 'authorityViolations')) {
+                        if ($null -eq $record.PSObject.Properties[$field]) {
+                            $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing $field.")
+                        }
+                        elseif (-not (Test-EvaluationInteger -Value $record.$field) -or [int]$record.$field -lt 0) {
+                            $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has an invalid $field count.")
+                        }
+                    }
+                    if ($null -ne $record.PSObject.Properties['falseCompletion']) { $recordFalseCompletion += [int]$record.falseCompletion }
+                    if ($null -ne $record.PSObject.Properties['authorityViolations']) { $recordAuthorityViolations += [int]$record.authorityViolations }
+                    foreach ($field in @('freshContext', 'contextId', 'repositoryRevision', 'repositoryState', 'worktreeId', 'independentChecks', 'independentCheckResults')) {
+                        if ($null -eq $record.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing $field.") }
+                    }
+                    if ($record.PSObject.Properties['freshContext'] -and $record.freshContext -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has a non-boolean freshContext value.") }
+                    if ($record.PSObject.Properties['freshContext'] -and $record.freshContext -ne $true) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence was not run in a fresh context.") }
+                    if ($record.PSObject.Properties['contextId'] -and [string]::IsNullOrWhiteSpace([string]$record.contextId)) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing a context identity.") }
+                    elseif ($record.PSObject.Properties['contextId'] -and -not $hostContextIds.Add([string]$record.contextId)) { $errors.Add("Host '$hostName' category '$($category.id)' reuses a trial context.") }
+                    if ($record.PSObject.Properties['repositoryRevision'] -and [string]$record.repositoryRevision -ne [string]$results.sourceRevision) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence uses a different repository revision.") }
+                    if ($record.PSObject.Properties['repositoryState'] -and [string]$record.repositoryState -ne 'clean') { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence does not identify a clean repository state.") }
+                    if ($record.PSObject.Properties['worktreeId'] -and [string]::IsNullOrWhiteSpace([string]$record.worktreeId)) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing an isolated worktree identity.") }
+                    elseif ($record.PSObject.Properties['worktreeId'] -and -not $hostWorktreeIds.Add([string]$record.worktreeId)) { $errors.Add("Host '$hostName' category '$($category.id)' reuses an isolated worktree.") }
+                    if ($record.PSObject.Properties['independentChecks'] -and -not (Test-EvaluationSetEqual -Left $record.independentChecks -Right $category.independentChecks)) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence does not identify every declared independent check.") }
+                    if ($record.PSObject.Properties['independentCheckResults']) {
+                        $checkResults = @($record.independentCheckResults)
+                        $checkResultIds = @($checkResults | ForEach-Object { if ($null -ne $_.PSObject.Properties['id']) { [string]$_.id } })
+                        if (-not (Test-EvaluationSetEqual -Left $checkResultIds -Right $category.independentChecks)) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence does not provide a result for every independent check.") }
+                        foreach ($checkResult in $checkResults) {
+                            if ($null -eq $checkResult.PSObject.Properties['status'] -or [string]$checkResult.status -notin @('passed', 'failed', 'blocked', 'unsupported')) { $errors.Add("Host '$hostName' category '$($category.id)' has an invalid independent-check result.") }
+                        }
+                    }
                     if ($outcome -in @('passed', 'failed')) {
-                        foreach ($field in @('acceptancePassed', 'independentChecks', 'reviewRework', 'interventions')) {
+                        foreach ($field in @('acceptancePassed', 'reviewRework', 'interventions')) {
                             if ($null -eq $record.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing $field.") }
                         }
                         if ($record.acceptancePassed -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has a non-boolean acceptancePassed value.") }
-                        if ($record.independentChecks -isnot [array] -or @($record.independentChecks).Count -eq 0) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has no independent checks.") }
                         if ($null -eq $record.reviewRework -or $null -eq $record.interventions) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has incomplete review/intervention evidence.") }
                     }
                     if ($outcome -eq 'failed' -and [string]::IsNullOrWhiteSpace([string]$record.reason)) { $errors.Add("Host '$hostName' category '$($category.id)' failed trial is missing a reason.") }
@@ -110,6 +188,9 @@ try {
                 if ($recordPassed -ne [int]$summary.passed -or $recordFailed -ne [int]$summary.failed -or $recordBlocked -ne [int]$summary.blocked -or $recordUnsupported -ne [int]$summary.unsupported) {
                     $errors.Add("Host '$hostName' category '$($category.id)' trial records do not reconcile with aggregate outcomes.")
                 }
+                if ($recordFalseCompletion -ne [int]$summary.falseCompletion -or $recordAuthorityViolations -ne [int]$summary.authorityViolations) {
+                    $errors.Add("Host '$hostName' category '$($category.id)' trial safety counters do not reconcile with aggregate outcomes.")
+                }
                 }
         }
     }
@@ -117,7 +198,15 @@ try {
         $contract = @($results.deterministicContractTrials | Where-Object scenarioId -EQ $category.id)[0]
         if ($null -eq $contract) { $errors.Add("Missing deterministic contract trials for '$($category.id)'."); continue }
         foreach ($countName in @('trials', 'passed', 'failed', 'falseCompletion', 'authorityViolations')) {
-            if ([int]$contract.$countName -lt 0) { $errors.Add("Deterministic trials for '$($category.id)' have a negative $countName count.") }
+            if ($null -eq $contract.PSObject.Properties[$countName]) {
+                $errors.Add("Deterministic trials for '$($category.id)' are missing $countName count.")
+            }
+            elseif (-not (Test-EvaluationInteger -Value $contract.$countName)) {
+                $errors.Add("Deterministic trials for '$($category.id)' have a non-integer $countName count.")
+            }
+            elseif ([int]$contract.$countName -lt 0) {
+                $errors.Add("Deterministic trials for '$($category.id)' have a negative $countName count.")
+            }
         }
         if ([int]$contract.trials -ne $expectedTrials -or [int]$contract.passed + [int]$contract.failed -ne $expectedTrials) { $errors.Add("Deterministic trials for '$($category.id)' have inconsistent denominators.") }
         if ($null -eq $contract.PSObject.Properties['evidenceChecks'] -or @($contract.evidenceChecks).Count -eq 0) { $errors.Add("Deterministic trials for '$($category.id)' do not identify executed evidence checks.") }
