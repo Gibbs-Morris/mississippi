@@ -74,6 +74,8 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
     {
         return types
             .Where(type => type.IsValueType && !type.IsEnum &&
+                           !type.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false) &&
+                           !(type.FullName?.StartsWith("OrleansCodeGen.", StringComparison.Ordinal) ?? false) &&
                            !type.IsDefined(typeof(IsReadOnlyAttribute), inherit: false))
             .Select(type => type.FullName ?? type.Name)
             .OrderBy(value => value, StringComparer.Ordinal)
