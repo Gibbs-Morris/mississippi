@@ -142,6 +142,22 @@ Describe 'Mutation automation' {
         $summary.Projects[0].Status | Should -Be 'BELOW_BREAK'
     }
 
+    It 'keeps report-only native failures as execution failures' {
+        Set-Content (Join-Path $completedOutput 'mutation-report.json') '{"files":{"Widget.cs":{"mutants":[{"status":"Survived"}]}}}'
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation {
+            $failure = [InvalidOperationException]::new('Stryker reporter failed')
+            $failure.Data['ReportPath'] = Join-Path $completedOutput 'mutation-report.json'
+            throw $failure
+        }
+        { Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output -ReportOnly } | Should -Throw '*mutation testing failed*'
+        $summary = Get-Content (Join-Path $output 'mutation-summary.json') -Raw | ConvertFrom-Json
+        $summary.ExecutionStatus | Should -Be 'FAILED'
+        $summary.MutationResult | Should -Be 'FAIL'
+        $summary.FailedProjectCount | Should -Be 1
+        $summary.ThresholdFailureCount | Should -Be 0
+        $summary.Projects[0].ExecutionStatus | Should -Be 'FAILED'
+    }
+
     It 'keeps the full mutation workflow manual and weekly' {
         $workflowPath = Join-Path $PSScriptRoot '../../../.github/workflows/stryker.yml'
         $workflow = Get-Content -LiteralPath $workflowPath -Raw

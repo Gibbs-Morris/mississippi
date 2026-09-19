@@ -792,7 +792,8 @@ function Set-MutationFailureResult {
     param(
         [Parameter(Mandatory)][object]$ProjectResult,
         [Parameter(Mandatory)][object]$Failure,
-        [double]$BreakThreshold
+        [double]$BreakThreshold,
+        [switch]$ReportOnly
     )
 
     $ProjectResult.Output = $Failure.Exception.Data['OutputPath']
@@ -808,7 +809,7 @@ function Set-MutationFailureResult {
             if (-not $ProjectResult.ReportError) { $ProjectResult.ReportError = $_.Exception.Message }
         }
     }
-    if ($ProjectResult.RawMutationScore -ne $null -and $BreakThreshold -gt 0 -and
+    if (-not $ReportOnly -and $ProjectResult.RawMutationScore -ne $null -and $BreakThreshold -gt 0 -and
         $ProjectResult.RawMutationScore -lt $BreakThreshold -and -not $ProjectResult.ReportError) {
         $ProjectResult.Status = 'ThresholdFailed'
         $ProjectResult.ThresholdFailure = $true
@@ -846,7 +847,7 @@ function Invoke-MutationTarget {
     }
     catch {
         Write-Warning "  ✗ Failed: $([System.IO.Path]::GetFileNameWithoutExtension($Target.Project)) - $($_.Exception.Message)"
-        Set-MutationFailureResult -ProjectResult $ProjectResult -Failure $_ -BreakThreshold $BreakThreshold
+        Set-MutationFailureResult -ProjectResult $ProjectResult -Failure $_ -BreakThreshold $BreakThreshold -ReportOnly:$ReportOnly
     }
 }
 
