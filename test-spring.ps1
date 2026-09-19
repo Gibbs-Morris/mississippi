@@ -23,7 +23,9 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1') -Force
+$executionLease = $null
 try {
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $PSScriptRoot -OperationId "spring-validation-$([guid]::NewGuid().ToString('N'))"
     Invoke-SpringValidation -RepoRoot $PSScriptRoot -TestLevel $TestLevel -Suite $Suite -Configuration $Configuration `
         -Doctor:$Doctor -InstallBrowserDependencies:$InstallBrowserDependencies
     exit 0
@@ -31,4 +33,7 @@ try {
 catch {
     Write-Error "Spring validation failed: $($_.Exception.Message)"
     exit 1
+}
+finally {
+    if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
 }

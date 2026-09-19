@@ -24,6 +24,36 @@ function Get-RepositoryRoot {
     throw "Unable to locate repository root from '$StartPath'."
 }
 
+function Get-RepositoryPathComparison {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$RepoRoot)
+
+    if ($IsWindows) { return [System.StringComparison]::OrdinalIgnoreCase }
+    if (-not $IsMacOS) { return [System.StringComparison]::Ordinal }
+
+    try {
+        $probe = @(
+            Get-ChildItem -LiteralPath $RepoRoot -Force -ErrorAction Stop |
+                Where-Object { $_.Name -match '[A-Za-z]' } |
+                Select-Object -First 1
+        )
+        if ($probe.Count -eq 1) {
+            $alternateName = -join ($probe[0].Name.ToCharArray() | ForEach-Object {
+                    if ([char]::IsUpper($_)) { [char]::ToLowerInvariant($_) } else { [char]::ToUpperInvariant($_) }
+                })
+            if ($alternateName -and $alternateName -cne $probe[0].Name -and
+                (Test-Path -LiteralPath (Join-Path $RepoRoot $alternateName))) {
+                return [System.StringComparison]::OrdinalIgnoreCase
+            }
+        }
+    }
+    catch {
+        # An unproven macOS volume remains case-sensitive for identity.
+    }
+
+    return [System.StringComparison]::Ordinal
+}
+
 function Get-RepositoryExecutionLeasePath {
     [CmdletBinding()]
     param(
@@ -32,7 +62,7 @@ function Get-RepositoryExecutionLeasePath {
     )
 
     $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
-    $keyRoot = if ([OperatingSystem]::IsWindows()) { $canonicalRoot.ToLowerInvariant() } else { $canonicalRoot }
+    $keyRoot = if ((Get-RepositoryPathComparison -RepoRoot $canonicalRoot) -eq [System.StringComparison]::OrdinalIgnoreCase) { $canonicalRoot.ToLowerInvariant() } else { $canonicalRoot }
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($keyRoot)
     $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
     $fileName = (($hash | ForEach-Object { $_.ToString('x2') }) -join '') + '.lease'
@@ -54,39 +84,54 @@ function Resolve-RepositoryExecutionRoot {
     param([Parameter(Mandatory)][string]$RepoRoot)
 
     function Resolve-ReparsePathComponent {
-        param([Parameter(Mandatory)][string]$Path)
+        param(
+            [Parameter(Mandatory)][string]$Path,
+            [System.Collections.Generic.HashSet[string]]$SeenTargets
+        )
 
-        $candidate = [System.IO.Path]::GetFullPath($Path)
-        $comparison = if ([OperatingSystem]::IsWindows()) { [System.StringComparer]::OrdinalIgnoreCase } else { [System.StringComparer]::Ordinal }
-        $seenTargets = [System.Collections.Generic.HashSet[string]]::new($comparison)
-        while ($true) {
+        if ($null -eq $SeenTargets) {
+            $comparison = if ((Get-RepositoryPathComparison -RepoRoot ([System.IO.Path]::GetFullPath($RepoRoot))) -eq [System.StringComparison]::OrdinalIgnoreCase) { [System.StringComparer]::OrdinalIgnoreCase } else { [System.StringComparer]::Ordinal }
+            $SeenTargets = [System.Collections.Generic.HashSet[string]]::new($comparison)
+        }
+
+        $fullPath = [System.IO.Path]::GetFullPath($Path)
+        $root = [System.IO.Path]::GetPathRoot($fullPath)
+        $segments = @($fullPath.Substring($root.Length).Split([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) | Where-Object { $_ })
+        $current = $root
+        for ($index = 0; $index -lt $segments.Count; $index++) {
+            $candidate = Join-Path $current $segments[$index]
             $item = Get-Item -LiteralPath $candidate -Force -ErrorAction Stop
             if (-not [bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
-                return $item.FullName
+                $current = $item.FullName
+                continue
             }
 
-            if (-not $seenTargets.Add($candidate)) { throw "Worktree path resolution loop detected at '$candidate'." }
+            if (-not $SeenTargets.Add([System.IO.Path]::GetFullPath($candidate))) {
+                throw "Worktree path resolution loop detected at '$candidate'."
+            }
             $target = @($item.Target | Select-Object -First 1)[0]
-            if ([string]::IsNullOrWhiteSpace([string]$target)) { throw "Unable to resolve worktree path component '$candidate'." }
+            if ([string]::IsNullOrWhiteSpace([string]$target)) {
+                throw "Unable to resolve worktree path component '$candidate'."
+            }
             if (-not [System.IO.Path]::IsPathRooted([string]$target)) {
                 $target = Join-Path (Split-Path -Parent $candidate) ([string]$target)
             }
-            $candidate = [System.IO.Path]::GetFullPath([string]$target)
+            $resolvedTarget = [System.IO.Path]::GetFullPath([string]$target)
+            $remaining = @(
+                if ($index -lt ($segments.Count - 1)) {
+                    $segments[($index + 1)..($segments.Count - 1)]
+                }
+            )
+            if (@($remaining).Count -gt 0) {
+                $resolvedTarget = Join-Path $resolvedTarget ($remaining -join [System.IO.Path]::DirectorySeparatorChar)
+            }
+            return Resolve-ReparsePathComponent -Path $resolvedTarget -SeenTargets $SeenTargets
         }
+
+        return $current
     }
 
-    $fullPath = [System.IO.Path]::GetFullPath($RepoRoot)
-    $root = [System.IO.Path]::GetPathRoot($fullPath)
-    $segments = $fullPath.Substring($root.Length).Split([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) | Where-Object { $_ }
-    $current = $root
-    $comparison = if ([OperatingSystem]::IsWindows()) { [System.StringComparer]::OrdinalIgnoreCase } else { [System.StringComparer]::Ordinal }
-    $seen = [System.Collections.Generic.HashSet[string]]::new($comparison)
-    foreach ($segment in $segments) {
-        $candidate = Join-Path $current $segment
-        $current = Resolve-ReparsePathComponent -Path $candidate
-        if (-not $seen.Add($current)) { throw "Worktree path resolution loop detected at '$current'." }
-    }
-    return $current
+    return Resolve-ReparsePathComponent -Path ([System.IO.Path]::GetFullPath($RepoRoot))
 }
 
 function Enter-RepositoryExecutionLease {
@@ -101,7 +146,7 @@ function Enter-RepositoryExecutionLease {
     if ($null -ne $ExistingLease) {
         $requestedRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
         $existingRoot = Resolve-RepositoryExecutionRoot -RepoRoot ([string]$ExistingLease.RepositoryRoot)
-        $comparison = if ([OperatingSystem]::IsWindows()) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
+        $comparison = Get-RepositoryPathComparison -RepoRoot $requestedRoot
         if (-not [string]::Equals($requestedRoot, $existingRoot, $comparison)) {
             throw "Existing lease belongs to '$existingRoot', not requested worktree '$requestedRoot'."
         }
