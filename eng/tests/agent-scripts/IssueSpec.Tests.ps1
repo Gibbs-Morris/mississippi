@@ -267,6 +267,15 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Valid | Should -BeTrue
     }
 
+    It 'resumes after multiline token-terminated raw HTML declarations' {
+        $tokens = '<?target' + [Environment]::NewLine + '?>' + [Environment]::NewLine + '<![CDATA[' + [Environment]::NewLine + ']]>' + [Environment]::NewLine + '<!DECL' + [Environment]::NewLine + '>' + [Environment]::NewLine
+        $content = $validBug -replace 'The input parser accepts an empty identifier', ($tokens + 'The input parser accepts an empty identifier')
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'rejects a missing validation section' {
         $content = $validBug -replace '(?ms)^## Validation plan.*?(?=^## Risks and delivery boundary)', ''
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)

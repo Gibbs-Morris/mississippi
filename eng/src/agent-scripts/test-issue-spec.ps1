@@ -178,13 +178,17 @@ function Remove-MarkdownHtmlComments { # NOSONAR - bounded comment/code scanner 
     $builder = [System.Text.StringBuilder]::new()
     $index = 0
     while ($index -lt $Content.Length) {
-        $precedingBackslashes = 0
-        $backslashIndex = $index - 1
-        while ($backslashIndex -ge 0 -and $Content[$backslashIndex] -eq '\') {
-            $precedingBackslashes++
-            $backslashIndex--
+        $isUnescapedDelimiter = $false
+        if ($Content[$index] -eq '`') {
+            $precedingBackslashes = 0
+            $backslashIndex = $index - 1
+            while ($backslashIndex -ge 0 -and $Content[$backslashIndex] -eq '\') {
+                $precedingBackslashes++
+                $backslashIndex--
+            }
+            $isUnescapedDelimiter = $precedingBackslashes % 2 -eq 0
         }
-        if ($Content[$index] -eq '`' -and ($precedingBackslashes % 2 -eq 0)) {
+        if ($isUnescapedDelimiter) {
             $start = $index
             while ($index -lt $Content.Length -and $Content[$index] -eq '`') { $index++ }
             $delimiterLength = $index - $start
@@ -382,8 +386,8 @@ function Get-IssueSpecResult { # NOSONAR - this validator intentionally aggregat
     $warnings = [System.Collections.Generic.List[string]]::new()
     $content = Get-Content -LiteralPath $IssuePath -Raw -ErrorAction Stop
     $trackedPaths = Get-RepositoryTrackedPaths -Root $RepositoryRoot
-    $structuralContent = Remove-MarkdownHtmlBlocks -Content (Remove-MarkdownHtmlComments -Content (Remove-MarkdownFencedBlocks -Content $content))
-    $nonRenderedContent = Remove-MarkdownHtmlBlocks -Content (Remove-MarkdownHtmlComments -Content (Remove-MarkdownFencedBlocks -Content $content -MaskContent))
+    $structuralContent = Remove-MarkdownHtmlComments -Content (Remove-MarkdownHtmlBlocks -Content (Remove-MarkdownFencedBlocks -Content $content))
+    $nonRenderedContent = Remove-MarkdownHtmlComments -Content (Remove-MarkdownHtmlBlocks -Content (Remove-MarkdownFencedBlocks -Content $content -MaskContent))
     $nonRenderedContent = Remove-MarkdownIndentedCode -Content $nonRenderedContent
     $sections = Get-MarkdownSections -Content $structuralContent
     $nonRenderedSections = Get-MarkdownSections -Content $nonRenderedContent
