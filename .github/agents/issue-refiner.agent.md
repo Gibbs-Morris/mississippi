@@ -189,6 +189,8 @@ Solution-level draft spec (no implementation code). Must include:
 ### 6) `05-issue-body-draft.md`
 A **GitHub-issue-safe** draft that contains only the material the future builder needs from the issue itself.
 
+It must begin with `Contract version: 1.0`.
+
 It must include these exact top-level sections, in this order:
 1. `## Problem`
 2. `## Observable outcome`

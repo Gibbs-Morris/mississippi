@@ -190,6 +190,7 @@ Describe 'Implementation-ready issue contract' {
 
         $refiner | Should -Match 'repository-relative paths'
         $refiner | Should -Match 'exact validation commands'
+        $refiner | Should -Match 'Contract version: 1\.0'
         $refiner | Should -Match '1\. `## Problem`'
         $refiner | Should -Match '11\. `## Validation evidence map`'
         $refiner | Should -Not -Match '1\. `## Summary`'
