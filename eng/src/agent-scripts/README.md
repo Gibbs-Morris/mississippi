@@ -22,7 +22,7 @@
 
 Follow the [mutation-testing policy](../../../.github/instructions/mutation-testing.instructions.md): use `test-project-quality.ps1 -SkipMutation` for routine test and coverage validation, report available mutation results and significant gaps, and keep improvements proportionate. There is no mandatory repository mutation-score threshold or ordinary mutation completion gate; costly historical gaps belong in dedicated follow-up work unless explicitly requested.
 
-`pwsh ./go.ps1` builds both solutions, runs L0/L1 tests, summarizes Mississippi coverage, applies cleanup, and performs a final build with warnings as errors. Add `-IncludeMutation` to run Mississippi mutation tests and refresh survivor tasks. Separate CI jobs cover additional checks listed below.
+`pwsh ./go.ps1` builds both solutions, applies cleanup, runs L0/L1 tests against the cleaned tree, summarizes Mississippi coverage, and performs a final build with warnings as errors. Add `-IncludeMutation` to run Mississippi mutation tests and refresh survivor tasks. Separate CI jobs cover additional checks listed below. `-SkipCleanup` is provisional and is not final handoff evidence.
 
 Cleanup uses a fresh cache under `.scratchpad/cleanup-caches/` for each invocation, avoiding reuse of a previous source-generator analysis model. The cache path is logged and retained for troubleshooting.
 
