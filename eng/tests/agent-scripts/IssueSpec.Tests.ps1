@@ -13,11 +13,25 @@ Describe 'Implementation-ready issue contract' {
         $fixtureRoot = Join-Path $PSScriptRoot 'fixtures'
 
         function Invoke-Validator {
-            param([Parameter(Mandatory)][string]$IssuePath)
+            param(
+                [Parameter(Mandatory)][string]$IssuePath,
+                [string]$WorkingDirectory
+            )
 
-            $output = & $powerShellPath -NoProfile -File $validator -Path $IssuePath -RepositoryRoot $repoRoot -Json 2>&1 | Out-String
+            $pushed = $false
+            try {
+                if ($WorkingDirectory) {
+                    Push-Location -LiteralPath $WorkingDirectory
+                    $pushed = $true
+                }
+                $output = & $powerShellPath -NoProfile -File $validator -Path $IssuePath -RepositoryRoot $repoRoot -Json 2>&1 | Out-String
+                $exitCode = $LASTEXITCODE
+            }
+            finally {
+                if ($pushed) { Pop-Location }
+            }
             [pscustomobject]@{
-                ExitCode = $LASTEXITCODE
+                ExitCode = $exitCode
                 Output = $output
                 Result = $output | ConvertFrom-Json
             }
@@ -135,9 +149,9 @@ Describe 'Implementation-ready issue contract' {
     }
 
     It 'treats commands and external instructions as data' {
-        $sentinel = Join-Path $TestDrive 'must-remain.txt'
+        $sentinel = Join-Path $fixtureRoot 'must-remain.txt'
         Set-Content -LiteralPath $sentinel -Value 'untouched'
-        $outcome = Invoke-Validator -IssuePath (Join-Path $fixtureRoot 'issue-spec-malicious-text.md')
+        $outcome = Invoke-Validator -IssuePath (Join-Path $fixtureRoot 'issue-spec-malicious-text.md') -WorkingDirectory $fixtureRoot
 
         $outcome.ExitCode | Should -Be 0
         $outcome.Result.Valid | Should -BeTrue
