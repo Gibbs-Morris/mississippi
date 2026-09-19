@@ -180,6 +180,7 @@ Write-Host ""
 $testFailed = $false
 $mutationFailed = $false
 Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
+$evidenceRun = New-ValidationEvidenceRun -RepositoryRoot (Get-Location).Path -Scope "focused-quality:$TestProject" -InputPath @($TestProject) -Arguments @('Configuration', $Configuration, 'SkipMutation', [string]$SkipMutation, 'NoBuild', [string]$NoBuild)
 
 try {
     if (Test-Path ".config/dotnet-tools.json") {
@@ -191,6 +192,8 @@ try {
     Write-Host "[2/7] Resolving test project path..." -ForegroundColor Cyan
     $testProjectPath = Resolve-TestProjectPath -InputValue $TestProject
     $testProjectName = [IO.Path]::GetFileNameWithoutExtension($testProjectPath)
+    $evidenceRun.InputPath = @($testProjectPath)
+    $evidenceRun.Record.SourceBefore = Get-ValidationSourceFingerprint -RepositoryRoot (Get-Location).Path -InputPath @($testProjectPath)
     Write-Host "Resolved test project: $testProjectName -> $testProjectPath" -ForegroundColor Green
 
     $scratchpadRoot = Join-Path (Get-Location) ".scratchpad"
@@ -296,9 +299,12 @@ try {
     if ($null -ne $coveragePercent) { Write-Host ("COVERAGE: {0}%" -f $coveragePercent) } else { Write-Host "COVERAGE: N/A" }
     }
 
-    if ($testFailed -or ($mutationFailed -and -not $SkipMutation)) { exit 1 } else { exit 0 }
+    $finalStatus = if ($testFailed -or ($mutationFailed -and -not $SkipMutation)) { 'FAIL' } else { 'PASS' }
+    Complete-ValidationEvidenceRun -Run $evidenceRun -Status $finalStatus -Phase 'complete' -Executed $true -TestCount $(if ($null -ne $trxSummary) { [int]$trxSummary.Passed } else { 0 }) -ExitCode $(if ($finalStatus -eq 'PASS') { 0 } else { 1 }) | Out-Null
+    if ($finalStatus -eq 'FAIL') { exit 1 } else { exit 0 }
 }
 catch {
+    Complete-ValidationEvidenceRun -Run $evidenceRun -Status FAIL -Phase 'error' -Executed $false -TestCount 0 -ExitCode 1 -ErrorMessage $_.Exception.Message | Out-Null
     Write-Error "ERROR: $_"
     # Attempt to still print what we have for easier parsing
     try {

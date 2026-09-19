@@ -1,0 +1,165 @@
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
+function Get-ValidationRepositoryRevision {
+    param([Parameter(Mandatory)][string]$RepositoryRoot)
+    $root = $RepositoryRoot.Replace('\', '/')
+    $output = @(& git -c "safe.directory=$root" -C $RepositoryRoot rev-parse HEAD 2>$null | Select-Object -First 1)
+    if ($LASTEXITCODE -ne 0) { return 'unknown' }
+    return ([string]$output).Trim()
+}
+
+function Get-ValidationRelativePath {
+    param([Parameter(Mandatory)][string]$RepositoryRoot, [Parameter(Mandatory)][string]$Path)
+    $fullRoot = [System.IO.Path]::GetFullPath($RepositoryRoot)
+    $fullPath = if ([System.IO.Path]::IsPathRooted($Path)) { [System.IO.Path]::GetFullPath($Path) } else { [System.IO.Path]::GetFullPath((Join-Path $fullRoot $Path)) }
+    $relative = [System.IO.Path]::GetRelativePath($fullRoot, $fullPath).Replace('\', '/')
+    if ($relative -eq '..' -or $relative.StartsWith('../', [System.StringComparison]::Ordinal)) { return $null }
+    return $relative
+}
+
+function Get-ValidationSourceFingerprint {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepositoryRoot,
+        [string[]]$InputPath = @()
+    )
+
+    $root = (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
+    $revision = Get-ValidationRepositoryRevision -RepositoryRoot $root
+    $statusLines = @(& git -c "safe.directory=$($root.Replace('\', '/'))" -C $root status --porcelain=v1 --untracked-files=all 2>$null)
+    $dirty = $statusLines.Count -gt 0
+    $paths = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    if (@($InputPath).Count -gt 0) {
+        foreach ($path in @($InputPath)) {
+            $relative = Get-ValidationRelativePath -RepositoryRoot $root -Path ([string]$path)
+            if ($null -ne $relative) { $null = $paths.Add($relative) }
+        }
+    }
+    else {
+        $tracked = @(& git -c "safe.directory=$($root.Replace('\', '/'))" -C $root ls-files --cached --others --exclude-standard 2>$null)
+        foreach ($path in $tracked) { $null = $paths.Add(([string]$path).Replace('\', '/')) }
+    }
+
+    $files = [System.Collections.Generic.List[object]]::new()
+    foreach ($relative in @($paths | Sort-Object)) {
+        $fullPath = Join-Path $root ($relative.Replace('/', [System.IO.Path]::DirectorySeparatorChar))
+        if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) { continue }
+        $hash = (Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        $files.Add([pscustomobject]@{ Path = $relative; SHA256 = "SHA256:$hash" })
+    }
+    $identity = [ordered]@{ Revision = $revision; Dirty = $dirty; Files = @($files) } | ConvertTo-Json -Depth 8 -Compress
+    $identityBytes = [System.Text.Encoding]::UTF8.GetBytes($identity)
+    $identityHash = [System.Security.Cryptography.SHA256]::HashData($identityBytes)
+    [pscustomobject][ordered]@{
+        Revision = $revision
+        Dirty = $dirty
+        Files = @($files)
+        Fingerprint = 'SHA256:' + (($identityHash | ForEach-Object { $_.ToString('x2') }) -join '')
+    }
+}
+
+function Write-ValidationEvidence {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Record, [Parameter(Mandatory)][string]$Path)
+
+    $directory = Split-Path -Parent $Path
+    New-Item -ItemType Directory -Path $directory -Force | Out-Null
+    $temporary = "$Path.$PID.tmp"
+    $Record | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $temporary -Encoding utf8
+    Move-Item -LiteralPath $temporary -Destination $Path -Force
+    return $Path
+}
+
+function New-ValidationEvidenceRun {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepositoryRoot,
+        [Parameter(Mandatory)][string]$Scope,
+        [string[]]$InputPath = @(),
+        [string[]]$Arguments = @(),
+        [string]$BaseRevision = 'unknown'
+    )
+
+    $root = (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
+    $runId = [guid]::NewGuid().ToString('N')
+    $runDirectory = Join-Path $root ".scratchpad/validation-evidence/$runId"
+    $path = Join-Path $runDirectory 'evidence.json'
+    $before = Get-ValidationSourceFingerprint -RepositoryRoot $root -InputPath $InputPath
+    $record = [ordered]@{
+        SchemaVersion = '1.0'
+        RunId = $runId
+        Scope = $Scope
+        RepositoryRoot = $root
+        BaseRevision = $BaseRevision
+        HeadRevision = $before.Revision
+        Arguments = @($Arguments)
+        ToolVersions = [ordered]@{ PowerShell = [string]$PSVersionTable.PSVersion }
+        SourceBefore = $before
+        SourceAfter = $null
+        Status = 'INCOMPLETE'
+        Phase = 'started'
+        Executed = $false
+        TestCount = 0
+        ExitCode = $null
+        Artifacts = @()
+        Error = $null
+        StartedUtc = (Get-Date).ToUniversalTime().ToString('o')
+        EndedUtc = $null
+        EvidencePath = $path
+    }
+    Write-ValidationEvidence -Record $record -Path $path | Out-Null
+    return [pscustomobject]@{ Record = $record; Path = $path; InputPath = @($InputPath) }
+}
+
+function Complete-ValidationEvidenceRun {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Run,
+        [Parameter(Mandatory)][ValidateSet('PASS', 'FAIL', 'INCOMPLETE', 'SKIPPED', 'READY')][string]$Status,
+        [Parameter(Mandatory)][string]$Phase,
+        [bool]$Executed = $true,
+        [int]$TestCount = 0,
+        [Nullable[int]]$ExitCode,
+        [string[]]$ArtifactPath = @(),
+        [AllowEmptyString()][string]$ErrorMessage
+    )
+
+    $record = $Run.Record
+    $record.Status = $Status
+    $record.Phase = $Phase
+    $record.Executed = $Executed
+    $record.TestCount = $TestCount
+    $record.ExitCode = $ExitCode
+    $record.Error = if ([string]::IsNullOrWhiteSpace($ErrorMessage)) { $null } else { $ErrorMessage }
+    $record.Artifacts = @($ArtifactPath | ForEach-Object { Get-ValidationRelativePath -RepositoryRoot $record.RepositoryRoot -Path $_ })
+    $record.SourceAfter = Get-ValidationSourceFingerprint -RepositoryRoot $record.RepositoryRoot -InputPath $Run.InputPath
+    $record.EndedUtc = (Get-Date).ToUniversalTime().ToString('o')
+    Write-ValidationEvidence -Record $record -Path $Run.Path | Out-Null
+    return $record
+}
+
+function Test-ValidationEvidence {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    $errors = [System.Collections.Generic.List[string]]::new()
+    try { $record = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json }
+    catch { return [pscustomobject]@{ Valid = $false; Fresh = $false; Errors = @('Evidence is missing or unreadable.'); Record = $null } }
+    if ([string]$record.SchemaVersion -ne '1.0') { $errors.Add('Unsupported evidence schema.') }
+    if ([string]$record.Status -notin @('PASS', 'FAIL', 'INCOMPLETE', 'SKIPPED', 'READY')) { $errors.Add('Evidence status is invalid.') }
+    if ([string]$record.Status -eq 'PASS' -and (-not [bool]$record.Executed -or [int]$record.TestCount -lt 1)) { $errors.Add('PASS requires executed tests and a nonzero test count.') }
+    if ([string]$record.Status -in @('PASS', 'FAIL') -and $null -eq $record.SourceAfter) { $errors.Add('Completed evidence has no final source fingerprint.') }
+    foreach ($artifact in @($record.Artifacts)) {
+        if ([string]::IsNullOrWhiteSpace([string]$artifact) -or -not (Test-Path -LiteralPath (Join-Path $record.RepositoryRoot $artifact) -PathType Leaf)) { $errors.Add("Required artifact is missing: '$artifact'.") }
+    }
+    try {
+        $current = Get-ValidationSourceFingerprint -RepositoryRoot $record.RepositoryRoot -InputPath @($record.SourceBefore.Files.Path)
+        $fresh = $null -ne $record.SourceAfter -and [string]$record.SourceAfter.Fingerprint -eq [string]$current.Fingerprint
+    }
+    catch { $fresh = $false; $errors.Add('Current source fingerprint could not be collected.') }
+    if (-not $fresh) { $errors.Add('Evidence inputs are stale or changed.') }
+    [pscustomobject]@{ Valid = $errors.Count -eq 0; Fresh = $fresh; Errors = @($errors); Record = $record }
+}
+
+Export-ModuleMember -Function Get-ValidationSourceFingerprint, New-ValidationEvidenceRun, Complete-ValidationEvidenceRun, Write-ValidationEvidence, Test-ValidationEvidence

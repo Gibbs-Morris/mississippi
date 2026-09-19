@@ -14,6 +14,7 @@ $testPaths = @(
     (Join-Path $PSScriptRoot 'MutationAutomation.Tests.ps1'),
     (Join-Path $PSScriptRoot 'MutationSummary.Tests.ps1'),
     (Join-Path $PSScriptRoot 'PowerShellTestHarness.Tests.ps1'),
+    (Join-Path $PSScriptRoot 'ValidationEvidence.Tests.ps1'),
     (Join-Path $PSScriptRoot 'PrFeedbackSkill.Tests.ps1')
 )
 foreach ($testPath in $testPaths) {
