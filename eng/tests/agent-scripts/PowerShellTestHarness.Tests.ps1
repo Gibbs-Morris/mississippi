@@ -137,10 +137,10 @@ Describe 'Build entry point process boundaries' {
         $scripts = Join-Path $fixture 'eng/src/agent-scripts'
         New-Item -ItemType Directory -Path $scripts -Force | Out-Null
         Copy-Item (Join-Path $PSScriptRoot '../../../go.ps1') $fixture
-        Set-Content (Join-Path $scripts 'orchestrate-solutions.ps1') "param([string]`$Configuration, [switch]`$SkipCleanup, [switch]`$IncludeMutation); Write-Output ([string]::Join('|', `$Configuration, `$SkipCleanup, `$IncludeMutation)); exit $ExitCode"
-        $output = & $powerShellPath -NoProfile -File $portableHostScript (Join-Path $fixture 'go.ps1') -Configuration Debug -SkipCleanup -IncludeMutation 2>&1 | Out-String
+        Set-Content (Join-Path $scripts 'orchestrate-solutions.ps1') "param([string]`$Configuration, [switch]`$SkipCleanup, [switch]`$IncludeMutation, [string]`$LeaseDirectory); Write-Output ([string]::Join('|', `$Configuration, `$SkipCleanup, `$IncludeMutation, `$LeaseDirectory)); exit $ExitCode"
+        $output = & $powerShellPath -NoProfile -File $portableHostScript (Join-Path $fixture 'go.ps1') -Configuration Debug -SkipCleanup -IncludeMutation -LeaseDirectory shared-leases 2>&1 | Out-String
         $LASTEXITCODE | Should -Be $(if ($ExitCode -eq 0) { 0 } else { 1 })
-        $output | Should -Match 'Debug\|True\|True'
+        $output | Should -Match 'Debug\|True\|True\|shared-leases'
         $output.Contains('SUCCESS: Main pipeline orchestration completed successfully') | Should -Be ($ExitCode -eq 0)
     }
 
@@ -152,10 +152,10 @@ Describe 'Build entry point process boundaries' {
         $scripts = Join-Path $fixture 'eng/src/agent-scripts'
         New-Item -ItemType Directory -Path $scripts -Force | Out-Null
         Copy-Item (Join-Path $PSScriptRoot '../../../quick-build.ps1') $fixture
-        Set-Content (Join-Path $scripts 'final-build-solutions.ps1') "param([string]`$Configuration); Write-Output ('FINAL:' + `$Configuration); exit $ExitCode"
-        $output = & $powerShellPath -NoProfile -File $portableHostScript (Join-Path $fixture 'quick-build.ps1') -Configuration Debug 2>&1 | Out-String
+        Set-Content (Join-Path $scripts 'final-build-solutions.ps1') "param([string]`$Configuration, [string]`$LeaseDirectory); Write-Output ('FINAL:' + `$Configuration + '|' + `$LeaseDirectory); exit $ExitCode"
+        $output = & $powerShellPath -NoProfile -File $portableHostScript (Join-Path $fixture 'quick-build.ps1') -Configuration Debug -LeaseDirectory shared-leases 2>&1 | Out-String
         $LASTEXITCODE | Should -Be $WrapperExit
-        $output | Should -Match 'FINAL:Debug'
+        $output | Should -Match 'FINAL:Debug\|shared-leases'
         $output.Contains('QUICK BUILD COMPLETED SUCCESSFULLY') | Should -Be ($ExitCode -eq 0)
         if ($ExitCode -ne 0) { $output | Should -Match 'failed[\s|]+with[\s|]+exit[\s|]+code:?[\s|]+7' }
     }

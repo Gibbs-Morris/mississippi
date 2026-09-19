@@ -26,6 +26,9 @@
 .PARAMETER SkipMississippi
     When present, skips building the core Mississippi solution.
 
+.PARAMETER LeaseDirectory
+    Shared coordination directory used for cross-account worktree execution leases.
+
 .EXAMPLE
     pwsh ./build.ps1
         Builds both solutions in Release.
@@ -43,7 +46,8 @@
 param(
     [string]$Configuration = 'Release',
     [switch]$SkipSamples,
-    [switch]$SkipMississippi
+    [switch]$SkipMississippi,
+    [string]$LeaseDirectory
 )
 
 Set-StrictMode -Version Latest
@@ -56,6 +60,8 @@ $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 # Underlying scripts
 $buildMississippi = Join-Path $repoRoot 'eng' 'src' 'agent-scripts' 'build-mississippi-solution.ps1'
 $buildSamples     = Join-Path $repoRoot 'eng' 'src' 'agent-scripts' 'build-sample-solution.ps1'
+$leaseArguments = @()
+if (-not [string]::IsNullOrWhiteSpace($LeaseDirectory)) { $leaseArguments = @('-LeaseDirectory', $LeaseDirectory) }
 
 function Invoke-BuildStep {
     param(
@@ -78,11 +84,11 @@ try {
     }
 
     if (-not $SkipMississippi) {
-        Invoke-BuildStep -Title 'STEP 1: Build Mississippi Solution' -Action { & $powerShellPath -NoProfile -File $buildMississippi -Configuration $Configuration }
+        Invoke-BuildStep -Title 'STEP 1: Build Mississippi Solution' -Action { & $powerShellPath -NoProfile -File $buildMississippi -Configuration $Configuration @leaseArguments }
     }
 
     if (-not $SkipSamples) {
-        Invoke-BuildStep -Title 'STEP 2: Build Samples Solution' -Action { & $powerShellPath -NoProfile -File $buildSamples -Configuration $Configuration }
+        Invoke-BuildStep -Title 'STEP 2: Build Samples Solution' -Action { & $powerShellPath -NoProfile -File $buildSamples -Configuration $Configuration @leaseArguments }
     }
 
     Write-Host '=== ALL REQUESTED BUILDS COMPLETED SUCCESSFULLY ===' -ForegroundColor Green

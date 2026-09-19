@@ -2,7 +2,8 @@
 
 [CmdletBinding()]
 param(
-    [string]$Configuration = 'Release'
+    [string]$Configuration = 'Release',
+    [string]$LeaseDirectory
 )
 
 Set-StrictMode -Version Latest
@@ -15,7 +16,7 @@ $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 
 $executionLease = $null
 try {
-    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "final-build-$([guid]::NewGuid().ToString('N'))"
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "final-build-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
     Invoke-FinalSolutionsBuild -Configuration $Configuration -RepoRoot $repoRoot
 }
 catch {

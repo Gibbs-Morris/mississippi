@@ -17,7 +17,8 @@ param(
     [ValidateSet('Smoke', 'Full')][string]$Suite = 'Smoke',
     [ValidateSet('Debug', 'Release')][string]$Configuration = 'Release',
     [switch]$Doctor,
-    [switch]$InstallBrowserDependencies
+    [switch]$InstallBrowserDependencies,
+    [string]$LeaseDirectory
 )
 
 Set-StrictMode -Version Latest
@@ -25,7 +26,7 @@ $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1') -Force
 $executionLease = $null
 try {
-    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $PSScriptRoot -OperationId "spring-validation-$([guid]::NewGuid().ToString('N'))"
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $PSScriptRoot -OperationId "spring-validation-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
     Invoke-SpringValidation -RepoRoot $PSScriptRoot -TestLevel $TestLevel -Suite $Suite -Configuration $Configuration `
         -Doctor:$Doctor -InstallBrowserDependencies:$InstallBrowserDependencies
     exit 0

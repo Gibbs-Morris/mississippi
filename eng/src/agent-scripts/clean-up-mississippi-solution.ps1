@@ -1,5 +1,10 @@
 #!/usr/bin/env pwsh
 
+[CmdletBinding()]
+param(
+    [string]$LeaseDirectory
+)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -10,7 +15,7 @@ $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 
 $executionLease = $null
 try {
-    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "cleanup-mississippi-$([guid]::NewGuid().ToString('N'))"
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "cleanup-mississippi-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
     Invoke-MississippiSolutionCleanup -RepoRoot $repoRoot
 }
 catch {

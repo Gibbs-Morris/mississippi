@@ -3,13 +3,16 @@
 <#
 .SYNOPSIS
     Runs the orchestrate-solutions.ps1 script for the repository.
+.PARAMETER LeaseDirectory
+    Shared coordination directory used for cross-account worktree execution leases.
 #>
 
 [CmdletBinding()]
 param(
     [switch]$SkipCleanup,
     [switch]$IncludeMutation,
-    [string]$Configuration = 'Release'
+    [string]$Configuration = 'Release',
+    [string]$LeaseDirectory
 )
 
 Set-StrictMode -Version Latest
@@ -30,6 +33,7 @@ try {
     $orchestrateArguments = @('-NoProfile', '-File', $orchestrateScript, '-Configuration', $Configuration)
     if ($SkipCleanup) { $orchestrateArguments += '-SkipCleanup' }
     if ($IncludeMutation) { $orchestrateArguments += '-IncludeMutation' }
+    if (-not [string]::IsNullOrWhiteSpace($LeaseDirectory)) { $orchestrateArguments += @('-LeaseDirectory', $LeaseDirectory) }
     & $powerShellPath @orchestrateArguments
     if ($LASTEXITCODE -ne 0) {
         throw "orchestrate-solutions.ps1 failed with exit code $LASTEXITCODE"

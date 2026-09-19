@@ -4,7 +4,8 @@
 param(
     [string]$Configuration = 'Release',
     [ValidateSet('L0Tests', 'L1Tests', 'L2Tests', 'L3Tests', 'L4Tests')]
-    [string[]]$TestLevels = @('L0Tests', 'L1Tests')
+    [string[]]$TestLevels = @('L0Tests', 'L1Tests'),
+    [string]$LeaseDirectory
 )
 
 Set-StrictMode -Version Latest
@@ -17,7 +18,7 @@ $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 
 $executionLease = $null
 try {
-    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "unit-test-mississippi-$([guid]::NewGuid().ToString('N'))"
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "unit-test-mississippi-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
     Invoke-MississippiSolutionUnitTests -Configuration $Configuration -RepoRoot $repoRoot -TestLevels $TestLevels
 }
 catch {
