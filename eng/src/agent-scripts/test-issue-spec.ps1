@@ -283,7 +283,7 @@ function Remove-MarkdownHtmlBlocks { # NOSONAR - bounded raw-HTML block scanner 
             if ($line -notmatch '\]\]>') { $tokenTerminator = '\]\]>' }
             continue
         }
-        $declarationMatch = [regex]::Match($line, '(?i)^[ \t]{0,3}<![A-Z]')
+        $declarationMatch = [regex]::Match($line, '^[ \t]{0,3}<![A-Z]')
         if ($declarationMatch.Success) {
             $lines.Add('')
             if ($line -notmatch '>') { $tokenTerminator = '>' }
