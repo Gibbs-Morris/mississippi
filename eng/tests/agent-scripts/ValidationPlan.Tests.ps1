@@ -40,6 +40,13 @@ Describe 'Deterministic validation plan' {
         $markdown.Executable | Should -Be 'npx'
     }
 
+    It 'selects the Docusaurus gate for Docusaurus changes' {
+        $outcome = Invoke-Plan -Paths @('docs/Docusaurus/docs/guide.md')
+
+        $outcome.Result.SelectedChecks.Id | Should -Contain 'docusaurus-final'
+        @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'docusaurus-final').Arguments | Should -Contain './docs/Docusaurus/test-docusaurus.ps1'
+    }
+
     It 'selects Spring doctor and smoke for browser-facing changes' {
         $outcome = Invoke-Plan -Paths @('samples/Spring/Spring.Client/Pages/Index.razor')
 

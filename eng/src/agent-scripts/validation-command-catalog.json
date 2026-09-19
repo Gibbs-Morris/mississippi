@@ -52,6 +52,16 @@
       "expectedArtifacts": ["markdownlint summary"]
     },
     {
+      "id": "docusaurus-final",
+      "mode": "final",
+      "executable": "pwsh",
+      "arguments": ["./docs/Docusaurus/test-docusaurus.ps1"],
+      "scriptPaths": ["docs/Docusaurus/test-docusaurus.ps1"],
+      "purpose": "Build and browser-test the Docusaurus site for documentation changes.",
+      "prerequisites": ["PowerShell 7", "Node.js 20+", "Playwright Chromium"],
+      "expectedArtifacts": ["Docusaurus build output", "Playwright test report"]
+    },
+    {
       "id": "spring-doctor",
       "mode": "prerequisite",
       "executable": "pwsh",

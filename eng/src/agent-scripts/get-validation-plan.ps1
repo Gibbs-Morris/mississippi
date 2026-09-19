@@ -65,6 +65,7 @@ try {
     $selected = [System.Collections.Generic.List[object]]::new()
     $isPowerShell = @($normalizedPaths | Where-Object { $_ -match '\.(?:ps1|psm1|psd1)$' }).Count -gt 0
     $isMarkdown = $markdownPaths.Count -gt 0
+    $isDocusaurus = @($normalizedPaths | Where-Object { $_ -match '^docs/Docusaurus/' }).Count -gt 0
     $browserPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:razor|css)$' })
     $springBrowserPaths = @($browserPaths | Where-Object { $_ -match '^samples/Spring/' })
     $nonSpringBrowserPaths = @($browserPaths | Where-Object { $_ -notmatch '^samples/Spring/' })
@@ -92,6 +93,7 @@ try {
     if ($isPowerShell) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'powershell-tests') -Reason 'PowerShell source or harness path changed.' -MarkdownPaths $markdownPaths }
     if ($isDotnet -or $isUnknown) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'core-iteration') -Reason $(if ($isUnknown) { 'Unknown mapping selects the broad .NET iteration gate conservatively.' } else { ' .NET source or project path changed.' }) -MarkdownPaths $markdownPaths }
     if ($isMarkdown) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'markdown-lint') -Reason 'Markdown or MDX content changed.' -MarkdownPaths $markdownPaths }
+    if ($isDocusaurus) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'docusaurus-final') -Reason 'Docusaurus content or site configuration changed.' -MarkdownPaths $markdownPaths }
     if ($isBrowser) {
         Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'spring-doctor') -Reason 'Browser-facing or Spring path changed.' -MarkdownPaths $markdownPaths
         Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'spring-smoke') -Reason 'Rendered/browser behavior may be affected.' -MarkdownPaths $markdownPaths
