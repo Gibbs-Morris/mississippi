@@ -121,6 +121,16 @@ Describe 'Repository prerequisite doctor' {
         $text | Should -Match 'Remediation: Start Docker with Linux containers'
     }
 
+    It 'bounds a hanging external probe' {
+        $probe = InModuleScope AgentDoctor {
+            Invoke-DoctorProbe -Name 'timeout-test' -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', 'Start-Sleep -Seconds 3') -TimeoutSeconds 1
+        }
+
+        $probe.TimedOut | Should -BeTrue
+        $probe.ExitCode | Should -Be 124
+        $probe.Error | Should -Match 'timed out after 1 seconds'
+    }
+
     It 'does not mutate the checkout while probing' {
         $marker = Join-Path $fixtureRoot 'marker.txt'
         Set-Content -LiteralPath $marker -Value 'unchanged'
