@@ -20,8 +20,8 @@ public sealed class ArchitectureTestBaseTests
         List<string> loadedPaths = new();
         string[] paths =
         [
-            Path.Combine("run.L0Tests.1", "Mississippi.Core.dll"),
-            Path.Combine("run", "Mississippi.Architecture.L0Tests.dll")
+            Path.Join("run.L0Tests.1", "Mississippi.Core.dll"),
+            Path.Join("run", "Mississippi.Architecture.L0Tests.dll")
         ];
 
         Assembly[] assemblies = ArchitectureTestBase.LoadMississippiAssemblies(
