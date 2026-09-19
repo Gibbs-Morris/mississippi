@@ -6,18 +6,18 @@
   "limitations": ["No paid/live model invocation is performed by ordinary CI.","The initial live-host baseline is explicitly unsupported until an authorized manual run supplies host evidence.","Unsupported trials are retained in denominators and never counted as passes."],
   "hosts": [
     {"host":"Codex","configuredModel":"gpt-6-astra","acceptedModel":"unknown","activeModel":"unsupported","trialSummaries":[
-      {"scenarioId":"csharp-behavior","attempted":0,"passed":0,"failed":0,"unsupported":3,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
-      {"scenarioId":"powershell-harness","attempted":0,"passed":0,"failed":0,"unsupported":3,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
-      {"scenarioId":"documentation","attempted":0,"passed":0,"failed":0,"unsupported":3,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
-      {"scenarioId":"browser-visible","attempted":0,"passed":0,"failed":0,"unsupported":3,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
-      {"scenarioId":"multi-project-generator","attempted":0,"passed":0,"failed":0,"unsupported":3,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"}
+      {"scenarioId":"csharp-behavior","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
+      {"scenarioId":"powershell-harness","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
+      {"scenarioId":"documentation","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
+      {"scenarioId":"browser-visible","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
+      {"scenarioId":"multi-project-generator","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"}
     ]},
     {"host":"Copilot","configuredModel":"host-default","acceptedModel":"unknown","activeModel":"unsupported","trialSummaries":[
-      {"scenarioId":"csharp-behavior","attempted":0,"passed":0,"failed":0,"unsupported":3,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
-      {"scenarioId":"powershell-harness","attempted":0,"passed":0,"failed":0,"unsupported":3,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
-      {"scenarioId":"documentation","attempted":0,"passed":0,"failed":0,"unsupported":3,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
-      {"scenarioId":"browser-visible","attempted":0,"passed":0,"failed":0,"unsupported":3,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
-      {"scenarioId":"multi-project-generator","attempted":0,"passed":0,"failed":0,"unsupported":3,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"}
+      {"scenarioId":"csharp-behavior","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
+      {"scenarioId":"powershell-harness","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
+      {"scenarioId":"documentation","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
+      {"scenarioId":"browser-visible","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
+      {"scenarioId":"multi-project-generator","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"}
     ]}
   ],
   "deterministicContractTrials":[
