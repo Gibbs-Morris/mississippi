@@ -2791,7 +2791,8 @@ function Get-PrReadinessExpectedCheckPatterns {
         '^Markdown Lint$',
         '^L3 Spring E2E \(Smoke\)$',
         '^pr-metrics$',
-        '^label-by-(?:files|semver)$',
+        '^label-by-files$',
+        '^label-by-semver$',
         '^Analyze \(csharp\)$',
         '^Analyze \(actions\)$',
         '^Analyze \(javascript-typescript\)$',
@@ -2802,6 +2803,8 @@ function Get-PrReadinessExpectedCheckPatterns {
     if ($docsApplicable) { $patterns.Add('^Build Docusaurus Site$') }
     $csprojApplicable = @($ChangedPaths | Where-Object { $_ -match '^src/.+\.csproj$' }).Count -gt 0
     if ($csprojApplicable) { $patterns.Add('^Validate src csproj descriptions$') }
+    $copilotSetupApplicable = @($ChangedPaths | Where-Object { $_ -eq '.github/workflows/copilot-setup-steps.yml' }).Count -gt 0
+    if ($copilotSetupApplicable) { $patterns.Add('^copilot-setup-steps$') }
     return @($patterns)
 }
 
@@ -2913,11 +2916,20 @@ function Get-PrReadinessSnapshot {
         $finalHasNextPage = [bool]$finalThreadPage.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage
         $finalCursor = [string]$finalThreadPage.data.repository.pullRequest.reviewThreads.pageInfo.endCursor
     } while ($finalHasNextPage)
-    $threadFingerprintStart = (@($threads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated)" }) -join '|')
-    $threadFingerprintEnd = (@($finalThreads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated)" }) -join '|')
+    $threadFingerprintStart = (@($threads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated):$(@($_.comments.nodes | ForEach-Object { $_.databaseId }) -join ',')" }) -join '|')
+    $threadFingerprintEnd = (@($finalThreads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated):$(@($_.comments.nodes | ForEach-Object { $_.databaseId }) -join ',')" }) -join '|')
     $mutableEvidenceStable = $checkFingerprintStart -eq $checkFingerprintEnd -and
         $reviewFingerprintStart -eq $reviewFingerprintEnd -and
         $threadFingerprintStart -eq $threadFingerprintEnd
+    $generalComments = @()
+    try {
+        $commentPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/issues/$PullRequestNumber/comments", '--paginate', '--slurp'))
+        $generalComments = @($commentPages | ForEach-Object { @($_) } | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_.body) })
+    }
+    catch {
+        # A provider that cannot expose discussion comments is incomplete.
+        $mutableEvidenceStable = $false
+    }
     $pollingCompleted = $PollingSeconds -ge 300
     [pscustomobject][ordered]@{
         DataComplete = $true
@@ -2936,6 +2948,7 @@ function Get-PrReadinessSnapshot {
         DescriptionReviewed = $false
         PollingCompleted = $pollingCompleted
         EvidenceStable = $mutableEvidenceStable
+        GeneralFeedbackCount = @($generalComments).Count
         PullRequestUrl = [string]$pullAtEnd.html_url
     }
 }
@@ -2961,6 +2974,9 @@ function Get-PrReadinessReport {
     if (-not $Snapshot.PollingCompleted) { $blockers.Add('Required post-push review polling evidence is incomplete.') }
     if ($null -ne $Snapshot.PSObject.Properties['EvidenceStable'] -and -not [bool]$Snapshot.EvidenceStable) {
         $blockers.Add('Mutable checks, reviews, or threads changed during collection; rerun the readiness snapshot.')
+    }
+    if ($null -ne $Snapshot.PSObject.Properties['GeneralFeedbackCount'] -and [int]$Snapshot.GeneralFeedbackCount -gt 0) {
+        $blockers.Add('General PR discussion comments require review disposition.')
     }
     $mechanicalReady = $blockers.Count -eq 0
     $semanticReady = [bool]$Snapshot.IssueReferenceVerified -and [bool]$Snapshot.DescriptionReviewed
