@@ -15,7 +15,7 @@ body:
     attributes:
       label: Contract version
       description: Keep the submitted contract version at 1.0 unless a reviewed contract revision is adopted.
-      value: 1.0
+      value: "1.0"
     validations:
       required: true
   - type: textarea

@@ -138,7 +138,7 @@ Describe 'Implementation-ready issue contract' {
         $contract | Should -Match 'Contract version: 1\.0'
         $form | Should -Match 'Contract version: 1\.0'
         $form | Should -Match 'id: contract-version'
-        $form | Should -Match 'value: 1\.0'
+        $form | Should -Match 'value:\s*["'']?1\.0["'']?'
         foreach ($label in $requiredLabels) {
             $contract | Should -Match ([regex]::Escape("- ``## $label``"))
             $form | Should -Match ([regex]::Escape("label: $label"))
