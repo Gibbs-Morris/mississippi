@@ -74,6 +74,22 @@ Describe 'Repository prerequisite doctor' {
         $report.RequiredFailures | Should -Contain 'node'
     }
 
+    It 'reports an incomplete global.json without throwing' {
+        $globalJsonPath = Join-Path $fixtureRoot 'global.json'
+        $originalGlobalJson = Get-Content -LiteralPath $globalJsonPath -Raw
+        try {
+            Set-Content -LiteralPath $globalJsonPath -Value '{"sdk":{}}'
+            $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Core -ProbeOverrides $readyProbes
+        }
+        finally {
+            Set-Content -LiteralPath $globalJsonPath -Value $originalGlobalJson
+        }
+
+        $report.Status | Should -Be 'INCOMPLETE'
+        @($report.Checks | Where-Object Name -EQ 'global.json').State | Should -Be 'unsupported'
+        $report.RequiredFailures | Should -Contain 'global.json'
+    }
+
     It 'reports denied GitHub access as unknown without exposing credentials' {
         $probes = @{} + $readyProbes
         $probes['github-repository'] = [pscustomobject]@{ Available = $true; Output = ''; ExitCode = 1; Error = 'permission denied' }
