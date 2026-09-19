@@ -101,6 +101,23 @@ function Get-IssueSpecResult {
         }
     }
 
+    $headingMatches = [regex]::Matches($content, '(?m)^#{2,3}\s+(?<Title>[^\r\n]+)\s*$')
+    $previousIndex = -1
+    foreach ($section in $requiredSections) {
+        $currentIndex = -1
+        for ($index = 0; $index -lt $headingMatches.Count; $index++) {
+            if ($headingMatches[$index].Groups['Title'].Value.Trim() -eq $section) {
+                $currentIndex = $index
+                break
+            }
+        }
+        if ($currentIndex -ge 0 -and $previousIndex -ge 0 -and $currentIndex -lt $previousIndex) {
+            Add-IssueSpecError -Errors $errors -Message 'Required sections must appear in the contract order.'
+            break
+        }
+        if ($currentIndex -ge 0) { $previousIndex = $currentIndex }
+    }
+
     if ($content -match '(?im)\b(?:TBD|TODO|FIXME)\b\s*(?:\(|\[)?\s*blocking') {
         Add-IssueSpecError -Errors $errors -Message 'Unresolved blocking TBD/TODO marker is not allowed.'
     }

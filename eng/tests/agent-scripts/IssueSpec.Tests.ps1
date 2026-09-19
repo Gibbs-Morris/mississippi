@@ -57,6 +57,16 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Valid | Should -BeTrue
     }
 
+    It 'rejects required sections in the wrong order' {
+        $reordered = $validBug -replace '(?m)^## Problem', '## Temporary problem'
+        $reordered = $reordered -replace '(?m)^## Observable outcome', '## Problem'
+        $reordered = $reordered -replace '(?m)^## Temporary problem', '## Observable outcome'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $reordered)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain 'Required sections must appear in the contract order.'
+    }
+
     It 'rejects a missing validation section' {
         $content = $validBug -replace '(?ms)^## Validation plan.*?(?=^## Risks and delivery boundary)', ''
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
