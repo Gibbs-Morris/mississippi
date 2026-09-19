@@ -50,6 +50,11 @@ separate adjudication decision. `change_relation` is one of `introduced`,
 one-based line number; a deleted or renamed path may use the line from the
 captured old side and must explain that choice in `evidence`.
 
+When multiple personas report the same fingerprint, the consolidated finding
+keeps the union of their evidence and a `reviewer_evidence` entry for every
+source record. Conflicting change relations are represented as `unknown` on
+the consolidated finding while each original relation remains in that entry.
+
 ## Disposition ledger
 
 The coordinator records exactly one disposition for every candidate fingerprint:
@@ -63,7 +68,9 @@ The coordinator records exactly one disposition for every candidate fingerprint:
 
 `duplicate` requires `duplicate_of`; `rejected`, `pre-existing`,
 `out-of-scope`, and `unresolved` require a concise evidence-backed rationale.
-The ledger includes the adjudicator, snapshot ID, and timestamp.
+The ledger input includes a non-empty adjudicator, snapshot ID, and UTC
+timestamp. Each disposition repeats the snapshot ID so a ledger cannot be
+silently applied to another scope.
 
 ## Final result
 

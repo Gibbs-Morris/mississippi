@@ -20,8 +20,17 @@ $ErrorActionPreference = 'Stop'
 
 function Invoke-GhApiJson { param([string[]]$Arguments,[object]$Body)
     $all = @('api','--hostname','github.com') + $Arguments
-    if ($null -ne $Body) { $json = $Body | ConvertTo-Json -Depth 100 -Compress; $result = $json | & gh @all 2>&1 } else { $result = & gh @all 2>&1 }
-    if ($LASTEXITCODE -ne 0) { throw "gh api failed: $($result -join "`n")" }
+    $errorPath = [System.IO.Path]::GetTempFileName()
+    try {
+        if ($null -ne $Body) { $json = $Body | ConvertTo-Json -Depth 100 -Compress; $result = $json | & gh @all 2> $errorPath } else { $result = & gh @all 2> $errorPath }
+        if ($LASTEXITCODE -ne 0) {
+            $detail = Get-Content -LiteralPath $errorPath -Raw -ErrorAction SilentlyContinue
+            throw "gh api failed: $($detail.Trim())"
+        }
+    }
+    finally {
+        if (Test-Path -LiteralPath $errorPath) { Remove-Item -LiteralPath $errorPath -Force }
+    }
     return ($result -join "`n" | ConvertFrom-Json)
 }
 
@@ -66,6 +75,12 @@ function Assert-Review { param([object]$Review)
     if ($Review.scope_manifest.snapshot_id -ne $Review.snapshot_id) { throw 'review snapshot_id does not match nested scope' }
 }
 
+function Assert-LivePullRequest { param([string]$Repository,[int]$Number,[string]$Base,[string]$Head)
+    $live = Invoke-GhApiJson -Arguments @("repos/$Repository/pulls/$Number")
+    if ($live.state -ne 'open' -or $live.base.sha -ne $Base -or $live.head.sha -ne $Head) { throw 'live PR state or base/head differs from reviewed scope' }
+    return $live
+}
+
 function Test-LiveAnchors { param([object]$Review,[object[]]$Files)
     $byPath=@{}
     foreach($file in $Files){ if($file.filename){$byPath[$file.filename]=$file}; if($file.previous_filename){$byPath[$file.previous_filename]=$file} }
@@ -95,9 +110,10 @@ try {
     $scope=$review.scope_manifest; if($scope.base -notmatch '^[0-9a-f]{40}$' -or $scope.head -notmatch '^[0-9a-f]{40}$'){throw 'scope lacks full base/head SHAs'}
     if($ExpectedBase -and $ExpectedBase -ne $scope.base){throw '--ExpectedBase differs from reviewed scope'}; if($ExpectedHead -and $ExpectedHead -ne $scope.head){throw '--ExpectedHead differs from reviewed scope'}
     if(-not $Execute){$result=[ordered]@{status='dry-run';provider='github';requires_revalidation=$true;marker=$marker}; if($OutputPath){Write-CrcJson -Path $OutputPath -Value $result}; $result|ConvertTo-Json -Compress; exit 0}
-    $live=Invoke-GhApiJson -Arguments @("repos/$Repo/pulls/$Pr"); if($live.state -ne 'open' -or $live.base.sha -ne $scope.base -or $live.head.sha -ne $scope.head){throw 'live PR state or base/head differs from reviewed scope'}
+    $live=Assert-LivePullRequest -Repository $Repo -Number $Pr -Base $scope.base -Head $scope.head
     $files=@(Invoke-GhApiJson -Arguments @("repos/$Repo/pulls/$Pr/files",'--paginate','--slurp') | ForEach-Object { $_ }); Test-LiveAnchors -Review $review -Files $files
-    $publisher=(Invoke-GhApiJson -Arguments @('user')).login; $comments=@(Invoke-GhApiJson -Arguments @("repos/$Repo/issues/$Pr/comments",'--paginate','--slurp') | ForEach-Object { $_ }); if(@($comments | Where-Object { $_.user.login -eq $publisher -and $_.body -like "*$marker*" }).Count -gt 0){$result=[ordered]@{status='already-published';provider='github';marker=$marker}; if($Output){Write-CrcJson -Path $Output -Value $result}; $result|ConvertTo-Json -Compress; exit 0}
+    $publisher=(Invoke-GhApiJson -Arguments @('user')).login; $comments=@(Invoke-GhApiJson -Arguments @("repos/$Repo/issues/$Pr/comments",'--paginate','--slurp') | ForEach-Object { $_ }); if(@($comments | Where-Object { $_.user.login -eq $publisher -and $_.body -like "*$marker*" }).Count -gt 0){$result=[ordered]@{status='already-published';provider='github';marker=$marker}; if($OutputPath){Write-CrcJson -Path $OutputPath -Value $result}; $result|ConvertTo-Json -Compress; exit 0}
+    $null=Assert-LivePullRequest -Repository $Repo -Number $Pr -Base $scope.base -Head $scope.head
     $null=Invoke-GhApiJson -Arguments @("repos/$Repo/issues/$Pr/comments",'--method','POST','--input','-') -Body ([ordered]@{body=$body}); $result=[ordered]@{status='published';provider='github';marker=$marker}; if($OutputPath){Write-CrcJson -Path $OutputPath -Value $result}; $result|ConvertTo-Json -Compress; exit 0
 }
 catch { $result=[ordered]@{status='blocked';error=$_.Exception.Message}; if($OutputPath){Write-CrcJson -Path $OutputPath -Value $result}; $result|ConvertTo-Json -Compress; exit 2 }

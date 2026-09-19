@@ -57,6 +57,13 @@
     "files": {
       "type": "array",
       "items": {"$ref": "#/$defs/fileEntry"}
+    },
+    "dirty_worktree": {
+      "type": "boolean"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {"type": "string"}
     }
   },
   "additionalProperties": true,
@@ -78,7 +85,9 @@
         "path": {"type": "string", "minLength": 1},
         "blob_sha": {"type": "string", "minLength": 1},
         "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-        "size": {"type": "integer", "minimum": 0}
+        "size": {"type": "integer", "minimum": 0},
+        "type": {"enum": ["file", "symlink", "gitlink"]},
+        "target": {"type": "array", "items": {"type": "string"}}
       },
       "additionalProperties": true
     }

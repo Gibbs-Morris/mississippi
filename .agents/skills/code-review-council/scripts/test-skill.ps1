@@ -45,7 +45,7 @@ try {
     $noChangeMaterial = [ordered]@{ mode='branch'; base=('a'*40); head=('a'*40); merge_base=('a'*40); changed_files=@(); patch=[ordered]@{sha256=('0'*64);bytes=0;encoding='base64';content_base64=''} }
     $noChange = [ordered]@{schema_version=$script:CrcSchemaVersion;mode='branch';status='NO_CHANGES';snapshot_id=(Get-CrcHashJson $noChangeMaterial);repository=[ordered]@{root=$repo};captured_at_utc=(Get-CrcUtcNow);changed_files=@();snapshot_material=$noChangeMaterial}
     $noChangePath = Join-Path $root 'no-change.json'; $emptyReviewers = Join-Path $root 'empty.jsonl'; $emptyAdjudication=Join-Path $root 'empty-adjudication.json'; $noChangeOutput=Join-Path $root 'no-change-result.json'
-    Write-CrcJson -Path $noChangePath -Value $noChange; Set-Content -LiteralPath $emptyReviewers -Value '' -Encoding utf8; Write-CrcJson -Path $emptyAdjudication -Value ([ordered]@{dispositions=@()})
+    Write-CrcJson -Path $noChangePath -Value $noChange; Set-Content -LiteralPath $emptyReviewers -Value '' -Encoding utf8; Write-CrcJson -Path $emptyAdjudication -Value ([ordered]@{adjudicator='test-coordinator';created_at_utc=(Get-CrcUtcNow);snapshot_id=$noChange.snapshot_id;dispositions=@()})
     & pwsh -NoProfile -File (Join-Path $PSScriptRoot 'validate-review.ps1') -Scope $noChangePath -Reviewers $emptyReviewers -Adjudication $emptyAdjudication -Output $noChangeOutput
     Assert-Crc ((Get-Content -LiteralPath $noChangeOutput -Raw | ConvertFrom-Json).status -eq 'NO_CHANGES') 'NO_CHANGES was not terminal'
 

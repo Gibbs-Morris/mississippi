@@ -33,8 +33,10 @@ comparing a stacked layer with `main` when its immediate parent is different.
 `--changes staged` selects only the index stream, `--changes unstaged` selects
 the worktree and untracked streams, and `--changes all` keeps all three. A
 staged defect that an unstaged edit appears to correct therefore remains
-visible in the staged-only evidence. The collector rejects paths that resolve
-outside the repository root.
+visible in the staged-only evidence. The collector compares revision, status,
+patch, unresolved-index, and untracked-content fingerprints before and after
+collection; a concurrent worktree edit blocks the snapshot. Untracked
+symlinks are recorded as links and their targets are not followed.
 
 ### Pull request
 
@@ -54,6 +56,7 @@ The collector writes a versioned JSON manifest containing:
 - rename-aware changed files with status and path data;
 - tracked file hashes for committed modes;
 - staged, unstaged, and untracked component hashes for worktree mode; and
+- dirty-worktree warnings for codebase mode; and
 - the source PR snapshot and check/discussion summary for pull-request mode.
 
 The manifest is deterministic apart from `captured_at_utc`. Re-run collection

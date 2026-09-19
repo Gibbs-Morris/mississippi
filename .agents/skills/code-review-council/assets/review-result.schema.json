@@ -32,7 +32,17 @@
       "type": "array",
       "items": {"$ref": "#/$defs/disposition"}
     },
-    "execution": {"type": "object"},
+    "execution": {
+      "type": "object",
+      "required": ["reviewer_count", "required_reviewer_count", "adjudicator", "adjudicated_at_utc", "adjudication_snapshot_id"],
+      "properties": {
+        "reviewer_count": {"type": "integer", "minimum": 0},
+        "required_reviewer_count": {"type": "integer", "minimum": 0},
+        "adjudicator": {"type": "string", "minLength": 1},
+        "adjudicated_at_utc": {"type": "string", "minLength": 1},
+        "adjudication_snapshot_id": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    },
     "publication": {"type": "object"}
   },
   "additionalProperties": true,
@@ -100,6 +110,22 @@
         "uncertainty": {"type": "string"},
         "change_relation": {
           "enum": ["introduced", "worsened", "pre-existing", "out-of-scope", "unknown"]
+        },
+        "reviewer_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["reviewer_id", "persona_id", "change_relation", "evidence", "uncertainty"],
+            "properties": {
+              "reviewer_id": {"type": "string", "minLength": 1},
+              "persona_id": {"type": "string", "minLength": 1},
+              "change_relation": {"enum": ["introduced", "worsened", "pre-existing", "out-of-scope", "unknown"]},
+              "evidence": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+              "uncertainty": {"type": "string"}
+            },
+            "additionalProperties": true
+          }
         },
         "disposition": {"type": "string"}
       },

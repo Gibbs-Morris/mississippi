@@ -18,7 +18,10 @@ function Test-EvalProperty { param([object]$Object,[string]$Name) return $null -
 function Get-Fixture { param([string]$Path)
     $fixture=Get-Content -LiteralPath (Resolve-CrcSafePath -Path $Path -Label 'fixture' -MustExist) -Raw | ConvertFrom-Json
     if($fixture.schema_version -ne $script:CrcSchemaVersion -or @($fixture.cases).Count -eq 0){throw 'fixture schema is invalid'}
-    $ids=@($fixture.cases | ForEach-Object id); foreach($required in $script:RequiredCases){if($required -notin $ids){throw "required fixture missing: $required"}}
+    $ids=@($fixture.cases | ForEach-Object id)
+    if ($ids.Count -ne @($ids | Sort-Object -Unique).Count) { throw 'fixture contains duplicate case IDs' }
+    if (@($ids | Where-Object { [string]::IsNullOrWhiteSpace([string]$_) }).Count -gt 0) { throw 'fixture contains an empty case ID' }
+    foreach($required in $script:RequiredCases){if($required -notin $ids){throw "required fixture missing: $required"}}
     if(@($fixture.cases | Where-Object set -eq 'development').Count -eq 0 -or @($fixture.cases | Where-Object set -eq 'held-out').Count -eq 0){throw 'fixture requires development and held-out cases'}
     foreach($case in @($fixture.cases)){if($case.truth -isnot [System.Collections.IEnumerable] -or $case.truth -is [string]){throw "truth must be a list: $($case.id)"}; $high=if(Test-EvalProperty $case 'high_severity_truth'){@($case.high_severity_truth)}else{@()}; if(@($high | Where-Object { $_ -notin @($case.truth) }).Count -gt 0){throw "high severity truth is invalid: $($case.id)"}; if((Test-EvalProperty $case 'trigger_expected') -and $case.trigger_expected -isnot [bool]){throw "trigger_expected is invalid: $($case.id)"}}
     return $fixture

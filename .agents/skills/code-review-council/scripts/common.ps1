@@ -107,6 +107,14 @@ function Invoke-CrcGit {
     return ($output -join "`n")
 }
 
+function Get-CrcGitLines {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Repository,[Parameter(Mandatory)][string[]]$Arguments)
+
+    $text = Invoke-CrcGit -Repository $Repository -Arguments $Arguments
+    return @($text -split "`r?`n" | Where-Object { $_ -and $_.Trim() })
+}
+
 function Resolve-CrcRepository {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Path)
