@@ -357,7 +357,7 @@ Refs #741
         $outcome = Invoke-MergeGroupValidator -PullRequests @()
 
         $outcome.ExitCode | Should -Not -Be 0
-        $outcome.Output | Should -Match 'could not resolve any constituent\s+pull requests'
+        $outcome.Output | Should -Match 'could not resolve any constituent[\s|]+pull requests'
     }
 
     It 'publishes PR-isolated status contexts' {
