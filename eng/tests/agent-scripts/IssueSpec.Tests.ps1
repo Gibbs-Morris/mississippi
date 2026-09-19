@@ -101,6 +101,15 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Errors | Should -Contain "Duplicate acceptance criterion ID: 'AC1'."
     }
 
+    It 'rejects duplicate and unknown validation evidence IDs' {
+        $content = $validBug + [Environment]::NewLine + '- [AC1] Duplicate mapping.' + [Environment]::NewLine + '- [AC99] Unknown mapping.'
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Duplicate validation evidence mapping ID: 'AC1'."
+        $outcome.Result.Errors | Should -Contain "Validation evidence map contains unknown acceptance criterion ID: 'AC99'."
+    }
+
     It 'rejects unresolved blocking decisions' {
         $content = $validBug -replace '(The parser project and its L0 test project are available in the current solution\.)', ('$1' + [Environment]::NewLine + 'TBD (blocking): choose an unapproved deployment target.')
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)

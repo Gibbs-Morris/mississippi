@@ -167,9 +167,25 @@ function Get-IssueSpecResult {
 
     if ($sections.Contains('Validation evidence map')) {
         $evidence = [string]$sections['Validation evidence map']
+        $evidenceIds = [System.Collections.Generic.List[string]]::new()
+        $evidenceMatches = [regex]::Matches($evidence, '(?im)^\s*[-*]\s*\[(?<Id>AC\d+)\]\s+.+$')
+        foreach ($evidenceMatch in $evidenceMatches) {
+            $evidenceId = $evidenceMatch.Groups['Id'].Value.ToUpperInvariant()
+            if ($evidenceIds.Contains($evidenceId)) {
+                Add-IssueSpecError -Errors $errors -Message "Duplicate validation evidence mapping ID: '$evidenceId'."
+            }
+            else {
+                $evidenceIds.Add($evidenceId)
+            }
+        }
         foreach ($id in $acceptanceIds) {
-            if ($evidence -notmatch "(?im)^\s*[-*]\s*\[$id\]\s+.+") {
+            if (-not $evidenceIds.Contains($id)) {
                 Add-IssueSpecError -Errors $errors -Message "Acceptance criterion '$id' has no validation evidence mapping."
+            }
+        }
+        foreach ($evidenceId in $evidenceIds) {
+            if (-not $acceptanceIds.Contains($evidenceId)) {
+                Add-IssueSpecError -Errors $errors -Message "Validation evidence map contains unknown acceptance criterion ID: '$evidenceId'."
             }
         }
     }
