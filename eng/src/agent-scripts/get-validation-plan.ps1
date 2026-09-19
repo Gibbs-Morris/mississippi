@@ -66,7 +66,7 @@ try {
     $isPowerShell = @($normalizedPaths | Where-Object { $_ -match '\.(?:ps1|psm1|psd1)$' -or $_ -eq 'eng/src/agent-scripts/validation-command-catalog.json' }).Count -gt 0
     $isMarkdown = $markdownPaths.Count -gt 0
     $isDocusaurus = @($normalizedPaths | Where-Object { $_ -match '^docs/Docusaurus/' }).Count -gt 0
-    $browserPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:razor|css)$' })
+    $browserPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:razor|css|html?|m?js|jsx|tsx?)$' -or $_ -match '(?:^|/)wwwroot/' })
     $springBrowserPaths = @($browserPaths | Where-Object { $_ -match '^samples/Spring/' })
     $nonSpringBrowserPaths = @($browserPaths | Where-Object { $_ -notmatch '^samples/Spring/' })
     $isSpringPath = @($normalizedPaths | Where-Object { $_ -match '^samples/Spring/' }).Count -gt 0

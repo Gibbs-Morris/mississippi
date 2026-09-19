@@ -70,6 +70,14 @@ Describe 'Deterministic validation plan' {
         $outcome.Result.Unresolved | Should -Match 'No application-specific browser validation gate'
     }
 
+    It 'treats non-Spring HTML and JavaScript assets as browser changes' {
+        $outcome = Invoke-Plan -Paths @('samples/LightSpeed/LightSpeed.Client/wwwroot/index.html', 'src/Reservoir.Client/wwwroot/mississippi.reservoir.devtools.js')
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.SelectedChecks.Id | Should -Not -Contain 'spring-smoke'
+        $outcome.Result.Unresolved | Should -Match 'No application-specific browser validation gate'
+    }
+
     It 'selects broad checks conservatively for unknown paths' {
         $outcome = Invoke-Plan -Paths @('new-tool/generated.surface')
 
