@@ -69,18 +69,29 @@ function Invoke-DoctorProbe {
         $standardErrorTask = $process.StandardError.ReadToEndAsync()
         $completed = $process.WaitForExit($TimeoutSeconds * 1000)
         if (-not $completed) {
-            try { $process.Kill($true) } catch { }
-            $process.WaitForExit()
+            $terminationErrors = [System.Collections.Generic.List[string]]::new()
+            try { $process.Kill($true) }
+            catch {
+                $terminationErrors.Add($_.Exception.Message)
+                try { $process.Kill() }
+                catch { $terminationErrors.Add($_.Exception.Message) }
+            }
+            $terminated = $process.WaitForExit(1000)
+            $null = $standardOutputTask.Wait(1000)
+            $null = $standardErrorTask.Wait(1000)
             $timedOutOutput = [System.Collections.Generic.List[string]]::new()
-            $timedOutStdout = $standardOutputTask.GetAwaiter().GetResult()
-            $timedOutStderr = $standardErrorTask.GetAwaiter().GetResult()
+            $timedOutStdout = if ($standardOutputTask.IsCompleted) { $standardOutputTask.GetAwaiter().GetResult() } else { '' }
+            $timedOutStderr = if ($standardErrorTask.IsCompleted) { $standardErrorTask.GetAwaiter().GetResult() } else { '' }
             if ($timedOutStdout) { $timedOutOutput.Add($timedOutStdout.TrimEnd()) }
             if ($timedOutStderr) { $timedOutOutput.Add($timedOutStderr.TrimEnd()) }
+            $timeoutDetails = "Command '$FilePath' timed out after $TimeoutSeconds seconds."
+            if (-not $terminated) { $timeoutDetails += ' The process did not terminate during the 1 second grace period.' }
+            if ($terminationErrors.Count -gt 0) { $timeoutDetails += " Termination error: $($terminationErrors -join '; ')" }
             return [pscustomobject]@{
                 Available = $true
                 Output = ($timedOutOutput -join [Environment]::NewLine).Trim()
                 ExitCode = 124
-                Error = "Command '$FilePath' timed out after $TimeoutSeconds seconds."
+                Error = $timeoutDetails
                 TimedOut = $true
             }
         }
