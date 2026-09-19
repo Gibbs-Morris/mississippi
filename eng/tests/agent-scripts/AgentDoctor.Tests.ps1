@@ -101,6 +101,24 @@ Describe 'Repository prerequisite doctor' {
         $report.RequiredFailures | Should -Contain 'dotnet-tools'
     }
 
+    It 'reports a tool manifest without a tools object' {
+        $manifestPath = Join-Path $fixtureRoot '.config/dotnet-tools.json'
+        $originalManifest = Get-Content -LiteralPath $manifestPath -Raw
+        try {
+            Set-Content -LiteralPath $manifestPath -Value '{"version":1}'
+            $probes = @{} + $readyProbes
+            $probes.Remove('dotnet-tools')
+            $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Core -ProbeOverrides $probes
+        }
+        finally {
+            Set-Content -LiteralPath $manifestPath -Value $originalManifest
+        }
+
+        $report.Status | Should -Be 'INCOMPLETE'
+        @($report.Checks | Where-Object Name -EQ 'dotnet-tools-manifest').State | Should -Be 'unsupported'
+        @($report.Checks | Where-Object Name -EQ 'dotnet-tools').State | Should -Be 'unsupported'
+    }
+
     It 'reports denied GitHub access as unknown without exposing credentials' {
         $probes = @{} + $readyProbes
         $probes['github-repository'] = [pscustomobject]@{ Available = $true; Output = ''; ExitCode = 1; Error = 'permission denied' }

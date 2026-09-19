@@ -178,9 +178,14 @@ function Get-AgentDoctorReport {
         if (Test-Path -LiteralPath $toolsManifest -PathType Leaf) {
             try {
                 $toolData = Get-Content -LiteralPath $toolsManifest -Raw | ConvertFrom-Json
-                Add-DoctorCheck -Checks $checks -Name 'dotnet-tools-manifest' -State ready -Required $true -Details "Pinned tool manifest contains $(@($toolData.tools.PSObject.Properties).Count) tools."
+                $toolProperties = @($toolData.tools.PSObject.Properties)
+                if ($toolProperties.Count -eq 0) { throw [System.IO.InvalidDataException]::new('Local tool manifest must contain a nonempty tools object.') }
+                Add-DoctorCheck -Checks $checks -Name 'dotnet-tools-manifest' -State ready -Required $true -Details "Pinned tool manifest contains $($toolProperties.Count) tools."
             }
-            catch { Add-DoctorCheck -Checks $checks -Name 'dotnet-tools-manifest' -State unsupported -Required $true -Details $_.Exception.Message -Remediation 'Repair .config/dotnet-tools.json.' }
+            catch {
+                $toolData = $null
+                Add-DoctorCheck -Checks $checks -Name 'dotnet-tools-manifest' -State unsupported -Required $true -Details $_.Exception.Message -Remediation 'Repair .config/dotnet-tools.json.'
+            }
         }
         else {
             Add-DoctorCheck -Checks $checks -Name 'dotnet-tools-manifest' -State missing -Required $true -Details 'Pinned local tool manifest is missing.' -Remediation 'Restore .config/dotnet-tools.json.'
