@@ -45,11 +45,15 @@ function Remove-MarkdownLinkDestinations {
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
     $builder = [System.Text.StringBuilder]::new()
     $index = 0
+    $operations = 0
+    $operationBudget = [Math]::Max(1000, [Math]::Min(1000000, ($Content.Length * 4) + 1000))
     while ($index -lt $Content.Length) {
         if ($index + 1 -lt $Content.Length -and $Content[$index] -eq ']' -and $Content[$index + 1] -eq '(') {
             $depth = 1
             $cursor = $index + 2
             while ($cursor -lt $Content.Length -and $depth -gt 0) {
+                $operations++
+                if ($operations -gt $operationBudget) { return $builder.ToString() }
                 if ($Content[$cursor] -eq '\' -and $cursor + 1 -lt $Content.Length) {
                     $cursor += 2
                     continue
@@ -77,7 +81,8 @@ function Remove-NonRenderedMarkdown {
     $fenceCharacter = ''
     $fenceLength = 0
     $withoutFences = foreach ($line in ($Content -split '\r?\n')) {
-        if (-not $insideFence -and $line -match '^[ ]{0,3}(?<Fence>`{3,}|~{3,})') {
+        $containerLine = $line -replace '^(?:[ ]{0,3}>[ \t]?)+', ''
+        if (-not $insideFence -and $containerLine -match '^[ ]{0,3}(?<Fence>`{3,}|~{3,})') {
             $insideFence = $true
             $fenceCharacter = $Matches.Fence.Substring(0, 1)
             $fenceLength = $Matches.Fence.Length
@@ -86,7 +91,7 @@ function Remove-NonRenderedMarkdown {
         }
         if ($insideFence) {
             $closingPattern = '^[ ]{0,3}' + [regex]::Escape($fenceCharacter) + '{' + $fenceLength + ',}[ \t]*$'
-            if ($line -match $closingPattern) { $insideFence = $false }
+            if ($containerLine -match $closingPattern) { $insideFence = $false }
             ''
             continue
         }
@@ -94,7 +99,7 @@ function Remove-NonRenderedMarkdown {
     }
     $withoutFences = $withoutFences -join [Environment]::NewLine
     $withoutComments = Remove-MarkdownHtmlComments -Content $withoutFences
-    $withoutComments = [regex]::Replace($withoutComments, '(?m)<(?!https?://|mailto:)[^>\r\n]*>', '')
+    $withoutComments = [regex]::Replace($withoutComments, '(?m)<(?!https?://|mailto:)(?:[^>\"''\r\n]|\"[^\"]*\"|''[^'']*'')*>', '')
     $withoutComments = [regex]::Replace($withoutComments, '(?m)^(?: {4}|\t)[^\r\n]*(?:\r?\n|$)', '')
     $withoutComments = [regex]::Replace($withoutComments, '(?m)^(?:[ ]{0,3}>[ \t]?)+[ ]{4,}[^\r\n]*(?:\r?\n|$)', '')
     $builder = [System.Text.StringBuilder]::new()
@@ -155,17 +160,18 @@ function Get-PrIssueReferences {
     }
     $usedLabels = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
     foreach ($used in [regex]::Matches($Content, '\[[^\]\r\n]+\]\[(?<Label>[^\]\r\n]*)\]')) {
-        $label = $used.Groups['Label'].Value.Trim()
-        if ([string]::IsNullOrWhiteSpace($label)) { $label = [regex]::Match($used.Value, '^\[(?<Text>[^\]\r\n]+)\]\[\]$').Groups['Text'].Value.Trim() }
+        $label = [regex]::Replace($used.Groups['Label'].Value.Trim(), '\s+', ' ')
+        if ([string]::IsNullOrWhiteSpace($label)) { $label = [regex]::Match($used.Value, '^\[(?<Text>[^\]\r\n]+)\]\[\]$').Groups['Text'].Value.Trim(); $label = [regex]::Replace($label, '\s+', ' ') }
         if ($label) { $null = $usedLabels.Add($label) }
     }
     foreach ($used in [regex]::Matches($Content, '(?<!\!)\[(?<Label>[^\]\r\n]+)\](?![ \t]*(?:\(|\[|:))')) {
-        $null = $usedLabels.Add($used.Groups['Label'].Value.Trim())
+        $null = $usedLabels.Add([regex]::Replace($used.Groups['Label'].Value.Trim(), '\s+', ' '))
     }
     $contentForExtraction = $Content
     $definitionPattern = '(?m)^[ \t]{0,3}\[(?<Label>[^\]\r\n]+)\]:[ \t]*(?<Destination><[^>\r\n]+>|\S+)(?:[ \t]+.*)?$'
     foreach ($definition in [regex]::Matches($Content, $definitionPattern)) {
-        $replacement = if ($usedLabels.Contains($definition.Groups['Label'].Value.Trim())) { " $($definition.Groups['Destination'].Value) " } else { '' }
+        $definitionLabel = [regex]::Replace($definition.Groups['Label'].Value.Trim(), '\s+', ' ')
+        $replacement = if ($usedLabels.Contains($definitionLabel)) { " $($definition.Groups['Destination'].Value) " } else { '' }
         $contentForExtraction = $contentForExtraction.Replace($definition.Value, $replacement)
     }
     $fullUrlPattern = '(?<![A-Za-z0-9+./?=&%_-])https://github\.com/(?<Owner>[^/\s]+)/(?<Repo>[^/#\s]+)/(?<Kind>issues|pull)/(?<Number>\d+)(?=[/?#\s>)\].,;!?]|$)'
@@ -177,6 +183,8 @@ function Get-PrIssueReferences {
         if (-not ([string]::Equals($matchOwner, $Owner, [System.StringComparison]::OrdinalIgnoreCase) -and [string]::Equals($matchRepo, $Name, [System.StringComparison]::OrdinalIgnoreCase))) {
             continue
         }
+        $prefix = $contentForExtraction.Substring(0, $match.Index)
+        if ($prefix -match '!\[[^\]\r\n]*\]\($') { continue }
         if ($kind -eq 'pull') { continue }
         if (-not (& $addReference -Number $number -Text $match.Value)) { return @($references) }
     }

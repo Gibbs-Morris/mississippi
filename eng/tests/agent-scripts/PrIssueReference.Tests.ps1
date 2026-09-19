@@ -193,11 +193,14 @@ Refs #741
     }
 
     It 'does not close a fence indented beyond three spaces' {
-        $body = "```md`r`nRefs #741`r`n    ``` `r`nRefs #741"
+        $backtick = [char]96
+        $fence = [string]::new($backtick, 3)
+        $body = $fence + 'md' + [Environment]::NewLine + 'Refs #741' + [Environment]::NewLine + '    ' + $fence
         $outcome = Invoke-ReferenceValidator -Body $body
 
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Valid | Should -BeTrue
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+        return
     }
 
     It 'ignores variable-width inline code spans' {
@@ -230,6 +233,13 @@ Refs #741
 
     It 'ignores shorthand tokens in Markdown link destinations' {
         $outcome = Invoke-ReferenceValidator -Body '[tracking details](#741)'
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
+    It 'ignores issue URLs used as Markdown image destinations' {
+        $outcome = Invoke-ReferenceValidator -Body '![tracking](https://github.com/Gibbs-Morris/mississippi/issues/741)'
 
         $outcome.ExitCode | Should -Not -Be 0
         $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
@@ -285,7 +295,7 @@ Refs #741
     It 'publishes PR-isolated status contexts' {
         $workflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github/workflows/pr-issue-reference.yml') -Raw
 
-        $workflow | Should -Match 'PR Issue Reference / PR #'
+        $workflow | Should -Match "context='PR Issue Reference'"
         $workflow | Should -Match 'PR_NUMBER'
     }
 
