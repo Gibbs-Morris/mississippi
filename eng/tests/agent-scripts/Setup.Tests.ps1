@@ -32,6 +32,7 @@ Describe 'Canonical repository setup' {
         $outcome.ExitCode | Should -Be 0
         @($outcome.Plan.Steps | Where-Object Name -EQ 'restore-docs').Arguments | Should -Contain 'ci'
         @($outcome.Plan.Steps | Where-Object Name -EQ 'restore-docs').Arguments | Should -Contain '--ignore-scripts'
+        @($outcome.Plan.Steps | Where-Object Name -EQ 'install-markdownlint').Arguments | Should -Contain 'markdownlint-cli@0.45.0'
     }
 
     It 'keeps browser setup diagnostic-only' {
@@ -44,6 +45,13 @@ Describe 'Canonical repository setup' {
 
     It 'makes Pester installation explicit' {
         $outcome = Get-SetupPlan -Profile Core -InstallPester
+
+        $outcome.ExitCode | Should -Be 0
+        @($outcome.Plan.Steps | Where-Object Name -EQ 'install-pester').Count | Should -Be 1
+    }
+
+    It 'honors Pester installation for a non-core profile' {
+        $outcome = Get-SetupPlan -Profile Docs -InstallPester
 
         $outcome.ExitCode | Should -Be 0
         @($outcome.Plan.Steps | Where-Object Name -EQ 'install-pester').Count | Should -Be 1
