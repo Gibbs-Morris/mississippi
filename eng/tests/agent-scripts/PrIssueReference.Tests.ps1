@@ -59,6 +59,18 @@ Refs #741
         $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
     }
 
+    It 'ignores variable-length Markdown fences' {
+        $body = @'
+````md
+Refs #741
+`````
+'@
+        $outcome = Invoke-ReferenceValidator -Body $body
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
     It 'rejects closed issues' {
         $outcome = Invoke-ReferenceValidator -Body 'Refs #742'
 

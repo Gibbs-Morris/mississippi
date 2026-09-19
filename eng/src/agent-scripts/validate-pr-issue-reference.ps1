@@ -15,7 +15,26 @@ $ErrorActionPreference = 'Stop'
 function Remove-NonRenderedMarkdown {
     param([Parameter(Mandatory)][string]$Content)
 
-    $withoutFences = [regex]::Replace($Content, '(?ms)^\s*(```|~~~).*?^\s*\1\s*$', '')
+    $insideFence = $false
+    $fenceCharacter = ''
+    $fenceLength = 0
+    $withoutFences = foreach ($line in ($Content -split '\r?\n')) {
+        if (-not $insideFence -and $line -match '^\s*(?<Fence>`{3,}|~{3,})') {
+            $insideFence = $true
+            $fenceCharacter = $Matches.Fence.Substring(0, 1)
+            $fenceLength = $Matches.Fence.Length
+            ''
+            continue
+        }
+        if ($insideFence) {
+            $closingPattern = '^\s*' + [regex]::Escape($fenceCharacter) + '{' + $fenceLength + ',}\s*$'
+            if ($line -match $closingPattern) { $insideFence = $false }
+            ''
+            continue
+        }
+        $line
+    }
+    $withoutFences = $withoutFences -join [Environment]::NewLine
     $withoutComments = [regex]::Replace($withoutFences, '(?s)<!--.*?(?:-->|$)', '')
     return [regex]::Replace($withoutComments, '`[^`\r\n]*`', '')
 }
