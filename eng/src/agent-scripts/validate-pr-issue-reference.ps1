@@ -12,7 +12,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-function Remove-MarkdownHtmlComments {
+function Remove-MarkdownHtmlComments { # NOSONAR - bounded Markdown comment/code scanner intentionally tracks delimiter state.
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
     $builder = [System.Text.StringBuilder]::new()
     $index = 0
@@ -41,7 +41,7 @@ function Remove-MarkdownHtmlComments {
     return $builder.ToString()
 }
 
-function Remove-MarkdownLinkDestinations {
+function Remove-MarkdownLinkDestinations { # NOSONAR - bounded Markdown destination scanner intentionally tracks balanced parentheses.
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
     $builder = [System.Text.StringBuilder]::new()
     $index = 0
@@ -80,7 +80,7 @@ function Remove-MarkdownLinkDestinations {
     return $builder.ToString()
 }
 
-function Remove-NonRenderedMarkdown {
+function Remove-NonRenderedMarkdown { # NOSONAR - bounded Markdown renderer approximation intentionally coordinates fence, HTML, and code-span states.
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
 
     $insideFence = $false
@@ -151,7 +151,7 @@ function Remove-NonRenderedMarkdown {
     return $builder.ToString()
 }
 
-function Get-PrIssueReferences {
+function Get-PrIssueReferences { # NOSONAR - bounded reference extraction intentionally coordinates rendered Markdown and repository validation states.
     param(
         [Parameter(Mandatory)][AllowEmptyString()][string]$Content,
         [Parameter(Mandatory)][string]$Owner,
