@@ -71,6 +71,12 @@ try {
     $nonSpringBrowserPaths = @($browserPaths | Where-Object { $_ -notmatch '^samples/Spring/' })
     $isBrowser = $springBrowserPaths.Count -gt 0 -or @($normalizedPaths | Where-Object { $_ -match '^samples/Spring/' }).Count -gt 0
     $isDotnet = @($normalizedPaths | Where-Object { $_ -match '\.(?:cs|csproj|slnx)$' -or $_ -match '(?:Directory\.Build|Directory\.Packages|global\.json)' }).Count -gt 0
+    $unmappedPaths = @($normalizedPaths | Where-Object {
+        $_ -notmatch '\.(?:ps1|psm1|psd1|md|mdx|razor|css|cs|csproj|slnx)$' -and
+        $_ -notmatch '(?:Directory\.Build|Directory\.Packages|global\.json)' -and
+        $_ -notmatch '^samples/Spring/' -and
+        $_ -notmatch '^docs/Docusaurus/'
+    })
     $riskChecks = @{
         browser = 'spring-doctor,spring-smoke'
         infrastructure = 'spring-doctor,core-final'
@@ -86,12 +92,12 @@ try {
             $unresolved.Add("Unsupported risk hint '$riskHint'.")
         }
     }
-    $isUnknown = -not ($isPowerShell -or $isMarkdown -or $isBrowser -or $isDotnet)
+    $isUnknown = $unmappedPaths.Count -gt 0
 
     Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'core-final') -Reason 'Required shared final gate.' -MarkdownPaths $markdownPaths
     Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'full-cleanup') -Reason 'Required final cleanup gate.' -MarkdownPaths $markdownPaths
     if ($isPowerShell) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'powershell-tests') -Reason 'PowerShell source or harness path changed.' -MarkdownPaths $markdownPaths }
-    if ($isDotnet -or $isUnknown) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'core-iteration') -Reason $(if ($isUnknown) { 'Unknown mapping selects the broad .NET iteration gate conservatively.' } else { ' .NET source or project path changed.' }) -MarkdownPaths $markdownPaths }
+    if ($isDotnet -or $isUnknown) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'core-iteration') -Reason $(if ($isUnknown) { "Unknown mapping selects the broad .NET iteration gate conservatively for: $($unmappedPaths -join ', ')." } else { ' .NET source or project path changed.' }) -MarkdownPaths $markdownPaths }
     if ($isMarkdown) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'markdown-lint') -Reason 'Markdown or MDX content changed.' -MarkdownPaths $markdownPaths }
     if ($isDocusaurus) { Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'docusaurus-final') -Reason 'Docusaurus content or site configuration changed.' -MarkdownPaths $markdownPaths }
     if ($isBrowser) {

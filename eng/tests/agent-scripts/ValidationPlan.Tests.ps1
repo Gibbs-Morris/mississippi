@@ -70,6 +70,13 @@ Describe 'Deterministic validation plan' {
         @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'core-iteration').Reasons | Should -Match 'Unknown mapping'
     }
 
+    It 'retains unknown handling when mapped and unmapped paths are mixed' {
+        $outcome = Invoke-Plan -Paths @('eng/src/agent-scripts/example.ps1', 'new-tool/generated.surface')
+
+        $outcome.ExitCode | Should -Be 0
+        @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'core-iteration').Reasons | Should -Match 'new-tool/generated.surface'
+    }
+
     It 'applies supported risk hints to check selection' {
         $outcome = Invoke-Plan -Paths @('README.txt') -RiskHints @('browser', 'infrastructure')
 
