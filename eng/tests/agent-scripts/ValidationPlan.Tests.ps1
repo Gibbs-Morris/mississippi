@@ -24,7 +24,7 @@ Describe 'Deterministic validation plan' {
     }
 
     It 'selects the PowerShell gate for PowerShell changes' {
-        $outcome = Invoke-Plan -Paths @('eng/src/agent-scripts/example.ps1')
+        $outcome = Invoke-Plan -Paths @('eng/src/agent-scripts/RepositoryAutomation.psm1')
 
         $outcome.ExitCode | Should -Be 0
         $outcome.Result.SelectedChecks.Id | Should -Contain 'powershell-tests'
@@ -95,7 +95,7 @@ Describe 'Deterministic validation plan' {
     }
 
     It 'retains unknown handling when mapped and unmapped paths are mixed' {
-        $outcome = Invoke-Plan -Paths @('eng/src/agent-scripts/example.ps1', 'new-tool/generated.surface')
+        $outcome = Invoke-Plan -Paths @('eng/src/agent-scripts/RepositoryAutomation.psm1', 'new-tool/generated.surface')
 
         $outcome.ExitCode | Should -Be 0
         @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'core-iteration').Reasons | Should -Match 'new-tool/generated.surface'
@@ -160,6 +160,14 @@ Describe 'Deterministic validation plan' {
         $outcome.ExitCode | Should -Be 1
         $outcome.Result.SelectedChecks.Id | Should -Not -Contain 'spring-smoke'
         $outcome.Result.Unresolved | Should -Match 'requires an application-specific browser context'
+    }
+
+    It 'does not map generic infrastructure risk to an unrelated L2 gate' {
+        $outcome = Invoke-Plan -Paths @('src/Reservoir/State.cs') -RiskHints @('infrastructure')
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.SelectedChecks.Id | Should -Not -Contain 'spring-doctor'
+        $outcome.Result.Unresolved | Should -Match 'requires an application-specific L2 gate'
     }
 
     It 'fails closed for unsupported risk hints' {

@@ -81,7 +81,8 @@ try {
     $markdownCheckPaths = if ($isMarkdownConfig) { @('.') } elseif ($markdownPaths.Count -gt 0) { $markdownPaths } else { @() }
     $selected = [System.Collections.Generic.List[object]]::new()
     $powerShellPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:ps1|psm1|psd1)$' })
-    $unvalidatedPowerShellPaths = @($powerShellPaths | Where-Object { $_ -notmatch '^(?:eng/src/agent-scripts|eng/tests/agent-scripts)/' })
+    $validatedPowerShellPaths = @('eng/src/agent-scripts/RepositoryAutomation.psm1', 'eng/tests/orchestrate-powershell-tests.ps1')
+    $unvalidatedPowerShellPaths = @($powerShellPaths | Where-Object { $validatedPowerShellPaths -notcontains $_ })
     $isPowerShell = $powerShellPaths.Count -gt 0 -or @($normalizedPaths | Where-Object { $_ -eq 'eng/src/agent-scripts/validation-command-catalog.json' }).Count -gt 0
     $isMarkdown = $markdownPaths.Count -gt 0
     $isDocusaurus = @($normalizedPaths | Where-Object { $_ -match '^docs/Docusaurus/' }).Count -gt 0
@@ -149,6 +150,10 @@ try {
             else {
                 $unresolved.Add("Browser risk hint requires an application-specific browser context; no safe gate was selected for the supplied paths.")
             }
+            continue
+        }
+        if ($riskHint -eq 'infrastructure' -and -not $isSpringPath) {
+            $unresolved.Add("Infrastructure risk hint requires an application-specific L2 gate; no safe generic L2 mapping exists for the supplied paths.")
             continue
         }
         if ($riskChecks.Keys -contains $riskHint) {
