@@ -54,6 +54,13 @@ Describe 'Deterministic validation plan' {
         $outcome.Result.SelectedChecks.Id | Should -Contain 'spring-smoke'
     }
 
+    It 'selects full Spring L2 and L3 suites for every Spring change' {
+        $outcome = Invoke-Plan -Paths @('samples/Spring/Spring.Domain/Account.cs')
+
+        $outcome.Result.SelectedChecks.Id | Should -Contain 'spring-l2-full'
+        $outcome.Result.SelectedChecks.Id | Should -Contain 'spring-l3-full'
+    }
+
     It 'does not route non-Spring browser changes to Spring validation' {
         $outcome = Invoke-Plan -Paths @('samples/LightSpeed/LightSpeed.Client/Pages/Index.razor')
 

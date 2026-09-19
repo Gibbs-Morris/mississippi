@@ -80,6 +80,26 @@
       "purpose": "Run the Spring L3 browser smoke journey when browser behavior is affected.",
       "prerequisites": ["Linux Docker daemon", "Playwright Chromium"],
       "expectedArtifacts": ["PASS summary", "spring.trx", "banking.png"]
+    },
+    {
+      "id": "spring-l2-full",
+      "mode": "final",
+      "executable": "pwsh",
+      "arguments": ["./test-spring.ps1", "-TestLevel", "L2", "-Suite", "Full"],
+      "scriptPaths": ["test-spring.ps1"],
+      "purpose": "Run the full Spring L2 API and authorization contract suite.",
+      "prerequisites": ["Linux Docker daemon", "Spring test dependencies"],
+      "expectedArtifacts": ["PASS summary", "L2 test result"]
+    },
+    {
+      "id": "spring-l3-full",
+      "mode": "final",
+      "executable": "pwsh",
+      "arguments": ["./test-spring.ps1", "-TestLevel", "L3", "-Suite", "Full"],
+      "scriptPaths": ["test-spring.ps1"],
+      "purpose": "Run all Spring L3 browser journeys beyond the smoke subset.",
+      "prerequisites": ["Linux Docker daemon", "Playwright Chromium"],
+      "expectedArtifacts": ["PASS summary", "L3 test result", "browser evidence"]
     }
   ]
 }
