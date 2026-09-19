@@ -394,6 +394,7 @@ function Test-IssueSectionContent {
 
     $withoutHeadings = [regex]::Replace($Content, '(?m)^[ \t]{0,3}#{1,6}[ \t]*[^\r\n]*$', '')
     $withoutHeadings = $withoutHeadings.Replace([string][char]0x1e, '')
+    $withoutHeadings = $withoutHeadings.Replace([string][char]0x1f, '')
     return -not [string]::IsNullOrWhiteSpace($withoutHeadings)
 }
 

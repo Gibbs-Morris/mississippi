@@ -325,6 +325,15 @@ Describe 'Implementation-ready issue contract' {
         $outcome.Result.Errors | Should -Contain "Required section '## Problem' is empty."
     }
 
+    It 'treats an empty fenced required section as empty' {
+        $emptyFence = '```text' + [Environment]::NewLine + '   ' + [Environment]::NewLine + '```' + [Environment]::NewLine
+        $content = $validBug -replace '(?ms)(?<=^## Problem\r?\n).*?(?=^## Observable outcome)', $emptyFence
+        $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Errors | Should -Contain "Required section '## Problem' is empty."
+    }
+
     It 'rejects a missing validation section' {
         $content = $validBug -replace '(?ms)^## Validation plan.*?(?=^## Risks and delivery boundary)', ''
         $outcome = Invoke-Validator -IssuePath (New-TemporaryIssue -Content $content)
