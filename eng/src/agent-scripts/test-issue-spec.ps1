@@ -125,12 +125,6 @@ function Remove-MarkdownFencedBlocks {
             $lines.Add($line)
             continue
         }
-        if ($line -match '^\s*#{1,6}[ \t]+') {
-            # Keep rendered commands and prose, but remove structural-looking
-            # headings from fenced examples before section discovery.
-            $lines.Add($line)
-            continue
-        }
         $lines.Add($line)
     }
     return ($lines -join [Environment]::NewLine)
