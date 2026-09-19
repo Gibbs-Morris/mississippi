@@ -148,6 +148,15 @@ Describe 'Repository prerequisite doctor' {
         ($report | ConvertTo-Json -Depth 8) | Should -Not -Match 'token|secret|credential'
     }
 
+    It 'reports a missing Git executable before GitHub identity' {
+        $probes = @{} + $readyProbes
+        $probes['git-remote'] = [pscustomobject]@{ Available = $false; Output = ''; ExitCode = 127; Error = "Command 'git' was not found." }
+        $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile GitHub -ProbeOverrides $probes
+
+        @($report.Checks | Where-Object Name -EQ 'github-repository').State | Should -Be 'missing'
+        @($report.Checks | Where-Object Name -EQ 'github-repository').Details | Should -Match "Command 'git' was not found"
+    }
+
     It 'preserves native output when a probe exits unsuccessfully' {
         $probes = @{} + $readyProbes
         $probes['git-root'] = [pscustomobject]@{ Available = $true; Output = 'fatal: not a git repository'; ExitCode = 128; Error = '' }

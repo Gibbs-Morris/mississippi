@@ -311,7 +311,9 @@ function Get-AgentDoctorReport {
     if ($profiles -contains 'GitHub') {
         $remote = Invoke-DoctorProbe -Name 'git-remote' -FilePath 'git' -Arguments @('-C', $root, 'config', '--get', 'remote.origin.url') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
         $gh = Invoke-DoctorProbe -Name 'github-repository' -FilePath 'gh' -Arguments @('repo', 'view', '--json', 'nameWithOwner') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
-        Add-DoctorCheck -Checks $checks -Name 'github-repository' -State $(if (-not $remote.Available -or $remote.ExitCode -ne 0) { 'unknown' } elseif (-not $gh.Available) { 'missing' } elseif ($gh.ExitCode -eq 0) { 'ready' } else { 'unknown' }) -Required $true -Details $(if ($gh.ExitCode -eq 0) { 'Repository identity resolved without exposing credentials.' } else { Get-DoctorProbeDetails -Probe $gh }) -Remediation 'Authenticate gh with read access to the current repository.'
+        $githubState = if (-not $remote.Available) { 'missing' } elseif ($remote.ExitCode -ne 0) { 'unknown' } elseif (-not $gh.Available) { 'missing' } elseif ($gh.ExitCode -eq 0) { 'ready' } else { 'unknown' }
+        $githubDetails = if (-not $remote.Available -or $remote.ExitCode -ne 0) { Get-DoctorProbeDetails -Probe $remote } elseif ($gh.ExitCode -eq 0) { 'Repository identity resolved without exposing credentials.' } else { Get-DoctorProbeDetails -Probe $gh }
+        Add-DoctorCheck -Checks $checks -Name 'github-repository' -State $githubState -Required $true -Details $githubDetails -Remediation 'Authenticate gh with read access to the current repository and verify Git is installed.'
     }
     else { Add-DoctorCheck -Checks $checks -Name 'github-profile' -State not-required -Required $false -Details 'GitHub delivery prerequisites were not requested.' }
 
