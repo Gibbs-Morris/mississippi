@@ -65,7 +65,10 @@ try {
     $selected = [System.Collections.Generic.List[object]]::new()
     $isPowerShell = @($normalizedPaths | Where-Object { $_ -match '\.(?:ps1|psm1|psd1)$' }).Count -gt 0
     $isMarkdown = $markdownPaths.Count -gt 0
-    $isBrowser = @($normalizedPaths | Where-Object { $_ -match '\.(?:razor|css)$' -or $_ -match '^samples/Spring/' }).Count -gt 0
+    $browserPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:razor|css)$' })
+    $springBrowserPaths = @($browserPaths | Where-Object { $_ -match '^samples/Spring/' })
+    $nonSpringBrowserPaths = @($browserPaths | Where-Object { $_ -notmatch '^samples/Spring/' })
+    $isBrowser = $springBrowserPaths.Count -gt 0 -or @($normalizedPaths | Where-Object { $_ -match '^samples/Spring/' }).Count -gt 0
     $isDotnet = @($normalizedPaths | Where-Object { $_ -match '\.(?:cs|csproj|slnx)$' -or $_ -match '(?:Directory\.Build|Directory\.Packages|global\.json)' }).Count -gt 0
     $riskChecks = @{
         browser = 'spring-doctor,spring-smoke'
@@ -92,6 +95,9 @@ try {
     if ($isBrowser) {
         Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'spring-doctor') -Reason 'Browser-facing or Spring path changed.' -MarkdownPaths $markdownPaths
         Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'spring-smoke') -Reason 'Rendered/browser behavior may be affected.' -MarkdownPaths $markdownPaths
+    }
+    if ($nonSpringBrowserPaths.Count -gt 0) {
+        $unresolved.Add("No application-specific browser validation gate is configured for non-Spring browser paths: $($nonSpringBrowserPaths -join ', ').")
     }
     foreach ($riskHint in $normalizedRiskHints) {
         if ($riskChecks.Keys -contains $riskHint) {

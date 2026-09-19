@@ -47,6 +47,15 @@ Describe 'Deterministic validation plan' {
         $outcome.Result.SelectedChecks.Id | Should -Contain 'spring-smoke'
     }
 
+    It 'does not route non-Spring browser changes to Spring validation' {
+        $outcome = Invoke-Plan -Paths @('samples/LightSpeed/LightSpeed.Client/Pages/Index.razor')
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.SelectedChecks.Id | Should -Not -Contain 'spring-doctor'
+        $outcome.Result.SelectedChecks.Id | Should -Not -Contain 'spring-smoke'
+        $outcome.Result.Unresolved | Should -Match 'No application-specific browser validation gate'
+    }
+
     It 'selects broad checks conservatively for unknown paths' {
         $outcome = Invoke-Plan -Paths @('new-tool/generated.surface')
 
