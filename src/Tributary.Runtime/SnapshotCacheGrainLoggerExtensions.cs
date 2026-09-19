@@ -32,6 +32,18 @@ internal static partial class SnapshotCacheGrainLoggerExtensions
         string snapshotKey
     );
 
+    [LoggerMessage(
+        11,
+        LogLevel.Debug,
+        "Snapshot persistence skipped for {SnapshotType} at version {Version}: modulus {RetainModulus}, persist-all {ShouldPersistAllSnapshots}")]
+    public static partial void PersistenceSkipped(
+        this ILogger logger,
+        string snapshotType,
+        long version,
+        int retainModulus,
+        bool shouldPersistAllSnapshots
+    );
+
     [LoggerMessage(5, LogLevel.Debug, "Rebuilding state from brook {BrookKey} for snapshot {SnapshotKey}")]
     public static partial void RebuildingFromStream(
         this ILogger logger,
@@ -54,6 +66,18 @@ internal static partial class SnapshotCacheGrainLoggerExtensions
     public static partial void RequestingPersistence(
         this ILogger logger,
         string snapshotKey
+    );
+
+    [LoggerMessage(
+        12,
+        LogLevel.Debug,
+        "Snapshot retention policy applied to {SnapshotType} ({SnapshotStorageName}): modulus {RetainModulus}, persist-all {ShouldPersistAllSnapshots}")]
+    public static partial void RetentionPolicyApplied(
+        this ILogger logger,
+        string snapshotType,
+        string snapshotStorageName,
+        int retainModulus,
+        bool shouldPersistAllSnapshots
     );
 
     [LoggerMessage(2, LogLevel.Debug, "Loaded snapshot from storage for key {SnapshotKey}")]
