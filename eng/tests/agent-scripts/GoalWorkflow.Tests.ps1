@@ -11,8 +11,9 @@ Describe 'Issue-driven goal workflow' {
         $powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
         $scriptPath = Join-Path $repoRoot 'eng/src/agent-scripts/invoke-github-issue-goal.ps1'
         $checkpoint = Join-Path $TestDrive 'goals/741/checkpoint.json'
+        $validIssueBody = Get-Content -LiteralPath (Join-Path $repoRoot 'eng/tests/agent-scripts/fixtures/issue-spec-bug-fix.md') -Raw
         function New-IssueJson {
-            param([string]$Body = "## Problem`nA safe problem.`n`n## Acceptance criteria`n- [AC1] Resume safely.")
+            param([Parameter(Mandatory)][string]$Body)
             [pscustomobject]@{
                 number = 741
                 title = '[Task] Goal route fixture'
@@ -24,10 +25,11 @@ Describe 'Issue-driven goal workflow' {
         function Invoke-Goal {
             param(
                 [ValidateSet('start', 'resume')][string]$Action = 'start',
-                [string]$Body = "## Problem`nA safe problem.`n`n## Acceptance criteria`n- [AC1] Resume safely.",
+                [string]$Body = $validIssueBody,
                 [string]$Head = 'head-fixture',
                 [string]$Base = 'base-fixture',
-                [string]$Operation = ''
+                [string]$Operation = '',
+                [switch]$EvidenceValidated
             )
             $arguments = @('-NoProfile', '-File', $scriptPath, '-Action', $Action,
                 '-RepositoryOwner', 'Gibbs-Morris', '-RepositoryName', 'mississippi',
@@ -35,9 +37,14 @@ Describe 'Issue-driven goal workflow' {
                 '-CheckpointPath', $checkpoint, '-RepositoryRoot', $repoRoot,
                 '-HeadRevision', $Head, '-BaseRevision', $Base, '-Json')
             if ($Operation) { $arguments += @('-OperationStateJson', $Operation) }
+            if ($EvidenceValidated) { $arguments += '-EvidenceValidated' }
             $output = & $powerShellPath @arguments 2>&1 | Out-String
             [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output; Result = $output | ConvertFrom-Json }
         }
+    }
+
+    BeforeEach {
+        Remove-Item -LiteralPath $checkpoint -Force -ErrorAction SilentlyContinue
     }
 
     It 'starts from one issue and records a non-authorizing checkpoint' {
@@ -63,7 +70,8 @@ Describe 'Issue-driven goal workflow' {
 
     It 'detects edited issue scope before implementation continues' {
         $null = Invoke-Goal
-        $outcome = Invoke-Goal -Action resume -Body "## Problem`nChanged scope.`n`n## Acceptance criteria`n- [AC1] Different."
+        $changedBody = $validIssueBody -replace 'Empty identifiers', 'Changed identifiers'
+        $outcome = Invoke-Goal -Action resume -Body $changedBody
 
         $outcome.ExitCode | Should -Be 2
         $outcome.Result.Status | Should -Be 'scope-changed'
@@ -77,6 +85,14 @@ Describe 'Issue-driven goal workflow' {
         $outcome.ExitCode | Should -Be 0
         $outcome.Result.Status | Should -Be 'evidence-stale'
         $outcome.Result.EvidenceFresh | Should -BeFalse
+    }
+
+    It 'promotes a changed baseline only after explicit revalidation' {
+        $null = Invoke-Goal
+        $null = Invoke-Goal -Action resume -Head 'new-head-fixture'
+        $outcome = Invoke-Goal -Action resume -Head 'new-head-fixture' -EvidenceValidated
+
+        $outcome.Result.EvidenceFresh | Should -BeTrue
     }
 
     It 'waits on a running operation handle instead of duplicating it' {

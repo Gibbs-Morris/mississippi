@@ -32,7 +32,16 @@ function Get-GoalWorktreeFingerprint {
     param([Parameter(Mandatory)][string]$Root)
     $status = @(& git -c "safe.directory=$($Root.Replace('\', '/'))" -C $Root status --porcelain=v1 --untracked-files=all 2>$null)
     if ($LASTEXITCODE -ne 0) { throw 'Unable to resolve the current worktree fingerprint.' }
-    $content = ($status -join "`n")
+    $fileHashes = foreach ($line in $status) {
+        if ([string]$line.Length -lt 4) { continue }
+        $relative = ([string]$line).Substring(3).Trim('"')
+        $full = Join-Path $Root $relative
+        if (Test-Path -LiteralPath $full -PathType Leaf) {
+            "${relative}:$((Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant())"
+        }
+        else { "${relative}:missing" }
+    }
+    $content = (($status -join "`n") + "`n" + ($fileHashes -join "`n"))
     $hash = [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($content))
     return 'SHA256:' + (($hash | ForEach-Object { $_.ToString('x2') }) -join '')
 }
@@ -69,6 +78,18 @@ function Get-GoalOperationState {
     }
 }
 
+function Test-GoalIssueContract {
+    param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][string]$Body)
+    $temporary = Join-Path ([System.IO.Path]::GetTempPath()) ("mississippi-goal-" + [guid]::NewGuid().ToString('N') + '.md')
+    try {
+        Set-Content -LiteralPath $temporary -Value $Body -Encoding utf8
+        $validator = Join-Path $Root 'eng/src/agent-scripts/test-issue-spec.ps1'
+        $output = & pwsh -NoProfile -File $validator -Path $temporary -RepositoryRoot $Root -Json 2>&1 | Out-String
+        if ($LASTEXITCODE -ne 0) { throw "Issue contract validation failed: $($output.Trim())" }
+    }
+    finally { Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue }
+}
+
 try {
     $root = (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
     $issue = Get-GoalIssue -Owner $RepositoryOwner -Name $RepositoryName -Number $IssueNumber -Json $IssueJson
@@ -81,6 +102,8 @@ try {
     $currentDigest = Get-GoalBodyDigest -Body $currentBody
     $currentHead = if ([string]::IsNullOrWhiteSpace($HeadRevision)) { Get-GoalRevision -Root $root -Name 'HEAD' } else { $HeadRevision }
     $currentBase = if ([string]::IsNullOrWhiteSpace($BaseRevision)) { Get-GoalRevision -Root $root -Name 'origin/main' } else { $BaseRevision }
+    if ([string]::IsNullOrWhiteSpace($BaseRevision)) { throw 'BaseRevision must be supplied explicitly, including the immediate parent for stacked work.' }
+    Test-GoalIssueContract -Root $root -Body $currentBody
     $operation = Get-GoalOperationState -Json $OperationStateJson
 
     if ($Action -eq 'resume' -and -not (Test-Path -LiteralPath $checkpoint -PathType Leaf)) {
@@ -115,9 +138,10 @@ try {
     $revisionChanged = $null -ne $previous -and (($headBaseline -ne $currentHead) -or ($baseBaseline -ne $currentBase))
     $worktreeChanged = $null -ne $previous -and $worktreeBaseline -ne $currentWorktreeFingerprint
     $activeOperation = $operation.Status -eq 'running'
+    $operationCompleted = $null -ne $previous -and [string]$previous.Operation.Status -eq 'running' -and $operation.Status -in @('completed', 'failed')
     $status = if ($scopeChanged) { 'scope-changed' } elseif ($activeOperation) { 'operation-running' } elseif ($revisionChanged -or $worktreeChanged) { 'evidence-stale' } elseif ($null -eq $previous) { 'started' } else { 'resumed' }
-    $evidenceFresh = -not $scopeChanged -and -not $revisionChanged -and -not $worktreeChanged -and -not $activeOperation -and ($EvidenceValidated -or ($null -ne $previous -and [bool]$previous.EvidenceFresh))
-    $nextAction = if ($scopeChanged) { 'reconcile-edited-issue-before-implementation' } elseif ($activeOperation) { "wait-for-existing-operation:$($operation.Handle)" } elseif ($revisionChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($null -eq $previous) { 'inspect-guidance-and-prerequisites' } else { [string]$previous.NextAction }
+    $evidenceFresh = -not $activeOperation -and (($EvidenceValidated) -or (-not $scopeChanged -and -not $revisionChanged -and -not $worktreeChanged -and ($null -ne $previous -and [bool]$previous.EvidenceFresh)))
+    $nextAction = if ($scopeChanged) { 'reconcile-edited-issue-before-implementation' } elseif ($activeOperation) { "wait-for-existing-operation:$($operation.Handle)" } elseif ($operationCompleted) { 'inspect-completed-operation-result' } elseif ($revisionChanged -or $worktreeChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($null -eq $previous) { 'inspect-guidance-and-prerequisites' } else { [string]$previous.NextAction }
     if ([string]::IsNullOrWhiteSpace($nextAction)) { $nextAction = 'inspect-guidance-and-prerequisites' }
 
     $record = [ordered]@{
@@ -134,10 +158,10 @@ try {
         HeadRevision = $currentHead
         BaseRevision = $currentBase
         WorktreeFingerprint = $currentWorktreeFingerprint
-        ValidatedIssueBodyDigest = if ($evidenceFresh) { $currentDigest } else { $validatedDigest }
-        ValidatedHeadRevision = if ($evidenceFresh) { $currentHead } else { $validatedHead }
-        ValidatedBaseRevision = if ($evidenceFresh) { $currentBase } else { $validatedBase }
-        ValidatedWorktreeFingerprint = if ($evidenceFresh) { $currentWorktreeFingerprint } else { $validatedWorktree }
+        ValidatedIssueBodyDigest = if ($EvidenceValidated -or $evidenceFresh) { $currentDigest } else { $validatedDigest }
+        ValidatedHeadRevision = if ($EvidenceValidated -or $evidenceFresh) { $currentHead } else { $validatedHead }
+        ValidatedBaseRevision = if ($EvidenceValidated -or $evidenceFresh) { $currentBase } else { $validatedBase }
+        ValidatedWorktreeFingerprint = if ($EvidenceValidated -or $evidenceFresh) { $currentWorktreeFingerprint } else { $validatedWorktree }
         Worktree = $root
         Action = $Action
         Status = $status
