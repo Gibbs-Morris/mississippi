@@ -268,6 +268,16 @@ public sealed class SnapshotRetentionOptionsTests
     }
 
     /// <summary>
+    ///     Verifies that the non-generic persistence eligibility overload rejects a null state type.
+    /// </summary>
+    [Fact]
+    public void ShouldPersistSnapshotRejectsNullStateType()
+    {
+        SnapshotRetentionOptions options = new();
+        Assert.Throws<ArgumentNullException>(() => options.ShouldPersistSnapshot(null!, 0));
+    }
+
+    /// <summary>
     ///     Verifies that persistence eligibility uses the interval and save-all override.
     /// </summary>
     [Fact]
