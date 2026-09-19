@@ -65,6 +65,15 @@ Describe 'Repository prerequisite doctor' {
         $report.RequiredFailures | Should -Contain 'dotnet-sdk'
     }
 
+    It 'rejects an unsupported Docs Node version' {
+        $probes = @{} + $readyProbes
+        $probes['node-version'] = [pscustomobject]@{ Available = $true; Output = 'v18.20.0'; ExitCode = 0; Error = '' }
+        $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Docs -ProbeOverrides $probes
+
+        @($report.Checks | Where-Object Name -EQ 'node').State | Should -Be 'unsupported'
+        $report.RequiredFailures | Should -Contain 'node'
+    }
+
     It 'reports denied GitHub access as unknown without exposing credentials' {
         $probes = @{} + $readyProbes
         $probes['github-repository'] = [pscustomobject]@{ Available = $true; Output = ''; ExitCode = 1; Error = 'permission denied' }

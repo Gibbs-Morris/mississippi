@@ -129,7 +129,11 @@ function Get-AgentDoctorReport {
         $lockFile = Join-Path $root 'docs/Docusaurus/package-lock.json'
         $node = Invoke-DoctorProbe -Name 'node-version' -FilePath 'node' -Arguments @('--version') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
         $npm = Invoke-DoctorProbe -Name 'npm-version' -FilePath 'npm' -Arguments @('--version') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
-        Add-DoctorCheck -Checks $checks -Name 'node' -State $(if ($node.Available -and $node.ExitCode -eq 0) { 'ready' } elseif (-not $node.Available) { 'missing' } else { 'unknown' }) -Required $true -Details $node.Output -Remediation 'Install Node.js for the documentation profile.'
+        $nodeVersionMatch = if ($node.Available -and $node.ExitCode -eq 0) { [regex]::Match($node.Output.Trim(), '^v?(?<Major>\d+)(?:\.(?<Minor>\d+))?(?:\.(?<Patch>\d+))?') } else { $null }
+        $nodeState = if (-not $node.Available) { 'missing' } elseif ($node.ExitCode -ne 0) { 'unknown' } elseif (-not $nodeVersionMatch.Success) { 'unknown' } elseif ([int]$nodeVersionMatch.Groups['Major'].Value -lt 20) { 'unsupported' } else { 'ready' }
+        $nodeDetails = if ($node.Output) { $node.Output } else { $node.Error }
+        $nodeRemediation = if ($nodeState -eq 'ready') { '' } elseif ($nodeState -eq 'unsupported') { 'Install Node.js 20 or later for the documentation profile.' } else { 'Install Node.js 20 or later and verify node --version.' }
+        Add-DoctorCheck -Checks $checks -Name 'node' -State $nodeState -Required $true -Details $nodeDetails -Remediation $nodeRemediation
         Add-DoctorCheck -Checks $checks -Name 'npm' -State $(if ($npm.Available -and $npm.ExitCode -eq 0) { 'ready' } elseif (-not $npm.Available) { 'missing' } else { 'unknown' }) -Required $true -Details $npm.Output -Remediation 'Install npm for the documentation profile.'
         Add-DoctorCheck -Checks $checks -Name 'docs-manifests' -State $(if ((Test-Path $packageJson -PathType Leaf) -and (Test-Path $lockFile -PathType Leaf)) { 'ready' } else { 'missing' }) -Required $true -Details "package.json=$((Test-Path $packageJson -PathType Leaf)); package-lock.json=$((Test-Path $lockFile -PathType Leaf))." -Remediation 'Restore the Docusaurus package manifests.'
     }
