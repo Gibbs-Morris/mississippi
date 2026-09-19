@@ -59,6 +59,32 @@ Describe 'PR readiness snapshot' {
         ($outcome.Blockers -join "`n") | Should -Match 'draft|mergeability|requests changes|polling'
     }
 
+    It 'blocks aggregate review decisions that are not APPROVED' {
+        $snapshot = $readySnapshot.PSObject.Copy()
+        $snapshot.ReviewDecision = 'REVIEW_REQUIRED'
+
+        $outcome = Invoke-Readiness -Snapshot $snapshot
+
+        $outcome.Status | Should -Be 'INCOMPLETE'
+        $outcome.Blockers | Should -Contain 'Aggregate review decision is REVIEW_REQUIRED.'
+    }
+
+    It 'accepts a resolved outdated thread as having a disposition' {
+        $snapshot = $readySnapshot.PSObject.Copy()
+        $snapshot.ReviewThreads = @([pscustomobject]@{ IsResolved = $true; IsOutdated = $true })
+
+        $outcome = Invoke-Readiness -Snapshot $snapshot
+
+        $outcome.Status | Should -Be 'READY'
+    }
+
+    It 'keeps matrix identities separate in the expected check catalog' {
+        $patterns = @(Get-PrReadinessExpectedCheckPatterns)
+
+        $patterns | Should -Contain '^Build \(ubuntu-latest, mississippi\.slnx\)$'
+        $patterns | Should -Contain '^Build \(ubuntu-latest, samples\.slnx\)$'
+    }
+
     It 'collects the live paths through an injectable GitHub provider and re-fetches the base and head' {
         $pullStart = [pscustomobject]@{ head = [pscustomobject]@{ sha = 'head-start' }; base = [pscustomobject]@{ sha = 'base-start' }; state = 'open'; draft = $false; mergeable_state = 'clean'; html_url = 'https://github.com/Gibbs-Morris/mississippi/pull/744' }
         $pullEnd = [pscustomobject]@{ head = [pscustomobject]@{ sha = 'head-end' }; base = [pscustomobject]@{ sha = 'base-end' }; state = 'open'; draft = $false; mergeable_state = 'clean'; html_url = $pullStart.html_url }
