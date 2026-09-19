@@ -22,19 +22,20 @@ Describe 'RepositoryAutomation helpers' {
 
     It 'leases one worktree exclusively and permits reentrant reuse' {
         $leaseRoot = Join-Path $TestDrive 'lease-repository'
+        $coordinationRoot = Join-Path $TestDrive 'lease-coordination'
         New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
-        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-one'
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-one' -LeaseDirectory $coordinationRoot
         try {
-            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-two' } | Should -Throw '*execution lease is held*'
-            $nestedLease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -ExistingLease $lease
+            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-two' -LeaseDirectory $coordinationRoot } | Should -Throw '*execution lease is held*'
+            $nestedLease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -ExistingLease $lease -LeaseDirectory $coordinationRoot
             try { $nestedLease.OperationId | Should -Be 'owner-one' } finally { Exit-RepositoryExecutionLease -Lease $nestedLease }
-            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-four' } | Should -Throw '*execution lease is held*'
+            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-four' -LeaseDirectory $coordinationRoot } | Should -Throw '*execution lease is held*'
         }
         finally {
             Exit-RepositoryExecutionLease -Lease $lease
         }
 
-        $released = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-three'
+        $released = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-three' -LeaseDirectory $coordinationRoot
         try { $released.OperationId | Should -Be 'owner-three' } finally { Exit-RepositoryExecutionLease -Lease $released }
     }
 
@@ -46,9 +47,10 @@ Describe 'RepositoryAutomation helpers' {
         try {
             New-Item -ItemType Junction -Path $aliasRoot -Target $realRoot -ErrorAction Stop | Out-Null
             $aliasCreated = $true
-            $lease = Enter-RepositoryExecutionLease -RepoRoot $realRoot -OperationId 'physical-owner'
+            $coordinationRoot = Join-Path $TestDrive 'alias-coordination'
+            $lease = Enter-RepositoryExecutionLease -RepoRoot $realRoot -OperationId 'physical-owner' -LeaseDirectory $coordinationRoot
             try {
-                { Enter-RepositoryExecutionLease -RepoRoot $aliasRoot -OperationId 'alias-owner' } | Should -Throw '*execution lease is held*'
+                { Enter-RepositoryExecutionLease -RepoRoot $aliasRoot -OperationId 'alias-owner' -LeaseDirectory $coordinationRoot } | Should -Throw '*execution lease is held*'
             }
             finally {
                 Exit-RepositoryExecutionLease -Lease $lease
@@ -67,6 +69,20 @@ Describe 'RepositoryAutomation helpers' {
         }
     }
 
+    It 'rejects a reentrant lease from a different worktree' {
+        $firstRoot = Join-Path $TestDrive 'lease-first'
+        $secondRoot = Join-Path $TestDrive 'lease-second'
+        $coordinationRoot = Join-Path $TestDrive 'different-worktree-coordination'
+        New-Item -ItemType Directory -Path $firstRoot, $secondRoot -Force | Out-Null
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $firstRoot -OperationId 'first' -LeaseDirectory $coordinationRoot
+        try {
+            { Enter-RepositoryExecutionLease -RepoRoot $secondRoot -ExistingLease $lease -LeaseDirectory $coordinationRoot } | Should -Throw '*belongs to*'
+        }
+        finally {
+            Exit-RepositoryExecutionLease -Lease $lease
+        }
+    }
+
     It 'resolves relative and chained symlink targets before deriving lease identity' {
         $chainRoot = Join-Path $TestDrive 'lease-chain'
         $realRoot = Join-Path $chainRoot 'real'
@@ -79,8 +95,9 @@ Describe 'RepositoryAutomation helpers' {
             New-Item -ItemType SymbolicLink -Path $linkOne -Target 'link-two' -ErrorAction Stop | Out-Null
             $linksCreated = $true
 
-            $realLeasePath = Get-RepositoryExecutionLeasePath -RepoRoot $realRoot
-            $aliasLeasePath = Get-RepositoryExecutionLeasePath -RepoRoot $linkOne
+            $coordinationRoot = Join-Path $TestDrive 'chain-coordination'
+            $realLeasePath = Get-RepositoryExecutionLeasePath -RepoRoot $realRoot -LeaseDirectory $coordinationRoot
+            $aliasLeasePath = Get-RepositoryExecutionLeasePath -RepoRoot $linkOne -LeaseDirectory $coordinationRoot
 
             $aliasLeasePath | Should -Be $realLeasePath
         }
