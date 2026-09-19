@@ -355,9 +355,24 @@ function Get-AgentContext {
                 }
             }
             foreach ($role in @($WorkflowRole)) {
-                if ($relative -match [regex]::Escape($role)) {
-                    $isSelected = $true
-                    $reasons.Add("workflow-role:$role")
+                $roleToken = $role.ToLowerInvariant()
+                $roleTokens = [System.Collections.Generic.List[string]]::new()
+                $roleTokens.Add($roleToken)
+                if ($roleToken.EndsWith('er', [System.StringComparison]::Ordinal) -and $roleToken.Length -gt 3) {
+                    $roleTokens.Add($roleToken.Substring(0, $roleToken.Length - 2))
+                }
+                foreach ($roleVariant in $roleTokens) {
+                    $roleProbes = @(".github/agents/*$roleVariant*.agent.md", ".github/agents/*$roleVariant*.md")
+                    $scopeMatchesRole = $false
+                    foreach ($scopePattern in @($frontMatter.Patterns)) {
+                        foreach ($roleProbe in $roleProbes) {
+                            if (Test-ContextGlob -Pattern $scopePattern -Path $roleProbe) { $scopeMatchesRole = $true }
+                        }
+                    }
+                    if ($relative -match [regex]::Escape($roleVariant) -or $scopeMatchesRole) {
+                        $isSelected = $true
+                        $reasons.Add("workflow-role:$role")
+                    }
                 }
             }
         }

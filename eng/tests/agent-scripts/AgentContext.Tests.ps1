@@ -51,6 +51,13 @@ applyTo: '.github/agents/*planner*.agent.md'
 
 # Planner route
 '@
+        Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/build-route.instructions.md') -Value @'
+---
+applyTo: '.github/agents/*build*.agent.md'
+---
+
+# Build route
+'@
         Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/instructions/adr-route.instructions.md') -Value @'
 ---
 applyTo: 'docs/Docusaurus/docs/adr/[0-9][0-9][0-9][0-9]-*.md'
@@ -133,6 +140,12 @@ applyTo: '**/*.cs'
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'docs/Docusaurus/docs/adr/0001-example.md'
 
         $context.Selected.Path | Should -Contain '.github/instructions/adr-route.instructions.md'
+    }
+
+    It 'matches workflow roles against declared agent scopes' {
+        $context = Get-AgentContext -RepositoryRoot $fixtureRoot -WorkflowRole build
+
+        $context.Selected.Path | Should -Contain '.github/instructions/build-route.instructions.md'
     }
 
     It 'reports missing required context instead of returning an empty pass' {
