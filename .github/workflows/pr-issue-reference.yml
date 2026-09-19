@@ -43,7 +43,7 @@ jobs:
           function Save-TrustedScript {
             param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][string]$Destination)
 
-            $encoded = gh api "repos/$repository/contents/$Path?ref=$trustedRef" --header 'Accept: application/vnd.github+json' --jq '.content' 2>&1 | Out-String
+            $encoded = gh api "repos/$repository/contents/$Path" --header 'Accept: application/vnd.github+json' -f "ref=$trustedRef" --jq '.content' 2>&1 | Out-String
             if ($LASTEXITCODE -ne 0) { throw "Unable to fetch trusted validator '$Path': $($encoded.Trim())" }
             try { $bytes = [Convert]::FromBase64String(($encoded -replace '\s', '')) }
             catch { throw "Trusted validator '$Path' was not valid base64: $($_.Exception.Message)" }
