@@ -11,9 +11,6 @@ using ArchUnitNET.xUnitV3;
 
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
-#pragma warning disable SA1501, SA1513, SA1413, S3358, S108, SA1600
-
-
 namespace Mississippi.Architecture.L0Tests;
 
 /// <summary>
@@ -30,6 +27,11 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
     private static readonly OpCode[] SingleByteOpCodes = CreateSingleByteOpCodes();
     private static readonly OpCode[] MultiByteOpCodes = CreateMultiByteOpCodes();
 
+    /// <summary>
+    ///     Finds interface or abstract fields populated directly from constructor parameters.
+    /// </summary>
+    /// <param name="types">Types to inspect.</param>
+    /// <returns>Names of fields that receive constructor parameter values.</returns>
     internal static IReadOnlyList<string> FindConstructorInjectedFields(IEnumerable<Type> types)
     {
         List<string> violations = new();
@@ -40,9 +42,10 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             {
                 continue;
             }
+
             foreach (FieldInfo field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
             {
-                if (field.IsStatic || field.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false) ||
+                if (field.IsStatic || field.Name.EndsWith("k__BackingField", StringComparison.Ordinal) ||
                     (!field.FieldType.IsInterface && !field.FieldType.IsAbstract))
                 {
                     continue;
@@ -62,6 +65,11 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
         return violations.OrderBy(value => value, StringComparer.Ordinal).ToArray();
     }
 
+    /// <summary>
+    ///     Returns non-enum value types that do not carry the readonly-struct marker.
+    /// </summary>
+    /// <param name="types">Types to inspect.</param>
+    /// <returns>Names of mutable value types.</returns>
     internal static IReadOnlyList<string> FindNonReadonlyStructs(IEnumerable<Type> types)
     {
         return types
@@ -144,7 +152,10 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
     private static bool ConstructorStoresParameter(ConstructorInfo constructor, FieldInfo targetField)
     {
         byte[]? il = constructor.GetMethodBody()?.GetILAsByteArray();
-        if (il is null) { return false; }
+        if (il is null)
+        {
+            return false;
+        }
 
         bool parameterLoaded = false;
         int offset = 0;
@@ -161,13 +172,16 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                 opcode = SingleByteOpCodes[first];
             }
 
-            if (opcode == OpCodes.Ldarg_1 || opcode == OpCodes.Ldarg_2 || opcode == OpCodes.Ldarg_3 || opcode == OpCodes.Ldarg_S || opcode == OpCodes.Ldarg)
+            if (opcode == OpCodes.Ldarg_0 || opcode == OpCodes.Ldarg_1 || opcode == OpCodes.Ldarg_2 || opcode == OpCodes.Ldarg_3 || opcode == OpCodes.Ldarg_S || opcode == OpCodes.Ldarg)
             {
-                int argumentIndex = opcode.OperandType switch
+                int argumentIndex = opcode switch
                 {
-                    OperandType.ShortInlineVar => il[offset],
-                    OperandType.InlineVar => BitConverter.ToUInt16(il, offset),
-                    _ => opcode == OpCodes.Ldarg_1 ? 1 : opcode == OpCodes.Ldarg_2 ? 2 : 3
+                    _ when opcode == OpCodes.Ldarg_0 => 0,
+                    _ when opcode == OpCodes.Ldarg_1 => 1,
+                    _ when opcode == OpCodes.Ldarg_2 => 2,
+                    _ when opcode == OpCodes.Ldarg_3 => 3,
+                    _ when opcode == OpCodes.Ldarg_S => il[offset],
+                    _ => BitConverter.ToUInt16(il, offset),
                 };
                 parameterLoaded |= argumentIndex > 0;
             }
@@ -176,12 +190,26 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             {
                 int token = BitConverter.ToInt32(il, offset);
                 FieldInfo? storedField = null;
-                try { storedField = constructor.Module.ResolveField(token, constructor.DeclaringType?.GetGenericArguments(), Type.EmptyTypes); }
+                try
+                {
+                    storedField = constructor.Module.ResolveField(token, constructor.DeclaringType?.GetGenericArguments(), Type.EmptyTypes);
+                }
                 catch (ArgumentException)
                 {
                     // An unresolved metadata token cannot prove the field assignment.
                 }
-                if (parameterLoaded && storedField == targetField) { return true; }
+
+                if (parameterLoaded && storedField == targetField)
+                {
+                    return true;
+                }
+
+                parameterLoaded = false;
+            }
+            else if (opcode != OpCodes.Nop &&
+                     opcode != OpCodes.Ldarg_0 && opcode != OpCodes.Ldarg_1 && opcode != OpCodes.Ldarg_2 && opcode != OpCodes.Ldarg_3 &&
+                     opcode != OpCodes.Ldarg_S && opcode != OpCodes.Ldarg)
+            {
                 parameterLoaded = false;
             }
 
@@ -199,7 +227,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             OperandType.ShortInlineI or OperandType.ShortInlineR or OperandType.ShortInlineBrTarget or OperandType.ShortInlineVar => 1,
             OperandType.InlineVar or OperandType.InlineI or OperandType.InlineBrTarget or OperandType.InlineField or OperandType.InlineI8 or OperandType.InlineMethod or OperandType.InlineSig or OperandType.InlineString or OperandType.InlineTok or OperandType.InlineType or OperandType.InlineR => opcode.OperandType == OperandType.InlineI8 || opcode.OperandType == OperandType.InlineR ? 8 : 4,
             OperandType.InlineSwitch => 4 + (4 * BitConverter.ToInt32(il, offset)),
-            _ => 0
+            _ => 0,
         };
     }
 
@@ -208,8 +236,12 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
         OpCode[] result = new OpCode[0x100];
         foreach (FieldInfo field in typeof(OpCodes).GetFields(BindingFlags.Public | BindingFlags.Static))
         {
-            if (field.GetValue(null) is OpCode opcode && opcode.Size == 1 && opcode.Value >= 0) { result[opcode.Value] = opcode; }
+            if (field.GetValue(null) is OpCode opcode && opcode.Size == 1 && opcode.Value >= 0)
+            {
+                result[opcode.Value] = opcode;
+            }
         }
+
         return result;
     }
 
@@ -218,10 +250,12 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
         OpCode[] result = new OpCode[0x100];
         foreach (FieldInfo field in typeof(OpCodes).GetFields(BindingFlags.Public | BindingFlags.Static))
         {
-            if (field.GetValue(null) is OpCode opcode && opcode.Size == 2 && (opcode.Value & 0xFF00) == 0xFE00) { result[opcode.Value & 0xFF] = opcode; }
+            if (field.GetValue(null) is OpCode opcode && opcode.Size == 2 && (opcode.Value & 0xFF00) == 0xFE00)
+            {
+                result[opcode.Value & 0xFF] = opcode;
+            }
         }
+
         return result;
     }
 }
-
-#pragma warning restore SA1501, SA1513, SA1413, S3358, S108, SA1600
