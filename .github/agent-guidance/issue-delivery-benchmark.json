@@ -2,11 +2,16 @@
   "schemaVersion": "1.0",
   "packId": "issue-delivery-benchmark",
   "normalTrialCount": 3,
+  "pairedCases": [
+    {"id":"issue-732-contract","repository":"Gibbs-Morris/mississippi","issueNumber":732,"inputProfile":"parent-issue-contract"},
+    {"id":"issue-732-review","repository":"Gibbs-Morris/mississippi","issueNumber":732,"inputProfile":"parent-issue-review-and-ci"},
+    {"id":"issue-732-delivery","repository":"Gibbs-Morris/mississippi","issueNumber":732,"inputProfile":"parent-issue-independent-prs"}
+  ],
   "categories": [
-    {"id":"csharp-behavior","kind":"normal","surface":"C# behavior fix","authorizedInput":"issue URL, repository, and shared guidance only","independentChecks":["behavior regression","scope compliance","PR traceability"],"failureCases":["edited issue scope","stale validation","unavailable SDK"]},
-    {"id":"powershell-harness","kind":"normal","surface":"PowerShell harness fix","authorizedInput":"issue URL, repository, and shared guidance only","independentChecks":["Pester regression","exit-code contract","no unrelated mutation"],"failureCases":["running operation","timeout","missing Pester"]},
-    {"id":"documentation","kind":"normal","surface":"documentation-only change","authorizedInput":"issue URL, repository, and shared guidance only","independentChecks":["Markdown/MDX lint","link validity","scope compliance"],"failureCases":["missing evidence","unsupported tool","changed issue scope"]},
-    {"id":"browser-visible","kind":"normal","surface":"browser-visible change","authorizedInput":"issue URL, repository, shared guidance, and declared browser prerequisites","independentChecks":["Playwright screenshot/evidence","browser behavior","PR traceability"],"failureCases":["browser unavailable","wrong application gate","stale source"]},
-    {"id":"multi-project-generator","kind":"normal","surface":"multi-project or generator change","authorizedInput":"issue URL, repository, and shared guidance only","independentChecks":["all affected projects","generated output","source/test mapping"],"failureCases":["partial project discovery","generated drift","running operation"]}
+    {"id":"csharp-behavior","kind":"normal","surface":"C# behavior fix","pairedInputIds":["issue-732-contract","issue-732-review","issue-732-delivery"],"authorizedInput":"paired issue-732 case, repository, and shared guidance only","independentChecks":["behavior regression","scope compliance","PR traceability"],"failureCases":["edited issue scope","stale validation","unavailable SDK"]},
+    {"id":"powershell-harness","kind":"normal","surface":"PowerShell harness fix","pairedInputIds":["issue-732-contract","issue-732-review","issue-732-delivery"],"authorizedInput":"paired issue-732 case, repository, and shared guidance only","independentChecks":["Pester regression","exit-code contract","no unrelated mutation"],"failureCases":["running operation","timeout","missing Pester"]},
+    {"id":"documentation","kind":"normal","surface":"documentation-only change","pairedInputIds":["issue-732-contract","issue-732-review","issue-732-delivery"],"authorizedInput":"paired issue-732 case, repository, and shared guidance only","independentChecks":["Markdown/MDX lint","link validity","scope compliance"],"failureCases":["missing evidence","unsupported tool","changed issue scope"]},
+    {"id":"browser-visible","kind":"normal","surface":"browser-visible change","pairedInputIds":["issue-732-contract","issue-732-review","issue-732-delivery"],"authorizedInput":"paired issue-732 case, repository, shared guidance, and declared browser prerequisites","independentChecks":["Playwright screenshot/evidence","browser behavior","PR traceability"],"failureCases":["browser unavailable","wrong application gate","stale source"]},
+    {"id":"multi-project-generator","kind":"normal","surface":"multi-project or generator change","pairedInputIds":["issue-732-contract","issue-732-review","issue-732-delivery"],"authorizedInput":"paired issue-732 case, repository, and shared guidance only","independentChecks":["all affected projects","generated output","source/test mapping"],"failureCases":["partial project discovery","generated drift","running operation"]}
   ]
 }

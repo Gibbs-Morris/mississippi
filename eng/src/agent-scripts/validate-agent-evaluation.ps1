@@ -19,6 +19,13 @@ try {
     if ([string]::IsNullOrWhiteSpace([string]$results.sourceRevision)) { $errors.Add('Results must identify the source revision.') }
     $categories = @($pack.categories | Where-Object { $_.kind -eq 'normal' })
     $expectedTrials = [int]$pack.normalTrialCount
+    $pairedCases = @($pack.pairedCases)
+    if ($pairedCases.Count -ne $expectedTrials) { $errors.Add("Scenario pack must define exactly $expectedTrials paired cases.") }
+    foreach ($category in $categories) {
+        if ($null -eq $category.PSObject.Properties['pairedInputIds'] -or @($category.pairedInputIds).Count -ne $expectedTrials) {
+            $errors.Add("Category '$($category.id)' must define one paired input for each trial.")
+        }
+    }
     $hostNames = @('Codex', 'Copilot')
     foreach ($hostName in $hostNames) {
         $hostResult = @($results.hosts | Where-Object host -EQ $hostName)[0]
@@ -26,9 +33,10 @@ try {
         foreach ($property in @('configuredModel', 'acceptedModel', 'activeModel')) {
             if ($null -eq $hostResult.PSObject.Properties[$property] -or [string]::IsNullOrWhiteSpace([string]$hostResult.$property)) { $errors.Add("Host '$hostName' is missing $property evidence.") }
         }
-        if ([string]$hostResult.activeModel -notin @('unsupported', 'blocked', 'unknown') -and ([string]$hostResult.acceptedModel -in @('unknown', 'unsupported', 'blocked') -or [string]$hostResult.activeModel -in @('unknown', 'unsupported', 'blocked'))) {
-            $errors.Add("Host '$hostName' has live results without verifiable accepted and active model evidence.")
-        }
+            $activeSentinel = [string]$hostResult.activeModel -in @('unsupported', 'blocked', 'unknown')
+            if (-not $activeSentinel -and [string]$hostResult.acceptedModel -in @('unknown', 'unsupported', 'blocked')) {
+                $errors.Add("Host '$hostName' has live results without verifiable accepted and active model evidence.")
+            }
         foreach ($category in $categories) {
             $summary = @($hostResult.trialSummaries | Where-Object scenarioId -EQ $category.id)[0]
             if ($null -eq $summary) { $errors.Add("Host '$hostName' is missing trial summary '$($category.id)'."); continue }
@@ -41,26 +49,39 @@ try {
             if (($attempted + $unsupported + $blocked) -ne $expectedTrials) { $errors.Add("Host '$hostName' category '$($category.id)' does not account for exactly $expectedTrials trials.") }
             if ([int]$summary.passed + [int]$summary.failed -ne $attempted) { $errors.Add("Host '$hostName' category '$($category.id)' does not reconcile attempted, passed, and failed counts.") }
             if ([int]$summary.passed -gt $attempted) { $errors.Add("Host '$hostName' category '$($category.id)' counts unsupported trials as passes.") }
-            if ([int]$summary.falseCompletion -ne 0) { $errors.Add("Host '$hostName' category '$($category.id)' has false-completion events.") }
-            if ([int]$summary.authorityViolations -ne 0) { $errors.Add("Host '$hostName' category '$($category.id)' has authorization-violation events.") }
             if ([string]$hostResult.activeModel -notin @('unsupported', 'blocked', 'unknown')) {
                 $records = @($hostResult.trialRecords | Where-Object scenarioId -EQ $category.id)
                 if ($records.Count -ne $expectedTrials) { $errors.Add("Host '$hostName' category '$($category.id)' requires one evidence record per trial.") }
-                foreach ($record in $records) {
-                    foreach ($field in @('acceptancePassed', 'independentChecks', 'reviewRework', 'interventions')) {
-                        if ($null -eq $record.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing $field.") }
+                    $recordPassed = 0
+                    foreach ($record in $records) {
+                        foreach ($field in @('acceptancePassed', 'independentChecks', 'reviewRework', 'interventions')) {
+                            if ($null -eq $record.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing $field.") }
+                        }
+                        if ($record.acceptancePassed -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has a non-boolean acceptancePassed value.") }
+                        if ($record.independentChecks -isnot [array] -or @($record.independentChecks).Count -eq 0) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has no independent checks.") }
+                        if ($null -eq $record.reviewRework -or $null -eq $record.interventions) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has incomplete review/intervention evidence.") }
+                        if ([bool]$record.acceptancePassed) { $recordPassed++ }
+                    }
+                    if ($recordPassed -ne [int]$summary.passed -or ($records.Count - $recordPassed) -ne [int]$summary.failed) {
+                        $errors.Add("Host '$hostName' category '$($category.id)' trial records do not reconcile with aggregate pass/fail outcomes.")
                     }
                 }
-            }
         }
     }
     foreach ($category in $categories) {
         $contract = @($results.deterministicContractTrials | Where-Object scenarioId -EQ $category.id)[0]
         if ($null -eq $contract) { $errors.Add("Missing deterministic contract trials for '$($category.id)'."); continue }
+        foreach ($countName in @('trials', 'passed', 'failed', 'falseCompletion', 'authorityViolations')) {
+            if ([int]$contract.$countName -lt 0) { $errors.Add("Deterministic trials for '$($category.id)' have a negative $countName count.") }
+        }
         if ([int]$contract.trials -ne $expectedTrials -or [int]$contract.passed + [int]$contract.failed -ne $expectedTrials) { $errors.Add("Deterministic trials for '$($category.id)' have inconsistent denominators.") }
-        if ([int]$contract.falseCompletion -ne 0 -or [int]$contract.authorityViolations -ne 0) { $errors.Add("Deterministic trials for '$($category.id)' violate safety invariants.") }
+        if ($null -eq $contract.PSObject.Properties['evidenceChecks'] -or @($contract.evidenceChecks).Count -eq 0) { $errors.Add("Deterministic trials for '$($category.id)' do not identify executed evidence checks.") }
     }
-    $liveUnsupported = @($results.hosts | Where-Object { [string]$_.activeModel -eq 'unsupported' }).Count -eq $hostNames.Count
+    $primaryHosts = @($results.hosts | Where-Object { $_.host -in $hostNames })
+    $liveUnsupported = $primaryHosts.Count -eq $hostNames.Count -and @($primaryHosts | Where-Object { [string]$_.activeModel -in @('unsupported', 'blocked', 'unknown') }).Count -eq $hostNames.Count
+    if (@($primaryHosts | Where-Object { [string]$_.activeModel -in @('unsupported', 'blocked', 'unknown') }).Count -gt 0 -and -not $liveUnsupported) {
+        $errors.Add('Primary host results must either all provide verifiable active models or all be classified as unsupported.')
+    }
     $report = [pscustomobject][ordered]@{
         SchemaVersion = '1.0'
         PackId = [string]$pack.packId

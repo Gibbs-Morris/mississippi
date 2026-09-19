@@ -21,10 +21,10 @@
     ]}
   ],
   "deterministicContractTrials":[
-    {"scenarioId":"csharp-behavior","trials":3,"passed":3,"failed":0,"falseCompletion":0,"authorityViolations":0},
-    {"scenarioId":"powershell-harness","trials":3,"passed":3,"failed":0,"falseCompletion":0,"authorityViolations":0},
-    {"scenarioId":"documentation","trials":3,"passed":3,"failed":0,"falseCompletion":0,"authorityViolations":0},
-    {"scenarioId":"browser-visible","trials":3,"passed":3,"failed":0,"falseCompletion":0,"authorityViolations":0},
-    {"scenarioId":"multi-project-generator","trials":3,"passed":3,"failed":0,"falseCompletion":0,"authorityViolations":0}
+    {"scenarioId":"csharp-behavior","trials":3,"passed":3,"failed":0,"falseCompletion":0,"authorityViolations":0,"evidenceChecks":["eng/tests/agent-scripts/AgentEvaluation.Tests.ps1","tests/Architecture.L0Tests/Architecture.L0Tests.csproj"]},
+    {"scenarioId":"powershell-harness","trials":3,"passed":3,"failed":0,"falseCompletion":0,"authorityViolations":0,"evidenceChecks":["eng/tests/agent-scripts/AgentEvaluation.Tests.ps1","eng/tests/orchestrate-powershell-tests.ps1"]},
+    {"scenarioId":"documentation","trials":3,"passed":3,"failed":0,"falseCompletion":0,"authorityViolations":0,"evidenceChecks":["eng/tests/agent-scripts/AgentEvaluation.Tests.ps1","docs/Docusaurus/test-docusaurus.ps1"]},
+    {"scenarioId":"browser-visible","trials":3,"passed":3,"failed":0,"falseCompletion":0,"authorityViolations":0,"evidenceChecks":["eng/tests/agent-scripts/AgentEvaluation.Tests.ps1","test-spring.ps1"]},
+    {"scenarioId":"multi-project-generator","trials":3,"passed":3,"failed":0,"falseCompletion":0,"authorityViolations":0,"evidenceChecks":["eng/tests/agent-scripts/AgentEvaluation.Tests.ps1","mississippi.slnx"]}
   ]
 }
