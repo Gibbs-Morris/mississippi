@@ -155,7 +155,7 @@ Describe 'Repository automation quality gates' {
     }
     It 'stops the pipeline when the coverage summarizer exits unsuccessfully' {
         Mock Invoke-MississippiSolutionBuild {} -ModuleName RepositoryAutomation
-        Mock Invoke-MississippiSolutionUnitTests {} -ModuleName RepositoryAutomation
+        Mock Invoke-MississippiSolutionUnitTests { [pscustomobject]@{ CoverageReportPath = (Join-Path $TestDrive 'coverage.cobertura.xml') } } -ModuleName RepositoryAutomation
         Mock Invoke-SampleSolutionBuild {} -ModuleName RepositoryAutomation
         Mock Invoke-RepositoryProcess { throw 'summarizer exited 1' } -ModuleName RepositoryAutomation
         { Invoke-SolutionsPipeline -RepoRoot $TestDrive -SkipCleanup } | Should -Throw '*summarizer exited 1*'
@@ -180,6 +180,22 @@ Describe 'Repository automation quality gates' {
         $calls.IndexOf('mississippi-cleanup') | Should -BeLessThan $calls.IndexOf('mississippi-tests')
         $calls.IndexOf('sample-cleanup') | Should -BeLessThan $calls.IndexOf('sample-tests')
         $calls.IndexOf('final-build') | Should -BeGreaterThan $calls.IndexOf('sample-tests')
+    }
+
+    It 'forwards the exact Mississippi coverage report to the summarizer' {
+        $coveragePath = Join-Path $TestDrive 'exact-run/coverage.cobertura.xml'
+        Mock Invoke-MississippiSolutionBuild {} -ModuleName RepositoryAutomation
+        Mock Invoke-MississippiSolutionUnitTests { [pscustomobject]@{ CoverageReportPath = $coveragePath } } -ModuleName RepositoryAutomation
+        Mock Invoke-SampleSolutionBuild {} -ModuleName RepositoryAutomation
+        Mock Invoke-SampleSolutionUnitTests {} -ModuleName RepositoryAutomation
+        Mock Invoke-FinalSolutionsBuild {} -ModuleName RepositoryAutomation
+        Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
+
+        Invoke-SolutionsPipeline -RepoRoot $TestDrive -SkipCleanup | Out-Null
+
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -ParameterFilter {
+            $Arguments -contains '-CoverageReportPath' -and $Arguments -contains $coveragePath
+        }
     }
 
     It 'streams compiler diagnostics before a failing build step throws' {
