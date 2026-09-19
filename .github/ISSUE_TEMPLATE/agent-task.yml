@@ -1,0 +1,89 @@
+name: Implementation-ready agent task
+description: Capture a repository-grounded handoff for a fresh implementation task
+title: "[Task] "
+labels:
+  - codex
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Contract version: 1.0
+
+        Complete every required field. Use repository-relative paths and keep commands and links as reviewable data.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: State the observed problem and its impact.
+    validations:
+      required: true
+  - type: textarea
+    id: observable-outcome
+    attributes:
+      label: Observable outcome
+      description: Describe the behavior or artifact a user can verify.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: List included paths, contracts, and required consumer updates.
+    validations:
+      required: true
+  - type: textarea
+    id: relevant-source-and-contracts
+    attributes:
+      label: Relevant source and contracts
+      description: Use backtick-wrapped repository-relative paths and explain each one.
+    validations:
+      required: true
+  - type: textarea
+    id: decisions-and-non-goals
+    attributes:
+      label: Decisions and non-goals
+      description: Record settled choices and explicit exclusions.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies-and-readiness
+    attributes:
+      label: Dependencies and readiness
+      description: Record prerequisites, owners, and any unresolved blocking decisions.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: Use unique stable IDs such as [AC1], [AC2], and make each criterion observable.
+    validations:
+      required: true
+  - type: textarea
+    id: implementation-outline
+    attributes:
+      label: Implementation outline
+      description: Describe ordered implementation boundaries and compatibility or migration work.
+    validations:
+      required: true
+  - type: textarea
+    id: validation-plan
+    attributes:
+      label: Validation plan
+      description: List exact commands, tests, manual observations, expected results, and evidence locations.
+    validations:
+      required: true
+  - type: textarea
+    id: risks-and-delivery-boundary
+    attributes:
+      label: Risks and delivery boundary
+      description: Record material risks, disclosure limits, and the distinction between merge-ready and merged.
+    validations:
+      required: true
+  - type: textarea
+    id: validation-evidence-map
+    attributes:
+      label: Validation evidence map
+      description: Map every acceptance ID to a command, test, or explicit manual observation and its expected result.
+    validations:
+      required: true
