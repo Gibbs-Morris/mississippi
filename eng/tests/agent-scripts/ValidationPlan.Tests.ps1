@@ -123,6 +123,13 @@ Describe 'Deterministic validation plan' {
         $outcome.Result.Unresolved | Should -Not -Match 'outside the maintained parser/test gate'
     }
 
+    It 'recognizes the PowerShell harness suite as a covered path' {
+        $outcome = Invoke-Plan -Paths @('eng/tests/agent-scripts/PowerShellTestHarness.Tests.ps1')
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Unresolved | Should -Not -Match 'outside the maintained parser/test gate'
+    }
+
     It 'selects Markdown lint for Markdown-lint configuration changes' {
         $outcome = Invoke-Plan -Paths @('.markdownlintignore')
 
@@ -170,8 +177,22 @@ Describe 'Deterministic validation plan' {
         $outcome.Result.Unresolved | Should -Match 'requires an application-specific browser context'
     }
 
+    It 'fails closed for browser risk across mixed Spring and non-Spring applications' {
+        $outcome = Invoke-Plan -Paths @('samples/Spring/Spring.Client/Pages/Index.razor', 'src/Reservoir/State.cs') -RiskHints @('browser')
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Unresolved | Should -Match 'ambiguous across Spring and non-Spring application paths'
+    }
+
     It 'treats Razor code-behind as browser-facing' {
         $outcome = Invoke-Plan -Paths @('src/Refraction.Client/Components/Molecules/CommandOrbit.razor.cs')
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Unresolved | Should -Match 'No application-specific browser validation gate'
+    }
+
+    It 'treats client-project C# as browser-facing' {
+        $outcome = Invoke-Plan -Paths @('src/Reservoir.Client/BuiltIn/Navigation/Effects/NavigationEffect.cs')
 
         $outcome.ExitCode | Should -Be 1
         $outcome.Result.Unresolved | Should -Match 'No application-specific browser validation gate'
@@ -192,6 +213,13 @@ Describe 'Deterministic validation plan' {
         $outcome.Result.Unresolved | Should -Contain "Unsupported risk hint 'unbounded-risk'."
     }
 
+    It 'uses a repository-wide Markdown target for documentation risk without Markdown paths' {
+        $outcome = Invoke-Plan -Paths @('src/Reservoir/State.cs') -RiskHints @('documentation')
+
+        $outcome.ExitCode | Should -Be 0
+        @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'markdown-lint').Arguments | Should -Contain '.'
+    }
+
     It 'normalizes renamed or deleted paths without executing commands' {
         $sentinel = Join-Path $TestDrive 'must-remain.txt'
         Set-Content -LiteralPath $sentinel -Value 'unchanged'
@@ -208,6 +236,34 @@ Describe 'Deterministic validation plan' {
         $outcome.ExitCode | Should -Be 0
         $outcome.Result.ChangedPaths | Should -Contain 'docs/api,legacy.md'
         @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'markdown-lint').Arguments | Should -Contain 'docs/api,legacy.md'
+    }
+
+    It 'uses a literal-safe repository target for Markdown glob characters' {
+        $outcome = Invoke-Plan -Paths @('docs/guide[1].md')
+
+        $outcome.ExitCode | Should -Be 0
+        @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'markdown-lint').Arguments | Should -Contain '.'
+    }
+
+    It 'returns structured output for an empty changed path entry' {
+        $outcome = Invoke-Plan -Paths @('')
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Unresolved | Should -Contain 'Changed path is empty or invalid.'
+    }
+
+    It 'rejects a rooted cross-volume path on Windows' {
+        if (-not $IsWindows) {
+            Set-ItResult -Skipped -Because 'Cross-volume rooted paths are Windows-specific.'
+            return
+        }
+
+        $currentDrive = ([System.IO.Path]::GetPathRoot($repoRoot)).Substring(0, 1).ToUpperInvariant()
+        $otherDrive = if ($currentDrive -eq 'Z') { 'Y' } else { 'Z' }
+        $outcome = Invoke-Plan -Paths @("${otherDrive}:\outside.md")
+
+        $outcome.ExitCode | Should -Be 1
+        ($outcome.Result.Unresolved -join "`n") | Should -Match 'outside the repository or invalid'
     }
 
     It 'quotes spaced arguments in text output' {

@@ -22,7 +22,7 @@ function ConvertTo-PlanRelativePath {
         $fullPath = if ([System.IO.Path]::IsPathRooted($Path)) { [System.IO.Path]::GetFullPath($Path) } else { [System.IO.Path]::GetFullPath((Join-Path $fullRoot $Path)) }
         $relative = [System.IO.Path]::GetRelativePath($fullRoot, $fullPath)
         if ([OperatingSystem]::IsWindows()) { $relative = $relative.Replace('\', '/') }
-        if ($relative -eq '..' -or $relative.StartsWith('../', [System.StringComparison]::Ordinal)) { return $null }
+        if ([System.IO.Path]::IsPathRooted($relative) -or $relative -match '^[A-Za-z]:[\\/]' -or $relative -eq '..' -or $relative.StartsWith('../', [System.StringComparison]::Ordinal)) { return $null }
         return $relative
     }
     catch { return $null }
@@ -33,7 +33,7 @@ function Add-PlanCheck {
         [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[object]]$Selected,
         [Parameter(Mandatory)][object]$Check,
         [Parameter(Mandatory)][string]$Reason,
-        [Parameter(Mandatory)][AllowEmptyCollection()][string[]]$MarkdownPaths
+        [Parameter(Mandatory)][AllowNull()][AllowEmptyCollection()][string[]]$MarkdownPaths
     )
 
     $existing = @($Selected | Where-Object Id -EQ $Check.id)
@@ -69,6 +69,10 @@ try {
     $inputChangedPaths = if (-not [string]::IsNullOrWhiteSpace($ChangedPathJson)) { @(ConvertFrom-Json -InputObject $ChangedPathJson) } else { @($ChangedPath) }
     $inputRiskHints = if (-not [string]::IsNullOrWhiteSpace($RiskHintJson)) { @(ConvertFrom-Json -InputObject $RiskHintJson) } else { @($RiskHint) }
     foreach ($path in $inputChangedPaths) {
+        if ($null -eq $path -or [string]::IsNullOrWhiteSpace([string]$path)) {
+            $unresolved.Add('Changed path is empty or invalid.')
+            continue
+        }
         $relative = ConvertTo-PlanRelativePath -Root $root -Path ([string]$path)
         if ($null -eq $relative) { $unresolved.Add("Changed path is outside the repository or invalid: '$path'.") }
         else { $normalizedPaths.Add($relative) }
@@ -76,13 +80,15 @@ try {
 
     $markdownPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:md|mdx)$' })
     $isMarkdownConfig = @($normalizedPaths | Where-Object { $_ -match '(^|/)(?:\.markdownlint-cli2\.jsonc|\.markdownlintignore)$' -or $_ -eq '.github/linters/.markdown-lint.yml' }).Count -gt 0
-    $markdownCheckPaths = if ($isMarkdownConfig) { @('.') } elseif ($markdownPaths.Count -gt 0) { $markdownPaths } else { @() }
+    $hasMarkdownGlobCharacter = @($markdownPaths | Where-Object { $_ -match '[*?\[\]]' }).Count -gt 0
+    $markdownCheckPaths = if ($isMarkdownConfig -or $hasMarkdownGlobCharacter) { @('.') } elseif ($markdownPaths.Count -gt 0) { $markdownPaths } else { @() }
     $selected = [System.Collections.Generic.List[object]]::new()
     $powerShellPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:ps1|psm1|psd1)$' })
     $validatedPowerShellPaths = @(
         'eng/src/agent-scripts/RepositoryAutomation.psm1',
         'eng/src/agent-scripts/get-validation-plan.ps1',
         'eng/tests/agent-scripts/ValidationPlan.Tests.ps1',
+        'eng/tests/agent-scripts/PowerShellTestHarness.Tests.ps1',
         'eng/tests/agent-scripts/run-validation-plan-tests.ps1',
         'eng/tests/orchestrate-powershell-tests.ps1'
     )
@@ -90,10 +96,11 @@ try {
     $isPowerShell = $powerShellPaths.Count -gt 0 -or @($normalizedPaths | Where-Object { $_ -eq 'eng/src/agent-scripts/validation-command-catalog.json' }).Count -gt 0
     $isMarkdown = $markdownPaths.Count -gt 0
     $isDocusaurus = @($normalizedPaths | Where-Object { $_ -match '^docs/Docusaurus/' }).Count -gt 0
-    $browserPaths = @($normalizedPaths | Where-Object { $_ -match '(?:\.razor\.cs|\.(?:razor|css|html?|m?js|jsx|tsx?))$' -or $_ -match '(?:^|/)wwwroot/' })
+    $browserPaths = @($normalizedPaths | Where-Object { $_ -match '(?:\.razor\.cs|\.(?:razor|css|html?|m?js|jsx|tsx?))$' -or $_ -match '(?:^|/)wwwroot/' -or $_ -match '^(?:src|samples)/[^/]+\.Client/.+\.cs$' })
     $springBrowserPaths = @($browserPaths | Where-Object { $_ -match '^samples/Spring/' })
     $nonSpringBrowserPaths = @($browserPaths | Where-Object { $_ -notmatch '^samples/Spring/' -and $_ -notmatch '^docs/Docusaurus/' })
     $isSpringPath = @($normalizedPaths | Where-Object { $_ -match '^samples/Spring/' }).Count -gt 0
+    $nonSpringApplicationPaths = @($normalizedPaths | Where-Object { $_ -notmatch '^samples/Spring/' -and $_ -notmatch '^docs/Docusaurus/' })
     $isBrowser = $springBrowserPaths.Count -gt 0 -or $isSpringPath
     $isDotnet = @($normalizedPaths | Where-Object { $_ -match '\.(?:cs|csproj|slnx)$' -or $_ -match '(?:Directory\.Build|Directory\.Packages|global\.json)' }).Count -gt 0
     $unmappedPaths = @($normalizedPaths | Where-Object {
@@ -141,7 +148,10 @@ try {
     }
     foreach ($riskHint in $normalizedRiskHints) {
         if ($riskHint -eq 'browser') {
-            if ($isSpringPath) {
+            if ($isSpringPath -and $nonSpringApplicationPaths.Count -gt 0) {
+                $unresolved.Add("Browser risk hint is ambiguous across Spring and non-Spring application paths: $($nonSpringApplicationPaths -join ', ').")
+            }
+            elseif ($isSpringPath) {
                 foreach ($checkId in @('spring-doctor', 'spring-smoke')) {
                     $riskCheck = @($catalog.checks | Where-Object { $_.id -eq $checkId } | Select-Object -First 1)
                     Add-PlanCheck -Selected $selected -Check $riskCheck[0] -Reason "Risk hint '$riskHint' selects this check for Spring paths." -MarkdownPaths @($markdownCheckPaths)
@@ -167,7 +177,8 @@ try {
                     $unresolved.Add("Risk hint '$riskHint' references missing catalog check '$checkId'.")
                 }
                 else {
-                    Add-PlanCheck -Selected $selected -Check $riskCheck[0] -Reason "Risk hint '$riskHint' selects this check." -MarkdownPaths $markdownPaths
+                    $riskMarkdownPaths = if ($riskHint -eq 'documentation') { if (@($markdownCheckPaths).Count -gt 0) { @($markdownCheckPaths) } else { @('.') } } else { @($markdownPaths) }
+                    Add-PlanCheck -Selected $selected -Check $riskCheck[0] -Reason "Risk hint '$riskHint' selects this check." -MarkdownPaths $riskMarkdownPaths
                 }
             }
         }
