@@ -115,6 +115,13 @@ Describe 'Deterministic validation plan' {
         $outcome.Result.Unresolved | Should -Match 'outside the maintained parser/test gate'
     }
 
+    It 'recognizes planner files as covered PowerShell paths' {
+        $outcome = Invoke-Plan -Paths @('eng/src/agent-scripts/get-validation-plan.ps1', 'eng/tests/agent-scripts/ValidationPlan.Tests.ps1')
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Unresolved | Should -Not -Match 'outside the maintained parser/test gate'
+    }
+
     It 'selects Markdown lint for Markdown-lint configuration changes' {
         $outcome = Invoke-Plan -Paths @('.markdownlintignore')
 
@@ -160,6 +167,13 @@ Describe 'Deterministic validation plan' {
         $outcome.ExitCode | Should -Be 1
         $outcome.Result.SelectedChecks.Id | Should -Not -Contain 'spring-smoke'
         $outcome.Result.Unresolved | Should -Match 'requires an application-specific browser context'
+    }
+
+    It 'treats Razor code-behind as browser-facing' {
+        $outcome = Invoke-Plan -Paths @('src/Refraction.Client/Components/Molecules/CommandOrbit.razor.cs')
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Unresolved | Should -Match 'No application-specific browser validation gate'
     }
 
     It 'does not map generic infrastructure risk to an unrelated L2 gate' {

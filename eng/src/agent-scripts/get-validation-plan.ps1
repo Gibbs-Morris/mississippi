@@ -20,7 +20,8 @@ function ConvertTo-PlanRelativePath {
     try {
         $fullRoot = [System.IO.Path]::GetFullPath($Root).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
         $fullPath = if ([System.IO.Path]::IsPathRooted($Path)) { [System.IO.Path]::GetFullPath($Path) } else { [System.IO.Path]::GetFullPath((Join-Path $fullRoot $Path)) }
-        $relative = [System.IO.Path]::GetRelativePath($fullRoot, $fullPath).Replace('\', '/')
+        $relative = [System.IO.Path]::GetRelativePath($fullRoot, $fullPath)
+        if ([OperatingSystem]::IsWindows()) { $relative = $relative.Replace('\', '/') }
         if ($relative -eq '..' -or $relative.StartsWith('../', [System.StringComparison]::Ordinal)) { return $null }
         return $relative
     }
@@ -56,10 +57,7 @@ function Add-PlanCheck {
 function Format-PlanArgument {
     param([AllowEmptyString()][string]$Value)
 
-    if ($Value -match '[\s,;|&<>"''`]') {
-        return "'$(($Value -replace "'", "''"))'"
-    }
-    return $Value
+    return "'$(($Value -replace "'", "''"))'"
 }
 
 try {
@@ -81,12 +79,18 @@ try {
     $markdownCheckPaths = if ($isMarkdownConfig) { @('.') } elseif ($markdownPaths.Count -gt 0) { $markdownPaths } else { @() }
     $selected = [System.Collections.Generic.List[object]]::new()
     $powerShellPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:ps1|psm1|psd1)$' })
-    $validatedPowerShellPaths = @('eng/src/agent-scripts/RepositoryAutomation.psm1', 'eng/tests/orchestrate-powershell-tests.ps1')
+    $validatedPowerShellPaths = @(
+        'eng/src/agent-scripts/RepositoryAutomation.psm1',
+        'eng/src/agent-scripts/get-validation-plan.ps1',
+        'eng/tests/agent-scripts/ValidationPlan.Tests.ps1',
+        'eng/tests/agent-scripts/run-validation-plan-tests.ps1',
+        'eng/tests/orchestrate-powershell-tests.ps1'
+    )
     $unvalidatedPowerShellPaths = @($powerShellPaths | Where-Object { $validatedPowerShellPaths -notcontains $_ })
     $isPowerShell = $powerShellPaths.Count -gt 0 -or @($normalizedPaths | Where-Object { $_ -eq 'eng/src/agent-scripts/validation-command-catalog.json' }).Count -gt 0
     $isMarkdown = $markdownPaths.Count -gt 0
     $isDocusaurus = @($normalizedPaths | Where-Object { $_ -match '^docs/Docusaurus/' }).Count -gt 0
-    $browserPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:razor|css|html?|m?js|jsx|tsx?)$' -or $_ -match '(?:^|/)wwwroot/' })
+    $browserPaths = @($normalizedPaths | Where-Object { $_ -match '(?:\.razor\.cs|\.(?:razor|css|html?|m?js|jsx|tsx?))$' -or $_ -match '(?:^|/)wwwroot/' })
     $springBrowserPaths = @($browserPaths | Where-Object { $_ -match '^samples/Spring/' })
     $nonSpringBrowserPaths = @($browserPaths | Where-Object { $_ -notmatch '^samples/Spring/' -and $_ -notmatch '^docs/Docusaurus/' })
     $isSpringPath = @($normalizedPaths | Where-Object { $_ -match '^samples/Spring/' }).Count -gt 0
@@ -192,6 +196,7 @@ try {
     }
     if ($OutputFormat -eq 'Json') { $result | ConvertTo-Json -Depth 10 -Compress } else {
         Write-Output "VALIDATION_PLAN: $(if ($result.Complete) { 'COMPLETE' } else { 'INCOMPLETE' })"
+        Write-Output "WORKING_DIRECTORY: $($result.RepositoryRoot)"
         Write-Output "BASE: $BaseRevision"
         Write-Output "HEAD: $HeadRevision"
         foreach ($check in @($result.SelectedChecks)) {
