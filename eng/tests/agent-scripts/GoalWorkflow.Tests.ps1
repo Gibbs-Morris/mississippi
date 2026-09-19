@@ -52,13 +52,13 @@ Describe 'Issue-driven goal workflow' {
         $saved.MergeBoundary | Should -Be 'PR_READY_NOT_MERGED'
     }
 
-    It 'resumes with fresh evidence without restarting an operation' {
+    It 'resumes without claiming evidence is fresh before revalidation' {
         $null = Invoke-Goal
         $outcome = Invoke-Goal -Action resume
 
         $outcome.ExitCode | Should -Be 0
         $outcome.Result.Status | Should -Be 'resumed'
-        $outcome.Result.EvidenceFresh | Should -BeTrue
+        $outcome.Result.EvidenceFresh | Should -BeFalse
     }
 
     It 'detects edited issue scope before implementation continues' {
@@ -80,12 +80,20 @@ Describe 'Issue-driven goal workflow' {
     }
 
     It 'waits on a running operation handle instead of duplicating it' {
-        $null = Invoke-Goal
         $operation = '{"Status":"running","Handle":"job-123","Name":"validation"}'
-        $outcome = Invoke-Goal -Action resume -Operation $operation
+        $null = Invoke-Goal -Operation $operation
+        $outcome = Invoke-Goal -Action resume
 
         $outcome.ExitCode | Should -Be 2
         $outcome.Result.Status | Should -Be 'operation-running'
         $outcome.Result.NextAction | Should -Match 'job-123'
+    }
+
+    It 'returns a structured JSON error for a missing resume checkpoint' {
+        Remove-Item -LiteralPath $checkpoint -Force -ErrorAction SilentlyContinue
+        $outcome = Invoke-Goal -Action resume
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Status | Should -Be 'ERROR'
     }
 }
