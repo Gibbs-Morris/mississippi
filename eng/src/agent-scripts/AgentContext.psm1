@@ -308,7 +308,12 @@ function Get-AgentContext {
         $reasons = [System.Collections.Generic.List[string]]::new()
         $isSelected = $false
         if ($candidate.Kind -eq 'AGENTS') {
-            $isSelected = $relative -eq 'AGENTS.md' -or @($requested | Where-Object { $_.Path.StartsWith(($relative -replace '/AGENTS\.md$', ''), [System.StringComparison]::OrdinalIgnoreCase) }).Count -gt 0
+            $entryDirectory = if ($relative -eq 'AGENTS.md') { '' } else { $relative.Substring(0, $relative.Length - '/AGENTS.md'.Length) }
+            $entryPrefix = if ($entryDirectory) { "$entryDirectory/" } else { '' }
+            $isSelected = $relative -eq 'AGENTS.md' -or @($requested | Where-Object {
+                $_.Path.Equals($entryDirectory, [System.StringComparison]::OrdinalIgnoreCase) -or
+                ($entryPrefix -and $_.Path.StartsWith($entryPrefix, [System.StringComparison]::OrdinalIgnoreCase))
+            }).Count -gt 0
             if ($isSelected) { $reasons.Add('scoped-entrypoint') }
         }
         elseif ($candidate.Kind -eq 'entrypoint') {

@@ -11,7 +11,7 @@ Describe 'Agent context selection' {
         Import-Module -Name $modulePath -Force
 
         $fixtureRoot = Join-Path $TestDrive 'context-repository'
-        New-Item -ItemType Directory -Path (Join-Path $fixtureRoot '.github/instructions'), (Join-Path $fixtureRoot '.github/agents'), (Join-Path $fixtureRoot 'nested/feature'), (Join-Path $fixtureRoot 'src'), (Join-Path $fixtureRoot 'docs') -Force | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $fixtureRoot '.github/instructions'), (Join-Path $fixtureRoot '.github/agents'), (Join-Path $fixtureRoot 'nested/feature'), (Join-Path $fixtureRoot 'foo'), (Join-Path $fixtureRoot 'foobar'), (Join-Path $fixtureRoot 'src'), (Join-Path $fixtureRoot 'docs') -Force | Out-Null
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'AGENTS.md') -Value '# Root guidance'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'nested/AGENTS.md') -Value '# Nested guidance'
         Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/copilot-instructions.md') -Value @'
@@ -59,6 +59,8 @@ applyTo: '**/*.cs'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Example.cs') -Value 'class Example { }'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'docs/guide.md') -Value '# Guide'
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'nested/feature/example.ps1') -Value 'Write-Output data'
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'foo/AGENTS.md') -Value '# Foo guidance'
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'foobar/example.cs') -Value 'class Sibling { }'
         Set-Content -LiteralPath (Join-Path $fixtureRoot '.github/agents/example-planner.agent.md') -Value '# Planner'
     }
 
@@ -111,6 +113,12 @@ applyTo: '**/*.cs'
         $context.Complete | Should -BeTrue
         $context.Selected.Path | Should -Contain '.github/instructions/markdown.instructions.md'
         @($context.Selected | Where-Object Path -EQ '.github/instructions/markdown.instructions.md').Reasons | Should -Contain 'path:changed:docs/guide.md'
+    }
+
+    It 'matches AGENTS guidance on directory boundaries' {
+        $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'foobar/example.cs'
+
+        $context.Selected.Path | Should -Not -Contain 'foo/AGENTS.md'
     }
 
     It 'reports missing required context instead of returning an empty pass' {
