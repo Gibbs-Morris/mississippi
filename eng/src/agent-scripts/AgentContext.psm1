@@ -71,6 +71,16 @@ function Convert-ContextGlobToRegex {
         elseif ($character -eq '?') {
             $null = $builder.Append('[^/]')
         }
+        elseif ($character -eq '[') {
+            $closingIndex = $Pattern.IndexOf(']', $index + 1)
+            if ($closingIndex -gt $index + 1) {
+                $null = $builder.Append($Pattern.Substring($index, $closingIndex - $index + 1))
+                $index = $closingIndex
+            }
+            else {
+                $null = $builder.Append('\\[')
+            }
+        }
         else {
             $null = $builder.Append([regex]::Escape([string]$character))
         }
