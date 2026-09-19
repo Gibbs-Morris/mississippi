@@ -242,7 +242,7 @@
       "approaches": {
         "single-reviewer": {},
         "all-lenses": {},
-        "council": {"policy_compliant": false, "result_status": "INCOMPLETE"}
+        "council": {"policy_compliant": true, "result_status": "INCOMPLETE"}
       }
     },
     {
@@ -252,7 +252,7 @@
       "approaches": {
         "single-reviewer": {},
         "all-lenses": {},
-        "council": {"policy_compliant": false, "result_status": "INCOMPLETE"}
+        "council": {"policy_compliant": true, "result_status": "INCOMPLETE"}
       }
     },
     {

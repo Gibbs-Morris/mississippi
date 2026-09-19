@@ -12,7 +12,7 @@ This is an offline deterministic fixture evaluation. It does not measure live mo
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | `single-reviewer` | 0.4286 | 0.2500 | 0.2500 | 0.2308 | 0.8750 | 0.9583 |
 | `all-lenses` | 0.6923 | 0.7500 | 0.7500 | 0.2308 | 0.8750 | 0.9583 |
-| `council` | 1.0000 | 1.0000 | 1.0000 | 0.0000 | 0.8750 | 0.9167 |
+| `council` | 1.0000 | 1.0000 | 1.0000 | 0.0000 | 0.8750 | 1.0000 |
 
 ## Interpretation
 
