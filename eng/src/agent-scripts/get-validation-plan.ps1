@@ -53,10 +53,12 @@ try {
     $catalog = Get-Content -LiteralPath $catalogPath -Raw -ErrorAction Stop | ConvertFrom-Json
     $unresolved = [System.Collections.Generic.List[string]]::new()
     $normalizedPaths = [System.Collections.Generic.List[string]]::new()
-    foreach ($path in @($ChangedPath)) {
-        $relative = ConvertTo-PlanRelativePath -Root $root -Path $path
-        if ($null -eq $relative) { $unresolved.Add("Changed path is outside the repository or invalid: '$path'.") }
-        else { $normalizedPaths.Add($relative) }
+    foreach ($pathValue in @($ChangedPath)) {
+        foreach ($path in @($pathValue -split ',' | Where-Object { $_ -ne '' })) {
+            $relative = ConvertTo-PlanRelativePath -Root $root -Path $path
+            if ($null -eq $relative) { $unresolved.Add("Changed path is outside the repository or invalid: '$path'.") }
+            else { $normalizedPaths.Add($relative) }
+        }
     }
 
     $markdownPaths = @($normalizedPaths | Where-Object { $_ -match '\.(?:md|mdx)$' })
@@ -65,6 +67,21 @@ try {
     $isMarkdown = $markdownPaths.Count -gt 0
     $isBrowser = @($normalizedPaths | Where-Object { $_ -match '\.(?:razor|css)$' -or $_ -match '^samples/Spring/' }).Count -gt 0
     $isDotnet = @($normalizedPaths | Where-Object { $_ -match '\.(?:cs|csproj|slnx)$' -or $_ -match '(?:Directory\.Build|Directory\.Packages|global\.json)' }).Count -gt 0
+    $riskChecks = @{
+        browser = 'spring-doctor,spring-smoke'
+        infrastructure = 'spring-doctor,core-final'
+        generated = 'core-iteration,core-final'
+        build = 'core-iteration,core-final'
+        documentation = 'markdown-lint'
+        powershell = 'powershell-tests'
+        'public-contract' = 'core-final'
+    }
+    $normalizedRiskHints = @($RiskHint | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim().ToLowerInvariant() } | Where-Object { $_ })
+    foreach ($riskHint in $normalizedRiskHints) {
+        if ($riskChecks.Keys -notcontains $riskHint) {
+            $unresolved.Add("Unsupported risk hint '$riskHint'.")
+        }
+    }
     $isUnknown = -not ($isPowerShell -or $isMarkdown -or $isBrowser -or $isDotnet)
 
     Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'core-final') -Reason 'Required shared final gate.' -MarkdownPaths $markdownPaths
@@ -75,6 +92,19 @@ try {
     if ($isBrowser) {
         Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'spring-doctor') -Reason 'Browser-facing or Spring path changed.' -MarkdownPaths $markdownPaths
         Add-PlanCheck -Selected $selected -Check ($catalog.checks | Where-Object id -EQ 'spring-smoke') -Reason 'Rendered/browser behavior may be affected.' -MarkdownPaths $markdownPaths
+    }
+    foreach ($riskHint in $normalizedRiskHints) {
+        if ($riskChecks.Keys -contains $riskHint) {
+            foreach ($checkId in ($riskChecks[$riskHint] -split ',')) {
+                $riskCheck = @($catalog.checks | Where-Object { $_.id -eq [string]$checkId } | Select-Object -First 1)
+                if ($riskCheck.Count -eq 0) {
+                    $unresolved.Add("Risk hint '$riskHint' references missing catalog check '$checkId'.")
+                }
+                else {
+                    Add-PlanCheck -Selected $selected -Check $riskCheck[0] -Reason "Risk hint '$riskHint' selects this check." -MarkdownPaths $markdownPaths
+                }
+            }
+        }
     }
 
     foreach ($check in @($catalog.checks)) {
@@ -93,7 +123,7 @@ try {
         BaseRevision = $BaseRevision
         HeadRevision = $HeadRevision
         ChangedPaths = @($normalizedPaths)
-        RiskHints = @($RiskHint)
+        RiskHints = @($normalizedRiskHints)
         SelectedChecks = @($selected)
         OmittedChecks = @($catalog.checks | Where-Object { @($selected | Where-Object Id -EQ $_.id).Count -eq 0 } | ForEach-Object { [pscustomobject]@{ Id = $_.id; Reason = 'No applicable changed-path or risk signal.' } })
         Unresolved = @($unresolved | Sort-Object -Unique)

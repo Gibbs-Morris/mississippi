@@ -14,9 +14,10 @@ Describe 'Deterministic validation plan' {
         New-Item -ItemType Directory -Path $fixtureRoot | Out-Null
 
         function Invoke-Plan {
-            param([string[]]$Paths, [AllowEmptyString()][string]$Base = 'base-sha', [AllowEmptyString()][string]$Head = 'head-sha')
+            param([string[]]$Paths, [string[]]$RiskHints = @(), [AllowEmptyString()][string]$Base = 'base-sha', [AllowEmptyString()][string]$Head = 'head-sha')
             $arguments = @('-NoProfile', '-File', $scriptPath, '-RepositoryRoot', $repoRoot, '-BaseRevision', $Base, '-HeadRevision', $Head, '-OutputFormat', 'Json')
-            if (@($Paths).Count -gt 0) { $arguments += @('-ChangedPath') + @($Paths) }
+            if (@($Paths).Count -gt 0) { $arguments += @('-ChangedPath', (@($Paths) -join ',')) }
+            if (@($RiskHints).Count -gt 0) { $arguments += @('-RiskHint', (@($RiskHints) -join ',')) }
             $json = & $powerShellPath @arguments 2>&1 | Out-String
             [pscustomobject]@{ ExitCode = $LASTEXITCODE; Result = $json | ConvertFrom-Json; Output = $json }
         }
@@ -51,6 +52,22 @@ Describe 'Deterministic validation plan' {
 
         $outcome.ExitCode | Should -Be 0
         @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'core-iteration').Reasons | Should -Match 'Unknown mapping'
+    }
+
+    It 'applies supported risk hints to check selection' {
+        $outcome = Invoke-Plan -Paths @('README.txt') -RiskHints @('browser', 'infrastructure')
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.SelectedChecks.Id | Should -Contain 'spring-doctor'
+        $outcome.Result.SelectedChecks.Id | Should -Contain 'spring-smoke'
+        @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'spring-doctor').Reasons | Should -Match "Risk hint 'browser'"
+    }
+
+    It 'fails closed for unsupported risk hints' {
+        $outcome = Invoke-Plan -Paths @('README.txt') -RiskHints @('unbounded-risk')
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Unresolved | Should -Contain "Unsupported risk hint 'unbounded-risk'."
     }
 
     It 'normalizes renamed or deleted paths without executing commands' {
