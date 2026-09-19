@@ -78,6 +78,27 @@ Refs #741
         $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
     }
 
+    It 'does not hide text when the inline-code closing run length differs' {
+        $outcome = Invoke-ReferenceValidator -Body '``Refs #741```'
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'ignores indented Markdown code blocks' {
+        $outcome = Invoke-ReferenceValidator -Body "    Refs #741"
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
+    It 'ignores shorthand tokens in Markdown link destinations' {
+        $outcome = Invoke-ReferenceValidator -Body '[tracking details](#741)'
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
     It 'caps API resolution work for excessive references' {
         $body = (1..25 | ForEach-Object { "Refs #$($_)" }) -join ' '
         $outcome = Invoke-ReferenceValidator -Body $body

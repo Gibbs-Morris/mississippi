@@ -36,6 +36,7 @@ function Remove-NonRenderedMarkdown {
     }
     $withoutFences = $withoutFences -join [Environment]::NewLine
     $withoutComments = [regex]::Replace($withoutFences, '(?s)<!--.*?(?:-->|$)', '')
+    $withoutComments = [regex]::Replace($withoutComments, '(?m)^(?: {4}|\t)[^\r\n]*(?:\r?\n|$)', '')
     $builder = [System.Text.StringBuilder]::new()
     $index = 0
     while ($index -lt $withoutComments.Length) {
@@ -60,7 +61,7 @@ function Remove-NonRenderedMarkdown {
             }
             $closingIndex = $candidate
         }
-        if ($closingLength -ge $delimiterLength) {
+        if ($closingLength -eq $delimiterLength) {
             $index = $closingIndex + $closingLength
         }
         else {
@@ -96,7 +97,8 @@ function Get-PrIssueReferences {
     }
 
     $withoutFullUrls = [regex]::Replace($Content, $fullUrlPattern, '')
-    foreach ($match in [regex]::Matches($withoutFullUrls, '(?<![\w/])#(?<Number>\d+)\b')) {
+    $withoutLinkDestinations = [regex]::Replace($withoutFullUrls, '\]\([^)\r\n]*\)', ']')
+    foreach ($match in [regex]::Matches($withoutLinkDestinations, '(?<![\w/])#(?<Number>\d+)\b')) {
         $number = [int]$match.Groups['Number'].Value
         if (@($references | Where-Object Number -EQ $number).Count -eq 0) {
             $references.Add([pscustomobject]@{ Number = $number; Text = $match.Value })
