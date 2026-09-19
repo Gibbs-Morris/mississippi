@@ -290,6 +290,47 @@ applyTo: '**'
         $context.Selected.Path | Should -Contain '.github/instructions/adr-route.instructions.md'
     }
 
+    It 'supports negated character classes in instruction globs' {
+        $routePath = Join-Path $fixtureRoot '.github/instructions/negated-class.instructions.md'
+        Set-Content -LiteralPath $routePath -Value @'
+---
+applyTo: '**/[!a]*.cs'
+---
+
+# Negated class guidance
+'@
+        try {
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/beta.cs'
+
+            $context.Selected.Path | Should -Contain '.github/instructions/negated-class.instructions.md'
+        }
+        finally {
+            Remove-Item -LiteralPath $routePath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'treats escaped YAML applyTo scalars as requiring direct inspection' {
+        $routePath = Join-Path $fixtureRoot '.github/instructions/escaped-scalar.instructions.md'
+        Set-Content -LiteralPath $routePath -Value @'
+---
+applyTo: "**/\u0073rc/**"
+---
+
+# Escaped scalar guidance
+'@
+        try {
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+            $route = @($context.Entries | Where-Object Path -EQ '.github/instructions/escaped-scalar.instructions.md')[0]
+
+            $route.ScopeStatus | Should -Be 'unknown'
+            $route.ScopeNote | Should -Match 'escapes'
+            $route.Reasons | Should -Contain 'unknown-scope-requires-inspection'
+        }
+        finally {
+            Remove-Item -LiteralPath $routePath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It 'matches workflow roles against declared agent scopes' {
         $context = Get-AgentContext -RepositoryRoot $fixtureRoot -WorkflowRole build
 
@@ -557,6 +598,78 @@ See [the release policy](../../policies/release(v2).md).
         }
         finally {
             Remove-Item -LiteralPath $routePath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'marks reference-style Markdown routes incomplete' {
+        $routePath = Join-Path $fixtureRoot '.github/instructions/reference-route.instructions.md'
+        Set-Content -LiteralPath $routePath -Value @'
+---
+applyTo: '**'
+---
+
+See [the release policy][release].
+
+[release]: ../../policies/release.md
+'@
+        try {
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+            $route = @($context.Selected | Where-Object Path -EQ '.github/instructions/reference-route.instructions.md')[0]
+
+            $route.RouteScanComplete | Should -BeFalse
+            $route.RouteScanNote | Should -Match 'Reference-style'
+            $context.Complete | Should -BeFalse
+            $context.Unresolved | Should -Contain "Unable to fully discover Markdown routes in '.github/instructions/reference-route.instructions.md': Reference-style Markdown links require direct inspection."
+        }
+        finally {
+            Remove-Item -LiteralPath $routePath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'reports route scanner budget exhaustion as unresolved' {
+        $routePath = Join-Path $fixtureRoot '.github/instructions/route-budget.instructions.md'
+        $malformedLinks = (1..100 | ForEach-Object { '[broken](' }) -join ''
+        Set-Content -LiteralPath $routePath -Value @"
+---
+applyTo: '**'
+---
+
+$malformedLinks
+"@
+        try {
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+            $route = @($context.Selected | Where-Object Path -EQ '.github/instructions/route-budget.instructions.md')[0]
+
+            $route.RouteScanComplete | Should -BeFalse
+            $route.RouteScanNote | Should -Match 'safety budget'
+            $context.Complete | Should -BeFalse
+        }
+        finally {
+            Remove-Item -LiteralPath $routePath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'ignores existing external Markdown route targets without invoking the reparse checker' {
+        $routePath = Join-Path $fixtureRoot '.github/instructions/external-route.instructions.md'
+        $externalPath = Join-Path (Split-Path -Parent $fixtureRoot) 'external-policy.md'
+        Set-Content -LiteralPath $externalPath -Value '# External policy'
+        Set-Content -LiteralPath $routePath -Value @'
+---
+applyTo: '**'
+---
+
+See [the external policy](../../../external-policy.md).
+'@
+        try {
+            $context = Get-AgentContext -RepositoryRoot $fixtureRoot -ChangedPath 'src/Example.cs'
+            $route = @($context.Selected | Where-Object Path -EQ '.github/instructions/external-route.instructions.md')[0]
+
+            $route.ReferencedRoutes | Should -Not -Contain '../../../external-policy.md'
+            $context.Complete | Should -BeTrue
+        }
+        finally {
+            Remove-Item -LiteralPath $routePath -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $externalPath -Force -ErrorAction SilentlyContinue
         }
     }
 

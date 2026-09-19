@@ -1,3 +1,5 @@
+#!/usr/bin/env pwsh
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -98,7 +100,11 @@ function Convert-ContextGlobToRegex { # NOSONAR - bounded glob compiler intentio
         elseif ($character -eq '[') {
             $closingIndex = $Pattern.IndexOf(']', $index + 1)
             if ($closingIndex -gt $index + 1) {
-                $null = $builder.Append($Pattern.Substring($index, $closingIndex - $index + 1))
+                $characterClass = $Pattern.Substring($index, $closingIndex - $index + 1)
+                if ($characterClass[1] -eq '!') {
+                    $characterClass = '[^' + $characterClass.Substring(2)
+                }
+                $null = $builder.Append($characterClass)
                 $index = $closingIndex
             }
             else {
@@ -117,7 +123,8 @@ function Test-ContextGlob {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Pattern,
-        [Parameter(Mandatory)][string]$Path
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][System.StringComparison]$PathComparison
     )
 
     foreach ($expanded in (Expand-ContextPattern -Pattern $Pattern)) {
@@ -125,24 +132,22 @@ function Test-ContextGlob {
         # Keep the matcher compatible with the repository's PowerShell 7.0
         # baseline. NonBacktracking was added after the minimum runtime.
         $options = [System.Text.RegularExpressions.RegexOptions]::None
-        $comparison = if ($IsWindows) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
-        $comparisonVariable = Get-Variable -Name ContextPathComparison -Scope Script -ErrorAction SilentlyContinue
-        if ($null -ne $comparisonVariable) { $comparison = [System.StringComparison]$comparisonVariable.Value }
-        if ($comparison -eq [System.StringComparison]::OrdinalIgnoreCase) {
+        if ($PathComparison -eq [System.StringComparison]::OrdinalIgnoreCase) {
             $options = $options -bor [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
         }
         try {
             $boundedRegex = [regex]::new($regex, $options, [TimeSpan]::FromMilliseconds(100))
-            if ($boundedRegex.IsMatch($Path)) { return $true }
+            if ($boundedRegex.IsMatch($Path)) {
+                return [pscustomobject]@{ Matched = $true; TimedOut = $false }
+            }
         }
         catch [System.Text.RegularExpressions.RegexMatchTimeoutException] {
-            $script:ContextGlobTimedOut = $true
-            return $false
+            return [pscustomobject]@{ Matched = $false; TimedOut = $true }
         }
-        catch { return $false }
+        catch { continue }
     }
 
-    return $false
+    return [pscustomobject]@{ Matched = $false; TimedOut = $false }
 }
 
 function Get-ContextPathComparison {
@@ -217,7 +222,11 @@ function Read-ContextFrontMatter { # NOSONAR - bounded frontmatter parser intent
         if ($trailing -and -not $trailing.StartsWith('#', [System.StringComparison]::Ordinal)) {
             return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'applyTo contains unsupported trailing syntax.' }
         }
-        $value = $value.Substring(1, $closingQuoteIndex - 1)
+        $quotedValue = $value.Substring(1, $closingQuoteIndex - 1)
+        if ($quote -eq '"' -and $quotedValue.Contains('\')) {
+            return [pscustomobject]@{ Status = 'unknown'; Patterns = @(); Reason = 'applyTo double-quoted scalars with escapes require direct inspection.' }
+        }
+        $value = $quotedValue
     }
     else {
         $commentMatch = [regex]::Match($value, '[\t ]+#')
@@ -337,35 +346,53 @@ function Get-ContextRoutes { # NOSONAR - route extraction is a bounded Markdown 
     )
 
     $routes = [System.Collections.Generic.List[string]]::new()
-    $scanBudget = [Math]::Max(1000, [Math]::Min(1000000, ($Content.Length * 4) + 1000))
+    $routeContent = $Content
+    $frontMatterMatch = [regex]::Match($Content, '(?s)\A(?:\uFEFF)?---\r?\n.*?\r?\n---(?:\r?\n|$)')
+    if ($frontMatterMatch.Success) { $routeContent = $Content.Substring($frontMatterMatch.Length) }
+    $referenceDefinition = [regex]::IsMatch($routeContent, '(?im)^[\t ]{0,3}\[[^\]\r\n]+\]:\s*(?:<[^>\r\n]+>|\S+)')
+    $referenceUse = [regex]::IsMatch($routeContent, '(?<!\\)\[[^\]\r\n]+\]\s*\[[^\]\r\n]*\]')
+    if ($referenceDefinition -or $referenceUse) {
+        return [pscustomobject]@{
+            Routes = @()
+            Complete = $false
+            Reason = 'Reference-style Markdown links require direct inspection.'
+        }
+    }
+    $scanBudget = [Math]::Max(1000, [Math]::Min(1000000, ($routeContent.Length * 4) + 1000))
     $scanOperations = 0
-    for ($index = 0; $index -lt ($Content.Length - 1); $index++) {
-        if ($Content[$index] -ne ']' -or $Content[$index + 1] -ne '(') { continue }
+    for ($index = 0; $index -lt ($routeContent.Length - 1); $index++) {
+        if ($routeContent[$index] -ne ']' -or $routeContent[$index + 1] -ne '(') { continue }
 
         $routeStart = $index + 2
         $depth = 1
         $routeEnd = -1
-        for ($cursor = $routeStart; $cursor -lt $Content.Length; $cursor++) {
+        for ($cursor = $routeStart; $cursor -lt $routeContent.Length; $cursor++) {
             $scanOperations++
-            if ($scanOperations -gt $scanBudget) { return @($routes | Sort-Object) }
-            if ($Content[$cursor] -eq '\' -and $cursor + 1 -lt $Content.Length) {
+            if ($scanOperations -gt $scanBudget) {
+                return [pscustomobject]@{
+                    Routes = @($routes | Sort-Object)
+                    Complete = $false
+                    Reason = 'Markdown route scanning exceeded the safety budget.'
+                }
+            }
+            if ($routeContent[$cursor] -eq '\' -and $cursor + 1 -lt $routeContent.Length) {
                 $cursor++
                 continue
             }
-            if ($Content[$cursor] -eq '(') { $depth++ }
-            elseif ($Content[$cursor] -eq ')') {
+            if ($routeContent[$cursor] -eq '(') { $depth++ }
+            elseif ($routeContent[$cursor] -eq ')') {
                 $depth--
                 if ($depth -eq 0) {
                     $routeEnd = $cursor
                     break
                 }
             }
-            elseif ($Content[$cursor] -match '[\r\n]') {
+            elseif ($routeContent[$cursor] -match '[\r\n]') {
                 break
             }
         }
         if ($routeEnd -lt 0) { continue }
-        $route = $Content.Substring($routeStart, $routeEnd - $routeStart).Trim()
+        $route = $routeContent.Substring($routeStart, $routeEnd - $routeStart).Trim()
         $destinationMatch = if ($route.StartsWith('<', [System.StringComparison]::Ordinal)) {
             [regex]::Match($route, '^<(?<Destination>[^>]+)>(?:\s+(?:"[^"]*"|''[^'']*''))?$')
         }
@@ -378,15 +405,20 @@ function Get-ContextRoutes { # NOSONAR - route extraction is a bounded Markdown 
         if ($destination -and $destination -notmatch '^(?:[A-Za-z][A-Za-z0-9+.-]*:|//)' -and $destination -match '(?:\.md|\.mdx|SKILL\.md)(?:$|#)' -and -not [System.IO.Path]::IsPathRooted($routePath)) {
             $candidatePath = Join-Path (Split-Path -Parent $SourcePath) $routePath
             $candidateRelative = ConvertTo-ContextRelativePath -RepositoryRoot $RepositoryRoot -Path $candidatePath
+            if ($null -eq $candidateRelative) { continue }
             $safeRoute = -not (Test-Path -LiteralPath $candidatePath) -or (Test-ContextPathWithoutReparsePoints -RepositoryRoot $RepositoryRoot -RelativePath $candidateRelative)
-            if ($null -ne $candidateRelative -and $safeRoute) {
+            if ($safeRoute) {
                 if (-not $routes.Contains($destination)) { $routes.Add($destination) }
             }
         }
         $index = $routeEnd
     }
 
-    return @($routes | Sort-Object)
+    return [pscustomobject]@{
+        Routes = @($routes | Sort-Object)
+        Complete = $true
+        Reason = ''
+    }
 }
 
 function Get-ContextSourceRevision {
@@ -542,7 +574,7 @@ function Test-ContextPathWithoutReparsePoints {
 
     $current = $RepositoryRoot
     foreach ($segment in ($RelativePath -split '[\\/]')) {
-        if ([string]::IsNullOrWhiteSpace($segment) -or $segment -eq '.') { continue }
+        if ($segment.Length -eq 0 -or $segment -eq '.') { continue }
         if ($segment -eq '..') { return $false }
         $current = Join-Path $current $segment
         try {
@@ -570,8 +602,7 @@ function Get-AgentContext { # NOSONAR - top-level context assembly intentionally
     )
 
     $resolvedRoot = (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
-    $script:ContextPathComparison = Get-ContextPathComparison -RepositoryRoot $resolvedRoot
-    $script:ContextGlobTimedOut = $false
+    $pathComparison = Get-ContextPathComparison -RepositoryRoot $resolvedRoot
     $unresolved = [System.Collections.Generic.List[string]]::new()
     $requested = [System.Collections.Generic.List[object]]::new()
     foreach ($group in @(
@@ -606,7 +637,6 @@ function Get-AgentContext { # NOSONAR - top-level context assembly intentionally
     foreach ($scanError in @($candidateResult.Errors)) { $unresolved.Add($scanError) }
     $sourceRevision = Get-ContextSourceRevision -RepositoryRoot $resolvedRoot
     $fullInventory = @($requested | Where-Object { $_.Path -cmatch '^\.github/instructions/.*\.instructions\.md$' -or $_.Path -cmatch '(^|/)AGENTS\.md$' -or $_.Path -ceq '.github/copilot-instructions.md' }).Count -gt 0
-    $pathComparison = Get-ContextPathComparison -RepositoryRoot $resolvedRoot
     $domainProbePaths = @{
         'csharp' = @('__domain__.cs', 'src/__domain__.cs', 'tests/__domain__.cs', 'samples/__domain__.cs')
         'c#' = @('__domain__.cs', 'src/__domain__.cs', 'tests/__domain__.cs', 'samples/__domain__.cs')
@@ -664,6 +694,7 @@ function Get-AgentContext { # NOSONAR - top-level context assembly intentionally
 
         $reasons = [System.Collections.Generic.List[string]]::new()
         $isSelected = $false
+        $scopeMatchTimedOut = $false
         if ($fullInventory) {
             $isSelected = $true
             $reasons.Add('full-inventory')
@@ -692,7 +723,15 @@ function Get-AgentContext { # NOSONAR - top-level context assembly intentionally
                 $reasons.Add('unknown-scope-requires-inspection')
             }
             foreach ($request in @($requested | Where-Object { $_.Kind -ne 'required' })) {
-                if ($frontMatter.Status -eq 'valid' -and @($frontMatter.Patterns | Where-Object { Test-ContextGlob -Pattern $_ -Path $request.Path }).Count -gt 0) {
+                $scopeMatchesRequest = $false
+                if ($frontMatter.Status -eq 'valid') {
+                    foreach ($scopePattern in @($frontMatter.Patterns)) {
+                        $match = Test-ContextGlob -Pattern $scopePattern -Path $request.Path -PathComparison $pathComparison
+                        $scopeMatchTimedOut = $scopeMatchTimedOut -or $match.TimedOut
+                        $scopeMatchesRequest = $scopeMatchesRequest -or $match.Matched
+                    }
+                }
+                if ($scopeMatchesRequest) {
                     $isSelected = $true
                     $reasons.Add("path:$($request.Kind):$($request.Path)")
                 }
@@ -705,7 +744,15 @@ function Get-AgentContext { # NOSONAR - top-level context assembly intentionally
                 }
                 $probes = @($domainProbePaths[$domainKey])
                 foreach ($probe in $probes) {
-                    if ($frontMatter.Status -eq 'valid' -and @($frontMatter.Patterns | Where-Object { Test-ContextGlob -Pattern $_ -Path $probe }).Count -gt 0) {
+                    $scopeMatchesProbe = $false
+                    if ($frontMatter.Status -eq 'valid') {
+                        foreach ($scopePattern in @($frontMatter.Patterns)) {
+                            $match = Test-ContextGlob -Pattern $scopePattern -Path $probe -PathComparison $pathComparison
+                            $scopeMatchTimedOut = $scopeMatchTimedOut -or $match.TimedOut
+                            $scopeMatchesProbe = $scopeMatchesProbe -or $match.Matched
+                        }
+                    }
+                    if ($scopeMatchesProbe) {
                         $isSelected = $true
                         $reasons.Add("content-domain:$domain")
                     }
@@ -724,7 +771,9 @@ function Get-AgentContext { # NOSONAR - top-level context assembly intentionally
                     $scopeMatchesRole = $false
                     foreach ($scopePattern in @($frontMatter.Patterns)) {
                         foreach ($roleProbe in $roleProbes) {
-                            if (Test-ContextGlob -Pattern $scopePattern -Path $roleProbe) { $scopeMatchesRole = $true }
+                            $match = Test-ContextGlob -Pattern $scopePattern -Path $roleProbe -PathComparison $pathComparison
+                            $scopeMatchTimedOut = $scopeMatchTimedOut -or $match.TimedOut
+                            if ($match.Matched) { $scopeMatchesRole = $true }
                         }
                     }
                     if ($relative -match [regex]::Escape($roleVariant) -or $scopeMatchesRole) {
@@ -735,11 +784,10 @@ function Get-AgentContext { # NOSONAR - top-level context assembly intentionally
             }
         }
 
-        if ($script:ContextGlobTimedOut) {
+        if ($scopeMatchTimedOut) {
             $isSelected = $true
             $reasons.Add('scope-match-timeout')
             $unresolved.Add("Unable to evaluate one or more scopes for '$relative' within the regex safety budget.")
-            $script:ContextGlobTimedOut = $false
         }
         if ($readError) {
             $isSelected = $true
@@ -751,6 +799,15 @@ function Get-AgentContext { # NOSONAR - top-level context assembly intentionally
             Get-ContextFileMetrics -Path $candidate.FullName -Content $content -Bytes $snapshot.Bytes
         }
         else { $null }
+        $routeResult = if ($null -ne $content) {
+            Get-ContextRoutes -Content $content -RepositoryRoot $resolvedRoot -SourcePath $candidate.FullName
+        }
+        else {
+            [pscustomobject]@{ Routes = @(); Complete = $true; Reason = '' }
+        }
+        if (-not $routeResult.Complete) {
+            $unresolved.Add("Unable to fully discover Markdown routes in '$relative': $($routeResult.Reason)")
+        }
         $entries.Add([pscustomobject][ordered]@{
             Path = $relative
             Kind = $candidate.Kind
@@ -762,7 +819,9 @@ function Get-AgentContext { # NOSONAR - top-level context assembly intentionally
             ContentHash = if ($null -ne $metrics) { $metrics.ContentHash } else { $null }
             ByteCount = if ($null -ne $metrics) { $metrics.ByteCount } else { $null }
             WordCount = if ($null -ne $metrics) { $metrics.WordCount } else { $null }
-            ReferencedRoutes = if ($null -ne $content) { @(Get-ContextRoutes -Content $content -RepositoryRoot $resolvedRoot -SourcePath $candidate.FullName) } else { @() }
+            ReferencedRoutes = @($routeResult.Routes)
+            RouteScanComplete = [bool]$routeResult.Complete
+            RouteScanNote = [string]$routeResult.Reason
         })
     }
 
