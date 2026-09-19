@@ -51,8 +51,10 @@ jobs:
               if ($LASTEXITCODE -ne 0) { throw 'Pull request issue-reference validation failed.' }
             }
             else {
-              $pullRequestsJson = gh api "repos/$repository/commits/$env:GITHUB_SHA/pulls" --header 'Accept: application/vnd.github+json' --paginate --slurp | Out-String
-              $output = & pwsh -NoProfile -File $mergeValidator -PullRequestsJson $pullRequestsJson -RepositoryOwner $env:REPOSITORY_OWNER -RepositoryName $env:REPOSITORY_NAME 2>&1 | Out-String
+              $pullRequestsPath = Join-Path $env:RUNNER_TEMP 'merge-group-pull-requests.json'
+              gh api "repos/$repository/commits/$env:GITHUB_SHA/pulls" --header 'Accept: application/vnd.github+json' --paginate --slurp | Set-Content -LiteralPath $pullRequestsPath -Encoding utf8
+              if ($LASTEXITCODE -ne 0) { throw 'Unable to resolve merge-group pull requests.' }
+              $output = & pwsh -NoProfile -File $mergeValidator -PullRequestsPath $pullRequestsPath -RepositoryOwner $env:REPOSITORY_OWNER -RepositoryName $env:REPOSITORY_NAME 2>&1 | Out-String
               Write-Output $output
               if ($LASTEXITCODE -ne 0) { throw 'Merge-group issue-reference validation failed.' }
             }

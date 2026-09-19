@@ -60,6 +60,41 @@ Describe 'PR issue reference validator' {
         $outcome.Result.Valid | Should -BeTrue
     }
 
+    It 'rejects a full issue URL with an invalid numeric boundary' {
+        $outcome = Invoke-ReferenceValidator -Body 'https://github.com/Gibbs-Morris/mississippi/issues/741abc'
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
+    It 'accepts a used Markdown reference definition' {
+        $outcome = Invoke-ReferenceValidator -Body "[tracking issue][work]`r`n`r`n[work]: https://github.com/Gibbs-Morris/mississippi/issues/741"
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
+    It 'ignores balanced Markdown link destinations while scanning shorthand' {
+        $outcome = Invoke-ReferenceValidator -Body '[tracking](https://example.test/a(b)#741)'
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
+    It 'ignores quoted indented code blocks' {
+        $outcome = Invoke-ReferenceValidator -Body ">     Refs #741"
+
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Result.Errors | Should -Contain 'No repository issue reference was found in the rendered pull request description.'
+    }
+
+    It 'preserves a reference after inline comment opener code' {
+        $outcome = Invoke-ReferenceValidator -Body 'The token `<!--` is code. Refs #741.'
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Valid | Should -BeTrue
+    }
+
     It 'ignores an unused Markdown reference definition' {
         $outcome = Invoke-ReferenceValidator -Body '[tracking]: https://github.com/Gibbs-Morris/mississippi/issues/741'
 

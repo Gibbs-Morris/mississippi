@@ -2,7 +2,8 @@
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory)][AllowEmptyString()][string]$PullRequestsJson,
+    [AllowEmptyString()][string]$PullRequestsJson,
+    [string]$PullRequestsPath,
     [Parameter(Mandatory)][string]$RepositoryOwner,
     [Parameter(Mandatory)][string]$RepositoryName,
     [string]$ValidatorPath = (Join-Path $PSScriptRoot 'validate-pr-issue-reference.ps1'),
@@ -13,6 +14,10 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 try {
+    if (-not [string]::IsNullOrWhiteSpace($PullRequestsPath)) {
+        $PullRequestsJson = Get-Content -LiteralPath $PullRequestsPath -Raw -ErrorAction Stop
+    }
+    if ([string]::IsNullOrWhiteSpace($PullRequestsJson)) { throw 'Merge-group pull-request data was empty.' }
     $decoded = @(ConvertFrom-Json -InputObject $PullRequestsJson)
     $pullRequests = [System.Collections.Generic.List[object]]::new()
     foreach ($page in $decoded) {

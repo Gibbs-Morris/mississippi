@@ -12,6 +12,60 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+function Remove-MarkdownHtmlComments {
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
+    $builder = [System.Text.StringBuilder]::new()
+    $index = 0
+    while ($index -lt $Content.Length) {
+        if ($Content[$index] -eq '`') {
+            $start = $index
+            while ($index -lt $Content.Length -and $Content[$index] -eq '`') { $index++ }
+            $delimiterLength = $index - $start
+            $closing = $Content.IndexOf(('`' * $delimiterLength), $index, [System.StringComparison]::Ordinal)
+            if ($closing -ge 0) {
+                $null = $builder.Append($Content.Substring($start, $closing + $delimiterLength - $start))
+                $index = $closing + $delimiterLength
+                continue
+            }
+            $null = $builder.Append($Content.Substring($start))
+            break
+        }
+        if ($index + 4 -le $Content.Length -and $Content.Substring($index, 4) -eq '<!--') {
+            $closing = $Content.IndexOf('-->', $index + 4, [System.StringComparison]::Ordinal)
+            $index = if ($closing -ge 0) { $closing + 3 } else { $Content.Length }
+            continue
+        }
+        $null = $builder.Append($Content[$index])
+        $index++
+    }
+    return $builder.ToString()
+}
+
+function Remove-MarkdownLinkDestinations {
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
+    $builder = [System.Text.StringBuilder]::new()
+    $index = 0
+    while ($index -lt $Content.Length) {
+        if ($index + 1 -lt $Content.Length -and $Content[$index] -eq ']' -and $Content[$index + 1] -eq '(') {
+            $depth = 1
+            $cursor = $index + 2
+            while ($cursor -lt $Content.Length -and $depth -gt 0) {
+                if ($Content[$cursor] -eq '(') { $depth++ }
+                elseif ($Content[$cursor] -eq ')') { $depth-- }
+                $cursor++
+            }
+            if ($depth -eq 0) {
+                $null = $builder.Append(']')
+                $index = $cursor
+                continue
+            }
+        }
+        $null = $builder.Append($Content[$index])
+        $index++
+    }
+    return $builder.ToString()
+}
+
 function Remove-NonRenderedMarkdown {
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
 
@@ -35,9 +89,10 @@ function Remove-NonRenderedMarkdown {
         $line
     }
     $withoutFences = $withoutFences -join [Environment]::NewLine
-    $withoutComments = [regex]::Replace($withoutFences, '(?s)<!--.*?(?:-->|$)', '')
+    $withoutComments = Remove-MarkdownHtmlComments -Content $withoutFences
     $withoutComments = [regex]::Replace($withoutComments, '(?m)<(?!https?://|mailto:)[^>\r\n]*>', '')
     $withoutComments = [regex]::Replace($withoutComments, '(?m)^(?: {4}|\t)[^\r\n]*(?:\r?\n|$)', '')
+    $withoutComments = [regex]::Replace($withoutComments, '(?m)^[ ]{0,3}>[ ]{5,}[^\r\n]*(?:\r?\n|$)', '')
     $builder = [System.Text.StringBuilder]::new()
     $index = 0
     while ($index -lt $withoutComments.Length) {
@@ -94,8 +149,15 @@ function Get-PrIssueReferences {
         $references.Add([pscustomobject]@{ Number = $Number; Text = $Text })
         return $true
     }
-    $contentForExtraction = [regex]::Replace($Content, '(?m)^[ \t]{0,3}\[[^\]\r\n]+\]:[ \t]*(?:<[^>\r\n]+>|\S+)(?:[ \t]+.*)?$', '')
-    $fullUrlPattern = 'https://github\.com/(?<Owner>[^/\s]+)/(?<Repo>[^/#\s]+)/(?<Kind>issues|pull)/(?<Number>\d+)'
+    $usedLabels = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($used in [regex]::Matches($Content, '\[[^\]]+\]\[(?<Label>[^\]]+)\]')) { $null = $usedLabels.Add($used.Groups['Label'].Value.Trim()) }
+    $contentForExtraction = $Content
+    $definitionPattern = '(?m)^[ \t]{0,3}\[(?<Label>[^\]\r\n]+)\]:[ \t]*(?<Destination><[^>\r\n]+>|\S+)(?:[ \t]+.*)?$'
+    foreach ($definition in [regex]::Matches($Content, $definitionPattern)) {
+        $replacement = if ($usedLabels.Contains($definition.Groups['Label'].Value.Trim())) { " $($definition.Groups['Destination'].Value) " } else { '' }
+        $contentForExtraction = $contentForExtraction.Replace($definition.Value, $replacement)
+    }
+    $fullUrlPattern = 'https://github\.com/(?<Owner>[^/\s]+)/(?<Repo>[^/#\s]+)/(?<Kind>issues|pull)/(?<Number>\d+)(?=[/?#\s>]|$)'
     foreach ($match in [regex]::Matches($contentForExtraction, $fullUrlPattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)) {
         $matchOwner = $match.Groups['Owner'].Value
         $matchRepo = $match.Groups['Repo'].Value
@@ -110,6 +172,7 @@ function Get-PrIssueReferences {
 
     $withoutFullUrls = [regex]::Replace($contentForExtraction, $fullUrlPattern, '')
     $withoutLinkDestinations = [regex]::Replace($withoutFullUrls, '\]\([^)\r\n]*\)', ']')
+    $withoutLinkDestinations = Remove-MarkdownLinkDestinations -Content $withoutFullUrls
     $withoutUriComponents = [regex]::Replace($withoutLinkDestinations, '(?i)\b[A-Za-z][A-Za-z0-9+.-]*://[^\s<>()]+', '')
     foreach ($match in [regex]::Matches($withoutUriComponents, '(?i)(?<![\w/])(?<Owner>[A-Za-z0-9_.-]+)/(?<Repo>[A-Za-z0-9_.-]+)#(?<QualifiedNumber>\d+)\b')) {
         if ([string]::Equals($match.Groups['Owner'].Value, $Owner, [System.StringComparison]::OrdinalIgnoreCase) -and [string]::Equals($match.Groups['Repo'].Value, $Name, [System.StringComparison]::OrdinalIgnoreCase)) {
