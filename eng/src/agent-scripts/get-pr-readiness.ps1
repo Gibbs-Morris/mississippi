@@ -6,6 +6,8 @@ param(
     [Parameter(Mandatory)][string]$RepositoryName,
     [Parameter(Mandatory)][int]$PullRequestNumber,
     [Parameter(Mandatory)][string]$TrustedReviewQueryPath,
+    [Parameter(Mandatory)][string]$TrustedAutomationModulePath,
+    [Parameter(Mandatory)][ValidatePattern('^SHA256:[0-9a-fA-F]{64}$')][string]$TrustedAutomationModuleSha256,
     [ValidateRange(0, 86400)][int]$PollingSeconds = 0,
     [switch]$Json
 )
@@ -13,9 +15,18 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
-
 try {
+    $trustedModulePath = (Resolve-Path -LiteralPath $TrustedAutomationModulePath -ErrorAction Stop).Path
+    $checkoutRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../../..') -ErrorAction Stop).Path
+    $checkoutPrefix = $checkoutRoot.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+    if ($trustedModulePath.StartsWith($checkoutPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'TrustedAutomationModulePath must be outside the reviewed checkout.'
+    }
+    $actualModuleSha256 = 'SHA256:' + (Get-FileHash -LiteralPath $trustedModulePath -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+    if ($actualModuleSha256 -ne $TrustedAutomationModuleSha256.ToUpperInvariant()) {
+        throw "Trusted automation module integrity mismatch: expected $TrustedAutomationModuleSha256, got $actualModuleSha256."
+    }
+    Import-Module $trustedModulePath -Force
     $snapshot = Get-PrReadinessSnapshot -RepositoryOwner $RepositoryOwner -RepositoryName $RepositoryName -PullRequestNumber $PullRequestNumber -TrustedReviewQueryPath $TrustedReviewQueryPath -PollingSeconds $PollingSeconds
     $result = Get-PrReadinessReport -Snapshot $snapshot
     if ($Json) {
