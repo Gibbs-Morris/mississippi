@@ -217,6 +217,32 @@ Describe 'Repository prerequisite doctor' {
         @($report.Checks | Where-Object Name -EQ 'dotnet-tools').State | Should -Be 'ready'
     }
 
+    It 'accepts current resolver records with a top-level executable path' {
+        $manifestPath = Join-Path $fixtureRoot '.config/dotnet-tools.json'
+        $originalManifest = Get-Content -LiteralPath $manifestPath -Raw
+        $originalHome = $env:DOTNET_CLI_HOME
+        $toolHome = Join-Path $TestDrive 'top-level-resolver-home'
+        $resolverRoot = Join-Path $toolHome '.dotnet/toolResolverCache/1'
+        $executable = Join-Path $toolHome 'example-cli.exe'
+        try {
+            New-Item -ItemType Directory -Path $resolverRoot -Force | Out-Null
+            Set-Content -LiteralPath $executable -Value 'fixture executable'
+            $record = @([pscustomobject]@{ Version = '1.0.0'; PathToExecutable = $executable })
+            $record | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $resolverRoot 'example-cli')
+            Set-Content -LiteralPath $manifestPath -Value '{"version":1,"tools":{"Example.Package":{"version":"1.0.0","commands":["example-cli"]}}}'
+            $env:DOTNET_CLI_HOME = $toolHome
+            $probes = @{} + $readyProbes
+            $probes.Remove('dotnet-tools')
+            $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Core -ProbeOverrides $probes
+        }
+        finally {
+            Set-Content -LiteralPath $manifestPath -Value $originalManifest
+            if ($null -eq $originalHome) { Remove-Item Env:DOTNET_CLI_HOME -ErrorAction SilentlyContinue } else { $env:DOTNET_CLI_HOME = $originalHome }
+        }
+
+        @($report.Checks | Where-Object Name -EQ 'dotnet-tools').State | Should -Be 'ready'
+    }
+
     It 'reports a resolver cache that is not a directory as unknown' {
         $manifestPath = Join-Path $fixtureRoot '.config/dotnet-tools.json'
         $originalManifest = Get-Content -LiteralPath $manifestPath -Raw
