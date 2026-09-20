@@ -19,6 +19,11 @@ $sharedExecutionLeaseFileMode = [System.IO.UnixFileMode]::UserRead -bor
     [System.IO.UnixFileMode]::GroupWrite -bor
     [System.IO.UnixFileMode]::OtherRead -bor
     [System.IO.UnixFileMode]::OtherWrite
+$privateExecutionLeaseDirectoryMode = [System.IO.UnixFileMode]::UserRead -bor
+    [System.IO.UnixFileMode]::UserWrite -bor
+    [System.IO.UnixFileMode]::UserExecute
+$privateExecutionLeaseFileMode = [System.IO.UnixFileMode]::UserRead -bor
+    [System.IO.UnixFileMode]::UserWrite
 
 function Test-RepositoryExecutionLeaseSharedMode {
     [CmdletBinding()]
@@ -128,7 +133,8 @@ function Get-RepositoryExecutionLeasePathForRoot {
     $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
     $fileName = (($hash | ForEach-Object { $_.ToString('x2') }) -join '') + '.lease'
     $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
-    $leaseDirectory = if ([string]::IsNullOrWhiteSpace($LeaseDirectory)) {
+    $defaultLeaseDirectory = [string]::IsNullOrWhiteSpace($LeaseDirectory)
+    $leaseDirectory = if ($defaultLeaseDirectory) {
         Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases'
     }
     elseif ([System.IO.Path]::IsPathRooted($LeaseDirectory)) {
@@ -155,6 +161,9 @@ function Get-RepositoryExecutionLeasePathForRoot {
         else {
             Test-RepositoryExecutionLeaseUnixMode -Path $leaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
         }
+    }
+    elseif ($defaultLeaseDirectory) {
+        Set-RepositoryExecutionLeaseUnixMode -Path $leaseDirectory -Mode $privateExecutionLeaseDirectoryMode
     }
     return Join-Path $leaseDirectory $fileName
 }
@@ -257,6 +266,7 @@ function Enter-RepositoryExecutionLease {
         }
     }
     $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
+    $privateLease = -not $sharedLease
     if ([string]::IsNullOrWhiteSpace($LeaseDirectory) -and $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true') {
         throw 'Cross-account shared worktrees require an explicit trusted -LeaseDirectory.'
     }
@@ -299,7 +309,10 @@ function Enter-RepositoryExecutionLease {
             $streamOptions.Mode = [System.IO.FileMode]::OpenOrCreate
             $streamOptions.Access = [System.IO.FileAccess]::ReadWrite
             $streamOptions.Share = [System.IO.FileShare]::Read
-            if ($sharedLease -and -not $IsWindows) { $streamOptions.UnixCreateMode = $sharedExecutionLeaseFileMode }
+            if (-not $IsWindows) {
+                if ($sharedLease) { $streamOptions.UnixCreateMode = $sharedExecutionLeaseFileMode }
+                elseif ($privateLease) { $streamOptions.UnixCreateMode = $privateExecutionLeaseFileMode }
+            }
             $stream = [System.IO.FileStream]::new($leasePath, $streamOptions)
         }
 
@@ -310,6 +323,9 @@ function Enter-RepositoryExecutionLease {
             else {
                 Test-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $sharedExecutionLeaseFileMode
             }
+        }
+        elseif ($privateLease) {
+            Set-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $privateExecutionLeaseFileMode
         }
     }
     catch [System.UnauthorizedAccessException] {
