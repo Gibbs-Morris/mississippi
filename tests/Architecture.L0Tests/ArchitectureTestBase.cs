@@ -53,7 +53,8 @@ public abstract class ArchitectureTestBase
         Justification = "Assembly discovery must aggregate every load failure and fail closed")]
     internal static Assembly[] LoadMississippiAssemblies(
         IEnumerable<string> assemblyPaths,
-        Func<string, Assembly> loader)
+        Func<string, Assembly> loader
+    )
     {
         ArgumentNullException.ThrowIfNull(assemblyPaths);
         ArgumentNullException.ThrowIfNull(loader);
