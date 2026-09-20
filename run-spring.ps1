@@ -25,7 +25,10 @@ param(
     [string]$LocalAuth = 'Off',
 
     [Parameter()]
-    [switch]$ForceCleanup
+    [switch]$ForceCleanup,
+
+    [Parameter()]
+    [string]$LeaseDirectory
 )
 
 Set-StrictMode -Version Latest
@@ -60,6 +63,15 @@ if ($staleProcesses) {
         Write-Warning "Detected existing Spring processes. Re-run with -ForceCleanup to stop them automatically."
     }
 }
+
+Import-Module (Join-Path $PSScriptRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1') -Force
+$repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+$executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "run-spring-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+try {
+    $repoRoot = $executionLease.RepositoryRoot
+    $solutionFile = Join-Path $repoRoot 'samples.slnx'
+    $appHostProject = Join-Path $repoRoot 'samples/Spring/Spring.AppHost/Spring.AppHost.csproj'
+    $launchSettingsPath = Join-Path $repoRoot 'samples/Spring/Spring.AppHost/Properties/launchSettings.json'
 
 Write-Host "Building Samples solution..." -ForegroundColor Cyan
 # Build the full solution to ensure source generators and all dependencies are built in correct order
@@ -140,5 +152,8 @@ if ($dotnetExitCode -ne 0) {
     Write-Error "Spring AppHost exited with code $dotnetExitCode"
     exit $dotnetExitCode
 }
-
+}
+finally {
+    if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
+}
 exit 0
