@@ -56,12 +56,8 @@ $powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pws
 
 # Determine repository root (this script resides there)
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
-
-# Underlying scripts
-$buildMississippi = Join-Path $repoRoot 'eng' 'src' 'agent-scripts' 'build-mississippi-solution.ps1'
-$buildSamples     = Join-Path $repoRoot 'eng' 'src' 'agent-scripts' 'build-sample-solution.ps1'
-$leaseArguments = @()
-if (-not [string]::IsNullOrWhiteSpace($LeaseDirectory)) { $leaseArguments = @('-LeaseDirectory', $LeaseDirectory) }
+Import-Module (Join-Path $repoRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1') -Force
+$executionLease = $null
 
 function Invoke-BuildStep {
     param(
@@ -78,6 +74,13 @@ function Invoke-BuildStep {
 }
 
 try {
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "build-wrapper-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $repoRoot = $executionLease.RepositoryRoot
+    $buildMississippi = Join-Path $repoRoot 'eng' 'src' 'agent-scripts' 'build-mississippi-solution.ps1'
+    $buildSamples = Join-Path $repoRoot 'eng' 'src' 'agent-scripts' 'build-sample-solution.ps1'
+    $leaseArguments = @('-SkipLease')
+    if (-not [string]::IsNullOrWhiteSpace($LeaseDirectory)) { $leaseArguments += @('-LeaseDirectory', $LeaseDirectory) }
+
     if ($SkipMississippi -and $SkipSamples) {
         Write-Warning 'Both -SkipMississippi and -SkipSamples specified; nothing to build.'
         return
@@ -96,6 +99,9 @@ try {
 catch {
     Write-Error "=== BUILD FAILED === $_"
     exit 1
+}
+finally {
+    if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
 }
 
 exit 0
