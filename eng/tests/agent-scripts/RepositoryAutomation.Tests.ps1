@@ -256,6 +256,47 @@ catch {
         }
     }
 
+    It 'coordinates same-process runspaces for one shared lease' {
+        $leaseRoot = Join-Path $TestDrive 'runspace-lease-repository'
+        $modulePath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../src/agent-scripts/RepositoryAutomation.psm1'))
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'runspace-owner'
+        $worker = @'
+param([string]$ModulePath, [string]$RepoRoot, [string]$LeaseDirectory)
+$ErrorActionPreference = 'Stop'
+Import-Module $ModulePath
+$childLease = $null
+try {
+    $childLease = Enter-RepositoryExecutionLease -RepoRoot $RepoRoot -LeaseDirectory $LeaseDirectory
+    'acquired'
+}
+catch { "blocked:$($_.Exception.Message)" }
+finally { if ($null -ne $childLease) { Exit-RepositoryExecutionLease -Lease $childLease } }
+'@
+        function Invoke-RunspaceLeaseAttempt {
+            param([string]$ScriptText, [string]$ModulePath, [string]$RepoRoot, [string]$LeaseDirectory)
+            $runspace = [runspacefactory]::CreateRunspace()
+            $runspace.Open()
+            $powershell = [powershell]::Create()
+            $powershell.Runspace = $runspace
+            try {
+                $null = $powershell.AddScript($ScriptText).AddArgument($ModulePath).AddArgument($RepoRoot).AddArgument($LeaseDirectory)
+                return [string]$powershell.Invoke()
+            }
+            finally {
+                $powershell.Dispose()
+                $runspace.Dispose()
+            }
+        }
+        try {
+                (Invoke-RunspaceLeaseAttempt -ScriptText $worker -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $null) |
+                Should -Match '^blocked:.*execution lease'
+        }
+        finally { Exit-RepositoryExecutionLease -Lease $lease }
+        Invoke-RunspaceLeaseAttempt -ScriptText $worker -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $null |
+            Should -Be 'acquired'
+    }
+
     It 'resolves relative lease directories from the physical repository root' {
         $repoRoot = Join-Path $TestDrive 'relative-lease-repository'
         New-Item -ItemType Directory -Path $repoRoot -Force | Out-Null

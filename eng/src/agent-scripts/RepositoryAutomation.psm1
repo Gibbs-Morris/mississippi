@@ -189,6 +189,20 @@ function Get-RepositoryExecutionLeaseIdentityKey {
     return $CanonicalRepoRoot
 }
 
+function Get-RepositoryExecutionLeaseFileIdentityKey {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (-not $IsWindows) {
+        $identity = (& stat -c '%d:%i' -- $Path 2>$null | Out-String).Trim()
+        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($identity)) {
+            $identity = (& stat -f '%d:%i' -- $Path 2>$null | Out-String).Trim()
+        }
+        if (-not [string]::IsNullOrWhiteSpace($identity) -and $LASTEXITCODE -eq 0) { return "filesystem-file:$identity" }
+    }
+    return [System.IO.Path]::GetFullPath($Path).ToLowerInvariant()
+}
+
 function New-RepositoryExecutionLeaseProcessSemaphore {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Identity)
@@ -712,7 +726,7 @@ function New-RepositoryExecutionLeaseContext {
         LeasePath = $leasePath
         MetadataPath = $metadataPath
         LeaseIdentity = "$repositoryKey|$identityLeasePath"
-        ProcessSynchronizationKey = if ($sharedLease) { $leasePath } else { "$repositoryKey|$identityLeasePath" }
+        ProcessSynchronizationKey = if ($sharedLease) { Get-RepositoryExecutionLeaseFileIdentityKey -Path $leasePath } else { "$repositoryKey|$identityLeasePath" }
         OperationId = $OperationId
         Metadata = $metadata
     }
@@ -906,7 +920,6 @@ function Open-RepositoryExecutionLeaseResources {
         ProcessSemaphoreAcquired = $false
     }
     try {
-        Assert-RepositoryExecutionLeaseNotHeldByCurrentProcess -Path $Context.MetadataPath -SharedLease $Context.SharedLease
         $resources.ProcessSemaphore = New-RepositoryExecutionLeaseProcessSemaphore -Identity $Context.ProcessSynchronizationKey
         if (-not $resources.ProcessSemaphore.Semaphore.Wait(0)) {
             if ($Context.SharedLease) {
@@ -915,6 +928,7 @@ function Open-RepositoryExecutionLeaseResources {
             throw 'Repository execution lease is already held in this process. Use -ExistingLease for supported reentrancy.'
         }
         $resources.ProcessSemaphore.Acquired = $true
+        Assert-RepositoryExecutionLeaseNotHeldByCurrentProcess -Path $Context.MetadataPath -SharedLease $Context.SharedLease
         Register-RepositoryExecutionLeaseIdentity -Identity $Context.LeaseIdentity
         $resources.LeaseRegistered = $true
         if ($Context.SharedLease) {
@@ -973,9 +987,6 @@ function Write-RepositoryExecutionLeaseMetadata {
         }
     }
     else { & $writeMetadata }
-    if ($IsWindows -and $Context.SharedLease) { Set-RepositoryExecutionLeaseWindowsAccess -Path $Context.MetadataPath }
-    elseif (-not $IsWindows -and $Context.SharedLease) { Set-RepositoryExecutionLeaseUnixMode -Path $Context.MetadataPath -Mode $sharedExecutionLeaseFileMode }
-    elseif (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $Context.MetadataPath -Mode $privateExecutionLeaseFileMode }
 }
 
 function Clear-RepositoryExecutionLeaseMetadata {
