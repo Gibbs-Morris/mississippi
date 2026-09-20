@@ -120,3 +120,5 @@ public abstract class ArchitectureTestBase
         return LoadMississippiAssemblies(assemblyPaths);
     }
 }
+
+// End of the shared architecture-test discovery base.
