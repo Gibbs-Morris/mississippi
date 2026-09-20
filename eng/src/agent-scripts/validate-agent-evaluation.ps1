@@ -58,7 +58,7 @@ function Get-EvaluationMeasurementAliasErrors {
     return $messages.ToArray()
 }
 
-function Get-EvaluationInputEvidenceErrors {
+function Get-EvaluationInputEvidenceErrors { # NOSONAR - bounded evidence reconciliation intentionally aggregates independent fail-closed checks.
     param(
         [Parameter(Mandatory)][object]$Record,
         [Parameter(Mandatory)][object]$Category,

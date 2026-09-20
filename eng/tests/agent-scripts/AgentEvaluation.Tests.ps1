@@ -17,7 +17,7 @@ Describe 'Issue delivery benchmark validation' {
             $output = & $powerShellPath -NoProfile -File $validator -ScenarioPath $ScenarioPath -ResultsPath $ResultsPath -Json 2>&1 | Out-String
             [pscustomobject]@{ ExitCode = $LASTEXITCODE; Result = $output | ConvertFrom-Json }
         }
-        function New-LiveResults {
+        function New-LiveResults { # NOSONAR - synthetic benchmark fixture intentionally constructs every host/category evidence branch.
             $data = Get-Content -LiteralPath $results -Raw | ConvertFrom-Json
             $scenario = Get-Content -LiteralPath $pack -Raw | ConvertFrom-Json
             $revision = (& git -c "safe.directory=$($repoRoot.Replace('\', '/'))" -C $repoRoot rev-parse HEAD | Select-Object -First 1).Trim()
