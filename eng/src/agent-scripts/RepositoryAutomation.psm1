@@ -2827,8 +2827,15 @@ function Get-PrReadinessCheckState {
     param([Parameter(Mandatory)][object]$CheckRun)
 
     if ([string]$CheckRun.conclusion -eq 'success') { return 'pass' }
+    if ([string]$CheckRun.conclusion -in @('skipped', 'neutral')) { return 'pass' }
     if ([string]$CheckRun.status -eq 'completed') { return 'fail' }
     return 'pending'
+}
+
+function Test-PrReadinessAdvisoryCheckName {
+    param([Parameter(Mandatory)][string]$Name)
+
+    return $Name -match '^(?:pr-metrics|CodeQL|label-by-files|label-by-semver)$'
 }
 
 function Test-PrReadinessCheckRunBelongsToPullRequest {
@@ -2932,7 +2939,7 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
         $checks.Add([pscustomobject]@{
             Name = [string]$checkRun.name
             State = Get-PrReadinessCheckState -CheckRun $checkRun
-            Required = $false
+            Required = -not (Test-PrReadinessAdvisoryCheckName -Name ([string]$checkRun.name))
             ExpectedIdentity = $false
         })
     }
