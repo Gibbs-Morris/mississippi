@@ -20,6 +20,13 @@ $sharedExecutionLeaseFileMode = [System.IO.UnixFileMode]::UserRead -bor
     [System.IO.UnixFileMode]::OtherRead -bor
     [System.IO.UnixFileMode]::OtherWrite
 
+function Test-RepositoryExecutionLeaseSharedMode {
+    [CmdletBinding()]
+    param([string]$LeaseDirectory)
+
+    return $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true' -or -not [string]::IsNullOrWhiteSpace($LeaseDirectory)
+}
+
 function Set-RepositoryExecutionLeaseUnixMode {
     [CmdletBinding()]
     param(
@@ -120,7 +127,7 @@ function Get-RepositoryExecutionLeasePathForRoot {
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($keyRoot)
     $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
     $fileName = (($hash | ForEach-Object { $_.ToString('x2') }) -join '') + '.lease'
-    $sharedLease = $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true'
+    $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
     $leaseDirectory = if ([string]::IsNullOrWhiteSpace($LeaseDirectory)) { Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases' } else { [System.IO.Path]::GetFullPath($LeaseDirectory) }
     $leaseDirectoryCreated = $false
     if (Test-Path -LiteralPath $leaseDirectory) {
@@ -237,6 +244,7 @@ function Enter-RepositoryExecutionLease {
             OwnsStream = $false
         }
     }
+    $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
     if ([string]::IsNullOrWhiteSpace($LeaseDirectory) -and $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true') {
         throw 'Cross-account shared worktrees require an explicit trusted -LeaseDirectory.'
     }
@@ -256,7 +264,6 @@ function Enter-RepositoryExecutionLease {
         startedUtc = (Get-Date).ToUniversalTime().ToString('o')
     } | ConvertTo-Json -Compress
 
-    $sharedLease = $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true'
     $stream = $null
     $leaseFileCreated = $false
     try {

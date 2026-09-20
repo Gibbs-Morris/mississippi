@@ -50,7 +50,7 @@ Describe 'RepositoryAutomation helpers' {
         $coordinationRoot = Join-Path $TestDrive 'shared-lease-coordination'
         New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
         try {
-            $env:MISSISSIPPI_SHARED_WORKTREE = 'true'
+            Remove-Item Env:MISSISSIPPI_SHARED_WORKTREE -ErrorAction SilentlyContinue
             $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'shared-owner' -LeaseDirectory $coordinationRoot
             try {
                 $directoryMode = [System.IO.File]::GetUnixFileMode($coordinationRoot)
@@ -79,7 +79,7 @@ Describe 'RepositoryAutomation helpers' {
         $coordinationRoot = Join-Path $TestDrive 'windows-shared-lease-coordination'
         New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
         try {
-            $env:MISSISSIPPI_SHARED_WORKTREE = 'true'
+            Remove-Item Env:MISSISSIPPI_SHARED_WORKTREE -ErrorAction SilentlyContinue
             $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'windows-shared-owner' -LeaseDirectory $coordinationRoot
             try { $lease.OperationId | Should -Be 'windows-shared-owner' }
             finally { Exit-RepositoryExecutionLease -Lease $lease }
