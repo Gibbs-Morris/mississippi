@@ -17,6 +17,7 @@ $testPaths = @(
     (Join-Path $PSScriptRoot 'PrReadiness.Tests.ps1'),
     (Join-Path $PSScriptRoot 'ValidationEvidence.Tests.ps1'),
     (Join-Path $PSScriptRoot 'Setup.Tests.ps1'),
+    (Join-Path $PSScriptRoot 'GoalWorkflow.Tests.ps1'),
     (Join-Path $PSScriptRoot 'PrFeedbackSkill.Tests.ps1')
 )
 foreach ($testPath in $testPaths) {

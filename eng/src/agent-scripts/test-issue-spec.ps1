@@ -605,6 +605,7 @@ function Get-IssueSpecResult { # NOSONAR - this validator intentionally aggregat
         IssuePath = $IssuePath
         RepositoryRoot = $RepositoryRoot
         ContractVersion = $version
+        DependenciesAndReadiness = if ($nonRenderedSections.Contains('Dependencies and readiness')) { [string]$nonRenderedSections['Dependencies and readiness'] } else { '' }
         AcceptanceCriteria = @($acceptanceIds)
         Errors = @($errors)
         Warnings = @($warnings)
