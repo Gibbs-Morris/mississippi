@@ -508,6 +508,75 @@ $timer.Stop()
         $result = Invoke-AutomationStep -Name 'Sample' -SilentSuccess -Action { 1 + 1 }
         $result | Should -Be 2
     }
+
+    It 'returns bounded native process diagnostics without killing unrelated work' {
+        $result = InModuleScope RepositoryAutomation {
+            Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', 'while ($true) { }') -TimeoutSeconds 1 -PassThru
+        }
+
+        $result.Success | Should -BeFalse
+        $result.TimedOut | Should -BeTrue
+        $result.ExitCode | Should -Be 124
+    }
+
+    It 'covers successful, nonzero, working-directory and launch-failure paths' {
+        $success = InModuleScope RepositoryAutomation { Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', "Write-Output 'ok'") -PassThru }
+        $success.Success | Should -BeTrue
+        $success.StdOut | Should -Be 'ok'
+
+        $whitespace = InModuleScope RepositoryAutomation { Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', "Write-Output '  leading and trailing  '") -PassThru }
+        $whitespace.StdOut | Should -Be '  leading and trailing  '
+
+        $failed = InModuleScope RepositoryAutomation { Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', "[Console]::Error.WriteLine('bad'); exit 3") -PassThru }
+        $failed.Success | Should -BeFalse
+        $failed.ExitCode | Should -Be 3
+        $failed.StdErr | Should -Match 'bad'
+
+        $directory = Join-Path $TestDrive 'native-working-directory'
+        New-Item -ItemType Directory -Path $directory -Force | Out-Null
+        $working = InModuleScope RepositoryAutomation -Parameters @{ WorkDir = $directory } {
+            param($WorkDir)
+            Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', '[Environment]::CurrentDirectory') -WorkingDirectory $WorkDir -PassThru
+        }
+        $working.Success | Should -BeTrue
+        $working.StdOut | Should -Match 'native-working-directory'
+        $workingOnly = InModuleScope RepositoryAutomation -Parameters @{ WorkDir = $directory } {
+            param($WorkDir)
+            Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', '[Environment]::CurrentDirectory') -WorkingDirectory $WorkDir
+        }
+        $workingOnly | Should -Match 'native-working-directory'
+
+        $launch = InModuleScope RepositoryAutomation { Invoke-RepositoryProcess -FilePath 'missing-native-command' -PassThru }
+        $launch.Success | Should -BeFalse
+        $launch.StdErr | Should -Match 'missing-native-command'
+    }
+
+    It 'reports bounded native output for overlong and excessive output' {
+        $result = InModuleScope RepositoryAutomation {
+            $command = '$long = ''x'' * 5000; 1..250 | ForEach-Object { if ($_ -eq 1) { $long } else { "line$_" } }'
+            Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', $command) -PassThru
+        }
+
+        $result.Success | Should -BeTrue
+        $result.OutputTruncated | Should -BeTrue
+        $result.StdOut.Length | Should -BeLessThan 900000
+    }
+
+    It 'fails closed when a descendant keeps a captured stream open' {
+        $result = InModuleScope RepositoryAutomation {
+            Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @(
+                '-NoProfile',
+                '-Command',
+                '$child = Start-Process -FilePath pwsh -ArgumentList "-NoProfile","-Command","Start-Sleep -Seconds 4" -NoNewWindow -PassThru; Write-Output $child.Id'
+            ) -PassThru
+        }
+
+        if ($result.StdOut -match '^\d+$') {
+            Stop-Process -Id ([int]$result.StdOut.Trim()) -Force -ErrorAction SilentlyContinue
+        }
+        $result.Success | Should -BeFalse
+        $result.CaptureIncomplete | Should -BeTrue
+    }
 }
 
 Describe 'Repository automation quality gates' {

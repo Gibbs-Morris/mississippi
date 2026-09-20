@@ -70,6 +70,57 @@ namespace Mississippi
         if ($null -eq ($coordinationTypeName -as [type])) { throw }
     }
 }
+$outputTypeName = 'Mississippi.BoundedProcessOutput'
+if ($null -eq ($outputTypeName -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+
+namespace Mississippi
+{
+    public sealed class BoundedProcessOutput
+    {
+        private readonly ConcurrentQueue<string> Lines = new ConcurrentQueue<string>();
+        private readonly int MaxLines;
+        private readonly int MaxLineLength;
+
+        public BoundedProcessOutput(int maxLines, int maxLineLength)
+        {
+            MaxLines = maxLines;
+            MaxLineLength = maxLineLength;
+        }
+
+        public bool Closed { get; private set; }
+        public bool Truncated { get; private set; }
+        public DataReceivedEventHandler Handler { get { return OnData; } }
+        public string Text { get { return string.Join(Environment.NewLine, Lines.ToArray()).TrimEnd('\r', '\n'); } }
+
+        private void OnData(object sender, DataReceivedEventArgs args)
+        {
+            if (args.Data == null)
+            {
+                Closed = true;
+                return;
+            }
+            var line = args.Data;
+            if (line.Length > MaxLineLength)
+            {
+                line = line.Substring(0, MaxLineLength);
+                Truncated = true;
+            }
+            Lines.Enqueue(line);
+            while (Lines.Count > MaxLines)
+            {
+                string ignored;
+                Lines.TryDequeue(out ignored);
+                Truncated = true;
+            }
+        }
+    }
+}
+'@ -ErrorAction Stop
+}
 
 function Test-RepositoryExecutionLeaseSharedMode {
     [CmdletBinding()]
@@ -1236,13 +1287,89 @@ function Invoke-AutomationStep {
     }
 }
 
-function Invoke-RepositoryProcess {
+function Get-RepositoryProcessDescendantIds { # NOSONAR - bounded process-tree ownership snapshot intentionally traverses platform process metadata.
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][int]$RootProcessId)
+
+    $parents = @{}
+    try {
+        if ($IsWindows) {
+            foreach ($processInfo in @(Get-CimInstance -ClassName Win32_Process -ErrorAction Stop)) {
+                $parents[[int]$processInfo.ProcessId] = [int]$processInfo.ParentProcessId
+            }
+        }
+        else {
+            foreach ($line in @(& ps -eo 'pid=,ppid=' 2>$null)) {
+                if ($line -match '^\s*(?<pid>\d+)\s+(?<parent>\d+)\s*$') {
+                    $parents[[int]$Matches.pid] = [int]$Matches.parent
+                }
+            }
+        }
+    }
+    catch {
+        Write-Verbose "Unable to snapshot native process descendants: $($_.Exception.Message)"
+        return @()
+    }
+
+    $descendants = [System.Collections.Generic.HashSet[int]]::new()
+    $pending = [System.Collections.Generic.Queue[int]]::new()
+    $pending.Enqueue($RootProcessId)
+    while ($pending.Count -gt 0) {
+        $parentId = $pending.Dequeue()
+        foreach ($entry in $parents.GetEnumerator() | Where-Object { $_.Value -eq $parentId }) {
+            $childId = [int]$entry.Key
+            if ($descendants.Add($childId)) { $pending.Enqueue($childId) }
+        }
+    }
+    return @($descendants | ForEach-Object {
+        $process = Get-Process -Id ([int]$_) -ErrorAction SilentlyContinue
+        [pscustomobject]@{ Id = [int]$_; StartTime = if ($null -ne $process) { $process.StartTime.ToUniversalTime() } else { $null } }
+    })
+}
+
+function Stop-RepositoryProcessIds { # NOSONAR - termination helper deliberately handles platform-specific process cleanup branches.
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object[]]$ProcessRecords)
+
+    $errors = [System.Collections.Generic.List[string]]::new()
+    foreach ($record in @($ProcessRecords | Sort-Object Id -Descending -Unique)) {
+        $processId = [int]$record.Id
+        try {
+            $current = Get-Process -Id $processId -ErrorAction SilentlyContinue
+            if ($null -eq $current -or ($null -ne $record.StartTime -and [Math]::Abs(($current.StartTime.ToUniversalTime() - $record.StartTime).TotalSeconds) -gt 1)) { continue }
+            if ($IsWindows) { Stop-Process -Id $processId -Force -ErrorAction Stop }
+            else { Stop-Process -Id $processId -Force -ErrorAction Stop }
+        }
+        catch { $errors.Add("${processId}: $($_.Exception.Message)") }
+    }
+    Start-Sleep -Milliseconds 100
+    foreach ($record in @($ProcessRecords | Sort-Object Id -Descending -Unique)) {
+        $processId = [int]$record.Id
+        try {
+            $current = Get-Process -Id $processId -ErrorAction SilentlyContinue
+            if ($null -eq $current -or ($null -ne $record.StartTime -and [Math]::Abs(($current.StartTime.ToUniversalTime() - $record.StartTime).TotalSeconds) -gt 1)) { continue }
+            if ($IsWindows) {
+                if (Get-Process -Id $processId -ErrorAction SilentlyContinue) { Stop-Process -Id $processId -Force -ErrorAction Stop }
+            }
+            else {
+                Stop-Process -Id $processId -Force -ErrorAction Stop
+            }
+        }
+        catch { $errors.Add("${processId}: $($_.Exception.Message)") }
+    }
+    return ,$errors
+}
+
+function Invoke-RepositoryProcess { # NOSONAR - native process lifecycle, bounded capture, and descendant cleanup intentionally remain coordinated here.
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$FilePath,
         [string[]]$Arguments,
         [string]$ErrorMessage,
-        [switch]$SuppressCommandEcho
+        [switch]$SuppressCommandEcho,
+        [ValidateRange(0, 86400)][int]$TimeoutSeconds = 0,
+        [string]$WorkingDirectory,
+        [switch]$PassThru
     )
 
     $escapedArgs = if ($Arguments) {
@@ -1262,13 +1389,127 @@ function Invoke-RepositoryProcess {
         }
     }
 
-    & $FilePath @Arguments
-    $exitCode = $LASTEXITCODE
-    if ($exitCode -ne 0) {
-        $message = if ($ErrorMessage) { $ErrorMessage } else { "Command '$FilePath' failed with exit code $exitCode." }
-        throw $message
+    if ($TimeoutSeconds -le 0 -and -not $PassThru -and [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
+        & $FilePath @Arguments
+        $exitCode = $LASTEXITCODE
+        if ($exitCode -ne 0) {
+            $message = if ($ErrorMessage) { $ErrorMessage } else { "Command '$FilePath' failed with exit code $exitCode." }
+            throw $message
+        }
+        return
     }
 
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $processFilePath = $FilePath
+    $processArguments = @($Arguments)
+    if ($IsWindows -and [System.IO.Path]::GetExtension($FilePath) -iin @('.cmd', '.bat')) {
+        $processFilePath = $env:ComSpec
+        $processArguments = @('/d', '/c', $FilePath) + @($Arguments)
+    }
+    $startInfo.FileName = $processFilePath
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    if ($WorkingDirectory) { $startInfo.WorkingDirectory = $WorkingDirectory }
+    foreach ($argument in $processArguments) { $null = $startInfo.ArgumentList.Add($argument) }
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    $startedUtc = (Get-Date).ToUniversalTime().ToString('o')
+    $trackedDescendants = @{}
+    $stdoutBuffer = [Mississippi.BoundedProcessOutput]::new(200, 4096)
+    $stderrBuffer = [Mississippi.BoundedProcessOutput]::new(200, 4096)
+    $stdoutHandler = $stdoutBuffer.Handler
+    $stderrHandler = $stderrBuffer.Handler
+    try {
+        if (-not $process.Start()) { throw "Command '$FilePath' could not be started." }
+        $process.add_OutputDataReceived($stdoutHandler)
+        $process.add_ErrorDataReceived($stderrHandler)
+        $process.BeginOutputReadLine()
+        $process.BeginErrorReadLine()
+        $deadline = if ($TimeoutSeconds -gt 0) { [DateTime]::UtcNow.AddSeconds($TimeoutSeconds) } else { $null }
+        $finished = $false
+        $nextDescendantScan = [DateTime]::UtcNow
+        while (-not $process.HasExited) {
+            if ([DateTime]::UtcNow -ge $nextDescendantScan) {
+                foreach ($descendant in @(Get-RepositoryProcessDescendantIds -RootProcessId $process.Id)) { $trackedDescendants[[int]$descendant.Id] = $descendant }
+                $nextDescendantScan = [DateTime]::UtcNow.AddMilliseconds(250)
+            }
+            if ($null -ne $deadline -and [DateTime]::UtcNow -ge $deadline) { break }
+            Start-Sleep -Milliseconds 50
+        }
+        $finished = $process.HasExited
+        $timedOut = $null -ne $deadline -and [DateTime]::UtcNow -ge $deadline
+        $terminationErrors = [System.Collections.Generic.List[string]]::new()
+        $terminationNotes = [System.Collections.Generic.List[string]]::new()
+        $terminated = $true
+        $captureDeadline = [DateTime]::UtcNow.AddMilliseconds(1000)
+        while (-not ($stdoutBuffer.Closed -and $stderrBuffer.Closed) -and [DateTime]::UtcNow -lt $captureDeadline) {
+            Start-Sleep -Milliseconds 25
+        }
+        $captureIncomplete = -not ($stdoutBuffer.Closed -and $stderrBuffer.Closed)
+        if ($timedOut -or $captureIncomplete) {
+            if ($timedOut) { $terminationNotes.Add("Command exceeded the $TimeoutSeconds second timeout.") }
+            if ($captureIncomplete) { $terminationNotes.Add('Native output streams remained open after the root process exited.') }
+            $terminationRecords = @($trackedDescendants.Values)
+            if (-not $process.HasExited) { $terminationRecords += [pscustomobject]@{ Id = $process.Id; StartTime = $process.StartTime.ToUniversalTime() } }
+            if ($terminationRecords.Count -gt 0) {
+                foreach ($terminationError in @(Stop-RepositoryProcessIds -ProcessRecords $terminationRecords)) { $terminationErrors.Add($terminationError) }
+            }
+            if (-not $process.HasExited) {
+                try { $process.Kill() } catch { $terminationErrors.Add($_.Exception.Message) }
+            }
+            $terminated = $process.WaitForExit(1000) -and $terminationErrors.Count -eq 0
+        }
+        $stdout = $stdoutBuffer.Text
+        $stderr = $stderrBuffer.Text
+        $result = [pscustomobject][ordered]@{
+            FilePath = $FilePath
+            Arguments = @($Arguments)
+            StartedUtc = $startedUtc
+            EndedUtc = (Get-Date).ToUniversalTime().ToString('o')
+            ExitCode = if ($timedOut) { 124 } else { $process.ExitCode }
+            TimedOut = $timedOut
+            Cancelled = $false
+            TerminationFailed = ($timedOut -or $captureIncomplete) -and (-not $terminated -or $terminationErrors.Count -gt 0)
+            TerminationErrors = @($terminationErrors)
+            TerminationNotes = @($terminationNotes)
+            CaptureIncomplete = $captureIncomplete
+            OutputTruncated = $stdoutBuffer.Truncated -or $stderrBuffer.Truncated
+            StdOut = $stdout
+            StdErr = $stderr
+            Success = -not $timedOut -and -not $captureIncomplete -and $process.ExitCode -eq 0
+        }
+        if ($PassThru) { return $result }
+        if (-not $result.Success) {
+            $message = if ($timedOut) { "Command '$FilePath' timed out after $TimeoutSeconds seconds." } elseif ($result.CaptureIncomplete) { "Command '$FilePath' exited before native output capture completed." } elseif ($ErrorMessage) { $ErrorMessage } else { "Command '$FilePath' failed with exit code $($result.ExitCode)." }
+            if ($stdout) { $message += " Native output: $stdout" }
+            if ($stderr) { $message += " Native error output: $stderr" }
+            if ($terminationNotes.Count -gt 0) { $message += " Process cleanup: $($terminationNotes -join '; ')" }
+            if ($result.TerminationFailed) { $message += " Process termination was not verified: $($result.TerminationErrors -join '; ')" }
+            throw $message
+        }
+        if ($stdout) { Write-Output $stdout }
+        if ($stderr) { Write-Output $stderr }
+    }
+    catch {
+        if ($PassThru) {
+            return [pscustomobject][ordered]@{
+                FilePath = $FilePath; Arguments = @($Arguments); StartedUtc = $startedUtc
+                EndedUtc = (Get-Date).ToUniversalTime().ToString('o'); ExitCode = -1
+                TimedOut = $false; Cancelled = $false; TerminationFailed = $false; CaptureIncomplete = $false
+                TerminationErrors = @(); TerminationNotes = @(); OutputTruncated = $false; StdOut = ''; StdErr = $_.Exception.Message; Success = $false
+            }
+        }
+        throw
+    }
+    finally {
+        try { $process.CancelOutputRead() } catch { Write-Verbose 'Native stdout reader was already closed.' }
+        try { $process.CancelErrorRead() } catch { Write-Verbose 'Native stderr reader was already closed.' }
+        try { $process.remove_OutputDataReceived($stdoutHandler) } catch { Write-Verbose 'Native stdout handler was already detached.' }
+        try { $process.remove_ErrorDataReceived($stderrHandler) } catch { Write-Verbose 'Native stderr handler was already detached.' }
+        $process.Dispose()
+    }
 }
 
 function Invoke-DotnetToolRestore {
@@ -2604,7 +2845,7 @@ function Invoke-SpringValidation {
     }
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Resolve-RepositoryExecutionPath, Get-RepositoryExecutionLeasePath, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation
+Export-ModuleMember -Function Get-RepositoryRoot, Resolve-RepositoryExecutionPath, Get-RepositoryExecutionLeasePath, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease, Invoke-RepositoryProcess, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation
 
 
 
