@@ -459,7 +459,7 @@ function Wait-RepositoryExecutionLeaseInitialization {
                 return $true
             }
             catch {
-                # The creator may have published the files but not finished applying their permissions.
+                Write-Verbose "Shared lease initialization is visible but its permissions are not fully published yet: $($_.Exception.Message)"
             }
         }
         Start-Sleep -Milliseconds 50
