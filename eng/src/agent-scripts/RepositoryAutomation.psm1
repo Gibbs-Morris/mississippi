@@ -4,6 +4,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $activeRepositoryExecutionLeases = [System.Collections.Concurrent.ConcurrentDictionary[string, bool]]::new()
+$sharedExecutionLeaseStreamStates = @{}
+$sharedExecutionLeaseStreamGate = [object]::new()
 $sharedExecutionLeaseDirectoryMode = 365 # 0555
 $sharedExecutionLeaseFileMode = 438 # 0666
 $privateExecutionLeaseDirectoryMode = 448 # 0700
@@ -36,6 +38,47 @@ function Unregister-RepositoryExecutionLeaseIdentity {
         $removed = $false
         $activeRepositoryExecutionLeases.TryRemove($Identity, [ref]$removed) | Out-Null
     }
+}
+
+function Acquire-SharedRepositoryExecutionLeaseStream {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    $key = if ($IsWindows) { $Path.ToLowerInvariant() } else { $Path }
+    [System.Threading.Monitor]::Enter($sharedExecutionLeaseStreamGate)
+    try {
+        if ($sharedExecutionLeaseStreamStates.ContainsKey($key)) {
+            $state = $sharedExecutionLeaseStreamStates[$key]
+            $state.RefCount++
+            return $state
+        }
+        $stream = [System.IO.FileStream]::new($Path, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+        $state = [pscustomobject]@{ Key = $key; Stream = $stream; RefCount = 1; Gate = [object]::new() }
+        $sharedExecutionLeaseStreamStates[$key] = $state
+        return $state
+    }
+    finally {
+        [System.Threading.Monitor]::Exit($sharedExecutionLeaseStreamGate)
+    }
+}
+
+function Release-SharedRepositoryExecutionLeaseStream {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$State)
+
+    $dispose = $false
+    [System.Threading.Monitor]::Enter($sharedExecutionLeaseStreamGate)
+    try {
+        $State.RefCount--
+        if ($State.RefCount -le 0) {
+            $sharedExecutionLeaseStreamStates.Remove($State.Key)
+            $dispose = $true
+        }
+    }
+    finally {
+        [System.Threading.Monitor]::Exit($sharedExecutionLeaseStreamGate)
+    }
+    if ($dispose) { $State.Stream.Dispose() }
 }
 
 function Get-RepositoryExecutionLeaseHash {
@@ -426,38 +469,56 @@ function Enter-RepositoryExecutionLease {
     $leaseIdentity = "$canonicalRoot|$leasePath"
     $leaseRegistered = $false
     $stream = $null
+    $streamState = $null
     $leaseOffset = $null
     try {
         Register-RepositoryExecutionLeaseIdentity -Identity $leaseIdentity
         $leaseRegistered = $true
-        $fileShare = if ($sharedLease) { [System.IO.FileShare]::ReadWrite } else { [System.IO.FileShare]::Read }
-        $stream = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, $fileShare)
         if ($sharedLease) {
-            $preferredSlot = Get-RepositoryExecutionLeaseSlot -CanonicalRepoRoot $canonicalRoot
-            $comparison = Get-RepositoryPathComparison -RepoRoot $canonicalRoot
-            $slotAcquired = $false
-            for ($probe = 0; $probe -lt $sharedExecutionLeaseSlotCount; $probe++) {
-                $candidateSlot = ($preferredSlot + $probe) % $sharedExecutionLeaseSlotCount
-                $candidateOffset = [long]$candidateSlot * $sharedExecutionLeaseSlotSize
-                $slotRoot = Read-RepositoryExecutionLeaseSlotRoot -Stream $stream -Offset $candidateOffset
-                if ([string]::Equals($slotRoot, $canonicalRoot, $comparison)) {
-                    $stream.Lock($candidateOffset, 1)
-                    $leaseOffset = $candidateOffset
-                    $slotAcquired = $true
-                    break
+            $streamState = Acquire-SharedRepositoryExecutionLeaseStream -Path $leasePath
+            $stream = $streamState.Stream
+        }
+        else {
+            $stream = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::Read)
+        }
+        if ($sharedLease) {
+            [System.Threading.Monitor]::Enter($streamState.Gate)
+            try {
+                $preferredSlot = Get-RepositoryExecutionLeaseSlot -CanonicalRepoRoot $canonicalRoot
+                $comparison = Get-RepositoryPathComparison -RepoRoot $canonicalRoot
+                $slotAcquired = $false
+                for ($probe = 0; $probe -lt $sharedExecutionLeaseSlotCount; $probe++) {
+                    $candidateSlot = ($preferredSlot + $probe) % $sharedExecutionLeaseSlotCount
+                    $candidateOffset = [long]$candidateSlot * $sharedExecutionLeaseSlotSize
+                    $slotRoot = Read-RepositoryExecutionLeaseSlotRoot -Stream $stream -Offset $candidateOffset
+                    if ([string]::IsNullOrWhiteSpace($slotRoot)) {
+                        $stream.Lock($candidateOffset, 1)
+                        $leaseOffset = $candidateOffset
+                        $slotAcquired = $true
+                        break
+                    }
+                    if ([string]::Equals($slotRoot, $canonicalRoot, $comparison)) {
+                        $stream.Lock($candidateOffset, 1)
+                        $leaseOffset = $candidateOffset
+                        $slotAcquired = $true
+                        break
+                    }
+                    try {
+                        $stream.Lock($candidateOffset, 1)
+                        $leaseOffset = $candidateOffset
+                        $slotAcquired = $true
+                        break
+                    }
+                    catch [System.IO.IOException] {
+                        continue
+                    }
                 }
-                try {
-                    $stream.Lock($candidateOffset, 1)
-                    $leaseOffset = $candidateOffset
-                    $slotAcquired = $true
-                    break
-                }
-                catch [System.IO.IOException] {
-                    continue
-                }
+                if (-not $slotAcquired) { throw 'No available shared execution lease slots remain.' }
+                Test-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $sharedExecutionLeaseFileMode
             }
-            if (-not $slotAcquired) { throw 'No available shared execution lease slots remain.' }
-            Test-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $sharedExecutionLeaseFileMode
+            finally {
+                [System.Threading.Monitor]::Exit($streamState.Gate)
+            }
         }
         elseif ($privateLease) {
             Set-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $privateExecutionLeaseFileMode
@@ -465,7 +526,8 @@ function Enter-RepositoryExecutionLease {
     }
     catch [System.UnauthorizedAccessException] {
         if ($leaseRegistered) { Unregister-RepositoryExecutionLeaseIdentity -Identity $leaseIdentity }
-        if ($null -ne $stream) { $stream.Dispose(); $stream = $null }
+        if ($null -ne $streamState) { Release-SharedRepositoryExecutionLeaseStream -State $streamState; $streamState = $null }
+        elseif ($null -ne $stream) { $stream.Dispose(); $stream = $null }
         if ($sharedLease) {
             throw "Shared execution lease '$leasePath' is not writable by this account. Ensure existing lease files in the shared directory are writable by all participating accounts."
         }
@@ -473,7 +535,8 @@ function Enter-RepositoryExecutionLease {
     }
     catch [System.IO.IOException] {
         if ($leaseRegistered) { Unregister-RepositoryExecutionLeaseIdentity -Identity $leaseIdentity }
-        if ($null -ne $stream) { $stream.Dispose(); $stream = $null }
+        if ($null -ne $streamState) { Release-SharedRepositoryExecutionLeaseStream -State $streamState; $streamState = $null }
+        elseif ($null -ne $stream) { $stream.Dispose(); $stream = $null }
         if ($sharedLease) {
             throw "Worktree execution lease is held for '$canonicalRoot' in shared coordination slot. Use a separate worktree or wait for the active operation."
         }
@@ -485,20 +548,28 @@ function Enter-RepositoryExecutionLease {
     }
     catch {
         if ($leaseRegistered) { Unregister-RepositoryExecutionLeaseIdentity -Identity $leaseIdentity }
-        if ($null -ne $stream) { $stream.Dispose(); $stream = $null }
+        if ($null -ne $streamState) { Release-SharedRepositoryExecutionLeaseStream -State $streamState; $streamState = $null }
+        elseif ($null -ne $stream) { $stream.Dispose(); $stream = $null }
         throw
     }
 
     try {
         $metadataBytes = [System.Text.Encoding]::UTF8.GetBytes($metadata)
         if ($sharedLease) {
-            Write-RepositoryExecutionLeaseSlotMetadata -Stream $stream -Offset $leaseOffset -Metadata $metadata
+            [System.Threading.Monitor]::Enter($streamState.Gate)
+            try {
+                Write-RepositoryExecutionLeaseSlotMetadata -Stream $stream -Offset $leaseOffset -Metadata $metadata
+                $stream.Flush($true)
+            }
+            finally {
+                [System.Threading.Monitor]::Exit($streamState.Gate)
+            }
         }
         else {
             $stream.SetLength(0)
             $stream.Write($metadataBytes, 0, $metadataBytes.Length)
+            $stream.Flush($true)
         }
-        $stream.Flush($true)
         return [pscustomobject]@{
             Path = $leasePath
             LeaseOffset = $leaseOffset
@@ -506,12 +577,14 @@ function Enter-RepositoryExecutionLease {
             OperationId = $OperationId
             RepositoryRoot = $canonicalRoot
             Stream = $stream
+            SharedStreamState = $streamState
             OwnsStream = $true
         }
     }
     catch {
         if ($leaseRegistered) { Unregister-RepositoryExecutionLeaseIdentity -Identity $leaseIdentity }
-        $stream.Dispose()
+        if ($null -ne $streamState) { Release-SharedRepositoryExecutionLeaseStream -State $streamState }
+        elseif ($null -ne $stream) { $stream.Dispose() }
         throw
     }
 }
@@ -521,7 +594,10 @@ function Exit-RepositoryExecutionLease {
     param([Parameter(Mandatory)][object]$Lease)
 
     if ($Lease.OwnsStream -and $null -ne $Lease.Stream) {
-        try { $Lease.Stream.Dispose() }
+        try {
+            if ($null -ne $Lease.SharedStreamState) { Release-SharedRepositoryExecutionLeaseStream -State $Lease.SharedStreamState }
+            else { $Lease.Stream.Dispose() }
+        }
         finally { Unregister-RepositoryExecutionLeaseIdentity -Identity ([string]$Lease.LeaseIdentity) }
     }
 }
