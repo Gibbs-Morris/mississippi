@@ -231,7 +231,7 @@ Describe 'Mutation automation' {
             $Arguments -contains 'Debug' -and $Arguments -contains 'Widget.csproj' -and
             $Arguments -contains (Join-Path $repo 'MSBuild.dll') -and
             $Arguments -contains '--test-runner' -and $Arguments -contains 'mtp' -and
-            $Arguments -contains '--break-at' -and $Arguments[[array]::IndexOf($Arguments, '--break-at') + 1] -eq '0' -and
+            $Arguments -notcontains '--break-at' -and
             $Arguments -contains '--concurrency' -and
             $Arguments[[array]::IndexOf($Arguments, '--concurrency') + 1] -eq '1'
         }

@@ -678,7 +678,8 @@ function Invoke-StrykerMutationTestPerProject {
         [Parameter(Mandatory)][string]$OutputPath,
         [Parameter(Mandatory)][string[]]$TestProjects,
         [string]$Configuration = 'Release',
-        [switch]$ReportOnly
+        [switch]$ReportOnly,
+        [switch]$ApplyThresholdAfterReport
     )
 
     $resolvedProject = (Resolve-Path -LiteralPath $ProjectPath).Path
@@ -693,8 +694,10 @@ function Invoke-StrykerMutationTestPerProject {
     foreach ($testProject in $TestProjects) {
         $arguments += @('--test-project', $testProject)
     }
-    # Keep native exits focused on execution/report generation; apply score thresholds after validating the report.
-    $arguments += @('--break-at', '0')
+    if ($ReportOnly -or $ApplyThresholdAfterReport) {
+        # Keep full-solution/report-only exits focused on execution/report generation; apply thresholds after validating the report.
+        $arguments += @('--break-at', '0')
+    }
     # MTP reuses test servers; serialize mutants to isolate process-global state and integration fixtures.
     $arguments += @('--concurrency', '1')
     # Stryker's multiple-test-project mode runs from the source project directory.
@@ -827,7 +830,7 @@ function Invoke-MutationTarget {
 
     try {
         if ($Target.Tests.Count -eq 0) { throw "Authored source project has no declared test mapping: $($Target.Project)" }
-        $projectOutput = Invoke-StrykerMutationTestPerProject -ProjectPath $Target.Project -TestProjects $Target.Tests -OutputPath $OutputPath -Configuration $Configuration -ReportOnly:$ReportOnly
+        $projectOutput = Invoke-StrykerMutationTestPerProject -ProjectPath $Target.Project -TestProjects $Target.Tests -OutputPath $OutputPath -Configuration $Configuration -ReportOnly:$ReportOnly -ApplyThresholdAfterReport
         $reportPath = Get-MutationReportPath -OutputPath $projectOutput
         Set-MutationResultMetrics -ProjectResult $ProjectResult -ReportPath $reportPath
         $ProjectResult.Output = $projectOutput
