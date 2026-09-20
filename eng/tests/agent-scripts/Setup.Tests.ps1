@@ -15,6 +15,20 @@ Describe 'Canonical repository setup' {
             $json = & $powerShellPath -NoProfile -File $scriptPath -RepositoryRoot $repoRoot -Profile $Profile -InstallPester:$InstallPester -PlanOnly 2>&1 | Out-String
             [pscustomobject]@{ ExitCode = $LASTEXITCODE; Plan = $json | ConvertFrom-Json }
         }
+        function Invoke-DocsSetupShim {
+            param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][string]$NpmScript)
+            $shimRoot = Join-Path $TestDrive $Name
+            New-Item -ItemType Directory -Path $shimRoot -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $shimRoot 'node.ps1') -Value "Write-Output 'v22.0.0'"
+            Set-Content -LiteralPath (Join-Path $shimRoot 'npm.ps1') -Value $NpmScript
+            $originalPath = $env:PATH
+            $env:PATH = $shimRoot + [IO.Path]::PathSeparator + $originalPath
+            try {
+                $output = & $powerShellPath -NoProfile -File $scriptPath -RepositoryRoot $repoRoot -Profile Docs -OutputFormat Json 2>&1 | Out-String
+                [pscustomobject]@{ Output = $output; ExitCode = $LASTEXITCODE }
+            }
+            finally { $env:PATH = $originalPath }
+        }
     }
 
     It 'plans locked core and sample restores without mutating the checkout' {
@@ -68,41 +82,17 @@ Describe 'Canonical repository setup' {
     }
 
     It 'executes the Docs profile with controlled node and npm shims' {
-        $shimRoot = Join-Path $TestDrive 'setup-shims'
-        New-Item -ItemType Directory -Path $shimRoot -Force | Out-Null
-        Set-Content -LiteralPath (Join-Path $shimRoot 'node.ps1') -Value "Write-Output 'v22.0.0'"
-        Set-Content -LiteralPath (Join-Path $shimRoot 'npm.ps1') -Value 'exit 0'
-        $originalPath = $env:PATH
-        $env:PATH = $shimRoot + [IO.Path]::PathSeparator + $originalPath
-        try {
-            $output = & $powerShellPath -NoProfile -File $scriptPath -RepositoryRoot $repoRoot -Profile Docs -OutputFormat Json 2>&1 | Out-String
-            $exitCode = $LASTEXITCODE
-        }
-        finally {
-            $env:PATH = $originalPath
-        }
+        $outcome = Invoke-DocsSetupShim -Name 'setup-shims' -NpmScript 'exit 0'
 
-        $exitCode | Should -Be 0
-        ($output | ConvertFrom-Json).Status | Should -Be 'READY'
+        $outcome.ExitCode | Should -Be 0
+        ($outcome.Output | ConvertFrom-Json).Status | Should -Be 'READY'
         Test-Path -LiteralPath (Join-Path $repoRoot '.tools/activate-markdownlint.ps1') -PathType Leaf | Should -BeTrue
     }
 
     It 'fails without READY when a setup child exits nonzero' {
-        $shimRoot = Join-Path $TestDrive 'setup-failure-shims'
-        New-Item -ItemType Directory -Path $shimRoot -Force | Out-Null
-        Set-Content -LiteralPath (Join-Path $shimRoot 'node.ps1') -Value "Write-Output 'v22.0.0'"
-        Set-Content -LiteralPath (Join-Path $shimRoot 'npm.ps1') -Value 'exit 7'
-        $originalPath = $env:PATH
-        $env:PATH = $shimRoot + [IO.Path]::PathSeparator + $originalPath
-        try {
-            $output = & $powerShellPath -NoProfile -File $scriptPath -RepositoryRoot $repoRoot -Profile Docs -OutputFormat Json 2>&1 | Out-String
-            $exitCode = $LASTEXITCODE
-        }
-        finally {
-            $env:PATH = $originalPath
-        }
+        $outcome = Invoke-DocsSetupShim -Name 'setup-failure-shims' -NpmScript 'exit 7'
 
-        $exitCode | Should -Not -Be 0
-        $output | Should -Not -Match '"Status"\s*:\s*"READY"'
+        $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Output | Should -Not -Match '"Status"\s*:\s*"READY"'
     }
 }
