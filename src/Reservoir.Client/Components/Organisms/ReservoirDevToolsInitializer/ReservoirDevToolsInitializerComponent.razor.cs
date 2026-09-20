@@ -3,7 +3,7 @@ using System;
 using Microsoft.AspNetCore.Components;
 
 
-namespace Mississippi.Reservoir.Client.Components.Organisms.ReservoirDevToolsInitializer;
+namespace Mississippi.Reservoir.Client;
 
 /// <summary>
 ///     Initializes Reservoir Redux DevTools after the component renders.

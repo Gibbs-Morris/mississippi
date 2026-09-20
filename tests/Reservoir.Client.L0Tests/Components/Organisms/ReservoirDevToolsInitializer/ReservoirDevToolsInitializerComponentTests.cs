@@ -1,15 +1,12 @@
 using System.Reflection;
 using System.Threading.Tasks;
 
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.JSInterop;
 
 using Mississippi.Reservoir.Abstractions;
-using Mississippi.Reservoir.Client.Components.Organisms.ReservoirDevToolsInitializer;
 using Mississippi.Reservoir.Core;
 
 using Moq;
@@ -28,28 +25,6 @@ public sealed class ReservoirDevToolsInitializerComponentTests
         (bool)typeof(ReduxDevToolsService).GetField("isInitialized", BindingFlags.Instance | BindingFlags.NonPublic)!
             .GetValue(service)!;
 
-    private sealed class TestHost : ComponentBase
-    {
-        [Inject]
-        private TestHostCapture Capture { get; set; } = default!;
-
-        protected override void BuildRenderTree(
-            RenderTreeBuilder builder
-        )
-        {
-            builder.OpenComponent<ReservoirDevToolsInitializerComponent>(0);
-            builder.AddComponentReferenceCapture(
-                1,
-                component => Capture.Initializer = (ReservoirDevToolsInitializerComponent)component);
-            builder.CloseComponent();
-        }
-    }
-
-    private sealed class TestHostCapture
-    {
-        public ReservoirDevToolsInitializerComponent? Initializer { get; set; }
-    }
-
     /// <summary>
     ///     Rendering the component initializes DevTools and renderer disposal stops the service.
     /// </summary>
@@ -60,7 +35,7 @@ public sealed class ReservoirDevToolsInitializerComponentTests
         // Arrange
         ServiceCollection services = [];
         Mock<IJSRuntime> jsRuntime = new();
-        TestHostCapture capture = new();
+        ReservoirDevToolsInitializerTestHostCapture capture = new();
         services.AddSingleton(jsRuntime.Object);
         services.AddSingleton(capture);
         services.AddLogging();
@@ -73,7 +48,8 @@ public sealed class ReservoirDevToolsInitializerComponentTests
         // Act
         await using (HtmlRenderer renderer = new(serviceProvider, NullLoggerFactory.Instance))
         {
-            _ = await renderer.Dispatcher.InvokeAsync(() => renderer.RenderComponentAsync<TestHost>());
+            _ = await renderer.Dispatcher.InvokeAsync(() =>
+                renderer.RenderComponentAsync<ReservoirDevToolsInitializerTestHost>());
             ReservoirDevToolsInitializerComponent component = capture.Initializer!;
             MethodInfo onAfterRender = typeof(ReservoirDevToolsInitializerComponent).GetMethod(
                 "OnAfterRender",
