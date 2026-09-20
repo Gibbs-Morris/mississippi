@@ -305,17 +305,23 @@ function Enter-RepositoryExecutionLease {
         }
     }
     catch [System.UnauthorizedAccessException] {
+        if ($null -ne $stream) { $stream.Dispose(); $stream = $null }
         if ($sharedLease) {
             throw "Shared execution lease '$leasePath' is not writable by this account. Ensure existing lease files in the shared directory are writable by all participating accounts."
         }
         throw
     }
     catch [System.IO.IOException] {
+        if ($null -ne $stream) { $stream.Dispose(); $stream = $null }
         $errorCode = $_.Exception.HResult -band 0xFFFF
         if ($errorCode -notin @(32, 33)) { throw }
         $owner = ''
         try { $owner = (Get-Content -LiteralPath $leasePath -Raw -ErrorAction Stop).Trim() } catch { }
         throw "Worktree execution lease is held for '$canonicalRoot'. Current owner: $owner. Use a separate worktree or wait for the active operation."
+    }
+    catch {
+        if ($null -ne $stream) { $stream.Dispose(); $stream = $null }
+        throw
     }
 
     try {
