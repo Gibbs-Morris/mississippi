@@ -30,7 +30,7 @@ public sealed class CSharpArchitectureRuleTests
         _ = new NestedWrappedInjectedFieldFixture(new Lazy<IClockFixture[]>(() => [clock])).GetClock();
         _ = new InheritedInjectedFieldFixture(clock).GetClock();
         IReadOnlyList<string> violations = CSharpArchitectureTests.FindConstructorInjectedFields(
-            [typeof(InjectedFieldFixture), typeof(InjectedPropertyFixture), typeof(SettableInjectedPropertyFixture), typeof(ManualSettableInjectedPropertyFixture), typeof(OrdinaryStateFixture), typeof(PrimaryConstructorFixture), typeof(FactoryAssignmentFixture), typeof(WrappedInjectedFieldFixture), typeof(NestedWrappedInjectedFieldFixture), typeof(InheritedInjectedFieldFixture), typeof(InheritedInjectedFieldBase)]);
+            [typeof(InjectedFieldFixture), typeof(InjectedPropertyFixture), typeof(SettableInjectedPropertyFixture), typeof(ManualSettableInjectedPropertyFixture), typeof(OrdinaryStateFixture), typeof(PrimaryConstructorFixture), typeof(FactoryAssignmentFixture), typeof(WrappedInjectedFieldFixture), typeof(NestedWrappedInjectedFieldFixture), typeof(InheritedInjectedFieldFixture), typeof(InheritedInjectedFieldBase), typeof(ConcreteInjectedFieldFixture)]);
 
         Assert.Contains(violations, value => value.StartsWith(typeof(InjectedFieldFixture).FullName + ".", System.StringComparison.Ordinal) && value.EndsWith(".clock", System.StringComparison.Ordinal));
         Assert.DoesNotContain(violations, value => value.StartsWith(typeof(InjectedPropertyFixture).FullName + ".", System.StringComparison.Ordinal));
@@ -42,6 +42,7 @@ public sealed class CSharpArchitectureRuleTests
         Assert.Contains(violations, value => value.StartsWith(typeof(WrappedInjectedFieldFixture).FullName + ".", System.StringComparison.Ordinal));
         Assert.Contains(violations, value => value.StartsWith(typeof(NestedWrappedInjectedFieldFixture).FullName + ".", System.StringComparison.Ordinal));
         Assert.Contains(violations, value => value.StartsWith(typeof(InheritedInjectedFieldFixture).FullName + ".", System.StringComparison.Ordinal));
+        Assert.Contains(violations, value => value.StartsWith(typeof(ConcreteInjectedFieldFixture).FullName + ".", System.StringComparison.Ordinal));
     }
 
     /// <summary>

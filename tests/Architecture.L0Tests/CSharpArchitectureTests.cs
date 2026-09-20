@@ -28,7 +28,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
     private static readonly OpCode[] MultiByteOpCodes = CreateMultiByteOpCodes();
 
     /// <summary>
-    ///     Finds interface or abstract fields populated directly from constructor parameters.
+    ///     Finds dependency-shaped fields populated directly from constructor parameters.
     /// </summary>
     /// <param name="types">Types to inspect.</param>
     /// <returns>Names of fields that receive constructor parameter values.</returns>
@@ -344,7 +344,21 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             return fieldType.GetElementType() is { } elementType && IsDependencyFieldType(elementType);
         }
 
-        return fieldType.IsGenericType && fieldType.GetGenericArguments().Any(IsDependencyFieldType);
+        if (fieldType.IsGenericType)
+        {
+            Type genericType = fieldType.GetGenericTypeDefinition();
+            bool isCollectionState = genericType.Namespace?.StartsWith("System.Collections", StringComparison.Ordinal) == true;
+            return fieldType.GetGenericArguments().Any(
+                argument => isCollectionState
+                    ? argument.IsInterface || argument.IsAbstract || (argument.IsGenericType && IsDependencyFieldType(argument))
+                    : IsDependencyFieldType(argument));
+        }
+
+        // A concrete reference type from this repository can be a registered service even when it has
+        // no public abstraction (for example DevToolsInitializationTracker). System reference types
+        // and ordinary value state are intentionally excluded; collection state is handled above.
+        return fieldType.IsClass && fieldType != typeof(string) &&
+               fieldType.Namespace?.StartsWith("System", StringComparison.Ordinal) != true;
     }
 
     private static IEnumerable<FieldInfo> GetInstanceFields(Type type)
