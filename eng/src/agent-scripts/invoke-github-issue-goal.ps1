@@ -39,7 +39,7 @@ function Get-GoalRevision {
     return $revision
 }
 
-function Get-GoalWorktreeFingerprint {
+function Get-GoalWorktreeFingerprint { # NOSONAR - bounded Git/index/worktree fingerprinting intentionally coordinates several integrity checks.
     param(
         [Parameter(Mandatory)][string]$Root,
         [AllowEmptyCollection()][string[]]$ExcludePaths = @()
@@ -137,9 +137,9 @@ function Get-GoalCheckpointPath {
         Join-Path $env:XDG_STATE_HOME 'mississippi'
     }
     else {
-        $home = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
-        if ([string]::IsNullOrWhiteSpace($home)) { throw 'Unable to resolve a persistent user state directory for the goal checkpoint.' }
-        Join-Path $home '.local/state/mississippi'
+        $userHome = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+        if ([string]::IsNullOrWhiteSpace($userHome)) { throw 'Unable to resolve a persistent user state directory for the goal checkpoint.' }
+        Join-Path $userHome '.local/state/mississippi'
     }
     return [System.IO.Path]::GetFullPath((Join-Path $stateRoot "goals/$repositoryKey/$Number/checkpoint.json"))
 }
@@ -171,7 +171,7 @@ function Expand-GoalStringCollection {
                 continue
             }
             catch {
-                # Preserve a non-JSON milestone string as one entry.
+                Write-Verbose "Goal collection value was not JSON; preserving it as one entry."
             }
         }
         $expanded.Add($value)
@@ -283,7 +283,7 @@ try {
                 break
             }
             catch {
-                # Try the next newest contract comment.
+                Write-Verbose "Issue comment was not a valid contract; trying the next newest comment."
             }
         }
         if ($null -eq $contractResult) { throw }
