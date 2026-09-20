@@ -4,23 +4,30 @@
 param(
     [string]$Configuration = 'Release',
     [ValidateSet('L0Tests', 'L1Tests', 'L2Tests', 'L3Tests', 'L4Tests')]
-    [string[]]$TestLevels = @('L0Tests', 'L1Tests')
+    [string[]]$TestLevels = @('L0Tests', 'L1Tests'),
+    [string]$LeaseDirectory
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $modulePath = Join-Path $PSScriptRoot 'RepositoryAutomation.psm1'
-Import-Module -Name $modulePath -Force
+Import-Module -Name $modulePath
 
 $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 
+$executionLease = $null
 try {
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "unit-test-mississippi-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $repoRoot = $executionLease.RepositoryRoot
     Invoke-MississippiSolutionUnitTests -Configuration $Configuration -RepoRoot $repoRoot -TestLevels $TestLevels
 }
 catch {
     Write-Error "=== MISSISSIPPI SOLUTION UNIT TESTING FAILED ===: $($_.Exception.Message)"
     exit 1
+}
+finally {
+    if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
 }
 
 exit 0

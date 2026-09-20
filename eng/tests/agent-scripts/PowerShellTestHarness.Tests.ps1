@@ -137,10 +137,10 @@ Describe 'Build entry point process boundaries' {
         $scripts = Join-Path $fixture 'eng/src/agent-scripts'
         New-Item -ItemType Directory -Path $scripts -Force | Out-Null
         Copy-Item (Join-Path $PSScriptRoot '../../../go.ps1') $fixture
-        Set-Content (Join-Path $scripts 'orchestrate-solutions.ps1') "param([string]`$Configuration, [switch]`$SkipCleanup, [switch]`$IncludeMutation); Write-Output ([string]::Join('|', `$Configuration, `$SkipCleanup, `$IncludeMutation)); exit $ExitCode"
-        $output = & $powerShellPath -NoProfile -File $portableHostScript (Join-Path $fixture 'go.ps1') -Configuration Debug -SkipCleanup -IncludeMutation 2>&1 | Out-String
+        Set-Content (Join-Path $scripts 'orchestrate-solutions.ps1') "param([string]`$Configuration, [switch]`$SkipCleanup, [switch]`$IncludeMutation, [string]`$LeaseDirectory); Write-Output ([string]::Join('|', `$Configuration, `$SkipCleanup, `$IncludeMutation, `$LeaseDirectory)); exit $ExitCode"
+        $output = & $powerShellPath -NoProfile -File $portableHostScript (Join-Path $fixture 'go.ps1') -Configuration Debug -SkipCleanup -IncludeMutation -LeaseDirectory shared-leases 2>&1 | Out-String
         $LASTEXITCODE | Should -Be $(if ($ExitCode -eq 0) { 0 } else { 1 })
-        $output | Should -Match 'Debug\|True\|True'
+        $output | Should -Match 'Debug\|True\|True\|shared-leases'
         $output.Contains('SUCCESS: Main pipeline orchestration completed successfully') | Should -Be ($ExitCode -eq 0)
     }
 
@@ -152,10 +152,10 @@ Describe 'Build entry point process boundaries' {
         $scripts = Join-Path $fixture 'eng/src/agent-scripts'
         New-Item -ItemType Directory -Path $scripts -Force | Out-Null
         Copy-Item (Join-Path $PSScriptRoot '../../../quick-build.ps1') $fixture
-        Set-Content (Join-Path $scripts 'final-build-solutions.ps1') "param([string]`$Configuration); Write-Output ('FINAL:' + `$Configuration); exit $ExitCode"
-        $output = & $powerShellPath -NoProfile -File $portableHostScript (Join-Path $fixture 'quick-build.ps1') -Configuration Debug 2>&1 | Out-String
+        Set-Content (Join-Path $scripts 'final-build-solutions.ps1') "param([string]`$Configuration, [string]`$LeaseDirectory); Write-Output ('FINAL:' + `$Configuration + '|' + `$LeaseDirectory); exit $ExitCode"
+        $output = & $powerShellPath -NoProfile -File $portableHostScript (Join-Path $fixture 'quick-build.ps1') -Configuration Debug -LeaseDirectory shared-leases 2>&1 | Out-String
         $LASTEXITCODE | Should -Be $WrapperExit
-        $output | Should -Match 'FINAL:Debug'
+        $output | Should -Match 'FINAL:Debug\|shared-leases'
         $output.Contains('QUICK BUILD COMPLETED SUCCESSFULLY') | Should -Be ($ExitCode -eq 0)
         if ($ExitCode -ne 0) { $output | Should -Match 'failed[\s|]+with[\s|]+exit[\s|]+code:?[\s|]+7' }
     }
@@ -170,8 +170,23 @@ Describe 'Build entry point process boundaries' {
         $scripts = Join-Path $fixture 'eng/src/agent-scripts'
         New-Item -ItemType Directory -Path $scripts -Force | Out-Null
         Copy-Item (Join-Path $PSScriptRoot '../../../' $EntryPoint) $fixture
-        Set-Content (Join-Path $scripts "$Prefix-mississippi-solution.ps1") "param([string]`$Configuration); Write-Output ('CORE:' + `$Configuration); exit $ExitCode"
-        Set-Content (Join-Path $scripts "$Prefix-sample-solution.ps1") "param([string]`$Configuration); Write-Output ('SAMPLES:' + `$Configuration); exit 0"
+        if ($Prefix -in @('build', 'clean-up')) {
+            $failureStatement = if ($ExitCode -eq 0) { '' } else { "throw 'CORE failed with exit code: $ExitCode'" }
+            @"
+function Get-RepositoryRoot { return (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent `$PSScriptRoot))) }
+function Enter-RepositoryExecutionLease { param([string]`$RepoRoot, [string]`$OperationId, [string]`$LeaseDirectory); [pscustomobject]@{ RepositoryRoot = `$RepoRoot; OwnsStream = `$false } }
+function Exit-RepositoryExecutionLease { param([object]`$Lease) }
+function Invoke-MississippiSolutionBuild { param([string]`$Configuration, [string]`$RepoRoot); Write-Output ('CORE:' + `$Configuration); $failureStatement }
+function Invoke-SampleSolutionBuild { param([string]`$Configuration, [string]`$RepoRoot); Write-Output ('SAMPLES:' + `$Configuration) }
+function Invoke-MississippiSolutionCleanup { param([string]`$RepoRoot); Write-Output 'CORE:'; $failureStatement }
+function Invoke-SampleSolutionCleanup { param([string]`$RepoRoot); Write-Output 'SAMPLES:' }
+Export-ModuleMember -Function Get-RepositoryRoot, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup
+"@ | Set-Content (Join-Path $scripts 'RepositoryAutomation.psm1')
+        }
+        else {
+            Set-Content (Join-Path $scripts "$Prefix-mississippi-solution.ps1") "param([string]`$Configuration); Write-Output ('CORE:' + `$Configuration); exit $ExitCode"
+            Set-Content (Join-Path $scripts "$Prefix-sample-solution.ps1") "param([string]`$Configuration); Write-Output ('SAMPLES:' + `$Configuration); exit 0"
+        }
         $options = if ($Prefix -eq 'build') { @('-Configuration', 'Debug') } else { @() }
         $expectedConfiguration = if ($Prefix -eq 'build') { 'Debug' } else { '' }
         $output = & $powerShellPath -NoProfile -File $portableHostScript (Join-Path $fixture $EntryPoint) @options 2>&1 | Out-String
@@ -183,7 +198,7 @@ Describe 'Build entry point process boundaries' {
         else {
             $LASTEXITCODE | Should -Be 1
             $output | Should -Not -Match 'SAMPLES:'
-            $output | Should -Match 'failed[\s|]+with[\s|]+exit[\s|]+code:?[\s|]+7'
+            $output | Should -Match 'CORE failed[\s|]+with[\s|]+exit[\s|]+code:?[\s|]+7'
         }
         $output | Should -Match "CORE:$expectedConfiguration"
     }

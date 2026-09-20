@@ -3,6 +3,8 @@
 [CmdletBinding()]
 param(
     [switch]$SkipMutationRun,
+    [switch]$SkipLease,
+    [string]$LeaseDirectory,
     [string]$MutationScriptPath,
     [string]$RunPath,
     [ValidateSet('Debug', 'Release')]
@@ -23,7 +25,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $modulePath = Join-Path $PSScriptRoot 'RepositoryAutomation.psm1'
-Import-Module -Name $modulePath -Force
+Import-Module -Name $modulePath
 
 
 
@@ -236,6 +238,13 @@ if (-not (Test-Path -LiteralPath $taskModulePath -PathType Leaf)) {
 
 Import-Module -Name $taskModulePath -Force
 
+$executionLease = $null
+if (-not $SkipLease) {
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "mutation-summary-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $repoRoot = $executionLease.RepositoryRoot
+}
+
+try {
 if (-not $TasksPath) {
     $TasksPath = Join-Path $repoRoot '.scratchpad/testing/mutation-tasks.md'
 }
@@ -339,14 +348,27 @@ function ConvertTo-SanitizedIdentifier {
 
 if ([string]::IsNullOrWhiteSpace($MutationScriptPath))
 {
-    $MutationScriptPath = Join-Path $scriptRoot 'mutation-test-mississippi-solution.ps1'
+    $MutationScriptPath = Join-Path $repoRoot 'eng/src/agent-scripts/mutation-test-mississippi-solution.ps1'
 }
 else
 {
-    if (-not (Test-Path -Path $MutationScriptPath -PathType Leaf))
-    {
-        throw "Mutation script path '$MutationScriptPath' was not found."
+    if (-not $SkipMutationRun) {
+        $resolvedMutationScriptPath = (Resolve-Path -LiteralPath $MutationScriptPath -ErrorAction Stop).Path
+        $mutationScriptRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $resolvedMutationScriptPath)
+        $rootComparison = if ($IsWindows) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
+        if (-not [string]::Equals([System.IO.Path]::GetFullPath($mutationScriptRoot), [System.IO.Path]::GetFullPath($repoRoot), $rootComparison)) {
+            throw "Mutation script path '$MutationScriptPath' is outside the leased repository root '$repoRoot'."
+        }
+        $relativeMutationScriptPath = [System.IO.Path]::GetRelativePath($mutationScriptRoot, $resolvedMutationScriptPath)
+        if ([System.IO.Path]::IsPathRooted($relativeMutationScriptPath) -or $relativeMutationScriptPath -match '^\.\.([\\/]|$)') {
+            throw "Mutation script path '$MutationScriptPath' is outside the leased repository."
+        }
+        $MutationScriptPath = Join-Path $repoRoot $relativeMutationScriptPath
     }
+}
+if (-not $SkipMutationRun -and -not (Test-Path -LiteralPath $MutationScriptPath -PathType Leaf))
+{
+    throw "Mutation script path '$MutationScriptPath' was not found in the leased repository."
 }
 
 $mutationOutputDirectory = Join-Path $repoRoot '.scratchpad/mutation-test-results'
@@ -357,7 +379,10 @@ if (-not $SkipMutationRun)
 {
     if ($RunPath) { throw '-RunPath requires -SkipMutationRun.' }
     Write-Host "Running mutation tests via '$MutationScriptPath'..." -ForegroundColor Cyan
-    & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoLogo -NoProfile -File $MutationScriptPath -Configuration $Configuration
+    $mutationArguments = @('-Configuration', $Configuration)
+    $mutationArguments += '-SkipLease'
+    if (-not [string]::IsNullOrWhiteSpace($LeaseDirectory)) { $mutationArguments += @('-LeaseDirectory', $LeaseDirectory) }
+    & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoLogo -NoProfile -File $MutationScriptPath @mutationArguments
     $mutationExitCode = $LASTEXITCODE
     if ($mutationExitCode -ne 0)
     {
@@ -801,6 +826,11 @@ if ($reportSurvivors.Count -gt 0)
 }
 Write-Host "- Markdown: $summaryMarkdownPath" -ForegroundColor Gray
 Write-Host "Total survivors: $totalCount" -ForegroundColor Cyan
+
+}
+finally {
+    if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
+}
 
 exit $mutationExitCode
 

@@ -222,7 +222,7 @@ developer work.
 2. Create a thin `#!/usr/bin/env pwsh` wrapper only when a standalone CLI entry point is needed—the wrapper should import the module, call the function, and surface friendly errors.
 3. Cover the logic with Pester (see `eng/tests/agent-scripts/RepositoryAutomation.Tests.ps1` for examples) and wire the suite into `eng/tests/orchestrate-powershell-tests.ps1` so CI runs it.
 
-> Tip: when experimenting interactively you can `Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force` and call the functions directly (for example `Invoke-MississippiSolutionBuild -Configuration Debug`).
+> Tip: use `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1 -Configuration Debug` for a leased build. If you call `Invoke-MississippiSolutionBuild` directly, acquire and release a lease around it; keep the module loaded while that lease is active.
 
 ## xUnit v3 runner and reports
 

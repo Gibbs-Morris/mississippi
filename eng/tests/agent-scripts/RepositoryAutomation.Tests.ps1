@@ -7,6 +7,12 @@ $modulePath = [System.IO.Path]::GetFullPath($modulePath)
 Import-Module -Name $modulePath -Force
 
 Describe 'RepositoryAutomation helpers' {
+    AfterEach {
+        if (-not $IsWindows) {
+            & chmod -R u+rwX -- $TestDrive 2>$null | Out-Null
+        }
+    }
+
     It 'resolves repository root from test path' {
         $root = Get-RepositoryRoot -StartPath $PSScriptRoot
         Test-Path -LiteralPath (Join-Path $root '.git') | Should -Be $true
@@ -20,6 +26,484 @@ Describe 'RepositoryAutomation helpers' {
         (New-AutomationRunDirectory -Root $testRoot -Prefix 'test') | Should -Not -Be $runDirectory
     }
 
+    It 'leases one worktree exclusively and permits reentrant reuse' {
+        $leaseRoot = Join-Path $TestDrive 'lease-repository'
+        $coordinationRoot = Join-Path $TestDrive 'lease-coordination'
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-one' -LeaseDirectory $coordinationRoot
+        try {
+            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-two' -LeaseDirectory $coordinationRoot } | Should -Throw '*execution lease*'
+            $nestedLease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -ExistingLease $lease -LeaseDirectory $coordinationRoot
+            try { $nestedLease.OperationId | Should -Be 'owner-one' } finally { Exit-RepositoryExecutionLease -Lease $nestedLease }
+            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-four' -LeaseDirectory $coordinationRoot } | Should -Throw '*execution lease*'
+        }
+        finally {
+            Exit-RepositoryExecutionLease -Lease $lease
+        }
+
+        $released = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-three' -LeaseDirectory $coordinationRoot
+        try { $released.OperationId | Should -Be 'owner-three' } finally { Exit-RepositoryExecutionLease -Lease $released }
+    }
+
+    It 'recovers a stale same-process metadata sidecar after the lock is free' {
+        $leaseRoot = Join-Path $TestDrive 'stale-metadata-repository'
+        $coordinationRoot = Join-Path $TestDrive 'stale-metadata-coordination'
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        $leasePath = Get-RepositoryExecutionLeasePath -RepoRoot $leaseRoot -LeaseDirectory $coordinationRoot
+        $metadataPath = "$leasePath.metadata"
+        $processStartUtc = (Get-Process -Id $PID).StartTime.ToUniversalTime().ToString('o')
+        Set-Content -LiteralPath $metadataPath -Value (@{
+            operationId = 'stale-owner'
+            processId = $PID
+            processStartUtc = $processStartUtc
+        } | ConvertTo-Json -Compress)
+
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'recovered-owner' -LeaseDirectory $coordinationRoot
+        try { $lease.OperationId | Should -Be 'recovered-owner' }
+        finally { Exit-RepositoryExecutionLease -Lease $lease }
+    }
+
+    It 'makes shared lease files writable by participating accounts on Unix' {
+        if ($IsWindows) {
+            Set-ItResult -Skipped -Because 'Unix lease permissions are not available on Windows.'
+            return
+        }
+
+        $previousSharedWorktree = $env:MISSISSIPPI_SHARED_WORKTREE
+        $leaseRoot = Join-Path $TestDrive 'shared-lease-repository'
+        $coordinationRoot = Join-Path $TestDrive 'shared-lease-coordination'
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        try {
+            Remove-Item Env:MISSISSIPPI_SHARED_WORKTREE -ErrorAction SilentlyContinue
+            $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'shared-owner' -LeaseDirectory $coordinationRoot
+            try {
+                $directoryModeText = (& stat -c '%a' -- $coordinationRoot 2>$null | Out-String).Trim()
+                if ($LASTEXITCODE -ne 0) { $directoryModeText = (& stat -f '%Lp' -- $coordinationRoot 2>$null | Out-String).Trim() }
+                $fileModeText = (& stat -c '%a' -- $lease.Path 2>$null | Out-String).Trim()
+                if ($LASTEXITCODE -ne 0) { $fileModeText = (& stat -f '%Lp' -- $lease.Path 2>$null | Out-String).Trim() }
+                ([Convert]::ToInt32($directoryModeText, 8) -band 2) | Should -Be 0
+                ([Convert]::ToInt32($fileModeText, 8) -band 2) | Should -Not -Be 0
+            }
+            finally {
+                Exit-RepositoryExecutionLease -Lease $lease
+            }
+        }
+        finally {
+            if ($null -eq $previousSharedWorktree) { Remove-Item Env:MISSISSIPPI_SHARED_WORKTREE -ErrorAction SilentlyContinue }
+            else { $env:MISSISSIPPI_SHARED_WORKTREE = $previousSharedWorktree }
+        }
+    }
+
+    It 'acquires a shared lease on Windows without Unix file modes' {
+        if (-not $IsWindows) {
+            Set-ItResult -Skipped -Because 'Windows shared lease behavior is not available on Unix.'
+            return
+        }
+
+        $previousSharedWorktree = $env:MISSISSIPPI_SHARED_WORKTREE
+        $leaseRoot = Join-Path $TestDrive 'windows-shared-lease-repository'
+        $coordinationRoot = Join-Path $TestDrive 'windows-shared-lease-coordination'
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        try {
+            Remove-Item Env:MISSISSIPPI_SHARED_WORKTREE -ErrorAction SilentlyContinue
+            $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'windows-shared-owner' -LeaseDirectory $coordinationRoot
+            try { $lease.OperationId | Should -Be 'windows-shared-owner' }
+            finally { Exit-RepositoryExecutionLease -Lease $lease }
+        }
+        finally {
+            if ($null -eq $previousSharedWorktree) { Remove-Item Env:MISSISSIPPI_SHARED_WORKTREE -ErrorAction SilentlyContinue }
+            else { $env:MISSISSIPPI_SHARED_WORKTREE = $previousSharedWorktree }
+        }
+    }
+
+    It 'rejects a pre-sealed shared directory without metadata on Unix' {
+        if ($IsWindows) {
+            Set-ItResult -Skipped -Because 'Unix shared lease provisioning is not available on Windows.'
+            return
+        }
+
+        $leaseRoot = Join-Path $TestDrive 'missing-metadata-lease-repository'
+        $coordinationRoot = Join-Path $TestDrive 'missing-metadata-coordination'
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        New-Item -ItemType Directory -Path $coordinationRoot -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $coordinationRoot 'shared.lease') -Value 'pre-provisioned' -NoNewline
+        & chmod 666 -- (Join-Path $coordinationRoot 'shared.lease') 2>$null | Out-Null
+        & chmod 555 -- $coordinationRoot 2>$null | Out-Null
+
+        { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'missing-metadata' -LeaseDirectory $coordinationRoot } |
+            Should -Throw '*metadata*'
+    }
+
+    It 'uses one lease identity for a worktree alias' {
+        $realRoot = Join-Path $TestDrive 'lease-real'
+        $aliasRoot = Join-Path $TestDrive 'lease-alias'
+        New-Item -ItemType Directory -Path $realRoot -Force | Out-Null
+        $aliasCreated = $false
+        try {
+            $aliasType = if ($IsWindows) { 'Junction' } else { 'SymbolicLink' }
+            New-Item -ItemType $aliasType -Path $aliasRoot -Target $realRoot -ErrorAction Stop | Out-Null
+            $aliasCreated = $true
+            $coordinationRoot = Join-Path $TestDrive 'alias-coordination'
+            $lease = Enter-RepositoryExecutionLease -RepoRoot $realRoot -OperationId 'physical-owner' -LeaseDirectory $coordinationRoot
+            try {
+                { Enter-RepositoryExecutionLease -RepoRoot $aliasRoot -OperationId 'alias-owner' -LeaseDirectory $coordinationRoot } | Should -Throw '*execution lease*'
+            }
+            finally {
+                Exit-RepositoryExecutionLease -Lease $lease
+            }
+        }
+        catch {
+            if (-not $aliasCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create directory junctions.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $aliasRoot -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'rejects a reentrant lease from a different worktree' {
+        $firstRoot = Join-Path $TestDrive 'lease-first'
+        $secondRoot = Join-Path $TestDrive 'lease-second'
+        $coordinationRoot = Join-Path $TestDrive 'different-worktree-coordination'
+        New-Item -ItemType Directory -Path $firstRoot, $secondRoot -Force | Out-Null
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $firstRoot -OperationId 'first' -LeaseDirectory $coordinationRoot
+        try {
+            { Enter-RepositoryExecutionLease -RepoRoot $secondRoot -ExistingLease $lease -LeaseDirectory $coordinationRoot } | Should -Throw '*belongs to*'
+        }
+        finally {
+            Exit-RepositoryExecutionLease -Lease $lease
+        }
+    }
+
+    It 'rejects a reentrant lease from a different coordination directory' {
+        $leaseRoot = Join-Path $TestDrive 'coordination-lease-repository'
+        $firstCoordinationRoot = Join-Path $TestDrive 'coordination-one'
+        $secondCoordinationRoot = Join-Path $TestDrive 'coordination-two'
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'coordination-one' -LeaseDirectory $firstCoordinationRoot
+        try {
+            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -ExistingLease $lease -LeaseDirectory $secondCoordinationRoot } |
+                Should -Throw '*coordination path*'
+        }
+        finally {
+            Exit-RepositoryExecutionLease -Lease $lease
+        }
+    }
+
+    It 'leases multiple worktrees through one shared coordination directory' {
+        $firstRoot = Join-Path $TestDrive 'shared-worktree-one'
+        $secondRoot = Join-Path $TestDrive 'shared-worktree-two'
+        $coordinationRoot = Join-Path $TestDrive 'shared-multi-coordination'
+        New-Item -ItemType Directory -Path $firstRoot, $secondRoot -Force | Out-Null
+        $firstLease = Enter-RepositoryExecutionLease -RepoRoot $firstRoot -OperationId 'shared-one' -LeaseDirectory $coordinationRoot
+        try {
+            { Enter-RepositoryExecutionLease -RepoRoot $secondRoot -OperationId 'shared-two' -LeaseDirectory $coordinationRoot } |
+                Should -Throw '*coordination file is already held*'
+        }
+        finally {
+            Exit-RepositoryExecutionLease -Lease $firstLease
+        }
+
+        $secondLease = Enter-RepositoryExecutionLease -RepoRoot $secondRoot -OperationId 'shared-two' -LeaseDirectory $coordinationRoot
+        try { $secondLease.OperationId | Should -Be 'shared-two' }
+        finally { Exit-RepositoryExecutionLease -Lease $secondLease }
+    }
+
+    It 'rejects a lease contender in another PowerShell process and permits it after release' {
+        $leaseRoot = Join-Path $TestDrive 'cross-process-lease-repository'
+        $coordinationRoot = Join-Path $TestDrive 'cross-process-coordination'
+        $scriptPath = Join-Path $TestDrive 'cross-process-contender.ps1'
+        $modulePath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../src/agent-scripts/RepositoryAutomation.psm1'))
+        $powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        @'
+param([string]$ModulePath, [string]$RepoRoot, [string]$LeaseDirectory)
+$ErrorActionPreference = 'Stop'
+Import-Module $ModulePath -Force
+try {
+    $lease = Enter-RepositoryExecutionLease -RepoRoot $RepoRoot -LeaseDirectory $LeaseDirectory
+    Exit-RepositoryExecutionLease -Lease $lease
+    exit 0
+}
+catch {
+    if ($_.Exception.Message -like '*execution lease*') { exit 42 }
+    throw
+}
+'@ | Set-Content -LiteralPath $scriptPath
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'parent-owner' -LeaseDirectory $coordinationRoot
+        try {
+            & $powerShellPath -NoProfile -File $scriptPath -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $coordinationRoot | Out-Null
+            $LASTEXITCODE | Should -Be 42
+        }
+        finally {
+            Exit-RepositoryExecutionLease -Lease $lease
+        }
+        & $powerShellPath -NoProfile -File $scriptPath -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $coordinationRoot | Out-Null
+        $LASTEXITCODE | Should -Be 0
+
+        $privateLeaseRoot = Join-Path $TestDrive 'cross-process-private-repository'
+        New-Item -ItemType Directory -Path $privateLeaseRoot -Force | Out-Null
+        $privateLease = Enter-RepositoryExecutionLease -RepoRoot $privateLeaseRoot -OperationId 'private-parent-owner'
+        try {
+            & $powerShellPath -NoProfile -File $scriptPath -ModulePath $modulePath -RepoRoot $privateLeaseRoot | Out-Null
+            $LASTEXITCODE | Should -Be 42
+        }
+        finally {
+            Exit-RepositoryExecutionLease -Lease $privateLease
+        }
+        & $powerShellPath -NoProfile -File $scriptPath -ModulePath $modulePath -RepoRoot $privateLeaseRoot | Out-Null
+        $LASTEXITCODE | Should -Be 0
+    }
+
+    It 'preserves lease state across a non-forcing module import' {
+        $leaseRoot = Join-Path $TestDrive 'reload-lease-repository'
+        $coordinationRoot = Join-Path $TestDrive 'reload-coordination'
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'reload-owner' -LeaseDirectory $coordinationRoot
+        try {
+            Import-Module -Name ([System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\src\agent-scripts\RepositoryAutomation.psm1')))
+            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'reload-contender' -LeaseDirectory $coordinationRoot } |
+                Should -Throw '*execution lease*'
+        }
+        finally {
+            Exit-RepositoryExecutionLease -Lease $lease
+        }
+    }
+
+    It 'coordinates same-process runspaces for one shared lease' {
+        $leaseRoot = Join-Path $TestDrive 'runspace-lease-repository'
+        $coordinationRoot = Join-Path $TestDrive 'runspace-lease-coordination'
+        $modulePath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../src/agent-scripts/RepositoryAutomation.psm1'))
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'runspace-owner' -LeaseDirectory $coordinationRoot
+        $worker = @'
+param([string]$ModulePath, [string]$RepoRoot, [string]$LeaseDirectory)
+$ErrorActionPreference = 'Stop'
+Import-Module $ModulePath
+$childLease = $null
+try {
+    $childLease = Enter-RepositoryExecutionLease -RepoRoot $RepoRoot -LeaseDirectory $LeaseDirectory
+    'acquired'
+}
+catch { "blocked:$($_.Exception.Message)" }
+finally { if ($null -ne $childLease) { Exit-RepositoryExecutionLease -Lease $childLease } }
+'@
+        function Invoke-RunspaceLeaseAttempt {
+            param([string]$ScriptText, [string]$ModulePath, [string]$RepoRoot, [string]$LeaseDirectory)
+            $runspace = [runspacefactory]::CreateRunspace()
+            $runspace.Open()
+            $powershell = [powershell]::Create()
+            $powershell.Runspace = $runspace
+            try {
+                $null = $powershell.AddScript($ScriptText).AddArgument($ModulePath).AddArgument($RepoRoot).AddArgument($LeaseDirectory)
+                return [string]$powershell.Invoke()
+            }
+            finally {
+                $powershell.Dispose()
+                $runspace.Dispose()
+            }
+        }
+        try {
+                (Invoke-RunspaceLeaseAttempt -ScriptText $worker -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $coordinationRoot) |
+                Should -Match '^blocked:.*execution lease'
+        }
+        finally { Exit-RepositoryExecutionLease -Lease $lease }
+        Invoke-RunspaceLeaseAttempt -ScriptText $worker -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $coordinationRoot |
+            Should -Be 'acquired'
+    }
+
+    It 'waits for delayed shared lease permission publication' {
+        if ($IsWindows) {
+            Set-ItResult -Skipped -Because 'The delayed Unix mode publication path is not available on Windows.'
+            return
+        }
+
+        $leaseRoot = Join-Path $TestDrive 'delayed-shared-lease-repository'
+        $coordinationRoot = Join-Path $TestDrive 'delayed-shared-lease-coordination'
+        $leasePath = Join-Path $coordinationRoot 'shared.lease'
+        $metadataPath = "$leasePath.metadata"
+        $readyPath = Join-Path $coordinationRoot 'worker.ready'
+        $proceedPath = Join-Path $coordinationRoot 'worker.proceed'
+        $startedPath = Join-Path $coordinationRoot 'worker.started'
+        $modulePath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../src/agent-scripts/RepositoryAutomation.psm1'))
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        New-Item -ItemType Directory -Path $coordinationRoot -Force | Out-Null
+        New-Item -ItemType File -Path $leasePath -Force | Out-Null
+        New-Item -ItemType File -Path $metadataPath -Force | Out-Null
+        & chmod 755 -- $coordinationRoot
+        & chmod 600 -- $leasePath
+        & chmod 600 -- $metadataPath
+
+        $worker = @'
+param([string]$ModulePath, [string]$RepoRoot, [string]$LeaseDirectory, [string]$ReadyPath, [string]$ProceedPath, [string]$StartedPath)
+$ErrorActionPreference = 'Stop'
+Import-Module $ModulePath
+New-Item -ItemType File -Path $ReadyPath -Force | Out-Null
+while (-not (Test-Path -LiteralPath $ProceedPath -PathType Leaf)) { Start-Sleep -Milliseconds 10 }
+New-Item -ItemType File -Path $StartedPath -Force | Out-Null
+$timer = [System.Diagnostics.Stopwatch]::StartNew()
+$null = Get-RepositoryExecutionLeasePath -RepoRoot $RepoRoot -LeaseDirectory $LeaseDirectory
+$timer.Stop()
+[pscustomobject]@{ Initialized = $true; ElapsedMilliseconds = $timer.ElapsedMilliseconds } | ConvertTo-Json -Compress
+'@
+        $runspace = [runspacefactory]::CreateRunspace()
+        $runspace.Open()
+        $powershell = [powershell]::Create()
+        $powershell.Runspace = $runspace
+        try {
+            $null = $powershell.AddScript($worker).AddArgument($modulePath).AddArgument($leaseRoot).AddArgument($coordinationRoot).AddArgument($readyPath).AddArgument($proceedPath).AddArgument($startedPath)
+            $asyncResult = $powershell.BeginInvoke()
+            $readyDeadline = [DateTime]::UtcNow.AddSeconds(5)
+            while (-not (Test-Path -LiteralPath $readyPath -PathType Leaf)) {
+                if ([DateTime]::UtcNow -ge $readyDeadline) { throw 'Delayed-initialization worker did not become ready.' }
+                Start-Sleep -Milliseconds 25
+            }
+            New-Item -ItemType File -Path $proceedPath -Force | Out-Null
+            $startedDeadline = [DateTime]::UtcNow.AddSeconds(5)
+            while (-not (Test-Path -LiteralPath $startedPath -PathType Leaf)) {
+                if ([DateTime]::UtcNow -ge $startedDeadline) { throw 'Delayed-initialization worker did not start the lease call.' }
+                Start-Sleep -Milliseconds 25
+            }
+            $pendingDeadline = [DateTime]::UtcNow.AddSeconds(1)
+            do {
+                if ($asyncResult.IsCompleted) { throw 'Lease initialization completed before permissions were sealed.' }
+                Start-Sleep -Milliseconds 25
+            } while ([DateTime]::UtcNow -lt $pendingDeadline)
+            & chmod 666 -- $leasePath
+            & chmod 666 -- $metadataPath
+            $pendingDeadline = [DateTime]::UtcNow.AddSeconds(1)
+            do {
+                if ($asyncResult.IsCompleted) { throw 'Lease initialization completed before the shared directory was sealed.' }
+                Start-Sleep -Milliseconds 25
+            } while ([DateTime]::UtcNow -lt $pendingDeadline)
+            & chmod 555 -- $coordinationRoot
+
+            $result = (ConvertFrom-Json -InputObject ([string]$powershell.EndInvoke($asyncResult)))
+            $result.Initialized | Should -Be $true
+        }
+        finally {
+            $powershell.Dispose()
+            $runspace.Dispose()
+        }
+    }
+
+    It 'resolves relative lease directories from the physical repository root' {
+        $repoRoot = Join-Path $TestDrive 'relative-lease-repository'
+        New-Item -ItemType Directory -Path $repoRoot -Force | Out-Null
+        $originalLocation = Get-Location
+        try {
+            Push-Location $TestDrive
+            $leasePath = Get-RepositoryExecutionLeasePath -RepoRoot $repoRoot -LeaseDirectory 'relative-leases'
+            $leasePath | Should -Be (Join-Path $repoRoot 'relative-leases' ([System.IO.Path]::GetFileName($leasePath)))
+        }
+        finally {
+            Set-Location $originalLocation
+        }
+    }
+
+    It 'resolves relative and chained symlink targets before deriving lease identity' {
+        $chainRoot = Join-Path $TestDrive 'lease-chain'
+        $realRoot = Join-Path $chainRoot 'real'
+        $linkTwo = Join-Path $chainRoot 'link-two'
+        $linkOne = Join-Path $chainRoot 'link-one'
+        New-Item -ItemType Directory -Path $realRoot -Force | Out-Null
+        $linksCreated = $false
+        try {
+            New-Item -ItemType SymbolicLink -Path $linkTwo -Target $realRoot -ErrorAction Stop | Out-Null
+            New-Item -ItemType SymbolicLink -Path $linkOne -Target 'link-two' -ErrorAction Stop | Out-Null
+            $linksCreated = $true
+
+            $coordinationRoot = Join-Path $TestDrive 'chain-coordination'
+            $realLeasePath = Get-RepositoryExecutionLeasePath -RepoRoot $realRoot -LeaseDirectory $coordinationRoot
+            $aliasLeasePath = Get-RepositoryExecutionLeasePath -RepoRoot $linkOne -LeaseDirectory $coordinationRoot
+
+            $aliasLeasePath | Should -Be $realLeasePath
+        }
+        catch {
+            if (-not $linksCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create chained symbolic links.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $linkOne -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $linkTwo -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $chainRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'resolves symlinked ancestors inside multi-component targets' {
+        $root = Join-Path $TestDrive 'multi-component-chain'
+        $realRoot = Join-Path $root 'real'
+        $realSubdirectory = Join-Path $realRoot 'subdir'
+        $middle = Join-Path $root 'middle'
+        $outer = Join-Path $root 'outer'
+        New-Item -ItemType Directory -Path $realSubdirectory -Force | Out-Null
+        $linksCreated = $false
+        try {
+            New-Item -ItemType SymbolicLink -Path $middle -Target $realRoot -ErrorAction Stop | Out-Null
+            New-Item -ItemType SymbolicLink -Path $outer -Target (Join-Path $middle 'subdir') -ErrorAction Stop | Out-Null
+            $linksCreated = $true
+
+            $coordinationRoot = Join-Path $TestDrive 'multi-component-coordination'
+            $realLeasePath = Get-RepositoryExecutionLeasePath -RepoRoot $realSubdirectory -LeaseDirectory $coordinationRoot
+            $aliasLeasePath = Get-RepositoryExecutionLeasePath -RepoRoot $outer -LeaseDirectory $coordinationRoot
+
+            $aliasLeasePath | Should -Be $realLeasePath
+        }
+        catch {
+            if (-not $linksCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create multi-component symbolic links.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $outer -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $middle -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'resolves a symlinked file target before leasing its repository' {
+        $sourceRoot = Join-Path $TestDrive 'solution-link-source'
+        $targetRoot = Join-Path $TestDrive 'solution-link-target'
+        $sourcePath = Join-Path $sourceRoot 'solution.slnx'
+        $targetPath = Join-Path $targetRoot 'solution.slnx'
+        New-Item -ItemType Directory -Path $sourceRoot -Force | Out-Null
+        New-Item -ItemType Directory -Path $targetRoot -Force | Out-Null
+        Set-Content -LiteralPath $targetPath -Value '<Solution />'
+        $linkCreated = $false
+        try {
+            New-Item -ItemType SymbolicLink -Path $sourcePath -Target $targetPath -ErrorAction Stop | Out-Null
+            $linkCreated = $true
+
+            $resolved = Resolve-RepositoryExecutionPath -Path $sourcePath
+
+            $resolved | Should -Be (Get-Item -LiteralPath $targetPath).FullName
+        }
+        catch {
+            if (-not $linkCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create file symbolic links.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $sourcePath -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $sourceRoot -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $targetRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It 'invokes automation steps and returns the result' {
         $result = Invoke-AutomationStep -Name 'Sample' -SilentSuccess -Action { 1 + 1 }
         $result | Should -Be 2
@@ -27,6 +511,12 @@ Describe 'RepositoryAutomation helpers' {
 }
 
 Describe 'Repository automation quality gates' {
+    AfterEach {
+        if (-not $IsWindows) {
+            & chmod -R u+rwX -- $TestDrive 2>$null | Out-Null
+        }
+    }
+
     BeforeAll {
         Import-Module (Join-Path $PSScriptRoot '../../src/agent-scripts/RepositoryAutomation.psm1') -Force
     }
@@ -158,7 +648,7 @@ Describe 'Repository automation quality gates' {
         Mock Invoke-MississippiSolutionUnitTests { [pscustomobject]@{ CoverageReportPath = (Join-Path $TestDrive 'coverage.cobertura.xml') } } -ModuleName RepositoryAutomation
         Mock Invoke-SampleSolutionBuild {} -ModuleName RepositoryAutomation
         Mock Invoke-RepositoryProcess { throw 'summarizer exited 1' } -ModuleName RepositoryAutomation
-        { Invoke-SolutionsPipeline -RepoRoot $TestDrive -SkipCleanup } | Should -Throw '*summarizer exited 1*'
+        { Invoke-SolutionsPipeline -RepoRoot $TestDrive -SkipCleanup -LeaseDirectory (Join-Path $TestDrive ('pipeline-leases-' + [guid]::NewGuid().ToString('N'))) } | Should -Throw '*summarizer exited 1*'
         Should -Invoke Invoke-SampleSolutionBuild -ModuleName RepositoryAutomation -Times 0 -Exactly
     }
 
@@ -176,13 +666,54 @@ Describe 'Repository automation quality gates' {
         Mock Invoke-FinalSolutionsBuild { $calls.Add('final-build') } -ModuleName RepositoryAutomation
         Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
 
-        Invoke-SolutionsPipeline -RepoRoot $TestDrive | Out-Null
+        Invoke-SolutionsPipeline -RepoRoot $TestDrive -LeaseDirectory (Join-Path $TestDrive ('pipeline-leases-' + [guid]::NewGuid().ToString('N'))) | Out-Null
 
         @($calls | Where-Object { $_ -eq 'mississippi-cleanup' }).Count | Should -Be 1
         @($calls | Where-Object { $_ -eq 'sample-cleanup' }).Count | Should -Be 1
         $calls.IndexOf('mississippi-cleanup') | Should -BeLessThan $calls.IndexOf('mississippi-tests')
         $calls.IndexOf('sample-cleanup') | Should -BeLessThan $calls.IndexOf('sample-tests')
         $calls.IndexOf('final-build') | Should -BeGreaterThan $calls.IndexOf('sample-tests')
+    }
+
+    It 'uses the resolved physical root for protected pipeline operations' {
+        $realRoot = Join-Path $TestDrive 'pipeline-real-root'
+        $aliasRoot = Join-Path $TestDrive 'pipeline-alias-root'
+        $observedRoots = [System.Collections.Generic.List[string]]::new()
+        New-Item -ItemType Directory -Path $realRoot -Force | Out-Null
+        $aliasCreated = $false
+        try {
+            $aliasType = if ($IsWindows) { 'Junction' } else { 'SymbolicLink' }
+            New-Item -ItemType $aliasType -Path $aliasRoot -Target $realRoot -ErrorAction Stop | Out-Null
+            $aliasCreated = $true
+            Mock Invoke-MississippiSolutionBuild { $observedRoots.Add($RepoRoot) } -ModuleName RepositoryAutomation
+            Mock Invoke-MississippiSolutionUnitTests {
+                $observedRoots.Add($RepoRoot)
+                [pscustomobject]@{ CoverageReportPath = Join-Path $RepoRoot 'coverage.cobertura.xml' }
+            } -ModuleName RepositoryAutomation
+            Mock Invoke-SampleSolutionBuild { $observedRoots.Add($RepoRoot) } -ModuleName RepositoryAutomation
+            Mock Invoke-SampleSolutionUnitTests { $observedRoots.Add($RepoRoot) } -ModuleName RepositoryAutomation
+            Mock Invoke-FinalSolutionsBuild { $observedRoots.Add($RepoRoot) } -ModuleName RepositoryAutomation
+            Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
+
+            Invoke-SolutionsPipeline -RepoRoot $aliasRoot -SkipCleanup -LeaseDirectory (Join-Path $TestDrive ('pipeline-leases-' + [guid]::NewGuid().ToString('N'))) | Out-Null
+
+            $expectedRoot = (Get-Item -LiteralPath $realRoot).FullName
+            $observedRoots.Count | Should -Be 5
+            foreach ($observedRoot in $observedRoots) {
+                $observedRoot | Should -Be $expectedRoot
+            }
+        }
+        catch {
+            if (-not $aliasCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create directory junctions.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $aliasRoot -Force -ErrorAction SilentlyContinue
+        }
     }
 
     It 'forwards the exact Mississippi coverage report to the summarizer' {
@@ -194,7 +725,7 @@ Describe 'Repository automation quality gates' {
         Mock Invoke-FinalSolutionsBuild {} -ModuleName RepositoryAutomation
         Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
 
-        Invoke-SolutionsPipeline -RepoRoot $TestDrive -SkipCleanup | Out-Null
+        Invoke-SolutionsPipeline -RepoRoot $TestDrive -SkipCleanup -LeaseDirectory (Join-Path $TestDrive ('pipeline-leases-' + [guid]::NewGuid().ToString('N'))) | Out-Null
 
         Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -ParameterFilter {
             $Arguments -contains '-CoverageReportPath' -and $Arguments -contains $coveragePath

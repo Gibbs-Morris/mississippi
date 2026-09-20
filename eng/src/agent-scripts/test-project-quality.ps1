@@ -10,7 +10,9 @@ param(
 
     [string]$SourceProject,
 
-    [switch]$NoBuild
+    [switch]$NoBuild,
+
+    [string]$LeaseDirectory
 )
 
 Set-StrictMode -Version Latest
@@ -179,19 +181,41 @@ Write-Host ""
 
 $testFailed = $false
 $mutationFailed = $false
-Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1')
+$executionLease = $null
 
 try {
+    Write-Host "[1/7] Resolving test project path..." -ForegroundColor Cyan
+    $testProjectPath = Resolve-TestProjectPath -InputValue $TestProject
+    $testProjectName = [IO.Path]::GetFileNameWithoutExtension($testProjectPath)
+    $repoRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $testProjectPath)
+    $relativeTestProjectPath = [System.IO.Path]::GetRelativePath($repoRoot, $testProjectPath)
+    if ([System.IO.Path]::IsPathRooted($relativeTestProjectPath) -or $relativeTestProjectPath -match '^\.\.([\\/]|$)') {
+        throw "Test project '$testProjectPath' is outside repository root '$repoRoot'."
+    }
+    $relativeSourceProjectPath = $null
+    if (-not [string]::IsNullOrWhiteSpace($SourceProject)) {
+        $resolvedSourceProjectPath = (Resolve-Path -LiteralPath $SourceProject -ErrorAction Stop).Path
+        $relativeSourceProjectPath = [System.IO.Path]::GetRelativePath($repoRoot, $resolvedSourceProjectPath)
+        if ([System.IO.Path]::IsPathRooted($relativeSourceProjectPath) -or $relativeSourceProjectPath -match '^\.\.([\\/]|$)') {
+            throw "Source project '$SourceProject' is outside repository root '$repoRoot'."
+        }
+    }
+    Write-Host "Resolved test project: $testProjectName -> $testProjectPath" -ForegroundColor Green
+
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "quality-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $repoRoot = $executionLease.RepositoryRoot
+    $testProjectPath = Join-Path $executionLease.RepositoryRoot $relativeTestProjectPath
+    if (-not (Test-Path -LiteralPath $testProjectPath -PathType Leaf)) {
+        throw "Test project '$testProjectPath' was not found beneath the leased repository root."
+    }
+    $testProjectName = [IO.Path]::GetFileNameWithoutExtension($testProjectPath)
+    if ($null -ne $relativeSourceProjectPath) { $SourceProject = Join-Path $executionLease.RepositoryRoot $relativeSourceProjectPath }
     if (Test-Path ".config/dotnet-tools.json") {
-        Write-Host "[1/7] Restoring dotnet tools..." -ForegroundColor Cyan
+        Write-Host "[2/7] Restoring dotnet tools..." -ForegroundColor Cyan
         dotnet tool restore
         if ($LASTEXITCODE -ne 0) { throw "Failed to restore dotnet tools" }
     }
-
-    Write-Host "[2/7] Resolving test project path..." -ForegroundColor Cyan
-    $testProjectPath = Resolve-TestProjectPath -InputValue $TestProject
-    $testProjectName = [IO.Path]::GetFileNameWithoutExtension($testProjectPath)
-    Write-Host "Resolved test project: $testProjectName -> $testProjectPath" -ForegroundColor Green
 
     $scratchpadRoot = Join-Path (Get-Location) ".scratchpad"
     $resultsRoot = Join-Path $scratchpadRoot "coverage-test-results"
@@ -306,6 +330,9 @@ catch {
         Write-Host "RESULT: FAIL"
     } catch {}
     exit 1
+}
+finally {
+    if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
 }
 
 

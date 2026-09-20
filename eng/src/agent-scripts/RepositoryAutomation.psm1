@@ -3,6 +3,305 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$activeRepositoryExecutionLeases = [System.Collections.Concurrent.ConcurrentDictionary[string, bool]]::new()
+$sharedExecutionLeaseStreamStates = @{}
+$sharedExecutionLeaseStreamGate = [object]::new()
+$sharedExecutionLeaseDirectoryMode = 365 # 0555
+$sharedExecutionLeaseWritableDirectoryMode = 493 # 0755
+$sharedExecutionLeaseFileMode = 438 # 0666
+$privateExecutionLeaseDirectoryMode = 448 # 0700
+$privateExecutionLeaseFileMode = 384 # 0600
+$coordinationTypeName = 'Mississippi.RepositoryExecutionLeaseCoordination'
+if ($null -eq ($coordinationTypeName -as [type])) {
+    try {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.Threading;
+
+namespace Mississippi
+{
+    public static class RepositoryExecutionLeaseCoordination
+    {
+        private sealed class Entry
+        {
+            public readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
+            public int References;
+        }
+
+        private static readonly object Gate = new object();
+        private static readonly Dictionary<string, Entry> Entries = new Dictionary<string, Entry>(StringComparer.Ordinal);
+
+        public static SemaphoreSlim Acquire(string key)
+        {
+            lock (Gate)
+            {
+                Entry entry;
+                if (!Entries.TryGetValue(key, out entry))
+                {
+                    entry = new Entry();
+                    Entries.Add(key, entry);
+                }
+                entry.References++;
+                return entry.Semaphore;
+            }
+        }
+
+        public static void Release(string key, SemaphoreSlim semaphore, bool acquired)
+        {
+            lock (Gate)
+            {
+                if (acquired) semaphore.Release();
+                Entry entry;
+                if (!Entries.TryGetValue(key, out entry) || !ReferenceEquals(entry.Semaphore, semaphore)) return;
+                entry.References--;
+                if (entry.References == 0)
+                {
+                    Entries.Remove(key);
+                    semaphore.Dispose();
+                }
+            }
+        }
+    }
+}
+'@ -ErrorAction Stop
+    }
+    catch {
+        if ($null -eq ($coordinationTypeName -as [type])) { throw }
+    }
+}
+
+function Test-RepositoryExecutionLeaseSharedMode {
+    [CmdletBinding()]
+    param([string]$LeaseDirectory)
+
+    return $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true' -or -not [string]::IsNullOrWhiteSpace($LeaseDirectory)
+}
+
+function Register-RepositoryExecutionLeaseIdentity {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Identity)
+
+    if (-not $activeRepositoryExecutionLeases.TryAdd($Identity, $true)) {
+        throw "Repository execution lease is already held in this process for '$Identity'. Use -ExistingLease for supported reentrancy."
+    }
+}
+
+function Unregister-RepositoryExecutionLeaseIdentity {
+    [CmdletBinding()]
+    param([string]$Identity)
+
+    if (-not [string]::IsNullOrWhiteSpace($Identity)) {
+        $removed = $false
+        $activeRepositoryExecutionLeases.TryRemove($Identity, [ref]$removed) | Out-Null
+    }
+}
+
+function Acquire-SharedRepositoryExecutionLeaseStream {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    $key = (Get-Item -LiteralPath $Path -Force -ErrorAction Stop).FullName
+    if ($IsWindows) { $key = $key.ToLowerInvariant() }
+    [System.Threading.Monitor]::Enter($sharedExecutionLeaseStreamGate)
+    try {
+        if ($sharedExecutionLeaseStreamStates.ContainsKey($key)) {
+            $state = $sharedExecutionLeaseStreamStates[$key]
+            $state.RefCount++
+            return $state
+        }
+        $stream = [System.IO.FileStream]::new($Path, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+        $state = [pscustomobject]@{ Key = $key; Stream = $stream; RefCount = 1; Gate = [object]::new(); Locked = $false }
+        $sharedExecutionLeaseStreamStates[$key] = $state
+        return $state
+    }
+    finally {
+        [System.Threading.Monitor]::Exit($sharedExecutionLeaseStreamGate)
+    }
+}
+
+function Release-SharedRepositoryExecutionLeaseStream {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$State)
+
+    [System.Threading.Monitor]::Enter($sharedExecutionLeaseStreamGate)
+    try {
+        $State.RefCount--
+        if ($State.RefCount -le 0) {
+            try { $State.Stream.Dispose() }
+            finally { $sharedExecutionLeaseStreamStates.Remove($State.Key) }
+        }
+    }
+    finally {
+        [System.Threading.Monitor]::Exit($sharedExecutionLeaseStreamGate)
+    }
+}
+
+function Unlock-SharedRepositoryExecutionLeaseSlot {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$State,
+        [Parameter(Mandatory)][long]$Offset
+    )
+
+    [System.Threading.Monitor]::Enter($State.Gate)
+    try {
+        if ($State.Locked) {
+            $State.Stream.Unlock($Offset, 1)
+            $State.Locked = $false
+        }
+    }
+    finally {
+        [System.Threading.Monitor]::Exit($State.Gate)
+    }
+}
+
+function Get-RepositoryExecutionLeaseHash {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$CanonicalRepoRoot)
+
+    $keyRoot = Get-RepositoryExecutionLeaseIdentityKey -CanonicalRepoRoot $CanonicalRepoRoot
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($keyRoot)
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $hash = $sha256.ComputeHash($bytes)
+    }
+    finally {
+        $sha256.Dispose()
+    }
+    return ,$hash
+}
+
+function Get-RepositoryExecutionUnixIdentity {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    if ($IsWindows) { return $null }
+    $statCommand = Get-Command -Name stat -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($null -eq $statCommand) { return $null }
+    foreach ($arguments in @(@('-c', '%d:%i'), @('-f', '%d:%i'))) {
+        try {
+            $identity = (& $statCommand.Source @arguments -- $Path 2>$null | Out-String).Trim()
+            if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($identity)) { return $identity }
+        }
+        catch {
+            Write-Verbose "Unable to read Unix filesystem identity for '$Path' with stat dialect '$($arguments[0])': $($_.Exception.Message)"
+        }
+    }
+    return $null
+}
+
+function Get-RepositoryExecutionLeaseIdentityKey {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$CanonicalRepoRoot)
+
+    $identity = Get-RepositoryExecutionUnixIdentity -Path $CanonicalRepoRoot
+    if (-not [string]::IsNullOrWhiteSpace($identity)) { return "filesystem:$identity" }
+    if ((Get-RepositoryPathComparison -RepoRoot $CanonicalRepoRoot) -eq [System.StringComparison]::OrdinalIgnoreCase) {
+        return $CanonicalRepoRoot.ToLowerInvariant()
+    }
+    return $CanonicalRepoRoot
+}
+
+function Get-RepositoryExecutionLeaseFileIdentityKey {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    $identity = Get-RepositoryExecutionUnixIdentity -Path $Path
+    if (-not [string]::IsNullOrWhiteSpace($identity)) { return "filesystem-file:$identity" }
+    return [System.IO.Path]::GetFullPath($Path).ToLowerInvariant()
+}
+
+function New-RepositoryExecutionLeaseProcessSemaphore {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Identity)
+
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try { $hash = $sha256.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Identity)) }
+    finally { $sha256.Dispose() }
+    $key = ([System.BitConverter]::ToString($hash).Replace('-', '').ToLowerInvariant())
+    return [pscustomobject]@{
+        Key = $key
+        Semaphore = [Mississippi.RepositoryExecutionLeaseCoordination]::Acquire($key)
+        Acquired = $false
+    }
+}
+
+function Set-RepositoryExecutionLeaseUnixMode {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][int]$Mode
+    )
+
+    if ($IsWindows) { return }
+
+    try {
+        $method = [System.IO.File].GetMethods() |
+            Where-Object { $_.Name -eq 'SetUnixFileMode' -and $_.GetParameters().Count -eq 2 -and $_.GetParameters()[0].ParameterType -eq [string] } |
+            Select-Object -First 1
+        if ($null -ne $method) {
+            $modeValue = [Enum]::ToObject($method.GetParameters()[1].ParameterType, $Mode)
+            $method.Invoke($null, @($Path, $modeValue)) | Out-Null
+        }
+        else {
+            $modeText = switch ($Mode) {
+                365 { '555'; break }
+                438 { '666'; break }
+                448 { '700'; break }
+                384 { '600'; break }
+                default { [Convert]::ToString($Mode, 8) }
+            }
+            & chmod $modeText -- $Path 2>&1 | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "chmod exited with code $LASTEXITCODE" }
+        }
+    }
+    catch {
+        throw "Unable to set shared execution lease permissions on '$Path': $($_.Exception.Message)"
+    }
+
+    Test-RepositoryExecutionLeaseUnixMode -Path $Path -Mode $Mode
+}
+
+function Test-RepositoryExecutionLeaseUnixMode {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][int]$Mode
+    )
+
+    if ($IsWindows) { return }
+
+    try {
+        $method = [System.IO.File].GetMethods() |
+            Where-Object { $_.Name -eq 'GetUnixFileMode' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType -eq [string] } |
+            Select-Object -First 1
+        if ($null -ne $method) {
+            $actualMode = [int]$method.Invoke($null, @($Path))
+        }
+        else {
+            $modeText = (& stat -c '%a' -- $Path 2>$null | Out-String).Trim()
+            if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($modeText)) {
+                $modeText = (& stat -f '%Lp' -- $Path 2>$null | Out-String).Trim()
+            }
+            if ([string]::IsNullOrWhiteSpace($modeText) -or $LASTEXITCODE -ne 0) { throw 'No compatible Unix mode API or stat command was available.' }
+            $actualMode = [Convert]::ToInt32($modeText, 8)
+        }
+    }
+    catch {
+        throw "Unable to inspect shared execution lease permissions on '$Path': $($_.Exception.Message)"
+    }
+
+    if (([int]$actualMode -band [int]$Mode) -ne [int]$Mode) {
+        throw "Shared execution lease permissions on '$Path' are insufficient for all participating accounts."
+    }
+
+    $writeBits = 146 # 0222
+    if (($Mode -band $writeBits) -eq 0 -and ($actualMode -band $writeBits) -ne 0) {
+        throw "Shared execution lease path '$Path' must not be writable by participating accounts."
+    }
+}
+
 function Get-RepositoryRoot {
     [CmdletBinding()]
     param(
@@ -25,6 +324,839 @@ function Get-RepositoryRoot {
     }
 
     throw "Unable to locate repository root from '$StartPath'."
+}
+
+function Get-RepositoryPathComparison {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$RepoRoot)
+
+    if ($IsWindows) { return [System.StringComparison]::OrdinalIgnoreCase }
+    if (-not $IsMacOS) { return [System.StringComparison]::Ordinal }
+
+    $probeName = '.mississippi-case-probe-' + [guid]::NewGuid().ToString('N')
+    $probePath = Join-Path $RepoRoot $probeName
+    try {
+        New-Item -ItemType Directory -LiteralPath $probePath -Force -ErrorAction Stop | Out-Null
+        if (Test-Path -LiteralPath (Join-Path $RepoRoot $probeName.ToUpperInvariant())) {
+            return [System.StringComparison]::OrdinalIgnoreCase
+        }
+    }
+    catch {
+        Write-Verbose "Unable to prove case-insensitive path comparison for '$RepoRoot': $($_.Exception.Message)"
+    }
+    finally {
+        Remove-Item -LiteralPath $probePath -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    return [System.StringComparison]::Ordinal
+}
+
+function Assert-RepositoryExecutionLeaseDirectoryAncestors {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    $root = [System.IO.Path]::GetPathRoot($fullPath)
+    $segments = @($fullPath.Substring($root.Length).Split([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) | Where-Object { $_ })
+    $current = $root
+    foreach ($segment in $segments) {
+        $candidate = Join-Path $current $segment
+        if (-not (Test-Path -LiteralPath $candidate)) { break }
+        $item = Get-Item -LiteralPath $candidate -Force -ErrorAction Stop
+        if ([bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            throw "Lease directory path contains a reparse-point ancestor: '$candidate'."
+        }
+        $current = $item.FullName
+    }
+}
+
+function Resolve-RepositoryExecutionLeaseDirectory {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$CanonicalRepoRoot,
+        [string]$LeaseDirectory
+    )
+
+    $candidate = if ([string]::IsNullOrWhiteSpace($LeaseDirectory)) {
+        $userProfile = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+        if ([string]::IsNullOrWhiteSpace($userProfile) -or -not [System.IO.Path]::IsPathRooted($userProfile) -or -not (Test-Path -LiteralPath $userProfile -PathType Container)) {
+            throw "Unable to resolve the default repository execution lease directory because the user profile directory is unavailable. Specify -LeaseDirectory with an absolute path."
+        }
+        Join-Path $userProfile '.mississippi/execution-leases'
+    }
+    elseif ([System.IO.Path]::IsPathRooted($LeaseDirectory)) {
+        $LeaseDirectory
+    }
+    else {
+        Join-Path $CanonicalRepoRoot $LeaseDirectory
+    }
+    $candidate = [System.IO.Path]::GetFullPath($candidate)
+    $missingSegments = [System.Collections.Generic.List[string]]::new()
+    $existingPath = $candidate
+    while (-not (Test-Path -LiteralPath $existingPath)) {
+        $segment = Split-Path -Leaf $existingPath
+        if ([string]::IsNullOrWhiteSpace($segment)) { throw "Unable to resolve lease directory parent for '$candidate'." }
+        $missingSegments.Add($segment)
+        $parent = Split-Path -Parent $existingPath
+        if ([string]::IsNullOrWhiteSpace($parent) -or $parent -eq $existingPath) { throw "Unable to resolve lease directory parent for '$candidate'." }
+        $existingPath = $parent
+    }
+    $resolved = (Resolve-Path -LiteralPath $existingPath -ErrorAction Stop).Path
+    for ($index = $missingSegments.Count - 1; $index -ge 0; $index--) {
+        $resolved = Join-Path $resolved $missingSegments[$index]
+    }
+    return [System.IO.Path]::GetFullPath($resolved)
+}
+
+function Ensure-RepositoryExecutionLeaseDirectory {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $Path
+    if (Test-Path -LiteralPath $Path) {
+        $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+        if (-not $item.PSIsContainer -or [bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            throw "Lease directory is not a trusted private directory: '$Path'."
+        }
+        Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $Path
+        return $false
+    }
+
+    $parent = Split-Path -Parent $Path
+    if (-not (Test-Path -LiteralPath $parent -PathType Container)) {
+        New-Item -ItemType Directory -Path $parent -Force | Out-Null
+    }
+    try {
+        New-Item -ItemType Directory -Path $Path -ErrorAction Stop | Out-Null
+        Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $Path
+        return $true
+    }
+    catch {
+        if (Test-Path -LiteralPath $Path -PathType Container) {
+            $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+            if ([bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+                throw "Lease directory is not a trusted private directory: '$Path'."
+            }
+            Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $Path
+            return $false
+        }
+        throw
+    }
+}
+
+function Wait-RepositoryExecutionLeaseInitialization {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$LeasePath,
+        [Parameter(Mandatory)][string]$MetadataPath
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds(5)
+    do {
+        if ((Test-Path -LiteralPath $LeasePath -PathType Leaf) -and (Test-Path -LiteralPath $MetadataPath -PathType Leaf)) {
+            try {
+                if ($IsWindows) {
+                    Test-RepositoryExecutionLeaseWindowsAccess -Path (Split-Path -Parent $LeasePath)
+                    Test-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath
+                    Test-RepositoryExecutionLeaseWindowsAccess -Path $MetadataPath
+                }
+                else {
+                    Test-RepositoryExecutionLeaseUnixMode -Path (Split-Path -Parent $LeasePath) -Mode $sharedExecutionLeaseDirectoryMode
+                    Test-RepositoryExecutionLeaseUnixMode -Path $LeasePath -Mode $sharedExecutionLeaseFileMode
+                    Test-RepositoryExecutionLeaseUnixMode -Path $MetadataPath -Mode $sharedExecutionLeaseFileMode
+                }
+                return $true
+            }
+            catch {
+                Write-Verbose "Shared lease initialization is visible but its permissions are not fully published yet: $($_.Exception.Message)"
+            }
+        }
+        Start-Sleep -Milliseconds 50
+    } while ([DateTime]::UtcNow -lt $deadline)
+    return $false
+}
+
+function Create-SharedRepositoryExecutionLeaseFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$LeaseDirectory,
+        [Parameter(Mandatory)][string]$LeasePath
+    )
+
+    $placeholder = [System.IO.FileStream]::new($LeasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+    try { $placeholder.SetLength(1); $placeholder.Flush($true) }
+    finally { $placeholder.Dispose() }
+    if (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $LeasePath -Mode $sharedExecutionLeaseFileMode }
+    if ($IsWindows) { Set-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath }
+}
+
+function Initialize-SharedRepositoryExecutionLeasePath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$LeaseDirectory,
+        [Parameter(Mandatory)][string]$LeasePath,
+        [Parameter(Mandatory)][string]$MetadataPath,
+        [Parameter(Mandatory)][bool]$LeaseDirectoryCreated
+    )
+
+    if (-not $LeaseDirectoryCreated) {
+        $initialized = Wait-RepositoryExecutionLeaseInitialization -LeasePath $LeasePath -MetadataPath $MetadataPath
+        if (-not $initialized) {
+            throw "Shared lease directory '$LeaseDirectory' exists without its coordination file. Refusing to modify a caller-owned directory; pre-provision '$LeasePath' or use a new dedicated coordination directory."
+        }
+        return
+    }
+    Create-SharedRepositoryExecutionLeaseFile -LeaseDirectory $LeaseDirectory -LeasePath $LeasePath
+    Ensure-RepositoryExecutionLeaseMetadataFile -Path $MetadataPath -SharedLease $true
+    Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
+}
+
+function Get-RepositoryExecutionLeaseCandidatePath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$CanonicalRepoRoot,
+        [string]$LeaseDirectory
+    )
+
+    $hash = Get-RepositoryExecutionLeaseHash -CanonicalRepoRoot $CanonicalRepoRoot
+    $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
+    $fileName = if ($sharedLease) { 'shared.lease' } else { ([System.BitConverter]::ToString($hash).Replace('-', '').ToLowerInvariant()) + '.lease' }
+    $resolvedLeaseDirectory = Resolve-RepositoryExecutionLeaseDirectory -CanonicalRepoRoot $CanonicalRepoRoot -LeaseDirectory $LeaseDirectory
+    return Join-Path $resolvedLeaseDirectory $fileName
+}
+
+function Get-RepositoryExecutionLeasePathForRoot {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$CanonicalRepoRoot,
+        [string]$LeaseDirectory
+    )
+
+    $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
+    $defaultLeaseDirectory = [string]::IsNullOrWhiteSpace($LeaseDirectory)
+    $leasePath = Get-RepositoryExecutionLeaseCandidatePath -CanonicalRepoRoot $CanonicalRepoRoot -LeaseDirectory $LeaseDirectory
+    $resolvedLeaseDirectory = Split-Path -Parent $leasePath
+    $leaseDirectoryCreated = Ensure-RepositoryExecutionLeaseDirectory -Path $resolvedLeaseDirectory
+    $metadataPath = "$leasePath.metadata"
+
+    if ($sharedLease) {
+        if ($IsWindows) {
+            if ($leaseDirectoryCreated) { Set-RepositoryExecutionLeaseWindowsAccess -Path $resolvedLeaseDirectory }
+        }
+        Initialize-SharedRepositoryExecutionLeasePath -LeaseDirectory $resolvedLeaseDirectory -LeasePath $leasePath -MetadataPath $metadataPath -LeaseDirectoryCreated $leaseDirectoryCreated
+    }
+    elseif ($defaultLeaseDirectory) {
+        Set-RepositoryExecutionLeaseUnixMode -Path $resolvedLeaseDirectory -Mode $privateExecutionLeaseDirectoryMode
+    }
+    return $leasePath
+}
+
+function Get-RepositoryExecutionLeasePath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [string]$LeaseDirectory
+    )
+
+    $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
+    return Get-RepositoryExecutionLeasePathForRoot -CanonicalRepoRoot $canonicalRoot -LeaseDirectory $LeaseDirectory
+}
+
+function Resolve-ReparseTargetPath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Item,
+        [Parameter(Mandatory)][string]$Candidate
+    )
+
+    $target = @($Item.Target | Select-Object -First 1)[0]
+    if ([string]::IsNullOrWhiteSpace([string]$target)) {
+        throw "Unable to resolve worktree path component '$Candidate'."
+    }
+    if (-not [System.IO.Path]::IsPathRooted([string]$target)) {
+        $target = Join-Path (Split-Path -Parent $Candidate) ([string]$target)
+    }
+    return [System.IO.Path]::GetFullPath([string]$target)
+}
+
+function Resolve-ReparsePathComponent {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [System.Collections.Generic.HashSet[string]]$SeenTargets
+    )
+
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    $root = [System.IO.Path]::GetPathRoot($fullPath)
+    $segments = @($fullPath.Substring($root.Length).Split([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) | Where-Object { $_ })
+    $current = $root
+    for ($index = 0; $index -lt $segments.Count; $index++) {
+        $candidate = Join-Path $current $segments[$index]
+        $item = Get-Item -LiteralPath $candidate -Force -ErrorAction Stop
+        if (-not [bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            $current = $item.FullName
+            continue
+        }
+
+        if (-not $SeenTargets.Add([System.IO.Path]::GetFullPath($candidate))) {
+            throw "Worktree path resolution loop detected at '$candidate'."
+        }
+        $resolvedTarget = Resolve-ReparseTargetPath -Item $item -Candidate $candidate
+        if ($index -lt ($segments.Count - 1)) {
+            $remaining = $segments[($index + 1)..($segments.Count - 1)] -join [System.IO.Path]::DirectorySeparatorChar
+            $resolvedTarget = Join-Path $resolvedTarget $remaining
+        }
+        return Resolve-ReparsePathComponent -Path $resolvedTarget -SeenTargets $SeenTargets
+    }
+
+    return $current
+}
+
+function Resolve-RepositoryExecutionRoot {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$RepoRoot)
+
+    return Resolve-RepositoryExecutionPath -Path $RepoRoot
+}
+
+function Resolve-RepositoryExecutionPath {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    if (-not (Test-Path -LiteralPath $fullPath)) {
+        throw "Execution path does not exist: '$Path'."
+    }
+
+    $comparisonRoot = Split-Path -Parent $fullPath
+    if ([string]::IsNullOrWhiteSpace($comparisonRoot)) { $comparisonRoot = [System.IO.Path]::GetPathRoot($fullPath) }
+    $comparison = Get-RepositoryPathComparison -RepoRoot $comparisonRoot
+    $comparer = if ($comparison -eq [System.StringComparison]::OrdinalIgnoreCase) { [System.StringComparer]::OrdinalIgnoreCase } else { [System.StringComparer]::Ordinal }
+    $seenTargets = [System.Collections.Generic.HashSet[string]]::new($comparer)
+    return Resolve-ReparsePathComponent -Path $fullPath -SeenTargets $seenTargets
+}
+
+function Get-ReentrantRepositoryExecutionLease {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][object]$ExistingLease,
+        [string]$LeaseDirectory
+    )
+
+    if ($null -eq $ExistingLease.Stream -or $ExistingLease.Stream.SafeFileHandle.IsClosed -or -not $ExistingLease.Stream.CanRead) {
+        throw 'Existing repository execution lease handle is closed or unavailable.'
+    }
+    $requestedRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
+    $existingRoot = Resolve-RepositoryExecutionRoot -RepoRoot ([string]$ExistingLease.RepositoryRoot)
+    $comparison = Get-RepositoryPathComparison -RepoRoot $requestedRoot
+    if (-not [string]::Equals($requestedRoot, $existingRoot, $comparison)) {
+        throw "Existing lease belongs to '$existingRoot', not requested worktree '$requestedRoot'."
+    }
+    $requestedLeasePath = Get-RepositoryExecutionLeaseCandidatePath -CanonicalRepoRoot $requestedRoot -LeaseDirectory $LeaseDirectory
+    $leaseComparison = Get-RepositoryPathComparison -RepoRoot (Split-Path -Parent $requestedLeasePath)
+    if (-not [string]::Equals([System.IO.Path]::GetFullPath($requestedLeasePath), [System.IO.Path]::GetFullPath([string]$ExistingLease.Path), $leaseComparison)) {
+        throw "Existing lease belongs to coordination path '$($ExistingLease.Path)', not requested path '$requestedLeasePath'."
+    }
+    return [pscustomobject]@{
+        Path = $ExistingLease.Path
+        OperationId = $ExistingLease.OperationId
+        RepositoryRoot = $ExistingLease.RepositoryRoot
+        Stream = $ExistingLease.Stream
+        OwnsStream = $false
+    }
+}
+
+function Test-RepositoryExecutionLeaseWindowsAccess {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (-not $IsWindows) { return }
+    try {
+        $sid = [System.Security.Principal.SecurityIdentifier]::new([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid, $null)
+        $acl = Get-Acl -LiteralPath $Path -ErrorAction Stop
+        $requiredRights = [System.Security.AccessControl.FileSystemRights]::Modify
+        $accessRules = $acl.GetAccessRules($true, $true, [System.Security.Principal.SecurityIdentifier])
+        $hasAccess = @(
+            $accessRules | Where-Object {
+                try {
+                    $identity = $_.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier])
+                    $identity.Value -eq $sid.Value -and $_.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow -and
+                        (([System.Security.AccessControl.FileSystemRights]$_.FileSystemRights -band $requiredRights) -eq $requiredRights)
+                }
+                catch { $false }
+            }
+        ).Count -gt 0
+        if (-not $hasAccess) { throw 'BUILTIN\Users does not have Modify access.' }
+    }
+    catch {
+        throw "Shared Windows lease path '$Path' is not accessible to all participating users: $($_.Exception.Message)"
+    }
+}
+
+function Set-RepositoryExecutionLeaseWindowsAccess {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (-not $IsWindows) { return }
+    try {
+        $sid = [System.Security.Principal.SecurityIdentifier]::new([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid, $null)
+        $acl = Get-Acl -LiteralPath $Path -ErrorAction Stop
+        $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+        $inheritance = if ($item.PSIsContainer) {
+            [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+        }
+        else {
+            [System.Security.AccessControl.InheritanceFlags]::None
+        }
+        $rule = [System.Security.AccessControl.FileSystemAccessRule]::new(
+            $sid,
+            [System.Security.AccessControl.FileSystemRights]::Modify,
+            $inheritance,
+            [System.Security.AccessControl.PropagationFlags]::None,
+            [System.Security.AccessControl.AccessControlType]::Allow)
+        $acl.SetAccessRule($rule)
+        Set-Acl -LiteralPath $Path -AclObject $acl -ErrorAction Stop
+        Test-RepositoryExecutionLeaseWindowsAccess -Path $Path
+    }
+    catch {
+        throw "Unable to provision shared Windows lease access on '$Path': $($_.Exception.Message)"
+    }
+}
+
+function Assert-RepositoryExecutionLeaseFile {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path)) { return }
+    $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+    if ($item.PSIsContainer -or [bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+        throw "Lease path is not a regular file: '$Path'."
+    }
+}
+
+function Get-RepositoryExecutionProcessStartUtc {
+    [CmdletBinding()]
+    param()
+
+    try { return (Get-Process -Id $PID -ErrorAction Stop).StartTime.ToUniversalTime() }
+    catch { return $null }
+}
+
+function New-RepositoryExecutionLeaseContext {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][string]$OperationId,
+        [string]$LeaseDirectory
+    )
+
+    $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
+    if ([string]::IsNullOrWhiteSpace($LeaseDirectory) -and $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true') {
+        throw 'Cross-account shared worktrees require an explicit trusted -LeaseDirectory.'
+    }
+    $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
+    $leasePath = Get-RepositoryExecutionLeasePathForRoot -CanonicalRepoRoot $canonicalRoot -LeaseDirectory $LeaseDirectory
+    $metadataPath = "$leasePath.metadata"
+    Assert-RepositoryExecutionLeaseFile -Path $leasePath
+    Assert-RepositoryExecutionLeaseFile -Path $metadataPath
+    $repositoryKey = [System.BitConverter]::ToString((Get-RepositoryExecutionLeaseHash -CanonicalRepoRoot $canonicalRoot)).Replace('-', '').ToLowerInvariant()
+    $comparison = Get-RepositoryPathComparison -RepoRoot $canonicalRoot
+    $identityLeasePath = if ($comparison -eq [System.StringComparison]::OrdinalIgnoreCase) { $leasePath.ToLowerInvariant() } else { $leasePath }
+    $processStartUtc = Get-RepositoryExecutionProcessStartUtc
+    $metadata = [ordered]@{
+        operationId = $OperationId
+        repositoryKey = $repositoryKey
+        repositoryRoot = if ($canonicalRoot.Length -gt 256) { $canonicalRoot.Substring(0, 256) } else { $canonicalRoot }
+        processId = $PID
+        processStartUtc = if ($null -eq $processStartUtc) { $null } else { $processStartUtc.ToString('o') }
+        startedUtc = (Get-Date).ToUniversalTime().ToString('o')
+    } | ConvertTo-Json -Compress
+    return [pscustomobject]@{
+        SharedLease = $sharedLease
+        CanonicalRoot = $canonicalRoot
+        LeasePath = $leasePath
+        MetadataPath = $metadataPath
+        LeaseIdentity = "$repositoryKey|$identityLeasePath"
+        ProcessSynchronizationKey = if ($sharedLease) { Get-RepositoryExecutionLeaseFileIdentityKey -Path $leasePath } else { "$repositoryKey|$identityLeasePath" }
+        OperationId = $OperationId
+        Metadata = $metadata
+    }
+}
+
+function Lock-SharedRepositoryExecutionLease {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$State,
+        [Parameter(Mandatory)][string]$Path
+    )
+
+    [System.Threading.Monitor]::Enter($State.Gate)
+    try {
+        if ($State.Locked) { throw "Shared coordination file is already held in this process. Use separate coordination directories for concurrent worktrees." }
+        $State.Stream.Lock(0, 1)
+        $State.Locked = $true
+        Test-RepositoryExecutionLeaseUnixMode -Path $Path -Mode $sharedExecutionLeaseFileMode
+        return [long]0
+    }
+    finally {
+        [System.Threading.Monitor]::Exit($State.Gate)
+    }
+}
+
+function Lock-PrivateRepositoryExecutionLease {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Stream,
+        [Parameter(Mandatory)][string]$Path
+    )
+
+    Set-RepositoryExecutionLeaseUnixMode -Path $Path -Mode $privateExecutionLeaseFileMode
+    $Stream.Lock(0, 1)
+    return [long]0
+}
+
+function Release-RepositoryExecutionLeaseProcessSemaphore {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Lease)
+
+    if ($null -eq $Lease.ProcessSemaphore) { return }
+    try {
+        [Mississippi.RepositoryExecutionLeaseCoordination]::Release(
+            $Lease.ProcessSemaphore.Key,
+            $Lease.ProcessSemaphore.Semaphore,
+            [bool]$Lease.ProcessSemaphore.Acquired)
+    }
+    finally { $Lease.ProcessSemaphore.Acquired = $false }
+}
+
+function Release-RepositoryExecutionLeaseResources {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Resources)
+
+    try {
+        if ($null -ne $Resources.StreamState) {
+            try {
+                if ($null -ne $Resources.LeaseOffset) { Unlock-SharedRepositoryExecutionLeaseSlot -State $Resources.StreamState -Offset ([long]$Resources.LeaseOffset) }
+            }
+            finally { Release-SharedRepositoryExecutionLeaseStream -State $Resources.StreamState }
+        }
+        elseif ($null -ne $Resources.Stream) {
+            $Resources.Stream.Dispose()
+        }
+    }
+    finally {
+        Release-RepositoryExecutionLeaseProcessSemaphore -Lease $Resources
+        if ($Resources.LeaseRegistered) { Unregister-RepositoryExecutionLeaseIdentity -Identity $Resources.LeaseIdentity }
+    }
+}
+
+function Assert-RepositoryExecutionLeaseNotHeldByCurrentProcess {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][bool]$SharedLease
+    )
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return }
+    $owner = $null
+    try { $owner = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json }
+    catch { return }
+    if ($null -eq $owner -or [string]$owner.processId -ne [string]$PID) { return }
+    $recordedStart = $null
+    $processStartProperty = $owner.PSObject.Properties['processStartUtc']
+    if ($null -ne $processStartProperty) { $recordedStart = $processStartProperty.Value }
+    $currentStart = Get-RepositoryExecutionProcessStartUtc
+    if ([string]::IsNullOrWhiteSpace([string]$recordedStart) -or $null -eq $currentStart) { return }
+    try {
+        $recordedStartTime = [DateTime]::Parse([string]$recordedStart).ToUniversalTime()
+        if ([Math]::Abs(($recordedStartTime - $currentStart).TotalSeconds) -gt 1) { return }
+    }
+    catch { return }
+    if ($SharedLease) {
+        throw 'Shared coordination file is already held in this process; repository execution lease is already held. Use separate coordination directories for concurrent worktrees.'
+    }
+    throw "Repository execution lease is already held in this process for '$Path'. Use -ExistingLease for supported reentrancy."
+}
+
+function Test-RepositoryExecutionLeaseLockConflict {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][Exception]$Exception)
+
+    $current = $Exception
+    while ($null -ne $current) {
+        $errorCode = $current.HResult -band 0xFFFF
+        if ($errorCode -in @(11, 32, 33)) { return $true }
+        if ($current.Message -match '(?i)(resource temporarily unavailable|would block|sharing violation|lock violation|already locked)') { return $true }
+        $current = $current.InnerException
+    }
+    return $false
+}
+
+function Get-RepositoryExecutionLeaseOwner {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    try { return (Get-Content -LiteralPath $Path -Raw -ErrorAction Stop).Trim() }
+    catch {
+        Write-Verbose "Unable to read the current lease owner from '$Path': $($_.Exception.Message)"
+        return ''
+    }
+}
+
+function Throw-RepositoryExecutionLeaseOpenFailure {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Context,
+        [Parameter(Mandatory)][object]$Resources,
+        [Parameter(Mandatory)][Exception]$Exception,
+        [switch]$Unauthorized
+    )
+
+    $lockConflict = Test-RepositoryExecutionLeaseLockConflict -Exception $Exception
+    Release-RepositoryExecutionLeaseResources -Resources $Resources
+    if ($Unauthorized) {
+        if ($Context.SharedLease) {
+            throw "Shared execution lease '$($Context.LeasePath)' is not writable by this account. Ensure existing lease files in the shared directory are writable by all participating accounts."
+        }
+        throw $Exception
+    }
+    if (-not $lockConflict) { throw $Exception }
+    if ($Context.SharedLease) {
+        throw "Worktree execution lease is held for '$($Context.CanonicalRoot)' in shared coordination slot. Use a separate worktree or wait for the active operation."
+    }
+    $owner = Get-RepositoryExecutionLeaseOwner -Path $Context.MetadataPath
+    throw "Worktree execution lease is held for '$($Context.CanonicalRoot)'. Current owner: $owner. Use a separate worktree or wait for the active operation."
+}
+
+function Ensure-RepositoryExecutionLeaseMetadataFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][bool]$SharedLease
+    )
+
+    if (Test-Path -LiteralPath $Path -PathType Leaf) {
+        Assert-RepositoryExecutionLeaseFile -Path $Path
+        return
+    }
+    $directoryRelaxed = $false
+    if ($SharedLease -and -not $IsWindows) {
+        Set-RepositoryExecutionLeaseUnixMode -Path (Split-Path -Parent $Path) -Mode $sharedExecutionLeaseWritableDirectoryMode
+        $directoryRelaxed = $true
+    }
+    try {
+        $stream = [System.IO.FileStream]::new($Path, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+        try { $stream.SetLength(0); $stream.Flush($true) }
+        finally { $stream.Dispose() }
+        if ($IsWindows -and $SharedLease) { Set-RepositoryExecutionLeaseWindowsAccess -Path $Path }
+        elseif (-not $IsWindows -and $SharedLease) { Set-RepositoryExecutionLeaseUnixMode -Path $Path -Mode $sharedExecutionLeaseFileMode }
+        elseif (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $Path -Mode $privateExecutionLeaseFileMode }
+    }
+    finally {
+        if ($directoryRelaxed) { Set-RepositoryExecutionLeaseUnixMode -Path (Split-Path -Parent $Path) -Mode $sharedExecutionLeaseDirectoryMode }
+    }
+}
+
+function Open-RepositoryExecutionLeaseResources {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Context)
+
+    $resources = [pscustomobject]@{
+        LeaseIdentity = $Context.LeaseIdentity
+        LeaseRegistered = $false
+        Stream = $null
+        StreamState = $null
+        LeaseOffset = $null
+        ProcessSemaphore = $null
+        ProcessSemaphoreAcquired = $false
+    }
+    try {
+        $resources.ProcessSemaphore = New-RepositoryExecutionLeaseProcessSemaphore -Identity $Context.ProcessSynchronizationKey
+        if (-not $resources.ProcessSemaphore.Semaphore.Wait(0)) {
+            if ($Context.SharedLease) {
+                throw 'Shared coordination file is already held in this process; repository execution lease is already held. Use separate coordination directories for concurrent worktrees.'
+            }
+            throw 'Repository execution lease is already held in this process. Use -ExistingLease for supported reentrancy.'
+        }
+        $resources.ProcessSemaphore.Acquired = $true
+        Register-RepositoryExecutionLeaseIdentity -Identity $Context.LeaseIdentity
+        $resources.LeaseRegistered = $true
+        if ($Context.SharedLease) {
+            $resources.StreamState = Acquire-SharedRepositoryExecutionLeaseStream -Path $Context.LeasePath
+            $resources.Stream = $resources.StreamState.Stream
+            $resources.LeaseOffset = Lock-SharedRepositoryExecutionLease -State $resources.StreamState -Path $Context.LeasePath
+        }
+        else {
+            $resources.Stream = [System.IO.FileStream]::new($Context.LeasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::Read)
+            $resources.LeaseOffset = Lock-PrivateRepositoryExecutionLease -Stream $resources.Stream -Path $Context.LeasePath
+        }
+        try {
+            Assert-RepositoryExecutionLeaseNotHeldByCurrentProcess -Path $Context.MetadataPath -SharedLease $Context.SharedLease
+        }
+        catch {
+            Clear-RepositoryExecutionLeaseMetadata -Lease ([pscustomobject]@{
+                Path = $Context.LeasePath
+                MetadataPath = $Context.MetadataPath
+                SharedStreamState = $resources.StreamState
+            })
+        }
+        return $resources
+    }
+    catch [System.UnauthorizedAccessException] {
+        Throw-RepositoryExecutionLeaseOpenFailure -Context $Context -Resources $resources -Exception $_.Exception -Unauthorized
+    }
+    catch [System.IO.IOException] {
+        Throw-RepositoryExecutionLeaseOpenFailure -Context $Context -Resources $resources -Exception $_.Exception
+    }
+    catch {
+        $exception = $_.Exception
+        $lockConflict = Test-RepositoryExecutionLeaseLockConflict -Exception $exception
+        if ($lockConflict) {
+            Throw-RepositoryExecutionLeaseOpenFailure -Context $Context -Resources $resources -Exception $exception
+        }
+        Release-RepositoryExecutionLeaseResources -Resources $resources
+        throw
+    }
+}
+
+function Write-RepositoryExecutionLeaseMetadata {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Context,
+        [Parameter(Mandatory)][object]$Resources
+    )
+
+    $metadataBytes = [System.Text.Encoding]::UTF8.GetBytes($Context.Metadata)
+    Ensure-RepositoryExecutionLeaseMetadataFile -Path $Context.MetadataPath -SharedLease $Context.SharedLease
+    $writeMetadata = {
+        $metadataStream = [System.IO.FileStream]::new($Context.MetadataPath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+        try {
+            $metadataStream.SetLength(0)
+            $metadataStream.Write($metadataBytes, 0, $metadataBytes.Length)
+            $metadataStream.Flush($true)
+        }
+        finally { $metadataStream.Dispose() }
+    }
+    if ($Context.SharedLease) {
+        [System.Threading.Monitor]::Enter($Resources.StreamState.Gate)
+        try {
+            & $writeMetadata
+        }
+        finally {
+            [System.Threading.Monitor]::Exit($Resources.StreamState.Gate)
+        }
+    }
+    else { & $writeMetadata }
+}
+
+function Clear-RepositoryExecutionLeaseMetadata {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Lease)
+
+    try {
+        $metadataPath = [string]$Lease.MetadataPath
+        if ($null -ne $Lease.SharedStreamState) {
+            [System.Threading.Monitor]::Enter($Lease.SharedStreamState.Gate)
+            try {
+                $metadataStream = [System.IO.FileStream]::new($metadataPath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+                try { $metadataStream.SetLength(0); $metadataStream.Flush($true) }
+                finally { $metadataStream.Dispose() }
+            }
+            finally {
+                [System.Threading.Monitor]::Exit($Lease.SharedStreamState.Gate)
+            }
+        }
+        else {
+            $metadataStream = [System.IO.FileStream]::new($metadataPath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+            try { $metadataStream.SetLength(0); $metadataStream.Flush($true) }
+            finally { $metadataStream.Dispose() }
+        }
+    }
+    catch {
+        throw "Unable to clear repository execution lease metadata from '$($Lease.Path)': $($_.Exception.Message)"
+    }
+}
+
+function Enter-RepositoryExecutionLease {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [string]$OperationId = ([guid]::NewGuid().ToString('N')),
+        [object]$ExistingLease,
+        [string]$LeaseDirectory
+    )
+
+    if ($null -ne $ExistingLease) {
+        return Get-ReentrantRepositoryExecutionLease -RepoRoot $RepoRoot -ExistingLease $ExistingLease -LeaseDirectory $LeaseDirectory
+    }
+    $context = New-RepositoryExecutionLeaseContext -RepoRoot $RepoRoot -OperationId $OperationId -LeaseDirectory $LeaseDirectory
+    $resources = $null
+    try {
+        $resources = Open-RepositoryExecutionLeaseResources -Context $context
+        Write-RepositoryExecutionLeaseMetadata -Context $context -Resources $resources
+        return [pscustomobject]@{
+            Path = $context.LeasePath
+            MetadataPath = $context.MetadataPath
+            LeaseOffset = $resources.LeaseOffset
+            LeaseIdentity = $context.LeaseIdentity
+            OperationId = $context.OperationId
+            RepositoryRoot = $context.CanonicalRoot
+            Stream = $resources.Stream
+            SharedStreamState = $resources.StreamState
+            ProcessSemaphore = $resources.ProcessSemaphore
+            ProcessSemaphoreAcquired = $resources.ProcessSemaphoreAcquired
+            OwnsStream = $true
+        }
+    }
+    catch {
+        if ($null -ne $resources) {
+            if ($null -ne $resources.LeaseOffset) {
+                try {
+                    Clear-RepositoryExecutionLeaseMetadata -Lease ([pscustomobject]@{
+                        Path = $context.LeasePath
+                        MetadataPath = $context.MetadataPath
+                        SharedStreamState = $resources.StreamState
+                    })
+                }
+                catch {
+                    Write-Verbose "Unable to clear failed lease metadata from '$($context.MetadataPath)': $($_.Exception.Message)"
+                }
+            }
+            Release-RepositoryExecutionLeaseResources -Resources $resources
+        }
+        throw
+    }
+}
+
+function Exit-RepositoryExecutionLease {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Lease)
+
+    if ($Lease.OwnsStream -and $null -ne $Lease.Stream) {
+        $metadataFailure = $null
+        try { Clear-RepositoryExecutionLeaseMetadata -Lease $Lease }
+        catch { $metadataFailure = $_.Exception }
+        try {
+            if ($null -ne $Lease.SharedStreamState) {
+                try {
+                    if ($null -ne $Lease.LeaseOffset) { Unlock-SharedRepositoryExecutionLeaseSlot -State $Lease.SharedStreamState -Offset ([long]$Lease.LeaseOffset) }
+                }
+                finally { Release-SharedRepositoryExecutionLeaseStream -State $Lease.SharedStreamState }
+            }
+            else {
+                try {
+                    if ($null -ne $Lease.LeaseOffset) { $Lease.Stream.Unlock([long]$Lease.LeaseOffset, 1) }
+                }
+                finally { $Lease.Stream.Dispose() }
+            }
+        }
+        finally {
+            Release-RepositoryExecutionLeaseProcessSemaphore -Lease $Lease
+            Unregister-RepositoryExecutionLeaseIdentity -Identity ([string]$Lease.LeaseIdentity)
+        }
+        if ($null -ne $metadataFailure) { throw $metadataFailure }
+    }
 }
 
 function ConvertTo-ConsoleColor {
@@ -1287,9 +2419,13 @@ function Invoke-SolutionsPipeline {
         [string]$Configuration = 'Release',
         [string]$RepoRoot = (Get-RepositoryRoot),
         [switch]$SkipCleanup,
-        [switch]$IncludeMutation
+        [switch]$IncludeMutation,
+        [string]$LeaseDirectory
     )
 
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $RepoRoot -OperationId "pipeline-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $RepoRoot = $executionLease.RepositoryRoot
+    try {
     $automationScriptsRoot = Join-Path (Join-Path (Join-Path $RepoRoot 'eng') 'src') 'agent-scripts'
     $coverageScript = Join-Path $automationScriptsRoot 'summarize-coverage-gaps.ps1'
     $mutationSummaryScript = Join-Path $automationScriptsRoot 'summarize-mutation-survivors.ps1'
@@ -1318,7 +2454,11 @@ function Invoke-SolutionsPipeline {
     }
     Invoke-AutomationStep -Name 'Summarize Coverage Gaps' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $coverageScript, '-CoverageReportPath', $mississippiTestResult.CoverageReportPath, '-EmitTasks') | Out-Host }
     if ($IncludeMutation) {
-        Invoke-AutomationStep -Name 'Run and Summarize Mississippi Mutation Tests' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $mutationSummaryScript, '-Configuration', $Configuration, '-GenerateTasks') | Out-Host }
+        Invoke-AutomationStep -Name 'Run and Summarize Mississippi Mutation Tests' -StepNumber ($step++) -Action {
+            $mutationArguments = @('-NoProfile', '-File', $mutationSummaryScript, '-Configuration', $Configuration, '-GenerateTasks', '-SkipLease')
+            if (-not [string]::IsNullOrWhiteSpace($LeaseDirectory)) { $mutationArguments += @('-LeaseDirectory', $LeaseDirectory) }
+            Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments $mutationArguments | Out-Host
+        }
     }
 
     Write-AutomationBanner -Message '=== SAMPLE SOLUTION PIPELINE ===' -ForegroundColor ([ConsoleColor]::Cyan)
@@ -1336,6 +2476,10 @@ function Invoke-SolutionsPipeline {
     }
     else {
         Write-Host 'Local build, test, coverage, cleanup and final-build checks completed. Deployment, browser and external CI checks are outside this command.'
+    }
+    }
+    finally {
+        Exit-RepositoryExecutionLease -Lease $executionLease
     }
 }
 
@@ -1460,7 +2604,7 @@ function Invoke-SpringValidation {
     }
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation
+Export-ModuleMember -Function Get-RepositoryRoot, Resolve-RepositoryExecutionPath, Get-RepositoryExecutionLeasePath, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation
 
 
 
