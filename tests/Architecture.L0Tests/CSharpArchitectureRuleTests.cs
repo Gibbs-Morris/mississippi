@@ -32,17 +32,17 @@ public sealed class CSharpArchitectureRuleTests
         IReadOnlyList<string> violations = CSharpArchitectureTests.FindConstructorInjectedFields(
             [typeof(InjectedFieldFixture), typeof(InjectedPropertyFixture), typeof(SettableInjectedPropertyFixture), typeof(ManualSettableInjectedPropertyFixture), typeof(OrdinaryStateFixture), typeof(PrimaryConstructorFixture), typeof(FactoryAssignmentFixture), typeof(WrappedInjectedFieldFixture), typeof(NestedWrappedInjectedFieldFixture), typeof(InheritedInjectedFieldFixture), typeof(InheritedInjectedFieldBase), typeof(ConcreteInjectedFieldFixture)]);
 
-        Assert.Contains(violations, value => value.StartsWith(typeof(InjectedFieldFixture).FullName + ".", System.StringComparison.Ordinal) && value.EndsWith(".clock", System.StringComparison.Ordinal));
-        Assert.DoesNotContain(violations, value => value.StartsWith(typeof(InjectedPropertyFixture).FullName + ".", System.StringComparison.Ordinal));
-        Assert.Contains(violations, value => value.StartsWith(typeof(SettableInjectedPropertyFixture).FullName + ".", System.StringComparison.Ordinal));
-        Assert.Contains(violations, value => value.StartsWith(typeof(ManualSettableInjectedPropertyFixture).FullName + ".", System.StringComparison.Ordinal));
+        Assert.Contains($"{typeof(InjectedFieldFixture).FullName}.clock", violations);
+        Assert.DoesNotContain($"{typeof(InjectedPropertyFixture).FullName}.Clock", violations);
+        Assert.Contains($"{typeof(SettableInjectedPropertyFixture).FullName}.<Clock>k__BackingField", violations);
+        Assert.Contains($"{typeof(ManualSettableInjectedPropertyFixture).FullName}.Clock", violations);
         Assert.DoesNotContain(violations, value => value.Contains("OrdinaryStateFixture", System.StringComparison.Ordinal));
-        Assert.Contains(violations, value => value.Contains("PrimaryConstructorFixture", System.StringComparison.Ordinal));
-        Assert.DoesNotContain(violations, value => value.Contains("FactoryAssignmentFixture", System.StringComparison.Ordinal));
-        Assert.Contains(violations, value => value.StartsWith(typeof(WrappedInjectedFieldFixture).FullName + ".", System.StringComparison.Ordinal));
-        Assert.Contains(violations, value => value.StartsWith(typeof(NestedWrappedInjectedFieldFixture).FullName + ".", System.StringComparison.Ordinal));
-        Assert.Contains(violations, value => value.StartsWith(typeof(InheritedInjectedFieldFixture).FullName + ".", System.StringComparison.Ordinal));
-        Assert.Contains(violations, value => value.StartsWith(typeof(ConcreteInjectedFieldFixture).FullName + ".", System.StringComparison.Ordinal));
+        Assert.Contains($"{typeof(PrimaryConstructorFixture).FullName}.<clock>P", violations);
+        Assert.DoesNotContain(violations, value => value.StartsWith(typeof(FactoryAssignmentFixture).FullName + ".", System.StringComparison.Ordinal));
+        Assert.Contains($"{typeof(WrappedInjectedFieldFixture).FullName}.clock", violations);
+        Assert.Contains($"{typeof(NestedWrappedInjectedFieldFixture).FullName}.clocks", violations);
+        Assert.Contains($"{typeof(InheritedInjectedFieldFixture).FullName}.<Clock>k__BackingField", violations);
+        Assert.Contains($"{typeof(ConcreteInjectedFieldFixture).FullName}.dependency", violations);
     }
 
     /// <summary>
