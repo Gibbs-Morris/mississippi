@@ -117,7 +117,12 @@ function Get-GoalWorktreeFingerprint { # NOSONAR - bounded Git/index/worktree fi
                 $fileHashes.Add($relative + ':index=' + $indexHash + ':worktree=symlink:' + $linkTarget)
             }
             elseif ($null -ne $item -and -not $item.PSIsContainer) {
-                $fileHashes.Add($relative + ':index=' + $indexHash + ':worktree=' + (Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant())
+                $modeEvidence = 'regular'
+                $unixMode = $item.PSObject.Properties['UnixFileMode']
+                if ($null -ne $unixMode) { $modeEvidence = [string]$unixMode.Value }
+                $modeChanges = @(& git -c "safe.directory=$($Root.Replace('\', '/'))" -C $Root diff --summary -- $relative 2>$null)
+                if ($modeChanges.Count -gt 0) { $modeEvidence = ($modeChanges -join '|') }
+                $fileHashes.Add($relative + ':index=' + $indexHash + ':mode=' + $modeEvidence + ':worktree=' + (Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant())
             }
             else { $fileHashes.Add($relative + ':index=' + $indexHash + ':worktree=missing') }
         }
@@ -439,10 +444,36 @@ try {
     $worktreeChanged = $null -ne $previous -and $worktreeBaseline -ne $currentWorktreeFingerprint
     $activeOperation = $operation.Status -eq 'running'
     $operationCompleted = $null -ne $previous -and $null -ne $previous.PSObject.Properties['Operation'] -and [string]$previous.Operation.Status -eq 'running' -and $operation.Status -in @('completed', 'failed')
-    $validatedNow = $EvidenceValidated -and $operation.Status -notin @('running', 'failed')
-    $status = if ($activeOperation) { 'operation-running' } elseif ($scopeChanged -and -not $validatedNow) { 'scope-changed' } elseif ($revisionChanged -or $worktreeChanged) { 'evidence-stale' } elseif ($null -eq $previous) { 'started' } else { 'resumed' }
+    $operationStartSnapshot = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['Operation'] -and $null -ne $previous.Operation.PSObject.Properties['StartSnapshot']) {
+        $previous.Operation.StartSnapshot
+    }
+    elseif ($operation.Status -eq 'running') {
+        [ordered]@{
+            IssueBodyDigest = $issueBodyDigest
+            ContractBodyDigest = $contractBodyDigest
+            ContractSource = $contractSource
+            HeadRevision = $currentHead
+            BaseRevision = $currentBase
+            BaseRevisionName = $BaseRevision
+            WorktreeFingerprint = $currentWorktreeFingerprint
+        }
+    }
+    else { $null }
+    $operationSnapshotChanged = $false
+    if ($operationCompleted -and $operation.Status -eq 'completed') {
+        $operationSnapshotChanged = $null -eq $operationStartSnapshot -or
+            [string]$operationStartSnapshot.IssueBodyDigest -ne $issueBodyDigest -or
+            [string]$operationStartSnapshot.ContractBodyDigest -ne $contractBodyDigest -or
+            [string]$operationStartSnapshot.ContractSource -ne $contractSource -or
+            [string]$operationStartSnapshot.HeadRevision -ne $currentHead -or
+            [string]$operationStartSnapshot.BaseRevision -ne $currentBase -or
+            [string]$operationStartSnapshot.BaseRevisionName -ne $BaseRevision -or
+            [string]$operationStartSnapshot.WorktreeFingerprint -ne $currentWorktreeFingerprint
+    }
+    $validatedNow = $EvidenceValidated -and $operation.Status -notin @('running', 'failed') -and -not $operationSnapshotChanged
+    $status = if ($activeOperation) { 'operation-running' } elseif ($scopeChanged -and -not $validatedNow) { 'scope-changed' } elseif ($revisionChanged -or $worktreeChanged -or $operationSnapshotChanged) { 'evidence-stale' } elseif ($null -eq $previous) { 'started' } else { 'resumed' }
     $evidenceFresh = -not $activeOperation -and ($validatedNow -or (-not $scopeChanged -and -not $revisionChanged -and -not $worktreeChanged -and ($null -ne $previous -and [bool]$previous.EvidenceFresh)))
-    $nextAction = if ($activeOperation) { "wait-for-existing-operation:$($operation.Handle)" } elseif ($scopeChanged -and -not $validatedNow) { 'reconcile-edited-issue-before-implementation' } elseif ($validatedNow) { 'continue-implementation-or-review' } elseif ($operationCompleted) { 'inspect-completed-operation-result' } elseif ($revisionChanged -or $worktreeChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($null -eq $previous) { 'inspect-guidance-and-prerequisites' } else { [string]$previous.NextAction }
+    $nextAction = if ($activeOperation) { "wait-for-existing-operation:$($operation.Handle)" } elseif ($scopeChanged -and -not $validatedNow) { 'reconcile-edited-issue-before-implementation' } elseif ($validatedNow) { 'continue-implementation-or-review' } elseif ($operationCompleted) { 'inspect-completed-operation-result' } elseif ($revisionChanged -or $worktreeChanged -or $operationSnapshotChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($null -eq $previous) { 'inspect-guidance-and-prerequisites' } else { [string]$previous.NextAction }
     if ([string]::IsNullOrWhiteSpace($nextAction)) { $nextAction = 'inspect-guidance-and-prerequisites' }
 
     $currentContract = [ordered]@{
@@ -520,7 +551,7 @@ try {
         AcceptanceEvidence = ConvertTo-GoalArray -Values (Merge-GoalCollection -Existing (Get-GoalCollection -Object $previous -Name 'AcceptanceEvidence') -Added (Expand-GoalStringCollection -Values $AcceptanceEvidence))
         AttemptedFixes = ConvertTo-GoalArray -Values (Merge-GoalCollection -Existing (Get-GoalCollection -Object $previous -Name 'AttemptedFixes') -Added (Expand-GoalStringCollection -Values $AttemptedFixes))
         OutstandingReviewWork = ConvertTo-GoalArray -Values $reviewWork
-        Operation = [ordered]@{ Status = $operation.Status; Handle = $operation.Handle; Name = $operation.Name }
+        Operation = [ordered]@{ Status = $operation.Status; Handle = $operation.Handle; Name = $operation.Name; StartSnapshot = $operationStartSnapshot }
         NextAction = $nextAction
         UpdatedUtc = (Get-Date).ToUniversalTime().ToString('o')
     }

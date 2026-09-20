@@ -201,6 +201,15 @@ Describe 'Issue-driven goal workflow' {
         $outcome.Result.Error | Should -Match 'failed operation evidence'
     }
 
+    It 'does not promote completed operation evidence from a changed snapshot' {
+        $null = Invoke-Goal -Operation '{"Status":"running","Handle":"job-123","Name":"validation"}'
+        $outcome = Invoke-Goal -Action resume -Base 'HEAD~2' -Operation '{"Status":"completed","Handle":"job-123","Name":"validation"}' -EvidenceValidated
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Status | Should -Be 'evidence-stale'
+        $outcome.Result.EvidenceFresh | Should -BeFalse
+    }
+
     It 'preserves the issue digest when a valid contract comes from a comment' {
         $comment = [pscustomobject]@{ body = $validIssueBody; created_at = '2026-09-19T00:00:00Z' }
         $invalidBody = 'The issue body is intentionally invalid.'
