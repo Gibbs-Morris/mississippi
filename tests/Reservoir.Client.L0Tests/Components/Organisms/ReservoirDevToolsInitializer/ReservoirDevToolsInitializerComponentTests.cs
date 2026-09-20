@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.JSInterop;
 
 using Mississippi.Reservoir.Abstractions;
+using Mississippi.Reservoir.Client.Components.Organisms.ReservoirDevToolsInitializer;
 using Mississippi.Reservoir.Core;
 
 using Moq;
