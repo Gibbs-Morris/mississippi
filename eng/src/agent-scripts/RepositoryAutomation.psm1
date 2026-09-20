@@ -321,9 +321,26 @@ function Ensure-RepositoryExecutionLeaseDirectory {
         return $false
     }
 
-    New-Item -ItemType Directory -Path $Path -Force | Out-Null
-    Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $Path
-    return $true
+    $parent = Split-Path -Parent $Path
+    if (-not (Test-Path -LiteralPath $parent -PathType Container)) {
+        New-Item -ItemType Directory -Path $parent -Force | Out-Null
+    }
+    try {
+        New-Item -ItemType Directory -Path $Path -ErrorAction Stop | Out-Null
+        Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $Path
+        return $true
+    }
+    catch {
+        if (Test-Path -LiteralPath $Path -PathType Container) {
+            $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+            if ([bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+                throw "Lease directory is not a trusted private directory: '$Path'."
+            }
+            Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $Path
+            return $false
+        }
+        throw
+    }
 }
 
 function Create-SharedRepositoryExecutionLeaseFile {
@@ -885,7 +902,7 @@ function Clear-RepositoryExecutionLeaseMetadata {
         }
     }
     catch {
-        Write-Verbose "Unable to clear repository execution lease metadata from '$($Lease.Path)': $($_.Exception.Message)"
+        throw "Unable to clear repository execution lease metadata from '$($Lease.Path)': $($_.Exception.Message)"
     }
 }
 
@@ -929,8 +946,10 @@ function Exit-RepositoryExecutionLease {
     param([Parameter(Mandatory)][object]$Lease)
 
     if ($Lease.OwnsStream -and $null -ne $Lease.Stream) {
+        $metadataFailure = $null
+        try { Clear-RepositoryExecutionLeaseMetadata -Lease $Lease }
+        catch { $metadataFailure = $_.Exception }
         try {
-            Clear-RepositoryExecutionLeaseMetadata -Lease $Lease
             if ($null -ne $Lease.SharedStreamState) {
                 try {
                     if ($null -ne $Lease.LeaseOffset) { Unlock-SharedRepositoryExecutionLeaseSlot -State $Lease.SharedStreamState -Offset ([long]$Lease.LeaseOffset) }
@@ -945,6 +964,7 @@ function Exit-RepositoryExecutionLease {
             }
         }
         finally { Unregister-RepositoryExecutionLeaseIdentity -Identity ([string]$Lease.LeaseIdentity) }
+        if ($null -ne $metadataFailure) { throw $metadataFailure }
     }
 }
 
