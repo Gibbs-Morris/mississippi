@@ -76,6 +76,7 @@ function Get-GoalWorktreeFingerprint { # NOSONAR - bounded Git/index/worktree fi
     $indexExitCode = if (Get-Variable -Name LASTEXITCODE -ErrorAction SilentlyContinue) { [int]$LASTEXITCODE } else { 0 }
     if ($indexExitCode -ne 0) { throw 'Unable to resolve the current index fingerprint.' }
     $indexHashes = @{}
+    $indexModes = @{}
     foreach ($indexEntry in @($indexRaw -split [char]0 | Where-Object { -not [string]::IsNullOrEmpty($_) })) {
         $tabIndex = $indexEntry.IndexOf([char]9)
         if ($tabIndex -lt 0) { continue }
@@ -83,6 +84,7 @@ function Get-GoalWorktreeFingerprint { # NOSONAR - bounded Git/index/worktree fi
         if ($metadata.Count -ge 2) {
             $indexPath = $indexEntry.Substring($tabIndex + 1).Replace('\', '/')
             $indexHashes[$indexPath] = $metadata[1]
+            $indexModes[$indexPath] = $metadata[0]
         }
     }
 
@@ -90,6 +92,17 @@ function Get-GoalWorktreeFingerprint { # NOSONAR - bounded Git/index/worktree fi
     $status = @($statusRaw -split [char]0 | Where-Object { -not [string]::IsNullOrEmpty($_) })
     $exitCode = if (Get-Variable -Name LASTEXITCODE -ErrorAction SilentlyContinue) { [int]$LASTEXITCODE } else { 0 }
     if ($exitCode -ne 0) { throw 'Unable to resolve the current worktree fingerprint.' }
+    $statusPaths = [System.Collections.Generic.HashSet[string]]::new($pathComparer)
+    foreach ($statusEntry in $status) {
+        if ($statusEntry.Length -ge 4) { $null = $statusPaths.Add(([string]$statusEntry).Substring(3).Trim('"').Replace('\', '/')) }
+    }
+    $visibilityEntries = @(& git -c "safe.directory=$($Root.Replace('\', '/'))" -C $Root ls-files -v 2>$null)
+    foreach ($visibilityEntry in $visibilityEntries) {
+        if ([string]$visibilityEntry -cmatch '^[a-z] (?<Path>.+)$') {
+            $visibilityPath = $Matches.Path.Replace('\', '/')
+            if ($statusPaths.Add($visibilityPath)) { $status += " M $visibilityPath" }
+        }
+    }
     $statusEntries = [System.Collections.Generic.List[string]]::new()
     $fileHashes = [System.Collections.Generic.List[string]]::new()
     for ($statusIndex = 0; $statusIndex -lt $status.Count; $statusIndex++) {
@@ -107,6 +120,15 @@ function Get-GoalWorktreeFingerprint { # NOSONAR - bounded Git/index/worktree fi
             $full = [System.IO.Path]::GetFullPath((Join-Path $Root $relative))
             if ($excludedPaths.Contains($full)) { continue }
             $indexHash = if ($indexHashes.ContainsKey($relative)) { [string]$indexHashes[$relative] } else { 'absent' }
+            if ($indexModes.ContainsKey($relative) -and [string]$indexModes[$relative] -eq '160000') {
+                if (Test-Path -LiteralPath $full -PathType Container) {
+                    $submoduleHead = ((& git -c "safe.directory=$($full.Replace('\', '/'))" -C $full rev-parse --verify HEAD 2>$null) -join '').Trim()
+                    $submoduleStatus = ((& git -c "safe.directory=$($full.Replace('\', '/'))" -C $full status --porcelain=v1 --untracked-files=all 2>$null) -join '|')
+                    $fileHashes.Add($relative + ':index=' + $indexHash + ':submodule-head=' + $submoduleHead + ':status=' + $submoduleStatus)
+                }
+                else { $fileHashes.Add($relative + ':index=' + $indexHash + ':submodule=missing') }
+                continue
+            }
             $item = Get-Item -LiteralPath $full -Force -ErrorAction SilentlyContinue
             if ($null -ne $item -and (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0)) {
                 $linkTargetProperty = $item.PSObject.Properties['LinkTarget']
@@ -473,7 +495,7 @@ try {
     $validatedNow = $EvidenceValidated -and $operation.Status -notin @('running', 'failed') -and -not $operationSnapshotChanged
     $status = if ($activeOperation) { 'operation-running' } elseif ($scopeChanged -and -not $validatedNow) { 'scope-changed' } elseif ($revisionChanged -or $worktreeChanged -or $operationSnapshotChanged) { 'evidence-stale' } elseif ($null -eq $previous) { 'started' } else { 'resumed' }
     $evidenceFresh = -not $activeOperation -and ($validatedNow -or (-not $scopeChanged -and -not $revisionChanged -and -not $worktreeChanged -and ($null -ne $previous -and [bool]$previous.EvidenceFresh)))
-    $nextAction = if ($activeOperation) { "wait-for-existing-operation:$($operation.Handle)" } elseif ($scopeChanged -and -not $validatedNow) { 'reconcile-edited-issue-before-implementation' } elseif ($validatedNow) { 'continue-implementation-or-review' } elseif ($operationCompleted) { 'inspect-completed-operation-result' } elseif ($revisionChanged -or $worktreeChanged -or $operationSnapshotChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($null -eq $previous) { 'inspect-guidance-and-prerequisites' } else { [string]$previous.NextAction }
+    $nextAction = if ($activeOperation) { "wait-for-existing-operation:$($operation.Handle)" } elseif ($scopeChanged -and -not $validatedNow) { 'reconcile-edited-issue-before-implementation' } elseif ($validatedNow) { 'continue-implementation-or-review' } elseif ($operationSnapshotChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($operationCompleted) { 'inspect-completed-operation-result' } elseif ($revisionChanged -or $worktreeChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($null -eq $previous) { 'inspect-guidance-and-prerequisites' } else { [string]$previous.NextAction }
     if ([string]::IsNullOrWhiteSpace($nextAction)) { $nextAction = 'inspect-guidance-and-prerequisites' }
 
     $currentContract = [ordered]@{
