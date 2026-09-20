@@ -47,7 +47,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             foreach (FieldInfo field in GetInstanceFields(type))
             {
                 bool dependencyFieldType = IsDependencyFieldType(field.FieldType);
-                if (field.IsStatic || (!dependencyFieldType && (field.FieldType != typeof(object))))
+                if (!dependencyFieldType && (field.FieldType != typeof(object)))
                 {
                     continue;
                 }
@@ -278,6 +278,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
         {
             foreach (FieldInfo field in current.GetFields(
                          BindingFlags.Instance |
+                         BindingFlags.Static |
                          BindingFlags.Public |
                          BindingFlags.NonPublic |
                          BindingFlags.DeclaredOnly))
@@ -459,7 +460,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             OpCode opcode;
             byte first = il[offset++];
             opcode = first == 0xFE ? MultiByteOpCodes[il[offset++]] : SingleByteOpCodes[first];
-            if ((opcode == OpCodes.Stfld) && ((offset + 4) <= il.Length))
+            if (((opcode == OpCodes.Stfld) || (opcode == OpCodes.Stsfld)) && ((offset + 4) <= il.Length))
             {
                 try
                 {
@@ -535,7 +536,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                 conditionalParameter = parameterIndex;
             }
 
-            if ((opcode == OpCodes.Stfld) && ((offset + 4) <= il.Length))
+            if (((opcode == OpCodes.Stfld) || (opcode == OpCodes.Stsfld)) && ((offset + 4) <= il.Length))
             {
                 FieldInfo? storedField = null;
                 try
