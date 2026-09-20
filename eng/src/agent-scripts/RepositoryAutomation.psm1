@@ -2791,6 +2791,7 @@ function Get-PrReadinessExpectedCheckPatterns {
         '^Markdown Lint$',
         '^L3 Spring E2E \(Smoke\)$',
         '^pr-metrics$',
+        '^Validate repository issue reference$',
         '^label-by-files$',
         '^label-by-semver$',
         '^Analyze \(csharp\)$',
@@ -2814,6 +2815,24 @@ function Get-PrReadinessCheckState {
     if ([string]$CheckRun.conclusion -eq 'success') { return 'pass' }
     if ([string]$CheckRun.status -eq 'completed') { return 'fail' }
     return 'pending'
+}
+
+function Get-PrReadinessCommitStatusState {
+    param([Parameter(Mandatory)][object]$Status)
+
+    switch ([string]$Status.state.ToLowerInvariant()) {
+        'success' { return 'pass' }
+        'pending' { return 'pending' }
+        default { return 'fail' }
+    }
+}
+
+function Get-PrReadinessBodyText {
+    param([Parameter(Mandatory)][object]$Value)
+
+    $property = $Value.PSObject.Properties['body']
+    if ($null -eq $property) { return '' }
+    return [string]$property.Value
 }
 
 function Get-PrReadinessSnapshot {
@@ -2840,11 +2859,21 @@ function Get-PrReadinessSnapshot {
     $changedPaths = @($filePages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | ForEach-Object { @($_.filename) } | Where-Object { $_ })
     $checkPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$headAtStart/check-runs", '--paginate', '--slurp'))
     $checkRuns = @($checkPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | ForEach-Object { @($_.check_runs) })
+    $statusPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$headAtStart/statuses", '--paginate', '--slurp'))
+    $statuses = @($statusPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } })
     $checks = [System.Collections.Generic.List[object]]::new()
     foreach ($checkRun in $checkRuns) {
         $checks.Add([pscustomobject]@{
             Name = [string]$checkRun.name
             State = Get-PrReadinessCheckState -CheckRun $checkRun
+            Required = $false
+            ExpectedIdentity = $false
+        })
+    }
+    foreach ($status in $statuses) {
+        $checks.Add([pscustomobject]@{
+            Name = [string]$status.context
+            State = Get-PrReadinessCommitStatusState -Status $status
             Required = $false
             ExpectedIdentity = $false
         })
@@ -2889,15 +2918,21 @@ function Get-PrReadinessSnapshot {
     $finalHead = [string]$pullAtEnd.head.sha
     $finalCheckPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$finalHead/check-runs", '--paginate', '--slurp'))
     $finalCheckRuns = @($finalCheckPages | ForEach-Object { @($_.check_runs) })
+    $finalStatusPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$finalHead/statuses", '--paginate', '--slurp'))
+    $finalStatuses = @($finalStatusPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } })
+    $statusFingerprintStart = (@($statuses | ForEach-Object { "$($_.context)=$([string](Get-PrReadinessCommitStatusState -Status $_))" } | Sort-Object) -join '|')
+    $statusFingerprintEnd = (@($finalStatuses | ForEach-Object { "$($_.context)=$([string](Get-PrReadinessCommitStatusState -Status $_))" } | Sort-Object) -join '|')
     $checkFingerprintStart = (@($checkRuns | ForEach-Object { "$($_.name)=$([string](Get-PrReadinessCheckState -CheckRun $_))" } | Sort-Object) -join '|')
     $checkFingerprintEnd = (@($finalCheckRuns | ForEach-Object { "$($_.name)=$([string](Get-PrReadinessCheckState -CheckRun $_))" } | Sort-Object) -join '|')
+    $checkFingerprintStart = "$checkFingerprintStart|$statusFingerprintStart"
+    $checkFingerprintEnd = "$checkFingerprintEnd|$statusFingerprintEnd"
 
     $finalReviewsPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/pulls/$PullRequestNumber/reviews", '--paginate', '--slurp'))
     $finalReviews = @($finalReviewsPages | ForEach-Object { @($_) })
     $reviewFingerprintStart = (@($reviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object user.login, state, id | ForEach-Object { "$($_.user.login)=$($_.state)#$($_.id)" }) -join '|')
     $reviewFingerprintEnd = (@($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object user.login, state, id | ForEach-Object { "$($_.user.login)=$($_.state)#$($_.id)" }) -join '|')
-    $commentFingerprintStart = (@($reviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace([string]$_.body) } | Sort-Object id | ForEach-Object { "$($_.id)=$($_.body.Length)" }) -join '|')
-    $commentFingerprintEnd = (@($finalReviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace([string]$_.body) } | Sort-Object id | ForEach-Object { "$($_.id)=$($_.body.Length)" }) -join '|')
+    $commentFingerprintStart = (@($reviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) } | Sort-Object id | ForEach-Object { "$($_.id)=$((Get-PrReadinessBodyText -Value $_).Length)" }) -join '|')
+    $commentFingerprintEnd = (@($finalReviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) } | Sort-Object id | ForEach-Object { "$($_.id)=$((Get-PrReadinessBodyText -Value $_).Length)" }) -join '|')
     $finalLatestReviewByAuthor = @{}
     foreach ($review in @($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object submitted_at)) {
         $author = if ($null -ne $review.user.login) { [string]$review.user.login } else { "review-$($review.id)" }
@@ -2927,7 +2962,7 @@ function Get-PrReadinessSnapshot {
     $generalComments = @()
     try {
         $commentPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/issues/$PullRequestNumber/comments", '--paginate', '--slurp'))
-        $generalComments = @($commentPages | ForEach-Object { @($_) } | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_.body) })
+        $generalComments = @($commentPages | ForEach-Object { @($_) } | Where-Object { -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) })
     }
     catch {
         # A provider that cannot expose discussion comments is incomplete.
@@ -2945,14 +2980,24 @@ function Get-PrReadinessSnapshot {
         MergeableState = [string]$pullAtEnd.mergeable_state
         ReviewDecision = $reviewDecision
         Checks = @($checks)
-        ReviewThreads = @($finalThreads | ForEach-Object { [pscustomobject]@{ IsResolved = [bool]$_.isResolved; IsOutdated = [bool]$_.isOutdated } })
+        ReviewThreads = @($finalThreads | ForEach-Object {
+            $latestComment = @($_.comments.nodes | Sort-Object databaseId | Select-Object -Last 1)
+            [pscustomobject]@{
+                IsResolved = [bool]$_.isResolved
+                IsOutdated = [bool]$_.isOutdated
+                LatestCommentId = if ($latestComment.Count -gt 0) { [string]$latestComment[0].databaseId } else { '' }
+                LatestCommentBody = if ($latestComment.Count -gt 0) { Get-PrReadinessBodyText -Value $latestComment[0] } else { '' }
+                LatestCommentAuthor = if ($latestComment.Count -gt 0) { [string]$latestComment[0].author.login } else { '' }
+                Disposition = if ([bool]$_.isResolved -or [bool]$_.isOutdated) { 'addressed' } else { 'pending' }
+            }
+        })
         Approvals = $approvals
         IssueReferenceVerified = $false
         DescriptionReviewed = $false
         PollingCompleted = $pollingCompleted
         EvidenceStable = $mutableEvidenceStable
         GeneralFeedbackCount = @($generalComments).Count
-        ReviewFeedbackCount = @($finalReviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace([string]$_.body) }).Count
+        ReviewFeedbackCount = @($finalReviews | Where-Object { -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) }).Count
         PullRequestUrl = [string]$pullAtEnd.html_url
     }
 }
@@ -2973,7 +3018,13 @@ function Get-PrReadinessReport {
     if ($mergeableState -notin @('clean', 'blocked')) { $blockers.Add("Pull request cannot currently advance (mergeability: $mergeableState).") }
     if (-not [string]::IsNullOrWhiteSpace([string]$Snapshot.ReviewDecision) -and [string]$Snapshot.ReviewDecision -ne 'APPROVED') { $blockers.Add("Aggregate review decision is $($Snapshot.ReviewDecision).") }
     foreach ($check in @($Snapshot.Checks | Where-Object { $_.Required -and $_.State -ne 'pass' })) { $blockers.Add("Required check '$($check.Name)' is $($check.State).") }
-    foreach ($thread in @($Snapshot.ReviewThreads | Where-Object { -not $_.IsResolved })) { $blockers.Add('An unresolved review thread remains.') }
+    foreach ($thread in @($Snapshot.ReviewThreads)) {
+        $disposition = $thread.PSObject.Properties['Disposition']
+        $pendingDisposition = $null -ne $disposition -and [string]$disposition.Value -eq 'pending'
+        if ($pendingDisposition -or (-not [bool]$thread.IsResolved -and -not [bool]$thread.IsOutdated)) {
+            $blockers.Add('An unresolved review thread remains.')
+        }
+    }
     if ([int]$Snapshot.Approvals -lt 1) { $blockers.Add('Required current review approval evidence is missing.') }
     if (-not $Snapshot.PollingCompleted) { $blockers.Add('Required post-push review polling evidence is incomplete.') }
     if ($null -ne $Snapshot.PSObject.Properties['EvidenceStable'] -and -not [bool]$Snapshot.EvidenceStable) {

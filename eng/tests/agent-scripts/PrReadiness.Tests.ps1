@@ -97,6 +97,7 @@ Describe 'PR readiness snapshot' {
         $pullStart = [pscustomobject]@{ head = [pscustomobject]@{ sha = 'head-start' }; base = [pscustomobject]@{ sha = 'base-start' }; state = 'open'; draft = $false; mergeable_state = 'clean'; html_url = 'https://github.com/Gibbs-Morris/mississippi/pull/744' }
         $pullEnd = [pscustomobject]@{ head = [pscustomobject]@{ sha = 'head-end' }; base = [pscustomobject]@{ sha = 'base-end' }; state = 'open'; draft = $false; mergeable_state = 'clean'; html_url = $pullStart.html_url }
         $checkPage = [pscustomobject]@{ check_runs = @([pscustomobject]@{ name = 'CodeQL'; status = 'completed'; conclusion = 'success' }) }
+        $statusPage = @()
         $reviewPage = @(
             [pscustomobject]@{ id = 1; user = [pscustomobject]@{ login = 'reviewer' }; state = 'APPROVED'; submitted_at = '2026-09-19T00:00:00Z' },
             [pscustomobject]@{ id = 2; user = [pscustomobject]@{ login = 'reviewer' }; state = 'COMMENTED'; submitted_at = '2026-09-19T00:01:00Z' }
@@ -114,6 +115,7 @@ Describe 'PR readiness snapshot' {
                 return $pullResponses.Dequeue()
             }
             if ($joined -match 'check-runs') { return $checkPage }
+            if ($joined -match 'statuses') { return $statusPage }
             if ($joined -match 'reviews') { return $reviewPage }
             if ($joined -match 'pulls/744/files') { return $filesPage }
             if ($joined -match 'graphql') { return $graphqlPage }
