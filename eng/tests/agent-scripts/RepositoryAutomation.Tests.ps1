@@ -180,6 +180,38 @@ Describe 'RepositoryAutomation helpers' {
         finally { Exit-RepositoryExecutionLease -Lease $secondLease }
     }
 
+    It 'rejects a lease contender in another PowerShell process and permits it after release' {
+        $leaseRoot = Join-Path $TestDrive 'cross-process-lease-repository'
+        $coordinationRoot = Join-Path $TestDrive 'cross-process-coordination'
+        $scriptPath = Join-Path $TestDrive 'cross-process-contender.ps1'
+        $modulePath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../src/agent-scripts/RepositoryAutomation.psm1'))
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        @'
+param([string]$ModulePath, [string]$RepoRoot, [string]$LeaseDirectory)
+$ErrorActionPreference = 'Stop'
+Import-Module $ModulePath -Force
+try {
+    $lease = Enter-RepositoryExecutionLease -RepoRoot $RepoRoot -LeaseDirectory $LeaseDirectory
+    Exit-RepositoryExecutionLease -Lease $lease
+    exit 0
+}
+catch {
+    if ($_.Exception.Message -like '*execution lease*') { exit 42 }
+    throw
+}
+'@ | Set-Content -LiteralPath $scriptPath
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'parent-owner' -LeaseDirectory $coordinationRoot
+        try {
+            & (Join-Path $PSHOME 'pwsh.exe') -NoProfile -File $scriptPath -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $coordinationRoot | Out-Null
+            $LASTEXITCODE | Should -Be 42
+        }
+        finally {
+            Exit-RepositoryExecutionLease -Lease $lease
+        }
+        & (Join-Path $PSHOME 'pwsh.exe') -NoProfile -File $scriptPath -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $coordinationRoot | Out-Null
+        $LASTEXITCODE | Should -Be 0
+    }
+
     It 'resolves relative lease directories from the physical repository root' {
         $repoRoot = Join-Path $TestDrive 'relative-lease-repository'
         New-Item -ItemType Directory -Path $repoRoot -Force | Out-Null

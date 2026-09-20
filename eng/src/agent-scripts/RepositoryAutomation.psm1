@@ -444,6 +444,8 @@ function Enter-RepositoryExecutionLease {
         }
         elseif ($privateLease) {
             Set-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $privateExecutionLeaseFileMode
+            $leaseOffset = 0
+            $stream.Lock($leaseOffset, 1)
         }
     }
     catch [System.UnauthorizedAccessException] {
@@ -529,7 +531,10 @@ function Exit-RepositoryExecutionLease {
                 }
                 Release-SharedRepositoryExecutionLeaseStream -State $Lease.SharedStreamState
             }
-            else { $Lease.Stream.Dispose() }
+            else {
+                if ($null -ne $Lease.LeaseOffset) { $Lease.Stream.Unlock([long]$Lease.LeaseOffset, 1) }
+                $Lease.Stream.Dispose()
+            }
         }
         finally { Unregister-RepositoryExecutionLeaseIdentity -Identity ([string]$Lease.LeaseIdentity) }
     }
