@@ -313,6 +313,12 @@ catch {
 }
 
 Describe 'Repository automation quality gates' {
+    AfterEach {
+        if (-not $IsWindows) {
+            & chmod -R u+rwX -- $TestDrive 2>$null | Out-Null
+        }
+    }
+
     BeforeAll {
         Import-Module (Join-Path $PSScriptRoot '../../src/agent-scripts/RepositoryAutomation.psm1') -Force
     }
