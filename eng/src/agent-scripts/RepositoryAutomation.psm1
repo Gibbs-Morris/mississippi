@@ -367,7 +367,7 @@ function Initialize-SharedRepositoryExecutionLeasePath {
     Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
 }
 
-function Get-RepositoryExecutionLeasePathForRoot {
+function Get-RepositoryExecutionLeaseCandidatePath {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$CanonicalRepoRoot,
@@ -377,10 +377,22 @@ function Get-RepositoryExecutionLeasePathForRoot {
     $hash = Get-RepositoryExecutionLeaseHash -CanonicalRepoRoot $CanonicalRepoRoot
     $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
     $fileName = if ($sharedLease) { 'shared.lease' } else { ([System.BitConverter]::ToString($hash).Replace('-', '').ToLowerInvariant()) + '.lease' }
-    $defaultLeaseDirectory = [string]::IsNullOrWhiteSpace($LeaseDirectory)
     $resolvedLeaseDirectory = Resolve-RepositoryExecutionLeaseDirectory -CanonicalRepoRoot $CanonicalRepoRoot -LeaseDirectory $LeaseDirectory
+    return Join-Path $resolvedLeaseDirectory $fileName
+}
+
+function Get-RepositoryExecutionLeasePathForRoot {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$CanonicalRepoRoot,
+        [string]$LeaseDirectory
+    )
+
+    $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
+    $defaultLeaseDirectory = [string]::IsNullOrWhiteSpace($LeaseDirectory)
+    $leasePath = Get-RepositoryExecutionLeaseCandidatePath -CanonicalRepoRoot $CanonicalRepoRoot -LeaseDirectory $LeaseDirectory
+    $resolvedLeaseDirectory = Split-Path -Parent $leasePath
     $leaseDirectoryCreated = Ensure-RepositoryExecutionLeaseDirectory -Path $resolvedLeaseDirectory
-    $leasePath = Join-Path $resolvedLeaseDirectory $fileName
     $metadataPath = "$leasePath.metadata"
 
     if ($sharedLease) {
@@ -485,7 +497,7 @@ function Get-ReentrantRepositoryExecutionLease {
     if (-not [string]::Equals($requestedRoot, $existingRoot, $comparison)) {
         throw "Existing lease belongs to '$existingRoot', not requested worktree '$requestedRoot'."
     }
-    $requestedLeasePath = Get-RepositoryExecutionLeasePathForRoot -CanonicalRepoRoot $requestedRoot -LeaseDirectory $LeaseDirectory
+    $requestedLeasePath = Get-RepositoryExecutionLeaseCandidatePath -CanonicalRepoRoot $requestedRoot -LeaseDirectory $LeaseDirectory
     $leaseComparison = Get-RepositoryPathComparison -RepoRoot (Split-Path -Parent $requestedLeasePath)
     if (-not [string]::Equals([System.IO.Path]::GetFullPath($requestedLeasePath), [System.IO.Path]::GetFullPath([string]$ExistingLease.Path), $leaseComparison)) {
         throw "Existing lease belongs to coordination path '$($ExistingLease.Path)', not requested path '$requestedLeasePath'."
@@ -926,8 +938,10 @@ function Exit-RepositoryExecutionLease {
                 finally { Release-SharedRepositoryExecutionLeaseStream -State $Lease.SharedStreamState }
             }
             else {
-                if ($null -ne $Lease.LeaseOffset) { $Lease.Stream.Unlock([long]$Lease.LeaseOffset, 1) }
-                $Lease.Stream.Dispose()
+                try {
+                    if ($null -ne $Lease.LeaseOffset) { $Lease.Stream.Unlock([long]$Lease.LeaseOffset, 1) }
+                }
+                finally { $Lease.Stream.Dispose() }
             }
         }
         finally { Unregister-RepositoryExecutionLeaseIdentity -Identity ([string]$Lease.LeaseIdentity) }

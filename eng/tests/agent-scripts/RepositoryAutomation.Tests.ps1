@@ -98,6 +98,24 @@ Describe 'RepositoryAutomation helpers' {
         }
     }
 
+    It 'rejects a pre-sealed shared directory without metadata on Unix' {
+        if ($IsWindows) {
+            Set-ItResult -Skipped -Because 'Unix shared lease provisioning is not available on Windows.'
+            return
+        }
+
+        $leaseRoot = Join-Path $TestDrive 'missing-metadata-lease-repository'
+        $coordinationRoot = Join-Path $TestDrive 'missing-metadata-coordination'
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        New-Item -ItemType Directory -Path $coordinationRoot -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $coordinationRoot 'shared.lease') -Value 'pre-provisioned' -NoNewline
+        & chmod 666 -- (Join-Path $coordinationRoot 'shared.lease') 2>$null | Out-Null
+        & chmod 555 -- $coordinationRoot 2>$null | Out-Null
+
+        { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'missing-metadata' -LeaseDirectory $coordinationRoot } |
+            Should -Throw '*metadata*'
+    }
+
     It 'uses one lease identity for a worktree alias' {
         $realRoot = Join-Path $TestDrive 'lease-real'
         $aliasRoot = Join-Path $TestDrive 'lease-alias'
