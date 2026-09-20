@@ -214,6 +214,8 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
     foreach ($artifact in @($record.Artifacts)) {
         if ([string]::IsNullOrWhiteSpace([string]$artifact) -or -not (Test-Path -LiteralPath (Join-Path $verificationRoot $artifact) -PathType Leaf)) { $errors.Add("Required artifact is missing: '$artifact'.") }
     }
+    $trxExecutedTotal = [int64]0
+    $trxFailedTotal = [int64]0
     $artifactSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
     foreach ($artifact in @($record.Artifacts)) { if (-not [string]::IsNullOrWhiteSpace([string]$artifact)) { $null = $artifactSet.Add([string]$artifact) } }
     $metadataByPath = @{}
@@ -238,7 +240,25 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
             switch ([System.IO.Path]::GetExtension($artifactPath).ToLowerInvariant()) {
                 '.json' { Get-Content -LiteralPath $artifactPath -Raw | ConvertFrom-Json | Out-Null }
                 '.xml' { [xml]$xml = Get-Content -LiteralPath $artifactPath -Raw; if ($null -eq $xml.DocumentElement) { throw 'XML document has no root element.' } }
-                '.trx' { [xml]$trx = Get-Content -LiteralPath $artifactPath -Raw; if ($null -eq $trx.TestRun) { throw 'TRX document has no TestRun element.' } }
+                '.trx' {
+                    [xml]$trx = Get-Content -LiteralPath $artifactPath -Raw
+                    if ($null -eq $trx.TestRun) { throw 'TRX document has no TestRun element.' }
+                    $summaryProperty = $trx.TestRun.PSObject.Properties['ResultSummary']
+                    if ($null -eq $summaryProperty) { throw 'TRX document has no completed ResultSummary.' }
+                    $summary = $summaryProperty.Value
+                    if ($null -eq $summary -or [string]$summary.outcome -ne 'Completed') { throw 'TRX document has no completed ResultSummary.' }
+                    $countersProperty = $summary.PSObject.Properties['Counters']
+                    if ($null -eq $countersProperty) { throw 'TRX document has no ResultSummary.Counters.' }
+                    $counters = $countersProperty.Value
+                    foreach ($counterName in @('total', 'executed', 'passed', 'failed', 'notExecuted')) {
+                        $counter = $counters.Attributes[$counterName]
+                        if ($null -eq $counter -or [string]$counter.Value -notmatch '^\d+$') { throw "TRX document has no nonnegative $counterName counter." }
+                    }
+                    $executed = [int64]$counters.executed
+                    if ($executed -lt 1) { throw 'TRX document must report a nonzero executed counter.' }
+                    $trxExecutedTotal += $executed
+                    $trxFailedTotal += [int64]$counters.failed
+                }
             }
         }
         catch { $errors.Add("Artifact metadata is malformed or unreadable: $($_.Exception.Message)") }
@@ -249,6 +269,10 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
         $metadataCount = if ($metadataByPath.ContainsKey($artifactPath)) { [int]$metadataByPath[$artifactPath].Count } else { 0 }
         if ($metadataCount -ne 1) { $errors.Add("Every recorded artifact must have exactly one hash metadata entry: '$artifactPath'.") }
     }
+    if ($trxExecutedTotal -gt 0 -and [int64]$record.TestCount -ne $trxExecutedTotal) {
+        $errors.Add("TRX executed counters ($trxExecutedTotal) do not reconcile with evidence TestCount ($($record.TestCount)).")
+    }
+    if ([string]$record.Status -eq 'PASS' -and $trxFailedTotal -gt 0) { $errors.Add('PASS evidence contains failed TRX tests.') }
     try {
         $current = Get-ValidationSourceFingerprint -RepositoryRoot $verificationRoot -InputPath @($record.SourceBefore.Files.Path)
         $fresh = $null -ne $record.SourceAfter -and [string]$record.SourceAfter.Fingerprint -eq [string]$current.Fingerprint

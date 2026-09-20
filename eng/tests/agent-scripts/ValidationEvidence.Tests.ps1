@@ -18,7 +18,7 @@ Describe 'Source-bound validation evidence' {
     It 'writes and verifies a passing result from the exact source fingerprint' {
         $run = New-ValidationEvidenceRun -RepositoryRoot $fixtureRoot -Scope 'fixture' -InputPath @($inputFile)
         $artifact = Join-Path $fixtureRoot 'result.trx'
-        Set-Content -LiteralPath $artifact -Value '<TestRun />'
+        Set-Content -LiteralPath $artifact -Value '<TestRun><ResultSummary outcome="Completed"><Counters total="1" executed="1" passed="1" failed="0" notExecuted="0" /></ResultSummary></TestRun>'
         Complete-ValidationEvidenceRun -Run $run -Status PASS -Phase complete -Executed $true -TestCount 1 -ExitCode 0 -ArtifactPath @($artifact) | Out-Null
 
         $result = Test-ValidationEvidence -Path $run.Path
@@ -26,6 +26,18 @@ Describe 'Source-bound validation evidence' {
         $result.Valid | Should -BeTrue
         $result.Fresh | Should -BeTrue
         $result.Record.Status | Should -Be 'PASS'
+    }
+
+    It 'rejects a TRX artifact without completed execution counters' {
+        $run = New-ValidationEvidenceRun -RepositoryRoot $fixtureRoot -Scope 'fixture' -InputPath @($inputFile)
+        $artifact = Join-Path $fixtureRoot 'incomplete.trx'
+        Set-Content -LiteralPath $artifact -Value '<TestRun />'
+        Complete-ValidationEvidenceRun -Run $run -Status PASS -Phase complete -Executed $true -TestCount 1 -ExitCode 0 -ArtifactPath @($artifact) | Out-Null
+
+        $result = Test-ValidationEvidence -Path $run.Path
+
+        $result.Valid | Should -BeFalse
+        ($result.Errors -join "`n") | Should -Match 'completed ResultSummary|execution counters'
     }
 
     It 'invalidates a report after a source edit' {

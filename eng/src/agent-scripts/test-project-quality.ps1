@@ -330,7 +330,7 @@ try {
     if ($null -ne $trx) { $evidenceArtifacts.Add($trx.FullName) }
     if ($null -ne $cobertura) { $evidenceArtifacts.Add($cobertura.FullName) }
     if (-not $SkipMutation -and $null -ne $mutationJson) { $evidenceArtifacts.Add($mutationJson.FullName) }
-    Complete-ValidationEvidenceRun -Run $evidenceRun -Status $finalStatus -Phase 'complete' -Executed $true -TestCount $(if ($null -ne $trxSummary) { [int]$trxSummary.Passed } else { 0 }) -ExitCode $(if ($finalStatus -eq 'PASS') { 0 } else { 1 }) -ArtifactPath @($evidenceArtifacts) | Out-Null
+    Complete-ValidationEvidenceRun -Run $evidenceRun -Status $finalStatus -Phase 'complete' -Executed $true -TestCount $(if ($null -ne $trxSummary) { [int]$trxSummary.Executed } else { 0 }) -ExitCode $(if ($finalStatus -eq 'PASS') { 0 } else { 1 }) -ArtifactPath @($evidenceArtifacts) | Out-Null
     if ($finalStatus -eq 'FAIL') { exit 1 } else { exit 0 }
 }
 catch {
