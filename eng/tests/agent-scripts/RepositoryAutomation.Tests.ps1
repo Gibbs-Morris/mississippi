@@ -53,10 +53,12 @@ Describe 'RepositoryAutomation helpers' {
             Remove-Item Env:MISSISSIPPI_SHARED_WORKTREE -ErrorAction SilentlyContinue
             $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'shared-owner' -LeaseDirectory $coordinationRoot
             try {
-                $directoryMode = [System.IO.File]::GetUnixFileMode($coordinationRoot)
-                ([int]$directoryMode -band [int][System.IO.UnixFileMode]::OtherWrite) | Should -Be 0
-                $fileMode = [System.IO.File]::GetUnixFileMode($lease.Path)
-                ([int]$fileMode -band [int][System.IO.UnixFileMode]::OtherWrite) | Should -Not -Be 0
+                $directoryModeText = (& stat -c '%a' -- $coordinationRoot 2>$null | Out-String).Trim()
+                if ($LASTEXITCODE -ne 0) { $directoryModeText = (& stat -f '%Lp' -- $coordinationRoot 2>$null | Out-String).Trim() }
+                $fileModeText = (& stat -c '%a' -- $lease.Path 2>$null | Out-String).Trim()
+                if ($LASTEXITCODE -ne 0) { $fileModeText = (& stat -f '%Lp' -- $lease.Path 2>$null | Out-String).Trim() }
+                ([Convert]::ToInt32($directoryModeText, 8) -band 2) | Should -Be 0
+                ([Convert]::ToInt32($fileModeText, 8) -band 2) | Should -Not -Be 0
             }
             finally {
                 Exit-RepositoryExecutionLease -Lease $lease

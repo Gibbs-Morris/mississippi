@@ -3,23 +3,10 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$sharedExecutionLeaseDirectoryMode = [System.IO.UnixFileMode]::UserRead -bor
-    [System.IO.UnixFileMode]::UserExecute -bor
-    [System.IO.UnixFileMode]::GroupRead -bor
-    [System.IO.UnixFileMode]::GroupExecute -bor
-    [System.IO.UnixFileMode]::OtherRead -bor
-    [System.IO.UnixFileMode]::OtherExecute
-$sharedExecutionLeaseFileMode = [System.IO.UnixFileMode]::UserRead -bor
-    [System.IO.UnixFileMode]::UserWrite -bor
-    [System.IO.UnixFileMode]::GroupRead -bor
-    [System.IO.UnixFileMode]::GroupWrite -bor
-    [System.IO.UnixFileMode]::OtherRead -bor
-    [System.IO.UnixFileMode]::OtherWrite
-$privateExecutionLeaseDirectoryMode = [System.IO.UnixFileMode]::UserRead -bor
-    [System.IO.UnixFileMode]::UserWrite -bor
-    [System.IO.UnixFileMode]::UserExecute
-$privateExecutionLeaseFileMode = [System.IO.UnixFileMode]::UserRead -bor
-    [System.IO.UnixFileMode]::UserWrite
+$sharedExecutionLeaseDirectoryMode = 365 # 0555
+$sharedExecutionLeaseFileMode = 438 # 0666
+$privateExecutionLeaseDirectoryMode = 448 # 0700
+$privateExecutionLeaseFileMode = 384 # 0600
 
 function Test-RepositoryExecutionLeaseSharedMode {
     [CmdletBinding()]
@@ -32,13 +19,30 @@ function Set-RepositoryExecutionLeaseUnixMode {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Path,
-        [Parameter(Mandatory)][System.IO.UnixFileMode]$Mode
+        [Parameter(Mandatory)][int]$Mode
     )
 
     if ($IsWindows) { return }
 
     try {
-        [System.IO.File]::SetUnixFileMode($Path, $Mode)
+        $method = [System.IO.File].GetMethods() |
+            Where-Object { $_.Name -eq 'SetUnixFileMode' -and $_.GetParameters().Count -eq 2 -and $_.GetParameters()[0].ParameterType -eq [string] } |
+            Select-Object -First 1
+        if ($null -ne $method) {
+            $modeValue = [Enum]::ToObject($method.GetParameters()[1].ParameterType, $Mode)
+            $method.Invoke($null, @($Path, $modeValue)) | Out-Null
+        }
+        else {
+            $modeText = switch ($Mode) {
+                365 { '555'; break }
+                438 { '666'; break }
+                448 { '700'; break }
+                384 { '600'; break }
+                default { [Convert]::ToString($Mode, 8) }
+            }
+            & chmod $modeText -- $Path 2>&1 | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "chmod exited with code $LASTEXITCODE" }
+        }
     }
     catch {
         throw "Unable to set shared execution lease permissions on '$Path': $($_.Exception.Message)"
@@ -51,13 +55,26 @@ function Test-RepositoryExecutionLeaseUnixMode {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Path,
-        [Parameter(Mandatory)][System.IO.UnixFileMode]$Mode
+        [Parameter(Mandatory)][int]$Mode
     )
 
     if ($IsWindows) { return }
 
     try {
-        $actualMode = [System.IO.File]::GetUnixFileMode($Path)
+        $method = [System.IO.File].GetMethods() |
+            Where-Object { $_.Name -eq 'GetUnixFileMode' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType -eq [string] } |
+            Select-Object -First 1
+        if ($null -ne $method) {
+            $actualMode = [int]$method.Invoke($null, @($Path))
+        }
+        else {
+            $modeText = (& stat -c '%a' -- $Path 2>$null | Out-String).Trim()
+            if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($modeText)) {
+                $modeText = (& stat -f '%Lp' -- $Path 2>$null | Out-String).Trim()
+            }
+            if ([string]::IsNullOrWhiteSpace($modeText) -or $LASTEXITCODE -ne 0) { throw 'No compatible Unix mode API or stat command was available.' }
+            $actualMode = [Convert]::ToInt32($modeText, 8)
+        }
     }
     catch {
         throw "Unable to inspect shared execution lease permissions on '$Path': $($_.Exception.Message)"
@@ -67,10 +84,8 @@ function Test-RepositoryExecutionLeaseUnixMode {
         throw "Shared execution lease permissions on '$Path' are insufficient for all participating accounts."
     }
 
-    $writeBits = [System.IO.UnixFileMode]::UserWrite -bor
-        [System.IO.UnixFileMode]::GroupWrite -bor
-        [System.IO.UnixFileMode]::OtherWrite
-    if (([int]$Mode -band [int]$writeBits) -eq 0 -and ([int]$actualMode -band [int]$writeBits) -ne 0) {
+    $writeBits = 146 # 0222
+    if (($Mode -band $writeBits) -eq 0 -and ($actualMode -band $writeBits) -ne 0) {
         throw "Shared execution lease path '$Path' must not be writable by participating accounts."
     }
 }
@@ -160,12 +175,7 @@ function Get-RepositoryExecutionLeasePathForRoot {
     $leasePath = Join-Path $leaseDirectory $fileName
     if ($sharedLease) {
         if ($leaseDirectoryCreated) {
-            $placeholderOptions = [System.IO.FileStreamOptions]::new()
-            $placeholderOptions.Mode = [System.IO.FileMode]::OpenOrCreate
-            $placeholderOptions.Access = [System.IO.FileAccess]::ReadWrite
-            $placeholderOptions.Share = [System.IO.FileShare]::ReadWrite
-            if (-not $IsWindows) { $placeholderOptions.UnixCreateMode = $sharedExecutionLeaseFileMode }
-            $placeholder = [System.IO.FileStream]::new($leasePath, $placeholderOptions)
+            $placeholder = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
             $placeholder.Dispose()
             if (-not $IsWindows) {
                 Set-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $sharedExecutionLeaseFileMode
@@ -307,13 +317,8 @@ function Enter-RepositoryExecutionLease {
     $leaseFileCreated = $false
     try {
         if ($sharedLease -and -not $IsWindows -and -not $leaseFileExists) {
-            $createOptions = [System.IO.FileStreamOptions]::new()
-            $createOptions.Mode = [System.IO.FileMode]::CreateNew
-            $createOptions.Access = [System.IO.FileAccess]::ReadWrite
-            $createOptions.Share = [System.IO.FileShare]::Read
-            $createOptions.UnixCreateMode = $sharedExecutionLeaseFileMode
             try {
-                $stream = [System.IO.FileStream]::new($leasePath, $createOptions)
+                $stream = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::Read)
                 $leaseFileCreated = $true
             }
             catch [System.IO.IOException] {
@@ -322,15 +327,7 @@ function Enter-RepositoryExecutionLease {
         }
 
         if ($null -eq $stream) {
-            $streamOptions = [System.IO.FileStreamOptions]::new()
-            $streamOptions.Mode = [System.IO.FileMode]::OpenOrCreate
-            $streamOptions.Access = [System.IO.FileAccess]::ReadWrite
-            $streamOptions.Share = [System.IO.FileShare]::Read
-            if (-not $IsWindows) {
-                if ($sharedLease) { $streamOptions.UnixCreateMode = $sharedExecutionLeaseFileMode }
-                elseif ($privateLease) { $streamOptions.UnixCreateMode = $privateExecutionLeaseFileMode }
-            }
-            $stream = [System.IO.FileStream]::new($leasePath, $streamOptions)
+            $stream = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::Read)
         }
 
         if ($sharedLease) {
