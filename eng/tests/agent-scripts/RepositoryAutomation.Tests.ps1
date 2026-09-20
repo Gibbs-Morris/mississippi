@@ -481,7 +481,8 @@ Describe 'Repository automation quality gates' {
         New-Item -ItemType Directory -Path $realRoot -Force | Out-Null
         $aliasCreated = $false
         try {
-            New-Item -ItemType Junction -Path $aliasRoot -Target $realRoot -ErrorAction Stop | Out-Null
+            $aliasType = if ($IsWindows) { 'Junction' } else { 'SymbolicLink' }
+            New-Item -ItemType $aliasType -Path $aliasRoot -Target $realRoot -ErrorAction Stop | Out-Null
             $aliasCreated = $true
             Mock Invoke-MississippiSolutionBuild { $observedRoots.Add($RepoRoot) } -ModuleName RepositoryAutomation
             Mock Invoke-MississippiSolutionUnitTests {
