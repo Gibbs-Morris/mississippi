@@ -2948,12 +2948,18 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     $reviewDecision = if (@($currentReviews | Where-Object { $_.state -eq 'CHANGES_REQUESTED' }).Count -gt 0) { 'CHANGES_REQUESTED' } elseif ($approvals -gt 0) { 'APPROVED' } else { '' }
 
     $threadQuery = 'query($owner:String!,$repo:String!,$number:Int!,$cursor:String){repository(owner:$owner,name:$repo){pullRequest(number:$number){reviewDecision reviewThreads(first:100,after:$cursor){nodes{id isResolved isOutdated comments(first:20){nodes{databaseId body author{login} path line url}}} pageInfo{hasNextPage endCursor}}}}}'
+    $threadQueryExpectedDigest = 'SHA256:408a4e4a10fcf7a747ce76b4f2894f1933d62c01b8a51af6e0e9adc15ef45169'
+    $threadQueryDigestBytes = [System.Text.Encoding]::UTF8.GetBytes($threadQuery)
+    $threadQueryDigestHash = [System.Security.Cryptography.SHA256]::HashData($threadQueryDigestBytes)
+    $threadQueryDigest = 'SHA256:' + (($threadQueryDigestHash | ForEach-Object { $_.ToString('x2') }) -join '')
+    if ($threadQueryDigest -ne $threadQueryExpectedDigest) { throw 'Readiness GraphQL query integrity verification failed.' }
     $threads = [System.Collections.Generic.List[object]]::new()
     $cursor = $null
     $graphqlReviewDecision = ''
     do {
         $graphqlArguments = @('api', 'graphql', '-f', "query=$threadQuery", '-F', "owner=$RepositoryOwner", '-F', "repo=$RepositoryName", '-F', "number=$PullRequestNumber", '-F', $(if ($null -eq $cursor) { 'cursor=null' } else { "cursor=$cursor" }))
         $threadPage = & $getJson $graphqlArguments
+        if ($null -ne $threadPage.PSObject.Properties['errors'] -and @($threadPage.errors).Count -gt 0) { throw "Readiness GraphQL thread query returned errors: $($threadPage.errors | ConvertTo-Json -Compress)" }
         $graphqlReviewDecision = [string]$threadPage.data.repository.pullRequest.reviewDecision
         foreach ($thread in @($threadPage.data.repository.pullRequest.reviewThreads.nodes)) { $threads.Add($thread) }
         $hasNextPage = [bool]$threadPage.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage
@@ -2995,6 +3001,7 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     do {
         $finalGraphqlArguments = @('api', 'graphql', '-f', "query=$threadQuery", '-F', "owner=$RepositoryOwner", '-F', "repo=$RepositoryName", '-F', "number=$PullRequestNumber", '-F', $(if ($null -eq $finalCursor) { 'cursor=null' } else { "cursor=$finalCursor" }))
         $finalThreadPage = & $getJson $finalGraphqlArguments
+        if ($null -ne $finalThreadPage.PSObject.Properties['errors'] -and @($finalThreadPage.errors).Count -gt 0) { throw "Readiness GraphQL final thread query returned errors: $($finalThreadPage.errors | ConvertTo-Json -Compress)" }
         if (-not [string]::IsNullOrWhiteSpace([string]$finalThreadPage.data.repository.pullRequest.reviewDecision)) {
             $reviewDecision = [string]$finalThreadPage.data.repository.pullRequest.reviewDecision
         }
@@ -3002,19 +3009,36 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
         $finalHasNextPage = [bool]$finalThreadPage.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage
         $finalCursor = [string]$finalThreadPage.data.repository.pullRequest.reviewThreads.pageInfo.endCursor
     } while ($finalHasNextPage)
-    $finalLatestReviewByAuthorAnyState = @{}
+    $reviewEventsByAuthor = @{}
     foreach ($review in @($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'COMMENTED', 'DISMISSED') } | Sort-Object submitted_at)) {
         $author = Get-PrReadinessReviewAuthor -Value $review
-        $finalLatestReviewByAuthorAnyState[$author] = $review
+        if (-not $reviewEventsByAuthor.ContainsKey($author)) { $reviewEventsByAuthor[$author] = [System.Collections.Generic.List[object]]::new() }
+        $reviewEventsByAuthor[$author].Add($review)
     }
-    $reviewDispositions = @($finalLatestReviewByAuthorAnyState.Values | Where-Object { -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) } | ForEach-Object {
-        [pscustomobject]@{
-            Id = [string]$_.id
-            Author = Get-PrReadinessReviewAuthor -Value $_
-            State = [string]$_.state
-            Disposition = if ([string]$_.state -in @('APPROVED', 'DISMISSED')) { 'addressed' } else { 'pending' }
+    $reviewDispositionList = [System.Collections.Generic.List[object]]::new()
+    foreach ($reviewEvents in $reviewEventsByAuthor.Values) {
+        $activeFeedback = [System.Collections.Generic.List[object]]::new()
+        foreach ($review in $reviewEvents) {
+            $body = Get-PrReadinessBodyText -Value $review
+            if ([string]$review.state -in @('APPROVED', 'DISMISSED')) {
+                $activeFeedback.Clear()
+                if (-not [string]::IsNullOrWhiteSpace($body)) {
+                    $reviewDispositionList.Add([pscustomobject]@{ Id = [string]$review.id; Author = Get-PrReadinessReviewAuthor -Value $review; State = [string]$review.state; Disposition = 'addressed' })
+                }
+            }
+            elseif ([string]$review.state -eq 'CHANGES_REQUESTED') {
+                $activeFeedback.Clear()
+                if (-not [string]::IsNullOrWhiteSpace($body)) { $activeFeedback.Add($review) }
+            }
+            elseif (-not [string]::IsNullOrWhiteSpace($body)) {
+                $activeFeedback.Add($review)
+            }
         }
-    })
+        foreach ($review in $activeFeedback) {
+            $reviewDispositionList.Add([pscustomobject]@{ Id = [string]$review.id; Author = Get-PrReadinessReviewAuthor -Value $review; State = [string]$review.state; Disposition = 'pending' })
+        }
+    }
+    $reviewDispositions = @($reviewDispositionList)
     $threadFingerprintStart = (@($threads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated):$(@($_.comments.nodes | ForEach-Object { $_.databaseId }) -join ',')" }) -join '|')
     $threadFingerprintEnd = (@($finalThreads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated):$(@($_.comments.nodes | ForEach-Object { $_.databaseId }) -join ',')" }) -join '|')
     $mutableEvidenceStable = $checkFingerprintStart -eq $checkFingerprintEnd -and
