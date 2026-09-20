@@ -1,4 +1,4 @@
-namespace Mississippi.Architecture.L0Tests.Fixtures;
+namespace Mississippi.Architecture.L0Tests.Fixtures.Dependencies;
 
 /// <summary>Concrete dependency with no abstraction, matching a registered concrete service.</summary>
 internal sealed class ConcreteInjectedDependency

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 
 
-namespace Mississippi.Architecture.L0Tests.Fixtures;
+namespace Mississippi.Architecture.L0Tests.Fixtures.Dependencies;
 
 /// <summary>Negative fixture proving concrete service-shaped elements are detected in collections.</summary>
 internal sealed class ConcreteCollectionInjectedFieldFixture

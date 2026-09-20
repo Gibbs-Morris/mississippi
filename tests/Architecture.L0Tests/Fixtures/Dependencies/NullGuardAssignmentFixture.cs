@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.Architecture.L0Tests.Fixtures;
+namespace Mississippi.Architecture.L0Tests.Fixtures.Dependencies;
 
 /// <summary>Negative fixture proving null-guarded constructor storage preserves parameter provenance.</summary>
 internal sealed class NullGuardAssignmentFixture

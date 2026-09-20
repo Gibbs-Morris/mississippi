@@ -1,3 +1,6 @@
+using Mississippi.Architecture.L0Tests.Fixtures.Dependencies;
+
+
 namespace Mississippi.Architecture.L0Tests.Fixtures;
 
 /// <summary>Concrete collaborator used to prove concrete service-shaped fields are detected.</summary>

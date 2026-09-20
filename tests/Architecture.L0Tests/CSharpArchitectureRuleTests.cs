@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Mississippi.Architecture.L0Tests.Fixtures;
+using Mississippi.Architecture.L0Tests.Fixtures.Dependencies;
 
 
 namespace Mississippi.Architecture.L0Tests;
@@ -33,6 +34,8 @@ public sealed class CSharpArchitectureRuleTests
         _ = new WrappedInjectedFieldFixture(new(() => clock)).GetClock();
         _ = new NestedWrappedInjectedFieldFixture(new(() => [clock])).GetClock();
         _ = new InheritedInjectedFieldFixture(clock).GetClock();
+        _ = new MultiArgumentHelperFixture(clock, clock).GetClock();
+        _ = new DelegateInjectedFieldFixture(() => 1).GetValue();
         IReadOnlyList<string> violations = CSharpArchitectureTests.FindConstructorInjectedFields(
         [
             typeof(InjectedFieldFixture), typeof(InjectedPropertyFixture), typeof(SettableInjectedPropertyFixture),
@@ -41,6 +44,7 @@ public sealed class CSharpArchitectureRuleTests
             typeof(GenericInjectedFieldFixture<IClockFixture>), typeof(FactoryAssignmentFixture),
             typeof(HelperAssignmentFixture), typeof(ConcreteCollectionInjectedFieldFixture),
             typeof(NullGuardAssignmentFixture),
+            typeof(MultiArgumentHelperFixture), typeof(DelegateInjectedFieldFixture),
             typeof(WrappedInjectedFieldFixture), typeof(NestedWrappedInjectedFieldFixture),
             typeof(InheritedInjectedFieldFixture), typeof(InheritedInjectedFieldBase),
             typeof(ConcreteInjectedFieldFixture),
@@ -67,6 +71,8 @@ public sealed class CSharpArchitectureRuleTests
         Assert.Contains($"{typeof(HelperAssignmentFixture).FullName}.clock", violations);
         Assert.Contains($"{typeof(ConcreteCollectionInjectedFieldFixture).FullName}.dependencies", violations);
         Assert.Contains($"{typeof(NullGuardAssignmentFixture).FullName}.clock", violations);
+        Assert.Contains($"{typeof(MultiArgumentHelperFixture).FullName}.clock", violations);
+        Assert.Contains($"{typeof(DelegateInjectedFieldFixture).FullName}.factory", violations);
         Assert.Contains($"{typeof(WrappedInjectedFieldFixture).FullName}.clock", violations);
         Assert.Contains($"{typeof(NestedWrappedInjectedFieldFixture).FullName}.clocks", violations);
         Assert.Contains($"{typeof(InheritedInjectedFieldFixture).FullName}.<Clock>k__BackingField", violations);

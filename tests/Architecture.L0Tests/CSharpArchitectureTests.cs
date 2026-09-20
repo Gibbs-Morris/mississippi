@@ -303,6 +303,11 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
         Type fieldType
     )
     {
+        if (typeof(Delegate).IsAssignableFrom(fieldType))
+        {
+            return true;
+        }
+
         if (fieldType.IsGenericParameter)
         {
             Type[] constraints = fieldType.GetGenericParameterConstraints();
@@ -440,6 +445,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
 
         int? loadedParameter = null;
         int? conditionalParameter = null;
+        List<int> argumentStack = new();
         int offset = 0;
         while (offset < il.Length)
         {
@@ -450,6 +456,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             if (TryGetArgumentIndex(opcode, il, operandOffset, out int argumentIndex))
             {
                 loadedParameter = argumentIndex;
+                argumentStack.Add(argumentIndex);
             }
 
             if (((opcode == OpCodes.Brtrue) ||
@@ -484,6 +491,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
 
                 loadedParameter = null;
                 conditionalParameter = null;
+                argumentStack.Clear();
             }
             else if (((opcode == OpCodes.Call) || (opcode == OpCodes.Callvirt)) && ((offset + 4) <= il.Length))
             {
@@ -500,19 +508,32 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                     // An unresolved metadata token cannot prove helper provenance.
                 }
 
-                if ((loadedParameter == parameterIndex) &&
-                    called is not null &&
-                    (called.DeclaringType == method.DeclaringType) &&
-                    (called.GetParameters().Length == 1))
+                if (called is not null && (called.DeclaringType == method.DeclaringType))
                 {
-                    int calledParameterIndex = called.IsStatic ? 0 : 1;
-                    if (MethodStoresParameter(called, calledParameterIndex, targetField, visited))
+                    int calledParameterCount = called.GetParameters().Length;
+                    int receiverCount = called.IsStatic ? 0 : 1;
+                    int requiredArgumentCount = calledParameterCount + receiverCount;
+                    if ((calledParameterCount > 0) && (argumentStack.Count >= requiredArgumentCount))
                     {
-                        return true;
+                        int[] callArguments = argumentStack.GetRange(
+                                argumentStack.Count - requiredArgumentCount,
+                                requiredArgumentCount)
+                            .ToArray();
+                        for (int calleeParameter = 0; calleeParameter < calledParameterCount; calleeParameter++)
+                        {
+                            int stackIndex = calleeParameter + receiverCount;
+                            if ((callArguments[stackIndex] == parameterIndex) &&
+                                MethodStoresParameter(called, calleeParameter + receiverCount, targetField, visited))
+                            {
+                                return true;
+                            }
+                        }
                     }
                 }
 
                 loadedParameter = null;
+                conditionalParameter = null;
+                argumentStack.Clear();
             }
             else if ((opcode != OpCodes.Nop) &&
                      (opcode != OpCodes.Dup) &&
@@ -525,6 +546,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                      !TryGetArgumentIndex(opcode, il, operandOffset, out int _))
             {
                 loadedParameter = null;
+                argumentStack.Clear();
             }
 
             offset += GetOperandSize(opcode, il, offset);

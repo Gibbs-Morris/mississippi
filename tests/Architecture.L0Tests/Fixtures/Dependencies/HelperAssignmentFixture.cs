@@ -1,4 +1,4 @@
-namespace Mississippi.Architecture.L0Tests.Fixtures;
+namespace Mississippi.Architecture.L0Tests.Fixtures.Dependencies;
 
 /// <summary>Negative fixture proving dependency provenance follows same-type assignment helpers.</summary>
 internal sealed class HelperAssignmentFixture
