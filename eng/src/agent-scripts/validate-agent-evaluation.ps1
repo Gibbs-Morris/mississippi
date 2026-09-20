@@ -112,6 +112,8 @@ try {
     if ([string]$results.mode -eq 'initial-baseline' -and @($primaryRows | Where-Object { [string]$_.activeModel -notin @('unsupported', 'blocked', 'unknown') }).Count -gt 0) {
         $errors.Add('Live host results cannot retain initial-baseline mode.')
     }
+    $hostContextIds = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $hostWorktreeIds = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     foreach ($hostName in $hostNames) {
         $hostResult = @($results.hosts | Where-Object host -EQ $hostName)[0]
         if ($null -eq $hostResult) { $errors.Add("Missing primary host result: $hostName."); continue }
@@ -133,8 +135,6 @@ try {
                     }
                 }
             }
-        $hostContextIds = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
-        $hostWorktreeIds = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
         foreach ($category in $categories) {
             $summaryMatches = @($hostResult.trialSummaries | Where-Object scenarioId -EQ $category.id)
             if ($summaryMatches.Count -ne 1) { $errors.Add("Host '$hostName' must contain exactly one trial summary '$($category.id)'.") }
@@ -219,12 +219,15 @@ try {
                             if ($null -eq $provenance -or [string]$provenance.Value -ne 'direct') { $errors.Add("Host '$hostName' category '$($category.id)' measurement evidence must be directly measured.") }
                         }
                     }
-                    if ($outcome -in @('passed', 'failed')) {
-                        foreach ($field in @('acceptancePassed', 'reviewRework', 'interventions')) {
+                    if ($outcome -in @('passed', 'failed', 'blocked', 'unsupported')) {
+                        foreach ($field in @('reviewRework', 'interventions')) {
                             if ($null -eq $record.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing $field.") }
                         }
-                        if ($record.acceptancePassed -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has a non-boolean acceptancePassed value.") }
                         if ($null -eq $record.reviewRework -or $null -eq $record.interventions) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has incomplete review/intervention evidence.") }
+                    }
+                    if ($outcome -in @('passed', 'failed')) {
+                        if ($null -eq $record.PSObject.Properties['acceptancePassed']) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing acceptancePassed.") }
+                        elseif ($record.acceptancePassed -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has a non-boolean acceptancePassed value.") }
                     }
                     if ($outcome -eq 'failed' -and [string]::IsNullOrWhiteSpace([string]$record.reason)) { $errors.Add("Host '$hostName' category '$($category.id)' failed trial is missing a reason.") }
                     if ($outcome -in @('blocked', 'unsupported') -and [string]::IsNullOrWhiteSpace([string]$record.reason)) { $errors.Add("Host '$hostName' category '$($category.id)' blocked or unsupported trial is missing a reason.") }
