@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 
+
 namespace Mississippi.Architecture.L0Tests;
 
 /// <summary>
@@ -40,7 +41,7 @@ public sealed class ArchitectureTestBaseTests
         string[] paths =
         [
             Path.Join("run.L0Tests.1", "Mississippi.Core.dll"),
-            Path.Join("run", "Mississippi.Architecture.L0Tests.dll")
+            Path.Join("run", "Mississippi.Architecture.L0Tests.dll"),
         ];
         Assembly[] assemblies = ArchitectureTestBase.LoadMississippiAssemblies(
             paths,

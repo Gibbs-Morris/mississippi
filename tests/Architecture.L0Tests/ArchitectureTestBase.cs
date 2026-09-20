@@ -8,6 +8,7 @@ using ArchUnitNET.Loader;
 
 using ArchUnitArchitecture = ArchUnitNET.Domain.Architecture;
 
+
 namespace Mississippi.Architecture.L0Tests;
 
 /// <summary>
@@ -26,13 +27,6 @@ public abstract class ArchitectureTestBase
         .LoadAssemblies(GetMississippiAssemblies())
         .Build();
 
-    private static Assembly[] GetMississippiAssemblies()
-    {
-        string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-        string[] assemblyPaths = Directory.GetFiles(baseDir, "Mississippi.*.dll");
-        return LoadMississippiAssemblies(assemblyPaths);
-    }
-
     /// <summary>
     ///     Loads assembly candidates using the runtime assembly loader.
     /// </summary>
@@ -42,7 +36,9 @@ public abstract class ArchitectureTestBase
         "Major Code Smell",
         "S3885:\"Assembly.LoadFrom\" should not be used",
         Justification = "Required for runtime assembly discovery")]
-    internal static Assembly[] LoadMississippiAssemblies(IEnumerable<string> assemblyPaths) =>
+    internal static Assembly[] LoadMississippiAssemblies(
+        IEnumerable<string> assemblyPaths
+    ) =>
         LoadMississippiAssemblies(assemblyPaths, Assembly.LoadFrom);
 
     /// <summary>
@@ -61,7 +57,6 @@ public abstract class ArchitectureTestBase
     {
         ArgumentNullException.ThrowIfNull(assemblyPaths);
         ArgumentNullException.ThrowIfNull(loader);
-
         List<Assembly> assemblies = new();
         List<string> failures = new();
         int candidateCount = 0;
@@ -104,5 +99,12 @@ public abstract class ArchitectureTestBase
         }
 
         return assemblies.ToArray();
+    }
+
+    private static Assembly[] GetMississippiAssemblies()
+    {
+        string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        string[] assemblyPaths = Directory.GetFiles(baseDir, "Mississippi.*.dll");
+        return LoadMississippiAssemblies(assemblyPaths);
     }
 }
