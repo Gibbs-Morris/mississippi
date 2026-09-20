@@ -112,6 +112,8 @@ try {
     }
     if ($PlanOnly) { exit 0 }
 
+    $env:DOTNET_CLI_HOME = Join-Path $root '.tools/dotnet-home'
+    New-Item -ItemType Directory -Path $env:DOTNET_CLI_HOME -Force | Out-Null
     Import-Module (Join-Path $root 'eng/src/agent-scripts/AgentDoctor.psm1') -Force
     $executedSteps = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     foreach ($selectedProfile in @($plan.Profiles)) {
