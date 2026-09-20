@@ -32,16 +32,16 @@ public sealed class CSharpArchitectureRuleTests
         IReadOnlyList<string> violations = CSharpArchitectureTests.FindConstructorInjectedFields(
             [typeof(InjectedFieldFixture), typeof(InjectedPropertyFixture), typeof(SettableInjectedPropertyFixture), typeof(ManualSettableInjectedPropertyFixture), typeof(OrdinaryStateFixture), typeof(PrimaryConstructorFixture), typeof(FactoryAssignmentFixture), typeof(WrappedInjectedFieldFixture), typeof(NestedWrappedInjectedFieldFixture), typeof(InheritedInjectedFieldFixture), typeof(InheritedInjectedFieldBase)]);
 
-        Assert.Contains(violations, value => value.EndsWith("InjectedFieldFixture.clock", System.StringComparison.Ordinal));
+        Assert.Contains(violations, value => value.StartsWith(typeof(InjectedFieldFixture).FullName + ".", System.StringComparison.Ordinal) && value.EndsWith(".clock", System.StringComparison.Ordinal));
         Assert.DoesNotContain(violations, value => value.StartsWith(typeof(InjectedPropertyFixture).FullName + ".", System.StringComparison.Ordinal));
-        Assert.Contains(violations, value => value.Contains("SettableInjectedPropertyFixture", System.StringComparison.Ordinal));
-        Assert.Contains(violations, value => value.Contains("ManualSettableInjectedPropertyFixture", System.StringComparison.Ordinal));
+        Assert.Contains(violations, value => value.StartsWith(typeof(SettableInjectedPropertyFixture).FullName + ".", System.StringComparison.Ordinal));
+        Assert.Contains(violations, value => value.StartsWith(typeof(ManualSettableInjectedPropertyFixture).FullName + ".", System.StringComparison.Ordinal));
         Assert.DoesNotContain(violations, value => value.Contains("OrdinaryStateFixture", System.StringComparison.Ordinal));
         Assert.Contains(violations, value => value.Contains("PrimaryConstructorFixture", System.StringComparison.Ordinal));
         Assert.DoesNotContain(violations, value => value.Contains("FactoryAssignmentFixture", System.StringComparison.Ordinal));
-        Assert.Contains(violations, value => value.Contains("WrappedInjectedFieldFixture", System.StringComparison.Ordinal));
-        Assert.Contains(violations, value => value.Contains("NestedWrappedInjectedFieldFixture", System.StringComparison.Ordinal));
-        Assert.Contains(violations, value => value.Contains("InheritedInjectedFieldFixture", System.StringComparison.Ordinal));
+        Assert.Contains(violations, value => value.StartsWith(typeof(WrappedInjectedFieldFixture).FullName + ".", System.StringComparison.Ordinal));
+        Assert.Contains(violations, value => value.StartsWith(typeof(NestedWrappedInjectedFieldFixture).FullName + ".", System.StringComparison.Ordinal));
+        Assert.Contains(violations, value => value.StartsWith(typeof(InheritedInjectedFieldFixture).FullName + ".", System.StringComparison.Ordinal));
     }
 
     /// <summary>
