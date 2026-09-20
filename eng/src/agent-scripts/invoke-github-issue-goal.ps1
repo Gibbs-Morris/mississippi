@@ -107,7 +107,16 @@ function Get-GoalWorktreeFingerprint { # NOSONAR - bounded Git/index/worktree fi
             $full = [System.IO.Path]::GetFullPath((Join-Path $Root $relative))
             if ($excludedPaths.Contains($full)) { continue }
             $indexHash = if ($indexHashes.ContainsKey($relative)) { [string]$indexHashes[$relative] } else { 'absent' }
-            if (Test-Path -LiteralPath $full -PathType Leaf) {
+            $item = Get-Item -LiteralPath $full -Force -ErrorAction SilentlyContinue
+            if ($null -ne $item -and (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0)) {
+                $linkTargetProperty = $item.PSObject.Properties['LinkTarget']
+                $linkTarget = if ($null -ne $linkTargetProperty) { [string]$linkTargetProperty.Value } else { '' }
+                if ([string]::IsNullOrWhiteSpace($linkTarget) -and $null -ne $item.PSObject.Properties['Target']) {
+                    $linkTarget = [string]$item.Target
+                }
+                $fileHashes.Add($relative + ':index=' + $indexHash + ':worktree=symlink:' + $linkTarget)
+            }
+            elseif ($null -ne $item -and -not $item.PSIsContainer) {
                 $fileHashes.Add($relative + ':index=' + $indexHash + ':worktree=' + (Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant())
             }
             else { $fileHashes.Add($relative + ':index=' + $indexHash + ':worktree=missing') }
@@ -317,7 +326,14 @@ try {
     catch {
         $hasEmbeddedComments = $null -ne $issue.PSObject.Properties['comments'] -and @($issue.comments | Where-Object { $null -ne $_.PSObject.Properties['body'] -and -not [string]::IsNullOrWhiteSpace([string]$_.body) }).Count -gt 0
         if (-not $hasEmbeddedComments) {
-            $issue = Get-GoalIssue -Owner $RepositoryOwner -Name $RepositoryName -Number $IssueNumber -Json $IssueJson -ForceCommentFallback
+            $refetchedIssue = Get-GoalIssue -Owner $RepositoryOwner -Name $RepositoryName -Number $IssueNumber -Json '' -ForceCommentFallback
+            $refetchedBody = if ($null -eq $refetchedIssue.body) { '' } else { [string]$refetchedIssue.body }
+            if ([int]$refetchedIssue.number -ne $IssueNumber -or
+                [string]$refetchedIssue.state -ne 'open' -or
+                (Get-GoalBodyDigest -Body $refetchedBody) -ne $issueBodyDigest) {
+                throw 'The issue changed while fallback comments were being fetched; retry from a newly verified issue response.'
+            }
+            $issue = $refetchedIssue
         }
         $issueComments = if ($null -ne $issue.PSObject.Properties['comments']) { @($issue.comments) } else { @() }
         $fallbackBodies = @($issueComments | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_.body) } | Sort-Object created_at -Descending | ForEach-Object { [string]$_.body })
@@ -380,21 +396,19 @@ try {
         }
     }
 
-    if ($null -eq $previous) {
-        if (-not [string]::IsNullOrWhiteSpace($ExpectedIssueBodyDigest) -and $ExpectedIssueBodyDigest -ne $issueBodyDigest) {
-            throw 'The issue body does not match the authorized local plan digest.'
-        }
-        if (-not [string]::IsNullOrWhiteSpace($ExpectedHeadRevision) -and (Get-GoalRevision -Root $root -Name $ExpectedHeadRevision) -ne $currentHead) {
-            throw 'The checked-out head does not match the authorized local plan revision.'
-        }
-        if (-not [string]::IsNullOrWhiteSpace($ExpectedBaseRevision) -and (Get-GoalRevision -Root $root -Name $ExpectedBaseRevision) -ne $currentBase) {
-            throw 'The selected base does not match the authorized local plan revision.'
-        }
-        $actualAcceptance = @($contractResult.AcceptanceCriteria | ForEach-Object { [string]$_ } | Sort-Object -Unique)
-        $expectedAcceptance = @(Expand-GoalStringCollection -Values $ExpectedAcceptanceCriteria | Sort-Object -Unique)
-        if ($expectedAcceptance.Count -gt 0 -and (($actualAcceptance -join '|') -ne ($expectedAcceptance -join '|'))) {
-            throw 'The issue acceptance criteria do not match the authorized local plan.'
-        }
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedIssueBodyDigest) -and $ExpectedIssueBodyDigest -ne $issueBodyDigest) {
+        throw 'The issue body does not match the authorized local plan digest.'
+    }
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedHeadRevision) -and (Get-GoalRevision -Root $root -Name $ExpectedHeadRevision) -ne $currentHead) {
+        throw 'The checked-out head does not match the authorized local plan revision.'
+    }
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedBaseRevision) -and (Get-GoalRevision -Root $root -Name $ExpectedBaseRevision) -ne $currentBase) {
+        throw 'The selected base does not match the authorized local plan revision.'
+    }
+    $actualAcceptance = @($contractResult.AcceptanceCriteria | ForEach-Object { [string]$_ } | Sort-Object -Unique)
+    $expectedAcceptance = @(Expand-GoalStringCollection -Values $ExpectedAcceptanceCriteria | Sort-Object -Unique)
+    if ($expectedAcceptance.Count -gt 0 -and (($actualAcceptance -join '|') -ne ($expectedAcceptance -join '|'))) {
+        throw 'The issue acceptance criteria do not match the authorized local plan.'
     }
 
     if ($EvidenceValidated -and $operation.Status -eq 'failed') {
