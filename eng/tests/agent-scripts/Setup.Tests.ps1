@@ -33,6 +33,7 @@ Describe 'Canonical repository setup' {
         @($outcome.Plan.Steps | Where-Object Name -EQ 'restore-docs').Arguments | Should -Contain 'ci'
         @($outcome.Plan.Steps | Where-Object Name -EQ 'restore-docs').Arguments | Should -Contain '--ignore-scripts'
         @($outcome.Plan.Steps | Where-Object Name -EQ 'install-markdownlint').Arguments | Should -Contain 'markdownlint-cli@0.45.0'
+        @($outcome.Plan.Steps | Where-Object Name -EQ 'install-markdownlint').Arguments | Should -Contain '--prefix'
     }
 
     It 'keeps browser setup diagnostic-only' {
@@ -81,5 +82,24 @@ Describe 'Canonical repository setup' {
 
         $exitCode | Should -Be 0
         ($output | ConvertFrom-Json).Status | Should -Be 'READY'
+    }
+
+    It 'fails without READY when a setup child exits nonzero' {
+        $shimRoot = Join-Path $TestDrive 'setup-failure-shims'
+        New-Item -ItemType Directory -Path $shimRoot -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $shimRoot 'node.ps1') -Value "Write-Output 'v22.0.0'"
+        Set-Content -LiteralPath (Join-Path $shimRoot 'npm.ps1') -Value 'exit 7'
+        $originalPath = $env:PATH
+        $env:PATH = $shimRoot + [IO.Path]::PathSeparator + $originalPath
+        try {
+            $output = & $powerShellPath -NoProfile -File $scriptPath -RepositoryRoot $repoRoot -Profile Docs -OutputFormat Json 2>&1 | Out-String
+            $exitCode = $LASTEXITCODE
+        }
+        finally {
+            $env:PATH = $originalPath
+        }
+
+        $exitCode | Should -Not -Be 0
+        $output | Should -Not -Match '"Status"\s*:\s*"READY"'
     }
 }
