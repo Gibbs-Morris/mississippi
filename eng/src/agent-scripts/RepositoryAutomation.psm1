@@ -237,7 +237,7 @@ function Get-RepositoryPathComparison {
         }
     }
     catch {
-        # An unproven macOS volume remains case-sensitive for identity.
+        Write-Verbose "Unable to prove case-insensitive path comparison for '$RepoRoot': $($_.Exception.Message)"
     }
     finally {
         Remove-Item -LiteralPath $probePath -Recurse -Force -ErrorAction SilentlyContinue
@@ -265,6 +265,71 @@ function Assert-RepositoryExecutionLeaseDirectoryAncestors {
     }
 }
 
+function Resolve-RepositoryExecutionLeaseDirectory {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$CanonicalRepoRoot,
+        [string]$LeaseDirectory
+    )
+
+    if ([string]::IsNullOrWhiteSpace($LeaseDirectory)) {
+        return Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases'
+    }
+    if ([System.IO.Path]::IsPathRooted($LeaseDirectory)) {
+        return [System.IO.Path]::GetFullPath($LeaseDirectory)
+    }
+    return [System.IO.Path]::GetFullPath((Join-Path $CanonicalRepoRoot $LeaseDirectory))
+}
+
+function Ensure-RepositoryExecutionLeaseDirectory {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $Path
+    if (Test-Path -LiteralPath $Path) {
+        $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+        if (-not $item.PSIsContainer -or [bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            throw "Lease directory is not a trusted private directory: '$Path'."
+        }
+        Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $Path
+        return $false
+    }
+
+    New-Item -ItemType Directory -Path $Path -Force | Out-Null
+    Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $Path
+    return $true
+}
+
+function Initialize-SharedRepositoryExecutionLeasePath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$LeaseDirectory,
+        [Parameter(Mandatory)][string]$LeasePath,
+        [Parameter(Mandatory)][bool]$LeaseDirectoryCreated
+    )
+
+    if (-not $LeaseDirectoryCreated) {
+        Test-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
+        if (-not (Test-Path -LiteralPath $LeasePath -PathType Leaf)) {
+            throw "Shared lease file '$LeasePath' must be pre-provisioned in the non-writable coordination directory."
+        }
+        return
+    }
+
+    $placeholder = [System.IO.FileStream]::new($LeasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+    try {
+        $placeholder.SetLength(1)
+        $placeholder.Flush($true)
+    }
+    finally {
+        $placeholder.Dispose()
+    }
+    if (-not $IsWindows) {
+        Set-RepositoryExecutionLeaseUnixMode -Path $LeasePath -Mode $sharedExecutionLeaseFileMode
+    }
+    Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
+}
+
 function Get-RepositoryExecutionLeasePathForRoot {
     [CmdletBinding()]
     param(
@@ -276,49 +341,15 @@ function Get-RepositoryExecutionLeasePathForRoot {
     $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
     $fileName = if ($sharedLease) { 'shared.lease' } else { ([System.BitConverter]::ToString($hash).Replace('-', '').ToLowerInvariant()) + '.lease' }
     $defaultLeaseDirectory = [string]::IsNullOrWhiteSpace($LeaseDirectory)
-    $leaseDirectory = if ($defaultLeaseDirectory) {
-        Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases'
-    }
-    elseif ([System.IO.Path]::IsPathRooted($LeaseDirectory)) {
-        [System.IO.Path]::GetFullPath($LeaseDirectory)
-    }
-    else {
-        [System.IO.Path]::GetFullPath((Join-Path $CanonicalRepoRoot $LeaseDirectory))
-    }
-    Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $leaseDirectory
-    $leaseDirectoryCreated = $false
-    if (Test-Path -LiteralPath $leaseDirectory) {
-        $leaseItem = Get-Item -LiteralPath $leaseDirectory -Force -ErrorAction Stop
-        if (-not $leaseItem.PSIsContainer -or [bool]($leaseItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
-            throw "Lease directory is not a trusted private directory: '$leaseDirectory'."
-        }
-    }
-    else {
-        New-Item -ItemType Directory -Path $leaseDirectory -Force | Out-Null
-        $leaseDirectoryCreated = $true
-    }
-    Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $leaseDirectory
-    $leasePath = Join-Path $leaseDirectory $fileName
+    $resolvedLeaseDirectory = Resolve-RepositoryExecutionLeaseDirectory -CanonicalRepoRoot $CanonicalRepoRoot -LeaseDirectory $LeaseDirectory
+    $leaseDirectoryCreated = Ensure-RepositoryExecutionLeaseDirectory -Path $resolvedLeaseDirectory
+    $leasePath = Join-Path $resolvedLeaseDirectory $fileName
+
     if ($sharedLease) {
-        if ($leaseDirectoryCreated) {
-            $placeholder = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
-            $placeholder.SetLength(1)
-            $placeholder.Flush($true)
-            $placeholder.Dispose()
-            if (-not $IsWindows) {
-                Set-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $sharedExecutionLeaseFileMode
-            }
-            Set-RepositoryExecutionLeaseUnixMode -Path $leaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
-        }
-        else {
-            Test-RepositoryExecutionLeaseUnixMode -Path $leaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
-            if (-not (Test-Path -LiteralPath $leasePath -PathType Leaf)) {
-                throw "Shared lease file '$leasePath' must be pre-provisioned in the non-writable coordination directory."
-            }
-        }
+        Initialize-SharedRepositoryExecutionLeasePath -LeaseDirectory $resolvedLeaseDirectory -LeasePath $leasePath -LeaseDirectoryCreated $leaseDirectoryCreated
     }
     elseif ($defaultLeaseDirectory) {
-        Set-RepositoryExecutionLeaseUnixMode -Path $leaseDirectory -Mode $privateExecutionLeaseDirectoryMode
+        Set-RepositoryExecutionLeaseUnixMode -Path $resolvedLeaseDirectory -Mode $privateExecutionLeaseDirectoryMode
     }
     return $leasePath
 }
@@ -334,59 +365,65 @@ function Get-RepositoryExecutionLeasePath {
     return Get-RepositoryExecutionLeasePathForRoot -CanonicalRepoRoot $canonicalRoot -LeaseDirectory $LeaseDirectory
 }
 
+function Resolve-ReparseTargetPath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Item,
+        [Parameter(Mandatory)][string]$Candidate
+    )
+
+    $target = @($Item.Target | Select-Object -First 1)[0]
+    if ([string]::IsNullOrWhiteSpace([string]$target)) {
+        throw "Unable to resolve worktree path component '$Candidate'."
+    }
+    if (-not [System.IO.Path]::IsPathRooted([string]$target)) {
+        $target = Join-Path (Split-Path -Parent $Candidate) ([string]$target)
+    }
+    return [System.IO.Path]::GetFullPath([string]$target)
+}
+
+function Resolve-ReparsePathComponent {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [System.Collections.Generic.HashSet[string]]$SeenTargets
+    )
+
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    $root = [System.IO.Path]::GetPathRoot($fullPath)
+    $segments = @($fullPath.Substring($root.Length).Split([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) | Where-Object { $_ })
+    $current = $root
+    for ($index = 0; $index -lt $segments.Count; $index++) {
+        $candidate = Join-Path $current $segments[$index]
+        $item = Get-Item -LiteralPath $candidate -Force -ErrorAction Stop
+        if (-not [bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            $current = $item.FullName
+            continue
+        }
+
+        if (-not $SeenTargets.Add([System.IO.Path]::GetFullPath($candidate))) {
+            throw "Worktree path resolution loop detected at '$candidate'."
+        }
+        $resolvedTarget = Resolve-ReparseTargetPath -Item $item -Candidate $candidate
+        if ($index -lt ($segments.Count - 1)) {
+            $remaining = $segments[($index + 1)..($segments.Count - 1)] -join [System.IO.Path]::DirectorySeparatorChar
+            $resolvedTarget = Join-Path $resolvedTarget $remaining
+        }
+        return Resolve-ReparsePathComponent -Path $resolvedTarget -SeenTargets $SeenTargets
+    }
+
+    return $current
+}
+
 function Resolve-RepositoryExecutionRoot {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$RepoRoot)
 
-    function Resolve-ReparsePathComponent {
-        param(
-            [Parameter(Mandatory)][string]$Path,
-            [System.Collections.Generic.HashSet[string]]$SeenTargets
-        )
-
-        if ($null -eq $SeenTargets) {
-            $comparison = if ((Get-RepositoryPathComparison -RepoRoot ([System.IO.Path]::GetFullPath($RepoRoot))) -eq [System.StringComparison]::OrdinalIgnoreCase) { [System.StringComparer]::OrdinalIgnoreCase } else { [System.StringComparer]::Ordinal }
-            $SeenTargets = [System.Collections.Generic.HashSet[string]]::new($comparison)
-        }
-
-        $fullPath = [System.IO.Path]::GetFullPath($Path)
-        $root = [System.IO.Path]::GetPathRoot($fullPath)
-        $segments = @($fullPath.Substring($root.Length).Split([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) | Where-Object { $_ })
-        $current = $root
-        for ($index = 0; $index -lt $segments.Count; $index++) {
-            $candidate = Join-Path $current $segments[$index]
-            $item = Get-Item -LiteralPath $candidate -Force -ErrorAction Stop
-            if (-not [bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
-                $current = $item.FullName
-                continue
-            }
-
-            if (-not $SeenTargets.Add([System.IO.Path]::GetFullPath($candidate))) {
-                throw "Worktree path resolution loop detected at '$candidate'."
-            }
-            $target = @($item.Target | Select-Object -First 1)[0]
-            if ([string]::IsNullOrWhiteSpace([string]$target)) {
-                throw "Unable to resolve worktree path component '$candidate'."
-            }
-            if (-not [System.IO.Path]::IsPathRooted([string]$target)) {
-                $target = Join-Path (Split-Path -Parent $candidate) ([string]$target)
-            }
-            $resolvedTarget = [System.IO.Path]::GetFullPath([string]$target)
-            $remaining = @(
-                if ($index -lt ($segments.Count - 1)) {
-                    $segments[($index + 1)..($segments.Count - 1)]
-                }
-            )
-            if (@($remaining).Count -gt 0) {
-                $resolvedTarget = Join-Path $resolvedTarget ($remaining -join [System.IO.Path]::DirectorySeparatorChar)
-            }
-            return Resolve-ReparsePathComponent -Path $resolvedTarget -SeenTargets $SeenTargets
-        }
-
-        return $current
-    }
-
-    return Resolve-ReparsePathComponent -Path ([System.IO.Path]::GetFullPath($RepoRoot))
+    $fullPath = [System.IO.Path]::GetFullPath($RepoRoot)
+    $comparison = Get-RepositoryPathComparison -RepoRoot $fullPath
+    $comparer = if ($comparison -eq [System.StringComparison]::OrdinalIgnoreCase) { [System.StringComparer]::OrdinalIgnoreCase } else { [System.StringComparer]::Ordinal }
+    $seenTargets = [System.Collections.Generic.HashSet[string]]::new($comparer)
+    return Resolve-ReparsePathComponent -Path $fullPath -SeenTargets $seenTargets
 }
 
 function Enter-RepositoryExecutionLease {
@@ -497,7 +534,8 @@ function Enter-RepositoryExecutionLease {
         $errorCode = $_.Exception.HResult -band 0xFFFF
         if ($errorCode -notin @(32, 33)) { throw }
         $owner = ''
-        try { $owner = (Get-Content -LiteralPath $leasePath -Raw -ErrorAction Stop).Trim() } catch { }
+        try { $owner = (Get-Content -LiteralPath $leasePath -Raw -ErrorAction Stop).Trim() }
+        catch { Write-Verbose "Unable to read the current lease owner from '$leasePath': $($_.Exception.Message)" }
         throw "Worktree execution lease is held for '$canonicalRoot'. Current owner: $owner. Use a separate worktree or wait for the active operation."
     }
     catch {
