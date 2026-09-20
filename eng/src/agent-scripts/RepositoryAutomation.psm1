@@ -545,6 +545,47 @@ function Get-MutationProjectSummary {
     }
 }
 
+function Get-MutationProjectMessage {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Project,
+        [Parameter(Mandatory)][string]$Fallback
+    )
+
+    if ($Project.Error) { return $Project.Error }
+    if ($Project.ReportError) { return $Project.ReportError }
+    return $Fallback
+}
+
+function Get-GitHubMutationSummaryDetailLines {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Summary)
+
+    $detailLines = @()
+    if ($Summary.BelowBreakThresholdCount -gt 0) {
+        $detailLines += ''
+        $detailLines += '### Projects below the advisory threshold'
+        foreach ($project in $Summary.BelowBreakThresholdProjects) {
+            $detailLines += "- $($project.Project): $($project.Score)%"
+        }
+    }
+    if ($Summary.NoScoreProjectCount -gt 0) {
+        $detailLines += ''
+        $detailLines += '### Projects without a mutation score'
+        foreach ($project in $Summary.NoScoreProjects) {
+            $detailLines += "- $($project.Project): $(Get-MutationProjectMessage -Project $project -Fallback 'No valid mutants were scored')"
+        }
+    }
+    if ($Summary.FailedProjectCount -gt 0) {
+        $detailLines += ''
+        $detailLines += '### Projects with execution failures'
+        foreach ($project in $Summary.FailedProjects) {
+            $detailLines += "- $($project.Project): $(Get-MutationProjectMessage -Project $project -Fallback $project.Status)"
+        }
+    }
+    return $detailLines
+}
+
 function Write-GitHubMutationSummary {
     [CmdletBinding()]
     param([Parameter(Mandatory)][object]$Summary)
@@ -568,29 +609,7 @@ function Write-GitHubMutationSummary {
         "- Unscored projects: **$($Summary.NoScoreProjectCount)**"
         "- Below break threshold ($($Summary.BreakThreshold)%): **$($Summary.BelowBreakThresholdCount)**"
     )
-    if ($Summary.BelowBreakThresholdCount -gt 0) {
-        $summaryLines += ''
-        $summaryLines += '### Projects below the advisory threshold'
-        foreach ($project in $Summary.BelowBreakThresholdProjects) {
-            $summaryLines += "- $($project.Project): $($project.Score)%"
-        }
-    }
-    if ($Summary.NoScoreProjectCount -gt 0) {
-        $summaryLines += ''
-        $summaryLines += '### Projects without a mutation score'
-        foreach ($project in $Summary.NoScoreProjects) {
-            $reason = if ($project.ReportError) { $project.ReportError } else { 'No valid mutants were scored' }
-            $summaryLines += "- $($project.Project): $reason"
-        }
-    }
-    if ($Summary.FailedProjectCount -gt 0) {
-        $summaryLines += ''
-        $summaryLines += '### Projects with execution failures'
-        foreach ($project in $Summary.FailedProjects) {
-            $failureMessage = if ($project.Error) { $project.Error } else { $project.Status }
-            $summaryLines += "- $($project.Project): $failureMessage"
-        }
-    }
+    $summaryLines += Get-GitHubMutationSummaryDetailLines -Summary $Summary
     Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value $summaryLines -Encoding utf8
 }
 
@@ -635,7 +654,7 @@ function Show-MutationRunSummary {
         BelowBreakThresholdProjects = @($belowBreak | Select-Object Project, Score)
         FailedProjects = @($failedProjects | Select-Object Project, Status, ReportValid, Error, ReportError)
         ThresholdFailureProjects = @($thresholdFailures | Select-Object Project, Score, RawScore)
-        NoScoreProjects = @($noScoreProjects | Select-Object Project, ReportError)
+        NoScoreProjects = @($noScoreProjects | Select-Object Project, Error, ReportError)
         Projects = $projectSummaries
     }
     $summaryPath = Join-Path $OutputPath 'mutation-summary.json'
@@ -835,7 +854,7 @@ function Invoke-MutationTarget {
         Set-MutationResultMetrics -ProjectResult $ProjectResult -ReportPath $reportPath
         $ProjectResult.Output = $projectOutput
         $ProjectResult.ReportPath = $reportPath
-        if (-not $ReportOnly -and $BreakThreshold -gt 0 -and $ProjectResult.RawMutationScore -ne $null -and
+        if (-not $ReportOnly -and $BreakThreshold -gt 0 -and $null -ne $ProjectResult.RawMutationScore -and
             $ProjectResult.RawMutationScore -lt $BreakThreshold) {
             $ProjectResult.Status = 'ThresholdFailed'
             $ProjectResult.ThresholdFailure = $true
