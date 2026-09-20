@@ -9,10 +9,7 @@ Import-Module -Name $modulePath -Force
 Describe 'RepositoryAutomation helpers' {
     AfterEach {
         if (-not $IsWindows) {
-            $testDirectories = @(Get-ChildItem -LiteralPath $TestDrive -Directory -Recurse -Force -ErrorAction SilentlyContinue | Sort-Object FullName -Descending)
-            foreach ($testDirectory in $testDirectories) {
-                & chmod 755 -- $testDirectory.FullName 2>$null | Out-Null
-            }
+            & chmod -R u+rwX -- $TestDrive 2>$null | Out-Null
         }
     }
 

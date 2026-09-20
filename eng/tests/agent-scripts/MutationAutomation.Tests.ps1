@@ -8,6 +8,12 @@ BeforeAll {
 }
 
 Describe 'Mutation automation' {
+    AfterEach {
+        if (-not $IsWindows) {
+            & chmod -R u+rwX -- $TestDrive 2>$null | Out-Null
+        }
+    }
+
     BeforeEach {
         $repo = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
         foreach ($directory in @('.git', 'src/Widget', 'tests/Widget.L0Tests', 'tests/Widget.L1Tests', 'tests/Widget.L2Tests', 'samples/Other.L0Tests')) {
