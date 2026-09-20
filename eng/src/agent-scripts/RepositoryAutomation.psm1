@@ -326,26 +326,6 @@ function Ensure-RepositoryExecutionLeaseDirectory {
     return $true
 }
 
-function Repair-SharedRepositoryExecutionLeaseFile {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][string]$LeaseDirectory,
-        [Parameter(Mandatory)][string]$LeasePath
-    )
-
-    if (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseWritableDirectoryMode }
-    try {
-        $placeholder = [System.IO.FileStream]::new($LeasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
-        try { $placeholder.SetLength(1); $placeholder.Flush($true) }
-        finally { $placeholder.Dispose() }
-        if (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $LeasePath -Mode $sharedExecutionLeaseFileMode }
-        if ($IsWindows) { Set-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath }
-    }
-    finally {
-        if (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode }
-    }
-}
-
 function Create-SharedRepositoryExecutionLeaseFile {
     [CmdletBinding()]
     param(
@@ -366,12 +346,13 @@ function Initialize-SharedRepositoryExecutionLeasePath {
     param(
         [Parameter(Mandatory)][string]$LeaseDirectory,
         [Parameter(Mandatory)][string]$LeasePath,
+        [Parameter(Mandatory)][string]$MetadataPath,
         [Parameter(Mandatory)][bool]$LeaseDirectoryCreated
     )
 
     if (-not $LeaseDirectoryCreated) {
         if (-not (Test-Path -LiteralPath $LeasePath -PathType Leaf)) {
-            Repair-SharedRepositoryExecutionLeaseFile -LeaseDirectory $LeaseDirectory -LeasePath $LeasePath
+            throw "Shared lease directory '$LeaseDirectory' exists without its coordination file. Refusing to modify a caller-owned directory; pre-provision '$LeasePath' or use a new dedicated coordination directory."
         }
         else {
             Test-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
@@ -379,6 +360,7 @@ function Initialize-SharedRepositoryExecutionLeasePath {
         }
         return
     }
+    Ensure-RepositoryExecutionLeaseMetadataFile -Path $MetadataPath -SharedLease $true
     Create-SharedRepositoryExecutionLeaseFile -LeaseDirectory $LeaseDirectory -LeasePath $LeasePath
 }
 
@@ -396,13 +378,14 @@ function Get-RepositoryExecutionLeasePathForRoot {
     $resolvedLeaseDirectory = Resolve-RepositoryExecutionLeaseDirectory -CanonicalRepoRoot $CanonicalRepoRoot -LeaseDirectory $LeaseDirectory
     $leaseDirectoryCreated = Ensure-RepositoryExecutionLeaseDirectory -Path $resolvedLeaseDirectory
     $leasePath = Join-Path $resolvedLeaseDirectory $fileName
+    $metadataPath = "$leasePath.metadata"
 
     if ($sharedLease) {
         if ($IsWindows) {
             if ($leaseDirectoryCreated) { Set-RepositoryExecutionLeaseWindowsAccess -Path $resolvedLeaseDirectory }
             else { Test-RepositoryExecutionLeaseWindowsAccess -Path $resolvedLeaseDirectory }
         }
-        Initialize-SharedRepositoryExecutionLeasePath -LeaseDirectory $resolvedLeaseDirectory -LeasePath $leasePath -LeaseDirectoryCreated $leaseDirectoryCreated
+        Initialize-SharedRepositoryExecutionLeasePath -LeaseDirectory $resolvedLeaseDirectory -LeasePath $leasePath -MetadataPath $metadataPath -LeaseDirectoryCreated $leaseDirectoryCreated
     }
     elseif ($defaultLeaseDirectory) {
         Set-RepositoryExecutionLeaseUnixMode -Path $resolvedLeaseDirectory -Mode $privateExecutionLeaseDirectoryMode
@@ -666,8 +649,10 @@ function Release-RepositoryExecutionLeaseResources {
 
     try {
         if ($null -ne $Resources.StreamState) {
-            if ($null -ne $Resources.LeaseOffset) { Unlock-SharedRepositoryExecutionLeaseSlot -State $Resources.StreamState -Offset ([long]$Resources.LeaseOffset) }
-            Release-SharedRepositoryExecutionLeaseStream -State $Resources.StreamState
+            try {
+                if ($null -ne $Resources.LeaseOffset) { Unlock-SharedRepositoryExecutionLeaseSlot -State $Resources.StreamState -Offset ([long]$Resources.LeaseOffset) }
+            }
+            finally { Release-SharedRepositoryExecutionLeaseStream -State $Resources.StreamState }
         }
         elseif ($null -ne $Resources.Stream) {
             $Resources.Stream.Dispose()
@@ -932,8 +917,10 @@ function Exit-RepositoryExecutionLease {
         try {
             Clear-RepositoryExecutionLeaseMetadata -Lease $Lease
             if ($null -ne $Lease.SharedStreamState) {
-                if ($null -ne $Lease.LeaseOffset) { Unlock-SharedRepositoryExecutionLeaseSlot -State $Lease.SharedStreamState -Offset ([long]$Lease.LeaseOffset) }
-                Release-SharedRepositoryExecutionLeaseStream -State $Lease.SharedStreamState
+                try {
+                    if ($null -ne $Lease.LeaseOffset) { Unlock-SharedRepositoryExecutionLeaseSlot -State $Lease.SharedStreamState -Offset ([long]$Lease.LeaseOffset) }
+                }
+                finally { Release-SharedRepositoryExecutionLeaseStream -State $Lease.SharedStreamState }
             }
             else {
                 if ($null -ne $Lease.LeaseOffset) { $Lease.Stream.Unlock([long]$Lease.LeaseOffset, 1) }

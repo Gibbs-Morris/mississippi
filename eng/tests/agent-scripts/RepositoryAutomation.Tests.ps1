@@ -208,6 +208,19 @@ catch {
         }
         & $powerShellPath -NoProfile -File $scriptPath -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $coordinationRoot | Out-Null
         $LASTEXITCODE | Should -Be 0
+
+        $privateLeaseRoot = Join-Path $TestDrive 'cross-process-private-repository'
+        New-Item -ItemType Directory -Path $privateLeaseRoot -Force | Out-Null
+        $privateLease = Enter-RepositoryExecutionLease -RepoRoot $privateLeaseRoot -OperationId 'private-parent-owner'
+        try {
+            & $powerShellPath -NoProfile -File $scriptPath -ModulePath $modulePath -RepoRoot $privateLeaseRoot | Out-Null
+            $LASTEXITCODE | Should -Be 42
+        }
+        finally {
+            Exit-RepositoryExecutionLease -Lease $privateLease
+        }
+        & $powerShellPath -NoProfile -File $scriptPath -ModulePath $modulePath -RepoRoot $privateLeaseRoot | Out-Null
+        $LASTEXITCODE | Should -Be 0
     }
 
     It 'preserves lease state across a non-forcing module import' {
