@@ -4,15 +4,11 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $sharedExecutionLeaseDirectoryMode = [System.IO.UnixFileMode]::UserRead -bor
-    [System.IO.UnixFileMode]::UserWrite -bor
     [System.IO.UnixFileMode]::UserExecute -bor
     [System.IO.UnixFileMode]::GroupRead -bor
-    [System.IO.UnixFileMode]::GroupWrite -bor
     [System.IO.UnixFileMode]::GroupExecute -bor
     [System.IO.UnixFileMode]::OtherRead -bor
-    [System.IO.UnixFileMode]::OtherWrite -bor
-    [System.IO.UnixFileMode]::OtherExecute -bor
-    [System.IO.UnixFileMode]::StickyBit
+    [System.IO.UnixFileMode]::OtherExecute
 $sharedExecutionLeaseFileMode = [System.IO.UnixFileMode]::UserRead -bor
     [System.IO.UnixFileMode]::UserWrite -bor
     [System.IO.UnixFileMode]::GroupRead -bor
@@ -69,6 +65,13 @@ function Test-RepositoryExecutionLeaseUnixMode {
 
     if (([int]$actualMode -band [int]$Mode) -ne [int]$Mode) {
         throw "Shared execution lease permissions on '$Path' are insufficient for all participating accounts."
+    }
+
+    $writeBits = [System.IO.UnixFileMode]::UserWrite -bor
+        [System.IO.UnixFileMode]::GroupWrite -bor
+        [System.IO.UnixFileMode]::OtherWrite
+    if (([int]$Mode -band [int]$writeBits) -eq 0 -and ([int]$actualMode -band [int]$writeBits) -ne 0) {
+        throw "Shared execution lease path '$Path' must not be writable by participating accounts."
     }
 }
 
@@ -154,18 +157,32 @@ function Get-RepositoryExecutionLeasePathForRoot {
         New-Item -ItemType Directory -Path $leaseDirectory -Force | Out-Null
         $leaseDirectoryCreated = $true
     }
+    $leasePath = Join-Path $leaseDirectory $fileName
     if ($sharedLease) {
         if ($leaseDirectoryCreated) {
+            $placeholderOptions = [System.IO.FileStreamOptions]::new()
+            $placeholderOptions.Mode = [System.IO.FileMode]::OpenOrCreate
+            $placeholderOptions.Access = [System.IO.FileAccess]::ReadWrite
+            $placeholderOptions.Share = [System.IO.FileShare]::ReadWrite
+            if (-not $IsWindows) { $placeholderOptions.UnixCreateMode = $sharedExecutionLeaseFileMode }
+            $placeholder = [System.IO.FileStream]::new($leasePath, $placeholderOptions)
+            $placeholder.Dispose()
+            if (-not $IsWindows) {
+                Set-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $sharedExecutionLeaseFileMode
+            }
             Set-RepositoryExecutionLeaseUnixMode -Path $leaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
         }
         else {
             Test-RepositoryExecutionLeaseUnixMode -Path $leaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
+            if (-not (Test-Path -LiteralPath $leasePath -PathType Leaf)) {
+                throw "Shared lease file '$leasePath' must be pre-provisioned in the non-writable coordination directory."
+            }
         }
     }
     elseif ($defaultLeaseDirectory) {
         Set-RepositoryExecutionLeaseUnixMode -Path $leaseDirectory -Mode $privateExecutionLeaseDirectoryMode
     }
-    return Join-Path $leaseDirectory $fileName
+    return $leasePath
 }
 
 function Get-RepositoryExecutionLeasePath {

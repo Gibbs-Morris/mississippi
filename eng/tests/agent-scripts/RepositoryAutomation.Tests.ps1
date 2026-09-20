@@ -54,7 +54,7 @@ Describe 'RepositoryAutomation helpers' {
             $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'shared-owner' -LeaseDirectory $coordinationRoot
             try {
                 $directoryMode = [System.IO.File]::GetUnixFileMode($coordinationRoot)
-                ([int]$directoryMode -band [int][System.IO.UnixFileMode]::OtherWrite) | Should -Not -Be 0
+                ([int]$directoryMode -band [int][System.IO.UnixFileMode]::OtherWrite) | Should -Be 0
                 $fileMode = [System.IO.File]::GetUnixFileMode($lease.Path)
                 ([int]$fileMode -band [int][System.IO.UnixFileMode]::OtherWrite) | Should -Not -Be 0
             }
@@ -368,7 +368,7 @@ Describe 'Repository automation quality gates' {
         Mock Invoke-MississippiSolutionUnitTests { [pscustomobject]@{ CoverageReportPath = (Join-Path $TestDrive 'coverage.cobertura.xml') } } -ModuleName RepositoryAutomation
         Mock Invoke-SampleSolutionBuild {} -ModuleName RepositoryAutomation
         Mock Invoke-RepositoryProcess { throw 'summarizer exited 1' } -ModuleName RepositoryAutomation
-        { Invoke-SolutionsPipeline -RepoRoot $TestDrive -SkipCleanup -LeaseDirectory (Join-Path $TestDrive 'pipeline-leases') } | Should -Throw '*summarizer exited 1*'
+        { Invoke-SolutionsPipeline -RepoRoot $TestDrive -SkipCleanup -LeaseDirectory (Join-Path $TestDrive ('pipeline-leases-' + [guid]::NewGuid().ToString('N'))) } | Should -Throw '*summarizer exited 1*'
         Should -Invoke Invoke-SampleSolutionBuild -ModuleName RepositoryAutomation -Times 0 -Exactly
     }
 
@@ -386,7 +386,7 @@ Describe 'Repository automation quality gates' {
         Mock Invoke-FinalSolutionsBuild { $calls.Add('final-build') } -ModuleName RepositoryAutomation
         Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
 
-        Invoke-SolutionsPipeline -RepoRoot $TestDrive -LeaseDirectory (Join-Path $TestDrive 'pipeline-leases') | Out-Null
+        Invoke-SolutionsPipeline -RepoRoot $TestDrive -LeaseDirectory (Join-Path $TestDrive ('pipeline-leases-' + [guid]::NewGuid().ToString('N'))) | Out-Null
 
         @($calls | Where-Object { $_ -eq 'mississippi-cleanup' }).Count | Should -Be 1
         @($calls | Where-Object { $_ -eq 'sample-cleanup' }).Count | Should -Be 1
@@ -414,7 +414,7 @@ Describe 'Repository automation quality gates' {
             Mock Invoke-FinalSolutionsBuild { $observedRoots.Add($RepoRoot) } -ModuleName RepositoryAutomation
             Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
 
-            Invoke-SolutionsPipeline -RepoRoot $aliasRoot -SkipCleanup -LeaseDirectory (Join-Path $TestDrive 'pipeline-leases') | Out-Null
+            Invoke-SolutionsPipeline -RepoRoot $aliasRoot -SkipCleanup -LeaseDirectory (Join-Path $TestDrive ('pipeline-leases-' + [guid]::NewGuid().ToString('N'))) | Out-Null
 
             $expectedRoot = (Get-Item -LiteralPath $realRoot).FullName
             $observedRoots.Count | Should -Be 5
@@ -444,7 +444,7 @@ Describe 'Repository automation quality gates' {
         Mock Invoke-FinalSolutionsBuild {} -ModuleName RepositoryAutomation
         Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
 
-        Invoke-SolutionsPipeline -RepoRoot $TestDrive -SkipCleanup -LeaseDirectory (Join-Path $TestDrive 'pipeline-leases') | Out-Null
+        Invoke-SolutionsPipeline -RepoRoot $TestDrive -SkipCleanup -LeaseDirectory (Join-Path $TestDrive ('pipeline-leases-' + [guid]::NewGuid().ToString('N'))) | Out-Null
 
         Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -ParameterFilter {
             $Arguments -contains '-CoverageReportPath' -and $Arguments -contains $coveragePath

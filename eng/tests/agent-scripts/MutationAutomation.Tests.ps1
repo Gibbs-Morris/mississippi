@@ -333,7 +333,7 @@ Describe 'Mutation automation' {
         Mock Invoke-StrykerMutationTestPerProject { throw 'mutation failed' }
         Push-Location $repo
         try {
-            $summary = & $qualityScript -TestProject $testProject -SourceProject $sourceProject -Configuration Debug -NoBuild -LeaseDirectory (Join-Path $TestDrive 'quality-leases') 6>&1 3>$null
+            $summary = & $qualityScript -TestProject $testProject -SourceProject $sourceProject -Configuration Debug -NoBuild -LeaseDirectory (Join-Path $TestDrive ('quality-leases-' + [guid]::NewGuid().ToString('N'))) 6>&1 3>$null
             $LASTEXITCODE | Should -Be 1
             ($summary | Out-String) | Should -Match 'RESULT: FAIL'
         }
@@ -355,7 +355,7 @@ Describe 'Mutation automation' {
         Mock Invoke-StrykerMutationTestPerProject {}
         Push-Location $repo
         try {
-            $summary = & $qualityScript -TestProject (Join-Path $repo 'tests/Widget.L0Tests/Widget.L0Tests.csproj') -SkipMutation -NoBuild -LeaseDirectory (Join-Path $TestDrive 'quality-leases') 6>&1
+            $summary = & $qualityScript -TestProject (Join-Path $repo 'tests/Widget.L0Tests/Widget.L0Tests.csproj') -SkipMutation -NoBuild -LeaseDirectory (Join-Path $TestDrive ('quality-leases-' + [guid]::NewGuid().ToString('N'))) 6>&1
             $LASTEXITCODE | Should -Be 1
             ($summary | Out-String) | Should -Match 'RESULT: FAIL'
             ($summary | Out-String) | Should -Match 'TEST_PASSED: 1'
@@ -405,7 +405,7 @@ Describe 'Mutation automation' {
         Mock Invoke-RepositoryProcess {
             if ($Arguments -like '*summarize-mutation-survivors.ps1') { throw 'mutation score gate failed after summary' }
         } -ModuleName RepositoryAutomation
-        { Invoke-SolutionsPipeline -RepoRoot $repo -IncludeMutation -Configuration Debug -LeaseDirectory (Join-Path $TestDrive 'pipeline-leases') } |
+        { Invoke-SolutionsPipeline -RepoRoot $repo -IncludeMutation -Configuration Debug -LeaseDirectory (Join-Path $TestDrive ('pipeline-leases-' + [guid]::NewGuid().ToString('N'))) } |
             Should -Throw '*mutation score gate failed after summary*'
         Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
             $Arguments -like '*summarize-mutation-survivors.ps1' -and $Arguments -contains 'Debug' -and
