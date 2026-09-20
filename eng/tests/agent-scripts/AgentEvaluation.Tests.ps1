@@ -155,4 +155,29 @@ Describe 'Issue delivery benchmark validation' {
         $outcome.ExitCode | Should -Not -Be 0
         ($outcome.Result.Errors -join "`n") | Should -Match 'invalid nonnegative reviewRework metric'
     }
+
+    It 'rejects trial records for scenarios outside the canonical category set' {
+        $data = New-LiveResults
+        $data.hosts[0].trialRecords[0].scenarioId = 'unlisted-scenario'
+        $path = Join-Path $TestDrive 'unknown-scenario-results.json'
+        $data | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path
+
+        $outcome = Invoke-Evaluation -ResultsPath $path
+
+        $outcome.ExitCode | Should -Not -Be 0
+        ($outcome.Result.Errors -join "`n") | Should -Match "unknown scenario 'unlisted-scenario'"
+    }
+
+    It 'validates optional measurements on failure-case records' {
+        $data = New-LiveResults
+        $failure = @($data.hosts[0].trialRecords | Where-Object { $null -ne $_.PSObject.Properties['failureCase'] })[0]
+        $failure | Add-Member -NotePropertyName elapsedMilliseconds -NotePropertyValue -1 -Force
+        $path = Join-Path $TestDrive 'invalid-failure-measurement-results.json'
+        $data | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path
+
+        $outcome = Invoke-Evaluation -ResultsPath $path
+
+        $outcome.ExitCode | Should -Not -Be 0
+        ($outcome.Result.Errors -join "`n") | Should -Match 'failure-case evidence has an invalid nonnegative elapsedMilliseconds measurement'
+    }
 }

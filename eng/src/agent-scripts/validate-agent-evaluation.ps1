@@ -215,6 +215,16 @@ try {
         if ($summaryIds.Count -ne $actualCategoryIds.Count -or (Get-EvaluationSet -Values $summaryIds).Count -ne $summaryIds.Count -or -not (Test-EvaluationSetEqual -Left $summaryIds -Right $actualCategoryIds)) {
             $errors.Add("Host '$hostName' trial summary scenario IDs must exactly match the canonical category set.")
         }
+        if ([string]$hostResult.activeModel -notin @('unsupported', 'blocked', 'unknown')) {
+            $canonicalCategoryIdSet = [System.Collections.Generic.HashSet[string]]::new([string[]]$actualCategoryIds)
+            foreach ($trialRecord in @($hostResult.trialRecords)) {
+                $scenarioProperty = $trialRecord.PSObject.Properties['scenarioId']
+                $scenarioId = if ($null -eq $scenarioProperty) { '' } else { [string]$scenarioProperty.Value }
+                if (-not $canonicalCategoryIdSet.Contains($scenarioId)) {
+                    $errors.Add("Host '$hostName' trial record has an unknown scenario '$scenarioId'.")
+                }
+            }
+        }
         foreach ($category in $categories) {
             $summaryMatches = @($summaryCollection | Where-Object scenarioId -EQ $category.id)
             if ($summaryMatches.Count -ne 1) { $errors.Add("Host '$hostName' must contain exactly one trial summary '$($category.id)'.") }
@@ -372,6 +382,19 @@ try {
                         }
                         if ($failureOutcome -eq 'passed' -and @($failureCheckResults | Where-Object { [string]$_.status -ne 'passed' }).Count -gt 0) {
                             $errors.Add("Host '$hostName' category '$($category.id)' passed failure-case evidence has a non-passing independent check.")
+                        }
+                    }
+                    foreach ($measurementField in @('tokenCount', 'tokens', 'elapsedMilliseconds', 'elapsedSeconds', 'durationMilliseconds', 'durationSeconds')) {
+                        $measurementProperty = $failureRecord.PSObject.Properties[$measurementField]
+                        if ($null -ne $measurementProperty) {
+                            $measurementValue = $measurementProperty.Value
+                            if (-not (Test-EvaluationNonnegativeNumber -Value $measurementValue)) {
+                                $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence has an invalid nonnegative $measurementField measurement.")
+                            }
+                            $provenance = $failureRecord.PSObject.Properties['measurementProvenance']
+                            if ($null -eq $provenance -or [string]$provenance.Value -ne 'direct') {
+                                $errors.Add("Host '$hostName' category '$($category.id)' failure-case measurement evidence must be directly measured.")
+                            }
                         }
                     }
                     foreach ($safetyField in @('falseCompletion', 'authorityViolations')) {
