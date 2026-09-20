@@ -15,6 +15,17 @@ function Test-EvaluationInteger {
     return $Value -is [byte] -or $Value -is [int16] -or $Value -is [int32] -or $Value -is [int64]
 }
 
+function Test-EvaluationNonnegativeNumber {
+    param([AllowNull()][object]$Value)
+
+    $numeric = $Value -is [sbyte] -or $Value -is [byte] -or $Value -is [int16] -or $Value -is [uint16] -or
+        $Value -is [int32] -or $Value -is [uint32] -or $Value -is [int64] -or $Value -is [uint64] -or
+        $Value -is [single] -or $Value -is [double] -or $Value -is [decimal]
+    if (-not $numeric) { return $false }
+    $number = [double]$Value
+    return -not [double]::IsNaN($number) -and -not [double]::IsInfinity($number) -and $number -ge 0
+}
+
 function Get-EvaluationSet {
     param([AllowEmptyCollection()][object[]]$Values)
     return @($Values | ForEach-Object { [string]$_ } | Sort-Object -Unique)
@@ -157,8 +168,16 @@ try {
             if ([int]$summary.passed + [int]$summary.failed -ne $attempted) { $errors.Add("Host '$hostName' category '$($category.id)' does not reconcile attempted, passed, and failed counts.") }
             if ([int]$summary.passed -gt $attempted) { $errors.Add("Host '$hostName' category '$($category.id)' counts unsupported trials as passes.") }
             if ([string]$hostResult.activeModel -notin @('unsupported', 'blocked', 'unknown')) {
-                $records = @($hostResult.trialRecords | Where-Object scenarioId -EQ $category.id)
-                if ($records.Count -ne $expectedTrials) { $errors.Add("Host '$hostName' category '$($category.id)' requires one evidence record per trial.") }
+                $allRecords = @($hostResult.trialRecords | Where-Object scenarioId -EQ $category.id)
+                $records = @($allRecords | Where-Object {
+                    $failureCase = $_.PSObject.Properties['failureCase']
+                    $null -eq $failureCase -or [string]::IsNullOrWhiteSpace([string]$failureCase.Value)
+                })
+                $failureRecords = @($allRecords | Where-Object {
+                    $failureCase = $_.PSObject.Properties['failureCase']
+                    $null -ne $failureCase -and -not [string]::IsNullOrWhiteSpace([string]$failureCase.Value)
+                })
+                if ($records.Count -ne $expectedTrials) { $errors.Add("Host '$hostName' category '$($category.id)' requires one normal evidence record per trial.") }
                 $recordInputIds = [System.Collections.Generic.List[string]]::new()
                 $recordPassed = 0
                 $recordFailed = 0
@@ -221,13 +240,19 @@ try {
                     }
                     if ($outcome -in @('passed', 'failed', 'blocked', 'unsupported')) {
                         foreach ($field in @('reviewRework', 'interventions')) {
-                            if ($null -eq $record.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing $field.") }
+                            $metric = $record.PSObject.Properties[$field]
+                            if ($null -eq $metric) {
+                                $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing $field.")
+                            }
+                            elseif (-not (Test-EvaluationNonnegativeNumber -Value $metric.Value)) {
+                                $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has an invalid nonnegative $field metric.")
+                            }
                         }
-                        if ($null -eq $record.reviewRework -or $null -eq $record.interventions) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has incomplete review/intervention evidence.") }
                     }
                     if ($outcome -in @('passed', 'failed')) {
                         if ($null -eq $record.PSObject.Properties['acceptancePassed']) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing acceptancePassed.") }
                         elseif ($record.acceptancePassed -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has a non-boolean acceptancePassed value.") }
+                        elseif (($outcome -eq 'passed' -and -not $record.acceptancePassed) -or ($outcome -eq 'failed' -and $record.acceptancePassed)) { $errors.Add("Host '$hostName' category '$($category.id)' acceptancePassed does not reconcile with outcome '$outcome'.") }
                     }
                     if ($outcome -eq 'failed' -and [string]::IsNullOrWhiteSpace([string]$record.reason)) { $errors.Add("Host '$hostName' category '$($category.id)' failed trial is missing a reason.") }
                     if ($outcome -in @('blocked', 'unsupported') -and [string]::IsNullOrWhiteSpace([string]$record.reason)) { $errors.Add("Host '$hostName' category '$($category.id)' blocked or unsupported trial is missing a reason.") }
@@ -250,9 +275,36 @@ try {
                 if ($recordFalseCompletion -ne [int]$summary.falseCompletion -or $recordAuthorityViolations -ne [int]$summary.authorityViolations) {
                     $errors.Add("Host '$hostName' category '$($category.id)' trial safety counters do not reconcile with aggregate outcomes.")
                 }
+                foreach ($failureRecord in $failureRecords) {
+                    if ([string]$failureRecord.failureCase -notin @($category.failureCases)) {
+                        $errors.Add("Host '$hostName' category '$($category.id)' has an unknown failure case.")
+                    }
+                    foreach ($identityField in @('contextId', 'worktreeId')) {
+                        $identityProperty = $failureRecord.PSObject.Properties[$identityField]
+                        if ($null -eq $identityProperty -or [string]::IsNullOrWhiteSpace([string]$identityProperty.Value)) {
+                            $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence is missing $identityField.")
+                        }
+                        elseif ($identityField -eq 'contextId' -and -not $hostContextIds.Add([string]$identityProperty.Value)) {
+                            $errors.Add("Host '$hostName' category '$($category.id)' reuses a trial context.")
+                        }
+                        elseif ($identityField -eq 'worktreeId' -and -not $hostWorktreeIds.Add([string]$identityProperty.Value)) {
+                            $errors.Add("Host '$hostName' category '$($category.id)' reuses an isolated worktree.")
+                        }
+                    }
+                    foreach ($metricField in @('reviewRework', 'interventions')) {
+                        $metricProperty = $failureRecord.PSObject.Properties[$metricField]
+                        if ($null -eq $metricProperty -or -not (Test-EvaluationNonnegativeNumber -Value $metricProperty.Value)) {
+                            $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence has an invalid nonnegative $metricField metric.")
+                        }
+                    }
+                }
                 foreach ($failureCase in @($category.failureCases)) {
-                    if (@($records | Where-Object { $null -ne $_.PSObject.Properties['failureCase'] -and [string]$_.failureCase -eq [string]$failureCase }).Count -eq 0) {
+                    $matchingFailureRecords = @($failureRecords | Where-Object { [string]$_.failureCase -eq [string]$failureCase })
+                    if ($matchingFailureRecords.Count -eq 0) {
                         $errors.Add("Host '$hostName' category '$($category.id)' is missing failure-case evidence '$failureCase'.")
+                    }
+                    elseif ($matchingFailureRecords.Count -gt 1) {
+                        $errors.Add("Host '$hostName' category '$($category.id)' has duplicate failure-case evidence '$failureCase'.")
                     }
                 }
                 }
