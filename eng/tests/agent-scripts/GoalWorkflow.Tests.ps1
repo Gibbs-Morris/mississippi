@@ -163,6 +163,14 @@ Describe 'Issue-driven goal workflow' {
         $outcome.Result.Error | Should -Match 'nonempty authoritative handle'
     }
 
+    It 'rejects an unknown operation status' {
+        $outcome = Invoke-Goal -Operation '{"Status":"paused","Handle":"job-123","Name":"validation"}'
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Status | Should -Be 'ERROR'
+        $outcome.Result.Error | Should -Match 'Unsupported goal operation status'
+    }
+
     It 'rejects a replacement handle for a running operation' {
         $null = Invoke-Goal -Operation '{"Status":"running","Handle":"job-123","Name":"validation"}'
         $outcome = Invoke-Goal -Action resume -Operation '{"Status":"running","Handle":"job-999","Name":"validation"}'
@@ -226,6 +234,10 @@ Describe 'Issue-driven goal workflow' {
         $null = Invoke-Goal -Decision 'decision-a' -Evidence 'evidence-a' -Fix 'fix-a' -Review 'review-a'
         $saved = Get-Content -LiteralPath $checkpoint -Raw | ConvertFrom-Json
 
+        $saved.Decisions -is [array] | Should -BeTrue
+        $saved.AcceptanceEvidence -is [array] | Should -BeTrue
+        $saved.AttemptedFixes -is [array] | Should -BeTrue
+        $saved.OutstandingReviewWork -is [array] | Should -BeTrue
         @($saved.Decisions) | Should -Contain 'decision-a'
         @($saved.AcceptanceEvidence) | Should -Contain 'evidence-a'
         @($saved.AttemptedFixes) | Should -Contain 'fix-a'

@@ -155,7 +155,8 @@ function Merge-GoalCollection {
         [AllowEmptyCollection()][object[]]$Existing = @(),
         [AllowEmptyCollection()][string[]]$Added = @()
     )
-    return @(@($Existing) + @($Added) | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | ForEach-Object { [string]$_ } | Select-Object -Unique)
+    $merged = @(@($Existing) + @($Added) | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | ForEach-Object { [string]$_ } | Select-Object -Unique)
+    return ,([object[]]$merged)
 }
 
 function Expand-GoalStringCollection {
@@ -183,8 +184,12 @@ function Get-GoalOperationState {
     param([AllowEmptyString()][string]$Json)
     if ([string]::IsNullOrWhiteSpace($Json)) { return [pscustomobject]@{ Status = 'none'; Handle = ''; Name = '' } }
     $state = ConvertFrom-Json -InputObject $Json
+    $status = if ($null -eq $state.PSObject.Properties['Status']) { '' } else { [string]$state.Status }
+    if ($status -notin @('none', 'running', 'completed', 'failed')) {
+        throw "Unsupported goal operation status '$status'. Expected none, running, completed, or failed."
+    }
     return [pscustomobject]@{
-        Status = if ($null -eq $state.PSObject.Properties['Status']) { '' } else { [string]$state.Status }
+        Status = $status
         Handle = if ($null -eq $state.PSObject.Properties['Handle'] -or $null -eq $state.Handle) { '' } else { [string]$state.Handle }
         Name = if ($null -eq $state.PSObject.Properties['Name'] -or $null -eq $state.Name) { '' } else { [string]$state.Name }
     }
@@ -345,15 +350,10 @@ try {
     }
 
     $currentWorktreeFingerprint = Get-GoalWorktreeFingerprint -Root $root -ExcludePaths @($checkpoint, $temporaryCheckpoint, $checkpointLockPath)
-    $dependenciesAndReadiness = if ($null -ne $contractResult.PSObject.Properties['DependenciesAndReadiness']) {
-        [string]$contractResult.DependenciesAndReadiness
+    if ($null -eq $contractResult.PSObject.Properties['DependenciesAndReadiness']) {
+        throw 'Issue contract validator did not return the DependenciesAndReadiness section.'
     }
-    else {
-        $structuredBody = Remove-GoalMarkdownFencedBlocks -Content $currentBody
-        $structuredBody = [regex]::Replace($structuredBody, '(?s)<!--.*?-->', '')
-        $dependencyMatches = @([regex]::Matches($structuredBody, '(?ms)^#{2,3}[ \t]+Dependencies and readiness[ \t]*\r?\n(?<Body>.*?)(?=^#{2,3}[ \t]+|\z)'))
-        if ($dependencyMatches.Count -gt 0) { $dependencyMatches[-1].Groups['Body'].Value.Trim() } else { '' }
-    }
+    $dependenciesAndReadiness = [string]$contractResult.DependenciesAndReadiness
     $validatedDigest = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['ValidatedIssueBodyDigest']) { [string]$previous.ValidatedIssueBodyDigest } else { '' }
     $validatedHead = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['ValidatedHeadRevision']) { [string]$previous.ValidatedHeadRevision } else { '' }
     $validatedBase = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['ValidatedBaseRevision']) { [string]$previous.ValidatedBaseRevision } else { '' }
