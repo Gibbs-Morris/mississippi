@@ -329,6 +329,11 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                 return fieldType.GetGenericArguments().Any(IsDependencyFieldType);
             }
 
+            if (fieldType.IsInterface || fieldType.IsAbstract)
+            {
+                return true;
+            }
+
             return fieldType.GetGenericArguments().Any(IsDependencyFieldType);
         }
 
@@ -434,6 +439,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
         }
 
         int? loadedParameter = null;
+        int? conditionalParameter = null;
         int offset = 0;
         while (offset < il.Length)
         {
@@ -444,6 +450,15 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             if (TryGetArgumentIndex(opcode, il, operandOffset, out int argumentIndex))
             {
                 loadedParameter = argumentIndex;
+            }
+
+            if (((opcode == OpCodes.Brtrue) ||
+                 (opcode == OpCodes.Brtrue_S) ||
+                 (opcode == OpCodes.Brfalse) ||
+                 (opcode == OpCodes.Brfalse_S)) &&
+                (loadedParameter == parameterIndex))
+            {
+                conditionalParameter = parameterIndex;
             }
 
             if ((opcode == OpCodes.Stfld) && ((offset + 4) <= il.Length))
@@ -461,12 +476,14 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                     // An unresolved metadata token cannot prove the field assignment.
                 }
 
-                if ((loadedParameter == parameterIndex) && (storedField == targetField))
+                if (((loadedParameter == parameterIndex) || (conditionalParameter == parameterIndex)) &&
+                    (storedField == targetField))
                 {
                     return true;
                 }
 
                 loadedParameter = null;
+                conditionalParameter = null;
             }
             else if (((opcode == OpCodes.Call) || (opcode == OpCodes.Callvirt)) && ((offset + 4) <= il.Length))
             {
@@ -503,12 +520,18 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                      (opcode != OpCodes.Brtrue_S) &&
                      (opcode != OpCodes.Brfalse) &&
                      (opcode != OpCodes.Brfalse_S) &&
+                     (opcode != OpCodes.Pop) &&
+                     (opcode != OpCodes.Throw) &&
                      !TryGetArgumentIndex(opcode, il, operandOffset, out int _))
             {
                 loadedParameter = null;
             }
 
             offset += GetOperandSize(opcode, il, offset);
+            if (opcode == OpCodes.Ret)
+            {
+                conditionalParameter = null;
+            }
         }
 
         return false;
@@ -625,7 +648,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
         IReadOnlyList<string> advisory = FindNonReadonlyStructs(
             MississippiAssemblies.SelectMany(assembly => assembly.GetTypes()));
         Console.WriteLine(
-            $"ADVISORY: {advisory.Count} non-readonly Mississippi value type(s) remain; readonly struct guidance is not an unconditional gate.");
+            $"ADVISORY: {advisory.Count} non-readonly Mississippi value type(s) remain; readonly struct guidance is not an unconditional gate.{Environment.NewLine}{string.Join(Environment.NewLine, advisory)}");
         Assert.All(advisory, name => Assert.False(string.IsNullOrWhiteSpace(name)));
     }
 }

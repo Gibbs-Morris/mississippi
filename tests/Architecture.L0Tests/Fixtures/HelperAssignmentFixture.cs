@@ -16,10 +16,15 @@ internal sealed class HelperAssignmentFixture
     /// <returns>The captured dependency.</returns>
     public IClockFixture GetClock() => clock;
 
-#pragma warning disable S2325 // The instance receiver is intentional: the rule must follow helper storage on this type.
     private void AssignClock(
         IClockFixture value
-    ) =>
+    )
+    {
+        if (ReferenceEquals(clock, value))
+        {
+            return;
+        }
+
         clock = value;
-#pragma warning restore S2325
+    }
 }

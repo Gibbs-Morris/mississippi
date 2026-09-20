@@ -40,6 +40,7 @@ public sealed class CSharpArchitectureRuleTests
             typeof(OrdinaryStateFixture), typeof(ConcreteStateFixture), typeof(PrimaryConstructorFixture),
             typeof(GenericInjectedFieldFixture<IClockFixture>), typeof(FactoryAssignmentFixture),
             typeof(HelperAssignmentFixture), typeof(ConcreteCollectionInjectedFieldFixture),
+            typeof(NullGuardAssignmentFixture),
             typeof(WrappedInjectedFieldFixture), typeof(NestedWrappedInjectedFieldFixture),
             typeof(InheritedInjectedFieldFixture), typeof(InheritedInjectedFieldBase),
             typeof(ConcreteInjectedFieldFixture),
@@ -65,6 +66,7 @@ public sealed class CSharpArchitectureRuleTests
             value => value.StartsWith(typeof(FactoryAssignmentFixture).FullName + ".", StringComparison.Ordinal));
         Assert.Contains($"{typeof(HelperAssignmentFixture).FullName}.clock", violations);
         Assert.Contains($"{typeof(ConcreteCollectionInjectedFieldFixture).FullName}.dependencies", violations);
+        Assert.Contains($"{typeof(NullGuardAssignmentFixture).FullName}.clock", violations);
         Assert.Contains($"{typeof(WrappedInjectedFieldFixture).FullName}.clock", violations);
         Assert.Contains($"{typeof(NestedWrappedInjectedFieldFixture).FullName}.clocks", violations);
         Assert.Contains($"{typeof(InheritedInjectedFieldFixture).FullName}.<Clock>k__BackingField", violations);
