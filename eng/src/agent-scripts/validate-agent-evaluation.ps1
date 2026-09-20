@@ -107,7 +107,7 @@ function Get-EvaluationArtifactErrors { # NOSONAR - artifact validation intentio
     $expectedPaths = @($Contract.evidenceChecks | ForEach-Object { [string]$_ })
     $artifacts = @($Contract.evidenceArtifacts)
     if (@($artifacts).Count -ne @($expectedPaths).Count) { $messages.Add('evidenceArtifacts must contain one artifact for every evidence check.') }
-    $seen = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $seen = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($artifact in $artifacts) {
         $pathProperty = $artifact.PSObject.Properties['path']
         $digestProperty = $artifact.PSObject.Properties['sha256']
@@ -118,11 +118,34 @@ function Get-EvaluationArtifactErrors { # NOSONAR - artifact validation intentio
         if ($null -eq $digestProperty -or $digestProperty.Value -isnot [string] -or [string]$digestProperty.Value -notmatch '^SHA256:[0-9a-fA-F]{64}$') { $messages.Add("evidence artifact '$path' is missing an immutable SHA256 digest."); continue }
         $fullPath = [System.IO.Path]::GetFullPath((Join-Path $RepositoryRoot $path))
         if (-not $fullPath.StartsWith(([System.IO.Path]::GetFullPath($RepositoryRoot).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar), [StringComparison]::OrdinalIgnoreCase) -or -not (Test-Path -LiteralPath $fullPath -PathType Leaf)) { $messages.Add("evidence artifact '$path' is not a repository file."); continue }
-        if ((Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash -ne ([string]$digestProperty.Value).Substring(7)) { $messages.Add("evidence artifact '$path' does not match its SHA256 digest.") }
+        if ((Get-EvaluationGitBlobSha256 -RepositoryRoot $RepositoryRoot -SourceRevision $SourceRevision -Path $path) -ne [string]$digestProperty.Value) { $messages.Add("evidence artifact '$path' does not match its canonical Git SHA256 digest.") }
         & git -c "safe.directory=$($RepositoryRoot.Replace('\', '/'))" -C $RepositoryRoot diff --quiet $SourceRevision -- $path 2>$null
         if ($LASTEXITCODE -ne 0) { $messages.Add("evidence artifact '$path' is not bound to source revision '$SourceRevision'.") }
     }
     return $messages.ToArray()
+}
+
+function Get-EvaluationGitBlobSha256 {
+    param([Parameter(Mandatory)][string]$RepositoryRoot, [Parameter(Mandatory)][string]$SourceRevision, [Parameter(Mandatory)][string]$Path)
+    $temporaryPath = [System.IO.Path]::GetTempFileName()
+    $safeRoot = $RepositoryRoot.Replace('\', '/')
+    $spec = "$SourceRevision`:$Path"
+    try {
+        $processInfo = [System.Diagnostics.ProcessStartInfo]::new()
+        $processInfo.FileName = 'git'
+        $processInfo.UseShellExecute = $false
+        $processInfo.RedirectStandardOutput = $true
+        $processInfo.RedirectStandardError = $true
+        foreach ($argument in @('-c', "safe.directory=$safeRoot", '-C', $RepositoryRoot, 'cat-file', 'blob', $spec)) { $null = $processInfo.ArgumentList.Add($argument) }
+        $process = [System.Diagnostics.Process]::Start($processInfo)
+        $stream = [System.IO.File]::Create($temporaryPath)
+        try { $process.StandardOutput.BaseStream.CopyTo($stream) } finally { $stream.Dispose() }
+        $errorText = $process.StandardError.ReadToEnd()
+        $process.WaitForExit()
+        if ($process.ExitCode -ne 0) { throw "Unable to read Git artifact '$Path': $errorText" }
+        return 'SHA256:' + (Get-FileHash -LiteralPath $temporaryPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+    finally { Remove-Item -LiteralPath $temporaryPath -Force -ErrorAction SilentlyContinue }
 }
 
 try {
