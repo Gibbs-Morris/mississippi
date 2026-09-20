@@ -543,6 +543,24 @@ function Release-RepositoryExecutionLeaseResources {
     }
 }
 
+function Assert-RepositoryExecutionLeaseNotHeldByCurrentProcess {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][bool]$SharedLease
+    )
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return }
+    $owner = $null
+    try { $owner = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json }
+    catch { return }
+    if ($null -eq $owner -or [string]$owner.processId -ne [string]$PID) { return }
+    if ($SharedLease) {
+        throw 'Shared coordination file is already held in this process. Use separate coordination directories for concurrent worktrees.'
+    }
+    throw "Repository execution lease is already held in this process for '$Path'. Use -ExistingLease for supported reentrancy."
+}
+
 function Open-RepositoryExecutionLeaseResources {
     [CmdletBinding()]
     param([Parameter(Mandatory)][object]$Context)
@@ -555,6 +573,7 @@ function Open-RepositoryExecutionLeaseResources {
         LeaseOffset = $null
     }
     try {
+        Assert-RepositoryExecutionLeaseNotHeldByCurrentProcess -Path $Context.LeasePath -SharedLease $Context.SharedLease
         Register-RepositoryExecutionLeaseIdentity -Identity $Context.LeaseIdentity
         $resources.LeaseRegistered = $true
         if ($Context.SharedLease) {
@@ -604,6 +623,8 @@ function Write-RepositoryExecutionLeaseMetadata {
     if ($Context.SharedLease) {
         [System.Threading.Monitor]::Enter($Resources.StreamState.Gate)
         try {
+            $Resources.Stream.SetLength(0)
+            $Resources.Stream.Write($metadataBytes, 0, $metadataBytes.Length)
             $Resources.Stream.Flush($true)
         }
         finally {
@@ -614,6 +635,31 @@ function Write-RepositoryExecutionLeaseMetadata {
     $Resources.Stream.SetLength(0)
     $Resources.Stream.Write($metadataBytes, 0, $metadataBytes.Length)
     $Resources.Stream.Flush($true)
+}
+
+function Clear-RepositoryExecutionLeaseMetadata {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Lease)
+
+    try {
+        if ($null -ne $Lease.SharedStreamState) {
+            [System.Threading.Monitor]::Enter($Lease.SharedStreamState.Gate)
+            try {
+                $Lease.Stream.SetLength(0)
+                $Lease.Stream.Flush($true)
+            }
+            finally {
+                [System.Threading.Monitor]::Exit($Lease.SharedStreamState.Gate)
+            }
+        }
+        else {
+            $Lease.Stream.SetLength(0)
+            $Lease.Stream.Flush($true)
+        }
+    }
+    catch {
+        Write-Verbose "Unable to clear repository execution lease metadata from '$($Lease.Path)': $($_.Exception.Message)"
+    }
 }
 
 function Enter-RepositoryExecutionLease {
@@ -656,6 +702,7 @@ function Exit-RepositoryExecutionLease {
 
     if ($Lease.OwnsStream -and $null -ne $Lease.Stream) {
         try {
+            Clear-RepositoryExecutionLeaseMetadata -Lease $Lease
             if ($null -ne $Lease.SharedStreamState) {
                 if ($null -ne $Lease.LeaseOffset) { Unlock-SharedRepositoryExecutionLeaseSlot -State $Lease.SharedStreamState -Offset ([long]$Lease.LeaseOffset) }
                 Release-SharedRepositoryExecutionLeaseStream -State $Lease.SharedStreamState

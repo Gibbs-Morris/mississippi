@@ -367,7 +367,7 @@ if (-not $SkipMutationRun)
     if ($RunPath) { throw '-RunPath requires -SkipMutationRun.' }
     Write-Host "Running mutation tests via '$MutationScriptPath'..." -ForegroundColor Cyan
     $mutationArguments = @('-Configuration', $Configuration)
-    if ($SkipLease) { $mutationArguments += '-SkipLease' }
+    $mutationArguments += '-SkipLease'
     if (-not [string]::IsNullOrWhiteSpace($LeaseDirectory)) { $mutationArguments += @('-LeaseDirectory', $LeaseDirectory) }
     & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoLogo -NoProfile -File $MutationScriptPath @mutationArguments
     $mutationExitCode = $LASTEXITCODE
