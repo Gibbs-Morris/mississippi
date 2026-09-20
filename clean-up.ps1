@@ -28,14 +28,17 @@ $powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pws
 
 # Determine repository root (this file lives there)
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
-
-# Paths to the per-solution cleanup scripts
-$mississippiCleanup = Join-Path $repoRoot 'eng' 'src' 'agent-scripts' 'clean-up-mississippi-solution.ps1'
-$sampleCleanup      = Join-Path $repoRoot 'eng' 'src' 'agent-scripts' 'clean-up-sample-solution.ps1'
-$leaseArguments = @()
-if (-not [string]::IsNullOrWhiteSpace($LeaseDirectory)) { $leaseArguments = @('-LeaseDirectory', $LeaseDirectory) }
+Import-Module (Join-Path $repoRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1') -Force
+$executionLease = $null
 
 try {
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "cleanup-wrapper-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $repoRoot = $executionLease.RepositoryRoot
+    $mississippiCleanup = Join-Path $repoRoot 'eng' 'src' 'agent-scripts' 'clean-up-mississippi-solution.ps1'
+    $sampleCleanup = Join-Path $repoRoot 'eng' 'src' 'agent-scripts' 'clean-up-sample-solution.ps1'
+    $leaseArguments = @('-SkipLease')
+    if (-not [string]::IsNullOrWhiteSpace($LeaseDirectory)) { $leaseArguments += @('-LeaseDirectory', $LeaseDirectory) }
+
     if (-not $SkipMississippi) {
         Write-Host "=== STEP 1: MISSISSIPPI SOLUTION CLEANUP ===" -ForegroundColor Yellow
         Write-Host "Running ReSharper CleanupCode on mississippi.slnx..."
@@ -63,6 +66,9 @@ try {
 } catch {
     Write-Error "=== FAILURE: Cleanup operation failed: $_"
     exit 1
+}
+finally {
+    if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
 }
 
 exit 0

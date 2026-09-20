@@ -170,7 +170,7 @@ Describe 'Build entry point process boundaries' {
         $scripts = Join-Path $fixture 'eng/src/agent-scripts'
         New-Item -ItemType Directory -Path $scripts -Force | Out-Null
         Copy-Item (Join-Path $PSScriptRoot '../../../' $EntryPoint) $fixture
-        if ($Prefix -eq 'build') {
+        if ($Prefix -in @('build', 'clean-up')) {
             @'
 function Get-RepositoryRoot { return (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))) }
 function Enter-RepositoryExecutionLease { param([string]$RepoRoot); [pscustomobject]@{ RepositoryRoot = $RepoRoot; OwnsStream = $false } }
