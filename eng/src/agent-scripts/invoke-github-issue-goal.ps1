@@ -51,7 +51,7 @@ function Get-GoalRepositoryIdentity {
         $remote = @(& git -c "safe.directory=$safeRoot" -C $Root remote get-url ([string]$remoteName) 2>$null | Select-Object -First 1)
         if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace([string]$remote)) { continue }
         $remoteText = ([string]$remote).Trim() -replace '\.git$', ''
-        $match = [regex]::Match($remoteText, '(?:github\.com[/:])(?<Owner>[^/]+)/(?<Name>[^/]+)$', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    $match = [regex]::Match($remoteText, '^(?:https?://github\.com/|git@github\.com:|ssh://git@github\.com/)(?<Owner>[^/]+)/(?<Name>[^/]+)$', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
         if ($match.Success) { $identities.Add("$($match.Groups['Owner'].Value)/$($match.Groups['Name'].Value)") }
     }
     if ($identities.Count -eq 0) { throw "Unable to identify a GitHub repository from the configured remotes for '$Root'." }
@@ -280,7 +280,7 @@ try {
         [System.IO.FileAccess]::ReadWrite,
         [System.IO.FileShare]::None)
     $temporaryCheckpoint = "$checkpoint.$PID.tmp"
-    $issue = Get-GoalIssue -Owner $RepositoryOwner -Name $RepositoryName -Number $IssueNumber -Json $IssueJson -ForceCommentFallback:([string]::IsNullOrWhiteSpace($IssueJson))
+    $issue = Get-GoalIssue -Owner $RepositoryOwner -Name $RepositoryName -Number $IssueNumber -Json $IssueJson
     if ([int]$issue.number -ne $IssueNumber) { throw "Issue identity mismatch: expected #$IssueNumber." }
     $expectedRepository = "$RepositoryOwner/$RepositoryName"
     if ($null -ne $issue.PSObject.Properties['html_url'] -and [string]$issue.html_url -notmatch "/$([regex]::Escape($expectedRepository))/issues/$IssueNumber(?:$|[/?#])") {
@@ -347,8 +347,11 @@ try {
             if ([string]::IsNullOrWhiteSpace($ExpectedContractBodyDigest)) { throw 'A fallback issue contract requires an expected contract body digest.' }
             if ($ExpectedContractBodyDigest -ne $contractBodyDigest) { throw 'The selected fallback contract does not match the authorized contract body digest.' }
         }
+        elseif (-not [string]::IsNullOrWhiteSpace($ExpectedContractBodyDigest)) {
+            if ($ExpectedContractBodyDigest -ne $contractBodyDigest) { throw 'The selected fallback contract does not match the authorized contract body digest.' }
+        }
         elseif ($null -eq $previous.PSObject.Properties['ContractBodyDigest'] -or [string]$previous.ContractBodyDigest -ne $contractBodyDigest) {
-            throw 'The selected fallback contract does not match the saved contract body digest.'
+            throw 'The selected fallback contract does not match the saved contract body digest; supply ExpectedContractBodyDigest to authorize reconciliation.'
         }
     }
 
@@ -408,9 +411,10 @@ try {
     $scopeContractSource = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['BaselineContractSource']) { [string]$previous.BaselineContractSource } elseif ($null -ne $previous) { [string]$previous.ContractSource } else { '' }
     $headBaseline = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['BaselineHeadRevision']) { [string]$previous.BaselineHeadRevision } elseif (-not [string]::IsNullOrWhiteSpace($validatedHead)) { $validatedHead } elseif ($null -ne $previous) { [string]$previous.HeadRevision } else { '' }
     $baseBaseline = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['BaselineBaseRevision']) { [string]$previous.BaselineBaseRevision } elseif (-not [string]::IsNullOrWhiteSpace($validatedBase)) { $validatedBase } elseif ($null -ne $previous) { [string]$previous.BaseRevision } else { '' }
+    $baseNameBaseline = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['BaselineBaseRevisionName']) { [string]$previous.BaselineBaseRevisionName } elseif ($null -ne $previous -and $null -ne $previous.PSObject.Properties['BaseRevisionName']) { [string]$previous.BaseRevisionName } else { '' }
     $worktreeBaseline = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['BaselineWorktreeFingerprint']) { [string]$previous.BaselineWorktreeFingerprint } elseif (-not [string]::IsNullOrWhiteSpace($validatedWorktree)) { $validatedWorktree } elseif ($null -ne $previous -and $null -ne $previous.PSObject.Properties['WorktreeFingerprint']) { [string]$previous.WorktreeFingerprint } else { '' }
     $scopeChanged = $null -ne $previous -and ($scopeBaseline -ne $issueBodyDigest -or $scopeContractBaseline -ne $contractBodyDigest -or $scopeContractSource -ne $contractSource)
-    $revisionChanged = $null -ne $previous -and (($headBaseline -ne $currentHead) -or ($baseBaseline -ne $currentBase))
+    $revisionChanged = $null -ne $previous -and (($headBaseline -ne $currentHead) -or ($baseBaseline -ne $currentBase) -or ($baseNameBaseline -ne $BaseRevision))
     $worktreeChanged = $null -ne $previous -and $worktreeBaseline -ne $currentWorktreeFingerprint
     $activeOperation = $operation.Status -eq 'running'
     $operationCompleted = $null -ne $previous -and $null -ne $previous.PSObject.Properties['Operation'] -and [string]$previous.Operation.Status -eq 'running' -and $operation.Status -in @('completed', 'failed')
@@ -443,6 +447,7 @@ try {
     $baselineContractSource = if ($validatedNow -or $evidenceFresh -or $null -eq $previous) { $contractSource } else { $scopeContractSource }
     $baselineHeadRevision = if ($validatedNow -or $evidenceFresh -or $null -eq $previous) { $currentHead } else { $headBaseline }
     $baselineBaseRevision = if ($validatedNow -or $evidenceFresh -or $null -eq $previous) { $currentBase } else { $baseBaseline }
+    $baselineBaseRevisionName = if ($validatedNow -or $evidenceFresh -or $null -eq $previous) { $BaseRevision } else { $baseNameBaseline }
     $baselineWorktreeFingerprint = if ($validatedNow -or $evidenceFresh -or $null -eq $previous) { $currentWorktreeFingerprint } else { $worktreeBaseline }
     $reviewWork = Merge-GoalCollection -Existing (Get-GoalCollection -Object $previous -Name 'OutstandingReviewWork') -Added (Expand-GoalStringCollection -Values $OutstandingReviewWork)
     $resolvedReviewWork = @(Expand-GoalStringCollection -Values $ResolvedReviewWork)
@@ -470,12 +475,14 @@ try {
         ReviewedSourceRevision = $reviewedSourceRevision
         HeadRevision = $currentHead
         BaseRevision = $currentBase
+        BaseRevisionName = $BaseRevision
         WorktreeFingerprint = $currentWorktreeFingerprint
         BaselineIssueBodyDigest = $baselineIssueBodyDigest
         BaselineContractBodyDigest = $baselineContractBodyDigest
         BaselineContractSource = $baselineContractSource
         BaselineHeadRevision = $baselineHeadRevision
         BaselineBaseRevision = $baselineBaseRevision
+        BaselineBaseRevisionName = $baselineBaseRevisionName
         BaselineWorktreeFingerprint = $baselineWorktreeFingerprint
         ValidatedIssueBodyDigest = if ($validatedNow -or $evidenceFresh) { $issueBodyDigest } else { $validatedDigest }
         ValidatedHeadRevision = if ($validatedNow -or $evidenceFresh) { $currentHead } else { $validatedHead }
@@ -513,6 +520,7 @@ try {
         IssueBodyDigest = $issueBodyDigest
         HeadRevision = $currentHead
         BaseRevision = $currentBase
+        BaseRevisionName = $BaseRevision
     }
     if ($Json) { $result | ConvertTo-Json -Depth 8 -Compress } else { $result | Format-List }
     if ($status -in @('scope-changed', 'operation-running')) { exit 2 }
