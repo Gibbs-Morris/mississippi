@@ -9,7 +9,7 @@ Describe 'Mutation summary report aggregation' {
         $scriptDirectory = Join-Path $repo 'eng/src/agent-scripts'
         New-Item -ItemType Directory -Path $scriptDirectory -Force | Out-Null
         New-Item -ItemType Directory -Path (Join-Path $repo '.git') | Out-Null
-        foreach ($file in @('summarize-mutation-survivors.ps1', 'RepositoryAutomation.psm1', 'TaskAutomation.psm1')) {
+        foreach ($file in @('summarize-mutation-survivors.ps1', 'RepositoryAutomation.psm1', 'ValidationEvidence.psm1', 'TaskAutomation.psm1')) {
             Copy-Item (Join-Path $PSScriptRoot "../../src/agent-scripts/$file") $scriptDirectory
         }
         $summaryScript = Join-Path $scriptDirectory 'summarize-mutation-survivors.ps1'
