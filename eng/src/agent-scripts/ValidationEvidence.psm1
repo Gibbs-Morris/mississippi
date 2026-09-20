@@ -20,7 +20,7 @@ function Get-ValidationRelativePath {
     return $relative
 }
 
-function Get-ValidationSourceFingerprint {
+function Get-ValidationSourceFingerprint { # NOSONAR - source evidence fingerprinting intentionally coordinates Git state and bounded file hashing.
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$RepositoryRoot,
@@ -165,7 +165,7 @@ function Complete-ValidationEvidenceRun {
     return $record
 }
 
-function Test-ValidationEvidence {
+function Test-ValidationEvidence { # NOSONAR - evidence verification intentionally validates source, artifact, and schema state together.
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Path, [string]$RepositoryRoot)
 

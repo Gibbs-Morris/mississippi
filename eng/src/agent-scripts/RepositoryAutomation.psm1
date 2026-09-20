@@ -2666,12 +2666,12 @@ function Get-ValidationPipelineTestCount {
             [xml]$xml = Get-Content -LiteralPath $trx.FullName -Raw
             $count += [int]$xml.TestRun.ResultSummary.Counters.executed
         }
-        catch { }
+        catch { Write-Verbose "Unable to read a focused validation TRX artifact while counting tests: $($_.Exception.Message)" }
     }
     return $count
 }
 
-function Invoke-SolutionsPipeline {
+function Invoke-SolutionsPipeline { # NOSONAR - full repository pipeline orchestration intentionally coordinates dependent validation phases.
     [CmdletBinding()]
     param(
         [string]$Configuration = 'Release',
@@ -3218,7 +3218,7 @@ function Get-PrReadinessReport { # NOSONAR - readiness reporting intentionally e
     }
 }
 
-function Invoke-SpringValidation {
+function Invoke-SpringValidation { # NOSONAR - Spring validation intentionally coordinates prerequisites, build, browser, and artifact phases.
     [CmdletBinding()]
     param(
         [string]$RepoRoot = (Get-RepositoryRoot),
