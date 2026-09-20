@@ -23,10 +23,12 @@ Describe 'Issue delivery benchmark validation' {
             $revision = (& git -c "safe.directory=$($repoRoot.Replace('\', '/'))" -C $repoRoot rev-parse HEAD | Select-Object -First 1).Trim()
             $data.sourceRevision = $revision
             $data.mode = 'authorized-live'
+            $inputDigest = 'SHA256:' + (('a' * 64) -join '')
             foreach ($hostRow in @($data.hosts)) {
                 $hostRow.configuredModel = 'test-configured-model'
                 $hostRow.acceptedModel = 'test-accepted-model'
                 $hostRow.activeModel = 'test-active-model'
+                $hostRow | Add-Member -NotePropertyName hostVersion -NotePropertyValue 'test-host-1' -Force
                 $hostRow | Add-Member -NotePropertyName configuredEffort -NotePropertyValue 'medium' -Force
                 $hostRow | Add-Member -NotePropertyName acceptedEffort -NotePropertyValue 'medium' -Force
                 $hostRow | Add-Member -NotePropertyName activeEffort -NotePropertyValue 'medium' -Force
@@ -43,6 +45,7 @@ Describe 'Issue delivery benchmark validation' {
                         $record = [ordered]@{
                             scenarioId = [string]$category.id
                             pairedInputId = [string]$category.pairedInputIds[$index]
+                            inputEvidence = [ordered]@{ repository = 'Gibbs-Morris/mississippi'; issueNumber = 732; bodyDigest = $inputDigest; sourceRevision = $revision }
                             outcome = $outcome
                             acceptancePassed = $outcome -eq 'passed'
                             reason = if ($outcome -eq 'failed') { 'controlled live trial failure' } else { $null }
@@ -66,6 +69,8 @@ Describe 'Issue delivery benchmark validation' {
                     foreach ($failureCase in @($category.failureCases)) {
                         $trialRecords.Add([pscustomobject][ordered]@{
                             scenarioId = [string]$category.id
+                            pairedInputId = [string]$category.pairedInputIds[0]
+                            inputEvidence = [ordered]@{ repository = 'Gibbs-Morris/mississippi'; issueNumber = 732; bodyDigest = $inputDigest; sourceRevision = $revision }
                             failureCase = [string]$failureCase
                             outcome = 'blocked'
                             reason = 'controlled failure-case trial'

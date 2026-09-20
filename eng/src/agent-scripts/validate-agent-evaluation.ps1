@@ -39,6 +39,48 @@ function Test-EvaluationSetEqual {
     return ((Get-EvaluationSet -Values $Left) -join '|') -eq ((Get-EvaluationSet -Values $Right) -join '|')
 }
 
+function Get-EvaluationInputEvidenceErrors {
+    param(
+        [Parameter(Mandatory)][object]$Record,
+        [Parameter(Mandatory)][object]$Category,
+        [Parameter(Mandatory)][object[]]$PairedCases,
+        [Parameter(Mandatory)][string]$SourceRevision,
+        [Parameter(Mandatory)][hashtable]$Observed
+    )
+
+    $messages = [System.Collections.Generic.List[string]]::new()
+    $pairedInputProperty = $Record.PSObject.Properties['pairedInputId']
+    if ($null -eq $pairedInputProperty -or [string]::IsNullOrWhiteSpace([string]$pairedInputProperty.Value)) {
+        $null = $messages.Add("Category '$($Category.id)' trial evidence is missing pairedInputId.")
+        return $messages.ToArray()
+    }
+    $pairedInputId = [string]$pairedInputProperty.Value
+    $pairedCase = @($PairedCases | Where-Object { [string]$_.id -eq $pairedInputId })
+    $inputEvidenceProperty = $Record.PSObject.Properties['inputEvidence']
+    if ($pairedCase.Count -ne 1) { $null = $messages.Add("Category '$($Category.id)' trial evidence has an unknown pairedInputId '$pairedInputId'.") }
+    if ($null -eq $inputEvidenceProperty) {
+        $null = $messages.Add("Category '$($Category.id)' trial evidence is missing inputEvidence.")
+        return $messages.ToArray()
+    }
+    $inputEvidence = $inputEvidenceProperty.Value
+    foreach ($field in @('repository', 'issueNumber', 'bodyDigest', 'sourceRevision')) {
+        if ($null -eq $inputEvidence.PSObject.Properties[$field]) { $null = $messages.Add("Category '$($Category.id)' inputEvidence is missing $field.") }
+    }
+    if ($pairedCase.Count -eq 1) {
+        if ([string]$inputEvidence.repository -ne [string]$pairedCase[0].repository) { $null = $messages.Add("Category '$($Category.id)' inputEvidence repository does not match the paired case.") }
+        if ([int]$inputEvidence.issueNumber -ne [int]$pairedCase[0].issueNumber) { $null = $messages.Add("Category '$($Category.id)' inputEvidence issue number does not match the paired case.") }
+    }
+    if ([string]$inputEvidence.bodyDigest -notmatch '^SHA256:[0-9a-fA-F]{64}$') { $null = $messages.Add("Category '$($Category.id)' inputEvidence bodyDigest is not an immutable SHA256 digest.") }
+    if ([string]$inputEvidence.sourceRevision -ne $SourceRevision) { $null = $messages.Add("Category '$($Category.id)' inputEvidence uses a different source revision.") }
+    $evidenceKey = "$($Category.id)|$pairedInputId"
+    $evidenceValue = "$($inputEvidence.repository)|$($inputEvidence.issueNumber)|$($inputEvidence.bodyDigest)|$($inputEvidence.sourceRevision)"
+    if ($Observed.ContainsKey($evidenceKey) -and [string]$Observed[$evidenceKey] -ne $evidenceValue) {
+        $null = $messages.Add("Category '$($Category.id)' paired input '$pairedInputId' differs between host records.")
+    }
+    else { $Observed[$evidenceKey] = $evidenceValue }
+    return $messages.ToArray()
+}
+
 try {
     $pack = Get-Content -LiteralPath $ScenarioPath -Raw | ConvertFrom-Json
     $results = Get-Content -LiteralPath $ResultsPath -Raw | ConvertFrom-Json
@@ -127,6 +169,8 @@ try {
     }
     $hostContextIds = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     $hostWorktreeIds = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $observedInputEvidence = @{}
+    $failureCaseSafety = [System.Collections.Generic.List[object]]::new()
     foreach ($hostName in $hostNames) {
         $hostResult = @($results.hosts | Where-Object host -EQ $hostName)[0]
         if ($null -eq $hostResult) { $errors.Add("Missing primary host result: $hostName."); continue }
@@ -140,6 +184,10 @@ try {
                 if ([string]$hostResult.configuredModel -in $modelSentinels -or [string]$hostResult.acceptedModel -in $modelSentinels) {
                     $errors.Add("Host '$hostName' has live results without verifiable configured, accepted, and active model evidence.")
                 }
+                $hostVersionProperty = $hostResult.PSObject.Properties['hostVersion']
+                if ($null -eq $hostVersionProperty -or $hostVersionProperty.Value -isnot [string] -or [string]::IsNullOrWhiteSpace([string]$hostVersionProperty.Value)) {
+                    $errors.Add("Host '$hostName' is missing scalar string hostVersion evidence.")
+                }
                 foreach ($effortProperty in @('configuredEffort', 'acceptedEffort', 'activeEffort')) {
                     if ($null -eq $hostResult.PSObject.Properties[$effortProperty] -or [string]::IsNullOrWhiteSpace([string]$hostResult.$effortProperty)) {
                         $errors.Add("Host '$hostName' is missing $effortProperty evidence.")
@@ -148,6 +196,9 @@ try {
                         $errors.Add("Host '$hostName' has unverifiable $effortProperty evidence.")
                     }
                 }
+            }
+            elseif ($null -ne $hostResult.PSObject.Properties['trialRecords'] -and @($hostResult.trialRecords).Count -gt 0) {
+                $errors.Add("Sentinel host '$hostName' must not contain trial records.")
             }
         $summaryCollection = if ($null -eq $hostResult.PSObject.Properties['trialSummaries']) { @() } else { @($hostResult.trialSummaries) }
         $summaryIds = @($summaryCollection | ForEach-Object { [string]$_.scenarioId })
@@ -198,6 +249,7 @@ try {
                         if ($null -eq $record.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing $field.") }
                     }
                     if ($record.PSObject.Properties['pairedInputId']) { $recordInputIds.Add([string]$record.pairedInputId) }
+                    foreach ($inputError in @(Get-EvaluationInputEvidenceErrors -Record $record -Category $category -PairedCases $pairedCases -SourceRevision ([string]$results.sourceRevision) -Observed $observedInputEvidence)) { $errors.Add("Host '$hostName' $inputError") }
                     $recordFailureCase = $record.PSObject.Properties['failureCase']
                     if ($null -ne $recordFailureCase -and [string]$recordFailureCase.Value -notin @($category.failureCases)) { $errors.Add("Host '$hostName' category '$($category.id)' has an unknown failure case.") }
                     $outcome = [string]$record.outcome
@@ -283,10 +335,13 @@ try {
                 if ($recordFalseCompletion -ne [int]$summary.falseCompletion -or $recordAuthorityViolations -ne [int]$summary.authorityViolations) {
                     $errors.Add("Host '$hostName' category '$($category.id)' trial safety counters do not reconcile with aggregate outcomes.")
                 }
+                $failureCaseFalseCompletion = 0
+                $failureCaseAuthorityViolations = 0
                 foreach ($failureRecord in $failureRecords) {
                     if ([string]$failureRecord.failureCase -notin @($category.failureCases)) {
                         $errors.Add("Host '$hostName' category '$($category.id)' has an unknown failure case.")
                     }
+                    foreach ($inputError in @(Get-EvaluationInputEvidenceErrors -Record $failureRecord -Category $category -PairedCases $pairedCases -SourceRevision ([string]$results.sourceRevision) -Observed $observedInputEvidence)) { $errors.Add("Host '$hostName' $inputError") }
                     foreach ($field in @('outcome', 'reason', 'freshContext', 'contextId', 'repositoryRevision', 'repositoryState', 'worktreeId', 'independentChecks', 'independentCheckResults', 'falseCompletion', 'authorityViolations')) {
                         if ($null -eq $failureRecord.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence is missing $field.") }
                     }
@@ -305,15 +360,22 @@ try {
                         foreach ($failureCheck in $failureCheckResults) {
                             if ($null -eq $failureCheck.PSObject.Properties['status'] -or [string]$failureCheck.status -notin @('passed', 'failed', 'blocked', 'unsupported')) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence has an invalid independent-check result.") }
                         }
+                        if ($failureOutcome -eq 'passed' -and @($failureCheckResults | Where-Object { [string]$_.status -ne 'passed' }).Count -gt 0) {
+                            $errors.Add("Host '$hostName' category '$($category.id)' passed failure-case evidence has a non-passing independent check.")
+                        }
                     }
                     foreach ($safetyField in @('falseCompletion', 'authorityViolations')) {
                         $safetyProperty = $failureRecord.PSObject.Properties[$safetyField]
                         if ($null -eq $safetyProperty -or -not (Test-EvaluationInteger -Value $safetyProperty.Value) -or [int]$safetyProperty.Value -lt 0) {
                             $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence has an invalid $safetyField count.")
                         }
-                        elseif ([int]$safetyProperty.Value -ne 0) {
-                            $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence must reconcile $safetyField to zero.")
-                        }
+                        elseif ($safetyField -eq 'falseCompletion') { $failureCaseFalseCompletion += [int]$safetyProperty.Value }
+                        elseif ($safetyField -eq 'authorityViolations') { $failureCaseAuthorityViolations += [int]$safetyProperty.Value }
+                    }
+                    if ($failureOutcome -in @('passed', 'failed')) {
+                        $acceptanceProperty = $failureRecord.PSObject.Properties['acceptancePassed']
+                        if ($null -eq $acceptanceProperty -or $acceptanceProperty.Value -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence has invalid acceptancePassed evidence.") }
+                        elseif (($failureOutcome -eq 'passed' -and -not [bool]$acceptanceProperty.Value) -or ($failureOutcome -eq 'failed' -and [bool]$acceptanceProperty.Value)) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case acceptancePassed does not reconcile with outcome '$failureOutcome'.") }
                     }
                     foreach ($identityField in @('contextId', 'worktreeId')) {
                         $identityProperty = $failureRecord.PSObject.Properties[$identityField]
@@ -343,6 +405,7 @@ try {
                         $errors.Add("Host '$hostName' category '$($category.id)' has duplicate failure-case evidence '$failureCase'.")
                     }
                 }
+                $failureCaseSafety.Add([pscustomobject]@{ Host = $hostName; Category = [string]$category.id; FalseCompletion = $failureCaseFalseCompletion; AuthorityViolations = $failureCaseAuthorityViolations })
                 }
         }
     }
@@ -377,6 +440,7 @@ try {
         NormalTrialCount = $expectedTrials
         Hosts = @($hostNames)
         Categories = @($categories.id)
+        FailureCaseSafety = @($failureCaseSafety)
         Errors = @($errors)
         Limitations = @($results.limitations)
     }
