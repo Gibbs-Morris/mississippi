@@ -68,7 +68,7 @@ try {
         if ($ForceCleanup.IsPresent) {
             throw 'Force cleanup is unavailable because process-name matches cannot be proven to belong to this worktree. Stop only processes launched from this checkout, then retry.'
         } else {
-            Write-Warning "Detected existing Spring processes. Re-run with -ForceCleanup to stop them automatically."
+            Write-Warning "Detected existing Spring processes. Stop only processes launched from this checkout, then retry."
         }
     }
 
