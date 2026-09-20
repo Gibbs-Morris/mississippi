@@ -326,6 +326,41 @@ function Ensure-RepositoryExecutionLeaseDirectory {
     return $true
 }
 
+function Repair-SharedRepositoryExecutionLeaseFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$LeaseDirectory,
+        [Parameter(Mandatory)][string]$LeasePath
+    )
+
+    if (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseWritableDirectoryMode }
+    try {
+        $placeholder = [System.IO.FileStream]::new($LeasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+        try { $placeholder.SetLength(1); $placeholder.Flush($true) }
+        finally { $placeholder.Dispose() }
+        if (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $LeasePath -Mode $sharedExecutionLeaseFileMode }
+        if ($IsWindows) { Set-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath }
+    }
+    finally {
+        if (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode }
+    }
+}
+
+function Create-SharedRepositoryExecutionLeaseFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$LeaseDirectory,
+        [Parameter(Mandatory)][string]$LeasePath
+    )
+
+    $placeholder = [System.IO.FileStream]::new($LeasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+    try { $placeholder.SetLength(1); $placeholder.Flush($true) }
+    finally { $placeholder.Dispose() }
+    if (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $LeasePath -Mode $sharedExecutionLeaseFileMode }
+    if ($IsWindows) { Set-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath }
+    Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
+}
+
 function Initialize-SharedRepositoryExecutionLeasePath {
     [CmdletBinding()]
     param(
@@ -336,17 +371,7 @@ function Initialize-SharedRepositoryExecutionLeasePath {
 
     if (-not $LeaseDirectoryCreated) {
         if (-not (Test-Path -LiteralPath $LeasePath -PathType Leaf)) {
-            if (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseWritableDirectoryMode }
-            try {
-                $placeholder = [System.IO.FileStream]::new($LeasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
-                try { $placeholder.SetLength(1); $placeholder.Flush($true) }
-                finally { $placeholder.Dispose() }
-                if (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $LeasePath -Mode $sharedExecutionLeaseFileMode }
-                if ($IsWindows) { Set-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath }
-            }
-            finally {
-                if (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode }
-            }
+            Repair-SharedRepositoryExecutionLeaseFile -LeaseDirectory $LeaseDirectory -LeasePath $LeasePath
         }
         else {
             Test-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
@@ -354,23 +379,7 @@ function Initialize-SharedRepositoryExecutionLeasePath {
         }
         return
     }
-
-    $placeholder = [System.IO.FileStream]::new($LeasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
-    try {
-        $placeholder.SetLength(1)
-        $placeholder.Flush($true)
-    }
-    finally {
-        $placeholder.Dispose()
-    }
-    if (-not $IsWindows) {
-        Set-RepositoryExecutionLeaseUnixMode -Path $LeasePath -Mode $sharedExecutionLeaseFileMode
-    }
-    if ($IsWindows) {
-        if ($LeaseDirectoryCreated) { Set-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath }
-        else { Test-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath }
-    }
-    Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
+    Create-SharedRepositoryExecutionLeaseFile -LeaseDirectory $LeaseDirectory -LeasePath $LeasePath
 }
 
 function Get-RepositoryExecutionLeasePathForRoot {
