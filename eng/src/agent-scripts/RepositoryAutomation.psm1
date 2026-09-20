@@ -7,6 +7,7 @@ $activeRepositoryExecutionLeases = [System.Collections.Concurrent.ConcurrentDict
 $sharedExecutionLeaseStreamStates = @{}
 $sharedExecutionLeaseStreamGate = [object]::new()
 $sharedExecutionLeaseDirectoryMode = 365 # 0555
+$sharedExecutionLeaseWritableDirectoryMode = 493 # 0755
 $sharedExecutionLeaseFileMode = 438 # 0666
 $privateExecutionLeaseDirectoryMode = 448 # 0700
 $privateExecutionLeaseFileMode = 384 # 0600
@@ -100,7 +101,7 @@ function Get-RepositoryExecutionLeaseHash {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$CanonicalRepoRoot)
 
-    $keyRoot = if ((Get-RepositoryPathComparison -RepoRoot $CanonicalRepoRoot) -eq [System.StringComparison]::OrdinalIgnoreCase) { $CanonicalRepoRoot.ToLowerInvariant() } else { $CanonicalRepoRoot }
+    $keyRoot = Get-RepositoryExecutionLeaseIdentityKey -CanonicalRepoRoot $CanonicalRepoRoot
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($keyRoot)
     $sha256 = [System.Security.Cryptography.SHA256]::Create()
     try {
@@ -110,6 +111,23 @@ function Get-RepositoryExecutionLeaseHash {
         $sha256.Dispose()
     }
     return ,$hash
+}
+
+function Get-RepositoryExecutionLeaseIdentityKey {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$CanonicalRepoRoot)
+
+    if (-not $IsWindows) {
+        $identity = (& stat -c '%d:%i' -- $CanonicalRepoRoot 2>$null | Out-String).Trim()
+        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($identity)) {
+            $identity = (& stat -f '%d:%i' -- $CanonicalRepoRoot 2>$null | Out-String).Trim()
+        }
+        if (-not [string]::IsNullOrWhiteSpace($identity) -and $LASTEXITCODE -eq 0) { return "filesystem:$identity" }
+    }
+    if ((Get-RepositoryPathComparison -RepoRoot $CanonicalRepoRoot) -eq [System.StringComparison]::OrdinalIgnoreCase) {
+        return $CanonicalRepoRoot.ToLowerInvariant()
+    }
+    return $CanonicalRepoRoot
 }
 
 function Set-RepositoryExecutionLeaseUnixMode {
@@ -262,13 +280,31 @@ function Resolve-RepositoryExecutionLeaseDirectory {
         [string]$LeaseDirectory
     )
 
-    if ([string]::IsNullOrWhiteSpace($LeaseDirectory)) {
-        return Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases'
+    $candidate = if ([string]::IsNullOrWhiteSpace($LeaseDirectory)) {
+        Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases'
     }
-    if ([System.IO.Path]::IsPathRooted($LeaseDirectory)) {
-        return [System.IO.Path]::GetFullPath($LeaseDirectory)
+    elseif ([System.IO.Path]::IsPathRooted($LeaseDirectory)) {
+        $LeaseDirectory
     }
-    return [System.IO.Path]::GetFullPath((Join-Path $CanonicalRepoRoot $LeaseDirectory))
+    else {
+        Join-Path $CanonicalRepoRoot $LeaseDirectory
+    }
+    $candidate = [System.IO.Path]::GetFullPath($candidate)
+    $missingSegments = [System.Collections.Generic.List[string]]::new()
+    $existingPath = $candidate
+    while (-not (Test-Path -LiteralPath $existingPath)) {
+        $segment = Split-Path -Leaf $existingPath
+        if ([string]::IsNullOrWhiteSpace($segment)) { throw "Unable to resolve lease directory parent for '$candidate'." }
+        $missingSegments.Add($segment)
+        $parent = Split-Path -Parent $existingPath
+        if ([string]::IsNullOrWhiteSpace($parent) -or $parent -eq $existingPath) { throw "Unable to resolve lease directory parent for '$candidate'." }
+        $existingPath = $parent
+    }
+    $resolved = (Resolve-Path -LiteralPath $existingPath -ErrorAction Stop).Path
+    for ($index = $missingSegments.Count - 1; $index -ge 0; $index--) {
+        $resolved = Join-Path $resolved $missingSegments[$index]
+    }
+    return [System.IO.Path]::GetFullPath($resolved)
 }
 
 function Ensure-RepositoryExecutionLeaseDirectory {
@@ -299,9 +335,22 @@ function Initialize-SharedRepositoryExecutionLeasePath {
     )
 
     if (-not $LeaseDirectoryCreated) {
-        Test-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
         if (-not (Test-Path -LiteralPath $LeasePath -PathType Leaf)) {
-            throw "Shared lease file '$LeasePath' must be pre-provisioned in the non-writable coordination directory."
+            if (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseWritableDirectoryMode }
+            try {
+                $placeholder = [System.IO.FileStream]::new($LeasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+                try { $placeholder.SetLength(1); $placeholder.Flush($true) }
+                finally { $placeholder.Dispose() }
+                if (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $LeasePath -Mode $sharedExecutionLeaseFileMode }
+                if ($IsWindows) { Set-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath }
+            }
+            finally {
+                if (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode }
+            }
+        }
+        else {
+            Test-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
+            if ($IsWindows) { Test-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath }
         }
         return
     }
@@ -544,7 +593,9 @@ function New-RepositoryExecutionLeaseContext {
     }
     $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
     $leasePath = Get-RepositoryExecutionLeasePathForRoot -CanonicalRepoRoot $canonicalRoot -LeaseDirectory $LeaseDirectory
+    $metadataPath = "$leasePath.metadata"
     Assert-RepositoryExecutionLeaseFile -Path $leasePath
+    Assert-RepositoryExecutionLeaseFile -Path $metadataPath
     $repositoryKey = [System.BitConverter]::ToString((Get-RepositoryExecutionLeaseHash -CanonicalRepoRoot $canonicalRoot)).Replace('-', '').ToLowerInvariant()
     $comparison = Get-RepositoryPathComparison -RepoRoot $canonicalRoot
     $identityLeasePath = if ($comparison -eq [System.StringComparison]::OrdinalIgnoreCase) { $leasePath.ToLowerInvariant() } else { $leasePath }
@@ -561,6 +612,7 @@ function New-RepositoryExecutionLeaseContext {
         SharedLease = $sharedLease
         CanonicalRoot = $canonicalRoot
         LeasePath = $leasePath
+        MetadataPath = $metadataPath
         LeaseIdentity = "$repositoryKey|$identityLeasePath"
         OperationId = $OperationId
         Metadata = $metadata
@@ -691,7 +743,7 @@ function Throw-RepositoryExecutionLeaseOpenFailure {
     if ($Context.SharedLease) {
         throw "Worktree execution lease is held for '$($Context.CanonicalRoot)' in shared coordination slot. Use a separate worktree or wait for the active operation."
     }
-    $owner = Get-RepositoryExecutionLeaseOwner -Path $Context.LeasePath
+    $owner = Get-RepositoryExecutionLeaseOwner -Path $Context.MetadataPath
     throw "Worktree execution lease is held for '$($Context.CanonicalRoot)'. Current owner: $owner. Use a separate worktree or wait for the active operation."
 }
 
@@ -707,7 +759,7 @@ function Open-RepositoryExecutionLeaseResources {
         LeaseOffset = $null
     }
     try {
-        Assert-RepositoryExecutionLeaseNotHeldByCurrentProcess -Path $Context.LeasePath -SharedLease $Context.SharedLease
+        Assert-RepositoryExecutionLeaseNotHeldByCurrentProcess -Path $Context.MetadataPath -SharedLease $Context.SharedLease
         Register-RepositoryExecutionLeaseIdentity -Identity $Context.LeaseIdentity
         $resources.LeaseRegistered = $true
         if ($Context.SharedLease) {
@@ -746,21 +798,28 @@ function Write-RepositoryExecutionLeaseMetadata {
     )
 
     $metadataBytes = [System.Text.Encoding]::UTF8.GetBytes($Context.Metadata)
+    $writeMetadata = {
+        $metadataStream = [System.IO.FileStream]::new($Context.MetadataPath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+        try {
+            $metadataStream.SetLength(0)
+            $metadataStream.Write($metadataBytes, 0, $metadataBytes.Length)
+            $metadataStream.Flush($true)
+        }
+        finally { $metadataStream.Dispose() }
+    }
     if ($Context.SharedLease) {
         [System.Threading.Monitor]::Enter($Resources.StreamState.Gate)
         try {
-            $Resources.Stream.SetLength(0)
-            $Resources.Stream.Write($metadataBytes, 0, $metadataBytes.Length)
-            $Resources.Stream.Flush($true)
+            & $writeMetadata
         }
         finally {
             [System.Threading.Monitor]::Exit($Resources.StreamState.Gate)
         }
-        return
     }
-    $Resources.Stream.SetLength(0)
-    $Resources.Stream.Write($metadataBytes, 0, $metadataBytes.Length)
-    $Resources.Stream.Flush($true)
+    else { & $writeMetadata }
+    if ($IsWindows -and $Context.SharedLease) { Set-RepositoryExecutionLeaseWindowsAccess -Path $Context.MetadataPath }
+    elseif (-not $IsWindows -and $Context.SharedLease) { Set-RepositoryExecutionLeaseUnixMode -Path $Context.MetadataPath -Mode $sharedExecutionLeaseFileMode }
+    elseif (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $Context.MetadataPath -Mode $privateExecutionLeaseFileMode }
 }
 
 function Clear-RepositoryExecutionLeaseMetadata {
@@ -768,19 +827,22 @@ function Clear-RepositoryExecutionLeaseMetadata {
     param([Parameter(Mandatory)][object]$Lease)
 
     try {
+        $metadataPath = [string]$Lease.MetadataPath
         if ($null -ne $Lease.SharedStreamState) {
             [System.Threading.Monitor]::Enter($Lease.SharedStreamState.Gate)
             try {
-                $Lease.Stream.SetLength(0)
-                $Lease.Stream.Flush($true)
+                $metadataStream = [System.IO.FileStream]::new($metadataPath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+                try { $metadataStream.SetLength(0); $metadataStream.Flush($true) }
+                finally { $metadataStream.Dispose() }
             }
             finally {
                 [System.Threading.Monitor]::Exit($Lease.SharedStreamState.Gate)
             }
         }
         else {
-            $Lease.Stream.SetLength(0)
-            $Lease.Stream.Flush($true)
+            $metadataStream = [System.IO.FileStream]::new($metadataPath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+            try { $metadataStream.SetLength(0); $metadataStream.Flush($true) }
+            finally { $metadataStream.Dispose() }
         }
     }
     catch {
@@ -807,6 +869,7 @@ function Enter-RepositoryExecutionLease {
         Write-RepositoryExecutionLeaseMetadata -Context $context -Resources $resources
         return [pscustomobject]@{
             Path = $context.LeasePath
+            MetadataPath = $context.MetadataPath
             LeaseOffset = $resources.LeaseOffset
             LeaseIdentity = $context.LeaseIdentity
             OperationId = $context.OperationId
