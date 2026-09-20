@@ -392,6 +392,56 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
         return name.EndsWith("State", StringComparison.Ordinal) || name.EndsWith("State`", StringComparison.Ordinal);
     }
 
+    private static bool MethodReturnsParameter(
+        MethodBase method,
+        int parameterIndex,
+        HashSet<string> visited
+    )
+    {
+        string visitKey = $"{method.Module.ModuleVersionId}:{method.MetadataToken}:{parameterIndex}";
+        if (!visited.Add(visitKey))
+        {
+            return false;
+        }
+
+        byte[]? il = method.GetMethodBody()?.GetILAsByteArray();
+        if (il is null)
+        {
+            return false;
+        }
+
+        int? loadedParameter = null;
+        int offset = 0;
+        while (offset < il.Length)
+        {
+            OpCode opcode;
+            byte first = il[offset++];
+            opcode = first == 0xFE ? MultiByteOpCodes[il[offset++]] : SingleByteOpCodes[first];
+            int operandOffset = offset;
+            if (TryGetArgumentIndex(opcode, il, operandOffset, out int argumentIndex))
+            {
+                loadedParameter = argumentIndex;
+            }
+            else if (opcode == OpCodes.Ret)
+            {
+                if (loadedParameter == parameterIndex)
+                {
+                    return true;
+                }
+            }
+            else if ((opcode != OpCodes.Nop) &&
+                     (opcode != OpCodes.Dup) &&
+                     !TryGetArgumentIndex(opcode, il, operandOffset, out int _))
+            {
+                loadedParameter = null;
+            }
+
+            offset += GetOperandSize(opcode, il, offset);
+        }
+
+        return false;
+    }
+
     private static bool MethodStoresField(
         MethodBase method,
         FieldInfo targetField
@@ -438,10 +488,11 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
         MethodBase method,
         int parameterIndex,
         FieldInfo targetField,
-        HashSet<MethodBase> visited
+        HashSet<string> visited
     )
     {
-        if (!visited.Add(method))
+        string visitKey = $"{method.Module.ModuleVersionId}:{method.MetadataToken}:{parameterIndex}";
+        if (!visited.Add(visitKey))
         {
             return false;
         }
@@ -455,6 +506,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
         int? loadedParameter = null;
         int? conditionalParameter = null;
         FieldInfo? loadedField = null;
+        int? returnedParameter = null;
         List<int> argumentStack = new();
         int offset = 0;
         while (offset < il.Length)
@@ -498,7 +550,9 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                     // An unresolved metadata token cannot prove the field assignment.
                 }
 
-                if (((loadedParameter == parameterIndex) || (conditionalParameter == parameterIndex)) &&
+                if (((loadedParameter == parameterIndex) ||
+                     (conditionalParameter == parameterIndex) ||
+                     (returnedParameter == parameterIndex)) &&
                     (storedField == targetField))
                 {
                     return true;
@@ -507,6 +561,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                 loadedParameter = null;
                 conditionalParameter = null;
                 loadedField = null;
+                returnedParameter = null;
                 argumentStack.Clear();
             }
             else if ((opcode == OpCodes.Ldfld) && ((offset + 4) <= il.Length))
@@ -563,10 +618,21 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                         for (int calleeParameter = 0; calleeParameter < calledParameterCount; calleeParameter++)
                         {
                             int stackIndex = calleeParameter + receiverCount;
-                            if ((callArguments[stackIndex] == parameterIndex) &&
-                                MethodStoresParameter(called, calleeParameter + receiverCount, targetField, visited))
+                            if (callArguments[stackIndex] == parameterIndex)
                             {
-                                return true;
+                                if (MethodStoresParameter(
+                                        called,
+                                        calleeParameter + receiverCount,
+                                        targetField,
+                                        visited))
+                                {
+                                    return true;
+                                }
+
+                                if (MethodReturnsParameter(called, calleeParameter + receiverCount, new()))
+                                {
+                                    returnedParameter = parameterIndex;
+                                }
                             }
                         }
                     }
@@ -590,6 +656,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             {
                 loadedParameter = null;
                 loadedField = null;
+                returnedParameter = null;
                 argumentStack.Clear();
             }
 

@@ -34,7 +34,7 @@ public sealed class CSharpArchitectureRuleTests
         _ = new WrappedInjectedFieldFixture(new(() => clock)).GetClock();
         _ = new NestedWrappedInjectedFieldFixture(new(() => [clock])).GetClock();
         _ = new InheritedInjectedFieldFixture(clock).GetClock();
-        _ = new MultiArgumentHelperFixture(clock, clock).GetClock();
+        _ = new MultiArgumentHelperFixture(null!, clock).GetClock();
         _ = new DelegateInjectedFieldFixture(() => 1).GetValue();
         IReadOnlyList<string> violations = CSharpArchitectureTests.FindConstructorInjectedFields(
         [
@@ -47,6 +47,7 @@ public sealed class CSharpArchitectureRuleTests
             typeof(MultiArgumentHelperFixture), typeof(DelegateInjectedFieldFixture),
             typeof(CollectionAddAssignmentFixture), typeof(InheritedManualPropertyFixture),
             typeof(BranchedFactoryAssignmentFixture),
+            typeof(ReturnHelperAssignmentFixture), typeof(ObjectStorageFixture),
             typeof(WrappedInjectedFieldFixture), typeof(NestedWrappedInjectedFieldFixture),
             typeof(InheritedInjectedFieldFixture), typeof(InheritedInjectedFieldBase),
             typeof(ConcreteInjectedFieldFixture),
@@ -82,6 +83,8 @@ public sealed class CSharpArchitectureRuleTests
         Assert.Contains($"{typeof(DelegateInjectedFieldFixture).FullName}.factory", violations);
         Assert.Contains($"{typeof(CollectionAddAssignmentFixture).FullName}.clocks", violations);
         Assert.Contains($"{typeof(InheritedManualPropertyFixture).FullName}.Clock", violations);
+        Assert.Contains($"{typeof(ReturnHelperAssignmentFixture).FullName}.clock", violations);
+        Assert.Contains($"{typeof(ObjectStorageFixture).FullName}.clock", violations);
         Assert.Contains($"{typeof(WrappedInjectedFieldFixture).FullName}.clock", violations);
         Assert.Contains($"{typeof(NestedWrappedInjectedFieldFixture).FullName}.clocks", violations);
         Assert.Contains($"{typeof(InheritedInjectedFieldFixture).FullName}.<Clock>k__BackingField", violations);
