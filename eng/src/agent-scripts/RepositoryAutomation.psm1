@@ -18,13 +18,27 @@ function Test-RepositoryExecutionLeaseSharedMode {
     return $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true' -or -not [string]::IsNullOrWhiteSpace($LeaseDirectory)
 }
 
-function Get-RepositoryExecutionLeaseSlot {
+function Get-RepositoryExecutionLeaseHash {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$CanonicalRepoRoot)
 
     $keyRoot = if ((Get-RepositoryPathComparison -RepoRoot $CanonicalRepoRoot) -eq [System.StringComparison]::OrdinalIgnoreCase) { $CanonicalRepoRoot.ToLowerInvariant() } else { $CanonicalRepoRoot }
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($keyRoot)
-    $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $hash = $sha256.ComputeHash($bytes)
+    }
+    finally {
+        $sha256.Dispose()
+    }
+    return ,$hash
+}
+
+function Get-RepositoryExecutionLeaseSlot {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$CanonicalRepoRoot)
+
+    $hash = Get-RepositoryExecutionLeaseHash -CanonicalRepoRoot $CanonicalRepoRoot
     return [int](([System.BitConverter]::ToUInt32($hash, 0)) % $sharedExecutionLeaseSlotCount)
 }
 
@@ -159,9 +173,7 @@ function Get-RepositoryExecutionLeasePathForRoot {
         [string]$LeaseDirectory
     )
 
-    $keyRoot = if ((Get-RepositoryPathComparison -RepoRoot $CanonicalRepoRoot) -eq [System.StringComparison]::OrdinalIgnoreCase) { $CanonicalRepoRoot.ToLowerInvariant() } else { $CanonicalRepoRoot }
-    $bytes = [System.Text.Encoding]::UTF8.GetBytes($keyRoot)
-    $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
+    $hash = Get-RepositoryExecutionLeaseHash -CanonicalRepoRoot $CanonicalRepoRoot
     $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
     $fileName = if ($sharedLease) { 'shared.lease' } else { (($hash | ForEach-Object { $_.ToString('x2') }) -join '') + '.lease' }
     $defaultLeaseDirectory = [string]::IsNullOrWhiteSpace($LeaseDirectory)
