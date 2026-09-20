@@ -747,6 +747,35 @@ function Throw-RepositoryExecutionLeaseOpenFailure {
     throw "Worktree execution lease is held for '$($Context.CanonicalRoot)'. Current owner: $owner. Use a separate worktree or wait for the active operation."
 }
 
+function Ensure-RepositoryExecutionLeaseMetadataFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][bool]$SharedLease
+    )
+
+    if (Test-Path -LiteralPath $Path -PathType Leaf) {
+        Assert-RepositoryExecutionLeaseFile -Path $Path
+        return
+    }
+    $directoryRelaxed = $false
+    if ($SharedLease -and -not $IsWindows) {
+        Set-RepositoryExecutionLeaseUnixMode -Path (Split-Path -Parent $Path) -Mode $sharedExecutionLeaseWritableDirectoryMode
+        $directoryRelaxed = $true
+    }
+    try {
+        $stream = [System.IO.FileStream]::new($Path, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+        try { $stream.SetLength(0); $stream.Flush($true) }
+        finally { $stream.Dispose() }
+        if ($IsWindows -and $SharedLease) { Set-RepositoryExecutionLeaseWindowsAccess -Path $Path }
+        elseif (-not $IsWindows -and $SharedLease) { Set-RepositoryExecutionLeaseUnixMode -Path $Path -Mode $sharedExecutionLeaseFileMode }
+        elseif (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $Path -Mode $privateExecutionLeaseFileMode }
+    }
+    finally {
+        if ($directoryRelaxed) { Set-RepositoryExecutionLeaseUnixMode -Path (Split-Path -Parent $Path) -Mode $sharedExecutionLeaseDirectoryMode }
+    }
+}
+
 function Open-RepositoryExecutionLeaseResources {
     [CmdletBinding()]
     param([Parameter(Mandatory)][object]$Context)
@@ -798,6 +827,7 @@ function Write-RepositoryExecutionLeaseMetadata {
     )
 
     $metadataBytes = [System.Text.Encoding]::UTF8.GetBytes($Context.Metadata)
+    Ensure-RepositoryExecutionLeaseMetadataFile -Path $Context.MetadataPath -SharedLease $Context.SharedLease
     $writeMetadata = {
         $metadataStream = [System.IO.FileStream]::new($Context.MetadataPath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
         try {
