@@ -72,7 +72,7 @@ Describe 'Issue delivery benchmark validation' {
                         $pairedCase = @($scenario.pairedCases | Where-Object id -EQ $category.pairedInputIds[0])[0]
                         $definitionText = "$($definition.id)|$($definition.setup)|$($definition.trigger)|$($definition.expectedObservation)"
                         $definitionHash = [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($definitionText))
-                        $trialRecords.Add([pscustomobject][ordered]@{
+                        $failureRecord = [ordered]@{
                             scenarioId = [string]$category.id
                             pairedInputId = [string]$category.pairedInputIds[0]
                             inputEvidence = [ordered]@{ repository = 'Gibbs-Morris/mississippi'; issueNumber = 732; inputProfile = [string]$pairedCase.inputProfile; bodyDigest = $inputDigest; sourceRevision = $revision }
@@ -93,7 +93,11 @@ Describe 'Issue delivery benchmark validation' {
                             independentCheckResults = @($category.independentChecks | ForEach-Object { [pscustomobject]@{ id = [string]$_; status = 'blocked' } })
                             reviewRework = 0
                             interventions = 1
-                        })
+                        }
+                        if ($category.id -eq 'browser-visible' -and $failureCase -eq 'wrong application gate') {
+                            $failureRecord.browserEvidence = [ordered]@{ route = '/'; state = 'wrong-app'; viewport = '1280x720'; command = 'playwright test'; screenshot = 'artifacts/browser-wrong-app.png' }
+                        }
+                        $trialRecords.Add([pscustomobject]$failureRecord)
                     }
                 }
                 $hostRow | Add-Member -NotePropertyName trialRecords -NotePropertyValue @($trialRecords) -Force
@@ -261,10 +265,11 @@ Describe 'Issue delivery benchmark validation' {
 
     It 'requires browser evidence for browser failure-case trials' {
         $data = New-LiveResults
-        $failure = @($data.hosts[0].trialRecords | Where-Object { $_.scenarioId -eq 'browser-visible' -and $null -ne $_.PSObject.Properties['failureCase'] })[0]
+        $failure = @($data.hosts[0].trialRecords | Where-Object { $_.scenarioId -eq 'browser-visible' -and $null -ne $_.PSObject.Properties['failureCase'] -and [string]$_.failureCase -eq 'wrong application gate' })[0]
         $failure.outcome = 'failed'
         $failure.acceptancePassed = $false
         $failure.reason = 'controlled browser failure'
+        $failure.PSObject.Properties.Remove('browserEvidence')
         $path = Join-Path $TestDrive 'missing-browser-failure-evidence.json'
         $data | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path
 
