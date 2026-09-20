@@ -170,8 +170,20 @@ Describe 'Build entry point process boundaries' {
         $scripts = Join-Path $fixture 'eng/src/agent-scripts'
         New-Item -ItemType Directory -Path $scripts -Force | Out-Null
         Copy-Item (Join-Path $PSScriptRoot '../../../' $EntryPoint) $fixture
-        Set-Content (Join-Path $scripts "$Prefix-mississippi-solution.ps1") "param([string]`$Configuration); Write-Output ('CORE:' + `$Configuration); exit $ExitCode"
-        Set-Content (Join-Path $scripts "$Prefix-sample-solution.ps1") "param([string]`$Configuration); Write-Output ('SAMPLES:' + `$Configuration); exit 0"
+        if ($Prefix -eq 'build') {
+            @'
+function Get-RepositoryRoot { return (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))) }
+function Enter-RepositoryExecutionLease { param([string]$RepoRoot); [pscustomobject]@{ RepositoryRoot = $RepoRoot; OwnsStream = $false } }
+function Exit-RepositoryExecutionLease { param([object]$Lease) }
+Export-ModuleMember -Function Get-RepositoryRoot, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease
+'@ | Set-Content (Join-Path $scripts 'RepositoryAutomation.psm1')
+            Set-Content (Join-Path $scripts "$Prefix-mississippi-solution.ps1") "param([string]`$Configuration, [string]`$LeaseDirectory, [switch]`$SkipLease); Write-Output ('CORE:' + `$Configuration); exit $ExitCode"
+            Set-Content (Join-Path $scripts "$Prefix-sample-solution.ps1") "param([string]`$Configuration, [string]`$LeaseDirectory, [switch]`$SkipLease); Write-Output ('SAMPLES:' + `$Configuration); exit 0"
+        }
+        else {
+            Set-Content (Join-Path $scripts "$Prefix-mississippi-solution.ps1") "param([string]`$Configuration); Write-Output ('CORE:' + `$Configuration); exit $ExitCode"
+            Set-Content (Join-Path $scripts "$Prefix-sample-solution.ps1") "param([string]`$Configuration); Write-Output ('SAMPLES:' + `$Configuration); exit 0"
+        }
         $options = if ($Prefix -eq 'build') { @('-Configuration', 'Debug') } else { @() }
         $expectedConfiguration = if ($Prefix -eq 'build') { 'Debug' } else { '' }
         $output = & $powerShellPath -NoProfile -File $portableHostScript (Join-Path $fixture $EntryPoint) @options 2>&1 | Out-String
