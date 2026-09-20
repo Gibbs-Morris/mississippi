@@ -2835,7 +2835,7 @@ function Get-PrReadinessBodyText {
     return [string]$property.Value
 }
 
-function Get-PrReadinessSnapshot {
+function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally coordinates paginated GitHub checks, reviews, threads, and stability fingerprints.
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$RepositoryOwner,
@@ -3002,7 +3002,7 @@ function Get-PrReadinessSnapshot {
     }
 }
 
-function Get-PrReadinessReport {
+function Get-PrReadinessReport { # NOSONAR - readiness reporting intentionally evaluates the complete mechanical and disposition gate.
     [CmdletBinding()]
     param([Parameter(Mandatory)][object]$Snapshot)
 
