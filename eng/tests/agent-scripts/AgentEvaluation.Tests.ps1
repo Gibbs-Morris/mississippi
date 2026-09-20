@@ -17,6 +17,26 @@ Describe 'Issue delivery benchmark validation' {
             $output = & $powerShellPath -NoProfile -File $validator -ScenarioPath $ScenarioPath -ResultsPath $ResultsPath -Json 2>&1 | Out-String
             [pscustomobject]@{ ExitCode = $LASTEXITCODE; Result = $output | ConvertFrom-Json }
         }
+        function Get-GitBlobDigest {
+            param([string]$Revision, [string]$Path)
+            $temporary = [IO.Path]::GetTempFileName()
+            try {
+                $info = [Diagnostics.ProcessStartInfo]::new()
+                $info.FileName = 'git'
+                $info.UseShellExecute = $false
+                $info.RedirectStandardOutput = $true
+                $info.RedirectStandardError = $true
+                foreach ($argument in @('-c', "safe.directory=$($repoRoot.Replace('\', '/'))", '-C', $repoRoot, 'cat-file', 'blob', "$Revision`:$Path")) { $null = $info.ArgumentList.Add($argument) }
+                $process = [Diagnostics.Process]::Start($info)
+                $stream = [IO.File]::Create($temporary)
+                try { $process.StandardOutput.BaseStream.CopyTo($stream) } finally { $stream.Dispose() }
+                $null = $process.StandardError.ReadToEnd()
+                $process.WaitForExit()
+                if ($process.ExitCode -ne 0) { throw "Unable to read Git blob '$Path'." }
+                return 'SHA256:' + (Get-FileHash -LiteralPath $temporary -Algorithm SHA256).Hash
+            }
+            finally { Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue }
+        }
         function New-LiveResults { # NOSONAR - synthetic benchmark fixture intentionally constructs every host/category evidence branch.
             $data = Get-Content -LiteralPath $results -Raw | ConvertFrom-Json
             $scenario = Get-Content -LiteralPath $pack -Raw | ConvertFrom-Json
@@ -105,7 +125,8 @@ Describe 'Issue delivery benchmark validation' {
             foreach ($contract in @($data.deterministicContractTrials)) {
                 $contract | Add-Member -NotePropertyName evidenceStatus -NotePropertyValue 'PASS' -Force
                 $contract | Add-Member -NotePropertyName evidenceRevision -NotePropertyValue $revision -Force
-                $contract | Add-Member -NotePropertyName evidenceArtifacts -NotePropertyValue @($contract.evidenceChecks) -Force
+                $artifacts = @($contract.evidenceChecks | ForEach-Object { $path = [string]$_; [ordered]@{ path = $path; sha256 = Get-GitBlobDigest -Revision $revision -Path $path } })
+                $contract | Add-Member -NotePropertyName evidenceArtifacts -NotePropertyValue $artifacts -Force
             }
             return $data
         }
@@ -313,6 +334,18 @@ Describe 'Issue delivery benchmark validation' {
 
         $outcome.ExitCode | Should -Not -Be 0
         ($outcome.Result.Errors -join "`n") | Should -Match 'contradictory measurement aliases'
+    }
+
+    It 'rejects fabricated deterministic evidence artifacts' {
+        $data = New-LiveResults
+        $data.deterministicContractTrials[0].evidenceArtifacts[0].sha256 = 'SHA256:' + ('0' * 64)
+        $path = Join-Path $TestDrive 'fabricated-deterministic-artifact.json'
+        $data | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path
+
+        $outcome = Invoke-Evaluation -ResultsPath $path
+
+        $outcome.ExitCode | Should -Not -Be 0
+        ($outcome.Result.Errors -join "`n") | Should -Match 'evidence artifact.*does not match'
     }
 
     It 'requires browser evidence for browser failure-case trials' {

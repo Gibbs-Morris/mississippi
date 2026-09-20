@@ -101,6 +101,53 @@ function Get-EvaluationInputEvidenceErrors { # NOSONAR - bounded evidence reconc
     return $messages.ToArray()
 }
 
+function Get-EvaluationArtifactErrors { # NOSONAR - artifact validation intentionally aggregates path, revision, and digest gates.
+    param([Parameter(Mandatory)][object]$Contract, [Parameter(Mandatory)][string]$RepositoryRoot, [Parameter(Mandatory)][string]$SourceRevision)
+    $messages = [System.Collections.Generic.List[string]]::new()
+    $expectedPaths = @($Contract.evidenceChecks | ForEach-Object { [string]$_ })
+    $artifacts = @($Contract.evidenceArtifacts)
+    if (@($artifacts).Count -ne @($expectedPaths).Count) { $messages.Add('evidenceArtifacts must contain one artifact for every evidence check.') }
+    $seen = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($artifact in $artifacts) {
+        $pathProperty = $artifact.PSObject.Properties['path']
+        $digestProperty = $artifact.PSObject.Properties['sha256']
+        if ($null -eq $pathProperty -or $pathProperty.Value -isnot [string] -or [string]::IsNullOrWhiteSpace([string]$pathProperty.Value)) { $messages.Add('evidence artifact is missing a scalar path.'); continue }
+        $path = [string]$pathProperty.Value
+        if (-not $seen.Add($path)) { $messages.Add("evidence artifact '$path' is duplicated.") }
+        if ($expectedPaths -notcontains $path) { $messages.Add("evidence artifact '$path' is not a declared evidence check."); continue }
+        if ($null -eq $digestProperty -or $digestProperty.Value -isnot [string] -or [string]$digestProperty.Value -notmatch '^SHA256:[0-9a-fA-F]{64}$') { $messages.Add("evidence artifact '$path' is missing an immutable SHA256 digest."); continue }
+        $fullPath = [System.IO.Path]::GetFullPath((Join-Path $RepositoryRoot $path))
+        if (-not $fullPath.StartsWith(([System.IO.Path]::GetFullPath($RepositoryRoot).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar), [StringComparison]::OrdinalIgnoreCase) -or -not (Test-Path -LiteralPath $fullPath -PathType Leaf)) { $messages.Add("evidence artifact '$path' is not a repository file."); continue }
+        if ((Get-EvaluationGitBlobSha256 -RepositoryRoot $RepositoryRoot -SourceRevision $SourceRevision -Path $path) -ne [string]$digestProperty.Value) { $messages.Add("evidence artifact '$path' does not match its canonical Git SHA256 digest.") }
+        & git -c "safe.directory=$($RepositoryRoot.Replace('\', '/'))" -C $RepositoryRoot diff --quiet $SourceRevision -- $path 2>$null
+        if ($LASTEXITCODE -ne 0) { $messages.Add("evidence artifact '$path' is not bound to source revision '$SourceRevision'.") }
+    }
+    return $messages.ToArray()
+}
+
+function Get-EvaluationGitBlobSha256 {
+    param([Parameter(Mandatory)][string]$RepositoryRoot, [Parameter(Mandatory)][string]$SourceRevision, [Parameter(Mandatory)][string]$Path)
+    $temporaryPath = [System.IO.Path]::GetTempFileName()
+    $safeRoot = $RepositoryRoot.Replace('\', '/')
+    $spec = "$SourceRevision`:$Path"
+    try {
+        $processInfo = [System.Diagnostics.ProcessStartInfo]::new()
+        $processInfo.FileName = 'git'
+        $processInfo.UseShellExecute = $false
+        $processInfo.RedirectStandardOutput = $true
+        $processInfo.RedirectStandardError = $true
+        foreach ($argument in @('-c', "safe.directory=$safeRoot", '-C', $RepositoryRoot, 'cat-file', 'blob', $spec)) { $null = $processInfo.ArgumentList.Add($argument) }
+        $process = [System.Diagnostics.Process]::Start($processInfo)
+        $stream = [System.IO.File]::Create($temporaryPath)
+        try { $process.StandardOutput.BaseStream.CopyTo($stream) } finally { $stream.Dispose() }
+        $errorText = $process.StandardError.ReadToEnd()
+        $process.WaitForExit()
+        if ($process.ExitCode -ne 0) { throw "Unable to read Git artifact '$Path': $errorText" }
+        return 'SHA256:' + (Get-FileHash -LiteralPath $temporaryPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+    finally { Remove-Item -LiteralPath $temporaryPath -Force -ErrorAction SilentlyContinue }
+}
+
 try {
     $pack = Get-Content -LiteralPath $ScenarioPath -Raw | ConvertFrom-Json
     $results = Get-Content -LiteralPath $ResultsPath -Raw | ConvertFrom-Json
@@ -124,7 +171,7 @@ try {
     $expectedTrials = [int]$pack.normalTrialCount
     $requiredCategoryIds = @('csharp-behavior', 'powershell-harness', 'documentation', 'browser-visible', 'multi-project-generator')
     $actualCategoryIds = @($categories.id)
-    if ($allCategories.Count -ne $categories.Count) { $errors.Add('Scenario pack must contain only normal benchmark categories.') }
+    if (@($allCategories).Count -ne @($categories).Count) { $errors.Add('Scenario pack must contain only normal benchmark categories.') }
     if ($actualCategoryIds.Count -ne $requiredCategoryIds.Count -or
         (Get-EvaluationSet -Values $actualCategoryIds).Count -ne $actualCategoryIds.Count -or
         @($requiredCategoryIds | Where-Object { $actualCategoryIds -notcontains $_ }).Count -gt 0 -or
@@ -414,13 +461,12 @@ try {
                             }
                         }
                     }
-                    if ($outcome -in @('passed', 'failed')) {
+                    if ($outcome -in @('passed', 'failed', 'blocked', 'unsupported')) {
                         if ($null -eq $record.PSObject.Properties['acceptancePassed']) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing acceptancePassed.") }
                         elseif ($record.acceptancePassed -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has a non-boolean acceptancePassed value.") }
-                        elseif (($outcome -eq 'passed' -and -not $record.acceptancePassed) -or ($outcome -eq 'failed' -and $record.acceptancePassed)) { $errors.Add("Host '$hostName' category '$($category.id)' acceptancePassed does not reconcile with outcome '$outcome'.") }
+                        elseif (($outcome -eq 'passed' -and -not $record.acceptancePassed) -or ($outcome -ne 'passed' -and $record.acceptancePassed)) { $errors.Add("Host '$hostName' category '$($category.id)' acceptancePassed does not reconcile with outcome '$outcome'.") }
                     }
-                    if ($outcome -eq 'failed' -and [string]::IsNullOrWhiteSpace([string]$record.reason)) { $errors.Add("Host '$hostName' category '$($category.id)' failed trial is missing a reason.") }
-                    if ($outcome -in @('blocked', 'unsupported') -and [string]::IsNullOrWhiteSpace([string]$record.reason)) { $errors.Add("Host '$hostName' category '$($category.id)' blocked or unsupported trial is missing a reason.") }
+                    if ($outcome -in @('failed', 'blocked', 'unsupported')) { $reasonProperty = $record.PSObject.Properties['reason']; if ($null -eq $reasonProperty -or $reasonProperty.Value -isnot [string] -or [string]::IsNullOrWhiteSpace([string]$reasonProperty.Value)) { $errors.Add("Host '$hostName' category '$($category.id)' outcome '$outcome' is missing a scalar textual reason.") } }
                     if ($category.id -eq 'browser-visible' -and ($outcome -eq 'passed' -or $outcome -eq 'failed')) {
                         if ($null -eq $record.PSObject.Properties['browserEvidence']) {
                             $errors.Add("Host '$hostName' browser trial is missing browserEvidence.")
@@ -464,7 +510,7 @@ try {
                     }
                     $failureOutcome = [string]$failureRecord.outcome
                     if ($failureOutcome -notin @('passed', 'failed', 'blocked', 'unsupported')) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence has an invalid outcome.") }
-                    if ($failureOutcome -in @('failed', 'blocked', 'unsupported') -and [string]::IsNullOrWhiteSpace([string]$failureRecord.reason)) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence is missing a reason.") }
+                    if ($failureOutcome -in @('failed', 'blocked', 'unsupported')) { $reasonProperty = $failureRecord.PSObject.Properties['reason']; if ($null -eq $reasonProperty -or $reasonProperty.Value -isnot [string] -or [string]::IsNullOrWhiteSpace([string]$reasonProperty.Value)) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence is missing a scalar textual reason.") } }
                     if ($failureRecord.PSObject.Properties['freshContext'] -and $failureRecord.freshContext -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence has a non-boolean freshContext value.") }
                     if ($failureRecord.PSObject.Properties['freshContext'] -and $failureRecord.freshContext -ne $true) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence was not run in a fresh context.") }
                     if ($failureRecord.PSObject.Properties['repositoryRevision'] -and [string]$failureRecord.repositoryRevision -ne [string]$results.sourceRevision) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence uses a different repository revision.") }
@@ -562,10 +608,13 @@ try {
         $evidenceRevision = if ($null -eq $contract.PSObject.Properties['evidenceRevision']) { '' } else { [string]$contract.evidenceRevision }
         $evidenceArtifacts = if ($null -eq $contract.PSObject.Properties['evidenceArtifacts']) { @() } else { @($contract.evidenceArtifacts) }
         if ([string]$results.mode -eq 'initial-baseline') {
-            if ($evidenceStatus -ne 'UNSUPPORTED' -or $evidenceRevision -ne 'record-at-evaluation-run') { $errors.Add("Deterministic trials for '$($category.id)' must declare unsupported baseline evidence.") }
+            if ($evidenceStatus -ne 'UNSUPPORTED' -or $evidenceRevision -ne 'record-at-evaluation-run' -or @($evidenceArtifacts).Count -ne 0) { $errors.Add("Deterministic trials for '$($category.id)' must declare unsupported baseline evidence.") }
         }
-        elseif ($evidenceStatus -ne 'PASS' -or $evidenceRevision -ne [string]$results.sourceRevision -or $evidenceArtifacts.Count -eq 0) {
+        elseif ($evidenceStatus -ne 'PASS' -or $evidenceRevision -ne [string]$results.sourceRevision -or @($evidenceArtifacts).Count -eq 0) {
             $errors.Add("Deterministic trials for '$($category.id)' lack revision-bound executed evidence.")
+        }
+        elseif ($evidenceStatus -eq 'PASS') {
+            foreach ($artifactError in @(Get-EvaluationArtifactErrors -Contract $contract -RepositoryRoot $repositoryRoot -SourceRevision ([string]$results.sourceRevision))) { $errors.Add("Deterministic trials for '$($category.id)' $artifactError") }
         }
         foreach ($countName in @('trials', 'passed', 'failed', 'falseCompletion', 'authorityViolations')) {
             if ($null -eq $contract.PSObject.Properties[$countName]) {
