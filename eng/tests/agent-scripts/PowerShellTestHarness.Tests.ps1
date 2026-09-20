@@ -24,6 +24,7 @@ Describe 'PowerShell test orchestration' {
         New-Item -ItemType Directory -Path $fixtureRunners, $fixtureModules, (Join-Path $fixtureRoot '.git') -Force | Out-Null
         Copy-Item (Join-Path $sourceRoot 'orchestrate-powershell-tests.ps1') $fixtureTests
         Copy-Item (Join-Path $sourceRoot '../src/agent-scripts/RepositoryAutomation.psm1') $fixtureModules
+        Copy-Item (Join-Path $sourceRoot '../src/agent-scripts/ValidationEvidence.psm1') $fixtureModules
         $orchestrator = Join-Path $fixtureTests 'orchestrate-powershell-tests.ps1'
         $pesterRunners = @(
             'run-repository-automation-tests.ps1',

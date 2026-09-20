@@ -181,9 +181,12 @@ Write-Host ""
 
 $testFailed = $false
 $mutationFailed = $false
+$trx = $null
+$cobertura = $null
+$trxSummary = $null
 Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
 $executionLease = $null
-$evidenceRun = New-ValidationEvidenceRun -RepositoryRoot (Get-Location).Path -Scope "focused-quality:$TestProject" -InputPath @($TestProject) -Arguments @('Configuration', $Configuration, 'SkipMutation', [string]$SkipMutation, 'NoBuild', [string]$NoBuild)
+$evidenceRun = $null
 
 try {
     Write-Host "[1/7] Resolving test project path..." -ForegroundColor Cyan
@@ -212,8 +215,7 @@ try {
     }
     $testProjectName = [IO.Path]::GetFileNameWithoutExtension($testProjectPath)
     if ($null -ne $relativeSourceProjectPath) { $SourceProject = Join-Path $executionLease.RepositoryRoot $relativeSourceProjectPath }
-    $evidenceRun.InputPath = @($testProjectPath)
-    $evidenceRun.Record.SourceBefore = Get-ValidationSourceFingerprint -RepositoryRoot $repoRoot -InputPath @($testProjectPath)
+    $evidenceRun = New-ValidationEvidenceRun -RepositoryRoot $repoRoot -Scope "focused-quality:$TestProject" -InputPath @($testProjectPath) -Arguments @('Configuration', $Configuration, 'SkipMutation', [string]$SkipMutation, 'NoBuild', [string]$NoBuild)
     if (Test-Path ".config/dotnet-tools.json") {
         Write-Host "[2/7] Restoring dotnet tools..." -ForegroundColor Cyan
         dotnet tool restore
@@ -332,7 +334,13 @@ try {
     if ($finalStatus -eq 'FAIL') { exit 1 } else { exit 0 }
 }
 catch {
-    Complete-ValidationEvidenceRun -Run $evidenceRun -Status FAIL -Phase 'error' -Executed $false -TestCount 0 -ExitCode 1 -ErrorMessage $_.Exception.Message | Out-Null
+    if ($null -ne $evidenceRun) {
+        $failureArtifacts = [System.Collections.Generic.List[string]]::new()
+        if ($null -ne $trx) { $failureArtifacts.Add($trx.FullName) }
+        if ($null -ne $cobertura) { $failureArtifacts.Add($cobertura.FullName) }
+        $executed = $null -ne $trxSummary -and [int]$trxSummary.Executed -gt 0
+        Complete-ValidationEvidenceRun -Run $evidenceRun -Status FAIL -Phase 'error' -Executed $executed -TestCount $(if ($executed) { [int]$trxSummary.Executed } else { 0 }) -ExitCode 1 -ArtifactPath @($failureArtifacts) -ErrorMessage $_.Exception.Message | Out-Null
+    }
     Write-Error "ERROR: $_"
     # Attempt to still print what we have for easier parsing
     try {

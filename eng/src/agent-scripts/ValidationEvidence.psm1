@@ -1,3 +1,5 @@
+#!/usr/bin/env pwsh
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -165,7 +167,7 @@ function Complete-ValidationEvidenceRun {
 
 function Test-ValidationEvidence {
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Path)
+    param([Parameter(Mandatory)][string]$Path, [string]$RepositoryRoot)
 
     $errors = [System.Collections.Generic.List[string]]::new()
     try { $record = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json }
@@ -175,6 +177,15 @@ function Test-ValidationEvidence {
         if ($null -eq $record.PSObject.Properties[$property]) { $errors.Add("Evidence is missing required field '$property'.") }
     }
     if ($errors.Count -gt 0) { return [pscustomobject]@{ Valid = $false; Fresh = $false; Errors = @($errors); Record = $record } }
+    $verificationRoot = if (-not [string]::IsNullOrWhiteSpace($RepositoryRoot)) {
+        (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
+    }
+    elseif (Test-Path -LiteralPath ([string]$record.RepositoryRoot) -PathType Container) {
+        (Resolve-Path -LiteralPath $record.RepositoryRoot -ErrorAction Stop).Path
+    }
+    else {
+        Split-Path -Parent (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $Path)))
+    }
     if ([string]$record.SchemaVersion -ne '1.0') { $errors.Add('Unsupported evidence schema.') }
     if ([string]$record.Status -notin @('PASS', 'FAIL', 'INCOMPLETE', 'SKIPPED', 'READY')) { $errors.Add('Evidence status is invalid.') }
     if ([string]$record.Status -eq 'PASS' -and (-not [bool]$record.Executed -or [int]$record.TestCount -lt 1)) { $errors.Add('PASS requires executed tests and a nonzero test count.') }
@@ -182,10 +193,10 @@ function Test-ValidationEvidence {
     if ([string]$record.Status -eq 'PASS' -and @($record.Artifacts).Count -eq 0) { $errors.Add('PASS requires at least one recorded artifact.') }
     if ([string]$record.Status -eq 'PASS' -and [bool]$record.SourceChangedDuringRun) { $errors.Add('PASS evidence was changed by a later cleanup or source edit.') }
     foreach ($artifact in @($record.Artifacts)) {
-        if ([string]::IsNullOrWhiteSpace([string]$artifact) -or -not (Test-Path -LiteralPath (Join-Path $record.RepositoryRoot $artifact) -PathType Leaf)) { $errors.Add("Required artifact is missing: '$artifact'.") }
+        if ([string]::IsNullOrWhiteSpace([string]$artifact) -or -not (Test-Path -LiteralPath (Join-Path $verificationRoot $artifact) -PathType Leaf)) { $errors.Add("Required artifact is missing: '$artifact'.") }
     }
     foreach ($metadata in @($record.ArtifactMetadata)) {
-        $artifactPath = Join-Path $record.RepositoryRoot ([string]$metadata.Path)
+        $artifactPath = Join-Path $verificationRoot ([string]$metadata.Path)
         if (-not (Test-Path -LiteralPath $artifactPath -PathType Leaf)) { continue }
         try {
             $currentHash = 'SHA256:' + (Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -199,7 +210,7 @@ function Test-ValidationEvidence {
         catch { $errors.Add("Artifact is malformed or unreadable: '$($metadata.Path)'.") }
     }
     try {
-        $current = Get-ValidationSourceFingerprint -RepositoryRoot $record.RepositoryRoot -InputPath @($record.SourceBefore.Files.Path)
+        $current = Get-ValidationSourceFingerprint -RepositoryRoot $verificationRoot -InputPath @($record.SourceBefore.Files.Path)
         $fresh = $null -ne $record.SourceAfter -and [string]$record.SourceAfter.Fingerprint -eq [string]$current.Fingerprint
     }
     catch { $fresh = $false; $errors.Add('Current source fingerprint could not be collected.') }
