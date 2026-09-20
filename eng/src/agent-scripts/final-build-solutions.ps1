@@ -17,6 +17,7 @@ $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 $executionLease = $null
 try {
     $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "final-build-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $repoRoot = $executionLease.RepositoryRoot
     Invoke-FinalSolutionsBuild -Configuration $Configuration -RepoRoot $repoRoot
 }
 catch {

@@ -19,6 +19,7 @@ $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 $executionLease = $null
 try {
     $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "unit-test-mississippi-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $repoRoot = $executionLease.RepositoryRoot
     Invoke-MississippiSolutionUnitTests -Configuration $Configuration -RepoRoot $repoRoot -TestLevels $TestLevels
 }
 catch {

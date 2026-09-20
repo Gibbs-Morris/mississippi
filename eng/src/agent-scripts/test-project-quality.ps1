@@ -182,21 +182,21 @@ Write-Host ""
 $testFailed = $false
 $mutationFailed = $false
 Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
-$repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 $executionLease = $null
 
 try {
+    Write-Host "[1/7] Resolving test project path..." -ForegroundColor Cyan
+    $testProjectPath = Resolve-TestProjectPath -InputValue $TestProject
+    $testProjectName = [IO.Path]::GetFileNameWithoutExtension($testProjectPath)
+    $repoRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $testProjectPath)
+    Write-Host "Resolved test project: $testProjectName -> $testProjectPath" -ForegroundColor Green
+
     $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "quality-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
     if (Test-Path ".config/dotnet-tools.json") {
-        Write-Host "[1/7] Restoring dotnet tools..." -ForegroundColor Cyan
+        Write-Host "[2/7] Restoring dotnet tools..." -ForegroundColor Cyan
         dotnet tool restore
         if ($LASTEXITCODE -ne 0) { throw "Failed to restore dotnet tools" }
     }
-
-    Write-Host "[2/7] Resolving test project path..." -ForegroundColor Cyan
-    $testProjectPath = Resolve-TestProjectPath -InputValue $TestProject
-    $testProjectName = [IO.Path]::GetFileNameWithoutExtension($testProjectPath)
-    Write-Host "Resolved test project: $testProjectName -> $testProjectPath" -ForegroundColor Green
 
     $scratchpadRoot = Join-Path (Get-Location) ".scratchpad"
     $resultsRoot = Join-Path $scratchpadRoot "coverage-test-results"

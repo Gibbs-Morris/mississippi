@@ -16,6 +16,7 @@ $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 $executionLease = $null
 try {
     $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "cleanup-mississippi-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $repoRoot = $executionLease.RepositoryRoot
     Invoke-MississippiSolutionCleanup -RepoRoot $repoRoot
 }
 catch {
