@@ -369,7 +369,11 @@ function Resolve-RepositoryExecutionLeaseDirectory {
     )
 
     $candidate = if ([string]::IsNullOrWhiteSpace($LeaseDirectory)) {
-        Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases'
+        $userProfile = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+        if ([string]::IsNullOrWhiteSpace($userProfile) -or -not [System.IO.Path]::IsPathRooted($userProfile) -or -not (Test-Path -LiteralPath $userProfile -PathType Container)) {
+            throw "Unable to resolve the default repository execution lease directory because the user profile directory is unavailable. Specify -LeaseDirectory with an absolute path."
+        }
+        Join-Path $userProfile '.mississippi/execution-leases'
     }
     elseif ([System.IO.Path]::IsPathRooted($LeaseDirectory)) {
         $LeaseDirectory
@@ -441,7 +445,22 @@ function Wait-RepositoryExecutionLeaseInitialization {
     $deadline = [DateTime]::UtcNow.AddSeconds(5)
     do {
         if ((Test-Path -LiteralPath $LeasePath -PathType Leaf) -and (Test-Path -LiteralPath $MetadataPath -PathType Leaf)) {
-            return $true
+            try {
+                if ($IsWindows) {
+                    Test-RepositoryExecutionLeaseWindowsAccess -Path (Split-Path -Parent $LeasePath)
+                    Test-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath
+                    Test-RepositoryExecutionLeaseWindowsAccess -Path $MetadataPath
+                }
+                else {
+                    Test-RepositoryExecutionLeaseUnixMode -Path (Split-Path -Parent $LeasePath) -Mode $sharedExecutionLeaseDirectoryMode
+                    Test-RepositoryExecutionLeaseUnixMode -Path $LeasePath -Mode $sharedExecutionLeaseFileMode
+                    Test-RepositoryExecutionLeaseUnixMode -Path $MetadataPath -Mode $sharedExecutionLeaseFileMode
+                }
+                return $true
+            }
+            catch {
+                # The creator may have published the files but not finished applying their permissions.
+            }
         }
         Start-Sleep -Milliseconds 50
     } while ([DateTime]::UtcNow -lt $deadline)
@@ -472,19 +491,9 @@ function Initialize-SharedRepositoryExecutionLeasePath {
     )
 
     if (-not $LeaseDirectoryCreated) {
-        $initialized = (Test-Path -LiteralPath $LeasePath -PathType Leaf) -and (Test-Path -LiteralPath $MetadataPath -PathType Leaf)
-        if (-not $initialized) {
-            $initialized = Wait-RepositoryExecutionLeaseInitialization -LeasePath $LeasePath -MetadataPath $MetadataPath
-        }
+        $initialized = Wait-RepositoryExecutionLeaseInitialization -LeasePath $LeasePath -MetadataPath $MetadataPath
         if (-not $initialized) {
             throw "Shared lease directory '$LeaseDirectory' exists without its coordination file. Refusing to modify a caller-owned directory; pre-provision '$LeasePath' or use a new dedicated coordination directory."
-        }
-        else {
-            Test-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
-            if ($IsWindows) { Test-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath }
-            if (-not (Test-Path -LiteralPath $MetadataPath -PathType Leaf)) {
-                throw "Shared lease metadata '$MetadataPath' must be pre-provisioned with the coordination file."
-            }
         }
         return
     }
@@ -524,7 +533,6 @@ function Get-RepositoryExecutionLeasePathForRoot {
     if ($sharedLease) {
         if ($IsWindows) {
             if ($leaseDirectoryCreated) { Set-RepositoryExecutionLeaseWindowsAccess -Path $resolvedLeaseDirectory }
-            else { Test-RepositoryExecutionLeaseWindowsAccess -Path $resolvedLeaseDirectory }
         }
         Initialize-SharedRepositoryExecutionLeasePath -LeaseDirectory $resolvedLeaseDirectory -LeasePath $leasePath -MetadataPath $metadataPath -LeaseDirectoryCreated $leaseDirectoryCreated
     }
