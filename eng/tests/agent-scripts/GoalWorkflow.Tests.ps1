@@ -47,11 +47,13 @@ Describe 'Issue-driven goal workflow' {
                 [string]$Operation = '',
                 [object[]]$Comments,
                 [string]$ExpectedDigest = '',
+                [string]$ExpectedContractDigest = '',
                 [string[]]$ExpectedAcceptance,
                 [string[]]$Decision,
                 [string[]]$Evidence,
                 [string[]]$Fix,
                 [string[]]$Review,
+                [string[]]$ResolvedReview,
                 [switch]$EvidenceValidated
             )
             $arguments = @('-NoProfile', '-File', $scriptPath, '-Action', $Action,
@@ -61,11 +63,13 @@ Describe 'Issue-driven goal workflow' {
                 '-HeadRevision', $Head, '-BaseRevision', $Base, '-Json')
             if ($Operation) { $arguments += @('-OperationStateJson', $Operation) }
             if ($ExpectedDigest) { $arguments += @('-ExpectedIssueBodyDigest', $ExpectedDigest) }
+            if ($ExpectedContractDigest) { $arguments += @('-ExpectedContractBodyDigest', $ExpectedContractDigest) }
             if ($ExpectedAcceptance) { $arguments += @('-ExpectedAcceptanceCriteria', (ConvertTo-Json -InputObject ([object[]]$ExpectedAcceptance) -Compress)) }
             if ($Decision) { $arguments += @('-Decisions', (ConvertTo-Json -InputObject ([object[]]$Decision) -Compress)) }
             if ($Evidence) { $arguments += @('-AcceptanceEvidence', (ConvertTo-Json -InputObject ([object[]]$Evidence) -Compress)) }
             if ($Fix) { $arguments += @('-AttemptedFixes', (ConvertTo-Json -InputObject ([object[]]$Fix) -Compress)) }
             if ($Review) { $arguments += @('-OutstandingReviewWork', (ConvertTo-Json -InputObject ([object[]]$Review) -Compress)) }
+            if ($ResolvedReview) { $arguments += @('-ResolvedReviewWork', (ConvertTo-Json -InputObject ([object[]]$ResolvedReview) -Compress)) }
             if ($EvidenceValidated) { $arguments += '-EvidenceValidated' }
             $output = & $powerShellPath @arguments 2>&1 | Out-String
             [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output; Result = $output | ConvertFrom-Json }
@@ -200,7 +204,10 @@ Describe 'Issue-driven goal workflow' {
     It 'preserves the issue digest when a valid contract comes from a comment' {
         $comment = [pscustomobject]@{ body = $validIssueBody; created_at = '2026-09-19T00:00:00Z' }
         $invalidBody = 'The issue body is intentionally invalid.'
-        $null = Invoke-Goal -Body $invalidBody -Comments @($comment)
+        $commentDigestBytes = [System.Text.Encoding]::UTF8.GetBytes($validIssueBody)
+        $commentDigestHash = [System.Security.Cryptography.SHA256]::HashData($commentDigestBytes)
+        $commentDigest = 'SHA256:' + (($commentDigestHash | ForEach-Object { $_.ToString('x2') }) -join '')
+        $null = Invoke-Goal -Body $invalidBody -Comments @($comment) -ExpectedContractDigest $commentDigest
         $saved = Get-Content -LiteralPath $checkpoint -Raw | ConvertFrom-Json
         $expectedBytes = [System.Text.Encoding]::UTF8.GetBytes($invalidBody)
         $expectedHash = [System.Security.Cryptography.SHA256]::HashData($expectedBytes)
@@ -209,6 +216,16 @@ Describe 'Issue-driven goal workflow' {
         $saved.IssueBodyDigest | Should -Be $expectedDigest
         $saved.ContractSource | Should -Be 'issue-comment'
         $saved.ContractBodyDigest | Should -Not -Be $saved.IssueBodyDigest
+    }
+
+    It 'removes explicitly resolved review work from the checkpoint collection' {
+        $null = Invoke-Goal -Review @('review-a', 'review-b')
+        $outcome = Invoke-Goal -Action resume -ResolvedReview 'review-a'
+        $saved = Get-Content -LiteralPath $checkpoint -Raw | ConvertFrom-Json
+
+        $outcome.ExitCode | Should -Be 0
+        @($saved.OutstandingReviewWork) | Should -Contain 'review-b'
+        @($saved.OutstandingReviewWork) | Should -Not -Contain 'review-a'
     }
 
     It 'extracts dependencies after ignoring tilde-fenced examples' {

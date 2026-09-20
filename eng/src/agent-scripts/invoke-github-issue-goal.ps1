@@ -13,6 +13,7 @@ param(
     [Parameter(Mandatory)][string]$BaseRevision,
     [string]$OperationStateJson,
     [string]$ExpectedIssueBodyDigest,
+    [string]$ExpectedContractBodyDigest,
     [string]$ExpectedHeadRevision,
     [string]$ExpectedBaseRevision,
     [string[]]$ExpectedAcceptanceCriteria,
@@ -37,6 +38,19 @@ function Get-GoalRevision {
     $revision = ([string]($value | Select-Object -First 1)).Trim()
     if ($exitCode -ne 0 -or $revision -notmatch '^[0-9a-fA-F]{7,64}$') { throw "Unable to resolve Git revision '$Name'." }
     return $revision
+}
+
+function Get-GoalRepositoryIdentity {
+    param([Parameter(Mandatory)][string]$Root)
+
+    $safeRoot = $Root.Replace('\', '/')
+    $remote = @(& git -c "safe.directory=$safeRoot" -C $Root remote get-url origin 2>$null | Select-Object -First 1)
+    $remoteExitCode = if (Get-Variable -Name LASTEXITCODE -ErrorAction SilentlyContinue) { [int]$LASTEXITCODE } else { 0 }
+    if ($remoteExitCode -ne 0 -or [string]::IsNullOrWhiteSpace([string]$remote)) { throw "Unable to resolve the origin repository for '$Root'." }
+    $remoteText = ([string]$remote).Trim() -replace '\.git$', ''
+    $match = [regex]::Match($remoteText, '(?:github\.com[/:])(?<Owner>[^/]+)/(?<Name>[^/]+)$', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    if (-not $match.Success) { throw "Unable to identify the GitHub repository from origin '$remoteText'." }
+    return "$($match.Groups['Owner'].Value)/$($match.Groups['Name'].Value)"
 }
 
 function Get-GoalWorktreeFingerprint { # NOSONAR - bounded Git/index/worktree fingerprinting intentionally coordinates several integrity checks.
@@ -155,8 +169,19 @@ function Merge-GoalCollection {
         [AllowEmptyCollection()][object[]]$Existing = @(),
         [AllowEmptyCollection()][string[]]$Added = @()
     )
-    $merged = @(@($Existing) + @($Added) | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | ForEach-Object { [string]$_ } | Select-Object -Unique)
-    return ,([object[]]$merged)
+    $merged = [System.Collections.Generic.List[string]]::new()
+    foreach ($value in @(@($Existing) + @($Added) | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | ForEach-Object { [string]$_ } | Select-Object -Unique)) {
+        $merged.Add($value)
+    }
+    return ,$merged.ToArray()
+}
+
+function ConvertTo-GoalArray {
+    param([AllowEmptyCollection()][object[]]$Values = @())
+
+    $array = [System.Collections.Generic.List[object]]::new()
+    foreach ($value in @($Values)) { $array.Add($value) }
+    return ,$array.ToArray()
 }
 
 function Expand-GoalStringCollection {
@@ -236,6 +261,9 @@ function Remove-GoalMarkdownFencedBlocks {
 $checkpointLockStream = $null
 try {
     $root = (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
+    if ((Get-GoalRepositoryIdentity -Root $root) -ne "$RepositoryOwner/$RepositoryName") {
+        throw "Repository root '$root' does not match requested repository '$RepositoryOwner/$RepositoryName'."
+    }
     $checkpoint = Get-GoalCheckpointPath -Root $root -Owner $RepositoryOwner -Name $RepositoryName -Number $IssueNumber -Requested $CheckpointPath
     $checkpointDirectory = Split-Path -Parent $checkpoint
     New-Item -ItemType Directory -Path $checkpointDirectory -Force | Out-Null
@@ -274,7 +302,8 @@ try {
         $contractResult = Test-GoalIssueContract -Root $root -Body $currentBody
     }
     catch {
-        if ($null -eq $issue.PSObject.Properties['comments'] -or @($issue.comments).Count -eq 0) {
+        $hasEmbeddedComments = $null -ne $issue.PSObject.Properties['comments'] -and @($issue.comments | Where-Object { $null -ne $_.PSObject.Properties['body'] -and -not [string]::IsNullOrWhiteSpace([string]$_.body) }).Count -gt 0
+        if (-not $hasEmbeddedComments) {
             $issue = Get-GoalIssue -Owner $RepositoryOwner -Name $RepositoryName -Number $IssueNumber -Json $IssueJson -ForceCommentFallback
         }
         $issueComments = if ($null -ne $issue.PSObject.Properties['comments']) { @($issue.comments) } else { @() }
@@ -292,6 +321,10 @@ try {
             }
         }
         if ($null -eq $contractResult) { throw }
+    }
+    if ($contractSource -eq 'issue-comment') {
+        if ([string]::IsNullOrWhiteSpace($ExpectedContractBodyDigest)) { throw 'A fallback issue contract requires an expected contract body digest.' }
+        if ($ExpectedContractBodyDigest -ne $contractBodyDigest) { throw 'The selected fallback contract does not match the authorized contract body digest.' }
     }
     $operation = Get-GoalOperationState -Json $OperationStateJson
     if ($operation.Status -eq 'running' -and [string]::IsNullOrWhiteSpace($operation.Handle)) {
@@ -380,7 +413,7 @@ try {
         CommandsExecutedFromIssueText = $false
         ToolsInstalledFromIssueText = $false
         SecretsAccessedFromIssueText = $false
-        AcceptanceCriteria = @($contractResult.AcceptanceCriteria)
+        AcceptanceCriteria = ConvertTo-GoalArray -Values @($contractResult.AcceptanceCriteria)
         DependenciesAndReadiness = $dependenciesAndReadiness
     }
     $previousValidatedContract = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['ValidatedContract']) {
@@ -405,7 +438,8 @@ try {
     $reviewedSourceRevision = if ($validatedNow -or $evidenceFresh -or $null -eq $previous) { $currentHead } elseif ($null -ne $previous.PSObject.Properties['ReviewedSourceRevision']) { [string]$previous.ReviewedSourceRevision } else { $validatedHead }
     $verificationHead = Get-GoalRevision -Root $root -Name 'HEAD'
     $verificationWorktreeFingerprint = Get-GoalWorktreeFingerprint -Root $root -ExcludePaths @($checkpoint, $temporaryCheckpoint, $checkpointLockPath)
-    if ($verificationHead -ne $checkedOutHead -or $verificationWorktreeFingerprint -ne $currentWorktreeFingerprint) {
+    $verificationBase = Get-GoalRevision -Root $root -Name $BaseRevision
+    if ($verificationHead -ne $checkedOutHead -or $verificationBase -ne $currentBase -or $verificationWorktreeFingerprint -ne $currentWorktreeFingerprint) {
         throw 'Repository head or worktree changed while evidence was being collected; retry the goal route.'
     }
 
@@ -442,10 +476,10 @@ try {
         MergeBoundary = if ($MergeAuthorized) { 'MERGE_AUTHORIZED_BY_USER_BUT_NOT_PERFORMED' } else { 'PR_READY_NOT_MERGED' }
         Contract = $currentContract
         ValidatedContract = $validatedContract
-        Decisions = Merge-GoalCollection -Existing (Get-GoalCollection -Object $previous -Name 'Decisions') -Added (Expand-GoalStringCollection -Values $Decisions)
-        AcceptanceEvidence = Merge-GoalCollection -Existing (Get-GoalCollection -Object $previous -Name 'AcceptanceEvidence') -Added (Expand-GoalStringCollection -Values $AcceptanceEvidence)
-        AttemptedFixes = Merge-GoalCollection -Existing (Get-GoalCollection -Object $previous -Name 'AttemptedFixes') -Added (Expand-GoalStringCollection -Values $AttemptedFixes)
-        OutstandingReviewWork = $reviewWork
+        Decisions = ConvertTo-GoalArray -Values (Merge-GoalCollection -Existing (Get-GoalCollection -Object $previous -Name 'Decisions') -Added (Expand-GoalStringCollection -Values $Decisions))
+        AcceptanceEvidence = ConvertTo-GoalArray -Values (Merge-GoalCollection -Existing (Get-GoalCollection -Object $previous -Name 'AcceptanceEvidence') -Added (Expand-GoalStringCollection -Values $AcceptanceEvidence))
+        AttemptedFixes = ConvertTo-GoalArray -Values (Merge-GoalCollection -Existing (Get-GoalCollection -Object $previous -Name 'AttemptedFixes') -Added (Expand-GoalStringCollection -Values $AttemptedFixes))
+        OutstandingReviewWork = ConvertTo-GoalArray -Values $reviewWork
         Operation = [ordered]@{ Status = $operation.Status; Handle = $operation.Handle; Name = $operation.Name }
         NextAction = $nextAction
         UpdatedUtc = (Get-Date).ToUniversalTime().ToString('o')
