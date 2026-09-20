@@ -2970,6 +2970,20 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
         $finalHasNextPage = [bool]$finalThreadPage.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage
         $finalCursor = [string]$finalThreadPage.data.repository.pullRequest.reviewThreads.pageInfo.endCursor
     } while ($finalHasNextPage)
+    $finalLatestReviewByAuthorAnyState = @{}
+    foreach ($review in @($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'COMMENTED', 'DISMISSED') } | Sort-Object submitted_at)) {
+        $author = if ($null -ne $review.user.login) { [string]$review.user.login } else { "review-$($review.id)" }
+        $finalLatestReviewByAuthorAnyState[$author] = $review
+    }
+    $unresolvedThreadCount = @($finalThreads | Where-Object { -not [bool]$_.isResolved -and -not [bool]$_.isOutdated }).Count
+    $reviewDispositions = @($finalLatestReviewByAuthorAnyState.Values | Where-Object { -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) } | ForEach-Object {
+        [pscustomobject]@{
+            Id = [string]$_.id
+            Author = [string]$_.user.login
+            State = [string]$_.state
+            Disposition = if ([string]$_.state -in @('APPROVED', 'DISMISSED') -or ([string]$_.state -eq 'COMMENTED' -and $unresolvedThreadCount -eq 0)) { 'addressed' } else { 'pending' }
+        }
+    })
     $threadFingerprintStart = (@($threads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated):$(@($_.comments.nodes | ForEach-Object { $_.databaseId }) -join ',')" }) -join '|')
     $threadFingerprintEnd = (@($finalThreads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated):$(@($_.comments.nodes | ForEach-Object { $_.databaseId }) -join ',')" }) -join '|')
     $mutableEvidenceStable = $checkFingerprintStart -eq $checkFingerprintEnd -and
@@ -3017,7 +3031,8 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
         PollingCompleted = $pollingCompleted
         EvidenceStable = $mutableEvidenceStable
         GeneralFeedbackCount = @($generalComments).Count
-        ReviewFeedbackCount = @($finalReviews | Where-Object { -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) }).Count
+        ReviewDispositions = @($reviewDispositions)
+        ReviewFeedbackCount = @($reviewDispositions | Where-Object Disposition -EQ 'pending').Count
         PullRequestUrl = [string]$pullAtEnd.html_url
     }
 }
