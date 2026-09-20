@@ -83,6 +83,24 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                     }
                 }
             }
+
+            foreach (PropertyInfo property in type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+            {
+                if (property.SetMethod is null || !IsDependencyFieldType(property.PropertyType) ||
+                    type.GetField($"<{property.Name}>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly) is not null)
+                {
+                    continue;
+                }
+
+                foreach (ConstructorInfo constructor in type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+                {
+                    if (ConstructorCallsSetter(constructor, property.SetMethod))
+                    {
+                        violations.Add($"{type.FullName}.{property.Name}");
+                        break;
+                    }
+                }
+            }
         }
 
         return violations.OrderBy(value => value, StringComparer.Ordinal).ToArray();
