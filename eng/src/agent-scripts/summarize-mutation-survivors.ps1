@@ -25,7 +25,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $modulePath = Join-Path $PSScriptRoot 'RepositoryAutomation.psm1'
-Import-Module -Name $modulePath -Force
+Import-Module -Name $modulePath
 
 
 
@@ -238,6 +238,13 @@ if (-not (Test-Path -LiteralPath $taskModulePath -PathType Leaf)) {
 
 Import-Module -Name $taskModulePath -Force
 
+$executionLease = $null
+if (-not $SkipLease) {
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "mutation-summary-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $repoRoot = $executionLease.RepositoryRoot
+}
+
+try {
 if (-not $TasksPath) {
     $TasksPath = Join-Path $repoRoot '.scratchpad/testing/mutation-tasks.md'
 }
@@ -806,6 +813,11 @@ if ($reportSurvivors.Count -gt 0)
 }
 Write-Host "- Markdown: $summaryMarkdownPath" -ForegroundColor Gray
 Write-Host "Total survivors: $totalCount" -ForegroundColor Cyan
+
+}
+finally {
+    if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
+}
 
 exit $mutationExitCode
 

@@ -173,7 +173,7 @@ Describe 'Build entry point process boundaries' {
         if ($Prefix -in @('build', 'clean-up')) {
             @'
 function Get-RepositoryRoot { return (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))) }
-function Enter-RepositoryExecutionLease { param([string]$RepoRoot); [pscustomobject]@{ RepositoryRoot = $RepoRoot; OwnsStream = $false } }
+function Enter-RepositoryExecutionLease { param([string]$RepoRoot, [string]$OperationId, [string]$LeaseDirectory); [pscustomobject]@{ RepositoryRoot = $RepoRoot; OwnsStream = $false } }
 function Exit-RepositoryExecutionLease { param([object]$Lease) }
 Export-ModuleMember -Function Get-RepositoryRoot, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease
 '@ | Set-Content (Join-Path $scripts 'RepositoryAutomation.psm1')

@@ -12,7 +12,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $modulePath = Join-Path $PSScriptRoot 'RepositoryAutomation.psm1'
-Import-Module -Name $modulePath -Force
+Import-Module -Name $modulePath
 
 $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 

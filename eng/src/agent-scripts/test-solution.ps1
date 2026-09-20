@@ -11,7 +11,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1')
 $resolvedSolutionPath = (Resolve-Path -LiteralPath $SolutionPath -ErrorAction Stop).Path
 $lexicalSolutionRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $resolvedSolutionPath)
 $relativeSolutionPath = [System.IO.Path]::GetRelativePath($lexicalSolutionRoot, $resolvedSolutionPath)

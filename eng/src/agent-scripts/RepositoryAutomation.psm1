@@ -3,19 +3,9 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$leaseStateVariableName = 'MississippiRepositoryExecutionLeaseState'
-$leaseState = Get-Variable -Name $leaseStateVariableName -Scope Global -ValueOnly -ErrorAction SilentlyContinue
-if ($null -eq $leaseState) {
-    $leaseState = [pscustomobject]@{
-        ActiveLeases = [System.Collections.Concurrent.ConcurrentDictionary[string, bool]]::new()
-        SharedStreams = @{}
-        SharedStreamGate = [object]::new()
-    }
-    Set-Variable -Name $leaseStateVariableName -Scope Global -Value $leaseState
-}
-$activeRepositoryExecutionLeases = $leaseState.ActiveLeases
-$sharedExecutionLeaseStreamStates = $leaseState.SharedStreams
-$sharedExecutionLeaseStreamGate = $leaseState.SharedStreamGate
+$activeRepositoryExecutionLeases = [System.Collections.Concurrent.ConcurrentDictionary[string, bool]]::new()
+$sharedExecutionLeaseStreamStates = @{}
+$sharedExecutionLeaseStreamGate = [object]::new()
 $sharedExecutionLeaseDirectoryMode = 365 # 0555
 $sharedExecutionLeaseFileMode = 438 # 0666
 $privateExecutionLeaseDirectoryMode = 448 # 0700

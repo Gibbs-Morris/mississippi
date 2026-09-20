@@ -210,13 +210,13 @@ catch {
         $LASTEXITCODE | Should -Be 0
     }
 
-    It 'preserves lease state across a forced module import' {
+    It 'preserves lease state across a non-forcing module import' {
         $leaseRoot = Join-Path $TestDrive 'reload-lease-repository'
         $coordinationRoot = Join-Path $TestDrive 'reload-coordination'
         New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
         $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'reload-owner' -LeaseDirectory $coordinationRoot
         try {
-            Import-Module -Name ([System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\src\agent-scripts\RepositoryAutomation.psm1'))) -Force
+            Import-Module -Name ([System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\src\agent-scripts\RepositoryAutomation.psm1')))
             { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'reload-contender' -LeaseDirectory $coordinationRoot } |
                 Should -Throw '*execution lease*'
         }

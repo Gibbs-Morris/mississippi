@@ -181,7 +181,7 @@ Write-Host ""
 
 $testFailed = $false
 $mutationFailed = $false
-Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1')
 $executionLease = $null
 
 try {
