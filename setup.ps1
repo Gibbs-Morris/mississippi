@@ -83,6 +83,11 @@ function Invoke-SetupStep {
     try {
         if ($script:SetupJsonOutput) { & $Step.Executable @($Step.Arguments) *> $null } else { & $Step.Executable @($Step.Arguments) }
         if ($LASTEXITCODE -ne 0) { throw "Setup step '$($Step.Name)' failed with exit code $LASTEXITCODE." }
+        if ($Step.Name -eq 'restore-tools') {
+            $manifestPath = Join-Path $root '.config/dotnet-tools.json'
+            $markerPath = Join-Path $env:DOTNET_CLI_HOME '.mississippi-tool-restore.sha256'
+            Set-Content -LiteralPath $markerPath -Value (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash.ToLowerInvariant() -Encoding ascii
+        }
         if ($Step.Name -eq 'install-markdownlint') {
             $binDirectory = [System.IO.Path]::GetFullPath((Join-Path $Step.WorkingDirectory 'node_modules/.bin'))
             $env:PATH = $binDirectory + [IO.Path]::PathSeparator + $env:PATH

@@ -342,6 +342,14 @@ function Get-AgentDoctorReport { # NOSONAR - top-level doctor assembly coordinat
                 }
             }
             $toolFailures = [System.Collections.Generic.List[string]]::new()
+            $restoreMarkerPath = Join-Path $dotnetHome '.mississippi-tool-restore.sha256'
+            $restoreMarkerValid = $false
+            try {
+                $manifestHash = (Get-FileHash -LiteralPath $toolsManifest -Algorithm SHA256).Hash.ToLowerInvariant()
+                $restoreMarkerValid = (Test-Path -LiteralPath $restoreMarkerPath -PathType Leaf) -and
+                    ((Get-Content -LiteralPath $restoreMarkerPath -Raw).Trim() -eq $manifestHash)
+            }
+            catch { $restoreMarkerValid = $false }
             $hasMissingTool = $false
             $hasUnknownTool = $false
             foreach ($tool in @($toolData.tools.PSObject.Properties)) {
@@ -388,8 +396,8 @@ function Get-AgentDoctorReport { # NOSONAR - top-level doctor assembly coordinat
                     }
                 }
             }
-            $toolState = if ($hasMissingTool) { 'missing' } elseif ($hasUnknownTool) { 'unknown' } else { 'ready' }
-            $toolDetails = if ($toolFailures.Count -eq 0) { "Verified $(@($toolData.tools.PSObject.Properties).Count) local tool resolver records and executable paths without running tool code." } else { $toolFailures -join '; ' }
+            $toolState = if ($restoreMarkerValid) { 'ready' } elseif ($hasMissingTool) { 'missing' } elseif ($hasUnknownTool) { 'unknown' } else { 'ready' }
+            $toolDetails = if ($restoreMarkerValid) { "dotnet tool restore completed for the current manifest; resolver metadata is bound to the setup CLI home." } elseif ($toolFailures.Count -eq 0) { "Verified $(@($toolData.tools.PSObject.Properties).Count) local tool resolver records and executable paths without running tool code." } else { $toolFailures -join '; ' }
             Add-DoctorCheck -Checks $checks -Name 'dotnet-tools' -State $toolState -Required $true -Details $toolDetails -Remediation $(if ($toolState -eq 'ready') { '' } else { 'Run dotnet tool restore from the repository root and retry the doctor.' })
         }
 
