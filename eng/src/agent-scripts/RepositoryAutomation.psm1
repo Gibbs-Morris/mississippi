@@ -431,6 +431,23 @@ function Ensure-RepositoryExecutionLeaseDirectory {
     }
 }
 
+function Wait-RepositoryExecutionLeaseInitialization {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$LeasePath,
+        [Parameter(Mandatory)][string]$MetadataPath
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds(5)
+    do {
+        if ((Test-Path -LiteralPath $LeasePath -PathType Leaf) -and (Test-Path -LiteralPath $MetadataPath -PathType Leaf)) {
+            return $true
+        }
+        Start-Sleep -Milliseconds 50
+    } while ([DateTime]::UtcNow -lt $deadline)
+    return $false
+}
+
 function Create-SharedRepositoryExecutionLeaseFile {
     [CmdletBinding()]
     param(
@@ -455,7 +472,11 @@ function Initialize-SharedRepositoryExecutionLeasePath {
     )
 
     if (-not $LeaseDirectoryCreated) {
-        if (-not (Test-Path -LiteralPath $LeasePath -PathType Leaf)) {
+        $initialized = (Test-Path -LiteralPath $LeasePath -PathType Leaf) -and (Test-Path -LiteralPath $MetadataPath -PathType Leaf)
+        if (-not $initialized) {
+            $initialized = Wait-RepositoryExecutionLeaseInitialization -LeasePath $LeasePath -MetadataPath $MetadataPath
+        }
+        if (-not $initialized) {
             throw "Shared lease directory '$LeaseDirectory' exists without its coordination file. Refusing to modify a caller-owned directory; pre-provision '$LeasePath' or use a new dedicated coordination directory."
         }
         else {
@@ -625,8 +646,9 @@ function Test-RepositoryExecutionLeaseWindowsAccess {
         $sid = [System.Security.Principal.SecurityIdentifier]::new([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid, $null)
         $acl = Get-Acl -LiteralPath $Path -ErrorAction Stop
         $requiredRights = [System.Security.AccessControl.FileSystemRights]::Modify
+        $accessRules = $acl.GetAccessRules($true, $true, [System.Security.Principal.SecurityIdentifier])
         $hasAccess = @(
-            $acl.Access | Where-Object {
+            $accessRules | Where-Object {
                 try {
                     $identity = $_.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier])
                     $identity.Value -eq $sid.Value -and $_.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow -and
@@ -1049,7 +1071,21 @@ function Enter-RepositoryExecutionLease {
         }
     }
     catch {
-        if ($null -ne $resources) { Release-RepositoryExecutionLeaseResources -Resources $resources }
+        if ($null -ne $resources) {
+            if ($null -ne $resources.LeaseOffset) {
+                try {
+                    Clear-RepositoryExecutionLeaseMetadata -Lease ([pscustomobject]@{
+                        Path = $context.LeasePath
+                        MetadataPath = $context.MetadataPath
+                        SharedStreamState = $resources.StreamState
+                    })
+                }
+                catch {
+                    Write-Verbose "Unable to clear failed lease metadata from '$($context.MetadataPath)': $($_.Exception.Message)"
+                }
+            }
+            Release-RepositoryExecutionLeaseResources -Resources $resources
+        }
         throw
     }
 }

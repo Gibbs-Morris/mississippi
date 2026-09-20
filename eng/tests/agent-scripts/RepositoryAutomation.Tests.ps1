@@ -258,9 +258,10 @@ catch {
 
     It 'coordinates same-process runspaces for one shared lease' {
         $leaseRoot = Join-Path $TestDrive 'runspace-lease-repository'
+        $coordinationRoot = Join-Path $TestDrive 'runspace-lease-coordination'
         $modulePath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../src/agent-scripts/RepositoryAutomation.psm1'))
         New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
-        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'runspace-owner'
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'runspace-owner' -LeaseDirectory $coordinationRoot
         $worker = @'
 param([string]$ModulePath, [string]$RepoRoot, [string]$LeaseDirectory)
 $ErrorActionPreference = 'Stop'
@@ -289,11 +290,11 @@ finally { if ($null -ne $childLease) { Exit-RepositoryExecutionLease -Lease $chi
             }
         }
         try {
-                (Invoke-RunspaceLeaseAttempt -ScriptText $worker -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $null) |
+                (Invoke-RunspaceLeaseAttempt -ScriptText $worker -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $coordinationRoot) |
                 Should -Match '^blocked:.*execution lease'
         }
         finally { Exit-RepositoryExecutionLease -Lease $lease }
-        Invoke-RunspaceLeaseAttempt -ScriptText $worker -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $null |
+        Invoke-RunspaceLeaseAttempt -ScriptText $worker -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $coordinationRoot |
             Should -Be 'acquired'
     }
 
