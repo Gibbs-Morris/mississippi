@@ -13,11 +13,13 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
 $resolvedSolutionPath = (Resolve-Path -LiteralPath $SolutionPath -ErrorAction Stop).Path
-$solutionRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $resolvedSolutionPath)
+$lexicalSolutionRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $resolvedSolutionPath)
+$relativeSolutionPath = [System.IO.Path]::GetRelativePath($lexicalSolutionRoot, $resolvedSolutionPath)
 $executionLease = $null
 
 try {
-    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $solutionRoot -OperationId "test-solution-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $lexicalSolutionRoot -OperationId "test-solution-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $resolvedSolutionPath = Join-Path $executionLease.RepositoryRoot $relativeSolutionPath
     $arguments = @()
     if ($NoBuild) { $arguments += '--no-build' }
     Invoke-SolutionTests -SolutionPath $resolvedSolutionPath -Configuration $Configuration -TestLevels $TestLevels `

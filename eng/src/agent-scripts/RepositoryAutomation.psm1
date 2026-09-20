@@ -76,6 +76,25 @@ function Release-SharedRepositoryExecutionLeaseStream {
     }
 }
 
+function Unlock-SharedRepositoryExecutionLeaseSlot {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$State,
+        [Parameter(Mandatory)][long]$Offset
+    )
+
+    [System.Threading.Monitor]::Enter($State.Gate)
+    try {
+        if ($State.Locked) {
+            $State.Stream.Unlock($Offset, 1)
+            $State.Locked = $false
+        }
+    }
+    finally {
+        [System.Threading.Monitor]::Exit($State.Gate)
+    }
+}
+
 function Get-RepositoryExecutionLeaseHash {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$CanonicalRepoRoot)
@@ -506,7 +525,10 @@ function Enter-RepositoryExecutionLease {
     }
     catch {
         if ($leaseRegistered) { Unregister-RepositoryExecutionLeaseIdentity -Identity $leaseIdentity }
-        if ($null -ne $streamState) { Release-SharedRepositoryExecutionLeaseStream -State $streamState }
+        if ($null -ne $streamState) {
+            if ($null -ne $leaseOffset) { Unlock-SharedRepositoryExecutionLeaseSlot -State $streamState -Offset $leaseOffset }
+            Release-SharedRepositoryExecutionLeaseStream -State $streamState
+        }
         elseif ($null -ne $stream) { $stream.Dispose() }
         throw
     }
@@ -519,16 +541,7 @@ function Exit-RepositoryExecutionLease {
     if ($Lease.OwnsStream -and $null -ne $Lease.Stream) {
         try {
             if ($null -ne $Lease.SharedStreamState) {
-                [System.Threading.Monitor]::Enter($Lease.SharedStreamState.Gate)
-                try {
-                    if ($null -ne $Lease.LeaseOffset) {
-                        $Lease.Stream.Unlock([long]$Lease.LeaseOffset, 1)
-                        $Lease.SharedStreamState.Locked = $false
-                    }
-                }
-                finally {
-                    [System.Threading.Monitor]::Exit($Lease.SharedStreamState.Gate)
-                }
+                if ($null -ne $Lease.LeaseOffset) { Unlock-SharedRepositoryExecutionLeaseSlot -State $Lease.SharedStreamState -Offset ([long]$Lease.LeaseOffset) }
                 Release-SharedRepositoryExecutionLeaseStream -State $Lease.SharedStreamState
             }
             else {
