@@ -70,6 +70,57 @@ namespace Mississippi
         if ($null -eq ($coordinationTypeName -as [type])) { throw }
     }
 }
+$outputTypeName = 'Mississippi.BoundedProcessOutput'
+if ($null -eq ($outputTypeName -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+
+namespace Mississippi
+{
+    public sealed class BoundedProcessOutput
+    {
+        private readonly ConcurrentQueue<string> Lines = new ConcurrentQueue<string>();
+        private readonly int MaxLines;
+        private readonly int MaxLineLength;
+
+        public BoundedProcessOutput(int maxLines, int maxLineLength)
+        {
+            MaxLines = maxLines;
+            MaxLineLength = maxLineLength;
+        }
+
+        public bool Closed { get; private set; }
+        public bool Truncated { get; private set; }
+        public DataReceivedEventHandler Handler { get { return OnData; } }
+        public string Text { get { return string.Join(Environment.NewLine, Lines.ToArray()).TrimEnd('\r', '\n'); } }
+
+        private void OnData(object sender, DataReceivedEventArgs args)
+        {
+            if (args.Data == null)
+            {
+                Closed = true;
+                return;
+            }
+            var line = args.Data;
+            if (line.Length > MaxLineLength)
+            {
+                line = line.Substring(0, MaxLineLength);
+                Truncated = true;
+            }
+            Lines.Enqueue(line);
+            while (Lines.Count > MaxLines)
+            {
+                string ignored;
+                Lines.TryDequeue(out ignored);
+                Truncated = true;
+            }
+        }
+    }
+}
+'@ -ErrorAction Stop
+}
 
 function Test-RepositoryExecutionLeaseSharedMode {
     [CmdletBinding()]
@@ -1236,6 +1287,70 @@ function Invoke-AutomationStep {
     }
 }
 
+function Get-RepositoryProcessDescendantIds {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][int]$RootProcessId)
+
+    $parents = @{}
+    try {
+        if ($IsWindows) {
+            foreach ($processInfo in @(Get-CimInstance -ClassName Win32_Process -ErrorAction Stop)) {
+                $parents[[int]$processInfo.ProcessId] = [int]$processInfo.ParentProcessId
+            }
+        }
+        else {
+            foreach ($line in @(& ps -eo 'pid=,ppid=' 2>$null)) {
+                if ($line -match '^\s*(?<pid>\d+)\s+(?<parent>\d+)\s*$') {
+                    $parents[[int]$Matches.pid] = [int]$Matches.parent
+                }
+            }
+        }
+    }
+    catch {
+        Write-Verbose "Unable to snapshot native process descendants: $($_.Exception.Message)"
+        return @()
+    }
+
+    $descendants = [System.Collections.Generic.HashSet[int]]::new()
+    $pending = [System.Collections.Generic.Queue[int]]::new()
+    $pending.Enqueue($RootProcessId)
+    while ($pending.Count -gt 0) {
+        $parentId = $pending.Dequeue()
+        foreach ($entry in $parents.GetEnumerator() | Where-Object { $_.Value -eq $parentId }) {
+            $childId = [int]$entry.Key
+            if ($descendants.Add($childId)) { $pending.Enqueue($childId) }
+        }
+    }
+    return @($descendants)
+}
+
+function Stop-RepositoryProcessIds {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][int[]]$ProcessIds)
+
+    $errors = [System.Collections.Generic.List[string]]::new()
+    foreach ($processId in @($ProcessIds | Sort-Object -Descending -Unique)) {
+        try {
+            if ($IsWindows) { Stop-Process -Id $processId -Force -ErrorAction Stop }
+            else { & kill -TERM -- $processId 2>$null; if ($LASTEXITCODE -ne 0) { throw "kill exited with code $LASTEXITCODE" } }
+        }
+        catch { $errors.Add("${processId}: $($_.Exception.Message)") }
+    }
+    Start-Sleep -Milliseconds 100
+    foreach ($processId in @($ProcessIds | Sort-Object -Descending -Unique)) {
+        try {
+            if ($IsWindows) {
+                if (Get-Process -Id $processId -ErrorAction SilentlyContinue) { Stop-Process -Id $processId -Force -ErrorAction Stop }
+            }
+            else {
+                & kill -KILL -- $processId 2>$null
+            }
+        }
+        catch { $errors.Add("${processId}: $($_.Exception.Message)") }
+    }
+    return ,$errors
+}
+
 function Invoke-RepositoryProcess {
     [CmdletBinding()]
     param(
@@ -1292,28 +1407,48 @@ function Invoke-RepositoryProcess {
     $process = [System.Diagnostics.Process]::new()
     $process.StartInfo = $startInfo
     $startedUtc = (Get-Date).ToUniversalTime().ToString('o')
+    $trackedDescendants = [System.Collections.Generic.HashSet[int]]::new()
+    $stdoutBuffer = [Mississippi.BoundedProcessOutput]::new(200, 4096)
+    $stderrBuffer = [Mississippi.BoundedProcessOutput]::new(200, 4096)
+    $stdoutHandler = $stdoutBuffer.Handler
+    $stderrHandler = $stderrBuffer.Handler
     try {
         if (-not $process.Start()) { throw "Command '$FilePath' could not be started." }
-        $stdoutTask = $process.StandardOutput.ReadToEndAsync()
-        $stderrTask = $process.StandardError.ReadToEndAsync()
-        $finished = if ($TimeoutSeconds -gt 0) { $process.WaitForExit($TimeoutSeconds * 1000) } else { $process.WaitForExit(); $true }
+        $process.add_OutputDataReceived($stdoutHandler)
+        $process.add_ErrorDataReceived($stderrHandler)
+        $process.BeginOutputReadLine()
+        $process.BeginErrorReadLine()
+        $deadline = if ($TimeoutSeconds -gt 0) { [DateTime]::UtcNow.AddSeconds($TimeoutSeconds) } else { $null }
+        $finished = $false
+        while (-not $process.HasExited) {
+            foreach ($descendantId in @(Get-RepositoryProcessDescendantIds -RootProcessId $process.Id)) { $null = $trackedDescendants.Add($descendantId) }
+            if ($null -ne $deadline -and [DateTime]::UtcNow -ge $deadline) { break }
+            Start-Sleep -Milliseconds 50
+        }
+        $finished = $process.HasExited
         $timedOut = -not $finished
         $terminationErrors = [System.Collections.Generic.List[string]]::new()
         $terminated = $true
-        if ($timedOut) {
-            $terminationErrors.Add('Descendant process termination was not verified.')
-            try { $process.Kill($true) }
-            catch {
-                $terminationErrors.Add($_.Exception.Message)
+        $captureDeadline = [DateTime]::UtcNow.AddMilliseconds(1000)
+        while (-not ($stdoutBuffer.Closed -and $stderrBuffer.Closed) -and [DateTime]::UtcNow -lt $captureDeadline) {
+            Start-Sleep -Milliseconds 25
+        }
+        $captureIncomplete = -not ($stdoutBuffer.Closed -and $stderrBuffer.Closed)
+        if ($timedOut -or $captureIncomplete) {
+            if ($timedOut) { $terminationErrors.Add("Command exceeded the $TimeoutSeconds second timeout.") }
+            if ($captureIncomplete) { $terminationErrors.Add('Native output streams remained open after the root process exited.') }
+            $terminationIds = @($trackedDescendants)
+            if (-not $process.HasExited) { $terminationIds += $process.Id }
+            if ($terminationIds.Count -gt 0) {
+                foreach ($terminationError in @(Stop-RepositoryProcessIds -ProcessIds $terminationIds)) { $terminationErrors.Add($terminationError) }
+            }
+            if (-not $process.HasExited) {
                 try { $process.Kill() } catch { $terminationErrors.Add($_.Exception.Message) }
             }
-            $terminated = $process.WaitForExit(1000)
+            $terminated = $process.WaitForExit(1000) -and $terminationErrors.Count -eq 0
         }
-        $stdoutCompleted = $stdoutTask.Wait(1000)
-        $stderrCompleted = $stderrTask.Wait(1000)
-        $captureIncomplete = -not ($stdoutCompleted -and $stderrCompleted -and $stdoutTask.IsCompleted -and $stderrTask.IsCompleted)
-        $stdout = if ($stdoutTask.IsCompleted) { $stdoutTask.GetAwaiter().GetResult().TrimEnd([char]0x0D, [char]0x0A) } else { '' }
-        $stderr = if ($stderrTask.IsCompleted) { $stderrTask.GetAwaiter().GetResult().TrimEnd([char]0x0D, [char]0x0A) } else { '' }
+        $stdout = $stdoutBuffer.Text
+        $stderr = $stderrBuffer.Text
         $result = [pscustomobject][ordered]@{
             FilePath = $FilePath
             Arguments = @($Arguments)
@@ -1322,9 +1457,10 @@ function Invoke-RepositoryProcess {
             ExitCode = if ($timedOut) { 124 } else { $process.ExitCode }
             TimedOut = $timedOut
             Cancelled = $false
-            TerminationFailed = $timedOut -and (-not $terminated -or $terminationErrors.Count -gt 0)
+            TerminationFailed = ($timedOut -or $captureIncomplete) -and (-not $terminated -or $terminationErrors.Count -gt 0)
             TerminationErrors = @($terminationErrors)
             CaptureIncomplete = $captureIncomplete
+            OutputTruncated = $stdoutBuffer.Truncated -or $stderrBuffer.Truncated
             StdOut = $stdout
             StdErr = $stderr
             Success = -not $timedOut -and -not $captureIncomplete -and $process.ExitCode -eq 0
@@ -1346,12 +1482,16 @@ function Invoke-RepositoryProcess {
                 FilePath = $FilePath; Arguments = @($Arguments); StartedUtc = $startedUtc
                 EndedUtc = (Get-Date).ToUniversalTime().ToString('o'); ExitCode = -1
                 TimedOut = $false; Cancelled = $false; TerminationFailed = $false; CaptureIncomplete = $false
-                TerminationErrors = @(); StdOut = ''; StdErr = $_.Exception.Message; Success = $false
+                TerminationErrors = @(); OutputTruncated = $false; StdOut = ''; StdErr = $_.Exception.Message; Success = $false
             }
         }
         throw
     }
     finally {
+        try { $process.CancelOutputRead() } catch { }
+        try { $process.CancelErrorRead() } catch { }
+        try { $process.remove_OutputDataReceived($stdoutHandler) } catch { }
+        try { $process.remove_ErrorDataReceived($stderrHandler) } catch { }
         $process.Dispose()
     }
 }
