@@ -19,8 +19,6 @@ internal sealed class BlobDistributedLock : IDistributedLock
 
     private readonly TimeSpan renewalThreshold;
 
-    private readonly TimeProvider timeProvider;
-
     private bool disposed;
 
     private DateTimeOffset lastRenewalTime;
@@ -51,8 +49,8 @@ internal sealed class BlobDistributedLock : IDistributedLock
         LeaseDurationSeconds = leaseDurationSeconds;
         this.lockKey = lockKey;
         this.heldDurationStopwatch = heldDurationStopwatch;
-        this.timeProvider = timeProvider ?? TimeProvider.System;
-        lastRenewalTime = this.timeProvider.GetUtcNow();
+        TimeProvider = timeProvider ?? TimeProvider.System;
+        lastRenewalTime = TimeProvider.GetUtcNow();
 
         // Calculate renewal threshold with a safety buffer to account for network latency
         renewalThreshold = TimeSpan.FromSeconds(Math.Max(1, leaseDurationSeconds - leaseRenewalThresholdSeconds - 1));
@@ -68,6 +66,8 @@ internal sealed class BlobDistributedLock : IDistributedLock
     private int LeaseDurationSeconds { get; }
 
     private int LeaseRenewalThresholdSeconds { get; }
+
+    private TimeProvider TimeProvider { get; }
 
     /// <summary>
     ///     Asynchronously disposes the distributed lock and releases the lease.
@@ -112,7 +112,7 @@ internal sealed class BlobDistributedLock : IDistributedLock
     )
     {
         ObjectDisposedException.ThrowIf(disposed, this);
-        DateTimeOffset now = timeProvider.GetUtcNow();
+        DateTimeOffset now = TimeProvider.GetUtcNow();
         TimeSpan timeSinceLastRenewal = now - lastRenewalTime;
 
         // Only renew if we're approaching the expiration threshold
@@ -126,7 +126,7 @@ internal sealed class BlobDistributedLock : IDistributedLock
             await LeaseClient.RenewAsync(cancellationToken: cancellationToken);
 
             // Use the actual completion time to avoid drifting too close to expiration
-            lastRenewalTime = timeProvider.GetUtcNow();
+            lastRenewalTime = TimeProvider.GetUtcNow();
         }
         catch (RequestFailedException ex) when ((ex.Status == 409) || (ex.Status == 404))
         {
