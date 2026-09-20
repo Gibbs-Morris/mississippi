@@ -180,4 +180,33 @@ Describe 'Issue delivery benchmark validation' {
         $outcome.ExitCode | Should -Not -Be 0
         ($outcome.Result.Errors -join "`n") | Should -Match 'failure-case evidence has an invalid nonnegative elapsedMilliseconds measurement'
     }
+
+    It 'rejects contradictory measurement aliases' {
+        $data = New-LiveResults
+        $data.hosts[0].trialRecords[0] | Add-Member -NotePropertyName tokenCount -NotePropertyValue 10 -Force
+        $data.hosts[0].trialRecords[0] | Add-Member -NotePropertyName tokens -NotePropertyValue 100 -Force
+        $data.hosts[0].trialRecords[0] | Add-Member -NotePropertyName measurementProvenance -NotePropertyValue direct -Force
+        $path = Join-Path $TestDrive 'contradictory-measurements.json'
+        $data | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path
+
+        $outcome = Invoke-Evaluation -ResultsPath $path
+
+        $outcome.ExitCode | Should -Not -Be 0
+        ($outcome.Result.Errors -join "`n") | Should -Match 'contradictory measurement aliases'
+    }
+
+    It 'requires browser evidence for browser failure-case trials' {
+        $data = New-LiveResults
+        $failure = @($data.hosts[0].trialRecords | Where-Object { $_.scenarioId -eq 'browser-visible' -and $null -ne $_.PSObject.Properties['failureCase'] })[0]
+        $failure.outcome = 'failed'
+        $failure.acceptancePassed = $false
+        $failure.reason = 'controlled browser failure'
+        $path = Join-Path $TestDrive 'missing-browser-failure-evidence.json'
+        $data | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path
+
+        $outcome = Invoke-Evaluation -ResultsPath $path
+
+        $outcome.ExitCode | Should -Not -Be 0
+        ($outcome.Result.Errors -join "`n") | Should -Match 'browser failure-case trial is missing browserEvidence'
+    }
 }

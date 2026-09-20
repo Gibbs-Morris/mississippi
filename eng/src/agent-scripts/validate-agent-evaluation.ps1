@@ -39,6 +39,25 @@ function Test-EvaluationSetEqual {
     return ((Get-EvaluationSet -Values $Left) -join '|') -eq ((Get-EvaluationSet -Values $Right) -join '|')
 }
 
+function Get-EvaluationMeasurementAliasErrors {
+    param(
+        [Parameter(Mandatory)][object]$Record,
+        [Parameter(Mandatory)][string]$Prefix
+    )
+
+    $messages = [System.Collections.Generic.List[string]]::new()
+    foreach ($group in @(
+            @('tokenCount', 'tokens'),
+            @('elapsedMilliseconds', 'elapsedSeconds', 'durationMilliseconds', 'durationSeconds')
+        )) {
+        $present = @($group | Where-Object { $null -ne $Record.PSObject.Properties[$_] })
+        if ($present.Count -gt 1) {
+            $messages.Add("$Prefix provides contradictory measurement aliases: $($present -join ', ').")
+        }
+    }
+    return $messages.ToArray()
+}
+
 function Get-EvaluationInputEvidenceErrors {
     param(
         [Parameter(Mandatory)][object]$Record,
@@ -307,6 +326,7 @@ try {
                             $errors.Add("Host '$hostName' category '$($category.id)' passed trial has a non-passing independent check.")
                         }
                     }
+                    foreach ($measurementError in @(Get-EvaluationMeasurementAliasErrors -Record $record -Prefix "Host '$hostName' category '$($category.id)' trial evidence")) { $errors.Add($measurementError) }
                     foreach ($measurementField in @('tokenCount', 'tokens', 'elapsedMilliseconds', 'elapsedSeconds', 'durationMilliseconds', 'durationSeconds')) {
                         $measurementProperty = $record.PSObject.Properties[$measurementField]
                         if ($null -ne $measurementProperty) {
@@ -384,6 +404,7 @@ try {
                             $errors.Add("Host '$hostName' category '$($category.id)' passed failure-case evidence has a non-passing independent check.")
                         }
                     }
+                    foreach ($measurementError in @(Get-EvaluationMeasurementAliasErrors -Record $failureRecord -Prefix "Host '$hostName' category '$($category.id)' failure-case evidence")) { $errors.Add($measurementError) }
                     foreach ($measurementField in @('tokenCount', 'tokens', 'elapsedMilliseconds', 'elapsedSeconds', 'durationMilliseconds', 'durationSeconds')) {
                         $measurementProperty = $failureRecord.PSObject.Properties[$measurementField]
                         if ($null -ne $measurementProperty) {
@@ -408,6 +429,16 @@ try {
                     $acceptanceProperty = $failureRecord.PSObject.Properties['acceptancePassed']
                     if ($null -eq $acceptanceProperty -or $acceptanceProperty.Value -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence has invalid acceptancePassed evidence.") }
                     elseif (($failureOutcome -eq 'passed' -and -not [bool]$acceptanceProperty.Value) -or ($failureOutcome -ne 'passed' -and [bool]$acceptanceProperty.Value)) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case acceptancePassed does not reconcile with outcome '$failureOutcome'.") }
+                    if ($category.id -eq 'browser-visible' -and ($failureOutcome -eq 'passed' -or $failureOutcome -eq 'failed')) {
+                        if ($null -eq $failureRecord.PSObject.Properties['browserEvidence']) {
+                            $errors.Add("Host '$hostName' browser failure-case trial is missing browserEvidence.")
+                        }
+                        else {
+                            foreach ($field in @('route', 'state', 'viewport', 'command', 'screenshot')) {
+                                if ($null -eq $failureRecord.browserEvidence.PSObject.Properties[$field] -or [string]::IsNullOrWhiteSpace([string]$failureRecord.browserEvidence.$field)) { $errors.Add("Host '$hostName' browser failure-case trial is missing browserEvidence.$field.") }
+                            }
+                        }
+                    }
                     foreach ($identityField in @('contextId', 'worktreeId')) {
                         $identityProperty = $failureRecord.PSObject.Properties[$identityField]
                         if ($null -eq $identityProperty -or [string]::IsNullOrWhiteSpace([string]$identityProperty.Value)) {
