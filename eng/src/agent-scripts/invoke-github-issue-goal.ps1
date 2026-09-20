@@ -113,8 +113,12 @@ function Get-GoalWorktreeFingerprint { # NOSONAR - bounded Git/index/worktree fi
         if ($entry[0] -in @('R', 'C') -and $statusIndex + 1 -lt $status.Count) {
             $statusIndex++
             $relativePaths.Add(([string]$status[$statusIndex]).Trim('"').Replace('\', '/'))
-            $statusEntries.Add($entry + ' -> ' + [string]$status[$statusIndex])
         }
+        $relativePaths = @($relativePaths | Where-Object {
+                -not $excludedPaths.Contains([System.IO.Path]::GetFullPath((Join-Path $Root $_)))
+            })
+        if ($relativePaths.Count -eq 0) { continue }
+        if ($entry[0] -in @('R', 'C') -and $statusIndex -lt $status.Count) { $statusEntries.Add($entry + ' -> ' + [string]$status[$statusIndex]) }
         else { $statusEntries.Add($entry) }
         foreach ($relative in $relativePaths) {
             $full = [System.IO.Path]::GetFullPath((Join-Path $Root $relative))
@@ -466,7 +470,23 @@ try {
     $worktreeChanged = $null -ne $previous -and $worktreeBaseline -ne $currentWorktreeFingerprint
     $activeOperation = $operation.Status -eq 'running'
     $operationCompleted = $null -ne $previous -and $null -ne $previous.PSObject.Properties['Operation'] -and [string]$previous.Operation.Status -eq 'running' -and $operation.Status -in @('completed', 'failed')
-    $operationStartSnapshot = if ($null -ne $previous -and $null -ne $previous.PSObject.Properties['Operation'] -and $null -ne $previous.Operation.PSObject.Properties['StartSnapshot']) {
+    $operationStartsNewSnapshot = $operation.Status -eq 'running' -and
+        ($null -eq $previous -or
+         $null -eq $previous.PSObject.Properties['Operation'] -or
+         [string]$previous.Operation.Status -ne 'running' -or
+         [string]$previous.Operation.Handle -ne $operation.Handle)
+    $operationStartSnapshot = if ($operationStartsNewSnapshot) {
+        [ordered]@{
+            IssueBodyDigest = $issueBodyDigest
+            ContractBodyDigest = $contractBodyDigest
+            ContractSource = $contractSource
+            HeadRevision = $currentHead
+            BaseRevision = $currentBase
+            BaseRevisionName = $BaseRevision
+            WorktreeFingerprint = $currentWorktreeFingerprint
+        }
+    }
+    elseif ($null -ne $previous -and $null -ne $previous.PSObject.Properties['Operation'] -and $null -ne $previous.Operation.PSObject.Properties['StartSnapshot']) {
         $previous.Operation.StartSnapshot
     }
     elseif ($operation.Status -eq 'running') {
