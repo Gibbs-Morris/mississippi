@@ -45,6 +45,8 @@ public sealed class CSharpArchitectureRuleTests
             typeof(HelperAssignmentFixture), typeof(ConcreteCollectionInjectedFieldFixture),
             typeof(NullGuardAssignmentFixture),
             typeof(MultiArgumentHelperFixture), typeof(DelegateInjectedFieldFixture),
+            typeof(CollectionAddAssignmentFixture), typeof(InheritedManualPropertyFixture),
+            typeof(BranchedFactoryAssignmentFixture),
             typeof(WrappedInjectedFieldFixture), typeof(NestedWrappedInjectedFieldFixture),
             typeof(InheritedInjectedFieldFixture), typeof(InheritedInjectedFieldBase),
             typeof(ConcreteInjectedFieldFixture),
@@ -68,11 +70,18 @@ public sealed class CSharpArchitectureRuleTests
         Assert.DoesNotContain(
             violations,
             value => value.StartsWith(typeof(FactoryAssignmentFixture).FullName + ".", StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            violations,
+            value => value.StartsWith(
+                typeof(BranchedFactoryAssignmentFixture).FullName + ".",
+                StringComparison.Ordinal));
         Assert.Contains($"{typeof(HelperAssignmentFixture).FullName}.clock", violations);
         Assert.Contains($"{typeof(ConcreteCollectionInjectedFieldFixture).FullName}.dependencies", violations);
         Assert.Contains($"{typeof(NullGuardAssignmentFixture).FullName}.clock", violations);
         Assert.Contains($"{typeof(MultiArgumentHelperFixture).FullName}.clock", violations);
         Assert.Contains($"{typeof(DelegateInjectedFieldFixture).FullName}.factory", violations);
+        Assert.Contains($"{typeof(CollectionAddAssignmentFixture).FullName}.clocks", violations);
+        Assert.Contains($"{typeof(InheritedManualPropertyFixture).FullName}.Clock", violations);
         Assert.Contains($"{typeof(WrappedInjectedFieldFixture).FullName}.clock", violations);
         Assert.Contains($"{typeof(NestedWrappedInjectedFieldFixture).FullName}.clocks", violations);
         Assert.Contains($"{typeof(InheritedInjectedFieldFixture).FullName}.<Clock>k__BackingField", violations);

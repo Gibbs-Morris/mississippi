@@ -46,7 +46,8 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             HashSet<FieldInfo> reportedFields = new();
             foreach (FieldInfo field in GetInstanceFields(type))
             {
-                if (field.IsStatic || !IsDependencyFieldType(field.FieldType))
+                bool dependencyFieldType = IsDependencyFieldType(field.FieldType);
+                if (field.IsStatic || (!dependencyFieldType && (field.FieldType != typeof(object))))
                 {
                     continue;
                 }
@@ -84,7 +85,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                 foreach (ConstructorInfo constructor in type.GetConstructors(
                              BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 {
-                    if (ConstructorStoresParameter(constructor, field) ||
+                    if (ConstructorStoresParameter(constructor, field, !dependencyFieldType) ||
                         (property?.SetMethod is not null && ConstructorCallsSetter(constructor, property.SetMethod)))
                     {
                         violations.Add($"{type.FullName}.{field.Name}");
@@ -95,10 +96,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             }
 
             foreach (PropertyInfo property in type.GetProperties(
-                         BindingFlags.Instance |
-                         BindingFlags.Public |
-                         BindingFlags.NonPublic |
-                         BindingFlags.DeclaredOnly))
+                         BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             {
                 if (property.SetMethod is null ||
                     !IsDependencyFieldType(property.PropertyType) ||
@@ -186,7 +184,11 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                         BitConverter.ToInt32(il, offset),
                         constructor.DeclaringType?.GetGenericArguments(),
                         Type.EmptyTypes);
-                    if (parameterLoaded && (called == setter))
+                    if (parameterLoaded &&
+                        ((called == setter) ||
+                         (called is not null &&
+                          (called.Name == setter.Name) &&
+                          (called.DeclaringType == setter.DeclaringType))))
                     {
                         return true;
                     }
@@ -218,12 +220,19 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
 
     private static bool ConstructorStoresParameter(
         ConstructorInfo constructor,
-        FieldInfo targetField
+        FieldInfo targetField,
+        bool requireDependencyParameter = false
     )
     {
         int parameterCount = constructor.GetParameters().Length;
         for (int parameterIndex = 1; parameterIndex <= parameterCount; parameterIndex++)
         {
+            if (requireDependencyParameter &&
+                !IsDependencyFieldType(constructor.GetParameters()[parameterIndex - 1].ParameterType))
+            {
+                continue;
+            }
+
             if (MethodStoresParameter(constructor, parameterIndex, targetField, new()))
             {
                 return true;
@@ -445,6 +454,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
 
         int? loadedParameter = null;
         int? conditionalParameter = null;
+        FieldInfo? loadedField = null;
         List<int> argumentStack = new();
         int offset = 0;
         while (offset < il.Length)
@@ -457,6 +467,11 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             {
                 loadedParameter = argumentIndex;
                 argumentStack.Add(argumentIndex);
+            }
+            else if (opcode == OpCodes.Ldnull)
+            {
+                loadedParameter = null;
+                argumentStack.Add(-1);
             }
 
             if (((opcode == OpCodes.Brtrue) ||
@@ -491,6 +506,24 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
 
                 loadedParameter = null;
                 conditionalParameter = null;
+                loadedField = null;
+                argumentStack.Clear();
+            }
+            else if ((opcode == OpCodes.Ldfld) && ((offset + 4) <= il.Length))
+            {
+                try
+                {
+                    loadedField = method.Module.ResolveField(
+                        BitConverter.ToInt32(il, offset),
+                        method.DeclaringType?.GetGenericArguments(),
+                        Type.EmptyTypes);
+                }
+                catch (ArgumentException)
+                {
+                    loadedField = null;
+                }
+
+                loadedParameter = null;
                 argumentStack.Clear();
             }
             else if (((opcode == OpCodes.Call) || (opcode == OpCodes.Callvirt)) && ((offset + 4) <= il.Length))
@@ -506,6 +539,14 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                 catch (ArgumentException)
                 {
                     // An unresolved metadata token cannot prove helper provenance.
+                }
+
+                if (called is not null &&
+                    (called.Name == "Add") &&
+                    (loadedField == targetField) &&
+                    (loadedParameter == parameterIndex))
+                {
+                    return true;
                 }
 
                 if (called is not null && (called.DeclaringType == method.DeclaringType))
@@ -533,6 +574,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
 
                 loadedParameter = null;
                 conditionalParameter = null;
+                loadedField = null;
                 argumentStack.Clear();
             }
             else if ((opcode != OpCodes.Nop) &&
@@ -543,9 +585,11 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                      (opcode != OpCodes.Brfalse_S) &&
                      (opcode != OpCodes.Pop) &&
                      (opcode != OpCodes.Throw) &&
+                     (opcode != OpCodes.Ldnull) &&
                      !TryGetArgumentIndex(opcode, il, operandOffset, out int _))
             {
                 loadedParameter = null;
+                loadedField = null;
                 argumentStack.Clear();
             }
 
