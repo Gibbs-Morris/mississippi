@@ -659,6 +659,42 @@ function Test-RepositoryExecutionLeaseLockConflict {
     return $false
 }
 
+function Get-RepositoryExecutionLeaseOwner {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    try { return (Get-Content -LiteralPath $Path -Raw -ErrorAction Stop).Trim() }
+    catch {
+        Write-Verbose "Unable to read the current lease owner from '$Path': $($_.Exception.Message)"
+        return ''
+    }
+}
+
+function Throw-RepositoryExecutionLeaseOpenFailure {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Context,
+        [Parameter(Mandatory)][object]$Resources,
+        [Parameter(Mandatory)][Exception]$Exception,
+        [switch]$Unauthorized
+    )
+
+    $lockConflict = Test-RepositoryExecutionLeaseLockConflict -Exception $Exception
+    Release-RepositoryExecutionLeaseResources -Resources $Resources
+    if ($Unauthorized) {
+        if ($Context.SharedLease) {
+            throw "Shared execution lease '$($Context.LeasePath)' is not writable by this account. Ensure existing lease files in the shared directory are writable by all participating accounts."
+        }
+        throw $Exception
+    }
+    if (-not $lockConflict) { throw $Exception }
+    if ($Context.SharedLease) {
+        throw "Worktree execution lease is held for '$($Context.CanonicalRoot)' in shared coordination slot. Use a separate worktree or wait for the active operation."
+    }
+    $owner = Get-RepositoryExecutionLeaseOwner -Path $Context.LeasePath
+    throw "Worktree execution lease is held for '$($Context.CanonicalRoot)'. Current owner: $owner. Use a separate worktree or wait for the active operation."
+}
+
 function Open-RepositoryExecutionLeaseResources {
     [CmdletBinding()]
     param([Parameter(Mandatory)][object]$Context)
@@ -686,38 +722,18 @@ function Open-RepositoryExecutionLeaseResources {
         return $resources
     }
     catch [System.UnauthorizedAccessException] {
-        Release-RepositoryExecutionLeaseResources -Resources $resources
-        if ($Context.SharedLease) {
-            throw "Shared execution lease '$($Context.LeasePath)' is not writable by this account. Ensure existing lease files in the shared directory are writable by all participating accounts."
-        }
-        throw
+        Throw-RepositoryExecutionLeaseOpenFailure -Context $Context -Resources $resources -Exception $_.Exception -Unauthorized
     }
     catch [System.IO.IOException] {
-        $exception = $_.Exception
-        $lockConflict = Test-RepositoryExecutionLeaseLockConflict -Exception $exception
-        Release-RepositoryExecutionLeaseResources -Resources $resources
-        if (-not $lockConflict) { throw $exception }
-        if ($Context.SharedLease) {
-            throw "Worktree execution lease is held for '$($Context.CanonicalRoot)' in shared coordination slot. Use a separate worktree or wait for the active operation."
-        }
-        $owner = ''
-        try { $owner = (Get-Content -LiteralPath $Context.LeasePath -Raw -ErrorAction Stop).Trim() }
-        catch { Write-Verbose "Unable to read the current lease owner from '$($Context.LeasePath)': $($_.Exception.Message)" }
-        throw "Worktree execution lease is held for '$($Context.CanonicalRoot)'. Current owner: $owner. Use a separate worktree or wait for the active operation."
+        Throw-RepositoryExecutionLeaseOpenFailure -Context $Context -Resources $resources -Exception $_.Exception
     }
     catch {
         $exception = $_.Exception
         $lockConflict = Test-RepositoryExecutionLeaseLockConflict -Exception $exception
-        Release-RepositoryExecutionLeaseResources -Resources $resources
         if ($lockConflict) {
-            if ($Context.SharedLease) {
-                throw "Worktree execution lease is held for '$($Context.CanonicalRoot)' in shared coordination slot. Use a separate worktree or wait for the active operation."
-            }
-            $owner = ''
-            try { $owner = (Get-Content -LiteralPath $Context.LeasePath -Raw -ErrorAction Stop).Trim() }
-            catch { Write-Verbose "Unable to read the current lease owner from '$($Context.LeasePath)': $($_.Exception.Message)" }
-            throw "Worktree execution lease is held for '$($Context.CanonicalRoot)'. Current owner: $owner. Use a separate worktree or wait for the active operation."
+            Throw-RepositoryExecutionLeaseOpenFailure -Context $Context -Resources $resources -Exception $exception
         }
+        Release-RepositoryExecutionLeaseResources -Resources $resources
         throw
     }
 }
