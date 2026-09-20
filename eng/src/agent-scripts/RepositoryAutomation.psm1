@@ -700,6 +700,17 @@ function Lock-PrivateRepositoryExecutionLease {
     return [long]0
 }
 
+function Release-RepositoryExecutionLeaseProcessSemaphore {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Lease)
+
+    if ($null -eq $Lease.ProcessSemaphore) { return }
+    try {
+        if ($Lease.ProcessSemaphoreAcquired) { $Lease.ProcessSemaphore.Release() | Out-Null }
+    }
+    finally { $Lease.ProcessSemaphoreAcquired = $false }
+}
+
 function Release-RepositoryExecutionLeaseResources {
     [CmdletBinding()]
     param([Parameter(Mandatory)][object]$Resources)
@@ -716,12 +727,7 @@ function Release-RepositoryExecutionLeaseResources {
         }
     }
     finally {
-        if ($null -ne $Resources.ProcessSemaphore) {
-            try {
-                if ($Resources.ProcessSemaphoreAcquired) { $Resources.ProcessSemaphore.Release() | Out-Null }
-            }
-            finally { $Resources.ProcessSemaphoreAcquired = $false }
-        }
+        Release-RepositoryExecutionLeaseProcessSemaphore -Lease $Resources
         if ($Resources.LeaseRegistered) { Unregister-RepositoryExecutionLeaseIdentity -Identity $Resources.LeaseIdentity }
     }
 }
@@ -1007,12 +1013,7 @@ function Exit-RepositoryExecutionLease {
             }
         }
         finally {
-            if ($null -ne $Lease.ProcessSemaphore) {
-                try {
-                    if ($Lease.ProcessSemaphoreAcquired) { $Lease.ProcessSemaphore.Release() | Out-Null }
-                }
-                finally { $Lease.ProcessSemaphoreAcquired = $false }
-            }
+            Release-RepositoryExecutionLeaseProcessSemaphore -Lease $Lease
             Unregister-RepositoryExecutionLeaseIdentity -Identity ([string]$Lease.LeaseIdentity)
         }
         if ($null -ne $metadataFailure) { throw $metadataFailure }
