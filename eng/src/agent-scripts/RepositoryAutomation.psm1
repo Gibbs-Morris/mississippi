@@ -2817,6 +2817,14 @@ function Get-PrReadinessCheckState {
     return 'pending'
 }
 
+function Test-PrReadinessCheckRunBelongsToPullRequest {
+    param([Parameter(Mandatory)][object]$CheckRun, [Parameter(Mandatory)][int]$PullRequestNumber)
+
+    $pullRequests = $CheckRun.PSObject.Properties['pull_requests']
+    if ($null -eq $pullRequests) { return $true }
+    return @($pullRequests.Value | Where-Object { [int]$_.number -eq $PullRequestNumber }).Count -gt 0
+}
+
 function Get-PrReadinessCommitStatusState {
     param([Parameter(Mandatory)][object]$Status)
 
@@ -2855,10 +2863,11 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     $pull = & $getJson @('api', $pullPath)
     $headAtStart = [string]$pull.head.sha
     $baseAtStart = [string]$pull.base.sha
+    $baseRefAtStart = if ($null -ne $pull.base.PSObject.Properties['ref']) { [string]$pull.base.ref } else { '' }
     $filePages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/pulls/$PullRequestNumber/files", '--paginate', '--slurp'))
     $changedPaths = @($filePages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | ForEach-Object { @($_.filename) } | Where-Object { $_ })
     $checkPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$headAtStart/check-runs", '--paginate', '--slurp'))
-    $checkRuns = @($checkPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | ForEach-Object { @($_.check_runs) })
+    $checkRuns = @($checkPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | ForEach-Object { @($_.check_runs) } | Where-Object { Test-PrReadinessCheckRunBelongsToPullRequest -CheckRun $_ -PullRequestNumber $PullRequestNumber })
     $statusPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$headAtStart/statuses", '--paginate', '--slurp'))
     $statuses = @($statusPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | Group-Object context | ForEach-Object { $_.Group | Sort-Object created_at -Descending | Select-Object -First 1 })
     $checks = [System.Collections.Generic.List[object]]::new()
@@ -2917,7 +2926,7 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     $pullAtEnd = & $getJson @('api', $pullPath)
     $finalHead = [string]$pullAtEnd.head.sha
     $finalCheckPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$finalHead/check-runs", '--paginate', '--slurp'))
-    $finalCheckRuns = @($finalCheckPages | ForEach-Object { @($_.check_runs) })
+    $finalCheckRuns = @($finalCheckPages | ForEach-Object { @($_.check_runs) } | Where-Object { Test-PrReadinessCheckRunBelongsToPullRequest -CheckRun $_ -PullRequestNumber $PullRequestNumber })
     $finalStatusPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$finalHead/statuses", '--paginate', '--slurp'))
     $finalStatuses = @($finalStatusPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | Group-Object context | ForEach-Object { $_.Group | Sort-Object created_at -Descending | Select-Object -First 1 })
     $statusFingerprintStart = (@($statuses | ForEach-Object { "$($_.context)=$([string](Get-PrReadinessCommitStatusState -Status $_))" } | Sort-Object) -join '|')
@@ -2969,12 +2978,15 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
         $mutableEvidenceStable = $false
     }
     $pollingCompleted = $PollingSeconds -ge 300
+    $baseRefAtEnd = if ($null -ne $pullAtEnd.base.PSObject.Properties['ref']) { [string]$pullAtEnd.base.ref } else { '' }
     [pscustomobject][ordered]@{
         DataComplete = $true
         HeadAtStart = $headAtStart
         HeadAtEnd = [string]$pullAtEnd.head.sha
         BaseAtStart = $baseAtStart
         BaseAtEnd = [string]$pullAtEnd.base.sha
+        BaseRefAtStart = $baseRefAtStart
+        BaseRefAtEnd = $baseRefAtEnd
         PullRequestState = [string]$pullAtEnd.state
         IsDraft = [bool]$pullAtEnd.draft
         MergeableState = [string]$pullAtEnd.mergeable_state
@@ -3009,13 +3021,13 @@ function Get-PrReadinessReport { # NOSONAR - readiness reporting intentionally e
     $blockers = [System.Collections.Generic.List[string]]::new()
     if (-not $Snapshot.DataComplete) { $blockers.Add('Required GitHub data is incomplete or inaccessible.') }
     if ($Snapshot.HeadAtStart -ne $Snapshot.HeadAtEnd) { $blockers.Add('PR head changed during collection; snapshot is stale.') }
-    if ($Snapshot.BaseAtStart -ne $Snapshot.BaseAtEnd) { $blockers.Add('PR base changed during collection; snapshot is stale.') }
+    if ($Snapshot.BaseAtStart -ne $Snapshot.BaseAtEnd -or ($null -ne $Snapshot.PSObject.Properties['BaseRefAtStart'] -and $Snapshot.BaseRefAtStart -ne $Snapshot.BaseRefAtEnd)) { $blockers.Add('PR base changed during collection; snapshot is stale.') }
     $state = if ($null -ne $Snapshot.PSObject.Properties['PullRequestState']) { [string]$Snapshot.PullRequestState } else { 'open' }
     $draft = if ($null -ne $Snapshot.PSObject.Properties['IsDraft']) { [bool]$Snapshot.IsDraft } else { $false }
     $mergeableState = if ($null -ne $Snapshot.PSObject.Properties['MergeableState']) { [string]$Snapshot.MergeableState } else { 'clean' }
     if ($state -ne 'open') { $blockers.Add("Pull request is not open (state: $state).") }
     if ($draft) { $blockers.Add('Pull request is still a draft.') }
-    if ($mergeableState -notin @('clean', 'blocked')) { $blockers.Add("Pull request cannot currently advance (mergeability: $mergeableState).") }
+    if ($mergeableState -ne 'clean') { $blockers.Add("Pull request cannot currently advance (mergeability: $mergeableState).") }
     if (-not [string]::IsNullOrWhiteSpace([string]$Snapshot.ReviewDecision) -and [string]$Snapshot.ReviewDecision -ne 'APPROVED') { $blockers.Add("Aggregate review decision is $($Snapshot.ReviewDecision).") }
     foreach ($check in @($Snapshot.Checks | Where-Object { $_.Required -and $_.State -ne 'pass' })) { $blockers.Add("Required check '$($check.Name)' is $($check.State).") }
     foreach ($thread in @($Snapshot.ReviewThreads)) {
