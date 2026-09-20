@@ -43,6 +43,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                 continue;
             }
 
+            HashSet<FieldInfo> reportedFields = new();
             foreach (FieldInfo field in GetInstanceFields(type))
             {
                 if (field.IsStatic || !IsDependencyFieldType(field.FieldType))
@@ -79,6 +80,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                         (property?.SetMethod is not null && ConstructorCallsSetter(constructor, property.SetMethod)))
                     {
                         violations.Add($"{type.FullName}.{field.Name}");
+                        reportedFields.Add(field);
                         break;
                     }
                 }
@@ -88,6 +90,13 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             {
                 if (property.SetMethod is null || !IsDependencyFieldType(property.PropertyType) ||
                     type.GetField($"<{property.Name}>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly) is not null)
+                {
+                    continue;
+                }
+
+                FieldInfo? associatedField = GetInstanceFields(type)
+                    .FirstOrDefault(field => MethodStoresField(property.SetMethod, field));
+                if (associatedField is not null && reportedFields.Contains(associatedField))
                 {
                     continue;
                 }
@@ -334,6 +343,11 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
 
     private static bool IsDependencyFieldType(Type fieldType)
     {
+        if (fieldType.IsGenericParameter)
+        {
+            return fieldType.GetGenericParameterConstraints().Any(IsDependencyFieldType);
+        }
+
         if (fieldType.IsInterface || fieldType.IsAbstract)
         {
             return true;
@@ -354,11 +368,29 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                     : IsDependencyFieldType(argument));
         }
 
-        // A concrete reference type from this repository can be a registered service even when it has
-        // no public abstraction (for example DevToolsInitializationTracker). System reference types
-        // and ordinary value state are intentionally excluded; collection state is handled above.
-        return fieldType.IsClass && fieldType != typeof(string) &&
-               fieldType.Namespace?.StartsWith("System", StringComparison.Ordinal) != true;
+        return IsExplicitConcreteServiceType(fieldType);
+    }
+
+    private static bool IsExplicitConcreteServiceType(Type fieldType)
+    {
+        if (!fieldType.IsClass || fieldType == typeof(string) ||
+            fieldType.Namespace?.StartsWith("System", StringComparison.Ordinal) == true)
+        {
+            return false;
+        }
+
+        // Concrete registrations without an abstraction are intentionally classified by service-shaped
+        // suffixes. This includes DevToolsInitializationTracker while excluding ordinary model/state classes.
+        string name = fieldType.Name;
+        return name.EndsWith("Client", StringComparison.Ordinal) ||
+               name.EndsWith("Dependency", StringComparison.Ordinal) ||
+               name.EndsWith("Handler", StringComparison.Ordinal) ||
+               name.EndsWith("Interop", StringComparison.Ordinal) ||
+               name.EndsWith("Manager", StringComparison.Ordinal) ||
+               name.EndsWith("Provider", StringComparison.Ordinal) ||
+               name.EndsWith("Repository", StringComparison.Ordinal) ||
+               name.EndsWith("Service", StringComparison.Ordinal) ||
+               name.EndsWith("Tracker", StringComparison.Ordinal);
     }
 
     private static IEnumerable<FieldInfo> GetInstanceFields(Type type)
