@@ -12,14 +12,15 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
-$repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+$resolvedSolutionPath = (Resolve-Path -LiteralPath $SolutionPath -ErrorAction Stop).Path
+$solutionRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $resolvedSolutionPath)
 $executionLease = $null
 
 try {
-    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "test-solution-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $solutionRoot -OperationId "test-solution-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
     $arguments = @()
     if ($NoBuild) { $arguments += '--no-build' }
-    Invoke-SolutionTests -SolutionPath $SolutionPath -Configuration $Configuration -TestLevels $TestLevels `
+    Invoke-SolutionTests -SolutionPath $resolvedSolutionPath -Configuration $Configuration -TestLevels $TestLevels `
         -AdditionalArguments $arguments | Out-Host
     exit 0
 }
