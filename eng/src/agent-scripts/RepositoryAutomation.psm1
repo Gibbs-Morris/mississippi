@@ -356,6 +356,9 @@ function Initialize-SharedRepositoryExecutionLeasePath {
         else {
             Test-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
             if ($IsWindows) { Test-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath }
+            if (-not (Test-Path -LiteralPath $MetadataPath -PathType Leaf)) {
+                throw "Shared lease metadata '$MetadataPath' must be pre-provisioned with the coordination file."
+            }
         }
         return
     }
