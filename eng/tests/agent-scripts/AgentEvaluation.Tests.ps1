@@ -105,7 +105,8 @@ Describe 'Issue delivery benchmark validation' {
             foreach ($contract in @($data.deterministicContractTrials)) {
                 $contract | Add-Member -NotePropertyName evidenceStatus -NotePropertyValue 'PASS' -Force
                 $contract | Add-Member -NotePropertyName evidenceRevision -NotePropertyValue $revision -Force
-                $contract | Add-Member -NotePropertyName evidenceArtifacts -NotePropertyValue @($contract.evidenceChecks) -Force
+                $artifacts = @($contract.evidenceChecks | ForEach-Object { $path = [string]$_; [ordered]@{ path = $path; sha256 = 'SHA256:' + (Get-FileHash -LiteralPath (Join-Path $repoRoot $path) -Algorithm SHA256).Hash } })
+                $contract | Add-Member -NotePropertyName evidenceArtifacts -NotePropertyValue $artifacts -Force
             }
             return $data
         }
@@ -313,6 +314,18 @@ Describe 'Issue delivery benchmark validation' {
 
         $outcome.ExitCode | Should -Not -Be 0
         ($outcome.Result.Errors -join "`n") | Should -Match 'contradictory measurement aliases'
+    }
+
+    It 'rejects fabricated deterministic evidence artifacts' {
+        $data = New-LiveResults
+        $data.deterministicContractTrials[0].evidenceArtifacts[0].sha256 = 'SHA256:' + ('0' * 64)
+        $path = Join-Path $TestDrive 'fabricated-deterministic-artifact.json'
+        $data | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path
+
+        $outcome = Invoke-Evaluation -ResultsPath $path
+
+        $outcome.ExitCode | Should -Not -Be 0
+        ($outcome.Result.Errors -join "`n") | Should -Match 'evidence artifact.*does not match'
     }
 
     It 'requires browser evidence for browser failure-case trials' {
