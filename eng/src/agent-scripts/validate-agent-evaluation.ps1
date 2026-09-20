@@ -82,17 +82,18 @@ function Get-EvaluationInputEvidenceErrors {
         return $messages.ToArray()
     }
     $inputEvidence = $inputEvidenceProperty.Value
-    foreach ($field in @('repository', 'issueNumber', 'bodyDigest', 'sourceRevision')) {
+    foreach ($field in @('repository', 'issueNumber', 'inputProfile', 'bodyDigest', 'sourceRevision')) {
         if ($null -eq $inputEvidence.PSObject.Properties[$field]) { $null = $messages.Add("Category '$($Category.id)' inputEvidence is missing $field.") }
     }
     if ($pairedCase.Count -eq 1) {
         if ([string]$inputEvidence.repository -ne [string]$pairedCase[0].repository) { $null = $messages.Add("Category '$($Category.id)' inputEvidence repository does not match the paired case.") }
         if ([int]$inputEvidence.issueNumber -ne [int]$pairedCase[0].issueNumber) { $null = $messages.Add("Category '$($Category.id)' inputEvidence issue number does not match the paired case.") }
+        if ([string]$inputEvidence.inputProfile -ne [string]$pairedCase[0].inputProfile) { $null = $messages.Add("Category '$($Category.id)' inputEvidence inputProfile does not match the paired case.") }
     }
     if ([string]$inputEvidence.bodyDigest -notmatch '^SHA256:[0-9a-fA-F]{64}$') { $null = $messages.Add("Category '$($Category.id)' inputEvidence bodyDigest is not an immutable SHA256 digest.") }
     if ([string]$inputEvidence.sourceRevision -ne $SourceRevision) { $null = $messages.Add("Category '$($Category.id)' inputEvidence uses a different source revision.") }
     $evidenceKey = $pairedInputId
-    $evidenceValue = "$($inputEvidence.repository)|$($inputEvidence.issueNumber)|$($inputEvidence.bodyDigest)|$($inputEvidence.sourceRevision)"
+    $evidenceValue = "$($inputEvidence.repository)|$($inputEvidence.issueNumber)|$($inputEvidence.inputProfile)|$($inputEvidence.bodyDigest)|$($inputEvidence.sourceRevision)"
     if ($Observed.ContainsKey($evidenceKey) -and [string]$Observed[$evidenceKey] -ne $evidenceValue) {
         $null = $messages.Add("Category '$($Category.id)' paired input '$pairedInputId' differs between host records.")
     }
@@ -118,10 +119,12 @@ try {
             $errors.Add("Results sourceRevision '$($results.sourceRevision)' does not resolve to a commit in the repository.")
         }
     }
-    $categories = @($pack.categories | Where-Object { $_.kind -eq 'normal' })
+    $allCategories = @($pack.categories)
+    $categories = @($allCategories | Where-Object { $_.kind -eq 'normal' })
     $expectedTrials = [int]$pack.normalTrialCount
     $requiredCategoryIds = @('csharp-behavior', 'powershell-harness', 'documentation', 'browser-visible', 'multi-project-generator')
     $actualCategoryIds = @($categories.id)
+    if ($allCategories.Count -ne $categories.Count) { $errors.Add('Scenario pack must contain only normal benchmark categories.') }
     if ($actualCategoryIds.Count -ne $requiredCategoryIds.Count -or
         (Get-EvaluationSet -Values $actualCategoryIds).Count -ne $actualCategoryIds.Count -or
         @($requiredCategoryIds | Where-Object { $actualCategoryIds -notcontains $_ }).Count -gt 0 -or
@@ -227,7 +230,11 @@ try {
         }
     }
     $hostNames = @('Codex', 'Copilot')
+    $allHostNames = @($results.hosts | ForEach-Object { [string]$_.host })
     $primaryRows = @($results.hosts | Where-Object { $_.host -in $hostNames })
+    if ($allHostNames.Count -ne $hostNames.Count -or (Get-EvaluationSet -Values $allHostNames).Count -ne $allHostNames.Count -or -not (Test-EvaluationSetEqual -Left $allHostNames -Right $hostNames)) {
+        $errors.Add('Results must contain exactly one row for each canonical primary host and no extra hosts.')
+    }
     if ($primaryRows.Count -ne $hostNames.Count) { $errors.Add('Results must contain exactly one row for each primary host.') }
     if ([string]$results.mode -eq 'initial-baseline' -and @($primaryRows | Where-Object { [string]$_.activeModel -notin @('unsupported', 'blocked', 'unknown') }).Count -gt 0) {
         $errors.Add('Live host results cannot retain initial-baseline mode.')
@@ -344,12 +351,20 @@ try {
                     }
                     if ($record.PSObject.Properties['freshContext'] -and $record.freshContext -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence has a non-boolean freshContext value.") }
                     if ($record.PSObject.Properties['freshContext'] -and $record.freshContext -ne $true) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence was not run in a fresh context.") }
-                    if ($record.PSObject.Properties['contextId'] -and [string]::IsNullOrWhiteSpace([string]$record.contextId)) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing a context identity.") }
-                    elseif ($record.PSObject.Properties['contextId'] -and -not $hostContextIds.Add([string]$record.contextId)) { $errors.Add("Host '$hostName' category '$($category.id)' reuses a trial context.") }
+                    $contextProperty = $record.PSObject.Properties['contextId']
+                    if ($null -ne $contextProperty) {
+                        if ($contextProperty.Value -isnot [string]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence contextId must be a scalar string.") }
+                        elseif ([string]::IsNullOrWhiteSpace([string]$contextProperty.Value)) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing a context identity.") }
+                        elseif (-not $hostContextIds.Add([string]$contextProperty.Value)) { $errors.Add("Host '$hostName' category '$($category.id)' reuses a trial context.") }
+                    }
                     if ($record.PSObject.Properties['repositoryRevision'] -and [string]$record.repositoryRevision -ne [string]$results.sourceRevision) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence uses a different repository revision.") }
                     if ($record.PSObject.Properties['repositoryState'] -and [string]$record.repositoryState -ne 'clean') { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence does not identify a clean repository state.") }
-                    if ($record.PSObject.Properties['worktreeId'] -and [string]::IsNullOrWhiteSpace([string]$record.worktreeId)) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing an isolated worktree identity.") }
-                    elseif ($record.PSObject.Properties['worktreeId'] -and -not $hostWorktreeIds.Add([string]$record.worktreeId)) { $errors.Add("Host '$hostName' category '$($category.id)' reuses an isolated worktree.") }
+                    $worktreeProperty = $record.PSObject.Properties['worktreeId']
+                    if ($null -ne $worktreeProperty) {
+                        if ($worktreeProperty.Value -isnot [string]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence worktreeId must be a scalar string.") }
+                        elseif ([string]::IsNullOrWhiteSpace([string]$worktreeProperty.Value)) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing an isolated worktree identity.") }
+                        elseif (-not $hostWorktreeIds.Add([string]$worktreeProperty.Value)) { $errors.Add("Host '$hostName' category '$($category.id)' reuses an isolated worktree.") }
+                    }
                     if ($record.PSObject.Properties['independentChecks'] -and -not (Test-EvaluationSetEqual -Left $record.independentChecks -Right $category.independentChecks)) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence does not identify every declared independent check.") }
                     if ($record.PSObject.Properties['independentCheckResults']) {
                         $checkResults = @($record.independentCheckResults)
@@ -491,7 +506,13 @@ try {
                     }
                     foreach ($identityField in @('contextId', 'worktreeId')) {
                         $identityProperty = $failureRecord.PSObject.Properties[$identityField]
-                        if ($null -eq $identityProperty -or [string]::IsNullOrWhiteSpace([string]$identityProperty.Value)) {
+                        if ($null -eq $identityProperty) {
+                            $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence is missing $identityField.")
+                        }
+                        elseif ($identityProperty.Value -isnot [string]) {
+                            $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence $identityField must be a scalar string.")
+                        }
+                        elseif ([string]::IsNullOrWhiteSpace([string]$identityProperty.Value)) {
                             $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence is missing $identityField.")
                         }
                         elseif ($identityField -eq 'contextId' -and -not $hostContextIds.Add([string]$identityProperty.Value)) {

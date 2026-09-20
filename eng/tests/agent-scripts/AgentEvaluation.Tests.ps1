@@ -13,8 +13,8 @@ Describe 'Issue delivery benchmark validation' {
         $pack = Join-Path $repoRoot '.github/agent-guidance/issue-delivery-benchmark.json'
         $results = Join-Path $repoRoot '.github/agent-guidance/issue-delivery-results.json'
         function Invoke-Evaluation {
-            param([string]$ResultsPath = $results)
-            $output = & $powerShellPath -NoProfile -File $validator -ScenarioPath $pack -ResultsPath $ResultsPath -Json 2>&1 | Out-String
+            param([string]$ResultsPath = $results, [string]$ScenarioPath = $pack)
+            $output = & $powerShellPath -NoProfile -File $validator -ScenarioPath $ScenarioPath -ResultsPath $ResultsPath -Json 2>&1 | Out-String
             [pscustomobject]@{ ExitCode = $LASTEXITCODE; Result = $output | ConvertFrom-Json }
         }
         function New-LiveResults {
@@ -42,10 +42,11 @@ Describe 'Issue delivery benchmark validation' {
                     $summary.blocked = 0
                     for ($index = 0; $index -lt 3; $index++) {
                         $outcome = if ($index -eq 2) { 'failed' } else { 'passed' }
+                        $pairedCase = @($scenario.pairedCases | Where-Object id -EQ $category.pairedInputIds[$index])[0]
                         $record = [ordered]@{
                             scenarioId = [string]$category.id
                             pairedInputId = [string]$category.pairedInputIds[$index]
-                            inputEvidence = [ordered]@{ repository = 'Gibbs-Morris/mississippi'; issueNumber = 732; bodyDigest = $inputDigest; sourceRevision = $revision }
+                            inputEvidence = [ordered]@{ repository = 'Gibbs-Morris/mississippi'; issueNumber = 732; inputProfile = [string]$pairedCase.inputProfile; bodyDigest = $inputDigest; sourceRevision = $revision }
                             outcome = $outcome
                             acceptancePassed = $outcome -eq 'passed'
                             reason = if ($outcome -eq 'failed') { 'controlled live trial failure' } else { $null }
@@ -68,12 +69,13 @@ Describe 'Issue delivery benchmark validation' {
                     }
                     foreach ($failureCase in @($category.failureCases)) {
                         $definition = @($category.failureCaseDefinitions | Where-Object id -EQ $failureCase)[0]
+                        $pairedCase = @($scenario.pairedCases | Where-Object id -EQ $category.pairedInputIds[0])[0]
                         $definitionText = "$($definition.id)|$($definition.setup)|$($definition.trigger)|$($definition.expectedObservation)"
                         $definitionHash = [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($definitionText))
                         $trialRecords.Add([pscustomobject][ordered]@{
                             scenarioId = [string]$category.id
                             pairedInputId = [string]$category.pairedInputIds[0]
-                            inputEvidence = [ordered]@{ repository = 'Gibbs-Morris/mississippi'; issueNumber = 732; bodyDigest = $inputDigest; sourceRevision = $revision }
+                            inputEvidence = [ordered]@{ repository = 'Gibbs-Morris/mississippi'; issueNumber = 732; inputProfile = [string]$pairedCase.inputProfile; bodyDigest = $inputDigest; sourceRevision = $revision }
                             failureCase = [string]$failureCase
                             failureDefinitionId = [string]$failureCase
                             failureDefinitionDigest = 'SHA256:' + (($definitionHash | ForEach-Object { $_.ToString('x2') }) -join '')
@@ -111,6 +113,58 @@ Describe 'Issue delivery benchmark validation' {
         $outcome.ExitCode | Should -Be 0
         $outcome.Result.Status | Should -Be 'VALIDATED_UNSUPPORTED_BASELINE'
         $outcome.Result.Errors | Should -HaveCount 0
+    }
+
+    It 'rejects noncanonical category kinds' {
+        $scenario = Get-Content -LiteralPath $pack -Raw | ConvertFrom-Json
+        $scenario.categories = @($scenario.categories + [pscustomobject]@{ id = 'injected'; kind = 'experimental' })
+        $scenarioPath = Join-Path $TestDrive 'noncanonical-category-pack.json'
+        $scenario | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $scenarioPath
+
+        $outcome = Invoke-Evaluation -ScenarioPath $scenarioPath
+
+        $outcome.ExitCode | Should -Not -Be 0
+        ($outcome.Result.Errors -join "`n") | Should -Match 'only normal benchmark categories'
+    }
+
+    It 'rejects extra result hosts' {
+        $data = New-LiveResults
+        $data.hosts = @($data.hosts + [pscustomobject]@{ host = 'UntrustedHost' })
+        $path = Join-Path $TestDrive 'extra-host-results.json'
+        $data | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path
+
+        $outcome = Invoke-Evaluation -ResultsPath $path
+
+        $outcome.ExitCode | Should -Not -Be 0
+        ($outcome.Result.Errors -join "`n") | Should -Match 'no extra hosts'
+    }
+
+    It 'requires scalar-string context and worktree identities' {
+        $data = New-LiveResults
+        $normal = $data.hosts[0].trialRecords[0]
+        $normal.contextId = 42
+        $failure = @($data.hosts[0].trialRecords | Where-Object { $null -ne $_.PSObject.Properties['failureCase'] })[0]
+        $failure.worktreeId = $false
+        $path = Join-Path $TestDrive 'non-scalar-identities.json'
+        $data | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path
+
+        $outcome = Invoke-Evaluation -ResultsPath $path
+
+        $outcome.ExitCode | Should -Not -Be 0
+        ($outcome.Result.Errors -join "`n") | Should -Match 'trial evidence contextId must be a scalar string'
+        ($outcome.Result.Errors -join "`n") | Should -Match 'failure-case evidence worktreeId must be a scalar string'
+    }
+
+    It 'binds trial evidence to the paired input profile' {
+        $data = New-LiveResults
+        $data.hosts[0].trialRecords[0].inputEvidence.inputProfile = 'wrong-profile'
+        $path = Join-Path $TestDrive 'wrong-input-profile.json'
+        $data | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path
+
+        $outcome = Invoke-Evaluation -ResultsPath $path
+
+        $outcome.ExitCode | Should -Not -Be 0
+        ($outcome.Result.Errors -join "`n") | Should -Match 'inputProfile does not match the paired case'
     }
 
     It 'rejects a host category with fewer than three accounted trials' {
