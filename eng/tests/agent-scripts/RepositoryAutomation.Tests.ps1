@@ -149,6 +149,20 @@ Describe 'RepositoryAutomation helpers' {
         }
     }
 
+    It 'resolves relative lease directories from the physical repository root' {
+        $repoRoot = Join-Path $TestDrive 'relative-lease-repository'
+        New-Item -ItemType Directory -Path $repoRoot -Force | Out-Null
+        $originalLocation = Get-Location
+        try {
+            Push-Location $TestDrive
+            $leasePath = Get-RepositoryExecutionLeasePath -RepoRoot $repoRoot -LeaseDirectory 'relative-leases'
+            $leasePath | Should -Be (Join-Path $repoRoot 'relative-leases' ([System.IO.Path]::GetFileName($leasePath)))
+        }
+        finally {
+            Set-Location $originalLocation
+        }
+    }
+
     It 'resolves relative and chained symlink targets before deriving lease identity' {
         $chainRoot = Join-Path $TestDrive 'lease-chain'
         $realRoot = Join-Path $chainRoot 'real'

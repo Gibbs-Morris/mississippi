@@ -128,7 +128,15 @@ function Get-RepositoryExecutionLeasePathForRoot {
     $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
     $fileName = (($hash | ForEach-Object { $_.ToString('x2') }) -join '') + '.lease'
     $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
-    $leaseDirectory = if ([string]::IsNullOrWhiteSpace($LeaseDirectory)) { Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases' } else { [System.IO.Path]::GetFullPath($LeaseDirectory) }
+    $leaseDirectory = if ([string]::IsNullOrWhiteSpace($LeaseDirectory)) {
+        Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases'
+    }
+    elseif ([System.IO.Path]::IsPathRooted($LeaseDirectory)) {
+        [System.IO.Path]::GetFullPath($LeaseDirectory)
+    }
+    else {
+        [System.IO.Path]::GetFullPath((Join-Path $CanonicalRepoRoot $LeaseDirectory))
+    }
     $leaseDirectoryCreated = $false
     if (Test-Path -LiteralPath $leaseDirectory) {
         $leaseItem = Get-Item -LiteralPath $leaseDirectory -Force -ErrorAction Stop
