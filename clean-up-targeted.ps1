@@ -118,10 +118,12 @@ function Normalize-RepositoryRelativePath {
 }
 
 $executionLease = $null
+$locationPushed = $false
 try {
     $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "cleanup-targeted-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
     $repoRoot = $executionLease.RepositoryRoot
     Push-Location -Path $repoRoot
+    $locationPushed = $true
 
     $inputFiles = Get-InputFiles
     $normalizedInputFiles = @($inputFiles |
@@ -185,5 +187,5 @@ catch {
 }
 finally {
     if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
-    Pop-Location -ErrorAction SilentlyContinue
+    if ($locationPushed) { Pop-Location -ErrorAction SilentlyContinue }
 }
