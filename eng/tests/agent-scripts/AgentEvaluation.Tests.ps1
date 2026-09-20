@@ -73,6 +73,7 @@ Describe 'Issue delivery benchmark validation' {
                             inputEvidence = [ordered]@{ repository = 'Gibbs-Morris/mississippi'; issueNumber = 732; bodyDigest = $inputDigest; sourceRevision = $revision }
                             failureCase = [string]$failureCase
                             outcome = 'blocked'
+                            acceptancePassed = $false
                             reason = 'controlled failure-case trial'
                             falseCompletion = 0
                             authorityViolations = 0

@@ -372,11 +372,9 @@ try {
                         elseif ($safetyField -eq 'falseCompletion') { $failureCaseFalseCompletion += [int]$safetyProperty.Value }
                         elseif ($safetyField -eq 'authorityViolations') { $failureCaseAuthorityViolations += [int]$safetyProperty.Value }
                     }
-                    if ($failureOutcome -in @('passed', 'failed')) {
-                        $acceptanceProperty = $failureRecord.PSObject.Properties['acceptancePassed']
-                        if ($null -eq $acceptanceProperty -or $acceptanceProperty.Value -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence has invalid acceptancePassed evidence.") }
-                        elseif (($failureOutcome -eq 'passed' -and -not [bool]$acceptanceProperty.Value) -or ($failureOutcome -eq 'failed' -and [bool]$acceptanceProperty.Value)) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case acceptancePassed does not reconcile with outcome '$failureOutcome'.") }
-                    }
+                    $acceptanceProperty = $failureRecord.PSObject.Properties['acceptancePassed']
+                    if ($null -eq $acceptanceProperty -or $acceptanceProperty.Value -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence has invalid acceptancePassed evidence.") }
+                    elseif (($failureOutcome -eq 'passed' -and -not [bool]$acceptanceProperty.Value) -or ($failureOutcome -ne 'passed' -and [bool]$acceptanceProperty.Value)) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case acceptancePassed does not reconcile with outcome '$failureOutcome'.") }
                     foreach ($identityField in @('contextId', 'worktreeId')) {
                         $identityProperty = $failureRecord.PSObject.Properties[$identityField]
                         if ($null -eq $identityProperty -or [string]::IsNullOrWhiteSpace([string]$identityProperty.Value)) {
