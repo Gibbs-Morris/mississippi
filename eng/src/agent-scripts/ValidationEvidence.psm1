@@ -20,6 +20,12 @@ function Get-ValidationRelativePath {
     return $relative
 }
 
+function Test-ValidationZeroTestFacadeArtifact {
+    param([Parameter(Mandatory)][string]$Path)
+
+    return $Path.Replace('\', '/') -match '(?i)(?:^|/)Sdk\.(?:Client|Gateway|Runtime)\.L0Tests(?:/|/[^/]*\.trx$)'
+}
+
 function Get-ValidationSourceFingerprint { # NOSONAR - source evidence fingerprinting intentionally coordinates Git state and bounded file hashing.
     [CmdletBinding()]
     param(
@@ -265,7 +271,7 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
                         if ($null -eq $counter -or [string]$counter.Value -notmatch '^\d+$') { throw "TRX document has no nonnegative $counterName counter." }
                     }
                     $executed = [int64]$counters.executed
-                    if ($executed -lt 1) { throw 'TRX document must report a nonzero executed counter.' }
+                    if ($executed -lt 1 -and -not (Test-ValidationZeroTestFacadeArtifact -Path $metadataPath)) { throw 'TRX document must report a nonzero executed counter.' }
                     $trxExecutedTotal += $executed
                     $trxFailedTotal += [int64]$counters.failed
                 }
