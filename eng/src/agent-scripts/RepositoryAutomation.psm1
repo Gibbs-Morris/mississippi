@@ -556,7 +556,7 @@ function Assert-RepositoryExecutionLeaseNotHeldByCurrentProcess {
     catch { return }
     if ($null -eq $owner -or [string]$owner.processId -ne [string]$PID) { return }
     if ($SharedLease) {
-        throw 'Shared coordination file is already held in this process. Use separate coordination directories for concurrent worktrees.'
+        throw 'Shared coordination file is already held in this process; repository execution lease is already held. Use separate coordination directories for concurrent worktrees.'
     }
     throw "Repository execution lease is already held in this process for '$Path'. Use -ExistingLease for supported reentrancy."
 }
