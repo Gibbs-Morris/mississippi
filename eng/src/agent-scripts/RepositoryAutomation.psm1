@@ -51,7 +51,8 @@ function Acquire-SharedRepositoryExecutionLeaseStream {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Path)
 
-    $key = if ($IsWindows) { $Path.ToLowerInvariant() } else { $Path }
+    $key = (Get-Item -LiteralPath $Path -Force -ErrorAction Stop).FullName
+    if ($IsWindows) { $key = $key.ToLowerInvariant() }
     [System.Threading.Monitor]::Enter($sharedExecutionLeaseStreamGate)
     try {
         if ($sharedExecutionLeaseStreamStates.ContainsKey($key)) {
