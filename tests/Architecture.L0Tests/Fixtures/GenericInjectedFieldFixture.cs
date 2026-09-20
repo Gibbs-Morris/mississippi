@@ -9,7 +9,10 @@ internal sealed class GenericInjectedFieldFixture<TClock>
 
     /// <summary>Initializes a new instance of the <see cref="GenericInjectedFieldFixture{TClock}" /> class.</summary>
     /// <param name="clock">Constrained dependency stored by the fixture.</param>
-    public GenericInjectedFieldFixture(TClock clock) => this.clock = clock;
+    public GenericInjectedFieldFixture(
+        TClock clock
+    ) =>
+        this.clock = clock;
 
     /// <summary>Reads the dependency so the fixture remains executable.</summary>
     /// <returns>The captured dependency.</returns>

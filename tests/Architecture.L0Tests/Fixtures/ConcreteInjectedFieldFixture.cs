@@ -7,7 +7,10 @@ internal sealed class ConcreteInjectedFieldFixture
 
     /// <summary>Initializes a new instance of the <see cref="ConcreteInjectedFieldFixture" /> class.</summary>
     /// <param name="dependency">The concrete collaborator stored by the fixture.</param>
-    public ConcreteInjectedFieldFixture(ConcreteInjectedDependency dependency) => this.dependency = dependency;
+    public ConcreteInjectedFieldFixture(
+        ConcreteInjectedDependency dependency
+    ) =>
+        this.dependency = dependency;
 
     /// <summary>Reads the collaborator so the fixture remains executable.</summary>
     /// <returns>The dependency value.</returns>

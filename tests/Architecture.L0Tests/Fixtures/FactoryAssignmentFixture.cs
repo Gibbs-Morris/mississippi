@@ -5,22 +5,26 @@ internal sealed class FactoryAssignmentFixture
 {
     private readonly IClockFixture clock;
 
-    /// <summary>Initializes a new instance of the <see cref="FactoryAssignmentFixture"/> class.</summary>
+    /// <summary>Initializes a new instance of the <see cref="FactoryAssignmentFixture" /> class.</summary>
     /// <param name="candidate">Candidate dependency used for validation only.</param>
-    public FactoryAssignmentFixture(IClockFixture candidate)
+    public FactoryAssignmentFixture(
+        IClockFixture candidate
+    )
     {
         Validate(candidate);
         clock = GetDefault();
     }
 
-    /// <summary>Returns the factory-assigned value.</summary>
-    /// <returns>The default dependency.</returns>
-    public IClockFixture GetClock() => clock;
+    private static IClockFixture GetDefault() => null!;
 
-    private static void Validate(IClockFixture candidate)
+    private static void Validate(
+        IClockFixture candidate
+    )
     {
         _ = candidate;
     }
 
-    private static IClockFixture GetDefault() => null!;
+    /// <summary>Returns the factory-assigned value.</summary>
+    /// <returns>The default dependency.</returns>
+    public IClockFixture GetClock() => clock;
 }

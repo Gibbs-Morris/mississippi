@@ -21,17 +21,23 @@ namespace Mississippi.Architecture.L0Tests;
     Justification = "xUnit requires public test classes")]
 public abstract class ArchitectureTestBase
 {
-    /// <summary>
-    ///     Gets the loaded Mississippi assemblies used by reflection-backed architecture diagnostics.
-    /// </summary>
-    protected static IReadOnlyList<Assembly> MississippiAssemblies { get; } = GetMississippiAssemblies();
+    static ArchitectureTestBase()
+    {
+        MississippiAssemblies = GetMississippiAssemblies();
+        ArchitectureModel = new ArchLoader()
+            .LoadAssemblies(MississippiAssemblies.ToArray())
+            .Build();
+    }
 
     /// <summary>
     ///     Gets the cached architecture model containing all Mississippi assemblies.
     /// </summary>
-    protected static ArchUnitArchitecture ArchitectureModel { get; } = new ArchLoader()
-        .LoadAssemblies(MississippiAssemblies.ToArray())
-        .Build();
+    protected static ArchUnitArchitecture ArchitectureModel { get; }
+
+    /// <summary>
+    ///     Gets the loaded Mississippi assemblies used by reflection-backed architecture diagnostics.
+    /// </summary>
+    protected static IReadOnlyList<Assembly> MississippiAssemblies { get; }
 
     /// <summary>
     ///     Loads assembly candidates using the runtime assembly loader.

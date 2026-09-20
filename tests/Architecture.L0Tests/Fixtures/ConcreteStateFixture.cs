@@ -7,7 +7,10 @@ internal sealed class ConcreteStateFixture
 
     /// <summary>Initializes a new instance of the <see cref="ConcreteStateFixture" /> class.</summary>
     /// <param name="state">Ordinary concrete state.</param>
-    public ConcreteStateFixture(ConcreteState state) => this.state = state;
+    public ConcreteStateFixture(
+        ConcreteState state
+    ) =>
+        this.state = state;
 
     /// <summary>Reads the state so the fixture remains executable.</summary>
     /// <returns>The state value.</returns>

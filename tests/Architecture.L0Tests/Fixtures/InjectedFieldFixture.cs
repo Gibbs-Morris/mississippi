@@ -5,9 +5,12 @@ internal sealed class InjectedFieldFixture
 {
     private readonly IClockFixture clock;
 
-    /// <summary>Initializes a new instance of the <see cref="InjectedFieldFixture"/> class.</summary>
+    /// <summary>Initializes a new instance of the <see cref="InjectedFieldFixture" /> class.</summary>
     /// <param name="clock">Dependency captured by the negative fixture.</param>
-    public InjectedFieldFixture(IClockFixture clock) => this.clock = clock;
+    public InjectedFieldFixture(
+        IClockFixture clock
+    ) =>
+        this.clock = clock;
 
     /// <summary>Reads the dependency so the fixture remains executable.</summary>
     /// <returns>The captured dependency.</returns>

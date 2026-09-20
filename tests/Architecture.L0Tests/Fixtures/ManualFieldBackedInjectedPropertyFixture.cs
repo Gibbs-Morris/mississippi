@@ -7,7 +7,10 @@ internal sealed class ManualFieldBackedInjectedPropertyFixture
 
     /// <summary>Initializes a new instance of the <see cref="ManualFieldBackedInjectedPropertyFixture" /> class.</summary>
     /// <param name="clock">Dependency stored through the manual property setter.</param>
-    public ManualFieldBackedInjectedPropertyFixture(IClockFixture clock) => Clock = clock;
+    public ManualFieldBackedInjectedPropertyFixture(
+        IClockFixture clock
+    ) =>
+        Clock = clock;
 
     /// <summary>Gets or sets the injected dependency through a normal backing field.</summary>
     internal IClockFixture Clock

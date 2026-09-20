@@ -1,5 +1,6 @@
 using System;
 
+
 namespace Mississippi.Architecture.L0Tests.Fixtures;
 
 /// <summary>
@@ -13,13 +14,13 @@ internal sealed class WrappedInjectedFieldFixture
     private readonly Lazy<IClockFixture> clock;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="WrappedInjectedFieldFixture"/> class.
+    ///     Initializes a new instance of the <see cref="WrappedInjectedFieldFixture" /> class.
     /// </summary>
     /// <param name="clock">Wrapped clock dependency.</param>
-    public WrappedInjectedFieldFixture(Lazy<IClockFixture> clock)
-    {
+    public WrappedInjectedFieldFixture(
+        Lazy<IClockFixture> clock
+    ) =>
         this.clock = clock;
-    }
 
     /// <summary>
     ///     Gets the wrapped clock.
