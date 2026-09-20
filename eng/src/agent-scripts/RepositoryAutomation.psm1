@@ -31,10 +31,28 @@ function Set-RepositoryExecutionLeaseUnixMode {
 
     try {
         [System.IO.File]::SetUnixFileMode($Path, $Mode)
-        $actualMode = [System.IO.File]::GetUnixFileMode($Path)
     }
     catch {
         throw "Unable to set shared execution lease permissions on '$Path': $($_.Exception.Message)"
+    }
+
+    Test-RepositoryExecutionLeaseUnixMode -Path $Path -Mode $Mode
+}
+
+function Test-RepositoryExecutionLeaseUnixMode {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][System.IO.UnixFileMode]$Mode
+    )
+
+    if ($IsWindows) { return }
+
+    try {
+        $actualMode = [System.IO.File]::GetUnixFileMode($Path)
+    }
+    catch {
+        throw "Unable to inspect shared execution lease permissions on '$Path': $($_.Exception.Message)"
     }
 
     if (([int]$actualMode -band [int]$Mode) -ne [int]$Mode) {
@@ -104,6 +122,7 @@ function Get-RepositoryExecutionLeasePathForRoot {
     $fileName = (($hash | ForEach-Object { $_.ToString('x2') }) -join '') + '.lease'
     $sharedLease = $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true'
     $leaseDirectory = if ([string]::IsNullOrWhiteSpace($LeaseDirectory)) { Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases' } else { [System.IO.Path]::GetFullPath($LeaseDirectory) }
+    $leaseDirectoryCreated = $false
     if (Test-Path -LiteralPath $leaseDirectory) {
         $leaseItem = Get-Item -LiteralPath $leaseDirectory -Force -ErrorAction Stop
         if (-not $leaseItem.PSIsContainer -or [bool]($leaseItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
@@ -112,9 +131,15 @@ function Get-RepositoryExecutionLeasePathForRoot {
     }
     else {
         New-Item -ItemType Directory -Path $leaseDirectory -Force | Out-Null
+        $leaseDirectoryCreated = $true
     }
     if ($sharedLease) {
-        Set-RepositoryExecutionLeaseUnixMode -Path $leaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
+        if ($leaseDirectoryCreated) {
+            Set-RepositoryExecutionLeaseUnixMode -Path $leaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
+        }
+        else {
+            Test-RepositoryExecutionLeaseUnixMode -Path $leaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
+        }
     }
     return Join-Path $leaseDirectory $fileName
 }
@@ -217,7 +242,8 @@ function Enter-RepositoryExecutionLease {
     }
     $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
     $leasePath = Get-RepositoryExecutionLeasePathForRoot -CanonicalRepoRoot $canonicalRoot -LeaseDirectory $LeaseDirectory
-    if (Test-Path -LiteralPath $leasePath) {
+    $leaseFileExists = Test-Path -LiteralPath $leasePath
+    if ($leaseFileExists) {
         $leaseItem = Get-Item -LiteralPath $leasePath -Force -ErrorAction Stop
         if ($leaseItem.PSIsContainer -or [bool]($leaseItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
             throw "Lease path is not a regular file: '$leasePath'."
@@ -232,15 +258,39 @@ function Enter-RepositoryExecutionLease {
 
     $sharedLease = $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true'
     $stream = $null
+    $leaseFileCreated = $false
     try {
-        $streamOptions = [System.IO.FileStreamOptions]::new()
-        $streamOptions.Mode = [System.IO.FileMode]::OpenOrCreate
-        $streamOptions.Access = [System.IO.FileAccess]::ReadWrite
-        $streamOptions.Share = [System.IO.FileShare]::Read
-        if ($sharedLease) { $streamOptions.UnixCreateMode = $sharedExecutionLeaseFileMode }
-        $stream = [System.IO.FileStream]::new($leasePath, $streamOptions)
+        if ($sharedLease -and -not $IsWindows -and -not $leaseFileExists) {
+            $createOptions = [System.IO.FileStreamOptions]::new()
+            $createOptions.Mode = [System.IO.FileMode]::CreateNew
+            $createOptions.Access = [System.IO.FileAccess]::ReadWrite
+            $createOptions.Share = [System.IO.FileShare]::Read
+            $createOptions.UnixCreateMode = $sharedExecutionLeaseFileMode
+            try {
+                $stream = [System.IO.FileStream]::new($leasePath, $createOptions)
+                $leaseFileCreated = $true
+            }
+            catch [System.IO.IOException] {
+                if (-not (Test-Path -LiteralPath $leasePath)) { throw }
+            }
+        }
+
+        if ($null -eq $stream) {
+            $streamOptions = [System.IO.FileStreamOptions]::new()
+            $streamOptions.Mode = [System.IO.FileMode]::OpenOrCreate
+            $streamOptions.Access = [System.IO.FileAccess]::ReadWrite
+            $streamOptions.Share = [System.IO.FileShare]::Read
+            if ($sharedLease -and -not $IsWindows) { $streamOptions.UnixCreateMode = $sharedExecutionLeaseFileMode }
+            $stream = [System.IO.FileStream]::new($leasePath, $streamOptions)
+        }
+
         if ($sharedLease) {
-            Set-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $sharedExecutionLeaseFileMode
+            if ($leaseFileCreated) {
+                Set-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $sharedExecutionLeaseFileMode
+            }
+            else {
+                Test-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $sharedExecutionLeaseFileMode
+            }
         }
     }
     catch [System.UnauthorizedAccessException] {
