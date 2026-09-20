@@ -84,6 +84,7 @@ project.fragment.lock.json
 artifacts/
 .tools/npm-global/
 .tools/dotnet-home/
+.tools/activate-*.ps1
 
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt

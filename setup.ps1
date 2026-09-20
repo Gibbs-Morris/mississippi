@@ -114,11 +114,13 @@ try {
     }
     if ($PlanOnly) { exit 0 }
 
-    $env:DOTNET_CLI_HOME = Join-Path $root '.tools/dotnet-home'
-    New-Item -ItemType Directory -Path $env:DOTNET_CLI_HOME -Force | Out-Null
-    if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_ENV)) { Add-Content -LiteralPath $env:GITHUB_ENV -Value "DOTNET_CLI_HOME=$($env:DOTNET_CLI_HOME)" }
-    $dotnetActivationPath = Join-Path $root '.tools/activate-dotnet-home.ps1'
-    Set-Content -LiteralPath $dotnetActivationPath -Value ("`$env:DOTNET_CLI_HOME = '$($env:DOTNET_CLI_HOME.Replace("'", "''"))'") -Encoding utf8
+    if ($plan.Profiles -contains 'Core') {
+        $env:DOTNET_CLI_HOME = Join-Path $root '.tools/dotnet-home'
+        New-Item -ItemType Directory -Path $env:DOTNET_CLI_HOME -Force | Out-Null
+        if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_ENV)) { Add-Content -LiteralPath $env:GITHUB_ENV -Value "DOTNET_CLI_HOME=$($env:DOTNET_CLI_HOME)" }
+        $dotnetActivationPath = Join-Path $root '.tools/activate-dotnet-home.ps1'
+        Set-Content -LiteralPath $dotnetActivationPath -Value ("`$env:DOTNET_CLI_HOME = '$($env:DOTNET_CLI_HOME.Replace("'", "''"))'") -Encoding utf8
+    }
     Import-Module (Join-Path $root 'eng/src/agent-scripts/AgentDoctor.psm1') -Force
     $executedSteps = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     foreach ($selectedProfile in @($plan.Profiles)) {

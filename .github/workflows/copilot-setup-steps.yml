@@ -7,11 +7,15 @@ on:
       - .github/workflows/copilot-setup-steps.yml
       - setup.ps1
       - eng/src/agent-scripts/AgentDoctor.psm1
+      - eng/setup/markdownlint/package.json
+      - eng/setup/markdownlint/package-lock.json
   pull_request:
     paths:
       - .github/workflows/copilot-setup-steps.yml
       - setup.ps1
       - eng/src/agent-scripts/AgentDoctor.psm1
+      - eng/setup/markdownlint/package.json
+      - eng/setup/markdownlint/package-lock.json
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

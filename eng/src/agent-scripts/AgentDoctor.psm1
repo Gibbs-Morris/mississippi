@@ -396,8 +396,8 @@ function Get-AgentDoctorReport { # NOSONAR - top-level doctor assembly coordinat
                     }
                 }
             }
-            $toolState = if ($restoreMarkerValid) { 'ready' } elseif ($hasMissingTool) { 'missing' } elseif ($hasUnknownTool) { 'unknown' } else { 'ready' }
-            $toolDetails = if ($restoreMarkerValid) { "dotnet tool restore completed for the current manifest; resolver metadata is bound to the setup CLI home." } elseif ($toolFailures.Count -eq 0) { "Verified $(@($toolData.tools.PSObject.Properties).Count) local tool resolver records and executable paths without running tool code." } else { $toolFailures -join '; ' }
+            $toolState = if ($resolverCacheState -eq 'missing' -and $restoreMarkerValid) { 'ready' } elseif ($hasMissingTool) { 'missing' } elseif ($hasUnknownTool) { 'unknown' } else { 'ready' }
+            $toolDetails = if ($resolverCacheState -eq 'missing' -and $restoreMarkerValid) { "dotnet tool restore completed for the current manifest; resolver metadata is bound to the setup CLI home." } elseif ($toolFailures.Count -eq 0) { "Verified $(@($toolData.tools.PSObject.Properties).Count) local tool resolver records and executable paths without running tool code." } else { $toolFailures -join '; ' }
             Add-DoctorCheck -Checks $checks -Name 'dotnet-tools' -State $toolState -Required $true -Details $toolDetails -Remediation $(if ($toolState -eq 'ready') { '' } else { 'Run dotnet tool restore from the repository root and retry the doctor.' })
         }
 
