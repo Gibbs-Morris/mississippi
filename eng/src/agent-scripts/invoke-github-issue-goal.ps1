@@ -46,6 +46,13 @@ function Get-GoalTextFingerprint {
     return 'SHA256:' + (($hash | ForEach-Object { $_.ToString('x2') }) -join '')
 }
 
+function Get-GoalWorktreeIdentity {
+    param([Parameter(Mandatory)][string]$Root)
+    $canonicalRoot = [System.IO.Path]::GetFullPath($Root).TrimEnd('\', '/')
+    if ($env:OS -eq 'Windows_NT') { $canonicalRoot = $canonicalRoot.ToUpperInvariant() }
+    return Get-GoalTextFingerprint -Text $canonicalRoot
+}
+
 function Get-GoalSubmoduleFingerprint {
     param(
         [Parameter(Mandatory)][string]$Root,
@@ -78,8 +85,12 @@ function Get-GoalSubmoduleFingerprint {
         }
         elseif ($null -ne $item -and -not $item.PSIsContainer) {
             $modeEvidence = 'regular'
-            $unixMode = $item.PSObject.Properties['UnixFileMode']
-            if ($null -ne $unixMode) { $modeEvidence = [string]$unixMode.Value }
+            if ($env:OS -ne 'Windows_NT') {
+                $unixMode = $item.PSObject.Properties['UnixFileMode']
+                if ($null -ne $unixMode) { $modeEvidence = [string]$unixMode.Value }
+            }
+            $modeChanges = @(& git -c "safe.directory=$safeRoot" -C $FullPath diff --summary -- ([string]$submodulePath) 2>$null)
+            if ($modeChanges.Count -gt 0) { $modeEvidence = ($modeChanges -join '|') }
             $pathEntries.Add(([string]$submodulePath).Replace('\', '/') + ':mode=' + $modeEvidence + ':sha256=' + (Get-FileHash -LiteralPath $submoduleFullPath -Algorithm SHA256).Hash.ToLowerInvariant())
         }
         else {
@@ -198,8 +209,10 @@ function Get-GoalWorktreeFingerprint { # NOSONAR - bounded Git/index/worktree fi
             }
             elseif ($null -ne $item -and -not $item.PSIsContainer) {
                 $modeEvidence = 'regular'
-                $unixMode = $item.PSObject.Properties['UnixFileMode']
-                if ($null -ne $unixMode) { $modeEvidence = [string]$unixMode.Value }
+                if ($env:OS -ne 'Windows_NT') {
+                    $unixMode = $item.PSObject.Properties['UnixFileMode']
+                    if ($null -ne $unixMode) { $modeEvidence = [string]$unixMode.Value }
+                }
                 $modeChanges = @(& git -c "safe.directory=$($Root.Replace('\', '/'))" -C $Root diff --summary -- $relative 2>$null)
                 if ($modeChanges.Count -gt 0) { $modeEvidence = ($modeChanges -join '|') }
                 $fileHashes.Add($relative + ':index=' + $indexHash + ':mode=' + $modeEvidence + ':worktree=' + (Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant())
@@ -261,7 +274,8 @@ function Get-GoalCheckpointPath {
         if ([string]::IsNullOrWhiteSpace($userHome)) { throw 'Unable to resolve a persistent user state directory for the goal checkpoint.' }
         Join-Path $userHome '.local/state/mississippi'
     }
-    return [System.IO.Path]::GetFullPath((Join-Path $stateRoot "goals/$repositoryKey/$Number/checkpoint.json"))
+    $worktreeKey = (Get-GoalWorktreeIdentity -Root $Root).Substring(7)
+    return [System.IO.Path]::GetFullPath((Join-Path $stateRoot "goals/$repositoryKey/$worktreeKey/$Number/checkpoint.json"))
 }
 
 function Get-GoalCollection {
