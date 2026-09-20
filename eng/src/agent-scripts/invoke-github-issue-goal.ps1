@@ -53,9 +53,36 @@ function Get-GoalWorktreeIdentity {
     return Get-GoalTextFingerprint -Text $canonicalRoot
 }
 
+function Get-GoalSubmodulePathFingerprint {
+    param(
+        [Parameter(Mandatory)][string]$FullPath,
+        [Parameter(Mandatory)][string]$SubmodulePath
+    )
+
+    $submoduleFullPath = [System.IO.Path]::GetFullPath((Join-Path $FullPath $SubmodulePath.Replace('/', [System.IO.Path]::DirectorySeparatorChar)))
+    $item = Get-Item -LiteralPath $submoduleFullPath -Force -ErrorAction SilentlyContinue
+    $normalizedPath = $SubmodulePath.Replace('\', '/')
+    if ($null -eq $item -or $item.PSIsContainer) { return $normalizedPath + ':missing' }
+    if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+        $linkTargetProperty = $item.PSObject.Properties['LinkTarget']
+        $linkTarget = if ($null -ne $linkTargetProperty) { [string]$linkTargetProperty.Value } else { '' }
+        if ([string]::IsNullOrWhiteSpace($linkTarget) -and $null -ne $item.PSObject.Properties['Target']) { $linkTarget = [string]$item.Target }
+        return $normalizedPath + ':symlink=' + $linkTarget
+    }
+
+    $modeEvidence = 'regular'
+    if ($env:OS -ne 'Windows_NT') {
+        $unixMode = $item.PSObject.Properties['UnixFileMode']
+        if ($null -ne $unixMode) { $modeEvidence = [string]$unixMode.Value }
+    }
+    $safeRoot = $FullPath.Replace('\', '/')
+    $modeChanges = @(& git -c "safe.directory=$safeRoot" -C $FullPath diff --summary -- $SubmodulePath 2>$null)
+    if ($modeChanges.Count -gt 0) { $modeEvidence = ($modeChanges -join '|') }
+    return $normalizedPath + ':mode=' + $modeEvidence + ':sha256=' + (Get-FileHash -LiteralPath $submoduleFullPath -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
 function Get-GoalSubmoduleFingerprint {
     param(
-        [Parameter(Mandatory)][string]$Root,
         [Parameter(Mandatory)][string]$FullPath,
         [Parameter(Mandatory)][string]$Relative,
         [Parameter(Mandatory)][string]$ParentIndexHash
@@ -73,29 +100,7 @@ function Get-GoalSubmoduleFingerprint {
 
     $pathEntries = [System.Collections.Generic.List[string]]::new()
     foreach ($submodulePath in @($pathsRaw -split [char]0 | Where-Object { -not [string]::IsNullOrEmpty($_) } | Sort-Object)) {
-        $submoduleFullPath = [System.IO.Path]::GetFullPath((Join-Path $FullPath ([string]$submodulePath).Replace('/', [System.IO.Path]::DirectorySeparatorChar)))
-        $item = Get-Item -LiteralPath $submoduleFullPath -Force -ErrorAction SilentlyContinue
-        if ($null -ne $item -and (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0)) {
-            $linkTargetProperty = $item.PSObject.Properties['LinkTarget']
-            $linkTarget = if ($null -ne $linkTargetProperty) { [string]$linkTargetProperty.Value } else { '' }
-            if ([string]::IsNullOrWhiteSpace($linkTarget) -and $null -ne $item.PSObject.Properties['Target']) {
-                $linkTarget = [string]$item.Target
-            }
-            $pathEntries.Add(([string]$submodulePath).Replace('\', '/') + ':symlink=' + $linkTarget)
-        }
-        elseif ($null -ne $item -and -not $item.PSIsContainer) {
-            $modeEvidence = 'regular'
-            if ($env:OS -ne 'Windows_NT') {
-                $unixMode = $item.PSObject.Properties['UnixFileMode']
-                if ($null -ne $unixMode) { $modeEvidence = [string]$unixMode.Value }
-            }
-            $modeChanges = @(& git -c "safe.directory=$safeRoot" -C $FullPath diff --summary -- ([string]$submodulePath) 2>$null)
-            if ($modeChanges.Count -gt 0) { $modeEvidence = ($modeChanges -join '|') }
-            $pathEntries.Add(([string]$submodulePath).Replace('\', '/') + ':mode=' + $modeEvidence + ':sha256=' + (Get-FileHash -LiteralPath $submoduleFullPath -Algorithm SHA256).Hash.ToLowerInvariant())
-        }
-        else {
-            $pathEntries.Add(([string]$submodulePath).Replace('\', '/') + ':missing')
-        }
+        $pathEntries.Add((Get-GoalSubmodulePathFingerprint -FullPath $FullPath -SubmodulePath ([string]$submodulePath)))
     }
 
     return @(
@@ -193,7 +198,7 @@ function Get-GoalWorktreeFingerprint { # NOSONAR - bounded Git/index/worktree fi
             $indexHash = if ($indexHashes.ContainsKey($relative)) { [string]$indexHashes[$relative] } else { 'absent' }
             if ($indexModes.ContainsKey($relative) -and [string]$indexModes[$relative] -eq '160000') {
                 if (Test-Path -LiteralPath $full -PathType Container) {
-                    $fileHashes.Add($relative + ':submodule=' + (Get-GoalSubmoduleFingerprint -Root $Root -FullPath $full -Relative $relative -ParentIndexHash $indexHash))
+                    $fileHashes.Add($relative + ':submodule=' + (Get-GoalSubmoduleFingerprint -FullPath $full -Relative $relative -ParentIndexHash $indexHash))
                 }
                 else { $fileHashes.Add($relative + ':index=' + $indexHash + ':submodule=missing') }
                 continue
