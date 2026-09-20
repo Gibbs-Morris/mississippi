@@ -63,6 +63,20 @@ function Resolve-ValidationContainedPath {
         }
     }
 
+    for ($linkDepth = 0; $linkDepth -lt 40; $linkDepth++) {
+        $resolvedItem = Get-Item -LiteralPath $resolved -Force -ErrorAction SilentlyContinue
+        if ($null -eq $resolvedItem -or (($resolvedItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -eq 0)) { break }
+        $linkTarget = Get-ValidationLinkTarget -Item $resolvedItem
+        if ([string]::IsNullOrWhiteSpace($linkTarget)) { return $null }
+        $resolved = if ([System.IO.Path]::IsPathRooted($linkTarget)) {
+            [System.IO.Path]::GetFullPath($linkTarget)
+        }
+        else {
+            [System.IO.Path]::GetFullPath((Join-Path (Split-Path -Parent $resolved) $linkTarget))
+        }
+        if ($linkDepth -eq 39) { return $null }
+    }
+
     $rootWithSeparator = $root.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
     $pathComparison = if ($env:OS -eq 'Windows_NT') { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
     if (-not $resolved.Equals($root, $pathComparison) -and
@@ -136,6 +150,10 @@ function Get-ValidationSourceFingerprint { # NOSONAR - source evidence fingerpri
     $files = [System.Collections.Generic.List[object]]::new()
     foreach ($relative in @($paths | Sort-Object)) {
         $fullPath = Join-Path $root ($relative.Replace('/', [System.IO.Path]::DirectorySeparatorChar))
+        if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
+            $files.Add([pscustomobject]@{ Path = $relative; SHA256 = 'MISSING' })
+            continue
+        }
         $resolvedPaths = @(Resolve-ValidationContainedPath -RepositoryRoot $root -Path $relative -ReturnResolvedPath | ForEach-Object { [string]$_ })
         if ($resolvedPaths.Count -ne 1 -or [string]::IsNullOrWhiteSpace(($resolvedPaths -join ''))) { throw "Source input escapes the verification root: '$relative'." }
         $sourceItem = Get-Item -LiteralPath $fullPath -Force -ErrorAction Stop
@@ -191,6 +209,7 @@ function New-ValidationEvidenceRun {
         BaseRevision = $BaseRevision
         HeadRevision = $before.Revision
         Arguments = @($Arguments)
+        InputPath = @($InputPath)
         ToolVersions = [ordered]@{ PowerShell = [string]$PSVersionTable.PSVersion }
         SourceBefore = $before
         SourceAfter = $null
@@ -287,7 +306,7 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
     $errors = [System.Collections.Generic.List[string]]::new()
     try { $record = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json }
     catch { return [pscustomobject]@{ Valid = $false; Fresh = $false; Errors = @('Evidence is missing or unreadable.'); Record = $null } }
-    $requiredProperties = @('SchemaVersion', 'Status', 'RepositoryRoot', 'SourceBefore', 'SourceAfter', 'Executed', 'TestCount', 'ExitCode', 'SourceChangedDuringRun', 'Artifacts', 'ArtifactMetadata')
+    $requiredProperties = @('SchemaVersion', 'Status', 'RepositoryRoot', 'InputPath', 'SourceBefore', 'SourceAfter', 'Executed', 'TestCount', 'ExitCode', 'SourceChangedDuringRun', 'Artifacts', 'ArtifactMetadata')
     foreach ($property in $requiredProperties) {
         if ($null -eq $record.PSObject.Properties[$property]) { $errors.Add("Evidence is missing required field '$property'.") }
     }
@@ -406,7 +425,7 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
     }
     if ([string]$record.Status -eq 'PASS' -and $trxFailedTotal -gt 0) { $errors.Add('PASS evidence contains failed TRX tests.') }
     try {
-        $current = Get-ValidationSourceFingerprint -RepositoryRoot $verificationRoot -InputPath @($record.SourceBefore.Files.Path)
+        $current = Get-ValidationSourceFingerprint -RepositoryRoot $verificationRoot -InputPath @($record.InputPath)
         $fresh = $null -ne $record.SourceAfter -and [string]$record.SourceAfter.Fingerprint -eq [string]$current.Fingerprint
     }
     catch { $fresh = $false; $errors.Add('Current source fingerprint could not be collected.') }

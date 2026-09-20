@@ -217,18 +217,25 @@ try {
     if ($null -ne $relativeSourceProjectPath) { $SourceProject = Join-Path $executionLease.RepositoryRoot $relativeSourceProjectPath }
     $evidenceInputPaths = [System.Collections.Generic.List[string]]::new()
     $evidenceProjectPaths = [System.Collections.Generic.List[string]]::new()
-    $evidenceProjectPaths.Add($testProjectPath)
-    if (-not [string]::IsNullOrWhiteSpace($SourceProject)) { $evidenceProjectPaths.Add($SourceProject) }
-    try {
-        [xml]$testProjectXml = Get-Content -LiteralPath $testProjectPath -Raw
-        foreach ($reference in @($testProjectXml.Project.ItemGroup.ProjectReference)) {
-            if ($null -ne $reference.Include) {
-                $referencePath = (Resolve-Path -LiteralPath (Join-Path (Split-Path -Parent $testProjectPath) ([string]$reference.Include)) -ErrorAction Stop).Path
-                $evidenceProjectPaths.Add($referencePath)
+    $projectQueue = [System.Collections.Generic.Queue[string]]::new()
+    $visitedProjects = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $projectQueue.Enqueue($testProjectPath)
+    if (-not [string]::IsNullOrWhiteSpace($SourceProject)) { $projectQueue.Enqueue($SourceProject) }
+    while ($projectQueue.Count -gt 0) {
+        $projectPath = $projectQueue.Dequeue()
+        if (-not $visitedProjects.Add($projectPath)) { continue }
+        $evidenceProjectPaths.Add($projectPath)
+        try {
+            [xml]$projectXml = Get-Content -LiteralPath $projectPath -Raw
+            foreach ($reference in @($projectXml.Project.ItemGroup.ProjectReference)) {
+                if ($null -ne $reference.Include) {
+                    $referencePath = (Resolve-Path -LiteralPath (Join-Path (Split-Path -Parent $projectPath) ([string]$reference.Include)) -ErrorAction Stop).Path
+                    $projectQueue.Enqueue($referencePath)
+                }
             }
         }
+        catch { Write-Verbose "Unable to enumerate focused project references for '$projectPath': $($_.Exception.Message)" }
     }
-    catch { Write-Verbose "Unable to enumerate focused project references for evidence: $($_.Exception.Message)" }
     $sharedInputNames = @('Directory.Build.props', 'Directory.Build.targets', 'Directory.Packages.props', 'global.json', 'NuGet.config', 'nuget.config', 'testconfig.json')
     $ancestorDirectory = Split-Path -Parent $testProjectPath
     while ($ancestorDirectory -and $ancestorDirectory.StartsWith($repoRoot, [StringComparison]::OrdinalIgnoreCase)) {
