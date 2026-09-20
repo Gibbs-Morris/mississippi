@@ -49,6 +49,7 @@ Describe 'Issue-driven goal workflow' {
                 state = 'open'
                 body = $Body
                 html_url = $Url
+                repository_url = 'https://api.github.com/repos/Gibbs-Morris/mississippi'
             } | ConvertTo-Json -Depth 6 -Compress
             if ($null -ne $Comments) {
                 $issue = [ordered]@{
@@ -57,6 +58,7 @@ Describe 'Issue-driven goal workflow' {
                     state = 'open'
                     body = $Body
                     html_url = $Url
+                    repository_url = 'https://api.github.com/repos/Gibbs-Morris/mississippi'
                     comments = $Comments
                 } | ConvertTo-Json -Depth 6 -Compress
             }

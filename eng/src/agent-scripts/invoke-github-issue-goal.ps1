@@ -452,7 +452,7 @@ try {
     if ([int]$issue.number -ne $IssueNumber) { throw "Issue identity mismatch: expected #$IssueNumber." }
     $expectedRepository = "$RepositoryOwner/$RepositoryName"
     $expectedIssuePath = '^/' + [regex]::Escape($RepositoryOwner) + '/' + [regex]::Escape($RepositoryName) + '/issues/' + $IssueNumber + '/?$'
-    $expectedRepositoryPath = '^/' + [regex]::Escape($RepositoryOwner) + '/' + [regex]::Escape($RepositoryName) + '/?$'
+    $expectedRepositoryPath = '^/repos/' + [regex]::Escape($RepositoryOwner) + '/' + [regex]::Escape($RepositoryName) + '/?$'
     if ($null -ne $issue.PSObject.Properties['html_url'] -and -not (Test-GoalCanonicalHttpsUrl -Url ([string]$issue.html_url) -ExpectedHost 'github.com' -PathPattern $expectedIssuePath)) {
         throw "Issue repository mismatch: expected '$expectedRepository'."
     }
