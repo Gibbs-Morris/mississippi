@@ -45,9 +45,11 @@ try {
     $errors = [System.Collections.Generic.List[string]]::new()
     if ([string]$pack.schemaVersion -ne '1.0' -or [string]$results.schemaVersion -ne '1.0') { $errors.Add('Scenario and result schemas must both be version 1.0.') }
     if ([string]$pack.packId -ne [string]$results.packId) { $errors.Add('Results refer to a different scenario pack.') }
+    if ([string]$results.mode -notin @('initial-baseline', 'authorized-live')) { $errors.Add("Results mode '$($results.mode)' is not supported.") }
     if ([string]::IsNullOrWhiteSpace([string]$results.sourceRevision)) { $errors.Add('Results must identify the source revision.') }
     if ([string]$results.sourceRevision -ne 'record-at-evaluation-run' -and [string]$results.sourceRevision -notmatch '^[0-9a-fA-F]{7,64}$') { $errors.Add('Results sourceRevision must be an immutable commit identifier or the initial-baseline sentinel.') }
     if ([string]$results.mode -ne 'initial-baseline' -and [string]$results.sourceRevision -eq 'record-at-evaluation-run') { $errors.Add('Live results cannot use the initial-baseline sourceRevision sentinel.') }
+    if ([string]$results.mode -eq 'initial-baseline' -and [string]$results.sourceRevision -ne 'record-at-evaluation-run') { $errors.Add('Initial-baseline results must use the record-at-evaluation-run sourceRevision sentinel.') }
     if ([string]$results.sourceRevision -match '^[0-9a-fA-F]{7,64}$') {
         $repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../../..')).Path
         $resolvedRevision = @(& git -c "safe.directory=$($repositoryRoot.Replace('\', '/'))" -C $repositoryRoot rev-parse --verify ("$($results.sourceRevision)^{commit}") 2>$null)
@@ -129,7 +131,8 @@ try {
         $hostResult = @($results.hosts | Where-Object host -EQ $hostName)[0]
         if ($null -eq $hostResult) { $errors.Add("Missing primary host result: $hostName."); continue }
         foreach ($property in @('configuredModel', 'acceptedModel', 'activeModel')) {
-            if ($null -eq $hostResult.PSObject.Properties[$property] -or [string]::IsNullOrWhiteSpace([string]$hostResult.$property)) { $errors.Add("Host '$hostName' is missing $property evidence.") }
+            $modelProperty = $hostResult.PSObject.Properties[$property]
+            if ($null -eq $modelProperty -or $modelProperty.Value -isnot [string] -or [string]::IsNullOrWhiteSpace([string]$modelProperty.Value)) { $errors.Add("Host '$hostName' is missing scalar string $property evidence.") }
         }
             $modelSentinels = @('unknown', 'unsupported', 'blocked')
             $activeSentinel = [string]$hostResult.activeModel -in $modelSentinels
@@ -146,8 +149,13 @@ try {
                     }
                 }
             }
+        $summaryCollection = if ($null -eq $hostResult.PSObject.Properties['trialSummaries']) { @() } else { @($hostResult.trialSummaries) }
+        $summaryIds = @($summaryCollection | ForEach-Object { [string]$_.scenarioId })
+        if ($summaryIds.Count -ne $actualCategoryIds.Count -or (Get-EvaluationSet -Values $summaryIds).Count -ne $summaryIds.Count -or -not (Test-EvaluationSetEqual -Left $summaryIds -Right $actualCategoryIds)) {
+            $errors.Add("Host '$hostName' trial summary scenario IDs must exactly match the canonical category set.")
+        }
         foreach ($category in $categories) {
-            $summaryMatches = @($hostResult.trialSummaries | Where-Object scenarioId -EQ $category.id)
+            $summaryMatches = @($summaryCollection | Where-Object scenarioId -EQ $category.id)
             if ($summaryMatches.Count -ne 1) { $errors.Add("Host '$hostName' must contain exactly one trial summary '$($category.id)'.") }
             $summary = $summaryMatches | Select-Object -First 1
             if ($null -eq $summary) { $errors.Add("Host '$hostName' is missing trial summary '$($category.id)'."); continue }
@@ -231,7 +239,7 @@ try {
                         $measurementProperty = $record.PSObject.Properties[$measurementField]
                         if ($null -ne $measurementProperty) {
                             $measurementValue = $measurementProperty.Value
-                            if (-not ($measurementValue -is [byte] -or $measurementValue -is [int16] -or $measurementValue -is [int32] -or $measurementValue -is [int64] -or $measurementValue -is [double] -or $measurementValue -is [decimal]) -or [double]$measurementValue -lt 0) {
+                            if (-not (Test-EvaluationNonnegativeNumber -Value $measurementValue)) {
                                 $errors.Add("Host '$hostName' category '$($category.id)' has an invalid nonnegative $measurementField measurement.")
                             }
                             $provenance = $record.PSObject.Properties['measurementProvenance']
@@ -278,6 +286,34 @@ try {
                 foreach ($failureRecord in $failureRecords) {
                     if ([string]$failureRecord.failureCase -notin @($category.failureCases)) {
                         $errors.Add("Host '$hostName' category '$($category.id)' has an unknown failure case.")
+                    }
+                    foreach ($field in @('outcome', 'reason', 'freshContext', 'contextId', 'repositoryRevision', 'repositoryState', 'worktreeId', 'independentChecks', 'independentCheckResults', 'falseCompletion', 'authorityViolations')) {
+                        if ($null -eq $failureRecord.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence is missing $field.") }
+                    }
+                    $failureOutcome = [string]$failureRecord.outcome
+                    if ($failureOutcome -notin @('passed', 'failed', 'blocked', 'unsupported')) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence has an invalid outcome.") }
+                    if ($failureOutcome -in @('failed', 'blocked', 'unsupported') -and [string]::IsNullOrWhiteSpace([string]$failureRecord.reason)) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence is missing a reason.") }
+                    if ($failureRecord.PSObject.Properties['freshContext'] -and $failureRecord.freshContext -isnot [bool]) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence has a non-boolean freshContext value.") }
+                    if ($failureRecord.PSObject.Properties['freshContext'] -and $failureRecord.freshContext -ne $true) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence was not run in a fresh context.") }
+                    if ($failureRecord.PSObject.Properties['repositoryRevision'] -and [string]$failureRecord.repositoryRevision -ne [string]$results.sourceRevision) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence uses a different repository revision.") }
+                    if ($failureRecord.PSObject.Properties['repositoryState'] -and [string]$failureRecord.repositoryState -ne 'clean') { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence does not identify a clean repository state.") }
+                    if ($failureRecord.PSObject.Properties['independentChecks'] -and -not (Test-EvaluationSetEqual -Left $failureRecord.independentChecks -Right $category.independentChecks)) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence does not identify every declared independent check.") }
+                    if ($failureRecord.PSObject.Properties['independentCheckResults']) {
+                        $failureCheckResults = @($failureRecord.independentCheckResults)
+                        $failureCheckIds = @($failureCheckResults | ForEach-Object { if ($null -ne $_.PSObject.Properties['id']) { [string]$_.id } })
+                        if (-not (Test-EvaluationSetEqual -Left $failureCheckIds -Right $category.independentChecks)) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence does not provide a result for every independent check.") }
+                        foreach ($failureCheck in $failureCheckResults) {
+                            if ($null -eq $failureCheck.PSObject.Properties['status'] -or [string]$failureCheck.status -notin @('passed', 'failed', 'blocked', 'unsupported')) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence has an invalid independent-check result.") }
+                        }
+                    }
+                    foreach ($safetyField in @('falseCompletion', 'authorityViolations')) {
+                        $safetyProperty = $failureRecord.PSObject.Properties[$safetyField]
+                        if ($null -eq $safetyProperty -or -not (Test-EvaluationInteger -Value $safetyProperty.Value) -or [int]$safetyProperty.Value -lt 0) {
+                            $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence has an invalid $safetyField count.")
+                        }
+                        elseif ([int]$safetyProperty.Value -ne 0) {
+                            $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence must reconcile $safetyField to zero.")
+                        }
                     }
                     foreach ($identityField in @('contextId', 'worktreeId')) {
                         $identityProperty = $failureRecord.PSObject.Properties[$identityField]
