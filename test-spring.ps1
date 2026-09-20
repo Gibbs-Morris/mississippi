@@ -26,7 +26,9 @@ $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1') -Force
 $executionLease = $null
 try {
-    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $PSScriptRoot -OperationId "spring-validation-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    if (-not $Doctor) {
+        $executionLease = Enter-RepositoryExecutionLease -RepoRoot $PSScriptRoot -OperationId "spring-validation-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    }
     Invoke-SpringValidation -RepoRoot $PSScriptRoot -TestLevel $TestLevel -Suite $Suite -Configuration $Configuration `
         -Doctor:$Doctor -InstallBrowserDependencies:$InstallBrowserDependencies
     exit 0
