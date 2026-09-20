@@ -2871,7 +2871,7 @@ function Get-PrReadinessReviewAuthor {
     # GitHub can retain review events after the account is deleted. A review ID
     # is not a stable reviewer identity, so keep those events in one tombstone
     # stream and let the aggregate review decision retire superseded requests.
-    return 'review-deleted'
+    return "review-deleted-$([string]$Value.id)"
 }
 
 function Assert-PrReadinessGraphQlPage {
@@ -3022,7 +3022,9 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
         $author = Get-PrReadinessReviewAuthor -Value $review
         $finalLatestReviewByAuthor[$author] = $review
     }
-    $approvals = @($finalLatestReviewByAuthor.Values | Where-Object { $_.state -eq 'APPROVED' }).Count
+    $approvals = @($finalLatestReviewByAuthor.Values | Where-Object {
+        $_.state -eq 'APPROVED' -and [string]$_.commit_id -eq $finalHead
+    }).Count
 
     $finalThreads = [System.Collections.Generic.List[object]]::new()
     $finalCursor = $null
@@ -3070,7 +3072,7 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     if ($reviewDecision -eq 'APPROVED') {
         $filteredReviewDispositions = [System.Collections.Generic.List[object]]::new()
         foreach ($disposition in @($reviewDispositionList | Where-Object {
-                    -not ([string]$_.Author -eq 'review-deleted' -and [string]$_.State -eq 'CHANGES_REQUESTED')
+                    -not ([string]$_.Author.StartsWith('review-deleted-', [StringComparison]::Ordinal) -and [string]$_.State -eq 'CHANGES_REQUESTED')
                 })) {
             $filteredReviewDispositions.Add($disposition)
         }

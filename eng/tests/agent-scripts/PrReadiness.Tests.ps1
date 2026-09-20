@@ -99,10 +99,10 @@ Describe 'PR readiness snapshot' {
         $checkPage = [pscustomobject]@{ check_runs = @([pscustomobject]@{ name = 'CodeQL'; status = 'completed'; conclusion = 'success' }) }
         $statusPage = @()
         $reviewPage = @(
-            [pscustomobject]@{ id = 1; user = [pscustomobject]@{ login = 'reviewer' }; state = 'APPROVED'; submitted_at = '2026-09-19T00:00:00Z' },
+            [pscustomobject]@{ id = 1; user = [pscustomobject]@{ login = 'reviewer' }; state = 'APPROVED'; commit_id = 'head-end'; submitted_at = '2026-09-19T00:00:00Z' },
             [pscustomobject]@{ id = 2; user = [pscustomobject]@{ login = 'reviewer' }; state = 'COMMENTED'; submitted_at = '2026-09-19T00:01:00Z' },
             [pscustomobject]@{ id = 3; user = $null; state = 'CHANGES_REQUESTED'; body = 'Superseded deleted-account feedback'; submitted_at = '2026-09-19T00:02:00Z' },
-            [pscustomobject]@{ id = 4; user = $null; state = 'APPROVED'; submitted_at = '2026-09-19T00:03:00Z' }
+            [pscustomobject]@{ id = 4; user = $null; state = 'APPROVED'; commit_id = 'head-end'; submitted_at = '2026-09-19T00:03:00Z' }
         )
         $filesPage = @([pscustomobject]@{ filename = 'README.md' })
         $thread = [pscustomobject]@{ id = 'thread-1'; isResolved = $true; isOutdated = $false; comments = [pscustomobject]@{ nodes = @() } }
