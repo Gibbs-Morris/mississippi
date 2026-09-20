@@ -12,7 +12,9 @@ param(
     [string]$BaseRef = 'main',
 
     [switch]$SkipSamples,
-    [switch]$SkipMississippi
+    [switch]$SkipMississippi,
+
+    [string]$LeaseDirectory
 )
 
 Set-StrictMode -Version Latest
@@ -117,7 +119,7 @@ function Normalize-RepositoryRelativePath {
 
 $executionLease = $null
 try {
-    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "cleanup-targeted-$([guid]::NewGuid().ToString('N'))"
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "cleanup-targeted-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
     Push-Location -Path $repoRoot
 
     $inputFiles = Get-InputFiles
