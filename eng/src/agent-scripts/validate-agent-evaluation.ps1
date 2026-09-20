@@ -37,6 +37,13 @@ try {
     if ([string]::IsNullOrWhiteSpace([string]$results.sourceRevision)) { $errors.Add('Results must identify the source revision.') }
     if ([string]$results.sourceRevision -ne 'record-at-evaluation-run' -and [string]$results.sourceRevision -notmatch '^[0-9a-fA-F]{7,64}$') { $errors.Add('Results sourceRevision must be an immutable commit identifier or the initial-baseline sentinel.') }
     if ([string]$results.mode -ne 'initial-baseline' -and [string]$results.sourceRevision -eq 'record-at-evaluation-run') { $errors.Add('Live results cannot use the initial-baseline sourceRevision sentinel.') }
+    if ([string]$results.sourceRevision -match '^[0-9a-fA-F]{7,64}$') {
+        $repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../../..')).Path
+        $resolvedRevision = @(& git -c "safe.directory=$($repositoryRoot.Replace('\', '/'))" -C $repositoryRoot rev-parse --verify ("$($results.sourceRevision)^{commit}") 2>$null)
+        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace([string]($resolvedRevision | Select-Object -First 1))) {
+            $errors.Add("Results sourceRevision '$($results.sourceRevision)' does not resolve to a commit in the repository.")
+        }
+    }
     $categories = @($pack.categories | Where-Object { $_.kind -eq 'normal' })
     $expectedTrials = [int]$pack.normalTrialCount
     $requiredCategoryIds = @('csharp-behavior', 'powershell-harness', 'documentation', 'browser-visible', 'multi-project-generator')
@@ -57,6 +64,31 @@ try {
         'browser-visible' = @('browser unavailable', 'wrong application gate', 'stale source')
         'multi-project-generator' = @('partial project discovery', 'generated drift', 'running operation')
     }
+    $requiredIndependentChecks = @{
+        'csharp-behavior' = @('behavior regression', 'scope compliance', 'PR traceability')
+        'powershell-harness' = @('Pester regression', 'exit-code contract', 'no unrelated mutation')
+        'documentation' = @('Markdown/MDX lint', 'link validity', 'scope compliance')
+        'browser-visible' = @('Playwright screenshot/evidence', 'browser behavior', 'PR traceability')
+        'multi-project-generator' = @('all affected projects', 'generated output', 'source/test mapping')
+    }
+    $requiredEvidenceChecks = @{
+        'csharp-behavior' = @('eng/tests/agent-scripts/AgentEvaluation.Tests.ps1', 'tests/Architecture.L0Tests/Architecture.L0Tests.csproj')
+        'powershell-harness' = @('eng/tests/agent-scripts/AgentEvaluation.Tests.ps1', 'eng/tests/orchestrate-powershell-tests.ps1')
+        'documentation' = @('eng/tests/agent-scripts/AgentEvaluation.Tests.ps1', 'docs/Docusaurus/test-docusaurus.ps1')
+        'browser-visible' = @('eng/tests/agent-scripts/AgentEvaluation.Tests.ps1', 'test-spring.ps1')
+        'multi-project-generator' = @('eng/tests/agent-scripts/AgentEvaluation.Tests.ps1', 'mississippi.slnx')
+    }
+    $requiredPairedCases = @(
+        [pscustomobject]@{ id = 'issue-732-contract'; repository = 'Gibbs-Morris/mississippi'; issueNumber = 732; inputProfile = 'parent-issue-contract' }
+        [pscustomobject]@{ id = 'issue-732-review'; repository = 'Gibbs-Morris/mississippi'; issueNumber = 732; inputProfile = 'parent-issue-review-and-ci' }
+        [pscustomobject]@{ id = 'issue-732-delivery'; repository = 'Gibbs-Morris/mississippi'; issueNumber = 732; inputProfile = 'parent-issue-independent-prs' }
+    )
+    foreach ($requiredCase in $requiredPairedCases) {
+        $actualCase = @($pairedCases | Where-Object id -EQ $requiredCase.id)
+        if ($actualCase.Count -ne 1 -or [string]$actualCase[0].repository -ne $requiredCase.repository -or [int]$actualCase[0].issueNumber -ne $requiredCase.issueNumber -or [string]$actualCase[0].inputProfile -ne $requiredCase.inputProfile) {
+            $errors.Add("Paired case '$($requiredCase.id)' does not match the canonical issue-732 contract.")
+        }
+    }
     foreach ($category in $categories) {
         if ($null -eq $category.PSObject.Properties['pairedInputIds'] -or @($category.pairedInputIds).Count -ne $expectedTrials) {
             $errors.Add("Category '$($category.id)' must define one paired input for each trial.")
@@ -69,6 +101,9 @@ try {
         }
         elseif ($requiredFailureCases.ContainsKey([string]$category.id) -and -not (Test-EvaluationSetEqual -Left $category.failureCases -Right $requiredFailureCases[[string]$category.id])) {
             $errors.Add("Category '$($category.id)' failure cases do not match the benchmark contract.")
+        }
+        if ($requiredIndependentChecks.ContainsKey([string]$category.id) -and -not (Test-EvaluationSetEqual -Left $category.independentChecks -Right $requiredIndependentChecks[[string]$category.id])) {
+            $errors.Add("Category '$($category.id)' independent checks do not match the benchmark contract.")
         }
     }
     $hostNames = @('Codex', 'Copilot')
@@ -93,12 +128,17 @@ try {
                     if ($null -eq $hostResult.PSObject.Properties[$effortProperty] -or [string]::IsNullOrWhiteSpace([string]$hostResult.$effortProperty)) {
                         $errors.Add("Host '$hostName' is missing $effortProperty evidence.")
                     }
+                    elseif ([string]$hostResult.$effortProperty -in $modelSentinels) {
+                        $errors.Add("Host '$hostName' has unverifiable $effortProperty evidence.")
+                    }
                 }
             }
         $hostContextIds = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
         $hostWorktreeIds = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
         foreach ($category in $categories) {
-            $summary = @($hostResult.trialSummaries | Where-Object scenarioId -EQ $category.id)[0]
+            $summaryMatches = @($hostResult.trialSummaries | Where-Object scenarioId -EQ $category.id)
+            if ($summaryMatches.Count -ne 1) { $errors.Add("Host '$hostName' must contain exactly one trial summary '$($category.id)'.") }
+            $summary = $summaryMatches | Select-Object -First 1
             if ($null -eq $summary) { $errors.Add("Host '$hostName' is missing trial summary '$($category.id)'."); continue }
             $attempted = [int]$summary.attempted
             $unsupported = [int]$summary.unsupported
@@ -131,6 +171,8 @@ try {
                         if ($null -eq $record.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence is missing $field.") }
                     }
                     if ($record.PSObject.Properties['pairedInputId']) { $recordInputIds.Add([string]$record.pairedInputId) }
+                    $recordFailureCase = $record.PSObject.Properties['failureCase']
+                    if ($null -ne $recordFailureCase -and [string]$recordFailureCase.Value -notin @($category.failureCases)) { $errors.Add("Host '$hostName' category '$($category.id)' has an unknown failure case.") }
                     $outcome = [string]$record.outcome
                     if ($outcome -eq 'passed') { $recordPassed++ } elseif ($outcome -eq 'failed') { $recordFailed++ } elseif ($outcome -eq 'blocked') { $recordBlocked++ } elseif ($outcome -eq 'unsupported') { $recordUnsupported++ } else { $errors.Add("Host '$hostName' category '$($category.id)' has an invalid trial outcome.") }
                     foreach ($field in @('falseCompletion', 'authorityViolations')) {
@@ -162,6 +204,20 @@ try {
                         foreach ($checkResult in $checkResults) {
                             if ($null -eq $checkResult.PSObject.Properties['status'] -or [string]$checkResult.status -notin @('passed', 'failed', 'blocked', 'unsupported')) { $errors.Add("Host '$hostName' category '$($category.id)' has an invalid independent-check result.") }
                         }
+                        if ($outcome -eq 'passed' -and @($checkResults | Where-Object { [string]$_.status -ne 'passed' }).Count -gt 0) {
+                            $errors.Add("Host '$hostName' category '$($category.id)' passed trial has a non-passing independent check.")
+                        }
+                    }
+                    foreach ($measurementField in @('tokenCount', 'tokens', 'elapsedMilliseconds', 'elapsedSeconds', 'durationMilliseconds', 'durationSeconds')) {
+                        $measurementProperty = $record.PSObject.Properties[$measurementField]
+                        if ($null -ne $measurementProperty) {
+                            $measurementValue = $measurementProperty.Value
+                            if (-not ($measurementValue -is [byte] -or $measurementValue -is [int16] -or $measurementValue -is [int32] -or $measurementValue -is [int64] -or $measurementValue -is [double] -or $measurementValue -is [decimal]) -or [double]$measurementValue -lt 0) {
+                                $errors.Add("Host '$hostName' category '$($category.id)' has an invalid nonnegative $measurementField measurement.")
+                            }
+                            $provenance = $record.PSObject.Properties['measurementProvenance']
+                            if ($null -eq $provenance -or [string]$provenance.Value -ne 'direct') { $errors.Add("Host '$hostName' category '$($category.id)' measurement evidence must be directly measured.") }
+                        }
                     }
                     if ($outcome -in @('passed', 'failed')) {
                         foreach ($field in @('acceptancePassed', 'reviewRework', 'interventions')) {
@@ -191,6 +247,11 @@ try {
                 if ($recordFalseCompletion -ne [int]$summary.falseCompletion -or $recordAuthorityViolations -ne [int]$summary.authorityViolations) {
                     $errors.Add("Host '$hostName' category '$($category.id)' trial safety counters do not reconcile with aggregate outcomes.")
                 }
+                foreach ($failureCase in @($category.failureCases)) {
+                    if (@($records | Where-Object { $null -ne $_.PSObject.Properties['failureCase'] -and [string]$_.failureCase -eq [string]$failureCase }).Count -eq 0) {
+                        $errors.Add("Host '$hostName' category '$($category.id)' is missing failure-case evidence '$failureCase'.")
+                    }
+                }
                 }
         }
     }
@@ -209,7 +270,9 @@ try {
             }
         }
         if ([int]$contract.trials -ne $expectedTrials -or [int]$contract.passed + [int]$contract.failed -ne $expectedTrials) { $errors.Add("Deterministic trials for '$($category.id)' have inconsistent denominators.") }
-        if ($null -eq $contract.PSObject.Properties['evidenceChecks'] -or @($contract.evidenceChecks).Count -eq 0) { $errors.Add("Deterministic trials for '$($category.id)' do not identify executed evidence checks.") }
+        if ($null -eq $contract.PSObject.Properties['evidenceChecks'] -or -not (Test-EvaluationSetEqual -Left $contract.evidenceChecks -Right $requiredEvidenceChecks[[string]$category.id]) -or @($contract.evidenceChecks | Where-Object { [string]$_ -eq 'not-run' }).Count -gt 0) {
+            $errors.Add("Deterministic trials for '$($category.id)' do not identify the canonical executed evidence checks.")
+        }
     }
     $primaryHosts = @($results.hosts | Where-Object { $_.host -in $hostNames })
     $liveUnsupported = $primaryHosts.Count -eq $hostNames.Count -and @($primaryHosts | Where-Object { [string]$_.activeModel -in @('unsupported', 'blocked', 'unknown') }).Count -eq $hostNames.Count
