@@ -10,13 +10,18 @@ internal sealed class ManualFieldBackedInjectedPropertyFixture
     public ManualFieldBackedInjectedPropertyFixture(IClockFixture clock) => Clock = clock;
 
     /// <summary>Gets or sets the injected dependency through a normal backing field.</summary>
-#pragma warning disable S2292 // This fixture intentionally exercises a manual backing-field property.
     internal IClockFixture Clock
     {
         get => clock;
-        set => clock = value;
+        set
+        {
+            clock = value;
+            if (value is not null)
+            {
+                _ = value.GetHashCode();
+            }
+        }
     }
-#pragma warning restore S2292
 
     /// <summary>Reads the dependency so the fixture remains executable.</summary>
     /// <returns>The captured dependency.</returns>
