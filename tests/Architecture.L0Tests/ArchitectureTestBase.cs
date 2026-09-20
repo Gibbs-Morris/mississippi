@@ -24,9 +24,7 @@ public abstract class ArchitectureTestBase
     static ArchitectureTestBase()
     {
         MississippiAssemblies = GetMississippiAssemblies();
-        ArchitectureModel = new ArchLoader()
-            .LoadAssemblies(MississippiAssemblies.ToArray())
-            .Build();
+        ArchitectureModel = new ArchLoader().LoadAssemblies(MississippiAssemblies.ToArray()).Build();
     }
 
     /// <summary>
@@ -119,5 +117,4 @@ public abstract class ArchitectureTestBase
         string[] assemblyPaths = Directory.GetFiles(baseDir, "Mississippi.*.dll");
         return LoadMississippiAssemblies(assemblyPaths);
     }
-}
 }

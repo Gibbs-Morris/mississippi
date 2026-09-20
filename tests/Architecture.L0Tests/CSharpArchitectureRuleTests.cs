@@ -29,6 +29,7 @@ public sealed class CSharpArchitectureRuleTests
         _ = new PrimaryConstructorFixture(clock).GetClock();
         _ = new GenericInjectedFieldFixture<IClockFixture>(clock).GetClock();
         _ = new FactoryAssignmentFixture(clock).GetClock();
+        _ = new HelperAssignmentFixture(clock).GetClock();
         _ = new WrappedInjectedFieldFixture(new(() => clock)).GetClock();
         _ = new NestedWrappedInjectedFieldFixture(new(() => [clock])).GetClock();
         _ = new InheritedInjectedFieldFixture(clock).GetClock();
@@ -38,6 +39,7 @@ public sealed class CSharpArchitectureRuleTests
             typeof(ManualSettableInjectedPropertyFixture), typeof(ManualFieldBackedInjectedPropertyFixture),
             typeof(OrdinaryStateFixture), typeof(ConcreteStateFixture), typeof(PrimaryConstructorFixture),
             typeof(GenericInjectedFieldFixture<IClockFixture>), typeof(FactoryAssignmentFixture),
+            typeof(HelperAssignmentFixture), typeof(ConcreteCollectionInjectedFieldFixture),
             typeof(WrappedInjectedFieldFixture), typeof(NestedWrappedInjectedFieldFixture),
             typeof(InheritedInjectedFieldFixture), typeof(InheritedInjectedFieldBase),
             typeof(ConcreteInjectedFieldFixture),
@@ -61,6 +63,8 @@ public sealed class CSharpArchitectureRuleTests
         Assert.DoesNotContain(
             violations,
             value => value.StartsWith(typeof(FactoryAssignmentFixture).FullName + ".", StringComparison.Ordinal));
+        Assert.Contains($"{typeof(HelperAssignmentFixture).FullName}.clock", violations);
+        Assert.Contains($"{typeof(ConcreteCollectionInjectedFieldFixture).FullName}.dependencies", violations);
         Assert.Contains($"{typeof(WrappedInjectedFieldFixture).FullName}.clock", violations);
         Assert.Contains($"{typeof(NestedWrappedInjectedFieldFixture).FullName}.clocks", violations);
         Assert.Contains($"{typeof(InheritedInjectedFieldFixture).FullName}.<Clock>k__BackingField", violations);

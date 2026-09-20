@@ -59,12 +59,10 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                         ? field.Name.Substring(1, propertyEnd - 1)
                         : string.Empty;
                     const BindingFlags propertyFlags = BindingFlags.Instance |
-                        BindingFlags.Public |
-                        BindingFlags.NonPublic |
-                        BindingFlags.DeclaredOnly;
-                    property = field.DeclaringType?.GetProperty(
-                        propertyName,
-                        propertyFlags);
+                                                       BindingFlags.Public |
+                                                       BindingFlags.NonPublic |
+                                                       BindingFlags.DeclaredOnly;
+                    property = field.DeclaringType?.GetProperty(propertyName, propertyFlags);
                 }
                 else
                 {
@@ -223,78 +221,13 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
         FieldInfo targetField
     )
     {
-        byte[]? il = constructor.GetMethodBody()?.GetILAsByteArray();
-        if (il is null)
+        int parameterCount = constructor.GetParameters().Length;
+        for (int parameterIndex = 1; parameterIndex <= parameterCount; parameterIndex++)
         {
-            return false;
-        }
-
-        bool parameterLoaded = false;
-        int offset = 0;
-        while (offset < il.Length)
-        {
-            OpCode opcode;
-            byte first = il[offset++];
-            opcode = first == 0xFE ? MultiByteOpCodes[il[offset++]] : SingleByteOpCodes[first];
-            if ((opcode == OpCodes.Ldarg_0) ||
-                (opcode == OpCodes.Ldarg_1) ||
-                (opcode == OpCodes.Ldarg_2) ||
-                (opcode == OpCodes.Ldarg_3) ||
-                (opcode == OpCodes.Ldarg_S) ||
-                (opcode == OpCodes.Ldarg))
+            if (MethodStoresParameter(constructor, parameterIndex, targetField, new()))
             {
-                int argumentIndex = opcode switch
-                {
-                    var _ when opcode == OpCodes.Ldarg_0 => 0,
-                    var _ when opcode == OpCodes.Ldarg_1 => 1,
-                    var _ when opcode == OpCodes.Ldarg_2 => 2,
-                    var _ when opcode == OpCodes.Ldarg_3 => 3,
-                    var _ when opcode == OpCodes.Ldarg_S => il[offset],
-                    var _ => BitConverter.ToUInt16(il, offset),
-                };
-                parameterLoaded |= argumentIndex > 0;
+                return true;
             }
-
-            if ((opcode == OpCodes.Stfld) && ((offset + 4) <= il.Length))
-            {
-                int token = BitConverter.ToInt32(il, offset);
-                FieldInfo? storedField = null;
-                try
-                {
-                    storedField = constructor.Module.ResolveField(
-                        token,
-                        constructor.DeclaringType?.GetGenericArguments(),
-                        Type.EmptyTypes);
-                }
-                catch (ArgumentException)
-                {
-                    // An unresolved metadata token cannot prove the field assignment.
-                }
-
-                if (parameterLoaded && (storedField == targetField))
-                {
-                    return true;
-                }
-
-                parameterLoaded = false;
-            }
-            else if ((opcode != OpCodes.Nop) &&
-                     (opcode != OpCodes.Dup) &&
-                     (opcode != OpCodes.Brtrue) &&
-                     (opcode != OpCodes.Brtrue_S) &&
-                     (opcode != OpCodes.Brfalse) &&
-                     (opcode != OpCodes.Brfalse_S) &&
-                     (opcode != OpCodes.Ldarg_0) &&
-                     (opcode != OpCodes.Ldarg_1) &&
-                     (opcode != OpCodes.Ldarg_2) &&
-                     (opcode != OpCodes.Ldarg_3) &&
-                     (opcode != OpCodes.Ldarg_S) &&
-                     (opcode != OpCodes.Ldarg))
-            {
-                parameterLoaded = false;
-            }
-
-            offset += GetOperandSize(opcode, il, offset);
         }
 
         return false;
@@ -372,7 +305,13 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
     {
         if (fieldType.IsGenericParameter)
         {
-            return fieldType.GetGenericParameterConstraints().Any(IsDependencyFieldType);
+            Type[] constraints = fieldType.GetGenericParameterConstraints();
+            if ((constraints.Length > 0) && constraints.All(IsStateConstraint))
+            {
+                return false;
+            }
+
+            return constraints.Any(IsDependencyFieldType);
         }
 
         if (fieldType.IsArray)
@@ -387,11 +326,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                 genericType.Namespace?.StartsWith("System.Collections", StringComparison.Ordinal) == true;
             if (isCollectionState)
             {
-                return fieldType.GetGenericArguments()
-                    .Any(argument =>
-                        argument.IsInterface ||
-                        argument.IsAbstract ||
-                        (argument.IsGenericType && IsDependencyFieldType(argument)));
+                return fieldType.GetGenericArguments().Any(IsDependencyFieldType);
             }
 
             return fieldType.GetGenericArguments().Any(IsDependencyFieldType);
@@ -428,6 +363,14 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                name.EndsWith("Repository", StringComparison.Ordinal) ||
                name.EndsWith("Service", StringComparison.Ordinal) ||
                name.EndsWith("Tracker", StringComparison.Ordinal);
+    }
+
+    private static bool IsStateConstraint(
+        Type constraint
+    )
+    {
+        string name = constraint.Name;
+        return name.EndsWith("State", StringComparison.Ordinal) || name.EndsWith("State`", StringComparison.Ordinal);
     }
 
     private static bool MethodStoresField(
@@ -469,6 +412,152 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             offset += GetOperandSize(opcode, il, offset);
         }
 
+        return false;
+    }
+
+    private static bool MethodStoresParameter(
+        MethodBase method,
+        int parameterIndex,
+        FieldInfo targetField,
+        HashSet<MethodBase> visited
+    )
+    {
+        if (!visited.Add(method))
+        {
+            return false;
+        }
+
+        byte[]? il = method.GetMethodBody()?.GetILAsByteArray();
+        if (il is null)
+        {
+            return false;
+        }
+
+        int? loadedParameter = null;
+        int offset = 0;
+        while (offset < il.Length)
+        {
+            OpCode opcode;
+            byte first = il[offset++];
+            opcode = first == 0xFE ? MultiByteOpCodes[il[offset++]] : SingleByteOpCodes[first];
+            int operandOffset = offset;
+            if (TryGetArgumentIndex(opcode, il, operandOffset, out int argumentIndex))
+            {
+                loadedParameter = argumentIndex;
+            }
+
+            if ((opcode == OpCodes.Stfld) && ((offset + 4) <= il.Length))
+            {
+                FieldInfo? storedField = null;
+                try
+                {
+                    storedField = method.Module.ResolveField(
+                        BitConverter.ToInt32(il, offset),
+                        method.DeclaringType?.GetGenericArguments(),
+                        Type.EmptyTypes);
+                }
+                catch (ArgumentException)
+                {
+                    // An unresolved metadata token cannot prove the field assignment.
+                }
+
+                if ((loadedParameter == parameterIndex) && (storedField == targetField))
+                {
+                    return true;
+                }
+
+                loadedParameter = null;
+            }
+            else if (((opcode == OpCodes.Call) || (opcode == OpCodes.Callvirt)) && ((offset + 4) <= il.Length))
+            {
+                MethodBase? called = null;
+                try
+                {
+                    called = method.Module.ResolveMethod(
+                        BitConverter.ToInt32(il, offset),
+                        method.DeclaringType?.GetGenericArguments(),
+                        Type.EmptyTypes);
+                }
+                catch (ArgumentException)
+                {
+                    // An unresolved metadata token cannot prove helper provenance.
+                }
+
+                if ((loadedParameter == parameterIndex) &&
+                    called is not null &&
+                    (called.DeclaringType == method.DeclaringType) &&
+                    (called.GetParameters().Length == 1))
+                {
+                    int calledParameterIndex = called.IsStatic ? 0 : 1;
+                    if (MethodStoresParameter(called, calledParameterIndex, targetField, visited))
+                    {
+                        return true;
+                    }
+                }
+
+                loadedParameter = null;
+            }
+            else if ((opcode != OpCodes.Nop) &&
+                     (opcode != OpCodes.Dup) &&
+                     (opcode != OpCodes.Brtrue) &&
+                     (opcode != OpCodes.Brtrue_S) &&
+                     (opcode != OpCodes.Brfalse) &&
+                     (opcode != OpCodes.Brfalse_S) &&
+                     !TryGetArgumentIndex(opcode, il, operandOffset, out int _))
+            {
+                loadedParameter = null;
+            }
+
+            offset += GetOperandSize(opcode, il, offset);
+        }
+
+        return false;
+    }
+
+    private static bool TryGetArgumentIndex(
+        OpCode opcode,
+        byte[] il,
+        int offset,
+        out int argumentIndex
+    )
+    {
+        if (opcode == OpCodes.Ldarg_0)
+        {
+            argumentIndex = 0;
+            return true;
+        }
+
+        if (opcode == OpCodes.Ldarg_1)
+        {
+            argumentIndex = 1;
+            return true;
+        }
+
+        if (opcode == OpCodes.Ldarg_2)
+        {
+            argumentIndex = 2;
+            return true;
+        }
+
+        if (opcode == OpCodes.Ldarg_3)
+        {
+            argumentIndex = 3;
+            return true;
+        }
+
+        if (opcode == OpCodes.Ldarg_S)
+        {
+            argumentIndex = il[offset];
+            return true;
+        }
+
+        if (opcode == OpCodes.Ldarg)
+        {
+            argumentIndex = BitConverter.ToUInt16(il, offset);
+            return true;
+        }
+
+        argumentIndex = -1;
         return false;
     }
 
