@@ -45,6 +45,24 @@ Describe 'RepositoryAutomation helpers' {
         try { $released.OperationId | Should -Be 'owner-three' } finally { Exit-RepositoryExecutionLease -Lease $released }
     }
 
+    It 'recovers a stale same-process metadata sidecar after the lock is free' {
+        $leaseRoot = Join-Path $TestDrive 'stale-metadata-repository'
+        $coordinationRoot = Join-Path $TestDrive 'stale-metadata-coordination'
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        $leasePath = Get-RepositoryExecutionLeasePath -RepoRoot $leaseRoot -LeaseDirectory $coordinationRoot
+        $metadataPath = "$leasePath.metadata"
+        $processStartUtc = (Get-Process -Id $PID).StartTime.ToUniversalTime().ToString('o')
+        Set-Content -LiteralPath $metadataPath -Value (@{
+            operationId = 'stale-owner'
+            processId = $PID
+            processStartUtc = $processStartUtc
+        } | ConvertTo-Json -Compress)
+
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'recovered-owner' -LeaseDirectory $coordinationRoot
+        try { $lease.OperationId | Should -Be 'recovered-owner' }
+        finally { Exit-RepositoryExecutionLease -Lease $lease }
+    }
+
     It 'makes shared lease files writable by participating accounts on Unix' {
         if ($IsWindows) {
             Set-ItResult -Skipped -Because 'Unix lease permissions are not available on Windows.'

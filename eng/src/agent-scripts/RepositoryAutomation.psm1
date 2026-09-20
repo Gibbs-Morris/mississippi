@@ -172,17 +172,31 @@ function Get-RepositoryExecutionLeaseHash {
     return ,$hash
 }
 
+function Get-RepositoryExecutionUnixIdentity {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    if ($IsWindows) { return $null }
+    $statCommand = Get-Command -Name stat -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($null -eq $statCommand) { return $null }
+    foreach ($arguments in @(@('-c', '%d:%i'), @('-f', '%d:%i'))) {
+        try {
+            $identity = (& $statCommand.Source @arguments -- $Path 2>$null | Out-String).Trim()
+            if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($identity)) { return $identity }
+        }
+        catch {
+            Write-Verbose "Unable to read Unix filesystem identity for '$Path' with stat dialect '$($arguments[0])': $($_.Exception.Message)"
+        }
+    }
+    return $null
+}
+
 function Get-RepositoryExecutionLeaseIdentityKey {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$CanonicalRepoRoot)
 
-    if (-not $IsWindows) {
-        $identity = (& stat -c '%d:%i' -- $CanonicalRepoRoot 2>$null | Out-String).Trim()
-        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($identity)) {
-            $identity = (& stat -f '%d:%i' -- $CanonicalRepoRoot 2>$null | Out-String).Trim()
-        }
-        if (-not [string]::IsNullOrWhiteSpace($identity) -and $LASTEXITCODE -eq 0) { return "filesystem:$identity" }
-    }
+    $identity = Get-RepositoryExecutionUnixIdentity -Path $CanonicalRepoRoot
+    if (-not [string]::IsNullOrWhiteSpace($identity)) { return "filesystem:$identity" }
     if ((Get-RepositoryPathComparison -RepoRoot $CanonicalRepoRoot) -eq [System.StringComparison]::OrdinalIgnoreCase) {
         return $CanonicalRepoRoot.ToLowerInvariant()
     }
@@ -193,13 +207,8 @@ function Get-RepositoryExecutionLeaseFileIdentityKey {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Path)
 
-    if (-not $IsWindows) {
-        $identity = (& stat -c '%d:%i' -- $Path 2>$null | Out-String).Trim()
-        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($identity)) {
-            $identity = (& stat -f '%d:%i' -- $Path 2>$null | Out-String).Trim()
-        }
-        if (-not [string]::IsNullOrWhiteSpace($identity) -and $LASTEXITCODE -eq 0) { return "filesystem-file:$identity" }
-    }
+    $identity = Get-RepositoryExecutionUnixIdentity -Path $Path
+    if (-not [string]::IsNullOrWhiteSpace($identity)) { return "filesystem-file:$identity" }
     return [System.IO.Path]::GetFullPath($Path).ToLowerInvariant()
 }
 
@@ -971,7 +980,6 @@ function Open-RepositoryExecutionLeaseResources {
             throw 'Repository execution lease is already held in this process. Use -ExistingLease for supported reentrancy.'
         }
         $resources.ProcessSemaphore.Acquired = $true
-        Assert-RepositoryExecutionLeaseNotHeldByCurrentProcess -Path $Context.MetadataPath -SharedLease $Context.SharedLease
         Register-RepositoryExecutionLeaseIdentity -Identity $Context.LeaseIdentity
         $resources.LeaseRegistered = $true
         if ($Context.SharedLease) {
@@ -982,6 +990,16 @@ function Open-RepositoryExecutionLeaseResources {
         else {
             $resources.Stream = [System.IO.FileStream]::new($Context.LeasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::Read)
             $resources.LeaseOffset = Lock-PrivateRepositoryExecutionLease -Stream $resources.Stream -Path $Context.LeasePath
+        }
+        try {
+            Assert-RepositoryExecutionLeaseNotHeldByCurrentProcess -Path $Context.MetadataPath -SharedLease $Context.SharedLease
+        }
+        catch {
+            Clear-RepositoryExecutionLeaseMetadata -Lease ([pscustomobject]@{
+                Path = $Context.LeasePath
+                MetadataPath = $Context.MetadataPath
+                SharedStreamState = $resources.StreamState
+            })
         }
         return $resources
     }
