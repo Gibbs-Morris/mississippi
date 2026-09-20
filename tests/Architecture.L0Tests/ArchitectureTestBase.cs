@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 using ArchUnitNET.Loader;
@@ -20,12 +21,21 @@ namespace Mississippi.Architecture.L0Tests;
     Justification = "xUnit requires public test classes")]
 public abstract class ArchitectureTestBase
 {
+    static ArchitectureTestBase()
+    {
+        MississippiAssemblies = GetMississippiAssemblies();
+        ArchitectureModel = new ArchLoader().LoadAssemblies(MississippiAssemblies.ToArray()).Build();
+    }
+
     /// <summary>
     ///     Gets the cached architecture model containing all Mississippi assemblies.
     /// </summary>
-    protected static ArchUnitArchitecture ArchitectureModel { get; } = new ArchLoader()
-        .LoadAssemblies(GetMississippiAssemblies())
-        .Build();
+    protected static ArchUnitArchitecture ArchitectureModel { get; }
+
+    /// <summary>
+    ///     Gets the loaded Mississippi assemblies used by reflection-backed architecture diagnostics.
+    /// </summary>
+    protected static IReadOnlyList<Assembly> MississippiAssemblies { get; }
 
     /// <summary>
     ///     Loads assembly candidates using the runtime assembly loader.
@@ -104,8 +114,11 @@ public abstract class ArchitectureTestBase
 
     private static Assembly[] GetMississippiAssemblies()
     {
+        // Keep discovery in the test base so every architecture rule shares the same fail-closed assembly set.
         string baseDir = AppDomain.CurrentDomain.BaseDirectory;
         string[] assemblyPaths = Directory.GetFiles(baseDir, "Mississippi.*.dll");
         return LoadMississippiAssemblies(assemblyPaths);
     }
 }
+
+// End of the shared architecture-test discovery base.
