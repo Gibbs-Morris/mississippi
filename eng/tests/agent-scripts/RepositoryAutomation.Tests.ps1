@@ -185,6 +185,7 @@ Describe 'RepositoryAutomation helpers' {
         $coordinationRoot = Join-Path $TestDrive 'cross-process-coordination'
         $scriptPath = Join-Path $TestDrive 'cross-process-contender.ps1'
         $modulePath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../src/agent-scripts/RepositoryAutomation.psm1'))
+        $powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
         New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
         @'
 param([string]$ModulePath, [string]$RepoRoot, [string]$LeaseDirectory)
@@ -202,14 +203,29 @@ catch {
 '@ | Set-Content -LiteralPath $scriptPath
         $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'parent-owner' -LeaseDirectory $coordinationRoot
         try {
-            & (Join-Path $PSHOME 'pwsh.exe') -NoProfile -File $scriptPath -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $coordinationRoot | Out-Null
+            & $powerShellPath -NoProfile -File $scriptPath -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $coordinationRoot | Out-Null
             $LASTEXITCODE | Should -Be 42
         }
         finally {
             Exit-RepositoryExecutionLease -Lease $lease
         }
-        & (Join-Path $PSHOME 'pwsh.exe') -NoProfile -File $scriptPath -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $coordinationRoot | Out-Null
+        & $powerShellPath -NoProfile -File $scriptPath -ModulePath $modulePath -RepoRoot $leaseRoot -LeaseDirectory $coordinationRoot | Out-Null
         $LASTEXITCODE | Should -Be 0
+    }
+
+    It 'preserves lease state across a forced module import' {
+        $leaseRoot = Join-Path $TestDrive 'reload-lease-repository'
+        $coordinationRoot = Join-Path $TestDrive 'reload-coordination'
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'reload-owner' -LeaseDirectory $coordinationRoot
+        try {
+            Import-Module -Name ([System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\src\agent-scripts\RepositoryAutomation.psm1'))) -Force
+            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'reload-contender' -LeaseDirectory $coordinationRoot } |
+                Should -Throw '*execution lease*'
+        }
+        finally {
+            Exit-RepositoryExecutionLease -Lease $lease
+        }
     }
 
     It 'resolves relative lease directories from the physical repository root' {
