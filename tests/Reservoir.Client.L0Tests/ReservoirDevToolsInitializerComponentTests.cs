@@ -53,6 +53,8 @@ public sealed class ReservoirDevToolsInitializerComponentTests
         using (component)
         {
             onAfterRender.Invoke(component, [false]);
+            Assert.False(tracker.WasInitialized);
+            Assert.False(IsInitialized(service));
             onAfterRender.Invoke(component, [true]);
 
             // Assert
