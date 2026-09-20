@@ -348,11 +348,6 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
             return fieldType.GetGenericParameterConstraints().Any(IsDependencyFieldType);
         }
 
-        if (fieldType.IsInterface || fieldType.IsAbstract)
-        {
-            return true;
-        }
-
         if (fieldType.IsArray)
         {
             return fieldType.GetElementType() is { } elementType && IsDependencyFieldType(elementType);
@@ -362,10 +357,18 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
         {
             Type genericType = fieldType.GetGenericTypeDefinition();
             bool isCollectionState = genericType.Namespace?.StartsWith("System.Collections", StringComparison.Ordinal) == true;
-            return fieldType.GetGenericArguments().Any(
-                argument => isCollectionState
-                    ? argument.IsInterface || argument.IsAbstract || (argument.IsGenericType && IsDependencyFieldType(argument))
-                    : IsDependencyFieldType(argument));
+            if (isCollectionState)
+            {
+                return fieldType.GetGenericArguments().Any(
+                    argument => argument.IsInterface || argument.IsAbstract || (argument.IsGenericType && IsDependencyFieldType(argument)));
+            }
+
+            return fieldType.GetGenericArguments().Any(IsDependencyFieldType);
+        }
+
+        if (fieldType.IsInterface || fieldType.IsAbstract)
+        {
+            return true;
         }
 
         return IsExplicitConcreteServiceType(fieldType);
