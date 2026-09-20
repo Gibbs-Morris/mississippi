@@ -338,7 +338,6 @@ function Create-SharedRepositoryExecutionLeaseFile {
     finally { $placeholder.Dispose() }
     if (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $LeasePath -Mode $sharedExecutionLeaseFileMode }
     if ($IsWindows) { Set-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath }
-    Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
 }
 
 function Initialize-SharedRepositoryExecutionLeasePath {
@@ -360,8 +359,9 @@ function Initialize-SharedRepositoryExecutionLeasePath {
         }
         return
     }
-    Ensure-RepositoryExecutionLeaseMetadataFile -Path $MetadataPath -SharedLease $true
     Create-SharedRepositoryExecutionLeaseFile -LeaseDirectory $LeaseDirectory -LeasePath $LeasePath
+    Ensure-RepositoryExecutionLeaseMetadataFile -Path $MetadataPath -SharedLease $true
+    Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
 }
 
 function Get-RepositoryExecutionLeasePathForRoot {
