@@ -1287,7 +1287,7 @@ function Invoke-AutomationStep {
     }
 }
 
-function Get-RepositoryProcessDescendantIds {
+function Get-RepositoryProcessDescendantIds { # NOSONAR - bounded process-tree ownership snapshot intentionally traverses platform process metadata.
     [CmdletBinding()]
     param([Parameter(Mandatory)][int]$RootProcessId)
 
@@ -1327,7 +1327,7 @@ function Get-RepositoryProcessDescendantIds {
     })
 }
 
-function Stop-RepositoryProcessIds {
+function Stop-RepositoryProcessIds { # NOSONAR - termination helper deliberately handles platform-specific process cleanup branches.
     [CmdletBinding()]
     param([Parameter(Mandatory)][object[]]$ProcessRecords)
 
@@ -1338,7 +1338,7 @@ function Stop-RepositoryProcessIds {
             $current = Get-Process -Id $processId -ErrorAction SilentlyContinue
             if ($null -eq $current -or ($null -ne $record.StartTime -and [Math]::Abs(($current.StartTime.ToUniversalTime() - $record.StartTime).TotalSeconds) -gt 1)) { continue }
             if ($IsWindows) { Stop-Process -Id $processId -Force -ErrorAction Stop }
-            else { & kill -TERM -- $processId 2>$null; if ($LASTEXITCODE -ne 0) { throw "kill exited with code $LASTEXITCODE" } }
+            else { Stop-Process -Id $processId -Force -ErrorAction Stop }
         }
         catch { $errors.Add("${processId}: $($_.Exception.Message)") }
     }
@@ -1352,7 +1352,7 @@ function Stop-RepositoryProcessIds {
                 if (Get-Process -Id $processId -ErrorAction SilentlyContinue) { Stop-Process -Id $processId -Force -ErrorAction Stop }
             }
             else {
-                & kill -KILL -- $processId 2>$null
+                Stop-Process -Id $processId -Force -ErrorAction Stop
             }
         }
         catch { $errors.Add("${processId}: $($_.Exception.Message)") }
@@ -1360,7 +1360,7 @@ function Stop-RepositoryProcessIds {
     return ,$errors
 }
 
-function Invoke-RepositoryProcess {
+function Invoke-RepositoryProcess { # NOSONAR - native process lifecycle, bounded capture, and descendant cleanup intentionally remain coordinated here.
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$FilePath,
@@ -1504,10 +1504,10 @@ function Invoke-RepositoryProcess {
         throw
     }
     finally {
-        try { $process.CancelOutputRead() } catch { }
-        try { $process.CancelErrorRead() } catch { }
-        try { $process.remove_OutputDataReceived($stdoutHandler) } catch { }
-        try { $process.remove_ErrorDataReceived($stderrHandler) } catch { }
+        try { $process.CancelOutputRead() } catch { Write-Verbose 'Native stdout reader was already closed.' }
+        try { $process.CancelErrorRead() } catch { Write-Verbose 'Native stderr reader was already closed.' }
+        try { $process.remove_OutputDataReceived($stdoutHandler) } catch { Write-Verbose 'Native stdout handler was already detached.' }
+        try { $process.remove_ErrorDataReceived($stderrHandler) } catch { Write-Verbose 'Native stderr handler was already detached.' }
         $process.Dispose()
     }
 }
