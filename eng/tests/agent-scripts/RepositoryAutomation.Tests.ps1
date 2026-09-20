@@ -344,6 +344,46 @@ Describe 'Repository automation quality gates' {
         $calls.IndexOf('final-build') | Should -BeGreaterThan $calls.IndexOf('sample-tests')
     }
 
+    It 'uses the resolved physical root for protected pipeline operations' {
+        $realRoot = Join-Path $TestDrive 'pipeline-real-root'
+        $aliasRoot = Join-Path $TestDrive 'pipeline-alias-root'
+        $observedRoots = [System.Collections.Generic.List[string]]::new()
+        New-Item -ItemType Directory -Path $realRoot -Force | Out-Null
+        $aliasCreated = $false
+        try {
+            New-Item -ItemType Junction -Path $aliasRoot -Target $realRoot -ErrorAction Stop | Out-Null
+            $aliasCreated = $true
+            Mock Invoke-MississippiSolutionBuild { $observedRoots.Add($RepoRoot) } -ModuleName RepositoryAutomation
+            Mock Invoke-MississippiSolutionUnitTests {
+                $observedRoots.Add($RepoRoot)
+                [pscustomobject]@{ CoverageReportPath = Join-Path $RepoRoot 'coverage.cobertura.xml' }
+            } -ModuleName RepositoryAutomation
+            Mock Invoke-SampleSolutionBuild { $observedRoots.Add($RepoRoot) } -ModuleName RepositoryAutomation
+            Mock Invoke-SampleSolutionUnitTests { $observedRoots.Add($RepoRoot) } -ModuleName RepositoryAutomation
+            Mock Invoke-FinalSolutionsBuild { $observedRoots.Add($RepoRoot) } -ModuleName RepositoryAutomation
+            Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
+
+            Invoke-SolutionsPipeline -RepoRoot $aliasRoot -SkipCleanup -LeaseDirectory (Join-Path $TestDrive 'pipeline-leases') | Out-Null
+
+            $expectedRoot = (Get-Item -LiteralPath $realRoot).FullName
+            $observedRoots.Count | Should -Be 5
+            foreach ($observedRoot in $observedRoots) {
+                $observedRoot | Should -Be $expectedRoot
+            }
+        }
+        catch {
+            if (-not $aliasCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create directory junctions.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $aliasRoot -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It 'forwards the exact Mississippi coverage report to the summarizer' {
         $coveragePath = Join-Path $TestDrive 'exact-run/coverage.cobertura.xml'
         Mock Invoke-MississippiSolutionBuild {} -ModuleName RepositoryAutomation

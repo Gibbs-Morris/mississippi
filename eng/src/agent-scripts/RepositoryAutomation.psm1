@@ -91,15 +91,14 @@ function Get-RepositoryPathComparison {
     return [System.StringComparison]::Ordinal
 }
 
-function Get-RepositoryExecutionLeasePath {
+function Get-RepositoryExecutionLeasePathForRoot {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][string]$CanonicalRepoRoot,
         [string]$LeaseDirectory
     )
 
-    $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
-    $keyRoot = if ((Get-RepositoryPathComparison -RepoRoot $canonicalRoot) -eq [System.StringComparison]::OrdinalIgnoreCase) { $canonicalRoot.ToLowerInvariant() } else { $canonicalRoot }
+    $keyRoot = if ((Get-RepositoryPathComparison -RepoRoot $CanonicalRepoRoot) -eq [System.StringComparison]::OrdinalIgnoreCase) { $CanonicalRepoRoot.ToLowerInvariant() } else { $CanonicalRepoRoot }
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($keyRoot)
     $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
     $fileName = (($hash | ForEach-Object { $_.ToString('x2') }) -join '') + '.lease'
@@ -118,6 +117,17 @@ function Get-RepositoryExecutionLeasePath {
         Set-RepositoryExecutionLeaseUnixMode -Path $leaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
     }
     return Join-Path $leaseDirectory $fileName
+}
+
+function Get-RepositoryExecutionLeasePath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [string]$LeaseDirectory
+    )
+
+    $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
+    return Get-RepositoryExecutionLeasePathForRoot -CanonicalRepoRoot $canonicalRoot -LeaseDirectory $LeaseDirectory
 }
 
 function Resolve-RepositoryExecutionRoot {
@@ -205,8 +215,8 @@ function Enter-RepositoryExecutionLease {
     if ([string]::IsNullOrWhiteSpace($LeaseDirectory) -and $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true') {
         throw 'Cross-account shared worktrees require an explicit trusted -LeaseDirectory.'
     }
-    $leasePath = Get-RepositoryExecutionLeasePath -RepoRoot $RepoRoot -LeaseDirectory $LeaseDirectory
     $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
+    $leasePath = Get-RepositoryExecutionLeasePathForRoot -CanonicalRepoRoot $canonicalRoot -LeaseDirectory $LeaseDirectory
     if (Test-Path -LiteralPath $leasePath) {
         $leaseItem = Get-Item -LiteralPath $leasePath -Force -ErrorAction Stop
         if ($leaseItem.PSIsContainer -or [bool]($leaseItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
@@ -1538,6 +1548,7 @@ function Invoke-SolutionsPipeline {
     )
 
     $executionLease = Enter-RepositoryExecutionLease -RepoRoot $RepoRoot -OperationId "pipeline-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $RepoRoot = $executionLease.RepositoryRoot
     try {
     $automationScriptsRoot = Join-Path (Join-Path (Join-Path $RepoRoot 'eng') 'src') 'agent-scripts'
     $coverageScript = Join-Path $automationScriptsRoot 'summarize-coverage-gaps.ps1'
