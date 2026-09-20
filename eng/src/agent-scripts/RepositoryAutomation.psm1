@@ -2843,6 +2843,14 @@ function Get-PrReadinessBodyText {
     return [string]$property.Value
 }
 
+function Get-PrReadinessBodyFingerprint {
+    param([Parameter(Mandatory)][object]$Value)
+
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes((Get-PrReadinessBodyText -Value $Value))
+    $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
+    return 'SHA256:' + (($hash | ForEach-Object { $_.ToString('x2') }) -join '')
+}
+
 function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally coordinates paginated GitHub checks, reviews, threads, and stability fingerprints.
     [CmdletBinding()]
     param(
@@ -2940,8 +2948,8 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     $finalReviews = @($finalReviewsPages | ForEach-Object { @($_) })
     $reviewFingerprintStart = (@($reviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object user.login, state, id | ForEach-Object { "$($_.user.login)=$($_.state)#$($_.id)" }) -join '|')
     $reviewFingerprintEnd = (@($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object user.login, state, id | ForEach-Object { "$($_.user.login)=$($_.state)#$($_.id)" }) -join '|')
-    $commentFingerprintStart = (@($reviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) } | Sort-Object id | ForEach-Object { "$($_.id)=$((Get-PrReadinessBodyText -Value $_).Length)" }) -join '|')
-    $commentFingerprintEnd = (@($finalReviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) } | Sort-Object id | ForEach-Object { "$($_.id)=$((Get-PrReadinessBodyText -Value $_).Length)" }) -join '|')
+    $commentFingerprintStart = (@($reviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) } | Sort-Object id | ForEach-Object { "$($_.id)=$(Get-PrReadinessBodyFingerprint -Value $_)" }) -join '|')
+    $commentFingerprintEnd = (@($finalReviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) } | Sort-Object id | ForEach-Object { "$($_.id)=$(Get-PrReadinessBodyFingerprint -Value $_)" }) -join '|')
     $finalLatestReviewByAuthor = @{}
     foreach ($review in @($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object submitted_at)) {
         $author = if ($null -ne $review.user.login) { [string]$review.user.login } else { "review-$($review.id)" }
