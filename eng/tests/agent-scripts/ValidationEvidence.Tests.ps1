@@ -52,6 +52,33 @@ Describe 'Source-bound validation evidence' {
         $result.Errors | Should -Contain 'PASS evidence requires a zero exit code.'
     }
 
+    It 'rejects PASS evidence with a null exit code' {
+        $run = New-ValidationEvidenceRun -RepositoryRoot $fixtureRoot -Scope 'fixture' -InputPath @($inputFile)
+        $artifact = Join-Path $fixtureRoot 'null-exit.trx'
+        Set-Content -LiteralPath $artifact -Value '<TestRun><ResultSummary outcome="Completed"><Counters total="1" executed="1" passed="1" failed="0" notExecuted="0" /></ResultSummary></TestRun>'
+        Complete-ValidationEvidenceRun -Run $run -Status PASS -Phase complete -Executed $true -TestCount 1 -ExitCode 0 -ArtifactPath @($artifact) | Out-Null
+        $record = Get-Content -LiteralPath $run.Path -Raw | ConvertFrom-Json
+        $record.ExitCode = $null
+        $record | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $run.Path
+
+        $result = Test-ValidationEvidence -Path $run.Path
+
+        $result.Valid | Should -BeFalse
+        $result.Errors | Should -Contain 'PASS evidence requires a numeric zero exit code.'
+    }
+
+    It 'rejects inconsistent TRX counters' {
+        $run = New-ValidationEvidenceRun -RepositoryRoot $fixtureRoot -Scope 'fixture' -InputPath @($inputFile)
+        $artifact = Join-Path $fixtureRoot 'inconsistent-counters.trx'
+        Set-Content -LiteralPath $artifact -Value '<TestRun><ResultSummary outcome="Completed"><Counters total="0" executed="1" passed="0" failed="0" notExecuted="0" /></ResultSummary></TestRun>'
+        Complete-ValidationEvidenceRun -Run $run -Status PASS -Phase complete -Executed $true -TestCount 1 -ExitCode 0 -ArtifactPath @($artifact) | Out-Null
+
+        $result = Test-ValidationEvidence -Path $run.Path
+
+        $result.Valid | Should -BeFalse
+        ($result.Errors -join "`n") | Should -Match 'inconsistent execution counters'
+    }
+
     It 'invalidates a report after a source edit' {
         $run = New-ValidationEvidenceRun -RepositoryRoot $fixtureRoot -Scope 'fixture' -InputPath @($inputFile)
         Complete-ValidationEvidenceRun -Run $run -Status PASS -Phase complete -Executed $true -TestCount 1 -ExitCode 0 | Out-Null

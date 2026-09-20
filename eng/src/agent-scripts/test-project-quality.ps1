@@ -229,6 +229,17 @@ try {
         }
     }
     catch { Write-Verbose "Unable to enumerate focused project references for evidence: $($_.Exception.Message)" }
+    $sharedInputNames = @('Directory.Build.props', 'Directory.Build.targets', 'Directory.Packages.props', 'global.json', 'NuGet.config', 'nuget.config', 'testconfig.json')
+    $ancestorDirectory = Split-Path -Parent $testProjectPath
+    while ($ancestorDirectory -and $ancestorDirectory.StartsWith($repoRoot, [StringComparison]::OrdinalIgnoreCase)) {
+        foreach ($sharedInputName in $sharedInputNames) {
+            $sharedInputPath = Join-Path $ancestorDirectory $sharedInputName
+            if (Test-Path -LiteralPath $sharedInputPath -PathType Leaf) { $evidenceInputPaths.Add($sharedInputPath) }
+        }
+        $parentDirectory = Split-Path -Parent $ancestorDirectory
+        if ($parentDirectory -eq $ancestorDirectory) { break }
+        $ancestorDirectory = $parentDirectory
+    }
     foreach ($projectPath in @($evidenceProjectPaths | Select-Object -Unique)) {
         $projectDirectory = Split-Path -Parent $projectPath
         $relativeDirectory = [System.IO.Path]::GetRelativePath($repoRoot, $projectDirectory).Replace('\', '/')

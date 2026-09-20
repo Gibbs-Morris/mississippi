@@ -64,8 +64,9 @@ function Resolve-ValidationContainedPath {
     }
 
     $rootWithSeparator = $root.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
-    if (-not $resolved.Equals($root, [System.StringComparison]::OrdinalIgnoreCase) -and
-        -not $resolved.StartsWith($rootWithSeparator, [System.StringComparison]::OrdinalIgnoreCase)) {
+    $pathComparison = if ($env:OS -eq 'Windows_NT') { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
+    if (-not $resolved.Equals($root, $pathComparison) -and
+        -not $resolved.StartsWith($rootWithSeparator, $pathComparison)) {
         return $null
     }
     if ($ReturnResolvedPath) { return [string]$resolved }
@@ -305,7 +306,8 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
     if ([string]$record.Status -eq 'PASS' -and (-not [bool]$record.Executed -or [int]$record.TestCount -lt 1)) { $errors.Add('PASS requires executed tests and a nonzero test count.') }
     if ([string]$record.Status -eq 'PASS') {
         try {
-            if ([int]$record.ExitCode -ne 0) { $errors.Add('PASS evidence requires a zero exit code.') }
+            if ($null -eq $record.ExitCode) { $errors.Add('PASS evidence requires a numeric zero exit code.') }
+            elseif ([int]$record.ExitCode -ne 0) { $errors.Add('PASS evidence requires a zero exit code.') }
         }
         catch { $errors.Add('PASS evidence requires a numeric zero exit code.') }
     }
@@ -362,7 +364,7 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
             $currentHash = [string]$currentMetadata.SHA256
             if ($currentHash -ne $metadataHash) { $errors.Add("Artifact content changed: '$metadataPath'.") }
             if ([int64]$lengthProperty.Value -ne [int64]$currentMetadata.Length) { $errors.Add("Artifact length changed: '$metadataPath'.") }
-            switch ([System.IO.Path]::GetExtension($artifactPath).ToLowerInvariant()) {
+            switch ([System.IO.Path]::GetExtension($metadataPath).ToLowerInvariant()) {
                 '.json' { Get-Content -LiteralPath $artifactPath -Raw | ConvertFrom-Json | Out-Null }
                 '.xml' { [xml]$xml = Get-Content -LiteralPath $artifactPath -Raw; if ($null -eq $xml.DocumentElement) { throw 'XML document has no root element.' } }
                 '.trx' {
@@ -380,6 +382,11 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
                         if ($null -eq $counter -or [string]$counter.Value -notmatch '^\d+$') { throw "TRX document has no nonnegative $counterName counter." }
                     }
                     $executed = [int64]$counters.executed
+                    $passed = [int64]$counters.passed
+                    $failed = [int64]$counters.failed
+                    $notExecuted = [int64]$counters.notExecuted
+                    $total = [int64]$counters.total
+                    if ($executed -gt $total -or $passed + $failed -gt $executed -or $executed + $notExecuted -ne $total) { throw 'TRX document has inconsistent execution counters.' }
                     if ($executed -lt 1 -and -not (Test-ValidationZeroTestFacadeArtifact -Path $metadataPath)) { throw 'TRX document must report a nonzero executed counter.' }
                     $trxExecutedTotal += $executed
                     $trxFailedTotal += [int64]$counters.failed
