@@ -168,20 +168,16 @@ Describe 'RepositoryAutomation helpers' {
         New-Item -ItemType Directory -Path $firstRoot, $secondRoot -Force | Out-Null
         $firstLease = Enter-RepositoryExecutionLease -RepoRoot $firstRoot -OperationId 'shared-one' -LeaseDirectory $coordinationRoot
         try {
-            $secondLease = Enter-RepositoryExecutionLease -RepoRoot $secondRoot -OperationId 'shared-two' -LeaseDirectory $coordinationRoot
-            try {
-                $firstLease.OperationId | Should -Be 'shared-one'
-                $secondLease.OperationId | Should -Be 'shared-two'
-                $firstLease.Path | Should -Be $secondLease.Path
-                $firstLease.LeaseOffset | Should -Not -Be $secondLease.LeaseOffset
-            }
-            finally {
-                Exit-RepositoryExecutionLease -Lease $secondLease
-            }
+            { Enter-RepositoryExecutionLease -RepoRoot $secondRoot -OperationId 'shared-two' -LeaseDirectory $coordinationRoot } |
+                Should -Throw '*coordination file is already held*'
         }
         finally {
             Exit-RepositoryExecutionLease -Lease $firstLease
         }
+
+        $secondLease = Enter-RepositoryExecutionLease -RepoRoot $secondRoot -OperationId 'shared-two' -LeaseDirectory $coordinationRoot
+        try { $secondLease.OperationId | Should -Be 'shared-two' }
+        finally { Exit-RepositoryExecutionLease -Lease $secondLease }
     }
 
     It 'resolves relative lease directories from the physical repository root' {
