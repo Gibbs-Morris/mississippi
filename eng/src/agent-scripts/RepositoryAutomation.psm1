@@ -2860,7 +2860,7 @@ function Get-PrReadinessSnapshot {
     $checkPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$headAtStart/check-runs", '--paginate', '--slurp'))
     $checkRuns = @($checkPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | ForEach-Object { @($_.check_runs) })
     $statusPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$headAtStart/statuses", '--paginate', '--slurp'))
-    $statuses = @($statusPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } })
+    $statuses = @($statusPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | Group-Object context | ForEach-Object { $_.Group | Sort-Object created_at -Descending | Select-Object -First 1 })
     $checks = [System.Collections.Generic.List[object]]::new()
     foreach ($checkRun in $checkRuns) {
         $checks.Add([pscustomobject]@{
@@ -2919,7 +2919,7 @@ function Get-PrReadinessSnapshot {
     $finalCheckPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$finalHead/check-runs", '--paginate', '--slurp'))
     $finalCheckRuns = @($finalCheckPages | ForEach-Object { @($_.check_runs) })
     $finalStatusPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$finalHead/statuses", '--paginate', '--slurp'))
-    $finalStatuses = @($finalStatusPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } })
+    $finalStatuses = @($finalStatusPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | Group-Object context | ForEach-Object { $_.Group | Sort-Object created_at -Descending | Select-Object -First 1 })
     $statusFingerprintStart = (@($statuses | ForEach-Object { "$($_.context)=$([string](Get-PrReadinessCommitStatusState -Status $_))" } | Sort-Object) -join '|')
     $statusFingerprintEnd = (@($finalStatuses | ForEach-Object { "$($_.context)=$([string](Get-PrReadinessCommitStatusState -Status $_))" } | Sort-Object) -join '|')
     $checkFingerprintStart = (@($checkRuns | ForEach-Object { "$($_.name)=$([string](Get-PrReadinessCheckState -CheckRun $_))" } | Sort-Object) -join '|')
@@ -3021,7 +3021,7 @@ function Get-PrReadinessReport {
     foreach ($thread in @($Snapshot.ReviewThreads)) {
         $disposition = $thread.PSObject.Properties['Disposition']
         $pendingDisposition = $null -ne $disposition -and [string]$disposition.Value -eq 'pending'
-        if ($pendingDisposition -or (-not [bool]$thread.IsResolved -and -not [bool]$thread.IsOutdated)) {
+        if ($pendingDisposition -or -not [bool]$thread.IsResolved) {
             $blockers.Add('An unresolved review thread remains.')
         }
     }
