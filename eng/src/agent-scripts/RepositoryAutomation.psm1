@@ -236,6 +236,10 @@ function Enter-RepositoryExecutionLease {
         if (-not [string]::Equals($requestedRoot, $existingRoot, $comparison)) {
             throw "Existing lease belongs to '$existingRoot', not requested worktree '$requestedRoot'."
         }
+        $requestedLeasePath = Get-RepositoryExecutionLeasePathForRoot -CanonicalRepoRoot $requestedRoot -LeaseDirectory $LeaseDirectory
+        if (-not [string]::Equals([System.IO.Path]::GetFullPath($requestedLeasePath), [System.IO.Path]::GetFullPath([string]$ExistingLease.Path), $comparison)) {
+            throw "Existing lease belongs to coordination path '$($ExistingLease.Path)', not requested path '$requestedLeasePath'."
+        }
         return [pscustomobject]@{
             Path = $ExistingLease.Path
             OperationId = $ExistingLease.OperationId

@@ -134,6 +134,21 @@ Describe 'RepositoryAutomation helpers' {
         }
     }
 
+    It 'rejects a reentrant lease from a different coordination directory' {
+        $leaseRoot = Join-Path $TestDrive 'coordination-lease-repository'
+        $firstCoordinationRoot = Join-Path $TestDrive 'coordination-one'
+        $secondCoordinationRoot = Join-Path $TestDrive 'coordination-two'
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'coordination-one' -LeaseDirectory $firstCoordinationRoot
+        try {
+            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -ExistingLease $lease -LeaseDirectory $secondCoordinationRoot } |
+                Should -Throw '*coordination path*'
+        }
+        finally {
+            Exit-RepositoryExecutionLease -Lease $lease
+        }
+    }
+
     It 'resolves relative and chained symlink targets before deriving lease identity' {
         $chainRoot = Join-Path $TestDrive 'lease-chain'
         $realRoot = Join-Path $chainRoot 'real'
