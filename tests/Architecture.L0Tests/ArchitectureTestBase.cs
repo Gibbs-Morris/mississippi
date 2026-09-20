@@ -111,10 +111,12 @@ public abstract class ArchitectureTestBase
 
         return assemblies.ToArray();
     }
+
     private static Assembly[] GetMississippiAssemblies()
     {
         string baseDir = AppDomain.CurrentDomain.BaseDirectory;
         string[] assemblyPaths = Directory.GetFiles(baseDir, "Mississippi.*.dll");
         return LoadMississippiAssemblies(assemblyPaths);
     }
+
 }
