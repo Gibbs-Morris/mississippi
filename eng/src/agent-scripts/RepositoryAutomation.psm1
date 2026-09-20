@@ -227,6 +227,25 @@ function Get-RepositoryPathComparison {
     return [System.StringComparison]::Ordinal
 }
 
+function Assert-RepositoryExecutionLeaseDirectoryAncestors {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    $root = [System.IO.Path]::GetPathRoot($fullPath)
+    $segments = @($fullPath.Substring($root.Length).Split([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) | Where-Object { $_ })
+    $current = $root
+    foreach ($segment in $segments) {
+        $candidate = Join-Path $current $segment
+        if (-not (Test-Path -LiteralPath $candidate)) { break }
+        $item = Get-Item -LiteralPath $candidate -Force -ErrorAction Stop
+        if ([bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            throw "Lease directory path contains a reparse-point ancestor: '$candidate'."
+        }
+        $current = $item.FullName
+    }
+}
+
 function Get-RepositoryExecutionLeasePathForRoot {
     [CmdletBinding()]
     param(
@@ -247,6 +266,7 @@ function Get-RepositoryExecutionLeasePathForRoot {
     else {
         [System.IO.Path]::GetFullPath((Join-Path $CanonicalRepoRoot $LeaseDirectory))
     }
+    Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $leaseDirectory
     $leaseDirectoryCreated = $false
     if (Test-Path -LiteralPath $leaseDirectory) {
         $leaseItem = Get-Item -LiteralPath $leaseDirectory -Force -ErrorAction Stop
@@ -258,6 +278,7 @@ function Get-RepositoryExecutionLeasePathForRoot {
         New-Item -ItemType Directory -Path $leaseDirectory -Force | Out-Null
         $leaseDirectoryCreated = $true
     }
+    Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $leaseDirectory
     $leasePath = Join-Path $leaseDirectory $fileName
     if ($sharedLease) {
         if ($leaseDirectoryCreated) {
@@ -369,7 +390,8 @@ function Enter-RepositoryExecutionLease {
             throw "Existing lease belongs to '$existingRoot', not requested worktree '$requestedRoot'."
         }
         $requestedLeasePath = Get-RepositoryExecutionLeasePathForRoot -CanonicalRepoRoot $requestedRoot -LeaseDirectory $LeaseDirectory
-        if (-not [string]::Equals([System.IO.Path]::GetFullPath($requestedLeasePath), [System.IO.Path]::GetFullPath([string]$ExistingLease.Path), $comparison)) {
+        $leaseComparison = Get-RepositoryPathComparison -RepoRoot (Split-Path -Parent $requestedLeasePath)
+        if (-not [string]::Equals([System.IO.Path]::GetFullPath($requestedLeasePath), [System.IO.Path]::GetFullPath([string]$ExistingLease.Path), $leaseComparison)) {
             throw "Existing lease belongs to coordination path '$($ExistingLease.Path)', not requested path '$requestedLeasePath'."
         }
         return [pscustomobject]@{
