@@ -215,7 +215,28 @@ try {
     }
     $testProjectName = [IO.Path]::GetFileNameWithoutExtension($testProjectPath)
     if ($null -ne $relativeSourceProjectPath) { $SourceProject = Join-Path $executionLease.RepositoryRoot $relativeSourceProjectPath }
-    $evidenceRun = New-ValidationEvidenceRun -RepositoryRoot $repoRoot -Scope "focused-quality:$TestProject" -InputPath @($testProjectPath) -Arguments @('Configuration', $Configuration, 'SkipMutation', [string]$SkipMutation, 'NoBuild', [string]$NoBuild)
+    $evidenceInputPaths = [System.Collections.Generic.List[string]]::new()
+    $evidenceProjectPaths = [System.Collections.Generic.List[string]]::new()
+    $evidenceProjectPaths.Add($testProjectPath)
+    if (-not [string]::IsNullOrWhiteSpace($SourceProject)) { $evidenceProjectPaths.Add($SourceProject) }
+    try {
+        [xml]$testProjectXml = Get-Content -LiteralPath $testProjectPath -Raw
+        foreach ($reference in @($testProjectXml.Project.ItemGroup.ProjectReference)) {
+            if ($null -ne $reference.Include) {
+                $referencePath = (Resolve-Path -LiteralPath (Join-Path (Split-Path -Parent $testProjectPath) ([string]$reference.Include)) -ErrorAction Stop).Path
+                $evidenceProjectPaths.Add($referencePath)
+            }
+        }
+    }
+    catch { Write-Verbose "Unable to enumerate focused project references for evidence: $($_.Exception.Message)" }
+    foreach ($projectPath in @($evidenceProjectPaths | Select-Object -Unique)) {
+        $projectDirectory = Split-Path -Parent $projectPath
+        $relativeDirectory = [System.IO.Path]::GetRelativePath($repoRoot, $projectDirectory).Replace('\', '/')
+        $trackedFiles = @(& git -c "safe.directory=$($repoRoot.Replace('\', '/'))" -C $repoRoot ls-files -- "$relativeDirectory/" 2>$null)
+        foreach ($trackedFile in $trackedFiles) { $evidenceInputPaths.Add((Join-Path $repoRoot ([string]$trackedFile))) }
+    }
+    if ($evidenceInputPaths.Count -eq 0) { $evidenceInputPaths.Add($testProjectPath) }
+    $evidenceRun = New-ValidationEvidenceRun -RepositoryRoot $repoRoot -Scope "focused-quality:$TestProject" -InputPath @($evidenceInputPaths) -Arguments @('Configuration', $Configuration, 'SkipMutation', [string]$SkipMutation, 'NoBuild', [string]$NoBuild)
     if (Test-Path ".config/dotnet-tools.json") {
         Write-Host "[2/7] Restoring dotnet tools..." -ForegroundColor Cyan
         dotnet tool restore

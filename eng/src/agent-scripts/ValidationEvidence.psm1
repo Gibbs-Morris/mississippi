@@ -197,7 +197,7 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
     $errors = [System.Collections.Generic.List[string]]::new()
     try { $record = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json }
     catch { return [pscustomobject]@{ Valid = $false; Fresh = $false; Errors = @('Evidence is missing or unreadable.'); Record = $null } }
-    $requiredProperties = @('SchemaVersion', 'Status', 'RepositoryRoot', 'SourceBefore', 'Artifacts', 'ArtifactMetadata')
+    $requiredProperties = @('SchemaVersion', 'Status', 'RepositoryRoot', 'SourceBefore', 'SourceAfter', 'Executed', 'TestCount', 'SourceChangedDuringRun', 'Artifacts', 'ArtifactMetadata')
     foreach ($property in $requiredProperties) {
         if ($null -eq $record.PSObject.Properties[$property]) { $errors.Add("Evidence is missing required field '$property'.") }
     }
