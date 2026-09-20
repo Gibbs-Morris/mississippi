@@ -308,6 +308,9 @@ finally { if ($null -ne $childLease) { Exit-RepositoryExecutionLease -Lease $chi
         $coordinationRoot = Join-Path $TestDrive 'delayed-shared-lease-coordination'
         $leasePath = Join-Path $coordinationRoot 'shared.lease'
         $metadataPath = "$leasePath.metadata"
+        $readyPath = Join-Path $coordinationRoot 'worker.ready'
+        $proceedPath = Join-Path $coordinationRoot 'worker.proceed'
+        $startedPath = Join-Path $coordinationRoot 'worker.started'
         $modulePath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../src/agent-scripts/RepositoryAutomation.psm1'))
         New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
         New-Item -ItemType Directory -Path $coordinationRoot -Force | Out-Null
@@ -318,9 +321,12 @@ finally { if ($null -ne $childLease) { Exit-RepositoryExecutionLease -Lease $chi
         & chmod 600 -- $metadataPath
 
         $worker = @'
-param([string]$ModulePath, [string]$RepoRoot, [string]$LeaseDirectory)
+param([string]$ModulePath, [string]$RepoRoot, [string]$LeaseDirectory, [string]$ReadyPath, [string]$ProceedPath, [string]$StartedPath)
 $ErrorActionPreference = 'Stop'
 Import-Module $ModulePath
+New-Item -ItemType File -Path $ReadyPath -Force | Out-Null
+while (-not (Test-Path -LiteralPath $ProceedPath -PathType Leaf)) { Start-Sleep -Milliseconds 10 }
+New-Item -ItemType File -Path $StartedPath -Force | Out-Null
 $timer = [System.Diagnostics.Stopwatch]::StartNew()
 $null = Get-RepositoryExecutionLeasePath -RepoRoot $RepoRoot -LeaseDirectory $LeaseDirectory
 $timer.Stop()
@@ -331,17 +337,35 @@ $timer.Stop()
         $powershell = [powershell]::Create()
         $powershell.Runspace = $runspace
         try {
-            $null = $powershell.AddScript($worker).AddArgument($modulePath).AddArgument($leaseRoot).AddArgument($coordinationRoot)
+            $null = $powershell.AddScript($worker).AddArgument($modulePath).AddArgument($leaseRoot).AddArgument($coordinationRoot).AddArgument($readyPath).AddArgument($proceedPath).AddArgument($startedPath)
             $asyncResult = $powershell.BeginInvoke()
-            Start-Sleep -Milliseconds 250
+            $readyDeadline = [DateTime]::UtcNow.AddSeconds(5)
+            while (-not (Test-Path -LiteralPath $readyPath -PathType Leaf)) {
+                if ([DateTime]::UtcNow -ge $readyDeadline) { throw 'Delayed-initialization worker did not become ready.' }
+                Start-Sleep -Milliseconds 25
+            }
+            New-Item -ItemType File -Path $proceedPath -Force | Out-Null
+            $startedDeadline = [DateTime]::UtcNow.AddSeconds(5)
+            while (-not (Test-Path -LiteralPath $startedPath -PathType Leaf)) {
+                if ([DateTime]::UtcNow -ge $startedDeadline) { throw 'Delayed-initialization worker did not start the lease call.' }
+                Start-Sleep -Milliseconds 25
+            }
+            $pendingDeadline = [DateTime]::UtcNow.AddSeconds(1)
+            do {
+                if ($asyncResult.IsCompleted) { throw 'Lease initialization completed before permissions were sealed.' }
+                Start-Sleep -Milliseconds 25
+            } while ([DateTime]::UtcNow -lt $pendingDeadline)
             & chmod 666 -- $leasePath
             & chmod 666 -- $metadataPath
-            Start-Sleep -Milliseconds 100
+            $pendingDeadline = [DateTime]::UtcNow.AddSeconds(1)
+            do {
+                if ($asyncResult.IsCompleted) { throw 'Lease initialization completed before the shared directory was sealed.' }
+                Start-Sleep -Milliseconds 25
+            } while ([DateTime]::UtcNow -lt $pendingDeadline)
             & chmod 555 -- $coordinationRoot
 
             $result = (ConvertFrom-Json -InputObject ([string]$powershell.EndInvoke($asyncResult)))
             $result.Initialized | Should -Be $true
-            $result.ElapsedMilliseconds | Should -BeGreaterOrEqual 250
         }
         finally {
             $powershell.Dispose()
@@ -427,6 +451,38 @@ $timer.Stop()
             Remove-Item -LiteralPath $outer -Force -ErrorAction SilentlyContinue
             Remove-Item -LiteralPath $middle -Force -ErrorAction SilentlyContinue
             Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'resolves a symlinked file target before leasing its repository' {
+        $sourceRoot = Join-Path $TestDrive 'solution-link-source'
+        $targetRoot = Join-Path $TestDrive 'solution-link-target'
+        $sourcePath = Join-Path $sourceRoot 'solution.slnx'
+        $targetPath = Join-Path $targetRoot 'solution.slnx'
+        New-Item -ItemType Directory -Path $sourceRoot -Force | Out-Null
+        New-Item -ItemType Directory -Path $targetRoot -Force | Out-Null
+        Set-Content -LiteralPath $targetPath -Value '<Solution />'
+        $linkCreated = $false
+        try {
+            New-Item -ItemType SymbolicLink -Path $sourcePath -Target $targetPath -ErrorAction Stop | Out-Null
+            $linkCreated = $true
+
+            $resolved = Resolve-RepositoryExecutionPath -Path $sourcePath
+
+            $resolved | Should -Be (Get-Item -LiteralPath $targetPath).FullName
+        }
+        catch {
+            if (-not $linkCreated) {
+                Set-ItResult -Skipped -Because 'The test host cannot create file symbolic links.'
+            }
+            else {
+                throw
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $sourcePath -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $sourceRoot -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $targetRoot -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
 

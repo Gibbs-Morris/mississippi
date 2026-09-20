@@ -12,14 +12,20 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1')
-$resolvedSolutionPath = (Resolve-Path -LiteralPath $SolutionPath -ErrorAction Stop).Path
-$lexicalSolutionRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $resolvedSolutionPath)
-$relativeSolutionPath = [System.IO.Path]::GetRelativePath($lexicalSolutionRoot, $resolvedSolutionPath)
+$resolvedSolutionPath = Resolve-RepositoryExecutionPath -Path $SolutionPath
+$solutionRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $resolvedSolutionPath)
+$relativeSolutionPath = [System.IO.Path]::GetRelativePath($solutionRoot, $resolvedSolutionPath)
 $executionLease = $null
 
 try {
-    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $lexicalSolutionRoot -OperationId "test-solution-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
-    $resolvedSolutionPath = Join-Path $executionLease.RepositoryRoot $relativeSolutionPath
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $solutionRoot -OperationId "test-solution-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $leasedSolutionPath = Join-Path $executionLease.RepositoryRoot $relativeSolutionPath
+    $resolvedSolutionPath = Resolve-RepositoryExecutionPath -Path $leasedSolutionPath
+    $resolvedSolutionRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $resolvedSolutionPath)
+    $pathComparison = if ($IsWindows -or $IsMacOS) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
+    if (-not [string]::Equals($resolvedSolutionRoot, $executionLease.RepositoryRoot, $pathComparison)) {
+        throw "Solution path '$SolutionPath' resolves outside the leased repository root '$($executionLease.RepositoryRoot)'."
+    }
     $arguments = @()
     if ($NoBuild) { $arguments += '--no-build' }
     Invoke-SolutionTests -SolutionPath $resolvedSolutionPath -Configuration $Configuration -TestLevels $TestLevels `
