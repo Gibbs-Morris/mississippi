@@ -68,6 +68,28 @@ Describe 'RepositoryAutomation helpers' {
         }
     }
 
+    It 'acquires a shared lease on Windows without Unix file modes' {
+        if (-not $IsWindows) {
+            Set-ItResult -Skipped -Because 'Windows shared lease behavior is not available on Unix.'
+            return
+        }
+
+        $previousSharedWorktree = $env:MISSISSIPPI_SHARED_WORKTREE
+        $leaseRoot = Join-Path $TestDrive 'windows-shared-lease-repository'
+        $coordinationRoot = Join-Path $TestDrive 'windows-shared-lease-coordination'
+        New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
+        try {
+            $env:MISSISSIPPI_SHARED_WORKTREE = 'true'
+            $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'windows-shared-owner' -LeaseDirectory $coordinationRoot
+            try { $lease.OperationId | Should -Be 'windows-shared-owner' }
+            finally { Exit-RepositoryExecutionLease -Lease $lease }
+        }
+        finally {
+            if ($null -eq $previousSharedWorktree) { Remove-Item Env:MISSISSIPPI_SHARED_WORKTREE -ErrorAction SilentlyContinue }
+            else { $env:MISSISSIPPI_SHARED_WORKTREE = $previousSharedWorktree }
+        }
+    }
+
     It 'uses one lease identity for a worktree alias' {
         $realRoot = Join-Path $TestDrive 'lease-real'
         $aliasRoot = Join-Path $TestDrive 'lease-alias'
