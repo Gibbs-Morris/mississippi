@@ -7,6 +7,15 @@ $modulePath = [System.IO.Path]::GetFullPath($modulePath)
 Import-Module -Name $modulePath -Force
 
 Describe 'RepositoryAutomation helpers' {
+    AfterEach {
+        if (-not $IsWindows) {
+            $testDirectories = @(Get-ChildItem -LiteralPath $TestDrive -Directory -Recurse -Force -ErrorAction SilentlyContinue | Sort-Object FullName -Descending)
+            foreach ($testDirectory in $testDirectories) {
+                & chmod 755 -- $testDirectory.FullName 2>$null | Out-Null
+            }
+        }
+    }
+
     It 'resolves repository root from test path' {
         $root = Get-RepositoryRoot -StartPath $PSScriptRoot
         Test-Path -LiteralPath (Join-Path $root '.git') | Should -Be $true
