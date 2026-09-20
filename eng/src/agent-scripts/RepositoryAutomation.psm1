@@ -1669,7 +1669,7 @@ function Invoke-SolutionsPipeline {
     }
     Invoke-AutomationStep -Name 'Summarize Coverage Gaps' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $coverageScript, '-CoverageReportPath', $mississippiTestResult.CoverageReportPath, '-EmitTasks') | Out-Host }
     if ($IncludeMutation) {
-        Invoke-AutomationStep -Name 'Run and Summarize Mississippi Mutation Tests' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $mutationSummaryScript, '-Configuration', $Configuration, '-GenerateTasks') | Out-Host }
+        Invoke-AutomationStep -Name 'Run and Summarize Mississippi Mutation Tests' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $mutationSummaryScript, '-Configuration', $Configuration, '-GenerateTasks', '-SkipLease') | Out-Host }
     }
 
     Write-AutomationBanner -Message '=== SAMPLE SOLUTION PIPELINE ===' -ForegroundColor ([ConsoleColor]::Cyan)

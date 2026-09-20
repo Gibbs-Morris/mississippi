@@ -5,7 +5,8 @@ param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Release',
     [string]$LeaseDirectory,
-    [switch]$ReportOnly
+    [switch]$ReportOnly,
+    [switch]$SkipLease
 )
 
 Set-StrictMode -Version Latest
@@ -18,8 +19,10 @@ $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 $executionLease = $null
 
 try {
-    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "mutation-mississippi-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
-    $repoRoot = $executionLease.RepositoryRoot
+    if (-not $SkipLease) {
+        $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "mutation-mississippi-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+        $repoRoot = $executionLease.RepositoryRoot
+    }
     Invoke-MississippiSolutionMutationTests -RepoRoot $repoRoot -Configuration $Configuration -ReportOnly:$ReportOnly
 }
 catch {

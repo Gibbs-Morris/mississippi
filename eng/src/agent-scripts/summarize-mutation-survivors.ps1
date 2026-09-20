@@ -3,6 +3,7 @@
 [CmdletBinding()]
 param(
     [switch]$SkipMutationRun,
+    [switch]$SkipLease,
     [string]$MutationScriptPath,
     [string]$RunPath,
     [ValidateSet('Debug', 'Release')]
@@ -357,7 +358,9 @@ if (-not $SkipMutationRun)
 {
     if ($RunPath) { throw '-RunPath requires -SkipMutationRun.' }
     Write-Host "Running mutation tests via '$MutationScriptPath'..." -ForegroundColor Cyan
-    & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoLogo -NoProfile -File $MutationScriptPath -Configuration $Configuration
+    $mutationArguments = @('-Configuration', $Configuration)
+    if ($SkipLease) { $mutationArguments += '-SkipLease' }
+    & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoLogo -NoProfile -File $MutationScriptPath @mutationArguments
     $mutationExitCode = $LASTEXITCODE
     if ($mutationExitCode -ne 0)
     {
