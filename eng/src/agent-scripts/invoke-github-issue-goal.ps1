@@ -92,19 +92,26 @@ function Get-GoalWorktreeFingerprint { # NOSONAR - bounded Git/index/worktree fi
     if ($exitCode -ne 0) { throw 'Unable to resolve the current worktree fingerprint.' }
     $statusEntries = [System.Collections.Generic.List[string]]::new()
     $fileHashes = [System.Collections.Generic.List[string]]::new()
-    foreach ($entry in $status) {
+    for ($statusIndex = 0; $statusIndex -lt $status.Count; $statusIndex++) {
+        $entry = [string]$status[$statusIndex]
         if ($entry.Length -lt 4) { continue }
-        $statusEntries.Add([string]$entry)
-        $relative = ([string]$entry).Substring(3).Trim('"')
-        if ($relative -match '^(?<Old>.+) -> (?<New>.+)$') { $relative = $Matches.New }
-        $relative = $relative.Replace('\', '/')
-        $full = [System.IO.Path]::GetFullPath((Join-Path $Root $relative))
-        if ($excludedPaths.Contains($full)) { continue }
-        $indexHash = if ($indexHashes.ContainsKey($relative)) { [string]$indexHashes[$relative] } else { 'absent' }
-        if (Test-Path -LiteralPath $full -PathType Leaf) {
-            $fileHashes.Add($relative + ':index=' + $indexHash + ':worktree=' + (Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant())
+        $relativePaths = [System.Collections.Generic.List[string]]::new()
+        $relativePaths.Add($entry.Substring(3).Trim('"').Replace('\', '/'))
+        if ($entry[0] -in @('R', 'C') -and $statusIndex + 1 -lt $status.Count) {
+            $statusIndex++
+            $relativePaths.Add(([string]$status[$statusIndex]).Trim('"').Replace('\', '/'))
+            $statusEntries.Add($entry + ' -> ' + [string]$status[$statusIndex])
         }
-        else { $fileHashes.Add($relative + ':index=' + $indexHash + ':worktree=missing') }
+        else { $statusEntries.Add($entry) }
+        foreach ($relative in $relativePaths) {
+            $full = [System.IO.Path]::GetFullPath((Join-Path $Root $relative))
+            if ($excludedPaths.Contains($full)) { continue }
+            $indexHash = if ($indexHashes.ContainsKey($relative)) { [string]$indexHashes[$relative] } else { 'absent' }
+            if (Test-Path -LiteralPath $full -PathType Leaf) {
+                $fileHashes.Add($relative + ':index=' + $indexHash + ':worktree=' + (Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant())
+            }
+            else { $fileHashes.Add($relative + ':index=' + $indexHash + ':worktree=missing') }
+        }
     }
     $content = (($statusEntries -join [Environment]::NewLine) + [Environment]::NewLine + ($fileHashes -join [Environment]::NewLine))
     $hash = [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($content))
