@@ -91,7 +91,7 @@ function Get-EvaluationInputEvidenceErrors {
     }
     if ([string]$inputEvidence.bodyDigest -notmatch '^SHA256:[0-9a-fA-F]{64}$') { $null = $messages.Add("Category '$($Category.id)' inputEvidence bodyDigest is not an immutable SHA256 digest.") }
     if ([string]$inputEvidence.sourceRevision -ne $SourceRevision) { $null = $messages.Add("Category '$($Category.id)' inputEvidence uses a different source revision.") }
-    $evidenceKey = "$($Category.id)|$pairedInputId"
+    $evidenceKey = $pairedInputId
     $evidenceValue = "$($inputEvidence.repository)|$($inputEvidence.issueNumber)|$($inputEvidence.bodyDigest)|$($inputEvidence.sourceRevision)"
     if ($Observed.ContainsKey($evidenceKey) -and [string]$Observed[$evidenceKey] -ne $evidenceValue) {
         $null = $messages.Add("Category '$($Category.id)' paired input '$pairedInputId' differs between host records.")
@@ -185,6 +185,18 @@ try {
         }
         elseif ($requiredFailureCases.ContainsKey([string]$category.id) -and -not (Test-EvaluationSetEqual -Left $category.failureCases -Right $requiredFailureCases[[string]$category.id])) {
             $errors.Add("Category '$($category.id)' failure cases do not match the benchmark contract.")
+        }
+        $failureDefinitions = if ($null -eq $category.PSObject.Properties['failureCaseDefinitions']) { @() } else { @($category.failureCaseDefinitions) }
+        $failureDefinitionIds = @($failureDefinitions | ForEach-Object { if ($null -ne $_.PSObject.Properties['id']) { [string]$_.id } })
+        if ($failureDefinitions.Count -ne @($category.failureCases).Count -or -not (Test-EvaluationSetEqual -Left $failureDefinitionIds -Right $category.failureCases)) {
+            $errors.Add("Category '$($category.id)' failure-case definitions must cover exactly every declared failure case.")
+        }
+        foreach ($definition in $failureDefinitions) {
+            foreach ($definitionField in @('id', 'setup', 'trigger', 'expectedObservation')) {
+                if ($null -eq $definition.PSObject.Properties[$definitionField] -or [string]::IsNullOrWhiteSpace([string]$definition.$definitionField)) {
+                    $errors.Add("Category '$($category.id)' failure-case definition is missing $definitionField.")
+                }
+            }
         }
         if ($requiredIndependentChecks.ContainsKey([string]$category.id) -and -not (Test-EvaluationSetEqual -Left $category.independentChecks -Right $requiredIndependentChecks[[string]$category.id])) {
             $errors.Add("Category '$($category.id)' independent checks do not match the benchmark contract.")
@@ -318,6 +330,7 @@ try {
                     if ($record.PSObject.Properties['independentCheckResults']) {
                         $checkResults = @($record.independentCheckResults)
                         $checkResultIds = @($checkResults | ForEach-Object { if ($null -ne $_.PSObject.Properties['id']) { [string]$_.id } })
+                        if ($checkResultIds.Count -ne (Get-EvaluationSet -Values $checkResultIds).Count) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence contains duplicate independent-check results.") }
                         if (-not (Test-EvaluationSetEqual -Left $checkResultIds -Right $category.independentChecks)) { $errors.Add("Host '$hostName' category '$($category.id)' trial evidence does not provide a result for every independent check.") }
                         foreach ($checkResult in $checkResults) {
                             if ($null -eq $checkResult.PSObject.Properties['status'] -or [string]$checkResult.status -notin @('passed', 'failed', 'blocked', 'unsupported')) { $errors.Add("Host '$hostName' category '$($category.id)' has an invalid independent-check result.") }
@@ -381,6 +394,13 @@ try {
                     if ([string]$failureRecord.failureCase -notin @($category.failureCases)) {
                         $errors.Add("Host '$hostName' category '$($category.id)' has an unknown failure case.")
                     }
+                    $failureDefinitionProperty = $failureRecord.PSObject.Properties['failureDefinitionId']
+                    if ($null -eq $failureDefinitionProperty -or [string]::IsNullOrWhiteSpace([string]$failureDefinitionProperty.Value)) {
+                        $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence is missing failureDefinitionId.")
+                    }
+                    elseif ([string]$failureDefinitionProperty.Value -ne [string]$failureRecord.failureCase) {
+                        $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence does not identify its executed failure definition.")
+                    }
                     foreach ($inputError in @(Get-EvaluationInputEvidenceErrors -Record $failureRecord -Category $category -PairedCases $pairedCases -SourceRevision ([string]$results.sourceRevision) -Observed $observedInputEvidence)) { $errors.Add("Host '$hostName' $inputError") }
                     foreach ($field in @('outcome', 'reason', 'freshContext', 'contextId', 'repositoryRevision', 'repositoryState', 'worktreeId', 'independentChecks', 'independentCheckResults', 'falseCompletion', 'authorityViolations')) {
                         if ($null -eq $failureRecord.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence is missing $field.") }
@@ -396,6 +416,7 @@ try {
                     if ($failureRecord.PSObject.Properties['independentCheckResults']) {
                         $failureCheckResults = @($failureRecord.independentCheckResults)
                         $failureCheckIds = @($failureCheckResults | ForEach-Object { if ($null -ne $_.PSObject.Properties['id']) { [string]$_.id } })
+                        if ($failureCheckIds.Count -ne (Get-EvaluationSet -Values $failureCheckIds).Count) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence contains duplicate independent-check results.") }
                         if (-not (Test-EvaluationSetEqual -Left $failureCheckIds -Right $category.independentChecks)) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence does not provide a result for every independent check.") }
                         foreach ($failureCheck in $failureCheckResults) {
                             if ($null -eq $failureCheck.PSObject.Properties['status'] -or [string]$failureCheck.status -notin @('passed', 'failed', 'blocked', 'unsupported')) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence has an invalid independent-check result.") }

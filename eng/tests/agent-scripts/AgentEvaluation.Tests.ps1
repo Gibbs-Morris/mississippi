@@ -72,6 +72,7 @@ Describe 'Issue delivery benchmark validation' {
                             pairedInputId = [string]$category.pairedInputIds[0]
                             inputEvidence = [ordered]@{ repository = 'Gibbs-Morris/mississippi'; issueNumber = 732; bodyDigest = $inputDigest; sourceRevision = $revision }
                             failureCase = [string]$failureCase
+                            failureDefinitionId = [string]$failureCase
                             outcome = 'blocked'
                             acceptancePassed = $false
                             reason = 'controlled failure-case trial'
@@ -208,5 +209,31 @@ Describe 'Issue delivery benchmark validation' {
 
         $outcome.ExitCode | Should -Not -Be 0
         ($outcome.Result.Errors -join "`n") | Should -Match 'browser failure-case trial is missing browserEvidence'
+    }
+
+    It 'rejects duplicate independent-check results' {
+        $data = New-LiveResults
+        $normal = $data.hosts[0].trialRecords[0]
+        $normal.independentCheckResults = @($normal.independentCheckResults + $normal.independentCheckResults[0])
+        $path = Join-Path $TestDrive 'duplicate-independent-checks.json'
+        $data | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path
+
+        $outcome = Invoke-Evaluation -ResultsPath $path
+
+        $outcome.ExitCode | Should -Not -Be 0
+        ($outcome.Result.Errors -join "`n") | Should -Match 'duplicate independent-check results'
+    }
+
+    It 'binds the same paired input identically across categories' {
+        $data = New-LiveResults
+        $documentationRecord = @($data.hosts[0].trialRecords | Where-Object scenarioId -EQ 'documentation')[0]
+        $documentationRecord.inputEvidence.bodyDigest = 'SHA256:' + ('b' * 64)
+        $path = Join-Path $TestDrive 'cross-category-input-mismatch.json'
+        $data | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path
+
+        $outcome = Invoke-Evaluation -ResultsPath $path
+
+        $outcome.ExitCode | Should -Not -Be 0
+        ($outcome.Result.Errors -join "`n") | Should -Match 'paired input.*differs'
     }
 }
