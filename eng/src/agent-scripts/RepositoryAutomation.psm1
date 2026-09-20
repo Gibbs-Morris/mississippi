@@ -2975,8 +2975,8 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
 
     $finalReviewsPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/pulls/$PullRequestNumber/reviews", '--paginate', '--slurp'))
     $finalReviews = @($finalReviewsPages | ForEach-Object { @($_) })
-    $reviewFingerprintStart = (@($reviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object user.login, state, id | ForEach-Object { "$($_.user.login)=$($_.state)#$($_.id)" }) -join '|')
-    $reviewFingerprintEnd = (@($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object user.login, state, id | ForEach-Object { "$($_.user.login)=$($_.state)#$($_.id)" }) -join '|')
+    $reviewFingerprintStart = (@($reviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object state, id | ForEach-Object { "$(Get-PrReadinessReviewAuthor -Value $_)=$($_.state)#$($_.id)" }) -join '|')
+    $reviewFingerprintEnd = (@($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object state, id | ForEach-Object { "$(Get-PrReadinessReviewAuthor -Value $_)=$($_.state)#$($_.id)" }) -join '|')
     $commentFingerprintStart = (@($reviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) } | Sort-Object id | ForEach-Object { "$($_.id)=$(Get-PrReadinessBodyFingerprint -Value $_)" }) -join '|')
     $commentFingerprintEnd = (@($finalReviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) } | Sort-Object id | ForEach-Object { "$($_.id)=$(Get-PrReadinessBodyFingerprint -Value $_)" }) -join '|')
     $finalLatestReviewByAuthor = @{}
