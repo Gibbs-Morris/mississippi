@@ -409,7 +409,8 @@ Describe 'Mutation automation' {
             Should -Throw '*mutation score gate failed after summary*'
         Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
             $Arguments -like '*summarize-mutation-survivors.ps1' -and $Arguments -contains 'Debug' -and
-            $Arguments -contains '-GenerateTasks' -and $Arguments -contains '-SkipLease' -and $Arguments -notcontains '-SkipMutationRun'
+            $Arguments -contains '-GenerateTasks' -and $Arguments -contains '-SkipLease' -and
+            $Arguments -contains '-LeaseDirectory' -and $Arguments -notcontains '-SkipMutationRun'
         }
     }
 
