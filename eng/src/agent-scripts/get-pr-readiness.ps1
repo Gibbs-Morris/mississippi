@@ -5,6 +5,7 @@ param(
     [Parameter(Mandatory)][string]$RepositoryOwner,
     [Parameter(Mandatory)][string]$RepositoryName,
     [Parameter(Mandatory)][int]$PullRequestNumber,
+    [Parameter(Mandatory)][string]$TrustedReviewQueryPath,
     [ValidateRange(0, 86400)][int]$PollingSeconds = 0,
     [switch]$Json
 )
@@ -15,7 +16,7 @@ $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
 
 try {
-    $snapshot = Get-PrReadinessSnapshot -RepositoryOwner $RepositoryOwner -RepositoryName $RepositoryName -PullRequestNumber $PullRequestNumber -PollingSeconds $PollingSeconds
+    $snapshot = Get-PrReadinessSnapshot -RepositoryOwner $RepositoryOwner -RepositoryName $RepositoryName -PullRequestNumber $PullRequestNumber -TrustedReviewQueryPath $TrustedReviewQueryPath -PollingSeconds $PollingSeconds
     $result = Get-PrReadinessReport -Snapshot $snapshot
     if ($Json) {
         $result | ConvertTo-Json -Depth 10 -Compress

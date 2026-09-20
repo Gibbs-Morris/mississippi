@@ -2868,7 +2868,24 @@ function Get-PrReadinessReviewAuthor {
     if ($null -ne $user -and $null -ne $user.Value -and $null -ne $user.Value.PSObject.Properties['login']) {
         return [string]$user.Value.login
     }
-    return "review-$([string]$Value.id)"
+    # GitHub can retain review events after the account is deleted. A review ID
+    # is not a stable reviewer identity, so keep those events in one tombstone
+    # stream and let the aggregate review decision retire superseded requests.
+    return 'review-deleted'
+}
+
+function Assert-PrReadinessGraphQlPage {
+    param([Parameter(Mandatory)][object]$Page, [Parameter(Mandatory)][string]$Label)
+
+    if ($null -ne $Page.PSObject.Properties['errors'] -and @($Page.errors).Count -gt 0) {
+        throw "Readiness GraphQL $Label query returned errors: $($Page.errors | ConvertTo-Json -Compress)"
+    }
+    if ($null -eq $Page.PSObject.Properties['data'] -or
+        $null -eq $Page.data.repository -or
+        $null -eq $Page.data.repository.pullRequest -or
+        $null -eq $Page.data.repository.pullRequest.reviewThreads) {
+        throw "Readiness GraphQL $Label query returned an incomplete response."
+    }
 }
 
 function Get-PrReadinessBodyFingerprint {
@@ -2885,6 +2902,7 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
         [Parameter(Mandatory)][string]$RepositoryOwner,
         [Parameter(Mandatory)][string]$RepositoryName,
         [Parameter(Mandatory)][int]$PullRequestNumber,
+        [string]$TrustedReviewQueryPath,
         [scriptblock]$GhJsonProvider,
         [ValidateRange(0, 86400)][int]$PollingSeconds = 0
     )
@@ -2949,6 +2967,17 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
 
     $threadQuery = 'query($owner:String!,$repo:String!,$number:Int!,$cursor:String){repository(owner:$owner,name:$repo){pullRequest(number:$number){reviewDecision reviewThreads(first:100,after:$cursor){nodes{id isResolved isOutdated comments(first:20){nodes{databaseId body author{login} path line url}}} pageInfo{hasNextPage endCursor}}}}}'
     $threadQueryExpectedDigest = 'SHA256:408a4e4a10fcf7a747ce76b4f2894f1933d62c01b8a51af6e0e9adc15ef45169'
+    $threadQueryArgument = "query=$threadQuery"
+    $threadQuerySwitch = '-f'
+    if ($null -eq $GhJsonProvider) {
+        if ([string]::IsNullOrWhiteSpace($TrustedReviewQueryPath)) {
+            throw 'A trusted, independently installed review-thread query file is required before invoking authenticated gh.'
+        }
+        $trustedQueryPath = (Resolve-Path -LiteralPath $TrustedReviewQueryPath -ErrorAction Stop).Path
+        $threadQuery = (Get-Content -LiteralPath $trustedQueryPath -Raw -ErrorAction Stop).Replace("`r`n", "`n").Trim()
+        $threadQueryArgument = "query=@$trustedQueryPath"
+        $threadQuerySwitch = '-F'
+    }
     $threadQueryDigestBytes = [System.Text.Encoding]::UTF8.GetBytes($threadQuery)
     $threadQueryDigestHash = [System.Security.Cryptography.SHA256]::HashData($threadQueryDigestBytes)
     $threadQueryDigest = 'SHA256:' + (($threadQueryDigestHash | ForEach-Object { $_.ToString('x2') }) -join '')
@@ -2957,9 +2986,9 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     $cursor = $null
     $graphqlReviewDecision = ''
     do {
-        $graphqlArguments = @('api', 'graphql', '-f', "query=$threadQuery", '-F', "owner=$RepositoryOwner", '-F', "repo=$RepositoryName", '-F', "number=$PullRequestNumber", '-F', $(if ($null -eq $cursor) { 'cursor=null' } else { "cursor=$cursor" }))
+        $graphqlArguments = @('api', 'graphql', $threadQuerySwitch, $threadQueryArgument, '-F', "owner=$RepositoryOwner", '-F', "repo=$RepositoryName", '-F', "number=$PullRequestNumber", '-F', $(if ($null -eq $cursor) { 'cursor=null' } else { "cursor=$cursor" }))
         $threadPage = & $getJson $graphqlArguments
-        if ($null -ne $threadPage.PSObject.Properties['errors'] -and @($threadPage.errors).Count -gt 0) { throw "Readiness GraphQL thread query returned errors: $($threadPage.errors | ConvertTo-Json -Compress)" }
+        Assert-PrReadinessGraphQlPage -Page $threadPage -Label 'thread'
         $graphqlReviewDecision = [string]$threadPage.data.repository.pullRequest.reviewDecision
         foreach ($thread in @($threadPage.data.repository.pullRequest.reviewThreads.nodes)) { $threads.Add($thread) }
         $hasNextPage = [bool]$threadPage.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage
@@ -2999,9 +3028,9 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     $finalCursor = $null
     $finalHasNextPage = $false
     do {
-        $finalGraphqlArguments = @('api', 'graphql', '-f', "query=$threadQuery", '-F', "owner=$RepositoryOwner", '-F', "repo=$RepositoryName", '-F', "number=$PullRequestNumber", '-F', $(if ($null -eq $finalCursor) { 'cursor=null' } else { "cursor=$finalCursor" }))
+        $finalGraphqlArguments = @('api', 'graphql', $threadQuerySwitch, $threadQueryArgument, '-F', "owner=$RepositoryOwner", '-F', "repo=$RepositoryName", '-F', "number=$PullRequestNumber", '-F', $(if ($null -eq $finalCursor) { 'cursor=null' } else { "cursor=$finalCursor" }))
         $finalThreadPage = & $getJson $finalGraphqlArguments
-        if ($null -ne $finalThreadPage.PSObject.Properties['errors'] -and @($finalThreadPage.errors).Count -gt 0) { throw "Readiness GraphQL final thread query returned errors: $($finalThreadPage.errors | ConvertTo-Json -Compress)" }
+        Assert-PrReadinessGraphQlPage -Page $finalThreadPage -Label 'final thread'
         if (-not [string]::IsNullOrWhiteSpace([string]$finalThreadPage.data.repository.pullRequest.reviewDecision)) {
             $reviewDecision = [string]$finalThreadPage.data.repository.pullRequest.reviewDecision
         }
@@ -3037,6 +3066,15 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
         foreach ($review in $activeFeedback) {
             $reviewDispositionList.Add([pscustomobject]@{ Id = [string]$review.id; Author = Get-PrReadinessReviewAuthor -Value $review; State = [string]$review.state; Disposition = 'pending' })
         }
+    }
+    if ($reviewDecision -eq 'APPROVED') {
+        $filteredReviewDispositions = [System.Collections.Generic.List[object]]::new()
+        foreach ($disposition in @($reviewDispositionList | Where-Object {
+                    -not ([string]$_.Author -eq 'review-deleted' -and [string]$_.State -eq 'CHANGES_REQUESTED')
+                })) {
+            $filteredReviewDispositions.Add($disposition)
+        }
+        $reviewDispositionList = $filteredReviewDispositions
     }
     $reviewDispositions = @($reviewDispositionList)
     $threadFingerprintStart = (@($threads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated):$(@($_.comments.nodes | ForEach-Object { $_.databaseId }) -join ',')" }) -join '|')

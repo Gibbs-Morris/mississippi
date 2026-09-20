@@ -100,7 +100,9 @@ Describe 'PR readiness snapshot' {
         $statusPage = @()
         $reviewPage = @(
             [pscustomobject]@{ id = 1; user = [pscustomobject]@{ login = 'reviewer' }; state = 'APPROVED'; submitted_at = '2026-09-19T00:00:00Z' },
-            [pscustomobject]@{ id = 2; user = [pscustomobject]@{ login = 'reviewer' }; state = 'COMMENTED'; submitted_at = '2026-09-19T00:01:00Z' }
+            [pscustomobject]@{ id = 2; user = [pscustomobject]@{ login = 'reviewer' }; state = 'COMMENTED'; submitted_at = '2026-09-19T00:01:00Z' },
+            [pscustomobject]@{ id = 3; user = $null; state = 'CHANGES_REQUESTED'; body = 'Superseded deleted-account feedback'; submitted_at = '2026-09-19T00:02:00Z' },
+            [pscustomobject]@{ id = 4; user = $null; state = 'APPROVED'; submitted_at = '2026-09-19T00:03:00Z' }
         )
         $filesPage = @([pscustomobject]@{ filename = 'README.md' })
         $thread = [pscustomobject]@{ id = 'thread-1'; isResolved = $true; isOutdated = $false; comments = [pscustomobject]@{ nodes = @() } }
@@ -130,7 +132,8 @@ Describe 'PR readiness snapshot' {
         $snapshot.BaseAtStart | Should -Be 'base-start'
         $snapshot.BaseAtEnd | Should -Be 'base-end'
         $snapshot.ReviewDecision | Should -Be 'APPROVED'
-        $snapshot.Approvals | Should -Be 1
+        $snapshot.Approvals | Should -Be 2
+        $snapshot.ReviewFeedbackCount | Should -Be 0
         @($snapshot.ReviewThreads).Count | Should -Be 1
     }
 }
