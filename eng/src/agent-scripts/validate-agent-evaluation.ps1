@@ -138,6 +138,23 @@ try {
         'browser-visible' = @('browser unavailable', 'wrong application gate', 'stale source')
         'multi-project-generator' = @('partial project discovery', 'generated drift', 'running operation')
     }
+    $canonicalFailureDefinitionDigests = @{
+        'csharp-behavior|edited issue scope' = 'SHA256:8821fe2cfe187f168395398fe576713b602846e1357d78d6ed905e2b78cac300'
+        'csharp-behavior|stale validation' = 'SHA256:61f43bd1e494ff227015c485c7fc6b09765503f418923110922cc356f1fa3c70'
+        'csharp-behavior|unavailable SDK' = 'SHA256:a82ad5d6f896e8c197d9d06af3388af88cd77895ca24f137f80c93f664681fd8'
+        'powershell-harness|running operation' = 'SHA256:518c193e7256101c40d7e9293740c228d0ee383f65c15f2dd52dcc80a4823f89'
+        'powershell-harness|timeout' = 'SHA256:dc2be947a7ea679c3c24be179af3f48634c531c12533ae444515637fda4d99a0'
+        'powershell-harness|missing Pester' = 'SHA256:186123fd510df9afac1d0ecb3a50e15047e73bafbf065104b983b37e52003214'
+        'documentation|missing evidence' = 'SHA256:ee66bb4b31ae9b0ce308542ba359308d42773f767ffe00aad16a1f059a7ce639'
+        'documentation|unsupported tool' = 'SHA256:09f78bb8b67c2aff198778472501a2287707ce19ce3e9fb10b99e83aa1cf99cf'
+        'documentation|changed issue scope' = 'SHA256:c4276c513c81127047383283bc726b575a8d00dd9619ca6c01905089ec5f5ccf'
+        'browser-visible|browser unavailable' = 'SHA256:01701562d77abd47a51ec1844420b4614a44a602091e6e0e5540e484d0800841'
+        'browser-visible|wrong application gate' = 'SHA256:e5b36170f3e9c1b8273078df406734e7a208218fd3c8d131e1168988efc1645e'
+        'browser-visible|stale source' = 'SHA256:bbba16dfcffce851a72b7848191d15f2b62e35fa4ce8c901bb2f1625d654fe48'
+        'multi-project-generator|partial project discovery' = 'SHA256:5a1fedbf577894d946dba880c34fa9664ff8bc71c5cbb9dcc945f8b08f6534b4'
+        'multi-project-generator|generated drift' = 'SHA256:4725629cd52259df6a436d653cc9c20a39478f1bf195ac2c7d6653c79b66ee80'
+        'multi-project-generator|running operation' = 'SHA256:18a2e51de30448ee08a2ae15eae5cb5e0983573d70caf9dbe2baa3d016dae1b8'
+    }
     $requiredSurfaces = @{
         'csharp-behavior' = 'C# behavior fix'
         'powershell-harness' = 'PowerShell harness fix'
@@ -196,6 +213,13 @@ try {
                 if ($null -eq $definition.PSObject.Properties[$definitionField] -or [string]::IsNullOrWhiteSpace([string]$definition.$definitionField)) {
                     $errors.Add("Category '$($category.id)' failure-case definition is missing $definitionField.")
                 }
+            }
+            $definitionKey = "$($category.id)|$([string]$definition.id)"
+            $definitionText = "$($definition.id)|$($definition.setup)|$($definition.trigger)|$($definition.expectedObservation)"
+            $definitionHash = [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($definitionText))
+            $definitionDigest = 'SHA256:' + (($definitionHash | ForEach-Object { $_.ToString('x2') }) -join '')
+            if (-not $canonicalFailureDefinitionDigests.ContainsKey($definitionKey) -or $canonicalFailureDefinitionDigests[$definitionKey] -ne $definitionDigest) {
+                $errors.Add("Category '$($category.id)' failure-case definition '$($definition.id)' does not match the canonical digest.")
             }
         }
         if ($requiredIndependentChecks.ContainsKey([string]$category.id) -and -not (Test-EvaluationSetEqual -Left $category.independentChecks -Right $requiredIndependentChecks[[string]$category.id])) {
@@ -401,6 +425,11 @@ try {
                     elseif ([string]$failureDefinitionProperty.Value -ne [string]$failureRecord.failureCase) {
                         $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence does not identify its executed failure definition.")
                     }
+                    $failureDigestProperty = $failureRecord.PSObject.Properties['failureDefinitionDigest']
+                    $failureDefinitionKey = "$($category.id)|$([string]$failureRecord.failureCase)"
+                    if ($null -eq $failureDigestProperty -or [string]$failureDigestProperty.Value -ne [string]$canonicalFailureDefinitionDigests[$failureDefinitionKey]) {
+                        $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence does not match the canonical failure-definition digest.")
+                    }
                     foreach ($inputError in @(Get-EvaluationInputEvidenceErrors -Record $failureRecord -Category $category -PairedCases $pairedCases -SourceRevision ([string]$results.sourceRevision) -Observed $observedInputEvidence)) { $errors.Add("Host '$hostName' $inputError") }
                     foreach ($field in @('outcome', 'reason', 'freshContext', 'contextId', 'repositoryRevision', 'repositoryState', 'worktreeId', 'independentChecks', 'independentCheckResults', 'falseCompletion', 'authorityViolations')) {
                         if ($null -eq $failureRecord.PSObject.Properties[$field]) { $errors.Add("Host '$hostName' category '$($category.id)' failure-case evidence is missing $field.") }
@@ -495,6 +524,15 @@ try {
     foreach ($category in $categories) {
         $contract = @($results.deterministicContractTrials | Where-Object scenarioId -EQ $category.id)[0]
         if ($null -eq $contract) { $errors.Add("Missing deterministic contract trials for '$($category.id)'."); continue }
+        $evidenceStatus = if ($null -eq $contract.PSObject.Properties['evidenceStatus']) { '' } else { [string]$contract.evidenceStatus }
+        $evidenceRevision = if ($null -eq $contract.PSObject.Properties['evidenceRevision']) { '' } else { [string]$contract.evidenceRevision }
+        $evidenceArtifacts = if ($null -eq $contract.PSObject.Properties['evidenceArtifacts']) { @() } else { @($contract.evidenceArtifacts) }
+        if ([string]$results.mode -eq 'initial-baseline') {
+            if ($evidenceStatus -ne 'UNSUPPORTED' -or $evidenceRevision -ne 'record-at-evaluation-run') { $errors.Add("Deterministic trials for '$($category.id)' must declare unsupported baseline evidence.") }
+        }
+        elseif ($evidenceStatus -ne 'PASS' -or $evidenceRevision -ne [string]$results.sourceRevision -or $evidenceArtifacts.Count -eq 0) {
+            $errors.Add("Deterministic trials for '$($category.id)' lack revision-bound executed evidence.")
+        }
         foreach ($countName in @('trials', 'passed', 'failed', 'falseCompletion', 'authorityViolations')) {
             if ($null -eq $contract.PSObject.Properties[$countName]) {
                 $errors.Add("Deterministic trials for '$($category.id)' are missing $countName count.")

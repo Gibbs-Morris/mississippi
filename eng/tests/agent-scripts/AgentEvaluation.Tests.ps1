@@ -67,12 +67,16 @@ Describe 'Issue delivery benchmark validation' {
                         $trialRecords.Add([pscustomobject]$record)
                     }
                     foreach ($failureCase in @($category.failureCases)) {
+                        $definition = @($category.failureCaseDefinitions | Where-Object id -EQ $failureCase)[0]
+                        $definitionText = "$($definition.id)|$($definition.setup)|$($definition.trigger)|$($definition.expectedObservation)"
+                        $definitionHash = [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($definitionText))
                         $trialRecords.Add([pscustomobject][ordered]@{
                             scenarioId = [string]$category.id
                             pairedInputId = [string]$category.pairedInputIds[0]
                             inputEvidence = [ordered]@{ repository = 'Gibbs-Morris/mississippi'; issueNumber = 732; bodyDigest = $inputDigest; sourceRevision = $revision }
                             failureCase = [string]$failureCase
                             failureDefinitionId = [string]$failureCase
+                            failureDefinitionDigest = 'SHA256:' + (($definitionHash | ForEach-Object { $_.ToString('x2') }) -join '')
                             outcome = 'blocked'
                             acceptancePassed = $false
                             reason = 'controlled failure-case trial'
@@ -91,6 +95,11 @@ Describe 'Issue delivery benchmark validation' {
                     }
                 }
                 $hostRow | Add-Member -NotePropertyName trialRecords -NotePropertyValue @($trialRecords) -Force
+            }
+            foreach ($contract in @($data.deterministicContractTrials)) {
+                $contract | Add-Member -NotePropertyName evidenceStatus -NotePropertyValue 'PASS' -Force
+                $contract | Add-Member -NotePropertyName evidenceRevision -NotePropertyValue $revision -Force
+                $contract | Add-Member -NotePropertyName evidenceArtifacts -NotePropertyValue @($contract.evidenceChecks) -Force
             }
             return $data
         }
