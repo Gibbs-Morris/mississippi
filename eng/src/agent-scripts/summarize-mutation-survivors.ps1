@@ -355,6 +355,10 @@ else
     if (-not $SkipMutationRun) {
         $resolvedMutationScriptPath = (Resolve-Path -LiteralPath $MutationScriptPath -ErrorAction Stop).Path
         $mutationScriptRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $resolvedMutationScriptPath)
+        $rootComparison = if ($IsWindows) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
+        if (-not [string]::Equals([System.IO.Path]::GetFullPath($mutationScriptRoot), [System.IO.Path]::GetFullPath($repoRoot), $rootComparison)) {
+            throw "Mutation script path '$MutationScriptPath' is outside the leased repository root '$repoRoot'."
+        }
         $relativeMutationScriptPath = [System.IO.Path]::GetRelativePath($mutationScriptRoot, $resolvedMutationScriptPath)
         if ([System.IO.Path]::IsPathRooted($relativeMutationScriptPath) -or $relativeMutationScriptPath -match '^\.\.([\\/]|$)') {
             throw "Mutation script path '$MutationScriptPath' is outside the leased repository."
