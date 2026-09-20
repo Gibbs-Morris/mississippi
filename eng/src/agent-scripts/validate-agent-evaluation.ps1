@@ -165,6 +165,13 @@ try {
         'browser-visible' = 'browser-visible change'
         'multi-project-generator' = 'multi-project or generator change'
     }
+    $requiredAuthorizedInputs = @{
+        'csharp-behavior' = 'paired issue-732 case, repository, and shared guidance only'
+        'powershell-harness' = 'paired issue-732 case, repository, and shared guidance only'
+        'documentation' = 'paired issue-732 case, repository, and shared guidance only'
+        'browser-visible' = 'paired issue-732 case, repository, shared guidance, and declared browser prerequisites'
+        'multi-project-generator' = 'paired issue-732 case, repository, and shared guidance only'
+    }
     $requiredIndependentChecks = @{
         'csharp-behavior' = @('behavior regression', 'scope compliance', 'PR traceability')
         'powershell-harness' = @('Pester regression', 'exit-code contract', 'no unrelated mutation')
@@ -193,6 +200,9 @@ try {
     foreach ($category in $categories) {
         if ($requiredSurfaces.ContainsKey([string]$category.id) -and [string]$category.surface -ne $requiredSurfaces[[string]$category.id]) {
             $errors.Add("Category '$($category.id)' surface does not match the benchmark contract.")
+        }
+        if ($requiredAuthorizedInputs.ContainsKey([string]$category.id) -and [string]$category.authorizedInput -ne $requiredAuthorizedInputs[[string]$category.id]) {
+            $errors.Add("Category '$($category.id)' authorized input does not match the benchmark contract.")
         }
         if ($null -eq $category.PSObject.Properties['pairedInputIds'] -or @($category.pairedInputIds).Count -ne $expectedTrials) {
             $errors.Add("Category '$($category.id)' must define one paired input for each trial.")
@@ -269,7 +279,7 @@ try {
                     }
                 }
             }
-            elseif ($null -ne $hostResult.PSObject.Properties['trialRecords'] -and @($hostResult.trialRecords).Count -gt 0) {
+            elseif ([string]$results.mode -eq 'initial-baseline' -and $null -ne $hostResult.PSObject.Properties['trialRecords'] -and @($hostResult.trialRecords).Count -gt 0) {
                 $errors.Add("Sentinel host '$hostName' must not contain trial records.")
             }
         $summaryCollection = if ($null -eq $hostResult.PSObject.Properties['trialSummaries']) { @() } else { @($hostResult.trialSummaries) }
@@ -277,7 +287,8 @@ try {
         if ($summaryIds.Count -ne $actualCategoryIds.Count -or (Get-EvaluationSet -Values $summaryIds).Count -ne $summaryIds.Count -or -not (Test-EvaluationSetEqual -Left $summaryIds -Right $actualCategoryIds)) {
             $errors.Add("Host '$hostName' trial summary scenario IDs must exactly match the canonical category set.")
         }
-        if ([string]$hostResult.activeModel -notin @('unsupported', 'blocked', 'unknown')) {
+        $validateTrialRecords = [string]$hostResult.activeModel -notin @('unsupported', 'blocked', 'unknown') -or [string]$results.mode -eq 'authorized-live'
+        if ($validateTrialRecords) {
             $canonicalCategoryIdSet = [System.Collections.Generic.HashSet[string]]::new([string[]]$actualCategoryIds)
             foreach ($trialRecord in @($hostResult.trialRecords)) {
                 $scenarioProperty = $trialRecord.PSObject.Properties['scenarioId']
@@ -308,7 +319,7 @@ try {
             if (($attempted + $unsupported + $blocked) -ne $expectedTrials) { $errors.Add("Host '$hostName' category '$($category.id)' does not account for exactly $expectedTrials trials.") }
             if ([int]$summary.passed + [int]$summary.failed -ne $attempted) { $errors.Add("Host '$hostName' category '$($category.id)' does not reconcile attempted, passed, and failed counts.") }
             if ([int]$summary.passed -gt $attempted) { $errors.Add("Host '$hostName' category '$($category.id)' counts unsupported trials as passes.") }
-            if ([string]$hostResult.activeModel -notin @('unsupported', 'blocked', 'unknown')) {
+            if ($validateTrialRecords) {
                 $allRecords = @($hostResult.trialRecords | Where-Object scenarioId -EQ $category.id)
                 $records = @($allRecords | Where-Object {
                     $failureCase = $_.PSObject.Properties['failureCase']

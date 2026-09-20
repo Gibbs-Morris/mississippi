@@ -131,6 +131,52 @@ Describe 'Issue delivery benchmark validation' {
         ($outcome.Result.Errors -join "`n") | Should -Match 'only normal benchmark categories'
     }
 
+    It 'rejects modified authorized input text' {
+        $scenario = Get-Content -LiteralPath $pack -Raw | ConvertFrom-Json
+        $scenario.categories[0].authorizedInput = 'untrusted extra context'
+        $scenarioPath = Join-Path $TestDrive 'modified-authorized-input-pack.json'
+        $scenario | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $scenarioPath
+
+        $outcome = Invoke-Evaluation -ScenarioPath $scenarioPath
+
+        $outcome.ExitCode | Should -Not -Be 0
+        ($outcome.Result.Errors -join "`n") | Should -Match 'authorized input does not match'
+    }
+
+    It 'validates records for unsupported hosts in authorized-live mode' {
+        $data = New-LiveResults
+        foreach ($hostRow in @($data.hosts)) {
+            $hostRow.configuredModel = 'unsupported'
+            $hostRow.acceptedModel = 'unsupported'
+            $hostRow.activeModel = 'unsupported'
+            foreach ($summary in @($hostRow.trialSummaries)) {
+                $summary.attempted = 0
+                $summary.passed = 0
+                $summary.failed = 0
+                $summary.unsupported = 3
+                $summary.blocked = 0
+            }
+            foreach ($record in @($hostRow.trialRecords | Where-Object { $null -eq $_.PSObject.Properties['failureCase'] })) {
+                $record.outcome = 'unsupported'
+                $record.acceptancePassed = $false
+                $record.reason = 'controlled unsupported live trial'
+            }
+        }
+        $path = Join-Path $TestDrive 'authorized-live-unsupported-results.json'
+        $data | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path
+
+        $valid = Invoke-Evaluation -ResultsPath $path
+
+        $valid.ExitCode | Should -Be 0
+        $valid.Result.Status | Should -Be 'VALIDATED_UNSUPPORTED_BASELINE'
+        $data.hosts[0].trialRecords = @()
+        $data | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path
+        $invalid = Invoke-Evaluation -ResultsPath $path
+
+        $invalid.ExitCode | Should -Not -Be 0
+        ($invalid.Result.Errors -join "`n") | Should -Match 'requires one normal evidence record per trial'
+    }
+
     It 'rejects extra result hosts' {
         $data = New-LiveResults
         $data.hosts = @($data.hosts + [pscustomobject]@{ host = 'UntrustedHost' })
