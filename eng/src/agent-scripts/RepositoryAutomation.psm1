@@ -2766,7 +2766,7 @@ function Get-PrReadinessGhJson {
 
 function Get-PrReadinessExpectedCheckPatterns {
     [CmdletBinding()]
-    param([string[]]$ChangedPaths = @())
+    param([string[]]$ChangedPaths = @(), [AllowEmptyString()][string]$BaseRef = 'main')
 
     $patterns = [System.Collections.Generic.List[string]]::new()
     foreach ($pattern in @(
@@ -2790,7 +2790,6 @@ function Get-PrReadinessExpectedCheckPatterns {
         '^pwsh-tests \(windows-latest\)$',
         '^Markdown Lint$',
         '^L3 Spring E2E \(Smoke\)$',
-        '^pr-metrics$',
         '^Validate repository issue reference$',
         '^label-by-files$',
         '^label-by-semver$',
@@ -2800,7 +2799,22 @@ function Get-PrReadinessExpectedCheckPatterns {
         '^submit-nuget$'
     )) { $patterns.Add($pattern) }
 
-    $docsApplicable = @($ChangedPaths | Where-Object { $_ -match '^(?:docs/|\.github/workflows/docusaurus\.yml$)' }).Count -gt 0
+    $standardWorkflowBase = $BaseRef -eq 'main' -or $BaseRef -match '^(?:feature|topic)/'
+    if (-not $standardWorkflowBase) {
+        $standardWorkflowPatterns = @(
+            '^SonarCloud$', '^SonarCloud Code Analysis$', '^Build \(ubuntu-latest\)$',
+            '^Build \(ubuntu-latest, mississippi\.slnx\)$', '^Build \(ubuntu-latest, samples\.slnx\)$',
+            '^L0 Unit Tests \(ubuntu-latest, mississippi\.slnx\)$', '^L0 Unit Tests \(ubuntu-latest, samples\.slnx\)$',
+            '^L1 Light Infrastructure Tests \(ubuntu-latest, mississippi\.slnx\)$', '^L1 Light Infrastructure Tests \(ubuntu-latest, samples\.slnx\)$',
+            '^L2 Integration Tests \(Aspire\) \(ubuntu-latest, mississippi\.slnx\)$', '^L2 Integration Tests \(Aspire\) \(ubuntu-latest, samples\.slnx\)$',
+            '^cleanup \(ubuntu-latest, mississippi\.slnx\)$', '^cleanup \(ubuntu-latest, samples\.slnx\)$',
+            '^AppHost locked restore \(ubuntu-latest\)$', '^AppHost locked restore \(windows-latest\)$',
+            '^pwsh-tests \(ubuntu-latest\)$', '^pwsh-tests \(windows-latest\)$', '^Markdown Lint$', '^L3 Spring E2E \(Smoke\)$'
+        )
+        foreach ($pattern in $standardWorkflowPatterns) { $null = $patterns.Remove($pattern) }
+    }
+
+    $docsApplicable = $standardWorkflowBase -and @($ChangedPaths | Where-Object { $_ -match '^(?:docs/|\.github/workflows/docusaurus\.yml$)' }).Count -gt 0
     if ($docsApplicable) { $patterns.Add('^Build Docusaurus Site$') }
     $csprojApplicable = @($ChangedPaths | Where-Object { $_ -match '^src/.+\.csproj$' }).Count -gt 0
     if ($csprojApplicable) { $patterns.Add('^Validate src csproj descriptions$') }
@@ -2818,11 +2832,15 @@ function Get-PrReadinessCheckState {
 }
 
 function Test-PrReadinessCheckRunBelongsToPullRequest {
-    param([Parameter(Mandatory)][object]$CheckRun, [Parameter(Mandatory)][int]$PullRequestNumber)
+    param([Parameter(Mandatory)][object]$CheckRun, [Parameter(Mandatory)][int]$PullRequestNumber, [AllowEmptyString()][string]$BaseRef)
 
     $pullRequests = $CheckRun.PSObject.Properties['pull_requests']
-    if ($null -eq $pullRequests) { return $true }
-    return @($pullRequests.Value | Where-Object { [int]$_.number -eq $PullRequestNumber }).Count -gt 0
+    if ($null -eq $pullRequests) { return $false }
+    return @($pullRequests.Value | Where-Object {
+        if ([int]$_.number -ne $PullRequestNumber) { return $false }
+        $base = $_.PSObject.Properties['base']
+        $null -eq $base -or [string]$base.Value.ref -eq $BaseRef
+    }).Count -gt 0
 }
 
 function Get-PrReadinessCommitStatusState {
@@ -2841,6 +2859,16 @@ function Get-PrReadinessBodyText {
     $property = $Value.PSObject.Properties['body']
     if ($null -eq $property) { return '' }
     return [string]$property.Value
+}
+
+function Get-PrReadinessReviewAuthor {
+    param([Parameter(Mandatory)][object]$Value)
+
+    $user = $Value.PSObject.Properties['user']
+    if ($null -ne $user -and $null -ne $user.Value -and $null -ne $user.Value.PSObject.Properties['login']) {
+        return [string]$user.Value.login
+    }
+    return "review-$([string]$Value.id)"
 }
 
 function Get-PrReadinessBodyFingerprint {
@@ -2875,7 +2903,7 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     $filePages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/pulls/$PullRequestNumber/files", '--paginate', '--slurp'))
     $changedPaths = @($filePages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | ForEach-Object { @($_.filename) } | Where-Object { $_ })
     $checkPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$headAtStart/check-runs", '--paginate', '--slurp'))
-    $checkRuns = @($checkPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | ForEach-Object { @($_.check_runs) } | Where-Object { Test-PrReadinessCheckRunBelongsToPullRequest -CheckRun $_ -PullRequestNumber $PullRequestNumber })
+    $checkRuns = @($checkPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | ForEach-Object { @($_.check_runs) } | Where-Object { Test-PrReadinessCheckRunBelongsToPullRequest -CheckRun $_ -PullRequestNumber $PullRequestNumber -BaseRef $baseRefAtStart })
     $statusPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$headAtStart/statuses", '--paginate', '--slurp'))
     $statuses = @($statusPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | Group-Object context | ForEach-Object { $_.Group | Sort-Object created_at -Descending | Select-Object -First 1 })
     $checks = [System.Collections.Generic.List[object]]::new()
@@ -2895,7 +2923,7 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
             ExpectedIdentity = $false
         })
     }
-    $expectedPatterns = @(Get-PrReadinessExpectedCheckPatterns -ChangedPaths $changedPaths)
+    $expectedPatterns = @(Get-PrReadinessExpectedCheckPatterns -ChangedPaths $changedPaths -BaseRef $baseRefAtStart)
     foreach ($pattern in $expectedPatterns) {
         if (@($checks | Where-Object { $_.Name -match $pattern }).Count -eq 0) {
             $checks.Add([pscustomobject]@{ Name = "required:$pattern"; State = 'missing'; Required = $true; ExpectedIdentity = $true })
@@ -2909,7 +2937,7 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     $reviews = @($reviewsPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } })
     $latestReviewByAuthor = @{}
     foreach ($review in @($reviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object submitted_at)) {
-        $author = if ($null -ne $review.user.login) { [string]$review.user.login } else { "review-$($review.id)" }
+        $author = Get-PrReadinessReviewAuthor -Value $review
         $latestReviewByAuthor[$author] = $review
     }
     $currentReviews = @($latestReviewByAuthor.Values)
@@ -2933,8 +2961,9 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     if ($PollingSeconds -gt 0) { Start-Sleep -Seconds $PollingSeconds }
     $pullAtEnd = & $getJson @('api', $pullPath)
     $finalHead = [string]$pullAtEnd.head.sha
+    $baseRefAtEnd = if ($null -ne $pullAtEnd.base.PSObject.Properties['ref']) { [string]$pullAtEnd.base.ref } else { '' }
     $finalCheckPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$finalHead/check-runs", '--paginate', '--slurp'))
-    $finalCheckRuns = @($finalCheckPages | ForEach-Object { @($_.check_runs) } | Where-Object { Test-PrReadinessCheckRunBelongsToPullRequest -CheckRun $_ -PullRequestNumber $PullRequestNumber })
+    $finalCheckRuns = @($finalCheckPages | ForEach-Object { @($_.check_runs) } | Where-Object { Test-PrReadinessCheckRunBelongsToPullRequest -CheckRun $_ -PullRequestNumber $PullRequestNumber -BaseRef $baseRefAtEnd })
     $finalStatusPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$finalHead/statuses", '--paginate', '--slurp'))
     $finalStatuses = @($finalStatusPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | Group-Object context | ForEach-Object { $_.Group | Sort-Object created_at -Descending | Select-Object -First 1 })
     $statusFingerprintStart = (@($statuses | ForEach-Object { "$($_.context)=$([string](Get-PrReadinessCommitStatusState -Status $_))" } | Sort-Object) -join '|')
@@ -2952,7 +2981,7 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     $commentFingerprintEnd = (@($finalReviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) } | Sort-Object id | ForEach-Object { "$($_.id)=$(Get-PrReadinessBodyFingerprint -Value $_)" }) -join '|')
     $finalLatestReviewByAuthor = @{}
     foreach ($review in @($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object submitted_at)) {
-        $author = if ($null -ne $review.user.login) { [string]$review.user.login } else { "review-$($review.id)" }
+        $author = Get-PrReadinessReviewAuthor -Value $review
         $finalLatestReviewByAuthor[$author] = $review
     }
     $approvals = @($finalLatestReviewByAuthor.Values | Where-Object { $_.state -eq 'APPROVED' }).Count
@@ -2972,16 +3001,15 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     } while ($finalHasNextPage)
     $finalLatestReviewByAuthorAnyState = @{}
     foreach ($review in @($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'COMMENTED', 'DISMISSED') } | Sort-Object submitted_at)) {
-        $author = if ($null -ne $review.user.login) { [string]$review.user.login } else { "review-$($review.id)" }
+        $author = Get-PrReadinessReviewAuthor -Value $review
         $finalLatestReviewByAuthorAnyState[$author] = $review
     }
-    $unresolvedThreadCount = @($finalThreads | Where-Object { -not [bool]$_.isResolved -and -not [bool]$_.isOutdated }).Count
     $reviewDispositions = @($finalLatestReviewByAuthorAnyState.Values | Where-Object { -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) } | ForEach-Object {
         [pscustomobject]@{
             Id = [string]$_.id
-            Author = [string]$_.user.login
+            Author = Get-PrReadinessReviewAuthor -Value $_
             State = [string]$_.state
-            Disposition = if ([string]$_.state -in @('APPROVED', 'DISMISSED') -or ([string]$_.state -eq 'COMMENTED' -and $unresolvedThreadCount -eq 0)) { 'addressed' } else { 'pending' }
+            Disposition = if ([string]$_.state -in @('APPROVED', 'DISMISSED')) { 'addressed' } else { 'pending' }
         }
     })
     $threadFingerprintStart = (@($threads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated):$(@($_.comments.nodes | ForEach-Object { $_.databaseId }) -join ',')" }) -join '|')
@@ -3000,7 +3028,6 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
         $mutableEvidenceStable = $false
     }
     $pollingCompleted = $PollingSeconds -ge 300
-    $baseRefAtEnd = if ($null -ne $pullAtEnd.base.PSObject.Properties['ref']) { [string]$pullAtEnd.base.ref } else { '' }
     [pscustomobject][ordered]@{
         DataComplete = $true
         HeadAtStart = $headAtStart
