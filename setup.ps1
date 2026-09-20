@@ -83,6 +83,14 @@ function Invoke-SetupStep {
     try {
         if ($script:SetupJsonOutput) { & $Step.Executable @($Step.Arguments) *> $null } else { & $Step.Executable @($Step.Arguments) }
         if ($LASTEXITCODE -ne 0) { throw "Setup step '$($Step.Name)' failed with exit code $LASTEXITCODE." }
+        if ($Step.Name -eq 'install-markdownlint') {
+            $prefixIndex = [Array]::IndexOf([string[]]$Step.Arguments, '--prefix')
+            if ($prefixIndex -lt 0 -or $prefixIndex + 1 -ge $Step.Arguments.Count) { throw 'Markdownlint setup step is missing its npm prefix.' }
+            $prefix = [System.IO.Path]::GetFullPath([string]$Step.Arguments[$prefixIndex + 1])
+            $binDirectory = if ($IsWindows) { $prefix } else { Join-Path $prefix 'bin' }
+            $env:PATH = $binDirectory + [IO.Path]::PathSeparator + $env:PATH
+            if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_PATH)) { Add-Content -LiteralPath $env:GITHUB_PATH -Value $binDirectory }
+        }
     }
     finally {
         Pop-Location
