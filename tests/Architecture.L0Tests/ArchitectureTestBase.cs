@@ -118,5 +118,4 @@ public abstract class ArchitectureTestBase
         string[] assemblyPaths = Directory.GetFiles(baseDir, "Mississippi.*.dll");
         return LoadMississippiAssemblies(assemblyPaths);
     }
-
 }
