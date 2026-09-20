@@ -32,8 +32,8 @@ Describe 'Canonical repository setup' {
         $outcome.ExitCode | Should -Be 0
         @($outcome.Plan.Steps | Where-Object Name -EQ 'restore-docs').Arguments | Should -Contain 'ci'
         @($outcome.Plan.Steps | Where-Object Name -EQ 'restore-docs').Arguments | Should -Contain '--ignore-scripts'
-        @($outcome.Plan.Steps | Where-Object Name -EQ 'install-markdownlint').Arguments | Should -Contain 'markdownlint-cli@0.45.0'
-        @($outcome.Plan.Steps | Where-Object Name -EQ 'install-markdownlint').Arguments | Should -Contain '--prefix'
+        @($outcome.Plan.Steps | Where-Object Name -EQ 'install-markdownlint').Arguments | Should -Contain 'ci'
+        @($outcome.Plan.Steps | Where-Object Name -EQ 'install-markdownlint').Arguments | Should -Contain '--ignore-scripts'
     }
 
     It 'keeps browser setup diagnostic-only' {
@@ -84,7 +84,7 @@ Describe 'Canonical repository setup' {
 
         $exitCode | Should -Be 0
         ($output | ConvertFrom-Json).Status | Should -Be 'READY'
-        Test-Path -LiteralPath (Join-Path $repoRoot '.tools/npm-global/activate-markdownlint.ps1') -PathType Leaf | Should -BeTrue
+        Test-Path -LiteralPath (Join-Path $repoRoot '.tools/activate-markdownlint.ps1') -PathType Leaf | Should -BeTrue
     }
 
     It 'fails without READY when a setup child exits nonzero' {

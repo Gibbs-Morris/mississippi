@@ -1,0 +1,8 @@
+{
+  "name": "mississippi-markdownlint-tools",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "markdownlint-cli": "0.45.0"
+  }
+}

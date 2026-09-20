@@ -59,7 +59,7 @@ function Get-SetupPlan {
     }
     if ($profiles -contains 'Docs') {
         Add-SetupStep -Steps $steps -Name 'restore-docs' -Executable 'npm' -Arguments @('ci', '--ignore-scripts') -WorkingDirectory (Join-Path $Root 'docs/Docusaurus') -Purpose 'Restore documentation dependencies from package-lock.json without lifecycle scripts.'
-        Add-SetupStep -Steps $steps -Name 'install-markdownlint' -Executable 'npm' -Arguments @('install', '--global', '--prefix', (Join-Path $Root '.tools/npm-global'), 'markdownlint-cli@0.45.0', '--yes') -WorkingDirectory $Root -Purpose 'Provide the repository-pinned Markdown linter in a repository-local writable prefix.'
+        Add-SetupStep -Steps $steps -Name 'install-markdownlint' -Executable 'npm' -Arguments @('ci', '--ignore-scripts') -WorkingDirectory (Join-Path $Root 'eng/setup/markdownlint') -Purpose 'Restore the repository-pinned Markdown linter from its committed lockfile.'
     }
     if ($profiles -contains 'Browser') {
         Add-SetupStep -Steps $steps -Name 'browser-doctor' -Executable 'pwsh' -Arguments @('./test-spring.ps1', '-Doctor') -WorkingDirectory $Root -Purpose 'Report SDK and Docker/browser prerequisites without starting the application.'
@@ -84,15 +84,12 @@ function Invoke-SetupStep {
         if ($script:SetupJsonOutput) { & $Step.Executable @($Step.Arguments) *> $null } else { & $Step.Executable @($Step.Arguments) }
         if ($LASTEXITCODE -ne 0) { throw "Setup step '$($Step.Name)' failed with exit code $LASTEXITCODE." }
         if ($Step.Name -eq 'install-markdownlint') {
-            $prefixIndex = [Array]::IndexOf([string[]]$Step.Arguments, '--prefix')
-            if ($prefixIndex -lt 0 -or $prefixIndex + 1 -ge $Step.Arguments.Count) { throw 'Markdownlint setup step is missing its npm prefix.' }
-            $prefix = [System.IO.Path]::GetFullPath([string]$Step.Arguments[$prefixIndex + 1])
-            $binDirectory = if ($IsWindows) { $prefix } else { Join-Path $prefix 'bin' }
+            $binDirectory = [System.IO.Path]::GetFullPath((Join-Path $Step.WorkingDirectory 'node_modules/.bin'))
             $env:PATH = $binDirectory + [IO.Path]::PathSeparator + $env:PATH
             if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_PATH)) { Add-Content -LiteralPath $env:GITHUB_PATH -Value $binDirectory }
-            $activationPath = Join-Path $prefix 'activate-markdownlint.ps1'
+            $activationPath = Join-Path $root '.tools/activate-markdownlint.ps1'
             $activationRoot = $binDirectory.Replace("'", "''")
-            New-Item -ItemType Directory -Path $prefix -Force | Out-Null
+            New-Item -ItemType Directory -Path (Split-Path -Parent $activationPath) -Force | Out-Null
             Set-Content -LiteralPath $activationPath -Value ("`$env:PATH = '$activationRoot' + [IO.Path]::PathSeparator + `$env:PATH") -Encoding utf8
         }
     }
@@ -114,6 +111,9 @@ try {
 
     $env:DOTNET_CLI_HOME = Join-Path $root '.tools/dotnet-home'
     New-Item -ItemType Directory -Path $env:DOTNET_CLI_HOME -Force | Out-Null
+    if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_ENV)) { Add-Content -LiteralPath $env:GITHUB_ENV -Value "DOTNET_CLI_HOME=$($env:DOTNET_CLI_HOME)" }
+    $dotnetActivationPath = Join-Path $root '.tools/activate-dotnet-home.ps1'
+    Set-Content -LiteralPath $dotnetActivationPath -Value ("`$env:DOTNET_CLI_HOME = '$($env:DOTNET_CLI_HOME.Replace("'", "''"))'") -Encoding utf8
     Import-Module (Join-Path $root 'eng/src/agent-scripts/AgentDoctor.psm1') -Force
     $executedSteps = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     foreach ($selectedProfile in @($plan.Profiles)) {
