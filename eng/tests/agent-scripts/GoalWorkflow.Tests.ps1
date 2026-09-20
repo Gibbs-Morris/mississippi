@@ -139,6 +139,7 @@ Describe 'Issue-driven goal workflow' {
         $outcome = Invoke-Goal -Action resume -Base 'HEAD~2' -EvidenceValidated
 
         $outcome.Result.EvidenceFresh | Should -BeTrue
+        $outcome.Result.Status | Should -Be 'resumed'
     }
 
     It 'rejects validation for a head other than the checked-out revision' {

@@ -40,6 +40,62 @@ function Get-GoalRevision {
     return $revision
 }
 
+function Get-GoalTextFingerprint {
+    param([AllowEmptyString()][string]$Text)
+    $hash = [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($Text))
+    return 'SHA256:' + (($hash | ForEach-Object { $_.ToString('x2') }) -join '')
+}
+
+function Get-GoalSubmoduleFingerprint {
+    param(
+        [Parameter(Mandatory)][string]$Root,
+        [Parameter(Mandatory)][string]$FullPath,
+        [Parameter(Mandatory)][string]$Relative,
+        [Parameter(Mandatory)][string]$ParentIndexHash
+    )
+
+    $safeRoot = $FullPath.Replace('\', '/')
+    $head = ((& git -c "safe.directory=$safeRoot" -C $FullPath rev-parse --verify HEAD 2>$null) -join '').Trim()
+    if ($LASTEXITCODE -ne 0) { throw "Unable to resolve the HEAD fingerprint for submodule '$Relative'." }
+    $statusRaw = ((& git -c "safe.directory=$safeRoot" -C $FullPath status --porcelain=v1 --untracked-files=all -z 2>$null) -join '')
+    if ($LASTEXITCODE -ne 0) { throw "Unable to resolve the status fingerprint for submodule '$Relative'." }
+    $indexRaw = ((& git -c "safe.directory=$safeRoot" -C $FullPath ls-files --stage -z 2>$null) -join '')
+    if ($LASTEXITCODE -ne 0) { throw "Unable to resolve the index fingerprint for submodule '$Relative'." }
+    $pathsRaw = ((& git -c "safe.directory=$safeRoot" -C $FullPath ls-files --cached --others --exclude-standard -z -- 2>$null) -join '')
+    if ($LASTEXITCODE -ne 0) { throw "Unable to resolve the worktree paths for submodule '$Relative'." }
+
+    $pathEntries = [System.Collections.Generic.List[string]]::new()
+    foreach ($submodulePath in @($pathsRaw -split [char]0 | Where-Object { -not [string]::IsNullOrEmpty($_) } | Sort-Object)) {
+        $submoduleFullPath = [System.IO.Path]::GetFullPath((Join-Path $FullPath ([string]$submodulePath).Replace('/', [System.IO.Path]::DirectorySeparatorChar)))
+        $item = Get-Item -LiteralPath $submoduleFullPath -Force -ErrorAction SilentlyContinue
+        if ($null -ne $item -and (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0)) {
+            $linkTargetProperty = $item.PSObject.Properties['LinkTarget']
+            $linkTarget = if ($null -ne $linkTargetProperty) { [string]$linkTargetProperty.Value } else { '' }
+            if ([string]::IsNullOrWhiteSpace($linkTarget) -and $null -ne $item.PSObject.Properties['Target']) {
+                $linkTarget = [string]$item.Target
+            }
+            $pathEntries.Add(([string]$submodulePath).Replace('\', '/') + ':symlink=' + $linkTarget)
+        }
+        elseif ($null -ne $item -and -not $item.PSIsContainer) {
+            $modeEvidence = 'regular'
+            $unixMode = $item.PSObject.Properties['UnixFileMode']
+            if ($null -ne $unixMode) { $modeEvidence = [string]$unixMode.Value }
+            $pathEntries.Add(([string]$submodulePath).Replace('\', '/') + ':mode=' + $modeEvidence + ':sha256=' + (Get-FileHash -LiteralPath $submoduleFullPath -Algorithm SHA256).Hash.ToLowerInvariant())
+        }
+        else {
+            $pathEntries.Add(([string]$submodulePath).Replace('\', '/') + ':missing')
+        }
+    }
+
+    return @(
+        'parent-index=' + $ParentIndexHash
+        'head=' + $head
+        'status=' + (Get-GoalTextFingerprint -Text $statusRaw)
+        'index=' + (Get-GoalTextFingerprint -Text $indexRaw)
+        'files=' + (Get-GoalTextFingerprint -Text ($pathEntries -join [Environment]::NewLine))
+    ) -join ':'
+}
+
 function Get-GoalRepositoryIdentity {
     param([Parameter(Mandatory)][string]$Root)
 
@@ -126,9 +182,7 @@ function Get-GoalWorktreeFingerprint { # NOSONAR - bounded Git/index/worktree fi
             $indexHash = if ($indexHashes.ContainsKey($relative)) { [string]$indexHashes[$relative] } else { 'absent' }
             if ($indexModes.ContainsKey($relative) -and [string]$indexModes[$relative] -eq '160000') {
                 if (Test-Path -LiteralPath $full -PathType Container) {
-                    $submoduleHead = ((& git -c "safe.directory=$($full.Replace('\', '/'))" -C $full rev-parse --verify HEAD 2>$null) -join '').Trim()
-                    $submoduleStatus = ((& git -c "safe.directory=$($full.Replace('\', '/'))" -C $full status --porcelain=v1 --untracked-files=all 2>$null) -join '|')
-                    $fileHashes.Add($relative + ':index=' + $indexHash + ':submodule-head=' + $submoduleHead + ':status=' + $submoduleStatus)
+                    $fileHashes.Add($relative + ':submodule=' + (Get-GoalSubmoduleFingerprint -Root $Root -FullPath $full -Relative $relative -ParentIndexHash $indexHash))
                 }
                 else { $fileHashes.Add($relative + ':index=' + $indexHash + ':submodule=missing') }
                 continue
@@ -154,8 +208,7 @@ function Get-GoalWorktreeFingerprint { # NOSONAR - bounded Git/index/worktree fi
         }
     }
     $content = (($statusEntries -join [Environment]::NewLine) + [Environment]::NewLine + ($fileHashes -join [Environment]::NewLine))
-    $hash = [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($content))
-    return 'SHA256:' + (($hash | ForEach-Object { $_.ToString('x2') }) -join '')
+    return Get-GoalTextFingerprint -Text $content
 }
 
 function Get-GoalIssue {
@@ -165,7 +218,7 @@ function Get-GoalIssue {
         $issue = ConvertFrom-Json -InputObject $Json
     }
     else {
-        $output = & gh api "repos/$Owner/$Name/issues/$Number" --header 'Accept: application/vnd.github+json' 2>&1 | Out-String
+        $output = & gh api --hostname github.com "repos/$Owner/$Name/issues/$Number" --header 'Accept: application/vnd.github+json' 2>&1 | Out-String
         if ($LASTEXITCODE -ne 0) { throw "Unable to read issue #${Number}: $($output.Trim())" }
         $issue = ConvertFrom-Json -InputObject $output
     }
@@ -175,7 +228,7 @@ function Get-GoalIssue {
         $commentBodies = @($issue.comments | Where-Object { $null -ne $_.PSObject.Properties['body'] -and -not [string]::IsNullOrWhiteSpace([string]$_.body) })
     }
     if ($ForceCommentFallback -and $commentBodies.Count -eq 0) {
-        $commentsOutput = & gh api "repos/$Owner/$Name/issues/$Number/comments" --header 'Accept: application/vnd.github+json' --paginate --slurp 2>&1 | Out-String
+        $commentsOutput = & gh api --hostname github.com "repos/$Owner/$Name/issues/$Number/comments" --header 'Accept: application/vnd.github+json' --paginate --slurp 2>&1 | Out-String
         if ($LASTEXITCODE -eq 0) {
             $commentPages = @(ConvertFrom-Json -InputObject $commentsOutput)
             $comments = @($commentPages | ForEach-Object { @($_) })
@@ -514,7 +567,7 @@ try {
             [string]$operationStartSnapshot.WorktreeFingerprint -ne $currentWorktreeFingerprint
     }
     $validatedNow = $EvidenceValidated -and $operation.Status -notin @('running', 'failed') -and -not $operationSnapshotChanged
-    $status = if ($activeOperation) { 'operation-running' } elseif ($scopeChanged -and -not $validatedNow) { 'scope-changed' } elseif ($revisionChanged -or $worktreeChanged -or $operationSnapshotChanged) { 'evidence-stale' } elseif ($null -eq $previous) { 'started' } else { 'resumed' }
+    $status = if ($activeOperation) { 'operation-running' } elseif ($scopeChanged -and -not $validatedNow) { 'scope-changed' } elseif (($revisionChanged -or $worktreeChanged -or $operationSnapshotChanged) -and -not $validatedNow) { 'evidence-stale' } elseif ($null -eq $previous) { 'started' } else { 'resumed' }
     $evidenceFresh = -not $activeOperation -and ($validatedNow -or (-not $scopeChanged -and -not $revisionChanged -and -not $worktreeChanged -and ($null -ne $previous -and [bool]$previous.EvidenceFresh)))
     $nextAction = if ($activeOperation) { "wait-for-existing-operation:$($operation.Handle)" } elseif ($scopeChanged -and -not $validatedNow) { 'reconcile-edited-issue-before-implementation' } elseif ($validatedNow) { 'continue-implementation-or-review' } elseif ($operationSnapshotChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($operationCompleted) { 'inspect-completed-operation-result' } elseif ($revisionChanged -or $worktreeChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($null -eq $previous) { 'inspect-guidance-and-prerequisites' } else { [string]$previous.NextAction }
     if ([string]::IsNullOrWhiteSpace($nextAction)) { $nextAction = 'inspect-guidance-and-prerequisites' }
