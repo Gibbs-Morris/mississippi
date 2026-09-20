@@ -474,6 +474,8 @@ function New-RepositoryExecutionLeaseContext {
     $leasePath = Get-RepositoryExecutionLeasePathForRoot -CanonicalRepoRoot $canonicalRoot -LeaseDirectory $LeaseDirectory
     Assert-RepositoryExecutionLeaseFile -Path $leasePath
     $repositoryKey = [System.BitConverter]::ToString((Get-RepositoryExecutionLeaseHash -CanonicalRepoRoot $canonicalRoot)).Replace('-', '').ToLowerInvariant()
+    $comparison = Get-RepositoryPathComparison -RepoRoot $canonicalRoot
+    $identityLeasePath = if ($comparison -eq [System.StringComparison]::OrdinalIgnoreCase) { $leasePath.ToLowerInvariant() } else { $leasePath }
     $metadata = [ordered]@{
         operationId = $OperationId
         repositoryKey = $repositoryKey
@@ -485,7 +487,7 @@ function New-RepositoryExecutionLeaseContext {
         SharedLease = $sharedLease
         CanonicalRoot = $canonicalRoot
         LeasePath = $leasePath
-        LeaseIdentity = "$canonicalRoot|$leasePath"
+        LeaseIdentity = "$repositoryKey|$identityLeasePath"
         OperationId = $OperationId
         Metadata = $metadata
     }
