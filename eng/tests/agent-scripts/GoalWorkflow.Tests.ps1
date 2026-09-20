@@ -54,6 +54,7 @@ Describe 'Issue-driven goal workflow' {
                 [string[]]$Fix,
                 [string[]]$Review,
                 [string[]]$ResolvedReview,
+                [switch]$OmitAuthorization,
                 [switch]$EvidenceValidated
             )
             $arguments = @('-NoProfile', '-File', $scriptPath, '-Action', $Action,
@@ -62,14 +63,24 @@ Describe 'Issue-driven goal workflow' {
                 '-CheckpointPath', $checkpoint, '-RepositoryRoot', $repoRoot,
                 '-HeadRevision', $Head, '-BaseRevision', $Base, '-Json')
             if ($Operation) { $arguments += @('-OperationStateJson', $Operation) }
-            if ($ExpectedDigest) { $arguments += @('-ExpectedIssueBodyDigest', $ExpectedDigest) }
             if ($ExpectedContractDigest) { $arguments += @('-ExpectedContractBodyDigest', $ExpectedContractDigest) }
-            if ($ExpectedAcceptance) { $arguments += @('-ExpectedAcceptanceCriteria', (ConvertTo-Json -InputObject ([object[]]$ExpectedAcceptance) -Compress)) }
             if ($Decision) { $arguments += @('-Decisions', (ConvertTo-Json -InputObject ([object[]]$Decision) -Compress)) }
             if ($Evidence) { $arguments += @('-AcceptanceEvidence', (ConvertTo-Json -InputObject ([object[]]$Evidence) -Compress)) }
             if ($Fix) { $arguments += @('-AttemptedFixes', (ConvertTo-Json -InputObject ([object[]]$Fix) -Compress)) }
             if ($Review) { $arguments += @('-OutstandingReviewWork', (ConvertTo-Json -InputObject ([object[]]$Review) -Compress)) }
             if ($ResolvedReview) { $arguments += @('-ResolvedReviewWork', (ConvertTo-Json -InputObject ([object[]]$ResolvedReview) -Compress)) }
+            if (-not $OmitAuthorization) {
+                if (-not $ExpectedDigest) {
+                    $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($Body)
+                    $bodyHash = [System.Security.Cryptography.SHA256]::HashData($bodyBytes)
+                    $ExpectedDigest = 'SHA256:' + (($bodyHash | ForEach-Object { $_.ToString('x2') }) -join '')
+                }
+                if (-not $ExpectedAcceptance) {
+                    $ExpectedAcceptance = @([regex]::Matches($Body, '(?m)^\s*-\s*\[(AC\d+)\]') | ForEach-Object { $_.Groups[1].Value })
+                }
+            }
+            if ($ExpectedDigest) { $arguments += @('-ExpectedIssueBodyDigest', $ExpectedDigest) }
+            if ($ExpectedAcceptance) { $arguments += @('-ExpectedAcceptanceCriteria', (ConvertTo-Json -InputObject ([object[]]$ExpectedAcceptance) -Compress)) }
             if ($EvidenceValidated) { $arguments += '-EvidenceValidated' }
             $output = & $powerShellPath @arguments 2>&1 | Out-String
             [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output; Result = $output | ConvertFrom-Json }
@@ -202,6 +213,15 @@ Describe 'Issue-driven goal workflow' {
         $outcome.Result.Error | Should -Match 'failed operation evidence'
     }
 
+    It 'rejects a completed operation after a failed operation' {
+        $null = Invoke-Goal -Operation '{"Status":"running","Handle":"job-123","Name":"validation"}'
+        $null = Invoke-Goal -Action resume -Operation '{"Status":"failed","Handle":"job-123","Name":"validation"}'
+        $outcome = Invoke-Goal -Action resume -Operation '{"Status":"completed","Handle":"job-123","Name":"validation"}' -EvidenceValidated
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Error | Should -Match 'failed operation cannot transition directly to completed'
+    }
+
     It 'does not promote completed operation evidence from a changed snapshot' {
         $null = Invoke-Goal -Operation '{"Status":"running","Handle":"job-123","Name":"validation"}'
         $outcome = Invoke-Goal -Action resume -Base 'HEAD~2' -Operation '{"Status":"completed","Handle":"job-123","Name":"validation"}' -EvidenceValidated
@@ -217,7 +237,7 @@ Describe 'Issue-driven goal workflow' {
         $commentDigestBytes = [System.Text.Encoding]::UTF8.GetBytes($validIssueBody)
         $commentDigestHash = [System.Security.Cryptography.SHA256]::HashData($commentDigestBytes)
         $commentDigest = 'SHA256:' + (($commentDigestHash | ForEach-Object { $_.ToString('x2') }) -join '')
-        $null = Invoke-Goal -Body $invalidBody -Comments @($comment) -ExpectedContractDigest $commentDigest
+        $null = Invoke-Goal -Body $invalidBody -Comments @($comment) -ExpectedContractDigest $commentDigest -ExpectedAcceptance @('AC1', 'AC2', 'AC3')
         $saved = Get-Content -LiteralPath $checkpoint -Raw | ConvertFrom-Json
         $expectedBytes = [System.Text.Encoding]::UTF8.GetBytes($invalidBody)
         $expectedHash = [System.Security.Cryptography.SHA256]::HashData($expectedBytes)
@@ -228,6 +248,22 @@ Describe 'Issue-driven goal workflow' {
         $saved.ContractBodyDigest | Should -Not -Be $saved.IssueBodyDigest
     }
 
+    It 'selects the fallback contract matching the authorized digest' {
+        $olderBody = $validIssueBody
+        $newerBody = $validIssueBody -replace 'Keep the existing exception type\.', 'Keep the existing exception type and message.'
+        $digestBytes = [System.Text.Encoding]::UTF8.GetBytes($olderBody)
+        $digestHash = [System.Security.Cryptography.SHA256]::HashData($digestBytes)
+        $olderDigest = 'SHA256:' + (($digestHash | ForEach-Object { $_.ToString('x2') }) -join '')
+        $comments = @(
+            [pscustomobject]@{ body = $newerBody; created_at = '2026-09-20T00:00:00Z' }
+            [pscustomobject]@{ body = $olderBody; created_at = '2026-09-19T00:00:00Z' }
+        )
+        $outcome = Invoke-Goal -Body 'The issue body is intentionally invalid.' -Comments $comments -ExpectedContractDigest $olderDigest -ExpectedAcceptance @('AC1', 'AC2', 'AC3')
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.Result.Status | Should -Be 'started'
+    }
+
     It 'removes explicitly resolved review work from the checkpoint collection' {
         $null = Invoke-Goal -Review @('review-a', 'review-b')
         $outcome = Invoke-Goal -Action resume -ResolvedReview 'review-a'
@@ -236,6 +272,24 @@ Describe 'Issue-driven goal workflow' {
         $outcome.ExitCode | Should -Be 0
         @($saved.OutstandingReviewWork) | Should -Contain 'review-b'
         @($saved.OutstandingReviewWork) | Should -Not -Contain 'review-a'
+    }
+
+    It 'resolves review work using case-sensitive identities' {
+        $null = Invoke-Goal -Review @('review-a', 'REVIEW-A')
+        $null = Invoke-Goal -Action resume -ResolvedReview 'review-a'
+        $saved = Get-Content -LiteralPath $checkpoint -Raw | ConvertFrom-Json
+        $remaining = @($saved.OutstandingReviewWork | ForEach-Object { [string]$_ })
+
+        @($remaining | Where-Object { $_ -ceq 'review-a' }).Count | Should -Be 0
+        @($remaining | Where-Object { $_ -ceq 'REVIEW-A' }).Count | Should -Be 1
+    }
+
+    It 'requires an authorized baseline for a first checkpoint' {
+        $outcome = Invoke-Goal -OmitAuthorization
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Status | Should -Be 'ERROR'
+        $outcome.Result.Error | Should -Match 'first checkpoint requires an expected issue body digest'
     }
 
     It 'extracts dependencies after ignoring tilde-fenced examples' {

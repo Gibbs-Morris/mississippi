@@ -392,6 +392,15 @@ try {
     if ([string]$issue.state -ne 'open') { throw "Issue #$IssueNumber is not open." }
     if ($null -ne $issue.PSObject.Properties['pull_request']) { throw "Reference #$IssueNumber is a pull request, not an issue." }
 
+    $previous = $null
+    if (Test-Path -LiteralPath $checkpoint -PathType Leaf) {
+        $previous = Get-Content -LiteralPath $checkpoint -Raw | ConvertFrom-Json
+        $previousRepository = if ($null -ne $previous.Issue.PSObject.Properties['Repository']) { [string]$previous.Issue.Repository } else { '' }
+        if ([int]$previous.Issue.Number -ne $IssueNumber -or $previousRepository -ne "$RepositoryOwner/$RepositoryName") {
+            throw "Checkpoint '$checkpoint' belongs to a different issue or repository."
+        }
+    }
+
     $issueBody = if ($null -eq $issue.body) { '' } else { [string]$issue.body }
     $issueBodyDigest = Get-GoalBodyDigest -Body $issueBody
     $checkedOutHead = Get-GoalRevision -Root $root -Name 'HEAD'
@@ -421,11 +430,24 @@ try {
         }
         $issueComments = if ($null -ne $issue.PSObject.Properties['comments']) { @($issue.comments) } else { @() }
         $fallbackBodies = @($issueComments | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_.body) } | Sort-Object created_at -Descending | ForEach-Object { [string]$_.body })
+        $authorizedContractBodyDigest = if (-not [string]::IsNullOrWhiteSpace($ExpectedContractBodyDigest)) {
+            $ExpectedContractBodyDigest
+        }
+        elseif ($null -ne $previous -and $null -ne $previous.PSObject.Properties['ContractBodyDigest']) {
+            [string]$previous.ContractBodyDigest
+        }
+        else { '' }
         foreach ($fallbackBody in $fallbackBodies) {
             try {
-                $contractResult = Test-GoalIssueContract -Root $root -Body $fallbackBody
+                $candidateContractResult = Test-GoalIssueContract -Root $root -Body $fallbackBody
+                $candidateContractBodyDigest = Get-GoalBodyDigest -Body $fallbackBody
+                if (-not [string]::IsNullOrWhiteSpace($authorizedContractBodyDigest) -and $candidateContractBodyDigest -ne $authorizedContractBodyDigest) {
+                    Write-Verbose 'Issue comment was a valid contract but did not match the authorized contract body digest; trying the next comment.'
+                    continue
+                }
+                $contractResult = $candidateContractResult
                 $currentBody = $fallbackBody
-                $contractBodyDigest = Get-GoalBodyDigest -Body $currentBody
+                $contractBodyDigest = $candidateContractBodyDigest
                 $contractSource = 'issue-comment'
                 break
             }
@@ -433,7 +455,12 @@ try {
                 Write-Verbose "Issue comment was not a valid contract; trying the next newest comment."
             }
         }
-        if ($null -eq $contractResult) { throw }
+        if ($null -eq $contractResult) {
+            if (-not [string]::IsNullOrWhiteSpace($authorizedContractBodyDigest)) {
+                throw 'No valid issue comment matches the authorized contract body digest.'
+            }
+            throw
+        }
     }
     $operation = Get-GoalOperationState -Json $OperationStateJson
     if ($operation.Status -eq 'running' -and [string]::IsNullOrWhiteSpace($operation.Handle)) {
@@ -442,11 +469,6 @@ try {
 
     if ($Action -eq 'resume' -and -not (Test-Path -LiteralPath $checkpoint -PathType Leaf)) {
         throw "Cannot resume issue #$IssueNumber because checkpoint '$checkpoint' does not exist."
-    }
-
-    $previous = $null
-    if (Test-Path -LiteralPath $checkpoint -PathType Leaf) {
-        $previous = Get-Content -LiteralPath $checkpoint -Raw | ConvertFrom-Json
     }
 
     if ($contractSource -eq 'issue-comment') {
@@ -463,12 +485,11 @@ try {
     }
 
     if ($null -ne $previous) {
-        $previousRepository = if ($null -ne $previous.Issue.PSObject.Properties['Repository']) { [string]$previous.Issue.Repository } else { '' }
-        if ([int]$previous.Issue.Number -ne $IssueNumber -or $previousRepository -ne "$RepositoryOwner/$RepositoryName") {
-            throw "Checkpoint '$checkpoint' belongs to a different issue or repository."
-        }
         if ([string]::IsNullOrWhiteSpace($OperationStateJson) -and $null -ne $previous.Operation) {
             $operation = [pscustomobject]@{ Status = [string]$previous.Operation.Status; Handle = [string]$previous.Operation.Handle; Name = [string]$previous.Operation.Name }
+        }
+        if ($null -ne $previous.Operation -and [string]$previous.Operation.Status -eq 'failed' -and $operation.Status -eq 'completed') {
+            throw 'A failed operation cannot transition directly to completed; start a new running operation with a fresh snapshot.'
         }
         if ($null -ne $previous.Operation -and [string]$previous.Operation.Status -eq 'running') {
             if ($operation.Status -notin @('running', 'completed', 'failed')) {
@@ -491,6 +512,14 @@ try {
     }
     $actualAcceptance = @($contractResult.AcceptanceCriteria | ForEach-Object { [string]$_ } | Sort-Object -Unique)
     $expectedAcceptance = @(Expand-GoalStringCollection -Values $ExpectedAcceptanceCriteria | Sort-Object -Unique)
+    if ($null -eq $previous) {
+        if ([string]::IsNullOrWhiteSpace($ExpectedIssueBodyDigest)) {
+            throw 'A first checkpoint requires an expected issue body digest from the authorized local plan.'
+        }
+        if ($expectedAcceptance.Count -eq 0) {
+            throw 'A first checkpoint requires expected acceptance criteria from the authorized local plan.'
+        }
+    }
     if ($expectedAcceptance.Count -gt 0 -and (($actualAcceptance -join '|') -ne ($expectedAcceptance -join '|'))) {
         throw 'The issue acceptance criteria do not match the authorized local plan.'
     }
@@ -599,7 +628,9 @@ try {
     $baselineWorktreeFingerprint = if ($validatedNow -or $evidenceFresh -or $null -eq $previous) { $currentWorktreeFingerprint } else { $worktreeBaseline }
     $reviewWork = Merge-GoalCollection -Existing (Get-GoalCollection -Object $previous -Name 'OutstandingReviewWork') -Added (Expand-GoalStringCollection -Values $OutstandingReviewWork)
     $resolvedReviewWork = @(Expand-GoalStringCollection -Values $ResolvedReviewWork)
-    $reviewWork = @($reviewWork | Where-Object { $_ -notin $resolvedReviewWork })
+    $resolvedReviewSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($resolvedReview in $resolvedReviewWork) { $null = $resolvedReviewSet.Add([string]$resolvedReview) }
+    $reviewWork = @($reviewWork | Where-Object { -not $resolvedReviewSet.Contains([string]$_) })
     $reviewedSourceRevision = if ($validatedNow -or $evidenceFresh -or $null -eq $previous) { $currentHead } elseif ($null -ne $previous.PSObject.Properties['ReviewedSourceRevision']) { [string]$previous.ReviewedSourceRevision } else { $validatedHead }
     $verificationHead = Get-GoalRevision -Root $root -Name 'HEAD'
     $verificationWorktreeFingerprint = Get-GoalWorktreeFingerprint -Root $root -ExcludePaths @($checkpoint, $temporaryCheckpoint, $checkpointLockPath)
