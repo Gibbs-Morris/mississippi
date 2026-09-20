@@ -3,6 +3,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$activeRepositoryExecutionLeases = [System.Collections.Concurrent.ConcurrentDictionary[string, bool]]::new()
 $sharedExecutionLeaseDirectoryMode = 365 # 0555
 $sharedExecutionLeaseFileMode = 438 # 0666
 $privateExecutionLeaseDirectoryMode = 448 # 0700
@@ -16,6 +17,25 @@ function Test-RepositoryExecutionLeaseSharedMode {
     param([string]$LeaseDirectory)
 
     return $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true' -or -not [string]::IsNullOrWhiteSpace($LeaseDirectory)
+}
+
+function Register-RepositoryExecutionLeaseIdentity {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Identity)
+
+    if (-not $activeRepositoryExecutionLeases.TryAdd($Identity, $true)) {
+        throw "Repository execution lease is already held in this process for '$Identity'. Use -ExistingLease for supported reentrancy."
+    }
+}
+
+function Unregister-RepositoryExecutionLeaseIdentity {
+    [CmdletBinding()]
+    param([string]$Identity)
+
+    if (-not [string]::IsNullOrWhiteSpace($Identity)) {
+        $removed = $false
+        $activeRepositoryExecutionLeases.TryRemove($Identity, [ref]$removed) | Out-Null
+    }
 }
 
 function Get-RepositoryExecutionLeaseHash {
@@ -340,9 +360,13 @@ function Enter-RepositoryExecutionLease {
         startedUtc = (Get-Date).ToUniversalTime().ToString('o')
     } | ConvertTo-Json -Compress
 
+    $leaseIdentity = "$canonicalRoot|$leasePath"
+    $leaseRegistered = $false
     $stream = $null
     $leaseOffset = $null
     try {
+        Register-RepositoryExecutionLeaseIdentity -Identity $leaseIdentity
+        $leaseRegistered = $true
         $fileShare = if ($sharedLease) { [System.IO.FileShare]::ReadWrite } else { [System.IO.FileShare]::Read }
         $stream = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, $fileShare)
         if ($sharedLease) {
@@ -356,6 +380,7 @@ function Enter-RepositoryExecutionLease {
         }
     }
     catch [System.UnauthorizedAccessException] {
+        if ($leaseRegistered) { Unregister-RepositoryExecutionLeaseIdentity -Identity $leaseIdentity }
         if ($null -ne $stream) { $stream.Dispose(); $stream = $null }
         if ($sharedLease) {
             throw "Shared execution lease '$leasePath' is not writable by this account. Ensure existing lease files in the shared directory are writable by all participating accounts."
@@ -363,6 +388,7 @@ function Enter-RepositoryExecutionLease {
         throw
     }
     catch [System.IO.IOException] {
+        if ($leaseRegistered) { Unregister-RepositoryExecutionLeaseIdentity -Identity $leaseIdentity }
         if ($null -ne $stream) { $stream.Dispose(); $stream = $null }
         if ($sharedLease) {
             throw "Worktree execution lease is held for '$canonicalRoot' in shared coordination slot. Use a separate worktree or wait for the active operation."
@@ -374,6 +400,7 @@ function Enter-RepositoryExecutionLease {
         throw "Worktree execution lease is held for '$canonicalRoot'. Current owner: $owner. Use a separate worktree or wait for the active operation."
     }
     catch {
+        if ($leaseRegistered) { Unregister-RepositoryExecutionLeaseIdentity -Identity $leaseIdentity }
         if ($null -ne $stream) { $stream.Dispose(); $stream = $null }
         throw
     }
@@ -391,6 +418,7 @@ function Enter-RepositoryExecutionLease {
         return [pscustomobject]@{
             Path = $leasePath
             LeaseOffset = $leaseOffset
+            LeaseIdentity = $leaseIdentity
             OperationId = $OperationId
             RepositoryRoot = $canonicalRoot
             Stream = $stream
@@ -398,6 +426,7 @@ function Enter-RepositoryExecutionLease {
         }
     }
     catch {
+        if ($leaseRegistered) { Unregister-RepositoryExecutionLeaseIdentity -Identity $leaseIdentity }
         $stream.Dispose()
         throw
     }
@@ -407,7 +436,10 @@ function Exit-RepositoryExecutionLease {
     [CmdletBinding()]
     param([Parameter(Mandatory)][object]$Lease)
 
-    if ($Lease.OwnsStream -and $null -ne $Lease.Stream) { $Lease.Stream.Dispose() }
+    if ($Lease.OwnsStream -and $null -ne $Lease.Stream) {
+        try { $Lease.Stream.Dispose() }
+        finally { Unregister-RepositoryExecutionLeaseIdentity -Identity ([string]$Lease.LeaseIdentity) }
+    }
 }
 
 function ConvertTo-ConsoleColor {

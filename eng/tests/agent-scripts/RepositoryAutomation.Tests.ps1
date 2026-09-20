@@ -35,10 +35,10 @@ Describe 'RepositoryAutomation helpers' {
         New-Item -ItemType Directory -Path $leaseRoot -Force | Out-Null
         $lease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-one' -LeaseDirectory $coordinationRoot
         try {
-            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-two' -LeaseDirectory $coordinationRoot } | Should -Throw '*execution lease is held*'
+            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-two' -LeaseDirectory $coordinationRoot } | Should -Throw '*execution lease*'
             $nestedLease = Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -ExistingLease $lease -LeaseDirectory $coordinationRoot
             try { $nestedLease.OperationId | Should -Be 'owner-one' } finally { Exit-RepositoryExecutionLease -Lease $nestedLease }
-            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-four' -LeaseDirectory $coordinationRoot } | Should -Throw '*execution lease is held*'
+            { Enter-RepositoryExecutionLease -RepoRoot $leaseRoot -OperationId 'owner-four' -LeaseDirectory $coordinationRoot } | Should -Throw '*execution lease*'
         }
         finally {
             Exit-RepositoryExecutionLease -Lease $lease
@@ -112,7 +112,7 @@ Describe 'RepositoryAutomation helpers' {
             $coordinationRoot = Join-Path $TestDrive 'alias-coordination'
             $lease = Enter-RepositoryExecutionLease -RepoRoot $realRoot -OperationId 'physical-owner' -LeaseDirectory $coordinationRoot
             try {
-                { Enter-RepositoryExecutionLease -RepoRoot $aliasRoot -OperationId 'alias-owner' -LeaseDirectory $coordinationRoot } | Should -Throw '*execution lease is held*'
+                { Enter-RepositoryExecutionLease -RepoRoot $aliasRoot -OperationId 'alias-owner' -LeaseDirectory $coordinationRoot } | Should -Throw '*execution lease*'
             }
             finally {
                 Exit-RepositoryExecutionLease -Lease $lease
