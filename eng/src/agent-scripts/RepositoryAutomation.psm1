@@ -317,6 +317,10 @@ function Initialize-SharedRepositoryExecutionLeasePath {
     if (-not $IsWindows) {
         Set-RepositoryExecutionLeaseUnixMode -Path $LeasePath -Mode $sharedExecutionLeaseFileMode
     }
+    if ($IsWindows) {
+        if ($LeaseDirectoryCreated) { Set-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath }
+        else { Test-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath }
+    }
     Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
 }
 
@@ -336,6 +340,10 @@ function Get-RepositoryExecutionLeasePathForRoot {
     $leasePath = Join-Path $resolvedLeaseDirectory $fileName
 
     if ($sharedLease) {
+        if ($IsWindows) {
+            if ($leaseDirectoryCreated) { Set-RepositoryExecutionLeaseWindowsAccess -Path $resolvedLeaseDirectory }
+            else { Test-RepositoryExecutionLeaseWindowsAccess -Path $resolvedLeaseDirectory }
+        }
         Initialize-SharedRepositoryExecutionLeasePath -LeaseDirectory $resolvedLeaseDirectory -LeasePath $leasePath -LeaseDirectoryCreated $leaseDirectoryCreated
     }
     elseif ($defaultLeaseDirectory) {
@@ -444,6 +452,62 @@ function Get-ReentrantRepositoryExecutionLease {
         RepositoryRoot = $ExistingLease.RepositoryRoot
         Stream = $ExistingLease.Stream
         OwnsStream = $false
+    }
+}
+
+function Test-RepositoryExecutionLeaseWindowsAccess {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (-not $IsWindows) { return }
+    try {
+        $sid = [System.Security.Principal.SecurityIdentifier]::new([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid, $null)
+        $acl = Get-Acl -LiteralPath $Path -ErrorAction Stop
+        $requiredRights = [System.Security.AccessControl.FileSystemRights]::Modify
+        $hasAccess = @(
+            $acl.Access | Where-Object {
+                try {
+                    $identity = $_.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier])
+                    $identity.Value -eq $sid.Value -and $_.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow -and
+                        (([System.Security.AccessControl.FileSystemRights]$_.FileSystemRights -band $requiredRights) -eq $requiredRights)
+                }
+                catch { $false }
+            }
+        ).Count -gt 0
+        if (-not $hasAccess) { throw 'BUILTIN\Users does not have Modify access.' }
+    }
+    catch {
+        throw "Shared Windows lease path '$Path' is not accessible to all participating users: $($_.Exception.Message)"
+    }
+}
+
+function Set-RepositoryExecutionLeaseWindowsAccess {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (-not $IsWindows) { return }
+    try {
+        $sid = [System.Security.Principal.SecurityIdentifier]::new([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid, $null)
+        $acl = Get-Acl -LiteralPath $Path -ErrorAction Stop
+        $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+        $inheritance = if ($item.PSIsContainer) {
+            [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+        }
+        else {
+            [System.Security.AccessControl.InheritanceFlags]::None
+        }
+        $rule = [System.Security.AccessControl.FileSystemAccessRule]::new(
+            $sid,
+            [System.Security.AccessControl.FileSystemRights]::Modify,
+            $inheritance,
+            [System.Security.AccessControl.PropagationFlags]::None,
+            [System.Security.AccessControl.AccessControlType]::Allow)
+        $acl.SetAccessRule($rule)
+        Set-Acl -LiteralPath $Path -AclObject $acl -ErrorAction Stop
+        Test-RepositoryExecutionLeaseWindowsAccess -Path $Path
+    }
+    catch {
+        throw "Unable to provision shared Windows lease access on '$Path': $($_.Exception.Message)"
     }
 }
 
