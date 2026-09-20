@@ -169,6 +169,12 @@ Describe 'Issue delivery benchmark validation' {
 
         $valid.ExitCode | Should -Be 0
         $valid.Result.Status | Should -Be 'VALIDATED_UNSUPPORTED_BASELINE'
+        $data.hosts[0].PSObject.Properties.Remove('hostVersion')
+        $data | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path
+        $missingVersion = Invoke-Evaluation -ResultsPath $path
+        $missingVersion.ExitCode | Should -Not -Be 0
+        ($missingVersion.Result.Errors -join "`n") | Should -Match 'missing scalar string hostVersion evidence'
+        $data.hosts[0] | Add-Member -NotePropertyName hostVersion -NotePropertyValue 'test-host-1' -Force
         $data.hosts[0].trialRecords = @()
         $data | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path
         $invalid = Invoke-Evaluation -ResultsPath $path

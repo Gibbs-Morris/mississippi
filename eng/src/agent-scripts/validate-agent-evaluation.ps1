@@ -262,13 +262,15 @@ try {
         }
             $modelSentinels = @('unknown', 'unsupported', 'blocked')
             $activeSentinel = [string]$hostResult.activeModel -in $modelSentinels
-            if (-not $activeSentinel) {
-                if ([string]$hostResult.configuredModel -in $modelSentinels -or [string]$hostResult.acceptedModel -in $modelSentinels) {
-                    $errors.Add("Host '$hostName' has live results without verifiable configured, accepted, and active model evidence.")
-                }
+            if (-not $activeSentinel -or [string]$results.mode -eq 'authorized-live') {
                 $hostVersionProperty = $hostResult.PSObject.Properties['hostVersion']
                 if ($null -eq $hostVersionProperty -or $hostVersionProperty.Value -isnot [string] -or [string]::IsNullOrWhiteSpace([string]$hostVersionProperty.Value)) {
                     $errors.Add("Host '$hostName' is missing scalar string hostVersion evidence.")
+                }
+            }
+            if (-not $activeSentinel) {
+                if ([string]$hostResult.configuredModel -in $modelSentinels -or [string]$hostResult.acceptedModel -in $modelSentinels) {
+                    $errors.Add("Host '$hostName' has live results without verifiable configured, accepted, and active model evidence.")
                 }
                 foreach ($effortProperty in @('configuredEffort', 'acceptedEffort', 'activeEffort')) {
                     if ($null -eq $hostResult.PSObject.Properties[$effortProperty] -or [string]::IsNullOrWhiteSpace([string]$hostResult.$effortProperty)) {
