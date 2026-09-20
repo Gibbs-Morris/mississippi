@@ -152,7 +152,7 @@ function Get-MutationRunReportPaths
     $paths = @()
     foreach ($project in $projects) {
         if ($project.Status -eq 'Skipped') { continue }
-        if ($project.Status -notin @('Completed', 'Failed') -or -not $project.ReportPath) {
+        if ($project.Status -notin @('Completed', 'Failed', 'ThresholdFailed') -or -not $project.ReportPath) {
             throw "Mutation run is incomplete for '$($project.Project)': $manifestPath"
         }
         $path = (Resolve-Path -LiteralPath $project.ReportPath).Path

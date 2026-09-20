@@ -22,7 +22,7 @@ Describe 'Mutation automation' {
         Set-Content (Join-Path $repo 'samples/Other.L0Tests/Other.L0Tests.csproj') '<Project />'
         $solution = Join-Path $repo 'mississippi.slnx'
         Set-Content $solution '<Solution><Project Path="src/Widget/Widget.csproj" /><Folder Name="/Tests/"><Project Path="tests\Widget.L0Tests\Widget.L0Tests.csproj" /><Project Path="tests/Widget.L1Tests/Widget.L1Tests.csproj" /><Project Path="tests/Widget.L2Tests/Widget.L2Tests.csproj" /></Folder></Solution>'
-        Set-Content (Join-Path $repo 'stryker-config.json') '{"stryker-config":{}}'
+        Set-Content (Join-Path $repo 'stryker-config.json') '{"stryker-config":{"thresholds":{"high":80,"low":60,"break":50}}}'
         Set-Content (Join-Path $repo 'MSBuild.dll') ''
         $output = Join-Path $repo 'mutation-results'
         $completedOutput = Join-Path $repo 'completed'
@@ -52,6 +52,136 @@ Describe 'Mutation automation' {
         }
     }
 
+    It 'passes a zero break threshold to Stryker in report-only mode' {
+        $tests = @(Join-Path $repo 'tests/Widget.L0Tests/Widget.L0Tests.csproj')
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
+            if ($Arguments[0] -eq 'stryker') {
+                Set-Content (Join-Path $Arguments[8] 'mutation-report.json') '{"files":{}}'
+            }
+            else {
+                $repo
+            }
+        }
+        Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects $tests -OutputPath $output -ReportOnly | Out-Null
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
+            $Arguments[0] -eq 'stryker' -and $Arguments -contains '--break-at' -and
+            $Arguments[[Array]::IndexOf($Arguments, '--break-at') + 1] -eq '0'
+        }
+    }
+
+    It 'writes a completed warning summary for below-threshold reports in report-only mode' {
+        Set-Content (Join-Path $completedOutput 'mutation-report.json') '{"files":{"Widget.cs":{"mutants":[{"status":"Survived"}]}}}'
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation { $completedOutput }
+        $summaryFile = Join-Path $repo 'github-step-summary.md'
+        $previousSummaryFile = $env:GITHUB_STEP_SUMMARY
+        $env:GITHUB_STEP_SUMMARY = $summaryFile
+        try {
+            Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output -ReportOnly | Should -Be $output
+        }
+        finally {
+            $env:GITHUB_STEP_SUMMARY = $previousSummaryFile
+        }
+        $summary = Get-Content (Join-Path $output 'mutation-summary.json') -Raw | ConvertFrom-Json
+        $summary.ExecutionStatus | Should -Be 'COMPLETED'
+        $summary.MutationResult | Should -Be 'WARN'
+        $summary.CompleteReportCount | Should -Be 1
+        $summary.BelowBreakThresholdCount | Should -Be 1
+        (Get-Content $summaryFile -Raw) | Should -Match 'completed with warnings'
+        Should -Invoke Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
+            $ReportOnly
+        }
+    }
+
+    It 'warns when a valid report has no mutation score' {
+        Set-Content (Join-Path $completedOutput 'mutation-report.json') '{"files":{"Widget.cs":{"mutants":[{"status":"Ignored"}]}}}'
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation { $completedOutput }
+        $summaryFile = Join-Path $repo 'github-step-summary.md'
+        $previousSummaryFile = $env:GITHUB_STEP_SUMMARY
+        $env:GITHUB_STEP_SUMMARY = $summaryFile
+        try {
+            Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output -ReportOnly | Should -Be $output
+        }
+        finally {
+            $env:GITHUB_STEP_SUMMARY = $previousSummaryFile
+        }
+        $summary = Get-Content (Join-Path $output 'mutation-summary.json') -Raw | ConvertFrom-Json
+        $summary.ExecutionStatus | Should -Be 'COMPLETED_WITH_WARNINGS'
+        $summary.MutationResult | Should -Be 'WARN'
+        $summary.NoScoreProjectCount | Should -Be 1
+        $summary.ScoredProjectCount | Should -Be 0
+        (Get-Content $summaryFile -Raw) | Should -Match 'Unscored projects'
+    }
+
+    It 'compares the raw mutation score before rounding the displayed score' {
+        $mutants = [System.Collections.Generic.List[object]]::new()
+        for ($index = 0; $index -lt 5000; $index++) { $mutants.Add(@{ status = 'Killed' }) }
+        for ($index = 0; $index -lt 5001; $index++) { $mutants.Add(@{ status = 'Survived' }) }
+        @{ files = @{ 'Widget.cs' = @{ mutants = $mutants } } } |
+            ConvertTo-Json -Depth 6 | Set-Content (Join-Path $completedOutput 'mutation-report.json')
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation { $completedOutput }
+        Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output -ReportOnly | Should -Be $output
+        $summary = Get-Content (Join-Path $output 'mutation-summary.json') -Raw | ConvertFrom-Json
+        $summary.BelowBreakThresholdCount | Should -Be 1
+        $summary.Projects[0].Score | Should -Be 50
+        $summary.Projects[0].RawScore | Should -BeLessThan 50
+    }
+
+    It 'separates a strict threshold exit from an execution failure in the summary' {
+        Set-Content (Join-Path $completedOutput 'mutation-report.json') '{"files":{"Widget.cs":{"mutants":[{"status":"Survived"}]}}}'
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation { $completedOutput }
+        { Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output } | Should -Throw '*mutation testing failed*'
+        $summary = Get-Content (Join-Path $output 'mutation-summary.json') -Raw | ConvertFrom-Json
+        $summary.ExecutionStatus | Should -Be 'COMPLETED_WITH_WARNINGS'
+        $summary.MutationResult | Should -Be 'WARN'
+        $summary.FailedProjectCount | Should -Be 0
+        $summary.ThresholdFailureCount | Should -Be 1
+        $summary.Projects[0].Status | Should -Be 'BELOW_BREAK'
+    }
+
+    It 'keeps strict native failures as execution failures' {
+        Set-Content (Join-Path $completedOutput 'mutation-report.json') '{"files":{"Widget.cs":{"mutants":[{"status":"Survived"}]}}}'
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation {
+            $failure = [InvalidOperationException]::new('Stryker reporter failed')
+            $failure.Data['ReportPath'] = Join-Path $completedOutput 'mutation-report.json'
+            throw $failure
+        }
+        { Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output } | Should -Throw '*mutation testing failed*'
+        $summary = Get-Content (Join-Path $output 'mutation-summary.json') -Raw | ConvertFrom-Json
+        $summary.ExecutionStatus | Should -Be 'FAILED'
+        $summary.MutationResult | Should -Be 'FAIL'
+        $summary.FailedProjectCount | Should -Be 1
+        $summary.ThresholdFailureCount | Should -Be 0
+        $summary.Projects[0].ExecutionStatus | Should -Be 'FAILED'
+    }
+
+    It 'keeps report-only native failures as execution failures' {
+        Set-Content (Join-Path $completedOutput 'mutation-report.json') '{"files":{"Widget.cs":{"mutants":[{"status":"Survived"}]}}}'
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation {
+            $failure = [InvalidOperationException]::new('Stryker reporter failed')
+            $failure.Data['ReportPath'] = Join-Path $completedOutput 'mutation-report.json'
+            throw $failure
+        }
+        { Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output -ReportOnly } | Should -Throw '*mutation testing failed*'
+        $summary = Get-Content (Join-Path $output 'mutation-summary.json') -Raw | ConvertFrom-Json
+        $summary.ExecutionStatus | Should -Be 'FAILED'
+        $summary.MutationResult | Should -Be 'FAIL'
+        $summary.FailedProjectCount | Should -Be 1
+        $summary.ThresholdFailureCount | Should -Be 0
+        $summary.Projects[0].ExecutionStatus | Should -Be 'FAILED'
+    }
+
+    It 'keeps the full mutation workflow manual and weekly' {
+        $workflowPath = Join-Path $PSScriptRoot '../../../.github/workflows/stryker.yml'
+        $workflow = Get-Content -LiteralPath $workflowPath -Raw
+        $workflow | Should -Match "(?m)^  schedule:\s*$"
+        $workflow | Should -Match "cron: '17 3 \* \* 0'"
+        $workflow | Should -Match '(?m)^permissions:\s*\r?\n  contents: read\s*$'
+        $workflow | Should -Not -Match '(?m)^  push:\s*$'
+        $workflow | Should -Match 'mutation-test-mississippi-solution\.ps1 -ReportOnly'
+        $workflow | Should -Match 'if-no-files-found: error'
+        $workflow | Should -Match 'include-hidden-files: true'
+    }
+
     It 'fails when a mutation process fails even if it is the only target' {
         Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation { throw 'Stryker exited 1' }
         { Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output } | Should -Throw '*mutation testing failed*'
@@ -73,6 +203,11 @@ Describe 'Mutation automation' {
             $completedOutput
         }
         Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output | Should -Be $output
+        $summary = Get-Content (Join-Path $output 'mutation-summary.json') -Raw | ConvertFrom-Json
+        $summary.ProjectCount | Should -Be 1
+        $summary.TargetProjectCount | Should -Be 2
+        $summary.SkippedProjectCount | Should -Be 1
+        $summary.CompleteReportCount | Should -Be 1
         Should -Invoke Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation -Exactly 1
         Should -Invoke Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation -Exactly 0 -ParameterFilter { $ProjectPath -like '*Package.csproj' }
     }
@@ -96,6 +231,7 @@ Describe 'Mutation automation' {
             $Arguments -contains 'Debug' -and $Arguments -contains 'Widget.csproj' -and
             $Arguments -contains (Join-Path $repo 'MSBuild.dll') -and
             $Arguments -contains '--test-runner' -and $Arguments -contains 'mtp' -and
+            $Arguments -notcontains '--break-at' -and
             $Arguments -contains '--concurrency' -and
             $Arguments[[array]::IndexOf($Arguments, '--concurrency') + 1] -eq '1'
         }

@@ -16,7 +16,7 @@
 2. `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1` and watch it fail (red).
 3. Implement the production change that makes the test pass.
 4. Re-run the unit-test script until it is green.
-5. Optionally run `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` to validate test quality.
+5. Optionally run `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1 -ReportOnly` to validate test quality and report score thresholds as warnings.
 6. `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1` to confirm a clean Release build.
 7. Repeat until the feature is complete, then mirror the steps on the Samples solution when relevant (no mutation testing there).
 
@@ -26,11 +26,11 @@ Follow the [mutation-testing policy](../../../.github/instructions/mutation-test
 
 Cleanup uses a fresh cache under `.scratchpad/cleanup-caches/` for each invocation, avoiding reuse of a previous source-generator analysis model. The cache path is logged and retained for troubleshooting.
 
-Mutation runs use the selected solution's declared source and test projects. Each target gets a fresh output directory, and `project-results.json` records every target before execution so interrupted or unmapped work stays visible. Native failures, missing or incomplete reports, and unmapped authored projects fail the run. Valid reports from failed score gates remain available for survivor analysis; the summarizer rejects missing target evidence instead of borrowing an older report. Focused quality runs use the same report contract.
+Mutation runs use the selected solution's declared source and test projects. Each target gets a fresh output directory, and `project-results.json` records every target before execution so interrupted or unmapped work stays visible. Native failures, missing or incomplete reports, and unmapped authored projects fail the run. Report-only runs classify valid below-threshold reports as warnings while preserving the configured high/low report colors. Valid reports from failed score gates remain available for survivor analysis; the summarizer rejects missing target evidence instead of borrowing an older report. Focused quality runs use the same report contract.
 
 Manifests identify solution and focused project scopes. Survivor summaries select the latest solution run by default. Use `-SkipMutationRun -RunPath <run-directory>` to inspect a focused run; its summaries stay inside that directory and cannot replace repository tasks.
 
-The default summary command and `go.ps1 -IncludeMutation` generate survivor reports and tasks from complete failed-score evidence before returning the unsuccessful mutation exit code. A failed preparation step or incomplete run cannot reuse historical evidence.
+The default summary command and `go.ps1 -IncludeMutation` generate survivor reports and tasks from complete failed-score evidence before returning the unsuccessful mutation exit code. The scheduled Stryker workflow uses `-ReportOnly` and emits a GitHub step summary; a failed preparation step or incomplete run cannot reuse historical evidence.
 
 ---
 
@@ -41,7 +41,7 @@ The default summary command and `go.ps1 -IncludeMutation` generate survivor repo
 | **../../../test-spring.ps1** (repository root) | Select Spring L2 API tests or L3 browser suites (default L3 Smoke); emits level/suite JSON and diagnostics. See [Spring test placement](../../../samples/Spring/TESTING.md). | `pwsh ./test-spring.ps1 -TestLevel L3 -Suite Smoke` |
 | **build-mississippi-solution.ps1** | Restore dependencies and compile `mississippi.slnx` (default `Release`). | `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1 -Configuration Debug` |
 | **unit-test-mississippi-solution.ps1** | Run Mississippi L0/L1 tests with coverage, emitting results under `.scratchpad/coverage-test-results`. | `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1` |
-| **mutation-test-mississippi-solution.ps1** | Generate `mississippi.sln` with SLNGen and execute Stryker.NET to measure mutation score. | `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` |
+| **mutation-test-mississippi-solution.ps1** | Generate `mississippi.sln` with SLNGen and execute Stryker.NET to measure mutation score. `-ReportOnly` treats configured score thresholds as warnings while retaining execution failures. | `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1 -ReportOnly` |
 | **test-project-quality.ps1** | Run `dotnet test` (with coverage) for a single project and optionally Stryker; prints a machine-readable summary. | `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Common.Abstractions.L0Tests -SkipMutation` |
 | **test-solution.ps1** | Run selected test levels through MTP with strict execution and separate TRX reports for each project. | `pwsh ./eng/src/agent-scripts/test-solution.ps1 -SolutionPath mississippi.slnx -NoBuild` |
 | **clean-up-mississippi-solution.ps1** | Produce a temporary `.sln` and run ReSharper CleanupCode using repository settings. | `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` |
@@ -64,7 +64,7 @@ These local commands cover the corresponding build and test steps. They do not r
 | [l0-tests.yml](../../../.github/workflows/l0-tests.yml), [l1-tests.yml](../../../.github/workflows/l1-tests.yml) | `pwsh ./go.ps1` | Local unit-test scripts combine L0/L1; CI runs each level separately. If a solution declares no L1 projects, CI records L1 as not applicable; declared suites must produce reports and execute tests. |
 | [l2-tests.yml](../../../.github/workflows/l2-tests.yml) | Core: `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 -TestLevels L2Tests`; samples: `pwsh ./eng/src/agent-scripts/integration-test-sample-solution.ps1 -TestLevels L2Tests` | CI targets L2 in both solutions with `continue-on-error`; workflow success does not prove L2 passed. Inspect the test step results. Both local commands fail on test errors. |
 | [l3-tests.yml](../../../.github/workflows/l3-tests.yml) | `pwsh ./test-spring.ps1` | Spring browser smoke tests; use `-TestLevel L3 -Suite Full` for all browser journeys. |
-| [stryker.yml](../../../.github/workflows/stryker.yml) | `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` | Mississippi mutation tests; opt into this step in `go.ps1` with `-IncludeMutation`. |
+| [stryker.yml](../../../.github/workflows/stryker.yml) | `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1 -ReportOnly` | Weekly/manual Mississippi mutation report; the full serial analysis is not run on every push to `main`. |
 | [cleanup.yml](../../../.github/workflows/cleanup.yml) | `pwsh ./clean-up.ps1` | Applies cleanup to both solutions; CI additionally fails if cleanup changes tracked files. |
 | [powershell-tests.yml](../../../.github/workflows/powershell-tests.yml) | `pwsh ./eng/tests/orchestrate-powershell-tests.ps1` | Pester and script integration tests; requires Pester 5+. CI runs on Windows and Ubuntu. |
 | [docusaurus.yml](../../../.github/workflows/docusaurus.yml) | `pwsh ./docs/Docusaurus/test-docusaurus.ps1` | Installs locked npm dependencies, builds the site, installs Chromium, and runs Playwright tests; requires Node.js 20+. |
@@ -184,9 +184,19 @@ MUTATION_RESULT: PASS|FAIL
 - Mutation reports under `.scratchpad/mutation-test-results/<run>/<SourceProject>/<invocation>/reports/`.
 - Target inventory and outcomes in `.scratchpad/mutation-test-results/<run>/project-results.json`.
 
-Exit code is `0` on success and `1` otherwise; when mutation is enabled, configured Stryker thresholds can make the command fail. Report that tooling failure accurately, separately from conventional test results. Tooling thresholds do not establish a mandatory repository mutation-score threshold or completion criterion, and failed or incomplete mutation runs are not passes.
+The focused script exits `0` when its tests, coverage, and optional mutation run complete successfully, and exits `1` for test, coverage, report, or configured mutation-threshold failures. It does not support `-ReportOnly`; use the full-solution entry point below for advisory score reporting. Failed or incomplete mutation runs are not passes.
 
 Happy building! 🚀
+
+### `mutation-test-mississippi-solution.ps1`
+
+Run the full Mississippi mutation analysis with advisory score reporting:
+
+```pwsh
+pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1 -ReportOnly
+```
+
+The `-ReportOnly` mode preserves native execution and complete-report failures, while valid below-threshold reports produce `MUTATION_RESULT: WARN` and exit `0`. It writes the target manifest and full-run status to `.scratchpad/mutation-test-results/<run>/project-results.json` and `mutation-summary.json`, and emits a GitHub step summary when running in Actions. The configured Stryker high/low thresholds remain available for report interpretation; no repository-wide mutation-score gate is introduced.
 
 ### RepositoryAutomation module
 
