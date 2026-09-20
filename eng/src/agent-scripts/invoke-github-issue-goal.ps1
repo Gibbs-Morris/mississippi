@@ -75,8 +75,8 @@ function Get-GoalWorktreeFingerprint { # NOSONAR - bounded Git/index/worktree fi
     $indexRaw = ((& git -c "safe.directory=$($Root.Replace('\', '/'))" -C $Root ls-files --stage -z 2>$null) -join '')
     $indexExitCode = if (Get-Variable -Name LASTEXITCODE -ErrorAction SilentlyContinue) { [int]$LASTEXITCODE } else { 0 }
     if ($indexExitCode -ne 0) { throw 'Unable to resolve the current index fingerprint.' }
-    $indexHashes = @{}
-    $indexModes = @{}
+    $indexHashes = [System.Collections.Generic.Dictionary[string, string]]::new($pathComparer)
+    $indexModes = [System.Collections.Generic.Dictionary[string, string]]::new($pathComparer)
     foreach ($indexEntry in @($indexRaw -split [char]0 | Where-Object { -not [string]::IsNullOrEmpty($_) })) {
         $tabIndex = $indexEntry.IndexOf([char]9)
         if ($tabIndex -lt 0) { continue }
@@ -421,7 +421,7 @@ try {
             if ($operation.Status -notin @('running', 'completed', 'failed')) {
                 throw "Unsupported operation transition '$($operation.Status)'."
             }
-            if ($operation.Handle -ne [string]$previous.Operation.Handle) {
+            if ($operation.Handle -cne [string]$previous.Operation.Handle) {
                 throw 'Operation update does not match the saved authoritative handle.'
             }
         }
@@ -474,7 +474,7 @@ try {
         ($null -eq $previous -or
          $null -eq $previous.PSObject.Properties['Operation'] -or
          [string]$previous.Operation.Status -ne 'running' -or
-         [string]$previous.Operation.Handle -ne $operation.Handle)
+         [string]$previous.Operation.Handle -cne $operation.Handle)
     $operationStartSnapshot = if ($operationStartsNewSnapshot) {
         [ordered]@{
             IssueBodyDigest = $issueBodyDigest
@@ -502,7 +502,8 @@ try {
     }
     else { $null }
     $operationSnapshotChanged = $false
-    if ($operationCompleted -and $operation.Status -eq 'completed') {
+    $previousOperationCompleted = $null -ne $previous -and $null -ne $previous.PSObject.Properties['Operation'] -and [string]$previous.Operation.Status -eq 'completed'
+    if (($operationCompleted -or $previousOperationCompleted) -and $operation.Status -eq 'completed') {
         $operationSnapshotChanged = $null -eq $operationStartSnapshot -or
             [string]$operationStartSnapshot.IssueBodyDigest -ne $issueBodyDigest -or
             [string]$operationStartSnapshot.ContractBodyDigest -ne $contractBodyDigest -or
