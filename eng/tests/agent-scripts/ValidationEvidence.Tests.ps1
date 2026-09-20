@@ -116,4 +116,21 @@ Describe 'Source-bound validation evidence' {
         $result.Valid | Should -BeFalse
         ($result.Errors -join "`n") | Should -Match 'metadata'
     }
+
+    It 'rejects artifact paths outside the verification root' {
+        $run = New-ValidationEvidenceRun -RepositoryRoot $fixtureRoot -Scope 'fixture' -InputPath @($inputFile)
+        $record = Get-Content -LiteralPath $run.Path -Raw | ConvertFrom-Json
+        $record.Status = 'FAIL'
+        $record.Executed = $false
+        $record.TestCount = 0
+        $record.Artifacts = @('../../outside.trx')
+        $record.ArtifactMetadata = @([pscustomobject]@{ Path = '../../outside.trx'; SHA256 = 'SHA256:' + ('0' * 64); Length = 1 })
+        $record.SourceAfter = $record.SourceBefore
+        $record | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $run.Path
+
+        $result = Test-ValidationEvidence -Path $run.Path
+
+        $result.Valid | Should -BeFalse
+        ($result.Errors -join "`n") | Should -Match 'escapes the verification root'
+    }
 }

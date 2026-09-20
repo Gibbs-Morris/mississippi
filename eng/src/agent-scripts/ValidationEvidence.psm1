@@ -212,7 +212,16 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
     if ([string]$record.Status -eq 'PASS' -and @($record.Artifacts).Count -eq 0) { $errors.Add('PASS requires at least one recorded artifact.') }
     if ([string]$record.Status -eq 'PASS' -and [bool]$record.SourceChangedDuringRun) { $errors.Add('PASS evidence was changed by a later cleanup or source edit.') }
     foreach ($artifact in @($record.Artifacts)) {
-        if ([string]::IsNullOrWhiteSpace([string]$artifact) -or -not (Test-Path -LiteralPath (Join-Path $verificationRoot $artifact) -PathType Leaf)) { $errors.Add("Required artifact is missing: '$artifact'.") }
+        $artifactText = [string]$artifact
+        if ([string]::IsNullOrWhiteSpace($artifactText)) {
+            $errors.Add("Required artifact is missing: '$artifact'.")
+            continue
+        }
+        if ([System.IO.Path]::IsPathRooted($artifactText) -or $null -eq (Get-ValidationRelativePath -RepositoryRoot $verificationRoot -Path $artifactText)) {
+            $errors.Add("Artifact path escapes the verification root: '$artifactText'.")
+            continue
+        }
+        if (-not (Test-Path -LiteralPath (Join-Path $verificationRoot $artifactText) -PathType Leaf)) { $errors.Add("Required artifact is missing: '$artifactText'.") }
     }
     $trxExecutedTotal = [int64]0
     $trxFailedTotal = [int64]0
@@ -229,6 +238,7 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
             $metadataPath = [string]$pathProperty.Value
             $metadataHash = [string]$hashProperty.Value
             if ([string]::IsNullOrWhiteSpace($metadataPath) -or $metadataHash -notmatch '^SHA256:[0-9a-fA-F]{64}$') { throw 'Artifact metadata has an invalid path or SHA256 value.' }
+            if ([System.IO.Path]::IsPathRooted($metadataPath) -or $null -eq (Get-ValidationRelativePath -RepositoryRoot $verificationRoot -Path $metadataPath)) { throw "Artifact path escapes the verification root: '$metadataPath'." }
             if (-not $metadataByPath.ContainsKey($metadataPath)) { $metadataByPath[$metadataPath] = [System.Collections.Generic.List[object]]::new() }
             $metadataByPath[$metadataPath].Add($metadata)
             if (-not $artifactSet.Contains($metadataPath)) { $errors.Add("Artifact metadata references an unrecorded artifact: '$metadataPath'."); continue }
