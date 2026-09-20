@@ -35,7 +35,8 @@ function Get-ValidationLinkTarget {
 function Resolve-ValidationContainedPath {
     param(
         [Parameter(Mandatory)][string]$RepositoryRoot,
-        [Parameter(Mandatory)][string]$Path
+        [Parameter(Mandatory)][string]$Path,
+        [switch]$ReturnResolvedPath
     )
 
     $root = (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
@@ -67,30 +68,30 @@ function Resolve-ValidationContainedPath {
         -not $resolved.StartsWith($rootWithSeparator, [System.StringComparison]::OrdinalIgnoreCase)) {
         return $null
     }
+    if ($ReturnResolvedPath) { return [string]$resolved }
     $finalPath = [System.IO.Path]::GetFullPath((Join-Path $root ([string]$relative)))
     return [string]$finalPath
 }
 
 function Get-ValidationPathMetadata {
-    param([Parameter(Mandatory)][string]$Path)
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [AllowEmptyString()][string]$LinkTarget = ''
+    )
 
     $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
     if ($item.PSIsContainer) { return $null }
     if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
-        $linkTarget = Get-ValidationLinkTarget -Item $item
-        if ([string]::IsNullOrWhiteSpace($linkTarget)) { throw "Unable to read symbolic-link target for '$Path'." }
-        $bytes = [System.Text.Encoding]::UTF8.GetBytes("SYMLINK:$linkTarget")
-        $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
-        return [pscustomobject]@{
-            SHA256 = 'SHA256:' + (($hash | ForEach-Object { $_.ToString('x2') }) -join '')
-            Length = $bytes.Length
-        }
+        throw "Path '$Path' must be resolved before metadata is collected."
     }
 
-    return [pscustomobject]@{
-        SHA256 = 'SHA256:' + (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
-        Length = $item.Length
+    $fileHash = 'SHA256:' + (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    if (-not [string]::IsNullOrWhiteSpace($LinkTarget)) {
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes("SYMLINK:$LinkTarget`nTARGET:$fileHash")
+        $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
+        $fileHash = 'SHA256:' + (($hash | ForEach-Object { $_.ToString('x2') }) -join '')
     }
+    return [pscustomobject]@{ SHA256 = $fileHash; Length = $item.Length }
 }
 
 function Test-ValidationZeroTestFacadeArtifact {
@@ -134,7 +135,11 @@ function Get-ValidationSourceFingerprint { # NOSONAR - source evidence fingerpri
     $files = [System.Collections.Generic.List[object]]::new()
     foreach ($relative in @($paths | Sort-Object)) {
         $fullPath = Join-Path $root ($relative.Replace('/', [System.IO.Path]::DirectorySeparatorChar))
-        $metadata = Get-ValidationPathMetadata -Path $fullPath
+        $resolvedPaths = @(Resolve-ValidationContainedPath -RepositoryRoot $root -Path $relative -ReturnResolvedPath | ForEach-Object { [string]$_ })
+        if ($resolvedPaths.Count -ne 1 -or [string]::IsNullOrWhiteSpace(($resolvedPaths -join ''))) { throw "Source input escapes the verification root: '$relative'." }
+        $sourceItem = Get-Item -LiteralPath $fullPath -Force -ErrorAction Stop
+        $linkTarget = if (($sourceItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) { Get-ValidationLinkTarget -Item $sourceItem } else { '' }
+        $metadata = Get-ValidationPathMetadata -Path ($resolvedPaths -join '') -LinkTarget $linkTarget
         if ($null -ne $metadata) {
             $files.Add([pscustomobject]@{ Path = $relative; SHA256 = [string]$metadata.SHA256 })
         }
@@ -239,14 +244,16 @@ function Complete-ValidationEvidenceRun {
             $missingArtifacts.Add('[invalid artifact path]')
             return
         }
-        $artifactPathValues = @(Resolve-ValidationContainedPath -RepositoryRoot $record.RepositoryRoot -Path $artifactText | ForEach-Object { [string]$_ })
+        $artifactPathValues = @(Resolve-ValidationContainedPath -RepositoryRoot $record.RepositoryRoot -Path $artifactText -ReturnResolvedPath | ForEach-Object { [string]$_ })
         if ($artifactPathValues.Count -ne 1) {
             $missingArtifacts.Add($artifactText)
             return
         }
         $resolvedArtifactPath = $artifactPathValues -join ''
         $metadata = $null
-        try { $metadata = Get-ValidationPathMetadata -Path $resolvedArtifactPath } catch { $metadata = $null }
+        $artifactItem = Get-Item -LiteralPath (Join-Path $record.RepositoryRoot $artifactText) -Force -ErrorAction SilentlyContinue
+        $linkTarget = if ($null -ne $artifactItem -and (($artifactItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0)) { Get-ValidationLinkTarget -Item $artifactItem } else { '' }
+        try { $metadata = Get-ValidationPathMetadata -Path $resolvedArtifactPath -LinkTarget $linkTarget } catch { $metadata = $null }
         if ($null -eq $metadata) {
             $missingArtifacts.Add($artifactText)
             return
@@ -311,7 +318,7 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
             $errors.Add("Required artifact is missing: '$artifact'.")
             continue
         }
-        $artifactResolvedPaths = @(Resolve-ValidationContainedPath -RepositoryRoot $verificationRoot -Path $artifactText | ForEach-Object { [string]$_ })
+        $artifactResolvedPaths = @(Resolve-ValidationContainedPath -RepositoryRoot $verificationRoot -Path $artifactText -ReturnResolvedPath | ForEach-Object { [string]$_ })
         if ([System.IO.Path]::IsPathRooted($artifactText) -or $artifactResolvedPaths.Count -ne 1) {
             $errors.Add("Artifact path escapes the verification root: '$artifactText'.")
             continue
@@ -321,7 +328,9 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
             $errors.Add("Required artifact is missing: '$artifactText'.")
             continue
         }
-        try { $artifactMetadata = Get-ValidationPathMetadata -Path $artifactResolvedPath } catch { $artifactMetadata = $null }
+        $artifactItem = Get-Item -LiteralPath (Join-Path $verificationRoot $artifactText) -Force -ErrorAction SilentlyContinue
+        $linkTarget = if ($null -ne $artifactItem -and (($artifactItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0)) { Get-ValidationLinkTarget -Item $artifactItem } else { '' }
+        try { $artifactMetadata = Get-ValidationPathMetadata -Path $artifactResolvedPath -LinkTarget $linkTarget } catch { $artifactMetadata = $null }
         if ($null -eq $artifactMetadata) { $errors.Add("Required artifact is missing: '$artifactText'.") }
     }
     $trxExecutedTotal = [int64]0
@@ -339,14 +348,16 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
             $metadataPath = @($pathProperty.Value) -join ''
             $metadataHash = [string]$hashProperty.Value
             if ([string]::IsNullOrWhiteSpace($metadataPath) -or $metadataHash -notmatch '^SHA256:[0-9a-fA-F]{64}$') { throw 'Artifact metadata has an invalid path or SHA256 value.' }
-            $metadataResolvedPaths = @(Resolve-ValidationContainedPath -RepositoryRoot $verificationRoot -Path $metadataPath | ForEach-Object { [string]$_ })
+            $metadataResolvedPaths = @(Resolve-ValidationContainedPath -RepositoryRoot $verificationRoot -Path $metadataPath -ReturnResolvedPath | ForEach-Object { [string]$_ })
             if ([System.IO.Path]::IsPathRooted($metadataPath) -or $metadataResolvedPaths.Count -ne 1 -or [string]::IsNullOrWhiteSpace(($metadataResolvedPaths -join ''))) { throw "Artifact path escapes the verification root: '$metadataPath'." }
             $metadataResolvedPath = $metadataResolvedPaths -join ''
             if (-not $metadataByPath.ContainsKey($metadataPath)) { $metadataByPath[$metadataPath] = [System.Collections.Generic.List[object]]::new() }
             $metadataByPath[$metadataPath].Add($metadata)
             if (-not $artifactSet.Contains($metadataPath)) { $errors.Add("Artifact metadata references an unrecorded artifact: '$metadataPath'."); continue }
             $artifactPath = $metadataResolvedPath
-            $currentMetadata = Get-ValidationPathMetadata -Path $artifactPath
+            $metadataItem = Get-Item -LiteralPath (Join-Path $verificationRoot $metadataPath) -Force -ErrorAction SilentlyContinue
+            $linkTarget = if ($null -ne $metadataItem -and (($metadataItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0)) { Get-ValidationLinkTarget -Item $metadataItem } else { '' }
+            $currentMetadata = Get-ValidationPathMetadata -Path $artifactPath -LinkTarget $linkTarget
             if ($null -eq $currentMetadata) { continue }
             $currentHash = [string]$currentMetadata.SHA256
             if ($currentHash -ne $metadataHash) { $errors.Add("Artifact content changed: '$metadataPath'.") }

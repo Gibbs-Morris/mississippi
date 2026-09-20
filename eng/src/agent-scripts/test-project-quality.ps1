@@ -232,8 +232,8 @@ try {
     foreach ($projectPath in @($evidenceProjectPaths | Select-Object -Unique)) {
         $projectDirectory = Split-Path -Parent $projectPath
         $relativeDirectory = [System.IO.Path]::GetRelativePath($repoRoot, $projectDirectory).Replace('\', '/')
-        $trackedFiles = @(& git -c "safe.directory=$($repoRoot.Replace('\', '/'))" -C $repoRoot ls-files -- "$relativeDirectory/" 2>$null)
-        foreach ($trackedFile in $trackedFiles) { $evidenceInputPaths.Add((Join-Path $repoRoot ([string]$trackedFile))) }
+        $projectFiles = @(& git -c "safe.directory=$($repoRoot.Replace('\', '/'))" -C $repoRoot ls-files --cached --others --exclude-standard -- "$relativeDirectory/" 2>$null)
+        foreach ($projectFile in $projectFiles) { $evidenceInputPaths.Add((Join-Path $repoRoot ([string]$projectFile))) }
     }
     if ($evidenceInputPaths.Count -eq 0) { $evidenceInputPaths.Add($testProjectPath) }
     $evidenceRun = New-ValidationEvidenceRun -RepositoryRoot $repoRoot -Scope "focused-quality:$TestProject" -InputPath @($evidenceInputPaths) -Arguments @('Configuration', $Configuration, 'SkipMutation', [string]$SkipMutation, 'NoBuild', [string]$NoBuild)
