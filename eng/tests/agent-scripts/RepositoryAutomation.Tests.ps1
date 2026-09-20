@@ -151,6 +151,29 @@ Describe 'RepositoryAutomation helpers' {
         }
     }
 
+    It 'leases multiple worktrees through one shared coordination directory' {
+        $firstRoot = Join-Path $TestDrive 'shared-worktree-one'
+        $secondRoot = Join-Path $TestDrive 'shared-worktree-two'
+        $coordinationRoot = Join-Path $TestDrive 'shared-multi-coordination'
+        New-Item -ItemType Directory -Path $firstRoot, $secondRoot -Force | Out-Null
+        $firstLease = Enter-RepositoryExecutionLease -RepoRoot $firstRoot -OperationId 'shared-one' -LeaseDirectory $coordinationRoot
+        try {
+            $secondLease = Enter-RepositoryExecutionLease -RepoRoot $secondRoot -OperationId 'shared-two' -LeaseDirectory $coordinationRoot
+            try {
+                $firstLease.OperationId | Should -Be 'shared-one'
+                $secondLease.OperationId | Should -Be 'shared-two'
+                $firstLease.Path | Should -Be $secondLease.Path
+                $firstLease.LeaseOffset | Should -Not -Be $secondLease.LeaseOffset
+            }
+            finally {
+                Exit-RepositoryExecutionLease -Lease $secondLease
+            }
+        }
+        finally {
+            Exit-RepositoryExecutionLease -Lease $firstLease
+        }
+    }
+
     It 'resolves relative lease directories from the physical repository root' {
         $repoRoot = Join-Path $TestDrive 'relative-lease-repository'
         New-Item -ItemType Directory -Path $repoRoot -Force | Out-Null

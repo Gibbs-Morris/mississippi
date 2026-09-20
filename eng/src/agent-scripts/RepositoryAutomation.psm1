@@ -7,12 +7,25 @@ $sharedExecutionLeaseDirectoryMode = 365 # 0555
 $sharedExecutionLeaseFileMode = 438 # 0666
 $privateExecutionLeaseDirectoryMode = 448 # 0700
 $privateExecutionLeaseFileMode = 384 # 0600
+$sharedExecutionLeaseSlotSize = 512
+$sharedExecutionLeaseSlotCount = 65536
+$sharedExecutionLeaseLength = $sharedExecutionLeaseSlotSize * $sharedExecutionLeaseSlotCount
 
 function Test-RepositoryExecutionLeaseSharedMode {
     [CmdletBinding()]
     param([string]$LeaseDirectory)
 
     return $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true' -or -not [string]::IsNullOrWhiteSpace($LeaseDirectory)
+}
+
+function Get-RepositoryExecutionLeaseSlot {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$CanonicalRepoRoot)
+
+    $keyRoot = if ((Get-RepositoryPathComparison -RepoRoot $CanonicalRepoRoot) -eq [System.StringComparison]::OrdinalIgnoreCase) { $CanonicalRepoRoot.ToLowerInvariant() } else { $CanonicalRepoRoot }
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($keyRoot)
+    $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
+    return [int](([System.BitConverter]::ToUInt32($hash, 0)) % $sharedExecutionLeaseSlotCount)
 }
 
 function Set-RepositoryExecutionLeaseUnixMode {
@@ -149,8 +162,8 @@ function Get-RepositoryExecutionLeasePathForRoot {
     $keyRoot = if ((Get-RepositoryPathComparison -RepoRoot $CanonicalRepoRoot) -eq [System.StringComparison]::OrdinalIgnoreCase) { $CanonicalRepoRoot.ToLowerInvariant() } else { $CanonicalRepoRoot }
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($keyRoot)
     $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
-    $fileName = (($hash | ForEach-Object { $_.ToString('x2') }) -join '') + '.lease'
     $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
+    $fileName = if ($sharedLease) { 'shared.lease' } else { (($hash | ForEach-Object { $_.ToString('x2') }) -join '') + '.lease' }
     $defaultLeaseDirectory = [string]::IsNullOrWhiteSpace($LeaseDirectory)
     $leaseDirectory = if ($defaultLeaseDirectory) {
         Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases'
@@ -176,6 +189,8 @@ function Get-RepositoryExecutionLeasePathForRoot {
     if ($sharedLease) {
         if ($leaseDirectoryCreated) {
             $placeholder = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+            $placeholder.SetLength($sharedExecutionLeaseLength)
+            $placeholder.Flush($true)
             $placeholder.Dispose()
             if (-not $IsWindows) {
                 Set-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $sharedExecutionLeaseFileMode
@@ -314,29 +329,15 @@ function Enter-RepositoryExecutionLease {
     } | ConvertTo-Json -Compress
 
     $stream = $null
-    $leaseFileCreated = $false
+    $leaseOffset = $null
     try {
-        if ($sharedLease -and -not $IsWindows -and -not $leaseFileExists) {
-            try {
-                $stream = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::Read)
-                $leaseFileCreated = $true
-            }
-            catch [System.IO.IOException] {
-                if (-not (Test-Path -LiteralPath $leasePath)) { throw }
-            }
-        }
-
-        if ($null -eq $stream) {
-            $stream = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::Read)
-        }
-
+        $fileShare = if ($sharedLease) { [System.IO.FileShare]::ReadWrite } else { [System.IO.FileShare]::Read }
+        $stream = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, $fileShare)
         if ($sharedLease) {
-            if ($leaseFileCreated) {
-                Set-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $sharedExecutionLeaseFileMode
-            }
-            else {
-                Test-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $sharedExecutionLeaseFileMode
-            }
+            $leaseSlot = Get-RepositoryExecutionLeaseSlot -CanonicalRepoRoot $canonicalRoot
+            $leaseOffset = [long]$leaseSlot * $sharedExecutionLeaseSlotSize
+            $stream.Lock($leaseOffset, 1)
+            Test-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $sharedExecutionLeaseFileMode
         }
         elseif ($privateLease) {
             Set-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $privateExecutionLeaseFileMode
@@ -351,6 +352,9 @@ function Enter-RepositoryExecutionLease {
     }
     catch [System.IO.IOException] {
         if ($null -ne $stream) { $stream.Dispose(); $stream = $null }
+        if ($sharedLease) {
+            throw "Worktree execution lease is held for '$canonicalRoot' in shared coordination slot. Use a separate worktree or wait for the active operation."
+        }
         $errorCode = $_.Exception.HResult -band 0xFFFF
         if ($errorCode -notin @(32, 33)) { throw }
         $owner = ''
@@ -363,12 +367,18 @@ function Enter-RepositoryExecutionLease {
     }
 
     try {
-        $stream.SetLength(0)
         $metadataBytes = [System.Text.Encoding]::UTF8.GetBytes($metadata)
+        if ($sharedLease) {
+            $stream.Position = $leaseOffset
+        }
+        else {
+            $stream.SetLength(0)
+        }
         $stream.Write($metadataBytes, 0, $metadataBytes.Length)
         $stream.Flush($true)
         return [pscustomobject]@{
             Path = $leasePath
+            LeaseOffset = $leaseOffset
             OperationId = $OperationId
             RepositoryRoot = $canonicalRoot
             Stream = $stream
