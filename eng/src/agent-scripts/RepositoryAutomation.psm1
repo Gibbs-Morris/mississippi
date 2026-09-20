@@ -2744,7 +2744,8 @@ function Invoke-SolutionsPipeline { # NOSONAR - full repository pipeline orchest
     Complete-ValidationEvidenceRun -Run $evidenceRun -Status PASS -Phase 'complete' -Executed $testExecutionReached -TestCount (Get-ValidationPipelineTestCount -RepoRoot $RepoRoot) -ExitCode 0 -ArtifactPath $pipelineArtifacts | Out-Null
     }
     catch {
-        Complete-ValidationEvidenceRun -Run $evidenceRun -Status FAIL -Phase 'pipeline' -Executed $testExecutionReached -TestCount (Get-ValidationPipelineTestCount -RepoRoot $RepoRoot) -ExitCode 1 -ErrorMessage $_.Exception.Message | Out-Null
+        $pipelineArtifacts = @(Get-ChildItem -LiteralPath (Join-Path $RepoRoot '.scratchpad/coverage-test-results') -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in @('.trx', '.xml') } | Select-Object -ExpandProperty FullName)
+        Complete-ValidationEvidenceRun -Run $evidenceRun -Status FAIL -Phase 'pipeline' -Executed $testExecutionReached -TestCount (Get-ValidationPipelineTestCount -RepoRoot $RepoRoot) -ExitCode 1 -ArtifactPath $pipelineArtifacts -ErrorMessage $_.Exception.Message | Out-Null
         throw
     }
     }

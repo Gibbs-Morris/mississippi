@@ -713,12 +713,18 @@ Describe 'Repository automation quality gates' {
         Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Times 2 -Exactly
     }
     It 'stops the pipeline when the coverage summarizer exits unsuccessfully' {
+        $artifactDirectory = Join-Path $TestDrive '.scratchpad/coverage-test-results/failure'
+        New-Item -ItemType Directory -Path $artifactDirectory -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $artifactDirectory 'failure.trx') -Value '<TestRun />'
         Mock Invoke-MississippiSolutionBuild {} -ModuleName RepositoryAutomation
         Mock Invoke-MississippiSolutionUnitTests { [pscustomobject]@{ CoverageReportPath = (Join-Path $TestDrive 'coverage.cobertura.xml') } } -ModuleName RepositoryAutomation
         Mock Invoke-SampleSolutionBuild {} -ModuleName RepositoryAutomation
         Mock Invoke-RepositoryProcess { throw 'summarizer exited 1' } -ModuleName RepositoryAutomation
         { Invoke-SolutionsPipeline -RepoRoot $TestDrive -SkipCleanup -LeaseDirectory (Join-Path $TestDrive ('pipeline-leases-' + [guid]::NewGuid().ToString('N'))) } | Should -Throw '*summarizer exited 1*'
         Should -Invoke Invoke-SampleSolutionBuild -ModuleName RepositoryAutomation -Times 0 -Exactly
+        $evidencePath = Get-ChildItem -LiteralPath (Join-Path $TestDrive '.scratchpad/validation-evidence') -Recurse -Filter evidence.json | Select-Object -First 1 -ExpandProperty FullName
+        $evidence = Get-Content -LiteralPath $evidencePath -Raw | ConvertFrom-Json
+        $evidence.Artifacts | Should -Contain '.scratchpad/coverage-test-results/failure/failure.trx'
     }
 
     It 'runs cleanup before authoritative solution tests' {

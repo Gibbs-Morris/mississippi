@@ -89,4 +89,19 @@ Describe 'Source-bound validation evidence' {
         $result.Valid | Should -BeFalse
         ($result.Errors -join "`n") | Should -Match 'malformed or unreadable'
     }
+
+    It 'fails closed without throwing for malformed nested artifact metadata' {
+        $run = New-ValidationEvidenceRun -RepositoryRoot $fixtureRoot -Scope 'fixture' -InputPath @($inputFile)
+        $artifact = Join-Path $fixtureRoot 'nested-metadata.trx'
+        Set-Content -LiteralPath $artifact -Value '<TestRun />'
+        Complete-ValidationEvidenceRun -Run $run -Status PASS -Phase complete -Executed $true -TestCount 1 -ExitCode 0 -ArtifactPath @($artifact) | Out-Null
+        $record = Get-Content -LiteralPath $run.Path -Raw | ConvertFrom-Json
+        $record.ArtifactMetadata = @([pscustomobject]@{ Path = 'nested-metadata.trx' })
+        $record | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $run.Path
+
+        $result = Test-ValidationEvidence -Path $run.Path
+
+        $result.Valid | Should -BeFalse
+        ($result.Errors -join "`n") | Should -Match 'metadata'
+    }
 }
