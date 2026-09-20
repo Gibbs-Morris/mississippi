@@ -551,6 +551,17 @@ $timer.Stop()
         $launch.StdErr | Should -Match 'missing-native-command'
     }
 
+    It 'reports bounded native output for overlong and excessive output' {
+        $result = InModuleScope RepositoryAutomation {
+            $command = '$long = ''x'' * 5000; 1..250 | ForEach-Object { if ($_ -eq 1) { $long } else { "line$_" } }'
+            Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-Command', $command) -PassThru
+        }
+
+        $result.Success | Should -BeTrue
+        $result.OutputTruncated | Should -BeTrue
+        $result.StdOut.Length | Should -BeLessThan 900000
+    }
+
     It 'fails closed when a descendant keeps a captured stream open' {
         $result = InModuleScope RepositoryAutomation {
             Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @(

@@ -1321,24 +1321,33 @@ function Get-RepositoryProcessDescendantIds {
             if ($descendants.Add($childId)) { $pending.Enqueue($childId) }
         }
     }
-    return @($descendants)
+    return @($descendants | ForEach-Object {
+        $process = Get-Process -Id ([int]$_) -ErrorAction SilentlyContinue
+        [pscustomobject]@{ Id = [int]$_; StartTime = if ($null -ne $process) { $process.StartTime.ToUniversalTime() } else { $null } }
+    })
 }
 
 function Stop-RepositoryProcessIds {
     [CmdletBinding()]
-    param([Parameter(Mandatory)][int[]]$ProcessIds)
+    param([Parameter(Mandatory)][object[]]$ProcessRecords)
 
     $errors = [System.Collections.Generic.List[string]]::new()
-    foreach ($processId in @($ProcessIds | Sort-Object -Descending -Unique)) {
+    foreach ($record in @($ProcessRecords | Sort-Object Id -Descending -Unique)) {
+        $processId = [int]$record.Id
         try {
+            $current = Get-Process -Id $processId -ErrorAction SilentlyContinue
+            if ($null -eq $current -or ($null -ne $record.StartTime -and [Math]::Abs(($current.StartTime.ToUniversalTime() - $record.StartTime).TotalSeconds) -gt 1)) { continue }
             if ($IsWindows) { Stop-Process -Id $processId -Force -ErrorAction Stop }
             else { & kill -TERM -- $processId 2>$null; if ($LASTEXITCODE -ne 0) { throw "kill exited with code $LASTEXITCODE" } }
         }
         catch { $errors.Add("${processId}: $($_.Exception.Message)") }
     }
     Start-Sleep -Milliseconds 100
-    foreach ($processId in @($ProcessIds | Sort-Object -Descending -Unique)) {
+    foreach ($record in @($ProcessRecords | Sort-Object Id -Descending -Unique)) {
+        $processId = [int]$record.Id
         try {
+            $current = Get-Process -Id $processId -ErrorAction SilentlyContinue
+            if ($null -eq $current -or ($null -ne $record.StartTime -and [Math]::Abs(($current.StartTime.ToUniversalTime() - $record.StartTime).TotalSeconds) -gt 1)) { continue }
             if ($IsWindows) {
                 if (Get-Process -Id $processId -ErrorAction SilentlyContinue) { Stop-Process -Id $processId -Force -ErrorAction Stop }
             }
@@ -1407,7 +1416,7 @@ function Invoke-RepositoryProcess {
     $process = [System.Diagnostics.Process]::new()
     $process.StartInfo = $startInfo
     $startedUtc = (Get-Date).ToUniversalTime().ToString('o')
-    $trackedDescendants = [System.Collections.Generic.HashSet[int]]::new()
+    $trackedDescendants = @{}
     $stdoutBuffer = [Mississippi.BoundedProcessOutput]::new(200, 4096)
     $stderrBuffer = [Mississippi.BoundedProcessOutput]::new(200, 4096)
     $stdoutHandler = $stdoutBuffer.Handler
@@ -1420,14 +1429,19 @@ function Invoke-RepositoryProcess {
         $process.BeginErrorReadLine()
         $deadline = if ($TimeoutSeconds -gt 0) { [DateTime]::UtcNow.AddSeconds($TimeoutSeconds) } else { $null }
         $finished = $false
+        $nextDescendantScan = [DateTime]::UtcNow
         while (-not $process.HasExited) {
-            foreach ($descendantId in @(Get-RepositoryProcessDescendantIds -RootProcessId $process.Id)) { $null = $trackedDescendants.Add($descendantId) }
+            if ([DateTime]::UtcNow -ge $nextDescendantScan) {
+                foreach ($descendant in @(Get-RepositoryProcessDescendantIds -RootProcessId $process.Id)) { $trackedDescendants[[int]$descendant.Id] = $descendant }
+                $nextDescendantScan = [DateTime]::UtcNow.AddMilliseconds(250)
+            }
             if ($null -ne $deadline -and [DateTime]::UtcNow -ge $deadline) { break }
             Start-Sleep -Milliseconds 50
         }
         $finished = $process.HasExited
-        $timedOut = -not $finished
+        $timedOut = $null -ne $deadline -and [DateTime]::UtcNow -ge $deadline
         $terminationErrors = [System.Collections.Generic.List[string]]::new()
+        $terminationNotes = [System.Collections.Generic.List[string]]::new()
         $terminated = $true
         $captureDeadline = [DateTime]::UtcNow.AddMilliseconds(1000)
         while (-not ($stdoutBuffer.Closed -and $stderrBuffer.Closed) -and [DateTime]::UtcNow -lt $captureDeadline) {
@@ -1435,12 +1449,12 @@ function Invoke-RepositoryProcess {
         }
         $captureIncomplete = -not ($stdoutBuffer.Closed -and $stderrBuffer.Closed)
         if ($timedOut -or $captureIncomplete) {
-            if ($timedOut) { $terminationErrors.Add("Command exceeded the $TimeoutSeconds second timeout.") }
-            if ($captureIncomplete) { $terminationErrors.Add('Native output streams remained open after the root process exited.') }
-            $terminationIds = @($trackedDescendants)
-            if (-not $process.HasExited) { $terminationIds += $process.Id }
-            if ($terminationIds.Count -gt 0) {
-                foreach ($terminationError in @(Stop-RepositoryProcessIds -ProcessIds $terminationIds)) { $terminationErrors.Add($terminationError) }
+            if ($timedOut) { $terminationNotes.Add("Command exceeded the $TimeoutSeconds second timeout.") }
+            if ($captureIncomplete) { $terminationNotes.Add('Native output streams remained open after the root process exited.') }
+            $terminationRecords = @($trackedDescendants.Values)
+            if (-not $process.HasExited) { $terminationRecords += [pscustomobject]@{ Id = $process.Id; StartTime = $process.StartTime.ToUniversalTime() } }
+            if ($terminationRecords.Count -gt 0) {
+                foreach ($terminationError in @(Stop-RepositoryProcessIds -ProcessRecords $terminationRecords)) { $terminationErrors.Add($terminationError) }
             }
             if (-not $process.HasExited) {
                 try { $process.Kill() } catch { $terminationErrors.Add($_.Exception.Message) }
@@ -1459,6 +1473,7 @@ function Invoke-RepositoryProcess {
             Cancelled = $false
             TerminationFailed = ($timedOut -or $captureIncomplete) -and (-not $terminated -or $terminationErrors.Count -gt 0)
             TerminationErrors = @($terminationErrors)
+            TerminationNotes = @($terminationNotes)
             CaptureIncomplete = $captureIncomplete
             OutputTruncated = $stdoutBuffer.Truncated -or $stderrBuffer.Truncated
             StdOut = $stdout
@@ -1470,6 +1485,7 @@ function Invoke-RepositoryProcess {
             $message = if ($timedOut) { "Command '$FilePath' timed out after $TimeoutSeconds seconds." } elseif ($result.CaptureIncomplete) { "Command '$FilePath' exited before native output capture completed." } elseif ($ErrorMessage) { $ErrorMessage } else { "Command '$FilePath' failed with exit code $($result.ExitCode)." }
             if ($stdout) { $message += " Native output: $stdout" }
             if ($stderr) { $message += " Native error output: $stderr" }
+            if ($terminationNotes.Count -gt 0) { $message += " Process cleanup: $($terminationNotes -join '; ')" }
             if ($result.TerminationFailed) { $message += " Process termination was not verified: $($result.TerminationErrors -join '; ')" }
             throw $message
         }
@@ -1482,7 +1498,7 @@ function Invoke-RepositoryProcess {
                 FilePath = $FilePath; Arguments = @($Arguments); StartedUtc = $startedUtc
                 EndedUtc = (Get-Date).ToUniversalTime().ToString('o'); ExitCode = -1
                 TimedOut = $false; Cancelled = $false; TerminationFailed = $false; CaptureIncomplete = $false
-                TerminationErrors = @(); OutputTruncated = $false; StdOut = ''; StdErr = $_.Exception.Message; Success = $false
+                TerminationErrors = @(); TerminationNotes = @(); OutputTruncated = $false; StdOut = ''; StdErr = $_.Exception.Message; Success = $false
             }
         }
         throw
@@ -2829,7 +2845,7 @@ function Invoke-SpringValidation {
     }
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Resolve-RepositoryExecutionPath, Get-RepositoryExecutionLeasePath, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation
+Export-ModuleMember -Function Get-RepositoryRoot, Resolve-RepositoryExecutionPath, Get-RepositoryExecutionLeasePath, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease, Invoke-RepositoryProcess, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation
 
 
 
