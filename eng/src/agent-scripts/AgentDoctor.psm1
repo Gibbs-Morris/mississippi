@@ -367,7 +367,9 @@ function Get-AgentDoctorReport { # NOSONAR - top-level doctor assembly coordinat
                         $hasUnknownTool = $true
                         continue
                     }
-                    $cacheFile = @($resolverCacheFiles | Where-Object { $_.Name -ieq [string]$commandName } | Select-Object -First 1)
+                    $cacheFile = @($resolverCacheFiles | Where-Object {
+                            $_.Name -ieq [string]$commandName -or $_.Name -ieq [string]$packageId
+                        } | Select-Object -First 1)
                     if ($cacheFile.Count -eq 0) {
                         $toolFailures.Add($toolLabel + ': resolver metadata is missing.')
                         $hasMissingTool = $true
@@ -380,8 +382,11 @@ function Get-AgentDoctorReport { # NOSONAR - top-level doctor assembly coordinat
                             if ([string]$_.Version -ne $expectedVersion) { return $false }
                             $paths = @()
                             if ($null -ne $_.PSObject.Properties['PathToExecutable']) { $paths += [string]$_.PathToExecutable }
-                            foreach ($commandRecord in @($_.Commands)) {
-                                if ($null -ne $commandRecord.PSObject.Properties['PathToExecutable']) { $paths += [string]$commandRecord.PathToExecutable }
+                            $commandsProperty = $_.PSObject.Properties['Commands']
+                            if ($null -ne $commandsProperty) {
+                                foreach ($commandRecord in @($commandsProperty.Value)) {
+                                    if ($null -ne $commandRecord.PSObject.Properties['PathToExecutable']) { $paths += [string]$commandRecord.PathToExecutable }
+                                }
                             }
                             @($paths | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and (Test-Path -LiteralPath $_ -PathType Leaf) }).Count -gt 0
                         })
