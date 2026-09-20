@@ -107,7 +107,8 @@ Describe 'RepositoryAutomation helpers' {
         New-Item -ItemType Directory -Path $realRoot -Force | Out-Null
         $aliasCreated = $false
         try {
-            New-Item -ItemType Junction -Path $aliasRoot -Target $realRoot -ErrorAction Stop | Out-Null
+            $aliasType = if ($IsWindows) { 'Junction' } else { 'SymbolicLink' }
+            New-Item -ItemType $aliasType -Path $aliasRoot -Target $realRoot -ErrorAction Stop | Out-Null
             $aliasCreated = $true
             $coordinationRoot = Join-Path $TestDrive 'alias-coordination'
             $lease = Enter-RepositoryExecutionLease -RepoRoot $realRoot -OperationId 'physical-owner' -LeaseDirectory $coordinationRoot
