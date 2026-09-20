@@ -298,6 +298,55 @@ finally { if ($null -ne $childLease) { Exit-RepositoryExecutionLease -Lease $chi
             Should -Be 'acquired'
     }
 
+    It 'waits for delayed shared lease permission publication' {
+        if ($IsWindows) {
+            Set-ItResult -Skipped -Because 'The delayed Unix mode publication path is not available on Windows.'
+            return
+        }
+
+        $coordinationRoot = Join-Path $TestDrive 'delayed-shared-lease-coordination'
+        $leasePath = Join-Path $coordinationRoot 'shared.lease'
+        $metadataPath = "$leasePath.metadata"
+        $modulePath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../src/agent-scripts/RepositoryAutomation.psm1'))
+        New-Item -ItemType Directory -Path $coordinationRoot -Force | Out-Null
+        New-Item -ItemType File -Path $leasePath -Force | Out-Null
+        New-Item -ItemType File -Path $metadataPath -Force | Out-Null
+        & chmod 755 -- $coordinationRoot
+        & chmod 600 -- $leasePath
+        & chmod 600 -- $metadataPath
+
+        $worker = @'
+param([string]$ModulePath, [string]$LeasePath, [string]$MetadataPath)
+$ErrorActionPreference = 'Stop'
+Import-Module $ModulePath
+$timer = [System.Diagnostics.Stopwatch]::StartNew()
+$initialized = Wait-RepositoryExecutionLeaseInitialization -LeasePath $LeasePath -MetadataPath $MetadataPath
+$timer.Stop()
+[pscustomobject]@{ Initialized = $initialized; ElapsedMilliseconds = $timer.ElapsedMilliseconds } | ConvertTo-Json -Compress
+'@
+        $runspace = [runspacefactory]::CreateRunspace()
+        $runspace.Open()
+        $powershell = [powershell]::Create()
+        $powershell.Runspace = $runspace
+        try {
+            $null = $powershell.AddScript($worker).AddArgument($modulePath).AddArgument($leasePath).AddArgument($metadataPath)
+            $asyncResult = $powershell.BeginInvoke()
+            Start-Sleep -Milliseconds 250
+            & chmod 666 -- $leasePath
+            & chmod 666 -- $metadataPath
+            Start-Sleep -Milliseconds 100
+            & chmod 555 -- $coordinationRoot
+
+            $result = (ConvertFrom-Json -InputObject ([string]$powershell.EndInvoke($asyncResult)))
+            $result.Initialized | Should -Be $true
+            $result.ElapsedMilliseconds | Should -BeGreaterOrEqual 250
+        }
+        finally {
+            $powershell.Dispose()
+            $runspace.Dispose()
+        }
+    }
+
     It 'resolves relative lease directories from the physical repository root' {
         $repoRoot = Join-Path $TestDrive 'relative-lease-repository'
         New-Item -ItemType Directory -Path $repoRoot -Force | Out-Null
