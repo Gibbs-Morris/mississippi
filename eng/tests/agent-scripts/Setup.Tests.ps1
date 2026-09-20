@@ -82,6 +82,7 @@ Describe 'Canonical repository setup' {
 
         $exitCode | Should -Be 0
         ($output | ConvertFrom-Json).Status | Should -Be 'READY'
+        Test-Path -LiteralPath (Join-Path $repoRoot '.tools/npm-global/activate-markdownlint.ps1') -PathType Leaf | Should -BeTrue
     }
 
     It 'fails without READY when a setup child exits nonzero' {

@@ -90,6 +90,10 @@ function Invoke-SetupStep {
             $binDirectory = if ($IsWindows) { $prefix } else { Join-Path $prefix 'bin' }
             $env:PATH = $binDirectory + [IO.Path]::PathSeparator + $env:PATH
             if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_PATH)) { Add-Content -LiteralPath $env:GITHUB_PATH -Value $binDirectory }
+            $activationPath = Join-Path $prefix 'activate-markdownlint.ps1'
+            $activationRoot = $binDirectory.Replace("'", "''")
+            New-Item -ItemType Directory -Path $prefix -Force | Out-Null
+            Set-Content -LiteralPath $activationPath -Value ("`$env:PATH = '$activationRoot' + [IO.Path]::PathSeparator + `$env:PATH") -Encoding utf8
         }
     }
     finally {
