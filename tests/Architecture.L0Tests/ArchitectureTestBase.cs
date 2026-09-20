@@ -114,6 +114,7 @@ public abstract class ArchitectureTestBase
 
     private static Assembly[] GetMississippiAssemblies()
     {
+        // Keep discovery in the test base so every architecture rule shares the same fail-closed assembly set.
         string baseDir = AppDomain.CurrentDomain.BaseDirectory;
         string[] assemblyPaths = Directory.GetFiles(baseDir, "Mississippi.*.dll");
         return LoadMississippiAssemblies(assemblyPaths);
