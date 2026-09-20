@@ -11,6 +11,16 @@ $sharedExecutionLeaseWritableDirectoryMode = 493 # 0755
 $sharedExecutionLeaseFileMode = 438 # 0666
 $privateExecutionLeaseDirectoryMode = 448 # 0700
 $privateExecutionLeaseFileMode = 384 # 0600
+$processLeaseSemaphoreRegistryKey = 'Mississippi.RepositoryExecutionLeaseSemaphores'
+[System.Threading.Monitor]::Enter([System.AppDomain]::CurrentDomain)
+try {
+    $processLeaseSemaphoreRegistry = [System.AppDomain]::CurrentDomain.GetData($processLeaseSemaphoreRegistryKey)
+    if ($null -eq $processLeaseSemaphoreRegistry) {
+        $processLeaseSemaphoreRegistry = [System.Collections.Concurrent.ConcurrentDictionary[string, System.Threading.SemaphoreSlim]]::new()
+        [System.AppDomain]::CurrentDomain.SetData($processLeaseSemaphoreRegistryKey, $processLeaseSemaphoreRegistry)
+    }
+}
+finally { [System.Threading.Monitor]::Exit([System.AppDomain]::CurrentDomain) }
 
 function Test-RepositoryExecutionLeaseSharedMode {
     [CmdletBinding()]
@@ -137,8 +147,11 @@ function New-RepositoryExecutionLeaseProcessSemaphore {
     $sha256 = [System.Security.Cryptography.SHA256]::Create()
     try { $hash = $sha256.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Identity)) }
     finally { $sha256.Dispose() }
-    $name = 'Mississippi.RepositoryExecutionLease.' + ([System.BitConverter]::ToString($hash).Replace('-', '').ToLowerInvariant())
-    return [System.Threading.Semaphore]::new(1, 1, $name)
+    $name = ([System.BitConverter]::ToString($hash).Replace('-', '').ToLowerInvariant())
+    $existing = $null
+    if ($processLeaseSemaphoreRegistry.TryGetValue($name, [ref]$existing)) { return $existing }
+    $candidate = [System.Threading.SemaphoreSlim]::new(1, 1)
+    return $processLeaseSemaphoreRegistry.GetOrAdd($name, $candidate)
 }
 
 function Set-RepositoryExecutionLeaseUnixMode {
@@ -707,7 +720,7 @@ function Release-RepositoryExecutionLeaseResources {
             try {
                 if ($Resources.ProcessSemaphoreAcquired) { $Resources.ProcessSemaphore.Release() | Out-Null }
             }
-            finally { $Resources.ProcessSemaphore.Dispose() }
+            finally { $Resources.ProcessSemaphoreAcquired = $false }
         }
         if ($Resources.LeaseRegistered) { Unregister-RepositoryExecutionLeaseIdentity -Identity $Resources.LeaseIdentity }
     }
@@ -836,7 +849,7 @@ function Open-RepositoryExecutionLeaseResources {
     try {
         Assert-RepositoryExecutionLeaseNotHeldByCurrentProcess -Path $Context.MetadataPath -SharedLease $Context.SharedLease
         $resources.ProcessSemaphore = New-RepositoryExecutionLeaseProcessSemaphore -Identity $Context.ProcessSynchronizationKey
-        if (-not $resources.ProcessSemaphore.WaitOne(0)) {
+        if (-not $resources.ProcessSemaphore.Wait(0)) {
             if ($Context.SharedLease) {
                 throw 'Shared coordination file is already held in this process; repository execution lease is already held. Use separate coordination directories for concurrent worktrees.'
             }
@@ -998,7 +1011,7 @@ function Exit-RepositoryExecutionLease {
                 try {
                     if ($Lease.ProcessSemaphoreAcquired) { $Lease.ProcessSemaphore.Release() | Out-Null }
                 }
-                finally { $Lease.ProcessSemaphore.Dispose() }
+                finally { $Lease.ProcessSemaphoreAcquired = $false }
             }
             Unregister-RepositoryExecutionLeaseIdentity -Identity ([string]$Lease.LeaseIdentity)
         }
