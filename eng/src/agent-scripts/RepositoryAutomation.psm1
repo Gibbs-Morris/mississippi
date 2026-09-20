@@ -3236,11 +3236,14 @@ function Invoke-SpringValidation { # NOSONAR - Spring validation intentionally c
     $runDirectory = New-AutomationRunDirectory -Root (Join-Path $RepoRoot 'artifacts/spring') -Prefix "$TestLevel-$Suite-$([guid]::NewGuid().ToString('N'))"
     $project = Join-Path $RepoRoot "samples/Spring/Spring.${TestLevel}Tests/Spring.${TestLevel}Tests.csproj"
     $springEvidenceRoot = Join-Path $RepoRoot 'samples/Spring'
-    $springEvidenceInputs = @(
-        Get-ChildItem -LiteralPath $springEvidenceRoot -Recurse -File -Force |
-            Where-Object { $_.FullName -notmatch '[\\/](?:bin|obj)[\\/]' } |
-            ForEach-Object FullName
-    )
+    $springEvidenceInputs = if (Test-Path -LiteralPath $springEvidenceRoot -PathType Container) {
+        @(
+            Get-ChildItem -LiteralPath $springEvidenceRoot -Recurse -File -Force |
+                Where-Object { $_.FullName -notmatch '[\\/](?:bin|obj)[\\/]' } |
+                ForEach-Object FullName
+        )
+    }
+    else { @($project) }
     $evidenceRun = New-ValidationEvidenceRun -RepositoryRoot $RepoRoot -Scope "spring:${TestLevel}:$Suite" -InputPath @($springEvidenceInputs) -Arguments @('TestLevel', $TestLevel, 'Suite', $Suite, 'Configuration', $Configuration)
     $summary = [ordered]@{ schemaVersion = 1; status = 'FAIL'; phase = 'selection'; testLevel = $TestLevel; suite = $Suite; project = $project; passed = 0; artifacts = $runDirectory; error = $null }
     $timer = [System.Diagnostics.Stopwatch]::StartNew()
