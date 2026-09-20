@@ -119,6 +119,13 @@ try {
         'browser-visible' = @('browser unavailable', 'wrong application gate', 'stale source')
         'multi-project-generator' = @('partial project discovery', 'generated drift', 'running operation')
     }
+    $requiredSurfaces = @{
+        'csharp-behavior' = 'C# behavior fix'
+        'powershell-harness' = 'PowerShell harness fix'
+        'documentation' = 'documentation-only change'
+        'browser-visible' = 'browser-visible change'
+        'multi-project-generator' = 'multi-project or generator change'
+    }
     $requiredIndependentChecks = @{
         'csharp-behavior' = @('behavior regression', 'scope compliance', 'PR traceability')
         'powershell-harness' = @('Pester regression', 'exit-code contract', 'no unrelated mutation')
@@ -145,6 +152,9 @@ try {
         }
     }
     foreach ($category in $categories) {
+        if ($requiredSurfaces.ContainsKey([string]$category.id) -and [string]$category.surface -ne $requiredSurfaces[[string]$category.id]) {
+            $errors.Add("Category '$($category.id)' surface does not match the benchmark contract.")
+        }
         if ($null -eq $category.PSObject.Properties['pairedInputIds'] -or @($category.pairedInputIds).Count -ne $expectedTrials) {
             $errors.Add("Category '$($category.id)' must define one paired input for each trial.")
         }
