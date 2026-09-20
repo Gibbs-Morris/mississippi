@@ -348,14 +348,23 @@ function ConvertTo-SanitizedIdentifier {
 
 if ([string]::IsNullOrWhiteSpace($MutationScriptPath))
 {
-    $MutationScriptPath = Join-Path $scriptRoot 'mutation-test-mississippi-solution.ps1'
+    $MutationScriptPath = Join-Path $repoRoot 'eng/src/agent-scripts/mutation-test-mississippi-solution.ps1'
 }
 else
 {
-    if (-not (Test-Path -Path $MutationScriptPath -PathType Leaf))
-    {
-        throw "Mutation script path '$MutationScriptPath' was not found."
+    if (-not $SkipMutationRun) {
+        $resolvedMutationScriptPath = (Resolve-Path -LiteralPath $MutationScriptPath -ErrorAction Stop).Path
+        $mutationScriptRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $resolvedMutationScriptPath)
+        $relativeMutationScriptPath = [System.IO.Path]::GetRelativePath($mutationScriptRoot, $resolvedMutationScriptPath)
+        if ([System.IO.Path]::IsPathRooted($relativeMutationScriptPath) -or $relativeMutationScriptPath -match '^\.\.([\\/]|$)') {
+            throw "Mutation script path '$MutationScriptPath' is outside the leased repository."
+        }
+        $MutationScriptPath = Join-Path $repoRoot $relativeMutationScriptPath
     }
+}
+if (-not $SkipMutationRun -and -not (Test-Path -LiteralPath $MutationScriptPath -PathType Leaf))
+{
+    throw "Mutation script path '$MutationScriptPath' was not found in the leased repository."
 }
 
 $mutationOutputDirectory = Join-Path $repoRoot '.scratchpad/mutation-test-results'

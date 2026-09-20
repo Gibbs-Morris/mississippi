@@ -522,6 +522,14 @@ function Assert-RepositoryExecutionLeaseFile {
     }
 }
 
+function Get-RepositoryExecutionProcessStartUtc {
+    [CmdletBinding()]
+    param()
+
+    try { return (Get-Process -Id $PID -ErrorAction Stop).StartTime.ToUniversalTime() }
+    catch { return $null }
+}
+
 function New-RepositoryExecutionLeaseContext {
     [CmdletBinding()]
     param(
@@ -540,11 +548,13 @@ function New-RepositoryExecutionLeaseContext {
     $repositoryKey = [System.BitConverter]::ToString((Get-RepositoryExecutionLeaseHash -CanonicalRepoRoot $canonicalRoot)).Replace('-', '').ToLowerInvariant()
     $comparison = Get-RepositoryPathComparison -RepoRoot $canonicalRoot
     $identityLeasePath = if ($comparison -eq [System.StringComparison]::OrdinalIgnoreCase) { $leasePath.ToLowerInvariant() } else { $leasePath }
+    $processStartUtc = Get-RepositoryExecutionProcessStartUtc
     $metadata = [ordered]@{
         operationId = $OperationId
         repositoryKey = $repositoryKey
         repositoryRoot = if ($canonicalRoot.Length -gt 256) { $canonicalRoot.Substring(0, 256) } else { $canonicalRoot }
         processId = $PID
+        processStartUtc = if ($null -eq $processStartUtc) { $null } else { $processStartUtc.ToString('o') }
         startedUtc = (Get-Date).ToUniversalTime().ToString('o')
     } | ConvertTo-Json -Compress
     return [pscustomobject]@{
@@ -619,10 +629,34 @@ function Assert-RepositoryExecutionLeaseNotHeldByCurrentProcess {
     try { $owner = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json }
     catch { return }
     if ($null -eq $owner -or [string]$owner.processId -ne [string]$PID) { return }
+    $recordedStart = $null
+    $processStartProperty = $owner.PSObject.Properties['processStartUtc']
+    if ($null -ne $processStartProperty) { $recordedStart = $processStartProperty.Value }
+    $currentStart = Get-RepositoryExecutionProcessStartUtc
+    if ([string]::IsNullOrWhiteSpace([string]$recordedStart) -or $null -eq $currentStart) { return }
+    try {
+        $recordedStartTime = [DateTime]::Parse([string]$recordedStart).ToUniversalTime()
+        if ([Math]::Abs(($recordedStartTime - $currentStart).TotalSeconds) -gt 1) { return }
+    }
+    catch { return }
     if ($SharedLease) {
         throw 'Shared coordination file is already held in this process; repository execution lease is already held. Use separate coordination directories for concurrent worktrees.'
     }
     throw "Repository execution lease is already held in this process for '$Path'. Use -ExistingLease for supported reentrancy."
+}
+
+function Test-RepositoryExecutionLeaseLockConflict {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][Exception]$Exception)
+
+    $current = $Exception
+    while ($null -ne $current) {
+        $errorCode = $current.HResult -band 0xFFFF
+        if ($errorCode -in @(11, 32, 33)) { return $true }
+        if ($current.Message -match '(?i)(resource temporarily unavailable|would block|sharing violation|lock violation|already locked)') { return $true }
+        $current = $current.InnerException
+    }
+    return $false
 }
 
 function Open-RepositoryExecutionLeaseResources {
@@ -659,19 +693,31 @@ function Open-RepositoryExecutionLeaseResources {
         throw
     }
     catch [System.IO.IOException] {
+        $exception = $_.Exception
+        $lockConflict = Test-RepositoryExecutionLeaseLockConflict -Exception $exception
         Release-RepositoryExecutionLeaseResources -Resources $resources
+        if (-not $lockConflict) { throw $exception }
         if ($Context.SharedLease) {
             throw "Worktree execution lease is held for '$($Context.CanonicalRoot)' in shared coordination slot. Use a separate worktree or wait for the active operation."
         }
-        $errorCode = $_.Exception.HResult -band 0xFFFF
-        if ($errorCode -notin @(32, 33)) { throw }
         $owner = ''
         try { $owner = (Get-Content -LiteralPath $Context.LeasePath -Raw -ErrorAction Stop).Trim() }
         catch { Write-Verbose "Unable to read the current lease owner from '$($Context.LeasePath)': $($_.Exception.Message)" }
         throw "Worktree execution lease is held for '$($Context.CanonicalRoot)'. Current owner: $owner. Use a separate worktree or wait for the active operation."
     }
     catch {
+        $exception = $_.Exception
+        $lockConflict = Test-RepositoryExecutionLeaseLockConflict -Exception $exception
         Release-RepositoryExecutionLeaseResources -Resources $resources
+        if ($lockConflict) {
+            if ($Context.SharedLease) {
+                throw "Worktree execution lease is held for '$($Context.CanonicalRoot)' in shared coordination slot. Use a separate worktree or wait for the active operation."
+            }
+            $owner = ''
+            try { $owner = (Get-Content -LiteralPath $Context.LeasePath -Raw -ErrorAction Stop).Trim() }
+            catch { Write-Verbose "Unable to read the current lease owner from '$($Context.LeasePath)': $($_.Exception.Message)" }
+            throw "Worktree execution lease is held for '$($Context.CanonicalRoot)'. Current owner: $owner. Use a separate worktree or wait for the active operation."
+        }
         throw
     }
 }
