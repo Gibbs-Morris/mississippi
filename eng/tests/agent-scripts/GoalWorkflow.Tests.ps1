@@ -248,6 +248,15 @@ Describe 'Issue-driven goal workflow' {
         $outcome.Result.Error | Should -Match 'failed operation cannot transition directly to completed'
     }
 
+    It 'rejects clearing a completed operation before validation' {
+        $null = Invoke-Goal -Operation '{"Status":"running","Handle":"job-123","Name":"validation"}'
+        $null = Invoke-Goal -Action resume -Operation '{"Status":"completed","Handle":"job-123","Name":"validation"}'
+        $outcome = Invoke-Goal -Action resume -Operation '{"Status":"none","Handle":"job-123","Name":"validation"}' -EvidenceValidated
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Error | Should -Match 'completed operation cannot be cleared'
+    }
+
     It 'does not promote completed operation evidence from a changed snapshot' {
         $null = Invoke-Goal -Operation '{"Status":"running","Handle":"job-123","Name":"validation"}'
         $outcome = Invoke-Goal -Action resume -Base 'HEAD~2' -Operation '{"Status":"completed","Handle":"job-123","Name":"validation"}' -EvidenceValidated

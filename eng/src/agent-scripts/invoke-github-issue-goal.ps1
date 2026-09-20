@@ -64,6 +64,52 @@ function Test-GoalCanonicalHttpsUrl {
     return $uri.IsAbsoluteUri -and $uri.Scheme -eq 'https' -and $uri.Host -ieq $ExpectedHost -and [string]::IsNullOrEmpty($uri.UserInfo) -and ($uri.IsDefaultPort -or $uri.Port -eq 443) -and $uri.AbsolutePath -match $PathPattern
 }
 
+function Get-GoalSubmoduleGitlinkHash {
+    param(
+        [Parameter(Mandatory)][string]$FullPath,
+        [Parameter(Mandatory)][string]$SubmodulePath
+    )
+
+    $safeRoot = $FullPath.Replace('\', '/')
+    $entries = @(& git -c "safe.directory=$safeRoot" -C $FullPath ls-files --stage -- $SubmodulePath 2>$null)
+    if ($LASTEXITCODE -ne 0) { throw "Unable to resolve the index entry for nested submodule '$SubmodulePath'." }
+    $gitlinkEntry = @($entries | Where-Object { [string]$_ -match '^160000 (?<Hash>[0-9a-fA-F]{40,64}) \d+\t' } | Select-Object -First 1)
+    if ($gitlinkEntry.Count -eq 0) { return '' }
+    return ([regex]::Match([string]$gitlinkEntry[0], '^160000 (?<Hash>[0-9a-fA-F]{40,64}) \d+\t')).Groups['Hash'].Value
+}
+
+function Get-GoalSubmoduleSymlinkFingerprint {
+    param(
+        [Parameter(Mandatory)][object]$Item,
+        [Parameter(Mandatory)][string]$NormalizedPath
+    )
+
+    $linkTargetProperty = $Item.PSObject.Properties['LinkTarget']
+    $linkTarget = if ($null -ne $linkTargetProperty) { [string]$linkTargetProperty.Value } else { '' }
+    if ([string]::IsNullOrWhiteSpace($linkTarget) -and $null -ne $Item.PSObject.Properties['Target']) { $linkTarget = [string]$Item.Target }
+    return $NormalizedPath + ':symlink=' + $linkTarget
+}
+
+function Get-GoalSubmoduleRegularFingerprint {
+    param(
+        [Parameter(Mandatory)][string]$FullPath,
+        [Parameter(Mandatory)][string]$SubmodulePath,
+        [Parameter(Mandatory)][string]$NormalizedPath,
+        [Parameter(Mandatory)][object]$Item
+    )
+
+    $modeEvidence = 'regular'
+    if ($env:OS -ne 'Windows_NT') {
+        $unixMode = $Item.PSObject.Properties['UnixFileMode']
+        if ($null -ne $unixMode) { $modeEvidence = [string]$unixMode.Value }
+    }
+    $safeRoot = $FullPath.Replace('\', '/')
+    $modeChanges = @(& git -c "safe.directory=$safeRoot" -C $FullPath diff --summary -- $SubmodulePath 2>$null)
+    if ($modeChanges.Count -gt 0) { $modeEvidence = ($modeChanges -join '|') }
+    $fullPath = [System.IO.Path]::GetFullPath((Join-Path $FullPath $SubmodulePath.Replace('/', [System.IO.Path]::DirectorySeparatorChar)))
+    return $NormalizedPath + ':mode=' + $modeEvidence + ':sha256=' + (Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
 function Get-GoalSubmodulePathFingerprint {
     param(
         [Parameter(Mandatory)][string]$FullPath,
@@ -73,23 +119,15 @@ function Get-GoalSubmodulePathFingerprint {
     $submoduleFullPath = [System.IO.Path]::GetFullPath((Join-Path $FullPath $SubmodulePath.Replace('/', [System.IO.Path]::DirectorySeparatorChar)))
     $item = Get-Item -LiteralPath $submoduleFullPath -Force -ErrorAction SilentlyContinue
     $normalizedPath = $SubmodulePath.Replace('\', '/')
+    $nestedGitlinkHash = Get-GoalSubmoduleGitlinkHash -FullPath $FullPath -SubmodulePath $SubmodulePath
+    if (-not [string]::IsNullOrWhiteSpace($nestedGitlinkHash)) {
+        if ($null -eq $item -or -not $item.PSIsContainer) { return $normalizedPath + ':nested=missing:index=' + $nestedGitlinkHash }
+        $nestedFingerprint = Get-GoalSubmoduleFingerprint -FullPath $submoduleFullPath -Relative $normalizedPath -ParentIndexHash $nestedGitlinkHash
+        return $normalizedPath + ':nested=' + $nestedFingerprint
+    }
     if ($null -eq $item -or $item.PSIsContainer) { return $normalizedPath + ':missing' }
-    if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
-        $linkTargetProperty = $item.PSObject.Properties['LinkTarget']
-        $linkTarget = if ($null -ne $linkTargetProperty) { [string]$linkTargetProperty.Value } else { '' }
-        if ([string]::IsNullOrWhiteSpace($linkTarget) -and $null -ne $item.PSObject.Properties['Target']) { $linkTarget = [string]$item.Target }
-        return $normalizedPath + ':symlink=' + $linkTarget
-    }
-
-    $modeEvidence = 'regular'
-    if ($env:OS -ne 'Windows_NT') {
-        $unixMode = $item.PSObject.Properties['UnixFileMode']
-        if ($null -ne $unixMode) { $modeEvidence = [string]$unixMode.Value }
-    }
-    $safeRoot = $FullPath.Replace('\', '/')
-    $modeChanges = @(& git -c "safe.directory=$safeRoot" -C $FullPath diff --summary -- $SubmodulePath 2>$null)
-    if ($modeChanges.Count -gt 0) { $modeEvidence = ($modeChanges -join '|') }
-    return $normalizedPath + ':mode=' + $modeEvidence + ':sha256=' + (Get-FileHash -LiteralPath $submoduleFullPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) { return Get-GoalSubmoduleSymlinkFingerprint -Item $item -NormalizedPath $normalizedPath }
+    return Get-GoalSubmoduleRegularFingerprint -FullPath $FullPath -SubmodulePath $SubmodulePath -NormalizedPath $normalizedPath -Item $item
 }
 
 function Get-GoalSubmoduleFingerprint {
@@ -519,6 +557,9 @@ try {
     if ($null -ne $previous) {
         if ([string]::IsNullOrWhiteSpace($OperationStateJson) -and $null -ne $previous.Operation) {
             $operation = [pscustomobject]@{ Status = [string]$previous.Operation.Status; Handle = [string]$previous.Operation.Handle; Name = [string]$previous.Operation.Name }
+        }
+        if ($null -ne $previous.Operation -and [string]$previous.Operation.Status -eq 'completed' -and $operation.Status -eq 'none') {
+            throw 'A completed operation cannot be cleared before its result is validated.'
         }
         if ($null -ne $previous.Operation -and [string]$previous.Operation.Status -eq 'failed' -and $operation.Status -eq 'completed') {
             throw 'A failed operation cannot transition directly to completed; start a new running operation with a fresh snapshot.'
