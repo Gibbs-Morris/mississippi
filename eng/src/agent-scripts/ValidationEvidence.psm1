@@ -20,6 +20,79 @@ function Get-ValidationRelativePath {
     return $relative
 }
 
+function Get-ValidationLinkTarget {
+    param([Parameter(Mandatory)][System.IO.FileSystemInfo]$Item)
+
+    $linkTargetProperty = $Item.PSObject.Properties['LinkTarget']
+    $linkTarget = if ($null -ne $linkTargetProperty) { [string]$linkTargetProperty.Value } else { '' }
+    if ([string]::IsNullOrWhiteSpace($linkTarget) -and $null -ne $Item.PSObject.Properties['Target']) {
+        $linkTarget = [string]$Item.Target
+    }
+    if ([string]::IsNullOrWhiteSpace($linkTarget)) { return $null }
+    return $linkTarget
+}
+
+function Resolve-ValidationContainedPath {
+    param(
+        [Parameter(Mandatory)][string]$RepositoryRoot,
+        [Parameter(Mandatory)][string]$Path
+    )
+
+    $root = (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
+    $relative = Get-ValidationRelativePath -RepositoryRoot $root -Path $Path
+    if ($null -eq $relative) { return $null }
+
+    $resolved = $root
+    foreach ($segment in ($relative -split '[\\/]')) {
+        if ([string]::IsNullOrWhiteSpace($segment) -or $segment -eq '.') { continue }
+        $candidate = Join-Path $resolved $segment
+        $item = Get-Item -LiteralPath $candidate -Force -ErrorAction SilentlyContinue
+        if ($null -ne $item -and (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0)) {
+            $linkTarget = Get-ValidationLinkTarget -Item $item
+            if ([string]::IsNullOrWhiteSpace($linkTarget)) { return $null }
+            $resolved = if ([System.IO.Path]::IsPathRooted($linkTarget)) {
+                [System.IO.Path]::GetFullPath($linkTarget)
+            }
+            else {
+                [System.IO.Path]::GetFullPath((Join-Path (Split-Path -Parent $candidate) $linkTarget))
+            }
+        }
+        else {
+            $resolved = [System.IO.Path]::GetFullPath($candidate)
+        }
+    }
+
+    $rootWithSeparator = $root.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+    if (-not $resolved.Equals($root, [System.StringComparison]::OrdinalIgnoreCase) -and
+        -not $resolved.StartsWith($rootWithSeparator, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $null
+    }
+    $finalPath = [System.IO.Path]::GetFullPath((Join-Path $root ([string]$relative)))
+    return [string]$finalPath
+}
+
+function Get-ValidationPathMetadata {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+    if ($item.PSIsContainer) { return $null }
+    if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+        $linkTarget = Get-ValidationLinkTarget -Item $item
+        if ([string]::IsNullOrWhiteSpace($linkTarget)) { throw "Unable to read symbolic-link target for '$Path'." }
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes("SYMLINK:$linkTarget")
+        $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
+        return [pscustomobject]@{
+            SHA256 = 'SHA256:' + (($hash | ForEach-Object { $_.ToString('x2') }) -join '')
+            Length = $bytes.Length
+        }
+    }
+
+    return [pscustomobject]@{
+        SHA256 = 'SHA256:' + (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+        Length = $item.Length
+    }
+}
+
 function Test-ValidationZeroTestFacadeArtifact {
     param([Parameter(Mandatory)][string]$Path)
 
@@ -61,9 +134,10 @@ function Get-ValidationSourceFingerprint { # NOSONAR - source evidence fingerpri
     $files = [System.Collections.Generic.List[object]]::new()
     foreach ($relative in @($paths | Sort-Object)) {
         $fullPath = Join-Path $root ($relative.Replace('/', [System.IO.Path]::DirectorySeparatorChar))
-        if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) { continue }
-        $hash = (Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash.ToLowerInvariant()
-        $files.Add([pscustomobject]@{ Path = $relative; SHA256 = "SHA256:$hash" })
+        $metadata = Get-ValidationPathMetadata -Path $fullPath
+        if ($null -ne $metadata) {
+            $files.Add([pscustomobject]@{ Path = $relative; SHA256 = [string]$metadata.SHA256 })
+        }
     }
     $identity = [ordered]@{ Revision = $revision; Dirty = $dirty; Files = @($files) } | ConvertTo-Json -Depth 8 -Compress
     $identityBytes = [System.Text.Encoding]::UTF8.GetBytes($identity)
@@ -160,16 +234,24 @@ function Complete-ValidationEvidenceRun {
     $record.SourceChangedDuringRun = [string]$record.SourceBefore.Fingerprint -ne [string]$record.SourceAfter.Fingerprint
     $missingArtifacts = [System.Collections.Generic.List[string]]::new()
     $record.ArtifactMetadata = @($record.Artifacts | ForEach-Object {
-        if ([string]::IsNullOrWhiteSpace([string]$_)) {
+        $artifactText = @($_) -join ''
+        if ([string]::IsNullOrWhiteSpace($artifactText)) {
             $missingArtifacts.Add('[invalid artifact path]')
             return
         }
-        $artifactPath = Join-Path $record.RepositoryRoot ([string]$_)
-        if (-not (Test-Path -LiteralPath $artifactPath -PathType Leaf)) {
-            $missingArtifacts.Add([string]$_)
+        $artifactPathValues = @(Resolve-ValidationContainedPath -RepositoryRoot $record.RepositoryRoot -Path $artifactText | ForEach-Object { [string]$_ })
+        if ($artifactPathValues.Count -ne 1) {
+            $missingArtifacts.Add($artifactText)
             return
         }
-        [pscustomobject]@{ Path = [string]$_; SHA256 = 'SHA256:' + (Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant(); Length = (Get-Item -LiteralPath $artifactPath).Length }
+        $resolvedArtifactPath = $artifactPathValues -join ''
+        $metadata = $null
+        try { $metadata = Get-ValidationPathMetadata -Path $resolvedArtifactPath } catch { $metadata = $null }
+        if ($null -eq $metadata) {
+            $missingArtifacts.Add($artifactText)
+            return
+        }
+        [pscustomobject]@{ Path = $artifactText; SHA256 = [string]$metadata.SHA256; Length = [int64]$metadata.Length }
     })
     if ($missingArtifacts.Count -gt 0) {
         $missingMessage = 'Recorded artifacts are missing: ' + ($missingArtifacts -join ', ')
@@ -197,7 +279,7 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
     $errors = [System.Collections.Generic.List[string]]::new()
     try { $record = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json }
     catch { return [pscustomobject]@{ Valid = $false; Fresh = $false; Errors = @('Evidence is missing or unreadable.'); Record = $null } }
-    $requiredProperties = @('SchemaVersion', 'Status', 'RepositoryRoot', 'SourceBefore', 'SourceAfter', 'Executed', 'TestCount', 'SourceChangedDuringRun', 'Artifacts', 'ArtifactMetadata')
+    $requiredProperties = @('SchemaVersion', 'Status', 'RepositoryRoot', 'SourceBefore', 'SourceAfter', 'Executed', 'TestCount', 'ExitCode', 'SourceChangedDuringRun', 'Artifacts', 'ArtifactMetadata')
     foreach ($property in $requiredProperties) {
         if ($null -eq $record.PSObject.Properties[$property]) { $errors.Add("Evidence is missing required field '$property'.") }
     }
@@ -214,25 +296,38 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
     if ([string]$record.SchemaVersion -ne '1.0') { $errors.Add('Unsupported evidence schema.') }
     if ([string]$record.Status -notin @('PASS', 'FAIL', 'INCOMPLETE', 'SKIPPED', 'READY')) { $errors.Add('Evidence status is invalid.') }
     if ([string]$record.Status -eq 'PASS' -and (-not [bool]$record.Executed -or [int]$record.TestCount -lt 1)) { $errors.Add('PASS requires executed tests and a nonzero test count.') }
+    if ([string]$record.Status -eq 'PASS') {
+        try {
+            if ([int]$record.ExitCode -ne 0) { $errors.Add('PASS evidence requires a zero exit code.') }
+        }
+        catch { $errors.Add('PASS evidence requires a numeric zero exit code.') }
+    }
     if ([string]$record.Status -in @('PASS', 'FAIL') -and $null -eq $record.SourceAfter) { $errors.Add('Completed evidence has no final source fingerprint.') }
     if ([string]$record.Status -eq 'PASS' -and @($record.Artifacts).Count -eq 0) { $errors.Add('PASS requires at least one recorded artifact.') }
     if ([string]$record.Status -eq 'PASS' -and [bool]$record.SourceChangedDuringRun) { $errors.Add('PASS evidence was changed by a later cleanup or source edit.') }
     foreach ($artifact in @($record.Artifacts)) {
-        $artifactText = [string]$artifact
+        $artifactText = @($artifact) -join ''
         if ([string]::IsNullOrWhiteSpace($artifactText)) {
             $errors.Add("Required artifact is missing: '$artifact'.")
             continue
         }
-        if ([System.IO.Path]::IsPathRooted($artifactText) -or $null -eq (Get-ValidationRelativePath -RepositoryRoot $verificationRoot -Path $artifactText)) {
+        $artifactResolvedPaths = @(Resolve-ValidationContainedPath -RepositoryRoot $verificationRoot -Path $artifactText | ForEach-Object { [string]$_ })
+        if ([System.IO.Path]::IsPathRooted($artifactText) -or $artifactResolvedPaths.Count -ne 1) {
             $errors.Add("Artifact path escapes the verification root: '$artifactText'.")
             continue
         }
-        if (-not (Test-Path -LiteralPath (Join-Path $verificationRoot $artifactText) -PathType Leaf)) { $errors.Add("Required artifact is missing: '$artifactText'.") }
+        $artifactResolvedPath = $artifactResolvedPaths -join ''
+        if ([string]::IsNullOrWhiteSpace($artifactResolvedPath)) {
+            $errors.Add("Required artifact is missing: '$artifactText'.")
+            continue
+        }
+        try { $artifactMetadata = Get-ValidationPathMetadata -Path $artifactResolvedPath } catch { $artifactMetadata = $null }
+        if ($null -eq $artifactMetadata) { $errors.Add("Required artifact is missing: '$artifactText'.") }
     }
     $trxExecutedTotal = [int64]0
     $trxFailedTotal = [int64]0
     $artifactSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
-    foreach ($artifact in @($record.Artifacts)) { if (-not [string]::IsNullOrWhiteSpace([string]$artifact)) { $null = $artifactSet.Add([string]$artifact) } }
+    foreach ($artifact in @($record.Artifacts)) { $artifactText = @($artifact) -join ''; if (-not [string]::IsNullOrWhiteSpace($artifactText)) { $null = $artifactSet.Add($artifactText) } }
     $metadataByPath = @{}
     foreach ($metadata in @($record.ArtifactMetadata | Where-Object { $null -ne $_ })) {
         try {
@@ -241,18 +336,21 @@ function Test-ValidationEvidence { # NOSONAR - evidence verification intentional
             $hashProperty = $metadata.PSObject.Properties['SHA256']
             $lengthProperty = $metadata.PSObject.Properties['Length']
             if ($null -eq $pathProperty -or $null -eq $hashProperty -or $null -eq $lengthProperty) { throw 'Artifact metadata must contain Path, SHA256, and Length.' }
-            $metadataPath = [string]$pathProperty.Value
+            $metadataPath = @($pathProperty.Value) -join ''
             $metadataHash = [string]$hashProperty.Value
             if ([string]::IsNullOrWhiteSpace($metadataPath) -or $metadataHash -notmatch '^SHA256:[0-9a-fA-F]{64}$') { throw 'Artifact metadata has an invalid path or SHA256 value.' }
-            if ([System.IO.Path]::IsPathRooted($metadataPath) -or $null -eq (Get-ValidationRelativePath -RepositoryRoot $verificationRoot -Path $metadataPath)) { throw "Artifact path escapes the verification root: '$metadataPath'." }
+            $metadataResolvedPaths = @(Resolve-ValidationContainedPath -RepositoryRoot $verificationRoot -Path $metadataPath | ForEach-Object { [string]$_ })
+            if ([System.IO.Path]::IsPathRooted($metadataPath) -or $metadataResolvedPaths.Count -ne 1 -or [string]::IsNullOrWhiteSpace(($metadataResolvedPaths -join ''))) { throw "Artifact path escapes the verification root: '$metadataPath'." }
+            $metadataResolvedPath = $metadataResolvedPaths -join ''
             if (-not $metadataByPath.ContainsKey($metadataPath)) { $metadataByPath[$metadataPath] = [System.Collections.Generic.List[object]]::new() }
             $metadataByPath[$metadataPath].Add($metadata)
             if (-not $artifactSet.Contains($metadataPath)) { $errors.Add("Artifact metadata references an unrecorded artifact: '$metadataPath'."); continue }
-            $artifactPath = Join-Path $verificationRoot $metadataPath
-            if (-not (Test-Path -LiteralPath $artifactPath -PathType Leaf)) { continue }
-            $currentHash = 'SHA256:' + (Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant()
+            $artifactPath = $metadataResolvedPath
+            $currentMetadata = Get-ValidationPathMetadata -Path $artifactPath
+            if ($null -eq $currentMetadata) { continue }
+            $currentHash = [string]$currentMetadata.SHA256
             if ($currentHash -ne $metadataHash) { $errors.Add("Artifact content changed: '$metadataPath'.") }
-            if ([int64]$lengthProperty.Value -ne [int64](Get-Item -LiteralPath $artifactPath).Length) { $errors.Add("Artifact length changed: '$metadataPath'.") }
+            if ([int64]$lengthProperty.Value -ne [int64]$currentMetadata.Length) { $errors.Add("Artifact length changed: '$metadataPath'.") }
             switch ([System.IO.Path]::GetExtension($artifactPath).ToLowerInvariant()) {
                 '.json' { Get-Content -LiteralPath $artifactPath -Raw | ConvertFrom-Json | Out-Null }
                 '.xml' { [xml]$xml = Get-Content -LiteralPath $artifactPath -Raw; if ($null -eq $xml.DocumentElement) { throw 'XML document has no root element.' } }

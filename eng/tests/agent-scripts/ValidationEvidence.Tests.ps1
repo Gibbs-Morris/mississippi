@@ -40,6 +40,18 @@ Describe 'Source-bound validation evidence' {
         ($result.Errors -join "`n") | Should -Match 'completed ResultSummary|execution counters'
     }
 
+    It 'rejects PASS evidence with a nonzero exit code' {
+        $run = New-ValidationEvidenceRun -RepositoryRoot $fixtureRoot -Scope 'fixture' -InputPath @($inputFile)
+        $artifact = Join-Path $fixtureRoot 'nonzero-exit.trx'
+        Set-Content -LiteralPath $artifact -Value '<TestRun><ResultSummary outcome="Completed"><Counters total="1" executed="1" passed="1" failed="0" notExecuted="0" /></ResultSummary></TestRun>'
+        Complete-ValidationEvidenceRun -Run $run -Status PASS -Phase complete -Executed $true -TestCount 1 -ExitCode 7 -ArtifactPath @($artifact) | Out-Null
+
+        $result = Test-ValidationEvidence -Path $run.Path
+
+        $result.Valid | Should -BeFalse
+        $result.Errors | Should -Contain 'PASS evidence requires a zero exit code.'
+    }
+
     It 'invalidates a report after a source edit' {
         $run = New-ValidationEvidenceRun -RepositoryRoot $fixtureRoot -Scope 'fixture' -InputPath @($inputFile)
         Complete-ValidationEvidenceRun -Run $run -Status PASS -Phase complete -Executed $true -TestCount 1 -ExitCode 0 | Out-Null
