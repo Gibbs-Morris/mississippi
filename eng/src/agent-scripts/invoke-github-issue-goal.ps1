@@ -44,13 +44,18 @@ function Get-GoalRepositoryIdentity {
     param([Parameter(Mandatory)][string]$Root)
 
     $safeRoot = $Root.Replace('\', '/')
-    $remote = @(& git -c "safe.directory=$safeRoot" -C $Root remote get-url origin 2>$null | Select-Object -First 1)
-    $remoteExitCode = if (Get-Variable -Name LASTEXITCODE -ErrorAction SilentlyContinue) { [int]$LASTEXITCODE } else { 0 }
-    if ($remoteExitCode -ne 0 -or [string]::IsNullOrWhiteSpace([string]$remote)) { throw "Unable to resolve the origin repository for '$Root'." }
-    $remoteText = ([string]$remote).Trim() -replace '\.git$', ''
-    $match = [regex]::Match($remoteText, '(?:github\.com[/:])(?<Owner>[^/]+)/(?<Name>[^/]+)$', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
-    if (-not $match.Success) { throw "Unable to identify the GitHub repository from origin '$remoteText'." }
-    return "$($match.Groups['Owner'].Value)/$($match.Groups['Name'].Value)"
+    $remoteNames = @(& git -c "safe.directory=$safeRoot" -C $Root remote 2>$null)
+    if ($LASTEXITCODE -ne 0 -or $remoteNames.Count -eq 0) { throw "Unable to resolve Git remotes for '$Root'." }
+    $identities = [System.Collections.Generic.List[string]]::new()
+    foreach ($remoteName in $remoteNames) {
+        $remote = @(& git -c "safe.directory=$safeRoot" -C $Root remote get-url ([string]$remoteName) 2>$null | Select-Object -First 1)
+        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace([string]$remote)) { continue }
+        $remoteText = ([string]$remote).Trim() -replace '\.git$', ''
+        $match = [regex]::Match($remoteText, '(?:github\.com[/:])(?<Owner>[^/]+)/(?<Name>[^/]+)$', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+        if ($match.Success) { $identities.Add("$($match.Groups['Owner'].Value)/$($match.Groups['Name'].Value)") }
+    }
+    if ($identities.Count -eq 0) { throw "Unable to identify a GitHub repository from the configured remotes for '$Root'." }
+    return @($identities | Sort-Object -Unique)
 }
 
 function Get-GoalWorktreeFingerprint { # NOSONAR - bounded Git/index/worktree fingerprinting intentionally coordinates several integrity checks.
@@ -129,6 +134,7 @@ function Get-GoalIssue {
             $comments = @($commentPages | ForEach-Object { @($_) })
             $issue | Add-Member -NotePropertyName comments -NotePropertyValue $comments -Force
         }
+        else { throw "Unable to read comments for issue #${Number}: $($commentsOutput.Trim())" }
     }
     return $issue
 }
@@ -261,7 +267,7 @@ function Remove-GoalMarkdownFencedBlocks {
 $checkpointLockStream = $null
 try {
     $root = (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
-    if ((Get-GoalRepositoryIdentity -Root $root) -ne "$RepositoryOwner/$RepositoryName") {
+    if ((Get-GoalRepositoryIdentity -Root $root) -notcontains "$RepositoryOwner/$RepositoryName") {
         throw "Repository root '$root' does not match requested repository '$RepositoryOwner/$RepositoryName'."
     }
     $checkpoint = Get-GoalCheckpointPath -Root $root -Owner $RepositoryOwner -Name $RepositoryName -Number $IssueNumber -Requested $CheckpointPath
@@ -322,10 +328,6 @@ try {
         }
         if ($null -eq $contractResult) { throw }
     }
-    if ($contractSource -eq 'issue-comment') {
-        if ([string]::IsNullOrWhiteSpace($ExpectedContractBodyDigest)) { throw 'A fallback issue contract requires an expected contract body digest.' }
-        if ($ExpectedContractBodyDigest -ne $contractBodyDigest) { throw 'The selected fallback contract does not match the authorized contract body digest.' }
-    }
     $operation = Get-GoalOperationState -Json $OperationStateJson
     if ($operation.Status -eq 'running' -and [string]::IsNullOrWhiteSpace($operation.Handle)) {
         throw 'Running operation state requires a nonempty authoritative handle.'
@@ -338,6 +340,16 @@ try {
     $previous = $null
     if (Test-Path -LiteralPath $checkpoint -PathType Leaf) {
         $previous = Get-Content -LiteralPath $checkpoint -Raw | ConvertFrom-Json
+    }
+
+    if ($contractSource -eq 'issue-comment') {
+        if ($null -eq $previous) {
+            if ([string]::IsNullOrWhiteSpace($ExpectedContractBodyDigest)) { throw 'A fallback issue contract requires an expected contract body digest.' }
+            if ($ExpectedContractBodyDigest -ne $contractBodyDigest) { throw 'The selected fallback contract does not match the authorized contract body digest.' }
+        }
+        elseif ($null -eq $previous.PSObject.Properties['ContractBodyDigest'] -or [string]$previous.ContractBodyDigest -ne $contractBodyDigest) {
+            throw 'The selected fallback contract does not match the saved contract body digest.'
+        }
     }
 
     if ($null -ne $previous) {
