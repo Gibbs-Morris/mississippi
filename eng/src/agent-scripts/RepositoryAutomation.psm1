@@ -121,7 +121,12 @@ function Read-RepositoryExecutionLeaseSlotRoot {
         $trimChars = [char[]]@(0, 9, 10, 13, 32)
         $text = [System.Text.Encoding]::UTF8.GetString($buffer, 0, $read).Trim($trimChars)
         if ([string]::IsNullOrWhiteSpace($text)) { return '' }
-        try { return [string](([string]$text | ConvertFrom-Json).repositoryRoot) } catch { return '' }
+        try {
+            $metadata = [string]$text | ConvertFrom-Json
+            if ($metadata.PSObject.Properties.Name -contains 'repositoryKey') { return [string]$metadata.repositoryKey }
+            return [string]$metadata.repositoryRoot
+        }
+        catch { return '' }
     }
     finally {
         $Stream.Position = $position
@@ -298,7 +303,7 @@ function Get-RepositoryExecutionLeasePathForRoot {
 
     $hash = Get-RepositoryExecutionLeaseHash -CanonicalRepoRoot $CanonicalRepoRoot
     $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
-    $fileName = if ($sharedLease) { 'shared.lease' } else { (($hash | ForEach-Object { $_.ToString('x2') }) -join '') + '.lease' }
+    $fileName = if ($sharedLease) { 'shared.lease' } else { ([System.BitConverter]::ToString($hash).Replace('-', '').ToLowerInvariant()) + '.lease' }
     $defaultLeaseDirectory = [string]::IsNullOrWhiteSpace($LeaseDirectory)
     $leaseDirectory = if ($defaultLeaseDirectory) {
         Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.mississippi/execution-leases'
@@ -459,9 +464,11 @@ function Enter-RepositoryExecutionLease {
             throw "Lease path is not a regular file: '$leasePath'."
         }
     }
+    $repositoryKey = [System.BitConverter]::ToString((Get-RepositoryExecutionLeaseHash -CanonicalRepoRoot $canonicalRoot)).Replace('-', '').ToLowerInvariant()
     $metadata = [ordered]@{
         operationId = $OperationId
-        repositoryRoot = $canonicalRoot
+        repositoryKey = $repositoryKey
+        repositoryRoot = if ($canonicalRoot.Length -gt 256) { $canonicalRoot.Substring(0, 256) } else { $canonicalRoot }
         processId = $PID
         startedUtc = (Get-Date).ToUniversalTime().ToString('o')
     } | ConvertTo-Json -Compress
@@ -486,34 +493,24 @@ function Enter-RepositoryExecutionLease {
             try {
                 $preferredSlot = Get-RepositoryExecutionLeaseSlot -CanonicalRepoRoot $canonicalRoot
                 $comparison = Get-RepositoryPathComparison -RepoRoot $canonicalRoot
-                $slotAcquired = $false
+                $matchingOffsets = [System.Collections.Generic.List[long]]::new()
+                $emptyOffsets = [System.Collections.Generic.List[long]]::new()
                 for ($probe = 0; $probe -lt $sharedExecutionLeaseSlotCount; $probe++) {
                     $candidateSlot = ($preferredSlot + $probe) % $sharedExecutionLeaseSlotCount
                     $candidateOffset = [long]$candidateSlot * $sharedExecutionLeaseSlotSize
                     $slotRoot = Read-RepositoryExecutionLeaseSlotRoot -Stream $stream -Offset $candidateOffset
-                    if ([string]::IsNullOrWhiteSpace($slotRoot)) {
-                        $stream.Lock($candidateOffset, 1)
-                        $leaseOffset = $candidateOffset
-                        $slotAcquired = $true
-                        break
-                    }
-                    if ([string]::Equals($slotRoot, $canonicalRoot, $comparison)) {
-                        $stream.Lock($candidateOffset, 1)
-                        $leaseOffset = $candidateOffset
-                        $slotAcquired = $true
-                        break
-                    }
-                    try {
-                        $stream.Lock($candidateOffset, 1)
-                        $leaseOffset = $candidateOffset
-                        $slotAcquired = $true
-                        break
-                    }
-                    catch [System.IO.IOException] {
-                        continue
-                    }
+                    if ([string]::IsNullOrWhiteSpace($slotRoot)) { $emptyOffsets.Add($candidateOffset); continue }
+                    if ([string]::Equals($slotRoot, $repositoryKey, [System.StringComparison]::Ordinal)) { $matchingOffsets.Add($candidateOffset) }
                 }
-                if (-not $slotAcquired) { throw 'No available shared execution lease slots remain.' }
+                if ($matchingOffsets.Count -gt 0) {
+                    $leaseOffset = $matchingOffsets[0]
+                    $stream.Lock($leaseOffset, 1)
+                }
+                elseif ($emptyOffsets.Count -gt 0) {
+                    $leaseOffset = $emptyOffsets[0]
+                    $stream.Lock($leaseOffset, 1)
+                }
+                else { throw 'No available shared execution lease slots remain.' }
                 Test-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $sharedExecutionLeaseFileMode
             }
             finally {
@@ -595,7 +592,16 @@ function Exit-RepositoryExecutionLease {
 
     if ($Lease.OwnsStream -and $null -ne $Lease.Stream) {
         try {
-            if ($null -ne $Lease.SharedStreamState) { Release-SharedRepositoryExecutionLeaseStream -State $Lease.SharedStreamState }
+            if ($null -ne $Lease.SharedStreamState) {
+                [System.Threading.Monitor]::Enter($Lease.SharedStreamState.Gate)
+                try {
+                    if ($null -ne $Lease.LeaseOffset) { $Lease.Stream.Unlock([long]$Lease.LeaseOffset, 1) }
+                }
+                finally {
+                    [System.Threading.Monitor]::Exit($Lease.SharedStreamState.Gate)
+                }
+                Release-SharedRepositoryExecutionLeaseStream -State $Lease.SharedStreamState
+            }
             else { $Lease.Stream.Dispose() }
         }
         finally { Unregister-RepositoryExecutionLeaseIdentity -Identity ([string]$Lease.LeaseIdentity) }
