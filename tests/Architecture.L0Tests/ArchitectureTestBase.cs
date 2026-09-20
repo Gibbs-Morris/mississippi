@@ -8,7 +8,6 @@ using ArchUnitNET.Loader;
 
 using ArchUnitArchitecture = ArchUnitNET.Domain.Architecture;
 
-
 namespace Mississippi.Architecture.L0Tests;
 
 /// <summary>
@@ -27,10 +26,6 @@ public abstract class ArchitectureTestBase
         .LoadAssemblies(GetMississippiAssemblies())
         .Build();
 
-    [SuppressMessage(
-        "Major Code Smell",
-        "S3885:\"Assembly.LoadFrom\" should not be used",
-        Justification = "Required for runtime assembly discovery")]
     private static Assembly[] GetMississippiAssemblies()
     {
         string baseDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -43,10 +38,12 @@ public abstract class ArchitectureTestBase
     /// </summary>
     /// <param name="assemblyPaths">Assembly file paths to inspect.</param>
     /// <returns>Loaded Mississippi assemblies.</returns>
-    internal static Assembly[] LoadMississippiAssemblies(IEnumerable<string> assemblyPaths)
-    {
-        return LoadMississippiAssemblies(assemblyPaths, Assembly.LoadFrom);
-    }
+    [SuppressMessage(
+        "Major Code Smell",
+        "S3885:\"Assembly.LoadFrom\" should not be used",
+        Justification = "Required for runtime assembly discovery")]
+    internal static Assembly[] LoadMississippiAssemblies(IEnumerable<string> assemblyPaths) =>
+        LoadMississippiAssemblies(assemblyPaths, Assembly.LoadFrom);
 
     /// <summary>
     ///     Loads all non-test Mississippi assembly candidates and fails closed when discovery is incomplete.
