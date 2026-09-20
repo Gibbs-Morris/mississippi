@@ -53,6 +53,17 @@ function Get-GoalWorktreeIdentity {
     return Get-GoalTextFingerprint -Text $canonicalRoot
 }
 
+function Test-GoalCanonicalHttpsUrl {
+    param(
+        [AllowEmptyString()][string]$Url,
+        [Parameter(Mandatory)][string]$ExpectedHost,
+        [Parameter(Mandatory)][string]$PathPattern
+    )
+
+    try { $uri = [System.Uri]$Url } catch { return $false }
+    return $uri.IsAbsoluteUri -and $uri.Scheme -eq 'https' -and $uri.Host -ieq $ExpectedHost -and [string]::IsNullOrEmpty($uri.UserInfo) -and ($uri.IsDefaultPort -or $uri.Port -eq 443) -and $uri.AbsolutePath -match $PathPattern
+}
+
 function Get-GoalSubmodulePathFingerprint {
     param(
         [Parameter(Mandatory)][string]$FullPath,
@@ -402,10 +413,12 @@ try {
     $issue = Get-GoalIssue -Owner $RepositoryOwner -Name $RepositoryName -Number $IssueNumber -Json $IssueJson
     if ([int]$issue.number -ne $IssueNumber) { throw "Issue identity mismatch: expected #$IssueNumber." }
     $expectedRepository = "$RepositoryOwner/$RepositoryName"
-    if ($null -ne $issue.PSObject.Properties['html_url'] -and [string]$issue.html_url -notmatch "/$([regex]::Escape($expectedRepository))/issues/$IssueNumber(?:$|[/?#])") {
+    $expectedIssuePath = '^/' + [regex]::Escape($RepositoryOwner) + '/' + [regex]::Escape($RepositoryName) + '/issues/' + $IssueNumber + '/?$'
+    $expectedRepositoryPath = '^/' + [regex]::Escape($RepositoryOwner) + '/' + [regex]::Escape($RepositoryName) + '/?$'
+    if ($null -ne $issue.PSObject.Properties['html_url'] -and -not (Test-GoalCanonicalHttpsUrl -Url ([string]$issue.html_url) -ExpectedHost 'github.com' -PathPattern $expectedIssuePath)) {
         throw "Issue repository mismatch: expected '$expectedRepository'."
     }
-    if ($null -ne $issue.PSObject.Properties['repository_url'] -and [string]$issue.repository_url -notmatch "/$([regex]::Escape($expectedRepository))$") {
+    if ($null -ne $issue.PSObject.Properties['repository_url'] -and -not (Test-GoalCanonicalHttpsUrl -Url ([string]$issue.repository_url) -ExpectedHost 'api.github.com' -PathPattern $expectedRepositoryPath)) {
         throw "Issue repository mismatch: expected '$expectedRepository'."
     }
     if ([string]$issue.state -ne 'open') { throw "Issue #$IssueNumber is not open." }
@@ -571,6 +584,7 @@ try {
     $worktreeChanged = $null -ne $previous -and $worktreeBaseline -ne $currentWorktreeFingerprint
     $activeOperation = $operation.Status -eq 'running'
     $operationCompleted = $null -ne $previous -and $null -ne $previous.PSObject.Properties['Operation'] -and [string]$previous.Operation.Status -eq 'running' -and $operation.Status -in @('completed', 'failed')
+    $operationFailed = $operationCompleted -and $operation.Status -eq 'failed'
     $operationStartsNewSnapshot = $operation.Status -eq 'running' -and
         ($null -eq $previous -or
          $null -eq $previous.PSObject.Properties['Operation'] -or
@@ -617,7 +631,7 @@ try {
     $validatedNow = $EvidenceValidated -and $operation.Status -notin @('running', 'failed') -and -not $operationSnapshotChanged
     $status = if ($activeOperation) { 'operation-running' } elseif ($scopeChanged -and -not $validatedNow) { 'scope-changed' } elseif (($revisionChanged -or $worktreeChanged -or $operationSnapshotChanged) -and -not $validatedNow) { 'evidence-stale' } elseif ($null -eq $previous) { 'started' } else { 'resumed' }
     $evidenceFresh = -not $activeOperation -and ($validatedNow -or (-not $scopeChanged -and -not $revisionChanged -and -not $worktreeChanged -and ($null -ne $previous -and [bool]$previous.EvidenceFresh)))
-    $nextAction = if ($activeOperation) { "wait-for-existing-operation:$($operation.Handle)" } elseif ($scopeChanged -and -not $validatedNow) { 'reconcile-edited-issue-before-implementation' } elseif ($validatedNow) { 'continue-implementation-or-review' } elseif ($operationSnapshotChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($operationCompleted) { 'inspect-completed-operation-result' } elseif ($revisionChanged -or $worktreeChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($null -eq $previous) { 'inspect-guidance-and-prerequisites' } else { [string]$previous.NextAction }
+    $nextAction = if ($activeOperation) { "wait-for-existing-operation:$($operation.Handle)" } elseif ($scopeChanged -and -not $validatedNow) { 'reconcile-edited-issue-before-implementation' } elseif ($validatedNow) { 'continue-implementation-or-review' } elseif ($operationSnapshotChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($operationFailed) { 'inspect-failed-operation-and-retry' } elseif ($operationCompleted) { 'inspect-completed-operation-result' } elseif ($revisionChanged -or $worktreeChanged) { 'invalidate-stale-evidence-and-revalidate' } elseif ($null -eq $previous) { 'inspect-guidance-and-prerequisites' } else { [string]$previous.NextAction }
     if ([string]::IsNullOrWhiteSpace($nextAction)) { $nextAction = 'inspect-guidance-and-prerequisites' }
 
     $currentContract = [ordered]@{

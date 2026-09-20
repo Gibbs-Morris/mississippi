@@ -9,14 +9,38 @@ Describe 'Issue-driven goal workflow' {
     BeforeAll {
         $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..'))
         $powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
-        $scriptPath = Join-Path $repoRoot 'eng/src/agent-scripts/invoke-github-issue-goal.ps1'
+        $fixtureRepoRoot = Join-Path $TestDrive 'goal-fixture-repo'
+        $fixtureScriptDirectory = Join-Path $fixtureRepoRoot 'eng/src/agent-scripts'
+        New-Item -ItemType Directory -Path $fixtureScriptDirectory -Force | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $fixtureRepoRoot '.github/instructions') -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $repoRoot 'eng/src/agent-scripts/invoke-github-issue-goal.ps1') -Destination $fixtureScriptDirectory
+        Copy-Item -LiteralPath (Join-Path $repoRoot 'eng/src/agent-scripts/test-issue-spec.ps1') -Destination $fixtureScriptDirectory
+        Set-Content -LiteralPath (Join-Path $fixtureRepoRoot '.github/instructions/issue-tracking.instructions.md') -Value '# Fixture issue tracking guidance' -Encoding utf8
+        Set-Content -LiteralPath (Join-Path $fixtureRepoRoot 'README.md') -Value '# Fixture repository' -Encoding utf8
+        Set-Content -LiteralPath (Join-Path $fixtureRepoRoot 'fixture.txt') -Value 'base' -Encoding utf8
+        $fixtureSafeRoot = $fixtureRepoRoot.Replace('\', '/')
+        $fixtureGit = @('-c', "safe.directory=$fixtureSafeRoot", '-C', $fixtureRepoRoot)
+        & git @fixtureGit init --quiet | Out-Null
+        & git @fixtureGit config user.email 'pester-fixture@example.invalid' | Out-Null
+        & git @fixtureGit config user.name 'Pester fixture' | Out-Null
+        & git @fixtureGit remote add origin 'https://github.com/Gibbs-Morris/mississippi.git' | Out-Null
+        & git @fixtureGit add -- . | Out-Null
+        & git @fixtureGit commit --quiet -m 'fixture base' | Out-Null
+        Set-Content -LiteralPath (Join-Path $fixtureRepoRoot 'fixture.txt') -Value 'middle' -Encoding utf8
+        & git @fixtureGit add -- fixture.txt | Out-Null
+        & git @fixtureGit commit --quiet -m 'fixture middle' | Out-Null
+        Set-Content -LiteralPath (Join-Path $fixtureRepoRoot 'fixture.txt') -Value 'head' -Encoding utf8
+        & git @fixtureGit add -- fixture.txt | Out-Null
+        & git @fixtureGit commit --quiet -m 'fixture head' | Out-Null
+        $scriptPath = Join-Path $fixtureRepoRoot 'eng/src/agent-scripts/invoke-github-issue-goal.ps1'
         $checkpoint = Join-Path $TestDrive 'goals/741/checkpoint.json'
-        $headCommit = (& git -C $repoRoot rev-parse HEAD).Trim()
-        $baseCommit = (& git -C $repoRoot rev-parse HEAD~1).Trim()
+        $headCommit = (& git @fixtureGit rev-parse HEAD).Trim()
+        $baseCommit = (& git @fixtureGit rev-parse HEAD~1).Trim()
         $validIssueBody = Get-Content -LiteralPath (Join-Path $repoRoot 'eng/tests/agent-scripts/fixtures/issue-spec-bug-fix.md') -Raw
         function New-IssueJson {
             param(
                 [Parameter(Mandatory)][string]$Body,
+                [string]$Url = 'https://github.com/Gibbs-Morris/mississippi/issues/741',
                 [AllowNull()][object[]]$Comments
             )
             $issue = [ordered]@{
@@ -24,7 +48,7 @@ Describe 'Issue-driven goal workflow' {
                 title = '[Task] Goal route fixture'
                 state = 'open'
                 body = $Body
-                html_url = 'https://github.com/Gibbs-Morris/mississippi/issues/741'
+                html_url = $Url
             } | ConvertTo-Json -Depth 6 -Compress
             if ($null -ne $Comments) {
                 $issue = [ordered]@{
@@ -32,7 +56,7 @@ Describe 'Issue-driven goal workflow' {
                     title = '[Task] Goal route fixture'
                     state = 'open'
                     body = $Body
-                    html_url = 'https://github.com/Gibbs-Morris/mississippi/issues/741'
+                    html_url = $Url
                     comments = $Comments
                 } | ConvertTo-Json -Depth 6 -Compress
             }
@@ -42,6 +66,7 @@ Describe 'Issue-driven goal workflow' {
             param(
                 [ValidateSet('start', 'resume')][string]$Action = 'start',
                 [string]$Body = $validIssueBody,
+                [string]$IssueUrl = 'https://github.com/Gibbs-Morris/mississippi/issues/741',
                 [string]$Head = $headCommit,
                 [string]$Base = $baseCommit,
                 [string]$Operation = '',
@@ -59,8 +84,8 @@ Describe 'Issue-driven goal workflow' {
             )
             $arguments = @('-NoProfile', '-File', $scriptPath, '-Action', $Action,
                 '-RepositoryOwner', 'Gibbs-Morris', '-RepositoryName', 'mississippi',
-                '-IssueNumber', '741', '-IssueJson', (New-IssueJson -Body $Body -Comments $Comments),
-                '-CheckpointPath', $checkpoint, '-RepositoryRoot', $repoRoot,
+                '-IssueNumber', '741', '-IssueJson', (New-IssueJson -Body $Body -Url $IssueUrl -Comments $Comments),
+                '-CheckpointPath', $checkpoint, '-RepositoryRoot', $fixtureRepoRoot,
                 '-HeadRevision', $Head, '-BaseRevision', $Base, '-Json')
             if ($Operation) { $arguments += @('-OperationStateJson', $Operation) }
             if ($ExpectedContractDigest) { $arguments += @('-ExpectedContractBodyDigest', $ExpectedContractDigest) }
@@ -215,7 +240,8 @@ Describe 'Issue-driven goal workflow' {
 
     It 'rejects a completed operation after a failed operation' {
         $null = Invoke-Goal -Operation '{"Status":"running","Handle":"job-123","Name":"validation"}'
-        $null = Invoke-Goal -Action resume -Operation '{"Status":"failed","Handle":"job-123","Name":"validation"}'
+        $failed = Invoke-Goal -Action resume -Operation '{"Status":"failed","Handle":"job-123","Name":"validation"}'
+        $failed.Result.NextAction | Should -Be 'inspect-failed-operation-and-retry'
         $outcome = Invoke-Goal -Action resume -Operation '{"Status":"completed","Handle":"job-123","Name":"validation"}' -EvidenceValidated
 
         $outcome.ExitCode | Should -Be 1
@@ -290,6 +316,14 @@ Describe 'Issue-driven goal workflow' {
         $outcome.ExitCode | Should -Be 1
         $outcome.Result.Status | Should -Be 'ERROR'
         $outcome.Result.Error | Should -Match 'first checkpoint requires an expected issue body digest'
+    }
+
+    It 'rejects issue URLs outside canonical github.com' {
+        $outcome = Invoke-Goal -IssueUrl 'https://example.test/Gibbs-Morris/mississippi/issues/741'
+
+        $outcome.ExitCode | Should -Be 1
+        $outcome.Result.Status | Should -Be 'ERROR'
+        $outcome.Result.Error | Should -Match 'Issue repository mismatch'
     }
 
     It 'extracts dependencies after ignoring tilde-fenced examples' {
