@@ -62,6 +62,47 @@ function Get-RepositoryExecutionLeaseSlot {
     return [int](([System.BitConverter]::ToUInt32($hash, 0)) % $sharedExecutionLeaseSlotCount)
 }
 
+function Read-RepositoryExecutionLeaseSlotRoot {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][System.IO.FileStream]$Stream,
+        [Parameter(Mandatory)][long]$Offset
+    )
+
+    $buffer = New-Object byte[] $sharedExecutionLeaseSlotSize
+    $position = $Stream.Position
+    try {
+        $Stream.Position = $Offset
+        $read = $Stream.Read($buffer, 0, $buffer.Length)
+        if ($read -le 0) { return '' }
+        $trimChars = [char[]]@(0, 9, 10, 13, 32)
+        $text = [System.Text.Encoding]::UTF8.GetString($buffer, 0, $read).Trim($trimChars)
+        if ([string]::IsNullOrWhiteSpace($text)) { return '' }
+        try { return [string](([string]$text | ConvertFrom-Json).repositoryRoot) } catch { return '' }
+    }
+    finally {
+        $Stream.Position = $position
+    }
+}
+
+function Write-RepositoryExecutionLeaseSlotMetadata {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][System.IO.FileStream]$Stream,
+        [Parameter(Mandatory)][long]$Offset,
+        [Parameter(Mandatory)][string]$Metadata
+    )
+
+    $metadataBytes = [System.Text.Encoding]::UTF8.GetBytes($Metadata)
+    if ($metadataBytes.Length -gt $sharedExecutionLeaseSlotSize) {
+        throw 'Shared execution lease metadata exceeded its reserved slot.'
+    }
+    $buffer = New-Object byte[] $sharedExecutionLeaseSlotSize
+    [System.Array]::Copy($metadataBytes, $buffer, $metadataBytes.Length)
+    $Stream.Position = $Offset
+    $Stream.Write($buffer, 0, $buffer.Length)
+}
+
 function Set-RepositoryExecutionLeaseUnixMode {
     [CmdletBinding()]
     param(
@@ -370,9 +411,30 @@ function Enter-RepositoryExecutionLease {
         $fileShare = if ($sharedLease) { [System.IO.FileShare]::ReadWrite } else { [System.IO.FileShare]::Read }
         $stream = [System.IO.FileStream]::new($leasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, $fileShare)
         if ($sharedLease) {
-            $leaseSlot = Get-RepositoryExecutionLeaseSlot -CanonicalRepoRoot $canonicalRoot
-            $leaseOffset = [long]$leaseSlot * $sharedExecutionLeaseSlotSize
-            $stream.Lock($leaseOffset, 1)
+            $preferredSlot = Get-RepositoryExecutionLeaseSlot -CanonicalRepoRoot $canonicalRoot
+            $comparison = Get-RepositoryPathComparison -RepoRoot $canonicalRoot
+            $slotAcquired = $false
+            for ($probe = 0; $probe -lt $sharedExecutionLeaseSlotCount; $probe++) {
+                $candidateSlot = ($preferredSlot + $probe) % $sharedExecutionLeaseSlotCount
+                $candidateOffset = [long]$candidateSlot * $sharedExecutionLeaseSlotSize
+                $slotRoot = Read-RepositoryExecutionLeaseSlotRoot -Stream $stream -Offset $candidateOffset
+                if ([string]::Equals($slotRoot, $canonicalRoot, $comparison)) {
+                    $stream.Lock($candidateOffset, 1)
+                    $leaseOffset = $candidateOffset
+                    $slotAcquired = $true
+                    break
+                }
+                try {
+                    $stream.Lock($candidateOffset, 1)
+                    $leaseOffset = $candidateOffset
+                    $slotAcquired = $true
+                    break
+                }
+                catch [System.IO.IOException] {
+                    continue
+                }
+            }
+            if (-not $slotAcquired) { throw 'No available shared execution lease slots remain.' }
             Test-RepositoryExecutionLeaseUnixMode -Path $leasePath -Mode $sharedExecutionLeaseFileMode
         }
         elseif ($privateLease) {
@@ -408,12 +470,12 @@ function Enter-RepositoryExecutionLease {
     try {
         $metadataBytes = [System.Text.Encoding]::UTF8.GetBytes($metadata)
         if ($sharedLease) {
-            $stream.Position = $leaseOffset
+            Write-RepositoryExecutionLeaseSlotMetadata -Stream $stream -Offset $leaseOffset -Metadata $metadata
         }
         else {
             $stream.SetLength(0)
+            $stream.Write($metadataBytes, 0, $metadataBytes.Length)
         }
-        $stream.Write($metadataBytes, 0, $metadataBytes.Length)
         $stream.Flush($true)
         return [pscustomobject]@{
             Path = $leasePath
