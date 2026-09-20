@@ -8,5 +8,9 @@ internal sealed class InjectedPropertyFixture
     public InjectedPropertyFixture(IClockFixture clock) => Clock = clock;
 
     /// <summary>Gets the injected dependency.</summary>
-    internal IClockFixture Clock { get; }
+    private IClockFixture Clock { get; }
+
+    /// <summary>Reads the dependency so the fixture remains executable.</summary>
+    /// <returns>The captured dependency.</returns>
+    public IClockFixture GetClock() => Clock;
 }

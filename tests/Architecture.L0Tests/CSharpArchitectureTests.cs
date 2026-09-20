@@ -43,7 +43,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                 continue;
             }
 
-            foreach (FieldInfo field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+            foreach (FieldInfo field in GetInstanceFields(type))
             {
                 if (field.IsStatic || !IsDependencyFieldType(field.FieldType))
                 {
@@ -57,13 +57,20 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                     string propertyName = field.Name.StartsWith('<') && propertyEnd > 1
                         ? field.Name.Substring(1, propertyEnd - 1)
                         : string.Empty;
-                    property = type.GetProperty(
+                    property = field.DeclaringType?.GetProperty(
                         propertyName,
                         BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-                    if (property?.SetMethod is null)
-                    {
-                        continue;
-                    }
+                }
+                else
+                {
+                    property = field.DeclaringType?.GetProperties(
+                            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                        .FirstOrDefault(candidate => candidate.SetMethod is not null && MethodStoresField(candidate.SetMethod, field));
+                }
+
+                if (property?.SetMethod is null && property?.GetMethod?.IsPrivate == true)
+                {
+                    continue;
                 }
 
                 foreach (ConstructorInfo constructor in type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
@@ -309,10 +316,70 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
 
     private static bool IsDependencyFieldType(Type fieldType)
     {
-        return fieldType.IsInterface ||
-               fieldType.IsAbstract ||
-               (fieldType.IsGenericType &&
-                fieldType.GetGenericArguments().Any(argument => argument.IsInterface || argument.IsAbstract));
+        if (fieldType.IsInterface || fieldType.IsAbstract)
+        {
+            return true;
+        }
+
+        if (fieldType.IsArray)
+        {
+            return fieldType.GetElementType() is { } elementType && IsDependencyFieldType(elementType);
+        }
+
+        return fieldType.IsGenericType && fieldType.GetGenericArguments().Any(IsDependencyFieldType);
+    }
+
+    private static IEnumerable<FieldInfo> GetInstanceFields(Type type)
+    {
+        for (Type? current = type; current is not null; current = current.BaseType)
+        {
+            foreach (FieldInfo field in current.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+            {
+                yield return field;
+            }
+        }
+    }
+
+    private static bool MethodStoresField(MethodBase method, FieldInfo targetField)
+    {
+        byte[]? il = method.GetMethodBody()?.GetILAsByteArray();
+        if (il is null)
+        {
+            return false;
+        }
+
+        int offset = 0;
+        while (offset < il.Length)
+        {
+            OpCode opcode;
+            byte first = il[offset++];
+            opcode = first == 0xFE
+                ? MultiByteOpCodes[il[offset++]]
+                : SingleByteOpCodes[first];
+
+            if (opcode == OpCodes.Stfld && offset + 4 <= il.Length)
+            {
+                try
+                {
+                    FieldInfo? storedField = method.Module.ResolveField(
+                        BitConverter.ToInt32(il, offset),
+                        method.DeclaringType?.GetGenericArguments(),
+                        Type.EmptyTypes);
+                    if (storedField == targetField)
+                    {
+                        return true;
+                    }
+                }
+                catch (ArgumentException)
+                {
+                    // An unresolved metadata token cannot prove the field assignment.
+                }
+            }
+
+            offset += GetOperandSize(opcode, il, offset);
+        }
+
+        return false;
     }
 
     private static OpCode[] CreateSingleByteOpCodes()

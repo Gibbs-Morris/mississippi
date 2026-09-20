@@ -20,22 +20,28 @@ public sealed class CSharpArchitectureRuleTests
     {
         IClockFixture clock = null!;
         _ = new InjectedFieldFixture(clock).GetClock();
-        _ = new InjectedPropertyFixture(clock).Clock;
+        _ = new InjectedPropertyFixture(clock).GetClock();
         _ = new SettableInjectedPropertyFixture(clock).Clock;
+        _ = new ManualSettableInjectedPropertyFixture(clock).GetClock();
         _ = new OrdinaryStateFixture(new List<string>()).Count;
         _ = new PrimaryConstructorFixture(clock).GetClock();
         _ = new FactoryAssignmentFixture(clock).GetClock();
         _ = new WrappedInjectedFieldFixture(new Lazy<IClockFixture>(() => clock)).GetClock();
+        _ = new NestedWrappedInjectedFieldFixture(new Lazy<IClockFixture[]>(() => [clock])).GetClock();
+        _ = new InheritedInjectedFieldFixture(clock).GetClock();
         IReadOnlyList<string> violations = CSharpArchitectureTests.FindConstructorInjectedFields(
-            [typeof(InjectedFieldFixture), typeof(InjectedPropertyFixture), typeof(SettableInjectedPropertyFixture), typeof(OrdinaryStateFixture), typeof(PrimaryConstructorFixture), typeof(FactoryAssignmentFixture), typeof(WrappedInjectedFieldFixture)]);
+            [typeof(InjectedFieldFixture), typeof(InjectedPropertyFixture), typeof(SettableInjectedPropertyFixture), typeof(ManualSettableInjectedPropertyFixture), typeof(OrdinaryStateFixture), typeof(PrimaryConstructorFixture), typeof(FactoryAssignmentFixture), typeof(WrappedInjectedFieldFixture), typeof(NestedWrappedInjectedFieldFixture), typeof(InheritedInjectedFieldFixture), typeof(InheritedInjectedFieldBase)]);
 
         Assert.Contains(violations, value => value.EndsWith("InjectedFieldFixture.clock", System.StringComparison.Ordinal));
         Assert.DoesNotContain(violations, value => value.StartsWith(typeof(InjectedPropertyFixture).FullName + ".", System.StringComparison.Ordinal));
         Assert.Contains(violations, value => value.Contains("SettableInjectedPropertyFixture", System.StringComparison.Ordinal));
+        Assert.Contains(violations, value => value.Contains("ManualSettableInjectedPropertyFixture", System.StringComparison.Ordinal));
         Assert.DoesNotContain(violations, value => value.Contains("OrdinaryStateFixture", System.StringComparison.Ordinal));
         Assert.Contains(violations, value => value.Contains("PrimaryConstructorFixture", System.StringComparison.Ordinal));
         Assert.DoesNotContain(violations, value => value.Contains("FactoryAssignmentFixture", System.StringComparison.Ordinal));
         Assert.Contains(violations, value => value.Contains("WrappedInjectedFieldFixture", System.StringComparison.Ordinal));
+        Assert.Contains(violations, value => value.Contains("NestedWrappedInjectedFieldFixture", System.StringComparison.Ordinal));
+        Assert.Contains(violations, value => value.Contains("InheritedInjectedFieldFixture", System.StringComparison.Ordinal));
     }
 
     /// <summary>
