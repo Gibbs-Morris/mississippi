@@ -66,19 +66,17 @@ function Release-SharedRepositoryExecutionLeaseStream {
     [CmdletBinding()]
     param([Parameter(Mandatory)][object]$State)
 
-    $dispose = $false
     [System.Threading.Monitor]::Enter($sharedExecutionLeaseStreamGate)
     try {
         $State.RefCount--
         if ($State.RefCount -le 0) {
-            $sharedExecutionLeaseStreamStates.Remove($State.Key)
-            $dispose = $true
+            try { $State.Stream.Dispose() }
+            finally { $sharedExecutionLeaseStreamStates.Remove($State.Key) }
         }
     }
     finally {
         [System.Threading.Monitor]::Exit($sharedExecutionLeaseStreamGate)
     }
-    if ($dispose) { $State.Stream.Dispose() }
 }
 
 function Get-RepositoryExecutionLeaseHash {

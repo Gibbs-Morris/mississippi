@@ -66,8 +66,7 @@ try {
     $staleProcesses = Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -in $staleProcessNames }
     if ($staleProcesses) {
         if ($ForceCleanup.IsPresent) {
-            Write-Host "Stopping stale Spring processes..." -ForegroundColor Yellow
-            $staleProcesses | Stop-Process -Force
+            throw 'Force cleanup is unavailable because process-name matches cannot be proven to belong to this worktree. Stop only processes launched from this checkout, then retry.'
         } else {
             Write-Warning "Detected existing Spring processes. Re-run with -ForceCleanup to stop them automatically."
         }
