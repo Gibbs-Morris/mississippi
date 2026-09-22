@@ -71,7 +71,7 @@ internal sealed class InletSignalRActionEffect
         TimeProvider = timeProvider ?? TimeProvider.System;
 
         // Subscribe to projection update notifications from the server
-        hubCallbackRegistration = hubConnectionProvider.RegisterHandler<string, string, long>(
+        hubCallbackRegistration = HubConnectionProvider.RegisterHandler<string, string, long>(
             InletHubConstants.ProjectionUpdatedMethod,
             OnProjectionUpdatedAsync);
 
