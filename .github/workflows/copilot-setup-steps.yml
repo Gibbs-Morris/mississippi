@@ -5,6 +5,9 @@ on:
   push:
     paths:
       - .github/workflows/copilot-setup-steps.yml
+      - global.json
+      - samples/LightSpeed/LightSpeed.Client/packages.lock.json
+      - samples/Spring/Spring.Client/packages.lock.json
       - setup.ps1
       - eng/src/agent-scripts/AgentDoctor.psm1
       - eng/setup/markdownlint/package.json
@@ -12,6 +15,9 @@ on:
   pull_request:
     paths:
       - .github/workflows/copilot-setup-steps.yml
+      - global.json
+      - samples/LightSpeed/LightSpeed.Client/packages.lock.json
+      - samples/Spring/Spring.Client/packages.lock.json
       - setup.ps1
       - eng/src/agent-scripts/AgentDoctor.psm1
       - eng/setup/markdownlint/package.json
