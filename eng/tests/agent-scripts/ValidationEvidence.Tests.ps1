@@ -15,6 +15,30 @@ Describe 'Source-bound validation evidence' {
         Set-Content -LiteralPath $inputFile -Value 'class Source { }'
     }
 
+    It 'reads the Git revision in a fresh strict-mode PowerShell process' {
+        $repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../../..')).Path
+        $scriptPath = Join-Path $TestDrive 'fresh-revision.ps1'
+        Set-Content -LiteralPath $scriptPath -Value @'
+param([string]$ModulePath, [string]$RepositoryRoot)
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+Import-Module -Name $ModulePath -Force
+$fingerprint = Get-ValidationSourceFingerprint -RepositoryRoot $RepositoryRoot -InputPath @('global.json')
+if ($fingerprint.Revision -notmatch '^[0-9a-f]{40}$') { throw 'Expected a Git revision.' }
+'@
+        $powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
+
+        $output = @(& $powerShellPath -NoProfile -File $scriptPath $modulePath $repoRoot 2>&1)
+
+        $LASTEXITCODE | Should -Be 0 -Because ($output -join [Environment]::NewLine)
+    }
+
+    It 'uses unknown when the evidence root is not a Git checkout' {
+        $fingerprint = Get-ValidationSourceFingerprint -RepositoryRoot $fixtureRoot -InputPath @($inputFile)
+
+        $fingerprint.Revision | Should -Be 'unknown'
+    }
+
     It 'writes and verifies a passing result from the exact source fingerprint' {
         $run = New-ValidationEvidenceRun -RepositoryRoot $fixtureRoot -Scope 'fixture' -InputPath @($inputFile)
         $artifact = Join-Path $fixtureRoot 'result.trx'
