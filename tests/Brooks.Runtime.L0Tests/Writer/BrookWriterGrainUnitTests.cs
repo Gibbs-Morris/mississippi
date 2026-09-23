@@ -51,7 +51,7 @@ public sealed class BrookWriterGrainUnitTests
                 key,
                 It.IsAny<IReadOnlyList<BrookEvent>>(),
                 null,
-                CancellationToken.None))
+                It.Is<CancellationToken>(token => token == TestContext.Current.CancellationToken)))
             .ThrowsAsync(storageFailure);
         BrookWriterGrain writer = new(
             storage.Object,
@@ -65,7 +65,8 @@ public sealed class BrookWriterGrainUnitTests
                 Id = "uncertain-event",
             },
         ];
-        TimeoutException exception = await Assert.ThrowsAsync<TimeoutException>(() => writer.AppendEventsAsync(events));
+        TimeoutException exception = await Assert.ThrowsAsync<TimeoutException>(() =>
+            writer.AppendEventsAsync(events, cancellationToken: TestContext.Current.CancellationToken));
         Assert.Same(storageFailure, exception);
         context.VerifyGet(value => value.ActivationServices, Times.Never);
     }
@@ -100,7 +101,7 @@ public sealed class BrookWriterGrainUnitTests
                 key,
                 It.IsAny<IReadOnlyList<BrookEvent>>(),
                 null,
-                CancellationToken.None))
+                It.Is<CancellationToken>(token => token == TestContext.Current.CancellationToken)))
             .ReturnsAsync(new BrookPosition(0));
         BrookWriterGrain writer = new(
             storage.Object,
@@ -114,7 +115,9 @@ public sealed class BrookWriterGrainUnitTests
                 Id = "committed-event",
             },
         ];
-        Exception thrown = await Assert.ThrowsAsync(exceptionType, () => writer.AppendEventsAsync(events));
+        Exception thrown = await Assert.ThrowsAsync(
+            exceptionType,
+            () => writer.AppendEventsAsync(events, cancellationToken: TestContext.Current.CancellationToken));
         Assert.Same(failure, thrown);
         storage.VerifyAll();
     }
@@ -190,7 +193,7 @@ public sealed class BrookWriterGrainUnitTests
                 key,
                 It.IsAny<IReadOnlyList<BrookEvent>>(),
                 new BrookPosition(4),
-                CancellationToken.None))
+                It.Is<CancellationToken>(token => token == TestContext.Current.CancellationToken)))
             .ReturnsAsync(new BrookPosition(5));
         BrookWriterGrain writer = new(
             storage.Object,
@@ -205,7 +208,7 @@ public sealed class BrookWriterGrainUnitTests
             },
         ];
         BrookCursorPublicationException exception = await Assert.ThrowsAsync<BrookCursorPublicationException>(() =>
-            writer.AppendEventsAsync(events, new BrookPosition(4)));
+            writer.AppendEventsAsync(events, new BrookPosition(4), TestContext.Current.CancellationToken));
         Assert.Equal(5, exception.Position.Value);
         KeyNotFoundException streamFailure = Assert.IsType<KeyNotFoundException>(exception.InnerException);
         Assert.Same(publicationFailure, streamFailure.InnerException);
@@ -214,7 +217,7 @@ public sealed class BrookWriterGrainUnitTests
                 key,
                 It.IsAny<IReadOnlyList<BrookEvent>>(),
                 new BrookPosition(4),
-                CancellationToken.None),
+                It.Is<CancellationToken>(token => token == TestContext.Current.CancellationToken)),
             Times.Once);
     }
 
@@ -239,7 +242,7 @@ public sealed class BrookWriterGrainUnitTests
             context.Object,
             Options.Create(new BrookProviderOptions()));
         KeyNotFoundException exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            writer.PublishCursorAsync(new(5)));
+            writer.PublishCursorAsync(new(5), TestContext.Current.CancellationToken));
         Assert.Same(publicationFailure, exception.InnerException);
         storage.VerifyNoOtherCalls();
         logger.Verify(
@@ -280,7 +283,7 @@ public sealed class BrookWriterGrainUnitTests
                 null))
             .Returns(Task.CompletedTask);
         BrookWriterGrain writer = new(storage.Object, logger.Object, context.Object, Options.Create(options));
-        await writer.PublishCursorAsync(new(5));
+        await writer.PublishCursorAsync(new(5), TestContext.Current.CancellationToken);
         stream.VerifyAll();
         storage.VerifyNoOtherCalls();
         logger.Verify(
@@ -307,7 +310,8 @@ public sealed class BrookWriterGrainUnitTests
             NullLogger<BrookWriterGrain>.Instance,
             context.Object,
             Options.Create(new BrookProviderOptions()));
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => writer.PublishCursorAsync(new(-1)));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            writer.PublishCursorAsync(new(-1), TestContext.Current.CancellationToken));
         storage.VerifyNoOtherCalls();
         context.VerifyNoOtherCalls();
     }
