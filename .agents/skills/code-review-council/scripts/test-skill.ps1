@@ -57,6 +57,46 @@ try {
     Assert-Crc ($validatedReview.status -eq 'PASS') 'complete review did not produce PASS'
     Assert-Crc ((Get-Content -LiteralPath $markdownReview -Raw) -match 'staged scenario' -and (Get-Content -LiteralPath $markdownReview -Raw) -match 'test evidence') 'Markdown review omitted finding evidence'
 
+    $invalidReview = Join-Path $root 'invalid-review.json'; $invalidLedger = Join-Path $root 'invalid-ledger.json'; $invalidOutput = Join-Path $root 'invalid-publication.json'
+    Write-CrcJson -Path $invalidReview -Value ([ordered]@{schema_version=$script:CrcSchemaVersion;status='PASS';snapshot_id=$scopeObject.snapshot_id;scope_manifest=$scopeObject;reviewers=@();findings=@();dispositions=@();execution=[ordered]@{reviewer_count=0;required_reviewer_count=10;adjudicator='test-coordinator';adjudicated_at_utc=(Get-CrcUtcNow);adjudication_snapshot_id=$scopeObject.snapshot_id};publication=[ordered]@{status='not-requested'};errors=@()})
+    & pwsh -NoProfile -File (Join-Path $PSScriptRoot 'publish-review.ps1') -Review $invalidReview -Provider mock -Ledger $invalidLedger -Output $invalidOutput
+    $invalidPublication = Get-Content -LiteralPath $invalidOutput -Raw | ConvertFrom-Json
+    Assert-Crc ($LASTEXITCODE -eq 2 -and $invalidPublication.status -eq 'blocked' -and $invalidPublication.error -match 'all ten reviewer records') 'publisher accepted an incomplete PASS result'
+    Assert-Crc (-not (Test-Path -LiteralPath $invalidLedger)) 'invalid review changed the publication ledger'
+
+    $readOnlyOutput = Join-Path $root 'read-only-output.json'; Set-Content -LiteralPath $readOnlyOutput -Value 'existing' -Encoding utf8
+    (Get-Item -LiteralPath $readOnlyOutput -Force).IsReadOnly = $true
+    $fakeBin = Join-Path $root 'fake-bin'; New-Item -ItemType Directory -Path $fakeBin -Force | Out-Null
+    $fakeGhLog = Join-Path $root 'fake-gh-called.txt'
+    $oldPath = $env:PATH; $oldPathExt = $env:PATHEXT; $oldGhLog = $env:CRC_GH_STUB_LOG
+    try {
+        $env:CRC_GH_STUB_LOG = $fakeGhLog
+        if ([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) {
+            $fakeGhPath = Join-Path $fakeBin 'gh.cmd'
+            Set-Content -LiteralPath $fakeGhPath -Value @('@echo off','echo called>"%CRC_GH_STUB_LOG%"','exit /b 97') -Encoding ascii
+            $env:PATH = "$fakeBin;$oldPath"
+            $env:PATHEXT = ".CMD;$oldPathExt"
+        }
+        else {
+            $fakeGhPath = Join-Path $fakeBin 'gh'
+            [System.IO.File]::WriteAllText($fakeGhPath,"#!/usr/bin/env pwsh`nSet-Content -LiteralPath `$env:CRC_GH_STUB_LOG -Value 'called' -Encoding utf8`nexit 97`n",[System.Text.UTF8Encoding]::new($false))
+            [System.IO.File]::SetUnixFileMode($fakeGhPath,[System.IO.UnixFileMode]::UserRead -bor [System.IO.UnixFileMode]::UserWrite -bor [System.IO.UnixFileMode]::UserExecute)
+            $env:PATH = "$fakeBin$([System.IO.Path]::PathSeparator)$oldPath"
+        }
+        $resolvedGh = Get-Command gh -ErrorAction Stop | Select-Object -First 1
+        Assert-Crc ($resolvedGh.Source -eq $fakeGhPath) 'GitHub test did not resolve the fake gh command'
+        $preflightOutput = & pwsh -NoProfile -File (Join-Path $PSScriptRoot 'publish-review.ps1') -Review $review -Provider github -Repo 'example.invalid/council-test' -Pr 1 -Execute -Output $readOnlyOutput 2>&1
+        $preflightExit = $LASTEXITCODE
+    }
+    finally {
+        $env:PATH = $oldPath; $env:PATHEXT = $oldPathExt
+        if ($null -eq $oldGhLog) { Remove-Item Env:CRC_GH_STUB_LOG -ErrorAction SilentlyContinue } else { $env:CRC_GH_STUB_LOG = $oldGhLog }
+        $readOnlyItem = Get-Item -LiteralPath $readOnlyOutput -Force; $readOnlyItem.IsReadOnly = $false
+    }
+    $preflightText = $preflightOutput -join [Environment]::NewLine
+    Assert-Crc ($preflightExit -eq 2 -and $preflightText -match 'read-only') 'publisher did not reject an unwritable output before GitHub access'
+    Assert-Crc (-not (Test-Path -LiteralPath $fakeGhLog)) 'publisher invoked gh before validating an unwritable output path'
+
     $noChangeMaterial = [ordered]@{ mode='branch'; status='NO_CHANGES'; base=('a'*40); head=('a'*40); merge_base=('a'*40); changed_files=@(); patch=[ordered]@{sha256=('0'*64);bytes=0;encoding='base64';content_base64=''} }
     $noChange = [ordered]@{schema_version=$script:CrcSchemaVersion;mode='branch';status='NO_CHANGES';snapshot_id=(Get-CrcHashJson $noChangeMaterial);repository=[ordered]@{root=$repo};captured_at_utc=(Get-CrcUtcNow);changed_files=@();snapshot_material=$noChangeMaterial}
     $noChangePath = Join-Path $root 'no-change.json'; $emptyReviewers = Join-Path $root 'empty.jsonl'; $emptyAdjudication=Join-Path $root 'empty-adjudication.json'; $noChangeOutput=Join-Path $root 'no-change-result.json'
