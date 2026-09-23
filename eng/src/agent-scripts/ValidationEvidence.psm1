@@ -6,9 +6,9 @@ $ErrorActionPreference = 'Stop'
 function Get-ValidationRepositoryRevision {
     param([Parameter(Mandatory)][string]$RepositoryRoot)
     $root = $RepositoryRoot.Replace('\', '/')
-    $output = @(& git -c "safe.directory=$root" -C $RepositoryRoot rev-parse HEAD 2>$null | Select-Object -First 1)
-    if ($LASTEXITCODE -ne 0) { return 'unknown' }
-    return ([string]$output).Trim()
+    $output = @(& git -c "safe.directory=$root" -C $RepositoryRoot rev-parse HEAD 2>$null)
+    if ($LASTEXITCODE -ne 0 -or $output.Count -ne 1) { return 'unknown' }
+    return ([string]$output[0]).Trim()
 }
 
 function Get-ValidationRelativePath {
