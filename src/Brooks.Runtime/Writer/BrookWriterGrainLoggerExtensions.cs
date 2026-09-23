@@ -98,6 +98,24 @@ internal static partial class BrookWriterGrainLoggerExtensions
     );
 
     /// <summary>
+    ///     Logs when a cursor publication attempt is canceled.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="brookKey">The brook key.</param>
+    /// <param name="position">The requested cursor position.</param>
+    /// <param name="elapsedMs">The publication duration in milliseconds.</param>
+    [LoggerMessage(
+        EventId = 9,
+        Level = LogLevel.Information,
+        Message = "Cursor publication canceled for brook '{BrookKey}' at position {Position} ({ElapsedMs}ms)")]
+    public static partial void CursorPublicationCanceled(
+        this ILogger logger,
+        BrookKey brookKey,
+        long position,
+        long elapsedMs
+    );
+
+    /// <summary>
     ///     Logs a cursor publication failure after an append has committed.
     /// </summary>
     /// <param name="logger">The logger instance.</param>

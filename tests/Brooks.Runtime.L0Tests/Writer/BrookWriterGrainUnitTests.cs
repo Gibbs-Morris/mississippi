@@ -324,18 +324,31 @@ public sealed class BrookWriterGrainUnitTests
     [Fact]
     public async Task PublishCursorAsyncRespectsCancellationBeforePublication()
     {
+        BrookKey key = new("test", "cancelled-republication");
         Mock<IBrookStorageWriter> storage = new(MockBehavior.Strict);
         Mock<IGrainContext> context = new(MockBehavior.Strict);
+        Mock<ILogger<BrookWriterGrain>> logger = new();
+        logger.Setup(value => value.IsEnabled(LogLevel.Information)).Returns(true);
         using CancellationTokenSource cancellation = new();
         await cancellation.CancelAsync();
+        context.SetupGet(value => value.GrainId).Returns(GrainId.Create("brook-writer", key.ToString()));
         BrookWriterGrain writer = new(
             storage.Object,
-            NullLogger<BrookWriterGrain>.Instance,
+            logger.Object,
             context.Object,
             Options.Create(new BrookProviderOptions()));
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
             writer.PublishCursorAsync(new(5), cancellation.Token));
         storage.VerifyNoOtherCalls();
-        context.VerifyNoOtherCalls();
+        context.VerifyGet(value => value.GrainId, Times.Once);
+        context.VerifyGet(value => value.ActivationServices, Times.Never);
+        logger.Verify(
+            value => value.Log(
+                LogLevel.Information,
+                It.Is<EventId>(id => id.Id == 9),
+                It.Is<It.IsAnyType>((state, type) => HasElapsedTime(state)),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 }

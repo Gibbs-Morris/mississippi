@@ -126,12 +126,12 @@ internal sealed class BrookWriterGrain
             throw new ArgumentOutOfRangeException(nameof(position), "The cursor position must be non-negative.");
         }
 
-        cancellationToken.ThrowIfCancellationRequested();
         BrookKey key = BrookKey.FromString(this.GetPrimaryKeyString());
-        Logger.PublishingCursorMoved(key, position.Value);
         Stopwatch publication = Stopwatch.StartNew();
+        Logger.PublishingCursorMoved(key, position.Value);
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             IAsyncStream<BrookCursorMovedEvent> stream = this
                 .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
                 .GetStream<BrookCursorMovedEvent>(
@@ -141,6 +141,12 @@ internal sealed class BrookWriterGrain
             await stream.OnNextAsync(new(this.GetPrimaryKeyString(), position));
             publication.Stop();
             Logger.CursorMovedEventPublished(key, position.Value, publication.ElapsedMilliseconds);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            publication.Stop();
+            Logger.CursorPublicationCanceled(key, position.Value, publication.ElapsedMilliseconds);
+            throw;
         }
         catch (Exception exception) when (exception is not (OutOfMemoryException or StackOverflowException
                                               or ThreadInterruptedException))
