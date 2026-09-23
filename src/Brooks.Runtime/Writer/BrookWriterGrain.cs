@@ -121,16 +121,16 @@ internal sealed class BrookWriterGrain
         CancellationToken cancellationToken = default
     )
     {
-        if (position.Value < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(position), "The cursor position must be non-negative.");
-        }
-
         BrookKey key = BrookKey.FromString(this.GetPrimaryKeyString());
         Stopwatch publication = Stopwatch.StartNew();
         Logger.PublishingCursorMoved(key, position.Value);
         try
         {
+            if (position.Value < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(position), "The cursor position must be non-negative.");
+            }
+
             cancellationToken.ThrowIfCancellationRequested();
             IAsyncStream<BrookCursorMovedEvent> stream = this
                 .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)

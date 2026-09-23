@@ -303,18 +303,31 @@ public sealed class BrookWriterGrainUnitTests
     [Fact]
     public async Task PublishCursorAsyncRejectsUnsetPosition()
     {
+        BrookKey key = new("test", "unset-position-publication");
         Mock<IBrookStorageWriter> storage = new(MockBehavior.Strict);
         Mock<IGrainContext> context = new(MockBehavior.Strict);
+        Mock<ILogger<BrookWriterGrain>> logger = new();
+        logger.Setup(value => value.IsEnabled(LogLevel.Error)).Returns(true);
+        context.SetupGet(value => value.GrainId).Returns(GrainId.Create("brook-writer", key.ToString()));
         BrookWriterGrain writer = new(
             storage.Object,
-            NullLogger<BrookWriterGrain>.Instance,
+            logger.Object,
             context.Object,
             Options.Create(new BrookProviderOptions()));
         ArgumentOutOfRangeException exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             writer.PublishCursorAsync(new(-1), TestContext.Current.CancellationToken));
         Assert.Equal("position", exception.ParamName);
+        logger.Verify(
+            value => value.Log(
+                LogLevel.Error,
+                It.Is<EventId>(id => id.Id == 8),
+                It.Is<It.IsAnyType>((state, type) => HasElapsedTime(state)),
+                exception,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
         storage.VerifyNoOtherCalls();
-        context.VerifyNoOtherCalls();
+        context.VerifyGet(value => value.GrainId, Times.Once);
+        context.VerifyGet(value => value.ActivationServices, Times.Never);
     }
 
     /// <summary>
