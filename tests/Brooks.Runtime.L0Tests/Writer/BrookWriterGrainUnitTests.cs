@@ -310,8 +310,9 @@ public sealed class BrookWriterGrainUnitTests
             NullLogger<BrookWriterGrain>.Instance,
             context.Object,
             Options.Create(new BrookProviderOptions()));
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        ArgumentOutOfRangeException exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             writer.PublishCursorAsync(new(-1), TestContext.Current.CancellationToken));
+        Assert.Equal("position", exception.ParamName);
         storage.VerifyNoOtherCalls();
         context.VerifyNoOtherCalls();
     }

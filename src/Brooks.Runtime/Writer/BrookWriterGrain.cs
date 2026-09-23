@@ -121,7 +121,11 @@ internal sealed class BrookWriterGrain
         CancellationToken cancellationToken = default
     )
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(position.Value);
+        if (position.Value < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(position), "The cursor position must be non-negative.");
+        }
+
         cancellationToken.ThrowIfCancellationRequested();
         BrookKey key = BrookKey.FromString(this.GetPrimaryKeyString());
         Logger.PublishingCursorMoved(key, position.Value);
