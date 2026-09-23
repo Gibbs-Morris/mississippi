@@ -72,6 +72,13 @@ For worktree mode, write the manifest outside the reviewed repository; the
 collector rejects an in-repository output path to keep its own artifact out of
 the evidence set.
 
+Git capture disables replacement objects and repository-configured fsmonitor
+commands, preserves raw patch bytes, and includes gitlinks despite local diff
+configuration. It blocks unsafe repository roots, ambiguous merge bases,
+missing PR commits, and untracked special files rather than following or
+opening them as ordinary files. Full object IDs may be SHA-1 or SHA-256
+according to the selected repository.
+
 ### 2. Dispatch isolated reviewers
 
 Run the ten personas in [personas.md](references/personas.md). Each reviewer

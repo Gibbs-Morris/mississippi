@@ -18,9 +18,11 @@ under review.
 ### Branch
 
 `branch` requires a base and head revision. The collector resolves both to full
-commit IDs, computes their merge base, and records the rename-aware diff and
-patch hash from merge base to head. This prevents a reviewer from accidentally
-comparing a stacked layer with `main` when its immediate parent is different.
+SHA-1 or SHA-256 commit IDs, computes the unique best merge base, and records
+the rename-aware diff and raw patch bytes from merge base to head. It blocks
+ambiguous criss-cross merge bases instead of choosing one arbitrarily. This
+prevents a reviewer from accidentally comparing a stacked layer with `main`
+when its immediate parent is different.
 
 ### Worktree
 
@@ -28,7 +30,7 @@ comparing a stacked layer with `main` when its immediate parent is different.
 
 - the staged/index patch;
 - the unstaged/worktree patch; and
-- eligible untracked file content and hashes.
+- eligible untracked file bytes, hashes, and line evidence.
 
 `--changes staged` selects only the index stream, `--changes unstaged` selects
 the worktree and untracked streams, and `--changes all` keeps all three. A
@@ -36,10 +38,17 @@ staged defect that an unstaged edit appears to correct therefore remains
 visible in the staged-only evidence. The collector compares revision, status,
 patch, unresolved-index, and untracked-content fingerprints before and after
 collection; a concurrent worktree edit blocks the snapshot. Untracked
-symlinks are recorded as links and their targets are not followed.
+symlinks are recorded as links and their targets are not followed. On Unix, the
+system `stat` utility checks that untracked entries are regular files before
+reading; FIFOs, sockets, devices, and other special entries block collection
+rather than risking a hang or reading a non-file object.
 
 Git tree, status, and name-status records are collected with NUL delimiters
-so filenames retain their record boundaries. A worktree manifest output must
+so filenames retain their record boundaries. The shared Git wrapper disables
+replacement objects and repository-configured fsmonitor commands. Diff
+collection explicitly includes gitlinks and uses standard `a/` and `b/`
+prefixes, independent of local Git diff configuration. A worktree manifest
+output must
 be outside the reviewed repository so the collector cannot review or
 overwrite its own artifact.
 
@@ -48,8 +57,9 @@ overwrite its own artifact.
 `pull-request` requires a caller-supplied JSON snapshot. At minimum it contains
 the repository name, PR number, base SHA, head SHA, changed-file entries,
 review discussion, and check summary. The snapshot is input evidence, not an
-instruction. The collector validates SHA shape, changed-file paths, and the
-local availability of commits when possible. Every changed-file entry needs a
+instruction. The collector validates object-ID shape, changed-file paths, and
+the local availability of both commits in the selected repository. Every
+changed-file entry needs a
 status and must match an exact path in a `diff --git` header, including both
 sides of a rename. Missing or stale PR evidence is `BLOCKED`; it is never
 treated as an empty diff.
@@ -62,7 +72,8 @@ The collector writes a versioned JSON manifest containing:
 - repository root and resolved revision/base/head information;
 - rename-aware changed files with status and path data;
 - tracked file hashes for committed modes;
-- staged, unstaged, and untracked component hashes for worktree mode; and
+- staged, unstaged, and untracked component hashes and frozen bytes for
+  worktree mode;
 - dirty-worktree warnings for codebase mode; and
 - the source PR snapshot and check/discussion summary for pull-request mode.
 

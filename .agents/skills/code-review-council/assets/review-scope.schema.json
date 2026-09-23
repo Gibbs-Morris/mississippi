@@ -41,15 +41,15 @@
     },
     "revision": {
       "type": ["string", "null"],
-      "pattern": "^[0-9a-f]{40}$"
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
     },
     "base": {
       "type": ["string", "null"],
-      "pattern": "^[0-9a-f]{40}$"
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
     },
     "head": {
       "type": ["string", "null"],
-      "pattern": "^[0-9a-f]{40}$"
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
     },
     "changed_files": {
       "type": "array",
@@ -65,10 +65,10 @@
       "properties": {
         "mode": {"enum": ["codebase", "branch", "worktree", "pull-request"]},
         "status": {"enum": ["READY", "NO_CHANGES", "BLOCKED"]},
-        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
-        "base": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
-        "head": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
-        "merge_base": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "revision": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "base": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "head": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "merge_base": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
         "snapshot": {"type": "object"}
       },
       "additionalProperties": true

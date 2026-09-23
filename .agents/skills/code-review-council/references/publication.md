@@ -15,7 +15,9 @@ Before a write, the publisher must have:
   PR number, base SHA, and head SHA, with the expected base and head supplied;
 - every finding path present in the live PR file list and every finding line
   present in the live PR diff response whose file headers match that file list;
-  and
+- distinct resolved paths for the review input, optional Markdown input,
+  optional ledger, and optional output, so a status write cannot replace its
+  evidence or idempotency state; and
 - an idempotency key derived from the snapshot ID, result status, and finding
   fingerprints.
 
@@ -30,6 +32,11 @@ returned file set and reported finding anchors; it does not claim to detect
 omitted content when a partial response still contains those headers and
 hunks.
 
+The validator-generated Markdown escapes reviewer- and adjudicator-controlled
+fields before rendering them. A caller-supplied `-Markdown` file is treated as
+explicitly authored publication content and is included verbatim with the
+marker; do not use that option to forward unsanitized reviewer text.
+
 ## Idempotency
 
 The comment contains a machine-readable marker:
@@ -38,10 +45,12 @@ The comment contains a machine-readable marker:
 <!-- code-review-council:v1:<idempotency-key> -->
 ```
 
-The publisher searches existing comments for that exact marker before posting.
-If it exists, the result is `already-published`; it does not create a second
-comment. The local mock provider uses the same ledger behavior so retries can
-be tested offline.
+The publisher searches existing comments for the exact marker and the generated
+review body (ignoring trailing whitespace) before posting. This remains
+idempotent if credentials rotate to another account, while a marker pasted
+into an unrelated comment is not enough to suppress publication. If a match exists, the result is
+`already-published`; it does not create a second comment. The local mock
+provider uses the same ledger behavior so retries can be tested offline.
 
 ## Provider behavior
 

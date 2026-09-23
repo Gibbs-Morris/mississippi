@@ -168,7 +168,7 @@ function Invoke-CrcGit {
     )
 
     $safeDirectory = $Repository.Replace('\', '/')
-    $gitArguments = @('-c', "safe.directory=$safeDirectory", '-C', $Repository) + $Arguments
+    $gitArguments = @('--no-replace-objects', '-c', "safe.directory=$safeDirectory", '-c', 'core.fsmonitor=false', '-C', $Repository) + $Arguments
     $errorPath = [System.IO.Path]::GetTempFileName()
     try {
         $output = & git @gitArguments 2> $errorPath
@@ -191,7 +191,7 @@ function Invoke-CrcGitBytes {
     )
 
     $safeDirectory = $Repository.Replace('\', '/')
-    $gitArguments = @('-c', "safe.directory=$safeDirectory", '-C', $Repository) + $Arguments
+    $gitArguments = @('--no-replace-objects', '-c', "safe.directory=$safeDirectory", '-c', 'core.fsmonitor=false', '-C', $Repository) + $Arguments
     $outputPath = [System.IO.Path]::GetTempFileName()
     $errorPath = [System.IO.Path]::GetTempFileName()
     try {
@@ -358,7 +358,7 @@ function Resolve-CrcRepository {
 
     $requested = Resolve-CrcSafePath -Path $Path -Label 'repository' -MustExist -Directory
     $topLevel = (Invoke-CrcGit -Repository $requested -Arguments @('rev-parse', '--show-toplevel')).Trim()
-    return [System.IO.Path]::GetFullPath($topLevel)
+    return Resolve-CrcSafePath -Path $topLevel -Label 'repository root' -MustExist -Directory
 }
 
 function Assert-CrcRevisionName {
@@ -377,10 +377,23 @@ function Resolve-CrcCommit {
 
     $safeRevision = Assert-CrcRevisionName -Revision $Revision
     $resolved = (Invoke-CrcGit -Repository $Repository -Arguments @('rev-parse', '--verify', '--end-of-options', "$safeRevision^{commit}")).Trim()
-    if ($resolved -notmatch '^[0-9a-f]{40}$') {
+    $objectIdLength = Get-CrcObjectIdLength -Repository $Repository
+    if ($resolved -notmatch "^[0-9a-f]{$objectIdLength}$") {
         throw "Revision did not resolve to a full commit SHA: $Revision"
     }
     return $resolved
+}
+
+function Get-CrcObjectIdLength {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Repository)
+
+    $format = (Invoke-CrcGit -Repository $Repository -Arguments @('rev-parse','--show-object-format=storage')).Trim()
+    switch ($format) {
+        'sha1' { return 40 }
+        'sha256' { return 64 }
+        default { throw "Git repository uses an unsupported object format: $format" }
+    }
 }
 
 function Get-CrcPath {

@@ -15,8 +15,11 @@ Each identical fixture is scored for:
    scope, anchor, disposition, and publication checks.
 
 The fixture records the seeded truth set and the candidate observations for
-each approach. The runner verifies the truth set, computes the metrics, and
-fails if required scenario coverage is missing.
+each approach. Truth fingerprints must be nonempty and unique within each
+case, so duplicates cannot distort recall denominators. The runner verifies
+the truth set, computes the metrics, and fails if required scenario coverage is
+missing. When a Markdown report path is supplied, its parent directory is
+created during output preflight before either result artifact is written.
 
 ## Required scenario coverage
 

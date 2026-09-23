@@ -31,12 +31,22 @@ function Assert-EvaluationDefaults { param([object]$Fixture)
     foreach($name in $script:Approaches){Assert-EvaluationApproach -Approach $Fixture.defaults.$name -Location "defaults.$name"}
 }
 
+function Assert-EvaluationFingerprints { param([object[]]$Values,[string]$Name,[string]$CaseId)
+    $unique = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($value in $Values) {
+        if ($value -isnot [string] -or [string]::IsNullOrWhiteSpace($value)) { throw "$Name contains an empty or non-string fingerprint: $CaseId" }
+        if (-not $unique.Add($value)) { throw "$Name contains duplicate fingerprints: $CaseId" }
+    }
+}
+
 function Assert-EvaluationCase { param([object]$Case)
     if($Case.set -notin @('development','held-out')){throw "unknown evaluation set: $($Case.set)"}
     if($Case.truth -isnot [System.Array]){throw "truth must be an array: $($Case.id)"}
+    Assert-EvaluationFingerprints -Values $Case.truth -Name 'truth' -CaseId $Case.id
     if(Test-EvalProperty $Case 'high_severity_truth'){
         if($Case.high_severity_truth -isnot [System.Array]){throw "high_severity_truth must be an array: $($Case.id)"}
-        if(@($Case.high_severity_truth | Where-Object { $_ -notin $Case.truth }).Count -gt 0){throw "high severity truth is invalid: $($Case.id)"}
+        Assert-EvaluationFingerprints -Values $Case.high_severity_truth -Name 'high_severity_truth' -CaseId $Case.id
+        if(@($Case.high_severity_truth | Where-Object { $_ -cnotin $Case.truth }).Count -gt 0){throw "high severity truth is invalid: $($Case.id)"}
     }
     Assert-EvalBoolean -Object $Case -Name 'trigger_expected' -Location $Case.id
     if(-not (Test-EvalProperty $Case 'approaches')){throw "approaches are missing: $($Case.id)"}
@@ -150,6 +160,11 @@ function Get-Metrics { param([object]$Fixture,[object[]]$Cases,[string]$Name)
     return Complete-MetricTotals -Totals $totals -CaseCount $Cases.Count -Name $Name
 }
 
+function Ensure-EvaluationOutputParent { param([string]$Path)
+    $parent = Split-Path -Parent $Path
+    if ($parent -and -not (Test-Path -LiteralPath $parent -PathType Container)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
+}
+
 try {
     $fixtureSafePath=Resolve-CrcSafePath -Path $FixturesPath -Label 'fixture input' -MustExist
     $requestedOutputPath=Resolve-CrcSafePath -Path $OutputPath -Label 'evaluation output'
@@ -157,6 +172,7 @@ try {
     if(Test-CrcPathEqual -Left $fixtureSafePath -Right $requestedOutputPath){throw 'evaluation output must differ from fixture input'}
     if($requestedMarkdownPath -and (Test-CrcPathEqual -Left $fixtureSafePath -Right $requestedMarkdownPath)){throw 'Markdown output must differ from fixture input'}
     if($requestedMarkdownPath -and (Test-CrcPathEqual -Left $requestedOutputPath -Right $requestedMarkdownPath)){throw 'Markdown output must differ from evaluation output'}
+    if($requestedMarkdownPath){Ensure-EvaluationOutputParent -Path $requestedMarkdownPath}
     $fixture=Get-Fixture -Path $fixtureSafePath; $cases=@($fixture.cases); $setCounts=@{}; foreach($set in @($cases | ForEach-Object { $_.set })){if(-not $setCounts.ContainsKey($set)){$setCounts[$set]=0};$setCounts[$set]++}
     $overall=[ordered]@{}; foreach($name in $script:Approaches){$overall[$name]=Get-Metrics $fixture $cases $name}
     $bySet=[ordered]@{}; foreach($set in $setCounts.Keys){$setMetrics=[ordered]@{}; $setCases=@($cases | Where-Object set -eq $set); foreach($name in $script:Approaches){$setMetrics[$name]=[pscustomobject](Get-Metrics $fixture $setCases $name)}; $bySet[$set]=[pscustomobject]$setMetrics}; $bySet=[pscustomobject]$bySet
