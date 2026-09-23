@@ -73,6 +73,25 @@ Describe 'TaskAutomation module' {
     $second[0].Status | Should -Be 'Skipped'
     }
 
+    It 'warns and continues when an existing task file contains malformed JSON' {
+        $testRepoRoot = Join-Path $TestDrive 'repo-malformed'
+        $pendingDirectory = Join-Path $testRepoRoot '.scratchpad/tasks/pending'
+        New-Item -ItemType Directory -Path $pendingDirectory -Force | Out-Null
+
+        $malformedFilePath = Join-Path $pendingDirectory 'malformed.json'
+        Set-Content -LiteralPath $malformedFilePath -Value '{"autoTaskKey":' -NoNewline
+        $task = New-TaskItem -Category 'coverage' -UniqueKey 'after-malformed' -Title 'Create after malformed task'
+        $warnings = @()
+
+        $results = Sync-AutoTasks -Tasks @($task) -RepoRoot $testRepoRoot -WarningVariable warnings
+
+        $results.Count | Should -Be 1
+        $results[0].Status | Should -Be 'Created'
+        $warnings | Should -HaveCount 1
+        $warnings[0] | Should -Match ([regex]::Escape($malformedFilePath))
+        $warnings[0] | Should -Match 'Failed to parse scratchpad task'
+    }
+
     It 'supports WhatIf mode without writing files' {
         $testRepoRoot = Join-Path $TestDrive 'repo-whatif'
         New-Item -ItemType Directory -Path $testRepoRoot | Out-Null
