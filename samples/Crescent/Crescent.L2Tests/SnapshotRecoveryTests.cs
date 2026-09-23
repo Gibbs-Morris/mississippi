@@ -1,5 +1,3 @@
-using System.Diagnostics.Metrics;
-
 using Mississippi.Brooks.Abstractions;
 using Mississippi.Brooks.Abstractions.Attributes;
 using Mississippi.DomainModeling.Abstractions;
@@ -16,8 +14,6 @@ namespace MississippiSamples.Crescent.L2Tests;
 public sealed class SnapshotRecoveryTests
 #pragma warning restore CA1515
 {
-    private const string SnapshotMeterName = "Mississippi.Tributary.Runtime";
-
     private readonly CrescentFixture fixture;
 
     /// <summary>
@@ -64,73 +60,6 @@ public sealed class SnapshotRecoveryTests
             throw new TimeoutException($"Snapshot version {snapshotKey.Version} was not persisted within 30 seconds.");
         }
     }
-
-    private sealed class SnapshotMetricCapture : IDisposable
-    {
-        private readonly MeterListener listener = new();
-
-        private readonly List<SnapshotMetricMeasurement> measurements = [];
-
-        private readonly object syncLock = new();
-
-        public SnapshotMetricCapture()
-        {
-            listener.InstrumentPublished = (instrument, meterListener) =>
-            {
-                if (instrument.Meter.Name == SnapshotMeterName)
-                {
-                    meterListener.EnableMeasurementEvents(instrument);
-                }
-            };
-            listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
-                Record(instrument.Name, measurement, tags));
-            listener.SetMeasurementEventCallback<int>((instrument, measurement, tags, _) =>
-                Record(instrument.Name, measurement, tags));
-            listener.Start();
-        }
-
-        /// <inheritdoc />
-        public void Dispose() => listener.Dispose();
-
-        public List<SnapshotMetricMeasurement> Snapshot()
-        {
-            lock (syncLock)
-            {
-                return [.. measurements];
-            }
-        }
-
-        private void Record(
-            string instrumentName,
-            long value,
-            ReadOnlySpan<KeyValuePair<string, object?>> tags
-        )
-        {
-            Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
-            foreach (KeyValuePair<string, object?> tag in tags)
-            {
-                tagMap[tag.Key] = tag.Value;
-            }
-
-            lock (syncLock)
-            {
-                measurements.Add(new(instrumentName, value, tagMap));
-            }
-        }
-
-        private void Record(
-            string instrumentName,
-            int value,
-            ReadOnlySpan<KeyValuePair<string, object?>> tags
-        ) =>
-            Record(instrumentName, (long)value, tags);
-    }
-
-    private sealed record SnapshotMetricMeasurement(
-        string InstrumentName,
-        long Value,
-        IReadOnlyDictionary<string, object?> Tags
-    );
 
     /// <summary>
     ///     Verifies a persisted checkpoint is reused after a silo restart and only the event tail is replayed.
