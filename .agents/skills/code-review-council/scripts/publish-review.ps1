@@ -18,7 +18,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'common.ps1')
 
-function Invoke-GhApiJson { param([string[]]$Arguments,[object]$Body)
+function Invoke-GhApiText { param([string[]]$Arguments,[object]$Body)
     $all = @('api','--hostname','github.com') + $Arguments
     $errorPath = [System.IO.Path]::GetTempFileName()
     try {
@@ -31,7 +31,12 @@ function Invoke-GhApiJson { param([string[]]$Arguments,[object]$Body)
     finally {
         if (Test-Path -LiteralPath $errorPath) { Remove-Item -LiteralPath $errorPath -Force }
     }
-    return ($result -join "`n" | ConvertFrom-Json)
+    return ($result -join "`n")
+}
+
+function Invoke-GhApiJson { param([string[]]$Arguments,[object]$Body)
+    $text = Invoke-GhApiText -Arguments $Arguments -Body $Body
+    return ($text | ConvertFrom-Json)
 }
 
 function Get-Marker { param([object]$Review)
@@ -252,14 +257,62 @@ function Assert-LivePullRequest { param([string]$Repository,[int]$Number,[string
     return $live
 }
 
-function Test-LiveAnchors { param([object]$Review,[object[]]$Files)
-    $byPath=@{}
-    foreach($file in $Files){ if($file.filename){$byPath[$file.filename]=$file}; if($file.previous_filename){$byPath[$file.previous_filename]=$file} }
-    foreach($finding in @($Review.findings)){
-        $file=$byPath[[string]$finding.path]; if($null -eq $file){throw "finding path missing from live diff: $($finding.path):$($finding.line)"}
-        if ($null -eq $file.PSObject.Properties['patch'] -or [string]::IsNullOrWhiteSpace([string]$file.patch)) { continue }
-        $found=$false; foreach($match in [regex]::Matches([string]$file.patch,'@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@')){ foreach($start in @([int]$match.Groups[1].Value,[int]$match.Groups[3].Value)){ $count=if($start -eq [int]$match.Groups[1].Value){if($match.Groups[2].Success){[int]$match.Groups[2].Value}else{1}}else{if($match.Groups[4].Success){[int]$match.Groups[4].Value}else{1}}; if([int]$finding.line -ge $start -and [int]$finding.line -lt ($start+$count)){$found=$true} } }; if(-not $found){throw "finding line missing from live diff: $($finding.path):$($finding.line)"}
+function Assert-GitHubReviewTarget { param([object]$Review,[string]$Repository,[int]$Number,[string]$ExpectedBase,[string]$ExpectedHead)
+    $scope = $Review.scope_manifest
+    if ($scope.mode -ne 'pull-request') { throw 'GitHub publication requires a pull-request scope snapshot' }
+    if ([string]::IsNullOrWhiteSpace($ExpectedBase) -or [string]::IsNullOrWhiteSpace($ExpectedHead)) { throw 'GitHub publication requires expected base and head SHAs' }
+    if ($null -eq $scope.snapshot_material.PSObject.Properties['snapshot']) { throw 'hashed pull-request scope snapshot is required for GitHub publication' }
+    if ($null -eq $scope.PSObject.Properties['pull_request']) { throw 'pull-request manifest is required for GitHub publication' }
+    $snapshot = $scope.snapshot_material.snapshot
+    if ((ConvertTo-CrcJson -Value $scope.pull_request) -ne (ConvertTo-CrcJson -Value $snapshot)) { throw 'pull-request manifest differs from its hashed snapshot' }
+    if ($snapshot.repository -isnot [string] -or [string]::IsNullOrWhiteSpace($snapshot.repository)) { throw 'pull-request scope lacks repository identity' }
+    if (-not $snapshot.repository.Equals($Repository,[System.StringComparison]::OrdinalIgnoreCase)) { throw 'requested repository differs from reviewed pull-request snapshot' }
+    if ($snapshot.number -isnot [int] -and $snapshot.number -isnot [long]) { throw 'pull-request scope number must be an integer' }
+    if ([int]$snapshot.number -ne $Number) { throw 'requested pull request differs from reviewed snapshot' }
+    if ($snapshot.base_sha -notmatch '^[0-9a-f]{40}$' -or $snapshot.head_sha -notmatch '^[0-9a-f]{40}$') { throw 'pull-request snapshot lacks full base/head SHAs' }
+    if ($scope.base -ne $snapshot.base_sha -or $scope.head -ne $snapshot.head_sha) { throw 'pull-request manifest revisions differ from its hashed snapshot' }
+    if ($ExpectedBase -ne $scope.base -or $ExpectedHead -ne $scope.head) { throw 'expected base/head differs from reviewed scope' }
+}
+
+function Get-LiveFileMap { param([object[]]$Files)
+    $byPath = [System.Collections.Generic.Dictionary[string,object]]::new([System.StringComparer]::Ordinal)
+    foreach ($file in $Files) { Add-LiveFilePaths -PathMap $byPath -File $file }
+    return $byPath
+}
+
+function Assert-LiveDiffMatchesFiles { param([string]$Diff,[object[]]$Files)
+    if ($Files.Count -ge 3000) { throw 'GitHub file-list limit prevents complete live-diff validation' }
+    $filePaths = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($file in $Files) {
+        $filename = if ($null -ne $file.PSObject.Properties['filename']) { [string]$file.filename } else { '' }
+        $previous = if ($null -ne $file.PSObject.Properties['previous_filename']) { [string]$file.previous_filename } else { '' }
+        if ($filename) { [void]$filePaths.Add((Get-CrcPath -Path $filename)) }
+        if ($previous) { [void]$filePaths.Add((Get-CrcPath -Path $previous)) }
     }
+    $diffPaths = Get-CrcDiffHeaderPaths -DiffText $Diff
+    if ($filePaths.Count -eq 0 -or $diffPaths.Count -ne $filePaths.Count) { throw 'live diff headers do not match the complete PR file list' }
+    foreach ($path in $filePaths) { if (-not $diffPaths.Contains($path)) { throw "live diff is missing PR file $path" } }
+}
+
+function Add-LiveFilePaths { param([System.Collections.Generic.Dictionary[string,object]]$PathMap,[object]$File)
+    $filename = if ($null -ne $File.PSObject.Properties['filename']) { [string]$File.filename } else { '' }
+    $previous = if ($null -ne $File.PSObject.Properties['previous_filename']) { [string]$File.previous_filename } else { '' }
+    if ($filename) { $PathMap[$filename] = $File }
+    if ($previous) { $PathMap[$previous] = $File }
+}
+
+function Assert-LiveFindingAnchor { param([object]$Finding,[System.Collections.Generic.Dictionary[string,object]]$PathMap,[string]$FullDiff)
+    $path = [string]$Finding.path
+    if (-not $PathMap.ContainsKey($path)) { throw "finding path missing from live diff: $path`:$($Finding.line)" }
+    if ([string]::IsNullOrWhiteSpace($FullDiff)) { throw 'complete live pull-request diff is unavailable' }
+    if (-not (Test-CrcPatchContainsLine -Patch $FullDiff -Path $path -Line ([int]$Finding.line))) { throw "finding line missing from complete live diff: $path`:$($Finding.line)" }
+}
+
+function Test-LiveAnchors { param([object]$Review,[object[]]$Files,[string]$FullDiff)
+    if ($Files.Count -ge 3000) { throw 'GitHub file-list limit prevents complete live-anchor validation' }
+    Assert-LiveDiffMatchesFiles -Diff $FullDiff -Files $Files
+    $byPath = Get-LiveFileMap -Files $Files
+    foreach ($finding in $Review.findings) { Assert-LiveFindingAnchor -Finding $finding -PathMap $byPath -FullDiff $FullDiff }
 }
 
  $outputSafePath = $null
@@ -281,11 +334,16 @@ try {
         $result=[ordered]@{status='published';provider='mock';idempotency_key=($marker -replace '^.*v1:([0-9a-f]+).*$','$1')}; if($outputSafePath){Write-CrcJson -Path $outputSafePath -Value $result}; $result|ConvertTo-Json -Compress; exit 0
     }
     if ($Repo -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$' -or $Pr -lt 1) { throw 'GitHub provider requires a valid --Repo and positive --Pr' }
-    $scope=$review.scope_manifest; if($scope.base -notmatch '^[0-9a-f]{40}$' -or $scope.head -notmatch '^[0-9a-f]{40}$'){throw 'scope lacks full base/head SHAs'}
-    if($ExpectedBase -and $ExpectedBase -ne $scope.base){throw '--ExpectedBase differs from reviewed scope'}; if($ExpectedHead -and $ExpectedHead -ne $scope.head){throw '--ExpectedHead differs from reviewed scope'}
+    Assert-GitHubReviewTarget -Review $review -Repository $Repo -Number $Pr -ExpectedBase $ExpectedBase -ExpectedHead $ExpectedHead
+    $scope=$review.scope_manifest
     if(-not $Execute){$result=[ordered]@{status='dry-run';provider='github';requires_revalidation=$true;marker=$marker}; if($outputSafePath){Write-CrcJson -Path $outputSafePath -Value $result}; $result|ConvertTo-Json -Compress; exit 0}
     $live=Assert-LivePullRequest -Repository $Repo -Number $Pr -Base $scope.base -Head $scope.head
-    $files=@(Invoke-GhApiJson -Arguments @("repos/$Repo/pulls/$Pr/files",'--paginate','--slurp') | ForEach-Object { $_ }); Test-LiveAnchors -Review $review -Files $files
+    $files=@(Invoke-GhApiJson -Arguments @("repos/$Repo/pulls/$Pr/files",'--paginate','--slurp') | ForEach-Object { $_ })
+    if ($files.Count -ge 3000) { throw 'GitHub file-list limit prevents complete live-anchor validation' }
+    $fullDiff = Invoke-GhApiText -Arguments @('-H','Accept: application/vnd.github.diff',"repos/$Repo/pulls/$Pr")
+    if ([string]::IsNullOrWhiteSpace($fullDiff)) { throw 'GitHub returned an empty complete pull-request diff' }
+    $null = Assert-LivePullRequest -Repository $Repo -Number $Pr -Base $scope.base -Head $scope.head
+    Test-LiveAnchors -Review $review -Files $files -FullDiff $fullDiff
     $publisher=(Invoke-GhApiJson -Arguments @('user')).login; $comments=@(Invoke-GhApiJson -Arguments @("repos/$Repo/issues/$Pr/comments",'--paginate','--slurp') | ForEach-Object { $_ }); if(@($comments | Where-Object { $_.user.login -eq $publisher -and $_.body -like "*$marker*" }).Count -gt 0){$result=[ordered]@{status='already-published';provider='github';marker=$marker}; if($outputSafePath){Write-CrcJson -Path $outputSafePath -Value $result}; $result|ConvertTo-Json -Compress; exit 0}
     $null=Assert-LivePullRequest -Repository $Repo -Number $Pr -Base $scope.base -Head $scope.head
     $null=Invoke-GhApiJson -Arguments @("repos/$Repo/issues/$Pr/comments",'--method','POST','--input','-') -Body ([ordered]@{body=$body}); $result=[ordered]@{status='published';provider='github';marker=$marker}; if($outputSafePath){Write-CrcJson -Path $outputSafePath -Value $result}; $result|ConvertTo-Json -Compress; exit 0

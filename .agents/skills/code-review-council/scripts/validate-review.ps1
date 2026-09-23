@@ -48,29 +48,20 @@ function Get-ScopePatchTexts { param([object]$Scope)
     return @($patches)
 }
 
-function Test-FindingLine { param([object]$Scope,[string]$Path,[int]$Line)
-    if ($Scope.mode -eq 'codebase') {
-        if (@($Scope.files | Where-Object path -eq $Path).Count -eq 0) { return $false }
-        try {
-            $repository = Resolve-CrcRepository -Path ([string]$Scope.repository.root)
-            $content = Invoke-CrcGit -Repository $repository -Arguments @('show','--no-ext-diff',"$($Scope.revision):$Path")
-            return $Line -le @($content -split "`r?`n").Count
-        }
-        catch { return $false }
+function Test-CodebaseFindingLine { param([object]$Scope,[string]$Path,[int]$Line)
+    if (@($Scope.files | Where-Object path -eq $Path).Count -eq 0) { return $false }
+    try {
+        $repository = Resolve-CrcRepository -Path ([string]$Scope.repository.root)
+        $content = Invoke-CrcGit -Repository $repository -Arguments @('show','--no-ext-diff',"$($Scope.revision):$Path")
+        return $Line -le @($content -split "`r?`n").Count
     }
+    catch { return $false }
+}
+
+function Test-FindingLine { param([object]$Scope,[string]$Path,[int]$Line)
+    if ($Scope.mode -eq 'codebase') { return Test-CodebaseFindingLine -Scope $Scope -Path $Path -Line $Line }
     foreach ($patch in Get-ScopePatchTexts -Scope $Scope) {
-        $currentPaths = @()
-        foreach ($patchLine in ($patch -split "`r?`n")) {
-            if ($patchLine -match '^diff --git a/(.*) b/(.*)$') {
-                $currentPaths = @((Get-CrcPath -Path $Matches[1]),(Get-CrcPath -Path $Matches[2]))
-                continue
-            }
-            if ($patchLine -match '^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@') {
-                $oldStart = [int]$Matches[1]; $oldCount = if ($Matches[2]) { [int]$Matches[2] } else { 1 }
-                $newStart = [int]$Matches[3]; $newCount = if ($Matches[4]) { [int]$Matches[4] } else { 1 }
-                if ($Path -in $currentPaths -and (($Line -ge $oldStart -and $Line -lt ($oldStart + $oldCount)) -or ($Line -ge $newStart -and $Line -lt ($newStart + $newCount)))) { return $true }
-            }
-        }
+        if (Test-CrcPatchContainsLine -Patch $patch -Path $Path -Line $Line) { return $true }
     }
     return $false
 }
@@ -94,35 +85,69 @@ function Get-MarkdownReview { param([string]$Status,[string]$SnapshotId,[object[
     return ($lines -join "`n") + "`n"
 }
 function Test-NullablePositiveInteger { param([object]$Value) return $null -eq $Value -or (($Value -is [int] -or $Value -is [long] -or $Value -is [uint32] -or $Value -is [uint64]) -and $Value -gt 0) }
+function Add-ScopeEntryPaths { param([System.Collections.Generic.HashSet[string]]$Paths,[object]$Entry,[switch]$IncludeOldPath)
+    $entryPath = Get-PropertyValue -Object $Entry -Name 'path'
+    if ($entryPath) { [void]$Paths.Add([string]$entryPath) }
+    if ($IncludeOldPath) {
+        $oldPath = Get-PropertyValue -Object $Entry -Name 'old_path'
+        if ($oldPath) { [void]$Paths.Add([string]$oldPath) }
+    }
+}
+
+function Add-ScopeFileCollection { param([System.Collections.Generic.HashSet[string]]$Paths,[object[]]$Entries,[switch]$IncludeOldPath)
+    foreach ($entry in $Entries) { Add-ScopeEntryPaths -Paths $Paths -Entry $entry -IncludeOldPath:$IncludeOldPath }
+}
+
 function Get-ScopePaths { param([object]$Scope)
     $paths = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
-    foreach ($entry in @($Scope.changed_files)) { $entryPath=Get-PropertyValue -Object $entry -Name 'path'; $oldPath=Get-PropertyValue -Object $entry -Name 'old_path'; if ($entryPath) { [void]$paths.Add([string]$entryPath) }; if ($oldPath) { [void]$paths.Add([string]$oldPath) } }
+    Add-ScopeFileCollection -Paths $paths -Entries @($Scope.changed_files) -IncludeOldPath
     if (Test-Property $Scope 'selected') {
-        foreach ($streamName in @('staged','unstaged')) { if (Test-Property $Scope.selected $streamName) { foreach ($entry in @($Scope.selected.$streamName.files)) { $entryPath=Get-PropertyValue -Object $entry -Name 'path'; $oldPath=Get-PropertyValue -Object $entry -Name 'old_path'; if ($entryPath) { [void]$paths.Add([string]$entryPath) }; if ($oldPath) { [void]$paths.Add([string]$oldPath) } } } }
-        if (Test-Property $Scope.selected 'untracked') { foreach ($entry in @($Scope.selected.untracked)) { $entryPath=Get-PropertyValue -Object $entry -Name 'path'; if ($entryPath) { [void]$paths.Add([string]$entryPath) } } }
+        foreach ($streamName in @('staged','unstaged')) {
+            if (Test-Property $Scope.selected $streamName) { Add-ScopeFileCollection -Paths $paths -Entries @($Scope.selected.$streamName.files) -IncludeOldPath }
+        }
+        if (Test-Property $Scope.selected 'untracked') { Add-ScopeFileCollection -Paths $paths -Entries @($Scope.selected.untracked) }
     }
-    if ($Scope.mode -eq 'codebase') { foreach ($entry in @($Scope.files)) { $entryPath=Get-PropertyValue -Object $entry -Name 'path'; if ($entryPath) { [void]$paths.Add([string]$entryPath) } } }
+    if ($Scope.mode -eq 'codebase') { Add-ScopeFileCollection -Paths $paths -Entries @($Scope.files) }
     return $paths
 }
 function Add-Error { param([System.Collections.Generic.List[string]]$Errors,[string]$Message) $Errors.Add($Message) | Out-Null }
-function Validate-Scope { param([object]$Scope,[System.Collections.Generic.List[string]]$Errors)
+function Validate-ScopeHeader { param([object]$Scope,[System.Collections.Generic.List[string]]$Errors)
     if ($Scope.schema_version -ne $script:CrcSchemaVersion) { Add-Error $Errors 'scope schema_version is invalid' }
     if ($Scope.snapshot_id -notmatch '^sha256:[0-9a-f]{64}$') { Add-Error $Errors 'scope snapshot_id is invalid' }
     if ($Scope.mode -notin @('codebase','branch','worktree','pull-request')) { Add-Error $Errors 'scope mode is invalid' }
     if ($Scope.status -notin @('READY','NO_CHANGES','BLOCKED')) { Add-Error $Errors 'scope status is invalid' }
-    if (-not (Test-Property $Scope 'snapshot_material')) { Add-Error $Errors 'scope snapshot_material is missing' }
-    else {
-        if ((Get-CrcHashJson -Value $Scope.snapshot_material) -ne $Scope.snapshot_id) { Add-Error $Errors 'scope snapshot_id does not match snapshot_material' }
-        foreach ($name in @('mode','status','revision','base','head','merge_base','changed_files','files','statuses','selected','unresolved_index','dirty_worktree','dirty_status','warnings')) {
-            if (Test-Property $Scope.snapshot_material $name) {
-                if (Test-Property $Scope $name) { $materialValue=Get-PropertyValue -Object $Scope.snapshot_material -Name $name; $manifestValue=Get-PropertyValue -Object $Scope -Name $name; if ((ConvertTo-CrcJson -Value $materialValue) -ne (ConvertTo-CrcJson -Value $manifestValue)) { Add-Error $Errors "scope mirrored field differs: $name" } }
-            }
-        }
-        if (Test-Property $Scope.snapshot_material 'snapshot') { $pullRequest = Get-PropertyValue -Object $Scope -Name 'pull_request'; if ($null -eq $pullRequest -or (ConvertTo-CrcJson $pullRequest) -ne (ConvertTo-CrcJson $Scope.snapshot_material.snapshot)) { Add-Error $Errors 'scope pull_request differs from snapshot_material' } }
+}
+
+function Validate-ScopeMirrors { param([object]$Scope,[System.Collections.Generic.List[string]]$Errors)
+    $names = @('mode','status','revision','base','head','merge_base','changed_files','files','statuses','selected','unresolved_index','dirty_worktree','dirty_status','warnings')
+    foreach ($name in $names) {
+        if (-not (Test-Property $Scope.snapshot_material $name) -or -not (Test-Property $Scope $name)) { continue }
+        $materialValue = Get-PropertyValue -Object $Scope.snapshot_material -Name $name
+        $manifestValue = Get-PropertyValue -Object $Scope -Name $name
+        if ((ConvertTo-CrcJson -Value $materialValue) -ne (ConvertTo-CrcJson -Value $manifestValue)) { Add-Error $Errors "scope mirrored field differs: $name" }
+    }
+    if (Test-Property $Scope.snapshot_material 'snapshot') {
+        $pullRequest = Get-PropertyValue -Object $Scope -Name 'pull_request'
+        $materialSnapshot = Get-PropertyValue -Object $Scope.snapshot_material -Name 'snapshot'
+        if ($null -eq $pullRequest -or (ConvertTo-CrcJson -Value $pullRequest) -ne (ConvertTo-CrcJson -Value $materialSnapshot)) { Add-Error $Errors 'scope pull_request differs from snapshot_material' }
     }
 }
-function Validate-Finding { param([object]$Finding,[string]$Persona,[string]$SnapshotId,[System.Collections.Generic.HashSet[string]]$Allowed,[string]$Mode,[System.Collections.Generic.List[string]]$Errors,[string]$Location)
-    foreach ($name in @('fingerprint','category','path','scenario','trigger','impact','remediation','uncertainty')) { if ([string]::IsNullOrWhiteSpace([string]$Finding.$name)) { Add-Error $Errors "$Location.$name is required" } }
+
+function Validate-ScopeMaterial { param([object]$Scope,[System.Collections.Generic.List[string]]$Errors)
+    if (-not (Test-Property $Scope 'snapshot_material') -or $null -eq $Scope.snapshot_material) { Add-Error $Errors 'scope snapshot_material is missing'; return }
+    if ((Get-CrcHashJson -Value $Scope.snapshot_material) -ne $Scope.snapshot_id) { Add-Error $Errors 'scope snapshot_id does not match snapshot_material' }
+    Validate-ScopeMirrors -Scope $Scope -Errors $Errors
+}
+
+function Validate-Scope { param([object]$Scope,[System.Collections.Generic.List[string]]$Errors)
+    Validate-ScopeHeader -Scope $Scope -Errors $Errors
+    Validate-ScopeMaterial -Scope $Scope -Errors $Errors
+}
+
+function Validate-FindingFields { param([object]$Finding,[string]$Persona,[string]$SnapshotId,[System.Collections.Generic.List[string]]$Errors,[string]$Location)
+    foreach ($name in @('fingerprint','category','path','scenario','trigger','impact','remediation','uncertainty')) {
+        if ([string]::IsNullOrWhiteSpace([string]$Finding.$name)) { Add-Error $Errors "$Location.$name is required" }
+    }
     if (-not (Test-Property $Finding 'persona_ids') -or -not (Test-CrcArrayValue $Finding.persona_ids)) { Add-Error $Errors "$Location.persona_ids must be an array" }
     if (-not (Test-Property $Finding 'evidence') -or -not (Test-CrcArrayValue $Finding.evidence)) { Add-Error $Errors "$Location.evidence must be an array" }
     if ($Finding.fingerprint -notmatch '^sha256:[0-9a-f]{64}$') { Add-Error $Errors "$Location.fingerprint is invalid" }
@@ -136,8 +161,16 @@ function Validate-Finding { param([object]$Finding,[string]$Persona,[string]$Sna
     if (Test-CrcArrayValue $Finding.evidence) {
         if ($Finding.evidence.Count -eq 0) { Add-Error $Errors "$Location.evidence is required" }
     }
+}
+
+function Validate-FindingAnchor { param([object]$Finding,[System.Collections.Generic.HashSet[string]]$Allowed,[object]$Scope,[System.Collections.Generic.List[string]]$Errors,[string]$Location)
     if (-not $Allowed.Contains([string]$Finding.path)) { Add-Error $Errors "$Location.path is outside the immutable scope" }
-    if ((Test-Property $Finding 'line') -and [int]$Finding.line -ge 1 -and $Allowed.Contains([string]$Finding.path) -and -not (Test-FindingLine -Scope $script:CurrentScope -Path ([string]$Finding.path) -Line ([int]$Finding.line))) { Add-Error $Errors "$Location.line is outside the captured evidence" }
+    if ((Test-Property $Finding 'line') -and [int]$Finding.line -ge 1 -and $Allowed.Contains([string]$Finding.path) -and -not (Test-FindingLine -Scope $Scope -Path ([string]$Finding.path) -Line ([int]$Finding.line))) { Add-Error $Errors "$Location.line is outside the captured evidence" }
+}
+
+function Validate-Finding { param([object]$Finding,[string]$Persona,[string]$SnapshotId,[System.Collections.Generic.HashSet[string]]$Allowed,[object]$Scope,[System.Collections.Generic.List[string]]$Errors,[string]$Location)
+    Validate-FindingFields -Finding $Finding -Persona $Persona -SnapshotId $SnapshotId -Errors $Errors -Location $Location
+    Validate-FindingAnchor -Finding $Finding -Allowed $Allowed -Scope $Scope -Errors $Errors -Location $Location
 }
 
 $errors = [System.Collections.Generic.List[string]]::new()
@@ -148,7 +181,6 @@ try {
     $adjudicator = if (Test-Property $adjudication 'adjudicator') { [string]$adjudication.adjudicator } else { 'unavailable' }
     $adjudicatedAt = if (Test-Property $adjudication 'created_at_utc') { [string]$adjudication.created_at_utc } else { Get-CrcUtcNow }
     $adjudicationSnapshot = if (Test-Property $adjudication 'snapshot_id') { [string]$adjudication.snapshot_id } else { [string]$scope.snapshot_id }
-    $script:CurrentScope = $scope
     Validate-Scope -Scope $scope -Errors $errors
     $allowed = Get-ScopePaths -Scope $scope
     foreach ($name in @('adjudicator','created_at_utc','snapshot_id')) {
@@ -186,7 +218,7 @@ try {
             foreach ($finding in $reviewerFindings) {
                 $findingIndex++
                 $findingErrorsBefore = $errors.Count
-                Validate-Finding -Finding $finding -Persona $personaId -SnapshotId $scope.snapshot_id -Allowed $allowed -Mode $scope.mode -Errors $errors -Location "$location.findings[$findingIndex]"
+                Validate-Finding -Finding $finding -Persona $personaId -SnapshotId $scope.snapshot_id -Allowed $allowed -Scope $scope -Errors $errors -Location "$location.findings[$findingIndex]"
                 if ($errors.Count -eq $findingErrorsBefore) {
                     $evidenceRecord = New-ReviewerEvidence -Reviewer $reviewer -Finding $finding
                     if (-not $candidates.ContainsKey($finding.fingerprint)) {

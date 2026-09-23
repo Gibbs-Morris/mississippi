@@ -16,28 +16,48 @@ $script:RequiredCases = @('unchanged-codebase-defect','branch-advanced-base','st
 function Test-EvalProperty { param([object]$Object,[string]$Name) return $null -ne $Object.PSObject.Properties[$Name] }
 function Assert-EvalBoolean { param([object]$Object,[string]$Name,[string]$Location) if ((Test-EvalProperty $Object $Name) -and $Object.$Name -isnot [bool]) { throw "$Location.$Name must be a boolean" } }
 
+function Assert-EvaluationApproach { param([object]$Approach,[string]$Location)
+    foreach($name in @('triggered','policy_compliant','scope_complete')){Assert-EvalBoolean -Object $Approach -Name $name -Location $Location}
+    if(-not (Test-EvalProperty $Approach 'findings')){return}
+    if($Approach.findings -isnot [System.Array]){throw "$Location.findings must be an array"}
+    $index=0
+    foreach($finding in $Approach.findings){
+        $index++
+        foreach($name in @('valid_anchor','blocked','validated')){Assert-EvalBoolean -Object $finding -Name $name -Location "$Location.findings[$index]"}
+    }
+}
+
+function Assert-EvaluationDefaults { param([object]$Fixture)
+    foreach($name in $script:Approaches){Assert-EvaluationApproach -Approach $Fixture.defaults.$name -Location "defaults.$name"}
+}
+
+function Assert-EvaluationCase { param([object]$Case)
+    if($Case.set -notin @('development','held-out')){throw "unknown evaluation set: $($Case.set)"}
+    if($Case.truth -isnot [System.Array]){throw "truth must be an array: $($Case.id)"}
+    if(Test-EvalProperty $Case 'high_severity_truth'){
+        if($Case.high_severity_truth -isnot [System.Array]){throw "high_severity_truth must be an array: $($Case.id)"}
+        if(@($Case.high_severity_truth | Where-Object { $_ -notin $Case.truth }).Count -gt 0){throw "high severity truth is invalid: $($Case.id)"}
+    }
+    Assert-EvalBoolean -Object $Case -Name 'trigger_expected' -Location $Case.id
+    if(-not (Test-EvalProperty $Case 'approaches')){throw "approaches are missing: $($Case.id)"}
+    foreach($name in $script:Approaches){Assert-EvaluationApproach -Approach $Case.approaches.$name -Location "$($Case.id).$name"}
+}
+
+function Assert-RequiredEvaluationCoverage { param([object[]]$Cases,[string[]]$Ids)
+    if(@($Cases | Where-Object set -eq 'development').Count -eq 0 -or @($Cases | Where-Object set -eq 'held-out').Count -eq 0){throw 'fixture requires development and held-out cases'}
+    foreach($required in $script:RequiredCases){if($required -notin $Ids){throw "required fixture missing: $required"}}
+}
+
 function Get-Fixture { param([string]$Path)
     $fixture=Get-Content -LiteralPath (Resolve-CrcSafePath -Path $Path -Label 'fixture' -MustExist) -Raw | ConvertFrom-Json
-    if($fixture.schema_version -ne $script:CrcSchemaVersion -or @($fixture.cases).Count -eq 0){throw 'fixture schema is invalid'}
-    $ids=@($fixture.cases | ForEach-Object id)
-    if ($ids.Count -ne @($ids | Sort-Object -Unique).Count) { throw 'fixture contains duplicate case IDs' }
-    if (@($ids | Where-Object { [string]::IsNullOrWhiteSpace([string]$_) }).Count -gt 0) { throw 'fixture contains an empty case ID' }
-    foreach($required in $script:RequiredCases){if($required -notin $ids){throw "required fixture missing: $required"}}
-    if(@($fixture.cases | Where-Object set -eq 'development').Count -eq 0 -or @($fixture.cases | Where-Object set -eq 'held-out').Count -eq 0){throw 'fixture requires development and held-out cases'}
-    foreach($name in $script:Approaches){$defaultApproach=$fixture.defaults.$name; foreach($booleanName in @('triggered','policy_compliant','scope_complete')){Assert-EvalBoolean -Object $defaultApproach -Name $booleanName -Location "defaults.$name"}; if(Test-EvalProperty $defaultApproach 'findings'){if($defaultApproach.findings -isnot [System.Array]){throw "defaults.$name.findings must be an array"}; $findingIndex=0; foreach($finding in $defaultApproach.findings){$findingIndex++; foreach($booleanName in @('valid_anchor','blocked','validated')){Assert-EvalBoolean -Object $finding -Name $booleanName -Location "defaults.$name.findings[$findingIndex]"}}}}
-    foreach($case in @($fixture.cases)){
-        if($case.set -notin @('development','held-out')){throw "unknown evaluation set: $($case.set)"}
-        if($case.truth -isnot [System.Collections.IEnumerable] -or $case.truth -is [string]){throw "truth must be a list: $($case.id)"}
-        $high=if(Test-EvalProperty $case 'high_severity_truth'){@($case.high_severity_truth)}else{@()}; if(@($high | Where-Object { $_ -notin @($case.truth) }).Count -gt 0){throw "high severity truth is invalid: $($case.id)"}; if((Test-EvalProperty $case 'trigger_expected') -and $case.trigger_expected -isnot [bool]){throw "trigger_expected is invalid: $($case.id)"}
-        foreach($name in $script:Approaches){
-            $approach = if(Test-EvalProperty $case.approaches $name){$case.approaches.$name}else{[pscustomobject]@{}}
-            foreach($booleanName in @('triggered','policy_compliant','scope_complete')){Assert-EvalBoolean -Object $approach -Name $booleanName -Location "$($case.id).$name"}
-            if(Test-EvalProperty $approach 'findings'){
-                if($approach.findings -isnot [System.Array]){throw "$($case.id).$name.findings must be an array"}
-                $findingIndex=0; foreach($finding in $approach.findings){$findingIndex++; foreach($booleanName in @('valid_anchor','blocked','validated')){Assert-EvalBoolean -Object $finding -Name $booleanName -Location "$($case.id).$name.findings[$findingIndex]"}}
-            }
-        }
-    }
+    $cases=@($fixture.cases)
+    if($fixture.schema_version -ne $script:CrcSchemaVersion -or $cases.Count -eq 0){throw 'fixture schema is invalid'}
+    $ids=@($cases | ForEach-Object id)
+    if($ids.Count -ne @($ids | Sort-Object -Unique).Count){throw 'fixture contains duplicate case IDs'}
+    if(@($ids | Where-Object { [string]::IsNullOrWhiteSpace([string]$_) }).Count -gt 0){throw 'fixture contains an empty case ID'}
+    Assert-RequiredEvaluationCoverage -Cases $cases -Ids $ids
+    Assert-EvaluationDefaults -Fixture $fixture
+    foreach($case in $cases){Assert-EvaluationCase -Case $case}
     return $fixture
 }
 
@@ -45,29 +65,89 @@ function Get-Approach { param([object]$Fixture,[object]$Case,[string]$Name)
     $base=[ordered]@{}; foreach($property in $Fixture.defaults.$Name.PSObject.Properties){$base[$property.Name]=$property.Value}; foreach($property in $Case.approaches.$Name.PSObject.Properties){$base[$property.Name]=$property.Value}; if((Test-EvalProperty $Fixture.defaults.$Name 'publication') -and (Test-EvalProperty $Case.approaches.$Name 'publication')){$base.publication=[ordered]@{}; foreach($property in $Fixture.defaults.$Name.publication.PSObject.Properties){$base.publication[$property.Name]=$property.Value}; foreach($property in $Case.approaches.$Name.publication.PSObject.Properties){$base.publication[$property.Name]=$property.Value} }; return [pscustomobject]$base
 }
 
-function Get-Metrics { param([object]$Fixture,[object[]]$Cases,[string]$Name)
-    [double]$predicted=0; [double]$truePredicted=0; [double]$truthCount=0; [double]$highTruth=0; [double]$trueHigh=0; [double]$falseBlockers=0; [double]$clean=0; [double]$invalid=0; [double]$anchored=0; [double]$scopePresentTotal=0; [double]$scopeRequiredTotal=0; [double]$policyPass=0; [double]$triggerPass=0; [double]$triggerCases=0; [double]$duplicates=0; [double]$publicationAttempts=0; [double]$latency=0; [double]$tokens=0; $council=@{}; $baselines=@{}
-    foreach($case in $Cases){$approach=Get-Approach $Fixture $case $Name; $findings=@($approach.findings); if($Name -eq 'council'){$findings=@($findings | Where-Object { $_.validated -eq $true })}; $truth=@($case.truth); $high=@(); if(Test-EvalProperty $case 'high_severity_truth'){$high=@($case.high_severity_truth)}; $ids=@($findings | ForEach-Object fingerprint | Sort-Object -Unique); $hits=@($ids | Where-Object {$_ -in $truth}); $highHits=@($ids | Where-Object {$_ -in $high}); $predicted+=$ids.Count; $truePredicted+=$hits.Count; $truthCount+=$truth.Count; $highTruth+=$high.Count; $trueHigh+=$highHits.Count; $invalid+=@($findings | Where-Object { $_.valid_anchor -eq $false }).Count; $anchored+=$findings.Count; if($truth.Count -eq 0){$clean++; if($approach.result_status -eq 'BLOCKED' -or @($findings | Where-Object { $_.blocked -eq $true }).Count -gt 0){$falseBlockers++}}; $required=[int]$approach.scope_elements_required; $present=[int]$approach.scope_elements_present; $policyPass += [int][bool]$approach.policy_compliant; $triggerCases++; $expected=if((Test-EvalProperty $case 'trigger_expected')){[bool]$case.trigger_expected}else{$true}; $triggerPass += [int]($approach.triggered -eq $expected); $publication=if(Test-EvalProperty $approach 'publication'){$approach.publication}else{[pscustomobject]@{attempts=0;duplicate_attempts=0}}; $duplicates += [int]$publication.duplicate_attempts; $publicationAttempts += [int]$publication.attempts; $latency += [int]$approach.latency_ms; $tokens += [int]$approach.tokens; if($Name -eq 'council'){foreach($f in @($findings)){$council[$f.fingerprint]=$true}; foreach($baselineName in @('single-reviewer','all-lenses')){$baselineApproach=Get-Approach $Fixture $case $baselineName; foreach($f in @($baselineApproach.findings)){$baselines[$f.fingerprint]=$true}}} }
-    return [ordered]@{ cases=$Cases.Count; precision=if($predicted){[math]::Round($truePredicted/$predicted,4)}else{1}; recall=if($truthCount){[math]::Round($truePredicted/$truthCount,4)}else{1}; p0_p1_recall=if($highTruth){[math]::Round($trueHigh/$highTruth,4)}else{1}; false_blocker_rate=if($clean){[math]::Round($falseBlockers/$clean,4)}else{0}; duplicate_publication_rate=if($publicationAttempts){[math]::Round($duplicates/$publicationAttempts,4)}else{0}; invalid_anchor_rate=if($anchored){[math]::Round($invalid/$anchored,4)}else{0}; scope_completeness=if($scopeRequired){[math]::Round($scopePresent/$scopeRequired,4)}else{0}; policy_compliance=[math]::Round($policyPass/$Cases.Count,4); skill_trigger_accuracy=[math]::Round($triggerPass/$triggerCases,4); latency_ms_total=$latency; tokens_total=$tokens; unique_validated_contribution=if($Name -eq 'council'){(@($council.Keys | Where-Object { -not $baselines.ContainsKey($_) }).Count)}else{0}}
+function Get-MetricRatio { param([double]$Numerator,[double]$Denominator,[double]$EmptyValue=1)
+    if($Denominator -gt 0){return [math]::Round($Numerator/$Denominator,4)}
+    return $EmptyValue
+}
+
+function New-MetricTotals {
+    return [pscustomobject]@{predicted=0.0;true_predicted=0.0;truth=0.0;high_truth=0.0;true_high=0.0;false_blockers=0.0;clean=0.0;invalid=0.0;anchored=0.0;scope_present=0.0;scope_required=0.0;policy_pass=0.0;trigger_pass=0.0;trigger_cases=0.0;duplicates=0.0;publication_attempts=0.0;latency=0.0;tokens=0.0;council=[System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal);baselines=[System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)}
+}
+
+function Get-EvaluationFindings { param([object]$Approach,[string]$Name)
+    $findings=@($Approach.findings)
+    if($Name -eq 'council'){$findings=@($findings | Where-Object {$_.validated -eq $true})}
+    return ,$findings
+}
+
+function Add-FindingMetrics { param([object]$Totals,[object[]]$Findings,[object[]]$Truth,[object[]]$HighTruth)
+    $ids=@($Findings | ForEach-Object fingerprint | Sort-Object -Unique)
+    $hits=@($ids | Where-Object {$_ -in $Truth})
+    $highHits=@($ids | Where-Object {$_ -in $HighTruth})
+    $Totals.predicted += $ids.Count; $Totals.true_predicted += $hits.Count; $Totals.truth += $Truth.Count; $Totals.high_truth += $HighTruth.Count; $Totals.true_high += $highHits.Count
+    $Totals.invalid += @($Findings | Where-Object {$_.valid_anchor -eq $false}).Count
+    $Totals.anchored += $Findings.Count
+}
+
+function Add-CaseSafetyMetrics { param([object]$Totals,[object]$Approach,[object[]]$Findings,[object]$Case)
+    if($Case.truth.Count -eq 0){
+        $Totals.clean++
+        if($Approach.result_status -eq 'BLOCKED' -or @($Findings | Where-Object {$_.blocked -eq $true}).Count -gt 0){$Totals.false_blockers++}
+    }
+    $Totals.scope_required += [double]$Approach.scope_elements_required
+    $Totals.scope_present += [double]$Approach.scope_elements_present
+    $Totals.policy_pass += [int]([bool]$Approach.policy_compliant)
+    $expected=if(Test-EvalProperty $Case 'trigger_expected'){[bool]$Case.trigger_expected}else{$true}
+    $Totals.trigger_cases++
+    $Totals.trigger_pass += [int]($Approach.triggered -eq $expected)
+}
+
+function Add-PublicationMetrics { param([object]$Totals,[object]$Approach)
+    $publication=if(Test-EvalProperty $Approach 'publication'){$Approach.publication}else{[pscustomobject]@{attempts=0;duplicate_attempts=0}}
+    $Totals.duplicates += [int]$publication.duplicate_attempts
+    $Totals.publication_attempts += [int]$publication.attempts
+    $Totals.latency += [int]$Approach.latency_ms
+    $Totals.tokens += [int]$Approach.tokens
+}
+
+function Add-CouncilContributionMetrics { param([object]$Totals,[object]$Fixture,[object]$Case,[object[]]$Findings)
+    foreach($finding in $Findings){[void]$Totals.council.Add([string]$finding.fingerprint)}
+    foreach($baselineName in @('single-reviewer','all-lenses')){
+        $baseline=Get-Approach -Fixture $Fixture -Case $Case -Name $baselineName
+        foreach($finding in @($baseline.findings)){[void]$Totals.baselines.Add([string]$finding.fingerprint)}
+    }
+}
+
+function Complete-MetricTotals { param([object]$Totals,[int]$CaseCount,[string]$Name)
+    $uniqueContribution=0
+    if($Name -eq 'council'){$uniqueContribution=@($Totals.council | Where-Object {-not $Totals.baselines.Contains($_)}).Count}
+    return [pscustomobject]@{
+        cases=$CaseCount
+        precision=Get-MetricRatio $Totals.true_predicted $Totals.predicted
+        recall=Get-MetricRatio $Totals.true_predicted $Totals.truth
+        p0_p1_recall=Get-MetricRatio $Totals.true_high $Totals.high_truth
+        false_blocker_rate=Get-MetricRatio $Totals.false_blockers $Totals.clean 0
+        duplicate_publication_rate=Get-MetricRatio $Totals.duplicates $Totals.publication_attempts 0
+        invalid_anchor_rate=Get-MetricRatio $Totals.invalid $Totals.anchored 0
+        scope_completeness=Get-MetricRatio $Totals.scope_present $Totals.scope_required 0
+        policy_compliance=Get-MetricRatio $Totals.policy_pass $CaseCount 0
+        skill_trigger_accuracy=Get-MetricRatio $Totals.trigger_pass $Totals.trigger_cases 0
+        latency_ms_total=$Totals.latency; tokens_total=$Totals.tokens; unique_validated_contribution=$uniqueContribution
+    }
 }
 
 function Get-Metrics { param([object]$Fixture,[object[]]$Cases,[string]$Name)
-    [double]$predicted=0; [double]$truePredicted=0; [double]$truthCount=0; [double]$highTruth=0; [double]$trueHigh=0; [double]$falseBlockers=0; [double]$clean=0; [double]$invalid=0; [double]$anchored=0; [double]$scopePresentTotal=0; [double]$scopeRequiredTotal=0; [double]$policyPass=0; [double]$triggerPass=0; [double]$triggerCases=0; [double]$duplicates=0; [double]$publicationAttempts=0; [double]$latency=0; [double]$tokens=0; $council=@{}; $baselines=@{}
-    foreach($case in $Cases) {
-        $approach=Get-Approach $Fixture $case $Name
-        $findings=@($approach.findings)
-        if($Name -eq 'council') { $findings=@($findings | Where-Object { $_.validated -eq $true }) }
-        $truth=@($case.truth); $high=@(); if(Test-EvalProperty $case 'high_severity_truth'){$high=@($case.high_severity_truth)}
-        $ids=@($findings | ForEach-Object fingerprint | Sort-Object -Unique); $hits=@($ids | Where-Object {$_ -in $truth}); $highHits=@($ids | Where-Object {$_ -in $high})
-        $predicted += $ids.Count; $truePredicted += $hits.Count; $truthCount += $truth.Count; $highTruth += $high.Count; $trueHigh += $highHits.Count
-        $invalid += @($findings | Where-Object { $_.valid_anchor -eq $false }).Count; $anchored += $findings.Count
-        if($truth.Count -eq 0) { $clean++; if($approach.result_status -eq 'BLOCKED' -or @($findings | Where-Object { $_.blocked -eq $true }).Count -gt 0) { $falseBlockers++ } }
-        $scopeRequiredTotal += [double]$approach.scope_elements_required; $scopePresentTotal += [double]$approach.scope_elements_present
-        $policyPass += [int]([bool]$approach.policy_compliant); $triggerCases++; $expected=if(Test-EvalProperty $case 'trigger_expected'){[bool]$case.trigger_expected}else{$true}; $triggerPass += [int]($approach.triggered -eq $expected)
-        $publication=if(Test-EvalProperty $approach 'publication'){$approach.publication}else{[pscustomobject]@{attempts=0;duplicate_attempts=0}}; $duplicates += [int]$publication.duplicate_attempts; $publicationAttempts += [int]$publication.attempts; $latency += [int]$approach.latency_ms; $tokens += [int]$approach.tokens
-        if($Name -eq 'council') { foreach($f in @($findings)){$council[$f.fingerprint]=$true}; foreach($baselineName in @('single-reviewer','all-lenses')) { $baselineApproach=Get-Approach $Fixture $case $baselineName; foreach($f in @($baselineApproach.findings)){$baselines[$f.fingerprint]=$true} } }
+    $totals=New-MetricTotals
+    foreach($case in $Cases){
+        $approach=Get-Approach -Fixture $Fixture -Case $case -Name $Name
+        $findings=Get-EvaluationFindings -Approach $approach -Name $Name
+        $highTruth=@(); if(Test-EvalProperty $case 'high_severity_truth'){$highTruth=@($case.high_severity_truth)}
+        Add-FindingMetrics -Totals $totals -Findings $findings -Truth @($case.truth) -HighTruth $highTruth
+        Add-CaseSafetyMetrics -Totals $totals -Approach $approach -Findings $findings -Case $case
+        Add-PublicationMetrics -Totals $totals -Approach $approach
+        if($Name -eq 'council'){Add-CouncilContributionMetrics -Totals $totals -Fixture $Fixture -Case $case -Findings $findings}
     }
-    return [pscustomobject]@{ cases=$Cases.Count; precision=if($predicted -gt 0){[math]::Round($truePredicted/$predicted,4)}else{1}; recall=if($truthCount -gt 0){[math]::Round($truePredicted/$truthCount,4)}else{1}; p0_p1_recall=if($highTruth -gt 0){[math]::Round($trueHigh/$highTruth,4)}else{1}; false_blocker_rate=if($clean -gt 0){[math]::Round($falseBlockers/$clean,4)}else{0}; duplicate_publication_rate=if($publicationAttempts -gt 0){[math]::Round($duplicates/$publicationAttempts,4)}else{0}; invalid_anchor_rate=if($anchored -gt 0){[math]::Round($invalid/$anchored,4)}else{0}; scope_completeness=if($scopeRequiredTotal -gt 0){[math]::Round($scopePresentTotal/$scopeRequiredTotal,4)}else{0}; policy_compliance=[math]::Round($policyPass/$Cases.Count,4); skill_trigger_accuracy=[math]::Round($triggerPass/$triggerCases,4); latency_ms_total=$latency; tokens_total=$tokens; unique_validated_contribution=if($Name -eq 'council'){(@($council.Keys | Where-Object { -not $baselines.ContainsKey($_) }).Count)}else{0} }
+    return Complete-MetricTotals -Totals $totals -CaseCount $Cases.Count -Name $Name
 }
 
 try {

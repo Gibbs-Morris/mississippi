@@ -124,10 +124,15 @@ use the guarded publisher described in [publication.md](references/publication.m
 pwsh .agents/skills/code-review-council/scripts/publish-review.ps1 -Review <review.json> -Provider mock -Ledger <ledger.json>
 ```
 
-The GitHub provider requires an explicit `--execute`, revalidates the live PR
-base/head and diff anchors immediately before writing, uses an idempotency
-marker, and can create only the consolidated review comment. It never approves,
-requests changes, resolves threads, merges, or closes a PR.
+The GitHub provider requires an explicit `--execute`, a hashed pull-request
+snapshot bound to the repository, PR number, base, and head, plus explicit
+expected base/head values. It fetches the live diff and file list,
+proves every finding hunk, then revalidates the live PR before writing. If a
+per-file patch is missing, publication proceeds only when the live diff's file
+headers match the API file list and it proves that finding's hunk. Missing or
+mismatched evidence blocks the write. It uses an idempotency marker and can
+create only the consolidated review comment. It never approves, requests
+changes, resolves threads, merges, or closes a PR.
 
 ### 6. Evaluate the workflow
 

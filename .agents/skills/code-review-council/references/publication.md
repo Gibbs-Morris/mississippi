@@ -11,16 +11,24 @@ Before a write, the publisher must have:
 
 - a final result tied to a current scope ID;
 - an explicit caller authorisation naming the target PR and intended comment;
-- expected base and head SHAs from the reviewed snapshot;
-- valid diff anchors for every inline claim, or a top-level report when no
-  inline anchor can be proven; and
+- a hashed `pull-request` scope snapshot bound to the requested repository,
+  PR number, base SHA, and head SHA, with the expected base and head supplied;
+- every finding path present in the live PR file list and every finding line
+  present in the live PR diff response whose file headers match that file list;
+  and
 - an idempotency key derived from the snapshot ID, result status, and finding
   fingerprints.
 
-The GitHub provider re-reads the live PR immediately before writing and refuses
-to continue if the PR is closed, the base/head changed, or the expected diff
-anchors are no longer present. A stale response is an incomplete publication,
-not a successful retry signal.
+The GitHub provider reads the live file list and requests the live PR diff
+using GitHub's `application/vnd.github.diff` media type. It matches the diff's
+file headers to the live file list, validates every finding hunk, and re-reads
+the PR base/head after fetching the diff and immediately before writing. A
+missing per-file patch is acceptable only when the live diff has matching file
+headers and proves that finding's hunk. An unavailable diff, mismatched file
+list, missing hunk, or file-list limit blocks publication. This validates the
+returned file set and reported finding anchors; it does not claim to detect
+omitted content when a partial response still contains those headers and
+hunks.
 
 ## Idempotency
 

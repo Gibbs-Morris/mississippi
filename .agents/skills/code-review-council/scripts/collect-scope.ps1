@@ -150,103 +150,142 @@ function Complete-Manifest {
     return $Manifest
 }
 
-function Invoke-Collection {
-    $repository = Resolve-CrcRepository -Path $Repo
-    if ($Mode -eq 'codebase') {
-        $revision = Resolve-CrcCommit -Repository $repository -Revision $Head
-        $files = @(Get-TreeFiles -Repository $repository -Revision $revision)
-        $dirtyStatus = @(Get-WorktreeStatus -Repository $repository)
-        $dirtyWorktree = $dirtyStatus.Count -gt 0
-        $warnings = if ($dirtyWorktree) { @('working tree is dirty; codebase snapshot is pinned to the requested commit') } else { @() }
-        $material = [ordered]@{ mode = 'codebase'; status = 'READY'; revision = $revision; files = $files; dirty_worktree = $dirtyWorktree; dirty_status = $dirtyStatus; warnings = $warnings }
-        $manifest = New-Manifest -Repository $repository -Mode $Mode
-        $manifest.status = 'READY'; $manifest.revision = $revision; $manifest.files = $files; $manifest.changed_files = @(); $manifest.dirty_worktree = $dirtyWorktree; $manifest.dirty_status = $dirtyStatus; $manifest.warnings = $warnings
-        return Complete-Manifest -Manifest $manifest -Material $material
+function Get-CodebaseCollection { param([string]$Repository,[string]$HeadRevision)
+    $revision = Resolve-CrcCommit -Repository $Repository -Revision $HeadRevision
+    $files = @(Get-TreeFiles -Repository $Repository -Revision $revision)
+    $dirtyStatus = @(Get-WorktreeStatus -Repository $Repository)
+    $dirtyWorktree = $dirtyStatus.Count -gt 0
+    $warnings = if ($dirtyWorktree) { @('working tree is dirty; codebase snapshot is pinned to the requested commit') } else { @() }
+    $material = [ordered]@{ mode = 'codebase'; status = 'READY'; revision = $revision; files = $files; dirty_worktree = $dirtyWorktree; dirty_status = $dirtyStatus; warnings = $warnings }
+    $manifest = New-Manifest -Repository $Repository -Mode 'codebase'
+    $manifest.status = 'READY'; $manifest.revision = $revision; $manifest.files = $files; $manifest.changed_files = @(); $manifest.dirty_worktree = $dirtyWorktree; $manifest.dirty_status = $dirtyStatus; $manifest.warnings = $warnings
+    return Complete-Manifest -Manifest $manifest -Material $material
+}
+
+function Get-BranchCollection { param([string]$Repository,[string]$BaseRevision,[string]$HeadRevision)
+    if (-not $BaseRevision) { throw 'branch mode requires --Base' }
+    $baseCommit = Resolve-CrcCommit -Repository $Repository -Revision $BaseRevision
+    $headCommit = Resolve-CrcCommit -Repository $Repository -Revision $HeadRevision
+    $mergeBase = (Invoke-CrcGit -Repository $Repository -Arguments @('merge-base',$baseCommit,$headCommit)).Trim()
+    $changed = @(Get-ChangedFiles -Repository $Repository -Revisions @($mergeBase,$headCommit))
+    $patch = Get-PatchComponent -Repository $Repository -Revisions @($mergeBase,$headCommit)
+    $manifestStatus = if ($changed.Count -gt 0) { 'READY' } else { 'NO_CHANGES' }
+    $material = [ordered]@{ mode = 'branch'; status = $manifestStatus; base = $baseCommit; head = $headCommit; merge_base = $mergeBase; changed_files = $changed; patch = $patch }
+    $manifest = New-Manifest -Repository $Repository -Mode 'branch'
+    $manifest.status = $manifestStatus; $manifest.base = $baseCommit; $manifest.head = $headCommit; $manifest.merge_base = $mergeBase; $manifest.changed_files = $changed; $manifest.patch = $patch
+    return Complete-Manifest -Manifest $manifest -Material $material
+}
+
+function Get-SelectedWorktreeStreams { param([string]$Repository,[string]$Selection)
+    $startState = Get-WorktreeState -Repository $Repository
+    $selected = [ordered]@{ selection = $Selection }
+    if ($Selection -in @('staged','all')) { $selected.staged = [ordered]@{ files = @(Get-ChangedFiles -Repository $Repository -Revisions @() -Cached); patch = Get-PatchComponent -Repository $Repository -Revisions @() -Cached } }
+    if ($Selection -in @('unstaged','all')) { $selected.unstaged = [ordered]@{ files = @(Get-ChangedFiles -Repository $Repository -Revisions @()); patch = Get-PatchComponent -Repository $Repository -Revisions @() }; $selected.untracked = @(Get-UntrackedFiles -Repository $Repository -Statuses $startState.statuses) }
+    $endState = Get-WorktreeState -Repository $Repository
+    if ((ConvertTo-CrcJson -Value $startState) -ne (ConvertTo-CrcJson -Value $endState)) { throw 'worktree changed while the immutable snapshot was being collected' }
+    return [pscustomobject]@{ revision=$startState.revision; statuses=$startState.statuses; unresolved_index=$startState.unresolved_index; selected=$selected }
+}
+
+function Get-SelectedWorktreeFiles { param([object]$Selected)
+    $files = @()
+    foreach ($streamName in @('staged','unstaged')) {
+        $stream = if ($Selected.Contains($streamName)) { $Selected[$streamName] } else { $null }
+        if ($null -ne $stream) { $files += @($stream.files) }
     }
-    if ($Mode -eq 'branch') {
-        if (-not $Base) { throw 'branch mode requires --Base' }
-        $baseCommit = Resolve-CrcCommit -Repository $repository -Revision $Base
-        $headCommit = Resolve-CrcCommit -Repository $repository -Revision $Head
-        $mergeBase = (Invoke-CrcGit -Repository $repository -Arguments @('merge-base',$baseCommit,$headCommit)).Trim()
-        $changed = @(Get-ChangedFiles -Repository $repository -Revisions @($mergeBase,$headCommit))
-        $patch = Get-PatchComponent -Repository $repository -Revisions @($mergeBase,$headCommit)
-        $manifestStatus = if ($changed.Count -gt 0) { 'READY' } else { 'NO_CHANGES' }
-        $material = [ordered]@{ mode = 'branch'; status = $manifestStatus; base = $baseCommit; head = $headCommit; merge_base = $mergeBase; changed_files = $changed; patch = $patch }
-        $manifest = New-Manifest -Repository $repository -Mode $Mode
-        $manifest.status = $manifestStatus
-        $manifest.base = $baseCommit; $manifest.head = $headCommit; $manifest.merge_base = $mergeBase; $manifest.changed_files = $changed; $manifest.patch = $patch
-        return Complete-Manifest -Manifest $manifest -Material $material
+    $untrackedFiles = if ($Selected.Contains('untracked')) { @($Selected['untracked']) } else { @() }
+    foreach ($untracked in $untrackedFiles) {
+        $entry = [ordered]@{ status='??'; path=$untracked.path; type=$untracked.type }
+        if ($untracked.type -eq 'symlink') { $entry.target = @($untracked.target) }
+        else { $entry.sha256 = $untracked.sha256; $entry.size = $untracked.size }
+        $files += $entry
     }
-    if ($Mode -eq 'worktree') {
-        $startState = Get-WorktreeState -Repository $repository
-        $revision = $startState.revision
-        $statuses = $startState.statuses
-        $staged = @(Get-ChangedFiles -Repository $repository -Revisions @() -Cached)
-        $unstaged = @(Get-ChangedFiles -Repository $repository -Revisions @())
-        $selected = [ordered]@{ selection = $Changes }
-        if ($Changes -in @('staged','all')) { $selected.staged = [ordered]@{ files = $staged; patch = Get-PatchComponent -Repository $repository -Revisions @() -Cached } }
-        if ($Changes -in @('unstaged','all')) { $selected.unstaged = [ordered]@{ files = $unstaged; patch = Get-PatchComponent -Repository $repository -Revisions @() }; $selected.untracked = @(Get-UntrackedFiles -Repository $repository -Statuses $statuses) }
-        $unresolved = [bool]((Invoke-CrcGit -Repository $repository -Arguments @('ls-files','-u')).Trim())
-        $endState = Get-WorktreeState -Repository $repository
-        if ((ConvertTo-CrcJson -Value $startState) -ne (ConvertTo-CrcJson -Value $endState)) { throw 'worktree changed while the immutable snapshot was being collected' }
-        $selectedFiles = @()
-        foreach ($stream in @($selected.staged,$selected.unstaged)) { if ($null -ne $stream) { $selectedFiles += @($stream.files) } }
-        if ($null -ne $selected.untracked) {
-            $selectedFiles += @($selected.untracked | ForEach-Object {
-                $entry = [ordered]@{ status = '??'; path = $_.path; type = $_.type }
-                if ($_.type -eq 'symlink') { $entry.target = @($_.target) }
-                else { $entry.sha256 = $_.sha256; $entry.size = $_.size }
-                $entry
-            })
-        }
-        $manifestStatus = if ($unresolved) { 'BLOCKED' } elseif ($selectedFiles.Count -gt 0) { 'READY' } else { 'NO_CHANGES' }
-        $material = [ordered]@{ mode = 'worktree'; status = $manifestStatus; revision = $revision; selection = $Changes; statuses = $statuses; selected = $selected; unresolved_index = $unresolved }
-        $manifest = New-Manifest -Repository $repository -Mode $Mode
-        $manifest.revision = $revision; $manifest.status = $manifestStatus
-        $manifest.statuses = $statuses; $manifest.selected = $selected; $manifest.changed_files = @($selectedFiles | Sort-Object path,status); $manifest.unresolved_index = $unresolved
-        return Complete-Manifest -Manifest $manifest -Material $material
-    }
-    if (-not $PullRequestSnapshot) { throw 'pull-request mode requires --PullRequestSnapshot' }
-    $snapshotPath = Resolve-CrcSafePath -Path $PullRequestSnapshot -Label 'pull-request snapshot' -MustExist
-    $snapshot = Get-Content -LiteralPath $snapshotPath -Raw | ConvertFrom-Json
+    return @($files | Sort-Object path,status)
+}
+
+function Get-WorktreeCollection { param([string]$Repository,[string]$Selection)
+    $snapshot = Get-SelectedWorktreeStreams -Repository $Repository -Selection $Selection
+    $changedFiles = Get-SelectedWorktreeFiles -Selected $snapshot.selected
+    $status = if ($snapshot.unresolved_index) { 'BLOCKED' } elseif ($changedFiles.Count -gt 0) { 'READY' } else { 'NO_CHANGES' }
+    $material = [ordered]@{ mode='worktree'; status=$status; revision=$snapshot.revision; selection=$Selection; statuses=$snapshot.statuses; selected=$snapshot.selected; unresolved_index=$snapshot.unresolved_index }
+    $manifest = New-Manifest -Repository $Repository -Mode 'worktree'
+    $manifest.revision=$snapshot.revision; $manifest.status=$status; $manifest.statuses=$snapshot.statuses; $manifest.selected=$snapshot.selected; $manifest.changed_files=$changedFiles; $manifest.unresolved_index=$snapshot.unresolved_index
+    return Complete-Manifest -Manifest $manifest -Material $material
+}
+
+function Assert-PullRequestSnapshotShape { param([object]$Snapshot)
     foreach ($field in @('repository','number','base_sha','head_sha','changed_files','diff','discussion','checks')) {
-        $property = $snapshot.PSObject.Properties[$field]
+        $property = $Snapshot.PSObject.Properties[$field]
         if ($null -eq $property -or $null -eq $property.Value) { throw "pull-request snapshot is missing $field" }
     }
-    if ([string]::IsNullOrWhiteSpace([string]$snapshot.repository)) { throw 'pull-request repository evidence is empty' }
-    if ([int]$snapshot.number -lt 1) { throw 'pull-request number evidence is invalid' }
+    if ([string]::IsNullOrWhiteSpace([string]$Snapshot.repository)) { throw 'pull-request repository evidence is empty' }
+    if ($Snapshot.number -isnot [int] -and $Snapshot.number -isnot [long]) { throw 'pull-request number must be an integer' }
+    if ($Snapshot.number -lt 1) { throw 'pull-request number evidence is invalid' }
     foreach ($field in @('changed_files','discussion','checks')) {
-        if ($snapshot.$field -is [string] -or $snapshot.$field -isnot [System.Collections.IEnumerable]) { throw "pull-request $field evidence must be a collection" }
+        if ($Snapshot.$field -isnot [System.Array]) { throw "pull-request $field evidence must be an array" }
     }
-    if ($snapshot.diff -isnot [string]) { throw 'pull-request diff evidence must be a string' }
-    if ($snapshot.base_sha -notmatch '^[0-9a-f]{40}$' -or $snapshot.head_sha -notmatch '^[0-9a-f]{40}$') { throw 'pull-request base_sha/head_sha must be full SHAs' }
-    $changed = @($snapshot.changed_files)
-    $hasFiles = $changed.Count -gt 0; $hasDiff = -not [string]::IsNullOrWhiteSpace([string]$snapshot.diff)
-    if ($hasFiles -ne $hasDiff) { throw 'pull-request changed_files and diff disagree about whether changes exist' }
-    $diffHeaderPaths = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
-    foreach ($line in ($snapshot.diff -split "`r?`n")) {
+    if ($Snapshot.diff -isnot [string]) { throw 'pull-request diff evidence must be a string' }
+    if ($Snapshot.base_sha -notmatch '^[0-9a-f]{40}$' -or $Snapshot.head_sha -notmatch '^[0-9a-f]{40}$') { throw 'pull-request base_sha/head_sha must be full SHAs' }
+}
+
+function Get-PullRequestDiffHeaderPaths { param([string]$Diff)
+    $paths = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($line in ($Diff -split "`r?`n")) {
         if ($line -match '^diff --git a/(.*) b/(.*)$') {
-            [void]$diffHeaderPaths.Add((Get-CrcPath -Path $Matches[1]))
-            [void]$diffHeaderPaths.Add((Get-CrcPath -Path $Matches[2]))
+            [void]$paths.Add((Get-CrcPath -Path $Matches[1]))
+            [void]$paths.Add((Get-CrcPath -Path $Matches[2]))
         }
     }
-    foreach ($file in $changed) {
+    return ,$paths
+}
+
+function Assert-PullRequestChangedFiles { param([object[]]$ChangedFiles,[System.Collections.Generic.HashSet[string]]$DiffPaths)
+    $paths = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($file in $ChangedFiles) {
         if ($null -eq $file.PSObject.Properties['status'] -or $file.status -isnot [string] -or [string]::IsNullOrWhiteSpace($file.status)) { throw 'pull-request changed_files contains an invalid status' }
         if ($null -eq $file.PSObject.Properties['path'] -or $file.path -isnot [string] -or [string]::IsNullOrWhiteSpace($file.path)) { throw 'pull-request changed_files contains an invalid path' }
         $path = Get-CrcPath -Path $file.path
-        if (-not $diffHeaderPaths.Contains($path)) { throw "pull-request diff headers do not contain changed path $path" }
+        if (-not $DiffPaths.Contains($path)) { throw "pull-request diff headers do not contain changed path $path" }
+        [void]$paths.Add($path)
         $oldPathProperty = $file.PSObject.Properties['old_path']
-        if ($null -ne $oldPathProperty -and $null -ne $oldPathProperty.Value) {
-            if ($file.old_path -isnot [string] -or [string]::IsNullOrWhiteSpace($file.old_path)) { throw "pull-request changed_files contains an invalid old_path for $path" }
-            $oldPath = Get-CrcPath -Path $file.old_path
-            if (-not $diffHeaderPaths.Contains($oldPath)) { throw "pull-request diff headers do not contain old path $oldPath" }
+        $oldPath = if ($null -ne $oldPathProperty) { $oldPathProperty.Value } else { $null }
+        if ($null -ne $oldPath) {
+            if ($oldPath -isnot [string] -or [string]::IsNullOrWhiteSpace($oldPath)) { throw "pull-request changed_files contains an invalid old_path for $path" }
+            $oldPath = Get-CrcPath -Path $oldPath
+            if (-not $DiffPaths.Contains($oldPath)) { throw "pull-request diff headers do not contain old path $oldPath" }
+            [void]$paths.Add($oldPath)
         }
     }
-    $manifestStatus = if ($hasFiles) { 'READY' } else { 'NO_CHANGES' }
-    $material = [ordered]@{ mode = 'pull-request'; status = $manifestStatus; snapshot = $snapshot }
-    $manifest = New-Manifest -Repository $repository -Mode $Mode
-    $manifest.status = $manifestStatus; $manifest.base = $snapshot.base_sha; $manifest.head = $snapshot.head_sha; $manifest.pull_request = $snapshot; $manifest.changed_files = $changed; $manifest.diff_sha256 = "sha256:$(Get-CrcHashText -Text ([string]$snapshot.diff))"
+    return ,$paths
+}
+
+function Get-PullRequestCollection { param([string]$Repository,[string]$SnapshotPath)
+    if (-not $SnapshotPath) { throw 'pull-request mode requires --PullRequestSnapshot' }
+    $safeSnapshotPath = Resolve-CrcSafePath -Path $SnapshotPath -Label 'pull-request snapshot' -MustExist
+    $snapshot = Get-Content -LiteralPath $safeSnapshotPath -Raw | ConvertFrom-Json
+    Assert-PullRequestSnapshotShape -Snapshot $snapshot
+    $changed = @($snapshot.changed_files)
+    $hasDiff = -not [string]::IsNullOrWhiteSpace([string]$snapshot.diff)
+    if (($changed.Count -gt 0) -ne $hasDiff) { throw 'pull-request changed_files and diff disagree about whether changes exist' }
+    $diffPaths = Get-CrcDiffHeaderPaths -DiffText $snapshot.diff
+    $changedPaths = Assert-PullRequestChangedFiles -ChangedFiles $changed -DiffPaths $diffPaths
+    if ($changedPaths.Count -ne $diffPaths.Count) { throw 'pull-request diff headers and changed_files are incomplete or inconsistent' }
+    foreach ($path in $diffPaths) { if (-not $changedPaths.Contains($path)) { throw "pull-request changed_files is missing diff header path $path" } }
+    $status = if ($changed.Count -gt 0) { 'READY' } else { 'NO_CHANGES' }
+    $material = [ordered]@{ mode='pull-request'; status=$status; snapshot=$snapshot }
+    $manifest = New-Manifest -Repository $Repository -Mode 'pull-request'
+    $manifest.status=$status; $manifest.base=$snapshot.base_sha; $manifest.head=$snapshot.head_sha; $manifest.pull_request=$snapshot; $manifest.changed_files=$changed; $manifest.diff_sha256="sha256:$(Get-CrcHashText -Text $snapshot.diff)"
     return Complete-Manifest -Manifest $manifest -Material $material
+}
+
+function Invoke-Collection {
+    $repository = Resolve-CrcRepository -Path $Repo
+    switch ($Mode) {
+        'codebase' { return Get-CodebaseCollection -Repository $repository -HeadRevision $Head }
+        'branch' { return Get-BranchCollection -Repository $repository -BaseRevision $Base -HeadRevision $Head }
+        'worktree' { return Get-WorktreeCollection -Repository $repository -Selection $Changes }
+        'pull-request' { return Get-PullRequestCollection -Repository $repository -SnapshotPath $PullRequestSnapshot }
+        default { throw "unsupported collection mode: $Mode" }
+    }
 }
 
 $outputSafePath = $null
@@ -265,6 +304,7 @@ catch {
     $manifest.error = $_.Exception.Message
     $manifest.snapshot_id = "sha256:$(Get-CrcHashText -Text $_.Exception.Message)"
     if ($null -ne $outputSafePath) { Write-CrcJson -Path $outputSafePath -Value $manifest }
-    Write-Error "BLOCKED: $($_.Exception.Message)"
+    [Console]::Error.WriteLine("BLOCKED: $($_.Exception.Message)")
+    [Console]::Error.WriteLine($_.InvocationInfo.PositionMessage)
     exit 2
 }
