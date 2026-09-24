@@ -55,7 +55,7 @@ Keep the same vocabulary in the requirement, code, and tests.
 | How the fact changes state | Event reducer | [FundsWithdrawnReducer](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Reducers/FundsWithdrawnReducer.cs) |
 | Data the screen reads | UX projection | [BankAccountBalance](https://github.com/Gibbs-Morris/mississippi/tree/main/samples/Spring/Spring.Domain/Projections/BankAccountBalance) |
 
-The handler returns events or a failed operation result. The reducer applies a recorded fact to state. The runtime handles event persistence through the aggregate execution path. This separation lets you change how a screen displays a withdrawal while keeping the business decision in one place.
+The handler returns an operation result containing emitted events or a failure. For a successful result, the aggregate runtime persists any emitted events before dispatching effects; a failed result returns without persisting events. The reducer applies a recorded fact to state. This separation lets you change how a screen displays a withdrawal while keeping the business decision in one place.
 
 ### 3. Provide a Bounded Implementation Brief
 
@@ -97,7 +97,7 @@ Keep the task to one operation at a time. Review the resulting domain diff befor
 
 ### 4. Keep Deterministic Transitions Explicit
 
-A pure reducer computes the next state from the prior state and its event or action. Given the same inputs and reducer implementation, it computes the same result. Put externally obtained facts into the event or action before reduction, so replay uses the recorded inputs.
+For deterministic state reconstruction, implement a reducer as a pure function from prior state and its event or action to the next state. With the same recorded inputs and reducer implementation, it produces the same state. Put externally obtained facts into the event or action before reduction so replay uses the recorded inputs.
 
 For example, Spring's withdrawal reducer subtracts the event amount and increments the withdrawal count. The reducer has everything needed to explain that transition. That makes it useful for debugging, testing, and asking an assistant to explain an unexpected balance.
 
@@ -117,11 +117,28 @@ The server reducer contract is [EventReducerBase](https://github.com/Gibbs-Morri
 
 After verifying the business behavior and defining interface access, follow the existing application's attributed domain pattern. Inlet generates the supported transport and client artifacts from those inputs. For example, Spring's `WithdrawFunds` declares a command route and `BankAccountAggregate` opts into aggregate endpoints.
 
-For a network-accessible gateway, configure authentication and authorization before exposing the generated transport. Select named application policies and put `[GenerateAuthorization]` metadata on each protected generated command, projection, and saga. Verify every generated route's effective authorization. Force mode adds a default controller filter only when the controller and all its actions lack explicit authorization metadata; a controller mixing protected and unannotated actions needs explicit coverage for the remaining actions. The default `GeneratedApiAuthorization.Mode` is `Disabled`; review the [authorization options](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/GeneratedApiAuthorizationOptions.cs) and [generation metadata](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateAuthorizationAttribute.cs) explicitly.
+For a network-accessible gateway, configure host authentication and authorization before mapping generated transports. Define the application policies and put `[GenerateAuthorization]` metadata on each protected generated command, projection, and saga. Verify every generated route's effective authorization.
 
-Protect an HTTP MCP endpoint and its tools through a separate application authorization boundary, or restrict them to a trusted local development environment. Generated HTTP-controller and Inlet subscription policies apply to those interfaces; generated MCP tools invoke domain grains directly. Include MCP access checks when that transport is part of the application.
+Register the host's authentication scheme with `AddAuthentication` before using this configuration. Define the default application policy, then enable force mode through `AddInletServer`:
 
-Treat permission to act on a particular entity as an application decision. Name the boundary that receives the entity ID and verifies access; subscription identity policies receive a null resource. Include that decision and its tests in the implementation brief.
+```csharp
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("generated-api", policy => policy.RequireAuthenticatedUser());
+
+builder.Services.AddInletServer(options =>
+{
+    options.GeneratedApiAuthorization.Mode =
+        GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+    options.GeneratedApiAuthorization.DefaultPolicy = "generated-api";
+    options.GeneratedApiAuthorization.AllowAnonymousOptOut = false;
+});
+```
+
+This mode configures generated HTTP API and projection-subscription authorization; it does not configure MCP authorization. In force mode, the convention adds a default HTTP authorization filter only when neither the generated controller nor any of its actions has an explicit `[Authorize]` or authorization filter. If any action has explicit authorization, the convention adds no default controller filter for its unannotated actions; explicitly authorize every action that must be protected. `AllowAnonymousOptOut` defaults to `true`, so generated `[AllowAnonymous]` metadata remains an opt-out in force mode; set it to `false` to remove that opt-out. `GeneratedApiAuthorization.Mode` defaults to `Disabled`. Review the [authorization options](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/GeneratedApiAuthorizationOptions.cs) and [generation metadata](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateAuthorizationAttribute.cs) explicitly.
+
+Generated API authorization applies to generated HTTP controllers and Inlet projection subscriptions; it does not authorize MCP. Generated MCP tool methods call aggregate, saga, and UX projection grains directly, so protect the MCP host or route with the application's MCP authorization boundary before exposing those tools. Spring registers generated MCP tools but maps `/mcp` only when the host environment is `Development` ([Spring.Gateway/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs)). Include separate MCP access checks when exposing that transport.
+
+Treat permission to act on a particular entity as an application decision. Inlet's generated projection-subscription authorization passes `null` as the ASP.NET authorization resource; it does not supply `entityId` for resource-based policy evaluation. Name the application boundary that receives the entity ID and verifies access, and include that decision and its tests in the implementation brief.
 
 Use the generated artifacts as part of the application's build. Keep the human-authored rule in the handler and the state transition in the reducer. When reviewing assistant changes, check the domain attributes and the resulting API/client behavior together.
 
