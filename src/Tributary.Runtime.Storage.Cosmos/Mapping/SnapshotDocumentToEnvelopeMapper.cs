@@ -21,5 +21,6 @@ internal sealed class SnapshotDocumentToEnvelopeMapper : IMapper<SnapshotDocumen
             Data = input.Data.ToImmutableArray(),
             DataSizeBytes = input.DataSizeBytes,
             DataContentType = input.DataContentType,
+            ReducerHash = input.ReducersHash,
         };
 }
