@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="MississippiSamples.Spring.Gateway" />
+    <InternalsVisibleTo Include="MississippiSamples.Spring.Client.L0Tests" />
   </ItemGroup>
 
   <ItemGroup>
@@ -11,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Sdk.Client\Sdk.Client.csproj" />
+    <ProjectReference Include="..\..\..\src\Refraction.Client\Refraction.Client.csproj" />
     <ProjectReference Include="..\..\..\src\Inlet.Generators.Core\Inlet.Generators.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
     <ProjectReference Include="..\..\..\src\Inlet.Client.Generators\Inlet.Client.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
     <!-- Compile-only reference: generator can see types, but DLL is NOT deployed to WASM bundle -->

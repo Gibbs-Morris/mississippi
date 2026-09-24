@@ -1,6 +1,7 @@
 @namespace MississippiSamples.Spring.Client
+@using MississippiSamples.Spring.Client.Components.Templates.SpringShell
 @inherits LayoutComponentBase
 
-<div>
+<SpringApplicationShell ThemeMode="@ThemeMode" ThemeChanged="@ChangeTheme">
     @Body
-</div>
+</SpringApplicationShell>

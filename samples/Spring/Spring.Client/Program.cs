@@ -16,6 +16,7 @@ using MississippiSamples.Spring.Client.Features.AuthSimulation;
 using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos;
 using MississippiSamples.Spring.Client.Features.DemoAccounts;
 using MississippiSamples.Spring.Client.Features.DualEntitySelection;
+using MississippiSamples.Spring.Client.Features.ThemePreferences;
 
 
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -44,6 +45,7 @@ builder.UseMississippi(client =>
         reservoir.AddDualEntitySelectionFeature();
         reservoir.AddDemoAccountsFeature();
         reservoir.AddAuthSimulationFeature();
+        reservoir.AddThemePreferencesFeature();
 
         // Built-in Reservoir features: navigation, lifecycle
         reservoir.AddReservoirBlazorBuiltIns();
