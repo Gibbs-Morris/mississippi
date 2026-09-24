@@ -223,6 +223,38 @@ public sealed class SnapshotRetentionOptionsTests
     }
 
     /// <summary>
+    ///     Verifies the public options object rejects an invalid default modulus without registration validation.
+    /// </summary>
+    [Fact]
+    public void GetRetainModulusRejectsInvalidDefaultWhenOptionsAreUsedDirectly()
+    {
+        SnapshotRetentionOptions options = new()
+        {
+            DefaultRetainModulus = 0,
+        };
+        InvalidOperationException exception =
+            Assert.Throws<InvalidOperationException>(() => options.GetRetainModulus<TestSnapshot>());
+        Assert.Contains(typeof(TestSnapshot).FullName!, exception.Message, StringComparison.Ordinal);
+        Assert.Contains("was 0", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Verifies the public options object rejects an invalid state-type override without registration validation.
+    /// </summary>
+    [Fact]
+    public void GetRetainModulusRejectsInvalidTypeOverrideWhenOptionsAreUsedDirectly()
+    {
+        const int invalidModulus = -1;
+        SnapshotRetentionOptions options = new();
+        string stateTypeName = typeof(TestSnapshot).FullName!;
+        options.StateTypeOverrides[stateTypeName] = invalidModulus;
+        InvalidOperationException exception =
+            Assert.Throws<InvalidOperationException>(() => options.GetRetainModulus<TestSnapshot>());
+        Assert.Contains(stateTypeName, exception.Message, StringComparison.Ordinal);
+        Assert.Contains($"was {invalidModulus}", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Verifies that GetRetainModulus respects type override using CLR type name.
     /// </summary>
     [Fact]

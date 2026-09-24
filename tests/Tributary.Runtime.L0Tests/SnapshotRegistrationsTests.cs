@@ -261,4 +261,16 @@ public sealed class SnapshotRegistrationsTests
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => services!.AddSnapshotStateConverter<TestState>());
     }
+
+    /// <summary>
+    ///     Verifies direct validator invocation reports a failure for null options.
+    /// </summary>
+    [Fact]
+    public void SnapshotRetentionOptionsValidatorRejectsNullOptions()
+    {
+        SnapshotRetentionOptionsValidator validator = new();
+        ValidateOptionsResult result = validator.Validate(Options.DefaultName, null);
+        Assert.True(result.Failed);
+        Assert.Contains("Snapshot retention options cannot be null.", result.Failures);
+    }
 }
