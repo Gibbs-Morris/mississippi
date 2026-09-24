@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ConnectFour.Domain\ConnectFour.Domain.csproj" />
+    <ProjectReference Include="..\..\..\src\DomainModeling.TestHarness\DomainModeling.TestHarness.csproj" />
+  </ItemGroup>
+
+</Project>
