@@ -8,7 +8,7 @@ namespace MississippiSamples.Crescent.L2Tests;
 /// <summary>
 ///     Event raised when a counter is initialized.
 /// </summary>
-[EventStorageName("CRESCENT", "SAMPLE", "COUNTERINITIALIZED")]
+[EventStorageName("CRESCENT", "SAMPLE", "COUNTERINITIALIZED", 1)]
 [GenerateSerializer]
 [Alias("MississippiSamples.Crescent.L2Tests.CounterInitialized")]
 internal sealed record CounterInitialized

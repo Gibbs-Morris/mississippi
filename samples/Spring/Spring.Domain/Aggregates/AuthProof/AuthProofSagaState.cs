@@ -13,7 +13,7 @@ namespace MississippiSamples.Spring.Domain.Aggregates.AuthProof;
 ///     Saga state used to prove generated saga endpoint authorization behavior.
 /// </summary>
 [BrookName("SPRING", "AUTHPROOF", "SAGA")]
-[SnapshotStorageName("SPRING", "AUTHPROOF", "SAGASTATE")]
+[SnapshotStorageName("SPRING", "AUTHPROOF", "SAGASTATE", 1)]
 [GenerateSagaEndpoints(
     InputType = typeof(StartAuthProofSagaInput),
     RoutePrefix = "auth-proof",

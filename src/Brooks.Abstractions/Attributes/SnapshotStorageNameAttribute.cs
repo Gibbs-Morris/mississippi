@@ -21,6 +21,21 @@ namespace Mississippi.Brooks.Abstractions.Attributes;
 public sealed partial class SnapshotStorageNameAttribute : Attribute
 {
     /// <summary>
+    ///     Initializes a new instance of the <see cref="SnapshotStorageNameAttribute" /> class using version 1.
+    /// </summary>
+    /// <param name="appName">The application name component of the storage name.</param>
+    /// <param name="moduleName">The module name component of the storage name.</param>
+    /// <param name="name">The specific name component of the snapshot.</param>
+    public SnapshotStorageNameAttribute(
+        string appName,
+        string moduleName,
+        string name
+    )
+        : this(appName, moduleName, name, 1)
+    {
+    }
+
+    /// <summary>
     ///     Initializes a new instance of the <see cref="SnapshotStorageNameAttribute" /> class.
     /// </summary>
     /// <param name="appName">
@@ -37,7 +52,7 @@ public sealed partial class SnapshotStorageNameAttribute : Attribute
         string appName,
         string moduleName,
         string name,
-        int version = 1
+        int version
     )
     {
         ValidateParameter(appName, nameof(appName));

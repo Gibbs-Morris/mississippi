@@ -8,7 +8,7 @@ namespace MississippiSamples.Crescent.L2Tests;
 /// <summary>
 ///     Event raised when the counter is reset.
 /// </summary>
-[EventStorageName("CRESCENT", "SAMPLE", "COUNTERRESET")]
+[EventStorageName("CRESCENT", "SAMPLE", "COUNTERRESET", 1)]
 [GenerateSerializer]
 [Alias("MississippiSamples.Crescent.L2Tests.CounterReset")]
 internal sealed record CounterReset

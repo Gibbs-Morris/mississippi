@@ -8,7 +8,7 @@ namespace MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
 /// <summary>
 ///     Event raised when funds are withdrawn from a bank account.
 /// </summary>
-[EventStorageName("SPRING", "BANKING", "FUNDSWITHDRAWN")]
+[EventStorageName("SPRING", "BANKING", "FUNDSWITHDRAWN", 1)]
 [GenerateSerializer]
 [Alias("MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events.FundsWithdrawn")]
 internal sealed record FundsWithdrawn

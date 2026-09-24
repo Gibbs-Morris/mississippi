@@ -46,7 +46,7 @@ A projection state record is similar to an aggregate state record. It uses `[Bro
 ```csharp
 [ProjectionPath("bank-account-balance")]
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
-[SnapshotStorageName("SPRING", "BANKING", "ACCOUNTBALANCE")]
+[SnapshotStorageName("SPRING", "BANKING", "ACCOUNTBALANCE", 1)]
 [GenerateProjectionEndpoints]
 [GenerateSerializer]
 [Alias("Spring.Domain.Projections.BankAccountBalance.BankAccountBalanceProjection")]
@@ -151,7 +151,7 @@ The ledger projection demonstrates a more complex read model. It maintains a sli
 ```csharp
 [ProjectionPath("bank-account-ledger")]
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
-[SnapshotStorageName("SPRING", "BANKING", "ACCOUNTLEDGER")]
+[SnapshotStorageName("SPRING", "BANKING", "ACCOUNTLEDGER", 1)]
 [GenerateProjectionEndpoints]
 [GenerateSerializer]
 public sealed record BankAccountLedgerProjection
@@ -228,7 +228,7 @@ The `FlaggedTransactionsProjection` subscribes to events from the `TransactionIn
 ```csharp
 [ProjectionPath("flagged-transactions")]
 [BrookName("SPRING", "COMPLIANCE", "INVESTIGATION")]
-[SnapshotStorageName("SPRING", "COMPLIANCE", "FLAGGEDTXPROJECTION")]
+[SnapshotStorageName("SPRING", "COMPLIANCE", "FLAGGEDTXPROJECTION", 1)]
 [GenerateProjectionEndpoints]
 [GenerateSerializer]
 public sealed record FlaggedTransactionsProjection
@@ -252,7 +252,7 @@ The `MoneyTransferStatusProjection` demonstrates a projection over a saga's even
 ```csharp
 [ProjectionPath("money-transfer-status")]
 [BrookName("SPRING", "BANKING", "TRANSFER")]
-[SnapshotStorageName("SPRING", "BANKING", "TRANSFERSTATUS")]
+[SnapshotStorageName("SPRING", "BANKING", "TRANSFERSTATUS", 1)]
 [GenerateProjectionEndpoints]
 [GenerateSerializer]
 [GenerateSagaStatusReducers]
