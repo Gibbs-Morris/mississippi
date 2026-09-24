@@ -97,4 +97,20 @@ public sealed class SnapshotRetentionPolicyStartupServiceTests
             entry => (entry.Level == LogLevel.Warning) &&
                      entry.Message.Contains("persist every reconstructed snapshot", StringComparison.Ordinal));
     }
+
+    /// <summary>
+    ///     Verifies cancellation prevents startup policy logging.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task StartAsyncThrowsWhenCancellationIsRequestedBeforeLoggingPolicy()
+    {
+        CancellationToken cancellationToken = new(true);
+        CapturingLogger logger = new();
+        SnapshotRetentionPolicyStartupService service = new(Options.Create(new SnapshotRetentionOptions()), logger);
+        OperationCanceledException exception =
+            await Assert.ThrowsAsync<OperationCanceledException>(() => service.StartAsync(cancellationToken));
+        Assert.Equal(cancellationToken, exception.CancellationToken);
+        Assert.Empty(logger.Entries);
+    }
 }

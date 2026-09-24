@@ -159,9 +159,14 @@ public sealed class SnapshotRetentionOptions
     /// </summary>
     /// <typeparam name="TSnapshot">The state type to get the modulus for.</typeparam>
     /// <returns>
-    ///     The configured modulus for the state type if an override exists;
-    ///     otherwise, <see cref="DefaultRetainModulus" />.
+    ///     The configured modulus for the state's stable snapshot storage name or CLR type name if an override
+    ///     exists; otherwise, the state's <see cref="SnapshotRetentionAttribute.Modulus" /> or
+    ///     <see cref="DefaultRetainModulus" />.
     /// </returns>
+    /// <remarks>
+    ///     Resolves overrides in this order: stable snapshot storage name, CLR full name, the
+    ///     <see cref="SnapshotRetentionAttribute.Modulus" /> attribute, then <see cref="DefaultRetainModulus" />.
+    /// </remarks>
     public int GetRetainModulus<TSnapshot>() => GetRetainModulus(typeof(TSnapshot));
 
     /// <summary>
