@@ -113,4 +113,18 @@ public sealed class SnapshotRetentionPolicyStartupServiceTests
         Assert.Equal(cancellationToken, exception.CancellationToken);
         Assert.Empty(logger.Entries);
     }
+
+    /// <summary>
+    ///     Verifies the no-op shutdown completes even when cancellation is already requested.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task StopAsyncCompletesWhenCancellationIsAlreadyRequested()
+    {
+        CancellationToken cancellationToken = new(true);
+        CapturingLogger logger = new();
+        SnapshotRetentionPolicyStartupService service = new(Options.Create(new SnapshotRetentionOptions()), logger);
+        await service.StopAsync(cancellationToken);
+        Assert.Empty(logger.Entries);
+    }
 }
