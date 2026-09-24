@@ -295,6 +295,40 @@ internal static partial class AggregateGrainLoggerExtensions
     );
 
     /// <summary>
+    ///     Logs when unregistering a newly created saga reminder fails after a failed append.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="exception">The exception thrown during reminder rollback.</param>
+    [LoggerMessage(
+        25,
+        LogLevel.Error,
+        "Failed to unregister reminder {ReminderName} for aggregate {AggregateKey} after a failed event append; the reminder may fire without committed saga events")]
+    public static partial void SagaReminderRollbackFailed(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey,
+        Exception exception
+    );
+
+    /// <summary>
+    ///     Logs when a newly created saga reminder is rolled back because the event append failed.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(
+        24,
+        LogLevel.Warning,
+        "Rolling back reminder {ReminderName} for aggregate {AggregateKey} because the event append failed before committing")]
+    public static partial void SagaReminderRollingBackAfterFailedAppend(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
+
+    /// <summary>
     ///     Logs when a reminder tick is skipped because saga work is already in progress.
     /// </summary>
     /// <param name="logger">The logger.</param>
@@ -305,6 +339,22 @@ internal static partial class AggregateGrainLoggerExtensions
         LogLevel.Debug,
         "Skipping reminder {ReminderName} for aggregate {AggregateKey} because saga work is already active")]
     public static partial void SagaReminderSkippedAlreadyActive(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
+
+    /// <summary>
+    ///     Logs when a reminder fires for a saga that never started and is unregistered as stale.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(
+        26,
+        LogLevel.Information,
+        "Reminder {ReminderName} found saga phase NotStarted for aggregate {AggregateKey}; unregistering stale reminder instead of recovering")]
+    public static partial void SagaReminderStaleNotStarted(
         this ILogger logger,
         string reminderName,
         string aggregateKey
