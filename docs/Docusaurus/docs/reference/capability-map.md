@@ -11,7 +11,7 @@ sidebar_label: Capability and Package Map
 
 Choose a Mississippi capability by the work your application needs to do, then use the package tables to find its contracts and implementation. A domain feature commonly spans several packages: your business rules stay in the domain model while generators connect the runtime, gateway, and client.
 
-This reference maps the projects under `src/` to their consumer roles. Package identities use the `Mississippi.` prefix defined in [Directory.Build.props](https://github.com/Gibbs-Morris/mississippi/blob/main/Directory.Build.props); [src/Directory.Build.props](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Directory.Build.props) enables packing for source projects.
+This reference maps all 46 projects under `src/` to their consumer roles. Package identities use the `Mississippi.` prefix defined in [Directory.Build.props](https://github.com/Gibbs-Morris/mississippi/blob/main/Directory.Build.props); [src/Directory.Build.props](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Directory.Build.props) enables packing for source projects.
 
 This map describes the current development source, and its GitHub source links follow `main`. When using a released package, compare the linked contract with that package's release tag or commit. When preparing a versioned documentation snapshot, pin its source links to the corresponding release revision so the examples and evidence stay aligned.
 
@@ -46,7 +46,10 @@ Use the SDK composition packages when following the full application pattern. Us
 | [Mississippi.Sdk.Runtime](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Sdk.Runtime/Sdk.Runtime.csproj) | Composes runtime libraries and Cosmos providers for a silo project |
 | [Mississippi.Sdk.Gateway](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Sdk.Gateway/Sdk.Gateway.csproj) | Composes gateway libraries for an ASP.NET Core project |
 | [Mississippi.Sdk.Client](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Sdk.Client/Sdk.Client.csproj) | Composes client hosting, Inlet, and Reservoir libraries |
-| [Mississippi.Hosting.Client](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Hosting.Client/Hosting.Client.csproj) | Provides `AddMississippiClient()` and `MississippiClientBuilder` for Blazor WebAssembly startup |
+| [Mississippi.Hosting.Abstractions](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Hosting.Abstractions/Hosting.Abstractions.csproj) | Shared host builder contracts and structured composition diagnostics |
+| [Mississippi.Hosting.Runtime.Abstractions](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Hosting.Runtime.Abstractions/Hosting.Runtime.Abstractions.csproj) | Runtime-role builder contracts and Orleans integration diagnostic codes |
+| [Mississippi.Hosting.Runtime](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Hosting.Runtime/Hosting.Runtime.csproj) | Validated terminal composition for Orleans runtime hosts |
+| [Mississippi.Hosting.Client](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Hosting.Client/Hosting.Client.csproj) | Provides `ClientBuilder` and `UseMississippi()` for Blazor WebAssembly client composition |
 
 ### Build-Time Generator References
 
