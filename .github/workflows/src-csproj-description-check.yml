@@ -1,6 +1,9 @@
 name: Src Csproj Description Check
 
 on:
+  merge_group:
+    types: [checks_requested]
+    branches: [main]
   pull_request:
     paths:
       - src/**/*.csproj

@@ -1,6 +1,9 @@
 name: "Docusaurus Build"
 on:
   workflow_dispatch:
+  merge_group:
+    types: [checks_requested]
+    branches: [main]
   push:
     branches:
       - main
