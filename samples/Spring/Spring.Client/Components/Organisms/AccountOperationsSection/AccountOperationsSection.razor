@@ -1,4 +1,3 @@
-@using MississippiSamples.Spring.Client.Components.Atoms.AmountInputAdapter
 @namespace MississippiSamples.Spring.Client.Components.Organisms
 
 <header>
@@ -27,12 +26,7 @@
                            placeholder="Account holder name"/>
             </div>
             <div>
-                <SpringAmountInput InputId="@InitialDepositInputId"
-                                   Label="@($"{PanelLabel} initial deposit (£)")"
-                                   Value="@InitialDeposit"
-                                   ValueChanged="@InitialDepositChanged"
-                                   IsValidChanged="@SetInitialDepositValidity"
-                                   IsDisabled="@IsExecutingOrLoading"/>
+                @RenderAmountInput(InitialDepositInputId, $"{PanelLabel} initial deposit (£)", InitialDeposit, InitialDepositChanged, SetInitialDepositValidity, IsExecutingOrLoading)
             </div>
             <button type="button" @onclick="OnOpenAccount" disabled="@(IsExecutingOrLoading || !isInitialDepositValid)">
                 Open Account
@@ -45,12 +39,7 @@
     <fieldset disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
         <legend>Deposit Funds (GBP)</legend>
         <div>
-            <SpringAmountInput InputId="@DepositAmountInputId"
-                               Label="@($"{PanelLabel} deposit amount (£)")"
-                               Value="@DepositAmount"
-                               ValueChanged="@DepositAmountChanged"
-                               IsValidChanged="@SetDepositAmountValidity"
-                               IsDisabled="@(IsExecutingOrLoading || !IsAccountOpen)"/>
+            @RenderAmountInput(DepositAmountInputId, $"{PanelLabel} deposit amount (£)", DepositAmount, DepositAmountChanged, SetDepositAmountValidity, IsExecutingOrLoading || !IsAccountOpen)
         </div>
         <button type="button" @onclick="OnDeposit" disabled="@(IsExecutingOrLoading || !IsAccountOpen || !isDepositAmountValid)">
             Deposit £
@@ -68,12 +57,7 @@
     <fieldset disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
         <legend>Withdraw Funds</legend>
         <div>
-            <SpringAmountInput InputId="@WithdrawAmountInputId"
-                               Label="@($"{PanelLabel} withdrawal amount (£)")"
-                               Value="@WithdrawAmount"
-                               ValueChanged="@WithdrawAmountChanged"
-                               IsValidChanged="@SetWithdrawAmountValidity"
-                               IsDisabled="@(IsExecutingOrLoading || !IsAccountOpen)"/>
+            @RenderAmountInput(WithdrawAmountInputId, $"{PanelLabel} withdrawal amount (£)", WithdrawAmount, WithdrawAmountChanged, SetWithdrawAmountValidity, IsExecutingOrLoading || !IsAccountOpen)
         </div>
         <button type="button" @onclick="OnWithdraw" disabled="@(IsExecutingOrLoading || !IsAccountOpen || !isWithdrawAmountValid)">Withdraw</button>
         <div>

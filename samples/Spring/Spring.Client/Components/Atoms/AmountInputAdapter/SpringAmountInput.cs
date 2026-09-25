@@ -5,8 +5,10 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
 
 using Mississippi.Refraction.Client;
+using Mississippi.Refraction.Client.Components.Atoms.Input;
 
 
 namespace MississippiSamples.Spring.Client.Components.Atoms.AmountInputAdapter;
@@ -14,7 +16,7 @@ namespace MississippiSamples.Spring.Client.Components.Atoms.AmountInputAdapter;
 /// <summary>
 ///     Adapts Refraction's string input to a validated decimal amount.
 /// </summary>
-public sealed partial class SpringAmountInput
+internal sealed class SpringAmountInput : ComponentBase
 {
     private static readonly IReadOnlyDictionary<string, object> NativeInputAttributes =
         new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
@@ -30,6 +32,11 @@ public sealed partial class SpringAmountInput
     private bool hasObservedValue;
 
     private decimal lastObservedValue;
+
+    /// <summary>Initializes a new instance of the <see cref="SpringAmountInput" /> class.</summary>
+    public SpringAmountInput()
+    {
+    }
 
     /// <summary>Gets or sets the native input ID.</summary>
     [Parameter]
@@ -108,6 +115,29 @@ public sealed partial class SpringAmountInput
             NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
             CultureInfo.InvariantCulture,
             out amount);
+    }
+
+    /// <inheritdoc />
+    protected override void BuildRenderTree(
+        RenderTreeBuilder builder
+    )
+    {
+        builder.OpenComponent<InputField>(0);
+        builder.AddAttribute(1, nameof(InputField.Id), InputId);
+        builder.AddAttribute(2, nameof(InputField.Label), Label);
+        builder.AddAttribute(3, nameof(InputField.Type), "text");
+        builder.AddAttribute(4, nameof(InputField.Value), draft);
+        builder.AddAttribute(
+            5,
+            nameof(InputField.ValueChanged),
+            EventCallback.Factory.Create<string>(this, HandleInputAsync));
+        builder.AddAttribute(6, nameof(InputField.State), InputState);
+        builder.AddAttribute(7, nameof(InputField.ErrorText), errorText);
+        builder.AddAttribute(8, nameof(InputField.HelperText), "Use a period (.) for decimal values.");
+        builder.AddAttribute(9, nameof(InputField.InputAttributes), NativeInputAttributes);
+        builder.AddAttribute(10, nameof(InputField.IsDisabled), IsDisabled);
+        builder.AddAttribute(11, nameof(InputField.Placeholder), Placeholder);
+        builder.CloseComponent();
     }
 
     /// <inheritdoc />

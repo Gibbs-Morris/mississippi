@@ -1,5 +1,8 @@
+using System;
+
 using Microsoft.AspNetCore.Components;
 
+using MississippiSamples.Spring.Client.Components.Atoms.AmountInputAdapter;
 using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos;
 using MississippiSamples.Spring.Client.Features.BankAccountLedger.Dtos;
 using MississippiSamples.Spring.Client.Features.MoneyTransferStatus.Dtos;
@@ -176,6 +179,29 @@ public sealed partial class AccountOperationsSection
         string inputName
     ) =>
         $"{InputIdPrefix}-{inputName}";
+
+    private RenderFragment RenderAmountInput(
+        string inputId,
+        string label,
+        decimal value,
+        EventCallback<decimal> valueChanged,
+        Action<bool> validityChanged,
+        bool isDisabled
+    ) =>
+        builder =>
+        {
+            builder.OpenComponent<SpringAmountInput>(0);
+            builder.AddAttribute(1, nameof(SpringAmountInput.InputId), inputId);
+            builder.AddAttribute(2, nameof(SpringAmountInput.Label), label);
+            builder.AddAttribute(3, nameof(SpringAmountInput.Value), value);
+            builder.AddAttribute(4, nameof(SpringAmountInput.ValueChanged), valueChanged);
+            builder.AddAttribute(
+                5,
+                nameof(SpringAmountInput.IsValidChanged),
+                EventCallback.Factory.Create(this, validityChanged));
+            builder.AddAttribute(6, nameof(SpringAmountInput.IsDisabled), isDisabled);
+            builder.CloseComponent();
+        };
 
     private void SetDepositAmountValidity(
         bool isValid
