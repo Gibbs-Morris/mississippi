@@ -12,6 +12,12 @@ namespace MississippiSamples.Spring.Client.Components.Organisms;
 /// </summary>
 public sealed partial class AccountOperationsSection
 {
+    private bool isDepositAmountValid = true;
+
+    private bool isInitialDepositValid = true;
+
+    private bool isWithdrawAmountValid = true;
+
     /// <summary>Gets or sets the balance projection.</summary>
     [Parameter]
     public BankAccountBalanceProjectionDto BalanceProjection { get; set; } = default!;
@@ -43,6 +49,10 @@ public sealed partial class AccountOperationsSection
     /// <summary>Gets or sets the callback when the initial deposit changes.</summary>
     [Parameter]
     public EventCallback<decimal> InitialDepositChanged { get; set; }
+
+    /// <summary>Gets or sets the stable prefix used for this panel's native input IDs.</summary>
+    [Parameter]
+    public string InputIdPrefix { get; set; } = "account";
 
     /// <summary>Gets or sets a value indicating whether the account is open.</summary>
     [Parameter]
@@ -147,4 +157,38 @@ public sealed partial class AccountOperationsSection
     /// <summary>Gets or sets the callback when the withdraw amount changes.</summary>
     [Parameter]
     public EventCallback<decimal> WithdrawAmountChanged { get; set; }
+
+    private string DepositAmountInputId => GetInputId("deposit-amount-input");
+
+    private string HolderNameInputId => GetInputId("holder-name-input");
+
+    private string InitialDepositInputId => GetInputId("initial-deposit-input");
+
+    private string PanelHeadingId => GetInputId("panel-heading");
+
+    private string TransferAmountInputId => GetInputId("transfer-amount-input");
+
+    private string TransferDestinationInputId => GetInputId("transfer-destination-input");
+
+    private string WithdrawAmountInputId => GetInputId("withdraw-amount-input");
+
+    private string GetInputId(
+        string inputName
+    ) =>
+        $"{InputIdPrefix}-{inputName}";
+
+    private void SetDepositAmountValidity(
+        bool isValid
+    ) =>
+        isDepositAmountValid = isValid;
+
+    private void SetInitialDepositValidity(
+        bool isValid
+    ) =>
+        isInitialDepositValid = isValid;
+
+    private void SetWithdrawAmountValidity(
+        bool isValid
+    ) =>
+        isWithdrawAmountValid = isValid;
 }

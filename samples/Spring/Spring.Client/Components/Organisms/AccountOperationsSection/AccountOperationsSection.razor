@@ -1,12 +1,12 @@
+@using MississippiSamples.Spring.Client.Components.Atoms.AmountInputAdapter
 @namespace MississippiSamples.Spring.Client.Components.Organisms
 
-<div>
-    <span>@PanelLabel: @SelectedEntityId</span>
-    <button type="button" @onclick="OnSwitchAccount">Switch</button>
-</div>
+<header>
+    <h2 id="@PanelHeadingId">@PanelLabel: @SelectedEntityId</h2>
+    <button type="button" @onclick="OnSwitchAccount" aria-label="@($"Switch {PanelLabel} account")">Switch</button>
+</header>
 
-<section>
-    <h2>Open Account</h2>
+<Pane Title="Open Account">
     <fieldset disabled="@(IsExecutingOrLoading || IsAccountOpen)">
         <legend>Open Account</legend>
         @if (IsAccountOpen)
@@ -18,8 +18,8 @@
         else
         {
             <div>
-                <label for="holder-name-input">Holder Name</label>
-                <InputText id="holder-name-input"
+                <label for="@HolderNameInputId">@PanelLabel holder name</label>
+                <InputText id="@HolderNameInputId"
                            type="text"
                            Value="HolderName"
                            ValueChanged="HolderNameChanged"
@@ -27,37 +27,32 @@
                            placeholder="Account holder name"/>
             </div>
             <div>
-                <label for="initial-deposit-input">Initial Deposit (£)</label>
-                <InputNumber id="initial-deposit-input"
-                             Value="InitialDeposit"
-                             ValueChanged="InitialDepositChanged"
-                             ValueExpression="() => InitialDeposit"
-                             placeholder="0.00"
-                             step="0.01"
-                             min="0"/>
+                <SpringAmountInput InputId="@InitialDepositInputId"
+                                   Label="@($"{PanelLabel} initial deposit (£)")"
+                                   Value="@InitialDeposit"
+                                   ValueChanged="@InitialDepositChanged"
+                                   IsValidChanged="@SetInitialDepositValidity"
+                                   IsDisabled="@IsExecutingOrLoading"/>
             </div>
-            <button type="button" @onclick="OnOpenAccount" disabled="@IsExecutingOrLoading">
+            <button type="button" @onclick="OnOpenAccount" disabled="@(IsExecutingOrLoading || !isInitialDepositValid)">
                 Open Account
             </button>
         }
     </fieldset>
-</section>
+</Pane>
 
-<section>
-    <h2>Deposit (£)</h2>
+<Pane Title="Deposit (£)">
     <fieldset disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
         <legend>Deposit Funds (GBP)</legend>
         <div>
-            <label for="deposit-amount-input">Amount (£)</label>
-            <InputNumber id="deposit-amount-input"
-                         Value="DepositAmount"
-                         ValueChanged="DepositAmountChanged"
-                         ValueExpression="() => DepositAmount"
-                         placeholder="0.00"
-                         step="0.01"
-                         min="0"/>
+            <SpringAmountInput InputId="@DepositAmountInputId"
+                               Label="@($"{PanelLabel} deposit amount (£)")"
+                               Value="@DepositAmount"
+                               ValueChanged="@DepositAmountChanged"
+                               IsValidChanged="@SetDepositAmountValidity"
+                               IsDisabled="@(IsExecutingOrLoading || !IsAccountOpen)"/>
         </div>
-        <button type="button" @onclick="OnDeposit" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
+        <button type="button" @onclick="OnDeposit" disabled="@(IsExecutingOrLoading || !IsAccountOpen || !isDepositAmountValid)">
             Deposit £
         </button>
         <div>
@@ -67,23 +62,20 @@
             <button type="button" @onclick="OnDepositBurst200" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">200×£10</button>
         </div>
     </fieldset>
-</section>
+</Pane>
 
-<section>
-    <h2>Withdraw</h2>
+<Pane Title="Withdraw">
     <fieldset disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
         <legend>Withdraw Funds</legend>
         <div>
-            <label for="withdraw-amount-input">Amount (£)</label>
-            <InputNumber id="withdraw-amount-input"
-                         Value="WithdrawAmount"
-                         ValueChanged="WithdrawAmountChanged"
-                         ValueExpression="() => WithdrawAmount"
-                         placeholder="0.00"
-                         step="0.01"
-                         min="0"/>
+            <SpringAmountInput InputId="@WithdrawAmountInputId"
+                               Label="@($"{PanelLabel} withdrawal amount (£)")"
+                               Value="@WithdrawAmount"
+                               ValueChanged="@WithdrawAmountChanged"
+                               IsValidChanged="@SetWithdrawAmountValidity"
+                               IsDisabled="@(IsExecutingOrLoading || !IsAccountOpen)"/>
         </div>
-        <button type="button" @onclick="OnWithdraw" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">Withdraw</button>
+        <button type="button" @onclick="OnWithdraw" disabled="@(IsExecutingOrLoading || !IsAccountOpen || !isWithdrawAmountValid)">Withdraw</button>
         <div>
             <span>Quick:</span>
             <button type="button" @onclick="OnWithdrawSingle100" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">-£100</button>
@@ -91,15 +83,15 @@
             <button type="button" @onclick="OnWithdrawBurst200" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">200×£10</button>
         </div>
     </fieldset>
-</section>
+</Pane>
 
 <section>
     <h2>Transfer</h2>
     <fieldset disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
         <legend>Transfer Between Accounts</legend>
         <div>
-            <label for="transfer-destination-input">Destination Account</label>
-            <InputText id="transfer-destination-input"
+            <label for="@TransferDestinationInputId">@PanelLabel transfer destination account</label>
+            <InputText id="@TransferDestinationInputId"
                        type="text"
                        disabled="@IsTransferDestinationReadOnly"
                        readonly="@IsTransferDestinationReadOnly"
@@ -109,8 +101,8 @@
                        placeholder="Destination account ID"/>
         </div>
         <div>
-            <label for="transfer-amount-input">Amount (£)</label>
-            <InputNumber id="transfer-amount-input"
+            <label for="@TransferAmountInputId">@PanelLabel transfer amount (£)</label>
+            <InputNumber id="@TransferAmountInputId"
                          Value="TransferAmount"
                          ValueChanged="TransferAmountChanged"
                          ValueExpression="() => TransferAmount"
