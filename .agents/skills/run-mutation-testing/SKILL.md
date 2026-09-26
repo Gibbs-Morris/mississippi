@@ -51,12 +51,15 @@ Choose the canonical focused or solution command from the local binding and
 preserve its stages, target mapping, report requirements, and configuration.
 Before a chosen run, restore the required tools and obtain the clean build that
 the consuming project requires. Before mutation starts, establish current,
-passing conventional-test evidence for the selected scope and configuration
-under the local test contract. Use a canonical command that runs those tests
-before mutation, or complete them separately if the chosen command has no
-such stage. Reuse valid, bound test evidence when local policy permits and
-the relevant inputs and outputs remain unchanged. Missing, stale, skipped,
-or unverified conventional-test evidence stops execution.
+passing conventional-test evidence for every test project actually mapped to
+the chosen mutation targets, at its required level and the same configuration,
+under the local test contract. Inspect the actual mapping rather than assume
+that default test levels cover it; broader locally required tests still apply.
+Use a canonical command that covers those tests before mutation, or complete
+them separately when the chosen command does not cover them. Reuse valid,
+bound test evidence when local policy permits and the relevant inputs and
+outputs remain unchanged. Missing, stale, skipped, or unverified
+conventional-test evidence stops execution.
 
 A preflight result that violates its local
 quality policy, including warnings when that policy makes them fatal, or a

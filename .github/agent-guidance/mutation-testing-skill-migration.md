@@ -91,7 +91,7 @@ threshold/tool distinctions, optional manifests, declared gates, incomplete
 scope, sample or ordinary-test routing, proportionate survivors, and the
 justified production exception. They are a rubric; the recorded assessment
 below is separate from the historical native trial. The current corpus contains
-24 unique rubric cases, including source changes during failed runs and
+27 unique rubric cases, including source changes during failed runs and
 later-added project files; those definitions are not executed results. Neither
 the historical assessment nor the native trial is a mutation run.
 
@@ -197,6 +197,30 @@ inputs, hashes and outcomes remain unchanged and do not validate the revised
 boundary. Fresh native/Copilot behavior and actual Stryker execution remain
 unverified. No Stryker execution was performed, and no threshold, budget or
 tool configuration changed.
+
+### Cycle 4: conventional evidence for every mapped test project
+
+Review thread `PRRT_kwDONxgvzs6mVF-R` (comment `4113172319`) identified a
+scope gap at owner `ed0b4dc6f3b9714118051365902c7249a568045c`.
+The [automation module](../../eng/src/agent-scripts/RepositoryAutomation.psm1)
+selects every `*Tests.csproj` when mapping mutation tests (lines 2141–2168),
+while [mississippi.slnx](../../mississippi.slnx) includes
+`Aqueduct.Gateway.L2Tests` (line 94). The
+[unit wrapper](../../eng/src/agent-scripts/unit-test-mississippi-solution.ps1)
+and full pipeline use default L0/L1 tests; `go.ps1` has no test-level forwarding
+parameter. The portable procedure and binding now require evidence for every
+actual mapped project, level and configuration, plus broader required tests,
+before either solution route. Separate supported single-level wrapper runs
+can supply extra baselines, but their bound inputs must remain current at
+mutation time, including after cleanup. Unestablished evidence blocks mutation;
+existing authority for the prerequisite execution needs no repeated approval.
+
+The three added cases are unexecuted definitions. This is fresh static source
+inspection; historical assessments, native inputs/results and corpus
+measurements remain unchanged at their named revisions. Neither those trials
+nor this source inspection validate current native decisions or actual test or
+mutation execution. Copilot behavior remains unverified. No engine, mapping,
+configuration, runtime or fixture change was made.
 
 ## Historical corpus accounting
 

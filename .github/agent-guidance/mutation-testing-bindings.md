@@ -26,20 +26,36 @@ portable package and does not change the mutation policy.
   `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
   -Configuration Release`. It restores tools, generates the legacy solution,
   restores packages, builds with warnings as errors, and invokes Stryker;
-  it does not run the canonical conventional unit-test workflow. Before
-  invoking it directly, require current, passing conventional-test evidence
-  from `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
-  -Configuration Release` for the intended test scope (default L0/L1; use
-  `-TestLevels` for other required levels). Check nonempty execution and
-  per-project TRX results, the configuration, and unchanged relevant authored
-  inputs and project inventory; restore/build alone is insufficient. Reuse
-  valid evidence bound to those current inputs rather than repeat tests
-  solely because mutation is requested. Missing, stale, skipped, failed, or
-  unverified test evidence stops direct mutation until an authorized test
-  workflow passes. Alternatively, explicitly authorized
-  `pwsh ./go.ps1 -Configuration Release -IncludeMutation` runs the canonical
-  unit tests before mutation. A mutation request alone does not authorize
-  that full pipeline or its cleanup and other side effects.
+  it does not run the canonical conventional unit-test workflow. Before solution
+  mutation, whether invoked directly or through an authorized full pipeline,
+  inspect the actual
+  `Get-MutationTargets` mapping in `RepositoryAutomation.psm1` for the current
+  `mississippi.slnx`. Require current, passing conventional-test evidence
+  covering every mapped test project and level in the same configuration,
+  plus broader locally required tests. The canonical unit wrapper
+  `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
+  -Configuration Release` defaults to L0/L1; the current mapping also includes
+  `Aqueduct.Gateway.L2Tests`. Inspect all actual mapped levels on each run
+  rather than assume the current list or defaults remain complete. Separate
+  bound runs may cover the required levels; for example,
+  `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
+  -Configuration Release -TestLevels L2Tests` selects the current extra level.
+  Check nonempty execution and per-project TRX results under the existing
+  test contract, configuration, and unchanged relevant authored inputs and
+  project inventory; restore/build alone is insufficient. Reuse valid bound
+  evidence rather than repeat tests solely because mutation is requested.
+  Missing, stale, skipped, failed, or unverified test evidence stops mutation
+  until the authorized prerequisite workflow passes; existing execution
+  authority covering those prerequisites needs no second approval.
+  An explicitly authorized
+  `pwsh ./go.ps1 -Configuration Release -IncludeMutation` runs default L0/L1
+  tests before mutation; it has no `-TestLevels` parameter and does not by
+  itself establish every mapped baseline. Additional bound evidence must
+  remain current at its mutation stage, including after cleanup and any other
+  input changes. If that cannot be established, report the gap or use the
+  authorized direct route after separately validating all prerequisites.
+  A mutation request alone does not authorize the full pipeline or its
+  cleanup and other side effects.
   The solution wrapper's `-ReportOnly` still restores/builds and runs the
   full Stryker analysis; it makes configured score shortfalls advisory,
   while test, tooling, and incomplete-report errors still fail. It is
