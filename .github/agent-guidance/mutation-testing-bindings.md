@@ -14,6 +14,12 @@ portable package and does not change the mutation policy.
   The script runs the selected test project with coverage first, requires at
   least one executed test and a current Cobertura report, then records a
   per-invocation manifest and mutation report.
+- Before that focused command, run
+  `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
+  -Configuration Release` and stop if it fails. This canonical preflight restores
+  tools and packages and builds `mississippi.slnx` with `--no-incremental` and
+  `--warnaserror`; the focused quality command alone does not establish that
+  warning-free clean build.
 - Routine conventional test and coverage validation uses the same script with
   `-SkipMutation`; it does not select mutation execution.
 - Solution-wide mutation uses
