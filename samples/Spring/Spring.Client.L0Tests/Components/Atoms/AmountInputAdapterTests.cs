@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 using AngleSharp.Dom;
 
@@ -16,6 +18,37 @@ namespace MississippiSamples.Spring.Client.L0Tests.Components.Atoms;
 /// </summary>
 public sealed class AmountInputAdapterTests : BunitContext
 {
+    /// <summary>External value changes reset invalid draft text and its error state.</summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task ExternalValueChangeResetsInvalidDraftAndError()
+    {
+        const string inputId = "account-a-amount-input";
+        using IRenderedComponent<SpringAmountInput> cut = Render<SpringAmountInput>(p => p
+            .Add(c => c.InputId, inputId)
+            .Add(c => c.Label, "Account A amount")
+            .Add(c => c.Value, 0m));
+        await cut.Find($"#{inputId}").InputAsync("12.");
+        IElement invalidInput = cut.Find($"#{inputId}");
+        Assert.Equal("12.", invalidInput.GetAttribute("value"));
+        Assert.Equal("true", invalidInput.GetAttribute("aria-invalid"));
+        Assert.Contains($"{inputId}-error", invalidInput.GetAttribute("aria-describedby"), StringComparison.Ordinal);
+        await cut.InvokeAsync(() => cut.Instance.SetParametersAsync(
+            ParameterView.FromDictionary(
+                new Dictionary<string, object?>
+                {
+                    [nameof(SpringAmountInput.Value)] = 42.5m,
+                })));
+        IElement updatedInput = cut.Find($"#{inputId}");
+        Assert.Equal("42.5", updatedInput.GetAttribute("value"));
+        Assert.Null(updatedInput.GetAttribute("aria-invalid"));
+        Assert.DoesNotContain(
+            $"{inputId}-error",
+            updatedInput.GetAttribute("aria-describedby") ?? string.Empty,
+            StringComparison.Ordinal);
+        Assert.Empty(cut.FindAll($"#{inputId}-error"));
+    }
+
     /// <summary>
     ///     Blank, incomplete, malformed, and unrepresentable values report invalid state without dispatching.
     /// </summary>
