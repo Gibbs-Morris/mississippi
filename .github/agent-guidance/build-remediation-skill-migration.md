@@ -62,8 +62,9 @@ The trial inputs match those bytes after documented CRLF-to-LF normalization.
 
 The assessment-scope wording was changed after those trials. Their original
 candidate hash and native records remain unchanged; they do not validate the
-revised skill. Fresh behavior for explicitly authorized assessment side effects
-and the read-only negative boundary remains unverified. Copilot remains unverified.
+revised skill. Fresh behavior for explicitly authorized assessment side effects,
+the read-only negative boundary, and the later untrusted-script execution
+safeguard remains unverified. Copilot remains unverified.
 
 [Native trial records](build-remediation-native-trials.json) bind four historical
 Codex runs to that candidate. All repair results were independently rerun, and
@@ -77,7 +78,7 @@ all existing fixture file hashes were compared before/after:
 | Assessment-only request with a side-effecting proposed command | Loaded the skill; inspected without editing or running that command; all fixture files unchanged and no artifact created. |
 
 This is synthetic Node fixture evidence with one run per case. It does not prove
-all 22 [rubric cases](build-remediation-skill-cases.json), arbitrary project
+the original 22-case rubric, arbitrary project
 behavior, or Copilot conformance. In particular, redaction, stale-test repair,
 suppression exceptions, and unobservable-operation handling have no fresh
 native trial at that historical candidate. Earlier Desktop fixture trials are
@@ -151,3 +152,15 @@ Revert this complete layer to restore the legacy adapter procedure and remove
 its skill and evaluation artifacts. Verify the six rules and local references
 remain intact. Preserve unrelated migrations and custom agents. The progress
 record is a checkpoint, not a replacement for live PR heads and gates.
+
+## Untrusted script execution correction
+
+Matching a command against contributor-controlled documentation does not verify
+the scripts or transitive build inputs it executes. The revised skill requires
+an independent caller-trusted execution source or an authorized credential-free
+sandbox constraining filesystem/network access before running untrusted code.
+When neither is available, reproduction stays unrun. This does not certify a
+particular host sandbox or change repository gates, trust settings, or budgets.
+The [case corpus](build-remediation-skill-cases.json) now contains 24 unique cases,
+including two authored trust-boundary decisions; their consuming behavior is
+unverified, and historical native records/hashes are unchanged.
