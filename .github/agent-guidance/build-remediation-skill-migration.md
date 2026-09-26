@@ -84,8 +84,17 @@ Mutation testing was not run; no mutation score is claimed.
 
 ## Context accounting
 
-Raw committed blobs from current main `30b306c076bd198329ae5c2f6e6e17fa3a0801e7`
-provide the baseline: 46 instructions, 19 global instructions, six repository
+Every figure and before/after total in this section is a historical measurement,
+using main `30b306c076bd198329ae5c2f6e6e17fa3a0801e7`,
+previous PR head `50760d308aa13b2fc75643e26fe62469cfe3d667`, and skill candidate
+`8c72aba1126468c06042ba5af806db6df3e83005`. They have not been recomputed
+for the reviewed PR base `6002ab05a918c1e0c7391a7417db23a9f132d399`,
+verified on 2026-09-26: 47 instructions, 20 global instructions and seven
+repository skills.
+The native trials above retain their separate candidate and input attribution.
+
+Raw committed blobs from historical main `30b306c076bd198329ae5c2f6e6e17fa3a0801e7`
+provide the historical baseline: 46 instructions, 19 global instructions, six repository
 skills. The instruction corpus is 247,476 UTF-8 bytes / 31,310 words / 52,262
 `o200k_base` tokens. Global bodies are 96,904 bytes / 12,845 words / 20,436 tokens.
 The two entrypoints together are 18,364 bytes / 2,295 words / 3,906 tokens;
@@ -97,9 +106,9 @@ existing repository skill name/description values add 1,785 bytes / 235 words /
 | Adapter before | 2,571 | 342 | 592 |
 | Adapter after | 1,948 | 244 | 435 |
 | Previous PR skill body | 12,104 | 1,751 | 2,312 |
-| Current skill body | 6,459 | 849 | 1,183 |
+| Measured candidate skill body | 6,459 | 849 | 1,183 |
 | Previous PR name/description | 389 | 56 | 74 |
-| Current name/description | 295 | 40 | 58 |
+| Measured candidate name/description | 295 | 40 | 58 |
 
 The previous PR input is immutable head `50760d308aa13b2fc75643e26fe62469cfe3d667`.
 Extraction parses YAML and counts name plus newline plus description; the body
