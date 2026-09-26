@@ -156,6 +156,31 @@ Describe 'Portable delivery context snapshots' {
         }
     }
 
+    It 'rejects submodule entries before status can execute nested filters' {
+        $source = Join-Path $TestDrive 'submodule-source'
+        New-Item -ItemType Directory -Path $source | Out-Null
+        Set-Content -LiteralPath (Join-Path $source 'probe.txt') -Value 'original'
+        Set-Content -LiteralPath (Join-Path $source '.gitattributes') -Value '*.txt filter=probe'
+        Invoke-FixtureGit @('-C', $source, 'init', '-b', 'fixture')
+        Invoke-FixtureGit @('-C', $source, 'config', 'core.autocrlf', 'false')
+        Invoke-FixtureGit @('-C', $source, 'add', '.')
+        Invoke-FixtureGit @('-C', $source, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'submodule baseline')
+        Invoke-FixtureGit @('-c', 'protocol.file.allow=always', 'submodule', 'add', $source, 'nested')
+        $nested = Join-Path $fixture 'nested'
+        $marker = Join-Path $fixture 'nested-filter-marker'
+        $driver = Join-Path $TestDrive 'nested-filter.ps1'
+        Set-Content -LiteralPath $driver -Value ("[IO.File]::WriteAllText('" + $marker.Replace("'", "''") + "', 'executed'); exit 1")
+        $driverCommand = '"' + $shell + '" -NoProfile -File "' + $driver + '"'
+        Invoke-FixtureGit @('-C', $nested, 'config', 'filter.probe.clean', $driverCommand)
+        $probe = Join-Path $nested 'probe.txt'
+        Set-Content -LiteralPath $probe -Value 'modified'
+        [IO.File]::SetLastWriteTimeUtc($probe, [DateTime]::UtcNow.AddSeconds(5))
+        { Get-FixtureSnapshot } | Should -Throw '*Submodule entries require manual inspection*'
+        Test-Path -LiteralPath $marker | Should -BeFalse
+        Invoke-FixtureGit @('--no-optional-locks', '-c', 'core.fsmonitor=', 'status', '--porcelain=v1')
+        Test-Path -LiteralPath $marker | Should -BeTrue
+    }
+
     It 'changes selected mode identity when Git ignores execute-bit changes' -Skip:$IsWindows {
         Invoke-FixtureGit @('config', 'core.fileMode', 'false')
         $before = Get-FixtureSnapshot

@@ -60,6 +60,10 @@ function Get-ContextObservation {
     param([string]$Root, [string[]]$ContextPaths)
     $head = [string](Invoke-ContextGit $root @('rev-parse', '--verify', 'HEAD'))
     $branch = [string](Invoke-ContextGit $root @('branch', '--show-current'))
+    $index = @(Invoke-ContextGit $root @('ls-files', '--stage'))
+    if (@($index | Where-Object { $_ -match '^160000 ' }).Count -gt 0) {
+        throw 'Submodule entries require manual inspection; status can execute submodule-local commands.'
+    }
     $filters = @(& git --no-optional-locks -c core.fsmonitor= -C $root config --name-only --get-regexp '^filter\..*\.(clean|process)$')
     if ($LASTEXITCODE -notin @(0, 1)) { throw 'Git filter configuration inspection failed.' }
     if ($filters.Count -gt 0) {
@@ -68,7 +72,6 @@ function Get-ContextObservation {
     $status = @(Invoke-ContextGit $root @('status', '--porcelain=v1', '--untracked-files=all'))
     $paths = @(Invoke-ContextGit $root @('-c', 'core.quotePath=false', 'ls-files', '--cached', '--others', '--exclude-standard') |
         Where-Object { Test-Path -LiteralPath (Join-Path $root $_) } | Sort-Object -Unique)
-    $index = @(Invoke-ContextGit $root @('ls-files', '--stage'))
     $selected = @(foreach ($relative in $ContextPaths) { Get-ContextInput $root $relative })
     return [pscustomobject]@{
         Head = $head
