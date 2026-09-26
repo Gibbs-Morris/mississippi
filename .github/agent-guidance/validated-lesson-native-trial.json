@@ -1,0 +1,23 @@
+{
+  "tool": "codex-cli 0.142.5",
+  "model": "gpt-5.5",
+  "reasoning": "medium",
+  "candidate_git_blob": "e6179bb5b86817b707fb6c367075089e505f7159",
+  "candidate_lf_sha256": "1260e379c5c52737e0477b2f610d5d143792fc924f8c11a25ce9794c207a9fca",
+  "mode": "assessment-only",
+  "skill_read_observed": true,
+  "reported_precedence": "captured.md ranks above handwritten.md under the declared fixture policy; provenance alone creates no rank",
+  "reported_admission": "Conflict before Duplicate; no write without authorized resolution",
+  "evidence_status": "supplied synthetic validation record; no live checker execution claimed",
+  "all_fixture_hashes_unchanged": true,
+  "changed_files": [],
+  "added_files": [],
+  "usage": {
+    "input_tokens": 73991,
+    "cached_input_tokens": 51328,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 1838,
+    "reasoning_output_tokens": 672
+  },
+  "limits": "One synthetic Codex authority trial; not Copilot conformance, all-rubric execution, or before/after context savings. Usage includes repeated/cached host and plugin context."
+}
