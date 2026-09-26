@@ -408,6 +408,19 @@ Describe 'Portable delivery context snapshots' {
         Test-Path -LiteralPath $marker | Should -BeTrue
     }
 
+    It 'rejects symlink conversions concealed by core.symlinks false' {
+        Invoke-FixtureGit @('config', 'core.symlinks', 'false')
+        $path = Join-Path $fixture 'tools/link.md'
+        [IO.File]::WriteAllText($path, 'missing-target.md')
+        $blob = & git -C $fixture hash-object -w $path
+        $LASTEXITCODE | Should -Be 0
+        Invoke-FixtureGit @('update-index', '--add', '--cacheinfo', "120000,$blob,tools/link.md")
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'symlink conversion fixture')
+        ([IO.FileInfo]::new($path)).LinkTarget | Should -BeNullOrEmpty
+        @(& git -C $fixture status --porcelain=v1).Count | Should -Be 0
+        { Get-FixtureSnapshot } | Should -Throw '*Tracked symlinks with core.symlinks=false require manual inspection*'
+    }
+
     It 'binds dirty status to the reported commit despite replacement refs' {
         $original = & git -C $fixture rev-parse HEAD
         Set-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'replacement tree'

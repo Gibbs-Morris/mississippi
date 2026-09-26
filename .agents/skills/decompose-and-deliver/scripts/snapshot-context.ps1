@@ -203,6 +203,12 @@ function Get-ContextObservation {
     if (@($index | Where-Object { $_ -match '^160000 ' }).Count -gt 0) {
         throw 'Submodule entries require manual inspection; status can execute submodule-local commands.'
     }
+    if (@($index | Where-Object { $_ -match '^120000 ' }).Count -gt 0) {
+        $symlinks = Invoke-ContextGit $root @('config', '--type=bool', '--get', 'core.symlinks') -AcceptedExitCodes @(0, 1) -WithResult
+        if ($symlinks.ExitCode -eq 0 -and $symlinks.Output.Trim() -eq 'false') {
+            throw 'Tracked symlinks with core.symlinks=false require manual inspection; plain-file substitutions can look clean.'
+        }
+    }
     $flags = @(Invoke-ContextGit $root @('ls-files', '-v'))
     if (@($flags | Where-Object { $_ -cmatch '^[a-zS] ' }).Count -gt 0) {
         throw 'Hidden index flags require manual inspection: assume-unchanged or skip-worktree can conceal changes.'
