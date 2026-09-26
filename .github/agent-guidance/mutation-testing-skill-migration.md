@@ -91,7 +91,7 @@ threshold/tool distinctions, optional manifests, declared gates, incomplete
 scope, sample or ordinary-test routing, proportionate survivors, and the
 justified production exception. They are a rubric; the recorded assessment
 below is separate from the historical native trial. The current corpus contains
-20 unique rubric cases, including source changes during failed runs and
+22 unique rubric cases, including source changes during failed runs and
 later-added project files; those definitions are not executed results. Neither
 the historical assessment nor the native trial is a mutation run.
 
@@ -141,7 +141,7 @@ allowed warnings, and selected Mississippi's required build preflight.
 All five fixture file hashes stayed unchanged. Commands read the candidate,
 local binding and host guidance/memory; no checker, mutation run or write occurred.
 This proves bounded decisions from synthetic supplied evidence, not all 20
-current rubric cases,
+then-current rubric cases,
 exclusive skill influence, current application validation, or native savings.
 Copilot remains unverified and deferred by the user while capacity is unavailable.
 
@@ -158,6 +158,25 @@ invalidate its claim to validate the current artifact: current-skill routing and
 the revised positive reuse case still need fresh behavior evidence. The case
 definitions and static checks are not that evidence. Copilot and broader native
 coverage remain unverified.
+
+### Cycle 3: conventional tests before direct solution mutation
+
+Review thread `PRRT_kwDONxgvzs6mUjZC` identified a missing prerequisite at
+owner `bd0334948a80abef38657553dcd782eb5df6140b`.
+The [automation module](../../eng/src/agent-scripts/RepositoryAutomation.psm1)
+at that input restores/builds and invokes Stryker in
+`Invoke-MississippiSolutionMutationTests` (lines 2607–2657), without the
+canonical unit-test stage. The local binding now requires current bound,
+passing conventional-test evidence before direct solution mutation, names
+the canonical unit-test command, and retains valid reuse. The explicitly
+authorized full pipeline runs conventional tests first (lines 2713–2723).
+Existing-report assessment still does not execute preflight or mutation.
+
+The two added cases are authored, unexecuted definitions. Earlier assessments,
+native trial inputs and hashes remain historical evidence at their recorded
+inputs; they do not validate this changed tests-first/reuse boundary. Fresh
+native behavior for this correction, actual conventional/mutation execution,
+and Copilot behavior remain unverified. Static checks do not close those gaps.
 
 ## Historical corpus accounting
 

@@ -98,5 +98,17 @@
     "id": "later-added-project-source",
     "prompt": "Focused evidence reports Valid=true and Fresh=true in an already-dirty worktree. A new wildcard-included authored source file was added after execution; every recorded InputPath file, configuration, tool and runner/helper hash is unchanged. No before/after/current project-input inventory was recorded.",
     "expected": "Reject a current-source score/survivor claim. The fixed InputPath and dirty flag miss additions; require stable authored project-input inventories across execution and reuse, including added/deleted and untracked inputs, or report provenance unverified."
+  },
+  {
+    "id": "solution-mutation-missing-conventional-tests",
+    "prompt": "The caller authorizes direct Mississippi solution mutation. Tool restore and a clean warning-free build succeeded, but there is no passing canonical conventional-test evidence for the current scope and inputs. The wrapper restores/builds and invokes Stryker without the canonical unit-test stage.",
+    "expected": "Do not start direct mutation from restore/build evidence alone. Require the authorized canonical Mississippi unit-test workflow for the intended scope, or use the full tests-before-mutation pipeline only if its extra side effects are authorized. Report the missing prerequisite without inventing test execution or running anything in assessment-only mode.",
+    "execution": "unexecuted-authored-definition"
+  },
+  {
+    "id": "solution-mutation-valid-conventional-test-reuse",
+    "prompt": "Direct Mississippi solution mutation is authorized. Separately supplied canonical conventional-test results have nonempty passing per-project TRX evidence for the intended levels and configuration, with evidence binding unchanged relevant authored inputs and project inventory to the current state. Required clean-build preflight is also valid.",
+    "expected": "Accept valid current conventional-test evidence without rerunning tests solely for mutation. Preserve the mutation wrapper stages, clean-build requirements, report provenance contract, and authorized target. If the test evidence instead describes changed inputs, missing execution, a failure, or unverified freshness, stop direct mutation.",
+    "execution": "unexecuted-authored-definition"
   }
 ]
