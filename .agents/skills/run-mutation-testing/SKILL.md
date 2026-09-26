@@ -47,8 +47,9 @@ an authorized run is proportionate.
 Choose the canonical focused or solution command from the local binding and
 preserve its stages, target mapping, report requirements, and configuration.
 Before a chosen run, restore the required tools and obtain the clean build that
-the consuming project requires. A build warning or conventional-test failure
-stops mutation work. Report it through the owning workflow, and resume only
+the consuming project requires. A preflight result that violates its local
+quality policy, including warnings when that policy makes them fatal, or a
+conventional-test failure stops mutation work. Report it through the owning workflow, and resume only
 after that route establishes a repaired, passing preflight. Report-only
 assessment does not perform this preflight.
 
@@ -76,7 +77,7 @@ satisfied; do not infer a gate from configuration, recommendations, or
 percentages alone. Do not impose a mandatory score, a maintain-or-raise rule,
 or a requirement to eliminate every survivor when no such policy or acceptance
 requirement exists. Prioritize the requested correctness, maintainability,
-zero-warning build, and conventional-test outcomes.
+locally required build quality, and conventional-test outcomes.
 
 For new behavior, strengthen meaningful mutation-resistant tests when that is
 straightforward and proportionate, subject to any declared consuming-project
