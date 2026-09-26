@@ -237,6 +237,19 @@ Describe 'Portable delivery context snapshots' {
         (Get-FixtureSnapshot).Head | Should -Not -BeExactly $before.Head
     }
 
+    It 'binds dirty status to the reported commit despite replacement refs' {
+        $original = & git -C $fixture rev-parse HEAD
+        Set-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'replacement tree'
+        Invoke-FixtureGit @('add', '.')
+        $tree = & git -C $fixture write-tree
+        $replacement = & git -C $fixture -c user.name=Fixture -c user.email=fixture@example.invalid commit-tree $tree -m replacement
+        Invoke-FixtureGit @('replace', $original, $replacement)
+        @(& git -C $fixture status --porcelain=v1).Count | Should -Be 0
+        $snapshot = Get-FixtureSnapshot
+        $snapshot.Head | Should -BeExactly $original
+        $snapshot.Dirty | Should -BeTrue
+    }
+
     It 'rejects a missing file rather than reporting absent guidance as success' {
         { Get-FixtureSnapshot @('missing-policy.md') } | Should -Throw
     }

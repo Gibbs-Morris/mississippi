@@ -85,6 +85,7 @@ disabled. These overrides preserve configuration and index contents; a clean Git
 view alone is not validation evidence for deliberately preserved metadata.
 Path joining and separator normalization follow the host filesystem: Unix
 backslashes remain literal characters in inventories, roots and selected identities.
+Inspection disables replacement objects so status remains bound to the reported commit.
 
 ## State and compatibility
 
