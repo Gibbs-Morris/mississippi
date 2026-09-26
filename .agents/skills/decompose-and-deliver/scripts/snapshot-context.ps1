@@ -51,6 +51,7 @@ function Get-ContextInput {
     return [pscustomobject]@{
         Path = [IO.Path]::GetRelativePath($root, $fullPath).Replace('\', '/')
         Type = $type
+        Mode = if ($IsWindows) { [int]$item.Attributes } else { [int]$item.UnixStat.Mode }
         Sha256 = (Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash.ToLowerInvariant()
     }
 }

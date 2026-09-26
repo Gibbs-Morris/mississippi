@@ -156,6 +156,26 @@ Describe 'Portable delivery context snapshots' {
         }
     }
 
+    It 'changes selected mode identity when Git ignores execute-bit changes' -Skip:$IsWindows {
+        Invoke-FixtureGit @('config', 'core.fileMode', 'false')
+        $before = Get-FixtureSnapshot
+        [IO.File]::SetUnixFileMode((Join-Path $fixture 'tools/verify.sh'), [IO.UnixFileMode]493)
+        $after = Get-FixtureSnapshot
+        $after.Dirty | Should -BeFalse
+        $after.SelectedInputs[1].Type | Should -BeExactly 'File'
+        $after.SelectedInputs[1].Sha256 | Should -BeExactly $before.SelectedInputs[1].Sha256
+        $after.SelectedInputs[1].Mode | Should -Not -Be $before.SelectedInputs[1].Mode
+    }
+
+    It 'rejects a selected mode change between observations' -Skip:$IsWindows {
+        Invoke-FixtureGit @('config', 'core.fileMode', 'false')
+        $scriptPath = (Join-Path $fixture 'tools/verify.sh').Replace("'", "''")
+        $marker = Join-Path $TestDrive 'mode-mutation'
+        $prelude = Get-SnapshotMutationPrelude -Marker $marker -Mutation "[IO.File]::SetUnixFileMode('$scriptPath', [IO.UnixFileMode]493)"
+        { Get-FixtureSnapshot -Prelude $prelude } | Should -Throw '*changed during context inspection*'
+        Test-Path -LiteralPath $marker | Should -BeTrue
+    }
+
     It 'preserves Git rejection of an untrusted repository owner' {
         $prelude = "`$env:GIT_TEST_ASSUME_DIFFERENT_OWNER = '1'; `$env:GIT_CONFIG_NOSYSTEM = '1'; " +
             "`$env:GIT_CONFIG_GLOBAL = '" + (Join-Path $fixture 'missing-global').Replace("'", "''") + "'; "
