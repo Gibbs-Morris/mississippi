@@ -58,6 +58,8 @@ bounded check does not promise an atomic snapshot; serialize conflicting work
 and refresh evidence before using it.
 Read selected bodies and follow the target's loading procedure. A snapshot is
 evidence identity, not proof of successful tests or a security attestation.
+Selected inputs must be regular files. Unix runtimes without file-type metadata
+require manual inspection; pipes, sockets and devices are rejected before hashing.
 
 ## State and compatibility
 

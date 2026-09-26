@@ -16,6 +16,18 @@ function Invoke-ContextGit {
     return $output
 }
 
+function Get-ContextFileType {
+    param([IO.FileSystemInfo]$Item, [string]$Relative)
+    if ($IsWindows) { return 'File' }
+    if ($null -eq $item.PSObject.Properties['UnixStat']) {
+        throw 'Unix file-type inspection is unavailable; inspect selected files manually.'
+    }
+    if ($item.UnixStat.ItemType -ne 'File') {
+        throw "Non-regular context files require manual inspection: $relative"
+    }
+    return 'File'
+}
+
 function Get-ContextInput {
     param([string]$Root, [string]$Relative)
     if ([string]::IsNullOrWhiteSpace($relative) -or [IO.Path]::IsPathRooted($relative)) {
@@ -35,8 +47,10 @@ function Get-ContextInput {
         }
         $ancestor = Get-Item -LiteralPath (Split-Path -Parent $ancestor.FullName) -Force
     }
+    $type = Get-ContextFileType $item $relative
     return [pscustomobject]@{
         Path = [IO.Path]::GetRelativePath($root, $fullPath).Replace('\', '/')
+        Type = $type
         Sha256 = (Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash.ToLowerInvariant()
     }
 }

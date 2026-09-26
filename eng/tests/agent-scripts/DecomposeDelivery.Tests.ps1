@@ -120,6 +120,42 @@ Describe 'Portable delivery context snapshots' {
         { Get-FixtureSnapshot @('tools') } | Should -Throw
     }
 
+    It 'rejects a Unix <Kind> before hashing without hanging' -Skip:$IsWindows -ForEach @(
+        @{ Kind = 'named pipe' }, @{ Kind = 'socket' }
+    ) {
+        $path = Join-Path $fixture 'special'
+        $socket = $null
+        if ($Kind -eq 'named pipe') {
+            & mkfifo $path
+            $LASTEXITCODE | Should -Be 0
+        }
+        else {
+            $socket = [Net.Sockets.Socket]::new([Net.Sockets.AddressFamily]::Unix, [Net.Sockets.SocketType]::Stream, [Net.Sockets.ProtocolType]::Unspecified)
+            $socket.Bind([Net.Sockets.UnixDomainSocketEndPoint]::new($path))
+        }
+        $start = [Diagnostics.ProcessStartInfo]::new($shell)
+        $start.UseShellExecute = $false
+        $start.RedirectStandardOutput = $true
+        $start.RedirectStandardError = $true
+        foreach ($argument in @('-NoProfile', '-File', $snapshotScript, '-RepositoryRoot', $fixture, '-ContextPath', 'special')) {
+            $start.ArgumentList.Add($argument)
+        }
+        $start.Environment['GIT_CONFIG_NOSYSTEM'] = '1'
+        $start.Environment['GIT_CONFIG_GLOBAL'] = Join-Path $fixture 'missing-global'
+        $child = [Diagnostics.Process]::Start($start)
+        try {
+            $child.WaitForExit(10000) | Should -BeTrue
+            $child.ExitCode | Should -Be 1
+            $child.StandardError.ReadToEnd() | Should -Match 'Non-regular context files'
+            $child.StandardOutput.ReadToEnd() | Should -BeNullOrEmpty
+        }
+        finally {
+            if (-not $child.HasExited) { $child.Kill($true) }
+            $child.Dispose()
+            if ($null -ne $socket) { $socket.Dispose() }
+        }
+    }
+
     It 'preserves Git rejection of an untrusted repository owner' {
         $prelude = "`$env:GIT_TEST_ASSUME_DIFFERENT_OWNER = '1'; `$env:GIT_CONFIG_NOSYSTEM = '1'; " +
             "`$env:GIT_CONFIG_GLOBAL = '" + (Join-Path $fixture 'missing-global').Replace("'", "''") + "'; "
