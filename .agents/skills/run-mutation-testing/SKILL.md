@@ -17,10 +17,13 @@ existing report answers the question or execution is not authorized or safe.
    disclosure rules, and ownership requirements before choosing an action.
 2. Classify the request as an existing-report assessment, an authorized
    mutation execution, or separately authorized survivor remediation. In
-   report-only or assessment-only mode, inspect supplied evidence without
+   existing-report or assessment-only mode, inspect supplied evidence without
    restoring tools, building, running tests or mutation, editing files, or
    publishing tasks merely to obtain more evidence. Do not claim live execution
-   from a supplied report.
+   from a supplied report. A tool's report-only flag is not an assessment
+   mode: inspect its documented behavior. If it still executes analysis,
+   apply the authorized-execution route and all preconditions; a flag alone
+   grants no execution authority.
 3. Define the target project or projects, source/test mapping, revision or
    working state, configuration, effort bound, acceptance question, and
    available report. Use the consuming project's supported target selection;
@@ -58,7 +61,7 @@ or unverified conventional-test evidence stops execution.
 A preflight result that violates its local
 quality policy, including warnings when that policy makes them fatal, or a
 conventional-test failure stops mutation work. Report it through the owning workflow, and resume only
-after that route establishes a repaired, passing preflight. Report-only
+after that route establishes a repaired, passing preflight. Existing-report
 assessment does not perform this preflight.
 
 Use a no-build, cached, or report-reuse switch only after checking its local

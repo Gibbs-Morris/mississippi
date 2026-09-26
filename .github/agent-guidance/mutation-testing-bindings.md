@@ -40,12 +40,18 @@ portable package and does not change the mutation policy.
   `pwsh ./go.ps1 -Configuration Release -IncludeMutation` runs the canonical
   unit tests before mutation. A mutation request alone does not authorize
   that full pipeline or its cleanup and other side effects.
+  The solution wrapper's `-ReportOnly` still restores/builds and runs the
+  full Stryker analysis; it makes configured score shortfalls advisory,
+  while test, tooling, and incomplete-report errors still fail. It is
+  mutation execution, requires existing explicit execution authorization
+  and the same tests-first/preflight conditions, and is never selected as
+  read-only assessment merely because of its name.
 - Existing report inspection uses
   `pwsh ./eng/src/agent-scripts/summarize-mutation-survivors.ps1
   -SkipMutationRun -RunPath <run-directory>`. The selected manifest and reports
   must belong to the requested run and scope; older reports are not fallback
   evidence for a newer incomplete run. `-SkipMutationRun` still writes enriched
-  and summary JSON/Markdown, plus optional tasks or skeletons, so report-only
+  and summary JSON/Markdown, plus optional tasks or skeletons, so existing-report
   assessment must inspect raw reports or use the summarizer only when those
   writes are authorized.
 - `-NoBuild` is supported by the focused quality script only after the required
