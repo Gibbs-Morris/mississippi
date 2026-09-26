@@ -51,7 +51,9 @@ reduction, existing deposits and replay. Protected fixture hashes were preserved
 Read-only generated-feature assessment honored local types, persisted identities,
 eventual reads and background command boundaries. A source recheck corrected
 an overstated generated-path gap. Unrelated translation read no body and ran no
-command. Seven cases are a rubric, not seven independently executed trials.
+command. These initial trials use their pinned historical input, not the later
+review-corrected skill. The nine current cases are a rubric, not nine independently
+executed trials.
 
 Raw committed-LF accounting includes both entrypoints, selected instruction
 bodies and all skill name/description values. Instruction lines fall from

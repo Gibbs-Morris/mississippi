@@ -48,11 +48,12 @@ diagram or framework name. Keep unrelated hosts and infrastructure unchanged.
 
 ## Connect the existing application
 
-Use source generation where the consuming project requires or supports it;
+Use source generation where the consuming project's policy requires or selects it;
 check the actual generator inputs and produced contracts before assuming
 support. Change source inputs rather than generated output. Use an authorized
-manual integration only where the local policy and unsupported scenario allow
-it. Preserve the existing registration and builder composition boundaries.
+manual integration wherever local policy permits it, including a supported
+scenario whose chosen integration is manual. Preserve the existing registration
+and builder composition boundaries.
 
 When the feature has client behavior, connect commands and focused projections
 through the established store, transport, and subscription lifecycle. Keep
