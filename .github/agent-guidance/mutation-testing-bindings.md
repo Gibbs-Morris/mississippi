@@ -75,6 +75,15 @@ report hashes. Without separately established invocation/source/report evidence,
 their manifests support no revision-specific score claim. Do not infer a revision
 from a filename, timestamp, or a passing outer pipeline.
 
+The focused manifest's `Failed` status combines native tool, reporter, and
+threshold failures; it does not identify the category. A complete report below
+the configured threshold is a score, not proof of a threshold-only exit. Classify
+a threshold failure only when the invocation's diagnostics establish that cause
+and its required reports are valid; otherwise report a failed run with an
+unverified cause. Keep build/test preflight failures separate. The solution
+wrapper's explicit `ThresholdFailed` follows successful report validation and
+its own threshold comparison; do not infer that status for a focused run.
+
 Current repository policy targets the primary solution's supported projects.
 The sample solution is outside this repository's mutation requirement, but this
 is a local binding rather than a portable prohibition; the skill must discover
