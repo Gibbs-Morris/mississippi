@@ -34,14 +34,13 @@ function Get-ContextInput {
         throw 'Context paths must be nonempty and repository-relative.'
     }
     $fullPath = [IO.Path]::GetFullPath((Join-Path $root $relative))
-    $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
-    if (-not $fullPath.StartsWith($root.TrimEnd('/', '\') + [IO.Path]::DirectorySeparatorChar, $comparison)) {
+    if (-not $fullPath.StartsWith($root.TrimEnd('/', '\') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal)) {
         throw "Context path escapes the target repository: $relative"
     }
     $item = Get-Item -LiteralPath $fullPath -Force
     if ($item.PSIsContainer) { throw "Context path is not a file: $relative" }
     $ancestor = $item
-    while ($null -ne $ancestor -and $ancestor.FullName -ne $root) {
+    while ($null -ne $ancestor -and $ancestor.FullName -cne $root) {
         if (($ancestor.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
             throw "Linked context paths require explicit manual inspection: $relative"
         }

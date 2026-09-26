@@ -164,6 +164,22 @@ Describe 'Portable delivery context snapshots' {
         { Get-FixtureSnapshot -Root $linked } | Should -Throw '*Git directory indirection requires manual inspection*'
     }
 
+    It 'rejects case aliases of the root without assuming Windows case folding' {
+        $caseRoot = Join-Path $TestDrive 'case-root'
+        New-Item -ItemType Directory -Path $caseRoot | Out-Null
+        Set-Content -LiteralPath (Join-Path $caseRoot 'AGENTS.md') -Value 'Selected instructions'
+        Invoke-FixtureGit @('-C', $caseRoot, 'init', '-b', 'case-fixture')
+        Invoke-FixtureGit @('-C', $caseRoot, 'config', 'core.autocrlf', 'false')
+        Invoke-FixtureGit @('-C', $caseRoot, 'add', '.')
+        Invoke-FixtureGit @('-C', $caseRoot, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'case baseline')
+        if (-not $IsWindows) {
+            $sibling = Join-Path $TestDrive 'CASE-ROOT'
+            New-Item -ItemType Directory -Path $sibling | Out-Null
+            Set-Content -LiteralPath (Join-Path $sibling 'AGENTS.md') -Value 'Foreign instructions'
+        }
+        { Get-FixtureSnapshot -Root $caseRoot -Paths @('../CASE-ROOT/AGENTS.md') } | Should -Throw '*Context path escapes*'
+    }
+
     It 'records a new head rather than reusing evidence from the baseline' {
         $before = Get-FixtureSnapshot
         Add-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'changed'
