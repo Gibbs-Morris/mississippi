@@ -55,11 +55,21 @@ command. These initial trials use their pinned historical input, not the later
 review-corrected skill. The ten current cases are a rubric, not ten independently
 executed trials.
 
-Previously recorded committed-LF accounting includes both entrypoints, selected
-instruction bodies and all skill name/description values. These figures are
-retained from the prior measurement and have not been recomputed for this
-coverage correction. Instruction lines fall from
-3,055 to 2,809: 246 fewer, with AGENTS unchanged. The sample-feature proxy package
+Instruction-file accounting is pinned to PR #796's reviewed immediate parent
+`272512b76076e83ce895b586a4241d0f13b591d2` and owning head
+`dd3789f2fc8a371f0152d4b81618df4010e7d71b`. For each committed tree,
+enumerate every `.instructions.md` file under `.github/instructions/` and count
+raw LF bytes (`0x0A`) in its Git blob, including metadata, Rules, prose, tables
+and examples. All 47 files are included, with no instruction-file or content
+exclusions. The parent totals **3,063 LF lines**; the head totals **2,817 LF lines**:
+**246 fewer**. `AGENTS.md` is byte-identical across these two revisions. These
+immutable counts describe that reviewed boundary; future head/base or
+consolidated-guidance totals require a new measurement.
+
+The following context figures retain the prior committed-LF measurement, which
+included both entrypoints, selected instruction bodies and all skill
+name/description values. They have not been recomputed for this accounting
+correction or the preceding coverage correction. The sample-feature proxy package
 falls from 42,251 to 39,518 o200k_base tokens; loading the skill and required local
 binding totals 41,219. All-instruction maintenance falls from 55,389 to 52,656,
 or 54,357 when loaded. Unrelated PowerShell/docs packages each increase 67 tokens
