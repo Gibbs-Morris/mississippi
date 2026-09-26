@@ -197,10 +197,10 @@ public sealed class BankAccountIntegrationTests
         HttpClient client = fixture.GatewayClient;
         string bankAccountId = $"test-account-{Guid.NewGuid():N}";
         const string holderName = "John Doe";
-        const decimal initialDeposit = 100.00m;
-        const decimal firstDeposit = 250.00m;
-        const decimal secondDeposit = 150.00m;
-        const decimal withdrawal = 75.00m;
+        const decimal initialDeposit = 100.25m;
+        const decimal firstDeposit = 250.34m;
+        const decimal secondDeposit = 150.12m;
+        const decimal withdrawal = 75.46m;
         decimal expectedBalance = (initialDeposit + firstDeposit + secondDeposit) - withdrawal;
 
         // Act - Step 1: Open account with initial deposit
