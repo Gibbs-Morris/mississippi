@@ -75,6 +75,8 @@ for both observations and before emission; nested ordinary working copies remain
 The helper supports embedded `.git` directories only and revalidates their binding
 to the selected root. Git files or linked metadata directories, including legitimate
 linked worktrees and submodules, require manual identity/backlink inspection.
+The absolute common directory must also equal the embedded metadata directory;
+`commondir` redirects require manual inspection even when the worktree/gitdir match.
 Inventory reads NUL-delimited UTF-8 paths with ordinal identity. Invalid encoding
 or any Git subprocess exceeding ten seconds fails instead of emitting a snapshot.
 Every query, including configuration reads, uses a timed native subprocess with

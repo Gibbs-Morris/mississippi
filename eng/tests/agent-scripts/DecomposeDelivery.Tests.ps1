@@ -215,6 +215,20 @@ Describe 'Portable delivery context snapshots' {
         { Get-FixtureSnapshot -Root $selected -Paths @('AGENTS.md') } | Should -Throw '*Git directory indirection requires manual inspection*'
     }
 
+    It 'rejects an embedded commondir redirect despite matching worktree and gitdir roots' {
+        $other = Join-Path $TestDrive 'common-target'
+        New-Item -ItemType Directory -Path $other | Out-Null
+        Set-Content -LiteralPath (Join-Path $other 'AGENTS.md') -Value 'Foreign common metadata'
+        Invoke-FixtureGit @('-C', $other, 'init', '-b', 'release/trunk')
+        Invoke-FixtureGit @('-C', $other, 'add', '.')
+        Invoke-FixtureGit @('-C', $other, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'foreign baseline')
+        Set-Content -LiteralPath (Join-Path $fixture '.git/commondir') -Value ((Join-Path $other '.git').Replace('\', '/'))
+        [IO.Path]::GetFullPath([string](& git -C $fixture rev-parse --show-toplevel)) | Should -BeExactly $fixture
+        [IO.Path]::GetFullPath([string](& git -C $fixture rev-parse --absolute-git-dir)) | Should -BeExactly (Join-Path $fixture '.git')
+        [string](& git -C $fixture rev-parse HEAD) | Should -BeExactly ([string](& git -C $other rev-parse HEAD))
+        { Get-FixtureSnapshot } | Should -Throw '*Git common directory differs*'
+    }
+
     It 'takes the declared manual fallback for legitimate linked Git worktrees' {
         $linked = Join-Path $TestDrive 'linked-working-copy'
         Invoke-FixtureGit @('worktree', 'add', '-b', 'linked', $linked)

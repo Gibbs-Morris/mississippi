@@ -146,9 +146,11 @@ function Get-ContextGitRoot {
     }
     $actualRoot = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $root @('rev-parse', '--show-toplevel'))).Trim())
     $gitDirectory = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $root @('rev-parse', '--absolute-git-dir'))).Trim())
+    $commonDirectory = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $root @('rev-parse', '--path-format=absolute', '--git-common-dir'))).Trim())
     if ($actualRoot -cne $expectedRoot -or $gitDirectory -cne [IO.Path]::Combine($expectedRoot, '.git')) {
         throw 'Git directory identity differs from the selected working copy; inspect this target manually.'
     }
+    if ($commonDirectory -cne $gitDirectory) { throw 'Git common directory differs from the embedded metadata; inspect this target manually.' }
     return $actualRoot
 }
 
