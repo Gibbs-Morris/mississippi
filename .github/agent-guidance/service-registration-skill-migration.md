@@ -36,8 +36,8 @@ negative/collision behavior; it is evaluation input, not an execution pass.
 An isolated consuming fixture and executable checker are prepared for a fresh
 worker using this chat's inherited model/settings. The checker compiled and
 rejected the intentionally unwired starter in all seven runtime cases, as
-expected. Independent positive behavior remains unverified at preparation
-handoff. Native host discovery/full-matrix evidence is not claimed. Copilot
+expected. At the historical preparation handoff, independent positive behavior was
+unverified; the fresh bounded result below supersedes that pending status. Native host discovery/full-matrix evidence is not claimed. Copilot
 behavior and review remain deferred and unverified; no retry or budget change.
 Required final build/cleanup/test and current-head/base CI/review evidence remain
 with the root's integration gate; this scoped preparation does not establish
@@ -72,3 +72,26 @@ skills, adding 71 proxy tokens; it is not a current whole-stack package.
 Core C# and maintenance unloaded context shrink; unrelated tasks pay the new
 metadata cost. Loading the workflow adds context. These estimates do not prove
 billed-token savings, latency improvements, or native discovery behavior.
+
+## Fresh consuming behavior evidence
+
+An inherited-chat-model worker selected the supplied registration capability and
+implemented only the permitted wiring/lifecycle types. Its build reported zero
+warnings/errors and its own probe passed 136 assertions across 14 cases. Root
+then independently executed all seven checker cases: keyed identity/deferred
+startup, overloads, invalid options at startup, missing keys, cancellation,
+initialization failure and constructor contracts passed. Nine protected copied
+inputs remained byte-identical; all eleven original inputs were preserved.
+
+The first root attempt stopped before runtime because the worker over-selected
+the event-feature capability for a pure reducer request without event-sourced
+context. The worker independently corrected only that routing decision; original
+decision/failure evidence and all thirteen unchanged non-routing output hashes
+are retained. The second root attempt passed; the checker was unchanged.
+
+Exact skill LF SHA-256 remains `2d7fb13290b94850e112ff83cb9d8a17cb5248a29a853932b939696f5af56ad9`.
+Root checker/probe hashes are `7d52d7d409662ab3133dc39ecd6cd405e53983568213c963b187447b0cf5b9c7` /
+`164ca1c55be155643810ac3321ddc1b5934ec5b5fe8164a95c1ee54dac0fa58e`; result evidence SHA-256 is
+`1d606abeb4e42b50ee8d108d10b43608b0e002f59293e2a5bea2278271183292`.
+These bounded supplied-catalog/runtime cases do not establish the full native
+discovery/model matrix or Copilot parity, which remain unverified.
