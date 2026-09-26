@@ -64,6 +64,8 @@ Selected identity includes file type and mode (Unix type/permission bits or
 Windows attributes), so content hashes alone cannot establish unchanged inputs.
 Git submodule entries require manual inspection, including uninitialized entries;
 the helper rejects them before status can descend into nested configurations.
+Assume-unchanged and skip-worktree index flags also require manual inspection;
+otherwise Git status can conceal source edits or sparse working-copy state.
 
 ## State and compatibility
 

@@ -73,6 +73,10 @@ function Get-ContextObservation {
     if (@($index | Where-Object { $_ -match '^160000 ' }).Count -gt 0) {
         throw 'Submodule entries require manual inspection; status can execute submodule-local commands.'
     }
+    $flags = @(Invoke-ContextGit $root @('ls-files', '-v'))
+    if (@($flags | Where-Object { $_ -cmatch '^[a-zS] ' }).Count -gt 0) {
+        throw 'Hidden index flags require manual inspection: assume-unchanged or skip-worktree can conceal changes.'
+    }
     $filters = @(& git --no-optional-locks -c core.fsmonitor= -C $root config --name-only --get-regexp '^filter\..*\.(clean|process)$')
     if ($LASTEXITCODE -notin @(0, 1)) { throw 'Git filter configuration inspection failed.' }
     if ($filters.Count -gt 0) {

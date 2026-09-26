@@ -108,6 +108,17 @@ Describe 'Portable delivery context snapshots' {
         @($snapshot.Paths | Where-Object { $_ -ceq 'tools/foo.md' }).Count | Should -Be 1
     }
 
+    It 'rejects <Flag> index flags that conceal changed source files' -ForEach @(
+        @{ Flag = 'assume-unchanged' }, @{ Flag = 'skip-worktree' }
+    ) {
+        Invoke-FixtureGit @('update-index', "--$Flag", 'packages/widget/model.txt')
+        Set-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'changed source'
+        $status = @(& git -C $fixture status --porcelain=v1)
+        $LASTEXITCODE | Should -Be 0
+        $status.Count | Should -Be 0
+        { Get-FixtureSnapshot } | Should -Throw '*Hidden index flags require manual inspection*'
+    }
+
     It 'records a new head rather than reusing evidence from the baseline' {
         $before = Get-FixtureSnapshot
         Add-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'changed'
