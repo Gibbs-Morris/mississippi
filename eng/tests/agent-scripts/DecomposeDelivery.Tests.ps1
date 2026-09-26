@@ -133,6 +133,22 @@ Describe 'Portable delivery context snapshots' {
         { Get-FixtureSnapshot } | Should -Throw '*Configured core.worktree requires manual inspection*'
     }
 
+    It 'rejects a Git file that redirects the selected directory to another repository' {
+        $selected = Join-Path $TestDrive 'redirected-working-copy'
+        New-Item -ItemType Directory -Path $selected | Out-Null
+        Set-Content -LiteralPath (Join-Path $selected '.git') -Value ('gitdir: ' + (Join-Path $fixture '.git').Replace('\', '/'))
+        Set-Content -LiteralPath (Join-Path $selected 'AGENTS.md') -Value 'Different directory'
+        $foreignHead = [string](& git -C $selected rev-parse HEAD)
+        $foreignHead | Should -BeExactly ([string](& git -C $fixture rev-parse HEAD))
+        { Get-FixtureSnapshot -Root $selected -Paths @('AGENTS.md') } | Should -Throw '*Git directory indirection requires manual inspection*'
+    }
+
+    It 'takes the declared manual fallback for legitimate linked Git worktrees' {
+        $linked = Join-Path $TestDrive 'linked-working-copy'
+        Invoke-FixtureGit @('worktree', 'add', '-b', 'linked', $linked)
+        { Get-FixtureSnapshot -Root $linked } | Should -Throw '*Git directory indirection requires manual inspection*'
+    }
+
     It 'records a new head rather than reusing evidence from the baseline' {
         $before = Get-FixtureSnapshot
         Add-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'changed'

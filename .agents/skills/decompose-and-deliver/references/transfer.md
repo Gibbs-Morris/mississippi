@@ -69,6 +69,9 @@ otherwise Git status can conceal source edits or sparse working-copy state.
 Configured `core.worktree` redirects require manual inspection, including
 legitimate separated Git directories that use this setting. Root checks repeat
 for both observations and before emission; nested ordinary working copies remain supported.
+The helper supports embedded `.git` directories only and revalidates their binding
+to the selected root. Git files or linked metadata directories, including legitimate
+linked worktrees and submodules, require manual identity/backlink inspection.
 
 ## State and compatibility
 

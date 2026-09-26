@@ -65,14 +65,37 @@ function Get-ContextPaths {
     return @($paths)
 }
 
+function Get-ContextEmbeddedRoot {
+    param([string]$Root)
+    $directory = Get-Item -LiteralPath $root -Force
+    while ($null -ne $directory) {
+        $marker = Join-Path $directory.FullName '.git'
+        if (Test-Path -LiteralPath $marker) {
+            $item = Get-Item -LiteralPath $marker -Force
+            if (-not $item.PSIsContainer -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+                throw 'Git directory indirection requires manual inspection, including linked worktrees.'
+            }
+            return $directory.FullName
+        }
+        $directory = $directory.Parent
+    }
+    throw 'An embedded Git directory was not found; inspect this target manually.'
+}
+
 function Get-ContextGitRoot {
     param([string]$Root)
+    $expectedRoot = Get-ContextEmbeddedRoot $root
     $null = & git --no-optional-locks -c core.fsmonitor= -C $root config --get core.worktree
     if ($LASTEXITCODE -notin @(0, 1)) { throw 'Git worktree configuration inspection failed.' }
     if ($LASTEXITCODE -eq 0) {
         throw 'Configured core.worktree requires manual inspection; it can redirect the selected repository.'
     }
-    return [IO.Path]::GetFullPath(([string](Invoke-ContextGit $root @('rev-parse', '--show-toplevel'))).Trim())
+    $actualRoot = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $root @('rev-parse', '--show-toplevel'))).Trim())
+    $gitDirectory = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $root @('rev-parse', '--absolute-git-dir'))).Trim())
+    if ($actualRoot -cne $expectedRoot -or $gitDirectory -cne (Join-Path $expectedRoot '.git')) {
+        throw 'Git directory identity differs from the selected working copy; inspect this target manually.'
+    }
+    return $actualRoot
 }
 
 function Get-ContextObservation {
