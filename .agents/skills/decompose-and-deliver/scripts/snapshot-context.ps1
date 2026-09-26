@@ -233,8 +233,8 @@ function Get-ContextObservation {
         throw 'Configured clean/process filters require manual inspection; status may execute repository-controlled commands.'
     }
     $status = @(Invoke-ContextGit $root @('status', '--porcelain=v1', '--untracked-files=all'))
-    $paths = @(Get-ContextPaths $root $ContextPaths)
     $selected = @(foreach ($relative in $ContextPaths) { Get-ContextInput $root $relative })
+    $paths = @(Get-ContextPaths $root $ContextPaths)
     return [pscustomobject]@{
         Head = $head
         Branch = $branch
