@@ -10,6 +10,8 @@ The six-field plan was recorded before implementation in
 [#556](https://github.com/Gibbs-Morris/mississippi/issues/556#issuecomment-5848675525)
 and [#555](https://github.com/Gibbs-Morris/mississippi/issues/555#issuecomment-5848675670).
 The source baseline is `3d258825642463390c356abdda0b35c92cbdcad7`.
+The integrated immediate parent is `4f54b7e368d81a814bd777f63f4ada56b50180cd`;
+the complete instruction directory changes from 2,732 to 2,680 LF lines.
 This source/contract consolidation does not claim a newly approved taxonomy,
 measured activation quality, or evaluation sign-off.
 
@@ -54,9 +56,12 @@ lint results are recorded in the audit. The
 [focused cases](documentation-consolidation-cases.json) are definitions, not a
 passing native-results table.
 
-Any same-model authored fixture establishes only its inspected page output,
-structure, and link evidence. It is not a blind activation trial, a Copilot
-trial, native CLI conformance, or independent behavioral evidence. Fresh
+The authored consuming fixture produced a how-to page, a linked reference page,
+and command evidence following its local Overview/Steps/Validation contract.
+Root inspected those outputs, the unchanged sample hash, and the actual scoped
+Git status (`?? sample.txt`); configured lint passed. This establishes only the
+inspected page output, structure, and link evidence. It is not a blind activation
+trial, a Copilot trial, native CLI conformance, or a separate model behavior trial. Fresh
 activation/collision/output trials, the complete cross-model matrix, and
 Copilot app/IDE discovery remain unverified. Copilot trials are deferred until
 capacity is verified. No expensive documentation/application builds or
@@ -69,5 +74,6 @@ Revert this complete layer to restore the four supporting blocks and remove
 its audit/case records together. Confirm the original rule/table equality,
 runtime-checklist availability, and instruction links. Leave PR #622's skill,
 nine contracts, and all earlier migration layers intact. Root owns serial
-native-stack #680 integration and publication; this preparation does not push,
-create a PR, merge, or change remote tracking.
+native-stack #680 integration and publication. User authorization allows
+independent parallel draft publication while CI runs; final readiness still
+requires current checks and feedback, with no merge or auto-merge authority.
