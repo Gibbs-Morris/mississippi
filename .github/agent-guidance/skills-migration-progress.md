@@ -61,9 +61,9 @@ reads are measured and documented separately.
 These are audit dispositions, not a conclusion that no useful migration remains.
 No next capability has been implemented while the first layer's gate is unmet.
 
-## Verified limits and next action
+## Historical verified limits and next action
 
-- Codex CLI discovery plus four current-candidate synthetic trials passed. Copilot CLI discovery passed; model behavior failed before output on HTTP 402 additional usage limit. Resume the same fixtures after usage is available; do not count discovery as behavior conformance.
+- Historical Codex discovery and four synthetic trials used skill revision `8c72aba1126468c06042ba5af806db6df3e83005`, committed LF SHA-256 `eea91fb6176b24159a765001b3e746105131574df3249ba356b4d354b4e6a912`. The assessment-scope correction changed those bytes afterward; these records do not validate the revised skill. Historical Copilot discovery is packaging evidence only; its model trial failed before output on HTTP 402 additional usage limit. Fresh corrected-skill behavior remains unverified. Resume behavior only after a verified capacity change; preserve the original records and hashes.
 - Canonical `pwsh ./go.ps1` passed on September 26: both solutions built with zero compiler/analyzer warnings, both cleanup stages passed, and 3,425 tests executed/passed across 45 TRX reports. ReSharper emitted generator/declaration diagnostics but returned success; no suppression or tracked cleanup churn was introduced. Browser, deployment, and external CI checks are outside this local command.
 - `pwsh ./eng/tests/orchestrate-powershell-tests.ps1` passed all 11 runners. Five Pester cases were skipped by the existing Windows/platform guards; skipped cases are not represented as executed passes.
 - Live main rules require code-owner approval. CODEOWNERS maps this layer to its author, `BenjaminLGibbs`; no independent required approval is present. Repository owners need to supply a valid independent approval path. This goal does not authorize changing protections to bypass it.
