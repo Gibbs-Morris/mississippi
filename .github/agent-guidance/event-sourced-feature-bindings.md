@@ -32,7 +32,7 @@ Replay and recovery claims also depend on event retention and serializer
 compatibility; an event log alone does not prove arbitrary rollback support.
 
 Choose validation from those policies and current scripts. The relevant fast
-quality route uses `eng/src/agent-scripts/test-project-quality.ps1 -SkipMutation`; Spring readiness
+quality route uses `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <Name> -SkipMutation`; Spring readiness
 uses `pwsh ./test-spring.ps1 -Doctor`, followed by executed selected suites where
 applicable. `READY` is not `PASS`. The full repository quality gates remain
 required under their policy. This guidance migration changes no application
