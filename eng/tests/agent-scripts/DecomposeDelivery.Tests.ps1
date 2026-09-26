@@ -64,6 +64,32 @@ BeforeAll {
             $child.Dispose()
         }
     }
+
+    function Set-FixtureCachedCTime {
+        param([string]$Relative)
+        Invoke-FixtureGit @('update-index', '--index-version=2')
+        $indexPath = Join-Path $fixture '.git/index'
+        $bytes = [IO.File]::ReadAllBytes($indexPath)
+        # The fixture uses SHA-1 index v2: https://git-scm.com/docs/gitformat-index.
+        [Convert]::ToInt32([BitConverter]::ToString($bytes, 4, 4).Replace('-', ''), 16) | Should -Be 2
+        $count = [Convert]::ToInt32([BitConverter]::ToString($bytes, 8, 4).Replace('-', ''), 16)
+        $cursor = 12
+        for ($entry = 0; $entry -lt $count; $entry++) {
+            $pathStart = $cursor + 62
+            $end = $pathStart
+            while ($bytes[$end] -ne 0) { $end++ }
+            $name = [Text.Encoding]::UTF8.GetString($bytes, $pathStart, $end - $pathStart)
+            if ($name -ceq $Relative) {
+                [Array]::Clear($bytes, $cursor, 4)
+                $checksum = [Security.Cryptography.SHA1]::HashData([byte[]]$bytes[0..($bytes.Length - 21)])
+                [Array]::Copy($checksum, 0, $bytes, $bytes.Length - 20, 20)
+                [IO.File]::WriteAllBytes($indexPath, $bytes)
+                return
+            }
+            $cursor += [int]([Math]::Ceiling(($end + 1 - $cursor) / 8.0) * 8)
+        }
+        throw 'Fixture index entry was not found.'
+    }
 }
 
 Describe 'Portable delivery context snapshots' {
@@ -73,7 +99,7 @@ Describe 'Portable delivery context snapshots' {
         Set-Content -LiteralPath (Join-Path $fixture 'AGENTS.md') -Value '# Target instructions: bash tools/verify.sh; branch release/trunk'
         Set-Content -LiteralPath (Join-Path $fixture 'tools/verify.sh') -Value 'test -f packages/widget/model.txt'
         Set-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'baseline'
-        Invoke-FixtureGit @('init', '-b', 'release/trunk')
+        Invoke-FixtureGit @('init', '--object-format=sha1', '-b', 'release/trunk')
         Invoke-FixtureGit @('config', 'core.autocrlf', 'false')
         Invoke-FixtureGit @('add', '.')
         Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'baseline')
@@ -202,11 +228,10 @@ Describe 'Portable delivery context snapshots' {
         Invoke-FixtureGit @('config', 'core.checkStat', 'minimal')
         $path = Join-Path $fixture 'packages/widget/model.txt'
         # Keep the cached mtime older than the index so racy-Git rehashing cannot mask the reduced-stat case.
-        [IO.File]::SetLastWriteTimeUtc($path, [DateTime]::UtcNow.AddSeconds(-10))
+        [IO.File]::SetLastWriteTimeUtc($path, [DateTime]::new(2000, 1, 1, 0, 0, 0, [DateTimeKind]::Utc))
         Invoke-FixtureGit @('update-index', '--refresh')
+        Set-FixtureCachedCTime -Relative 'packages/widget/model.txt'
         $stamp = (Get-Item -LiteralPath $path).LastWriteTimeUtc
-        # Git builds can compare ctime at whole-second precision.
-        Start-Sleep -Milliseconds 1200
         [IO.File]::WriteAllText($path, "modified`n")
         [IO.File]::SetLastWriteTimeUtc($path, $stamp)
         $status = @(& git -C $fixture status --porcelain=v1)
