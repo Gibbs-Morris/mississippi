@@ -1,0 +1,42 @@
+[
+  {
+    "id": "feature-registration",
+    "prompt": "Add an options-configured feature registration that composes its internal storage child. Use the supplied project conventions and existing lifetimes.",
+    "expected": "Select register-dotnet-services; preserve the public boundary, child composition, configuration forms, validation, and intentional lifetimes."
+  },
+  {
+    "id": "independent-keyed-clients",
+    "prompt": "Two host-owned clients of the same type use keys ledger and archive. Wire two library modules and a host unkeyed ledger alias without replacing either client.",
+    "expected": "Forward each library key to its corresponding host key; assert the two consumers receive their exact distinct instances and the unkeyed alias is the ledger instance."
+  },
+  {
+    "id": "deferred-initialization",
+    "prompt": "The feature needs asynchronous resource setup before serving work. Add its service registration while retaining startup failure and cancellation behavior.",
+    "expected": "Keep registration synchronous; defer setup through the supported host lifecycle and verify no setup during registration plus execution/failure/cancellation at startup."
+  },
+  {
+    "id": "assessment-only",
+    "prompt": "Assess the supplied DI graph and missing keyed-client error. Do not edit, execute initialization, or publish.",
+    "expected": "Inspect current constructors, registrations, keys and options; explain evidence and gaps without mutations or a claimed execution pass."
+  },
+  {
+    "id": "ordinary-feature-negative",
+    "prompt": "Implement the pure reducer for the supplied accepted fee calculation. Service wiring is unchanged.",
+    "expected": "Use the feature implementation owner; do not activate registration work or add wiring changes based on C# alone."
+  },
+  {
+    "id": "logging-collision",
+    "prompt": "Convert this worker's direct ILogger call to source-generated logging. Its service registration is unchanged.",
+    "expected": "Use logging-conversion ownership; do not activate register-dotnet-services or modify keys, lifetimes, or options."
+  },
+  {
+    "id": "builder-overload-drift",
+    "prompt": "A copied sample uses IServiceCollection and Action<StorageOptions>, but current source exposes a nested builder callback. Wire the supported provider.",
+    "expected": "Read current registrations and builder lifecycle; use the supported current surface and report stale sample evidence without inventing the old overload."
+  },
+  {
+    "id": "portable-policy",
+    "prompt": "Register Cedar's cache using its existing cache:primary module key, internal registration class, and permitted scoped lifetime. No Mississippi package is present.",
+    "expected": "Apply Cedar's local policies and exact contract; do not import Mississippi names, key prefixes, paths, lifetimes, or public-surface requirements."
+  }
+]
