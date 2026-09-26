@@ -10,6 +10,7 @@ Governing thought: Copilot responses must follow repository guardrails—shared 
 
 ## Rules (RFC 2119)
 
+- Copilot **MUST** use [plain English](instructions/plain-english.instructions.md) when communicating with people, including conversations, reviews, and pull request comments or replies. Why: Readers should understand the message on first reading.
 - Copilot **MUST** follow all applicable repository instruction files, especially shared guardrails, C#, naming, logging, and testing guidance. Why: Keeps suggestions compliant with their declared scopes.
 - Copilot **MUST** follow [issue tracking and PR traceability](instructions/issue-tracking.instructions.md), including its intake timing, ongoing updates, and issue link on every PR. Why: Requested work needs a durable record through delivery.
 - Copilot **MUST** use the [instruction-loading procedure](../AGENTS.md#instruction-loading), including its file-access or host-supplied fallback when shell discovery is unavailable, when selecting guidance not already supplied by the host. Why: All global and relevant requirements remain mandatory while unrelated instruction bodies stay out of startup context.

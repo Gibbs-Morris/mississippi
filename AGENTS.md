@@ -10,6 +10,7 @@ Governing thought: Agents follow repository instructions and iterate from correc
 
 ## Rules (RFC 2119)
 
+- Agents MUST use [plain English](.github/instructions/plain-english.instructions.md) when communicating with people, including conversations, reviews, and pull request comments or replies. Why: Readers should understand the message on first reading.
 - Agents MUST read `.github/copilot-instructions.md` first, then all globally scoped and task-applicable instruction files under `.github/instructions/`, before planning repository work, making changes, reviewing content, or answering repository questions. Why: Preserves authoritative requirements without preloading unrelated bodies.
 - Agents MUST use the instruction-loading inventory below for every `.github/instructions/*.instructions.md` file, including `self-taught-*.instructions.md`, so newly added global or task-applicable guidance is available to Codex. Why: Keeps Codex context aligned with repository guidance.
 - Agents MUST follow every rule and guideline in those documents when planning or writing code. Why: Keeps contributions consistent, reviewable, and compliant with quality gates.
