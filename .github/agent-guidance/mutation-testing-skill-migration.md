@@ -85,13 +85,13 @@ instruction-only mutation package with local supporting bindings.
 
 ## Validation and limits
 
-The [evaluation cases](mutation-testing-skill-cases.json) cover report-only
+The [evaluation cases](mutation-testing-skill-cases.json) cover existing-report
 assessment, authorized focused execution, preflight failure, report reuse,
 threshold/tool distinctions, optional manifests, declared gates, incomplete
 scope, sample or ordinary-test routing, proportionate survivors, and the
 justified production exception. They are a rubric; the recorded assessment
 below is separate from the historical native trial. The current corpus contains
-22 unique rubric cases, including source changes during failed runs and
+24 unique rubric cases, including source changes during failed runs and
 later-added project files; those definitions are not executed results. Neither
 the historical assessment nor the native trial is a mutation run.
 
@@ -122,7 +122,7 @@ reported as tooling behavior and are not treated as acceptance gates; declared
 target-specific policy or caller acceptance remains applicable where present.
 
 Because the local summarizer writes enriched and summary artifacts even with
-`-SkipMutationRun`, report-only validation uses raw reports unless those writes
+`-SkipMutationRun`, existing-report validation uses raw reports unless those writes
 are authorized.
 
 ### September 26 review corrections and native evidence
@@ -177,6 +177,26 @@ native trial inputs and hashes remain historical evidence at their recorded
 inputs; they do not validate this changed tests-first/reuse boundary. Fresh
 native behavior for this correction, actual conventional/mutation execution,
 and Copilot behavior remain unverified. Static checks do not close those gaps.
+
+### Cycle 3: existing-report assessment and the local ReportOnly flag
+
+Review thread `PRRT_kwDONxgvzs6mUjZH` identified ambiguous mode wording.
+The portable procedure now calls the no-execution route existing-report
+assessment and decides execution from documented behavior and caller
+authority. The [framework quality guidance](../../README.md#framework-quality-gates)
+at owner `bd0334948a80abef38657553dcd782eb5df6140b`
+states that the local `-ReportOnly` flag performs full Stryker analysis with
+advisory score shortfalls. The unchanged module forwards the flag through
+the executing solution wrapper and changes threshold handling after report
+validation; it does not turn the run into read-only inspection. The local
+binding makes execution authority and tests-first conditions explicit.
+
+The two additional cases are authored, unexecuted definitions. This mode and
+local-flag clarification follows the recorded historical trials; their
+inputs, hashes and outcomes remain unchanged and do not validate the revised
+boundary. Fresh native/Copilot behavior and actual Stryker execution remain
+unverified. No Stryker execution was performed, and no threshold, budget or
+tool configuration changed.
 
 ## Historical corpus accounting
 

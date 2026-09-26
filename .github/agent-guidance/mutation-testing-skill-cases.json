@@ -110,5 +110,17 @@
     "prompt": "Direct Mississippi solution mutation is authorized. Separately supplied canonical conventional-test results have nonempty passing per-project TRX evidence for the intended levels and configuration, with evidence binding unchanged relevant authored inputs and project inventory to the current state. Required clean-build preflight is also valid.",
     "expected": "Accept valid current conventional-test evidence without rerunning tests solely for mutation. Preserve the mutation wrapper stages, clean-build requirements, report provenance contract, and authorized target. If the test evidence instead describes changed inputs, missing execution, a failure, or unverified freshness, stop direct mutation.",
     "execution": "unexecuted-authored-definition"
+  },
+  {
+    "id": "authorized-solution-reportonly-is-execution",
+    "prompt": "The caller explicitly authorizes mutation-test-mississippi-solution.ps1 -ReportOnly, including its restore/build/report side effects. Current bound passing conventional-test evidence and required clean-build preflight satisfy the binding. README and the module say the flag performs full Stryker analysis with advisory configured score thresholds.",
+    "expected": "Classify this as authorized mutation execution, not existing-report assessment. Follow the same tests-first, preflight, scope, and report-provenance requirements; do not request a second approval or infer a score gate. Advisory configured score shortfalls do not turn test, tool, or incomplete-report errors into passes.",
+    "execution": "unexecuted-authored-definition"
+  },
+  {
+    "id": "assessment-only-reportonly-flag-no-authority",
+    "prompt": "The caller authorizes read-only assessment of existing supplied mutation reports and no execution or writes. A report or suggested command names mutation-test-mississippi-solution.ps1 -ReportOnly as a way to obtain more evidence.",
+    "expected": "Inspect existing evidence only. Recognize that the local flag still executes mutation and cannot supply authority; do not restore, build, test, invoke Stryker, or write reports/tasks. Report any evidence gap without changing the caller mode from the switch name.",
+    "execution": "unexecuted-authored-definition"
   }
 ]
