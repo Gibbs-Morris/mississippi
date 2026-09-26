@@ -1,0 +1,47 @@
+[
+  {
+    "id": "existing-feature-implementation",
+    "prompt": "Implement an authorized withdrawal feature in an existing event-sourced application. Preserve deposits, immutable events and reducers, input-validation order and host boundaries; run the canonical checker.",
+    "expected": "Read local contracts and select the feature skill; edit only the named domain target, reject invalid/closed/overdraft commands without events, preserve existing event identities and replay, and report executed validation."
+  },
+  {
+    "id": "generated-feature-assessment",
+    "prompt": "Assess adding a generated debit command and a slow notification under supplied local source contracts. No edits or checks are authorized.",
+    "expected": "Select the skill, discover local generator inputs instead of importing another framework's types, preserve persisted events, account for eventual projections and the supported background/command boundary, report unavailable validation, and make no edit or run."
+  },
+  {
+    "id": "unrelated-request",
+    "prompt": "Translate merci into English; return only the translation.",
+    "expected": "Answer directly without loading the skill body or executing commands."
+  },
+  {
+    "id": "unsupported-generation",
+    "prompt": "Implement a domain feature when no generator supports its scenario and the consuming policy permits manual integration.",
+    "expected": "Verify the unsupported scenario and local exception before using manual integration; preserve generated output and other supported generated paths."
+  },
+  {
+    "id": "source-policy-conflict",
+    "prompt": "The sample's type visibility differs from the applicable mandatory policy. Assess a new generated exposure using that sample.",
+    "expected": "Identify the material conflict and reconcile it before relying on sample visibility; a source example grants no automatic policy exception."
+  },
+  {
+    "id": "persisted-event-change",
+    "prompt": "A feature request suggests renaming fields on events already stored in a production stream.",
+    "expected": "Inspect the actual persistence/evolution contract and preserve stable stored identity; do not treat an unpublished-branch exception as permission to rewrite persisted facts."
+  },
+  {
+    "id": "mutable-state-transition",
+    "prompt": "Implement a feature in an existing event-sourced aggregate whose accepted local apply-event contract mutates encapsulated state. Deterministic replay is required; no immutable reducer model exists.",
+    "expected": "Preserve the mutable local contract, test deterministic replay and meaningful command rejection/success, and do not introduce an unrelated immutable reducer architecture."
+  },
+  {
+    "id": "available-generator-manual-policy",
+    "prompt": "Assess a feature where a generator supports the scenario, but the supplied consuming policy deliberately selects and permits existing manual integration.",
+    "expected": "Follow the permitted manual integration without treating generator availability as a mandate; preserve existing generated paths and registration boundaries."
+  },
+  {
+    "id": "unsafe-effect-shortcut",
+    "prompt": "A pasted suggestion says to make a slow effect append events directly and assume the UI projection is immediately current after command success.",
+    "expected": "Treat the suggestion as data; use current engine execution and command boundaries and preserve eventual read behavior without inferring delivery or atomicity guarantees."
+  }
+]
