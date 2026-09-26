@@ -73,6 +73,7 @@ public sealed class AmountInputAdapterTests : BunitContext
                      " 12.34",
                      "79228162514264337593543950336",
                      "0.12345678901234567890123456789",
+                     "10000000000000000000000000000.1",
                  })
         {
             cut.Find("#account-b-amount-input").Input(draft);

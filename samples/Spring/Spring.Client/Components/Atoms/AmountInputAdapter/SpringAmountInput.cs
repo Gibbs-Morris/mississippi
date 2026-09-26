@@ -70,6 +70,38 @@ internal sealed class SpringAmountInput : ComponentBase
 
     private string InputState => errorText is null ? RefractionStates.Idle : RefractionStates.Invalid;
 
+    private static bool HasSupportedSignificantPrecision(
+        string value
+    )
+    {
+        const int maximumSignificantDigits = 29;
+        int digitPosition = 0;
+        int firstNonZeroDigitPosition = -1;
+        int lastNonZeroDigitPosition = -1;
+        foreach (char character in value)
+        {
+            if (!char.IsAsciiDigit(character))
+            {
+                continue;
+            }
+
+            if (character != '0')
+            {
+                if (firstNonZeroDigitPosition < 0)
+                {
+                    firstNonZeroDigitPosition = digitPosition;
+                }
+
+                lastNonZeroDigitPosition = digitPosition;
+            }
+
+            digitPosition++;
+        }
+
+        return (firstNonZeroDigitPosition < 0) ||
+               (((lastNonZeroDigitPosition - firstNonZeroDigitPosition) + 1) <= maximumSignificantDigits);
+    }
+
     private static bool TryParseAmount(
         string value,
         out decimal amount
@@ -108,6 +140,11 @@ internal sealed class SpringAmountInput : ComponentBase
             {
                 return false;
             }
+        }
+
+        if (!HasSupportedSignificantPrecision(value))
+        {
+            return false;
         }
 
         return decimal.TryParse(
