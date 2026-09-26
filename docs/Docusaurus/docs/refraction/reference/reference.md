@@ -46,5 +46,6 @@ Use this page as the current reference boundary for what Refraction owns and whi
 - Read [ProgressArc](./progress-arc.md) for completion, unknown duration, and motion behavior.
 - Read [Emitter](./emitter.md) for native button semantics, disabled state, and activation callbacks.
 - Read [NotificationPulse](./notification-pulse.md) for status content and optional action intents.
+- Read [SmokeConfirm](./smoke-confirm.md) for named, form-safe confirmation actions.
 - Read [Refraction Concepts](../concepts/concepts.md).
 - Use [Refraction Troubleshooting](../troubleshooting/troubleshooting.md) if you are still deciding whether the problem belongs here.

@@ -1,0 +1,31 @@
+@* SmokeConfirm - presentational confirmation surface with native actions *@
+
+<div @attributes="ForwardedAttributes"
+     class="@CssClass"
+     role="@RefractionAriaRoles.Dialog"
+     data-state="@State"
+     aria-labelledby="@TitleId"
+     aria-describedby="@DescribedBy">
+    <div class="rf-smoke-confirm__veil" aria-hidden="true"></div>
+    <div class="rf-smoke-confirm__pane">
+        <h2 id="@TitleId" class="rf-smoke-confirm__title">@Title</h2>
+        @if (HasConsequence)
+        {
+            <p id="@ConsequenceId" class="rf-smoke-confirm__consequence">@Consequence</p>
+        }
+        <div class="rf-smoke-confirm__actions">
+            <button class="rf-smoke-confirm__cancel"
+                    type="button"
+                    disabled="@(!OnCancel.HasDelegate)"
+                    @onclick="HandleCancelAsync">
+                @CancelText
+            </button>
+            <button class="rf-smoke-confirm__confirm"
+                    type="button"
+                    disabled="@(!OnConfirm.HasDelegate)"
+                    @onclick="HandleConfirmAsync">
+                @ConfirmText
+            </button>
+        </div>
+    </div>
+</div>
