@@ -142,15 +142,19 @@ This proves bounded decisions from synthetic supplied evidence, not all 18 cases
 exclusive skill influence, current application validation, or native savings.
 Copilot remains unverified and deferred by the user while capacity is unavailable.
 
-Final routing trial: native Codex read both final skills, including mutation blob
+Historical routing trial: native Codex read both then-current skills, including mutation blob
 b726381074de2119a2a377eaf7f01e06e66e7f0f, LF SHA-256
 8fee1f7a5c720afb06684ebee67aec2ec43408cff3c1154302d3310d71b6cc9f.
 It selected explicit legacy mutation assessment, reused a supplied report only
 with matching configuration/tool-manifest hashes, and rejected dirty-worktree
 freshness from a partial fingerprint. A separate incidental-keyword translation
 read no body and ran no command. All ten fixture hashes stayed unchanged; no
-checker, remote action or write occurred. These are bounded synthetic decisions;
-Copilot and broader coverage remain unverified.
+checker, remote action or write occurred. These are bounded synthetic decisions
+at the named historical input. Later no-build and dependency-closure corrections
+invalidate its claim to validate the current artifact: current-skill routing and
+the revised positive reuse case still need fresh behavior evidence. The case
+definitions and static checks are not that evidence. Copilot and broader native
+coverage remain unverified.
 
 ## Historical corpus accounting
 
