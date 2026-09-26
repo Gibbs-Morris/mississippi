@@ -1,8 +1,19 @@
-# Skills migration progress
+# Skills migration progress and historical source map
 
 Checkpoint for the instruction-only [#532 goal](https://github.com/Gibbs-Morris/mississippi/issues/532).
 This file is outside startup instructions. Verify live heads, rules, CI, and
 reviews before resuming; a checkpoint is not an advancement gate.
+
+The initial four-layer state and blocker statements below are historical.
+Current progress is recorded in [#532](https://github.com/Gibbs-Morris/mississippi/issues/532),
+including the fifth skill in [#796](https://github.com/Gibbs-Morris/mississippi/pull/796).
+The user deferred unavailable Copilot review/behavior validation; it remains
+unverified and is not an advancement blocker during that deferral. A configured
+code-owner flag alone does not prove an approval blocker; observe effective
+GitHub state. Continue useful reductions below 1,000 instruction lines rather
+than stopping at 999. Final scoped-AGENTS consolidation remains a separate last
+layer. Read the latest issue checkpoint and current PR artifacts before acting;
+the initial statuses below are not current readiness or next-action evidence.
 
 ## Scope and state
 
