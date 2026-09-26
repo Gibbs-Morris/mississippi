@@ -183,10 +183,13 @@ Describe 'Portable delivery context snapshots' {
     It 'overrides reduced stat settings that conceal a same-size source rewrite' -Skip:$IsWindows {
         Invoke-FixtureGit @('config', 'core.trustctime', 'false')
         Invoke-FixtureGit @('config', 'core.checkStat', 'minimal')
-        Invoke-FixtureGit @('update-index', '--refresh')
         $path = Join-Path $fixture 'packages/widget/model.txt'
+        # Keep the cached mtime older than the index so racy-Git rehashing cannot mask the reduced-stat case.
+        [IO.File]::SetLastWriteTimeUtc($path, [DateTime]::UtcNow.AddSeconds(-10))
+        Invoke-FixtureGit @('update-index', '--refresh')
         $stamp = (Get-Item -LiteralPath $path).LastWriteTimeUtc
-        Start-Sleep -Milliseconds 100
+        # Git builds can compare ctime at whole-second precision.
+        Start-Sleep -Milliseconds 1200
         [IO.File]::WriteAllText($path, "modified`n")
         [IO.File]::SetLastWriteTimeUtc($path, $stamp)
         $status = @(& git -C $fixture status --porcelain=v1)
