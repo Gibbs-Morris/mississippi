@@ -16,6 +16,12 @@ internal sealed record ShowcaseState : IFeatureState
     /// <summary>Gets the editable email address.</summary>
     public string Email { get; init; } = "alex@contoso.example";
 
+    /// <summary>Gets the number of emitter activations.</summary>
+    public int EmitterActivationCount { get; init; }
+
+    /// <summary>Gets a value indicating whether the emitter is disabled.</summary>
+    public bool IsEmitterDisabled { get; init; }
+
     /// <summary>Gets a value indicating whether validation was requested.</summary>
     public bool IsSubmitted { get; init; }
 

@@ -1,5 +1,6 @@
 @page "/kitchen-sink"
 @using Mississippi.Refraction.Client.Components.Atoms.Input
+@using MississippiSamples.LightSpeed.Client.Components.Molecules.Activation
 @using MississippiSamples.LightSpeed.Client.Components.Molecules.Profile
 @using MississippiSamples.LightSpeed.Client.Components.Molecules.Progress
 @using MississippiSamples.LightSpeed.Client.Components.Templates.Showcase
@@ -26,6 +27,10 @@
                 <dd data-testid="state-email">@View.Email</dd>
                 <dt>Input state</dt>
                 <dd>@View.InputState</dd>
+                <dt>Emitter activations</dt>
+                <dd data-testid="state-emitter-count">@View.EmitterActivationCount</dd>
+                <dt>Emitter disabled</dt>
+                <dd data-testid="state-emitter-disabled">@(View.IsEmitterDisabled ? "true" : "false")</dd>
                 <dt>Progress</dt>
                 <dd data-testid="state-progress">@(View.ProgressPercent is null ? "Unknown" : $"{View.ProgressPercent}%")</dd>
             </dl>
@@ -45,9 +50,15 @@
     <div class="states">
         <ProgressDemo Percent="@View.ProgressPercent" PercentChanged="ChangeProgress"/>
     </div>
+    <div class="states">
+        <EmitterDemo ActivationCount="@View.EmitterActivationCount"
+                     IsDisabled="@View.IsEmitterDisabled"
+                     Activated="ActivateEmitter"
+                     DisabledChanged="ChangeEmitterDisabled"/>
+    </div>
     <section class="maturity" aria-labelledby="maturity-title">
         <h2 id="maturity-title">What is ready to explore?</h2>
-        <p><strong>Verified here:</strong> input identity, helper/error feedback, focus behavior, theme scopes, progress arcs, and Reservoir integration.</p>
-        <p><strong>Prototypes in the library:</strong> Emitter, Reticle, CalloutLine, NotificationPulse, CommandOrbit, TelemetryStrip, Pane, SchematicViewer, and SmokeConfirm. Their broader interaction and accessibility work is still in progress.</p>
+        <p><strong>Verified here:</strong> input identity, helper/error feedback, focus behavior, theme scopes, progress arcs, native emitter activation, and Reservoir integration.</p>
+        <p><strong>Prototypes in the library:</strong> Reticle, CalloutLine, NotificationPulse, CommandOrbit, TelemetryStrip, Pane, SchematicViewer, and SmokeConfirm. Their broader interaction and accessibility work is still in progress.</p>
     </section>
 </ShowcaseShell>
