@@ -199,6 +199,13 @@ Native commands read the candidate and host guidance/memory; this is bounded
 behavior evidence, not exclusive skill influence, live publication, all-case
 coverage, Copilot parity, or measured native savings.
 
+Final routing trial read tracking blob `aeefedc4181d905588fa9d6d5368102f4b69a01c`,
+LF SHA-256 `fc93d683f37aba62acb3214ebf92f842c2f738329d3eb6c3084a5108c0988b89`.
+Native Codex selected the issue milestone after the supplied review push while
+leaving thread actions with the feedback owner. A separate incidental-keyword
+translation read no body and ran no command. All ten fixture hashes were
+preserved; these are bounded synthetic decisions without live writes or Copilot.
+
 The issue-tracking policy owner maintains the compact adapter and direct route;
 the skill follows provider and linking semantics discovered at use time. Caller
 owners maintain their plan, stack, review, and canonical-workflow bindings.
