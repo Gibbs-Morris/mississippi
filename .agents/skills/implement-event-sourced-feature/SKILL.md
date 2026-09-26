@@ -8,7 +8,8 @@ description: Implement or assess one application feature in an existing event-so
 Deliver one bounded feature through the consuming application's existing write
 and read models. Discover its framework and policy rather than substituting a
 different event-sourcing architecture. In assessment-only mode, describe the
-required changes and evidence without editing, running checks, or publishing.
+required changes and evidence without editing or publishing. Run checks only
+when the caller authorizes them; report unrun validation as a gap.
 
 ## Establish the feature and local contract
 
