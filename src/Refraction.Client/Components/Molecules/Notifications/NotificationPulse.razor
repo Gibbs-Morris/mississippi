@@ -1,0 +1,36 @@
+@* NotificationPulse - non-intrusive status message with optional action intents *@
+
+<div @attributes="ForwardedAttributes"
+     class="@CssClass"
+     data-state="@State">
+    <div class="rf-notification-pulse__status"
+         role="@RefractionAriaRoles.Status"
+         aria-atomic="true">
+        <span class="rf-notification-pulse__dot" aria-hidden="true"></span>
+        @if (ChildContent is not null)
+        {
+            <div class="rf-notification-pulse__content">@ChildContent</div>
+        }
+    </div>
+    @if (OnExpand.HasDelegate || OnDismiss.HasDelegate)
+    {
+        <div class="rf-notification-pulse__actions">
+            @if (OnExpand.HasDelegate)
+            {
+                <button class="rf-notification-pulse__action rf-notification-pulse__expand"
+                        type="button"
+                        @onclick="HandleExpandAsync">
+                    @ExpandText
+                </button>
+            }
+            @if (OnDismiss.HasDelegate)
+            {
+                <button class="rf-notification-pulse__action rf-notification-pulse__dismiss"
+                        type="button"
+                        @onclick="HandleDismissAsync">
+                    @DismissText
+                </button>
+            }
+        </div>
+    }
+</div>

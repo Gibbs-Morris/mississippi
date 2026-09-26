@@ -6,10 +6,10 @@ using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
-using Mississippi.Refraction.Client.Components.Atoms;
+using Mississippi.Refraction.Client.Components.Molecules.Notifications;
 
 
-namespace Mississippi.Refraction.Client.L0Tests.Components.Atoms;
+namespace Mississippi.Refraction.Client.L0Tests.Components.Molecules.Notifications;
 
 /// <summary>
 ///     Tests for <see cref="NotificationPulse" /> component.
@@ -100,10 +100,11 @@ public sealed class NotificationPulseTests : BunitContext
     {
         // Assert
         Assert.True(typeof(ComponentBase).IsAssignableFrom(typeof(NotificationPulse)));
+        Assert.True(typeof(NotificationPulse).IsSealed);
     }
 
     /// <summary>
-    ///     NotificationPulse invokes OnExpand when clicked.
+    ///     NotificationPulse invokes OnExpand when its expand action is clicked.
     /// </summary>
     [Fact]
     public void NotificationPulseInvokesOnExpandWhenClicked()
@@ -120,7 +121,7 @@ public sealed class NotificationPulseTests : BunitContext
             }));
 
         // Act
-        cut.Find(".rf-notification-pulse").Click();
+        cut.Find(".rf-notification-pulse__expand").Click();
 
         // Assert
         Assert.True(wasExpanded);
@@ -183,6 +184,7 @@ public sealed class NotificationPulseTests : BunitContext
 
         // Assert
         Assert.NotEmpty(cut.FindAll(".rf-notification-pulse__dot"));
+        Assert.Equal("true", cut.Find(".rf-notification-pulse__dot").GetAttribute("aria-hidden"));
     }
 
     /// <summary>
@@ -200,7 +202,7 @@ public sealed class NotificationPulseTests : BunitContext
     }
 
     /// <summary>
-    ///     NotificationPulse renders with status role for accessibility.
+    ///     NotificationPulse renders with a stable atomic status region for accessibility.
     /// </summary>
     [Fact]
     public void NotificationPulseRendersWithStatusRoleForAccessibility()
@@ -209,22 +211,22 @@ public sealed class NotificationPulseTests : BunitContext
         using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>();
 
         // Assert
-        string? role = cut.Find(".rf-notification-pulse").GetAttribute("role");
+        string? role = cut.Find(".rf-notification-pulse__status").GetAttribute("role");
         Assert.Equal("status", role);
+        Assert.Equal("true", cut.Find(".rf-notification-pulse__status").GetAttribute("aria-atomic"));
     }
 
     /// <summary>
-    ///     NotificationPulse renders with tabindex for keyboard accessibility.
+    ///     NotificationPulse does not add a root tabindex for keyboard accessibility.
     /// </summary>
     [Fact]
-    public void NotificationPulseRendersWithTabindexForKeyboardAccessibility()
+    public void NotificationPulseRendersWithoutRootTabindex()
     {
         // Act
         using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>();
 
         // Assert
-        string? tabindex = cut.Find(".rf-notification-pulse").GetAttribute("tabindex");
-        Assert.Equal("0", tabindex);
+        Assert.False(cut.Find(".rf-notification-pulse").HasAttribute("tabindex"));
     }
 
     /// <summary>
