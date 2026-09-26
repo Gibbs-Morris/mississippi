@@ -8,6 +8,8 @@ skills-migration epic under the verified [implementation plan](https://github.co
 The current user-authorized scope is one complete PR containing the portable
 skill, its local adapter routes, the moved repository format reference, and
 evidence. No new self-taught lesson is added by this migration.
+The September 26 instruction-only scope excludes custom agents; Scribe and
+Rules Manager remain byte-identical to the current parent.
 
 ## Parent gate and boundary
 
@@ -36,7 +38,7 @@ categories and template text outside the portable package.
 | Governing thought, drift check, global scope, and existing references | Retained; the route and local format links are added without changing authority. |
 | Quick-Start, conflict-detection procedure, lesson lifecycle, and Core Principles | Replaced by a concise skill route with a direct-read fallback. |
 | Domain Categories and quoted Self-Taught File Template | Moved verbatim to `self-taught-format.md`, with its repository-specific paths and domains intentionally kept local. |
-| `cs-scribe` Learning Capture trigger, conflict recording, and activity-log duty | Trigger and the exact conflict/activity lines remain; duplicated identification, domain, and write guidance becomes skill/policy/format routing. |
+| Existing `cs-scribe` Learning Capture consumer | Agent file remains unchanged; the adapter retains its named Conflict Detection Protocol entrypoint and routes to the skill and local format without repeating the procedure. |
 | Clean Squad Scribe route | Trigger, Scribe ownership, **SHOULD**, lesson destination, and rationale remain; the stale protocol name now routes directly to the skill, self-improvement policy, and local format. |
 | Remaining Scribe role, permissions, hard rules, ledger/audit duties, and output structures | Unchanged. Rules Manager remains unchanged and retains broader user-rule intake. |
 
@@ -76,10 +78,9 @@ verified silent success under the consuming contract.
 Structural checks passed: the bundled skill-creator validator; configured
 Markdown lint; JSON parsing; relative-link resolution; exact comparison of the
 12 retained Rules bullets; exact comparison of the moved format sections;
-comparison showing only the Scribe Learning Capture block changed; portability
-scanning of the skill; and whitespace checks. The Scribe file was linted with
-the current repository configuration, and no pre-existing findings were
-encountered.
+comparison showing Scribe is byte-identical to the current parent; portability
+scanning of the skill; and whitespace checks. The compatibility entrypoint and
+its skill/local-format references remain present; no agent migration is included.
 
 The retained-rule comparison was refreshed September 26 against the current
 parent: all 12 bullets match exactly. Other historical checks retain their
@@ -170,6 +171,6 @@ workflow, or runtime files are part of this layer.
 
 Revert this complete layer together to remove the portable skill, local format
 reference, audit, and cases; restore the original self-improvement procedure
-sections and the original Scribe Learning Capture block. Recheck all 12 Rules,
-the local format content, and the unchanged Scribe sections. Preserve the
+sections. Recheck all 12 Rules, the local format content, and the unchanged
+Scribe file. Preserve the
 preceding build-remediation skill and unrelated repository work.
