@@ -71,8 +71,8 @@
   },
   {
     "id": "focused-companion-provenance",
-    "prompt": "A focused manifest omits revision, but the exact invocation's separate evidence record supplies HeadRevision, unchanged source fingerprints and a matching report path, SHA256 and length. Its freshness and required report checks are valid. Separately recorded mutation configuration/tool-manifest hashes and hashes for the actual invoked runner/imported-helper dependency closure are unchanged, or clean tracked matching-revision evidence proves those omitted inputs unchanged.",
-    "expected": "Use the report-bound companion provenance for the evidenced target and revision only with the evidenced configuration, tool and runner/helper closure freshness; do not invent a manifest-only provenance requirement or rerun valid existing evidence."
+    "prompt": "A focused manifest omits revision, but the exact invocation's separate evidence record supplies HeadRevision, matching source-before/source-after/current fingerprints, SourceChangedDuringRun=false and unchanged before/after/current authored project-input inventories (including untracked additions/deletions) and a matching report path, SHA256 and length. Its freshness and required report checks are valid. Separately recorded mutation configuration/tool-manifest hashes and hashes for the actual invoked runner/imported-helper dependency closure are unchanged, or clean tracked matching-revision evidence proves those omitted inputs unchanged.",
+    "expected": "Use the report-bound companion provenance for the evidenced target and revision only with stable invocation source and complete project-input inventories plus the evidenced configuration, tool and runner/helper closure freshness; do not invent a manifest-only provenance requirement or rerun valid existing evidence."
   },
   {
     "id": "solution-provenance-gap",
@@ -93,5 +93,10 @@
     "id": "failed-run-moving-source",
     "prompt": "A focused mutation manifest says Failed with complete reports. Its companion evidence reports Valid=true and Fresh=true, but SourceChangedDuringRun=true and SourceBefore.Fingerprint differs from SourceAfter.Fingerprint; only SourceAfter matches current source. No separate stable invocation/source evidence exists.",
     "expected": "Do not attribute its score or survivors to the current source or a guessed historical revision. Report the moving-input provenance gap despite complete reports and helper freshness; failed runs also need stable before/after/current source proof."
+  },
+  {
+    "id": "later-added-project-source",
+    "prompt": "Focused evidence reports Valid=true and Fresh=true in an already-dirty worktree. A new wildcard-included authored source file was added after execution; every recorded InputPath file, configuration, tool and runner/helper hash is unchanged. No before/after/current project-input inventory was recorded.",
+    "expected": "Reject a current-source score/survivor claim. The fixed InputPath and dirty flag miss additions; require stable authored project-input inventories across execution and reuse, including added/deleted and untracked inputs, or report provenance unverified."
   }
 ]
