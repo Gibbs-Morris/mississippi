@@ -1,6 +1,6 @@
 ---
 name: run-mutation-testing
-description: "Assess an existing mutation report or run and report an authorized focused mutation-testing job, including survivor analysis and proportionate remediation. Use for explicit mutation execution, mutation-score or survivor assessment, or existing mutation evidence. Not for ordinary build/test, legacy test improvement, build-failure repair, branch/PR work, or general quality review."
+description: "Assess an existing mutation report or run and report an authorized focused mutation-testing job, including survivor analysis and proportionate remediation. Use for explicit mutation execution, mutation-score or survivor assessment, or mutation-evidence review on a PR. Not for ordinary build/test, legacy test improvement, build-failure repair, PR/branch management, or quality review without mutation evidence."
 ---
 
 # Run mutation testing
