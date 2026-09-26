@@ -42,6 +42,28 @@ BeforeAll {
 `$snapshotInvocationPath = '$($injected.Replace("'", "''"))'
 "@ + "`n"
     }
+
+    function Invoke-BoundedSnapshot {
+        param([string]$Root = $fixture, [string]$Path = 'AGENTS.md')
+        $start = [Diagnostics.ProcessStartInfo]::new($shell)
+        $start.UseShellExecute = $false
+        $start.RedirectStandardOutput = $true
+        $start.RedirectStandardError = $true
+        foreach ($argument in @('-NoProfile', '-File', $snapshotScript, '-RepositoryRoot', $Root, '-ContextPath', $Path)) { $start.ArgumentList.Add($argument) }
+        $start.Environment['GIT_CONFIG_NOSYSTEM'] = '1'
+        $start.Environment['GIT_CONFIG_GLOBAL'] = Join-Path $fixture 'missing-global'
+        $child = [Diagnostics.Process]::Start($start)
+        try {
+            $output = $child.StandardOutput.ReadToEndAsync()
+            $errorOutput = $child.StandardError.ReadToEndAsync()
+            if (-not $child.WaitForExit(15000)) { throw 'Snapshot exceeded its outer fixture timeout.' }
+            return [pscustomobject]@{ ExitCode = $child.ExitCode; Output = $output.GetAwaiter().GetResult(); Error = $errorOutput.GetAwaiter().GetResult() }
+        }
+        finally {
+            if (-not $child.HasExited) { $child.Kill($true) }
+            $child.Dispose()
+        }
+    }
 }
 
 Describe 'Portable delivery context snapshots' {
@@ -292,6 +314,19 @@ Describe 'Portable delivery context snapshots' {
             $child.Dispose()
             if ($null -ne $socket) { $socket.Dispose() }
         }
+    }
+
+    It 'bounds Git reads of a FIFO at .git/<Metadata>' -Skip:$IsWindows -ForEach @(
+        @{ Metadata = 'index' }, @{ Metadata = 'config' }
+    ) {
+        $path = Join-Path $fixture ".git/$Metadata"
+        Remove-Item -LiteralPath $path
+        & mkfifo $path
+        $LASTEXITCODE | Should -Be 0
+        $result = Invoke-BoundedSnapshot
+        $result.ExitCode | Should -Be 1
+        $result.Error | Should -Match 'Native context inspection timed out'
+        $result.Output | Should -BeNullOrEmpty
     }
 
     It 'rejects submodule entries before status can execute nested filters' {

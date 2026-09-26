@@ -76,7 +76,9 @@ The helper supports embedded `.git` directories only and revalidates their bindi
 to the selected root. Git files or linked metadata directories, including legitimate
 linked worktrees and submodules, require manual identity/backlink inspection.
 Inventory reads NUL-delimited UTF-8 paths with ordinal identity. Invalid encoding
-or a path query exceeding ten seconds fails instead of emitting an incomplete list.
+or any Git subprocess exceeding ten seconds fails instead of emitting a snapshot.
+Every query, including configuration reads, uses a timed native subprocess with
+targeted child-process cleanup; blocking Git metadata takes a manual fallback.
 Root containment uses exact ordinal spelling on every platform. Root case aliases
 take a manual fallback even on case-insensitive Windows directories; Windows
 per-directory case sensitivity is never assumed away.

@@ -10,10 +10,11 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 function Invoke-ContextGit {
-    param([string]$Root, [string[]]$Arguments)
-    $output = @(& $gitApplication --no-replace-objects --no-optional-locks -c core.fsmonitor= -c core.trustctime=true -c core.checkStat=default -c core.ignoreStat=false -C $Root @Arguments)
-    if ($LASTEXITCODE -ne 0) { throw "Git context inspection failed: $($Arguments[0])" }
-    return $output
+    param([string]$Root, [string[]]$Arguments, [int[]]$AcceptedExitCodes = @(0), [switch]$WithResult)
+    $options = @('--no-replace-objects', '--no-optional-locks', '-c', 'core.fsmonitor=', '-c', 'core.trustctime=true', '-c', 'core.checkStat=default', '-c', 'core.ignoreStat=false', '-C', $root)
+    $result = Invoke-ContextNativeOutput $gitApplication ($options + $Arguments) -AcceptedExitCodes $AcceptedExitCodes -WithResult
+    if ($WithResult) { return $result }
+    return $result.Output.Split([char]10, [StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object { $_.TrimEnd([char]13) }
 }
 
 function Get-ContextFileMetadata {
@@ -77,7 +78,7 @@ function Get-ContextInput {
 }
 
 function Invoke-ContextNativeOutput {
-    param([string]$Application, [string[]]$Arguments)
+    param([string]$Application, [string[]]$Arguments, [int[]]$AcceptedExitCodes = @(0), [switch]$WithResult)
     $start = [Diagnostics.ProcessStartInfo]::new($Application)
     $start.UseShellExecute = $false
     $start.CreateNoWindow = $true
@@ -92,7 +93,8 @@ function Invoke-ContextNativeOutput {
         $output = $child.StandardOutput.ReadToEndAsync()
         $errorOutput = $child.StandardError.ReadToEndAsync()
         if (-not $child.WaitForExit(10000)) { throw 'Native context inspection timed out; inspect the target manually.' }
-        if ($child.ExitCode -ne 0) { throw "Native context inspection failed: $($errorOutput.GetAwaiter().GetResult())" }
+        if ($child.ExitCode -notin $AcceptedExitCodes) { throw "Native context inspection failed: $($errorOutput.GetAwaiter().GetResult())" }
+        if ($WithResult) { return [pscustomobject]@{ ExitCode = $child.ExitCode; Output = $output.GetAwaiter().GetResult() } }
         return $output.GetAwaiter().GetResult()
     }
     finally {
@@ -138,9 +140,8 @@ function Get-ContextEmbeddedRoot {
 function Get-ContextGitRoot {
     param([string]$Root)
     $expectedRoot = Get-ContextEmbeddedRoot $root
-    $null = & $gitApplication --no-replace-objects --no-optional-locks -c core.fsmonitor= -C $root config --get core.worktree
-    if ($LASTEXITCODE -notin @(0, 1)) { throw 'Git worktree configuration inspection failed.' }
-    if ($LASTEXITCODE -eq 0) {
+    $worktreeSetting = Invoke-ContextGit $root @('config', '--get', 'core.worktree') -AcceptedExitCodes @(0, 1) -WithResult
+    if ($worktreeSetting.ExitCode -eq 0) {
         throw 'Configured core.worktree requires manual inspection; it can redirect the selected repository.'
     }
     $actualRoot = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $root @('rev-parse', '--show-toplevel'))).Trim())
@@ -164,9 +165,8 @@ function Get-ContextObservation {
     if (@($flags | Where-Object { $_ -cmatch '^[a-zS] ' }).Count -gt 0) {
         throw 'Hidden index flags require manual inspection: assume-unchanged or skip-worktree can conceal changes.'
     }
-    $filters = @(& $gitApplication --no-replace-objects --no-optional-locks -c core.fsmonitor= -C $root config --name-only --get-regexp '^filter\..*\.(clean|process)$')
-    if ($LASTEXITCODE -notin @(0, 1)) { throw 'Git filter configuration inspection failed.' }
-    if ($filters.Count -gt 0) {
+    $filters = Invoke-ContextGit $root @('config', '--name-only', '--get-regexp', '^filter\..*\.(clean|process)$') -AcceptedExitCodes @(0, 1) -WithResult
+    if ($filters.ExitCode -eq 0) {
         throw 'Configured clean/process filters require manual inspection; status may execute repository-controlled commands.'
     }
     $status = @(Invoke-ContextGit $root @('status', '--porcelain=v1', '--untracked-files=all'))
