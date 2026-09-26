@@ -17,8 +17,9 @@ its live description records current head/base and gate state. Its original issu
 is the reachable Git blob `78fd09ad25ff9c1ba66a20ab00d56499fec672c1`, measured
 below. The September 13 readiness record above reported clean CI and resolved
 threads at that time; it is historical evidence, not the current advancement
-gate. After the September 26 cascade, fresh exact-head CI/review and the bottom
-layer's Copilot behavior and independent approval requirements remain open.
+gate. Current head/base CI and review remain separate advancement requirements.
+The user deferred Copilot while capacity is unavailable; its behavior remains
+unverified. A configured code-owner flag alone is not a confirmed approval block.
 
 The portable skill handles issue intake, identity and scope reconciliation,
 search/reuse/create decisions, plan records, milestone updates, disclosure
@@ -88,8 +89,8 @@ assessment-only work, reuse versus creation, identity/plan mismatch, unavailable
 tools, confidential disclosure and missing required restricted records, preserved milestone updates, partial and
 complete references, base-change and post-merge lifecycle, unattended triage,
 and negative activation boundaries.
-They are a rubric, not recorded model trials. No native behavior trial, runtime
-test, application test, or activation claim is made for this layer.
+The 18 cases are a rubric, not 18 recorded model trials. Historical assessments
+and the current bounded native behavior evidence are identified separately below.
 
 Structural validation covers the skill schema, configured Markdown lint, JSON
 parsing, relative links, portability, the 11-rule/source-rule map, and
@@ -135,7 +136,7 @@ an enabled project skill with the correct per-root path. The copied package was
 byte-identical to the source. These are packaging and discovery results only,
 not model activation, native behavior, authentication, or update results.
 
-## Corpus accounting
+## Historical corpus accounting
 
 Measurements use raw committed bytes from `git cat-file blob` via subprocess and
 LF-normalized copies for uncommitted candidates. The adapter-before row is the
@@ -183,6 +184,20 @@ Git-configuration hashes were preserved. This is bounded canonical-target
 assessment evidence, not live provider or CLI conformance.
 
 ## Maintenance and rollback
+
+September 26 review corrections restore the interactive intake stop, approved
+restricted planning record, and tracking update after review remediation.
+Native Codex CLI `0.158.0-alpha.2.1`, GPT-5.5 medium, assessed three supplied-record
+cases at skill blob `6c6ce6faccb3a745d4a657bd53977ea31485899e`, LF SHA-256
+`f4028cb27e72dd316f7dad1dea71afc7bb0dd612d877a18ef0d202725a2ac002`.
+It blocked further interactive implementation/review approval after missed
+intake, accepted all six planning fields in the accessible approved restricted
+record without public disclosure, and kept the pushed-change issue milestone
+with tracking while leaving thread management with the feedback owner.
+All four fixture file hashes stayed unchanged; no remote action or write occurred.
+Native commands read the candidate and host guidance/memory; this is bounded
+behavior evidence, not exclusive skill influence, live publication, all-case
+coverage, Copilot parity, or measured native savings.
 
 The issue-tracking policy owner maintains the compact adapter and direct route;
 the skill follows provider and linking semantics discovered at use time. Caller
