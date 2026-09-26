@@ -29,54 +29,22 @@ Governing thought: Copilot responses must follow repository guardrails—shared 
 - Copilot **SHOULD** prioritize public APIs from README when suggesting symbols and **SHOULD** respond concisely with file paths/lines when referencing code. Why: Improves traceability.
 - When work spans many small fixes, Copilot **SHOULD** stage via `.scratchpad/tasks` per scratchpad rules and **MUST NOT** reference `.scratchpad/` from source/tests. Why: Enables safe coordination.
 
+- Copilot **MUST** use [verify-change](../.agents/skills/verify-change/SKILL.md) when selecting, running, or assessing change-validation checks. Why: Required gates and evidence interpretation need one maintained procedure.
+
 ## Scope and Audience
 
 These rules apply to Copilot chat/search responses for this repository.
 
-## At-a-Glance Quick-Start
+## Change verification
 
-- Use all global guardrails and the instruction scopes relevant to the task, including C#/naming/logging/testing guidance when applicable.
-- For repeatable scoped startup, use `pwsh ./eng/src/agent-scripts/get-agent-context.ps1 -RepositoryRoot .` with the task's changed/reviewed paths, content domains, and workflow role; treat its selection reasons and unresolved states as evidence, then retain the direct file-read fallback when it is unavailable.
-- Build/test with `pwsh ./go.ps1`; tidy with `pwsh ./clean-up.ps1`.
-- **When you see StyleCop/formatting warnings (SA1xxx), run cleanup first**—don't manually fix indentation/spacing.
-- Manage packages with `dotnet add/remove package`; never add `Version` attributes.
-- Verify SOLID after each C# change; fix violations before proceeding.
-- Use README as the source of truth for usage guidance.
-
-## Core Principles
-
-- Canonical scripts/configs trump inferred behavior.
-- SOLID and repository guardrails keep generated code review-ready.
-- CPM + DI/logging patterns prevent drift across suggestions.
+Use [verify-change](../.agents/skills/verify-change/SKILL.md) with the
+[local check bindings](agent-guidance/verify-change-bindings.md) for check selection,
+execution, evidence reuse, and status assessment. If skill discovery is
+unavailable or applicability is unclear, read both linked files directly.
+The Rules above remain effective independently of skill activation; a
+targeted or prerequisite check does not replace required completion gates.
 
 ## References
 
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
 - C#/naming/logging/testing: see respective instruction files under `.github/instructions/`
-
-## Cleanup Script Details
-
-The `./clean-up.ps1` script runs JetBrains ReSharper CleanupCode on both solutions using settings from `Directory.DotSettings`. It automatically fixes:
-
-- **Formatting**: Indentation, spacing, blank lines (SA1137, SA1517, SA1000, etc.)
-- **Braces**: Required braces for `if`/`for`/`foreach`/`while` statements
-- **Expression bodies**: Converts to expression-bodied members where configured
-- **Member ordering**: Reorders members per xUnit test class patterns and standard layouts
-- **Line wrapping**: Chops long argument lists, method chains, and parameters
-- **Trailing commas**: Adds trailing commas in multiline lists
-
-Run `pwsh ./clean-up.ps1` after making code changes and before committing to ensure formatting compliance. The script processes both `mississippi.slnx` and `samples.slnx`.
-
-For faster local loops, use targeted cleanup first:
-
-- Explicit files: `pwsh ./clean-up-targeted.ps1 -Files src/Foo/Bar.cs,tests/FooTests.cs`
-- File list: `pwsh ./clean-up-targeted.ps1 -FileListPath .scratchpad/cleanup-files.txt`
-- Changed-vs-main mode: `pwsh ./clean-up-targeted.ps1`
-
-Measured sample (3 runs, 20 changed files, `jb cleanupcode --no-build`):
-
-- Targeted average: `59.448s`
-- Full cleanup average (mississippi + samples): `607.558s`
-- Approximate speed-up: `10.22x` (~`90.2%` faster)
-
-Use targeted cleanup to iterate quickly, then run full cleanup before final handoff.
