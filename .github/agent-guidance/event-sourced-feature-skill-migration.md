@@ -57,13 +57,23 @@ executed trials.
 
 Raw committed-LF accounting includes both entrypoints, selected instruction
 bodies and all skill name/description values. Instruction lines fall from
-3,055 to 2,804: 251 fewer, with AGENTS unchanged. The sample-feature proxy package
-falls from 42,200 to 39,426 o200k_base tokens; loading the skill and required local
-binding totals 40,905. All-instruction maintenance falls from 55,338 to 52,564,
-or 54,043 when loaded. Unrelated PowerShell/docs packages each increase 67 tokens
+3,055 to 2,809: 246 fewer, with AGENTS unchanged. The sample-feature proxy package
+falls from 42,251 to 39,518 o200k_base tokens; loading the skill and required local
+binding totals 41,219. All-instruction maintenance falls from 55,389 to 52,656,
+or 54,357 when loaded. Unrelated PowerShell/docs packages each increase 67 tokens
 from discovery metadata. Host guidance, personal/plugin skills, framing, other
 references and outputs are excluded; this is not native billing savings.
 Copilot remains deferred and unverified. No repository mutation score or newly
 implemented Mississippi feature is claimed; current-head CI remains a separate
 publication gate. Revert the whole layer to restore removed sections and remove
 the skill/binding/evidence, preserving ancestors and unrelated work.
+
+A fresh Codex worker using this chat's exact inherited model selected the feature
+and verification bodies from six supplied fixture metadata entries. Skill LF
+SHA-256 `cfb3456ebfd462f84dbce18eff00f8cca224f6f0bbf5449bea4efbd49c6bedf3`
+implemented Withdrawal through the existing mutable state and manual API;
+generator availability did not override local policy. The protected checker
+failed before the change, then passed 15 assertions; an independent root run
+also passed. Only the domain file changed and all 20 protected inputs matched.
+This is bounded supplied-catalog worker evidence, not native CLI discovery,
+Copilot conformance, all-case evaluation, or a Mississippi feature implementation.
