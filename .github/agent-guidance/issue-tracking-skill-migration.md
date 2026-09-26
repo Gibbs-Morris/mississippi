@@ -108,6 +108,22 @@ evaluation bytes have SHA-256
 live GitHub verification or remote calls. These results are tied to this prior
 input and do not evaluate later corrections.
 
+### Retrieving historical inputs
+
+The [published PR branch history](https://github.com/Gibbs-Morris/mississippi/pull/684/commits)
+retains the introduction and correction commits rather than squashing them into
+the final file. Fetch that branch with its history, then run
+`git rev-list --objects HEAD -- .agents/skills/track-github-work/SKILL.md` and
+`git cat-file blob <recorded-blob>` to inspect each named assessment input.
+The September 26 remote commit-list and ancestry check confirms that
+`1bc8190aa932cfac26e79c2dddf4b99a42fc9324`,
+`fb0c33fff006cc7c412845851f36941f847cd337`, and
+`6c6ce6faccb3a745d4a657bd53977ea31485899e` are reachable from that branch.
+A flattened review checkout or a history-limited fetch may omit these inputs;
+it cannot reproduce the historical assessments until the branch history is
+available. Keep those snapshots reachable when rewriting or landing this layer,
+or preserve the exact inputs as committed artifacts before discarding history.
+
 | Assessment | Recorded result |
 | --- | --- |
 | A: intake | Matched the authorized simulated host, owner, and repository; rejected a title-only mismatch; made no writes. Supplied `OPEN` values remain non-live evidence. |
