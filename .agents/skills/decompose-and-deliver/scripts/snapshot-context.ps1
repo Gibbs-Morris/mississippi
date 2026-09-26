@@ -16,6 +16,31 @@ function Invoke-ContextGit {
     return $output
 }
 
+function Get-ContextInput {
+    param([string]$Root, [string]$Relative)
+    if ([string]::IsNullOrWhiteSpace($relative) -or [IO.Path]::IsPathRooted($relative)) {
+        throw 'Context paths must be nonempty and repository-relative.'
+    }
+    $fullPath = [IO.Path]::GetFullPath((Join-Path $root $relative))
+    $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+    if (-not $fullPath.StartsWith($root.TrimEnd('/', '\') + [IO.Path]::DirectorySeparatorChar, $comparison)) {
+        throw "Context path escapes the target repository: $relative"
+    }
+    $item = Get-Item -LiteralPath $fullPath -Force
+    if ($item.PSIsContainer) { throw "Context path is not a file: $relative" }
+    $ancestor = $item
+    while ($null -ne $ancestor -and $ancestor.FullName -ne $root) {
+        if (($ancestor.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "Linked context paths require explicit manual inspection: $relative"
+        }
+        $ancestor = Get-Item -LiteralPath (Split-Path -Parent $ancestor.FullName) -Force
+    }
+    return [pscustomobject]@{
+        Path = [IO.Path]::GetRelativePath($root, $fullPath).Replace('\', '/')
+        Sha256 = (Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+}
+
 function Get-ContextObservation {
     param([string]$Root, [string[]]$ContextPaths)
     $head = [string](Invoke-ContextGit $root @('rev-parse', '--verify', 'HEAD'))
@@ -28,30 +53,7 @@ function Get-ContextObservation {
     $status = @(Invoke-ContextGit $root @('status', '--porcelain=v1', '--untracked-files=all'))
     $paths = @(Invoke-ContextGit $root @('-c', 'core.quotePath=false', 'ls-files', '--cached', '--others', '--exclude-standard') | Sort-Object -Unique)
     $index = @(Invoke-ContextGit $root @('ls-files', '--stage'))
-    $selected = @()
-    foreach ($relative in $ContextPaths) {
-        if ([string]::IsNullOrWhiteSpace($relative) -or [IO.Path]::IsPathRooted($relative)) {
-            throw 'Context paths must be nonempty and repository-relative.'
-        }
-        $fullPath = [IO.Path]::GetFullPath((Join-Path $root $relative))
-        $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
-        if (-not $fullPath.StartsWith($root.TrimEnd('/', '\') + [IO.Path]::DirectorySeparatorChar, $comparison)) {
-            throw "Context path escapes the target repository: $relative"
-        }
-        $item = Get-Item -LiteralPath $fullPath -Force
-        if ($item.PSIsContainer) { throw "Context path is not a file: $relative" }
-        $ancestor = $item
-        while ($null -ne $ancestor -and $ancestor.FullName -ne $root) {
-            if (($ancestor.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
-                throw "Linked context paths require explicit manual inspection: $relative"
-            }
-            $ancestor = Get-Item -LiteralPath (Split-Path -Parent $ancestor.FullName) -Force
-        }
-        $selected += [pscustomobject]@{
-            Path = [IO.Path]::GetRelativePath($root, $fullPath).Replace('\', '/')
-            Sha256 = (Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash.ToLowerInvariant()
-        }
-    }
+    $selected = @(foreach ($relative in $ContextPaths) { Get-ContextInput $root $relative })
     return [pscustomobject]@{
         Head = $head
         Branch = $branch
