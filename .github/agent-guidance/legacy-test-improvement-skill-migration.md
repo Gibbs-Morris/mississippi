@@ -4,8 +4,10 @@ This preparation contributes one coherent capability to
 [#547](https://github.com/Gibbs-Morris/mississippi/issues/547) under the recorded
 [September 26 plan](https://github.com/Gibbs-Morris/mississippi/issues/547#issuecomment-5848635646).
 Its isolated preparation started at published snapshot
-`3d258825642463390c356abdda0b35c92cbdcad7`; its actual integrated immediate base
-is `23cf0ba2e89d56f76d4fd358a5260b639099ed4f` in native stack #680. The user's parallel preparation
+`3d258825642463390c356abdda0b35c92cbdcad7`; initial accounting used base
+`23cf0ba2e89d56f76d4fd358a5260b639099ed4f` in native stack #680. That pinned
+snapshot is historical after restacking; live PR ancestry and current gates
+come from the latest #532 checkpoint. The user's parallel preparation
 authority overrides the old issue's introduce/reduce two-PR pattern; this is
 one skill, its route, binding, reduction, and evidence in one proposed layer.
 
