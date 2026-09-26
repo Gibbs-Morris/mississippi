@@ -13,7 +13,10 @@ repair. Follow the consuming project's commands and policies.
 - Identify the project, target revision or working state, failing check, and
   whether the request is assessment-only or repair. Ask for missing scope only
   when it cannot be established from available evidence. Assessment-only work
-  permits inspection and reporting, not edits or side-effecting reproduction.
+  permits inspection and reporting, plus diagnostic reproduction whose side
+  effects are explicitly authorized for that assessment. It does not authorize
+  source edits, repair, or side effects outside that scope; use supplied evidence
+  or authorized read-only diagnostics when reproduction is not permitted.
 - Preserve unrelated user changes. Reconcile an authorized overlapping edit
   with current state; report a conflict only when safe reconciliation is impossible.
 - Inspect applicable instructions, manifests, CI, nearby tests, and documented

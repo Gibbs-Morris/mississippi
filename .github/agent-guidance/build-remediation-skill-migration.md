@@ -51,14 +51,19 @@ were changed to obtain these results. An automatic approval rejection based on
 assumed private repository content was reconciled with live public visibility
 and inspected synthetic inputs before the native trial was approved.
 
-## Current-candidate validation
+## Historical-candidate validation
 
 Immutable skill content revision: `8c72aba1126468c06042ba5af806db6df3e83005`.
 Committed UTF-8/LF SHA-256:
 `eea91fb6176b24159a765001b3e746105131574df3249ba356b4d354b4e6a912`.
 The trial inputs match those bytes after documented CRLF-to-LF normalization.
 
-[Native trial records](build-remediation-native-trials.json) bind four fresh
+The assessment-scope wording was changed after those trials. Their original
+candidate hash and native records remain unchanged; they do not validate the
+revised skill. Fresh behavior for explicitly authorized assessment side effects
+and the read-only negative boundary remains unverified. Copilot remains unverified.
+
+[Native trial records](build-remediation-native-trials.json) bind four historical
 Codex runs to that candidate. All repair results were independently rerun, and
 all existing fixture file hashes were compared before/after:
 
@@ -73,11 +78,12 @@ This is synthetic Node fixture evidence with one run per case. It does not prove
 all 22 [rubric cases](build-remediation-skill-cases.json), arbitrary project
 behavior, or Copilot conformance. In particular, redaction, stale-test repair,
 suppression exceptions, and unobservable-operation handling have no fresh
-native trial at this candidate. Earlier Desktop fixture trials are historical,
-not current-candidate proof.
+native trial at that historical candidate. Earlier Desktop fixture trials are
+historical and do not prove the revised skill.
 
-Skill-creator structural validation, configured Markdown lint, JSON parsing,
-exact six-rule comparison, portability, and whitespace checks pass. Current
+For that historical candidate, skill-creator structural validation, configured
+Markdown lint, JSON parsing, exact six-rule comparison, portability, and
+whitespace checks passed. Current
 pipeline and GitHub gate state are maintained in the
 [resumable progress record](skills-migration-progress.md), PR, and issue.
 Mutation testing was not run; no mutation score is claimed.
