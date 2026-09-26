@@ -29,59 +29,22 @@ Governing thought: Default to fast, deterministic L0 tests with strong coverage,
 - Legacy improvement tasks **MUST NOT** edit production code without approval and **MUST** keep work inside `tests/`; warnings/failures **MUST** be fixed immediately. Why: Assumes production behavior is correct until tests prove otherwise.
 - Package references in tests **MUST** follow Central Package Management (no `Version` attributes). Why: Prevents drift and NU10xx noise.
 
+- Agents **MUST** use [verify-change](../../.agents/skills/verify-change/SKILL.md) when selecting, running, or assessing change-validation checks. Why: Required gates and evidence interpretation need one maintained procedure.
+
 ## Scope and Audience
 
 Applies to all test authors across Mississippi and Samples solutions, including mutation work and legacy test improvements.
 
-## At-a-Glance Quick-Start
+## Change verification
 
-- Restore tools once: `dotnet tool restore`
-- Fast loop (tests + coverage only): `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <Name> -SkipMutation`
-- Optional mutation (Mississippi): `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <Name>`
-- Build-only during iteration: `dotnet build ./tests/<Name>/<Name>.csproj -c Release -warnaserror`
-- Full pipeline (both solutions): `pwsh ./go.ps1` (mutation is opt-in with `-IncludeMutation`)
-- Integration tests (Samples L2+): `pwsh ./eng/src/agent-scripts/integration-test-sample-solution.ps1`
-- Summaries/tasks: use `summarize-coverage-gaps.ps1` for coverage and, when mutation reports exist, `summarize-mutation-survivors.ps1 -SkipMutationRun` (add `-RunPath <run-directory>` for a focused run)
+Use [verify-change](../../.agents/skills/verify-change/SKILL.md) with the
+[local check bindings](../agent-guidance/verify-change-bindings.md) for check selection,
+execution, evidence reuse, and status assessment. If skill discovery is
+unavailable or applicability is unclear, read both linked files directly.
+The Rules above remain effective independently of skill activation; a
+targeted or prerequisite check does not replace required completion gates.
 
-## Test Level Filtering
-
-Unit test scripts default to running L0 and L1 tests only. Higher levels have separate workflows so their cost and scope remain visible.
-
-- **Default behavior**: `unit-test-mississippi-solution.ps1` and `unit-test-sample-solution.ps1` run L0Tests and L1Tests.
-- **Override**: Pass `-TestLevels @('L0Tests','L1Tests','L2Tests')` to include additional levels.
-- **Integration tests**: Use `integration-test-sample-solution.ps1` for L2, or pass custom levels explicitly.
-- **Spring L3 smoke**: `pwsh ./test-spring.ps1` runs the browser smoke subset in PR and merge-queue checks.
-- **Spring L3 full**: `pwsh ./test-spring.ps1 -TestLevel L3 -Suite Full` runs all browser journeys locally; the L3 Tests workflow offers the same suite on demand.
-
-Filter uses `FullyQualifiedName` matching on project naming convention (e.g., `*.L0Tests`, `*.L2Tests`).
-
-## Core Principles
-
-- Prefer L0 (pure, in-memory) for speed; step to L1 then L2 when needed, with L2 backed by real infra via Aspire.
-- Determinism first: use `FakeTimeProvider` for time, fix random seeds, isolate file system and ports, avoid sleeps.
-- High conventional test coverage on changed code; no coverage regressions.
-- Mississippi requires comprehensive tests; Samples showcase patterns with minimal illustrative tests. Mutation testing is an additional signal, with no mandatory repository score threshold.
-- Use summarizer outputs and scratchpad tasks instead of manual tracking.
-
-## Test Levels Snapshot
-
-| Level | Scope | Dependencies | Typical Run |
-| ----- | ----- | ------------ | ----------- |
-| L0 | Pure unit, no IO | In-memory only | Always (PR/local) |
-| L1 | Light infra | Temp FS, in-proc DB/mocks | Often (PR/local) |
-| L2 | Feature API/infrastructure contracts vs test deployment | Aspire AppHost + emulators/services | Separate L2 workflow/local |
-| L3 | End-to-end user journeys through the real client or composed public API | Full stack; Playwright for browser journeys | Small smoke subset on PR/merge queue; full suite on demand |
-| L4 | Synthetic prod checks | Live endpoints (read-only) | Post-deploy/monitoring |
-
-## Workflows
-
-### Baseline and Coverage
-
-1. Run `test-project-quality.ps1 -SkipMutation` for the target test project.
-2. Add tests to hit behavior, edges, and branches; keep determinism.
-3. If coverage < target, inspect Cobertura output under `.scratchpad/coverage-test-results/<Project>/`.
-
-### Optional Mutation Work
+## Optional Mutation Work
 
 For explicit mutation execution or report assessment, read
 [run-mutation-testing](../../.agents/skills/run-mutation-testing/SKILL.md) and
@@ -89,12 +52,6 @@ the [local mutation bindings](../agent-guidance/mutation-testing-bindings.md).
 If discovery is unavailable, read the linked skill directly. Keep mutation
 optional unless the task makes it acceptance criteria, and report its status,
 scope, valid results, paths, and significant gaps under the mutation policy.
-
-### Legacy Test Improvements
-
-1. Work only under `tests/` unless explicitly approved to change production code.
-2. Use `-NoBuild` on `test-project-quality.ps1` after the first build for speed; still run a build with `-warnaserror`.
-3. Fix warnings immediately; preserve conventional coverage targets and report remaining mutation gaps for proportionate follow-up.
 
 ## References
 

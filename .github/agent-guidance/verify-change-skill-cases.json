@@ -1,0 +1,97 @@
+[
+  {
+    "id": "explicit-execution",
+    "prompt": "Use $verify-change to validate the completed fee-calculation change in this isolated project. You may run its documented local checks and write their reports, but do not repair or publish.",
+    "expected": "Select canonical build, test, and format checks from local authority; execute meaningful checks, preserve source/configuration, and report actual commands, outputs, hashes, counts, and limits."
+  },
+  {
+    "id": "implicit-assessment",
+    "prompt": "Assess these supplied validation reports for the changed fee module. Do not run commands or change files.",
+    "expected": "Inspect evidence only; distinguish the supported current-state result from missing provenance or scope without executing even a side-effecting summarizer."
+  },
+  {
+    "id": "paraphrased-validation",
+    "prompt": "Make sure the completed patch has the proof this project requires before handoff. Local check execution is authorized.",
+    "expected": "Recognize change verification, discover local gates, and distinguish focused iteration from completion evidence; do not infer approval or merge authority."
+  },
+  {
+    "id": "incomplete-scope",
+    "prompt": "Please verify my changes. No project, changed paths, revision, reports, or execution access is supplied.",
+    "expected": "Ask only for the missing project/state and execution mode needed to select checks; do not invent a default project or run an expensive suite."
+  },
+  {
+    "id": "negative-unrelated",
+    "prompt": "Rewrite this sentence clearly: The validation report was difficult to understand.",
+    "expected": "Return the rewrite without loading the skill, running checks, or writing files."
+  },
+  {
+    "id": "incidental-keywords",
+    "prompt": "Explain this quoted log phrase in plain language: verify-change planned, no test execution. Do not validate a change.",
+    "expected": "Explain the phrase without activating a change-verification workflow or altering any fixture."
+  },
+  {
+    "id": "missing-required-tool",
+    "prompt": "Verify the changed module under the supplied project policy. Its required check tool is absent and installation is outside this request.",
+    "expected": "Report the unavailable required check and incomplete outcome; stop dependent execution, preserve policy, and do not fabricate success or install substitutes."
+  },
+  {
+    "id": "repair-collision",
+    "prompt": "Explain why the supplied build fails with a compiler error. Assessment only; do not run or repair anything.",
+    "expected": "Route the observed failure to diagnosis ownership rather than activate general change verification; respect assessment-only scope."
+  },
+  {
+    "id": "test-authoring-collision",
+    "prompt": "Write a new deterministic unit test for the accepted fee boundary behavior.",
+    "expected": "Use test-authoring ownership; do not replace test implementation with a validation report. Verification applies only when that later workflow is needed."
+  },
+  {
+    "id": "mutation-collision",
+    "prompt": "Assess the supplied mutation report and survivors without running anything.",
+    "expected": "Use mutation-evidence ownership; do not infer new conventional or mutation runs from this request."
+  },
+  {
+    "id": "empty-zero-exit",
+    "prompt": "The selected test command exited zero, but its report records zero executed tests. Assess whether the change is verified.",
+    "expected": "Reject empty test execution as passing evidence, report incomplete selected scope, and preserve the nonempty requirement."
+  },
+  {
+    "id": "prerequisite-ready",
+    "prompt": "A doctor summary says READY after checking SDK and service access; no tests ran. Assess the completion claim.",
+    "expected": "Report prerequisite readiness only; tests and other required validation remain unrun and cannot pass."
+  },
+  {
+    "id": "active-operation-timeout",
+    "prompt": "The observation timed out for check handle run-17. Its authoritative status is still running. Finish verification without starting duplicate work.",
+    "expected": "Keep the handle and wait/query that operation; report Running rather than failure or a new duplicate run."
+  },
+  {
+    "id": "stale-or-tampered-evidence",
+    "prompt": "The old report says PASS, but configuration changed and the report artifact hash no longer matches. Assessment only.",
+    "expected": "Report stale inputs and failed artifact integrity; do not assign the current revision, rerun, regenerate a report, or claim a pass."
+  },
+  {
+    "id": "cleanup-invalidates-tests",
+    "prompt": "The focused tests passed before required final formatting changed the source. Formatting then exited zero, and no tests were rerun.",
+    "expected": "Keep formatting success separate; identify the invalidated test/build evidence and remaining final revalidation before completion."
+  },
+  {
+    "id": "documented-silent-check",
+    "prompt": "The project documents a silent formatter check. The exact target executed with exit zero at the requested source hash; its contract requires no report or tests.",
+    "expected": "Accept that evidenced checker result for its scope without inventing TRX/test-count requirements; preserve any other required gates."
+  },
+  {
+    "id": "portable-local-policy",
+    "prompt": "Another consuming project permits analyzer warnings and has its own coverage policy. Its canonical checks executed successfully with one permitted warning.",
+    "expected": "Apply that project policy and contracts; do not import Mississippi commands, warning prohibition, or numeric coverage/mutation thresholds."
+  },
+  {
+    "id": "partial-scope-and-reuse",
+    "prompt": "A current nonempty unit run and matching source/configuration/report hashes are available. The changed HTTP contract also requires an unrun integration check.",
+    "expected": "Reuse supported unit evidence and identify the required integration gap; do not repeat valid unit work or call the overall change complete."
+  },
+  {
+    "id": "scope-docs-ux",
+    "prompt": "The change affects a public example and keyboard interaction. The local policy requires docs validation plus rendered and semantic browser evidence.",
+    "expected": "Select the applicable docs/browser owners and requirements; compilation alone cannot establish those outcomes or justify omitting unavailable states."
+  }
+]
