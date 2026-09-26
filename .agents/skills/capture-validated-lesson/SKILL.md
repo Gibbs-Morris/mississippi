@@ -55,7 +55,8 @@ Classify the result as one of:
   peer captured lesson at equal authority.
 - **New** — the evidence supports a bounded lesson not already covered.
 - **Insufficient evidence** — the event, correction, or reuse claim is not
-  independently supported.
+  independently supported, or applicable scope and authority inspection is
+  incomplete. An unread overlapping source cannot establish a new lesson.
 
 Apply the governing instruction hierarchy and the consuming project's declared
 authority model; do not infer precedence from hand-written or captured provenance.
