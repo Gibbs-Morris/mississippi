@@ -48,7 +48,35 @@ public sealed class BankAccountSmokeTests
             Directory.CreateDirectory(directory);
         }
 
+        await page.SetViewportSizeAsync(1440, 900);
         await SaveScreenshotAsync("shell-dark-desktop.png");
+        await SaveScreenshotAsync("account-operations-dark-desktop.png");
+        await Expect(
+                page.GetByLabel(
+                    "Account A deposit amount (£)",
+                    new()
+                    {
+                        Exact = true,
+                    }))
+            .ToHaveAttributeAsync("id", "account-a-deposit-amount-input");
+        await Expect(
+                page.GetByLabel(
+                    "Account B deposit amount (£)",
+                    new()
+                    {
+                        Exact = true,
+                    }))
+            .ToHaveAttributeAsync("id", "account-b-deposit-amount-input");
+        await page.SetViewportSizeAsync(390, 844);
+        await SaveScreenshotAsync("account-operations-dark-mobile.png");
+        bool hasNoHorizontalOverflow = await page.EvaluateAsync<bool>(
+            "document.documentElement.scrollWidth <= document.documentElement.clientWidth");
+        string mobileOverflowEvidence = await page.EvaluateAsync<string>(
+            "() => JSON.stringify({clientWidth: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth, offenders: Array.from(document.querySelectorAll('body *')).filter(element => { const rect = element.getBoundingClientRect(); return rect.left < -1 || rect.right > document.documentElement.clientWidth + 1; }).slice(0, 8).map(element => { const rect = element.getBoundingClientRect(); return {tag: element.tagName, id: element.id, className: element.getAttribute('class'), left: rect.left, right: rect.right}; })})");
+        Assert.True(
+            hasNoHorizontalOverflow,
+            $"the mobile operations page should not overflow horizontally: {mobileOverflowEvidence}");
+        await page.SetViewportSizeAsync(1440, 900);
         await Expect(page.Locator("html")).ToHaveAttributeAsync("data-rf-theme", "dark");
         ILocator lightThemeButton = page.GetByRole(
             AriaRole.Button,
@@ -73,6 +101,9 @@ public sealed class BankAccountSmokeTests
             .ToHaveAttributeAsync("data-rf-theme", "high-contrast");
         await Expect(page.Locator("html")).ToHaveAttributeAsync("data-rf-theme", "high-contrast");
         await page.SetViewportSizeAsync(390, 844);
+        bool hasNoHighContrastHorizontalOverflow = await page.EvaluateAsync<bool>(
+            "document.documentElement.scrollWidth <= document.documentElement.clientWidth");
+        Assert.True(hasNoHighContrastHorizontalOverflow, "the mobile operations page should not overflow horizontally");
         await SaveScreenshotAsync("shell-high-contrast-mobile.png");
         await page.GetByRole(
                 AriaRole.Link,
