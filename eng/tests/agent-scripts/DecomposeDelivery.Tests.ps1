@@ -199,6 +199,33 @@ Describe 'Portable delivery context snapshots' {
         ([string](& git -C $fixture config --get core.checkStat)) | Should -BeExactly 'minimal'
     }
 
+    It 'preserves literal Unix backslashes separately from directory separators' -Skip:$IsWindows {
+        $literal = 'policies\team.md'
+        $nested = 'policies/team.md'
+        New-Item -ItemType Directory -Path (Join-Path $fixture 'policies') | Out-Null
+        [IO.File]::WriteAllText([IO.Path]::Combine($fixture, $literal), 'Literal filename')
+        [IO.File]::WriteAllText([IO.Path]::Combine($fixture, $nested), 'Nested filename')
+        $snapshot = Get-FixtureSnapshot -Paths @($literal, $nested)
+        $snapshot.Paths | Should -Contain $literal
+        $snapshot.Paths | Should -Contain $nested
+        $snapshot.SelectedInputs[0].Path | Should -BeExactly $literal
+        $snapshot.SelectedInputs[1].Path | Should -BeExactly $nested
+        $snapshot.SelectedInputs[0].Sha256 | Should -Not -BeExactly $snapshot.SelectedInputs[1].Sha256
+    }
+
+    It 'supports a Unix root ending in a literal backslash' -Skip:$IsWindows {
+        $backslashRoot = [IO.Path]::Combine($TestDrive, 'repo\')
+        $null = [IO.Directory]::CreateDirectory($backslashRoot)
+        [IO.File]::WriteAllText([IO.Path]::Combine($backslashRoot, 'AGENTS.md'), 'Backslash root')
+        Invoke-FixtureGit @('-C', $backslashRoot, 'init', '-b', 'backslash-fixture')
+        Invoke-FixtureGit @('-C', $backslashRoot, 'config', 'core.autocrlf', 'false')
+        Invoke-FixtureGit @('-C', $backslashRoot, 'add', '.')
+        Invoke-FixtureGit @('-C', $backslashRoot, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'backslash baseline')
+        $snapshot = Get-FixtureSnapshot -Root $backslashRoot -Paths @('AGENTS.md')
+        $snapshot.RepositoryRoot | Should -BeExactly $backslashRoot
+        $snapshot.SelectedInputs[0].Path | Should -BeExactly 'AGENTS.md'
+    }
+
     It 'records a new head rather than reusing evidence from the baseline' {
         $before = Get-FixtureSnapshot
         Add-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'changed'

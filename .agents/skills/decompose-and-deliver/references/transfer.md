@@ -35,8 +35,9 @@ the target root, selected context paths, validation command, branch convention
 or state location where evidence is ambiguous. Record its source and precedence;
 do not guess defaults. Unknown material conventions return to the coordinator.
 
-The optional `scripts/snapshot-context.ps1` needs PowerShell 7 and Git. Discover
-both commands before use; if missing, inspect the same evidence with supported
+The optional `scripts/snapshot-context.ps1` needs PowerShell 7, Git and the
+existing `stat` utility on Unix. Discover these commands before use; if missing,
+inspect the same evidence with supported
 file/Git tools. Invoke the script by its resolved package path with an explicit
 `-RepositoryRoot` and discovered repository-relative `-ContextPath` values.
 It returns paths, Git identity/status and selected input hashes. It neither
@@ -58,8 +59,10 @@ bounded check does not promise an atomic snapshot; serialize conflicting work
 and refresh evidence before using it.
 Read selected bodies and follow the target's loading procedure. A snapshot is
 evidence identity, not proof of successful tests or a security attestation.
-Selected inputs must be regular files. Unix runtimes without file-type metadata
-require manual inspection; pipes, sockets and devices are rejected before hashing.
+Selected inputs must be regular files. Unix inspection uses the existing system
+`stat` utility (GNU on Linux, BSD on macOS); absence requires manual inspection.
+Linux/Windows paths are exercised locally; the BSD branch remains unverified.
+Pipes, sockets and devices are rejected before hashing.
 Selected identity includes file type and mode (Unix type/permission bits or
 Windows attributes), so content hashes alone cannot establish unchanged inputs.
 Git submodule entries require manual inspection, including uninitialized entries;
@@ -80,6 +83,8 @@ per-directory case sensitivity is never assumed away.
 Status uses command-local default stat checks with ctime trusted and ignoreStat
 disabled. These overrides preserve configuration and index contents; a clean Git
 view alone is not validation evidence for deliberately preserved metadata.
+Path joining and separator normalization follow the host filesystem: Unix
+backslashes remain literal characters in inventories, roots and selected identities.
 
 ## State and compatibility
 

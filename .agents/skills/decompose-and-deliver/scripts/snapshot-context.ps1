@@ -16,16 +16,31 @@ function Invoke-ContextGit {
     return $output
 }
 
-function Get-ContextFileType {
+function Get-ContextFileMetadata {
     param([IO.FileSystemInfo]$Item, [string]$Relative)
-    if ($IsWindows) { return 'File' }
-    if ($null -eq $item.PSObject.Properties['UnixStat']) {
-        throw 'Unix file-type inspection is unavailable; inspect selected files manually.'
-    }
-    if ($item.UnixStat.ItemType -ne 'File') {
+    if ($IsWindows) { return [pscustomobject]@{ Type = 'File'; Mode = [int]$item.Attributes } }
+    $stat = Get-Command stat -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($null -eq $stat) { throw 'Unix stat metadata is unavailable; inspect selected files manually.' }
+    $arguments = if ($IsMacOS) { @('-f', '%p', '--', $item.FullName) } else { @('-c', '%f', '--', $item.FullName) }
+    $radix = if ($IsMacOS) { 8 } else { 16 }
+    $mode = [Convert]::ToInt32(([string](Invoke-ContextNativeOutput $stat.Source $arguments)).Trim(), $radix)
+    if (($mode -band 61440) -ne 32768) {
         throw "Non-regular context files require manual inspection: $relative"
     }
-    return 'File'
+    return [pscustomobject]@{ Type = 'File'; Mode = $mode }
+}
+
+function Get-ContextFileHash {
+    param([string]$Path)
+    $stream = [IO.File]::OpenRead($Path)
+    $hasher = [Security.Cryptography.SHA256]::Create()
+    try {
+        return [BitConverter]::ToString($hasher.ComputeHash($stream)).Replace('-', '').ToLowerInvariant()
+    }
+    finally {
+        $stream.Dispose()
+        $hasher.Dispose()
+    }
 }
 
 function Get-ContextInput {
@@ -33,46 +48,52 @@ function Get-ContextInput {
     if ([string]::IsNullOrWhiteSpace($relative) -or [IO.Path]::IsPathRooted($relative)) {
         throw 'Context paths must be nonempty and repository-relative.'
     }
-    $fullPath = [IO.Path]::GetFullPath((Join-Path $root $relative))
-    if (-not $fullPath.StartsWith($root.TrimEnd('/', '\') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal)) {
+    $fullPath = [IO.Path]::GetFullPath([IO.Path]::Combine($root, $relative))
+    if (-not $fullPath.StartsWith($root.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal)) {
         throw "Context path escapes the target repository: $relative"
     }
-    $item = Get-Item -LiteralPath $fullPath -Force
-    if ($item.PSIsContainer) { throw "Context path is not a file: $relative" }
-    $ancestor = $item
+    if ([IO.Directory]::Exists($fullPath)) { throw "Context path is not a file: $relative" }
+    $item = [IO.FileInfo]::new($fullPath)
+    if (-not $item.Exists) { throw "Context file is absent or inaccessible: $relative" }
+    if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "Linked context paths require explicit manual inspection: $relative"
+    }
+    $ancestor = $item.Directory
     while ($null -ne $ancestor -and $ancestor.FullName -cne $root) {
         if (($ancestor.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
             throw "Linked context paths require explicit manual inspection: $relative"
         }
-        $ancestor = Get-Item -LiteralPath (Split-Path -Parent $ancestor.FullName) -Force
+        $ancestor = $ancestor.Parent
     }
-    $type = Get-ContextFileType $item $relative
+    $metadata = Get-ContextFileMetadata $item $relative
+    $relativePath = [IO.Path]::GetRelativePath($root, $fullPath)
+    if ($IsWindows) { $relativePath = $relativePath.Replace('\', '/') }
     return [pscustomobject]@{
-        Path = [IO.Path]::GetRelativePath($root, $fullPath).Replace('\', '/')
-        Type = $type
-        Mode = if ($IsWindows) { [int]$item.Attributes } else { [int]$item.UnixStat.Mode }
-        Sha256 = (Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        Path = $relativePath
+        Type = $metadata.Type
+        Mode = $metadata.Mode
+        Sha256 = Get-ContextFileHash $fullPath
     }
 }
 
-function Get-ContextRawPaths {
-    param([string]$Root)
-    $start = [Diagnostics.ProcessStartInfo]::new((Get-Command git -CommandType Application | Select-Object -First 1).Source)
+function Invoke-ContextNativeOutput {
+    param([string]$Application, [string[]]$Arguments)
+    $start = [Diagnostics.ProcessStartInfo]::new($Application)
     $start.UseShellExecute = $false
     $start.CreateNoWindow = $true
     $start.RedirectStandardOutput = $true
     $start.RedirectStandardError = $true
     $start.StandardOutputEncoding = [Text.UTF8Encoding]::new($false, $true)
-    foreach ($argument in @('--no-optional-locks', '-c', 'core.fsmonitor=', '-C', $root, 'ls-files', '-z', '--cached', '--others', '--exclude-standard')) {
+    foreach ($argument in $Arguments) {
         $start.ArgumentList.Add($argument)
     }
     $child = [Diagnostics.Process]::Start($start)
     try {
         $output = $child.StandardOutput.ReadToEndAsync()
         $errorOutput = $child.StandardError.ReadToEndAsync()
-        if (-not $child.WaitForExit(10000)) { throw 'Git path inspection timed out; inspect the target manually.' }
-        if ($child.ExitCode -ne 0) { throw "Git path inspection failed: $($errorOutput.GetAwaiter().GetResult())" }
-        return $output.GetAwaiter().GetResult().Split([char]0, [StringSplitOptions]::RemoveEmptyEntries)
+        if (-not $child.WaitForExit(10000)) { throw 'Native context inspection timed out; inspect the target manually.' }
+        if ($child.ExitCode -ne 0) { throw "Native context inspection failed: $($errorOutput.GetAwaiter().GetResult())" }
+        return $output.GetAwaiter().GetResult()
     }
     finally {
         if (-not $child.HasExited) { $child.Kill($true) }
@@ -80,23 +101,32 @@ function Get-ContextRawPaths {
     }
 }
 
+function Get-ContextRawPaths {
+    param([string]$Root)
+    $git = (Get-Command git -CommandType Application | Select-Object -First 1).Source
+    $arguments = @('--no-optional-locks', '-c', 'core.fsmonitor=', '-C', $root, 'ls-files', '-z', '--cached', '--others', '--exclude-standard')
+    return ([string](Invoke-ContextNativeOutput $git $arguments)).Split([char]0, [StringSplitOptions]::RemoveEmptyEntries)
+}
+
 function Get-ContextPaths {
     param([string]$Root)
     $paths = [Collections.Generic.SortedSet[string]]::new([StringComparer]::Ordinal)
     foreach ($relative in (Get-ContextRawPaths $root)) {
-        if (Test-Path -LiteralPath (Join-Path $root $relative)) { $null = $paths.Add($relative) }
+        $fullPath = [IO.Path]::Combine($root, $relative)
+        if ([IO.File]::Exists($fullPath) -or [IO.Directory]::Exists($fullPath)) { $null = $paths.Add($relative) }
     }
     return @($paths)
 }
 
 function Get-ContextEmbeddedRoot {
     param([string]$Root)
-    $directory = Get-Item -LiteralPath $root -Force
+    $directory = [IO.DirectoryInfo]::new($root)
+    if (-not $directory.Exists) { throw 'The selected directory is absent or inaccessible.' }
     while ($null -ne $directory) {
-        $marker = Join-Path $directory.FullName '.git'
-        if (Test-Path -LiteralPath $marker) {
-            $item = Get-Item -LiteralPath $marker -Force
-            if (-not $item.PSIsContainer -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        $marker = [IO.Path]::Combine($directory.FullName, '.git')
+        $markerDirectory = [IO.DirectoryInfo]::new($marker)
+        if ([IO.File]::Exists($marker) -or $markerDirectory.Exists) {
+            if (-not $markerDirectory.Exists -or ($markerDirectory.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
                 throw 'Git directory indirection requires manual inspection, including linked worktrees.'
             }
             return $directory.FullName
@@ -116,7 +146,7 @@ function Get-ContextGitRoot {
     }
     $actualRoot = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $root @('rev-parse', '--show-toplevel'))).Trim())
     $gitDirectory = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $root @('rev-parse', '--absolute-git-dir'))).Trim())
-    if ($actualRoot -cne $expectedRoot -or $gitDirectory -cne (Join-Path $expectedRoot '.git')) {
+    if ($actualRoot -cne $expectedRoot -or $gitDirectory -cne [IO.Path]::Combine($expectedRoot, '.git')) {
         throw 'Git directory identity differs from the selected working copy; inspect this target manually.'
     }
     return $actualRoot
@@ -159,7 +189,9 @@ try {
             throw "Ambient Git override $selector prevents reliable target inspection; use a clean process or manual inspection."
         }
     }
-    $requestedRoot = (Resolve-Path -LiteralPath $RepositoryRoot).Path
+    $requestedRoot = if ([IO.Path]::IsPathRooted($RepositoryRoot)) {
+        [IO.Path]::GetFullPath($RepositoryRoot)
+    } else { [IO.Path]::GetFullPath([IO.Path]::Combine((Get-Location).Path, $RepositoryRoot)) }
     $root = Get-ContextGitRoot $requestedRoot
     $before = Get-ContextObservation $root $ContextPath
     $after = Get-ContextObservation $root $ContextPath
