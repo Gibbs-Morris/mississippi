@@ -101,6 +101,19 @@ Describe 'Portable delivery context snapshots' {
         Test-Path -LiteralPath (Join-Path $fixture 'escaped-execution.txt') | Should -BeFalse
     }
 
+    It 'does not run a configured filesystem-monitor hook or refresh the index' {
+        $hook = Join-Path $fixture 'fsmonitor-hook'
+        [IO.File]::WriteAllText($hook, "#!/bin/sh`nprintf invoked > escaped-hook.txt`nprintf 'fixture\0/\0'`n")
+        if (-not $IsWindows) { [IO.File]::SetUnixFileMode($hook, [IO.UnixFileMode]493) }
+        Invoke-FixtureGit @('config', 'core.fsmonitor', $hook.Replace('\', '/'))
+        $indexHash = (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash
+        $null = Get-FixtureSnapshot
+        Test-Path -LiteralPath (Join-Path $fixture 'escaped-hook.txt') | Should -BeFalse
+        (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash | Should -BeExactly $indexHash
+        Invoke-FixtureGit @('status', '--porcelain=v1')
+        Test-Path -LiteralPath (Join-Path $fixture 'escaped-hook.txt') | Should -BeTrue
+    }
+
     It 'rejects linked directories instead of reading context from another repository' {
         $outside = Join-Path $TestDrive 'outside'
         New-Item -ItemType Directory -Path $outside -Force | Out-Null
