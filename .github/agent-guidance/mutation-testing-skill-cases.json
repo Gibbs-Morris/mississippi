@@ -86,7 +86,7 @@
   },
   {
     "id": "untracked-mutation-input-freshness",
-    "prompt": "Focused evidence reports Fresh=true in an already-dirty worktree, but its InputPath omitted mutation configuration and tool-manifest files. Those files subsequently changed, and no per-run hashes or clean matching-revision proof exist.",
-    "expected": "Report configuration freshness as unverified; a passing partial source fingerprint or unchanged global dirty flag cannot establish unchanged mutation inputs."
+    "prompt": "Focused evidence reports Fresh=true in an already-dirty worktree, but its InputPath omitted mutation configuration, tool-manifest and runner/imported-helper files. One of those files subsequently changed, and no per-run hashes or clean matching-revision proof exist.",
+    "expected": "Report configuration/runner freshness as unverified; require matching recorded hashes for the actual invoked/imported dependency closure or clean matching-revision proof. A passing partial source fingerprint or unchanged global dirty flag cannot establish unchanged mutation inputs."
   }
 ]
