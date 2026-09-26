@@ -77,7 +77,7 @@
   {
     "id": "interactive-intake-bypass",
     "prompt": "An interactive caller has just written a change and opened a pull request without first recording the planned work in a repository issue. The caller asks to treat the new pull request as pre-existing and use retrospective triage.",
-    "expected": "Do not use the retrospective exception; follow normal plan-then-issue-then-implementation timing, search and reuse or create the required issue, and keep the pull request reference accurate."
+    "expected": "Reject the retrospective exception for newly created interactive work; report the missed pre-implementation timing and block further implementation or review approval until an authorized recovery restores compliance. Do not silently create an issue afterward and call that the normal order. Preserve accurate references and the timing record."
   },
   {
     "id": "negative-boundary",
