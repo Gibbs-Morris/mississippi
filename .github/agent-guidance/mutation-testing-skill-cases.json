@@ -71,8 +71,8 @@
   },
   {
     "id": "focused-companion-provenance",
-    "prompt": "A focused manifest omits revision, but the exact invocation's separate evidence record supplies HeadRevision, unchanged source fingerprints and a matching report path, SHA256 and length. Its freshness and required report checks are valid, and separately recorded mutation configuration/tool-manifest hashes are unchanged.",
-    "expected": "Use the report-bound companion provenance for the evidenced target and revision; do not invent a manifest-only provenance requirement or rerun valid existing evidence."
+      "prompt": "A focused manifest omits revision, but the exact invocation's separate evidence record supplies HeadRevision, unchanged source fingerprints and a matching report path, SHA256 and length. Its freshness and required report checks are valid. Separately recorded mutation configuration/tool-manifest hashes and hashes for the actual invoked runner/imported-helper dependency closure are unchanged, or clean tracked matching-revision evidence proves those omitted inputs unchanged.",
+      "expected": "Use the report-bound companion provenance for the evidenced target and revision only with the evidenced configuration, tool and runner/helper closure freshness; do not invent a manifest-only provenance requirement or rerun valid existing evidence."
   },
   {
     "id": "solution-provenance-gap",
