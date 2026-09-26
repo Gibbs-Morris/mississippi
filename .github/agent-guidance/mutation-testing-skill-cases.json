@@ -71,8 +71,8 @@
   },
   {
     "id": "focused-companion-provenance",
-      "prompt": "A focused manifest omits revision, but the exact invocation's separate evidence record supplies HeadRevision, unchanged source fingerprints and a matching report path, SHA256 and length. Its freshness and required report checks are valid. Separately recorded mutation configuration/tool-manifest hashes and hashes for the actual invoked runner/imported-helper dependency closure are unchanged, or clean tracked matching-revision evidence proves those omitted inputs unchanged.",
-      "expected": "Use the report-bound companion provenance for the evidenced target and revision only with the evidenced configuration, tool and runner/helper closure freshness; do not invent a manifest-only provenance requirement or rerun valid existing evidence."
+    "prompt": "A focused manifest omits revision, but the exact invocation's separate evidence record supplies HeadRevision, unchanged source fingerprints and a matching report path, SHA256 and length. Its freshness and required report checks are valid. Separately recorded mutation configuration/tool-manifest hashes and hashes for the actual invoked runner/imported-helper dependency closure are unchanged, or clean tracked matching-revision evidence proves those omitted inputs unchanged.",
+    "expected": "Use the report-bound companion provenance for the evidenced target and revision only with the evidenced configuration, tool and runner/helper closure freshness; do not invent a manifest-only provenance requirement or rerun valid existing evidence."
   },
   {
     "id": "solution-provenance-gap",
@@ -88,5 +88,10 @@
     "id": "untracked-mutation-input-freshness",
     "prompt": "Focused evidence reports Fresh=true in an already-dirty worktree, but its InputPath omitted mutation configuration, tool-manifest and runner/imported-helper files. One of those files subsequently changed, and no per-run hashes or clean matching-revision proof exist.",
     "expected": "Report configuration/runner freshness as unverified; require matching recorded hashes for the actual invoked/imported dependency closure or clean matching-revision proof. A passing partial source fingerprint or unchanged global dirty flag cannot establish unchanged mutation inputs."
+  },
+  {
+    "id": "failed-run-moving-source",
+    "prompt": "A focused mutation manifest says Failed with complete reports. Its companion evidence reports Valid=true and Fresh=true, but SourceChangedDuringRun=true and SourceBefore.Fingerprint differs from SourceAfter.Fingerprint; only SourceAfter matches current source. No separate stable invocation/source evidence exists.",
+    "expected": "Do not attribute its score or survivors to the current source or a guessed historical revision. Report the moving-input provenance gap despite complete reports and helper freshness; failed runs also need stable before/after/current source proof."
   }
 ]
