@@ -65,8 +65,19 @@ function Get-ContextPaths {
     return @($paths)
 }
 
+function Get-ContextGitRoot {
+    param([string]$Root)
+    $null = & git --no-optional-locks -c core.fsmonitor= -C $root config --get core.worktree
+    if ($LASTEXITCODE -notin @(0, 1)) { throw 'Git worktree configuration inspection failed.' }
+    if ($LASTEXITCODE -eq 0) {
+        throw 'Configured core.worktree requires manual inspection; it can redirect the selected repository.'
+    }
+    return [IO.Path]::GetFullPath(([string](Invoke-ContextGit $root @('rev-parse', '--show-toplevel'))).Trim())
+}
+
 function Get-ContextObservation {
     param([string]$Root, [string[]]$ContextPaths)
+    if ((Get-ContextGitRoot $root) -cne $root) { throw 'Repository root changed during context inspection.' }
     $head = [string](Invoke-ContextGit $root @('rev-parse', '--verify', 'HEAD'))
     $branch = [string](Invoke-ContextGit $root @('branch', '--show-current'))
     $index = @(Invoke-ContextGit $root @('ls-files', '--stage'))
@@ -102,12 +113,13 @@ try {
         }
     }
     $requestedRoot = (Resolve-Path -LiteralPath $RepositoryRoot).Path
-    $root = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $requestedRoot @('rev-parse', '--show-toplevel'))).Trim())
+    $root = Get-ContextGitRoot $requestedRoot
     $before = Get-ContextObservation $root $ContextPath
     $after = Get-ContextObservation $root $ContextPath
     if (($before | ConvertTo-Json -Depth 8 -Compress) -cne ($after | ConvertTo-Json -Depth 8 -Compress)) {
         throw 'Repository or selected inputs changed during context inspection; reconcile and retry.'
     }
+    if ((Get-ContextGitRoot $requestedRoot) -cne $root) { throw 'Repository root changed during context inspection.' }
     [pscustomobject]@{
         SchemaVersion = 1
         RepositoryRoot = $root

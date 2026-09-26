@@ -66,6 +66,9 @@ Git submodule entries require manual inspection, including uninitialized entries
 the helper rejects them before status can descend into nested configurations.
 Assume-unchanged and skip-worktree index flags also require manual inspection;
 otherwise Git status can conceal source edits or sparse working-copy state.
+Configured `core.worktree` redirects require manual inspection, including
+legitimate separated Git directories that use this setting. Root checks repeat
+for both observations and before emission; nested ordinary working copies remain supported.
 
 ## State and compatibility
 

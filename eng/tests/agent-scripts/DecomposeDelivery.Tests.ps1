@@ -119,6 +119,20 @@ Describe 'Portable delivery context snapshots' {
         { Get-FixtureSnapshot } | Should -Throw '*Hidden index flags require manual inspection*'
     }
 
+    It 'rejects a repository-local worktree redirect to another repository' {
+        $other = Join-Path $TestDrive 'other-repository'
+        New-Item -ItemType Directory -Path $other | Out-Null
+        Set-Content -LiteralPath (Join-Path $other 'AGENTS.md') -Value 'Different repository instructions'
+        Invoke-FixtureGit @('-C', $other, 'init', '-b', 'other')
+        Invoke-FixtureGit @('-C', $other, 'config', 'core.autocrlf', 'false')
+        Invoke-FixtureGit @('-C', $other, 'add', '.')
+        Invoke-FixtureGit @('-C', $other, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'other baseline')
+        Invoke-FixtureGit @('config', 'core.worktree', $other)
+        $redirected = [string](& git -C $fixture rev-parse --show-toplevel)
+        [IO.Path]::GetFullPath($redirected) | Should -BeExactly $other
+        { Get-FixtureSnapshot } | Should -Throw '*Configured core.worktree requires manual inspection*'
+    }
+
     It 'records a new head rather than reusing evidence from the baseline' {
         $before = Get-FixtureSnapshot
         Add-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'changed'
