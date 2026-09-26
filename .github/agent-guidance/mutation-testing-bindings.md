@@ -60,6 +60,21 @@ belongs inside the selected run. Completed and failed tool runs may be analyzed
 when their required reports are complete; missing, stale, pending, skipped,
 interrupted, or incomplete required targets are reported as such and never pass.
 
+The mutation manifest alone does not record revision provenance. Focused quality
+runs also emit `.scratchpad/validation-evidence/<run-id>/evidence.json` with
+`HeadRevision`, source fingerprints before/after execution, and the exact mutation
+report's path, SHA-256, and length in `ArtifactMetadata`. Associate that record
+with the selected report and invocation, check its fields and report hash, and
+use `Test-ValidationEvidence` from `ValidationEvidence.psm1` to check reuse.
+Only claim current-source freshness when that check supports it; report changed
+inputs or missing provenance as a gap. A historical report needs evidence for
+its historical source, not a guessed revision from the current checkout.
+Standalone solution mutation has no equivalent report-bound provenance record,
+and `go.ps1`'s outer evidence records coverage artifacts rather than mutation
+report hashes. Without separately established invocation/source/report evidence,
+their manifests support no revision-specific score claim. Do not infer a revision
+from a filename, timestamp, or a passing outer pipeline.
+
 Current repository policy targets the primary solution's supported projects.
 The sample solution is outside this repository's mutation requirement, but this
 is a local binding rather than a portable prohibition; the skill must discover
