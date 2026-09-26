@@ -34,7 +34,8 @@ categories and template text outside the portable package.
 
 | Source content | Disposition |
 | --- | --- |
-| All 12 bullets in `self-improvement.instructions.md` Rules | Retained exactly; they remain effective whether skill discovery works or not. |
+| Original 12 bullets in `self-improvement.instructions.md` Rules | Retained exactly; they remain effective whether skill discovery works or not. |
+| September 26 peer-conflict correction | Adds three distinct requirements: use the all-agent local record route, leave the proposed lesson unwritten while unresolved, and preserve existing lessons until an authorized exact resolution. |
 | Governing thought, drift check, global scope, and existing references | Retained; the route and local format links are added without changing authority. |
 | Quick-Start, conflict-detection procedure, lesson lifecycle, and Core Principles | Replaced by a concise skill route with a direct-read fallback. |
 | Domain Categories and quoted Self-Taught File Template | Moved verbatim to `self-taught-format.md`, with its repository-specific paths and domains intentionally kept local. |
@@ -42,8 +43,8 @@ categories and template text outside the portable package.
 | Clean Squad Scribe route | Trigger, Scribe ownership, **SHOULD**, lesson destination, and rationale remain; the stale protocol name now routes directly to the skill, self-improvement policy, and local format. |
 | Remaining Scribe role, permissions, hard rules, ledger/audit duties, and output structures | Unchanged. Rules Manager remains unchanged and retains broader user-rule intake. |
 
-The adapter retains the mandatory 12-rule policy even when automatic skill
-selection is unavailable. The direct route reads both the portable procedure
+The adapter retains every original policy rule and the added peer-conflict
+requirements even when automatic skill selection is unavailable. The direct route reads both the portable procedure
 and the local format reference before a lesson is recorded; the skill itself
 does not depend on that repository-only file when copied elsewhere.
 
@@ -65,7 +66,7 @@ specific dependency.
 
 ## Validation and evaluation limits
 
-The [evaluation cases](validated-lesson-skill-cases.json) define 19 scenarios
+The [evaluation cases](validated-lesson-skill-cases.json) define 24 authored scenarios
 covering validated admission, assessment-only and unrun evidence, negative
 routing, duplicate and higher-policy conflict, denied scope, authorized
 overlap, untrusted injection, promotion and retirement controls, existing
@@ -74,7 +75,8 @@ no-write outcomes, a consuming hierarchy that ranks captured guidance above an o
 source, validated process gaps without failures, and speculative improvements. They are a reusable rubric rather than recorded model trials;
 no runtime savings, activation rate, or latency claim is made. The
 documented-silent case distinguishes missing required execution evidence from a
-verified silent success under the consuming contract.
+verified silent success under the consuming contract. The five peer-route
+additions are definitions, not executed model behavior.
 
 Structural checks passed: the bundled skill-creator validator; configured
 Markdown lint; JSON parsing; relative-link resolution; exact comparison of the
@@ -86,6 +88,33 @@ its skill/local-format references remain present; no agent migration is included
 The retained-rule comparison was refreshed September 26 against the current
 parent: all 12 bullets match exactly. Other historical checks retain their
 recorded revision and do not establish current native behavior.
+
+### September 26 repository-wide peer-conflict route correction
+
+Review [comment 4112876304](https://github.com/Gibbs-Morris/mississippi/pull/679#discussion_r4112876304)
+identified a local binding gap at reviewed owner head
+`b37f2ad7458dae06e494f8f9942679c16d6d5a13`. The portable classifier already
+returns Conflict for equal-authority peer contradictions, but the original
+global policy records only hand-authored conflicts and Scribe's broader
+`.thinking/<task>/` procedure does not cover every agent.
+
+The correction retains the original 12 Rules byte-for-byte and adds three
+requirements plus explicit full-audience scope. The [local peer-conflict route](self-taught-format.md#peer-lesson-conflicts)
+records both paths, rule IDs, scopes, contradiction, evidence, status, and next
+review in an authorized active task folder or linked task issue. If neither
+record write is available within scope, the agent reports a record gap without
+escalating authority. Existing lessons remain unchanged and the proposed lesson
+remains unwritten until an authorized exact resolution; an already-authorized
+write or reconciliation needs no additional approval. The skill and native
+trial record bytes are unchanged. This is an explicit policy addition, not a
+verbatim migration of an existing repository-wide requirement.
+
+Five added adversarial cases define authorized folder recording, authorized
+issue fallback, read-only/unavailable recording, already-authorized exact
+resolution, and disjoint scopes. They have not been executed. Historical trials
+below retain their inputs and results; none establishes the new local route.
+Fresh current-candidate recording, reconciliation, and authorization-boundary
+behavior remain unverified, as does Copilot conformance.
 
 ### Historical September 26 authority correction
 
@@ -116,7 +145,7 @@ Speculative proposals remain insufficient. Candidate Git blob
 `5d24946f73e1f1dc1a5681c2cd3ee7460cff3ecc9f69b0bd6d15f5f14372e3c9`:
 6,420 bytes, 903 words, 108 lines.
 
-The current [native record](validated-lesson-native-trial.json) uses Codex CLI
+The process-gap [native record](validated-lesson-native-trial.json) uses Codex CLI
 0.158.0-alpha.2.1 / GPT-5.5 medium. It read the skill, admitted the supplied
 validated process gap, preserved required rechecks after input changes, and
 rejected the speculative proposal. All fixture hashes remained unchanged;
@@ -181,6 +210,9 @@ was performed; exact-head CI is authoritative and mutation testing was not run.
 
 ## Corpus accounting
 
+The rows below measure historical migration inputs; they do not include the
+September 26 peer-conflict policy and local-route addition.
+
 All measurements use raw bytes from `git cat-file blob` invoked through a
 subprocess. The algorithm UTF-8-decodes each blob, counts `str.split()` words
 and `str.splitlines()` lines, records raw byte length, and computes UTF-16 code
@@ -213,3 +245,8 @@ reference, audit, and cases; restore the original self-improvement procedure
 sections. Recheck all 12 Rules, the local format content, and the unchanged
 Scribe file. Preserve the
 preceding build-remediation skill and unrelated repository work.
+
+For only the peer-conflict correction, revert its added policy bullets, scope
+paragraph, local route, five case definitions, and audit updates together.
+Preserve the original 12 Rules, portable skill, historical native records, and
+all unrelated work.
