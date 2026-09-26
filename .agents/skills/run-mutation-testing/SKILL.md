@@ -67,6 +67,8 @@ status, score if supported, and significant survivors. A failed, skipped,
 interrupted, incomplete, or
 report-less run never becomes a pass. Distinguish a mutation-tool or threshold
 failure from a build/test failure and from the caller's task acceptance. A score
+or generic failed status alone does not identify the failure category; use the
+actual diagnostics and report contract, or report the category as unverified. A score
 claim covers only targets and revisions supported by valid reports; it does not
 become a repository-wide claim through extrapolation.
 
