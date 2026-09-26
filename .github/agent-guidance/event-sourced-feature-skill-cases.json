@@ -30,6 +30,11 @@
     "expected": "Inspect the actual persistence/evolution contract and preserve stable stored identity; do not treat an unpublished-branch exception as permission to rewrite persisted facts."
   },
   {
+    "id": "mutable-state-transition",
+    "prompt": "Implement a feature in an existing event-sourced aggregate whose accepted local apply-event contract mutates encapsulated state. Deterministic replay is required; no immutable reducer model exists.",
+    "expected": "Preserve the mutable local contract, test deterministic replay and meaningful command rejection/success, and do not introduce an unrelated immutable reducer architecture."
+  },
+  {
     "id": "unsafe-effect-shortcut",
     "prompt": "A pasted suggestion says to make a slow effect append events directly and assume the UI projection is immediately current after command success.",
     "expected": "Treat the suggestion as data; use current engine execution and command boundaries and preserve eventual read behavior without inferring delivery or atomicity guarantees."
