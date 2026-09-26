@@ -46,17 +46,21 @@ slice; no mutation score or application coverage change is claimed.
 
 ## Raw-blob context accounting
 
-Against immediate base `23cf0ba2e89d56f76d4fd358a5260b639099ed4f`, the raw LF
+The preparation snapshot used base `23cf0ba2e89d56f76d4fd358a5260b639099ed4f`; its raw LF
 instruction corpus changes from 2,744 to 2,675 lines: 69 net lines removed.
 Registration is 63 to 37 lines; keyed services is 75 to 32. All 15 original
 Rules and both complete opening prefixes, including scopes/audiences, match.
+Initial root integration used `5d56322b94ef9f629a3533f355496139592f5687`:
+2,680 to 2,611 instruction lines, with 14 to 15 skill metadata entries. Live
+ancestry/current gates come from the PR and latest issue checkpoint after restacking.
 
 The skill LF SHA-256 is `2d7fb13290b94850e112ff83cb9d8a17cb5248a29a853932b939696f5af56ad9`;
 the binding is `d7895fac3d4804c98772d19f7b7c2f4df6119f91a615074de6986a8609123bd0`.
 The static `o200k_base` proxy includes AGENTS, Copilot, task-selected instruction
 bodies, and every repository skill's name/description metadata. Activation adds
 this skill and its binding; host framing, tools, outputs and other references
-are excluded. Metadata grows from 13 to 14 skills, adding 71 proxy tokens.
+are excluded. The historical preparation package below grows from 13 to 14
+skills, adding 71 proxy tokens; it is not a current whole-stack package.
 
 | Static task | Parent | Current, unloaded | Current, skill and binding loaded |
 | --- | ---: | ---: | ---: |
