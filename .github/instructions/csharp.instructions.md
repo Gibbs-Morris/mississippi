@@ -32,22 +32,6 @@ Governing thought: Write SOLID, testable, cloud-ready C# with internal-by-defaul
 
 C# contributors across Mississippi and Samples, including Orleans code.
 
-## At-a-Glance Quick-Start
-
-- Default visibility to `internal`; justify any widening in XML docs.
-- Use DI property pattern and options pattern; no raw config parameters.
-- Inject `TimeProvider` for date/time; use `FakeTimeProvider` in tests.
-- Avoid blocking/parallel loops in Orleans; use async + `Task.WhenAll`.
-- Place public contracts in `.Abstractions`; keep implementations internal.
-- Keep analyzers on; fix warnings instead of suppressing.
-
-## Core Principles
-
-- SOLID + DI seams enable testing and refactoring.
-- Internal-by-default keeps APIs stable and reduces unintended breaking changes (pre-1.0: intentional breaks are permitted per `.github/instructions/backwards-compatibility.instructions.md`).
-- Orleans POCO pattern and async-first avoid threading issues.
-- Immutable/value-object bias improves correctness and logging/serialization.
-
 ## References
 
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
@@ -55,3 +39,4 @@ C# contributors across Mississippi and Samples, including Orleans code.
 - Orleans specifics: `.github/instructions/orleans.instructions.md`
 - Service registration: `.github/instructions/service-registration.instructions.md`
 - Logging: `.github/instructions/logging-rules.instructions.md`
+- Compatibility baseline: [API and storage policy](backwards-compatibility.instructions.md).

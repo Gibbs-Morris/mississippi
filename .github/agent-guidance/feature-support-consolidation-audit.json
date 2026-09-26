@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "evidence_kind": "Exact source preservation and explicit raw-LF context profiles; no new native behavior pass",
+  "source_revision": "23cf0ba2e89d56f76d4fd358a5260b639099ed4f",
+  "issue_plan": "https://github.com/Gibbs-Morris/mississippi/issues/795#issuecomment-5849010950",
+  "instruction_counts": {"before_lines": 356,"after_lines": 248,"reduction_lines": 108,"before_bytes": 26352,"after_bytes": 21330},
+  "files": [
+    {"path": ".github/instructions/csharp.instructions.md","before_lines": 57,"after_lines": 42,"before_bytes": 5429,"after_bytes": 4667,"before_sha256": "3d8783287fd89b6ce283085ebd1d709fb3ab14940bd5214a199cc01c2b63a976","after_sha256": "9ee09b8a1e0266218b89904238ef2ae39ab93a6e083fc527f96f412b563835e8"},
+    {"path": ".github/instructions/naming.instructions.md","before_lines": 55,"after_lines": 36,"before_bytes": 3296,"after_bytes": 2406,"before_sha256": "45574df98ddfbe0d2aaf9399261651f12048168f60c7cce0ed62c2fe6c6ff112","after_sha256": "f32197a794c7df273ebcd078fce58c9ca02f25bfc9c3b4e9ea3b69ba80df686c"},
+    {"path": ".github/instructions/orleans-serialization.instructions.md","before_lines": 40,"after_lines": 29,"before_bytes": 2897,"after_bytes": 2372,"before_sha256": "527a6411e4cedbc4e3ccbdd5a819c6f910cd355e6cabf2b86142a486aa0e160d","after_sha256": "a19c23d303395d1c462d3af83ad2762e742e9a28899ace20f95e85335733cc34"},
+    {"path": ".github/instructions/storage-type-naming.instructions.md","before_lines": 36,"after_lines": 25,"before_bytes": 2200,"after_bytes": 1770,"before_sha256": "cf11d23e42d81206513d711b71255471d0642a24fd1e767f00d19631ad493a0d","after_sha256": "ad8c18dafaca406ee5b9a4484d00a352d827b5b4fe018325503101b11b16921f"},
+    {"path": ".github/instructions/backwards-compatibility.instructions.md","before_lines": 43,"after_lines": 29,"before_bytes": 4038,"after_bytes": 3269,"before_sha256": "28ca4b286e673ef6aac37ac14e91b96c77396988fa250250f25eba9249a7e3c7","after_sha256": "d9dafdbcdc452250909bfcdfd0887f5140b532a064232d86dfc2095b06d39d76"},
+    {"path": ".github/instructions/dotnet-architecture-good-practices.instructions.md","before_lines": 43,"after_lines": 30,"before_bytes": 2640,"after_bytes": 2066,"before_sha256": "4055153e9567c66956346f66a2f4fb43e80deddcc472dab232462d8cfba56c80","after_sha256": "a1dcb1fee18e7935e518862399aca681c6f817b632e7fb42fceca277209febed"},
+    {"path": ".github/instructions/blazor-ux-guidelines.instructions.md","before_lines": 44,"after_lines": 31,"before_bytes": 3088,"after_bytes": 2512,"before_sha256": "ba2672cc5a947193b1be80d8e888338190992f8924a7706f73b9bc6cce2bb99c","after_sha256": "1db280ddf08e4be99d0438c7aaf54ac2bbdb977c4d52f13c857dc008cc5384de"},
+    {"path": ".github/instructions/abstractions-projects.instructions.md","before_lines": 38,"after_lines": 26,"before_bytes": 2764,"after_bytes": 2268,"before_sha256": "dc6429e336454b629d2aab582627d003f0cd3a2fc5eb28ac4ce14ccf076316b5","after_sha256": "b7202825cb09e350a3b0ad955334e725e198fc8188e8e5525cc82b48f1dba8a0"}
+  ],
+  "preservation": {"exact_prefixes": 8,"exact_complete_rules_sections": 8,"rule_bullets": 64,"exact_scope_audience_sections": 8,"original_references_preserved": 8,"exact_suffix_table_rows": 7,"unchanged_skill_package_sha256": "c8914bd2a067ab89845e7772dfd6a75d97d35aed99019e4cf6f1c87923ea5e6e","skill_raw_lf_sha256": "e3697224f1a70d10ca4f9473ab046ecb9446eae3ece5b2a120b92058b4c7e034","skill_files": 1},
+  "removed_items": {
+    ".github/instructions/csharp.instructions.md": [
+      {"line": 37,"target": "R8"},
+      {"line": 38,"target": "R4+R6"},
+      {"line": 39,"target": "R17"},
+      {"line": 40,"target": "R1+R9+R11"},
+      {"line": 41,"target": "R8+R13"},
+      {"line": 42,"target": "R2"},
+      {"line": 46,"target": "R1"},
+      {"line": 47,"target": "R8; compatibility R1-R3"},
+      {"line": 48,"target": "R9-R11"},
+      {"line": 49,"target": "R14"}
+    ],
+    ".github/instructions/naming.instructions.md": [
+      {"line": 27,"target": "R2; namespace-folder-placement R3"},
+      {"line": 28,"target": "R3+R4"},
+      {"line": 29,"target": "R4"},
+      {"line": 30,"target": "R5"},
+      {"line": 34,"target": "R2"},
+      {"line": 35,"target": "R2-R4"},
+      {"line": 36,"target": "R5"},
+      {"line": 42,"target": "binding suffix row 1"},
+      {"line": 43,"target": "binding suffix row 2"},
+      {"line": 44,"target": "binding suffix row 3"},
+      {"line": 45,"target": "binding suffix row 4"},
+      {"line": 46,"target": "binding suffix row 5"},
+      {"line": 47,"target": "binding suffix row 6"},
+      {"line": 48,"target": "binding suffix row 7"}
+    ],
+    ".github/instructions/orleans-serialization.instructions.md": [
+      {"line": 27,"target": "binding serialization example; R1+R2; domain Alias rule"},
+      {"line": 28,"target": "R4+R5 (post-1.0 only)"},
+      {"line": 29,"target": "R6"},
+      {"line": 33,"target": "R1+R2"},
+      {"line": 34,"target": "R3-R5; compatibility R1"}
+    ],
+    ".github/instructions/storage-type-naming.instructions.md": [
+      {"line": 25,"target": "binding storage example; R1"},
+      {"line": 26,"target": "R2"},
+      {"line": 27,"target": "R3"},
+      {"line": 31,"target": "R2+R4"},
+      {"line": 32,"target": "R1+R2"}
+    ],
+    ".github/instructions/backwards-compatibility.instructions.md": [
+      {"line": 26,"target": "R1+R3; R6 persists separately"},
+      {"line": 27,"target": "R2"},
+      {"line": 28,"target": "R5"},
+      {"line": 29,"target": "R6"},
+      {"line": 33,"target": "R1"},
+      {"line": 34,"target": "R2"},
+      {"line": 35,"target": "R5"},
+      {"line": 36,"target": "R6"}
+    ],
+    ".github/instructions/dotnet-architecture-good-practices.instructions.md": [
+      {"line": 27,"target": "R1+R2"},
+      {"line": 28,"target": "R3; service-registration Rules"},
+      {"line": 29,"target": "R2+R4+R6; logging Rules"},
+      {"line": 30,"target": "R3+R4+R6; verify-change binding"},
+      {"line": 34,"target": "R1+R2"},
+      {"line": 35,"target": "R3; csharp R6+R14"},
+      {"line": 36,"target": "R2+R4+R6; logging Rules"}
+    ],
+    ".github/instructions/blazor-ux-guidelines.instructions.md": [
+      {"line": 30,"target": "R2; namespace-folder-placement R3"},
+      {"line": 31,"target": "R3+R6"},
+      {"line": 32,"target": "R4+R5"},
+      {"line": 33,"target": "R7+R8"},
+      {"line": 37,"target": "R2+R9"},
+      {"line": 38,"target": "R3-R6"},
+      {"line": 39,"target": "R6+R8+R10"}
+    ],
+    ".github/instructions/abstractions-projects.instructions.md": [
+      {"line": 26,"target": "R3"},
+      {"line": 27,"target": "R1+R2"},
+      {"line": 28,"target": "R1+R2"},
+      {"line": 32,"target": "R1"},
+      {"line": 33,"target": "R2; csharp R8"},
+      {"line": 34,"target": "R2 (dependency-direction rationale)"}
+    ]
+  },
+  "unchanged_controls": [
+    {"path": "AGENTS.md","raw_lf_sha256": "668aec376f19f9d04bd4a2a3aeb97bf6ab4eb1d59e9e614d8f0eea81557894af"},
+    {"path": ".github/copilot-instructions.md","raw_lf_sha256": "099a89222e3fc769da297758ed72a2481654f6593addd6427e1b37e22fb298c6"},
+    {"path": "GitVersion.yml","raw_lf_sha256": "6b48670209fedab835bb8f5749edf537d3be4dd97ced5a31f9c5526f21f4d18e"},
+    {"path": ".markdownlint-cli2.jsonc","raw_lf_sha256": "5c0af87d8b75cd2f74f85ac8f38162bc37847b219e93ec8b645f8b0f73498cbe"},
+    {"path": ".github/linters/.markdown-lint.yml","raw_lf_sha256": "523cb96f445655ccea6ed08506845cfbebee8f4dccdf7eb8d8acfd1ab1279d3b"},
+    {"path": ".github/instructions/authoring.instructions.md","raw_lf_sha256": "bb719b437b682706d0ce658dbd33f937673656cc35c1c36573cf34dd4d7e742e"},
+    {"path": ".github/instructions/markdown.instructions.md","raw_lf_sha256": "2eba2b9c968875c7a937bcb0c76d2cdba73a93e524b539130e107920d828ae26"},
+    {"path": ".github/instructions/rfc2119.instructions.md","raw_lf_sha256": "1e8aa031df94b4ca8e54943eec2e61a0123509a1f8b425f7398c97ed9eabd7d1"},
+    {"path": ".github/instructions/domain-modeling.instructions.md","raw_lf_sha256": "23dabe27e881a41d282115e9976c77f6325d17801c3f662b83d66a6b1eb4919b"},
+    {"path": ".github/instructions/coding-discipline.instructions.md","raw_lf_sha256": "86e1643b9e9b1aa0c057a74c60837cc3effb40a8f82b8d37b1cebd4c0ee5f818"},
+    {"path": ".github/instructions/mississippi-framework.instructions.md","raw_lf_sha256": "0b027c74efe7bb5817ad02e001700ba6bb442c936cadd85f837e4a87ea8caf52"},
+    {"path": ".github/instructions/service-registration.instructions.md","raw_lf_sha256": "566afd865129659101de1148ca9e724246136f54fd1528ba3b272a98e9b2a426"},
+    {"path": ".github/instructions/framework-patterns.instructions.md","raw_lf_sha256": "db132a84404b23bf4d16c657a78c82500cec89872659984e00e358edbf3e77c7"}
+  ],
+  "inventory": {"valid_frontmatter_files": 47,"global_files": 20,"unknown_scopes": 0,"scoped_agents": "Only root AGENTS.md discovered; no scoped AGENTS file","read_policy": "All instruction bodies read; selected domains include authoring, Markdown, C#, sample/domain, serialization, storage, Blazor, architecture and abstractions"},
+  "metadata_accounting": {"skill_records": 13,"skill_name_description_bytes": 4494,"skill_name_description_o200k_tokens": 818,"metadata_unchanged": true,"algorithm": "Sorted selected LF blobs separated by LF, plus all local skill name/description UTF-8 values. Explicit profiles are context proxies, not activation/billing measurements. Personal/plugin skills, host framing, other references and outputs are excluded."},
+  "contexts": [
+    {"profile": "all_instruction_maintenance","selected_files": 49,"before_lines": 3011,"after_lines": 2903,"before_bytes": 243815,"after_bytes": 238793,"before_o200k_tokens": 51211,"after_o200k_tokens": 50129},
+    {"profile": "general_csharp","selected_files": 33,"before_lines": 1831,"after_lines": 1736,"before_bytes": 144218,"after_bytes": 139772,"before_o200k_tokens": 30334,"after_o200k_tokens": 29373},
+    {"profile": "sample_feature","selected_files": 36,"before_lines": 2141,"after_lines": 2033,"before_bytes": 176558,"after_bytes": 171536,"before_o200k_tokens": 36906,"after_o200k_tokens": 35824,"after_with_skill_and_binding_tokens": 37977,"before_with_skill_and_binding_tokens": 38680,"with_skill_and_binding_reduction_tokens": 703},
+    {"profile": "unrelated_markdown","selected_files": 23,"before_lines": 1297,"after_lines": 1271,"before_bytes": 108234,"after_bytes": 106969,"before_o200k_tokens": 22460,"after_o200k_tokens": 22198}
+  ],
+  "checks": {"source_map": "62 removed support bullets/table rows have exact baseline line and target; section headings and whitespace belong to their removed block","protected_scope": "Only eight owned instructions, existing feature binding and three focused records changed","skill_schema": "pass; quick_validate.py returned Skill is valid!; unchanged portable skill","json_shape": "pass; exact required keys, nonempty strings, case ids and uniqueness, source revision, preserved-count and accounting identities; not native behavioral execution","configured_markdownlint": {"status": "pass","tool": "markdownlint-cli2 0.23.3 / markdownlint 0.41.1","config": ".markdownlint-cli2.jsonc","executed_files": 11,"issues": 0,"method": "Verified cached package bin markdownlint-cli2-bin.mjs; no dependency/configuration changes"},"relative_links_anchors": {"status": "pass","relative_links": 43,"anchors": 10},"whitespace": "pass; git diff --check"},
+  "behavior_evidence": {"fresh_cases": 4, "status": "Two fresh supplied-catalog read-only assessments independently inspected; four-case definition matrix is not fully executed.", "historical_native_record": ".github/agent-guidance/event-sourced-feature-native-trials.json", "reuse": "The portable skill is unchanged; old skill-only behavior remains historical. Changed instruction and binding inputs prevent reusing it as a fresh support-consolidation behavior pass. CRLF fixture hashes are not relabeled LF.", "next_fixture": "Remaining cases and broader native host/CLI matrix are unverified. Copilot stays deferred.", "fresh_assessments": {"model": "Inherited chat settings without overrides", "cases": ["general-csharp-negative-routing", "pre-release-api-and-persisted-identity"], "result": "General C# excludes the feature skill; pre-release API/CLR rename preserves existing real-store identity ACME.BILLING.RECORDED.V1.", "protected_inputs": 9, "evidence_sha256": "0e4dc4e3bce8f046861a25a19119309af99b397cbeff0e11a29189a82dbb22ec", "assessment_sha256": "81ab8c725929ba1c013578d159aedb4e97c967bc0bdb0c43c0e8b5ca0b37a60a", "limits": "Read-only recommendations on supplied catalogs; no implementation, application behavior or full native discovery/model matrix pass."}},
+  "remaining": ["Root current-head/base CI, applicable canonical cleanup/build/unit checks and complete review disposition", "Cross-model and native host discovery matrix; Copilot deferred"],
+  "protected_trees": [
+    {"path": ".agents/skills","tracked_files": 25,"committed_tree_manifest_sha256": "62b87747fcb9b1c62e39658eb9e600c6d96a903779a250e05a113fc5c45ba775"},
+    {"path": ".github/agents","tracked_files": 85,"committed_tree_manifest_sha256": "7df93cd9499a9cbc0df6b8d78affdbc979b0cb3fd05d9896d3f42181a5de6893"},
+    {"path": ".github/workflows","tracked_files": 24,"committed_tree_manifest_sha256": "642fa243e832d732f44524ffb7ca3088854c585541f57930bf375a5bb895dea2"},
+    {"path": "src","tracked_files": 714,"committed_tree_manifest_sha256": "69cf33ba7ff14d33bb90a31a752afe7f29ebacb8d8e053cbca98123667b3b1c9"},
+    {"path": "samples","tracked_files": 326,"committed_tree_manifest_sha256": "54dbb7c2ac8fb57855c9f2bf1684470ce348e665f38b67f1429ff5d98c27ef11"},
+    {"path": "tests","tracked_files": 529,"committed_tree_manifest_sha256": "37cd4dc434716c71424e2bb6e940fbc73cd414acee71d798c2319c59ba66483b"},
+    {"path": "eng","tracked_files": 74,"committed_tree_manifest_sha256": "4304c8914b2f703c62cb0ea273ff4c6c3eed5d22377c793dd04f5666ec2f4154"}
+  ],
+  "fresh_fixtures": [{"id": "general-csharp-negative-routing", "files": 4, "fixture_manifest_sha256": "09232d95aa90182082d4192ebd9e8c22eb76583a20846594857e836bc065d7d1", "inputs_are_lf": true, "status": "Read-only assessment completed; protected hashes independently unchanged; runtime not executed."}, {"id": "pre-release-api-and-persisted-identity", "files": 5, "fixture_manifest_sha256": "605da4c3542b3e26bff9dec43802297f50d6136f75157f8835f372e1a828ba8a", "inputs_are_lf": true, "status": "Read-only assessment completed; protected hashes independently unchanged; runtime not executed."}],
+  "binding_counts": {"before_lines": 57,"after_lines": 84,"addition_lines": 27,"before_bytes": 4732,"after_bytes": 6421,"before_raw_lf_sha256": "ddcea3cbf6e7142b16af314aee27e225b5dee0b5242c989a3953cfa1cede64f0","after_raw_lf_sha256": "b6167bbe8f8e1e43f1058070de9c6c367eedd7116d3dae2b683019bfdd5b4bbd"},
+  "source_revision_role": "Historical preparation baseline for source maps, metadata and context counts; live PR/checkpoint carry the current integrated head and base.",
+  "integration_accounting": {"initial_actual_base": "9bca81170461f2c740c202dcf4d367f2aa5bccb0", "instruction_directory_before": 2571, "instruction_directory_after": 2463, "reduction_lines": 108, "skill_count_before": 16, "skill_count_after": 16}
+}
