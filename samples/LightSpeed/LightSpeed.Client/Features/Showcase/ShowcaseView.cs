@@ -28,6 +28,12 @@ public sealed record ShowcaseView(
     /// <summary>Gets a value indicating whether the emitter is disabled.</summary>
     public bool IsEmitterDisabled { get; init; }
 
+    /// <summary>Gets a value indicating whether the notification details are expanded.</summary>
+    public bool IsNotificationExpanded { get; init; }
+
+    /// <summary>Gets a value indicating whether the notification is visible.</summary>
+    public bool IsNotificationVisible { get; init; }
+
     /// <summary>Gets the demonstrated completion, or null for unknown duration.</summary>
     public int? ProgressPercent { get; init; } = 25;
 }

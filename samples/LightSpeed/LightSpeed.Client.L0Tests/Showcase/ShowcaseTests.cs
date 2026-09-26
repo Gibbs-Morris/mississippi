@@ -99,6 +99,58 @@ public sealed class ShowcaseTests
         Assert.Same(state, ShowcaseReducers.ChangeProgress(state, new(percent)));
     }
 
+    /// <summary>The registered notification intents reach the selected view.</summary>
+    [Fact]
+    public void NotificationRegistrationConnectsActionsToState()
+    {
+        ServiceCollection services = new();
+        services.AddLogging();
+        services.AddReservoir().AddShowcaseFeature();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IStore store = provider.GetRequiredService<IStore>();
+        store.Dispatch(new ExpandNotificationAction());
+        store.Dispatch(new DismissNotificationAction());
+        store.Dispatch(new RestoreNotificationAction());
+        ShowcaseView view = ShowcaseSelectors.GetView(store.GetState<ShowcaseState>());
+        Assert.True(view.IsNotificationVisible);
+        Assert.False(view.IsNotificationExpanded);
+        Assert.Equal(3, view.ActionCount);
+        Assert.Equal(nameof(RestoreNotificationAction), view.LastAction);
+    }
+
+    /// <summary>Notification intents preserve immutable state and reject invalid visibility transitions.</summary>
+    [Fact]
+    public void NotificationTransitionsAreImmutable()
+    {
+        ShowcaseState initial = new();
+        ShowcaseState expanded = ShowcaseReducers.ExpandNotification(initial, new());
+        ShowcaseState dismissed = ShowcaseReducers.DismissNotification(expanded, new());
+        ShowcaseState ignoredDismissal = ShowcaseReducers.DismissNotification(dismissed, new());
+        ShowcaseState ignoredExpansion = ShowcaseReducers.ExpandNotification(dismissed, new());
+        ShowcaseState restored = ShowcaseReducers.RestoreNotification(dismissed, new());
+        ShowcaseState ignoredRestore = ShowcaseReducers.RestoreNotification(restored, new());
+        Assert.NotSame(initial, expanded);
+        Assert.True(initial.IsNotificationVisible);
+        Assert.False(initial.IsNotificationExpanded);
+        Assert.True(expanded.IsNotificationVisible);
+        Assert.True(expanded.IsNotificationExpanded);
+        Assert.Equal(nameof(ExpandNotificationAction), expanded.LastAction);
+        Assert.Equal(1, expanded.ActionCount);
+        Assert.False(dismissed.IsNotificationVisible);
+        Assert.False(dismissed.IsNotificationExpanded);
+        Assert.Equal(nameof(DismissNotificationAction), dismissed.LastAction);
+        Assert.Equal(2, dismissed.ActionCount);
+        Assert.Same(dismissed, ignoredDismissal);
+        Assert.Equal(nameof(DismissNotificationAction), ignoredDismissal.LastAction);
+        Assert.Equal(2, ignoredDismissal.ActionCount);
+        Assert.Same(dismissed, ignoredExpansion);
+        Assert.True(restored.IsNotificationVisible);
+        Assert.False(restored.IsNotificationExpanded);
+        Assert.Equal(nameof(RestoreNotificationAction), restored.LastAction);
+        Assert.Equal(3, restored.ActionCount);
+        Assert.Same(restored, ignoredRestore);
+    }
+
     /// <summary>Completion changes preserve the original state and unrelated form data.</summary>
     [Fact]
     public void ProgressChangesAreImmutable()
@@ -148,6 +200,8 @@ public sealed class ShowcaseTests
             ActionCount = 4,
             EmitterActivationCount = 2,
             IsEmitterDisabled = true,
+            IsNotificationVisible = true,
+            IsNotificationExpanded = true,
         };
         ShowcaseState reset = ShowcaseReducers.Reset(state, new());
         Assert.Equal(RefractionThemeMode.Light, reset.ThemeMode);
@@ -155,6 +209,8 @@ public sealed class ShowcaseTests
         Assert.False(reset.IsSubmitted);
         Assert.Equal(2, reset.EmitterActivationCount);
         Assert.True(reset.IsEmitterDisabled);
+        Assert.True(reset.IsNotificationVisible);
+        Assert.True(reset.IsNotificationExpanded);
         Assert.Equal(5, reset.ActionCount);
         Assert.Equal(nameof(ResetProfileAction), reset.LastAction);
     }

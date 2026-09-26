@@ -53,6 +53,14 @@ Activate **Emit signal** in the emitter demonstration to follow
 `ChangeEmitterDisabledAction`; native button state and the activation count are
 controlled by the page and survive **Reset example**.
 
+Use the notification demonstration to follow `ExpandNotificationAction`,
+`DismissNotificationAction`, and `RestoreNotificationAction`. **View details**
+opens a real details region, **Dismiss notification** hides and collapses the
+message, and **Restore notification** returns it to the visible collapsed state.
+The organism only presents callbacks; the page selects and dispatches state,
+and focus moves to the details, restore action, or stable section heading as
+the parent state changes. Profile reset preserves both notification fields.
+
 The gallery identifies the verified input, theme, and progress surface separately from the
 library's prototype controls. It is not a whole-library accessibility
 certification. Components are organized into atomic folders, with page-level
