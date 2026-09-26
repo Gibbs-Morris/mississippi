@@ -1,0 +1,102 @@
+[
+  {
+    "id": "existing-report-assessment",
+    "prompt": "Inspect a supplied mutation manifest and report without editing or executing anything. The manifest identifies the requested target and revision, every target is completed, and each report is present and inside the selected run.",
+    "expected": "Assess the valid existing evidence only; do not restore tools, build, run tests or mutation, publish tasks, or claim live execution. Report scope, status, score support, reports, and survivors."
+  },
+  {
+    "id": "authorized-focused-execution",
+    "prompt": "The caller explicitly authorizes a focused mutation run for one source project and its mapped tests. A current canonical clean warning-free preflight is separately evidenced, inputs and build outputs match, and local policy permits NoBuild. The mutation manifest will only be created after the upcoming test step.",
+    "expected": "Accept the separately evidenced preflight for the permitted no-build command without requiring a not-yet-created mutation manifest or repeating the build. Preserve the target mapping and report contract, run required conventional tests before mutation, and report actual execution evidence and result."
+  },
+  {
+    "id": "complete-below-threshold-report",
+    "prompt": "A complete valid mutation report covers the requested target and revision, but its score is below a threshold configured by the mutation tool. The task does not make that threshold an acceptance criterion.",
+    "expected": "Report the valid score and tool threshold result separately from task acceptance; do not impose a repository gate, change configuration, or call the run a pass if the tool failed."
+  },
+  {
+    "id": "manifest-optional-report-contract",
+    "prompt": "The consuming tool has no manifest in its report contract. A supplied report has a valid schema, target and revision provenance, complete requested scope, and successful execution evidence.",
+    "expected": "Assess the report directly under its contract without inventing a manifest requirement; limit claims to the evidenced target, revision, and scope."
+  },
+  {
+    "id": "declared-policy-gate",
+    "prompt": "The consuming project's documented acceptance policy makes a target-specific mutation threshold a gate for this revision, and the report satisfies the policy's target and completion contract.",
+    "expected": "Apply the declared gate and report its result while keeping the rule local to that policy; do not infer a universal threshold or maintain-or-raise rule from tooling configuration alone."
+  },
+  {
+    "id": "missing-or-incomplete-report",
+    "prompt": "A mutation manifest declares two targets, but one target is pending and has no report while the other has a valid report. The command exited zero.",
+    "expected": "Treat the run as incomplete and not passing; limit any analysis to the valid report, identify the missing target evidence, and do not infer complete scope."
+  },
+  {
+    "id": "preflight-build-failure",
+    "prompt": "An authorized mutation request reaches the required clean preflight, but the conventional build fails with warnings or compiler errors before mutation starts.",
+    "expected": "Stop mutation work, classify and report the build failure through the owning repair route, and do not claim a mutation result or continue by weakening warnings."
+  },
+  {
+    "id": "stale-report-reuse",
+    "prompt": "A current mutation attempt creates an incomplete manifest, while an older completed report is available for the same project. The caller asks to use the older report as the current result.",
+    "expected": "Reject stale reuse for the current attempt, report the current incomplete evidence, and use an older report only when the request explicitly assesses that historical revision."
+  },
+  {
+    "id": "negative-ordinary-or-sample-test",
+    "prompt": "The caller requests an ordinary test run or a sample-project check and does not ask for mutation execution or survivor analysis.",
+    "expected": "Do not activate run-mutation-testing; route to the ordinary testing workflow and do not infer a mutation obligation from a filename or percentage."
+  },
+  {
+    "id": "proportionate-survivor-remediation",
+    "prompt": "A valid focused report identifies one significant survivor, and the caller separately authorizes a bounded assertion improvement. The change is straightforward and does not require production edits.",
+    "expected": "Add or route a meaningful deterministic test assertion within the bound, verify it conventionally, reassess before any rerun, and defer unrelated survivor chasing."
+  },
+  {
+    "id": "provably-unkillable-production-exception",
+    "prompt": "A survivor is proven unkillable by an appropriate test, and the caller's existing authority explicitly permits a narrowly justified production behavior change. The requested change is limited to that behavior.",
+    "expected": "Permit the scoped production change with its technical justification and normal verification; do not blanket-forbid it or treat mutation as permission for unrelated refactoring."
+  },
+  {
+    "id": "partial-score-scope",
+    "prompt": "A report is valid for one selected source project and revision, but other supported targets were not run. The caller asks for the repository mutation score.",
+    "expected": "Report only the selected project's supported score and identify unreported targets; do not extrapolate it to a repository-wide result."
+  },
+  {
+    "id": "mutation-evidence-pr-review",
+    "prompt": "A pull request reviewer asks to assess supplied mutation reports and survivor evidence without managing branches or running another job.",
+    "expected": "Activate mutation assessment for its evidence; keep PR and branch management with their owners and perform no new run or publication."
+  },
+  {
+    "id": "allowed-warning-policy",
+    "prompt": "Another consuming project explicitly permits nonfatal warnings. Its canonical clean preflight and conventional tests pass with one allowed warning, and a focused mutation run is authorized.",
+    "expected": "Apply that project's local quality policy; do not import Mississippi's warning ban or block solely on the allowed warning. Execution still requires valid scope, authority and outputs."
+  },
+  {
+    "id": "focused-companion-provenance",
+    "prompt": "A focused manifest omits revision, but the exact invocation's separate evidence record supplies HeadRevision, matching source-before/source-after/current fingerprints, SourceChangedDuringRun=false and unchanged before/after/current authored project-input inventories (including untracked additions/deletions) and a matching report path, SHA256 and length. Its freshness and required report checks are valid. Separately recorded mutation configuration/tool-manifest hashes and hashes for the actual invoked runner/imported-helper dependency closure are unchanged, or clean tracked matching-revision evidence proves those omitted inputs unchanged.",
+    "expected": "Use the report-bound companion provenance for the evidenced target and revision only with stable invocation source and complete project-input inventories plus the evidenced configuration, tool and runner/helper closure freshness; do not invent a manifest-only provenance requirement or rerun valid existing evidence."
+  },
+  {
+    "id": "solution-provenance-gap",
+    "prompt": "A solution manifest has no revision provenance; a later passing outer pipeline records coverage artifact hashes only. The caller wants the current checkout's mutation score.",
+    "expected": "Report the missing invocation/source/report provenance; neither current HEAD nor a passing coverage record establishes a revision-specific mutation claim."
+  },
+  {
+    "id": "ambiguous-focused-status",
+    "prompt": "A focused manifest records Failed and a complete 45 percent report below its configured 50 threshold. The nonzero-exit diagnostic is unavailable.",
+    "expected": "Report failed execution with unverified cause; score and generic Failed alone cannot prove a threshold-only exit or passing evidence."
+  },
+  {
+    "id": "untracked-mutation-input-freshness",
+    "prompt": "Focused evidence reports Fresh=true in an already-dirty worktree, but its InputPath omitted mutation configuration, tool-manifest and runner/imported-helper files. One of those files subsequently changed, and no per-run hashes or clean matching-revision proof exist.",
+    "expected": "Report configuration/runner freshness as unverified; require matching recorded hashes for the actual invoked/imported dependency closure or clean matching-revision proof. A passing partial source fingerprint or unchanged global dirty flag cannot establish unchanged mutation inputs."
+  },
+  {
+    "id": "failed-run-moving-source",
+    "prompt": "A focused mutation manifest says Failed with complete reports. Its companion evidence reports Valid=true and Fresh=true, but SourceChangedDuringRun=true and SourceBefore.Fingerprint differs from SourceAfter.Fingerprint; only SourceAfter matches current source. No separate stable invocation/source evidence exists.",
+    "expected": "Do not attribute its score or survivors to the current source or a guessed historical revision. Report the moving-input provenance gap despite complete reports and helper freshness; failed runs also need stable before/after/current source proof."
+  },
+  {
+    "id": "later-added-project-source",
+    "prompt": "Focused evidence reports Valid=true and Fresh=true in an already-dirty worktree. A new wildcard-included authored source file was added after execution; every recorded InputPath file, configuration, tool and runner/helper hash is unchanged. No before/after/current project-input inventory was recorded.",
+    "expected": "Reject a current-source score/survivor claim. The fixed InputPath and dirty flag miss additions; require stable authored project-input inventories across execution and reuse, including added/deleted and untracked inputs, or report provenance unverified."
+  }
+]
