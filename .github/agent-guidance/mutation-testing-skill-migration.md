@@ -90,7 +90,7 @@ assessment, authorized focused execution, preflight failure, report reuse,
 threshold/tool distinctions, optional manifests, declared gates, incomplete
 scope, sample or ordinary-test routing, proportionate survivors, and the
 justified production exception. They are a rubric; the recorded assessment
-below is separate from the current native trial. The 17 cases are a rubric;
+below is separate from the current native trial. The 18 cases are a rubric;
 neither the historical assessment nor the native trial is a mutation run.
 
 One direct Luna Max collaboration assessment used the canonical LF input at
@@ -138,13 +138,23 @@ distinguished a diagnosed advisory threshold exit, respected another consumer's
 allowed warnings, and selected Mississippi's required build preflight.
 All five fixture file hashes stayed unchanged. Commands read the candidate,
 local binding and host guidance/memory; no checker, mutation run or write occurred.
-This proves bounded decisions from synthetic supplied evidence, not all 17 cases,
+This proves bounded decisions from synthetic supplied evidence, not all 18 cases,
 exclusive skill influence, current application validation, or native savings.
 Copilot remains unverified and deferred by the user while capacity is unavailable.
 
+Final routing trial: native Codex read both final skills, including mutation blob
+b726381074de2119a2a377eaf7f01e06e66e7f0f, LF SHA-256
+8fee1f7a5c720afb06684ebee67aec2ec43408cff3c1154302d3310d71b6cc9f.
+It selected explicit legacy mutation assessment, reused a supplied report only
+with matching configuration/tool-manifest hashes, and rejected dirty-worktree
+freshness from a partial fingerprint. A separate incidental-keyword translation
+read no body and ran no command. All ten fixture hashes stayed unchanged; no
+checker, remote action or write occurred. These are bounded synthetic decisions;
+Copilot and broader coverage remain unverified.
+
 ## Historical corpus accounting
 
-Counts use raw Git blobs or LF-normalized candidate copies. UTF-8 text uses
+The following counts describe the named September 13 inputs, not the current skill. Counts use raw Git blobs or LF-normalized candidate copies. UTF-8 text uses
 `str.split()` words and `str.splitlines()` physical lines; raw UTF-8 bytes and
 UTF-16-LE bytes divided by two are reported. Complete four-line skill front
 matter is excluded from body counts. No PowerShell `Out-String` or worktree
@@ -156,9 +166,9 @@ line-ending assumption is used.
 | Mutation policy candidate | LF candidate SHA-256 `97CAF5D5EB6708AE5A77A002F528AC47F9402F0181F3972DF26D77214E0F46B9` | 512 | 47 | 4,155 | 4,155 |
 | Testing policy before | parent commit `e933c33084d406c00c754aa8741d3c36e8f59b19` | 1,120 | 100 | 8,511 | 8,509 |
 | Testing policy candidate | LF candidate SHA-256 `542FB14DCADF5E82293381EB013ED489C684181E6321104FF283D971C4BA5D9C` | 1,112 | 103 | 8,511 | 8,509 |
-| Skill full file | staged Git blob `131a8f79720649d9b10d79d9ee9f6df7724149f6`; LF SHA-256 `2D25A268D9AFF060C150ABF040196E2EDB360BADF73E8A35CDC17DEF8A2C30CE` | 984 | 119 | 7,018 | 7,018 |
-| Skill body after complete front matter | same staged Git blob and LF copy | 931 | 115 | 6,586 | 6,586 |
-| Discovery metadata values | same staged Git blob; name and description joined with one space | 51 | 1 | 423 | 423 |
+| Skill full file | historical Git blob `131a8f79720649d9b10d79d9ee9f6df7724149f6`; LF SHA-256 `2D25A268D9AFF060C150ABF040196E2EDB360BADF73E8A35CDC17DEF8A2C30CE` | 984 | 119 | 7,018 | 7,018 |
+| Skill body after complete front matter | same historical Git blob and LF copy | 931 | 115 | 6,586 | 6,586 |
+| Discovery metadata values | same historical Git blob; name and description joined with one space | 51 | 1 | 423 | 423 |
 | Local mutation binding | LF candidate SHA-256 `D9BE40DDDFA86C844C2DCAB5FB34EDB801F5766DFEC827E7432C323C68339DE6` | 508 | 68 | 3,907 | 3,907 |
 
 The movable mutation source slice was 28 lines, 294 words, and about 2,330
