@@ -66,13 +66,16 @@ runs also emit `.scratchpad/validation-evidence/<run-id>/evidence.json` with
 report's path, SHA-256, and length in `ArtifactMetadata`. Associate that record
 with the selected report and invocation, check its fields and report hash, and
 use `Test-ValidationEvidence` from `ValidationEvidence.psm1` to check reuse.
-That focused fingerprint omits `stryker-config.json` and
-`.config/dotnet-tools.json`; its `Fresh=true` alone does not establish mutation
-configuration freshness, especially in an already-dirty worktree. Before a run,
-record those inputs' SHA-256 values with the invocation and compare them on reuse,
+That focused fingerprint omits `stryker-config.json`, `.config/dotnet-tools.json`,
+and the mutation runner/imported helpers: at least `test-project-quality.ps1`,
+`RepositoryAutomation.psm1`, and `ValidationEvidence.psm1` under `eng/src/agent-scripts/`.
+Inspect the actual invoked/imported dependency closure and include any additional
+execution or report-validation inputs. `Fresh=true` alone does not establish
+those inputs' freshness, especially in an already-dirty worktree. Before a run,
+record their SHA-256 values with the invocation and compare them on reuse,
 or establish clean source-before, source-after and current states at the same
-Git revision with both tracked inputs unchanged. If neither record exists, report
-configuration freshness as unverified even when `Test-ValidationEvidence` passes.
+Git revision with all those tracked inputs unchanged. If neither record exists,
+report configuration/runner freshness as unverified even when `Test-ValidationEvidence` passes.
 Only claim current-source and configuration freshness with both checks supported;
 report changed inputs or missing provenance as a gap. A historical report needs evidence for
 its historical source, not a guessed revision from the current checkout.
