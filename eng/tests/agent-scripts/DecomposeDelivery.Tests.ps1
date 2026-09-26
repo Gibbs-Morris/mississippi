@@ -307,6 +307,32 @@ Describe 'Portable delivery context snapshots' {
         (Get-FixtureSnapshot).Head | Should -Not -BeExactly $before.Head
     }
 
+    It 'takes a manual fallback for <Setting> metadata' -ForEach @(
+        @{ Setting = 'extensions.partialclone'; Value = 'origin' },
+        @{ Setting = 'remote.origin.promisor'; Value = 'true' }
+    ) {
+        Invoke-FixtureGit @('config', $Setting, $Value)
+        { Get-FixtureSnapshot } | Should -Throw '*Partial/promisor repositories require manual inspection*'
+    }
+
+    It 'rejects a promisor remote before a missing tree can execute its transport helper' -Skip:$IsWindows {
+        $marker = Join-Path $fixture 'partial-fetch-marker'
+        $driver = Join-Path $fixture 'partial-fetch-hook'
+        [IO.File]::WriteAllText($driver, "#!/bin/sh`nprintf executed > partial-fetch-marker`nexit 1`n")
+        [IO.File]::SetUnixFileMode($driver, [IO.UnixFileMode]493)
+        Invoke-FixtureGit @('config', 'remote.origin.promisor', 'true')
+        Invoke-FixtureGit @('config', 'remote.origin.url', 'ext::./partial-fetch-hook')
+        Invoke-FixtureGit @('config', 'protocol.ext.allow', 'always')
+        $content = "tree 1111111111111111111111111111111111111111`nauthor Fixture <fixture@example.invalid> 1000000000 +0000`ncommitter Fixture <fixture@example.invalid> 1000000000 +0000`n`nMissing tree fixture`n"
+        $commit = $content | & git -C $fixture hash-object -t commit -w --stdin
+        $LASTEXITCODE | Should -Be 0
+        Invoke-FixtureGit @('update-ref', 'HEAD', $commit)
+        { Get-FixtureSnapshot } | Should -Throw '*Partial/promisor repositories require manual inspection*'
+        Test-Path -LiteralPath $marker | Should -BeFalse
+        & git --no-optional-locks -c core.fsmonitor= -C $fixture status --porcelain=v1 2>&1 | Out-Null
+        Test-Path -LiteralPath $marker | Should -BeTrue
+    }
+
     It 'binds dirty status to the reported commit despite replacement refs' {
         $original = & git -C $fixture rev-parse HEAD
         Set-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'replacement tree'

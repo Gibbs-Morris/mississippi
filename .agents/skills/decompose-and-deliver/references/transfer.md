@@ -90,6 +90,9 @@ view alone is not validation evidence for deliberately preserved metadata.
 Path joining and separator normalization follow the host filesystem: Unix
 backslashes remain literal characters in inventories, roots and selected identities.
 Inspection disables replacement objects so status remains bound to the reported commit.
+Partial/promisor repositories require manual inspection. Child-only environment
+settings also disable lazy fetching and disallow all remote protocols, preserving
+repository/account settings while preventing inspection from launching transports.
 
 ## State and compatibility
 

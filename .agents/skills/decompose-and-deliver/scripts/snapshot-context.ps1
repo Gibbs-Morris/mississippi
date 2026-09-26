@@ -85,6 +85,8 @@ function Invoke-ContextNativeOutput {
     $start.RedirectStandardOutput = $true
     $start.RedirectStandardError = $true
     $start.StandardOutputEncoding = [Text.UTF8Encoding]::new($false, $true)
+    $start.Environment['GIT_NO_LAZY_FETCH'] = '1'
+    $start.Environment['GIT_ALLOW_PROTOCOL'] = ''
     foreach ($argument in $Arguments) {
         $start.ArgumentList.Add($argument)
     }
@@ -144,6 +146,8 @@ function Get-ContextGitRoot {
     if ($worktreeSetting.ExitCode -eq 0) {
         throw 'Configured core.worktree requires manual inspection; it can redirect the selected repository.'
     }
+    $partialClone = Invoke-ContextGit $root @('config', '--name-only', '--get-regexp', '^(extensions\.partialclone|remote\..*\.promisor)$') -AcceptedExitCodes @(0, 1) -WithResult
+    if ($partialClone.ExitCode -eq 0) { throw 'Partial/promisor repositories require manual inspection; missing objects can trigger remote helpers.' }
     $actualRoot = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $root @('rev-parse', '--show-toplevel'))).Trim())
     $gitDirectory = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $root @('rev-parse', '--absolute-git-dir'))).Trim())
     $commonDirectory = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $root @('rev-parse', '--path-format=absolute', '--git-common-dir'))).Trim())
