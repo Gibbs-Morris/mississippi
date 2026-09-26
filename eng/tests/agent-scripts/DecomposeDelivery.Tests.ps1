@@ -8,6 +8,11 @@ BeforeAll {
     $package = Join-Path $repositoryRoot '.agents/skills/decompose-and-deliver'
     $snapshotScript = Join-Path $package 'scripts/snapshot-context.ps1'
     $shell = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
+    $probeName = [guid]::NewGuid().ToString('N') + '-case-probe'
+    $probePath = [IO.Path]::Combine($TestDrive, $probeName)
+    [IO.File]::WriteAllText($probePath, 'case probe')
+    $caseSensitiveFileSystem = -not [IO.File]::Exists([IO.Path]::Combine($TestDrive, $probeName.ToUpperInvariant()))
+    [IO.File]::Delete($probePath)
 
     function Invoke-FixtureGit {
         param([string[]]$Arguments)
@@ -150,7 +155,8 @@ Describe 'Portable delivery context snapshots' {
         $snapshot.Dirty | Should -BeTrue
     }
 
-    It 'preserves case-distinct paths on a case-sensitive filesystem' -Skip:$IsWindows {
+    It 'preserves case-distinct paths on a case-sensitive filesystem' {
+        if (-not $caseSensitiveFileSystem) { Set-ItResult -Skipped -Because 'The fixture filesystem is case-insensitive.'; return }
         Set-Content -LiteralPath (Join-Path $fixture 'tools/Foo.md') -Value 'uppercase'
         Set-Content -LiteralPath (Join-Path $fixture 'tools/foo.md') -Value 'lowercase'
         Invoke-FixtureGit @('add', 'tools/Foo.md', 'tools/foo.md')
@@ -223,7 +229,7 @@ Describe 'Portable delivery context snapshots' {
         Invoke-FixtureGit @('-C', $caseRoot, 'config', 'core.autocrlf', 'false')
         Invoke-FixtureGit @('-C', $caseRoot, 'add', '.')
         Invoke-FixtureGit @('-C', $caseRoot, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'case baseline')
-        if (-not $IsWindows) {
+        if ($caseSensitiveFileSystem) {
             $sibling = Join-Path $TestDrive 'CASE-ROOT'
             New-Item -ItemType Directory -Path $sibling | Out-Null
             Set-Content -LiteralPath (Join-Path $sibling 'AGENTS.md') -Value 'Foreign instructions'
