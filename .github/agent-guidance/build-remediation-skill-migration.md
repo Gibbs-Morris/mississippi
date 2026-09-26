@@ -36,11 +36,13 @@ Official documentation was refreshed September 26, 2026:
 - [Copilot skills](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/add-skills) supports the shared repository directory and description-based selection. [Copilot surface support](https://docs.github.com/en/copilot/reference/custom-instructions-support) varies by environment; AGENTS support is not universal.
 - The [Agent Skills specification](https://agentskills.io/specification) defines directory-matching name/description frontmatter and progressive resource loading. The shared package uses only required fields.
 
-Observed on this host, not inferred from documentation:
+Historical observations on this host, not inferred from documentation. These
+checks predate the rebase and assessment-scope correction; they are not discovery
+or behavior proof for the reviewed tree:
 
 | Check | Evidence and limit |
 | --- | --- |
-| Copilot CLI `skill list --json`, version 1.0.83-5 | Candidate is an enabled project skill in `.agents/skills`; seven repository skills are discovered at this layer. |
+| Copilot CLI `skill list --json`, version 1.0.83-5 | The historical candidate was enabled in `.agents/skills`; seven repository skills were discovered in that pre-rebase environment. The reviewed layer has eight skill files (seven inherited plus this skill); current native discovery is unverified. |
 | Codex CLI `debug prompt-input`, version 0.142.5 | Startup includes candidate metadata and root AGENTS, excludes candidate body and the Copilot entrypoint body. The latter is read because repository policy requires it, not because native Codex automatically loads every Copilot instruction. |
 | Configured Codex model | Saved GPT-6 Sol/max was rejected by this CLI account. Live `debug models` advertised GPT-5.5; trials used GPT-5.5/medium through invocation-only overrides. Saved settings were not changed. |
 | Copilot behavior trial | Parser-compatible invocation reached GPT-5.4 and failed before model output with HTTP 402 additional usage limit. No fixture file changed; behavior is unverified. |
