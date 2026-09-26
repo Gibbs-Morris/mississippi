@@ -56,10 +56,35 @@ function Get-ContextInput {
     }
 }
 
+function Get-ContextRawPaths {
+    param([string]$Root)
+    $start = [Diagnostics.ProcessStartInfo]::new((Get-Command git -CommandType Application | Select-Object -First 1).Source)
+    $start.UseShellExecute = $false
+    $start.CreateNoWindow = $true
+    $start.RedirectStandardOutput = $true
+    $start.RedirectStandardError = $true
+    $start.StandardOutputEncoding = [Text.UTF8Encoding]::new($false, $true)
+    foreach ($argument in @('--no-optional-locks', '-c', 'core.fsmonitor=', '-C', $root, 'ls-files', '-z', '--cached', '--others', '--exclude-standard')) {
+        $start.ArgumentList.Add($argument)
+    }
+    $child = [Diagnostics.Process]::Start($start)
+    try {
+        $output = $child.StandardOutput.ReadToEndAsync()
+        $errorOutput = $child.StandardError.ReadToEndAsync()
+        if (-not $child.WaitForExit(10000)) { throw 'Git path inspection timed out; inspect the target manually.' }
+        if ($child.ExitCode -ne 0) { throw "Git path inspection failed: $($errorOutput.GetAwaiter().GetResult())" }
+        return $output.GetAwaiter().GetResult().Split([char]0, [StringSplitOptions]::RemoveEmptyEntries)
+    }
+    finally {
+        if (-not $child.HasExited) { $child.Kill($true) }
+        $child.Dispose()
+    }
+}
+
 function Get-ContextPaths {
     param([string]$Root)
     $paths = [Collections.Generic.SortedSet[string]]::new([StringComparer]::Ordinal)
-    foreach ($relative in (Invoke-ContextGit $root @('-c', 'core.quotePath=false', 'ls-files', '--cached', '--others', '--exclude-standard'))) {
+    foreach ($relative in (Get-ContextRawPaths $root)) {
         if (Test-Path -LiteralPath (Join-Path $root $relative)) { $null = $paths.Add($relative) }
     }
     return @($paths)

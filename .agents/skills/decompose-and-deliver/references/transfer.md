@@ -72,6 +72,8 @@ for both observations and before emission; nested ordinary working copies remain
 The helper supports embedded `.git` directories only and revalidates their binding
 to the selected root. Git files or linked metadata directories, including legitimate
 linked worktrees and submodules, require manual identity/backlink inspection.
+Inventory reads NUL-delimited UTF-8 paths with ordinal identity. Invalid encoding
+or a path query exceeding ten seconds fails instead of emitting an incomplete list.
 
 ## State and compatibility
 

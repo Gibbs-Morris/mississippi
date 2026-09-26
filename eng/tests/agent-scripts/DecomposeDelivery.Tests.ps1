@@ -108,6 +108,21 @@ Describe 'Portable delivery context snapshots' {
         @($snapshot.Paths | Where-Object { $_ -ceq 'tools/foo.md' }).Count | Should -Be 1
     }
 
+    It 'preserves a <Label> in tracked and untracked filenames' -Skip:$IsWindows -ForEach @(
+        @{ Label = 'newline'; Character = "`n" },
+        @{ Label = 'tab'; Character = "`t" },
+        @{ Label = 'quote'; Character = '"' }
+    ) {
+        $tracked = 'tools/tracked' + $Character + 'name.md'
+        $untracked = 'tools/untracked' + $Character + 'name.md'
+        Set-Content -LiteralPath (Join-Path $fixture $tracked) -Value 'tracked'
+        Set-Content -LiteralPath (Join-Path $fixture $untracked) -Value 'untracked'
+        Invoke-FixtureGit @('add', '--', $tracked)
+        $snapshot = Get-FixtureSnapshot
+        @($snapshot.Paths | Where-Object { $_ -ceq $tracked }).Count | Should -Be 1
+        @($snapshot.Paths | Where-Object { $_ -ceq $untracked }).Count | Should -Be 1
+    }
+
     It 'rejects <Flag> index flags that conceal changed source files' -ForEach @(
         @{ Flag = 'assume-unchanged' }, @{ Flag = 'skip-worktree' }
     ) {
