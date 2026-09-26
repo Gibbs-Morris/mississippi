@@ -25,6 +25,33 @@ Governing thought: Agents follow repository instructions and iterate from correc
 - Agents MUST follow [PR size and stacked delivery](.github/instructions/pr-size-and-stacking.instructions.md), including the 600-line target, justified exceptions, and the CI/review gate before starting the next dependent PR. Why: Small, complete changes keep review manageable.
 - Agents MUST use the [gh-stack skill](https://github.com/github/gh-stack/blob/main/skills/gh-stack/SKILL.md) for stack work. Why: Native GitHub stacks need correct branch placement and lifecycle commands.
 
+### Codex model routing and parallelism
+
+- The primary agent MUST run as `gpt-6-astra` with `xhigh` reasoning and own the plan, architecture, acceptance criteria, decomposition, difficult and security-sensitive decisions, integration, and final review. The primary MAY make small integration corrections and SHOULD avoid unnecessary handoffs. Why: Central ownership keeps decisions coherent.
+- The primary MUST delegate well-specified implementation, refactoring, test-writing, and supporting investigation to Luna workers, except for small integration corrections. Why: Bounded delegation leaves ambiguous architecture and security-sensitive decisions with the primary.
+- Workers MUST use `gpt-5.6-luna` with `max` reasoning when the routing is supported. Why: Literal worker settings make delegation predictable.
+- When spawn parameters support overrides, the primary MUST pass both model and reasoning explicitly and check selected roles because effective precedence is custom-agent-file model/reasoning settings, then explicit spawn settings, then agent defaults, then the parent. Why: Agent-role settings can change effective routing.
+- If requested routing is unsupported, the primary MUST report the limitation without downgrading model or reasoning or using an expensive fallback. Why: Unsupported routing is observable uncertainty, not permission to change the plan.
+- Workers MUST keep their assigned scope and worker model/reasoning after reading root policy. Why: Policy reading does not expand a worker's assignment.
+- Workers MUST escalate ambiguity or blockers and MUST NOT spawn further agents without explicit primary authorization. Why: Workers execute bounded tasks under primary control.
+- Every delegated task MUST state a bounded objective, relevant context, acceptance criteria, file/module ownership, and proportionate validation. Why: Complete handoffs make work independently reviewable.
+- Agents SHOULD prefer independent, non-overlapping writes and agree shared interfaces before parallel edits. Why: Explicit boundaries reduce coordination errors.
+- Agents MUST preserve other contributors' changes. Why: Shared worktrees require non-destructive collaboration.
+- Workers MUST report changed files, actual commands and results, and unresolved concerns. Why: Primary review depends on concrete evidence.
+- The session MUST keep no more than 16 concurrently open subagents, excluding the primary; this is a per-session ceiling, not a target or a machine-wide limit. Why: A bounded session prevents avoidable contention.
+- The primary SHOULD use the smallest useful worker set and expand it only when additional independence is useful. Why: Delegation is valuable when it adds independent progress.
+- The primary MUST NOT split trivial work merely to occupy workers, duplicate investigations, or assign tasks that must wait for another worker's unfinished output. Why: Unnecessary parallelism increases coordination cost.
+- Agents MUST coordinate expensive builds and full tests before running them. Why: Shared resources should not be saturated by competing validation.
+- Workers MUST use targeted validation before integration. Why: Focused checks provide proportionate evidence for bounded tasks.
+- The primary MUST coordinate integration validation after targeted worker checks. Why: The assembled result needs evidence beyond each bounded task.
+- Agents MUST NOT make concurrent writes to shared mutable build outputs, test artifacts, or database resources. Why: Concurrent mutation can invalidate results and damage shared state.
+- Agents MUST account for observable active sessions and resource pressure without claiming exclusive machine access or inventing a machine-wide coordination mechanism. Why: Coordination must reflect evidence about shared capacity.
+- The primary MUST reduce active concurrency when contention, rate limits, duplicate work, or review backlog undermines progress without changing model or reasoning settings. Why: Capacity relief must preserve the selected routing.
+- The primary MUST review the integrated result against acceptance criteria and verify actual commands and results. Why: Worker claims alone do not establish completion.
+- Worker claims MUST NOT be treated as proof, and unverified items MUST be recorded. Why: Evidence status must remain explicit.
+- Agents MUST prioritize the correctly reviewed outcome over worker count. Why: Quality matters more than delegation volume.
+- Agents MUST NOT alter ongoing goals or workers while configuring routing. Why: Routing changes must not disrupt active work.
+
 ## Scope and Audience
 
 All agents working in this repository.
