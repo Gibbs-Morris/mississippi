@@ -6,8 +6,8 @@
   },
   {
     "id": "authorized-focused-execution",
-    "prompt": "The caller explicitly authorizes a focused mutation run for one source project and its mapped tests. The local binding requires tool restore and a clean warning-free conventional-test preflight before mutation.",
-    "expected": "Use the canonical focused command after the required preflight, preserve the target mapping and report contract, and report the exact execution evidence and result."
+    "prompt": "The caller explicitly authorizes a focused mutation run for one source project and its mapped tests. A current canonical clean warning-free preflight is separately evidenced, inputs and build outputs match, and local policy permits NoBuild. The mutation manifest will only be created after the upcoming test step.",
+    "expected": "Accept the separately evidenced preflight for the permitted no-build command without requiring a not-yet-created mutation manifest or repeating the build. Preserve the target mapping and report contract, run required conventional tests before mutation, and report actual execution evidence and result."
   },
   {
     "id": "complete-below-threshold-report",

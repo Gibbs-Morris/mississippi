@@ -53,10 +53,13 @@ conventional-test failure stops mutation work. Report it through the owning work
 after that route establishes a repaired, passing preflight. Report-only
 assessment does not perform this preflight.
 
-Use a no-build, cached, or report-reuse switch only when the local script and
-current manifest, when its contract provides one, prove that the required clean
-preflight and current outputs already exist. Do not infer semantics from a
-switch name. Keep the target and effort focused, and do not change thresholds,
+Use a no-build, cached, or report-reuse switch only after checking its local
+contract. A no-build run needs evidence of a completed clean preflight and
+outputs matching the current inputs; the canonical preflight's own evidence can
+establish this without a mutation manifest. Require a manifest when the chosen
+reuse contract requires it, and claim only the steps that manifest records.
+Do not infer semantics from a switch name. Keep the target and effort focused,
+and do not change thresholds,
 exclusions, mutator scope, or warning policy merely to obtain a green command.
 
 ## Interpret results without upgrading them
