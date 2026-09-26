@@ -36,6 +36,13 @@ selecting a scope or creating a file. If automatic skill discovery is
 unavailable, read both linked files directly. The twelve rules above remain
 effective whether or not the skill is loaded.
 
+## Conflict Detection Protocol
+
+Compatibility entrypoint for unchanged callers such as Scribe: apply the
+[rules above](#rules-rfc-2119), then read the linked lesson-capture skill and
+local format before conflict checks or lesson writing. This anchor preserves
+the existing consumer reference without duplicating the procedure.
+
 ## References
 
 - Rules Manager agent: `.github/agents/rules-manager.agent.md`
