@@ -108,6 +108,9 @@ per-directory case sensitivity is never assumed away.
 Status uses command-local default stat checks with ctime trusted and ignoreStat
 disabled. These overrides preserve configuration and index contents; a clean Git
 view alone is not validation evidence for deliberately preserved metadata.
+On Unix, status also honors executable-bit changes for every tracked file using
+command-local `core.fileMode=true`, including files outside selected context.
+Windows retains its filesystem's configured mode behavior.
 Path joining and separator normalization follow the host filesystem: Unix
 backslashes remain literal characters in inventories, roots and selected identities.
 Inspection disables replacement objects so status remains bound to the reported commit.

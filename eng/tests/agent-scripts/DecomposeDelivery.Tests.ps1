@@ -571,15 +571,25 @@ Describe 'Portable delivery context snapshots' {
         Test-Path -LiteralPath $marker | Should -BeTrue
     }
 
-    It 'changes selected mode identity when Git ignores execute-bit changes' -Skip:$IsWindows {
+    It 'changes selected mode identity and overrides ignored execute-bit changes' -Skip:$IsWindows {
         Invoke-FixtureGit @('config', 'core.fileMode', 'false')
         $before = Get-FixtureSnapshot
         [IO.File]::SetUnixFileMode((Join-Path $fixture 'tools/verify.sh'), [IO.UnixFileMode]493)
         $after = Get-FixtureSnapshot
-        $after.Dirty | Should -BeFalse
+        $after.Dirty | Should -BeTrue
         $after.SelectedInputs[1].Type | Should -BeExactly 'File'
         $after.SelectedInputs[1].Sha256 | Should -BeExactly $before.SelectedInputs[1].Sha256
         $after.SelectedInputs[1].Mode | Should -Not -Be $before.SelectedInputs[1].Mode
+    }
+
+    It 'detects executable-bit changes outside selected context despite core.fileMode false' -Skip:$IsWindows {
+        Invoke-FixtureGit @('config', 'core.fileMode', 'false')
+        $indexHash = (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash
+        [IO.File]::SetUnixFileMode((Join-Path $fixture 'packages/widget/model.txt'), [IO.UnixFileMode]493)
+        @(& git -C $fixture status --porcelain=v1).Count | Should -Be 0
+        (Get-FixtureSnapshot).Dirty | Should -BeTrue
+        ([string](& git -C $fixture config --get core.fileMode)) | Should -BeExactly 'false'
+        (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash | Should -BeExactly $indexHash
     }
 
     It 'rejects a selected mode change between observations' -Skip:$IsWindows {
