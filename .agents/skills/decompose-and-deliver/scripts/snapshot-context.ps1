@@ -16,20 +16,15 @@ function Invoke-ContextGit {
     return $output
 }
 
-try {
-    foreach ($selector in @('GIT_DIR', 'GIT_WORK_TREE', 'GIT_COMMON_DIR', 'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_NAMESPACE')) {
-        if ($null -ne [Environment]::GetEnvironmentVariable($selector)) {
-            throw "Ambient Git override $selector prevents reliable target inspection; use a clean process or manual inspection."
-        }
-    }
-    $requestedRoot = (Resolve-Path -LiteralPath $RepositoryRoot).Path
-    $root = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $requestedRoot @('rev-parse', '--show-toplevel'))).Trim())
+function Get-ContextObservation {
+    param([string]$Root, [string[]]$ContextPaths)
     $head = [string](Invoke-ContextGit $root @('rev-parse', '--verify', 'HEAD'))
     $branch = [string](Invoke-ContextGit $root @('branch', '--show-current'))
     $status = @(Invoke-ContextGit $root @('status', '--porcelain=v1', '--untracked-files=all'))
     $paths = @(Invoke-ContextGit $root @('-c', 'core.quotePath=false', 'ls-files', '--cached', '--others', '--exclude-standard') | Sort-Object -Unique)
+    $index = @(Invoke-ContextGit $root @('ls-files', '--stage'))
     $selected = @()
-    foreach ($relative in $ContextPath) {
+    foreach ($relative in $ContextPaths) {
         if ([string]::IsNullOrWhiteSpace($relative) -or [IO.Path]::IsPathRooted($relative)) {
             throw 'Context paths must be nonempty and repository-relative.'
         }
@@ -52,16 +47,37 @@ try {
             Sha256 = (Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash.ToLowerInvariant()
         }
     }
-    $finalHead = [string](Invoke-ContextGit $root @('rev-parse', '--verify', 'HEAD'))
-    if ($head -ne $finalHead) { throw 'HEAD changed during context inspection; reconcile and retry.' }
+    return [pscustomobject]@{
+        Head = $head
+        Branch = $branch
+        Status = $status
+        Paths = $paths
+        Index = $index
+        SelectedInputs = @($selected)
+    }
+}
+
+try {
+    foreach ($selector in @('GIT_DIR', 'GIT_WORK_TREE', 'GIT_COMMON_DIR', 'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_NAMESPACE')) {
+        if ($null -ne [Environment]::GetEnvironmentVariable($selector)) {
+            throw "Ambient Git override $selector prevents reliable target inspection; use a clean process or manual inspection."
+        }
+    }
+    $requestedRoot = (Resolve-Path -LiteralPath $RepositoryRoot).Path
+    $root = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $requestedRoot @('rev-parse', '--show-toplevel'))).Trim())
+    $before = Get-ContextObservation $root $ContextPath
+    $after = Get-ContextObservation $root $ContextPath
+    if (($before | ConvertTo-Json -Depth 8 -Compress) -cne ($after | ConvertTo-Json -Depth 8 -Compress)) {
+        throw 'Repository or selected inputs changed during context inspection; reconcile and retry.'
+    }
     [pscustomobject]@{
         SchemaVersion = 1
         RepositoryRoot = $root
-        Head = $head
-        Branch = $branch
-        Dirty = $status.Count -gt 0
-        Paths = $paths
-        SelectedInputs = @($selected)
+        Head = $after.Head
+        Branch = $after.Branch
+        Dirty = $after.Status.Count -gt 0
+        Paths = $after.Paths
+        SelectedInputs = @($after.SelectedInputs)
         InstructionSelectionRequired = $true
     } | ConvertTo-Json -Depth 8
     exit 0

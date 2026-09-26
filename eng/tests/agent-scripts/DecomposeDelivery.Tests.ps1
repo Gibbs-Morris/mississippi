@@ -24,6 +24,27 @@ BeforeAll {
         if ($LASTEXITCODE -ne 0) { throw $result }
         return $result | ConvertFrom-Json
     }
+
+    function Get-SnapshotMutationPrelude {
+        param([string]$Mutation, [string]$Marker)
+        $realGit = (Get-Command git -CommandType Application | Select-Object -First 1).Source.Replace("'", "''")
+        $markerPath = $Marker.Replace("'", "''")
+        return @"
+`$global:snapshotRealGit = '$realGit'
+`$global:snapshotHeadReads = 0
+`$global:snapshotMutation = { Set-Content -LiteralPath '$markerPath' -Value 'mutated'; $Mutation }
+function global:git {
+    `$gitArguments = @(`$args)
+    if (`$gitArguments -contains 'rev-parse' -and `$gitArguments -contains '--verify' -and `$gitArguments -contains 'HEAD') {
+        `$global:snapshotHeadReads++
+        if (`$global:snapshotHeadReads -eq 2) { & `$global:snapshotMutation }
+    }
+    `$result = @(& `$global:snapshotRealGit @gitArguments)
+    `$global:LASTEXITCODE = `$LASTEXITCODE
+    `$result
+}
+"@ + "`n"
+    }
 }
 
 Describe 'Portable delivery context snapshots' {
@@ -112,6 +133,66 @@ Describe 'Portable delivery context snapshots' {
         (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash | Should -BeExactly $indexHash
         Invoke-FixtureGit @('status', '--porcelain=v1')
         Test-Path -LiteralPath (Join-Path $fixture 'escaped-hook.txt') | Should -BeTrue
+    }
+
+    It 'rejects concurrent <MutationCase> with an unchanged HEAD' -ForEach @(
+        @{ MutationCase = 'clean input edit' },
+        @{ MutationCase = 'already dirty input edit' },
+        @{ MutationCase = 'branch change' },
+        @{ MutationCase = 'index-only change' }
+    ) {
+        $inputPath = Join-Path $fixture 'AGENTS.md'
+        $modelPath = Join-Path $fixture 'packages/widget/model.txt'
+        $quotedRoot = $fixture.Replace("'", "''")
+        $mutation = "Set-Content -LiteralPath '" + $inputPath.Replace("'", "''") + "' -Value 'changed during inspection'"
+        if ($MutationCase -eq 'already dirty input edit') {
+            Set-Content -LiteralPath $inputPath -Value 'dirty before inspection'
+            (Get-FixtureSnapshot).Dirty | Should -BeTrue
+        }
+        elseif ($MutationCase -eq 'branch change') {
+            Invoke-FixtureGit @('branch', 'case/alternate')
+            $mutation = "& `$global:snapshotRealGit -C '$quotedRoot' symbolic-ref HEAD refs/heads/case/alternate | Out-Null"
+        }
+        elseif ($MutationCase -eq 'index-only change') {
+            Set-Content -LiteralPath $modelPath -Value 'staged before inspection'
+            Invoke-FixtureGit @('add', 'packages/widget/model.txt')
+            Set-Content -LiteralPath $modelPath -Value 'working content stays unchanged'
+            $replacementPath = Join-Path $TestDrive 'replacement-blob.txt'
+            Set-Content -LiteralPath $replacementPath -Value 'replacement staged content'
+            $blob = & git -C $fixture hash-object -w $replacementPath
+            $LASTEXITCODE | Should -Be 0
+            $mutation = "& `$global:snapshotRealGit -C '$quotedRoot' update-index --cacheinfo '100644,$blob,packages/widget/model.txt' | Out-Null"
+        }
+        $headBefore = & git -C $fixture rev-parse HEAD
+        $statusBefore = @(& git -C $fixture status --porcelain=v1) -join "`n"
+        $indexBefore = @(& git -C $fixture ls-files --stage) -join "`n"
+        $inputHashBefore = (Get-FileHash -LiteralPath $inputPath).Hash
+        $modelHashBefore = (Get-FileHash -LiteralPath $modelPath).Hash
+        $marker = Join-Path $TestDrive ([guid]::NewGuid().ToString('N') + '-snapshot-mutated.txt')
+        $prelude = Get-SnapshotMutationPrelude -Mutation $mutation -Marker $marker
+        $failure = ''
+        try { $null = Get-FixtureSnapshot -Prelude $prelude }
+        catch { $failure = $_.Exception.Message }
+        $failure | Should -BeLike '*changed during context inspection*'
+        $failure | Should -Not -Match '"SchemaVersion"'
+        Test-Path -LiteralPath $marker | Should -BeTrue
+        (& git -C $fixture rev-parse HEAD) | Should -BeExactly $headBefore
+        $statusAfter = @(& git -C $fixture status --porcelain=v1) -join "`n"
+        if ($MutationCase -eq 'clean input edit') {
+            $statusAfter | Should -Not -BeExactly $statusBefore
+        }
+        else { $statusAfter | Should -BeExactly $statusBefore }
+        if ($MutationCase -in @('clean input edit', 'already dirty input edit')) {
+            (Get-FileHash -LiteralPath $inputPath).Hash | Should -Not -BeExactly $inputHashBefore
+        }
+        elseif ($MutationCase -eq 'branch change') {
+            (& git -C $fixture branch --show-current) | Should -BeExactly 'case/alternate'
+        }
+        else {
+            (@(& git -C $fixture ls-files --stage) -join "`n") | Should -Not -BeExactly $indexBefore
+            (Get-FileHash -LiteralPath $inputPath).Hash | Should -BeExactly $inputHashBefore
+            (Get-FileHash -LiteralPath $modelPath).Hash | Should -BeExactly $modelHashBefore
+        }
     }
 
     It 'rejects linked directories instead of reading context from another repository' {

@@ -48,6 +48,10 @@ Git ownership failures remain failures. Any ownership/trust decision belongs
 outside the helper and must follow the target's authorization rules.
 Inspection disables filesystem-monitor hooks and optional index writes for
 each Git command; it does not change repository or account configuration.
+Two observations compare head, branch, full status, path inventory, staged
+content and revalidated selected hashes. Observed changes fail closed. This
+bounded check does not promise an atomic snapshot; serialize conflicting work
+and refresh evidence before using it.
 Read selected bodies and follow the target's loading procedure. A snapshot is
 evidence identity, not proof of successful tests or a security attestation.
 
