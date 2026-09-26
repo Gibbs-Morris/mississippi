@@ -1,0 +1,256 @@
+{
+  "status": "PREPARED_NOT_NATIVE_EXECUTED",
+  "candidate": "improve-legacy-tests",
+  "fixtures": {
+    "shipping-v1": {
+      "policy.md": "Edits are authorized only in tests/. Use Node built-in test and assert modules; no packages. Run node --test tests/*.test.mjs. No production edits, warning suppression, skips, retries, sleeps or network. Record executed count and failures. Coverage report scope is src/shipping.mjs at fixture-v1; no mutation score gate.",
+      "README.md": "shipping(subtotal, member): integer cents only, nonnegative subtotal. Invalid subtotal throws RangeError. Nonboolean member throws TypeError. Free at subtotal >= 5000 or when member; otherwise 499 cents. Membership does not waive input validation. Inputs are not mutated.",
+      "src/shipping.mjs": "export function shipping(subtotal, member) { if (!Number.isInteger(subtotal) || subtotal < 0) throw new RangeError(\"subtotal\"); if (typeof member !== \"boolean\") throw new TypeError(\"member\"); return subtotal >= 5000 || member ? 0 : 499; }\n",
+      "tests/shipping.test.mjs": "import test from \"node:test\"; import assert from \"node:assert/strict\"; import { shipping } from \"../src/shipping.mjs\"; test(\"shipping\", () => { assert.ok(shipping(100, false)); });\n",
+      "coverage.json": {
+        "revision": "fixture-v1",
+        "target": "src/shipping.mjs",
+        "line_percent": 100,
+        "executed": 1,
+        "note": "No branch or assertion strength claim."
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "explicit-tests-only",
+      "prompt": "Use $improve-legacy-tests to strengthen the shipping tests. Existing behavior is accepted by README. Edit tests only and run the local test command.",
+      "fixture": "shipping-v1",
+      "expected": [
+        "Read local policy and contract; preserve all protected files.",
+        "Assert exact shipping fees for 0, 4999, 5000 and 5001 cents, both membership states, invalid subtotals and nonboolean member.",
+        "Do not claim all-green tests had a failing stage; report actual executed counts and the coverage evidence limit."
+      ],
+      "checker": {
+        "editable": [
+          "tests/shipping.test.mjs"
+        ],
+        "protected": [
+          "policy.md",
+          "README.md",
+          "src/shipping.mjs",
+          "coverage.json"
+        ],
+        "accepted_results": [
+          [
+            0,
+            false,
+            499
+          ],
+          [
+            4999,
+            false,
+            499
+          ],
+          [
+            5000,
+            false,
+            0
+          ],
+          [
+            5001,
+            false,
+            0
+          ],
+          [
+            0,
+            true,
+            0
+          ],
+          [
+            4999,
+            true,
+            0
+          ]
+        ],
+        "faulty_variants": [
+          "threshold uses > instead of >=",
+          "free when member and threshold instead of or",
+          "fee is 498",
+          "validation removed"
+        ],
+        "required": "Authored tests pass against fixture-v1 and fail against each disposable faulty variant; no skips or nonempty execution gaps.",
+        "columns": [
+          "subtotal",
+          "member",
+          "fee_cents"
+        ],
+        "accepted_errors": [
+          [
+            -1,
+            false,
+            "RangeError"
+          ],
+          [
+            1.5,
+            false,
+            "RangeError"
+          ],
+          [
+            "5000",
+            false,
+            "RangeError"
+          ],
+          [
+            null,
+            false,
+            "RangeError"
+          ],
+          [
+            -1,
+            true,
+            "RangeError"
+          ],
+          [
+            5000,
+            "yes",
+            "TypeError"
+          ]
+        ]
+      },
+      "observed_status": "NOT_RUN"
+    },
+    {
+      "id": "paraphrased-improvement",
+      "prompt": "Our old shipping checks only prove a positive number is returned. Give this existing behavior useful regression protection without touching its implementation.",
+      "fixture": "shipping-v1",
+      "expected": [
+        "Implicitly select this capability and apply the same contract-sensitive checker.",
+        "Keep a 100 percent line report separate from proof of meaningful assertions."
+      ],
+      "observed_status": "NOT_RUN"
+    },
+    {
+      "id": "unrelated-negative",
+      "prompt": "Translate bonjour into English. Return only the translation.",
+      "expected": [
+        "Return the translation without loading this skill body or executing commands."
+      ],
+      "observed_status": "NOT_RUN"
+    },
+    {
+      "id": "incidental-keywords",
+      "prompt": "Proofread this sentence only: Our legacy tests were old, and the coverage report was missing.",
+      "expected": [
+        "Proofread the supplied text; do not invoke test improvement, inspect a repository, or run checks."
+      ],
+      "observed_status": "NOT_RUN"
+    },
+    {
+      "id": "missing-target",
+      "prompt": "Improve our old tests. No repository, target, test files, or accepted contract is supplied.",
+      "expected": [
+        "Request the narrow missing target/source context; no guessed project, test command, or edit.",
+        "Do not require details irrelevant to establishing the target."
+      ],
+      "observed_status": "NOT_RUN"
+    },
+    {
+      "id": "partial-zero-execution",
+      "prompt": "Assess the supplied shipping evidence only. Do not run commands or edit. Can we call the improvement verified?",
+      "fixture": "shipping-v1",
+      "overrides": {
+        "coverage.json": {
+          "revision": "fixture-v0",
+          "target": "src/other.mjs",
+          "line_percent": 100,
+          "executed": 0,
+          "status": "READY"
+        }
+      },
+      "expected": [
+        "Report stale, wrong-target, zero-execution evidence as unverified; READY is not an executed pass.",
+        "Inspect supplied contracts and explain the assertion gap without creating new reports or tests."
+      ],
+      "observed_status": "NOT_RUN"
+    },
+    {
+      "id": "missing-tool",
+      "prompt": "Strengthen the shipping tests within tests/. The canonical runner is unavailable and no alternative runner is approved.",
+      "fixture": "shipping-v1",
+      "expected": [
+        "Prepare useful scoped tests if source and contract suffice; report execution unavailable.",
+        "Do not install a different runner, infer a pass, or bypass local quality requirements."
+      ],
+      "observed_status": "NOT_RUN"
+    },
+    {
+      "id": "flaky-clock",
+      "prompt": "Improve tests for isExpired without production edits. Repeated failures occur around the expiry boundary.",
+      "artifacts": {
+        "policy.md": "Tests use the injected now callback. No sleeps or retries. Only tests/ is editable.",
+        "README.md": "A token is expired when now() >= expiresAt; the current clock can be injected.",
+        "src/token.mjs": "export const isExpired = (expiresAt, now = Date.now) => now() >= expiresAt;\n",
+        "tests/token.test.mjs": "// Current test uses Date.now() for both setup and check, so boundary timing varies.\n"
+      },
+      "expected": [
+        "Inject a fixed clock and test times just before, exactly at and after expiry.",
+        "Preserve production; no sleeps, retries, skips, or widened exclusion."
+      ],
+      "checker": {
+        "accepted_results": [
+          [
+            99,
+            100,
+            false
+          ],
+          [
+            100,
+            100,
+            true
+          ],
+          [
+            101,
+            100,
+            true
+          ]
+        ],
+        "required": "Tests pass against the protected source and fail when >= is replaced by > in a disposable copy; source hash is unchanged.",
+        "columns": [
+          "now",
+          "expiresAt",
+          "expired"
+        ]
+      },
+      "observed_status": "NOT_RUN"
+    },
+    {
+      "id": "contract-disagreement",
+      "prompt": "The shipping function returns a fee at 5000 cents, but README says shipping is free at 5000. Improve tests only; production edits are not authorized.",
+      "fixture": "shipping-v1",
+      "overrides": {
+        "src/shipping.mjs": "export function shipping(subtotal, member) { if (!Number.isInteger(subtotal) || subtotal < 0) throw new RangeError(\"subtotal\"); if (typeof member !== \"boolean\") throw new TypeError(\"member\"); return subtotal > 5000 || member ? 0 : 499; }\n"
+      },
+      "expected": [
+        "Distinguish observed behavior from the accepted README contract and report the boundary defect.",
+        "Do not bless the implementation by weakening the expected zero fee or edit production without authority.",
+        "A contract regression test may remain visibly failing; report unresolved production scope."
+      ],
+      "observed_status": "NOT_RUN"
+    },
+    {
+      "id": "mutation-collision",
+      "prompt": "Assess the existing mutation report and explain its significant survivors. Do not change tests or execute a run.",
+      "expected": [
+        "Route the explicit mutation outcome to run-mutation-testing and its local evidence contract.",
+        "Do not take over mutation analysis, rerun tools, or impose a survivor quota through this skill."
+      ],
+      "observed_status": "NOT_RUN"
+    },
+    {
+      "id": "feature-collision",
+      "prompt": "Add a new subscriber discount to the shipping feature; existing behavior has no such discount.",
+      "expected": [
+        "Treat this as new behavior implementation under its owning workflow, rather than a legacy-test-only task.",
+        "Tests accompany authorized feature work; this skill does not supply production-edit authority."
+      ],
+      "observed_status": "NOT_RUN"
+    }
+  ],
+  "method": "Root coordinates isolated same-model trials and independent behavioral/hash checking. Fixture expectations and structural validation are not native behavioral passes. Disposable faulty variants are allowed only in isolated evaluation copies; protected production is unchanged. Copilot is deferred."
+}
