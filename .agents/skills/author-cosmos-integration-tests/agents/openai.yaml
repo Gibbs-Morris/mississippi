@@ -1,0 +1,4 @@
+interface:
+  display_name: "Author Cosmos integration tests"
+  short_description: "Author owned Cosmos emulator integration tests"
+  default_prompt: "Use $author-cosmos-integration-tests to add a Cosmos emulator integration test using this project's fixture and storage contracts."

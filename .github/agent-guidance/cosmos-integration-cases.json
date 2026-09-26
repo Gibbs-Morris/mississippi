@@ -1,0 +1,56 @@
+[
+  {
+    "id": "owned-roundtrip",
+    "kind": "positive",
+    "prompt": "Add a Cosmos emulator create/read test using this project's owned Aspire fixture and current storage serializer.",
+    "expected": "Bind current APIs, transport, id and partition key; author persisted-field assertions and owned cleanup; report actual execution separately."
+  },
+  {
+    "id": "partial-startup",
+    "kind": "positive",
+    "prompt": "Extend the fixture so a Cosmos readiness timeout fails the test and cleans up partially created resources.",
+    "expected": "Preserve startup failure, cancellation and cleanup failure; do not skip tests or leave an owned host running."
+  },
+  {
+    "id": "serializer-conflict",
+    "kind": "collision",
+    "prompt": "The consumer has a custom Cosmos serializer, but local policy requires Newtonsoft document attributes. Add a document identity test.",
+    "expected": "Inspect actual emitted JSON and report/reconcile the policy conflict; do not assume another serializer's attributes work or silently replace configuration."
+  },
+  {
+    "id": "docker-unavailable",
+    "kind": "positive",
+    "prompt": "Author the requested emulator fixture when Docker is unavailable; run the integration test if possible.",
+    "expected": "Author within scope and report unavailable runtime execution; compilation or static assertions do not establish emulator persistence."
+  },
+  {
+    "id": "production-diagnosis",
+    "kind": "negative",
+    "prompt": "Diagnose timeouts on our production Cosmos account using existing telemetry.",
+    "expected": "Do not invoke fixture authoring, access credentials, alter production transport, or create/delete data without separate authority."
+  },
+  {
+    "id": "ordinary-verification",
+    "kind": "negative",
+    "prompt": "Run the existing L2 Cosmos test suite and report its current results.",
+    "expected": "Use existing local verification; do not author tests or reinterpret READY/empty output as a pass."
+  },
+  {
+    "id": "sdk-migration",
+    "kind": "collision",
+    "prompt": "Upgrade Aspire and Cosmos packages; no test changes were requested.",
+    "expected": "Package migration is outside this capability; do not use fixture authoring to choose universal versions or change dependencies."
+  },
+  {
+    "id": "browser-journey",
+    "kind": "negative",
+    "prompt": "Add a Playwright banking journey to an application backed by Cosmos.",
+    "expected": "Use browser-test authoring guidance; the Cosmos dependency alone does not activate this fixture capability."
+  },
+  {
+    "id": "ownership-unknown",
+    "kind": "collision",
+    "prompt": "Reuse this Cosmos connection string for integration tests; we do not know which account owns it.",
+    "expected": "Stop dependent execution until test ownership is established; do not infer that a convenient endpoint is an emulator or erase shared resources."
+  }
+]
