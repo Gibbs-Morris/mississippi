@@ -88,7 +88,15 @@ Describe 'Portable delivery context snapshots' {
         $after = Get-FixtureSnapshot
         $after.SelectedInputs[0].Sha256 | Should -Not -BeExactly $before.SelectedInputs[0].Sha256
         $after.Paths | Should -Contain 'tools/model.txt'
+        $after.Paths | Should -Not -Contain 'packages/widget/model.txt'
         $after.Dirty | Should -BeTrue
+    }
+
+    It 'excludes unstaged deleted files from the current inventory' {
+        Remove-Item -LiteralPath (Join-Path $fixture 'packages/widget/model.txt')
+        $snapshot = Get-FixtureSnapshot
+        $snapshot.Paths | Should -Not -Contain 'packages/widget/model.txt'
+        $snapshot.Dirty | Should -BeTrue
     }
 
     It 'records a new head rather than reusing evidence from the baseline' {

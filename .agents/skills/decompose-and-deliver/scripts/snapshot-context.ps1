@@ -51,7 +51,8 @@ function Get-ContextObservation {
         throw 'Configured clean/process filters require manual inspection; status may execute repository-controlled commands.'
     }
     $status = @(Invoke-ContextGit $root @('status', '--porcelain=v1', '--untracked-files=all'))
-    $paths = @(Invoke-ContextGit $root @('-c', 'core.quotePath=false', 'ls-files', '--cached', '--others', '--exclude-standard') | Sort-Object -Unique)
+    $paths = @(Invoke-ContextGit $root @('-c', 'core.quotePath=false', 'ls-files', '--cached', '--others', '--exclude-standard') |
+        Where-Object { Test-Path -LiteralPath (Join-Path $root $_) } | Sort-Object -Unique)
     $index = @(Invoke-ContextGit $root @('ls-files', '--stage'))
     $selected = @(foreach ($relative in $ContextPaths) { Get-ContextInput $root $relative })
     return [pscustomobject]@{
