@@ -140,5 +140,23 @@
     "prompt": "Authorized solution mutation has independently bound current passing conventional results for every test project and level in the actual mutation mapping, in the same configuration, plus all broader locally required tests. Separate canonical single-level runs supplied mapped extra levels. Complete source, inventory and report provenance are stable through the mutation stage, and clean-build preflight is valid.",
     "expected": "Reuse the complete current baseline without repeating tests solely for mutation or requesting redundant approval. Preserve the actual mapping, configuration, clean-build and mutation report contracts. A subset of intended/default levels alone would not meet this requirement.",
     "execution": "unexecuted-authored-definition"
+  },
+  {
+    "id": "standalone-unit-reports-without-run-provenance",
+    "prompt": "Every mapped conventional test project and required broader test passes in the right configuration. The standalone unit wrapper supplied TRX and coverage, but no independent execution-time source-before/source-after fingerprints or authored-input inventories bound to those exact artifacts were recorded. Current files and dirty flag appear unchanged.",
+    "expected": "Report the provenance gap and do not reuse those reports as a current mutation baseline. Do not infer the missing before state or artifact/invocation binding from current HEAD, timestamps or unchanged recorded paths. If existing authority covers fresh prerequisite tests and evidence collection, obtain a fresh bound canonical baseline without another approval; in assessment-only mode perform no execution or writes.",
+    "execution": "unexecuted-authored-definition"
+  },
+  {
+    "id": "conventional-baseline-fixed-list-misses-added-source",
+    "prompt": "All actual mapped levels have passing supplied TRX results. A helper returns Valid=true and Fresh=true for a fixed recordedInputPaths list in an already-dirty worktree, but a later wildcard-included authored source file is absent from that list. No complete before/after/current authored inventories exist; recorded file hashes and dirty flag match.",
+    "expected": "Reject current baseline reuse and report missing complete provenance. Require independently recorded and stable before/after/current authored input inventories including additions, deletions, untracked and referenced/external authored inputs, plus unchanged mapping/configuration/runner inputs and bound report hashes. A helper boolean or fixed list cannot replace that proof.",
+    "execution": "unexecuted-authored-definition"
+  },
+  {
+    "id": "independently-bound-standalone-conventional-reuse",
+    "prompt": "Authorized solution mutation has independent records for the exact conventional invocations covering every actual mapped project/level and broader required tests in the same configuration. Passing TRX/coverage paths, SHA-256 and lengths match. Source fingerprints and complete authored project-input inventories were recorded before/after execution and match independently collected current values, including untracked additions/deletions and referenced/outside inputs; solution/mapping, configuration, tools and actual runner/helper inputs are unchanged.",
+    "expected": "Accept supported current conventional-test reuse without a redundant rerun or second approval. Verify invocation, complete project/level scope, test outcomes, report hashes and all before/after/current provenance explicitly; do not require the standalone wrapper itself to have emitted a nonexistent companion record. Preserve clean preflight and separate mutation-report provenance requirements.",
+    "execution": "unexecuted-authored-definition"
   }
 ]

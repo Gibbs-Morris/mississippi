@@ -91,7 +91,7 @@ threshold/tool distinctions, optional manifests, declared gates, incomplete
 scope, sample or ordinary-test routing, proportionate survivors, and the
 justified production exception. They are a rubric; the recorded assessment
 below is separate from the historical native trial. The current corpus contains
-27 unique rubric cases, including source changes during failed runs and
+30 unique rubric cases, including source changes during failed runs and
 later-added project files; those definitions are not executed results. Neither
 the historical assessment nor the native trial is a mutation run.
 
@@ -221,6 +221,28 @@ measurements remain unchanged at their named revisions. Neither those trials
 nor this source inspection validate current native decisions or actual test or
 mutation execution. Copilot behavior remains unverified. No engine, mapping,
 configuration, runtime or fixture change was made.
+
+### Cycle 4: independently bound conventional-test provenance
+
+Review thread `PRRT_kwDONxgvzs6mVF-V` (comment `4113172325`) identified a
+reuse gap at owner `ed0b4dc6f3b9714118051365902c7249a568045c`.
+`Invoke-MississippiSolutionUnitTests` in the
+[automation module](../../eng/src/agent-scripts/RepositoryAutomation.psm1)
+(lines 2421–2490) emits per-project TRX and coverage artifacts but does not
+capture before/after fingerprints or authored-input inventories. The standalone
+wrapper does not add that record. The binding now requires independently
+recorded before/after provenance, current comparison, complete authored
+inventories and exact invocation/report hashes before reusing those reports.
+A fixed input list, dirty flag or helper validity result alone does not prove
+that missing execution-time provenance. Missing proof is reported; an already
+authorized fresh prerequisite can establish it without repeated approval,
+while existing-report assessment remains read-only.
+
+The three additional cases are unexecuted definitions. The earlier mapped-scope
+correction, historical case definitions, native evidence and measurements are
+preserved distinctly. Static inspection and artifact checks do not establish
+current native/Copilot behavior, report reuse in practice or an executed test
+or mutation result. No checker API, engine, fixture or runtime was changed.
 
 ## Historical corpus accounting
 

@@ -81,6 +81,36 @@ mutator exclusions for generated files and logger-extension files. Its 80/60/50
 thresholds and ignored String mutations are tooling behavior, not a repository
 acceptance gate.
 
+## Conventional-test evidence provenance
+
+The standalone unit wrapper emits TRX and coverage reports, not a
+before/after source-fingerprint or authored-input-inventory record. Before
+reusing its results as the solution-mutation prerequisite, require independent
+evidence recorded for that exact conventional-test invocation: selected
+projects and levels, configuration, source fingerprints and complete authored
+input inventories before and after execution, and paths, SHA-256 values and
+lengths for every required TRX and coverage artifact. Verify the reported test
+execution and outcomes under the existing contract and associate those exact
+artifacts with the recorded invocation and scope.
+
+At reuse, independently collect the current fingerprint and authored inventory
+and require before, after and current values to agree. Inventory the actual
+source/test project inputs and references, including untracked files,
+additions, deletions and authored inputs outside project directories; include
+the solution/mapping inputs, build/test configuration, tool manifest and actual
+runner/imported-helper dependency closure. Verify these inputs and all bound
+report hashes are unchanged. A fixed `recordedInputPaths` list, unchanged dirty
+flag, or helper `Valid=true`/`Fresh=true` alone does not supply the missing
+before/after inventory or prove the complete current scope unchanged.
+
+If that provenance was not recorded or cannot be verified, report the gap and
+do not reuse the reports as a current mutation baseline or reconstruct the
+missing before state from today's checkout. When existing execution authority
+covers the necessary conventional-test prerequisite and evidence collection,
+complete a fresh canonical run with those records without asking again.
+Existing-report or assessment-only authority still permits inspection only;
+missing evidence does not authorize tests, mutation, writes or a mode change.
+
 ## Report contract and scope
 
 Mutation output is written below `.scratchpad/mutation-test-results`. A selected
