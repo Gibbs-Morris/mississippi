@@ -8,12 +8,12 @@ skills-migration epic under the verified
 and [readiness record](https://github.com/Gibbs-Morris/mississippi/issues/532#issuecomment-5651476492).
 The layer keeps issue-tracking authority local while moving detailed bookkeeping
 decisions into one mandatory, portable route with a direct-file fallback.
+Custom agents are excluded from the September 26 scope and remain unchanged.
 
 ## Parent gate and boundary
 
-The current parent is [PR #679](https://github.com/Gibbs-Morris/mississippi/pull/679)
-at reachable head `f78091dd620e006798e33241993650f78cc6ea0e`, based on
-`c6aad3b196ef27353e9933b650ad6438215f0e6d`. Its original issue-tracking adapter
+The parent layer is [PR #679](https://github.com/Gibbs-Morris/mississippi/pull/679);
+its live description records current head/base and gate state. Its original issue-tracking adapter
 is the reachable Git blob `78fd09ad25ff9c1ba66a20ab00d56499fec672c1`, measured
 below. The September 13 readiness record above reported clean CI and resolved
 threads at that time; it is historical evidence, not the current advancement
@@ -54,16 +54,16 @@ probabilistic skill activation.
 All 21 source requirements remain represented by these atomic rules and the routed
 skill. The adapter keeps the mandatory outcome and fail-closed conditions;
 the skill owns the detailed procedure, and direct reading preserves enforcement
-when discovery is unavailable. The three caller routes preserve their local
+when discovery is unavailable. The three unchanged callers preserve their local
 authority and workflow records.
 
 ## Caller preservation
 
 | Caller | Route retained | Local responsibilities preserved |
 | --- | --- | --- |
-| `flow-build` | Plan issue identity, search/reuse/create, and milestone/reference tracking route through the skill with direct policy fallback. | Plan-root law, plan completeness, build/test gates, cleanup, and plan-folder lifecycle remain local. |
-| `epic-builder` | Master/child issue reconciliation, intake, and progress links route through the skill. | Dependency and advancement gates, sub-plan authority, branch/stack placement, and completion markers remain local. |
-| `cs-product-owner` | G2 intake and Phase 5 issue recheck/update route through the skill. | Sole orchestration, `runSubagent`, `.thinking/` state, canonical v3 audit ownership, human gates, and roster rules remain local. |
+| `flow-build` | Existing issue-policy reference and intake/milestone procedure remain unchanged; the adapter provides the shared route. | Plan-root law, plan completeness, build/test gates, cleanup, and plan-folder lifecycle remain local. |
+| `epic-builder` | Existing issue-policy reference and master/child reconciliation remain unchanged. | Dependency and advancement gates, sub-plan authority, branch/stack placement, and completion markers remain local. |
+| `cs-product-owner` | Existing G2 intake and Phase 5 issue recheck/update remain unchanged. | Sole orchestration, `runSubagent`, `.thinking/` state, canonical v3 audit ownership, human gates, and roster rules remain local. |
 
 ## Research and placement rationale
 
@@ -93,8 +93,8 @@ test, application test, or activation claim is made for this layer.
 
 Structural validation covers the skill schema, configured Markdown lint, JSON
 parsing, relative links, portability, the 11-rule/source-rule map, and
-caller-scope comparisons showing that only the intended issue-bookkeeping
-sections changed. Any unavailable host capability remains a reported gap rather
+raw-parent comparisons showing that all three agent files are unchanged and
+their existing policy references resolve. Any unavailable host capability remains a reported gap rather
 than an inferred success.
 
 ### Supplied-record assessment evidence (prior input)
@@ -150,7 +150,7 @@ below.
 
 | Content | Source | Words | Lines | UTF-8 bytes | UTF-16 units |
 | --- | --- | ---: | ---: | ---: | ---: |
-| Adapter before | Git blob `78fd09ad25ff9c1ba66a20ab00d56499fec672c1` in parent `f78091dd620e006798e33241993650f78cc6ea0e` | 1,352 | 75 | 9,515 | 9,515 |
+| Adapter before | Reachable parent Git blob `78fd09ad25ff9c1ba66a20ab00d56499fec672c1` | 1,352 | 75 | 9,515 | 9,515 |
 | Adapter candidate | current LF copy SHA-256 `7E21DD9DBD174D0E5E340F9851299B18BFF810FEE02B0B054803E01B2B0DA5BD` | 477 | 45 | 3,920 | 3,920 |
 | Skill full file (current staged input) | Git blob `fb0c33fff006cc7c412845851f36941f847cd337`; LF copy SHA-256 `071D901E31D72F929800093C4AC46034B26E9D611B436EAE9E34834B47FF967C` | 1,364 | 157 | 9,648 | 9,648 |
 | Skill body after complete front matter (current staged input) | same Git blob and LF copy | 1,305 | 153 | 9,179 | 9,179 |
@@ -188,5 +188,5 @@ The issue-tracking policy owner maintains the compact adapter and direct route;
 the skill follows provider and linking semantics discovered at use time. Caller
 owners maintain their plan, stack, review, and canonical-workflow bindings.
 Revert this complete layer together to remove the skill, cases, audit, and
-caller routes, restore the original issue-tracking procedure, and verify that
-the unrelated caller sections and preceding skill layers remain unchanged.
+restore the original issue-tracking procedure, and verify that all custom-agent
+files and preceding skill layers remain unchanged.
