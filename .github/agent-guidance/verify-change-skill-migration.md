@@ -54,7 +54,7 @@ results are reused only for their unchanged, recorded inputs.
 
 Initial accounting used base `a97d9561bed0bf4a189943468e3279dca159d7a3`.
 That snapshot is historical after restacking; use live PR ancestry and the latest
-#532 checkpoint for current gates. Its raw LF instruction blobs contain
+issue #532 checkpoint for current gates. Its raw LF instruction blobs contain
 2,809 → 2,744 lines: 65 net instruction-directory lines removed.
 Copilot is separate: 82 → 50 lines, for another 32 removed. AGENTS is unchanged.
 All 45 original adapter Rules, frontmatter, prefixes, and audiences are preserved.
