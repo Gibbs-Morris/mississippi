@@ -11,14 +11,14 @@ decisions into one mandatory, portable route with a direct-file fallback.
 
 ## Parent gate and boundary
 
-Before implementation, PR679 at head
-`877f562a2f82bdf78f849475642f26cf6157b3e6` against base
-`cbe8fc71a8aa62a24b507295af82b6d12c491b29` passed its 05:46 UTC advancement
-gate: both parent PRs were `CLEAN` and `MERGEABLE`, all applicable CI and all 11
-required checks passed, all 9 of 9 review threads were resolved on each, and
-the upper metadata refresh was clean. The open epic and plan above were verified
-before editing. This evidence is the parent gate for this layer; its eventual
-head still needs its own exact-head CI and review checks.
+The current parent is [PR #679](https://github.com/Gibbs-Morris/mississippi/pull/679)
+at reachable head `f78091dd620e006798e33241993650f78cc6ea0e`, based on
+`c6aad3b196ef27353e9933b650ad6438215f0e6d`. Its original issue-tracking adapter
+is the reachable Git blob `78fd09ad25ff9c1ba66a20ab00d56499fec672c1`, measured
+below. The September 13 readiness record above reported clean CI and resolved
+threads at that time; it is historical evidence, not the current advancement
+gate. After the September 26 cascade, fresh exact-head CI/review and the bottom
+layer's Copilot behavior and independent approval requirements remain open.
 
 The portable skill handles issue intake, identity and scope reconciliation,
 search/reuse/create decisions, plan records, milestone updates, disclosure
@@ -139,7 +139,7 @@ not model activation, native behavior, authentication, or update results.
 
 Measurements use raw committed bytes from `git cat-file blob` via subprocess and
 LF-normalized copies for uncommitted candidates. The adapter-before row is the
-parent commit; the adapter candidate row is the current atomic adapter copy; the
+pinned blob present in the current parent; the adapter candidate row is the current atomic adapter copy; the
 skill and metadata rows are the current staged source object. Prior model
 evidence remains tied to its original blob above.
 UTF-8 text is counted with `str.split()` words and `str.splitlines()` physical
@@ -150,7 +150,7 @@ below.
 
 | Content | Source | Words | Lines | UTF-8 bytes | UTF-16 units |
 | --- | --- | ---: | ---: | ---: | ---: |
-| Adapter before | parent commit `877f562a2f82bdf78f849475642f26cf6157b3e6` | 1,352 | 75 | 9,515 | 9,515 |
+| Adapter before | Git blob `78fd09ad25ff9c1ba66a20ab00d56499fec672c1` in parent `f78091dd620e006798e33241993650f78cc6ea0e` | 1,352 | 75 | 9,515 | 9,515 |
 | Adapter candidate | current LF copy SHA-256 `7E21DD9DBD174D0E5E340F9851299B18BFF810FEE02B0B054803E01B2B0DA5BD` | 477 | 45 | 3,920 | 3,920 |
 | Skill full file (current staged input) | Git blob `fb0c33fff006cc7c412845851f36941f847cd337`; LF copy SHA-256 `071D901E31D72F929800093C4AC46034B26E9D611B436EAE9E34834B47FF967C` | 1,364 | 157 | 9,648 | 9,648 |
 | Skill body after complete front matter (current staged input) | same Git blob and LF copy | 1,305 | 153 | 9,179 | 9,179 |
