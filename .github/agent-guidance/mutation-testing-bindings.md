@@ -66,6 +66,13 @@ runs also emit `.scratchpad/validation-evidence/<run-id>/evidence.json` with
 report's path, SHA-256, and length in `ArtifactMetadata`. Associate that record
 with the selected report and invocation, check its fields and report hash, and
 use `Test-ValidationEvidence` from `ValidationEvidence.psm1` to check reuse.
+For every status, including failed runs with complete reports, also require
+`SourceBefore.Fingerprint == SourceAfter.Fingerprint == current.Fingerprint`
+and `SourceChangedDuringRun=false` before attributing results to that source.
+The helper rejects source changes during execution only for PASS records;
+`Valid=true`/`Fresh=true` alone can accept a failed run against moving inputs.
+Changed or missing before/after/current provenance remains unverified, even
+when the report is complete and its recorded hash matches.
 That focused fingerprint omits `stryker-config.json`, `.config/dotnet-tools.json`,
 and the mutation runner/imported helpers: at least `test-project-quality.ps1`,
 `RepositoryAutomation.psm1`, and `ValidationEvidence.psm1` under `eng/src/agent-scripts/`.
