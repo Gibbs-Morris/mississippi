@@ -38,9 +38,9 @@ diagram or framework name. Keep unrelated hosts and infrastructure unchanged.
   Return the consuming framework's success/events or failure contract; rejected
   commands do not acquire successful events or silently mutate state. Let the
   existing persistence pipeline own append and snapshot behavior.
-- Reduce events into new state using the local immutable, deterministic
-  reducer contract. Preserve input state and replay behavior. Build focused
-  projections for the required reads instead of coupling unrelated views.
+- Apply events using the project's mutable or immutable state-transition
+  contract and deterministic replay. Preserve input state when that contract
+  requires it. Build focused projections instead of coupling unrelated views.
 - Add effects only when the feature needs them. Follow the engine's execution,
   lifetime, failure, and replay semantics. Keep client effects distinct from
   server effects, and route follow-up state changes through the normal command
@@ -63,7 +63,7 @@ of fresh projection state. Follow applicable UI and browser validation policy.
 
 ## Verify and report the complete feature
 
-Validate meaningful success, invalid-input, invalid-state, immutable reduction,
+Validate meaningful success, invalid-input, invalid-state, local state-transition,
 and replay cases relevant to the change. Check generated integration and
 eventual read behavior when those paths changed. Run the consuming project's
 applicable quality gates within the authorized scope; distinguish prerequisite
