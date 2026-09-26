@@ -21,20 +21,6 @@ Governing thought: While the repository version is pre-1.0.0, breaking changes a
 
 All contributors and agents making code changes in this repository. This policy overrides any other instruction that implies backwards compatibility is required by default while the repo is pre-1.0.
 
-## At-a-Glance Quick-Start
-
-- **Pre-1.0?** Break anything. Fix the samples and tests in the same PR.
-- **On a branch?** Only preserve contracts that exist on `main`, never patterns you introduced earlier in the same branch.
-- **Adding a wrapper for compat?** Mark it `[Obsolete]` immediately and plan removal.
-- **Changing a storage name?** Stop—that is a data-integrity rule, not a compatibility rule; storage names are immutable once persisted.
-
-## Core Principles
-
-- Ship quality over ceremony: pre-release means iterate fast.
-- Branch work is ephemeral; only `main` defines the compatibility baseline.
-- Compatibility shims are technical debt; minimize their lifetime.
-- Storage identity (persisted attribute names) is sacred even when API compatibility is not.
-
 ## References
 
 - GitVersion config: `GitVersion.yml` (`next-version` field)

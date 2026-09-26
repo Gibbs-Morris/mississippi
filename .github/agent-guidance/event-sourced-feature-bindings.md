@@ -55,3 +55,30 @@ Brooks may feed multiple projections asynchronously. These optimized read views
 are eventually consistent: command success does not prove the client has already
 received the corresponding projection update. Inspect the actual pipeline and
 subscription evidence before making stronger freshness or atomicity claims.
+
+## Domain type suffix examples
+
+These illustrative names retain the former naming table; they are not new APIs
+or exceptions to general C# visibility and naming. The [naming Rules](../instructions/naming.instructions.md#rules-rfc-2119),
+[domain Rules](../instructions/domain-modeling.instructions.md#rules-rfc-2119),
+[registration Rules](../instructions/service-registration.instructions.md#rules-rfc-2119),
+and [logging Rules](../instructions/logging-rules.instructions.md#rules-rfc-2119) remain authoritative.
+
+| Type | Suffix | Example |
+|------|--------|---------|
+| Aggregate state | `Aggregate` | `ChannelAggregate` |
+| Command handler | `Handler` | `CreateChannelHandler` |
+| Aggregate reducer | `Reducer` | `ChannelCreatedReducer` |
+| Projection state | `Projection` | `UserProfileProjection` |
+| Projection reducer | `ProjectionReducer` | `UserRegisteredProjectionReducer` |
+| Registration class | `Registrations` | `ContosoRegistrations` |
+| LoggerExtensions | `LoggerExtensions` | `BrookWriterGrainLoggerExtensions` |
+
+## Serialization and storage examples
+
+These attribute shapes retain the former quick-start examples; they are not
+runnable samples or a universal compatibility promise. Read the [serialization Rules](../instructions/orleans-serialization.instructions.md#rules-rfc-2119)
+and [storage Rules](../instructions/storage-type-naming.instructions.md#rules-rfc-2119) for the applicable version and persistence boundary.
+
+- Add `[GenerateSerializer]`, `[Alias("Namespace.TypeName")]` (fully qualified type name), `[Id(n)]` (starting at 0) to members.
+- Decorate types with `[EventStorageName("ORDER","FULFILLMENT","SHIPPED", version: 1)]` (or appropriate attribute).
