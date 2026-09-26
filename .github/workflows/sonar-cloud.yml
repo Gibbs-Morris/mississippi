@@ -31,93 +31,20 @@ env:
 jobs:
   Build:
     name: "Build"
+    # `SONAR_TOKEN` must exist only as a secret in the `sonar-analysis`
+    # environment. Restrict that environment to `main` and `refs/pull/*/merge`,
+    # and remove any repository- or organization-level secret with this name.
+    # Merge groups and non-main manual runs use the empty `sonar-no-token` environment.
+    # Merge-group candidates still run build/tests; Sonar analysis runs on the PR.
+    environment:
+      name: ${{ (github.event_name == 'merge_group' || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')) && 'sonar-no-token' || 'sonar-analysis' }}
+      deployment: false
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ ubuntu-latest ]
 
     steps:
-      - name: Validate merge-group origins
-        id: merge-group-origin
-        if: github.event_name == 'merge_group'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BASE_REF: ${{ github.event.merge_group.base_ref }}
-          QUEUE_HEAD_REF: ${{ github.event.merge_group.head_ref }}
-          REPOSITORY: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-
-          # Run this before checkout so fork-controlled code cannot alter the origin gate.
-          if [[ "$BASE_REF" != "refs/heads/main" ]]; then
-            echo "::error::Sonar merge-group analysis only supports the main branch."
-            exit 1
-          fi
-
-          if [[ ! "$QUEUE_HEAD_REF" =~ ^refs/heads/gh-readonly-queue/main/pr-([0-9]+)(-|$) ]]; then
-            echo "::error::Cannot identify the pull request at the head of this merge group; Sonar credentials will not be used."
-            exit 1
-          fi
-          current_pr="${BASH_REMATCH[1]}"
-
-          IFS='/' read -r owner repository_name <<< "$REPOSITORY"
-          if [[ -z "$owner" || -z "$repository_name" || "$repository_name" == */* ]]; then
-            echo "::error::Cannot identify the repository for merge-group origin validation."
-            exit 1
-          fi
-
-          query='query($owner: String!, $name: String!, $branch: String!, $endCursor: String) {
-            repository(owner: $owner, name: $name) {
-              mergeQueue(branch: $branch) {
-                entries(first: 100, after: $endCursor) {
-                  nodes {
-                    position
-                    pullRequest {
-                      number
-                      headRepository { nameWithOwner }
-                    }
-                  }
-                  pageInfo { hasNextPage endCursor }
-                }
-              }
-            }
-          }'
-          queue_pages="$(gh api graphql --paginate \
-            -f query="$query" \
-            -F owner="$owner" \
-            -F name="$repository_name" \
-            -F branch="main")"
-          queue_json="$(jq -s '
-            if any(.[]; .data.repository.mergeQueue == null) then
-              error("The main merge queue is unavailable")
-            else
-              { entries: [ .[].data.repository.mergeQueue.entries.nodes[] ] }
-            end
-          ' <<< "$queue_pages")"
-
-          current_position="$(jq -r --argjson pr "$current_pr" \
-            '[.entries[] | select(.pullRequest.number == $pr) | .position] | if length == 1 then .[0] else empty end' \
-            <<< "$queue_json")"
-          if [[ -z "$current_position" ]]; then
-            echo "::error::The pull request at the merge-group head is not in the main queue; Sonar credentials will not be used."
-            exit 1
-          fi
-
-          # A later merge-group ref may include every queued entry ahead of it.
-          untrusted_positions="$(jq -r \
-            --arg repository "$REPOSITORY" \
-            --argjson current_position "$current_position" \
-            '.entries[]
-             | select(.position <= $current_position)
-             | select(((.pullRequest.headRepository.nameWithOwner // "") | ascii_downcase) != ($repository | ascii_downcase))
-             | .position' <<< "$queue_json")"
-          if [[ -n "$untrusted_positions" ]]; then
-            echo "::error::This merge group contains pull request(s) from outside $REPOSITORY; Sonar credentials are withheld."
-            exit 1
-          fi
-
-          echo "Verified that every pull request up to the merge-group head originates from $REPOSITORY."
-
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -183,28 +110,34 @@ jobs:
           dotnet tool restore
           true
 
-      - name: Sonar restore-build-report
+      - name: Explain merge-group Sonar boundary
+        if: github.event_name == 'merge_group'
+        run: echo "Merge-group candidates run build and tests without SONAR_TOKEN; Sonar analysis runs on the pull request."
+
+      - name: Sonar begin
+        if: >-
+          github.event_name != 'merge_group' &&
+          (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main') &&
+          (github.event_name != 'pull_request' ||
+           github.event.pull_request.head.repo.full_name == github.repository)
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          if [[ "$GITHUB_EVENT_NAME" == "merge_group" ]]; then
-            if [[ "$GITHUB_REF_TYPE" != "branch" || -z "$GITHUB_REF_NAME" ]]; then
-              echo "::error::Merge-group analysis requires a branch ref."
-              exit 1
-            fi
+          dotnet dotnet-sonarscanner begin /k:"${{ env.SONAR_PROJECT_KEY }}" /o:"${{ env.SONAR_ORGANIZATION }}" /d:sonar.token="$SONAR_TOKEN" /d:sonar.host.url="${{ env.SONAR_HOST_URL }}" /v:${{ steps.gitversion.outputs.SemVer }} /d:"sonar.cs.vscoveragexml.reportsPaths=coverage.xml" /d:sonar.exclusions="**/*.lock.json, **/*.DotSettings,**/packages.lock.json,docs/**" /d:sonar.cpd.exclusions="**/Inlet.Client.Generators/**,**/Inlet.Gateway.Generators/**,**/Inlet.Runtime.Generators/**,**/setup.ps1,**/Setup.Tests.ps1,**/AgentDoctor.Tests.ps1" /d:sonar.issue.ignore.multicriteria=s107 /d:sonar.issue.ignore.multicriteria.s107.ruleKey=csharpsquid:S107 /d:sonar.issue.ignore.multicriteria.s107.resourceKey='**/*.cs'
 
-            # Analyze the exact candidate as a short-lived branch targeting main.
-            set -- "/d:sonar.branch.name=$GITHUB_REF_NAME" "/d:sonar.branch.target=main" "/d:sonar.qualitygate.wait=true"
-          else
-            set --
-          fi
-
-          dotnet dotnet-sonarscanner begin /k:"${{ env.SONAR_PROJECT_KEY }}" /o:"${{ env.SONAR_ORGANIZATION }}" /d:sonar.token="$SONAR_TOKEN" /d:sonar.host.url="${{ env.SONAR_HOST_URL }}" /v:${{ steps.gitversion.outputs.SemVer }} /d:"sonar.cs.vscoveragexml.reportsPaths=coverage.xml" /d:sonar.exclusions="**/*.lock.json, **/*.DotSettings,**/packages.lock.json,docs/**" /d:sonar.cpd.exclusions="**/Inlet.Client.Generators/**,**/Inlet.Gateway.Generators/**,**/Inlet.Runtime.Generators/**,**/setup.ps1,**/Setup.Tests.ps1,**/AgentDoctor.Tests.ps1" /d:sonar.issue.ignore.multicriteria=s107 /d:sonar.issue.ignore.multicriteria.s107.ruleKey=csharpsquid:S107 /d:sonar.issue.ignore.multicriteria.s107.resourceKey='**/*.cs' "$@"
-
+      - name: Restore, build, and test
+        run: |
           dotnet restore ${{ env.SOLUTION_PATH }}
           dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
-
           dotnet dotnet-coverage collect "pwsh -NoProfile -File ./eng/src/agent-scripts/test-solution.ps1 -SolutionPath ${{ env.SOLUTION_PATH }} -Configuration ${{ env.CONFIGURATION }} -NoBuild" -f xml -o "coverage.xml"
 
-          dotnet dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+      - name: Sonar end
+        if: >-
+          github.event_name != 'merge_group' &&
+          (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main') &&
+          (github.event_name != 'pull_request' ||
+           github.event.pull_request.head.repo.full_name == github.repository)
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
 
