@@ -83,5 +83,15 @@
     "id": "negative-boundary",
     "prompt": "Write an architecture decision record for a new storage design and summarize a production incident. No request is made to capture a lesson from an actual failure or workaround.",
     "expected": "Do not activate capture-validated-lesson; use the ADR or incident workflow requested by the caller."
+  },
+  {
+    "id": "validated-process-gap-without-failure",
+    "prompt": "Assess a recurring process gap for a reusable lesson. Three supplied before/after records show an unchanged input was checked twice; removing the duplicate invocation preserved output hashes and all required checks while saving measured time. No failure, retry, or workaround occurred. The project permits validated inefficiency lessons; assess only.",
+    "expected": "Admit a bounded New lesson from the observed gap and validated correction without requiring a failure; preserve required rechecks after input changes, distinguish supplied records from live execution, and make no write."
+  },
+  {
+    "id": "speculative-process-improvement",
+    "prompt": "Assess a suggestion to remove a second check because it might save time. No observed repeated step, timing, before/after output, or validated correction is supplied. The project permits validated inefficiency lessons; assess only.",
+    "expected": "Classify as Insufficient evidence, identify the missing observation and correction validation, and neither draft a validated rule nor write a speculative lesson."
   }
 ]

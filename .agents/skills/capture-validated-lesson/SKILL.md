@@ -1,19 +1,19 @@
 ---
 name: capture-validated-lesson
-description: Record a reusable lesson from an actual failure, retry, or non-obvious workaround after the correction is validated. Use when the task is to assess, admit, or write a bounded lesson into consuming-project guidance. Not for speculative tips, ordinary troubleshooting before validation, broad rule intake, architecture decisions, or generic incident summaries.
+description: Record a reusable lesson after a validated correction to an observed failure, retry, workaround, process gap, or inefficiency. Use to assess, admit, or write one bounded lesson into consuming-project guidance. Not for speculative tips, unvalidated troubleshooting, broad rule intake, architecture decisions, or generic incident summaries.
 ---
 
 # Capture a validated lesson
 
-Record a concise, reusable lesson only when an observed failure, retry, or
-non-obvious workaround has a supported correction. Discover the consuming
-project's authority and format at use time; a no-write outcome is valid when
+Record a concise, reusable lesson only when an observed failure, retry,
+workaround, process gap, or inefficiency has a supported correction. Discover
+the consuming project's authority and format at use time; a no-write outcome is valid when
 the evidence, scope, or authority is insufficient.
 
 ## Establish the candidate and authority
 
-1. Identify the actual failure, retry, or workaround; the before and after
-   behavior; the correction; the evidence that validated it; and the requested
+1. Identify the observed failure, retry, workaround, process gap, or inefficiency;
+   the before and after behavior; the correction; its validation evidence; and the requested
    output. If the event or target cannot be identified, ask for that narrow
    missing scope instead of inventing a lesson.
 2. Distinguish assessment-only work from an authorized write. Preserve existing
@@ -30,9 +30,10 @@ the evidence, scope, or authority is insufficient.
 
 ## Admit only an evidenced lesson
 
-1. Confirm that the failure or workaround actually occurred and that the
-   correction was observed to work under the relevant conditions. Separate
-   confirmed facts, supported explanations, and unresolved possibilities.
+1. Confirm that the failure, workaround, process gap, or inefficiency actually
+   occurred and that the correction was observed to work under the relevant
+   conditions. A validated process improvement does not require a failure.
+   Separate confirmed facts, supported explanations, and unresolved possibilities.
 2. Ask whether the lesson changes a future decision and is reusable beyond the
    single event. Keep it bounded to the observed cause, correction, and scope;
    omit generic advice, preferences, and conclusions that the evidence does not
