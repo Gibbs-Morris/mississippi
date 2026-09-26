@@ -296,6 +296,19 @@ Describe 'Portable delivery context snapshots' {
         { Get-FixtureSnapshot } | Should -Throw '*Linked Git metadata entries require manual inspection*'
     }
 
+    It 'bounds a blocked Git metadata enumerator in its owned child' {
+        $copy = Join-Path $TestDrive 'metadata-stall-snapshot.ps1'
+        $source = [IO.File]::ReadAllText($snapshotScript)
+        $boundary = '$pending.Dequeue().EnumerateFileSystemInfos()'
+        $source.Contains($boundary) | Should -BeTrue
+        # Deterministically simulate stalled enumerator advancement without requiring FUSE or a network filesystem.
+        [IO.File]::WriteAllText($copy, $source.Replace($boundary, '$(while ($true) { })'))
+        $result = Invoke-BoundedSnapshot -ScriptPath $copy
+        $result.ExitCode | Should -Be 1
+        $result.Error | Should -Match 'Native context inspection timed out'
+        $result.Output | Should -BeNullOrEmpty
+    }
+
     It 'rejects a linked Git index' -Skip:$IsWindows {
         $index = Join-Path $fixture '.git/index'
         $outside = Join-Path $TestDrive 'foreign-index'

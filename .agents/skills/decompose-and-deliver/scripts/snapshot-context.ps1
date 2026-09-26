@@ -4,7 +4,8 @@
 param(
     [Parameter(Mandatory)][string]$RepositoryRoot,
     [string[]]$ContextPath = @(),
-    [Parameter(DontShow)][string]$HashPath
+    [Parameter(DontShow)][string]$HashPath,
+    [Parameter(DontShow)][string]$MetadataPath
 )
 
 Set-StrictMode -Version Latest
@@ -135,7 +136,13 @@ function Get-ContextPaths {
 }
 
 function Assert-ContextGitMetadata {
-    param([IO.DirectoryInfo]$Directory)
+    param([IO.DirectoryInfo]$Directory, [switch]$InChild)
+    if (-not $InChild) {
+        $shell = [IO.Path]::Combine($PSHOME, $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' }))
+        $null = Invoke-ContextNativeOutput $shell @('-NoProfile', '-File', $PSCommandPath, '-RepositoryRoot', $Directory.Parent.FullName, '-MetadataPath', $Directory.FullName)
+        return
+    }
+    if (($Directory.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'Linked Git metadata directories require manual inspection.' }
     $pending = [Collections.Generic.Queue[IO.DirectoryInfo]]::new()
     $pending.Enqueue($Directory)
     $entries = 0
@@ -239,6 +246,10 @@ function Get-ContextObservation {
 }
 
 try {
+    if (-not [string]::IsNullOrEmpty($MetadataPath)) {
+        Assert-ContextGitMetadata ([IO.DirectoryInfo]::new($MetadataPath)) -InChild
+        exit 0
+    }
     if (-not [string]::IsNullOrEmpty($HashPath)) {
         $stream = [IO.FileStream]::new($HashPath, [IO.FileMode]::Open, [IO.FileAccess]::Read, ([IO.FileShare]::Read -bor [IO.FileShare]::Inheritable))
         try {
