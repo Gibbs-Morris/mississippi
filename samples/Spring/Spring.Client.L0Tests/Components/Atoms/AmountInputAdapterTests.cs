@@ -97,6 +97,7 @@ public sealed class AmountInputAdapterTests : BunitContext
                      "79228162514264337593543950336",
                      "0.12345678901234567890123456789",
                      "10000000000000000000000000000.1",
+                     "8.0000000000000000000000000001",
                  })
         {
             cut.Find("#account-b-amount-input").Input(draft);
@@ -129,5 +130,9 @@ public sealed class AmountInputAdapterTests : BunitContext
         Assert.True(isValid);
         Assert.Equal("12.345", cut.Find("#account-a-amount-input").GetAttribute("value"));
         Assert.Null(cut.Find("#account-a-amount-input").GetAttribute("aria-invalid"));
+        cut.Find("#account-a-amount-input").Input("0012.3400");
+        Assert.Equal(12.3400m, result);
+        Assert.True(isValid);
+        Assert.Equal("0012.3400", cut.Find("#account-a-amount-input").GetAttribute("value"));
     }
 }

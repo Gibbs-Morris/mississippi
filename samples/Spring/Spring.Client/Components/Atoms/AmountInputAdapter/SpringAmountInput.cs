@@ -70,6 +70,15 @@ internal sealed class SpringAmountInput : ComponentBase
 
     private string InputState => errorText is null ? RefractionStates.Idle : RefractionStates.Invalid;
 
+    private static bool HasExactDecimalRepresentation(
+        string value,
+        decimal amount
+    ) =>
+        string.Equals(
+            NormalizeDecimalText(value),
+            NormalizeDecimalText(amount.ToString(CultureInfo.InvariantCulture)),
+            StringComparison.Ordinal);
+
     private static bool HasSupportedSignificantPrecision(
         string value
     )
@@ -100,6 +109,48 @@ internal sealed class SpringAmountInput : ComponentBase
 
         return (firstNonZeroDigitPosition < 0) ||
                (((lastNonZeroDigitPosition - firstNonZeroDigitPosition) + 1) <= maximumSignificantDigits);
+    }
+
+    private static string NormalizeDecimalText(
+        string value
+    )
+    {
+        int valueStart = value[0] is '+' or '-' ? 1 : 0;
+        bool isNegative = value[0] == '-';
+        int decimalPointIndex = value.IndexOf('.', valueStart);
+        int integerEnd = decimalPointIndex < 0 ? value.Length : decimalPointIndex;
+        int integerStart = valueStart;
+        while ((integerStart < integerEnd) && (value[integerStart] == '0'))
+        {
+            integerStart++;
+        }
+
+        int fractionStart = decimalPointIndex < 0 ? value.Length : decimalPointIndex + 1;
+        int fractionEnd = value.Length;
+        while ((fractionEnd > fractionStart) && (value[fractionEnd - 1] == '0'))
+        {
+            fractionEnd--;
+        }
+
+        bool isZero = true;
+        for (int index = valueStart; index < value.Length; index++)
+        {
+            if (char.IsAsciiDigit(value[index]) && (value[index] != '0'))
+            {
+                isZero = false;
+                break;
+            }
+        }
+
+        if (isZero)
+        {
+            return "0";
+        }
+
+        string integer = integerStart == integerEnd ? "0" : value[integerStart..integerEnd];
+        string fraction = value[fractionStart..fractionEnd];
+        string sign = isNegative ? "-" : string.Empty;
+        return fraction.Length == 0 ? $"{sign}{integer}" : $"{sign}{integer}.{fraction}";
     }
 
     private static bool TryParseAmount(
@@ -147,11 +198,22 @@ internal sealed class SpringAmountInput : ComponentBase
             return false;
         }
 
-        return decimal.TryParse(
-            value,
-            NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
-            CultureInfo.InvariantCulture,
-            out amount);
+        if (!decimal.TryParse(
+                value,
+                NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
+                CultureInfo.InvariantCulture,
+                out amount))
+        {
+            return false;
+        }
+
+        if (!HasExactDecimalRepresentation(value, amount))
+        {
+            amount = default;
+            return false;
+        }
+
+        return true;
     }
 
     /// <inheritdoc />
