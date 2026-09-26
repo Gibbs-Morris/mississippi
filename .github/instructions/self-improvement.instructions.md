@@ -33,7 +33,7 @@ Use [capture-validated-lesson](../../.agents/skills/capture-validated-lesson/SKI
 for lesson admission, conflict assessment, and bounded writing. Read the
 [local self-taught format](../agent-guidance/self-taught-format.md) when
 selecting a scope or creating a file. If automatic skill discovery is
-unavailable, read both linked files directly. The eleven rules above remain
+unavailable, read both linked files directly. The twelve rules above remain
 effective whether or not the skill is loaded.
 
 ## References

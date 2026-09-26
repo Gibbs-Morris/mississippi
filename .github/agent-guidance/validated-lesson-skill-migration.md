@@ -32,7 +32,7 @@ categories and template text outside the portable package.
 
 | Source content | Disposition |
 | --- | --- |
-| All 11 bullets in `self-improvement.instructions.md` Rules | Retained exactly; they remain effective whether skill discovery works or not. |
+| All 12 bullets in `self-improvement.instructions.md` Rules | Retained exactly; they remain effective whether skill discovery works or not. |
 | Governing thought, drift check, global scope, and existing references | Retained; the route and local format links are added without changing authority. |
 | Quick-Start, conflict-detection procedure, lesson lifecycle, and Core Principles | Replaced by a concise skill route with a direct-read fallback. |
 | Domain Categories and quoted Self-Taught File Template | Moved verbatim to `self-taught-format.md`, with its repository-specific paths and domains intentionally kept local. |
@@ -40,7 +40,7 @@ categories and template text outside the portable package.
 | Clean Squad Scribe route | Trigger, Scribe ownership, **SHOULD**, lesson destination, and rationale remain; the stale protocol name now routes directly to the skill, self-improvement policy, and local format. |
 | Remaining Scribe role, permissions, hard rules, ledger/audit duties, and output structures | Unchanged. Rules Manager remains unchanged and retains broader user-rule intake. |
 
-The adapter retains the mandatory 11-rule policy even when automatic skill
+The adapter retains the mandatory 12-rule policy even when automatic skill
 selection is unavailable. The direct route reads both the portable procedure
 and the local format reference before a lesson is recorded; the skill itself
 does not depend on that repository-only file when copied elsewhere.
@@ -75,11 +75,15 @@ verified silent success under the consuming contract.
 
 Structural checks passed: the bundled skill-creator validator; configured
 Markdown lint; JSON parsing; relative-link resolution; exact comparison of the
-11 retained Rules bullets; exact comparison of the moved format sections;
+12 retained Rules bullets; exact comparison of the moved format sections;
 comparison showing only the Scribe Learning Capture block changed; portability
 scanning of the skill; and whitespace checks. The Scribe file was linted with
 the current repository configuration, and no pre-existing findings were
 encountered.
+
+The retained-rule comparison was refreshed September 26 against the current
+parent: all 12 bullets match exactly. Other historical checks retain their
+recorded revision and do not establish current native behavior.
 
 ### Recorded fixed-input fixture evidence
 
@@ -166,6 +170,6 @@ workflow, or runtime files are part of this layer.
 
 Revert this complete layer together to remove the portable skill, local format
 reference, audit, and cases; restore the original self-improvement procedure
-sections and the original Scribe Learning Capture block. Recheck all 11 Rules,
+sections and the original Scribe Learning Capture block. Recheck all 12 Rules,
 the local format content, and the unchanged Scribe sections. Preserve the
 preceding build-remediation skill and unrelated repository work.
