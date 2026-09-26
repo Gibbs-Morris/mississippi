@@ -374,6 +374,24 @@ Describe 'Portable delivery context snapshots' {
         $snapshot.SelectedInputs[0].Path | Should -BeExactly 'AGENTS.md'
     }
 
+    It 'preserves a trailing <Label> in a Unix repository root' -Skip:$IsWindows -ForEach @(
+        @{ Label = 'space'; Suffix = ' ' },
+        @{ Label = 'tab'; Suffix = "`t" },
+        @{ Label = 'newline'; Suffix = "`n" },
+        @{ Label = 'carriage return'; Suffix = "`r" }
+    ) {
+        $whitespaceRoot = [IO.Path]::Combine($TestDrive, 'whitespace-' + $Label + $Suffix)
+        $null = [IO.Directory]::CreateDirectory($whitespaceRoot)
+        [IO.File]::WriteAllText([IO.Path]::Combine($whitespaceRoot, 'AGENTS.md'), 'Whitespace root instructions')
+        Invoke-FixtureGit @('-C', $whitespaceRoot, 'init', '-b', 'whitespace')
+        Invoke-FixtureGit @('-C', $whitespaceRoot, 'config', 'core.autocrlf', 'false')
+        Invoke-FixtureGit @('-C', $whitespaceRoot, 'add', '.')
+        Invoke-FixtureGit @('-C', $whitespaceRoot, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'whitespace baseline')
+        $snapshot = Get-FixtureSnapshot -Root $whitespaceRoot -Paths @('AGENTS.md')
+        $snapshot.RepositoryRoot | Should -BeExactly $whitespaceRoot
+        $snapshot.SelectedInputs[0].Path | Should -BeExactly 'AGENTS.md'
+    }
+
     It 'records a new head rather than reusing evidence from the baseline' {
         $before = Get-FixtureSnapshot
         Add-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'changed'

@@ -116,6 +116,8 @@ including legitimate Windows conversions: Git can otherwise report a regular
 file containing a link target as clean while its filesystem behavior differs.
 Path joining and separator normalization follow the host filesystem: Unix
 backslashes remain literal characters in inventories, roots and selected identities.
+Git root paths lose only the command's single line terminator; real trailing
+spaces, tabs, carriage returns and newlines remain part of Unix root identity.
 Inspection disables replacement objects so status remains bound to the reported commit.
 Partial/promisor repositories require manual inspection. Child-only environment
 settings also disable lazy fetching and disallow all remote protocols, preserving

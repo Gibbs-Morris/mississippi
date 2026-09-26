@@ -173,6 +173,14 @@ function Get-ContextEmbeddedRoot {
     throw 'An embedded Git directory was not found; inspect this target manually.'
 }
 
+function Get-ContextGitPath {
+    param([string]$Root, [string[]]$Arguments)
+    $output = (Invoke-ContextGit $Root $Arguments -WithResult).Output
+    if (-not $output.EndsWith("`n", [StringComparison]::Ordinal)) { throw 'Git path output lacks its line terminator; inspect this target manually.' }
+    $terminatorLength = if ($IsWindows -and $output.EndsWith("`r`n", [StringComparison]::Ordinal)) { 2 } else { 1 }
+    return [IO.Path]::GetFullPath($output.Substring(0, $output.Length - $terminatorLength))
+}
+
 function Get-ContextGitRoot {
     param([string]$Root)
     $expectedRoot = Get-ContextEmbeddedRoot $root
@@ -182,9 +190,9 @@ function Get-ContextGitRoot {
     }
     $partialClone = Invoke-ContextGit $root @('config', '--name-only', '--get-regexp', '^(extensions\.partialclone|remote\..*\.promisor)$') -AcceptedExitCodes @(0, 1) -WithResult
     if ($partialClone.ExitCode -eq 0) { throw 'Partial/promisor repositories require manual inspection; missing objects can trigger remote helpers.' }
-    $actualRoot = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $root @('rev-parse', '--show-toplevel'))).Trim())
-    $gitDirectory = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $root @('rev-parse', '--absolute-git-dir'))).Trim())
-    $commonDirectory = [IO.Path]::GetFullPath(([string](Invoke-ContextGit $root @('rev-parse', '--path-format=absolute', '--git-common-dir'))).Trim())
+    $actualRoot = Get-ContextGitPath $root @('rev-parse', '--show-toplevel')
+    $gitDirectory = Get-ContextGitPath $root @('rev-parse', '--absolute-git-dir')
+    $commonDirectory = Get-ContextGitPath $root @('rev-parse', '--path-format=absolute', '--git-common-dir')
     if ($actualRoot -cne $expectedRoot -or $gitDirectory -cne [IO.Path]::Combine($expectedRoot, '.git')) {
         throw 'Git directory identity differs from the selected working copy; inspect this target manually.'
     }
