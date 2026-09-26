@@ -53,8 +53,10 @@ No next capability has been implemented while the first layer's gate is unmet.
 ## Verified limits and next action
 
 - Codex CLI discovery plus four current-candidate synthetic trials passed. Copilot CLI discovery passed; model behavior failed before output on HTTP 402 additional usage limit. Resume the same fixtures after usage is available; do not count discovery as behavior conformance.
+- Canonical `pwsh ./go.ps1` passed on September 26: both solutions built with zero compiler/analyzer warnings, both cleanup stages passed, and 3,425 tests executed/passed across 45 TRX reports. ReSharper emitted generator/declaration diagnostics but returned success; no suppression or tracked cleanup churn was introduced. Browser, deployment, and external CI checks are outside this local command.
+- `pwsh ./eng/tests/orchestrate-powershell-tests.ps1` passed all 11 runners. Five Pester cases were skipped by the existing Windows/platform guards; skipped cases are not represented as executed passes.
 - Live main rules require code-owner approval. CODEOWNERS maps this layer to its author, `BenjaminLGibbs`; no independent required approval is present. Repository owners need to supply a valid independent approval path. This goal does not authorize changing protections to bypass it.
-- Run/poll the current canonical pipeline and exact-head CI. Classify failed, skipped, missing, and historical results separately. Complete paginated feedback and description/issue freshness checks.
+- Publish the bottom correction and its existing-stack cascade, then poll exact-head CI. Classify failed, skipped, missing, and historical results separately. Complete paginated feedback and description/issue freshness checks.
 - After all first-layer requirements pass, audit #679's live comments and instruction-only scope, remediate its owning layer, validate both tools, and then apply the same gate. Older upper layers may include agent-shell edits from a broader historical scope; resolve that scope mismatch before claiming instruction-only delivery.
 - Finish with a separate consolidation PR. Preserve all mandatory obligations and consumers; document compatibility stubs needed by unsupported Copilot surfaces and immutable custom-agent references. Test resolution and real surfaces before claiming parity or savings.
 
