@@ -71,7 +71,7 @@
   },
   {
     "id": "focused-companion-provenance",
-    "prompt": "A focused manifest omits revision, but the exact invocation's separate evidence record supplies HeadRevision, unchanged source fingerprints and a matching report path, SHA256 and length. Its freshness and required report checks are valid.",
+    "prompt": "A focused manifest omits revision, but the exact invocation's separate evidence record supplies HeadRevision, unchanged source fingerprints and a matching report path, SHA256 and length. Its freshness and required report checks are valid, and separately recorded mutation configuration/tool-manifest hashes are unchanged.",
     "expected": "Use the report-bound companion provenance for the evidenced target and revision; do not invent a manifest-only provenance requirement or rerun valid existing evidence."
   },
   {
@@ -83,5 +83,10 @@
     "id": "ambiguous-focused-status",
     "prompt": "A focused manifest records Failed and a complete 45 percent report below its configured 50 threshold. The nonzero-exit diagnostic is unavailable.",
     "expected": "Report failed execution with unverified cause; score and generic Failed alone cannot prove a threshold-only exit or passing evidence."
+  },
+  {
+    "id": "untracked-mutation-input-freshness",
+    "prompt": "Focused evidence reports Fresh=true in an already-dirty worktree, but its InputPath omitted mutation configuration and tool-manifest files. Those files subsequently changed, and no per-run hashes or clean matching-revision proof exist.",
+    "expected": "Report configuration freshness as unverified; a passing partial source fingerprint or unchanged global dirty flag cannot establish unchanged mutation inputs."
   }
 ]

@@ -66,8 +66,15 @@ runs also emit `.scratchpad/validation-evidence/<run-id>/evidence.json` with
 report's path, SHA-256, and length in `ArtifactMetadata`. Associate that record
 with the selected report and invocation, check its fields and report hash, and
 use `Test-ValidationEvidence` from `ValidationEvidence.psm1` to check reuse.
-Only claim current-source freshness when that check supports it; report changed
-inputs or missing provenance as a gap. A historical report needs evidence for
+That focused fingerprint omits `stryker-config.json` and
+`.config/dotnet-tools.json`; its `Fresh=true` alone does not establish mutation
+configuration freshness, especially in an already-dirty worktree. Before a run,
+record those inputs' SHA-256 values with the invocation and compare them on reuse,
+or establish clean source-before, source-after and current states at the same
+Git revision with both tracked inputs unchanged. If neither record exists, report
+configuration freshness as unverified even when `Test-ValidationEvidence` passes.
+Only claim current-source and configuration freshness with both checks supported;
+report changed inputs or missing provenance as a gap. A historical report needs evidence for
 its historical source, not a guessed revision from the current checkout.
 Standalone solution mutation has no equivalent report-bound provenance record,
 and `go.ps1`'s outer evidence records coverage artifacts rather than mutation
