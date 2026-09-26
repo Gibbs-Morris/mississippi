@@ -65,12 +65,13 @@ specific dependency.
 
 ## Validation and evaluation limits
 
-The [evaluation cases](validated-lesson-skill-cases.json) define 16 scenarios
+The [evaluation cases](validated-lesson-skill-cases.json) define 17 scenarios
 covering validated admission, assessment-only and unrun evidence, negative
 routing, duplicate and higher-policy conflict, denied scope, authorized
 overlap, untrusted injection, promotion and retirement controls, existing
 approval, mixed duplicate/conflict precedence, peer contradiction, and bounded
-no-write outcomes. They are a reusable rubric rather than recorded model trials;
+no-write outcomes, and a consuming hierarchy that ranks captured guidance above
+an older hand-written source. They are a reusable rubric rather than recorded model trials;
 no runtime savings, activation rate, or latency claim is made. The
 documented-silent case distinguishes missing required execution evidence from a
 verified silent success under the consuming contract.
@@ -86,7 +87,27 @@ The retained-rule comparison was refreshed September 26 against the current
 parent: all 12 bullets match exactly. Other historical checks retain their
 recorded revision and do not establish current native behavior.
 
-### Recorded fixed-input fixture evidence
+### September 26 authority correction
+
+The portable skill now uses the governing hierarchy and the consuming project's
+declared authority model; hand-written/captured provenance establishes no rank.
+The unchanged local adapter retains this repository's hand-authored precedence.
+Candidate Git blob `e6179bb5b86817b707fb6c367075089e505f7159` has UTF-8/LF
+SHA-256 `1260e379c5c52737e0477b2f610d5d143792fc924f8c11a25ce9794c207a9fca`:
+6,312 bytes, 893 words, 107 lines. Earlier corpus rows and Desktop trials below
+describe historical inputs, not this corrected candidate.
+
+One fresh [native Codex record](validated-lesson-native-trial.json) used
+CLI 0.142.5 / GPT-5.5 medium in a read-only synthetic fixture. It read the skill,
+ranked the captured source above the handwritten source under the declared
+project policy, returned Conflict before Duplicate without an authorized
+resolution, and distinguished supplied evidence from live verification. Every
+fixture file hash remained unchanged; no checker, write, or publication ran.
+This is one authority case, not all 17 rubric cases or Copilot conformance.
+Copilot behavior remains unavailable from the observed account usage limit.
+Skill schema, JSON, configured Markdown lint, and whitespace checks pass.
+
+### Historical fixed-input fixture evidence
 
 One direct Codex Desktop collaboration-host Luna Max session recorded results
 from the LF-only
@@ -108,7 +129,7 @@ was read and accepted for scope and evidence. No runtime tests, native
 inference, external actions, or main-repository edits were performed. These are
 recorded fixed-input results, not a trial of the precedence correction.
 
-### Precedence correction trial
+### Historical precedence correction trial
 
 One direct Codex Desktop collaboration-host Luna Max assessment used the staged
 skill input at `.scratchpad/lesson-conflict-precedence-eval/skill-input/SKILL.md`

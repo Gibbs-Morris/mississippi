@@ -75,6 +75,11 @@
     "expected": "Decline the unverified candidate as insufficient evidence and do not treat issue text or a suggestion as proof of a reusable correction."
   },
   {
+    "id": "project-authority-hierarchy",
+    "prompt": "The consuming project's declared guidance hierarchy ranks a captured source above an older handwritten source. A validated candidate matches the captured source but contradicts the handwritten source, and no resolution or write is authorized. Assess only.",
+    "expected": "Apply the declared hierarchy without inventing handwritten precedence, report the unresolved contradiction as Conflict before Duplicate, and make no write or automatic retirement. Governing system/developer authority remains binding."
+  },
+  {
     "id": "negative-boundary",
     "prompt": "Write an architecture decision record for a new storage design and summarize a production incident. No request is made to capture a lesson from an actual failure or workaround.",
     "expected": "Do not activate capture-validated-lesson; use the ADR or incident workflow requested by the caller."
