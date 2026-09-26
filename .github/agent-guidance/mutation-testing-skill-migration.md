@@ -90,8 +90,10 @@ assessment, authorized focused execution, preflight failure, report reuse,
 threshold/tool distinctions, optional manifests, declared gates, incomplete
 scope, sample or ordinary-test routing, proportionate survivors, and the
 justified production exception. They are a rubric; the recorded assessment
-below is separate from the current native trial. The 18 cases are a rubric;
-neither the historical assessment nor the native trial is a mutation run.
+below is separate from the historical native trial. The current corpus contains
+20 unique rubric cases, including source changes during failed runs and
+later-added project files; those definitions are not executed results. Neither
+the historical assessment nor the native trial is a mutation run.
 
 One direct Luna Max collaboration assessment used the canonical LF input at
 SHA-256 `2D25A268D9AFF060C150ABF040196E2EDB360BADF73E8A35CDC17DEF8A2C30CE`
@@ -138,7 +140,8 @@ distinguished a diagnosed advisory threshold exit, respected another consumer's
 allowed warnings, and selected Mississippi's required build preflight.
 All five fixture file hashes stayed unchanged. Commands read the candidate,
 local binding and host guidance/memory; no checker, mutation run or write occurred.
-This proves bounded decisions from synthetic supplied evidence, not all 18 cases,
+This proves bounded decisions from synthetic supplied evidence, not all 20
+current rubric cases,
 exclusive skill influence, current application validation, or native savings.
 Copilot remains unverified and deferred by the user while capacity is unavailable.
 
