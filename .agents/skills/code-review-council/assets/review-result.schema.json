@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gibbs-morris.github.io/mississippi/code-review-council/review-result.schema.json",
+  "title": "Code Review Council final result",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "status",
+    "snapshot_id",
+    "scope_manifest",
+    "reviewers",
+    "findings",
+    "dispositions",
+    "execution",
+    "publication"
+  ],
+  "properties": {
+    "schema_version": {"const": "code-review-council/v1"},
+    "status": {"enum": ["PASS", "BLOCKED", "INCOMPLETE", "NO_CHANGES"]},
+    "snapshot_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "scope_manifest": {
+      "type": "object",
+      "required": ["schema_version", "mode", "status", "snapshot_id", "repository", "captured_at_utc", "snapshot_material"],
+      "properties": {
+        "schema_version": {"const": "code-review-council/v1"},
+        "mode": {"enum": ["codebase", "branch", "worktree", "pull-request"]},
+        "status": {"enum": ["READY", "NO_CHANGES", "BLOCKED"]},
+        "snapshot_id": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "repository": {"type": "object"},
+        "captured_at_utc": {"type": "string"},
+        "snapshot_material": {"type": "object", "required": ["mode", "status"]}
+      },
+      "additionalProperties": true
+    },
+    "reviewers": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/reviewer"}
+    },
+    "findings": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/finding"}
+    },
+    "dispositions": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/disposition"}
+    },
+    "execution": {
+      "type": "object",
+      "required": ["reviewer_count", "required_reviewer_count", "adjudicator", "adjudicated_at_utc", "adjudication_snapshot_id"],
+      "properties": {
+        "reviewer_count": {"type": "integer", "minimum": 0},
+        "required_reviewer_count": {"type": "integer", "minimum": 0},
+        "adjudicator": {"type": "string", "minLength": 1},
+        "adjudicated_at_utc": {"type": "string", "minLength": 1},
+        "adjudication_snapshot_id": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    },
+    "publication": {"type": "object"}
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "reviewer": {
+      "type": "object",
+      "required": [
+        "review_id",
+        "persona_id",
+        "snapshot_id",
+        "status",
+        "requested_model",
+        "effective_model",
+        "requested_concurrency",
+        "effective_concurrency",
+        "completed_at_utc"
+      ],
+      "properties": {
+        "review_id": {"type": "string", "minLength": 1},
+        "persona_id": {"type": "string", "minLength": 1},
+        "snapshot_id": {"type": "string"},
+        "status": {"enum": ["complete", "not_applicable", "failed"]},
+        "reason": {"type": ["string", "null"]},
+        "requested_model": {"type": ["string", "null"]},
+        "effective_model": {"type": ["string", "null"]},
+        "requested_concurrency": {"type": ["integer", "null"], "minimum": 1},
+        "effective_concurrency": {"type": ["integer", "null"], "minimum": 1},
+        "completed_at_utc": {"type": "string", "minLength": 1},
+        "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}}
+      },
+      "additionalProperties": true
+    },
+    "finding": {
+      "type": "object",
+      "required": [
+        "fingerprint",
+        "persona_ids",
+        "category",
+        "severity",
+        "snapshot_id",
+        "path",
+        "line",
+        "scenario",
+        "trigger",
+        "impact",
+        "evidence",
+        "remediation",
+        "uncertainty",
+        "change_relation"
+      ],
+      "properties": {
+        "fingerprint": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "persona_ids": {"type": "array", "items": {"type": "string"}},
+        "category": {"type": "string", "minLength": 1},
+        "severity": {"enum": ["P0", "P1", "P2", "P3"]},
+        "snapshot_id": {"type": "string"},
+        "path": {"type": "string", "minLength": 1},
+        "symbol": {"type": "string"},
+        "line": {"type": "integer", "minimum": 1},
+        "scenario": {"type": "string", "minLength": 1},
+        "trigger": {"type": "string", "minLength": 1},
+        "impact": {"type": "string", "minLength": 1},
+        "evidence": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "remediation": {"type": "string", "minLength": 1},
+        "uncertainty": {"type": "string"},
+        "change_relation": {
+          "enum": ["introduced", "worsened", "pre-existing", "out-of-scope", "unknown"]
+        },
+        "reviewer_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["reviewer_id", "persona_id", "category", "severity", "path", "line", "scenario", "trigger", "impact", "change_relation", "evidence", "remediation", "uncertainty"],
+            "properties": {
+              "reviewer_id": {"type": "string", "minLength": 1},
+              "persona_id": {"type": "string", "minLength": 1},
+              "category": {"type": "string", "minLength": 1},
+              "severity": {"enum": ["P0", "P1", "P2", "P3"]},
+              "path": {"type": "string", "minLength": 1},
+              "symbol": {"type": "string"},
+              "line": {"type": "integer", "minimum": 1},
+              "scenario": {"type": "string", "minLength": 1},
+              "trigger": {"type": "string", "minLength": 1},
+              "impact": {"type": "string", "minLength": 1},
+              "change_relation": {"enum": ["introduced", "worsened", "pre-existing", "out-of-scope", "unknown"]},
+              "evidence": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+              "remediation": {"type": "string", "minLength": 1},
+              "uncertainty": {"type": "string"}
+            },
+            "additionalProperties": true
+          }
+        },
+        "disposition": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "disposition": {
+      "type": "object",
+      "required": ["fingerprint", "disposition", "rationale", "snapshot_id"],
+      "properties": {
+        "fingerprint": {"type": "string"},
+        "disposition": {
+          "enum": [
+            "validated",
+            "duplicate",
+            "rejected",
+            "pre-existing",
+            "out-of-scope",
+            "unresolved"
+          ]
+        },
+        "duplicate_of": {"type": ["string", "null"]},
+        "rationale": {"type": "string", "minLength": 1},
+        "snapshot_id": {"type": "string"}
+      },
+      "additionalProperties": true
+    }
+  }
+}

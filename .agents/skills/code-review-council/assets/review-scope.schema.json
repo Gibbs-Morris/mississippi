@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gibbs-morris.github.io/mississippi/code-review-council/review-scope.schema.json",
+  "title": "Code Review Council scope manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "mode",
+    "status",
+    "snapshot_id",
+    "repository",
+    "captured_at_utc",
+    "snapshot_material"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "code-review-council/v1"
+    },
+    "mode": {
+      "enum": ["codebase", "branch", "worktree", "pull-request"]
+    },
+    "status": {
+      "enum": ["READY", "NO_CHANGES", "BLOCKED"]
+    },
+    "snapshot_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "repository": {
+      "type": "object",
+      "required": ["root"],
+      "properties": {
+        "root": {"type": "string"},
+        "name": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "captured_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "revision": {
+      "type": ["string", "null"],
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+    },
+    "base": {
+      "type": ["string", "null"],
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+    },
+    "head": {
+      "type": ["string", "null"],
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+    },
+    "changed_files": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/changedFile"}
+    },
+    "files": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/fileEntry"}
+    },
+    "snapshot_material": {
+      "type": "object",
+      "required": ["mode", "status"],
+      "properties": {
+        "mode": {"enum": ["codebase", "branch", "worktree", "pull-request"]},
+        "status": {"enum": ["READY", "NO_CHANGES", "BLOCKED"]},
+        "revision": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "base": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "head": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "merge_base": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "snapshot": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "dirty_worktree": {
+      "type": "boolean"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "changedFile": {
+      "type": "object",
+      "required": ["status", "path"],
+      "properties": {
+        "status": {"type": "string"},
+        "path": {"type": "string", "minLength": 1},
+        "old_path": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "fileEntry": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "blob_sha": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "size": {"type": "integer", "minimum": 0},
+        "type": {"enum": ["file", "symlink", "gitlink"]},
+        "target": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    }
+  }
+}
