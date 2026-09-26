@@ -10,8 +10,10 @@ The six-field plan was recorded before implementation in
 [#556](https://github.com/Gibbs-Morris/mississippi/issues/556#issuecomment-5848675525)
 and [#555](https://github.com/Gibbs-Morris/mississippi/issues/555#issuecomment-5848675670).
 The source baseline is `3d258825642463390c356abdda0b35c92cbdcad7`.
-The integrated immediate parent is `4f54b7e368d81a814bd777f63f4ada56b50180cd`;
-the complete instruction directory changes from 2,732 to 2,680 LF lines.
+Initial integration used parent `4f54b7e368d81a814bd777f63f4ada56b50180cd`;
+the instruction directory changed from 2,732 to 2,680 LF lines. That pinned
+accounting snapshot is historical after restacking; use the live PR base and
+latest #532 checkpoint for current ancestry and CI.
 This source/contract consolidation does not claim a newly approved taxonomy,
 measured activation quality, or evaluation sign-off.
 
