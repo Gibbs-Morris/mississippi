@@ -192,6 +192,7 @@ try {
     $requestedRoot = if ([IO.Path]::IsPathRooted($RepositoryRoot)) {
         [IO.Path]::GetFullPath($RepositoryRoot)
     } else { [IO.Path]::GetFullPath([IO.Path]::Combine((Get-Location).Path, $RepositoryRoot)) }
+    $requestedRoot = [IO.Path]::TrimEndingDirectorySeparator($requestedRoot)
     $root = Get-ContextGitRoot $requestedRoot
     $before = Get-ContextObservation $root $ContextPath
     $after = Get-ContextObservation $root $ContextPath

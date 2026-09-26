@@ -124,6 +124,14 @@ Describe 'Portable delivery context snapshots' {
         finally { Pop-Location }
     }
 
+    It 'normalizes trailing root separators while preserving file identity' {
+        $snapshot = Get-FixtureSnapshot -Root ($fixture + [IO.Path]::DirectorySeparatorChar)
+        $snapshot.RepositoryRoot | Should -BeExactly $fixture
+        $snapshot.SelectedInputs[0].Path | Should -BeExactly 'AGENTS.md'
+        $nested = Get-FixtureSnapshot -Root ((Join-Path $fixture 'packages/widget') + [IO.Path]::DirectorySeparatorChar)
+        $nested.RepositoryRoot | Should -BeExactly $fixture
+    }
+
     It 'changes input identity after uncommitted instruction edits and discovers a changed layout' {
         $before = Get-FixtureSnapshot
         Add-Content -LiteralPath (Join-Path $fixture 'AGENTS.md') -Value 'New decision: validate moved layout.'
