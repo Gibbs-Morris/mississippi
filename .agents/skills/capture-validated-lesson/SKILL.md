@@ -56,8 +56,9 @@ Classify the result as one of:
 - **Insufficient evidence** — the event, correction, or reuse claim is not
   independently supported.
 
-Keep higher-authority and hand-written policy ahead of captured lessons, while
-still detecting contradictions between peer lessons. Reconcile a conflict with
+Apply the governing instruction hierarchy and the consuming project's declared
+authority model; do not infer precedence from hand-written or captured provenance.
+Still detect contradictions between peer lessons. Reconcile a conflict with
 the existing guidance before writing: do not silently retire or rewrite peer
 content. After checking every applicable source, an unresolved contradiction
 makes the overall result **Conflict** before **Duplicate**, even when another
