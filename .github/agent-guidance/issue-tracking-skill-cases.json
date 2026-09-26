@@ -81,7 +81,12 @@
   },
   {
     "id": "negative-boundary",
-    "prompt": "The caller asks for branch creation, stack-base selection, review-thread remediation, or deep issue requirements refinement. No issue-intake or reference-verification decision is requested.",
-    "expected": "Do not activate track-github-work for the unrelated workflow; route the request to the existing branch, stack, review, or issue-refinement owner."
+    "prompt": "The caller asks for branch creation, stack-base selection, read-only review-thread assessment, or deep requirements refinement. No issue intake, material milestone update, or reference-verification action is involved.",
+    "expected": "Keep the unrelated workflow with its existing branch, stack, review, or refinement owner. If authorized remediation later pushes a PR change or creates a material tracking milestone, use track-github-work for that required issue update without taking over thread management."
+  },
+  {
+    "id": "review-remediation-tracking-update",
+    "prompt": "Authorized review remediation has fixed and pushed a PR change. The existing feedback owner handles the thread reply and resolution, and the issue needs its material PR-update milestone recorded.",
+    "expected": "Use track-github-work for the issue update with current changes, validation and remaining work; preserve existing discussion and leave thread management with its established feedback owner."
   }
 ]
