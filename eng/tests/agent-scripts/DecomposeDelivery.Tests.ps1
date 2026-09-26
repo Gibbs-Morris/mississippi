@@ -229,6 +229,30 @@ Describe 'Portable delivery context snapshots' {
         { Get-FixtureSnapshot } | Should -Throw '*Git common directory differs*'
     }
 
+    It 'rejects a linked .git/<Metadata> despite matching worktree and gitdir roots' -ForEach @(
+        @{ Metadata = 'refs' }, @{ Metadata = 'objects' }, @{ Metadata = 'refs/heads' }
+    ) {
+        $metadataPath = [IO.Path]::GetFullPath((Join-Path $fixture ".git/$Metadata"))
+        $outside = [IO.Path]::GetFullPath((Join-Path $TestDrive ([guid]::NewGuid().ToString('N') + '-metadata')))
+        $ownedRoot = [IO.Path]::GetFullPath($TestDrive).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+        $metadataPath.StartsWith($ownedRoot, [StringComparison]::Ordinal) | Should -BeTrue
+        $outside.StartsWith($ownedRoot, [StringComparison]::Ordinal) | Should -BeTrue
+        Move-Item -LiteralPath $metadataPath -Destination $outside
+        $linkType = if ($IsWindows) { 'Junction' } else { 'SymbolicLink' }
+        New-Item -ItemType $linkType -Path $metadataPath -Target $outside | Out-Null
+        [IO.Path]::GetFullPath([string](& git -C $fixture rev-parse --show-toplevel)) | Should -BeExactly $fixture
+        [IO.Path]::GetFullPath([string](& git -C $fixture rev-parse --absolute-git-dir)) | Should -BeExactly (Join-Path $fixture '.git')
+        { Get-FixtureSnapshot } | Should -Throw '*Linked Git metadata entries require manual inspection*'
+    }
+
+    It 'rejects a linked Git index' -Skip:$IsWindows {
+        $index = Join-Path $fixture '.git/index'
+        $outside = Join-Path $TestDrive 'foreign-index'
+        [IO.File]::Move($index, $outside)
+        $null = [IO.File]::CreateSymbolicLink($index, $outside)
+        { Get-FixtureSnapshot } | Should -Throw '*Linked Git metadata entries require manual inspection*'
+    }
+
     It 'takes the declared manual fallback for legitimate linked Git worktrees' {
         $linked = Join-Path $TestDrive 'linked-working-copy'
         Invoke-FixtureGit @('worktree', 'add', '-b', 'linked', $linked)

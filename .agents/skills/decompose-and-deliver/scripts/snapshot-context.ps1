@@ -121,6 +121,26 @@ function Get-ContextPaths {
     return @($paths)
 }
 
+function Assert-ContextGitMetadata {
+    param([IO.DirectoryInfo]$Directory)
+    $pending = [Collections.Generic.Queue[IO.DirectoryInfo]]::new()
+    $pending.Enqueue($Directory)
+    $entries = 0
+    $elapsed = [Diagnostics.Stopwatch]::StartNew()
+    while ($pending.Count -gt 0) {
+        foreach ($item in $pending.Dequeue().EnumerateFileSystemInfos()) {
+            $entries++
+            if ($entries -gt 100000 -or $elapsed.Elapsed.TotalSeconds -gt 10) {
+                throw 'Git metadata inspection exceeded its bounds; inspect this target manually.'
+            }
+            if ($null -ne $item.LinkTarget -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+                throw 'Linked Git metadata entries require manual inspection; refs, objects and index must belong to the selected repository.'
+            }
+            if ($item -is [IO.DirectoryInfo]) { $pending.Enqueue($item) }
+        }
+    }
+}
+
 function Get-ContextEmbeddedRoot {
     param([string]$Root)
     $directory = [IO.DirectoryInfo]::new($root)
@@ -132,6 +152,7 @@ function Get-ContextEmbeddedRoot {
             if (-not $markerDirectory.Exists -or ($markerDirectory.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
                 throw 'Git directory indirection requires manual inspection, including linked worktrees.'
             }
+            Assert-ContextGitMetadata $markerDirectory
             return $directory.FullName
         }
         $directory = $directory.Parent

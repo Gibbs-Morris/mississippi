@@ -77,6 +77,10 @@ to the selected root. Git files or linked metadata directories, including legiti
 linked worktrees and submodules, require manual identity/backlink inspection.
 The absolute common directory must also equal the embedded metadata directory;
 `commondir` redirects require manual inspection even when the worktree/gitdir match.
+The helper rejects linked entries anywhere inside embedded Git metadata before
+running Git, including nested refs, objects and index links. Metadata traversal
+is limited to 100,000 entries and ten seconds; larger inspections use the manual
+fallback. It inspects each entry before descending into a directory.
 Inventory reads NUL-delimited UTF-8 paths with ordinal identity. Invalid encoding
 or any Git subprocess exceeding ten seconds fails instead of emitting a snapshot.
 Every query, including configuration reads, uses a timed native subprocess with
