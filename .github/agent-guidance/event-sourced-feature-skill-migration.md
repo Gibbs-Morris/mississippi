@@ -2,11 +2,16 @@
 
 This single capability contributes to [#795](https://github.com/Gibbs-Morris/mississippi/issues/795)
 and [#532](https://github.com/Gibbs-Morris/mississippi/issues/532). It is layer five
-of native stack #680, after PR #687. The parent gate was checked at
+of native stack #680, after PR #687. Historical advancement evidence, before
+the later review corrections and stack rebases, checked parent
 `c096f7be94e69a0dc1d0d47c7c42504079471c59` against
 `87815068d47dfb3f72eab1ecbd08618463cc45ad`: 11 required and 30 selected checks
 passed, one edited-event label skip was intentional, no threads were open,
-and GitHub reported CLEAN with no outstanding changes requested. Current scope
+and GitHub reported CLEAN with no outstanding changes requested. Those old
+revisions do not describe the current layer boundary or certify rebased checks.
+Use [PR #796's live base and head](https://github.com/Gibbs-Morris/mississippi/pull/796)
+and the latest #532 checkpoint for current stack identity and gate status.
+Current scope
 and the user's Copilot deferral are in the
 [resumption receipt](https://github.com/Gibbs-Morris/mississippi/issues/532#issuecomment-5848117226).
 
