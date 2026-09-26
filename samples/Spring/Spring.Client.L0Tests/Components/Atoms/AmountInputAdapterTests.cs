@@ -18,6 +18,29 @@ namespace MississippiSamples.Spring.Client.L0Tests.Components.Atoms;
 /// </summary>
 public sealed class AmountInputAdapterTests : BunitContext
 {
+    /// <summary>External valid values restore parent-owned amount validity.</summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task ExternalValidValueRestoresParentValidity()
+    {
+        const string inputId = "account-b-amount-input";
+        bool? isValid = null;
+        using IRenderedComponent<SpringAmountInput> cut = Render<SpringAmountInput>(p => p
+            .Add(c => c.InputId, inputId)
+            .Add(c => c.Label, "Account B amount")
+            .Add(c => c.Value, 0m)
+            .Add(c => c.IsValidChanged, EventCallback.Factory.Create<bool>(this, value => isValid = value)));
+        await cut.Find($"#{inputId}").InputAsync("12.");
+        Assert.False(isValid);
+        await cut.InvokeAsync(() => cut.Instance.SetParametersAsync(
+            ParameterView.FromDictionary(
+                new Dictionary<string, object?>
+                {
+                    [nameof(SpringAmountInput.Value)] = 42.5m,
+                })));
+        Assert.True(isValid);
+    }
+
     /// <summary>External value changes reset invalid draft text and its error state.</summary>
     /// <returns>A task representing the test.</returns>
     [Fact]

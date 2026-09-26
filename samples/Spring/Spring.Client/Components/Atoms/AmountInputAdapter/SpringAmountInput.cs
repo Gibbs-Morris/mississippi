@@ -178,14 +178,19 @@ internal sealed class SpringAmountInput : ComponentBase
     }
 
     /// <inheritdoc />
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         if (!hasObservedValue || (lastObservedValue != Value))
         {
+            bool wasInvalid = errorText is not null;
             draft = Value.ToString(CultureInfo.InvariantCulture);
             errorText = null;
             lastObservedValue = Value;
             hasObservedValue = true;
+            if (wasInvalid)
+            {
+                await IsValidChanged.InvokeAsync(true);
+            }
         }
     }
 
