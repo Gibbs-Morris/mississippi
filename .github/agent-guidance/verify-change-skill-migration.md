@@ -4,8 +4,8 @@ This coherent instruction-only layer contributes to [#546](https://github.com/Gi
 and [#532](https://github.com/Gibbs-Morris/mississippi/issues/532). The
 [recorded plan](https://github.com/Gibbs-Morris/mississippi/issues/546#issuecomment-5848470852)
 precedes implementation. Introduction, mandatory routes, local bindings, and
-verified removal belong in one layer of existing native stack #680. Independent
-preparation does not establish the serial integration or advancement gate.
+verified removal belong in one layer of existing native stack #680. The user authorized independent parallel preparation and draft publication;
+readiness still requires current CI and review evidence for every layer.
 
 ## Source map and retained authority
 
@@ -36,68 +36,45 @@ portable metadata/body checks, owned-path exclusions, and whitespace checks
 pass for this preparation. The [19-case rubric](verify-change-skill-cases.json)
 is evaluation input, not evidence that its expected behavior occurred.
 
-A synthetic fee-library fixture was prepared for isolated same-model native
-validation. Its checker itself completed two syntax checks, six file-format
-checks, and four assertions with Node 24.4.1. All six protected fixture input
-hashes remained unchanged; only the checker copy's three reports were created.
-This validates the fixture mechanics, not model activation or skill behavior.
-The independent fixture retains pristine inputs and source/report hashes for
-explicit, implicit, assessment-only, empty/stale evidence, and negative trials.
+A fresh worker using this chat's inherited model and settings selected the skill
+from a supplied six-skill file catalog and ran the consuming fixture's canonical
+build, read-only format, and test sequence. Two syntax checks, six format checks,
+and four assertions passed. Root independently checked all 21 input hashes and
+the three report hashes: inputs stayed identical and reports match their source.
+The portable skill LF SHA-256 below matches the trial input. This is bounded
+file-catalog behavior evidence, not native CLI/app/IDE discovery or the complete
+19-case matrix. Copilot behavior and review remain deferred and unverified under
+the user's instruction until verified capacity returns.
 
-No native Codex model trial ran during preparation. Explicit/implicit/paraphrased
-selection, incomplete-request handling, unrelated/incidental cases, missing-tool
-stops, and neighboring-skill collisions remain unverified until realistic trials
-bind their commands, outcomes, and fixture hashes to this candidate. Root owns
-that evaluation using this chat's model and reasoning settings. Copilot behavior
-and review remain deferred under the user's explicit direction while credits
-are unavailable; no parity is claimed and no retry is required for advancement.
-
-Application builds, cleanup, tests, mutation, remote CI, and review readiness were
-not run or established by this instruction-only preparation. Historical results
-are not current-head evidence. Normal applicable CI/review gates remain required
-for serial publication and later progression; no protection or budget changed.
+Application behavior and build inputs are unchanged. Applicable current-head/base
+CI and review remain pending for draft readiness; historical application test
+results are reused only for their unchanged, recorded inputs.
 
 ## Raw-blob context accounting
 
-Baseline is Git revision `3d258825642463390c356abdda0b35c92cbdcad7`.
-Measurements use raw UTF-8/LF Git blobs, Python 3.13 `splitlines()`/`split()`,
-PyYAML 6.0.3, and tiktoken 0.14.0 `o200k_base`. Candidate LF hashes are independent
-of Windows worktree line endings; token counts are static proxies, not runtime
-usage or measured latency savings.
+The actual immediate base is `a97d9561bed0bf4a189943468e3279dca159d7a3`. Raw LF instruction blobs contain
+2,809 → 2,744 lines: 65 net instruction-directory lines removed.
+Copilot is separate: 82 → 50 lines, for another 32 removed. AGENTS is unchanged.
+All 45 original adapter Rules, frontmatter, prefixes, and audiences are preserved.
 
-| Component | Before lines | After lines | Before tokens | After tokens |
-| --- | ---: | ---: | ---: | ---: |
-| Copilot entrypoint | 82 | 50 | 1,734 | 1,278 |
-| Build rules | 63 | 41 | 966 | 648 |
-| Testing | 103 | 60 | 1,947 | 1,213 |
-| All 47 instruction bodies | 2,804 | 2,739 | 47,861 | 46,809 |
-| All 20 global instruction bodies | 1,085 | 1,020 | 18,771 | 17,719 |
+The skill LF SHA-256 is `9ed1fa8bd755e7453fc7a076fbb832fb0bd82e7927800bb75fe54d7250ded058`.
+The current local binding LF SHA-256 is
+`28fa308df14454b1320cb09791b97c4cfcec39cde02075f87ec25249424b7dec`.
 
-The three changed files remove 97 net lines: 125 deletions and 28 additions.
-The corpus rows exclude the separate Copilot/AGENTS entrypoints. The new skill is
-95 lines / 1,116 tokens, with a 1,048-token body and 63-token name/description;
-the local binding is 90 lines / 1,455 tokens. LF skill Git blob:
-`cd74efe9b8bc41cff784c21a966ee8840e83149c`; SHA-256:
-`9ed1fa8bd755e7453fc7a076fbb832fb0bd82e7927800bb75fe54d7250ded058`.
-Binding Git blob: `054fbe87a61d92f5428990151eac12bba06354e0`; SHA-256:
-`b27f663abc72b0d12107eb3b3320699fa94989dbefc130cff33706de06d7f98e`.
+The static `o200k_base` proxy includes both entrypoints, selected instruction
+bodies, and all repository skill name/description metadata. Activation adds this
+skill body and local binding. Other references, host framing, tools, and outputs
+are excluded. These are context estimates, not billed tokens or measured latency.
 
-These static packages include both entrypoints, global instructions, selected
-scopes, and all repository skill name/description values. PowerShell adds its
-scope; core C# adds C#, core, placement, and architecture scopes; product docs
-adds Markdown and product-doc scopes; instruction maintenance includes all bodies.
-Tool outputs, personal/plugin skills, framing, and other reference reads are extra.
-
-| Static task | Before | After, unloaded | After, skill and binding loaded |
+| Static task | Parent | Current, unloaded | Current, skill and binding loaded |
 | --- | ---: | ---: | ---: |
-| PowerShell | 23,958 | 22,513 | 25,016 |
-| Core C# | 34,185 | 32,740 | 35,243 |
-| Product docs | 26,737 | 25,292 | 27,795 |
-| Instruction maintenance | 52,615 | 51,170 | 53,673 |
+| PowerShell | 23,958 | 22,513 | 25,085 |
+| Core C# | 34,185 | 32,740 | 35,312 |
+| Product docs | 26,737 | 25,292 | 27,864 |
+| Instruction maintenance | 52,656 | 51,211 | 53,783 |
 
-Unloaded packages shrink by 1,445 proxy tokens including discovery metadata.
-Loading this complete workflow adds 2,503 tokens, leaving the illustrated loaded
-package 1,058 tokens larger than before; no universal token-saving claim follows.
+Unloaded context shrinks; loading the complete workflow costs additional tokens.
+No universal loaded-context saving is claimed.
 
 ## Rollback
 

@@ -19,7 +19,7 @@ reports and source without invoking commands that run checks or write artifacts.
 | Check | Canonical entrypoint and evidenced scope |
 | --- | --- |
 | Both-solution final pipeline | `pwsh ./go.ps1 -Configuration Release`: build and cleanup each solution, L0/L1 tests against the cleaned tree, Mississippi coverage summary, then final warnings-as-errors build. |
-| Focused conventional tests/coverage | `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <Name-or-csproj> -SkipMutation`; use inspected `-SourceProject` when mapping is ambiguous. |
+| Focused conventional tests/coverage | `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <test-csproj-path> -SourceProject <source-csproj-path> -SkipMutation`; verify the actual source mapping. Bare test names resolve under `tests/`, not sample folders. |
 | Solution unit tests | `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1` or `unit-test-sample-solution.ps1`; both default to L0/L1. |
 | Separate core L2 | `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 -TestLevels L2Tests`; requires the selected tests' infrastructure. |
 | Separate sample L2 | `pwsh ./eng/src/agent-scripts/integration-test-sample-solution.ps1 -TestLevels L2Tests`. |
@@ -35,6 +35,11 @@ full cleanup and checks invalidated by its edits still need final evidence.
 `-IncludeMutation` selects explicit additional mutation work; default `go.ps1`
 does not run mutation. Use the [mutation policy and binding](../instructions/mutation-testing.instructions.md#mandatory-route)
 for that separate capability rather than imposing a score gate here.
+
+For sample tests, inspect project references and pass the intended source project
+explicitly: automatic resolution can select a framework test helper under `src/`.
+The [feature binding](event-sourced-feature-bindings.md) includes the
+complete Spring domain test/source command.
 
 For custom test levels, invoke a wrapper from PowerShell with an array, for example
 `& ./eng/src/agent-scripts/unit-test-sample-solution.ps1 -TestLevels @('L0Tests','L1Tests','L2Tests')`.
