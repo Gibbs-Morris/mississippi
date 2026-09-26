@@ -16,6 +16,9 @@ Governing thought: Preserve explicit repository identity when PowerShell launche
 - Agents SHOULD select one resolved application before treating `Get-Command` output as an executable path. Why: Two `git.exe` resolutions became one invalid command string in the [snapshot mutation fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1); selecting the first matches normal command resolution.
 - Agents SHOULD verify literal Unix filenames when using filesystem cmdlets. Why: `-LiteralPath` normalized backslashes in the [PR #803 fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1).
 - Agents SHOULD avoid index-mtime races and account for ctime precision in Git stat-cache tests. Why: The [PR #803 fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) varied across runs until its timestamps were controlled.
+- Agents SHOULD reject native inspection diagnostics even with a successful exit code. Why: The [PR #803 permission fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) showed Git omitting unreadable content with exit zero.
+- Agents SHOULD bound selected-file opening and reading. Why: The [PR #803 pipe-race fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) replaced a checked regular file with a blocking FIFO.
+- Agents SHOULD validate metadata and hash content through the same open handle. Why: The [PR #803 handle-race fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) replaced the pathname after validation.
 
 ## Scope and Audience
 
