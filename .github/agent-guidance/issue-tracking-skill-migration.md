@@ -112,8 +112,9 @@ input and do not evaluate later corrections.
 
 The [published PR branch history](https://github.com/Gibbs-Morris/mississippi/pull/684/commits)
 retains the introduction and correction commits rather than squashing them into
-the final file. Fetch that branch with its history, then run
-`git rev-list --objects HEAD -- .agents/skills/track-github-work/SKILL.md` and
+the final file. Fetch the verified repository's `refs/pull/684/head` with its
+history, then run
+`git rev-list --objects FETCH_HEAD -- .agents/skills/track-github-work/SKILL.md` and
 `git cat-file blob <recorded-blob>` to inspect each named assessment input.
 The September 26 remote commit-list and ancestry check confirms that
 `1bc8190aa932cfac26e79c2dddf4b99a42fc9324`,
