@@ -159,6 +159,19 @@ Describe 'Portable delivery context snapshots' {
         $snapshot.Dirty | Should -BeTrue
     }
 
+    It 'retains a clean tracked dangling symlink in the current inventory' -Skip:$IsWindows {
+        $path = Join-Path $fixture 'tools/dangling.md'
+        $null = [IO.File]::CreateSymbolicLink($path, 'missing-target.md')
+        [IO.File]::Exists((Join-Path $fixture 'tools/missing-target.md')) | Should -BeFalse
+        ([IO.FileInfo]::new($path)).LinkTarget | Should -BeExactly 'missing-target.md'
+        Invoke-FixtureGit @('add', 'tools/dangling.md')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'tracked dangling link')
+        @(& git -C $fixture status --porcelain=v1).Count | Should -Be 0
+        $snapshot = Get-FixtureSnapshot
+        $snapshot.Dirty | Should -BeFalse
+        $snapshot.Paths | Should -Contain 'tools/dangling.md'
+    }
+
     It 'preserves case-distinct paths on a case-sensitive filesystem' {
         if (-not $caseSensitiveFileSystem) { Set-ItResult -Skipped -Because 'The fixture filesystem is case-insensitive.'; return }
         Set-Content -LiteralPath (Join-Path $fixture 'tools/Foo.md') -Value 'uppercase'

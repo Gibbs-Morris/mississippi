@@ -87,8 +87,12 @@ The helper rejects linked entries anywhere inside embedded Git metadata before
 running Git, including nested refs, objects and index links. Metadata traversal
 is limited to 100,000 entries and ten seconds; larger inspections use the manual
 fallback. It inspects each entry before descending into a directory.
-Inventory reads NUL-delimited UTF-8 paths with ordinal identity. Invalid encoding
-or any Git subprocess exceeding ten seconds fails instead of emitting a snapshot.
+Inventory reads NUL-delimited UTF-8 paths with ordinal identity.
+Existing dangling links stay in the path inventory without
+following their targets; actual deleted entries are excluded. Selected linked
+content still requires manual inspection. Missing link-metadata support fails.
+Invalid encoding or any Git subprocess exceeding ten seconds fails instead of
+emitting a snapshot.
 Nonempty stderr also fails, even with an accepted exit code: traversal warnings
 can mean that Git omitted unreadable paths from an apparently clean inventory.
 Every query, including configuration reads, uses a timed native subprocess with

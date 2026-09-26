@@ -123,7 +123,8 @@ function Get-ContextPaths {
     $paths = [Collections.Generic.SortedSet[string]]::new([StringComparer]::Ordinal)
     foreach ($relative in (Get-ContextRawPaths $root)) {
         $fullPath = [IO.Path]::Combine($root, $relative)
-        if ([IO.File]::Exists($fullPath) -or [IO.Directory]::Exists($fullPath)) { $null = $paths.Add($relative) }
+        $entry = [IO.FileInfo]::new($fullPath)
+        if ([IO.File]::Exists($fullPath) -or [IO.Directory]::Exists($fullPath) -or $null -ne $entry.LinkTarget) { $null = $paths.Add($relative) }
     }
     return @($paths)
 }
