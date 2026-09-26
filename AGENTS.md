@@ -10,6 +10,11 @@ Governing thought: Agents follow repository instructions and iterate from correc
 
 ## Rules (RFC 2119)
 
+- Coordinators MUST use [decompose-and-deliver](.agents/skills/decompose-and-deliver/SKILL.md) for substantial implementation work with multiple outcomes, dependencies, or integration risks. Why: Delivery should follow real outcomes and verified capabilities.
+- Coordinators MUST keep trivial fixes within a single session. Why: Small changes should not require orchestration.
+- The original session MUST remain the sole user-facing coordinator and owner of authoritative decisions, integration, and publication. Why: Delegation must not make the user manage workers.
+- Delegated workers MUST return questions, blockers, decisions, results, and evidence to that coordinator within their assigned scope. Why: The coordinator needs material information to own delivery decisions.
+- Delegated workers MUST obtain an explicitly bounded assignment before further delegation. Why: Worker mode must not restart coordination recursively.
 - Agents MUST use [plain English](.github/instructions/plain-english.instructions.md) when communicating with people, including conversations, reviews, and pull request comments or replies. Why: Readers should understand the message on first reading.
 - Agents MUST read `.github/copilot-instructions.md` first, then all globally scoped and task-applicable instruction files under `.github/instructions/`, before planning repository work, making changes, reviewing content, or answering repository questions. Why: Preserves authoritative requirements without preloading unrelated bodies.
 - Agents MUST use the instruction-loading inventory below for every `.github/instructions/*.instructions.md` file, including `self-taught-*.instructions.md`, so newly added global or task-applicable guidance is available to Codex. Why: Keeps Codex context aligned with repository guidance.

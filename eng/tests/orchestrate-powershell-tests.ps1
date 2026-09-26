@@ -28,6 +28,7 @@ $testRunners = @(
     @{ Name = 'run-issue-spec-tests.ps1';        Type = 'Pester' },
     @{ Name = 'run-agent-doctor-tests.ps1';      Type = 'Pester' },
     @{ Name = 'run-agent-context-tests.ps1';    Type = 'Pester' },
+    @{ Name = 'run-decompose-delivery-tests.ps1'; Type = 'Pester' },
     @{ Name = 'verify-scratchpad-task-scripts.ps1';    Type = 'Script' }
 )
 
