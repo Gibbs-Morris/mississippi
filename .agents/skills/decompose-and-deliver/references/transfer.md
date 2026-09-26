@@ -42,6 +42,8 @@ file/Git tools. Invoke the script by its resolved package path with an explicit
 `-RepositoryRoot` and discovered repository-relative `-ContextPath` values.
 It returns paths, Git identity/status and selected input hashes. It neither
 selects applicable instructions nor executes commands from their contents.
+An initialized repository without commits reports `Head: null` and its unborn
+branch explicitly. A missing detached HEAD remains an inspection failure.
 Ambient repository/index/object Git overrides and linked context paths fail
 closed; use a clean process or explicit manual inspection rather than silently
 reading another target.

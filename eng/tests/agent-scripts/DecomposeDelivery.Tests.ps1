@@ -124,6 +124,23 @@ Describe 'Portable delivery context snapshots' {
         $snapshot.Dirty | Should -BeFalse
     }
 
+    It 'represents an unborn branch and then discovers its initial commit' {
+        $newRoot = Join-Path $TestDrive 'greenfield'
+        $null = [IO.Directory]::CreateDirectory($newRoot)
+        [IO.File]::WriteAllText((Join-Path $newRoot 'AGENTS.md'), 'Greenfield instructions')
+        Invoke-FixtureGit @('-C', $newRoot, 'init', '-b', 'greenfield')
+        $before = Get-FixtureSnapshot -Root $newRoot -Paths @('AGENTS.md')
+        $before.Head | Should -BeNullOrEmpty
+        $before.Branch | Should -BeExactly 'greenfield'
+        $before.Paths | Should -Contain 'AGENTS.md'
+        $before.Dirty | Should -BeTrue
+        Invoke-FixtureGit @('-C', $newRoot, 'add', '.')
+        Invoke-FixtureGit @('-C', $newRoot, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'initial commit')
+        $after = Get-FixtureSnapshot -Root $newRoot -Paths @('AGENTS.md')
+        $after.Head | Should -Match '^[a-f0-9]{40}$'
+        $after.Dirty | Should -BeFalse
+    }
+
     It 'resolves a nested target independently of the current directory and package directory' {
         Push-Location (Join-Path $fixture 'packages/widget')
         try {

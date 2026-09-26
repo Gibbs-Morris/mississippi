@@ -190,8 +190,10 @@ function Get-ContextGitRoot {
 function Get-ContextObservation {
     param([string]$Root, [string[]]$ContextPaths)
     if ((Get-ContextGitRoot $root) -cne $root) { throw 'Repository root changed during context inspection.' }
-    $head = [string](Invoke-ContextGit $root @('rev-parse', '--verify', 'HEAD'))
+    $headResult = Invoke-ContextGit $root @('rev-parse', '--verify', '--quiet', 'HEAD') -AcceptedExitCodes @(0, 1) -WithResult
+    $head = if ($headResult.ExitCode -eq 0) { $headResult.Output.Trim() } else { $null }
     $branch = [string](Invoke-ContextGit $root @('branch', '--show-current'))
+    if ($null -eq $head -and [string]::IsNullOrWhiteSpace($branch)) { throw 'Missing detached HEAD requires manual inspection.' }
     $index = @(Invoke-ContextGit $root @('ls-files', '--stage'))
     if (@($index | Where-Object { $_ -match '^160000 ' }).Count -gt 0) {
         throw 'Submodule entries require manual inspection; status can execute submodule-local commands.'
