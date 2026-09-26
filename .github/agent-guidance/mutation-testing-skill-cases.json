@@ -58,5 +58,30 @@
     "id": "partial-score-scope",
     "prompt": "A report is valid for one selected source project and revision, but other supported targets were not run. The caller asks for the repository mutation score.",
     "expected": "Report only the selected project's supported score and identify unreported targets; do not extrapolate it to a repository-wide result."
+  },
+  {
+    "id": "mutation-evidence-pr-review",
+    "prompt": "A pull request reviewer asks to assess supplied mutation reports and survivor evidence without managing branches or running another job.",
+    "expected": "Activate mutation assessment for its evidence; keep PR and branch management with their owners and perform no new run or publication."
+  },
+  {
+    "id": "allowed-warning-policy",
+    "prompt": "Another consuming project explicitly permits nonfatal warnings. Its canonical clean preflight and conventional tests pass with one allowed warning, and a focused mutation run is authorized.",
+    "expected": "Apply that project's local quality policy; do not import Mississippi's warning ban or block solely on the allowed warning. Execution still requires valid scope, authority and outputs."
+  },
+  {
+    "id": "focused-companion-provenance",
+    "prompt": "A focused manifest omits revision, but the exact invocation's separate evidence record supplies HeadRevision, unchanged source fingerprints and a matching report path, SHA256 and length. Its freshness and required report checks are valid.",
+    "expected": "Use the report-bound companion provenance for the evidenced target and revision; do not invent a manifest-only provenance requirement or rerun valid existing evidence."
+  },
+  {
+    "id": "solution-provenance-gap",
+    "prompt": "A solution manifest has no revision provenance; a later passing outer pipeline records coverage artifact hashes only. The caller wants the current checkout's mutation score.",
+    "expected": "Report the missing invocation/source/report provenance; neither current HEAD nor a passing coverage record establishes a revision-specific mutation claim."
+  },
+  {
+    "id": "ambiguous-focused-status",
+    "prompt": "A focused manifest records Failed and a complete 45 percent report below its configured 50 threshold. The nonzero-exit diagnostic is unavailable.",
+    "expected": "Report failed execution with unverified cause; score and generic Failed alone cannot prove a threshold-only exit or passing evidence."
   }
 ]

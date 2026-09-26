@@ -90,9 +90,8 @@ assessment, authorized focused execution, preflight failure, report reuse,
 threshold/tool distinctions, optional manifests, declared gates, incomplete
 scope, sample or ordinary-test routing, proportionate survivors, and the
 justified production exception. They are a rubric; the recorded assessment
-below is separate and is not a mutation run or native-conformance trial. No
-mutation execution, native inference, or application test was performed for
-this migration.
+below is separate from the current native trial. The 17 cases are a rubric;
+neither the historical assessment nor the native trial is a mutation run.
 
 One direct Luna Max collaboration assessment used the canonical LF input at
 SHA-256 `2D25A268D9AFF060C150ABF040196E2EDB360BADF73E8A35CDC17DEF8A2C30CE`
@@ -124,7 +123,26 @@ Because the local summarizer writes enriched and summary artifacts even with
 `-SkipMutationRun`, report-only validation uses raw reports unless those writes
 are authorized.
 
-## Corpus accounting
+### September 26 review corrections and native evidence
+
+The portable trigger includes PR mutation-evidence assessment, and warning
+preflight follows the consuming project's policy. Mississippi's focused binding
+now names the canonical clean warn-as-error build, existing report-bound source
+provenance, the solution provenance gap, and ambiguous focused failure statuses.
+Native Codex CLI `0.158.0-alpha.2.1`, GPT-5.5 medium, assessed six supplied-record
+cases at skill blob `4d842febfec30c2573297a0a871fda3d337ea896`, LF SHA-256
+`066ec00cee9c86b99ee43023f1386dfb3d00033f34fa3fae29f61a43f656b222`.
+It reused valid focused companion provenance, rejected current-revision claims
+for unbound solution reports, left generic focused failure causes unverified,
+distinguished a diagnosed advisory threshold exit, respected another consumer's
+allowed warnings, and selected Mississippi's required build preflight.
+All five fixture file hashes stayed unchanged. Commands read the candidate,
+local binding and host guidance/memory; no checker, mutation run or write occurred.
+This proves bounded decisions from synthetic supplied evidence, not all 17 cases,
+exclusive skill influence, current application validation, or native savings.
+Copilot remains unverified and deferred by the user while capacity is unavailable.
+
+## Historical corpus accounting
 
 Counts use raw Git blobs or LF-normalized candidate copies. UTF-8 text uses
 `str.split()` words and `str.splitlines()` physical lines; raw UTF-8 bytes and
