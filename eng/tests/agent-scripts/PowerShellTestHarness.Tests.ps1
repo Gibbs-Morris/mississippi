@@ -36,7 +36,8 @@ Describe 'PowerShell test orchestration' {
             'run-validation-plan-tests.ps1',
             'run-issue-spec-tests.ps1',
             'run-agent-doctor-tests.ps1',
-            'run-agent-context-tests.ps1'
+            'run-agent-context-tests.ps1',
+            'run-decompose-delivery-tests.ps1'
         )
         $targetRunner = Join-Path $fixtureRunners $pesterRunners[0]
     }
@@ -57,7 +58,7 @@ Describe 'PowerShell test orchestration' {
 
     It 'runs every required suite successfully' {
         $results = & $orchestrator -PassThru 6>$null
-        $results.Count | Should -Be 11
+        $results.Count | Should -Be 12
         @($results | Where-Object Status -NE 'Passed').Count | Should -Be 0
     }
 
@@ -107,7 +108,8 @@ Describe 'Standalone Pester runners' {
             @{ Runner = 'run-issue-spec-tests.ps1'; TestFile = 'IssueSpec.Tests.ps1' },
             @{ Runner = 'run-agent-doctor-tests.ps1'; TestFile = 'AgentDoctor.Tests.ps1' }
             @{ Runner = 'run-agent-doctor-tests.ps1'; TestFile = 'AgentDoctor.Tests.ps1' },
-            @{ Runner = 'run-agent-context-tests.ps1'; TestFile = 'AgentContext.Tests.ps1' }
+            @{ Runner = 'run-agent-context-tests.ps1'; TestFile = 'AgentContext.Tests.ps1' },
+            @{ Runner = 'run-decompose-delivery-tests.ps1'; TestFile = 'DecomposeDelivery.Tests.ps1' }
         )) {
             foreach ($scenario in @(
                 @{ Case = 'passing'; Body = "Describe 'Suite' { It 'passes' { 1 | Should -Be 1 } }"; ExitCode = 0 },
