@@ -8,6 +8,7 @@ work item under the verified
 and the [#532](https://github.com/Gibbs-Morris/mississippi/issues/532)
 skills-migration epic. The migration keeps mutation optional, evidence-based,
 and owned by the existing test and quality workflows.
+The September 26 scope excludes custom agents; Test Engineer remains unchanged.
 
 ## Parent gate and boundary
 
@@ -53,7 +54,7 @@ exception remain in a local binding that the portable package does not require.
 | Mutation rule 15 | The adapter's preflight-stop rule and the skill's preparation step keep mutation stopped while build warnings or conventional-test failures invalidate preflight; the skill requires a repaired, passing preflight before resuming. |
 | Mutation rule 16 | The adapter and skill prefer valid existing reports before another run; the local summarizer remains authoritative for report reuse. |
 | Testing policy optional mutation route | Replaced by a direct route to the skill and local bindings; xUnit/MTP, levels, coverage, determinism, warnings, CPM, and legacy-test rules remain in testing policy. |
-| Test Engineer mutation responsibility | A narrow route points explicit mutation work to the skill while preserving test implementation, semantic-consistency, and `.thinking/` report ownership. |
+| Existing Test Engineer mutation responsibility | Agent file remains unchanged; existing mutation/testing policy references resolve to the retained adapter and its shared procedure/local bindings. |
 
 No source requirement is dropped. The adapter retains the mandatory workflow and
 fail-closed outcomes; the skill provides the detailed sequence; local bindings
@@ -115,7 +116,7 @@ tested.
 
 Structural validation covers the skill schema, configured Markdown lint, JSON
 parsing, relative links, portability, source-map coverage, local-binding links,
-and caller-scope comparison. This repository's configured thresholds are
+and raw-parent comparison confirming the unchanged Test Engineer file. This repository's configured thresholds are
 reported as tooling behavior and are not treated as acceptance gates; declared
 target-specific policy or caller acceptance remains applicable where present.
 
@@ -137,8 +138,6 @@ line-ending assumption is used.
 | Mutation policy candidate | LF candidate SHA-256 `97CAF5D5EB6708AE5A77A002F528AC47F9402F0181F3972DF26D77214E0F46B9` | 512 | 47 | 4,155 | 4,155 |
 | Testing policy before | parent commit `e933c33084d406c00c754aa8741d3c36e8f59b19` | 1,120 | 100 | 8,511 | 8,509 |
 | Testing policy candidate | LF candidate SHA-256 `542FB14DCADF5E82293381EB013ED489C684181E6321104FF283D971C4BA5D9C` | 1,112 | 103 | 8,511 | 8,509 |
-| Test Engineer before | parent commit `e933c33084d406c00c754aa8741d3c36e8f59b19` | 650 | 87 | 4,663 | 4,649 |
-| Test Engineer candidate | LF candidate SHA-256 `E4ECFC86CE9E547414B30C0D75588F8D91AD9BDC77CE1AC1CCCAFD26EB23888D` | 680 | 89 | 5,012 | 4,998 |
 | Skill full file | staged Git blob `131a8f79720649d9b10d79d9ee9f6df7724149f6`; LF SHA-256 `2D25A268D9AFF060C150ABF040196E2EDB360BADF73E8A35CDC17DEF8A2C30CE` | 984 | 119 | 7,018 | 7,018 |
 | Skill body after complete front matter | same staged Git blob and LF copy | 931 | 115 | 6,586 | 6,586 |
 | Discovery metadata values | same staged Git blob; name and description joined with one space | 51 | 1 | 423 | 423 |
@@ -151,6 +150,6 @@ not startup or runtime savings claims.
 ## Rollback
 
 Revert this complete layer together to remove the portable skill, local binding,
-cases, audit, adapter route, testing route, and Test Engineer route. Restore the
+cases, audit, adapter route, and testing route. Preserve the unchanged Test Engineer file and restore the
 original mutation policy and testing optional-mutation section, then verify that
 the legacy-test workflow, application files, and preceding skills remain intact.
