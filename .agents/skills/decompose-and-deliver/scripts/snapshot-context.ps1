@@ -11,7 +11,7 @@ $ErrorActionPreference = 'Stop'
 
 function Invoke-ContextGit {
     param([string]$Root, [string[]]$Arguments)
-    $output = @(& git -c "safe.directory=$($Root.Replace('\', '/'))" -C $Root @Arguments)
+    $output = @(& git -C $Root @Arguments)
     if ($LASTEXITCODE -ne 0) { throw "Git context inspection failed: $($Arguments[0])" }
     return $output
 }

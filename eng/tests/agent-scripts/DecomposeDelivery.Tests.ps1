@@ -16,9 +16,9 @@ BeforeAll {
     }
 
     function Get-FixtureSnapshot {
-        param([string[]]$Paths = @('AGENTS.md', 'tools/verify.sh'))
+        param([string[]]$Paths = @('AGENTS.md', 'tools/verify.sh'), [string]$Prelude = '')
         $quotedPaths = @($Paths | ForEach-Object { "'" + $_.Replace("'", "''") + "'" }) -join ','
-        $command = "& '" + $snapshotScript.Replace("'", "''") + "' -RepositoryRoot '" +
+        $command = $Prelude + "& '" + $snapshotScript.Replace("'", "''") + "' -RepositoryRoot '" +
             $fixture.Replace("'", "''") + "' -ContextPath @(" + $quotedPaths + ')'
         $result = & $shell -NoProfile -Command $command 2>&1 | Out-String
         if ($LASTEXITCODE -ne 0) { throw $result }
@@ -87,6 +87,12 @@ Describe 'Portable delivery context snapshots' {
 
     It 'rejects a directory as selected instruction content' {
         { Get-FixtureSnapshot @('tools') } | Should -Throw
+    }
+
+    It 'preserves Git rejection of an untrusted repository owner' {
+        $prelude = "`$env:GIT_TEST_ASSUME_DIFFERENT_OWNER = '1'; `$env:GIT_CONFIG_NOSYSTEM = '1'; " +
+            "`$env:GIT_CONFIG_GLOBAL = '" + (Join-Path $fixture 'missing-global').Replace("'", "''") + "'; "
+        { Get-FixtureSnapshot -Prelude $prelude } | Should -Throw '*dubious ownership*'
     }
 
     It 'never executes commands embedded in target instructions' {

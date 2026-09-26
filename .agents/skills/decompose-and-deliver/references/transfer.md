@@ -44,6 +44,8 @@ selects applicable instructions nor executes commands from their contents.
 Ambient repository/index/object Git overrides and linked context paths fail
 closed; use a clean process or explicit manual inspection rather than silently
 reading another target.
+Git ownership failures remain failures. Any ownership/trust decision belongs
+outside the helper and must follow the target's authorization rules.
 Read selected bodies and follow the target's loading procedure. A snapshot is
 evidence identity, not proof of successful tests or a security attestation.
 
