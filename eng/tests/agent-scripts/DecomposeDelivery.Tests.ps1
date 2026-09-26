@@ -176,6 +176,23 @@ Describe 'Portable delivery context snapshots' {
         $snapshot.Dirty | Should -BeTrue
     }
 
+    It 'includes ignored instruction candidates and explicitly selected context' {
+        [IO.File]::WriteAllText((Join-Path $fixture '.gitignore'), "packages/widget/AGENTS.md`n.github/instructions/`ntools/private-policy.txt`n")
+        Invoke-FixtureGit @('add', '.gitignore')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'ignored guidance setup')
+        $null = [IO.Directory]::CreateDirectory((Join-Path $fixture '.github/instructions'))
+        [IO.File]::WriteAllText((Join-Path $fixture 'packages/widget/AGENTS.md'), 'Ignored scoped guidance')
+        [IO.File]::WriteAllText((Join-Path $fixture '.github/instructions/hidden.instructions.md'), 'Ignored global guidance')
+        [IO.File]::WriteAllText((Join-Path $fixture 'tools/private-policy.txt'), 'Selected private guidance')
+        @(& git -C $fixture status --porcelain=v1).Count | Should -Be 0
+        $snapshot = Get-FixtureSnapshot -Paths @('AGENTS.md', 'tools/private-policy.txt')
+        $snapshot.Dirty | Should -BeFalse
+        $snapshot.Paths | Should -Contain 'packages/widget/AGENTS.md'
+        $snapshot.Paths | Should -Contain '.github/instructions/hidden.instructions.md'
+        $snapshot.Paths | Should -Contain 'tools/private-policy.txt'
+        $snapshot.SelectedInputs.Path | Should -Contain 'tools/private-policy.txt'
+    }
+
     It 'retains a clean tracked dangling symlink in the current inventory' -Skip:$IsWindows {
         $path = Join-Path $fixture 'tools/dangling.md'
         $null = [IO.File]::CreateSymbolicLink($path, 'missing-target.md')

@@ -90,6 +90,9 @@ running Git, including nested refs, objects and index links. Metadata traversal
 is limited to 100,000 entries and ten seconds; larger inspections use the manual
 fallback. It inspects each entry before descending into a directory.
 Inventory reads NUL-delimited UTF-8 paths with ordinal identity.
+Ignored `AGENTS.md`, `*.instructions.md`, `CLAUDE.md`, Copilot's repository guide,
+and explicitly selected context files also appear. Additional target-specific
+guidance conventions still need independent discovery and instruction selection.
 Existing dangling links stay in the path inventory without
 following their targets; actual deleted entries are excluded. Selected linked
 content still requires manual inspection. Missing link-metadata support fails.

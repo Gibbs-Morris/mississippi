@@ -113,15 +113,19 @@ function Invoke-ContextNativeOutput {
 }
 
 function Get-ContextRawPaths {
-    param([string]$Root)
+    param([string]$Root, [string[]]$ContextPaths)
     $arguments = @('--no-replace-objects', '--no-optional-locks', '-c', 'core.fsmonitor=', '-C', $root, 'ls-files', '-z', '--cached', '--others', '--exclude-standard')
-    return ([string](Invoke-ContextNativeOutput $gitApplication $arguments)).Split([char]0, [StringSplitOptions]::RemoveEmptyEntries)
+    $visible = [string](Invoke-ContextNativeOutput $gitApplication $arguments)
+    $instructionCandidates = @(':(glob)**/AGENTS.md', ':(glob)**/*.instructions.md', ':(glob)**/CLAUDE.md', '.github/copilot-instructions.md')
+    $selected = @($ContextPaths | ForEach-Object { ':(literal)' + $_ })
+    $ignored = Invoke-ContextGit $root (@('ls-files', '-z', '--others', '--ignored', '--exclude-standard', '--') + $instructionCandidates + $selected) -WithResult
+    return ($visible + $ignored.Output).Split([char]0, [StringSplitOptions]::RemoveEmptyEntries)
 }
 
 function Get-ContextPaths {
-    param([string]$Root)
+    param([string]$Root, [string[]]$ContextPaths)
     $paths = [Collections.Generic.SortedSet[string]]::new([StringComparer]::Ordinal)
-    foreach ($relative in (Get-ContextRawPaths $root)) {
+    foreach ($relative in (Get-ContextRawPaths $root $ContextPaths)) {
         $fullPath = [IO.Path]::Combine($root, $relative)
         $entry = [IO.FileInfo]::new($fullPath)
         if ([IO.File]::Exists($fullPath) -or [IO.Directory]::Exists($fullPath) -or $null -ne $entry.LinkTarget) { $null = $paths.Add($relative) }
@@ -207,7 +211,7 @@ function Get-ContextObservation {
         throw 'Configured clean/process filters require manual inspection; status may execute repository-controlled commands.'
     }
     $status = @(Invoke-ContextGit $root @('status', '--porcelain=v1', '--untracked-files=all'))
-    $paths = @(Get-ContextPaths $root)
+    $paths = @(Get-ContextPaths $root $ContextPaths)
     $selected = @(foreach ($relative in $ContextPaths) { Get-ContextInput $root $relative })
     return [pscustomobject]@{
         Head = $head
