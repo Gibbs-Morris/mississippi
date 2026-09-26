@@ -20,55 +20,15 @@ Governing thought: Use the preview Cosmos emulator with HTTP mode and SDK workar
 
 Developers building Aspire-based integration tests with Azure emulators.
 
-## At-a-Glance Quick-Start
+## Mandatory route
 
-AppHost configuration:
-
-```csharp
-builder.AddAzureCosmosDB("cosmos")
-    .RunAsPreviewEmulator(emulator =>
-    {
-        emulator.WithDataExplorer();
-        emulator.WithoutHttpsCertificate(); // HTTP mode
-    });
-```
-
-SDK client configuration:
-
-```csharp
-CosmosClientOptions options = new()
-{
-    ConnectionMode = ConnectionMode.Gateway,
-    LimitToEndpoint = true, // CRITICAL: prevents replica discovery hang
-};
-```
-
-Document model:
-
-```csharp
-public class MyDocument
-{
-    [Newtonsoft.Json.JsonProperty("id")]
-    public string Id { get; set; } = string.Empty;
-}
-```
-
-## Known Issues Reference
-
-| Issue | Symptom | Fix |
-|-------|---------|-----|
-| [SDK #5364](https://github.com/Azure/azure-cosmos-dotnet-v3/issues/5364) | SDK hangs on connection | `LimitToEndpoint = true` |
-| [Aspire #7882](https://github.com/dotnet/aspire/issues/7882) | Health check passes before ready | Use preview emulator |
-| Newtonsoft vs STJ | "Document does not contain id" | Use `Newtonsoft.Json.JsonProperty` |
-
-## Core Principles
-
-- Preview emulator over legacy Linux emulator
-- HTTP mode eliminates certificate complexity
-- SDK needs explicit single-endpoint mode for emulators
+For authoring or extending an owned Cosmos emulator integration-test fixture, use
+[author-cosmos-integration-tests](../../.agents/skills/author-cosmos-integration-tests/SKILL.md)
+with the [local Cosmos binding](../agent-guidance/cosmos-integration-bindings.md).
+Read both linked files directly if discovery is unavailable or applicability is
+unclear. The five rules above remain effective independently of skill activation.
 
 ## References
 
-- Sample implementation: `samples/Crescent/Aspire.L2Tests/`
-- Shared guardrails: `.github/instructions/shared-policies.instructions.md`
-- Testing guidance: `.github/instructions/testing.instructions.md`
+- [Shared guardrails](shared-policies.instructions.md) and [testing guidance](testing.instructions.md)
+- [Source bindings and validation](../agent-guidance/cosmos-integration-bindings.md)
