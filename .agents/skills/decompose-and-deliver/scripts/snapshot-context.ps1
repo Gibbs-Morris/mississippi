@@ -95,7 +95,11 @@ function Invoke-ContextNativeOutput {
         $output = $child.StandardOutput.ReadToEndAsync()
         $errorOutput = $child.StandardError.ReadToEndAsync()
         if (-not $child.WaitForExit(10000)) { throw 'Native context inspection timed out; inspect the target manually.' }
-        if ($child.ExitCode -notin $AcceptedExitCodes) { throw "Native context inspection failed: $($errorOutput.GetAwaiter().GetResult())" }
+        $diagnostic = $errorOutput.GetAwaiter().GetResult()
+        if ($child.ExitCode -notin $AcceptedExitCodes) { throw "Native context inspection failed: $diagnostic" }
+        if (-not [string]::IsNullOrWhiteSpace($diagnostic)) {
+            throw "Native context inspection reported diagnostics; inspect the target manually: $diagnostic"
+        }
         if ($WithResult) { return [pscustomobject]@{ ExitCode = $child.ExitCode; Output = $output.GetAwaiter().GetResult() } }
         return $output.GetAwaiter().GetResult()
     }

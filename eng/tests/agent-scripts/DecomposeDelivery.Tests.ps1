@@ -49,11 +49,15 @@ BeforeAll {
     }
 
     function Invoke-BoundedSnapshot {
-        param([string]$Root = $fixture, [string]$Path = 'AGENTS.md')
-        $start = [Diagnostics.ProcessStartInfo]::new($shell)
+        param([string]$Root = $fixture, [string]$Path = 'AGENTS.md', [switch]$Unprivileged)
+        $application = if ($Unprivileged) { (Get-Command setpriv -CommandType Application | Select-Object -First 1).Source } else { $shell }
+        $start = [Diagnostics.ProcessStartInfo]::new($application)
         $start.UseShellExecute = $false
         $start.RedirectStandardOutput = $true
         $start.RedirectStandardError = $true
+        if ($Unprivileged) {
+            foreach ($argument in @('--reuid=65534', '--regid=65534', '--clear-groups', $shell)) { $start.ArgumentList.Add($argument) }
+        }
         foreach ($argument in @('-NoProfile', '-File', $snapshotScript, '-RepositoryRoot', $Root, '-ContextPath', $Path)) { $start.ArgumentList.Add($argument) }
         $start.Environment['GIT_CONFIG_NOSYSTEM'] = '1'
         $start.Environment['GIT_CONFIG_GLOBAL'] = Join-Path $fixture 'missing-global'
@@ -430,6 +434,41 @@ Describe 'Portable delivery context snapshots' {
         $result.ExitCode | Should -Be 1
         $result.Error | Should -Match 'Native context inspection timed out'
         $result.Output | Should -BeNullOrEmpty
+    }
+
+    It 'rejects successful Git traversal warnings from an unreadable directory' -Skip:$IsWindows {
+        $permissionRoot = [IO.Path]::GetFullPath([IO.Path]::Combine([IO.Path]::GetTempPath(), [guid]::NewGuid().ToString('N') + '-permissions'))
+        $null = [IO.Directory]::CreateDirectory($permissionRoot)
+        $unreadable = Join-Path $permissionRoot 'unreadable'
+        $null = [IO.Directory]::CreateDirectory($unreadable)
+        [IO.File]::WriteAllText((Join-Path $permissionRoot 'AGENTS.md'), 'Permission fixture')
+        [IO.File]::WriteAllText((Join-Path $unreadable 'hidden.md'), 'Untracked content')
+        $rootUser = ([string](& id -u)).Trim() -eq '0'
+        try {
+            Invoke-FixtureGit @('-C', $permissionRoot, 'init', '-b', 'permissions')
+            Invoke-FixtureGit @('-C', $permissionRoot, 'config', 'core.excludesFile', (Join-Path $permissionRoot 'missing-exclude'))
+            Invoke-FixtureGit @('-C', $permissionRoot, 'add', 'AGENTS.md')
+            Invoke-FixtureGit @('-C', $permissionRoot, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'permission baseline')
+            if ($rootUser) {
+                & chown -R 65534:65534 -- $permissionRoot
+                $LASTEXITCODE | Should -Be 0
+            }
+            [IO.File]::SetUnixFileMode($unreadable, [IO.UnixFileMode]0)
+            if ($rootUser) { $warning = & setpriv --reuid=65534 --regid=65534 --clear-groups git -C $permissionRoot status --porcelain=v1 --untracked-files=all 2>&1 | Out-String }
+            else { $warning = & git -C $permissionRoot status --porcelain=v1 --untracked-files=all 2>&1 | Out-String }
+            $LASTEXITCODE | Should -Be 0
+            $warning | Should -Match 'Permission denied'
+            $result = Invoke-BoundedSnapshot -Root $permissionRoot -Unprivileged:$rootUser
+            $result.ExitCode | Should -Be 1
+            $result.Error | Should -Match 'reported diagnostics'
+            $result.Error | Should -Match 'unreadable/'
+            $result.Error | Should -Match 'Permission denied'
+            $result.Output | Should -BeNullOrEmpty
+        }
+        finally {
+            [IO.File]::SetUnixFileMode($unreadable, [IO.UnixFileMode]493)
+            [IO.Directory]::Delete($permissionRoot, $true)
+        }
     }
 
     It 'rejects submodule entries before status can execute nested filters' {

@@ -83,6 +83,8 @@ is limited to 100,000 entries and ten seconds; larger inspections use the manual
 fallback. It inspects each entry before descending into a directory.
 Inventory reads NUL-delimited UTF-8 paths with ordinal identity. Invalid encoding
 or any Git subprocess exceeding ten seconds fails instead of emitting a snapshot.
+Nonempty stderr also fails, even with an accepted exit code: traversal warnings
+can mean that Git omitted unreadable paths from an apparently clean inventory.
 Every query, including configuration reads, uses a timed native subprocess with
 targeted child-process cleanup; blocking Git metadata takes a manual fallback.
 Root containment uses exact ordinal spelling on every platform. Root case aliases
