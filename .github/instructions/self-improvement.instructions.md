@@ -23,9 +23,17 @@ Governing thought: Agents record validated lessons from real-work failures into 
 - Self-taught files **MUST NOT** contain opinions, preferences, or speculative guidance; every lesson **MUST** trace to a concrete, observed failure or inefficiency. Why: Empirical evidence only; no cargo-culting.
 - New domains **MAY** be created when no existing domain covers the lesson; the agent **MUST** select the `applyTo` pattern that best matches the domain scope. Why: Categories grow organically with the codebase.
 
+- Agents **MUST** follow the [peer-lesson conflict route](../agent-guidance/self-taught-format.md#peer-lesson-conflicts) for unresolved contradictions between applicable self-taught lessons at equal authority. Why: Every agent needs a recorded route for reconciliation, not only Scribe.
+- Agents **MUST NOT** write a proposed lesson while an applicable peer-lesson conflict remains unresolved. Why: A new lesson cannot settle contradictory guidance by silently adding another rule.
+- Agents **MUST** preserve each existing lesson unchanged until an authorized resolution identifies the exact reconciliation. Why: Conflict detection does not grant retirement or rewrite authority.
+
 ## Scope and Audience
 
 All agents and contributors; applies whenever an agent encounters a recoverable failure, retry, or non-obvious workaround during any workflow.
+
+The peer-lesson conflict route applies to all agents and contributors whenever
+applicable self-taught lessons contradict each other, including outside Scribe
+workflows or lesson-writing tasks.
 
 ## Lesson capture workflow
 
@@ -33,7 +41,7 @@ Use [capture-validated-lesson](../../.agents/skills/capture-validated-lesson/SKI
 for lesson admission, conflict assessment, and bounded writing. Read the
 [local self-taught format](../agent-guidance/self-taught-format.md) when
 selecting a scope or creating a file. If automatic skill discovery is
-unavailable, read both linked files directly. The twelve rules above remain
+unavailable, read both linked files directly. The rules above remain
 effective whether or not the skill is loaded.
 
 ## Conflict Detection Protocol
