@@ -1,6 +1,6 @@
 ---
 name: track-github-work
-description: "Verify and maintain GitHub issue tracking, including Enterprise hosts, for planned work: intake, identity and scope reconciliation, plan records, milestone updates, confidentiality, and pull-request references. Use when an issue must be found, reused, created, updated, or verified. Not for writing pull-request prose, branch or stack operations, review-thread work, deep requirements refinement, or workflow-audit state."
+description: "Verify and maintain GitHub issue tracking, including Enterprise hosts, for planned work: intake, identity and scope reconciliation, plan records, milestone updates, confidentiality, and pull-request references. Use when an issue must be found, reused, created, updated, or verified, including issue updates after review remediation. Not for writing pull-request prose, branch or stack operations, replying to or resolving review threads, deep requirements refinement, or workflow-audit state."
 ---
 
 # Track repository work
