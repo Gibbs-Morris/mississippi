@@ -11,7 +11,7 @@ $ErrorActionPreference = 'Stop'
 
 function Invoke-ContextGit {
     param([string]$Root, [string[]]$Arguments)
-    $output = @(& git --no-replace-objects --no-optional-locks -c core.fsmonitor= -c core.trustctime=true -c core.checkStat=default -c core.ignoreStat=false -C $Root @Arguments)
+    $output = @(& $gitApplication --no-replace-objects --no-optional-locks -c core.fsmonitor= -c core.trustctime=true -c core.checkStat=default -c core.ignoreStat=false -C $Root @Arguments)
     if ($LASTEXITCODE -ne 0) { throw "Git context inspection failed: $($Arguments[0])" }
     return $output
 }
@@ -103,9 +103,8 @@ function Invoke-ContextNativeOutput {
 
 function Get-ContextRawPaths {
     param([string]$Root)
-    $git = (Get-Command git -CommandType Application | Select-Object -First 1).Source
     $arguments = @('--no-replace-objects', '--no-optional-locks', '-c', 'core.fsmonitor=', '-C', $root, 'ls-files', '-z', '--cached', '--others', '--exclude-standard')
-    return ([string](Invoke-ContextNativeOutput $git $arguments)).Split([char]0, [StringSplitOptions]::RemoveEmptyEntries)
+    return ([string](Invoke-ContextNativeOutput $gitApplication $arguments)).Split([char]0, [StringSplitOptions]::RemoveEmptyEntries)
 }
 
 function Get-ContextPaths {
@@ -139,7 +138,7 @@ function Get-ContextEmbeddedRoot {
 function Get-ContextGitRoot {
     param([string]$Root)
     $expectedRoot = Get-ContextEmbeddedRoot $root
-    $null = & git --no-replace-objects --no-optional-locks -c core.fsmonitor= -C $root config --get core.worktree
+    $null = & $gitApplication --no-replace-objects --no-optional-locks -c core.fsmonitor= -C $root config --get core.worktree
     if ($LASTEXITCODE -notin @(0, 1)) { throw 'Git worktree configuration inspection failed.' }
     if ($LASTEXITCODE -eq 0) {
         throw 'Configured core.worktree requires manual inspection; it can redirect the selected repository.'
@@ -165,7 +164,7 @@ function Get-ContextObservation {
     if (@($flags | Where-Object { $_ -cmatch '^[a-zS] ' }).Count -gt 0) {
         throw 'Hidden index flags require manual inspection: assume-unchanged or skip-worktree can conceal changes.'
     }
-    $filters = @(& git --no-replace-objects --no-optional-locks -c core.fsmonitor= -C $root config --name-only --get-regexp '^filter\..*\.(clean|process)$')
+    $filters = @(& $gitApplication --no-replace-objects --no-optional-locks -c core.fsmonitor= -C $root config --name-only --get-regexp '^filter\..*\.(clean|process)$')
     if ($LASTEXITCODE -notin @(0, 1)) { throw 'Git filter configuration inspection failed.' }
     if ($filters.Count -gt 0) {
         throw 'Configured clean/process filters require manual inspection; status may execute repository-controlled commands.'
@@ -184,6 +183,7 @@ function Get-ContextObservation {
 }
 
 try {
+    $gitApplication = (Get-Command git -CommandType Application | Select-Object -First 1).Source
     foreach ($selector in @('GIT_DIR', 'GIT_WORK_TREE', 'GIT_COMMON_DIR', 'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_NAMESPACE')) {
         if ($null -ne [Environment]::GetEnvironmentVariable($selector)) {
             throw "Ambient Git override $selector prevents reliable target inspection; use a clean process or manual inspection."

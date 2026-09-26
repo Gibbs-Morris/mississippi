@@ -20,7 +20,7 @@ BeforeAll {
         $quotedPaths = @($Paths | ForEach-Object { "'" + $_.Replace("'", "''") + "'" }) -join ','
         $configuration = "`$env:GIT_CONFIG_NOSYSTEM = '1'; `$env:GIT_CONFIG_GLOBAL = '" +
             (Join-Path $fixture 'missing-global').Replace("'", "''") + "'; "
-        $command = $configuration + $Prelude + "& '" + $snapshotScript.Replace("'", "''") + "' -RepositoryRoot '" +
+        $command = $configuration + "`$snapshotInvocationPath = '" + $snapshotScript.Replace("'", "''") + "'; " + $Prelude + "& `$snapshotInvocationPath -RepositoryRoot '" +
             $Root.Replace("'", "''") + "' -ContextPath @(" + $quotedPaths + ')'
         $result = & $shell -NoProfile -Command $command 2>&1 | Out-String
         if ($LASTEXITCODE -ne 0) { throw $result }
@@ -31,20 +31,15 @@ BeforeAll {
         param([string]$Mutation, [string]$Marker)
         $realGit = (Get-Command git -CommandType Application | Select-Object -First 1).Source.Replace("'", "''")
         $markerPath = $Marker.Replace("'", "''")
+        $injected = Join-Path $TestDrive ([guid]::NewGuid().ToString('N') + '-snapshot.ps1')
+        $source = [IO.File]::ReadAllText($snapshotScript)
+        $boundary = '$after = Get-ContextObservation $root $ContextPath'
+        if (-not $source.Contains($boundary)) { throw 'Snapshot observation boundary was not found.' }
+        [IO.File]::WriteAllText($injected, $source.Replace($boundary, "& `$global:snapshotMutation`n    " + $boundary))
         return @"
 `$global:snapshotRealGit = '$realGit'
-`$global:snapshotHeadReads = 0
 `$global:snapshotMutation = { Set-Content -LiteralPath '$markerPath' -Value 'mutated'; $Mutation }
-function global:git {
-    `$gitArguments = @(`$args)
-    if (`$gitArguments -contains 'rev-parse' -and `$gitArguments -contains '--verify' -and `$gitArguments -contains 'HEAD') {
-        `$global:snapshotHeadReads++
-        if (`$global:snapshotHeadReads -eq 2) { & `$global:snapshotMutation }
-    }
-    `$result = @(& `$global:snapshotRealGit @gitArguments)
-    `$global:LASTEXITCODE = `$LASTEXITCODE
-    `$result
-}
+`$snapshotInvocationPath = '$($injected.Replace("'", "''"))'
 "@ + "`n"
     }
 }
@@ -348,6 +343,13 @@ Describe 'Portable delivery context snapshots' {
         $prelude = "`$env:GIT_TEST_ASSUME_DIFFERENT_OWNER = '1'; `$env:GIT_CONFIG_NOSYSTEM = '1'; " +
             "`$env:GIT_CONFIG_GLOBAL = '" + (Join-Path $fixture 'missing-global').Replace("'", "''") + "'; "
         { Get-FixtureSnapshot -Prelude $prelude } | Should -Throw '*dubious ownership*'
+    }
+
+    It 'ignores a PowerShell function shadowing native Git' {
+        $marker = (Join-Path $TestDrive 'git-wrapper-marker').Replace("'", "''")
+        $prelude = "function global:git { [IO.File]::WriteAllText('$marker', 'executed'); throw 'Shadowed Git executed' }; "
+        (Get-FixtureSnapshot -Prelude $prelude).Dirty | Should -BeFalse
+        Test-Path -LiteralPath $marker | Should -BeFalse
     }
 
     It 'never executes commands embedded in target instructions' {
