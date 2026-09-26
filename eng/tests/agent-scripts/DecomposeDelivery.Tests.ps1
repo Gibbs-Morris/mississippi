@@ -16,10 +16,12 @@ BeforeAll {
     }
 
     function Get-FixtureSnapshot {
-        param([string[]]$Paths = @('AGENTS.md', 'tools/verify.sh'), [string]$Prelude = '')
+        param([string[]]$Paths = @('AGENTS.md', 'tools/verify.sh'), [string]$Prelude = '', [string]$Root = $fixture)
         $quotedPaths = @($Paths | ForEach-Object { "'" + $_.Replace("'", "''") + "'" }) -join ','
-        $command = $Prelude + "& '" + $snapshotScript.Replace("'", "''") + "' -RepositoryRoot '" +
-            $fixture.Replace("'", "''") + "' -ContextPath @(" + $quotedPaths + ')'
+        $configuration = "`$env:GIT_CONFIG_NOSYSTEM = '1'; `$env:GIT_CONFIG_GLOBAL = '" +
+            (Join-Path $fixture 'missing-global').Replace("'", "''") + "'; "
+        $command = $configuration + $Prelude + "& '" + $snapshotScript.Replace("'", "''") + "' -RepositoryRoot '" +
+            $Root.Replace("'", "''") + "' -ContextPath @(" + $quotedPaths + ')'
         $result = & $shell -NoProfile -Command $command 2>&1 | Out-String
         if ($LASTEXITCODE -ne 0) { throw $result }
         return $result | ConvertFrom-Json
@@ -55,6 +57,7 @@ Describe 'Portable delivery context snapshots' {
         Set-Content -LiteralPath (Join-Path $fixture 'tools/verify.sh') -Value 'test -f packages/widget/model.txt'
         Set-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'baseline'
         Invoke-FixtureGit @('init', '-b', 'release/trunk')
+        Invoke-FixtureGit @('config', 'core.autocrlf', 'false')
         Invoke-FixtureGit @('add', '.')
         Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'baseline')
     }
@@ -72,8 +75,7 @@ Describe 'Portable delivery context snapshots' {
     It 'resolves a nested target independently of the current directory and package directory' {
         Push-Location (Join-Path $fixture 'packages/widget')
         try {
-            $output = & $shell -NoProfile -File $snapshotScript -RepositoryRoot . -ContextPath AGENTS.md | ConvertFrom-Json
-            $LASTEXITCODE | Should -Be 0
+            $output = Get-FixtureSnapshot -Root . -Paths @('AGENTS.md')
             $output.RepositoryRoot | Should -BeExactly ([IO.Path]::GetFullPath($fixture))
         }
         finally { Pop-Location }
@@ -133,6 +135,35 @@ Describe 'Portable delivery context snapshots' {
         (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash | Should -BeExactly $indexHash
         Invoke-FixtureGit @('status', '--porcelain=v1')
         Test-Path -LiteralPath (Join-Path $fixture 'escaped-hook.txt') | Should -BeTrue
+    }
+
+    It 'rejects <Scope> <Kind> filters before executing content drivers' -ForEach @(
+        @{ Kind = 'clean'; Scope = 'local' },
+        @{ Kind = 'process'; Scope = 'local' },
+        @{ Kind = 'clean'; Scope = 'inherited' }
+    ) {
+        Set-Content -LiteralPath (Join-Path $fixture '.gitattributes') -Value '* filter=probe'
+        Invoke-FixtureGit @('add', '.gitattributes')
+        $marker = Join-Path $TestDrive ([guid]::NewGuid().ToString('N') + '-filter-executed.txt')
+        $driver = Join-Path $TestDrive ([guid]::NewGuid().ToString('N') + '-filter.ps1')
+        Set-Content -LiteralPath $driver -Value ("Set-Content -LiteralPath '" + $marker.Replace("'", "''") + "' -Value 'executed'; exit 1")
+        $filterCommand = '"' + $shell.Replace('\', '/') + '" -NoProfile -File "' + $driver.Replace('\', '/') + '"'
+        $key = "filter.probe.$Kind"
+        $prelude = ''
+        if ($Scope -eq 'local') { Invoke-FixtureGit @('config', $key, $filterCommand) }
+        else {
+            $configPath = Join-Path $TestDrive 'inherited-filter.cfg'
+            Invoke-FixtureGit @('config', '--file', $configPath, $key, $filterCommand)
+            $prelude = "`$env:GIT_CONFIG_GLOBAL = '" + $configPath.Replace("'", "''") + "'; "
+        }
+        $inputPath = Join-Path $fixture 'AGENTS.md'
+        $inputText = [IO.File]::ReadAllText($inputPath)
+        [IO.File]::WriteAllText($inputPath, '!' + $inputText.Substring(1))
+        (Get-Item -LiteralPath $inputPath).LastWriteTimeUtc = [datetime]::UtcNow.AddSeconds(3)
+        { Get-FixtureSnapshot -Prelude $prelude } | Should -Throw '*filters require manual inspection*'
+        Test-Path -LiteralPath $marker | Should -BeFalse
+        & git --no-optional-locks -c core.fsmonitor= -c "$key=$filterCommand" -C $fixture status --porcelain=v1 2>&1 | Out-Null
+        Test-Path -LiteralPath $marker | Should -BeTrue
     }
 
     It 'rejects concurrent <MutationCase> with an unchanged HEAD' -ForEach @(

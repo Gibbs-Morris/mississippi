@@ -20,6 +20,11 @@ function Get-ContextObservation {
     param([string]$Root, [string[]]$ContextPaths)
     $head = [string](Invoke-ContextGit $root @('rev-parse', '--verify', 'HEAD'))
     $branch = [string](Invoke-ContextGit $root @('branch', '--show-current'))
+    $filters = @(& git --no-optional-locks -c core.fsmonitor= -C $root config --name-only --get-regexp '^filter\..*\.(clean|process)$')
+    if ($LASTEXITCODE -notin @(0, 1)) { throw 'Git filter configuration inspection failed.' }
+    if ($filters.Count -gt 0) {
+        throw 'Configured clean/process filters require manual inspection; status may execute repository-controlled commands.'
+    }
     $status = @(Invoke-ContextGit $root @('status', '--porcelain=v1', '--untracked-files=all'))
     $paths = @(Invoke-ContextGit $root @('-c', 'core.quotePath=false', 'ls-files', '--cached', '--others', '--exclude-standard') | Sort-Object -Unique)
     $index = @(Invoke-ContextGit $root @('ls-files', '--stage'))

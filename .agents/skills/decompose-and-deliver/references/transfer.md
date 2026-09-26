@@ -48,6 +48,10 @@ Git ownership failures remain failures. Any ownership/trust decision belongs
 outside the helper and must follow the target's authorization rules.
 Inspection disables filesystem-monitor hooks and optional index writes for
 each Git command; it does not change repository or account configuration.
+Configured clean/process filters, including inherited LFS settings, require
+manual file/commit inspection or an explicitly authorized trusted workflow.
+The helper rejects them before status rather than changing normalization and
+reporting misleading dirtiness. Serialize Git configuration changes during use.
 Two observations compare head, branch, full status, path inventory, staged
 content and revalidated selected hashes. Observed changes fail closed. This
 bounded check does not promise an atomic snapshot; serialize conflicting work

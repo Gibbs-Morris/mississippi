@@ -7,6 +7,9 @@ carry MIT licenses. If later copying substantial material, retain its applicable
 copyright and permission notice. No candidate is a required dependency.
 The bundled `LICENSE` preserves this package's own MIT permission and attribution
 when transferred; its legal notice is not a target-repository assumption.
+Git's [ownership and filesystem-monitor configuration](https://git-scm.com/docs/git-config)
+and [content-filter semantics](https://git-scm.com/docs/gitattributes#_filter)
+inform the helper's fail-closed inspection boundaries.
 
 ## Candidate source instructions
 
