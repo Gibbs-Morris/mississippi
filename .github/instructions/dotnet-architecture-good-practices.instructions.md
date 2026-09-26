@@ -22,19 +22,6 @@ Governing thought: Start every domain change with explicit DDD/SOLID analysis, k
 
 Engineers modifying domain/application/infrastructure/UI shells where DDD or SOLID choices matter.
 
-## At-a-Glance Quick-Start
-
-- Map bounded context, aggregates, value objects, services, events, and invariants.
-- Identify impacted layers and dependencies (logging, DI, serialization, options).
-- Plan tests and observability updates alongside code changes.
-- Implement with clean layering; validate with `pwsh ./go.ps1` plus targeted scripts.
-
-## Core Principles
-
-- Ubiquitous language + bounded contexts reduce coupling.
-- Composition/DI beats inheritance; keep options/config external.
-- Observability (logging/events) and testing are part of design, not afterthoughts.
-
 ## References
 
 - C#: `.github/instructions/csharp.instructions.md`
