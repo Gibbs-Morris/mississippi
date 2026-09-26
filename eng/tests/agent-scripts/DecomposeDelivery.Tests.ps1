@@ -99,6 +99,15 @@ Describe 'Portable delivery context snapshots' {
         $snapshot.Dirty | Should -BeTrue
     }
 
+    It 'preserves case-distinct paths on a case-sensitive filesystem' -Skip:$IsWindows {
+        Set-Content -LiteralPath (Join-Path $fixture 'tools/Foo.md') -Value 'uppercase'
+        Set-Content -LiteralPath (Join-Path $fixture 'tools/foo.md') -Value 'lowercase'
+        Invoke-FixtureGit @('add', 'tools/Foo.md', 'tools/foo.md')
+        $snapshot = Get-FixtureSnapshot
+        @($snapshot.Paths | Where-Object { $_ -ceq 'tools/Foo.md' }).Count | Should -Be 1
+        @($snapshot.Paths | Where-Object { $_ -ceq 'tools/foo.md' }).Count | Should -Be 1
+    }
+
     It 'records a new head rather than reusing evidence from the baseline' {
         $before = Get-FixtureSnapshot
         Add-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'changed'

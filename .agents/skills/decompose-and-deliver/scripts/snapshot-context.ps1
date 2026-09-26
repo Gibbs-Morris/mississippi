@@ -56,6 +56,15 @@ function Get-ContextInput {
     }
 }
 
+function Get-ContextPaths {
+    param([string]$Root)
+    $paths = [Collections.Generic.SortedSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($relative in (Invoke-ContextGit $root @('-c', 'core.quotePath=false', 'ls-files', '--cached', '--others', '--exclude-standard'))) {
+        if (Test-Path -LiteralPath (Join-Path $root $relative)) { $null = $paths.Add($relative) }
+    }
+    return @($paths)
+}
+
 function Get-ContextObservation {
     param([string]$Root, [string[]]$ContextPaths)
     $head = [string](Invoke-ContextGit $root @('rev-parse', '--verify', 'HEAD'))
@@ -70,8 +79,7 @@ function Get-ContextObservation {
         throw 'Configured clean/process filters require manual inspection; status may execute repository-controlled commands.'
     }
     $status = @(Invoke-ContextGit $root @('status', '--porcelain=v1', '--untracked-files=all'))
-    $paths = @(Invoke-ContextGit $root @('-c', 'core.quotePath=false', 'ls-files', '--cached', '--others', '--exclude-standard') |
-        Where-Object { Test-Path -LiteralPath (Join-Path $root $_) } | Sort-Object -Unique)
+    $paths = @(Get-ContextPaths $root)
     $selected = @(foreach ($relative in $ContextPaths) { Get-ContextInput $root $relative })
     return [pscustomobject]@{
         Head = $head
