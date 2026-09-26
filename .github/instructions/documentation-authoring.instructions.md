@@ -54,19 +54,8 @@ product-page layouts; shared evidence, metadata, and validation rules still appl
 
 ## Distributed-Systems Checklist
 
-Apply the relevant subset of these topics when the page describes runtime behavior:
-
-- activation or lifecycle boundaries
-- concurrency or scheduling assumptions
-- ordering guarantees and non-guarantees
-- retry behavior and timeout behavior
-- persistence or durability semantics
-- failure handling and recovery implications
-- serialization and version compatibility implications
-- deployment or cluster assumptions
-- diagnostics or telemetry needed to validate behavior
-- security constraints
-- unsupported or dangerous patterns
+Read the [local distributed-systems checklist](../../docs/Docusaurus/docs/contributing/documentation-guide.md#distributed-systems-checklist)
+and apply its relevant topics when the page describes runtime behavior.
 
 ## References
 

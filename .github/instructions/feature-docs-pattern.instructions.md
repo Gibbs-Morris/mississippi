@@ -35,13 +35,6 @@ This pattern does not replace page-type rules. It refines them.
 
 Authors documenting Mississippi features that expose both source-generated and manual registration paths.
 
-## At-a-Glance Quick-Start
-
-- Choose the page type first.
-- Teach shared setup before branching.
-- Show the recommended generated path first.
-- Explain the manual path only when it adds real value.
-
 ## Core Principles
 
 - **Subordinate Pattern**: Page type remains the top-level contract.
@@ -53,3 +46,4 @@ Authors documenting Mississippi features that expose both source-generated and m
 - Documentation guide: `docs/Docusaurus/docs/contributing/documentation-guide.md`
 - Documentation authoring: `.github/instructions/documentation-authoring.instructions.md`
 - Documentation page focus: `.github/instructions/documentation-page-focus.instructions.md`
+- Page-contract selection: [Author technical documentation](../../.agents/skills/author-technical-documentation/SKILL.md#select-the-page-contract).
