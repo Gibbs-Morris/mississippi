@@ -103,7 +103,7 @@ ranked the captured source above the handwritten source under the declared
 project policy, returned Conflict before Duplicate without an authorized
 resolution, and distinguished supplied evidence from live verification. Every
 fixture file hash remained unchanged; no checker, write, or publication ran.
-This is one authority case, not all 17 rubric cases or Copilot conformance.
+This is one authority case, not all 19 rubric cases or Copilot conformance.
 Copilot behavior remains unavailable from the observed account usage limit.
 Skill schema, JSON, configured Markdown lint, and whitespace checks pass.
 
