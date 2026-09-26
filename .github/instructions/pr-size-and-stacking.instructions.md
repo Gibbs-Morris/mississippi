@@ -33,20 +33,6 @@ Governing thought: Deliver one complete, reviewable change per PR, aiming for 60
 
 All human contributors and agents planning, implementing, reviewing, or landing changes. This file is the canonical policy for PR size and stack progression; specialized workflows add their own acceptance criteria.
 
-## At-a-Glance Quick-Start
-
-1. State this PR's outcome in one sentence; separate unrelated work.
-2. Plan dependent outcomes bottom to top, including tests and documentation in each estimate.
-3. Implement and submit only the current layer; inspect its diff against its immediate parent.
-4. Pass the advancement gate, then start the next layer. A ready parent can remain open for grouped landing.
-5. Recheck every included PR before merging a ready prefix or the whole stack.
-
-## Core Principles
-
-- Reviewability is the goal; 600 lines is Mississippi's target, not an externally proven optimum.
-- A working layer includes its prerequisites and its proof; it does not depend on code above it.
-- One active implementation layer per dependency chain keeps review feedback manageable.
-
 ## Planning and Size Judgment
 
 For a small change, a short task note is enough. For a stack, record each layer's outcome, immediate base, scope, size estimate, tests/docs, and whether to land separately or together. Prefer a small end-to-end behavior or a useful preparatory refactor over arbitrary file-count or technical-layer splits. Keep coupled changes together when separating them obscures correctness.
@@ -75,25 +61,13 @@ After a lower-layer correction, edit the owning branch, propagate it up the stac
 
 GitHub's native stacked PRs were announced in public preview on July 30, 2026; documentation checked September 8, 2026. They form a linear chain within one repository; cross-fork stacks are unsupported. The bottom PR targets the trunk (usually `main`); later PRs target the preceding branch. GitHub applies the trunk's review protections and PR CI to every native layer. Verify actual jobs and rules on the repository rather than treating absent checks as success. See [GitHub's rollout guide](https://docs.github.com/en/pull-requests/tutorials/roll-out-stacked-prs).
 
-Install the official extension with `gh extension install github/gh-stack`. Agents also use the [gh-stack skill and supporting references](https://github.com/github/gh-stack/tree/main/skills/gh-stack); this is distinct from installing the CLI extension. Read [stack design](https://github.com/github/gh-stack/blob/main/skills/gh-stack/references/stack-design.md) before choosing layers. Follow repository branch names and specify the intended remote when needed by the skill.
+Use the installed [gh-stack skill](https://github.com/github/gh-stack/blob/main/skills/gh-stack/SKILL.md) and [stack design](https://github.com/github/gh-stack/blob/main/skills/gh-stack/references/stack-design.md) for setup, layer design, branch placement, submission, inspection, and authorized merging. The skill is separate from the CLI extension. Read its supporting references when their triggers apply; use `gh stack <command> --help` for current flags.
 
-Example sequence (replace topic, branch, remote, and PR placeholders with verified values):
+For PR titles and bodies, use the [write-pull-request-description skill](../../.agents/skills/write-pull-request-description/SKILL.md) with [PR authoring policy](pr-description.instructions.md) and the [repository template](../PULL_REQUEST_TEMPLATE.md). If skill discovery is unavailable, read the linked skill files directly.
 
-```powershell
-gh stack init codex/topic/first-change
-# Implement this layer, stage its files deliberately, commit, and validate.
-gh stack submit --auto --remote origin
-gh stack view --json
-# Update the generated PR title/body using the repository template.
-# Mark ready for review; wait for the full advancement gate above.
-gh stack add codex/topic/next-change
-# Implement and validate this next layer, then submit and repeat the gate.
-gh stack submit --auto --remote origin
-```
+Verify native stack membership as the chain grows. Confirm the merge target and method, and merge only after every included layer passes the [advancement gate](#advancement-gate) and merging is authorized.
 
-`submit --auto` submits the stack and creates new PRs as drafts; `--open` creates them ready for review. Use `gh stack view --json` and explicit branch/target arguments for agents; avoid interactive menus. Verify native stack membership as the chain grows. If native stacks are unavailable, report the limitation and use small standalone PRs with dependencies merged first; do not assume manually chained bases inherit native stack protections.
-
-Once the included layers pass their gates and merge is authorized, use `gh stack merge <pr-number-or-stack-number> --yes`. A PR target includes that PR and all unmerged ancestors; a stack target includes the entire stack. Confirm the target and merge method first. This supports landing reviewed changes together without replacing them with one giant PR. Merge queues may land separate groups, so grouped merge is not an atomic deployment guarantee. See the [official skill's merge guidance](https://github.com/github/gh-stack/blob/main/skills/gh-stack/SKILL.md#merging).
+If native stacks are unavailable, report the limitation and use small standalone PRs with dependencies merged first; do not assume manually chained bases inherit native stack protections.
 
 ## Evidence and References
 
