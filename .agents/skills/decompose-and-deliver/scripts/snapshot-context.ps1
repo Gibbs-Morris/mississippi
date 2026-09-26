@@ -11,7 +11,7 @@ $ErrorActionPreference = 'Stop'
 
 function Invoke-ContextGit {
     param([string]$Root, [string[]]$Arguments)
-    $output = @(& git --no-optional-locks -c core.fsmonitor= -C $Root @Arguments)
+    $output = @(& git --no-optional-locks -c core.fsmonitor= -c core.trustctime=true -c core.checkStat=default -c core.ignoreStat=false -C $Root @Arguments)
     if ($LASTEXITCODE -ne 0) { throw "Git context inspection failed: $($Arguments[0])" }
     return $output
 }

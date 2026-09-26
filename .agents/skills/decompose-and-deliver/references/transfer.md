@@ -77,6 +77,9 @@ or a path query exceeding ten seconds fails instead of emitting an incomplete li
 Root containment uses exact ordinal spelling on every platform. Root case aliases
 take a manual fallback even on case-insensitive Windows directories; Windows
 per-directory case sensitivity is never assumed away.
+Status uses command-local default stat checks with ctime trusted and ignoreStat
+disabled. These overrides preserve configuration and index contents; a clean Git
+view alone is not validation evidence for deliberately preserved metadata.
 
 ## State and compatibility
 

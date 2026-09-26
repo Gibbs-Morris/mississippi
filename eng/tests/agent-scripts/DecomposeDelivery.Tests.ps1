@@ -180,6 +180,25 @@ Describe 'Portable delivery context snapshots' {
         { Get-FixtureSnapshot -Root $caseRoot -Paths @('../CASE-ROOT/AGENTS.md') } | Should -Throw '*Context path escapes*'
     }
 
+    It 'overrides reduced stat settings that conceal a same-size source rewrite' -Skip:$IsWindows {
+        Invoke-FixtureGit @('config', 'core.trustctime', 'false')
+        Invoke-FixtureGit @('config', 'core.checkStat', 'minimal')
+        Invoke-FixtureGit @('update-index', '--refresh')
+        $path = Join-Path $fixture 'packages/widget/model.txt'
+        $stamp = (Get-Item -LiteralPath $path).LastWriteTimeUtc
+        Start-Sleep -Milliseconds 100
+        [IO.File]::WriteAllText($path, "modified`n")
+        [IO.File]::SetLastWriteTimeUtc($path, $stamp)
+        $status = @(& git -C $fixture status --porcelain=v1)
+        $LASTEXITCODE | Should -Be 0
+        $status.Count | Should -Be 0
+        $indexHash = (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash
+        (Get-FixtureSnapshot).Dirty | Should -BeTrue
+        (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash | Should -BeExactly $indexHash
+        ([string](& git -C $fixture config --get core.trustctime)) | Should -BeExactly 'false'
+        ([string](& git -C $fixture config --get core.checkStat)) | Should -BeExactly 'minimal'
+    }
+
     It 'records a new head rather than reusing evidence from the baseline' {
         $before = Get-FixtureSnapshot
         Add-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'changed'
