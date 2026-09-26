@@ -34,9 +34,16 @@ compatibility; an event log alone does not prove arbitrary rollback support.
 Choose validation from those policies and current scripts. The relevant fast
 quality route for Spring domain changes uses
 `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject samples/Spring/Spring.Domain.L0Tests/Spring.Domain.L0Tests.csproj -SourceProject samples/Spring/Spring.Domain/Spring.Domain.csproj -SkipMutation`.
-Bare test names resolve only below `tests/`; sample coverage needs the explicit
-source path because automatic mapping prefers references below `src/`.
-For other targets, inspect the actual test/source paths and command mapping.
+Use the explicit test path because bare names resolve only below `tests/`.
+With `-SkipMutation`, `-SourceProject` contributes to input provenance; it does
+not select coverage modules or assign coverage to Spring.Domain. The fast route
+selects Spring.Domain.L0Tests for test execution with configured Coverlet/Cobertura
+coverage. Inspect that run's emitted report modules and files before claiming
+coverage of changed Spring.Domain code; the summary percentage alone does not
+establish that scope. Report absent domain files, missing reports and unrun checks
+as coverage or validation gaps. Source-project inference, which prefers
+references below `src/`, applies to the separate mutation path. For other targets,
+inspect the actual test/source paths and command mapping.
 Spring readiness
 uses `pwsh ./test-spring.ps1 -Doctor`, followed by executed selected suites where
 applicable. `READY` is not `PASS`. The full repository quality gates remain
