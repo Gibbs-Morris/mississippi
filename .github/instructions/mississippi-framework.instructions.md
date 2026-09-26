@@ -182,6 +182,11 @@ with the [local source bindings](../agent-guidance/event-sourced-feature-binding
 Read these files directly if skill discovery is unavailable. The Rules above
 apply independently of skill activation.
 
+## Consistency Model Separation
+
+Read the [write/read consistency binding](../agent-guidance/event-sourced-feature-bindings.md#consistency-model-separation)
+for the authoritative aggregate and asynchronous projection boundaries.
+
 ## References
 
 - Coding discipline (samples): `.github/instructions/coding-discipline.instructions.md`

@@ -37,3 +37,16 @@ uses `pwsh ./test-spring.ps1 -Doctor`, followed by executed selected suites wher
 applicable. `READY` is not `PASS`. The full repository quality gates remain
 required under their policy. This guidance migration changes no application
 behavior and does not claim execution of a new sample feature.
+
+## Consistency Model Separation
+
+Write decisions use the aggregate's authoritative current state through its
+command-handling and persistence pipeline. Orleans serial execution within an
+aggregate activation is the local write boundary; it does not establish a
+cross-aggregate transaction. Cross-aggregate coordination follows the existing
+saga or eventual-consistency contract.
+
+Brooks may feed multiple projections asynchronously. These optimized read views
+are eventually consistent: command success does not prove the client has already
+received the corresponding projection update. Inspect the actual pipeline and
+subscription evidence before making stronger freshness or atomicity claims.
