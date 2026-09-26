@@ -21,8 +21,8 @@ an `edited` event, GitHub reported `CLEAN`, and there were no review requests
 or unresolved threads. The Codex code-review bot completed without findings;
 this historical gate does not prove the current layer's eventual head.
 
-The portable skill records only a lesson grounded in an actual failure, retry,
-or non-obvious workaround whose correction was validated. It discovers the
+The portable skill records a lesson grounded in an observed failure, retry,
+workaround, process gap, or inefficiency whose correction was validated. It discovers the
 consuming project's authority, format, location, scope, and review controls at
 use time. It deliberately returns no-write outcomes for insufficient evidence,
 duplicates, conflicts, or unauthorized promotion. It contains no product or
@@ -65,13 +65,13 @@ specific dependency.
 
 ## Validation and evaluation limits
 
-The [evaluation cases](validated-lesson-skill-cases.json) define 17 scenarios
+The [evaluation cases](validated-lesson-skill-cases.json) define 19 scenarios
 covering validated admission, assessment-only and unrun evidence, negative
 routing, duplicate and higher-policy conflict, denied scope, authorized
 overlap, untrusted injection, promotion and retirement controls, existing
 approval, mixed duplicate/conflict precedence, peer contradiction, and bounded
-no-write outcomes, and a consuming hierarchy that ranks captured guidance above
-an older hand-written source. They are a reusable rubric rather than recorded model trials;
+no-write outcomes, a consuming hierarchy that ranks captured guidance above an older hand-written
+source, validated process gaps without failures, and speculative improvements. They are a reusable rubric rather than recorded model trials;
 no runtime savings, activation rate, or latency claim is made. The
 documented-silent case distinguishes missing required execution evidence from a
 verified silent success under the consuming contract.
@@ -87,7 +87,7 @@ The retained-rule comparison was refreshed September 26 against the current
 parent: all 12 bullets match exactly. Other historical checks retain their
 recorded revision and do not establish current native behavior.
 
-### September 26 authority correction
+### Historical September 26 authority correction
 
 The portable skill now uses the governing hierarchy and the consuming project's
 declared authority model; hand-written/captured provenance establishes no rank.
@@ -106,6 +106,24 @@ fixture file hash remained unchanged; no checker, write, or publication ran.
 This is one authority case, not all 17 rubric cases or Copilot conformance.
 Copilot behavior remains unavailable from the observed account usage limit.
 Skill schema, JSON, configured Markdown lint, and whitespace checks pass.
+
+### September 26 process-gap admission correction
+
+The description, intake, and admission criteria now include observed process
+gaps and inefficiencies with validated corrections, without requiring a failure.
+Speculative proposals remain insufficient. Candidate Git blob
+`b7218506f1c5047f48b5858cb0400240fe5b0eb6` has UTF-8/LF SHA-256
+`5d24946f73e1f1dc1a5681c2cd3ee7460cff3ecc9f69b0bd6d15f5f14372e3c9`:
+6,420 bytes, 903 words, 108 lines.
+
+The current [native record](validated-lesson-native-trial.json) uses Codex CLI
+0.158.0-alpha.2.1 / GPT-5.5 medium. It read the skill, admitted the supplied
+validated process gap, preserved required rechecks after input changes, and
+rejected the speculative proposal. All fixture hashes remained unchanged;
+no checker, write, or publication ran. These are two synthetic admission cases,
+not all 19 cases, a fresh authority replay, Copilot parity, or context savings.
+The prior authority record retains its historical candidate hash. All 12 local
+Rules remain exact; skill schema, JSON, Markdown lint, and whitespace pass.
 
 ### Historical fixed-input fixture evidence
 
