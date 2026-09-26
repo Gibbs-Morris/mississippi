@@ -18,11 +18,13 @@ They bind the workflow to Mississippi without replacing the instruction Rules.
 
 Inspect the target project and current scripts before execution. Restore local
 tools with `dotnet tool restore`. The ordinary tests-and-coverage loop is
-`pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <Name> -SkipMutation`.
+`pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <test-csproj-path> -SourceProject <source-csproj-path> -SkipMutation`.
 The [quality script](../../eng/src/agent-scripts/test-project-quality.ps1) accepts
-an existing project path or a resolvable test name. When source mapping is
-ambiguous, select the verified source explicitly with `-SourceProject` rather
-than guessing from the test name.
+an existing project path or a test name below `tests/`. Inspect project references
+and pass the intended source explicitly: automatic resolution can select a
+framework helper under `src/` for sample tests. The
+[feature binding](event-sourced-feature-bindings.md) has the complete Spring
+domain test/source command; approval still controls edits outside `tests/`.
 
 After a first clean build, `-NoBuild` can shorten a valid iteration; changed
 inputs still need current outputs and a build with `-warnaserror`. Use the

@@ -3,9 +3,9 @@
 This preparation contributes one coherent capability to
 [#547](https://github.com/Gibbs-Morris/mississippi/issues/547) under the recorded
 [September 26 plan](https://github.com/Gibbs-Morris/mississippi/issues/547#issuecomment-5848635646).
-It starts from published snapshot `3d258825642463390c356abdda0b35c92cbdcad7`
-on `codex/skills/improve-legacy-tests-prep`. Integration and publication belong
-to the root workflow for native stack #680. The user's parallel preparation
+Its isolated preparation started at published snapshot
+`3d258825642463390c356abdda0b35c92cbdcad7`; its actual integrated immediate base
+is `23cf0ba2e89d56f76d4fd358a5260b639099ed4f` in native stack #680. The user's parallel preparation
 authority overrides the old issue's introduce/reduce two-PR pattern; this is
 one skill, its route, binding, reduction, and evidence in one proposed layer.
 
@@ -39,48 +39,41 @@ implementation and disposable faulty variants, check meaningful boundary
 sensitivity, and compare every protected artifact hash; wording matches alone
 do not prove behavior.
 
-Same-model native evaluation is coordinated by the root workflow. No worker
-selects another model or starts a CLI trial here. Copilot behavior and review
-remain deferred until verified capacity returns. Schema, lint and preservation
-checks establish structure only; no historical application pass is presented
-as validation of this skill or current CI.
+A fresh worker inheriting this chat's exact model/settings selected the skill
+from a supplied file catalog and strengthened the consuming shipping tests from
+one truthiness assertion to 34 tests with 75 assertions. The executed suite
+passed without skips or todos. All 19 protected production/catalog/checker
+inputs stayed unchanged; only the permitted test file changed. Root reran the
+34-test suite and checked four disposable production faults: threshold,
+membership conjunction, wrong fee, and omitted validation. Each fault was
+detected by failing assertions (1, 2, 1, and 31 tests respectively), while the
+original production file remained unchanged. The skill LF hash below matches
+the trial catalog input.
+
+This bounded supplied-catalog task is not native CLI/app/IDE discovery or the
+complete eleven-case matrix. Its old coverage record lacked source/branch and
+assertion-strength evidence, so it was not promoted to current coverage proof.
+No Stryker run or repository mutation score is claimed. Copilot remains deferred
+and unverified until verified capacity returns under the user's instruction.
 
 ## Validation and measurements
 
-Skill schema, configured Markdown lint (four files, zero issues), JSON and
-unique-case validation, 27 relative links, whitespace, focused scope and all six
-original Rules/frontmatter preservation pass. No protected agent or runtime
-path changes. Eleven evaluation cases are prepared and zero are natively
-executed; every observed status is `NOT_RUN`. Application builds and cleanup are
-outside this authorized instruction-only preparation. Final integrated-head
-CI and review remain required; no mutation execution or merge readiness is
-claimed.
+Skill schema, configured Markdown lint, JSON/unique-case validation, relative
+links, whitespace, focused scope, and all six original Rules/frontmatter/audience
+checks passed during preparation and are rechecked after integration. No
+protected agent, application, build or package input changed. Current-head/base
+CI and review remain required before draft readiness.
 
-Raw committed-LF instruction lines fall from 2,804 to 2,792: 12 fewer. The source
-file falls from 41 to 29 lines; both entrypoints and every other instruction
-remain unchanged. The representative C# legacy-test package contains both
-entrypoints, all global instructions, scopes matching
-`tests/Legacy.L0Tests/ExampleTests.cs`, and all skill names/descriptions. Using
-canonical path/newline/blob/newline framing and o200k_base, it changes from
-33,097 to 33,072 proxy tokens (156,123 to 156,185 bytes); loading the skill and
-binding totals 34,868 tokens. All-instruction maintenance changes from 53,305 to
-53,280 tokens. These are content proxies, not native billing savings; host
-framing, plugins, other references and tool outputs are excluded.
+Raw LF instruction-directory lines change from 2,744 to 2,732: 12 fewer.
+The source policy changes from 41 to 29 lines; both entrypoints and all other
+instruction files are unchanged. Static context measurements are proxies that
+include discovery metadata and distinguish activation cost; they do not measure
+native billing savings. Whole-stack accounting is kept in the issue checkpoint.
 
-| Content | Git blob | LF SHA-256 |
-| --- | --- | --- |
-| Skill | `6c4f48e11bd9bafda63cdc15c7c25fcfa697e51c` | `8d7833bf1a5bc39eefb4d912c2d558992144b4a361169c193b4b31a55732c063` |
-| Source policy | `f1a3860af03a2985e3c1ca269b054c458c420328` | `c5a0d07144a3ccd7ffabf7207ecf78cdf86ea1ef01955da378d46f63dcea2718` |
-| Local binding | `fe850d2e800d7b9a65537a7d46d4fbacce0d89fc` | `9c0f226308763e8b194aa17fbabad8b784db71f0cf2112b8fabd0de743b81626` |
-| Cases | `78b207aa340d8a93d45a5ab3e849f024053c40d9` | `81365542d781eaf2719098381cdc4e5088ceb490390cb59afa41e0c5a643a741` |
-
-Representative package LF SHA-256 before/after/loaded:
-`ee13644c00e99e5eae8652f786adf8e674eb1393311bc0862a834e628321074e`,
-`2fbcc29805e6c3968553b3684d96b954550bd51c7890fb12a1095675c3af0821`,
-`6e05a994d0f0480edf27e714054aaad99cf66c38996dcb54baea46a7ef20200c`.
-All-instruction package before/after:
-`d4fb5729072556cdd3f9aca8c50fe668cf33178f8375880a3336c8bca9f586d1`,
-`473c4b57f5d1c8c7b508d6022b77bc28cdaafa86f2971818c09c6115ed1925ea`.
+| Content | LF SHA-256 |
+| --- | --- |
+| Skill | `8d7833bf1a5bc39eefb4d912c2d558992144b4a361169c193b4b31a55732c063` |
+| Current local binding | `9d5bf412405bc127feddd06ec4b44dbda588d44f3b393d2d266bc2ef39e47aeb` |
 
 ## Rollback
 
