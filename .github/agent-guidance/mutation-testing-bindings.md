@@ -25,9 +25,21 @@ portable package and does not change the mutation policy.
 - Solution-wide mutation uses
   `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
   -Configuration Release`. It restores tools, generates the legacy solution,
-  restores packages, builds with warnings as errors, and invokes Stryker.
-  `pwsh ./go.ps1 -IncludeMutation` is reserved for an explicitly authorized
-  full pipeline.
+  restores packages, builds with warnings as errors, and invokes Stryker;
+  it does not run the canonical conventional unit-test workflow. Before
+  invoking it directly, require current, passing conventional-test evidence
+  from `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
+  -Configuration Release` for the intended test scope (default L0/L1; use
+  `-TestLevels` for other required levels). Check nonempty execution and
+  per-project TRX results, the configuration, and unchanged relevant authored
+  inputs and project inventory; restore/build alone is insufficient. Reuse
+  valid evidence bound to those current inputs rather than repeat tests
+  solely because mutation is requested. Missing, stale, skipped, failed, or
+  unverified test evidence stops direct mutation until an authorized test
+  workflow passes. Alternatively, explicitly authorized
+  `pwsh ./go.ps1 -Configuration Release -IncludeMutation` runs the canonical
+  unit tests before mutation. A mutation request alone does not authorize
+  that full pipeline or its cleanup and other side effects.
 - Existing report inspection uses
   `pwsh ./eng/src/agent-scripts/summarize-mutation-survivors.ps1
   -SkipMutationRun -RunPath <run-directory>`. The selected manifest and reports
