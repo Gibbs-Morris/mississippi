@@ -69,9 +69,16 @@ publication gate. Revert the whole layer to restore removed sections and remove
 the skill/binding/evidence, preserving ancestors and unrelated work.
 
 A fresh Codex worker using this chat's exact inherited model selected the feature
-and verification bodies from six supplied fixture metadata entries. Skill LF
-SHA-256 `cfb3456ebfd462f84dbce18eff00f8cca224f6f0bbf5449bea4efbd49c6bedf3`
-implemented Withdrawal through the existing mutable state and manual API;
+and verification bodies from six supplied fixture metadata entries. The fixture
+skill's raw CRLF SHA-256 is
+`cfb3456ebfd462f84dbce18eff00f8cca224f6f0bbf5449bea4efbd49c6bedf3`;
+its CRLF-normalized LF SHA-256 is
+`e3697224f1a70d10ca4f9473ab046ecb9446eae3ece5b2a120b92058b4c7e034`.
+Root compared the normalized fixture bytes directly with the committed skill:
+they are identical, with only 67 CRLF line endings differing. Both the preserved
+raw trial input and the matching committed LF artifact identify this evidence;
+the former hash was previously mislabeled LF. The worker implemented Withdrawal
+through the existing mutable state and manual API;
 generator availability did not override local policy. The protected checker
 failed before the change, then passed 15 assertions; an independent root run
 also passed. Only the domain file changed and all 20 protected inputs matched.
