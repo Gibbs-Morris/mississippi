@@ -10,7 +10,8 @@ Governing thought: Agents follow repository instructions and iterate from correc
 
 ## Rules (RFC 2119)
 
-- Coordinators MUST use [decompose-and-deliver](.agents/skills/decompose-and-deliver/SKILL.md) for substantial implementation work with multiple outcomes, dependencies, or integration risks; trivial fixes stay single-session. Why: Delivery should follow real outcomes and verified capabilities.
+- Coordinators MUST use [decompose-and-deliver](.agents/skills/decompose-and-deliver/SKILL.md) for substantial implementation work with multiple outcomes, dependencies, or integration risks. Why: Delivery should follow real outcomes and verified capabilities.
+- Coordinators MUST keep trivial fixes within a single session. Why: Small changes should not require orchestration.
 - The original session MUST remain the sole user-facing coordinator and owner of authoritative decisions, integration, and publication. Why: Delegation must not make the user manage workers.
 - Delegated workers MUST return questions, blockers, decisions, results, and evidence to that coordinator within their assigned scope; further delegation requires an explicitly bounded assignment. Why: Worker mode must not restart coordination recursively.
 - Agents MUST use [plain English](.github/instructions/plain-english.instructions.md) when communicating with people, including conversations, reviews, and pull request comments or replies. Why: Readers should understand the message on first reading.
