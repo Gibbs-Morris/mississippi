@@ -155,7 +155,7 @@ below.
 | Adapter candidate | earlier LF copy SHA-256 `7E21DD9DBD174D0E5E340F9851299B18BFF810FEE02B0B054803E01B2B0DA5BD` | 477 | 45 | 3,920 | 3,920 |
 | Skill full file (earlier corrected input) | Git blob `fb0c33fff006cc7c412845851f36941f847cd337`; LF copy SHA-256 `071D901E31D72F929800093C4AC46034B26E9D611B436EAE9E34834B47FF967C` | 1,364 | 157 | 9,648 | 9,648 |
 | Skill body after complete front matter (earlier corrected input) | same Git blob and LF copy | 1,305 | 153 | 9,179 | 9,179 |
-| Discovery metadata values (current staged input) | same Git blob; name and description joined with one space | 55 | 1 | 439 | 439 |
+| Discovery metadata values (earlier corrected input) | same Git blob; name and description joined with one space | 55 | 1 | 439 | 439 |
 
 The adapter reduction is 875 words, 30 lines, and 5,595 UTF-8 bytes. The skill
 body count removes the complete four-line YAML front matter before applying the
