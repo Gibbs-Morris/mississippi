@@ -20,7 +20,7 @@ path is replaced by inspected current [source bindings](cosmos-integration-bindi
 | UTF-8 bytes after LF normalization | 2,979 | 2,214 |
 | `o200k_base` tokens | 716 | 509 |
 
-The always-loaded support reduction is 40 LF lines and 207 measured tokens.
+The selected instruction-body reduction is 40 LF lines and 207 measured tokens.
 The portable skill is 78 LF lines, 639 words, and 861 `o200k_base` tokens; it is
 loaded for the bounded test-authoring task. These are context measurements, not
 measured end-to-end runtime or total-task token savings.
@@ -45,6 +45,14 @@ an authorized daemon-access check. The supplied AppHost built against Aspire
 not test compilation, emulator startup, persisted assertions, or teardown.
 The fixture checker rejects missing or empty executed-test evidence.
 
+The fresh inherited-model worker inspected the fixture and current candidate,
+but authorization review rejected its external test-file write. No test source
+was written and zero tests executed; explicit fixture approval remains pending.
+Its read-only installed-package inspection also found Aspire 13.5.3 requires
+Newtonsoft.Json at least 13.0.4 while the supplied test manifest pins 13.0.3.
+That is a fixture setup concern, not an observed build failure or skill outcome;
+the earlier AppHost-only compile does not establish test-project compatibility.
+Repair and execution await fixture authority; they cannot be claimed as passes.
 Fresh inherited-model test authoring and observed runtime evaluation are pending.
 NuGet restore, emulator image pull/data-plane startup, real test execution,
 nonempty reports, and owned teardown still need observation for that outcome.
