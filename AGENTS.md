@@ -12,7 +12,10 @@ Governing thought: Agents follow repository instructions and iterate from correc
 
 - Coordinators MUST use [decompose-and-deliver](.agents/skills/decompose-and-deliver/SKILL.md) for substantial implementation work with multiple outcomes, dependencies, or integration risks. Why: Delivery should follow real outcomes and verified capabilities.
 - Coordinators MUST keep trivial fixes within a single session. Why: Small changes should not require orchestration.
-- The original session MUST remain the sole user-facing coordinator and owner of authoritative decisions, integration, and publication. Why: Delegation must not make the user manage workers.
+- The original session MUST remain the sole user-facing coordinator. Why: Delegation must not make the user manage workers.
+- The original session MUST own authoritative delivery decisions. Why: Worker proposals need one accountable decision owner.
+- The original session MUST own integration. Why: Independently returned changes need one owner to reconcile their combined result.
+- The original session MUST own publication. Why: External delivery needs one owner to verify its postconditions.
 - Delegated workers MUST return questions, blockers, decisions, results, and evidence to that coordinator within their assigned scope. Why: The coordinator needs material information to own delivery decisions.
 - Delegated workers MUST obtain an explicitly bounded assignment before further delegation. Why: Worker mode must not restart coordination recursively.
 - Agents MUST use [plain English](.github/instructions/plain-english.instructions.md) when communicating with people, including conversations, reviews, and pull request comments or replies. Why: Readers should understand the message on first reading.
