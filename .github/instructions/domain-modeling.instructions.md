@@ -65,56 +65,13 @@ Governing thought: Use consistent, attribute-driven domain modeling with immutab
 
 Developers implementing domain models using Mississippi event sourcing in samples or applications.
 
-## At-a-Glance Quick-Start
+## Feature workflow
 
-### Folder Structure
-
-```text
-{Domain}/
-├── {Aggregate}/
-│   ├── {Aggregate}Aggregate.cs
-│   ├── Commands/
-│   │   └── {Action}.cs
-│   ├── Events/
-│   │   └── {ActionPastTense}.cs
-│   ├── Handlers/
-│   │   └── {Action}Handler.cs
-│   └── Reducers/
-│       └── {Event}Reducer.cs
-├── {ProjectionName}Projection/
-│   ├── {ProjectionName}Projection.cs
-│   └── Reducers/
-│       └── {Event}ProjectionReducer.cs
-└── {Domain}Registrations.cs
-```
-
-### Required Attributes Checklist
-
-| Type | Required Attributes |
-|------|---------------------|
-| Aggregate | `[BrookName]`, `[SnapshotStorageName]`, `[GenerateSerializer]`, `[Alias]` |
-| Command | `[GenerateSerializer]`, `[Alias]` |
-| Event | `[EventStorageName]`, `[GenerateSerializer]`, `[Alias]` |
-| Projection | `[BrookName]`, `[SnapshotStorageName]`, `[GenerateSerializer]`, `[Alias]` |
-
-### Naming Conventions
-
-| Type | Pattern | Example |
-|------|---------|---------|
-| Aggregate | `{Name}Aggregate` | `ChannelAggregate` |
-| Command | `{Verb}{Noun}` | `CreateChannel` |
-| Event | `{Noun}{PastVerb}` | `ChannelCreated` |
-| Handler | `{Command}Handler` | `CreateChannelHandler` |
-| Reducer | `{Event}Reducer` | `ChannelCreatedReducer` |
-| Projection | `{Name}Projection` | `UserProfileProjection` |
-| Projection Reducer | `{Event}ProjectionReducer` | `UserRegisteredProjectionReducer` |
-
-## Core Principles
-
-- Immutable record types with explicit serialization ensure deterministic replay.
-- Attribute-based storage names decouple code identity from persistence identity.
-- Base classes enforce patterns (immutability, type dispatch) while providing extension points.
-- Hierarchical registration mirrors domain structure and enables composability.
+For implementing or assessing an event-sourced application feature, use
+[implement-event-sourced-feature](../../.agents/skills/implement-event-sourced-feature/SKILL.md)
+with the [local source bindings](../agent-guidance/event-sourced-feature-bindings.md).
+Read these files directly if skill discovery is unavailable. The Rules above
+apply independently of skill activation.
 
 ## References
 
