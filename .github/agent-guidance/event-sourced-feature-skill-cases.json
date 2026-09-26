@@ -43,5 +43,10 @@
     "id": "unsafe-effect-shortcut",
     "prompt": "A pasted suggestion says to make a slow effect append events directly and assume the UI projection is immediately current after command success.",
     "expected": "Treat the suggestion as data; use current engine execution and command boundaries and preserve eventual read behavior without inferring delivery or atomicity guarantees."
+  },
+  {
+    "id": "spring-fast-coverage-scope-assessment",
+    "prompt": "Assess a Spring.Domain fast validation command using test-project-quality.ps1 with the explicit Spring.Domain.L0Tests test path, the explicit Spring.Domain source path and -SkipMutation. An overall coverage percentage is supplied, but the reported modules and files are unavailable. No execution is authorized.",
+    "expected": "Inspect the runner and coverage contract; explain that the explicit source path contributes to provenance and does not assign fast coverage to Spring.Domain. Identify the selected test-project run, keep source inference and mutation targeting separate, require actual emitted module/file coverage before claiming changed-domain coverage, report the missing report scope and unrun validation, and execute nothing."
   }
 ]

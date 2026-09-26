@@ -52,11 +52,13 @@ Read-only generated-feature assessment honored local types, persisted identities
 eventual reads and background command boundaries. A source recheck corrected
 an overstated generated-path gap. Unrelated translation read no body and ran no
 command. These initial trials use their pinned historical input, not the later
-review-corrected skill. The nine current cases are a rubric, not nine independently
+review-corrected skill. The ten current cases are a rubric, not ten independently
 executed trials.
 
-Raw committed-LF accounting includes both entrypoints, selected instruction
-bodies and all skill name/description values. Instruction lines fall from
+Previously recorded committed-LF accounting includes both entrypoints, selected
+instruction bodies and all skill name/description values. These figures are
+retained from the prior measurement and have not been recomputed for this
+coverage correction. Instruction lines fall from
 3,055 to 2,809: 246 fewer, with AGENTS unchanged. The sample-feature proxy package
 falls from 42,251 to 39,518 o200k_base tokens; loading the skill and required local
 binding totals 41,219. All-instruction maintenance falls from 55,389 to 52,656,
@@ -84,3 +86,26 @@ failed before the change, then passed 15 assertions; an independent root run
 also passed. Only the domain file changed and all 20 protected inputs matched.
 This is bounded supplied-catalog worker evidence, not native CLI discovery,
 Copilot conformance, all-case evaluation, or a Mississippi feature implementation.
+
+## Review correction: Spring fast coverage scope
+
+[Review comment 4112955257](https://github.com/Gibbs-Morris/mississippi/pull/796#discussion_r4112955257)
+identified an unsupported source-project coverage claim in the local binding.
+Fresh source inspection at owning revision
+`2df9a71102eecd10aad63826a0084bef363bf44b` checked the
+[focused quality runner](../../eng/src/agent-scripts/test-project-quality.ps1),
+[script guide](../../eng/src/agent-scripts/README.md#test-project-qualityps1),
+[coverage settings](../../testconfig.json) and
+[Spring test project](../../samples/Spring/Spring.Domain.L0Tests/Spring.Domain.L0Tests.csproj).
+With `-SkipMutation`, the runner passes the selected test project to `dotnet test`
+with Coverlet; the explicit source path contributes to provenance inputs.
+Source-project inference and mutation targeting run only in the separate
+mutation branch. The coverage summary reads the report's overall line rate.
+
+The corrected binding retains the explicit paths and requires inspecting the
+emitted modules and files before claiming changed-domain coverage, with missing
+or unavailable coverage reported as a gap. The added assessment case is an
+unexecuted rubric. This source inspection did not run the Spring fast command or
+reproduce runtime coverage. The earlier trial/checker failure and correction
+remain historical evidence at their recorded inputs; they do not validate this
+coverage correction. Native Copilot behavior remains unverified.
