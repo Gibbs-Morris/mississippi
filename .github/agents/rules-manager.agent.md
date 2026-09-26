@@ -77,7 +77,7 @@ Use `applyTo` patterns aggressively to prevent irrelevant rules from loading:
 
 ### Rule Compression Techniques
 
-1. **Use shorthand** - "fn" not "function", "impl" not "implementation"
+1. **Use clear words** - Remove repetition instead of shortening words into unfamiliar abbreviations; follow the [plain-English communication policy](../instructions/plain-english.instructions.md).
 2. **Imply context** - In a TS file, don't say "in TypeScript"
 3. **Trust intelligence** - Don't over-explain, Copilot understands concepts
 4. **Group related** - One bullet with sub-items vs multiple bullets
