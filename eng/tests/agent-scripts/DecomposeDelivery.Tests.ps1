@@ -49,7 +49,7 @@ BeforeAll {
     }
 
     function Invoke-BoundedSnapshot {
-        param([string]$Root = $fixture, [string]$Path = 'AGENTS.md', [switch]$Unprivileged)
+        param([string]$Root = $fixture, [string]$Path = 'AGENTS.md', [switch]$Unprivileged, [string]$ScriptPath = $snapshotScript)
         $application = if ($Unprivileged) { (Get-Command setpriv -CommandType Application | Select-Object -First 1).Source } else { $shell }
         $start = [Diagnostics.ProcessStartInfo]::new($application)
         $start.UseShellExecute = $false
@@ -58,7 +58,7 @@ BeforeAll {
         if ($Unprivileged) {
             foreach ($argument in @('--reuid=65534', '--regid=65534', '--clear-groups', $shell)) { $start.ArgumentList.Add($argument) }
         }
-        foreach ($argument in @('-NoProfile', '-File', $snapshotScript, '-RepositoryRoot', $Root, '-ContextPath', $Path)) { $start.ArgumentList.Add($argument) }
+        foreach ($argument in @('-NoProfile', '-File', $ScriptPath, '-RepositoryRoot', $Root, '-ContextPath', $Path)) { $start.ArgumentList.Add($argument) }
         $start.Environment['GIT_CONFIG_NOSYSTEM'] = '1'
         $start.Environment['GIT_CONFIG_GLOBAL'] = Join-Path $fixture 'missing-global'
         $child = [Diagnostics.Process]::Start($start)
@@ -421,6 +421,34 @@ Describe 'Portable delivery context snapshots' {
             $child.Dispose()
             if ($null -ne $socket) { $socket.Dispose() }
         }
+    }
+
+    It 'bounds hashing when a regular file becomes a FIFO after path inspection' -Skip:$IsWindows {
+        $copy = Join-Path $TestDrive 'fifo-race-snapshot.ps1'
+        $source = [IO.File]::ReadAllText($snapshotScript)
+        $boundary = '$metadata = Get-ContextFileHash $fullPath'
+        $source.Contains($boundary) | Should -BeTrue
+        $replacement = '[IO.File]::Delete($fullPath); & mkfifo -- $fullPath; ' + $boundary
+        [IO.File]::WriteAllText($copy, $source.Replace($boundary, $replacement))
+        $result = Invoke-BoundedSnapshot -ScriptPath $copy
+        $result.ExitCode | Should -Be 1
+        $result.Error | Should -Match 'Native context inspection timed out'
+        $result.Output | Should -BeNullOrEmpty
+    }
+
+    It 'hashes the validated open handle after its path is replaced' -Skip:$IsWindows {
+        $copy = Join-Path $TestDrive 'handle-race-snapshot.ps1'
+        $path = Join-Path $fixture 'AGENTS.md'
+        $originalHash = (Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant()
+        $source = [IO.File]::ReadAllText($snapshotScript)
+        $boundary = '$hasher = [Security.Cryptography.SHA256]::Create()'
+        $source.Contains($boundary) | Should -BeTrue
+        $replacement = '[IO.File]::Move($HashPath, $HashPath + ''.opened''); [IO.File]::WriteAllText($HashPath, ''replacement after validation''); ' + $boundary
+        [IO.File]::WriteAllText($copy, $source.Replace($boundary, $replacement))
+        $output = & $shell -NoProfile -File $copy -RepositoryRoot $fixture -HashPath $path 2>&1 | Out-String
+        $LASTEXITCODE | Should -Be 0
+        ($output | ConvertFrom-Json).Sha256 | Should -BeExactly $originalHash
+        (Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant() | Should -Not -BeExactly $originalHash
     }
 
     It 'bounds Git reads of a FIFO at .git/<Metadata>' -Skip:$IsWindows -ForEach @(

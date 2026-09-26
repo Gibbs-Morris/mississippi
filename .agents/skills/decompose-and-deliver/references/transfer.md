@@ -62,7 +62,13 @@ evidence identity, not proof of successful tests or a security attestation.
 Selected inputs must be regular files. Unix inspection uses the existing system
 `stat` utility (GNU on Linux, BSD on macOS); absence requires manual inspection.
 Linux/Windows paths are exercised locally; the BSD branch remains unverified.
-Pipes, sockets and devices are rejected before hashing.
+Pipes, sockets and devices are rejected before hashing. Selected hashes run in
+an owned child with a ten-second timeout, including file opening and reads.
+Metadata and content come from the same open handle. Unix handle inspection
+requires inherited descriptors and `/dev/fd`; unsupported capabilities fail
+for manual inspection. Windows handle attributes require the runtime's
+`File.GetAttributes(SafeFileHandle)` API. The hidden `HashPath` parameter is an
+internal child entry point, not repository evidence or a replacement snapshot.
 Selected identity includes file type and mode (Unix type/permission bits or
 Windows attributes), so content hashes alone cannot establish unchanged inputs.
 Git submodule entries require manual inspection, including uninitialized entries;

@@ -3,7 +3,8 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$RepositoryRoot,
-    [string[]]$ContextPath = @()
+    [string[]]$ContextPath = @(),
+    [Parameter(DontShow)][string]$HashPath
 )
 
 Set-StrictMode -Version Latest
@@ -18,11 +19,19 @@ function Invoke-ContextGit {
 }
 
 function Get-ContextFileMetadata {
-    param([IO.FileSystemInfo]$Item, [string]$Relative)
-    if ($IsWindows) { return [pscustomobject]@{ Type = 'File'; Mode = [int]$item.Attributes } }
+    param([IO.FileSystemInfo]$Item, [string]$Relative, [IO.FileStream]$Stream)
+    if ($IsWindows) {
+        $attributes = if ($null -eq $Stream) { $item.Attributes } else { [IO.File]::GetAttributes($Stream.SafeFileHandle) }
+        if ($null -ne $Stream -and (-not $Stream.CanSeek -or ($attributes -band [IO.FileAttributes]::Device) -ne 0)) {
+            throw "Non-regular context files require manual inspection: $Relative"
+        }
+        return [pscustomobject]@{ Type = 'File'; Mode = [int]$attributes }
+    }
     $stat = Get-Command stat -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($null -eq $stat) { throw 'Unix stat metadata is unavailable; inspect selected files manually.' }
-    $arguments = if ($IsMacOS) { @('-f', '%p', '--', $item.FullName) } else { @('-c', '%f', '--', $item.FullName) }
+    $metadataPath = if ($null -eq $Stream) { $item.FullName } else { '/dev/fd/' + $Stream.SafeFileHandle.DangerousGetHandle().ToInt64() }
+    $arguments = if ($IsMacOS) { @('-f', '%p', '--', $metadataPath) } else { @('-c', '%f', '--', $metadataPath) }
+    if ($null -ne $Stream) { $arguments = @('-L') + $arguments }
     $radix = if ($IsMacOS) { 8 } else { 16 }
     $mode = [Convert]::ToInt32(([string](Invoke-ContextNativeOutput $stat.Source $arguments)).Trim(), $radix)
     if (($mode -band 61440) -ne 32768) {
@@ -33,15 +42,8 @@ function Get-ContextFileMetadata {
 
 function Get-ContextFileHash {
     param([string]$Path)
-    $stream = [IO.File]::OpenRead($Path)
-    $hasher = [Security.Cryptography.SHA256]::Create()
-    try {
-        return [BitConverter]::ToString($hasher.ComputeHash($stream)).Replace('-', '').ToLowerInvariant()
-    }
-    finally {
-        $stream.Dispose()
-        $hasher.Dispose()
-    }
+    $shell = [IO.Path]::Combine($PSHOME, $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' }))
+    return Invoke-ContextNativeOutput $shell @('-NoProfile', '-File', $PSCommandPath, '-RepositoryRoot', $root, '-HashPath', $Path) | ConvertFrom-Json
 }
 
 function Get-ContextInput {
@@ -66,14 +68,15 @@ function Get-ContextInput {
         }
         $ancestor = $ancestor.Parent
     }
-    $metadata = Get-ContextFileMetadata $item $relative
+    $null = Get-ContextFileMetadata $item $relative
+    $metadata = Get-ContextFileHash $fullPath
     $relativePath = [IO.Path]::GetRelativePath($root, $fullPath)
     if ($IsWindows) { $relativePath = $relativePath.Replace('\', '/') }
     return [pscustomobject]@{
         Path = $relativePath
         Type = $metadata.Type
         Mode = $metadata.Mode
-        Sha256 = Get-ContextFileHash $fullPath
+        Sha256 = $metadata.Sha256
     }
 }
 
@@ -214,6 +217,23 @@ function Get-ContextObservation {
 }
 
 try {
+    if (-not [string]::IsNullOrEmpty($HashPath)) {
+        $stream = [IO.FileStream]::new($HashPath, [IO.FileMode]::Open, [IO.FileAccess]::Read, ([IO.FileShare]::Read -bor [IO.FileShare]::Inheritable))
+        try {
+            $metadata = Get-ContextFileMetadata ([IO.FileInfo]::new($HashPath)) $HashPath $stream
+            $hasher = [Security.Cryptography.SHA256]::Create()
+            try {
+                [pscustomobject]@{
+                    Type = $metadata.Type
+                    Mode = $metadata.Mode
+                    Sha256 = [BitConverter]::ToString($hasher.ComputeHash($stream)).Replace('-', '').ToLowerInvariant()
+                } | ConvertTo-Json
+            }
+            finally { $hasher.Dispose() }
+        }
+        finally { $stream.Dispose() }
+        exit 0
+    }
     $gitApplication = (Get-Command git -CommandType Application | Select-Object -First 1).Source
     foreach ($selector in @('GIT_DIR', 'GIT_WORK_TREE', 'GIT_COMMON_DIR', 'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_NAMESPACE')) {
         if ($null -ne [Environment]::GetEnvironmentVariable($selector)) {
