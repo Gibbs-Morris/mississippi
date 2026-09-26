@@ -1,6 +1,10 @@
 name: SonarCloud
 on:
   workflow_dispatch:
+  merge_group:
+    types: [checks_requested]
+    branches:
+      - main
   push:
     branches:
       - main
@@ -33,6 +37,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          ref: ${{ github.sha }}
 
       - name: Setup Dotnet
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -96,7 +101,19 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          dotnet dotnet-sonarscanner begin /k:"${{ env.SONAR_PROJECT_KEY }}" /o:"${{ env.SONAR_ORGANIZATION }}" /d:sonar.token="$SONAR_TOKEN" /d:sonar.host.url="${{ env.SONAR_HOST_URL }}" /v:${{ steps.gitversion.outputs.SemVer }} /d:"sonar.cs.vscoveragexml.reportsPaths=coverage.xml" /d:sonar.exclusions="**/*.lock.json, **/*.DotSettings,**/packages.lock.json,docs/**" /d:sonar.cpd.exclusions="**/Inlet.Client.Generators/**,**/Inlet.Gateway.Generators/**,**/Inlet.Runtime.Generators/**,**/setup.ps1,**/Setup.Tests.ps1,**/AgentDoctor.Tests.ps1" /d:sonar.issue.ignore.multicriteria=s107 /d:sonar.issue.ignore.multicriteria.s107.ruleKey=csharpsquid:S107 /d:sonar.issue.ignore.multicriteria.s107.resourceKey='**/*.cs'
+          if [[ "$GITHUB_EVENT_NAME" == "merge_group" ]]; then
+            if [[ "$GITHUB_REF_TYPE" != "branch" || -z "$GITHUB_REF_NAME" ]]; then
+              echo "::error::Merge-group analysis requires a branch ref."
+              exit 1
+            fi
+
+            # Analyze the exact candidate as a short-lived branch targeting main.
+            set -- "/d:sonar.branch.name=$GITHUB_REF_NAME" "/d:sonar.branch.target=main" "/d:sonar.qualitygate.wait=true"
+          else
+            set --
+          fi
+
+          dotnet dotnet-sonarscanner begin /k:"${{ env.SONAR_PROJECT_KEY }}" /o:"${{ env.SONAR_ORGANIZATION }}" /d:sonar.token="$SONAR_TOKEN" /d:sonar.host.url="${{ env.SONAR_HOST_URL }}" /v:${{ steps.gitversion.outputs.SemVer }} /d:"sonar.cs.vscoveragexml.reportsPaths=coverage.xml" /d:sonar.exclusions="**/*.lock.json, **/*.DotSettings,**/packages.lock.json,docs/**" /d:sonar.cpd.exclusions="**/Inlet.Client.Generators/**,**/Inlet.Gateway.Generators/**,**/Inlet.Runtime.Generators/**,**/setup.ps1,**/Setup.Tests.ps1,**/AgentDoctor.Tests.ps1" /d:sonar.issue.ignore.multicriteria=s107 /d:sonar.issue.ignore.multicriteria.s107.ruleKey=csharpsquid:S107 /d:sonar.issue.ignore.multicriteria.s107.resourceKey='**/*.cs' "$@"
 
           dotnet restore ${{ env.SOLUTION_PATH }}
           dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
