@@ -83,7 +83,17 @@ record their SHA-256 values with the invocation and compare them on reuse,
 or establish clean source-before, source-after and current states at the same
 Git revision with all those tracked inputs unchanged. If neither record exists,
 report configuration/runner freshness as unverified even when `Test-ValidationEvidence` passes.
-Only claim current-source and configuration freshness with both checks supported;
+The focused `InputPath` is a fixed list of files present when collection starts;
+it cannot detect later-added wildcard source/test files in an already-dirty
+worktree. Before, after and on reuse, record and compare the authored input
+inventory (paths and hashes) for selected source/test project directories and
+their referenced projects, including untracked files, additions and deletions.
+Include authored inputs outside those directories when the project includes
+them; generated build output is not an authored input. Use the actual project
+input scope rather than comparing only the recorded fixed list or dirty flag.
+Missing or changed inventories leave current-source freshness unverified.
+Only claim current-source and configuration freshness with stable source and
+inventory proof plus configuration/runner checks supported;
 report changed inputs or missing provenance as a gap. A historical report needs evidence for
 its historical source, not a guessed revision from the current checkout.
 Standalone solution mutation has no equivalent report-bound provenance record,
