@@ -398,6 +398,20 @@ if ($Arguments -contains 'ls-files') {
         { Get-FixtureSnapshot } | Should -Throw '*Legacy Git grafts require manual inspection*'
     }
 
+    It 'preserves plain nested failure diagnostics under forced ANSI rendering' {
+        $copy = Join-Path $TestDrive 'ansi-diagnostics-snapshot.ps1'
+        $source = [IO.File]::ReadAllText($snapshotScript)
+        $boundary = '$ErrorActionPreference = ''Stop'''
+        $source.Contains($boundary) | Should -BeTrue
+        [IO.File]::WriteAllText($copy, $source.Replace($boundary, $boundary + "`n`$PSStyle.OutputRendering = 'Ansi'"))
+        [IO.File]::WriteAllText((Join-Path $fixture '.git/objects/info/alternates'), 'synthetic alternate entry')
+        $result = Invoke-BoundedSnapshot -ScriptPath $copy
+        $result.ExitCode | Should -Be 1
+        $result.Output | Should -BeNullOrEmpty
+        $result.Error | Should -Match 'Alternate Git object stores require manual inspection'
+        $result.Error | Should -Not -Match ([regex]::Escape([string][char]27))
+    }
+
     It 'rejects a regular HTTP alternates metadata file before reading objects' {
         [IO.File]::WriteAllText((Join-Path $fixture '.git/objects/info/http-alternates'), 'https://example.invalid/objects')
         { Get-FixtureSnapshot } | Should -Throw '*Alternate Git object stores require manual inspection*'
