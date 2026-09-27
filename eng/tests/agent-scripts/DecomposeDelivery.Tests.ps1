@@ -602,8 +602,6 @@ if ($Arguments -contains 'ls-files') {
         Invoke-FixtureGit @('update-index', '--index-version=2')
         $hiddenName = 'hidden-payload.txt'
         [IO.File]::WriteAllText((Join-Path $fixture $hiddenName), 'Untracked payload')
-        # Avoid a racy directory timestamp while Git records the real cache stat data.
-        Start-Sleep -Milliseconds 1100
         Invoke-FixtureGit @('status', '--porcelain=v1', '--untracked-files=all')
         $indexPath = Join-Path $fixture '.git/index'
         $bytes = [IO.File]::ReadAllBytes($indexPath)
@@ -649,6 +647,8 @@ if ($Arguments -contains 'ls-files') {
         # Preserve entries and current root stat data; discard other optional extensions.
         $body = [byte[]]($bytes[0..($extensions - 1)] + [Text.Encoding]::ASCII.GetBytes('UNTR') + $lengthBytes + $forged)
         [IO.File]::WriteAllBytes($indexPath, [byte[]]($body + [Security.Cryptography.SHA1]::HashData($body)))
+        # Make the index strictly newer than the cached root without a wall-clock delay.
+        [IO.File]::SetLastWriteTimeUtc($indexPath, [IO.Directory]::GetLastWriteTimeUtc($fixture).AddDays(1))
         $indexHash = (Get-FileHash -LiteralPath $indexPath).Hash
         @(& git --no-optional-locks -c core.fsmonitor= -c core.untrackedCache=true -C $fixture status --porcelain=v1 --untracked-files=all).Count | Should -Be 0
         @(& git --no-optional-locks -c core.untrackedCache=false -C $fixture status --porcelain=v1 --untracked-files=all) | Should -Contain ('?? ' + $hiddenName)
