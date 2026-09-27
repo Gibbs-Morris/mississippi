@@ -14,7 +14,7 @@ $ErrorActionPreference = 'Stop'
 
 function Invoke-ContextGit {
     param([string]$Root, [string[]]$Arguments, [int[]]$AcceptedExitCodes = @(0), [switch]$WithResult)
-    $options = @('--no-replace-objects', '--no-optional-locks', '-c', 'core.fsmonitor=', '-c', 'core.trustctime=true', '-c', 'core.checkStat=default', '-c', 'core.ignoreStat=false', '-c', 'core.ignoreCase=false', '-C', $root)
+    $options = @('--no-replace-objects', '--no-optional-locks', '-c', 'core.fsmonitor=', '-c', 'core.trustctime=true', '-c', 'core.checkStat=default', '-c', 'core.ignoreStat=false', '-c', 'core.ignoreCase=false', '-c', 'core.commitGraph=false', '-C', $root)
     if (-not $IsWindows) { $options = @('-c', 'core.fileMode=true') + $options }
     $result = Invoke-ContextNativeOutput $gitApplication ($options + $Arguments) -AcceptedExitCodes $AcceptedExitCodes -WithResult
     if ($WithResult) { return $result }

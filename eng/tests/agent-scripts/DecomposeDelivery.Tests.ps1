@@ -589,6 +589,39 @@ if ($Arguments -contains 'ls-files') {
         { Get-FixtureSnapshot } | Should -Throw '*Tracked symlinks with core.symlinks=false require manual inspection*'
     }
 
+    It 'exposes staged changes concealed by a forged commit-graph root tree' {
+        Invoke-FixtureGit @('config', 'core.commitGraph', 'true')
+        Invoke-FixtureGit @('commit-graph', 'write', '--reachable')
+        [IO.File]::WriteAllText((Join-Path $fixture 'packages/widget/model.txt'), 'synthetic staged payload')
+        Invoke-FixtureGit @('add', 'packages/widget/model.txt')
+        $stagedTree=[string](& git -C $fixture write-tree)
+        $graphPath=Join-Path $fixture '.git/objects/info/commit-graph'
+        $bytes=[IO.File]::ReadAllBytes($graphPath)
+        # SHA-1 graph format: https://git-scm.com/docs/gitformat-commit-graph.
+        [Text.Encoding]::ASCII.GetString($bytes, 0, 4) | Should -BeExactly 'CGPH'
+        $bytes[4] | Should -Be 1
+        $bytes[5] | Should -Be 1
+        $dataOffset=-1
+        for ($chunk=0; $chunk -lt $bytes[6]; $chunk++) {
+            $tableOffset=8 + (12 * $chunk)
+            if ([Text.Encoding]::ASCII.GetString($bytes, $tableOffset, 4) -ceq 'CDAT') {
+                $dataOffset=[Convert]::ToInt64([BitConverter]::ToString($bytes, $tableOffset + 4, 8).Replace('-', ''), 16)
+            }
+        }
+        $dataOffset | Should -BeGreaterThan 0
+        [Array]::Copy([Convert]::FromHexString($stagedTree), 0, $bytes, $dataOffset, 20)
+        $checksum=[Security.Cryptography.SHA1]::HashData([byte[]]$bytes[0..($bytes.Length - 21)])
+        [Array]::Copy($checksum, 0, $bytes, $bytes.Length - 20, 20)
+        [IO.File]::SetAttributes($graphPath, ([IO.File]::GetAttributes($graphPath) -band (-bnot [IO.FileAttributes]::ReadOnly)))
+        [IO.File]::WriteAllBytes($graphPath, $bytes)
+        @(& git --no-replace-objects --no-optional-locks -c core.fsmonitor= -c core.commitGraph=true -C $fixture status --porcelain=v1).Count | Should -Be 0
+        @(& git -c core.commitGraph=false -C $fixture status --porcelain=v1).Count | Should -BeGreaterThan 0
+        $snapshot=Get-FixtureSnapshot
+        $snapshot.Dirty | Should -BeTrue
+        $snapshot.Head | Should -BeExactly ([string](& git -C $fixture rev-parse HEAD))
+        [string](& git -C $fixture config --get core.commitGraph) | Should -BeExactly 'true'
+    }
+
     It 'binds dirty status to the reported commit despite replacement refs' {
         $original = & git -C $fixture rev-parse HEAD
         Set-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'replacement tree'

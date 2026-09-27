@@ -67,6 +67,8 @@ Regular `info/grafts` metadata also requires manual inspection before Git reads
 objects, even with deprecation advice suppressed and replacement refs disabled.
 Inspection disables filesystem-monitor hooks and optional index writes for
 each Git command; it does not change repository or account configuration.
+Each Git command also uses `core.commitGraph=false`, so cached commit-graph tree
+metadata cannot hide staged changes behind an otherwise matching reported HEAD.
 Every inspection Git command also disables filename folding with
 `core.ignoreCase=false`, preserving case-distinct instruction paths in status
 and both inventory queries without changing the target's configuration.
