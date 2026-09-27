@@ -17,6 +17,10 @@ Linux [session creation](https://man7.org/linux/man-pages/man2/setsid.2.html),
 [group signaling](https://man7.org/linux/man-pages/man2/kill.2.html) and
 [process metadata](https://docs.kernel.org/filesystems/proc.html) inform bounded
 descendant cleanup. These platform references were checked 2026-09-27.
+[Windows job memory limits](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_extended_limit_information)
+and Linux [prlimit](https://man7.org/linux/man-pages/man1/prlimit.1.html) and
+[address-space limits](https://man7.org/linux/man-pages/man2/getrlimit.2.html)
+inform pre-execution memory ceilings for native Git inspection.
 
 ## Candidate source instructions
 

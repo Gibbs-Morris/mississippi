@@ -38,7 +38,8 @@ namespace PortableDelivery
             {
                 Marshal.Copy(new byte[size], 0, limits, size);
                 // JOBOBJECT_EXTENDED_LIMIT_INFORMATION begins with two LARGE_INTEGER values.
-                Marshal.WriteInt32(limits, 16, 0x2000); // JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE.
+                Marshal.WriteInt32(limits, 16, 0x2200); // KILL_ON_JOB_CLOSE and JOB_MEMORY.
+                Marshal.WriteIntPtr(limits, IntPtr.Size == 8 ? 120 : 100, new IntPtr(536870912)); // 512 MiB for the whole job.
                 if (!SetInformationJobObject(job, 9, limits, size))
                 {
                     int error = Marshal.GetLastPInvokeError();
@@ -128,7 +129,7 @@ namespace PortableDelivery
 }
 
 function Get-ContextUnixGroupMembers {
-    param([int]$Group, [string]$Nonce)
+    param([int]$Group, [string]$Nonce, [Collections.Generic.Dictionary[int, string]]$KnownMembers)
     $members = @()
     foreach ($directory in [IO.Directory]::EnumerateDirectories('/proc')) {
         if ([IO.Path]::GetFileName($directory) -notmatch '^\d+$') { continue }
@@ -140,10 +141,12 @@ function Get-ContextUnixGroupMembers {
         }
         catch [IO.FileNotFoundException] { continue }
         catch [IO.DirectoryNotFoundException] { continue }
-        if (-not $environment.Split([char]0).Contains('DECOMPOSE_INSPECTION_OWNER=' + $Nonce)) {
+        $processId = [int][IO.Path]::GetFileName($directory)
+        if ($environment.Split([char]0).Contains('DECOMPOSE_INSPECTION_OWNER=' + $Nonce)) { $KnownMembers[$processId] = $fields[19] }
+        elseif (-not $KnownMembers.ContainsKey($processId) -or $KnownMembers[$processId] -cne $fields[19]) {
             throw 'Inspection process-group ownership is unconfirmed; reconcile manually before retrying.'
         }
-        $members += [int][IO.Path]::GetFileName($directory)
+        $members += $processId
     }
     return $members
 }
@@ -158,16 +161,17 @@ function Stop-ContextNativeProcess {
 function Stop-ContextInspectionOwner {
     param([Diagnostics.Process]$Child, [IntPtr]$Job, [string]$Nonce)
     $elapsed = [Diagnostics.Stopwatch]::StartNew()
+    $knownMembers = [Collections.Generic.Dictionary[int, string]]::new()
     try {
         if ($IsWindows) { [PortableDelivery.InspectionOwnership]::TerminateWindowsJob($Job) }
-        elseif (@(Get-ContextUnixGroupMembers $Child.Id $Nonce).Count -gt 0) { [PortableDelivery.InspectionOwnership]::TerminateUnixGroup($Child.Id) }
+        elseif (@(Get-ContextUnixGroupMembers $Child.Id $Nonce $knownMembers).Count -gt 0) { [PortableDelivery.InspectionOwnership]::TerminateUnixGroup($Child.Id) }
         Stop-ContextNativeProcess $Child
         $remaining = [Math]::Max(0, 2000 - [int]$elapsed.ElapsedMilliseconds)
         if (-not $Child.WaitForExit($remaining)) { throw 'Inspection termination is unconfirmed; reconcile manually before retrying.' }
         $pause = [Threading.ManualResetEventSlim]::new($false)
         try {
             do {
-                $active = if ($IsWindows) { [PortableDelivery.InspectionOwnership]::GetWindowsActiveProcesses($Job) } else { @(Get-ContextUnixGroupMembers $Child.Id $Nonce).Count }
+                $active = if ($IsWindows) { [PortableDelivery.InspectionOwnership]::GetWindowsActiveProcesses($Job) } else { @(Get-ContextUnixGroupMembers $Child.Id $Nonce $knownMembers).Count }
                 if ($active -eq 0) { return }
                 if ($elapsed.ElapsedMilliseconds -ge 2000) { throw 'Inspection descendant termination is unconfirmed; reconcile manually before retrying.' }
                 $null = $pause.Wait(10)
@@ -183,7 +187,13 @@ function Invoke-ContextGit {
     $options = @('--no-replace-objects', '--no-optional-locks', '-c', 'core.fsmonitor=', '-c', 'core.trustctime=true', '-c', 'core.checkStat=default', '-c', 'core.ignoreStat=false', '-c', 'core.ignoreCase=false', '-c', 'core.commitGraph=false', '-c', 'core.untrackedCache=false', '-C', $root)
     if (-not $IsWindows) { $options = @('-c', 'core.fileMode=true') + $options }
     $inputOption = if ($PSBoundParameters.ContainsKey('InputText')) { @{ InputText = $InputText } } else { @{} }
-    $result = Invoke-ContextNativeOutput $gitApplication ($options + $Arguments) -AcceptedExitCodes $AcceptedExitCodes -WithResult @inputOption
+    $application = $gitApplication
+    $nativeArguments = $options + $Arguments
+    if ($IsLinux) {
+        $application = $gitLimiter
+        $nativeArguments = @('--as=268435456:268435456', '--', $gitApplication) + $nativeArguments
+    }
+    $result = Invoke-ContextNativeOutput $application $nativeArguments -AcceptedExitCodes $AcceptedExitCodes -WithResult @inputOption
     if ($WithResult) { return $result }
     return $result.Output.Split([char]10, [StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object { $_.TrimEnd([char]13) }
 }
@@ -827,6 +837,9 @@ try {
             throw "Ambient Git override $selector prevents reliable target inspection; use a clean process or manual inspection."
         }
     }
+    $gitLimiter = if ($IsLinux) { Get-Command prlimit -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1 } else { $null }
+    if ($IsLinux -and $null -eq $gitLimiter) { throw 'Git memory limiting requires Linux prlimit; inspect the target manually.' }
+    if ($IsLinux) { $gitLimiter = $gitLimiter.Source }
     $requestedRoot = if ([IO.Path]::IsPathRooted($RepositoryRoot)) {
         [IO.Path]::GetFullPath($RepositoryRoot)
     } else { [IO.Path]::GetFullPath([IO.Path]::Combine((Get-Location).Path, $RepositoryRoot)) }

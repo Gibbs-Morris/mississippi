@@ -35,8 +35,8 @@ the target root, selected context paths, validation command, branch convention
 or state location where evidence is ambiguous. Record its source and precedence;
 do not guess defaults. Unknown material conventions return to the coordinator.
 
-The optional `scripts/snapshot-context.ps1` needs PowerShell 7.4 or later, Git and the
-existing `stat` utility on Unix. Discover these commands before use; if missing,
+The optional `scripts/snapshot-context.ps1` needs PowerShell 7.4 or later, Git and
+Linux `stat` and `prlimit` utilities. Discover these commands before use; if missing,
 inspect the same evidence with supported
 file/Git tools. Invoke the script by its resolved package path with an explicit
 `-RepositoryRoot` and discovered repository-relative `-ContextPath` values.
@@ -55,13 +55,20 @@ and process group. Its native children inherit that ownership. Cleanup terminate
 remaining members even after the worker exits and allows at most two seconds to
 confirm no live members remain. Linux confirmation requires readable `/proc`
 metadata and the inherited private ownership nonce; unrelated groups are never
-signaled. Unconfirmed termination requires manual reconciliation before retrying
+signaled. Previously verified PID/start-time identities remain tracked while
+exiting processes clear their environment. Unconfirmed termination requires manual reconciliation before retrying
 or releasing resources. Unsupported job/group capabilities fail before target
 inspection. The helper supports Windows and Linux; macOS uses manual inspection.
 The hidden `InspectionContext` and `WaitForInspectionOwner` parameters are internal
 entry points, not a public snapshot interface.
 An initialized repository without commits reports `Head: null` and its unborn
 branch explicitly. A missing detached HEAD remains an inspection failure.
+Every Linux Git child starts through `prlimit` with a 256-MiB hard and soft
+address-space ceiling before Git executes. The gated Windows job limits combined
+committed memory for the worker and its children to 512 MiB. Limits are applied
+before target inspection; unavailable enforcement, allocation failure or memory
+pressure diagnostics require manual inspection. Timeout and captured-byte limits
+also remain active. The core workflow does not require these optional mechanisms.
 Ambient repository/index/object/configuration Git overrides and linked context paths fail
 closed; use a clean process or explicit manual inspection rather than silently
 reading another target.
@@ -159,6 +166,10 @@ following their targets; actual deleted entries are excluded. Selected linked
 content and live inventory links require manual inspection, including regular
 targets. Instruction loading must not follow an unchecked link to a special file.
 Missing link-metadata support fails.
+The repository test harness reports this optional suite as skipped below
+PowerShell 7.4, on unsupported platforms or without its Linux prerequisites.
+The root permission fixture also reports an explicit skip without `setpriv`;
+ordinary permission controls do not require that optional privilege utility.
 Invalid encoding or any Git subprocess exceeding ten seconds fails instead of
 emitting a snapshot.
 Nonempty stderr also fails, even with an accepted exit code: traversal warnings

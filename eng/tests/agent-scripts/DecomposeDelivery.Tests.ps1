@@ -396,6 +396,71 @@ $termination
         }
     }
 
+    It 'retains verified Linux process identity through exit-time environment clearing and rejects PID reuse' -Skip:$IsWindows {
+        $tokens = $null
+        $errors = $null
+        $ast = [Management.Automation.Language.Parser]::ParseFile($snapshotScript, [ref]$tokens, [ref]$errors)
+        $definition = $ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Get-ContextUnixGroupMembers' }, $true)
+        $proc = Join-Path $TestDrive 'owned-proc-records'
+        $record = Join-Path $proc '123456'
+        $null = [IO.Directory]::CreateDirectory($record)
+        $statFields = @('R', '1', '123456') + (@('0') * 16) + @('900')
+        [IO.File]::WriteAllText((Join-Path $record 'stat'), '123456 (owned child) ' + ($statFields -join ' '))
+        [IO.File]::WriteAllText((Join-Path $record 'environ'), 'DECOMPOSE_INSPECTION_OWNER=fixture-nonce' + [char]0)
+        # Controlled proc records make the exit-time clearing race deterministic;
+        # actual group termination is covered separately by the descendant fixtures.
+        $body = $definition.Extent.Text.Replace("[IO.Directory]::EnumerateDirectories('/proc')", "[IO.Directory]::EnumerateDirectories('$($proc.Replace("'", "''"))')")
+        . ([scriptblock]::Create($body))
+        $known = [Collections.Generic.Dictionary[int, string]]::new()
+        @(Get-ContextUnixGroupMembers 123456 'fixture-nonce' $known) | Should -Contain 123456
+        [IO.File]::WriteAllText((Join-Path $record 'environ'), '')
+        @(Get-ContextUnixGroupMembers 123456 'fixture-nonce' $known) | Should -Contain 123456
+        $statFields[19] = '901'
+        [IO.File]::WriteAllText((Join-Path $record 'stat'), '123456 (owned child) ' + ($statFields -join ' '))
+        { Get-ContextUnixGroupMembers 123456 'fixture-nonce' $known } | Should -Throw '*ownership is unconfirmed*'
+    }
+
+    It 'bounds native Git allocation from a tiny loose object with a hostile declared size' {
+        $header = [Text.Encoding]::ASCII.GetBytes('tree 1073741824' + [char]0)
+        $objectId = [Convert]::ToHexString([Security.Cryptography.SHA1]::HashData($header)).ToLowerInvariant()
+        $directory = Join-Path $fixture ('.git/objects/' + $objectId.Substring(0, 2))
+        $null = [IO.Directory]::CreateDirectory($directory)
+        $objectPath = Join-Path $directory $objectId.Substring(2)
+        $stream = [IO.File]::Create($objectPath)
+        try {
+            $compressed = [IO.Compression.ZLibStream]::new($stream, [IO.Compression.CompressionLevel]::Optimal, $true)
+            try { $compressed.Write($header, 0, $header.Length) }
+            finally { $compressed.Dispose() }
+        }
+        finally { $stream.Dispose() }
+        (Get-Item -LiteralPath $objectPath).Length | Should -BeLessThan 100
+        $parent = ([string](& git -C $fixture rev-parse HEAD)).Trim()
+        $commitPath = Join-Path $TestDrive 'hostile-tree-commit.txt'
+        [IO.File]::WriteAllText($commitPath, "tree $objectId`nparent $parent`nauthor Fixture <fixture@example.invalid> 946684800 +0000`ncommitter Fixture <fixture@example.invalid> 946684800 +0000`n`nOwned allocation control`n")
+        $commit = ([string](& git -C $fixture hash-object -t commit -w -- $commitPath)).Trim()
+        $LASTEXITCODE | Should -Be 0
+        Invoke-FixtureGit @('update-ref', 'HEAD', $commit)
+        $indexHash = (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash
+        # Never run an unbounded allocation positive control on the host.
+        $result = Invoke-BoundedSnapshot
+        $result.ExitCode | Should -Be 1
+        $result.Output | Should -BeNullOrEmpty
+        $result.Error | Should -Match '(?i)memory|allocate'
+        (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash | Should -BeExactly $indexHash
+    }
+
+    It 'requires manual inspection when Linux Git memory limiting is unavailable' -Skip:$IsWindows {
+        $copy = Join-Path $TestDrive 'missing-limiter-snapshot.ps1'
+        $source = [IO.File]::ReadAllText($snapshotScript)
+        $probe = 'Get-Command prlimit -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1'
+        $source.Contains($probe) | Should -BeTrue
+        [IO.File]::WriteAllText($copy, $source.Replace($probe, '$null'))
+        $result = Invoke-BoundedSnapshot -ScriptPath $copy
+        $result.ExitCode | Should -Be 1
+        $result.Output | Should -BeNullOrEmpty
+        $result.Error | Should -Match 'Git memory limiting requires Linux prlimit'
+    }
+
     It 'rejects a Unix <Kind> from the instruction inventory before returning paths' -Skip:$IsWindows -ForEach @(
         @{ Kind = 'named pipe'; Relative = '.github/instructions/special.instructions.md' },
         @{ Kind = 'socket'; Relative = 'scoped/AGENTS.md' }
@@ -1145,7 +1210,7 @@ $termination
         Test-Path -LiteralPath $lock | Should -BeTrue
     }
 
-    It 'rejects a live instruction symlink to a <Kind> before returning inventory' -ForEach @(
+    It 'rejects a live untracked instruction symlink to a <Kind> before returning inventory' -ForEach @(
         @{ Kind = 'FIFO' },
         @{ Kind = 'socket' }
     ) -Skip:$IsWindows {
@@ -1157,11 +1222,8 @@ $termination
             $socket.Bind([Net.Sockets.UnixDomainSocketEndPoint]::new($target))
         }
         try {
-            $instructions = Join-Path $fixture 'AGENTS.md'
-            [IO.File]::Delete($instructions)
+            $instructions = Join-Path $fixture 'linked.instructions.md'
             $null = [IO.File]::CreateSymbolicLink($instructions, $target)
-            Invoke-FixtureGit @('add', 'AGENTS.md')
-            Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'instruction link')
             { Get-FixtureSnapshot -Paths @('tools/verify.sh') } | Should -Throw '*Live linked inventory entries require manual discovery*'
         }
         finally { if ($null -ne $socket) { $socket.Dispose() } }
@@ -1265,6 +1327,10 @@ $termination
         [IO.File]::WriteAllText((Join-Path $permissionRoot 'AGENTS.md'), 'Permission fixture')
         [IO.File]::WriteAllText((Join-Path $unreadable 'hidden.md'), 'Untracked content')
         $rootUser = ([string](& id -u)).Trim() -eq '0'
+        if ($rootUser -and $null -eq (Get-Command setpriv -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1)) {
+            Set-ItResult -Skipped -Because 'The root permission fixture requires the optional setpriv utility.'
+            return
+        }
         try {
             Invoke-FixtureGit @('-C', $permissionRoot, 'init', '-b', 'permissions')
             Invoke-FixtureGit @('-C', $permissionRoot, 'config', 'core.excludesFile', (Join-Path $permissionRoot 'missing-exclude'))
