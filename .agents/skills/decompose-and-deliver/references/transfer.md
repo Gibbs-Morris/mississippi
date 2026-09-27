@@ -121,8 +121,10 @@ use Git quoting and a one-MiB limit, with concurrent input/output under the nati
 deadline. Neither index nor object store is written.
 Two observations compare head, branch, full status, path inventory, staged
 and actual tracked content identities and revalidated selected hashes. Observed changes fail closed.
-Merge, rebase, cherry-pick, revert, sequencer, bisect and index-lock markers are checked before each
-observation; their presence requires manual recovery even with empty status.
+Merge, rebase, cherry-pick, revert, sequencer, bisect, index-lock, HEAD-lock and
+packed-ref-lock markers are checked before each observation. The bounded metadata
+walk conservatively rejects every lock below `refs/`, including symbolic-chain
+targets. Their presence requires manual recovery even with empty status.
 This bounded check does not promise an atomic snapshot; serialize conflicting work
 and refresh evidence before using it.
 Read selected bodies and follow the target's loading procedure. A snapshot is

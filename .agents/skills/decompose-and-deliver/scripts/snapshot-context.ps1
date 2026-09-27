@@ -424,6 +424,9 @@ function Assert-ContextGitMetadataEntry {
         throw 'Linked Git metadata entries require manual inspection; refs, objects and index must belong to the selected repository.'
     }
     $metadataRelative = [IO.Path]::GetRelativePath($Directory.FullName, $item.FullName).Replace([IO.Path]::DirectorySeparatorChar, [char]'/')
+    if ($metadataRelative.StartsWith('refs/', [StringComparison]::OrdinalIgnoreCase) -and $metadataRelative.EndsWith('.lock', [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Git ref locks require manual recovery before inspection: $metadataRelative"
+    }
     if ($metadataRelative.Equals('objects/info/alternates', [StringComparison]::OrdinalIgnoreCase) -or $metadataRelative.Equals('objects/info/http-alternates', [StringComparison]::OrdinalIgnoreCase)) {
         throw 'Alternate Git object stores require manual inspection; objects must belong to the selected repository.'
     }
@@ -689,7 +692,7 @@ function Assert-ContextCachedTree {
 
 function Assert-ContextOperationState {
     param([string]$Root)
-    foreach ($name in @('MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD', 'REBASE_HEAD', 'rebase-apply', 'rebase-merge', 'sequencer', 'BISECT_START', 'index.lock')) {
+    foreach ($name in @('MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD', 'REBASE_HEAD', 'rebase-apply', 'rebase-merge', 'sequencer', 'BISECT_START', 'index.lock', 'HEAD.lock', 'packed-refs.lock')) {
         $path = [IO.Path]::Combine($Root, '.git', $name)
         $entry = [IO.FileInfo]::new($path)
         if ($entry.Exists -or [IO.Directory]::Exists($path) -or $null -ne $entry.LinkTarget) {

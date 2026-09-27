@@ -1210,6 +1210,35 @@ $termination
         Test-Path -LiteralPath $lock | Should -BeTrue
     }
 
+    It 'rejects a <Kind> lock before reporting mutation readiness' -ForEach @(
+        @{ Kind = 'branch ref'; Relative = 'refs/heads/release/trunk.lock' },
+        @{ Kind = 'detached HEAD'; Relative = 'HEAD.lock' },
+        @{ Kind = 'symbolic-chain target'; Relative = 'refs/heads/release/trunk.lock' },
+        @{ Kind = 'packed refs'; Relative = 'packed-refs.lock' }
+    ) {
+        if ($Kind -eq 'detached HEAD') { Invoke-FixtureGit @('checkout', '--detach', 'HEAD') }
+        if ($Kind -eq 'symbolic-chain target') {
+            Invoke-FixtureGit @('symbolic-ref', 'refs/heads/alias', 'refs/heads/release/trunk')
+            Invoke-FixtureGit @('symbolic-ref', 'HEAD', 'refs/heads/alias')
+        }
+        $lock = Join-Path $fixture ('.git/' + $Relative)
+        [IO.File]::WriteAllText($lock, '')
+        @(& git --no-optional-locks -C $fixture status --porcelain=v1).Count | Should -Be 0
+        $head = ([string](& git -C $fixture rev-parse HEAD)).Trim()
+        if ($Kind -eq 'packed refs') { & git -C $fixture pack-refs --all --prune 2>&1 | Out-Null }
+        else { & git -C $fixture -c user.name=Fixture -c user.email=fixture@example.invalid commit --allow-empty -m 'owned lock control' 2>&1 | Out-Null }
+        $LASTEXITCODE | Should -Not -Be 0
+        ([string](& git -C $fixture rev-parse HEAD)).Trim() | Should -BeExactly $head
+        $indexHash = (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash
+        $result = Invoke-BoundedSnapshot
+        $result.ExitCode | Should -Be 1
+        $result.Output | Should -BeNullOrEmpty
+        $result.Error | Should -Match 'manual recovery before inspection'
+        $result.Error | Should -Match ([regex]::Escape($Relative))
+        Test-Path -LiteralPath $lock | Should -BeTrue
+        (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash | Should -BeExactly $indexHash
+    }
+
     It 'rejects a live untracked instruction symlink to a <Kind> before returning inventory' -ForEach @(
         @{ Kind = 'FIFO' },
         @{ Kind = 'socket' }
