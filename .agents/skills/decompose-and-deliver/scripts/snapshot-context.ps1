@@ -5,7 +5,8 @@ param(
     [Parameter(Mandatory)][string]$RepositoryRoot,
     [string[]]$ContextPath = @(),
     [Parameter(DontShow)][string]$HashPath,
-    [Parameter(DontShow)][string]$MetadataPath
+    [Parameter(DontShow)][string]$MetadataPath,
+    [Parameter(DontShow)][string]$InspectionContext
 )
 
 Set-StrictMode -Version Latest
@@ -83,7 +84,7 @@ function Get-ContextInput {
 }
 
 function Invoke-ContextNativeOutput {
-    param([string]$Application, [string[]]$Arguments, [int[]]$AcceptedExitCodes = @(0), [switch]$WithResult)
+    param([string]$Application, [string[]]$Arguments, [int[]]$AcceptedExitCodes = @(0), [switch]$WithResult, [ValidateRange(1, 30000)][int]$TimeoutMilliseconds = 10000)
     $start = [Diagnostics.ProcessStartInfo]::new($Application)
     $start.UseShellExecute = $false
     $start.CreateNoWindow = $true
@@ -99,7 +100,7 @@ function Invoke-ContextNativeOutput {
     try {
         $output = $child.StandardOutput.ReadToEndAsync()
         $errorOutput = $child.StandardError.ReadToEndAsync()
-        if (-not $child.WaitForExit(10000)) { throw 'Native context inspection timed out; inspect the target manually.' }
+        if (-not $child.WaitForExit($TimeoutMilliseconds)) { throw 'Native context inspection timed out; inspect the target manually.' }
         $diagnostic = $errorOutput.GetAwaiter().GetResult()
         if ($child.ExitCode -notin $AcceptedExitCodes) { throw "Native context inspection failed: $diagnostic" }
         if (-not [string]::IsNullOrWhiteSpace($diagnostic)) {
@@ -246,6 +247,16 @@ function Get-ContextObservation {
 }
 
 try {
+    if ([string]::IsNullOrEmpty($InspectionContext) -and [string]::IsNullOrEmpty($MetadataPath) -and [string]::IsNullOrEmpty($HashPath)) {
+        $inspectionRoot = if ([IO.Path]::IsPathRooted($RepositoryRoot)) { [IO.Path]::GetFullPath($RepositoryRoot) }
+        else { [IO.Path]::GetFullPath([IO.Path]::Combine((Get-Location).Path, $RepositoryRoot)) }
+        $shell = [IO.Path]::Combine($PSHOME, $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' }))
+        $contextJson = ConvertTo-Json -InputObject @($ContextPath) -Compress
+        $output = Invoke-ContextNativeOutput $shell @('-NoProfile', '-File', $PSCommandPath, '-RepositoryRoot', $inspectionRoot, '-InspectionContext', $contextJson) -TimeoutMilliseconds 30000
+        [Console]::Write($output)
+        exit 0
+    }
+    if (-not [string]::IsNullOrEmpty($InspectionContext)) { $ContextPath = @(ConvertFrom-Json -InputObject $InspectionContext) }
     if (-not [string]::IsNullOrEmpty($MetadataPath)) {
         Assert-ContextGitMetadata ([IO.DirectoryInfo]::new($MetadataPath)) -InChild
         exit 0

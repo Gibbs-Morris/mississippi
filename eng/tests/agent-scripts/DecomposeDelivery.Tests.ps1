@@ -40,12 +40,15 @@ BeforeAll {
         $source = [IO.File]::ReadAllText($snapshotScript)
         $boundary = '$after = Get-ContextObservation $root $ContextPath'
         if (-not $source.Contains($boundary)) { throw 'Snapshot observation boundary was not found.' }
-        [IO.File]::WriteAllText($injected, $source.Replace($boundary, "& `$global:snapshotMutation`n    " + $boundary))
-        return @"
+        $definitions = @"
 `$global:snapshotRealGit = '$realGit'
 `$global:snapshotMutation = { Set-Content -LiteralPath '$markerPath' -Value 'mutated'; $Mutation }
-`$snapshotInvocationPath = '$($injected.Replace("'", "''"))'
 "@ + "`n"
+        $workerBoundary = '$gitApplication = (Get-Command git -CommandType Application'
+        if (-not $source.Contains($workerBoundary)) { throw 'Snapshot worker boundary was not found.' }
+        $source = $source.Replace($workerBoundary, $definitions + $workerBoundary)
+        [IO.File]::WriteAllText($injected, $source.Replace($boundary, "& `$global:snapshotMutation`n    " + $boundary))
+        return "`$snapshotInvocationPath = '$($injected.Replace("'", "''"))'`n"
     }
 
     function Invoke-BoundedSnapshot {
@@ -65,7 +68,7 @@ BeforeAll {
         try {
             $output = $child.StandardOutput.ReadToEndAsync()
             $errorOutput = $child.StandardError.ReadToEndAsync()
-            if (-not $child.WaitForExit(15000)) { throw 'Snapshot exceeded its outer fixture timeout.' }
+            if (-not $child.WaitForExit(45000)) { throw 'Snapshot exceeded its outer fixture timeout.' }
             return [pscustomobject]@{ ExitCode = $child.ExitCode; Output = $output.GetAwaiter().GetResult(); Error = $errorOutput.GetAwaiter().GetResult() }
         }
         finally {
@@ -191,6 +194,19 @@ Describe 'Portable delivery context snapshots' {
         $snapshot.Paths | Should -Contain '.github/instructions/hidden.instructions.md'
         $snapshot.Paths | Should -Contain 'tools/private-policy.txt'
         $snapshot.SelectedInputs.Path | Should -Contain 'tools/private-policy.txt'
+    }
+
+    It 'bounds stalled worktree probes during inventory filtering' {
+        $copy = Join-Path $TestDrive 'inventory-stall-snapshot.ps1'
+        $source = [IO.File]::ReadAllText($snapshotScript)
+        $boundary = 'if ([IO.File]::Exists($fullPath) -or [IO.Directory]::Exists($fullPath) -or $null -ne $entry.LinkTarget)'
+        $source.Contains($boundary) | Should -BeTrue
+        # Deterministically simulate a blocked filesystem probe; no network or FUSE setup is implied.
+        [IO.File]::WriteAllText($copy, $source.Replace($boundary, 'while ($true) { }; ' + $boundary))
+        $result = Invoke-BoundedSnapshot -ScriptPath $copy
+        $result.ExitCode | Should -Be 1
+        $result.Error | Should -Match 'Native context inspection timed out'
+        $result.Output | Should -BeNullOrEmpty
     }
 
     It 'retains a clean tracked dangling symlink in the current inventory' -Skip:$IsWindows {

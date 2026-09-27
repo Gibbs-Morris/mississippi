@@ -42,6 +42,12 @@ file/Git tools. Invoke the script by its resolved package path with an explicit
 `-RepositoryRoot` and discovered repository-relative `-ContextPath` values.
 It returns paths, Git identity/status and selected input hashes. It neither
 selects applicable instructions nor executes commands from their contents.
+Public inspection runs in one owned worker bounded to thirty seconds, including
+root discovery, filesystem existence/link probes, selected-path preflight and
+inventory filtering. Slower or stalled filesystems take the manual fallback;
+native Git, hashing and metadata children retain their shorter ten-second bounds.
+The hidden `InspectionContext` parameter carries serialized paths to that worker
+and is an internal entry point, not a public snapshot interface.
 An initialized repository without commits reports `Head: null` and its unborn
 branch explicitly. A missing detached HEAD remains an inspection failure.
 Ambient repository/index/object Git overrides and linked context paths fail
