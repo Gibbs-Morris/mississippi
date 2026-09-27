@@ -73,6 +73,8 @@ before Git reads objects, because a matching root and clean status do not prove
 that the reported commit or its ancestry belongs to this repository's store.
 Regular `info/grafts` metadata also requires manual inspection before Git reads
 objects, even with deprecation advice suppressed and replacement refs disabled.
+External `GIT_GRAFT_FILE` and `GIT_SHALLOW_FILE` overrides are rejected before Git
+queries; embedded metadata inspection cannot verify an external history boundary.
 Shallow boundaries also require manual inspection, including legitimate shallow
 clones. Effective replacement refs, including packed refs, are rejected before
 objects are attributed; invocation-only replacement disabling cannot protect
@@ -152,7 +154,7 @@ Inventory reads NUL-delimited UTF-8 paths with ordinal identity.
 Ignored `AGENTS.md`, `*.instructions.md`, `CLAUDE.md`, Copilot's repository guide,
 and explicitly selected context files also appear. Additional target-specific
 guidance conventions still need independent discovery and instruction selection.
-Existing dangling links stay in the path inventory without
+Existing untracked dangling links stay in the path inventory without
 following their targets; actual deleted entries are excluded. Selected linked
 content and live inventory links require manual inspection, including regular
 targets. Instruction loading must not follow an unchecked link to a special file.
@@ -172,9 +174,10 @@ view alone is not validation evidence for deliberately preserved metadata.
 On Unix, status also honors executable-bit changes for every tracked file using
 command-local `core.fileMode=true`, including files outside selected context.
 Windows retains its filesystem's configured mode behavior.
-Tracked symlink entries with `core.symlinks=false` require manual inspection,
-including legitimate Windows conversions: Git can otherwise report a regular
-file containing a link target as clean while its filesystem behavior differs.
+Every tracked symlink requires manual content inspection, including dangling
+links and legitimate Windows conversions with `core.symlinks=false`. Cached stat
+fields can conceal changed link text; plain-file conversions can look clean while
+their filesystem behavior differs.
 Path joining and separator normalization follow the host filesystem: Unix
 backslashes remain literal characters in inventories, roots and selected identities.
 Git root paths lose only the command's single line terminator; real trailing

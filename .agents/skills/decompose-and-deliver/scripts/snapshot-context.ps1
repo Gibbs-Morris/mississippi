@@ -302,6 +302,31 @@ function Get-ContextBoundedOutput {
     finally { foreach ($capture in $captures) { $capture.Content.Dispose() } }
 }
 
+function New-ContextInspectionOwner {
+    param([Diagnostics.ProcessStartInfo]$Start, [switch]$OwnInspection)
+    $owner = [pscustomobject]@{ Job = [IntPtr]::Zero; Nonce = [guid]::NewGuid().ToString('N') }
+    if (-not $OwnInspection) { return $owner }
+    if (-not $IsWindows -and -not $IsLinux) { throw 'Inspection process ownership is unsupported; inspect the target manually.' }
+    Enable-ContextOwnershipType
+    $Start.Environment['DECOMPOSE_INSPECTION_OWNER'] = $owner.Nonce
+    if ($IsWindows) { $owner.Job = [PortableDelivery.InspectionOwnership]::CreateWindowsJob() }
+    return $owner
+}
+
+function Close-ContextNativeOutput {
+    param([Diagnostics.Process]$Child, [psobject]$Owner, [switch]$OwnInspection)
+    try {
+        if ($null -eq $Child) {
+            if ($Owner.Job -ne [IntPtr]::Zero) { [PortableDelivery.InspectionOwnership]::CloseWindowsJob($Owner.Job) }
+        } elseif ($OwnInspection) { Stop-ContextInspectionOwner $Child $Owner.Job $Owner.Nonce }
+        else {
+            Stop-ContextNativeProcess $Child
+            if (-not $Child.WaitForExit(2000)) { throw 'Native inspection termination is unconfirmed; reconcile manually before retrying.' }
+        }
+    }
+    finally { if ($null -ne $Child) { $Child.Dispose() } }
+}
+
 function Invoke-ContextNativeOutput {
     param([string]$Application, [string[]]$Arguments, [int[]]$AcceptedExitCodes = @(0), [switch]$WithResult, [ValidateRange(1, 30000)][int]$TimeoutMilliseconds = 10000, [switch]$OwnInspection, [string]$InputText)
     $hasInput = $PSBoundParameters.ContainsKey('InputText')
@@ -319,19 +344,12 @@ function Invoke-ContextNativeOutput {
     foreach ($argument in $Arguments) {
         $start.ArgumentList.Add($argument)
     }
-    $job = [IntPtr]::Zero
-    $nonce = [guid]::NewGuid().ToString('N')
-    if ($OwnInspection) {
-        if (-not $IsWindows -and -not $IsLinux) { throw 'Inspection process ownership is unsupported; inspect the target manually.' }
-        Enable-ContextOwnershipType
-        $start.Environment['DECOMPOSE_INSPECTION_OWNER'] = $nonce
-        if ($IsWindows) { $job = [PortableDelivery.InspectionOwnership]::CreateWindowsJob() }
-    }
+    $owner = New-ContextInspectionOwner $start -OwnInspection:$OwnInspection
     $child = $null
     try {
         $child = [Diagnostics.Process]::Start($start)
         if ($OwnInspection) {
-            if ($IsWindows) { [PortableDelivery.InspectionOwnership]::AttachWindowsProcess($job, $child.Handle) }
+            if ($IsWindows) { [PortableDelivery.InspectionOwnership]::AttachWindowsProcess($owner.Job, $child.Handle) }
             $child.StandardInput.WriteLine('OWNED')
             $child.StandardInput.Close()
         }
@@ -345,18 +363,7 @@ function Invoke-ContextNativeOutput {
         if ($WithResult) { return [pscustomobject]@{ ExitCode = $child.ExitCode; Output = $captured.Output } }
         return $captured.Output
     }
-    finally {
-        try {
-            if ($null -eq $child) {
-                if ($job -ne [IntPtr]::Zero) { [PortableDelivery.InspectionOwnership]::CloseWindowsJob($job) }
-            } elseif ($OwnInspection) { Stop-ContextInspectionOwner $child $job $nonce }
-            else {
-                Stop-ContextNativeProcess $child
-                if (-not $child.WaitForExit(2000)) { throw 'Native inspection termination is unconfirmed; reconcile manually before retrying.' }
-            }
-        }
-        finally { if ($null -ne $child) { $child.Dispose() } }
-    }
+    finally { Close-ContextNativeOutput $child $owner -OwnInspection:$OwnInspection }
 }
 
 function Get-ContextRawPaths {
@@ -529,6 +536,18 @@ function Skip-ContextIndexEntry {
     if ($Version -ne 4) { $null = Read-ContextIndexBytes $Buffer ((8 - (($Buffer.Cursor - $start) % 8)) % 8) }
 }
 
+function Read-ContextIndexFile {
+    param([IO.FileStream]$Stream)
+    $bytes = [byte[]]::new([int]$Stream.Length)
+    $read = 0
+    while ($read -lt $bytes.Length) {
+        $count = $Stream.Read($bytes, $read, $bytes.Length - $read)
+        if ($count -eq 0) { throw 'Git index ended during inspection; reconcile and retry.' }
+        $read += $count
+    }
+    return ,$bytes
+}
+
 function Get-ContextCacheTree {
     param([string]$Root, [int]$HashSize)
     $path = [IO.Path]::Combine($Root, '.git', 'index')
@@ -538,13 +557,7 @@ function Get-ContextCacheTree {
         if (-not $stream.CanSeek -or $stream.Length -gt 1048576 -or $stream.Length -lt 12 + $HashSize) {
             throw 'Git index exceeds supported inspection bounds; inspect this target manually.'
         }
-        $bytes = [byte[]]::new([int]$stream.Length)
-        $read = 0
-        while ($read -lt $bytes.Length) {
-            $count = $stream.Read($bytes, $read, $bytes.Length - $read)
-            if ($count -eq 0) { throw 'Git index ended during inspection; reconcile and retry.' }
-            $read += $count
-        }
+        $bytes = Read-ContextIndexFile $stream
     }
     finally { $stream.Dispose() }
     $buffer = [pscustomobject]@{ Data = $bytes; Cursor = 0; Limit = $bytes.Length - $HashSize }
@@ -686,23 +699,30 @@ function ConvertTo-ContextGitInputPath {
     return $quoted.Append('"').ToString()
 }
 
+function Get-ContextTrackedFile {
+    param([string]$Root, [string]$Relative)
+    $fullPath = [IO.Path]::GetFullPath([IO.Path]::Combine($Root, $Relative))
+    $prefix = $Root.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+    if (-not $fullPath.StartsWith($prefix, [StringComparison]::Ordinal)) { throw "Tracked path escapes the target repository: $Relative" }
+    $item = [IO.FileInfo]::new($fullPath)
+    if ($null -ne $item.LinkTarget -or ($item.Exists -and ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)) { throw "Linked tracked content requires manual inspection: $Relative" }
+    $ancestor = $item.Directory
+    while ($null -ne $ancestor -and $ancestor.FullName -cne $Root) {
+        if ($ancestor.Exists -and ($ancestor.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw "Linked tracked content requires manual inspection: $Relative" }
+        $ancestor = $ancestor.Parent
+    }
+    if ([IO.Directory]::Exists($item.FullName)) { throw "Non-regular tracked content requires manual inspection: $Relative" }
+    if ($item.Exists -and ($item.Attributes -band [IO.FileAttributes]::Device) -ne 0) { throw "Non-regular tracked content requires manual inspection: $Relative" }
+    return $item
+}
+
 function Get-ContextTrackedContent {
     param([string]$Root, [string[]]$Index)
     $entries = @(foreach ($record in $Index) {
         if ($record -cnotmatch '(?s)^(100644|100755) ([a-f0-9]+) 0\t(.+)$') { continue }
         $expected = $Matches[2]
         $relative = $Matches[3]
-        $fullPath = [IO.Path]::GetFullPath([IO.Path]::Combine($Root, $relative))
-        if (-not $fullPath.StartsWith($Root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal)) { throw "Tracked path escapes the target repository: $relative" }
-        $item = [IO.FileInfo]::new($fullPath)
-        if ($null -ne $item.LinkTarget -or ($item.Exists -and ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)) { throw "Linked tracked content requires manual inspection: $relative" }
-        $ancestor = $item.Directory
-        while ($null -ne $ancestor -and $ancestor.FullName -cne $Root) {
-            if ($ancestor.Exists -and ($ancestor.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw "Linked tracked content requires manual inspection: $relative" }
-            $ancestor = $ancestor.Parent
-        }
-        if ([IO.Directory]::Exists($item.FullName)) { throw "Non-regular tracked content requires manual inspection: $relative" }
-        if ($item.Exists -and ($item.Attributes -band [IO.FileAttributes]::Device) -ne 0) { throw "Non-regular tracked content requires manual inspection: $relative" }
+        $item = Get-ContextTrackedFile $Root $relative
         [pscustomobject]@{ Path = $relative; Expected = $expected; Actual = $null; Present = $item.Exists }
     })
     $present = @($entries | Where-Object { $_.Present })
@@ -736,6 +756,7 @@ function Get-ContextObservation {
         if ($symlinks.ExitCode -eq 0 -and $symlinks.Output.Trim() -eq 'false') {
             throw 'Tracked symlinks with core.symlinks=false require manual inspection; plain-file substitutions can look clean.'
         }
+        throw 'Tracked symlink content requires manual inspection; cached stat fields cannot establish link identity.'
     }
     $flags = @(Invoke-ContextGit $root @('ls-files', '-v'))
     if (@($flags | Where-Object { $_ -cmatch '^[a-zS] ' }).Count -gt 0) {
@@ -801,7 +822,7 @@ try {
         exit 0
     }
     $gitApplication = (Get-Command git -CommandType Application | Select-Object -First 1).Source
-    foreach ($selector in @('GIT_DIR', 'GIT_WORK_TREE', 'GIT_COMMON_DIR', 'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_NAMESPACE', 'GIT_CONFIG', 'GIT_REPLACE_REF_BASE')) {
+    foreach ($selector in @('GIT_DIR', 'GIT_WORK_TREE', 'GIT_COMMON_DIR', 'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_NAMESPACE', 'GIT_CONFIG', 'GIT_REPLACE_REF_BASE', 'GIT_SHALLOW_FILE', 'GIT_GRAFT_FILE')) {
         if ($null -ne [Environment]::GetEnvironmentVariable($selector)) {
             throw "Ambient Git override $selector prevents reliable target inspection; use a clean process or manual inspection."
         }

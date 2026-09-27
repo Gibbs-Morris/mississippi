@@ -64,6 +64,7 @@ BeforeAll {
         foreach ($argument in @('-NoProfile', '-File', $ScriptPath, '-RepositoryRoot', $Root, '-ContextPath', $Path)) { $start.ArgumentList.Add($argument) }
         $start.Environment['GIT_CONFIG_NOSYSTEM'] = '1'
         $start.Environment['GIT_CONFIG_GLOBAL'] = Join-Path $fixture 'missing-global'
+        $start.Environment['XDG_CONFIG_HOME'] = Join-Path $fixture 'missing-xdg'
         $child = [Diagnostics.Process]::Start($start)
         try {
             $output = $child.StandardOutput.ReadToEndAsync()
@@ -424,17 +425,67 @@ $termination
         finally { if ($null -ne $socket) { $socket.Dispose() } }
     }
 
-    It 'retains a clean tracked dangling symlink in the current inventory' -Skip:$IsWindows {
+    It 'requires manual inspection of tracked dangling symlink content' -Skip:$IsWindows {
         $path = Join-Path $fixture 'tools/dangling.md'
         $null = [IO.File]::CreateSymbolicLink($path, 'missing-target.md')
         [IO.File]::Exists((Join-Path $fixture 'tools/missing-target.md')) | Should -BeFalse
         ([IO.FileInfo]::new($path)).LinkTarget | Should -BeExactly 'missing-target.md'
+        $inventory = Get-FixtureSnapshot
+        $inventory.Dirty | Should -BeTrue
+        $inventory.Paths | Should -Contain 'tools/dangling.md'
         Invoke-FixtureGit @('add', 'tools/dangling.md')
         Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'tracked dangling link')
         @(& git -C $fixture status --porcelain=v1).Count | Should -Be 0
-        $snapshot = Get-FixtureSnapshot
-        $snapshot.Dirty | Should -BeFalse
-        $snapshot.Paths | Should -Contain 'tools/dangling.md'
+        { Get-FixtureSnapshot } | Should -Throw '*Tracked symlink content requires manual inspection*'
+        ([IO.FileInfo]::new($path)).LinkTarget | Should -BeExactly 'missing-target.md'
+    }
+
+    It 'rejects a forged clean stat cache for a changed tracked dangling symlink' -Skip:$IsWindows {
+        $path = Join-Path $fixture 'tools/dangling.md'
+        $null = [IO.File]::CreateSymbolicLink($path, 'missing-one.md')
+        Invoke-FixtureGit @('add', 'tools/dangling.md')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'dangling link baseline')
+        $original = ([string](& git -C $fixture rev-parse HEAD:tools/dangling.md)).Trim()
+        [IO.File]::Delete($path)
+        $null = [IO.File]::CreateSymbolicLink($path, 'missing-two.md')
+        Invoke-FixtureGit @('add', 'tools/dangling.md')
+        Set-FixtureStagedObject 'tools/dangling.md' $original
+        @(& git --no-optional-locks -c core.fsmonitor= -c core.trustctime=true -c core.checkStat=default -C $fixture status --porcelain=v1).Count | Should -Be 0
+        $indexHash = (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash
+        { Get-FixtureSnapshot } | Should -Throw '*Tracked symlink content requires manual inspection*'
+        (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash | Should -BeExactly $indexHash
+        ([IO.FileInfo]::new($path)).LinkTarget | Should -BeExactly 'missing-two.md'
+    }
+
+    It 'preserves containment at the filesystem root of an owned tracked file' {
+        $tokens = $null
+        $errors = $null
+        $ast = [Management.Automation.Language.Parser]::ParseFile($snapshotScript, [ref]$tokens, [ref]$errors)
+        $definition = $ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Get-ContextTrackedFile' }, $true)
+        $definition | Should -Not -BeNullOrEmpty
+        . ([scriptblock]::Create($definition.Extent.Text))
+        $path = Join-Path $fixture 'AGENTS.md'
+        $filesystemRoot = [IO.Path]::GetPathRoot($path)
+        $relative = [IO.Path]::GetRelativePath($filesystemRoot, $path)
+        (Get-ContextTrackedFile $filesystemRoot $relative).FullName | Should -BeExactly $path
+    }
+
+    It 'rejects external shallow history overrides before attributing a clean target' {
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--allow-empty', '-m', 'second commit')
+        $boundary = Join-Path $TestDrive 'external-shallow'
+        [IO.File]::WriteAllText($boundary, ([string](& git -C $fixture rev-parse HEAD)).Trim() + "`n")
+        $previous = [Environment]::GetEnvironmentVariable('GIT_SHALLOW_FILE')
+        try {
+            [int](& git -C $fixture rev-list --count HEAD) | Should -Be 2
+            $env:GIT_SHALLOW_FILE = $boundary
+            [int](& git -C $fixture rev-list --count HEAD) | Should -Be 1
+            @(& git -C $fixture status --porcelain=v1).Count | Should -Be 0
+            { Get-FixtureSnapshot } | Should -Throw '*Ambient Git override GIT_SHALLOW_FILE*'
+        }
+        finally {
+            if ($null -eq $previous) { Remove-Item -LiteralPath Env:GIT_SHALLOW_FILE -ErrorAction SilentlyContinue }
+            else { [Environment]::SetEnvironmentVariable('GIT_SHALLOW_FILE', $previous) }
+        }
     }
 
     It 'preserves case-distinct paths on a case-sensitive filesystem' {
@@ -1463,7 +1514,9 @@ $termination
         @{ Selector = 'GIT_COMMON_DIR' },
         @{ Selector = 'GIT_INDEX_FILE' },
         @{ Selector = 'GIT_CONFIG' },
-        @{ Selector = 'GIT_REPLACE_REF_BASE' }
+        @{ Selector = 'GIT_REPLACE_REF_BASE' },
+        @{ Selector = 'GIT_SHALLOW_FILE' },
+        @{ Selector = 'GIT_GRAFT_FILE' }
     ) {
         $previous = [Environment]::GetEnvironmentVariable($Selector)
         try {
