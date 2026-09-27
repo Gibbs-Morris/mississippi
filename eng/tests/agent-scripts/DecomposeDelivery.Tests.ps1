@@ -245,6 +245,23 @@ Describe 'Portable delivery context snapshots' {
         @($snapshot.Paths | Where-Object { $_ -ceq 'tools/foo.md' }).Count | Should -Be 1
     }
 
+    It 'discovers case-distinct instructions concealed by core.ignoreCase' {
+        if (-not $caseSensitiveFileSystem) { Set-ItResult -Skipped -Because 'The fixture filesystem is case-insensitive.'; return }
+        [IO.File]::WriteAllText((Join-Path $fixture 'Foo.instructions.md'), 'Tracked uppercase guidance')
+        Invoke-FixtureGit @('add', 'Foo.instructions.md')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'case-folding fixture')
+        Invoke-FixtureGit @('config', 'core.ignoreCase', 'true')
+        [IO.File]::WriteAllText((Join-Path $fixture 'foo.instructions.md'), 'Untracked lowercase guidance')
+        @(& git -C $fixture status --porcelain=v1).Count | Should -Be 0
+        @(& git -C $fixture ls-files --cached --others --exclude-standard | Where-Object { $_ -ceq 'foo.instructions.md' }).Count | Should -Be 0
+        $snapshot = Get-FixtureSnapshot -Paths @('AGENTS.md', 'foo.instructions.md')
+        $snapshot.Dirty | Should -BeTrue
+        @($snapshot.Paths | Where-Object { $_ -ceq 'Foo.instructions.md' }).Count | Should -Be 1
+        @($snapshot.Paths | Where-Object { $_ -ceq 'foo.instructions.md' }).Count | Should -Be 1
+        @($snapshot.SelectedInputs.Path | Where-Object { $_ -ceq 'foo.instructions.md' }).Count | Should -Be 1
+        [string](& git -C $fixture config --get core.ignoreCase) | Should -BeExactly 'true'
+    }
+
     It 'preserves a <Label> in tracked and untracked filenames' -Skip:$IsWindows -ForEach @(
         @{ Label = 'newline'; Character = "`n" },
         @{ Label = 'tab'; Character = "`t" },

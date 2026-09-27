@@ -14,7 +14,7 @@ $ErrorActionPreference = 'Stop'
 
 function Invoke-ContextGit {
     param([string]$Root, [string[]]$Arguments, [int[]]$AcceptedExitCodes = @(0), [switch]$WithResult)
-    $options = @('--no-replace-objects', '--no-optional-locks', '-c', 'core.fsmonitor=', '-c', 'core.trustctime=true', '-c', 'core.checkStat=default', '-c', 'core.ignoreStat=false', '-C', $root)
+    $options = @('--no-replace-objects', '--no-optional-locks', '-c', 'core.fsmonitor=', '-c', 'core.trustctime=true', '-c', 'core.checkStat=default', '-c', 'core.ignoreStat=false', '-c', 'core.ignoreCase=false', '-C', $root)
     if (-not $IsWindows) { $options = @('-c', 'core.fileMode=true') + $options }
     $result = Invoke-ContextNativeOutput $gitApplication ($options + $Arguments) -AcceptedExitCodes $AcceptedExitCodes -WithResult
     if ($WithResult) { return $result }
@@ -117,12 +117,11 @@ function Invoke-ContextNativeOutput {
 
 function Get-ContextRawPaths {
     param([string]$Root, [string[]]$ContextPaths)
-    $arguments = @('--no-replace-objects', '--no-optional-locks', '-c', 'core.fsmonitor=', '-C', $root, 'ls-files', '-z', '--cached', '--others', '--exclude-standard')
-    $visible = [string](Invoke-ContextNativeOutput $gitApplication $arguments)
+    $visible = Invoke-ContextGit $root @('ls-files', '-z', '--cached', '--others', '--exclude-standard') -WithResult
     $instructionCandidates = @(':(glob)**/AGENTS.md', ':(glob)**/*.instructions.md', ':(glob)**/CLAUDE.md', '.github/copilot-instructions.md')
     $selected = @($ContextPaths | ForEach-Object { ':(literal)' + $_ })
     $ignored = Invoke-ContextGit $root (@('ls-files', '-z', '--others', '--ignored', '--exclude-standard', '--') + $instructionCandidates + $selected) -WithResult
-    return ($visible + $ignored.Output).Split([char]0, [StringSplitOptions]::RemoveEmptyEntries)
+    return ($visible.Output + $ignored.Output).Split([char]0, [StringSplitOptions]::RemoveEmptyEntries)
 }
 
 function Get-ContextPaths {

@@ -61,6 +61,9 @@ before Git reads objects, because a matching root and clean status do not prove
 that the reported commit or its ancestry belongs to this repository's store.
 Inspection disables filesystem-monitor hooks and optional index writes for
 each Git command; it does not change repository or account configuration.
+Every inspection Git command also disables filename folding with
+`core.ignoreCase=false`, preserving case-distinct instruction paths in status
+and both inventory queries without changing the target's configuration.
 Configured clean/process filters, including inherited LFS settings, require
 manual file/commit inspection or an explicitly authorized trusted workflow.
 The helper rejects them before status rather than changing normalization and
