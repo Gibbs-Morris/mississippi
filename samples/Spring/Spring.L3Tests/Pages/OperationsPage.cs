@@ -357,7 +357,12 @@ public sealed partial class OperationsPage
     public async Task WaitForCommandSuccessAsync(
         float? timeout = null
     ) =>
-        await AccountAPanel.Locator("div[role='status']")
+        await AccountAPanel.GetByText(
+                "Command executed successfully.",
+                new()
+                {
+                    Exact = true,
+                })
             .WaitForAsync(
                 new()
                 {
