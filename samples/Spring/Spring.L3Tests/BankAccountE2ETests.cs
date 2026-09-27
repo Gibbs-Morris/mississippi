@@ -327,6 +327,16 @@ public sealed class BankAccountE2ETests
             OperationsPage operationsPage = await BankAccountScenario.PrepareAsync(fixture, page, ProjectionTimeout);
             await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
             await operationsPage.WaitForBalanceAsync(ProjectionTimeout, "B");
+            string? accountAHeader = await operationsPage.GetAccountHeaderAsync();
+            string? accountBHeader = await operationsPage.GetAccountHeaderAsync("B");
+            Assert.NotNull(accountAHeader);
+            Assert.NotNull(accountBHeader);
+            Assert.StartsWith("Account A: ", accountAHeader, StringComparison.Ordinal);
+            Assert.StartsWith("Account B: ", accountBHeader, StringComparison.Ordinal);
+            string accountAId = accountAHeader["Account A: ".Length..];
+            string accountBId = accountBHeader["Account B: ".Length..];
+            Assert.Equal(accountBId, await operationsPage.GetTransferDestinationValueAsync());
+            Assert.Equal(accountAId, await operationsPage.GetTransferDestinationValueAsync("B"));
             await operationsPage.EnterTransferAmountAsync(25.00m);
             await operationsPage.ClickStartTransferAsync();
             await operationsPage.WaitForTransferPhaseAsync("Completed", ProjectionTimeout);

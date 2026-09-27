@@ -125,6 +125,26 @@ public sealed class AccountOperationsSectionTests : BunitContext
     }
 
     /// <summary>
+    ///     A transfer destination displays its supplied account ID and remains read-only.
+    /// </summary>
+    [Fact]
+    public void TransferDestinationShowsSuppliedAccountIdAndRemainsReadOnly()
+    {
+        using IRenderedComponent<AccountOperationsSection> cut = Render<AccountOperationsSection>(p => p
+            .Add(c => c.PanelLabel, "Account A")
+            .Add(c => c.InputIdPrefix, "account-a")
+            .Add(c => c.SelectedEntityId, "account-a-id")
+            .Add(c => c.IsAccountOpen, true)
+            .Add(c => c.IsExecutingOrLoading, false)
+            .Add(c => c.TransferDestinationAccountId, "account-b-id")
+            .Add(c => c.IsTransferDestinationReadOnly, true));
+        IElement destination = cut.Find("#account-a-transfer-destination-input");
+        Assert.Equal("account-b-id", destination.GetAttribute("value"));
+        Assert.True(destination.HasAttribute("readonly"));
+        Assert.True(destination.HasAttribute("disabled"));
+    }
+
+    /// <summary>
     ///     Every mapped saga phase is presented with its supported Refraction state.
     /// </summary>
     /// <param name="phase">The projected saga phase.</param>

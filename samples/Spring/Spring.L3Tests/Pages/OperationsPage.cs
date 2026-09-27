@@ -182,12 +182,21 @@ public sealed partial class OperationsPage
             .FillAsync(amount.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>
-    ///     Gets the displayed account header from the first account panel.
+    ///     Gets the displayed account header from the selected account panel.
     /// </summary>
+    /// <param name="account">The account slot, A or B.</param>
     /// <returns>The account ID text, or null if not present.</returns>
-    public async Task<string?> GetAccountHeaderAsync()
+    public async Task<string?> GetAccountHeaderAsync(
+        string account = "A"
+    )
     {
-        ILocator accountHeader = AccountAPanel.Locator("#account-a-panel-heading");
+        string headingId = account switch
+        {
+            "A" => "#account-a-panel-heading",
+            "B" => "#account-b-panel-heading",
+            var _ => throw new ArgumentOutOfRangeException(nameof(account), account, "Account slot must be A or B."),
+        };
+        ILocator accountHeader = GetAccountPanel(account).Locator(headingId);
         return await accountHeader.TextContentAsync();
     }
 
@@ -247,6 +256,23 @@ public sealed partial class OperationsPage
     /// </summary>
     /// <returns>The page title.</returns>
     public async Task<string?> GetTitleAsync() => await page.Locator("h1").TextContentAsync();
+
+    /// <summary>
+    ///     Gets the value rendered in the selected account panel's read-only transfer destination.
+    /// </summary>
+    /// <param name="account">The account slot, A or B.</param>
+    /// <returns>The destination account ID shown in the input.</returns>
+    public async Task<string> GetTransferDestinationValueAsync(
+        string account = "A"
+    ) =>
+        await GetAccountPanel(account)
+            .GetByLabel(
+                $"Account {account} transfer destination account",
+                new()
+                {
+                    Exact = true,
+                })
+            .InputValueAsync();
 
     /// <summary>
     ///     Gets the accessible transfer status strip for the selected account.
