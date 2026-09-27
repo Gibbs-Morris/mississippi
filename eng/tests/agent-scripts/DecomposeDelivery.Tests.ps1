@@ -102,6 +102,48 @@ BeforeAll {
         }
         throw 'Fixture index entry was not found.'
     }
+
+    function New-FixtureTree {
+        param([string[]]$Entries)
+        $start = [Diagnostics.ProcessStartInfo]::new((Get-Command git -CommandType Application | Select-Object -First 1).Source)
+        $start.UseShellExecute = $false
+        $start.CreateNoWindow = $true
+        $start.RedirectStandardInput = $true
+        $start.RedirectStandardOutput = $true
+        $start.RedirectStandardError = $true
+        foreach ($argument in @('-C', $fixture, 'mktree')) { $start.ArgumentList.Add($argument) }
+        $child = [Diagnostics.Process]::Start($start)
+        try {
+            $output = $child.StandardOutput.ReadToEndAsync()
+            $errorOutput = $child.StandardError.ReadToEndAsync()
+            # Git's input records require LF, including when the fixture runs on Windows.
+            $child.StandardInput.NewLine = "`n"
+            foreach ($entry in $Entries) { $child.StandardInput.WriteLine($entry) }
+            $child.StandardInput.Close()
+            if (-not $child.WaitForExit(45000)) { throw 'Fixture tree creation timed out.' }
+            if ($child.ExitCode -ne 0) { throw $errorOutput.GetAwaiter().GetResult() }
+            return $output.GetAwaiter().GetResult().Trim()
+        }
+        finally {
+            if (-not $child.HasExited) { $child.Kill($true) }
+            $child.Dispose()
+        }
+    }
+
+    function Set-FixtureCachedTree {
+        param([string]$Original, [string]$Replacement)
+        $indexPath = Join-Path $fixture '.git/index'
+        $bytes = [IO.File]::ReadAllBytes($indexPath)
+        $hex = [Convert]::ToHexString($bytes)
+        $offset = $hex.IndexOf($Original.ToUpperInvariant(), [StringComparison]::Ordinal)
+        $offset | Should -BeGreaterThan 0
+        $hex.IndexOf($Original.ToUpperInvariant(), $offset + 1, [StringComparison]::Ordinal) | Should -Be -1
+        ($offset % 2) | Should -Be 0
+        [Array]::Copy([Convert]::FromHexString($Replacement), 0, $bytes, $offset / 2, 20)
+        $checksum = [Security.Cryptography.SHA1]::HashData([byte[]]$bytes[0..($bytes.Length - 21)])
+        [Array]::Copy($checksum, 0, $bytes, $bytes.Length - 20, 20)
+        [IO.File]::WriteAllBytes($indexPath, $bytes)
+    }
 }
 
 Describe 'Portable delivery context snapshots' {
@@ -660,6 +702,108 @@ if ($Arguments -contains 'ls-files') {
         ([IO.FileInfo]::new($path)).LinkTarget | Should -BeNullOrEmpty
         @(& git -C $fixture status --porcelain=v1).Count | Should -Be 0
         { Get-FixtureSnapshot } | Should -Throw '*Tracked symlinks with core.symlinks=false require manual inspection*'
+    }
+
+    It 'rejects a forged cached index root despite clean status and benign staged entries' {
+        Invoke-FixtureGit @('update-index', '--index-version=2')
+        $originalTree = [string](& git -C $fixture rev-parse 'HEAD^{tree}')
+        $blob = [string](& git -C $fixture rev-parse 'HEAD:AGENTS.md')
+        $payloadTree = New-FixtureTree @("100644 blob $blob`tprivate-payload")
+        Set-FixtureCachedTree $originalTree $payloadTree
+        @(& git --no-optional-locks -c core.fsmonitor= -c core.commitGraph=false -C $fixture status --porcelain=v1).Count | Should -Be 0
+        (& git -C $fixture ls-files --stage | Out-String) | Should -Not -Match 'private-payload'
+        [string](& git --no-optional-locks -C $fixture write-tree) | Should -BeExactly $payloadTree
+        $indexHash = (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash
+        $objectsBefore = @(& git -C $fixture count-objects -v) -join "`n"
+        $result = Invoke-BoundedSnapshot
+        $result.ExitCode | Should -Be 1
+        $result.Output | Should -BeNullOrEmpty
+        $result.Error | Should -Match 'Cached Git index tree disagrees with staged entries'
+        (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash | Should -BeExactly $indexHash
+        (@(& git -C $fixture count-objects -v) -join "`n") | Should -BeExactly $objectsBefore
+    }
+
+    It 'rejects a forged valid child beneath an <RootState> cached index root' -ForEach @(
+        @{ RootState = 'invalidated'; StageRootEdit = $true },
+        @{ RootState = 'intact'; StageRootEdit = $false }
+    ) {
+        Invoke-FixtureGit @('update-index', '--index-version=2')
+        $originalTree = [string](& git -C $fixture rev-parse 'HEAD:tools')
+        $blob = [string](& git -C $fixture rev-parse 'HEAD:tools/verify.sh')
+        $payloadTree = New-FixtureTree @("100644 blob $blob`tprivate-payload")
+        if ($StageRootEdit) {
+            [IO.File]::AppendAllText((Join-Path $fixture 'AGENTS.md'), 'Staged root edit')
+            Invoke-FixtureGit @('add', 'AGENTS.md')
+        }
+        Set-FixtureCachedTree $originalTree $payloadTree
+        $result = Invoke-BoundedSnapshot
+        $result.ExitCode | Should -Be 1
+        $result.Output | Should -BeNullOrEmpty
+        $result.Error | Should -Match 'Cached Git index tree disagrees with staged entries'
+        if (-not $StageRootEdit) {
+            [IO.File]::AppendAllText((Join-Path $fixture 'AGENTS.md'), 'Later coordinator edit')
+            Invoke-FixtureGit @('add', 'AGENTS.md')
+        }
+        $publishedTree = [string](& git -C $fixture write-tree)
+        @(& git -C $fixture ls-tree -r --name-only $publishedTree) | Should -Contain 'tools/private-payload'
+        @(& git -C $fixture ls-files) | Should -Contain 'tools/verify.sh'
+    }
+
+    It 'accepts a genuine SHA256 version-four cached index tree' {
+        $fixture = Join-Path $TestDrive ([guid]::NewGuid().ToString('N') + '-sha256')
+        $null = [IO.Directory]::CreateDirectory((Join-Path $fixture 'nested'))
+        [IO.File]::WriteAllText((Join-Path $fixture 'AGENTS.md'), 'SHA256 instructions')
+        [IO.File]::WriteAllText((Join-Path $fixture 'nested/a'), 'First file')
+        [IO.File]::WriteAllText((Join-Path $fixture 'nested/ab'), 'Second file')
+        Invoke-FixtureGit @('init', '--object-format=sha256', '-b', 'sha256-fixture')
+        Invoke-FixtureGit @('config', 'core.autocrlf', 'false')
+        Invoke-FixtureGit @('add', '.')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'SHA256 baseline')
+        Invoke-FixtureGit @('update-index', '--index-version=4')
+        $snapshot = Get-FixtureSnapshot -Paths @('AGENTS.md')
+        $snapshot.Dirty | Should -BeFalse
+        $snapshot.Head.Length | Should -Be 64
+        $snapshot.Paths | Should -Contain 'nested/ab'
+    }
+
+    It 'accepts genuine cached index trees with directory prefixes and distinct Unicode names' {
+        $null = [IO.Directory]::CreateDirectory((Join-Path $fixture 'same'))
+        foreach ($name in @('same.file', 'same/leaf', [string][char]0xe000, [char]::ConvertFromUtf32(0x10000))) {
+            [IO.File]::WriteAllText([IO.Path]::Combine($fixture, $name), $name)
+        }
+        Invoke-FixtureGit @('add', '.')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'tree names fixture')
+        (Get-FixtureSnapshot).Dirty | Should -BeFalse
+    }
+
+    It 'accepts a genuinely invalidated cached index root with valid children' {
+        [IO.File]::AppendAllText((Join-Path $fixture 'AGENTS.md'), 'Real staged edit')
+        Invoke-FixtureGit @('add', 'AGENTS.md')
+        (Get-FixtureSnapshot).Dirty | Should -BeTrue
+    }
+
+    It 'accepts a genuine version-three cached index with intent-to-add' {
+        [IO.File]::WriteAllText((Join-Path $fixture 'new-file'), 'Intent to add')
+        Invoke-FixtureGit @('add', '--intent-to-add', 'new-file')
+        Invoke-FixtureGit @('update-index', '--index-version=3')
+        (Get-FixtureSnapshot).Dirty | Should -BeTrue
+    }
+
+    It 'rejects a cached index tree containing an extra empty directory' {
+        Invoke-FixtureGit @('update-index', '--index-version=2')
+        $originalTree = [string](& git -C $fixture rev-parse 'HEAD^{tree}')
+        $emptyTree = New-FixtureTree @()
+        $entries = @(& git -C $fixture ls-tree HEAD) + "040000 tree $emptyTree`textra-empty"
+        $payloadTree = New-FixtureTree $entries
+        Set-FixtureCachedTree $originalTree $payloadTree
+        $result = Invoke-BoundedSnapshot
+        $result.ExitCode | Should -Be 1
+        $result.Error | Should -Match 'Cached Git index tree disagrees with staged entries'
+    }
+
+    It 'requires manual inspection for split cached index storage' {
+        Invoke-FixtureGit @('update-index', '--split-index')
+        { Get-FixtureSnapshot } | Should -Throw '*Mandatory Git index extensions require manual inspection*'
     }
 
     It 'exposes untracked files concealed by a forged untracked cache' {

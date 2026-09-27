@@ -285,6 +285,175 @@ function Get-ContextGitRoot {
     return $actualRoot
 }
 
+function Read-ContextIndexBytes {
+    param([psobject]$Buffer, [int]$Count)
+    if ($Count -lt 0 -or $Count -gt $Buffer.Limit - $Buffer.Cursor) { throw 'Malformed Git index requires manual inspection.' }
+    $value = [byte[]]::new($Count)
+    [Array]::Copy($Buffer.Data, $Buffer.Cursor, $value, 0, $Count)
+    $Buffer.Cursor += $Count
+    return ,$value
+}
+
+function Read-ContextIndexNumber {
+    param([psobject]$Buffer, [int]$Count = 4)
+    return [Convert]::ToInt64([Convert]::ToHexString((Read-ContextIndexBytes $Buffer $Count)), 16)
+}
+
+function Read-ContextIndexTerminated {
+    param([psobject]$Buffer, [byte]$Terminator = 0)
+    $end = [Array]::IndexOf($Buffer.Data, $Terminator, $Buffer.Cursor, $Buffer.Limit - $Buffer.Cursor)
+    if ($end -lt 0) { throw 'Malformed Git index requires manual inspection.' }
+    $value = Read-ContextIndexBytes $Buffer ($end - $Buffer.Cursor)
+    $Buffer.Cursor++
+    return ,$value
+}
+
+function Skip-ContextIndexEntry {
+    param([psobject]$Buffer, [int]$Version, [int]$HashSize)
+    $start = $Buffer.Cursor
+    $null = Read-ContextIndexBytes $Buffer (40 + $HashSize)
+    $flags = Read-ContextIndexNumber $Buffer 2
+    if (($flags -band 16384) -ne 0) {
+        if ($Version -eq 2) { throw 'Extended version-two Git index requires manual inspection.' }
+        $null = Read-ContextIndexBytes $Buffer 2
+    }
+    if ($Version -eq 4) {
+        do { $encoded = (Read-ContextIndexBytes $Buffer 1)[0] } while (($encoded -band 128) -ne 0)
+    }
+    $null = Read-ContextIndexTerminated $Buffer
+    if ($Version -ne 4) { $null = Read-ContextIndexBytes $Buffer ((8 - (($Buffer.Cursor - $start) % 8)) % 8) }
+}
+
+function Get-ContextCacheTree {
+    param([string]$Root, [int]$HashSize)
+    $path = [IO.Path]::Combine($Root, '.git', 'index')
+    if (-not [IO.File]::Exists($path)) { return $null }
+    $stream = [IO.FileStream]::new($path, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+    try {
+        if (-not $stream.CanSeek -or $stream.Length -gt 1048576 -or $stream.Length -lt 12 + $HashSize) {
+            throw 'Git index exceeds supported inspection bounds; inspect this target manually.'
+        }
+        $bytes = [byte[]]::new([int]$stream.Length)
+        $stream.ReadExactly($bytes, 0, $bytes.Length)
+    }
+    finally { $stream.Dispose() }
+    $buffer = [pscustomobject]@{ Data = $bytes; Cursor = 0; Limit = $bytes.Length - $HashSize }
+    if ([Text.Encoding]::ASCII.GetString((Read-ContextIndexBytes $buffer 4)) -cne 'DIRC') { throw 'Unsupported Git index requires manual inspection.' }
+    $version = Read-ContextIndexNumber $buffer
+    if ($version -notin @(2, 3, 4)) { throw 'Unsupported Git index version requires manual inspection.' }
+    $count = Read-ContextIndexNumber $buffer
+    if ($count -gt $buffer.Limit / (43 + $HashSize)) { throw 'Malformed Git index requires manual inspection.' }
+    for ($entry = 0; $entry -lt $count; $entry++) { Skip-ContextIndexEntry $buffer $version $HashSize }
+    $tree = $null
+    while ($buffer.Cursor -lt $buffer.Limit) {
+        $signature = [Text.Encoding]::ASCII.GetString((Read-ContextIndexBytes $buffer 4))
+        $size = Read-ContextIndexNumber $buffer
+        $payload = Read-ContextIndexBytes $buffer $size
+        if ($signature -cnotmatch '^[A-Z]') { throw 'Mandatory Git index extensions require manual inspection, including split indexes.' }
+        if ($signature -ceq 'TREE') {
+            if ($null -ne $tree) { throw 'Duplicate Git index cache trees require manual inspection.' }
+            $tree = $payload
+        }
+    }
+    return ,$tree
+}
+
+function Read-ContextCacheTreeNode {
+    param([psobject]$Buffer, [int]$HashSize, [int]$Depth = 0)
+    if ($Depth -gt 256) { throw 'Git cache tree exceeds inspection depth; inspect this target manually.' }
+    $encoding = [Text.UTF8Encoding]::new($false, $true)
+    $name = $encoding.GetString((Read-ContextIndexTerminated $Buffer))
+    $header = $encoding.GetString((Read-ContextIndexTerminated $Buffer 10))
+    if ($name.Contains('/') -or $header -cnotmatch '^(-?\d+) (\d+)$') { throw 'Malformed Git index cache tree requires manual inspection.' }
+    $count = [int]::Parse($Matches[1])
+    $childCount = [int]::Parse($Matches[2])
+    $oid = if ($count -ge 0) { [Convert]::ToHexString((Read-ContextIndexBytes $Buffer $HashSize)).ToLowerInvariant() } else { $null }
+    $children = @(for ($child = 0; $child -lt $childCount; $child++) { Read-ContextCacheTreeNode $Buffer $HashSize ($Depth + 1) })
+    return [pscustomobject]@{ Name = $name; EntryCount = $count; Oid = $oid; Children = $children }
+}
+
+function Get-ContextStagedTree {
+    param([string[]]$Index, [int]$HashSize)
+    $files = [Collections.Generic.Dictionary[string, string]]::new([StringComparer]::Ordinal)
+    $counts = [Collections.Generic.Dictionary[string, int]]::new([StringComparer]::Ordinal)
+    $counts.Add('', 0)
+    foreach ($record in $Index) {
+        if ($record -cnotmatch '(?s)^(100644|100755|120000) ([a-f0-9]+) 0\t(.+)$' -or $Matches[2].Length -ne 2 * $HashSize) {
+            throw 'Unsupported staged entries require manual cache-tree inspection.'
+        }
+        $path = $Matches[3]
+        $files.Add($path, $Matches[1] + ' blob ' + $Matches[2] + "`t" + $path)
+        $counts['']++
+        $parts = $path.Split('/')
+        $parent = ''
+        for ($part = 0; $part -lt $parts.Length - 1; $part++) {
+            $parent = if ($part -eq 0) { $parts[$part] } else { $parent + '/' + $parts[$part] }
+            if (-not $counts.ContainsKey($parent)) { $counts.Add($parent, 0) }
+            $counts[$parent]++
+        }
+    }
+    return [pscustomobject]@{ Files = $files; Counts = $counts }
+}
+
+function Get-ContextTreeRecord {
+    param([string]$Record, [string]$Prefix, [psobject]$Staged)
+    if ($Record -cnotmatch '(?s)^(\d{6}) (blob|tree) ([a-f0-9]+)\t(.+)$') { throw 'Unsupported Git tree requires manual inspection.' }
+    $path = if ($Prefix.Length -eq 0) { $Matches[4] } else { $Prefix + '/' + $Matches[4] }
+    $value = $Matches[1] + ' ' + $Matches[2] + ' ' + $Matches[3] + "`t" + $path
+    $entry = [pscustomobject]@{ Path = $path; Oid = $Matches[3]; IsDirectory = $Matches[1] -ceq '040000' -and $Matches[2] -ceq 'tree' }
+    if ($entry.IsDirectory) {
+        if (-not $Staged.Counts.ContainsKey($path)) { throw 'Cached Git index tree disagrees with staged entries.' }
+    } elseif (-not $Staged.Files.ContainsKey($path) -or $Staged.Files[$path] -cne $value) {
+        throw 'Cached Git index tree disagrees with staged entries.'
+    }
+    return $entry
+}
+
+function Get-ContextVerifiedTreeObjects {
+    param([string]$Root, [string]$Oid, [string]$Prefix, [psobject]$Staged)
+    $output = (Invoke-ContextGit $Root @('ls-tree', '-r', '-t', '-z', '--full-tree', $Oid) -WithResult).Output
+    $trees = [Collections.Generic.Dictionary[string, string]]::new([StringComparer]::Ordinal)
+    $trees.Add($Prefix, $Oid)
+    $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $files = 0
+    foreach ($record in $output.Split([char]0, [StringSplitOptions]::RemoveEmptyEntries)) {
+        $entry = Get-ContextTreeRecord $record $Prefix $Staged
+        if (-not $seen.Add($entry.Path)) { throw 'Cached Git index tree disagrees with staged entries.' }
+        if ($entry.IsDirectory) { $trees.Add($entry.Path, $entry.Oid) } else { $files++ }
+    }
+    $subtreePrefix = if ($Prefix.Length -eq 0) { '' } else { $Prefix + '/' }
+    $directories = @($Staged.Counts.get_Keys() | Where-Object { $_ -cne $Prefix -and $_.StartsWith($subtreePrefix, [StringComparison]::Ordinal) }).Count
+    if ($files -ne $Staged.Counts[$Prefix] -or $trees.get_Count() -ne $directories + 1) { throw 'Cached Git index tree disagrees with staged entries.' }
+    return ,$trees
+}
+
+function Assert-ContextCachedTreeNode {
+    param([string]$Root, [psobject]$Node, [string]$Prefix, [psobject]$Staged, [Collections.Generic.Dictionary[string, string]]$Trees)
+    if ($Node.EntryCount -ge 0) {
+        if (-not $Staged.Counts.ContainsKey($Prefix) -or $Node.EntryCount -ne $Staged.Counts[$Prefix]) { throw 'Cached Git index tree disagrees with staged entries.' }
+        if ($null -eq $Trees) { $Trees = Get-ContextVerifiedTreeObjects $Root $Node.Oid $Prefix $Staged }
+        if (-not $Trees.ContainsKey($Prefix) -or $Trees[$Prefix] -cne $Node.Oid) { throw 'Cached Git index tree disagrees with staged entries.' }
+    }
+    foreach ($child in $Node.Children) {
+        if ($child.Name.Length -eq 0) { throw 'Malformed Git index cache tree requires manual inspection.' }
+        $childPrefix = if ($Prefix.Length -eq 0) { $child.Name } else { $Prefix + '/' + $child.Name }
+        Assert-ContextCachedTreeNode $Root $child $childPrefix $Staged $Trees
+    }
+}
+
+function Assert-ContextCachedTree {
+    param([string]$Root, [string[]]$Index)
+    $format = [string](Invoke-ContextGit $Root @('rev-parse', '--show-object-format'))
+    $hashSize = switch ($format) { 'sha1' { 20 } 'sha256' { 32 } default { throw 'Unsupported Git object format requires manual inspection.' } }
+    $tree = Get-ContextCacheTree $Root $hashSize
+    if ($null -eq $tree) { return }
+    $buffer = [pscustomobject]@{ Data = $tree; Cursor = 0; Limit = $tree.Length }
+    $node = Read-ContextCacheTreeNode $buffer $hashSize
+    if ($node.Name.Length -ne 0 -or $buffer.Cursor -ne $buffer.Limit) { throw 'Malformed Git index cache tree requires manual inspection.' }
+    $staged = Get-ContextStagedTree $Index $hashSize
+    Assert-ContextCachedTreeNode $Root $node '' $staged $null
+}
+
 function Assert-ContextOperationState {
     param([string]$Root)
     foreach ($name in @('MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD', 'REBASE_HEAD', 'rebase-apply', 'rebase-merge', 'sequencer')) {
@@ -304,7 +473,7 @@ function Get-ContextObservation {
     $head = if ($headResult.ExitCode -eq 0) { $headResult.Output.Trim() } else { $null }
     $branch = [string](Invoke-ContextGit $root @('branch', '--show-current'))
     if ($null -eq $head -and [string]::IsNullOrWhiteSpace($branch)) { throw 'Missing detached HEAD requires manual inspection.' }
-    $index = @(Invoke-ContextGit $root @('ls-files', '--stage'))
+    $index = (Invoke-ContextGit $root @('ls-files', '--stage', '-z') -WithResult).Output.Split([char]0, [StringSplitOptions]::RemoveEmptyEntries)
     if (@($index | Where-Object { $_ -match '^160000 ' }).Count -gt 0) {
         throw 'Submodule entries require manual inspection; status can execute submodule-local commands.'
     }
@@ -322,6 +491,7 @@ function Get-ContextObservation {
     if ($filters.ExitCode -eq 0) {
         throw 'Configured clean/process filters require manual inspection; status may execute repository-controlled commands.'
     }
+    Assert-ContextCachedTree $Root $index
     $status = @(Invoke-ContextGit $root @('status', '--porcelain=v1', '--untracked-files=all'))
     $selected = @(foreach ($relative in $ContextPaths) { Get-ContextInput $root $relative })
     $paths = @(Get-ContextPaths $root $ContextPaths)

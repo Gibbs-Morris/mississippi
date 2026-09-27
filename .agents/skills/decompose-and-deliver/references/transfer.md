@@ -71,6 +71,13 @@ Each Git command also uses `core.commitGraph=false`, so cached commit-graph tree
 metadata cannot hide staged changes behind an otherwise matching reported HEAD.
 Each Git command uses `core.untrackedCache=false`, so stale or crafted untracked
 cache entries cannot conceal new files. The target's index remains unchanged.
+Index cache-tree objects are checked against NUL-delimited staged files and
+directory entries before each status observation, including valid children
+under invalidated parents. Inspection uses bounded native tree reads without
+writing the index or object store. Embedded indexes up to one MiB, versions
+2–4 and SHA-1/SHA-256 object formats are supported. Split indexes, unknown
+mandatory extensions and cache trees deeper than 256 levels require manual
+inspection. The helper does not rebuild or discard target metadata.
 Every inspection Git command also disables filename folding with
 `core.ignoreCase=false`, preserving case-distinct instruction paths in status
 and both inventory queries without changing the target's configuration.
