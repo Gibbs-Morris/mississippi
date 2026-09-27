@@ -93,6 +93,43 @@ function Get-ContextInput {
     }
 }
 
+function New-ContextOutputCapture {
+    param([IO.Stream]$Stream)
+    $buffer = [byte[]]::new(8192)
+    return [pscustomobject]@{ Stream = $Stream; Buffer = $buffer; Content = [IO.MemoryStream]::new(); Read = $Stream.ReadAsync($buffer, 0, $buffer.Length) }
+}
+
+function Update-ContextOutputCapture {
+    param([psobject]$Capture)
+    if ($null -eq $Capture.Read -or -not $Capture.Read.IsCompleted) { return }
+    $count = $Capture.Read.GetAwaiter().GetResult()
+    if ($count -eq 0) { $Capture.Read = $null; return }
+    if ($Capture.Content.Length + $count -gt 1048576) { throw 'Native context output exceeded its one-MiB stream limit; inspect the target manually.' }
+    $Capture.Content.Write($Capture.Buffer, 0, $count)
+    $Capture.Read = $Capture.Stream.ReadAsync($Capture.Buffer, 0, $Capture.Buffer.Length)
+}
+
+function Get-ContextBoundedOutput {
+    param([Diagnostics.Process]$Child, [int]$TimeoutMilliseconds)
+    $captures = @((New-ContextOutputCapture $Child.StandardOutput.BaseStream), (New-ContextOutputCapture $Child.StandardError.BaseStream))
+    $elapsed = [Diagnostics.Stopwatch]::StartNew()
+    try {
+        while (-not $Child.HasExited -or $null -ne $captures[0].Read -or $null -ne $captures[1].Read) {
+            foreach ($capture in $captures) { Update-ContextOutputCapture $capture }
+            if ($elapsed.ElapsedMilliseconds -ge $TimeoutMilliseconds) { throw 'Native context inspection timed out; inspect the target manually.' }
+            $pending = @($captures | Where-Object { $null -ne $_.Read } | Select-Object -First 1)
+            if ($pending.Count -eq 0) { $null = $Child.WaitForExit(10) }
+            else { $null = $pending[0].Read.Wait(10) }
+        }
+        $encoding = [Text.UTF8Encoding]::new($false, $true)
+        return [pscustomobject]@{
+            Output = $encoding.GetString($captures[0].Content.GetBuffer(), 0, [int]$captures[0].Content.Length)
+            Error = $encoding.GetString($captures[1].Content.GetBuffer(), 0, [int]$captures[1].Content.Length)
+        }
+    }
+    finally { foreach ($capture in $captures) { $capture.Content.Dispose() } }
+}
+
 function Invoke-ContextNativeOutput {
     param([string]$Application, [string[]]$Arguments, [int[]]$AcceptedExitCodes = @(0), [switch]$WithResult, [ValidateRange(1, 30000)][int]$TimeoutMilliseconds = 10000)
     $start = [Diagnostics.ProcessStartInfo]::new($Application)
@@ -108,16 +145,14 @@ function Invoke-ContextNativeOutput {
     }
     $child = [Diagnostics.Process]::Start($start)
     try {
-        $output = $child.StandardOutput.ReadToEndAsync()
-        $errorOutput = $child.StandardError.ReadToEndAsync()
-        if (-not $child.WaitForExit($TimeoutMilliseconds)) { throw 'Native context inspection timed out; inspect the target manually.' }
-        $diagnostic = $errorOutput.GetAwaiter().GetResult()
+        $captured = Get-ContextBoundedOutput $child $TimeoutMilliseconds
+        $diagnostic = $captured.Error
         if ($child.ExitCode -notin $AcceptedExitCodes) { throw "Native context inspection failed: $diagnostic" }
         if (-not [string]::IsNullOrWhiteSpace($diagnostic)) {
             throw "Native context inspection reported diagnostics; inspect the target manually: $diagnostic"
         }
-        if ($WithResult) { return [pscustomobject]@{ ExitCode = $child.ExitCode; Output = $output.GetAwaiter().GetResult() } }
-        return $output.GetAwaiter().GetResult()
+        if ($WithResult) { return [pscustomobject]@{ ExitCode = $child.ExitCode; Output = $captured.Output } }
+        return $captured.Output
     }
     finally {
         if (-not $child.HasExited) { $child.Kill($true) }

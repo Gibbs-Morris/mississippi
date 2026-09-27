@@ -209,6 +209,30 @@ Describe 'Portable delivery context snapshots' {
         $result.Output | Should -BeNullOrEmpty
     }
 
+    It 'caps captured <Stream> before processing oversized inventory output' -ForEach @(
+        @{ Stream = 'Out' }, @{ Stream = 'Error' }
+    ) {
+        $copy = Join-Path $TestDrive ('output-cap-' + $Stream + '-snapshot.ps1')
+        $source = [IO.File]::ReadAllText($snapshotScript)
+        $boundary = '$start = [Diagnostics.ProcessStartInfo]::new($Application)'
+        $source.Contains($boundary) | Should -BeTrue
+        $emitter = '[Console]::' + $Stream + '.Write((''x'' * 2097152))'
+        $replacement = @'
+if ($Arguments -contains 'ls-files') {
+        $Application = [IO.Path]::Combine($PSHOME, $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' }))
+        $Arguments = @('-NoProfile', '-Command', '__EMITTER__')
+    }
+
+'@
+        # Inject only the command stream; this does not claim a millions-of-paths index fixture.
+        $replacement = $replacement.Replace('__EMITTER__', $emitter.Replace("'", "''"))
+        [IO.File]::WriteAllText($copy, $source.Replace($boundary, $replacement + $boundary))
+        $result = Invoke-BoundedSnapshot -ScriptPath $copy
+        $result.ExitCode | Should -Be 1
+        $result.Error | Should -Match 'Native context output exceeded its one-MiB stream limit'
+        $result.Output | Should -BeNullOrEmpty
+    }
+
     It 'bounds stalled selected-path preflight probes before hashing' {
         $copy = Join-Path $TestDrive 'preflight-stall-snapshot.ps1'
         $source = [IO.File]::ReadAllText($snapshotScript)

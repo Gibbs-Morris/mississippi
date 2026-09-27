@@ -46,6 +46,10 @@ Public inspection runs in one owned worker bounded to thirty seconds, including
 root discovery, filesystem existence/link probes, selected-path preflight and
 inventory filtering. Slower or stalled filesystems take the manual fallback;
 native Git, hashing and metadata children retain their shorter ten-second bounds.
+Each captured native or worker output stream has a one-MiB byte limit. Oversized
+inventories or diagnostics terminate that owned child and require manual
+inspection before path splitting or JSON processing. Both streams are drained
+in bounded chunks under the same deadline, including process exit and EOF.
 The hidden `InspectionContext` parameter carries serialized paths to that worker
 and is an internal entry point, not a public snapshot interface.
 An initialized repository without commits reports `Head: null` and its unborn
