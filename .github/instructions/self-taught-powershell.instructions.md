@@ -29,6 +29,7 @@ Governing thought: Preserve explicit repository identity when PowerShell launche
 - Agents SHOULD reject legacy Git grafts before attributing commit ancestry. Why: The [PR #803 graft fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) reported clean status with unrelated parent ancestry.
 - Agents SHOULD disable or verify Git commit graphs when inspecting staged state. Why: The [PR #803 forged-graph fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) concealed a staged payload behind a cached root tree.
 - Agents SHOULD disable or verify Git's untracked cache when inspecting dirty state. Why: The [PR #803 forged-cache fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) concealed a new file while both observations agreed.
+- Agents SHOULD inspect pending Git operation markers before treating porcelain status as readiness evidence. Why: The [PR #803 merge fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) retained `MERGE_HEAD` while reporting empty status.
 - Agents SHOULD reject opaque Git inventory directories or discover their guidance independently. Why: The [PR #803 embedded-repository fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) hid ignored scoped instructions behind one directory entry.
 - Agents SHOULD validate discovered instruction entry types before returning readable paths. Why: The [PR #803 inventory fixtures](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) returned tracked guidance replaced by a FIFO or socket before the guard.
 

@@ -84,8 +84,10 @@ manual file/commit inspection or an explicitly authorized trusted workflow.
 The helper rejects them before status rather than changing normalization and
 reporting misleading dirtiness. Serialize Git configuration changes during use.
 Two observations compare head, branch, full status, path inventory, staged
-content and revalidated selected hashes. Observed changes fail closed. This
-bounded check does not promise an atomic snapshot; serialize conflicting work
+content and revalidated selected hashes. Observed changes fail closed.
+Merge, rebase, cherry-pick, revert and sequencer markers are checked before each
+observation; their presence requires manual recovery even with empty status.
+This bounded check does not promise an atomic snapshot; serialize conflicting work
 and refresh evidence before using it.
 Read selected bodies and follow the target's loading procedure. A snapshot is
 evidence identity, not proof of successful tests or a security attestation.

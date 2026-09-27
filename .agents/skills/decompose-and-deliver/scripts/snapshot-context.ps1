@@ -285,9 +285,21 @@ function Get-ContextGitRoot {
     return $actualRoot
 }
 
+function Assert-ContextOperationState {
+    param([string]$Root)
+    foreach ($name in @('MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD', 'REBASE_HEAD', 'rebase-apply', 'rebase-merge', 'sequencer')) {
+        $path = [IO.Path]::Combine($Root, '.git', $name)
+        $entry = [IO.FileInfo]::new($path)
+        if ($entry.Exists -or [IO.Directory]::Exists($path) -or $null -ne $entry.LinkTarget) {
+            throw "In-progress Git operations require manual recovery before inspection: $name"
+        }
+    }
+}
+
 function Get-ContextObservation {
     param([string]$Root, [string[]]$ContextPaths)
     if ((Get-ContextGitRoot $root) -cne $root) { throw 'Repository root changed during context inspection.' }
+    Assert-ContextOperationState $root
     $headResult = Invoke-ContextGit $root @('rev-parse', '--verify', '--quiet', 'HEAD') -AcceptedExitCodes @(0, 1) -WithResult
     $head = if ($headResult.ExitCode -eq 0) { $headResult.Output.Trim() } else { $null }
     $branch = [string](Invoke-ContextGit $root @('branch', '--show-current'))

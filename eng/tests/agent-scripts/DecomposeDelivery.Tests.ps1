@@ -571,6 +571,50 @@ if ($Arguments -contains 'ls-files') {
         $snapshot.SelectedInputs[0].Path | Should -BeExactly 'AGENTS.md'
     }
 
+    It 'rejects a content-free pending merge despite clean porcelain status' {
+        Invoke-FixtureGit @('checkout', '-b', 'pending-merge')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--allow-empty', '-m', 'other empty commit')
+        Invoke-FixtureGit @('checkout', 'release/trunk')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--allow-empty', '-m', 'local empty commit')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'merge', '--no-commit', '--no-ff', 'pending-merge')
+        @(& git -C $fixture status --porcelain=v1).Count | Should -Be 0
+        [IO.File]::Exists((Join-Path $fixture '.git/MERGE_HEAD')) | Should -BeTrue
+        $result = Invoke-BoundedSnapshot
+        $result.ExitCode | Should -Be 1
+        $result.Output | Should -BeNullOrEmpty
+        $result.Error | Should -Match 'In-progress Git operations require manual recovery'
+    }
+
+    It 'rejects pending Git state at <Marker> before inspecting commits' -ForEach @(
+        @{ Marker = 'CHERRY_PICK_HEAD'; Directory = $false },
+        @{ Marker = 'REVERT_HEAD'; Directory = $false },
+        @{ Marker = 'REBASE_HEAD'; Directory = $false },
+        @{ Marker = 'rebase-apply'; Directory = $true },
+        @{ Marker = 'rebase-merge'; Directory = $true },
+        @{ Marker = 'sequencer'; Directory = $true }
+    ) {
+        $path = Join-Path $fixture ('.git/' + $Marker)
+        if ($Directory) { $null = [IO.Directory]::CreateDirectory($path) }
+        else { [IO.File]::WriteAllText($path, 'Pending operation fixture') }
+        $result = Invoke-BoundedSnapshot
+        $result.ExitCode | Should -Be 1
+        $result.Output | Should -BeNullOrEmpty
+        $result.Error | Should -Match 'In-progress Git operations require manual recovery'
+    }
+
+    It 'rejects a pending merge introduced between observations' {
+        $path = (Join-Path $fixture '.git/MERGE_HEAD').Replace("'", "''")
+        $marker = Join-Path $TestDrive 'pending-operation-mutated'
+        $prelude = Get-SnapshotMutationPrelude -Marker $marker -Mutation "[IO.File]::WriteAllText('$path', 'Pending operation fixture')"
+        { Get-FixtureSnapshot -Prelude $prelude } | Should -Throw '*In-progress Git operations require manual recovery*'
+        [IO.File]::Exists($marker) | Should -BeTrue
+    }
+
+    It 'does not mistake an unrelated nested metadata filename for pending Git state' {
+        [IO.File]::WriteAllText((Join-Path $fixture '.git/info/MERGE_HEAD'), 'Unrelated fixture metadata')
+        (Get-FixtureSnapshot).Dirty | Should -BeFalse
+    }
+
     It 'records a new head rather than reusing evidence from the baseline' {
         $before = Get-FixtureSnapshot
         Add-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'changed'
