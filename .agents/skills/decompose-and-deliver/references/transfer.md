@@ -69,7 +69,8 @@ committed memory for the worker and its children to 512 MiB. Limits are applied
 before target inspection; unavailable enforcement, allocation failure or memory
 pressure diagnostics require manual inspection. Timeout and captured-byte limits
 also remain active. The core workflow does not require these optional mechanisms.
-Ambient repository/index/object/configuration Git overrides and linked context paths fail
+Ambient repository/index/object/configuration, pathspec-mode and attribute-source
+Git overrides and linked context paths fail
 closed; use a clean process or explicit manual inspection rather than silently
 reading another target.
 Git ownership failures remain failures. Any ownership/trust decision belongs

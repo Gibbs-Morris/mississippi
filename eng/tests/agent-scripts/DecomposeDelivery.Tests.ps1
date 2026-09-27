@@ -1603,6 +1603,59 @@ $termination
         { Get-FixtureSnapshot @('linked/policy.md') } | Should -Throw
     }
 
+    It 'rejects a literal-pathspec override that hides ignored scoped guidance' {
+        $ignored = Join-Path $fixture 'ignored'
+        $null = [IO.Directory]::CreateDirectory($ignored)
+        [IO.File]::WriteAllText((Join-Path $ignored 'AGENTS.md'), 'Ignored scoped guidance')
+        [IO.File]::WriteAllText((Join-Path $fixture '.gitignore'), "ignored/`n")
+        Invoke-FixtureGit @('add', '.gitignore')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'owned ignored guidance')
+        $arguments = @('ls-files', '--others', '--ignored', '--exclude-standard', '--', ':(glob)**/AGENTS.md')
+        @(& git -C $fixture @arguments) | Should -Contain 'ignored/AGENTS.md'
+        (Get-FixtureSnapshot).Paths | Should -Contain 'ignored/AGENTS.md'
+        $previous = [Environment]::GetEnvironmentVariable('GIT_LITERAL_PATHSPECS')
+        try {
+            [Environment]::SetEnvironmentVariable('GIT_LITERAL_PATHSPECS', '1')
+            @(& git -C $fixture @arguments).Count | Should -Be 0
+            { Get-FixtureSnapshot } | Should -Throw '*Ambient Git override GIT_LITERAL_PATHSPECS*'
+        }
+        finally {
+            if ($null -eq $previous) { Remove-Item -LiteralPath Env:GIT_LITERAL_PATHSPECS -ErrorAction SilentlyContinue }
+            else { [Environment]::SetEnvironmentVariable('GIT_LITERAL_PATHSPECS', $previous) }
+        }
+    }
+
+    It 'rejects an attribute-source override that conceals a tracked CRLF difference' {
+        $model = Join-Path $fixture 'packages/widget/model.txt'
+        $attributes = Join-Path $fixture '.gitattributes'
+        [IO.File]::WriteAllText($model, "baseline`r`n")
+        [IO.File]::WriteAllText($attributes, "packages/widget/model.txt text eol=lf`n")
+        Invoke-FixtureGit @('add', '.')
+        Invoke-FixtureGit @('add', '--renormalize', '.')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'owned normalization policy')
+        $attributeSource = ([string](& git -C $fixture rev-parse HEAD)).Trim()
+        $expected = ([string](& git -C $fixture rev-parse HEAD:packages/widget/model.txt)).Trim()
+        [IO.File]::WriteAllText($attributes, "packages/widget/model.txt -text`n")
+        Invoke-FixtureGit @('add', '.gitattributes')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'owned raw-content policy')
+        [IO.File]::WriteAllText($model, "baseline`r`n")
+        [IO.File]::SetLastWriteTimeUtc($model, [DateTime]::UtcNow.AddSeconds(2))
+        ([string](& git -C $fixture hash-object -- packages/widget/model.txt)).Trim() | Should -Not -BeExactly $expected
+        @(& git --no-optional-locks -C $fixture status --porcelain=v1).Count | Should -BeGreaterThan 0
+        (Get-FixtureSnapshot).Dirty | Should -BeTrue
+        $previous = [Environment]::GetEnvironmentVariable('GIT_ATTR_SOURCE')
+        try {
+            [Environment]::SetEnvironmentVariable('GIT_ATTR_SOURCE', $attributeSource)
+            ([string](& git -C $fixture hash-object -- packages/widget/model.txt)).Trim() | Should -BeExactly $expected
+            @(& git --no-optional-locks -C $fixture status --porcelain=v1).Count | Should -Be 0
+            { Get-FixtureSnapshot } | Should -Throw '*Ambient Git override GIT_ATTR_SOURCE*'
+        }
+        finally {
+            if ($null -eq $previous) { Remove-Item -LiteralPath Env:GIT_ATTR_SOURCE -ErrorAction SilentlyContinue }
+            else { [Environment]::SetEnvironmentVariable('GIT_ATTR_SOURCE', $previous) }
+        }
+    }
+
     It 'rejects an ambient <Selector> instead of silently inspecting another target' -ForEach @(
         @{ Selector = 'GIT_DIR' },
         @{ Selector = 'GIT_WORK_TREE' },
@@ -1611,12 +1664,17 @@ $termination
         @{ Selector = 'GIT_CONFIG' },
         @{ Selector = 'GIT_REPLACE_REF_BASE' },
         @{ Selector = 'GIT_SHALLOW_FILE' },
-        @{ Selector = 'GIT_GRAFT_FILE' }
+        @{ Selector = 'GIT_GRAFT_FILE' },
+        @{ Selector = 'GIT_LITERAL_PATHSPECS' },
+        @{ Selector = 'GIT_GLOB_PATHSPECS' },
+        @{ Selector = 'GIT_NOGLOB_PATHSPECS' },
+        @{ Selector = 'GIT_ICASE_PATHSPECS' },
+        @{ Selector = 'GIT_ATTR_SOURCE' }
     ) {
         $previous = [Environment]::GetEnvironmentVariable($Selector)
         try {
             [Environment]::SetEnvironmentVariable($Selector, $repositoryRoot)
-            { Get-FixtureSnapshot } | Should -Throw '*Ambient Git override*'
+            { Get-FixtureSnapshot } | Should -Throw "*Ambient Git override $Selector prevents reliable target inspection*"
         }
         finally {
             if ($null -eq $previous) { Remove-Item -LiteralPath "Env:$Selector" -ErrorAction SilentlyContinue }
