@@ -59,6 +59,8 @@ Repository-local `objects/info/alternates` and `http-alternates` also require
 manual inspection, including regular files in shared clones. They are rejected
 before Git reads objects, because a matching root and clean status do not prove
 that the reported commit or its ancestry belongs to this repository's store.
+Regular `info/grafts` metadata also requires manual inspection before Git reads
+objects, even with deprecation advice suppressed and replacement refs disabled.
 Inspection disables filesystem-monitor hooks and optional index writes for
 each Git command; it does not change repository or account configuration.
 Every inspection Git command also disables filename folding with

@@ -154,6 +154,9 @@ function Assert-ContextGitMetadataEntry {
     if ($metadataRelative.Equals('objects/info/alternates', [StringComparison]::OrdinalIgnoreCase) -or $metadataRelative.Equals('objects/info/http-alternates', [StringComparison]::OrdinalIgnoreCase)) {
         throw 'Alternate Git object stores require manual inspection; objects must belong to the selected repository.'
     }
+    if ($metadataRelative.Equals('info/grafts', [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Legacy Git grafts require manual inspection; synthetic ancestry can publish unrelated objects.'
+    }
 }
 
 function Assert-ContextGitMetadata {

@@ -348,6 +348,17 @@ Describe 'Portable delivery context snapshots' {
         { Get-FixtureSnapshot -Root $borrowed } | Should -Throw '*Alternate Git object stores require manual inspection*'
     }
 
+    It 'rejects regular graft metadata even when advice is suppressed and replacement refs are disabled' {
+        $head=[string](& git -C $fixture rev-parse HEAD)
+        $tree=[string](& git -C $fixture write-tree)
+        $parent=[string](& git -C $fixture -c user.name=Fixture -c user.email=fixture@example.invalid commit-tree $tree -m 'synthetic unrelated parent')
+        [IO.File]::WriteAllText((Join-Path $fixture '.git/info/grafts'), "$head $parent`n")
+        Invoke-FixtureGit @('config', 'advice.graftFileDeprecated', 'false')
+        @(& git --no-replace-objects -C $fixture status --porcelain=v1).Count | Should -Be 0
+        [string](& git --no-replace-objects -C $fixture log -1 '--format=%H %P') | Should -BeExactly "$head $parent"
+        { Get-FixtureSnapshot } | Should -Throw '*Legacy Git grafts require manual inspection*'
+    }
+
     It 'rejects a regular HTTP alternates metadata file before reading objects' {
         [IO.File]::WriteAllText((Join-Path $fixture '.git/objects/info/http-alternates'), 'https://example.invalid/objects')
         { Get-FixtureSnapshot } | Should -Throw '*Alternate Git object stores require manual inspection*'
