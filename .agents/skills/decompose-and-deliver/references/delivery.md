@@ -36,6 +36,12 @@ Shared contracts have one owner; dependent workers do not improvise them.
 Before each remote mutation, inspect current local/remote state and operation
 status. Verify non-interactive command help and explicit repository, branch,
 base and PR targets. Keep recoverable refs before authorized history changes.
+Before any remote access, inspect effective configuration origins, URL rewrites
+and the resolved transport. Require approved provenance for executable transport
+settings such as `core.sshCommand`, proxy commands and external helpers. When a
+repository controls an unapproved transport program, use an approved host-owned
+connector or verified transport environment; otherwise retain the prepared local
+result and report the blocked remote action through the coordinator.
 Check actual remote refs, ancestry, PR identity/base and check publication after
 execution; exit code zero is insufficient. Reuse an existing matching PR after
 partial publication. A failed creation does not prove no PR was created.
