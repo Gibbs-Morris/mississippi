@@ -216,6 +216,32 @@ public sealed class AccountOperationsSectionTests : BunitContext
     }
 
     /// <summary>
+    ///     A newly running saga clearly reports that no step has completed yet.
+    /// </summary>
+    [Fact]
+    public void TransferStatusShowsNoneWhenRunningSagaHasNoCompletedStep()
+    {
+        MoneyTransferStatusProjectionDto projection = new(
+            null,
+            null,
+            null,
+            -1,
+            SagaPhaseDto.Running,
+            new(2026, 9, 27, 10, 15, 0, TimeSpan.Zero));
+        using IRenderedComponent<AccountOperationsSection> cut = Render<AccountOperationsSection>(p => p
+            .Add(c => c.InputIdPrefix, "account-a")
+            .Add(c => c.PanelLabel, "Account A")
+            .Add(c => c.IsAccountOpen, true)
+            .Add(c => c.IsExecutingOrLoading, false)
+            .Add(c => c.TransferSagaId, "transfer-saga-started")
+            .Add(c => c.TransferStatusProjection, projection));
+        IElement status = cut.Find("#account-a-transfer-status");
+        Assert.Equal("busy", status.GetAttribute("data-state"));
+        Assert.Contains("Phase: Running", status.TextContent, StringComparison.Ordinal);
+        Assert.Contains("Last completed step: None", status.TextContent, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     The assigned saga remains visible while its projection is still loading.
     /// </summary>
     [Fact]
