@@ -10,6 +10,13 @@ when transferred; its legal notice is not a target-repository assumption.
 Git's [ownership and filesystem-monitor configuration](https://git-scm.com/docs/git-config)
 and [content-filter semantics](https://git-scm.com/docs/gitattributes#_filter)
 inform the helper's fail-closed inspection boundaries.
+Git's [hash-object reference](https://git-scm.com/docs/git-hash-object) supports
+read-only content identities with built-in attribute normalization.
+[Windows job ownership](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects),
+Linux [session creation](https://man7.org/linux/man-pages/man2/setsid.2.html),
+[group signaling](https://man7.org/linux/man-pages/man2/kill.2.html) and
+[process metadata](https://docs.kernel.org/filesystems/proc.html) inform bounded
+descendant cleanup. These platform references were checked 2026-09-27.
 
 ## Candidate source instructions
 

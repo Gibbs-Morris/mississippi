@@ -1,4 +1,5 @@
 #!/usr/bin/env pwsh
+#requires -Version 7.4
 
 [CmdletBinding()]
 param(
@@ -6,17 +7,183 @@ param(
     [string[]]$ContextPath = @(),
     [Parameter(DontShow)][string]$HashPath,
     [Parameter(DontShow)][string]$MetadataPath,
-    [Parameter(DontShow)][string]$InspectionContext
+    [Parameter(DontShow)][string]$InspectionContext,
+    [Parameter(DontShow)][switch]$WaitForInspectionOwner
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+function Enable-ContextOwnershipType {
+    if ($null -ne ('PortableDelivery.InspectionOwnership' -as [type])) { return }
+    Add-Type -TypeDefinition @'
+using System;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+
+namespace PortableDelivery
+{
+    /// <summary>Expose native ownership operations publicly for PowerShell Add-Type binding.</summary>
+    public static class InspectionOwnership
+    {
+        /// <summary>Create a private Windows job that terminates members when its handle closes.</summary>
+        /// <returns>The owned job handle.</returns>
+        public static IntPtr CreateWindowsJob()
+        {
+            IntPtr job = CreateJobObject(IntPtr.Zero, null);
+            if (job == IntPtr.Zero) { throw new Win32Exception(Marshal.GetLastPInvokeError()); }
+            int size = IntPtr.Size == 8 ? 144 : 112;
+            IntPtr limits = Marshal.AllocHGlobal(size);
+            try
+            {
+                Marshal.Copy(new byte[size], 0, limits, size);
+                // JOBOBJECT_EXTENDED_LIMIT_INFORMATION begins with two LARGE_INTEGER values.
+                Marshal.WriteInt32(limits, 16, 0x2000); // JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE.
+                if (!SetInformationJobObject(job, 9, limits, size))
+                {
+                    int error = Marshal.GetLastPInvokeError();
+                    CloseHandle(job);
+                    throw new Win32Exception(error);
+                }
+                return job;
+            }
+            finally { Marshal.FreeHGlobal(limits); }
+        }
+
+        /// <summary>Attach a gated inspection process before it launches native children.</summary>
+        /// <param name="job">The owned job handle.</param>
+        /// <param name="process">The gated process handle.</param>
+        public static void AttachWindowsProcess(IntPtr job, IntPtr process)
+        {
+            if (!AssignProcessToJobObject(job, process)) { throw new Win32Exception(Marshal.GetLastPInvokeError()); }
+        }
+
+        /// <summary>Terminate every remaining member of the owned job.</summary>
+        /// <param name="job">The owned job handle.</param>
+        public static void TerminateWindowsJob(IntPtr job)
+        {
+            if (!TerminateJobObject(job, 1)) { throw new Win32Exception(Marshal.GetLastPInvokeError()); }
+        }
+
+        /// <summary>Read the active process count from the owned job.</summary>
+        /// <param name="job">The owned job handle.</param>
+        /// <returns>The active process count.</returns>
+        public static int GetWindowsActiveProcesses(IntPtr job)
+        {
+            IntPtr accounting = Marshal.AllocHGlobal(48);
+            try
+            {
+                if (!QueryInformationJobObject(job, 1, accounting, 48, IntPtr.Zero)) { throw new Win32Exception(Marshal.GetLastPInvokeError()); }
+                return Marshal.ReadInt32(accounting, 40);
+            }
+            finally { Marshal.FreeHGlobal(accounting); }
+        }
+
+        /// <summary>Release the owned job handle.</summary>
+        /// <param name="job">The owned job handle.</param>
+        public static void CloseWindowsJob(IntPtr job)
+        {
+            if (!CloseHandle(job)) { throw new Win32Exception(Marshal.GetLastPInvokeError()); }
+        }
+
+        /// <summary>Create a Unix session and process group before inspecting the target.</summary>
+        /// <returns>The session identifier.</returns>
+        public static int CreateUnixSession()
+        {
+            int session = SetSid();
+            if (session < 0) { throw new Win32Exception(Marshal.GetLastPInvokeError()); }
+            return session;
+        }
+
+        /// <summary>Signal an already verified owned Unix process group.</summary>
+        /// <param name="group">The verified process group.</param>
+        public static void TerminateUnixGroup(int group)
+        {
+            if (Kill(-group, 9) != 0)
+            {
+                int error = Marshal.GetLastPInvokeError();
+                if (error != 3) { throw new Win32Exception(error); }
+            }
+        }
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern IntPtr CreateJobObject(IntPtr attributes, string name);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetInformationJobObject(IntPtr job, int informationClass, IntPtr information, int length);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool TerminateJobObject(IntPtr job, uint exitCode);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool QueryInformationJobObject(IntPtr job, int informationClass, IntPtr information, int length, IntPtr returnedLength);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool CloseHandle(IntPtr handle);
+        [DllImport("libc", EntryPoint = "setsid", SetLastError = true)]
+        private static extern int SetSid();
+        [DllImport("libc", EntryPoint = "kill", SetLastError = true)]
+        private static extern int Kill(int process, int signal);
+    }
+}
+'@
+}
+
+function Get-ContextUnixGroupMembers {
+    param([int]$Group, [string]$Nonce)
+    $members = @()
+    foreach ($directory in [IO.Directory]::EnumerateDirectories('/proc')) {
+        if ([IO.Path]::GetFileName($directory) -notmatch '^\d+$') { continue }
+        try {
+            $value = [IO.File]::ReadAllText([IO.Path]::Combine($directory, 'stat'))
+            $fields = $value.Substring($value.LastIndexOf(')') + 2).Split(' ')
+            if ([int]$fields[2] -ne $Group -or $fields[0] -in @('Z', 'X')) { continue }
+            $environment = [IO.File]::ReadAllText([IO.Path]::Combine($directory, 'environ'))
+        }
+        catch [IO.FileNotFoundException] { continue }
+        catch [IO.DirectoryNotFoundException] { continue }
+        if (-not $environment.Split([char]0).Contains('DECOMPOSE_INSPECTION_OWNER=' + $Nonce)) {
+            throw 'Inspection process-group ownership is unconfirmed; reconcile manually before retrying.'
+        }
+        $members += [int][IO.Path]::GetFileName($directory)
+    }
+    return $members
+}
+
+function Stop-ContextNativeProcess {
+    param([Diagnostics.Process]$Child)
+    if ($Child.HasExited) { return }
+    try { $Child.Kill($true) }
+    catch [InvalidOperationException] { if (-not $Child.HasExited) { throw } }
+}
+
+function Stop-ContextInspectionOwner {
+    param([Diagnostics.Process]$Child, [IntPtr]$Job, [string]$Nonce)
+    $elapsed = [Diagnostics.Stopwatch]::StartNew()
+    try {
+        if ($IsWindows) { [PortableDelivery.InspectionOwnership]::TerminateWindowsJob($Job) }
+        elseif (@(Get-ContextUnixGroupMembers $Child.Id $Nonce).Count -gt 0) { [PortableDelivery.InspectionOwnership]::TerminateUnixGroup($Child.Id) }
+        Stop-ContextNativeProcess $Child
+        $remaining = [Math]::Max(0, 2000 - [int]$elapsed.ElapsedMilliseconds)
+        if (-not $Child.WaitForExit($remaining)) { throw 'Inspection termination is unconfirmed; reconcile manually before retrying.' }
+        $pause = [Threading.ManualResetEventSlim]::new($false)
+        try {
+            do {
+                $active = if ($IsWindows) { [PortableDelivery.InspectionOwnership]::GetWindowsActiveProcesses($Job) } else { @(Get-ContextUnixGroupMembers $Child.Id $Nonce).Count }
+                if ($active -eq 0) { return }
+                if ($elapsed.ElapsedMilliseconds -ge 2000) { throw 'Inspection descendant termination is unconfirmed; reconcile manually before retrying.' }
+                $null = $pause.Wait(10)
+            } while ($true)
+        }
+        finally { $pause.Dispose() }
+    }
+    finally { if ($IsWindows) { [PortableDelivery.InspectionOwnership]::CloseWindowsJob($Job) } }
+}
+
 function Invoke-ContextGit {
-    param([string]$Root, [string[]]$Arguments, [int[]]$AcceptedExitCodes = @(0), [switch]$WithResult)
+    param([string]$Root, [string[]]$Arguments, [int[]]$AcceptedExitCodes = @(0), [switch]$WithResult, [string]$InputText)
     $options = @('--no-replace-objects', '--no-optional-locks', '-c', 'core.fsmonitor=', '-c', 'core.trustctime=true', '-c', 'core.checkStat=default', '-c', 'core.ignoreStat=false', '-c', 'core.ignoreCase=false', '-c', 'core.commitGraph=false', '-c', 'core.untrackedCache=false', '-C', $root)
     if (-not $IsWindows) { $options = @('-c', 'core.fileMode=true') + $options }
-    $result = Invoke-ContextNativeOutput $gitApplication ($options + $Arguments) -AcceptedExitCodes $AcceptedExitCodes -WithResult
+    $inputOption = if ($PSBoundParameters.ContainsKey('InputText')) { @{ InputText = $InputText } } else { @{} }
+    $result = Invoke-ContextNativeOutput $gitApplication ($options + $Arguments) -AcceptedExitCodes $AcceptedExitCodes -WithResult @inputOption
     if ($WithResult) { return $result }
     return $result.Output.Split([char]10, [StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object { $_.TrimEnd([char]13) }
 }
@@ -110,12 +277,17 @@ function Update-ContextOutputCapture {
 }
 
 function Get-ContextBoundedOutput {
-    param([Diagnostics.Process]$Child, [int]$TimeoutMilliseconds)
+    param([Diagnostics.Process]$Child, [int]$TimeoutMilliseconds, [Threading.Tasks.Task]$InputWrite)
     $captures = @((New-ContextOutputCapture $Child.StandardOutput.BaseStream), (New-ContextOutputCapture $Child.StandardError.BaseStream))
     $elapsed = [Diagnostics.Stopwatch]::StartNew()
     try {
-        while (-not $Child.HasExited -or $null -ne $captures[0].Read -or $null -ne $captures[1].Read) {
+        while (-not $Child.HasExited -or $null -ne $captures[0].Read -or $null -ne $captures[1].Read -or $null -ne $InputWrite) {
             foreach ($capture in $captures) { Update-ContextOutputCapture $capture }
+            if ($null -ne $InputWrite -and $InputWrite.IsCompleted) {
+                $null = $InputWrite.GetAwaiter().GetResult()
+                $Child.StandardInput.Close()
+                $InputWrite = $null
+            }
             if ($elapsed.ElapsedMilliseconds -ge $TimeoutMilliseconds) { throw 'Native context inspection timed out; inspect the target manually.' }
             $pending = @($captures | Where-Object { $null -ne $_.Read } | Select-Object -First 1)
             if ($pending.Count -eq 0) { $null = $Child.WaitForExit(10) }
@@ -131,21 +303,40 @@ function Get-ContextBoundedOutput {
 }
 
 function Invoke-ContextNativeOutput {
-    param([string]$Application, [string[]]$Arguments, [int[]]$AcceptedExitCodes = @(0), [switch]$WithResult, [ValidateRange(1, 30000)][int]$TimeoutMilliseconds = 10000)
+    param([string]$Application, [string[]]$Arguments, [int[]]$AcceptedExitCodes = @(0), [switch]$WithResult, [ValidateRange(1, 30000)][int]$TimeoutMilliseconds = 10000, [switch]$OwnInspection, [string]$InputText)
+    $hasInput = $PSBoundParameters.ContainsKey('InputText')
+    $inputBytes = if ($hasInput) { [Text.UTF8Encoding]::new($false, $true).GetBytes($InputText) } else { $null }
+    if ($hasInput -and ($OwnInspection -or $inputBytes.Length -gt 1048576)) { throw 'Native inspection input is unsupported or exceeds its one-MiB limit; inspect the target manually.' }
     $start = [Diagnostics.ProcessStartInfo]::new($Application)
     $start.UseShellExecute = $false
     $start.CreateNoWindow = $true
     $start.RedirectStandardOutput = $true
     $start.RedirectStandardError = $true
+    $start.RedirectStandardInput = $OwnInspection -or $hasInput
     $start.StandardOutputEncoding = [Text.UTF8Encoding]::new($false, $true)
     $start.Environment['GIT_NO_LAZY_FETCH'] = '1'
     $start.Environment['GIT_ALLOW_PROTOCOL'] = ''
     foreach ($argument in $Arguments) {
         $start.ArgumentList.Add($argument)
     }
-    $child = [Diagnostics.Process]::Start($start)
+    $job = [IntPtr]::Zero
+    $nonce = [guid]::NewGuid().ToString('N')
+    if ($OwnInspection) {
+        if (-not $IsWindows -and -not $IsLinux) { throw 'Inspection process ownership is unsupported; inspect the target manually.' }
+        Enable-ContextOwnershipType
+        $start.Environment['DECOMPOSE_INSPECTION_OWNER'] = $nonce
+        if ($IsWindows) { $job = [PortableDelivery.InspectionOwnership]::CreateWindowsJob() }
+    }
+    $child = $null
     try {
-        $captured = Get-ContextBoundedOutput $child $TimeoutMilliseconds
+        $child = [Diagnostics.Process]::Start($start)
+        if ($OwnInspection) {
+            if ($IsWindows) { [PortableDelivery.InspectionOwnership]::AttachWindowsProcess($job, $child.Handle) }
+            $child.StandardInput.WriteLine('OWNED')
+            $child.StandardInput.Close()
+        }
+        $inputWrite = if ($hasInput) { $child.StandardInput.BaseStream.WriteAsync($inputBytes, 0, $inputBytes.Length) } else { $null }
+        $captured = Get-ContextBoundedOutput $child $TimeoutMilliseconds $inputWrite
         $diagnostic = $captured.Error
         if ($child.ExitCode -notin $AcceptedExitCodes) { throw "Native context inspection failed: $diagnostic" }
         if (-not [string]::IsNullOrWhiteSpace($diagnostic)) {
@@ -155,8 +346,16 @@ function Invoke-ContextNativeOutput {
         return $captured.Output
     }
     finally {
-        if (-not $child.HasExited) { $child.Kill($true) }
-        $child.Dispose()
+        try {
+            if ($null -eq $child) {
+                if ($job -ne [IntPtr]::Zero) { [PortableDelivery.InspectionOwnership]::CloseWindowsJob($job) }
+            } elseif ($OwnInspection) { Stop-ContextInspectionOwner $child $job $nonce }
+            else {
+                Stop-ContextNativeProcess $child
+                if (-not $child.WaitForExit(2000)) { throw 'Native inspection termination is unconfirmed; reconcile manually before retrying.' }
+            }
+        }
+        finally { if ($null -ne $child) { $child.Dispose() } }
     }
 }
 
@@ -194,6 +393,7 @@ function Get-ContextPaths {
         $fullPath = [IO.Path]::Combine($root, $relative)
         if ([IO.Directory]::Exists($fullPath)) { throw "Opaque directory inventory requires manual instruction discovery: $relative" }
         $entry = [IO.FileInfo]::new($fullPath)
+        if ($null -ne $entry.LinkTarget -and $entry.ResolveLinkTarget($true).Exists) { throw "Live linked inventory entries require manual discovery: $relative" }
         if ([IO.File]::Exists($fullPath) -or $null -ne $entry.LinkTarget) { $null = $paths.Add($relative) }
     }
     $inventory = @($paths)
@@ -212,6 +412,9 @@ function Assert-ContextGitMetadataEntry {
     }
     if ($metadataRelative.Equals('info/grafts', [StringComparison]::OrdinalIgnoreCase)) {
         throw 'Legacy Git grafts require manual inspection; synthetic ancestry can publish unrelated objects.'
+    }
+    if ($metadataRelative.Equals('shallow', [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Shallow Git boundaries require manual inspection; ancestry cannot be attributed from a truncated view.'
     }
 }
 
@@ -275,6 +478,8 @@ function Get-ContextGitRoot {
     }
     $partialClone = Invoke-ContextGit $root @('config', '--name-only', '--get-regexp', '^(extensions\.partialclone|remote\..*\.promisor)$') -AcceptedExitCodes @(0, 1) -WithResult
     if ($partialClone.ExitCode -eq 0) { throw 'Partial/promisor repositories require manual inspection; missing objects can trigger remote helpers.' }
+    $replacements = Invoke-ContextGit $root @('for-each-ref', '--format=%(refname)', 'refs/replace/') -WithResult
+    if (-not [string]::IsNullOrWhiteSpace($replacements.Output)) { throw 'Git replacement refs require manual inspection; ordinary review and publication can use different object views.' }
     $actualRoot = Get-ContextGitPath $root @('rev-parse', '--show-toplevel')
     $gitDirectory = Get-ContextGitPath $root @('rev-parse', '--absolute-git-dir')
     $commonDirectory = Get-ContextGitPath $root @('rev-parse', '--path-format=absolute', '--git-common-dir')
@@ -296,7 +501,7 @@ function Read-ContextIndexBytes {
 
 function Read-ContextIndexNumber {
     param([psobject]$Buffer, [int]$Count = 4)
-    return [Convert]::ToInt64([Convert]::ToHexString((Read-ContextIndexBytes $Buffer $Count)), 16)
+    return [Convert]::ToInt64([BitConverter]::ToString((Read-ContextIndexBytes $Buffer $Count)).Replace('-', ''), 16)
 }
 
 function Read-ContextIndexTerminated {
@@ -334,7 +539,12 @@ function Get-ContextCacheTree {
             throw 'Git index exceeds supported inspection bounds; inspect this target manually.'
         }
         $bytes = [byte[]]::new([int]$stream.Length)
-        $stream.ReadExactly($bytes, 0, $bytes.Length)
+        $read = 0
+        while ($read -lt $bytes.Length) {
+            $count = $stream.Read($bytes, $read, $bytes.Length - $read)
+            if ($count -eq 0) { throw 'Git index ended during inspection; reconcile and retry.' }
+            $read += $count
+        }
     }
     finally { $stream.Dispose() }
     $buffer = [pscustomobject]@{ Data = $bytes; Cursor = 0; Limit = $bytes.Length - $HashSize }
@@ -367,7 +577,7 @@ function Read-ContextCacheTreeNode {
     if ($name.Contains('/') -or $header -cnotmatch '^(-?\d+) (\d+)$') { throw 'Malformed Git index cache tree requires manual inspection.' }
     $count = [int]::Parse($Matches[1])
     $childCount = [int]::Parse($Matches[2])
-    $oid = if ($count -ge 0) { [Convert]::ToHexString((Read-ContextIndexBytes $Buffer $HashSize)).ToLowerInvariant() } else { $null }
+    $oid = if ($count -ge 0) { [BitConverter]::ToString((Read-ContextIndexBytes $Buffer $HashSize)).Replace('-', '').ToLowerInvariant() } else { $null }
     $children = @(for ($child = 0; $child -lt $childCount; $child++) { Read-ContextCacheTreeNode $Buffer $HashSize ($Depth + 1) })
     return [pscustomobject]@{ Name = $name; EntryCount = $count; Oid = $oid; Children = $children }
 }
@@ -456,13 +666,57 @@ function Assert-ContextCachedTree {
 
 function Assert-ContextOperationState {
     param([string]$Root)
-    foreach ($name in @('MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD', 'REBASE_HEAD', 'rebase-apply', 'rebase-merge', 'sequencer')) {
+    foreach ($name in @('MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD', 'REBASE_HEAD', 'rebase-apply', 'rebase-merge', 'sequencer', 'BISECT_START', 'index.lock')) {
         $path = [IO.Path]::Combine($Root, '.git', $name)
         $entry = [IO.FileInfo]::new($path)
         if ($entry.Exists -or [IO.Directory]::Exists($path) -or $null -ne $entry.LinkTarget) {
             throw "In-progress Git operations require manual recovery before inspection: $name"
         }
     }
+}
+
+function ConvertTo-ContextGitInputPath {
+    param([string]$Path)
+    $quoted = [Text.StringBuilder]::new('"')
+    foreach ($character in $Path.ToCharArray()) {
+        if ($character -eq [char]34 -or $character -eq [char]92) { $null = $quoted.Append([char]92).Append($character) }
+        elseif ([int]$character -lt 32 -or [int]$character -eq 127) { $null = $quoted.Append([char]92).Append([Convert]::ToString([int]$character, 8).PadLeft(3, '0')) }
+        else { $null = $quoted.Append($character) }
+    }
+    return $quoted.Append('"').ToString()
+}
+
+function Get-ContextTrackedContent {
+    param([string]$Root, [string[]]$Index)
+    $entries = @(foreach ($record in $Index) {
+        if ($record -cnotmatch '(?s)^(100644|100755) ([a-f0-9]+) 0\t(.+)$') { continue }
+        $expected = $Matches[2]
+        $relative = $Matches[3]
+        $fullPath = [IO.Path]::GetFullPath([IO.Path]::Combine($Root, $relative))
+        if (-not $fullPath.StartsWith($Root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal)) { throw "Tracked path escapes the target repository: $relative" }
+        $item = [IO.FileInfo]::new($fullPath)
+        if ($null -ne $item.LinkTarget -or ($item.Exists -and ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)) { throw "Linked tracked content requires manual inspection: $relative" }
+        $ancestor = $item.Directory
+        while ($null -ne $ancestor -and $ancestor.FullName -cne $Root) {
+            if ($ancestor.Exists -and ($ancestor.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw "Linked tracked content requires manual inspection: $relative" }
+            $ancestor = $ancestor.Parent
+        }
+        if ([IO.Directory]::Exists($item.FullName)) { throw "Non-regular tracked content requires manual inspection: $relative" }
+        if ($item.Exists -and ($item.Attributes -band [IO.FileAttributes]::Device) -ne 0) { throw "Non-regular tracked content requires manual inspection: $relative" }
+        [pscustomobject]@{ Path = $relative; Expected = $expected; Actual = $null; Present = $item.Exists }
+    })
+    $present = @($entries | Where-Object { $_.Present })
+    if ($present.Count -gt 0) {
+        Assert-ContextInventoryTypes $Root @($present.Path)
+        $inputPaths = (@($present | ForEach-Object { ConvertTo-ContextGitInputPath $_.Path }) -join "`n") + "`n"
+        $hashes = @(Invoke-ContextGit $Root @('hash-object', '--stdin-paths') -InputText $inputPaths)
+        if ($hashes.Count -ne $present.Count) { throw 'Tracked content identities are incomplete; inspect the target manually.' }
+        for ($entry = 0; $entry -lt $present.Count; $entry++) {
+            if ($hashes[$entry] -cnotmatch '^[a-f0-9]+$' -or $hashes[$entry].Length -ne $present[$entry].Expected.Length) { throw 'Tracked content identity is malformed; inspect the target manually.' }
+            $present[$entry].Actual = $hashes[$entry]
+        }
+    }
+    return $entries
 }
 
 function Get-ContextObservation {
@@ -492,6 +746,7 @@ function Get-ContextObservation {
         throw 'Configured clean/process filters require manual inspection; status may execute repository-controlled commands.'
     }
     Assert-ContextCachedTree $Root $index
+    $content = @(Get-ContextTrackedContent $Root $index)
     $status = @(Invoke-ContextGit $root @('status', '--porcelain=v1', '--untracked-files=all'))
     $selected = @(foreach ($relative in $ContextPaths) { Get-ContextInput $root $relative })
     $paths = @(Get-ContextPaths $root $ContextPaths)
@@ -501,17 +756,25 @@ function Get-ContextObservation {
         Status = $status
         Paths = $paths
         Index = $index
+        TrackedContent = $content
         SelectedInputs = @($selected)
     }
 }
 
 try {
+    if ($WaitForInspectionOwner) {
+        if ($IsLinux) {
+            Enable-ContextOwnershipType
+            if ([PortableDelivery.InspectionOwnership]::CreateUnixSession() -ne $PID) { throw 'Inspection process group identity differs from its owner.' }
+        }
+        if ([Console]::In.ReadLine() -cne 'OWNED') { throw 'Inspection ownership handshake is absent.' }
+    }
     if ([string]::IsNullOrEmpty($InspectionContext) -and [string]::IsNullOrEmpty($MetadataPath) -and [string]::IsNullOrEmpty($HashPath)) {
         $inspectionRoot = if ([IO.Path]::IsPathRooted($RepositoryRoot)) { [IO.Path]::GetFullPath($RepositoryRoot) }
         else { [IO.Path]::GetFullPath([IO.Path]::Combine((Get-Location).Path, $RepositoryRoot)) }
         $shell = [IO.Path]::Combine($PSHOME, $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' }))
         $contextJson = ConvertTo-Json -InputObject @($ContextPath) -Compress
-        $output = Invoke-ContextNativeOutput $shell @('-NoProfile', '-File', $PSCommandPath, '-RepositoryRoot', $inspectionRoot, '-InspectionContext', $contextJson) -TimeoutMilliseconds 30000
+        $output = Invoke-ContextNativeOutput $shell @('-NoProfile', '-File', $PSCommandPath, '-RepositoryRoot', $inspectionRoot, '-InspectionContext', $contextJson, '-WaitForInspectionOwner') -TimeoutMilliseconds 30000 -OwnInspection
         [Console]::Write($output)
         exit 0
     }
@@ -538,7 +801,7 @@ try {
         exit 0
     }
     $gitApplication = (Get-Command git -CommandType Application | Select-Object -First 1).Source
-    foreach ($selector in @('GIT_DIR', 'GIT_WORK_TREE', 'GIT_COMMON_DIR', 'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_NAMESPACE')) {
+    foreach ($selector in @('GIT_DIR', 'GIT_WORK_TREE', 'GIT_COMMON_DIR', 'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_NAMESPACE', 'GIT_CONFIG', 'GIT_REPLACE_REF_BASE')) {
         if ($null -ne [Environment]::GetEnvironmentVariable($selector)) {
             throw "Ambient Git override $selector prevents reliable target inspection; use a clean process or manual inspection."
         }
@@ -559,7 +822,7 @@ try {
         RepositoryRoot = $root
         Head = $after.Head
         Branch = $after.Branch
-        Dirty = $after.Status.Count -gt 0
+        Dirty = $after.Status.Count -gt 0 -or @($after.TrackedContent | Where-Object { $_.Actual -cne $_.Expected }).Count -gt 0
         Paths = $after.Paths
         SelectedInputs = @($after.SelectedInputs)
         InstructionSelectionRequired = $true

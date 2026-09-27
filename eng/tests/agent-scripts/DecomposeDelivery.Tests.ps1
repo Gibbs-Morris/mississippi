@@ -103,6 +103,43 @@ BeforeAll {
         throw 'Fixture index entry was not found.'
     }
 
+    function Set-FixtureStagedObject {
+        param([string]$Relative, [string]$Object)
+        Invoke-FixtureGit @('update-index', '--index-version=2')
+        $indexPath = Join-Path $fixture '.git/index'
+        $bytes = [IO.File]::ReadAllBytes($indexPath)
+        $count = [Convert]::ToInt32([BitConverter]::ToString($bytes, 8, 4).Replace('-', ''), 16)
+        $cursor = 12
+        for ($entry = 0; $entry -lt $count; $entry++) {
+            $pathStart = $cursor + 62
+            $end = $pathStart
+            while ($bytes[$end] -ne 0) { $end++ }
+            if ([Text.Encoding]::UTF8.GetString($bytes, $pathStart, $end - $pathStart) -ceq $Relative) {
+                # Preserve genuine Git-written stat fields while substituting the staged blob identity.
+                [Array]::Copy([Convert]::FromHexString($Object), 0, $bytes, $cursor + 40, 20)
+                $checksum = [Security.Cryptography.SHA1]::HashData([byte[]]$bytes[0..($bytes.Length - 21)])
+                [Array]::Copy($checksum, 0, $bytes, $bytes.Length - 20, 20)
+                [IO.File]::WriteAllBytes($indexPath, $bytes)
+                [IO.File]::SetLastWriteTimeUtc($indexPath, [datetime]::UtcNow.AddMinutes(1))
+                return
+            }
+            $cursor += [int]([Math]::Ceiling(($end + 1 - $cursor) / 8.0) * 8)
+        }
+        throw 'Fixture index entry was not found.'
+    }
+
+    function Test-FixtureLiveProcess {
+        param([int]$ProcessId)
+        if ($IsLinux) {
+            $statPath = '/proc/' + $ProcessId + '/stat'
+            if (-not [IO.File]::Exists($statPath)) { return $false }
+            $stat = [IO.File]::ReadAllText($statPath)
+            return $stat.Substring($stat.LastIndexOf(')') + 2).Split(' ')[0] -notin @('Z', 'X')
+        }
+        $process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+        return $null -ne $process -and -not $process.HasExited
+    }
+
     function New-FixtureTree {
         param([string[]]$Entries)
         $start = [Diagnostics.ProcessStartInfo]::new((Get-Command git -CommandType Application | Select-Object -First 1).Source)
@@ -301,6 +338,61 @@ if ($Arguments -contains 'ls-files') {
         $result.ExitCode | Should -Be 1
         $result.Error | Should -Match 'Native context inspection timed out'
         $result.Output | Should -BeNullOrEmpty
+    }
+
+    It 'confirms owned descendants terminate after <Failure> while preserving an unrelated process' -ForEach @(
+        @{ Failure = 'root exit' }, @{ Failure = 'timeout' }, @{ Failure = 'output cap' }
+    ) {
+        $marker = Join-Path $TestDrive ('descendant-' + $Failure + '.pid')
+        $descendant = Join-Path $TestDrive ('descendant-' + $Failure + '.ps1')
+        [IO.File]::WriteAllText($descendant, "[IO.File]::WriteAllText('$($marker.Replace("'", "''"))', [string]`$PID); `$pause = [Threading.ManualResetEventSlim]::new(`$false); `$null = `$pause.Wait(60000)")
+        $unrelatedStart = [Diagnostics.ProcessStartInfo]::new($shell)
+        $unrelatedStart.UseShellExecute = $false
+        $unrelatedStart.CreateNoWindow = $true
+        foreach ($argument in @('-NoProfile', '-Command', '$pause = [Threading.ManualResetEventSlim]::new($false); $null = $pause.Wait(60000)')) { $unrelatedStart.ArgumentList.Add($argument) }
+        $unrelated = [Diagnostics.Process]::Start($unrelatedStart)
+        $descendantId = 0
+        try {
+            $copy = Join-Path $TestDrive ('owner-' + $Failure + '-snapshot.ps1')
+            $source = [IO.File]::ReadAllText($snapshotScript)
+            $boundary = '$gitApplication = (Get-Command git -CommandType Application'
+            $source.Contains($boundary) | Should -BeTrue
+            $termination = switch ($Failure) {
+                'root exit' { 'exit 0' }
+                'timeout' { '$pause = [Threading.ManualResetEventSlim]::new($false); $null = $pause.Wait(60000)' }
+                'output cap' { '[Console]::Out.Write((''x'' * 2097152)); $pause = [Threading.ManualResetEventSlim]::new($false); $null = $pause.Wait(60000)' }
+            }
+            $injection = @"
+`$descendantStart = [Diagnostics.ProcessStartInfo]::new('$($shell.Replace("'", "''"))')
+`$descendantStart.UseShellExecute = `$false
+`$descendantStart.CreateNoWindow = `$true
+foreach (`$argument in @('-NoProfile', '-File', '$($descendant.Replace("'", "''"))')) { `$descendantStart.ArgumentList.Add(`$argument) }
+`$null = [Diagnostics.Process]::Start(`$descendantStart)
+`$ready = [Diagnostics.Stopwatch]::StartNew()
+`$pause = [Threading.ManualResetEventSlim]::new(`$false)
+while (-not [IO.File]::Exists('$($marker.Replace("'", "''"))')) {
+    if (`$ready.ElapsedMilliseconds -gt 4000) { throw 'Owned descendant did not start.' }
+    `$null = `$pause.Wait(10)
+}
+$termination
+"@ + "`n"
+            # Shorten only this deterministic ownership fixture's outer deadline.
+            $source = $source.Replace('-TimeoutMilliseconds 30000 -OwnInspection', '-TimeoutMilliseconds 6000 -OwnInspection')
+            [IO.File]::WriteAllText($copy, $source.Replace($boundary, $injection + $boundary))
+            $result = Invoke-BoundedSnapshot -ScriptPath $copy
+            $result.ExitCode | Should -Be 1
+            $result.Output | Should -BeNullOrEmpty
+            $result.Error | Should -Match $(if ($Failure -eq 'output cap') { 'one-MiB stream limit' } else { 'inspection timed out' })
+            [IO.File]::Exists($marker) | Should -BeTrue
+            $descendantId = [int][IO.File]::ReadAllText($marker)
+            (Test-FixtureLiveProcess $descendantId) | Should -BeFalse
+            $unrelated.HasExited | Should -BeFalse
+        }
+        finally {
+            if ($descendantId -gt 0 -and (Test-FixtureLiveProcess $descendantId)) { Stop-Process -Id $descendantId -Force }
+            if (-not $unrelated.HasExited) { $unrelated.Kill($true); $null = $unrelated.WaitForExit(2000) }
+            $unrelated.Dispose()
+        }
     }
 
     It 'rejects a Unix <Kind> from the instruction inventory before returning paths' -Skip:$IsWindows -ForEach @(
@@ -566,6 +658,47 @@ if ($Arguments -contains 'ls-files') {
         (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash | Should -BeExactly $indexHash
         ([string](& git -C $fixture config --get core.trustctime)) | Should -BeExactly 'false'
         ([string](& git -C $fixture config --get core.checkStat)) | Should -BeExactly 'minimal'
+    }
+
+    It 'detects unselected tracked content concealed by a forged matching stat cache without writes' {
+        $relative = 'packages/widget/model.txt'
+        $original = ([string](& git -C $fixture rev-parse ('HEAD:' + $relative))).Trim()
+        [IO.File]::WriteAllText((Join-Path $fixture $relative), "modified`n")
+        Invoke-FixtureGit @('add', '--', $relative)
+        Set-FixtureStagedObject $relative $original
+        @(& git --no-optional-locks -c core.fsmonitor= -c core.trustctime=true -c core.checkStat=default -c core.ignoreStat=false -C $fixture status --porcelain=v1).Count | Should -Be 0
+        $indexHash = (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash
+        $configHash = (Get-FileHash -LiteralPath (Join-Path $fixture '.git/config')).Hash
+        $objects = @([IO.Directory]::EnumerateFiles((Join-Path $fixture '.git/objects'), '*', [IO.SearchOption]::AllDirectories) | Sort-Object)
+        $snapshot = Get-FixtureSnapshot
+        $snapshot.SelectedInputs.Path | Should -Not -Contain $relative
+        $snapshot.Dirty | Should -BeTrue
+        (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash | Should -BeExactly $indexHash
+        (Get-FileHash -LiteralPath (Join-Path $fixture '.git/config')).Hash | Should -BeExactly $configHash
+        (@([IO.Directory]::EnumerateFiles((Join-Path $fixture '.git/objects'), '*', [IO.SearchOption]::AllDirectories) | Sort-Object) -join "`n") | Should -BeExactly ($objects -join "`n")
+    }
+
+    It 'preserves built-in CRLF normalization when checking tracked content' {
+        [IO.File]::WriteAllText((Join-Path $fixture '.gitattributes'), "*.txt text eol=crlf`n")
+        Invoke-FixtureGit @('add', '.gitattributes')
+        Invoke-FixtureGit @('add', '--renormalize', '.')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'CRLF checkout policy')
+        $path = Join-Path $fixture 'packages/widget/model.txt'
+        [IO.File]::Delete($path)
+        Invoke-FixtureGit @('checkout', '--', 'packages/widget/model.txt')
+        [IO.File]::ReadAllText($path).Contains("`r`n") | Should -BeTrue
+        (Get-FixtureSnapshot).Dirty | Should -BeFalse
+    }
+
+    It 'hashes quoted Unicode and control-character tracked filenames literally' -Skip:$IsWindows {
+        $paths = @('models/é"name.txt', "models/line`nbreak.txt", 'models/back\slash.txt')
+        $null = [IO.Directory]::CreateDirectory((Join-Path $fixture 'models'))
+        foreach ($path in $paths) { [IO.File]::WriteAllText([IO.Path]::Combine($fixture, $path), 'Tracked content') }
+        Invoke-FixtureGit @('add', '.')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'literal tracked names')
+        (Get-FixtureSnapshot).Dirty | Should -BeFalse
+        [IO.File]::WriteAllText([IO.Path]::Combine($fixture, $paths[1]), 'Changed content')
+        (Get-FixtureSnapshot).Dirty | Should -BeTrue
     }
 
     It 'preserves literal Unix backslashes separately from directory separators' -Skip:$IsWindows {
@@ -909,17 +1042,78 @@ if ($Arguments -contains 'ls-files') {
         [string](& git -C $fixture config --get core.commitGraph) | Should -BeExactly 'true'
     }
 
-    It 'binds dirty status to the reported commit despite replacement refs' {
+    It 'rejects <Storage> replacement refs that conceal the ordinary Git view' -ForEach @(
+        @{ Storage = 'loose'; Packed = $false },
+        @{ Storage = 'packed'; Packed = $true }
+    ) {
         $original = & git -C $fixture rev-parse HEAD
         Set-Content -LiteralPath (Join-Path $fixture 'packages/widget/model.txt') -Value 'replacement tree'
         Invoke-FixtureGit @('add', '.')
         $tree = & git -C $fixture write-tree
         $replacement = & git -C $fixture -c user.name=Fixture -c user.email=fixture@example.invalid commit-tree $tree -m replacement
         Invoke-FixtureGit @('replace', $original, $replacement)
+        if ($Packed) {
+            Invoke-FixtureGit @('pack-refs', '--all')
+            (Get-Content -Raw -LiteralPath (Join-Path $fixture '.git/packed-refs')) | Should -Match 'refs/replace/'
+        }
         @(& git -C $fixture status --porcelain=v1).Count | Should -Be 0
-        $snapshot = Get-FixtureSnapshot
-        $snapshot.Head | Should -BeExactly $original
-        $snapshot.Dirty | Should -BeTrue
+        { Get-FixtureSnapshot } | Should -Throw '*Git replacement refs require manual inspection*'
+    }
+
+    It 'rejects a shallow boundary that conceals existing parent ancestry' {
+        $parent = [string](& git -C $fixture rev-parse HEAD)
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--allow-empty', '-m', 'child')
+        $head = [string](& git -C $fixture rev-parse HEAD)
+        [IO.File]::WriteAllText((Join-Path $fixture '.git/shallow'), $head + "`n")
+        & git -C $fixture merge-base --is-ancestor $parent HEAD
+        $LASTEXITCODE | Should -Be 1
+        $emptyBoundary = Join-Path $TestDrive 'empty-shallow'
+        [IO.File]::WriteAllText($emptyBoundary, '')
+        & git --shallow-file $emptyBoundary -C $fixture merge-base --is-ancestor $parent HEAD
+        $LASTEXITCODE | Should -Be 0
+        { Get-FixtureSnapshot } | Should -Throw '*Shallow Git boundaries require manual inspection*'
+        [IO.File]::ReadAllText((Join-Path $fixture '.git/shallow')) | Should -BeExactly ($head + "`n")
+    }
+
+    It 'rejects an active bisect despite empty status and a detached HEAD' {
+        foreach ($number in 1..3) { Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--allow-empty', '-m', "revision $number") }
+        Invoke-FixtureGit @('bisect', 'start', 'HEAD', 'HEAD~3')
+        @(& git --no-optional-locks -C $fixture status --porcelain=v1).Count | Should -Be 0
+        [string](& git -C $fixture branch --show-current) | Should -BeNullOrEmpty
+        { Get-FixtureSnapshot } | Should -Throw '*In-progress Git operations require manual recovery*BISECT_START*'
+        Test-Path -LiteralPath (Join-Path $fixture '.git/BISECT_START') | Should -BeTrue
+    }
+
+    It 'rejects an index lock that prevents the next ordinary mutation' {
+        $lock = Join-Path $fixture '.git/index.lock'
+        [IO.File]::WriteAllText($lock, '')
+        @(& git --no-optional-locks -C $fixture status --porcelain=v1).Count | Should -Be 0
+        { Get-FixtureSnapshot } | Should -Throw '*In-progress Git operations require manual recovery*index.lock*'
+        & git -C $fixture add AGENTS.md 2>&1 | Out-Null
+        $LASTEXITCODE | Should -Not -Be 0
+        Test-Path -LiteralPath $lock | Should -BeTrue
+    }
+
+    It 'rejects a live instruction symlink to a <Kind> before returning inventory' -ForEach @(
+        @{ Kind = 'FIFO' },
+        @{ Kind = 'socket' }
+    ) -Skip:$IsWindows {
+        $target = Join-Path $TestDrive ([guid]::NewGuid().ToString('N') + '-special')
+        $socket = $null
+        if ($Kind -eq 'FIFO') { & mkfifo $target; $LASTEXITCODE | Should -Be 0 }
+        else {
+            $socket = [Net.Sockets.Socket]::new([Net.Sockets.AddressFamily]::Unix, [Net.Sockets.SocketType]::Stream, [Net.Sockets.ProtocolType]::Unspecified)
+            $socket.Bind([Net.Sockets.UnixDomainSocketEndPoint]::new($target))
+        }
+        try {
+            $instructions = Join-Path $fixture 'AGENTS.md'
+            [IO.File]::Delete($instructions)
+            $null = [IO.File]::CreateSymbolicLink($instructions, $target)
+            Invoke-FixtureGit @('add', 'AGENTS.md')
+            Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'instruction link')
+            { Get-FixtureSnapshot -Paths @('tools/verify.sh') } | Should -Throw '*Live linked inventory entries require manual discovery*'
+        }
+        finally { if ($null -ne $socket) { $socket.Dispose() } }
     }
 
     It 'rejects a missing file rather than reporting absent guidance as success' {
@@ -1163,6 +1357,37 @@ if ($Arguments -contains 'ls-files') {
         Test-Path -LiteralPath $marker | Should -BeTrue
     }
 
+    It 'rejects GIT_CONFIG before a concealed local filter can execute' {
+        [IO.File]::WriteAllText((Join-Path $fixture '.gitattributes'), "*.txt filter=probe`n")
+        Invoke-FixtureGit @('add', '.gitattributes')
+        $marker = Join-Path $TestDrive 'concealed-filter.marker'
+        $driver = Join-Path $TestDrive 'concealed-filter.ps1'
+        [IO.File]::WriteAllText($driver, "[IO.File]::WriteAllText('$($marker.Replace("'", "''"))', 'executed'); exit 1")
+        $command = '"' + $shell.Replace('\', '/') + '" -NoProfile -File "' + $driver.Replace('\', '/') + '"'
+        Invoke-FixtureGit @('config', 'filter.probe.clean', $command)
+        $modelPath = Join-Path $fixture 'packages/widget/model.txt'
+        $modelText = [IO.File]::ReadAllText($modelPath)
+        [IO.File]::WriteAllText($modelPath, '!' + $modelText.Substring(1))
+        [IO.File]::SetLastWriteTimeUtc($modelPath, [datetime]::UtcNow.AddSeconds(3))
+        $alternate = Join-Path $TestDrive 'empty-alternate-config'
+        [IO.File]::WriteAllText($alternate, '')
+        $prelude = "`$env:GIT_CONFIG = '$($alternate.Replace("'", "''"))'; "
+        { Get-FixtureSnapshot -Prelude $prelude } | Should -Throw '*Ambient Git override GIT_CONFIG*'
+        [IO.File]::Exists($marker) | Should -BeFalse
+        $previous = [Environment]::GetEnvironmentVariable('GIT_CONFIG')
+        try {
+            $env:GIT_CONFIG = $alternate
+            & git -C $fixture config --name-only --get-regexp '^filter\..*\.(clean|process)$' | Out-Null
+            $LASTEXITCODE | Should -Be 1
+            $controlOutput = & git --no-optional-locks -c core.fsmonitor= -C $fixture status --porcelain=v1 2>&1 | Out-String
+            if (-not [IO.File]::Exists($marker)) { throw "Concealed filter positive control did not execute: $controlOutput" }
+        }
+        finally {
+            if ($null -eq $previous) { Remove-Item -LiteralPath Env:GIT_CONFIG -ErrorAction SilentlyContinue }
+            else { [Environment]::SetEnvironmentVariable('GIT_CONFIG', $previous) }
+        }
+    }
+
     It 'rejects concurrent <MutationCase> with an unchanged HEAD' -ForEach @(
         @{ MutationCase = 'clean input edit' },
         @{ MutationCase = 'already dirty input edit' },
@@ -1236,7 +1461,9 @@ if ($Arguments -contains 'ls-files') {
         @{ Selector = 'GIT_DIR' },
         @{ Selector = 'GIT_WORK_TREE' },
         @{ Selector = 'GIT_COMMON_DIR' },
-        @{ Selector = 'GIT_INDEX_FILE' }
+        @{ Selector = 'GIT_INDEX_FILE' },
+        @{ Selector = 'GIT_CONFIG' },
+        @{ Selector = 'GIT_REPLACE_REF_BASE' }
     ) {
         $previous = [Environment]::GetEnvironmentVariable($Selector)
         try {

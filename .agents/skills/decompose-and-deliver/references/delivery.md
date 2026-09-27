@@ -29,6 +29,19 @@ review or integration becomes the bottleneck.
 ## Integration and publication
 
 One owner under the coordinator controls integration and stack mutation.
+Before review commands or any Git mutation, inspect effective configuration
+origins, environment overrides, attributes and executable settings in a trusted
+host context. Require approved provenance for hooks (including the default
+`.git/hooks` directory and `core.hooksPath`), signing programs and custom merge
+drivers. Unapproved callbacks require a trusted host-owned execution environment
+or a blocked operation; they are never covered by approval for the enclosing Git
+command. Apply this preflight to commits, merges, cherry-picks, rebases, tags and
+pushes. Keep required approved hooks/signing enabled; use an invocation-only
+trusted empty hooks directory only where target policy authorizes disabling hooks.
+Inspect signing controls such as `commit.gpgSign`, `merge.gpgSign`, `tag.gpgSign`,
+`push.gpgSign`, `gpg.program`, `gpg.ssh.program` and format-specific programs.
+Inspect `merge.*.driver` and attribute-selected drivers before integration;
+validation afterward cannot authorize a program that already ran.
 Inspect worker diffs and evidence before accepting results; preserve unrelated
 work. Integrate using the target's conventions and validate the combination.
 Shared contracts have one owner; dependent workers do not improvise them.

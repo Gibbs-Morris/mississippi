@@ -35,7 +35,7 @@ the target root, selected context paths, validation command, branch convention
 or state location where evidence is ambiguous. Record its source and precedence;
 do not guess defaults. Unknown material conventions return to the coordinator.
 
-The optional `scripts/snapshot-context.ps1` needs PowerShell 7, Git and the
+The optional `scripts/snapshot-context.ps1` needs PowerShell 7.4 or later, Git and the
 existing `stat` utility on Unix. Discover these commands before use; if missing,
 inspect the same evidence with supported
 file/Git tools. Invoke the script by its resolved package path with an explicit
@@ -47,14 +47,22 @@ root discovery, filesystem existence/link probes, selected-path preflight and
 inventory filtering. Slower or stalled filesystems take the manual fallback;
 native Git, hashing and metadata children retain their shorter ten-second bounds.
 Each captured native or worker output stream has a one-MiB byte limit. Oversized
-inventories or diagnostics terminate that owned child and require manual
+inventories or diagnostics terminate the owned inspection and require manual
 inspection before path splitting or JSON processing. Both streams are drained
 in bounded chunks under the same deadline, including process exit and EOF.
-The hidden `InspectionContext` parameter carries serialized paths to that worker
-and is an internal entry point, not a public snapshot interface.
+The worker is gated until assigned to a private Windows job or a Linux session
+and process group. Its native children inherit that ownership. Cleanup terminates
+remaining members even after the worker exits and allows at most two seconds to
+confirm no live members remain. Linux confirmation requires readable `/proc`
+metadata and the inherited private ownership nonce; unrelated groups are never
+signaled. Unconfirmed termination requires manual reconciliation before retrying
+or releasing resources. Unsupported job/group capabilities fail before target
+inspection. The helper supports Windows and Linux; macOS uses manual inspection.
+The hidden `InspectionContext` and `WaitForInspectionOwner` parameters are internal
+entry points, not a public snapshot interface.
 An initialized repository without commits reports `Head: null` and its unborn
 branch explicitly. A missing detached HEAD remains an inspection failure.
-Ambient repository/index/object Git overrides and linked context paths fail
+Ambient repository/index/object/configuration Git overrides and linked context paths fail
 closed; use a clean process or explicit manual inspection rather than silently
 reading another target.
 Git ownership failures remain failures. Any ownership/trust decision belongs
@@ -65,6 +73,11 @@ before Git reads objects, because a matching root and clean status do not prove
 that the reported commit or its ancestry belongs to this repository's store.
 Regular `info/grafts` metadata also requires manual inspection before Git reads
 objects, even with deprecation advice suppressed and replacement refs disabled.
+Shallow boundaries also require manual inspection, including legitimate shallow
+clones. Effective replacement refs, including packed refs, are rejected before
+objects are attributed; invocation-only replacement disabling cannot protect
+later ordinary review and publication commands. `GIT_REPLACE_REF_BASE` overrides
+are rejected rather than hiding a different effective replacement namespace.
 Inspection disables filesystem-monitor hooks and optional index writes for
 each Git command; it does not change repository or account configuration.
 Each Git command also uses `core.commitGraph=false`, so cached commit-graph tree
@@ -90,17 +103,24 @@ Configured clean/process filters, including inherited LFS settings, require
 manual file/commit inspection or an explicitly authorized trusted workflow.
 The helper rejects them before status rather than changing normalization and
 reporting misleading dirtiness. Serialize Git configuration changes during use.
+Every tracked regular file is hashed with bounded `git hash-object --stdin-paths`
+without `-w`, independently of cached index stat fields. Built-in line-ending,
+encoding and ident normalization remain intact; executable clean/process filters
+have already been rejected. Missing or mismatching content makes the result dirty.
+Linked or special tracked files require manual inspection. UTF-8 input records
+use Git quoting and a one-MiB limit, with concurrent input/output under the native
+deadline. Neither index nor object store is written.
 Two observations compare head, branch, full status, path inventory, staged
-content and revalidated selected hashes. Observed changes fail closed.
-Merge, rebase, cherry-pick, revert and sequencer markers are checked before each
+and actual tracked content identities and revalidated selected hashes. Observed changes fail closed.
+Merge, rebase, cherry-pick, revert, sequencer, bisect and index-lock markers are checked before each
 observation; their presence requires manual recovery even with empty status.
 This bounded check does not promise an atomic snapshot; serialize conflicting work
 and refresh evidence before using it.
 Read selected bodies and follow the target's loading procedure. A snapshot is
 evidence identity, not proof of successful tests or a security attestation.
 Selected inputs must be regular files. Unix inspection uses the existing system
-`stat` utility (GNU on Linux, BSD on macOS); absence requires manual inspection.
-Linux/Windows paths are exercised locally; the BSD branch remains unverified.
+`stat` utility (GNU on Linux); absence requires manual inspection.
+Linux/Windows paths are exercised locally; macOS ownership is unsupported.
 Pipes, sockets and devices are rejected before hashing. Selected hashes run in
 an owned child with a ten-second timeout, including file opening and reads.
 Metadata and content come from the same open handle. Unix handle inspection
@@ -134,7 +154,9 @@ and explicitly selected context files also appear. Additional target-specific
 guidance conventions still need independent discovery and instruction selection.
 Existing dangling links stay in the path inventory without
 following their targets; actual deleted entries are excluded. Selected linked
-content still requires manual inspection. Missing link-metadata support fails.
+content and live inventory links require manual inspection, including regular
+targets. Instruction loading must not follow an unchecked link to a special file.
+Missing link-metadata support fails.
 Invalid encoding or any Git subprocess exceeding ten seconds fails instead of
 emitting a snapshot.
 Nonempty stderr also fails, even with an accepted exit code: traversal warnings
