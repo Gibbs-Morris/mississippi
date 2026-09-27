@@ -206,11 +206,31 @@ public sealed class AccountOperationsSectionTests : BunitContext
         Assert.Contains("Phase: Failed", status.TextContent, StringComparison.Ordinal);
         Assert.Contains("Last completed step: 1", status.TextContent, StringComparison.Ordinal);
         Assert.Contains("Started:", status.TextContent, StringComparison.Ordinal);
-        Assert.Contains("Completed:", status.TextContent, StringComparison.Ordinal);
+        Assert.Contains("Finished:", status.TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("Completed:", status.TextContent, StringComparison.Ordinal);
         Assert.Contains("Error code: insufficient-funds", status.TextContent, StringComparison.Ordinal);
         Assert.Contains(
             "Error: The source account does not have enough funds.",
             status.TextContent,
             StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     The assigned saga remains visible while its projection is still loading.
+    /// </summary>
+    [Fact]
+    public void TransferStatusShowsWaitingWhenSagaIdExistsWithoutProjection()
+    {
+        using IRenderedComponent<AccountOperationsSection> cut = Render<AccountOperationsSection>(p => p
+            .Add(c => c.InputIdPrefix, "account-a")
+            .Add(c => c.IsAccountOpen, true)
+            .Add(c => c.IsExecutingOrLoading, false)
+            .Add(c => c.TransferSagaId, "transfer-saga-pending"));
+        IElement status = cut.Find("#account-a-transfer-status");
+        Assert.Equal("status", status.GetAttribute("role"));
+        Assert.Equal("quiet", status.GetAttribute("data-state"));
+        Assert.Contains("Transfer saga ID: transfer-saga-pending", status.TextContent, StringComparison.Ordinal);
+        Assert.Contains("Waiting for transfer status.", status.TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("Start a transfer to see saga status.", status.TextContent, StringComparison.Ordinal);
     }
 }

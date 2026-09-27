@@ -336,7 +336,7 @@ public sealed class BankAccountE2ETests
             string statusText = await status.TextContentAsync() ?? string.Empty;
             Assert.Contains("Transfer saga ID:", statusText, StringComparison.Ordinal);
             Assert.Contains("Last completed step:", statusText, StringComparison.Ordinal);
-            Assert.Contains("Completed:", statusText, StringComparison.Ordinal);
+            Assert.Contains("Finished:", statusText, StringComparison.Ordinal);
             Assert.Equal("complete", await status.GetAttributeAsync("data-state"));
             await SaveTransferStatusScreenshotsAsync(page, operationsPage);
             await operationsPage.WaitForBalanceValueAsync("475.00", ProjectionTimeout);
