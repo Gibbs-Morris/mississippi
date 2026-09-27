@@ -18,8 +18,9 @@ Governing thought: Preserve explicit repository identity when PowerShell launche
 - Agents SHOULD avoid index-mtime races in Git stat-cache tests. Why: The [PR #803 fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) rehashed content until its cached mtime preceded the index.
 - Agents SHOULD account for ctime precision in Git stat-cache tests. Why: The [PR #803 fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) varied across whole-second ctime boundaries until its cached ctime was controlled.
 - Agents SHOULD reject native inspection diagnostics even with a successful exit code. Why: The [PR #803 permission fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) showed Git omitting unreadable content with exit zero.
-- Agents SHOULD bound selected-file opening and reading. Why: The [PR #803 pipe-race fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) replaced a checked regular file with a blocking FIFO.
+- Agents SHOULD bound the whole filesystem inspection, including probes, opening and reading. Why: The [PR #803 stall and FIFO fixtures](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) covered work outside individual Git/hash deadlines.
 - Agents SHOULD validate metadata and hash content through the same open handle. Why: The [PR #803 handle-race fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) replaced the pathname after validation.
+- Agents SHOULD reject alternate Git object stores before attributing commits to a selected repository. Why: The [PR #803 shared-clone fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) had clean status while borrowing HEAD and ancestry.
 
 ## Scope and Audience
 
