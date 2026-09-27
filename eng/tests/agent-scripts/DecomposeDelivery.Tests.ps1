@@ -209,6 +209,19 @@ Describe 'Portable delivery context snapshots' {
         $result.Output | Should -BeNullOrEmpty
     }
 
+    It 'bounds stalled selected-path preflight probes before hashing' {
+        $copy = Join-Path $TestDrive 'preflight-stall-snapshot.ps1'
+        $source = [IO.File]::ReadAllText($snapshotScript)
+        $boundary = 'if ([IO.Directory]::Exists($fullPath)) { throw "Context path is not a file: $relative" }'
+        $source.Contains($boundary) | Should -BeTrue
+        # Simulate a blocked preflight probe before the separately bounded hash child starts.
+        [IO.File]::WriteAllText($copy, $source.Replace($boundary, 'while ($true) { }; ' + $boundary))
+        $result = Invoke-BoundedSnapshot -ScriptPath $copy
+        $result.ExitCode | Should -Be 1
+        $result.Error | Should -Match 'Native context inspection timed out'
+        $result.Output | Should -BeNullOrEmpty
+    }
+
     It 'retains a clean tracked dangling symlink in the current inventory' -Skip:$IsWindows {
         $path = Join-Path $fixture 'tools/dangling.md'
         $null = [IO.File]::CreateSymbolicLink($path, 'missing-target.md')
