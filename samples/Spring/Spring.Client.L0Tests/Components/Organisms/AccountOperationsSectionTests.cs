@@ -8,6 +8,7 @@ using Bunit;
 using Microsoft.AspNetCore.Components;
 
 using MississippiSamples.Spring.Client.Components.Organisms;
+using MississippiSamples.Spring.Client.Features.MoneyTransferStatus.Dtos;
 
 
 namespace MississippiSamples.Spring.Client.L0Tests.Components.Organisms;
@@ -131,8 +132,50 @@ public sealed class AccountOperationsSectionTests : BunitContext
     {
         using IRenderedComponent<AccountOperationsSection> cut = Render<AccountOperationsSection>(p => p
             .Add(c => c.SelectedEntityId, "account-1")
+            .Add(c => c.InputIdPrefix, "account-a")
             .Add(c => c.IsAccountOpen, true)
             .Add(c => c.IsExecutingOrLoading, false));
-        Assert.Contains("Start a transfer to see saga status.", cut.Markup, StringComparison.Ordinal);
+        IElement status = cut.Find("#account-a-transfer-status");
+        Assert.Equal("status", status.GetAttribute("role"));
+        Assert.Equal("quiet", status.GetAttribute("data-state"));
+        Assert.Contains("Start a transfer to see saga status.", status.TextContent, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     The failure projection is exposed through the accessible Refraction status strip.
+    /// </summary>
+    [Fact]
+    public void TransferStatusRendersProjectionDetailsAndFailureState()
+    {
+        MoneyTransferStatusProjectionDto projection = new(
+            new(2026, 9, 27, 10, 16, 0, TimeSpan.Zero),
+            "insufficient-funds",
+            "The source account does not have enough funds.",
+            1,
+            SagaPhaseDto.Failed,
+            new(2026, 9, 27, 10, 15, 0, TimeSpan.Zero));
+        using IRenderedComponent<AccountOperationsSection> cut = Render<AccountOperationsSection>(p => p
+            .Add(c => c.InputIdPrefix, "account-a")
+            .Add(c => c.PanelLabel, "Account A")
+            .Add(c => c.IsAccountOpen, true)
+            .Add(c => c.IsExecutingOrLoading, false)
+            .Add(c => c.TransferSagaId, "transfer-saga-123")
+            .Add(c => c.TransferStatusProjection, projection));
+        IElement transferPanel = cut.Find("#account-a-transfer-panel");
+        IElement status = cut.Find("#account-a-transfer-status");
+        Assert.Equal("Transfer", transferPanel.QuerySelector("h2")?.TextContent.Trim());
+        Assert.Equal("status", status.GetAttribute("role"));
+        Assert.Equal("Account A transfer status", status.GetAttribute("aria-label"));
+        Assert.Equal("error", status.GetAttribute("data-state"));
+        Assert.Contains("Transfer saga ID: transfer-saga-123", status.TextContent, StringComparison.Ordinal);
+        Assert.Contains("Phase: Failed", status.TextContent, StringComparison.Ordinal);
+        Assert.Contains("Last completed step: 1", status.TextContent, StringComparison.Ordinal);
+        Assert.Contains("Started:", status.TextContent, StringComparison.Ordinal);
+        Assert.Contains("Completed:", status.TextContent, StringComparison.Ordinal);
+        Assert.Contains("Error code: insufficient-funds", status.TextContent, StringComparison.Ordinal);
+        Assert.Contains(
+            "Error: The source account does not have enough funds.",
+            status.TextContent,
+            StringComparison.Ordinal);
     }
 }

@@ -1,0 +1,51 @@
+.spring-transfer__content {
+    display: grid;
+    gap: var(--rf-raw-space-4);
+    min-width: 0;
+}
+
+.spring-transfer__form {
+    display: grid;
+    gap: var(--rf-raw-space-4);
+    min-width: 0;
+    margin: 0;
+}
+
+.spring-transfer__field {
+    display: grid;
+    gap: var(--rf-raw-space-2);
+    min-width: 0;
+}
+
+.spring-transfer__content ::deep .spring-transfer__status-strip {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    min-width: 0;
+    border-inline-start: 0.25rem solid var(--rf-color-text-accent);
+    overflow-wrap: anywhere;
+}
+
+.spring-transfer__status-details {
+    display: grid;
+    flex: 1 1 100%;
+    gap: var(--rf-raw-space-2);
+    min-width: 0;
+}
+
+.spring-transfer__content ::deep .spring-transfer__status-strip[data-state="complete"] {
+    border-inline-start-color: var(--rf-color-status-success);
+}
+
+.spring-transfer__content ::deep .spring-transfer__status-strip[data-state="alert"] {
+    border-inline-start-color: var(--rf-color-status-warning);
+}
+
+.spring-transfer__content ::deep .spring-transfer__status-strip[data-state="error"] {
+    border-inline-start-color: var(--rf-color-status-error);
+}
+
+@media (max-width: 600px) {
+    .spring-transfer__form button {
+        width: 100%;
+    }
+}

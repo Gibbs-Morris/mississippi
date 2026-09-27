@@ -1,6 +1,9 @@
 using System;
+using System.Globalization;
 
 using Microsoft.AspNetCore.Components;
+
+using Mississippi.Refraction.Client;
 
 using MississippiSamples.Spring.Client.Components.Atoms.AmountInputAdapter;
 using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos;
@@ -167,13 +170,37 @@ public sealed partial class AccountOperationsSection
 
     private string InitialDepositInputId => GetInputId("initial-deposit-input");
 
+    private string LastCompletedStepText =>
+        TransferStatusProjection is not null && (TransferStatusProjection.LastCompletedStepIndex >= 0)
+            ? TransferStatusProjection.LastCompletedStepIndex.ToString(CultureInfo.CurrentCulture)
+            : "None";
+
     private string PanelHeadingId => GetInputId("panel-heading");
 
     private string TransferAmountInputId => GetInputId("transfer-amount-input");
 
     private string TransferDestinationInputId => GetInputId("transfer-destination-input");
 
+    private string TransferPanelId => GetInputId("transfer-panel");
+
+    private string TransferStatusId => GetInputId("transfer-status");
+
+    private string TransferStatusState =>
+        TransferStatusProjection?.Phase switch
+        {
+            SagaPhaseDto.Completed => RefractionStates.Complete,
+            SagaPhaseDto.Compensated => RefractionStates.Alert,
+            SagaPhaseDto.Compensating or SagaPhaseDto.Running => RefractionStates.Busy,
+            SagaPhaseDto.Failed => RefractionStates.Error,
+            var _ => RefractionStates.Quiet,
+        };
+
     private string WithdrawAmountInputId => GetInputId("withdraw-amount-input");
+
+    private static string FormatTransferTimestamp(
+        DateTimeOffset? timestamp
+    ) =>
+        timestamp?.ToLocalTime().ToString("g", CultureInfo.CurrentCulture) ?? string.Empty;
 
     private string GetInputId(
         string inputName
