@@ -174,8 +174,9 @@ function Get-ContextPaths {
     $paths = [Collections.Generic.SortedSet[string]]::new([StringComparer]::Ordinal)
     foreach ($relative in (Get-ContextRawPaths $root $ContextPaths)) {
         $fullPath = [IO.Path]::Combine($root, $relative)
+        if ([IO.Directory]::Exists($fullPath)) { throw "Opaque directory inventory requires manual instruction discovery: $relative" }
         $entry = [IO.FileInfo]::new($fullPath)
-        if ([IO.File]::Exists($fullPath) -or [IO.Directory]::Exists($fullPath) -or $null -ne $entry.LinkTarget) { $null = $paths.Add($relative) }
+        if ([IO.File]::Exists($fullPath) -or $null -ne $entry.LinkTarget) { $null = $paths.Add($relative) }
     }
     return @($paths)
 }

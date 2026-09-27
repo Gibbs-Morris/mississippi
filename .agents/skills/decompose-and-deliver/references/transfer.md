@@ -70,6 +70,9 @@ each Git command; it does not change repository or account configuration.
 Every inspection Git command also disables filename folding with
 `core.ignoreCase=false`, preserving case-distinct instruction paths in status
 and both inventory queries without changing the target's configuration.
+Opaque directory entries from Git inventory require manual instruction discovery.
+This includes ignored embedded repositories whose scoped guidance Git does not
+enumerate through the outer repository's path queries.
 Configured clean/process filters, including inherited LFS settings, require
 manual file/commit inspection or an explicitly authorized trusted workflow.
 The helper rejects them before status rather than changing normalization and

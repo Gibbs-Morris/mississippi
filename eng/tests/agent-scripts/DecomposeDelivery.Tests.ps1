@@ -196,10 +196,25 @@ Describe 'Portable delivery context snapshots' {
         $snapshot.SelectedInputs.Path | Should -Contain 'tools/private-policy.txt'
     }
 
+    It 'rejects ignored embedded repositories that hide scoped guidance behind a directory entry' {
+        [IO.File]::WriteAllText((Join-Path $fixture '.gitignore'), "nested/`n")
+        Invoke-FixtureGit @('add', '.gitignore')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'opaque ignored directory')
+        $nested = Join-Path $fixture 'nested'
+        [IO.Directory]::CreateDirectory($nested) | Out-Null
+        Invoke-FixtureGit @('-C', $nested, 'init', '-b', 'nested')
+        [IO.File]::WriteAllText((Join-Path $nested 'AGENTS.md'), 'Scoped instructions inside an ignored embedded repository')
+        @(& git -C $fixture status --porcelain=v1).Count | Should -Be 0
+        $opaque = @(& git -C $fixture ls-files --others --ignored --exclude-standard)
+        @($opaque | Where-Object { $_ -ceq 'nested/' }).Count | Should -Be 1
+        @($opaque | Where-Object { $_ -ceq 'nested/AGENTS.md' }).Count | Should -Be 0
+        { Get-FixtureSnapshot } | Should -Throw '*Opaque directory inventory requires manual instruction discovery*'
+    }
+
     It 'bounds stalled worktree probes during inventory filtering' {
         $copy = Join-Path $TestDrive 'inventory-stall-snapshot.ps1'
         $source = [IO.File]::ReadAllText($snapshotScript)
-        $boundary = 'if ([IO.File]::Exists($fullPath) -or [IO.Directory]::Exists($fullPath) -or $null -ne $entry.LinkTarget)'
+        $boundary = 'if ([IO.Directory]::Exists($fullPath)) { throw "Opaque directory inventory requires manual instruction discovery: $relative" }'
         $source.Contains($boundary) | Should -BeTrue
         # Deterministically simulate a blocked filesystem probe; no network or FUSE setup is implied.
         [IO.File]::WriteAllText($copy, $source.Replace($boundary, 'while ($true) { }; ' + $boundary))
