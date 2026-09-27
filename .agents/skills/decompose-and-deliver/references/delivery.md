@@ -59,10 +59,23 @@ Check actual remote refs, ancestry, PR identity/base and check publication after
 execution; exit code zero is insufficient. Reuse an existing matching PR after
 partial publication. A failed creation does not prove no PR was created.
 
-Use ordinary pushes where possible. Where an authorized rewrite is necessary,
-capture the verified expected remote revision and use a guarded update against
-that value. A lease rejection requires fresh reconciliation, not an unguarded
-force push. Do not retry a running operation or overwrite unrelated remote work.
+Freeze worker writes to shared Git configuration during publication preflight
+and execution; otherwise use a trusted connector or report the operation blocked.
+For every push, pin the verified endpoint and one explicit source-to-destination
+refspec, such as `VERIFIED_SOURCE_OID:refs/heads/VERIFIED_BRANCH`. Inspect and reject
+or neutralize `remote.<name>.mirror`, configured push refspecs and implicit tag
+expansion before execution. An explicit refspec bypasses configured push mappings;
+also disable mirror mode and follow-tags for that invocation, for example with
+`-c remote.NAME.mirror=false -c push.followTags=false` before `push` and
+`--no-mirror --no-follow-tags` after it. Replace `NAME` with the verified remote;
+check these options against current help. Do not infer the destination from
+`HEAD`, upstream configuration or push defaults. Wider ref sets, deletion and tag
+publication require separate authorization and explicit expected destinations.
+Use fast-forward updates where possible. Where an authorized rewrite is necessary,
+capture the verified expected remote revision and use a lease naming that exact
+destination and revision. A lease rejection requires fresh reconciliation, not
+an unguarded force push. Check every affected remote ref afterward; do not retry
+a running operation or overwrite unrelated remote work.
 
 ## Stacks and landing boundaries
 
