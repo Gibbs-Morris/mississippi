@@ -171,6 +171,8 @@ targets. Instruction loading must not follow an unchecked link to a special file
 Missing link-metadata support fails.
 The repository test harness reports this optional suite as skipped below
 PowerShell 7.4, on unsupported platforms or without its Linux prerequisites.
+The suite also checks those capabilities at discovery, so standalone Pester
+execution reports all cases as skipped with an explicit reason when unavailable.
 The root permission fixture also reports an explicit skip without `setpriv`;
 ordinary permission controls do not require that optional privilege utility.
 Invalid encoding or any Git subprocess exceeding ten seconds fails instead of

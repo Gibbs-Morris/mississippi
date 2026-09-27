@@ -3,6 +3,15 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$contextSuiteSkipReason = $null
+if ($PSVersionTable.PSVersion -lt [version]'7.4') { $contextSuiteSkipReason = 'Requires PowerShell 7.4 or later.' }
+elseif (-not ($IsWindows -or $IsLinux)) { $contextSuiteSkipReason = 'Supports Windows and Linux; use manual inspection on other platforms.' }
+elseif ($IsLinux) {
+    $missing = @(@('stat', 'prlimit') | Where-Object { $null -eq (Get-Command $_ -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1) })
+    if ($missing.Count -gt 0) { $contextSuiteSkipReason = "Optional helper prerequisites are unavailable: $($missing -join ', ')." }
+}
+if ($null -ne $contextSuiteSkipReason) { Write-Host "Skipping portable delivery context snapshot suite: $contextSuiteSkipReason" }
+
 BeforeAll {
     $repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
     $package = Join-Path $repositoryRoot '.agents/skills/decompose-and-deliver'
@@ -184,7 +193,7 @@ BeforeAll {
     }
 }
 
-Describe 'Portable delivery context snapshots' {
+Describe 'Portable delivery context snapshots' -Skip:($null -ne $contextSuiteSkipReason) {
     BeforeEach {
         $fixture = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path (Join-Path $fixture 'tools'),(Join-Path $fixture 'packages/widget') -Force | Out-Null
