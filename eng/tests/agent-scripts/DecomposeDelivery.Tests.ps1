@@ -309,6 +309,33 @@ Describe 'Portable delivery context snapshots' {
         { Get-FixtureSnapshot } | Should -Throw '*Git common directory differs*'
     }
 
+    It 'rejects a clean shared clone whose HEAD and ancestry use an alternate object store' {
+        [IO.File]::WriteAllText((Join-Path $fixture 'borrowed-parent.txt'), 'Synthetic parent content for the fixture')
+        Invoke-FixtureGit @('add', 'borrowed-parent.txt')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'synthetic borrowed parent')
+        [IO.File]::Delete((Join-Path $fixture 'borrowed-parent.txt'))
+        Invoke-FixtureGit @('add', '-u')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'remove parent fixture content')
+        $borrowed = Join-Path $TestDrive 'borrowed-objects'
+        Invoke-FixtureGit @('clone', '--shared', '--', $fixture, $borrowed)
+        $head = [string](& git -C $borrowed rev-parse HEAD)
+        $head | Should -BeExactly ([string](& git -C $fixture rev-parse HEAD))
+        @(& git -C $borrowed status --porcelain=v1).Count | Should -Be 0
+        [IO.Path]::GetFullPath([string](& git -C $borrowed rev-parse --show-toplevel)) | Should -BeExactly $borrowed
+        [IO.Path]::GetFullPath([string](& git -C $borrowed rev-parse --absolute-git-dir)) | Should -BeExactly (Join-Path $borrowed '.git')
+        $alternate = [IO.FileInfo]::new((Join-Path $borrowed '.git/objects/info/alternates'))
+        $alternate.Exists | Should -BeTrue
+        $alternate.LinkTarget | Should -BeNullOrEmpty
+        [IO.File]::Exists((Join-Path $borrowed ('.git/objects/' + $head.Substring(0, 2) + '/' + $head.Substring(2)))) | Should -BeFalse
+        [string](& git -C $borrowed show 'HEAD~1:borrowed-parent.txt') | Should -BeExactly 'Synthetic parent content for the fixture'
+        { Get-FixtureSnapshot -Root $borrowed } | Should -Throw '*Alternate Git object stores require manual inspection*'
+    }
+
+    It 'rejects a regular HTTP alternates metadata file before reading objects' {
+        [IO.File]::WriteAllText((Join-Path $fixture '.git/objects/info/http-alternates'), 'https://example.invalid/objects')
+        { Get-FixtureSnapshot } | Should -Throw '*Alternate Git object stores require manual inspection*'
+    }
+
     It 'rejects a linked .git/<Metadata> despite matching worktree and gitdir roots' -ForEach @(
         @{ Metadata = 'refs' }, @{ Metadata = 'objects' }, @{ Metadata = 'refs/heads' }
     ) {

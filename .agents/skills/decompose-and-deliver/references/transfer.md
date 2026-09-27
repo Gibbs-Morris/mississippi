@@ -55,6 +55,10 @@ closed; use a clean process or explicit manual inspection rather than silently
 reading another target.
 Git ownership failures remain failures. Any ownership/trust decision belongs
 outside the helper and must follow the target's authorization rules.
+Repository-local `objects/info/alternates` and `http-alternates` also require
+manual inspection, including regular files in shared clones. They are rejected
+before Git reads objects, because a matching root and clean status do not prove
+that the reported commit or its ancestry belongs to this repository's store.
 Inspection disables filesystem-monitor hooks and optional index writes for
 each Git command; it does not change repository or account configuration.
 Configured clean/process filters, including inherited LFS settings, require

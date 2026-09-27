@@ -157,6 +157,10 @@ function Assert-ContextGitMetadata {
             if ($null -ne $item.LinkTarget -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
                 throw 'Linked Git metadata entries require manual inspection; refs, objects and index must belong to the selected repository.'
             }
+            $metadataRelative = [IO.Path]::GetRelativePath($Directory.FullName, $item.FullName).Replace([IO.Path]::DirectorySeparatorChar, [char]'/')
+            if ($metadataRelative.Equals('objects/info/alternates', [StringComparison]::OrdinalIgnoreCase) -or $metadataRelative.Equals('objects/info/http-alternates', [StringComparison]::OrdinalIgnoreCase)) {
+                throw 'Alternate Git object stores require manual inspection; objects must belong to the selected repository.'
+            }
             if ($item -is [IO.DirectoryInfo]) { $pending.Enqueue($item) }
         }
     }
