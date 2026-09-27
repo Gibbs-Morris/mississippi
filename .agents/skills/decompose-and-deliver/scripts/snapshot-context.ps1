@@ -24,12 +24,22 @@ function Invoke-ContextGit {
 function Get-ContextFileMetadata {
     param([IO.FileSystemInfo]$Item, [string]$Relative, [IO.FileStream]$Stream)
     if ($IsWindows) {
-        $attributes = if ($null -eq $Stream) { $item.Attributes } else { [IO.File]::GetAttributes($Stream.SafeFileHandle) }
-        if ($null -ne $Stream -and (-not $Stream.CanSeek -or ($attributes -band [IO.FileAttributes]::Device) -ne 0)) {
-            throw "Non-regular context files require manual inspection: $Relative"
-        }
-        return [pscustomobject]@{ Type = 'File'; Mode = [int]$attributes }
+        return Get-ContextWindowsFileMetadata $Item $Relative $Stream
     }
+    return Get-ContextUnixFileMetadata $Item $Relative $Stream
+}
+
+function Get-ContextWindowsFileMetadata {
+    param([IO.FileSystemInfo]$Item, [string]$Relative, [IO.FileStream]$Stream)
+    $attributes = if ($null -eq $Stream) { $item.Attributes } else { [IO.File]::GetAttributes($Stream.SafeFileHandle) }
+    if ($null -ne $Stream -and (-not $Stream.CanSeek -or ($attributes -band [IO.FileAttributes]::Device) -ne 0)) {
+        throw "Non-regular context files require manual inspection: $Relative"
+    }
+    return [pscustomobject]@{ Type = 'File'; Mode = [int]$attributes }
+}
+
+function Get-ContextUnixFileMetadata {
+    param([IO.FileSystemInfo]$Item, [string]$Relative, [IO.FileStream]$Stream)
     $stat = Get-Command stat -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($null -eq $stat) { throw 'Unix stat metadata is unavailable; inspect selected files manually.' }
     $metadataPath = if ($null -eq $Stream) { $item.FullName } else { '/dev/fd/' + $Stream.SafeFileHandle.DangerousGetHandle().ToInt64() }
@@ -135,6 +145,17 @@ function Get-ContextPaths {
     return @($paths)
 }
 
+function Assert-ContextGitMetadataEntry {
+    param([IO.DirectoryInfo]$Directory, [IO.FileSystemInfo]$Item)
+    if ($null -ne $item.LinkTarget -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw 'Linked Git metadata entries require manual inspection; refs, objects and index must belong to the selected repository.'
+    }
+    $metadataRelative = [IO.Path]::GetRelativePath($Directory.FullName, $item.FullName).Replace([IO.Path]::DirectorySeparatorChar, [char]'/')
+    if ($metadataRelative.Equals('objects/info/alternates', [StringComparison]::OrdinalIgnoreCase) -or $metadataRelative.Equals('objects/info/http-alternates', [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Alternate Git object stores require manual inspection; objects must belong to the selected repository.'
+    }
+}
+
 function Assert-ContextGitMetadata {
     param([IO.DirectoryInfo]$Directory, [switch]$InChild)
     if (-not $InChild) {
@@ -153,13 +174,7 @@ function Assert-ContextGitMetadata {
             if ($entries -gt 100000 -or $elapsed.Elapsed.TotalSeconds -gt 10) {
                 throw 'Git metadata inspection exceeded its bounds; inspect this target manually.'
             }
-            if ($null -ne $item.LinkTarget -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
-                throw 'Linked Git metadata entries require manual inspection; refs, objects and index must belong to the selected repository.'
-            }
-            $metadataRelative = [IO.Path]::GetRelativePath($Directory.FullName, $item.FullName).Replace([IO.Path]::DirectorySeparatorChar, [char]'/')
-            if ($metadataRelative.Equals('objects/info/alternates', [StringComparison]::OrdinalIgnoreCase) -or $metadataRelative.Equals('objects/info/http-alternates', [StringComparison]::OrdinalIgnoreCase)) {
-                throw 'Alternate Git object stores require manual inspection; objects must belong to the selected repository.'
-            }
+            Assert-ContextGitMetadataEntry $Directory $item
             if ($item -is [IO.DirectoryInfo]) { $pending.Enqueue($item) }
         }
     }
