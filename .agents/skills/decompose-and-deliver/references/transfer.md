@@ -69,6 +69,8 @@ Inspection disables filesystem-monitor hooks and optional index writes for
 each Git command; it does not change repository or account configuration.
 Each Git command also uses `core.commitGraph=false`, so cached commit-graph tree
 metadata cannot hide staged changes behind an otherwise matching reported HEAD.
+Each Git command uses `core.untrackedCache=false`, so stale or crafted untracked
+cache entries cannot conceal new files. The target's index remains unchanged.
 Every inspection Git command also disables filename folding with
 `core.ignoreCase=false`, preserving case-distinct instruction paths in status
 and both inventory queries without changing the target's configuration.

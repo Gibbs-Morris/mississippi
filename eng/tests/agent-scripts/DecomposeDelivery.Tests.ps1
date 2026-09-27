@@ -589,6 +589,76 @@ if ($Arguments -contains 'ls-files') {
         { Get-FixtureSnapshot } | Should -Throw '*Tracked symlinks with core.symlinks=false require manual inspection*'
     }
 
+    It 'exposes untracked files concealed by a forged untracked cache' {
+        $fixture = Join-Path $TestDrive ([guid]::NewGuid().ToString('N') + '-untracked-cache')
+        $null = [IO.Directory]::CreateDirectory($fixture)
+        [IO.File]::WriteAllText((Join-Path $fixture 'AGENTS.md'), 'Untracked cache fixture')
+        Invoke-FixtureGit @('init', '--object-format=sha1', '-b', 'cache-fixture')
+        Invoke-FixtureGit @('config', 'status.showUntrackedFiles', 'all')
+        Invoke-FixtureGit @('config', 'core.untrackedCache', 'true')
+        Invoke-FixtureGit @('config', 'core.autocrlf', 'false')
+        Invoke-FixtureGit @('add', 'AGENTS.md')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'cache baseline')
+        Invoke-FixtureGit @('update-index', '--index-version=2')
+        $hiddenName = 'hidden-payload.txt'
+        [IO.File]::WriteAllText((Join-Path $fixture $hiddenName), 'Untracked payload')
+        # Avoid a racy directory timestamp while Git records the real cache stat data.
+        Start-Sleep -Milliseconds 1100
+        Invoke-FixtureGit @('status', '--porcelain=v1', '--untracked-files=all')
+        $indexPath = Join-Path $fixture '.git/index'
+        $bytes = [IO.File]::ReadAllBytes($indexPath)
+        # SHA-1 index v2 and UNTR layout: https://git-scm.com/docs/gitformat-index.
+        [Convert]::ToInt32([BitConverter]::ToString($bytes, 4, 4).Replace('-', ''), 16) | Should -Be 2
+        [Convert]::ToInt32([BitConverter]::ToString($bytes, 8, 4).Replace('-', ''), 16) | Should -Be 1
+        $entryEnd = 12 + 62
+        while ($bytes[$entryEnd] -ne 0) { $entryEnd++ }
+        $extensions = 12 + [int]([Math]::Ceiling(($entryEnd + 1 - 12) / 8.0) * 8)
+        $cursor = $extensions
+        while ([Text.Encoding]::ASCII.GetString($bytes, $cursor, 4) -cne 'UNTR') {
+            $cursor += 8 + [Convert]::ToInt32([BitConverter]::ToString($bytes, $cursor + 4, 4).Replace('-', ''), 16)
+            if ($cursor -ge $bytes.Length - 20) { throw 'Fixture untracked cache was not found.' }
+        }
+        $size = [Convert]::ToInt32([BitConverter]::ToString($bytes, $cursor + 4, 4).Replace('-', ''), 16)
+        $cache = [byte[]]$bytes[($cursor + 8)..($cursor + 7 + $size)]
+        $offset = 0
+        $encoded = [int]$cache[$offset++]
+        $environmentLength = $encoded -band 127
+        while (($encoded -band 128) -ne 0) {
+            $encoded = [int]$cache[$offset++]
+            $environmentLength = ($environmentLength + 1) * 128 + ($encoded -band 127)
+        }
+        # Git's UNTR stat_data has nine uint32 fields (no index-entry mode field).
+        $offset += $environmentLength + 72 + 4 + 40
+        $ignoreEnd = [Array]::IndexOf($cache, [byte]0, $offset)
+        $ignoreEnd | Should -BeGreaterOrEqual $offset
+        $offset = $ignoreEnd + 1
+        $cache[$offset++] | Should -Be 1 # One cached directory: the root.
+        $countOffset = $offset++
+        $cache[$countOffset] | Should -Be 1
+        $cache[$offset++] | Should -Be 0 # No subdirectories.
+        $cache[$offset++] | Should -Be 0 # Empty root name.
+        $nameStart = $offset
+        $nameEnd = [Array]::IndexOf($cache, [byte]0, $offset)
+        $nameEnd | Should -BeGreaterOrEqual $offset
+        $offset = $nameEnd + 1
+        [Text.Encoding]::UTF8.GetString($cache, $nameStart, $offset - $nameStart - 1) | Should -BeExactly $hiddenName
+        $cache[$countOffset] = 0
+        $forged = [byte[]]($cache[0..($nameStart - 1)] + $cache[$offset..($cache.Length - 1)])
+        $lengthBytes = [BitConverter]::GetBytes([int]$forged.Length)
+        if ([BitConverter]::IsLittleEndian) { [Array]::Reverse($lengthBytes) }
+        # Preserve entries and current root stat data; discard other optional extensions.
+        $body = [byte[]]($bytes[0..($extensions - 1)] + [Text.Encoding]::ASCII.GetBytes('UNTR') + $lengthBytes + $forged)
+        [IO.File]::WriteAllBytes($indexPath, [byte[]]($body + [Security.Cryptography.SHA1]::HashData($body)))
+        $indexHash = (Get-FileHash -LiteralPath $indexPath).Hash
+        @(& git --no-optional-locks -c core.fsmonitor= -c core.untrackedCache=true -C $fixture status --porcelain=v1 --untracked-files=all).Count | Should -Be 0
+        @(& git --no-optional-locks -c core.untrackedCache=false -C $fixture status --porcelain=v1 --untracked-files=all) | Should -Contain ('?? ' + $hiddenName)
+        $snapshot = Get-FixtureSnapshot -Paths @('AGENTS.md')
+        $snapshot.Dirty | Should -BeTrue
+        $snapshot.Paths | Should -Contain $hiddenName
+        [string](& git -C $fixture config --get core.untrackedCache) | Should -BeExactly 'true'
+        (Get-FileHash -LiteralPath $indexPath).Hash | Should -BeExactly $indexHash
+    }
+
     It 'exposes staged changes concealed by a forged commit-graph root tree' {
         Invoke-FixtureGit @('config', 'core.commitGraph', 'true')
         Invoke-FixtureGit @('commit-graph', 'write', '--reachable')

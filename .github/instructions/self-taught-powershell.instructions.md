@@ -27,6 +27,7 @@ Governing thought: Preserve explicit repository identity when PowerShell launche
 - Agents SHOULD reject alternate Git object stores before attributing commit ancestry. Why: The [PR #803 shared-clone fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) reported clean status with objects supplied by another repository.
 - Agents SHOULD reject legacy Git grafts before attributing commit ancestry. Why: The [PR #803 graft fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) reported clean status with unrelated parent ancestry.
 - Agents SHOULD disable or verify Git commit graphs when inspecting staged state. Why: The [PR #803 forged-graph fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) concealed a staged payload behind a cached root tree.
+- Agents SHOULD disable or verify Git's untracked cache when inspecting dirty state. Why: The [PR #803 forged-cache fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) concealed a new file while both observations agreed.
 - Agents SHOULD reject opaque Git inventory directories or discover their guidance independently. Why: The [PR #803 embedded-repository fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) hid ignored scoped instructions behind one directory entry.
 
 ## Scope and Audience
