@@ -261,6 +261,35 @@ if ($Arguments -contains 'ls-files') {
         $result.Output | Should -BeNullOrEmpty
     }
 
+    It 'rejects a Unix <Kind> from the instruction inventory before returning paths' -Skip:$IsWindows -ForEach @(
+        @{ Kind = 'named pipe'; Relative = '.github/instructions/special.instructions.md' },
+        @{ Kind = 'socket'; Relative = 'scoped/AGENTS.md' }
+    ) {
+        $path = [IO.Path]::Combine($fixture, $Relative)
+        $null = [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($path))
+        [IO.File]::WriteAllText($path, 'Tracked scoped guidance')
+        Invoke-FixtureGit @('add', '--', $Relative)
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'scoped guidance')
+        [IO.File]::Delete($path)
+        $socket = $null
+        try {
+            if ($Kind -eq 'named pipe') {
+                & mkfifo -- $path
+                $LASTEXITCODE | Should -Be 0
+            }
+            else {
+                $socket = [Net.Sockets.Socket]::new([Net.Sockets.AddressFamily]::Unix, [Net.Sockets.SocketType]::Stream, [Net.Sockets.ProtocolType]::Unspecified)
+                $socket.Bind([Net.Sockets.UnixDomainSocketEndPoint]::new($path))
+            }
+            @(& git -C $fixture ls-files --cached) | Should -Contain $Relative
+            $result = Invoke-BoundedSnapshot
+            $result.ExitCode | Should -Be 1
+            $result.Output | Should -BeNullOrEmpty
+            $result.Error | Should -Match 'Non-regular inventory entries require manual instruction discovery'
+        }
+        finally { if ($null -ne $socket) { $socket.Dispose() } }
+    }
+
     It 'retains a clean tracked dangling symlink in the current inventory' -Skip:$IsWindows {
         $path = Join-Path $fixture 'tools/dangling.md'
         $null = [IO.File]::CreateSymbolicLink($path, 'missing-target.md')

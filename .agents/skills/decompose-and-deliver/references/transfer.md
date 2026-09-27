@@ -77,6 +77,8 @@ and both inventory queries without changing the target's configuration.
 Opaque directory entries from Git inventory require manual instruction discovery.
 This includes ignored embedded repositories whose scoped guidance Git does not
 enumerate through the outer repository's path queries.
+Unix inventory entry types are checked in one bounded `stat` invocation; special
+entries such as FIFOs and sockets require manual discovery before paths return.
 Configured clean/process filters, including inherited LFS settings, require
 manual file/commit inspection or an explicitly authorized trusted workflow.
 The helper rejects them before status rather than changing normalization and

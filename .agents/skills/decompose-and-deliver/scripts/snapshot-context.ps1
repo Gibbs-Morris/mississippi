@@ -169,6 +169,24 @@ function Get-ContextRawPaths {
     return ($visible.Output + $ignored.Output).Split([char]0, [StringSplitOptions]::RemoveEmptyEntries)
 }
 
+function Assert-ContextInventoryTypes {
+    param([string]$Root, [string[]]$Paths)
+    if ($IsWindows -or $Paths.Count -eq 0) { return }
+    $stat = Get-Command stat -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($null -eq $stat) { throw 'Unix stat metadata is unavailable; inspect inventory entries manually.' }
+    $arguments = if ($IsMacOS) { @('-f', '%p', '--') } else { @('-c', '%f', '--') }
+    $radix = if ($IsMacOS) { 8 } else { 16 }
+    $arguments += @($Paths | ForEach-Object { [IO.Path]::Combine($Root, $_) })
+    $modes = (Invoke-ContextNativeOutput $stat.Source $arguments).Split([char]10, [StringSplitOptions]::RemoveEmptyEntries)
+    if ($modes.Count -ne $Paths.Count) { throw 'Inventory entry metadata is incomplete; inspect instructions manually.' }
+    for ($index = 0; $index -lt $Paths.Count; $index++) {
+        $mode = [Convert]::ToInt32($modes[$index].Trim(), $radix) -band 61440
+        if ($mode -notin @(32768, 40960)) {
+            throw "Non-regular inventory entries require manual instruction discovery: $($Paths[$index])"
+        }
+    }
+}
+
 function Get-ContextPaths {
     param([string]$Root, [string[]]$ContextPaths)
     $paths = [Collections.Generic.SortedSet[string]]::new([StringComparer]::Ordinal)
@@ -178,7 +196,9 @@ function Get-ContextPaths {
         $entry = [IO.FileInfo]::new($fullPath)
         if ([IO.File]::Exists($fullPath) -or $null -ne $entry.LinkTarget) { $null = $paths.Add($relative) }
     }
-    return @($paths)
+    $inventory = @($paths)
+    Assert-ContextInventoryTypes $Root $inventory
+    return $inventory
 }
 
 function Assert-ContextGitMetadataEntry {

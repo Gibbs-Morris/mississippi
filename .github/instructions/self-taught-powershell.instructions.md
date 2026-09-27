@@ -30,6 +30,7 @@ Governing thought: Preserve explicit repository identity when PowerShell launche
 - Agents SHOULD disable or verify Git commit graphs when inspecting staged state. Why: The [PR #803 forged-graph fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) concealed a staged payload behind a cached root tree.
 - Agents SHOULD disable or verify Git's untracked cache when inspecting dirty state. Why: The [PR #803 forged-cache fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) concealed a new file while both observations agreed.
 - Agents SHOULD reject opaque Git inventory directories or discover their guidance independently. Why: The [PR #803 embedded-repository fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) hid ignored scoped instructions behind one directory entry.
+- Agents SHOULD validate discovered instruction entry types before returning readable paths. Why: The [PR #803 inventory fixtures](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) returned tracked guidance replaced by a FIFO or socket before the guard.
 
 ## Scope and Audience
 
