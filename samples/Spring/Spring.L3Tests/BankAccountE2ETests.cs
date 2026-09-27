@@ -57,42 +57,43 @@ public sealed class BankAccountE2ETests
         await page.SetViewportSizeAsync(1440, 900);
     }
 
+    private static async Task SaveScreenshotIfRequestedAsync(
+        IPage page,
+        string? artifactsDirectory,
+        string fileName
+    )
+    {
+        if (!string.IsNullOrWhiteSpace(artifactsDirectory))
+        {
+            await page.ScreenshotAsync(
+                new()
+                {
+                    Path = Path.Join(artifactsDirectory, fileName),
+                    FullPage = true,
+                });
+        }
+    }
+
     private static async Task SaveTransferStatusScreenshotsAsync(
         IPage page,
         OperationsPage operationsPage
     )
     {
         string? artifactsDirectory = Environment.GetEnvironmentVariable("SPRING_TEST_ARTIFACTS");
-        if (string.IsNullOrWhiteSpace(artifactsDirectory))
+        if (!string.IsNullOrWhiteSpace(artifactsDirectory))
         {
-            return;
+            Directory.CreateDirectory(artifactsDirectory);
         }
 
-        Directory.CreateDirectory(artifactsDirectory);
         await page.SetViewportSizeAsync(1440, 900);
-        await page.ScreenshotAsync(
-            new()
-            {
-                Path = Path.Join(artifactsDirectory, "transfer-completed-dark-desktop.png"),
-                FullPage = true,
-            });
+        await SaveScreenshotIfRequestedAsync(page, artifactsDirectory, "transfer-completed-dark-desktop.png");
         await operationsPage.SetThemeAsync("Light", "light");
         await operationsPage.WaitForTransferPhaseAsync("Completed", ProjectionTimeout);
-        await page.ScreenshotAsync(
-            new()
-            {
-                Path = Path.Join(artifactsDirectory, "transfer-completed-light-desktop.png"),
-                FullPage = true,
-            });
+        await SaveScreenshotIfRequestedAsync(page, artifactsDirectory, "transfer-completed-light-desktop.png");
         await operationsPage.SetThemeAsync("High contrast", "high-contrast");
         await operationsPage.WaitForTransferPhaseAsync("Completed", ProjectionTimeout);
         await page.SetViewportSizeAsync(390, 844);
-        await page.ScreenshotAsync(
-            new()
-            {
-                Path = Path.Join(artifactsDirectory, "transfer-completed-high-contrast-mobile.png"),
-                FullPage = true,
-            });
+        await SaveScreenshotIfRequestedAsync(page, artifactsDirectory, "transfer-completed-high-contrast-mobile.png");
     }
 
     /// <summary>

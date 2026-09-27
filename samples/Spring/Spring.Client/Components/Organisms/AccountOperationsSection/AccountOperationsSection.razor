@@ -70,7 +70,7 @@
     </fieldset>
 </Pane>
 
-<Pane Title="Transfer" id="@TransferPanelId" class="spring-transfer">
+<Pane Title="Transfer" id="@TransferPanelId">
     <div class="spring-transfer__content">
         <fieldset class="spring-transfer__form" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
             <legend>Transfer Between Accounts</legend>
@@ -104,7 +104,7 @@
 
         <TelemetryStrip State="@TransferStatusState"
                         id="@TransferStatusId"
-                        class="spring-transfer__status-strip"
+                        data-spring-transfer-status="true"
                         aria-label="@($"{PanelLabel} transfer status")">
             <div class="spring-transfer__status-details">
                 @if (!string.IsNullOrWhiteSpace(TransferSagaId))

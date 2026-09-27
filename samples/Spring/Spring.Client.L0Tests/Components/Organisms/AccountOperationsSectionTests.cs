@@ -125,6 +125,38 @@ public sealed class AccountOperationsSectionTests : BunitContext
     }
 
     /// <summary>
+    ///     Every mapped saga phase is presented with its supported Refraction state.
+    /// </summary>
+    /// <param name="phase">The projected saga phase.</param>
+    /// <param name="expectedState">The expected Refraction telemetry state.</param>
+    [Theory]
+    [InlineData(SagaPhaseDto.NotStarted, "quiet")]
+    [InlineData(SagaPhaseDto.Completed, "complete")]
+    [InlineData(SagaPhaseDto.Compensated, "alert")]
+    [InlineData(SagaPhaseDto.Compensating, "busy")]
+    [InlineData(SagaPhaseDto.Running, "busy")]
+    public void TransferStatusMapsSagaPhaseToRefractionState(
+        SagaPhaseDto phase,
+        string expectedState
+    )
+    {
+        MoneyTransferStatusProjectionDto projection = new(
+            null,
+            null,
+            null,
+            0,
+            phase,
+            new(2026, 9, 27, 10, 15, 0, TimeSpan.Zero));
+        using IRenderedComponent<AccountOperationsSection> cut = Render<AccountOperationsSection>(p => p
+            .Add(c => c.InputIdPrefix, "account-a")
+            .Add(c => c.PanelLabel, "Account A")
+            .Add(c => c.IsAccountOpen, true)
+            .Add(c => c.IsExecutingOrLoading, false)
+            .Add(c => c.TransferStatusProjection, projection));
+        Assert.Equal(expectedState, cut.Find("#account-a-transfer-status").GetAttribute("data-state"));
+    }
+
+    /// <summary>
     ///     Transfer status placeholder renders when projection is missing.
     /// </summary>
     [Fact]
@@ -164,8 +196,11 @@ public sealed class AccountOperationsSectionTests : BunitContext
         IElement transferPanel = cut.Find("#account-a-transfer-panel");
         IElement status = cut.Find("#account-a-transfer-status");
         Assert.Equal("Transfer", transferPanel.QuerySelector("h2")?.TextContent.Trim());
+        Assert.Contains("rf-pane", transferPanel.GetAttribute("class"), StringComparison.Ordinal);
         Assert.Equal("status", status.GetAttribute("role"));
         Assert.Equal("Account A transfer status", status.GetAttribute("aria-label"));
+        Assert.Contains("rf-telemetry-strip", status.GetAttribute("class"), StringComparison.Ordinal);
+        Assert.Equal("true", status.GetAttribute("data-spring-transfer-status"));
         Assert.Equal("error", status.GetAttribute("data-state"));
         Assert.Contains("Transfer saga ID: transfer-saga-123", status.TextContent, StringComparison.Ordinal);
         Assert.Contains("Phase: Failed", status.TextContent, StringComparison.Ordinal);
