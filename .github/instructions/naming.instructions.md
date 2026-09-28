@@ -10,27 +10,8 @@ Governing thought: Use feature-centric namespaces, clear PascalCase identifiers,
 
 ## Rules (RFC 2119)
 
-- Naming/StyleCop rules (SA13xx/SA16xx) **MUST** be treated as build-breaking; violations **MUST** be fixed, not suppressed. Why: Keeps naming/docs consistent.
-- Namespaces **MUST** be feature-oriented (no `Services/Models` silos), max ten PascalCase segments, no underscores; abbreviations **MUST** be industry-standard only. Why: Improves discoverability.
-- Types **MUST** use PascalCase nouns; interfaces **MUST** prefix `I`; enums **MUST** be singular with PascalCase members. Why: Aligns with .NET guidelines.
-- Methods **MUST** use PascalCase verb phrases; properties **MUST** be PascalCase nouns; booleans **MUST** start with `Is/Has/Can/Should`; DI properties **MUST** follow `private Type Name { get; }`; private fields/locals **MUST** be camelCase with no underscore; constants **MUST** be PascalCase. Why: Keeps identifiers unambiguous.
-- Public (and internal when exposed) symbols **MUST** have XML docs with `<summary>` (imperative voice), `<param>`/`<typeparam>`/`<returns>` as applicable; text **MUST** be factual (no TODOs). Why: Ensures IntelliSense and docs quality.
-- Abstract base classes **SHOULD NOT** use "Base" unless intended for inheritance; Orleans abstract grains ending in "Base" **MAY** follow Orleans guidance. Why: Avoids noisy suffixes unless necessary.
-- Documentation for private/internal members **SHOULD** exist only when behavior is non-trivial or exposed via `InternalsVisibleTo`. Why: Balances value vs noise.
+- Covered contributors **MUST** read the complete policy files for [naming contracts](../../src/AGENTS.md#naming) and apply their clauses within this instruction's original path, content, and audience scope. Why: Relocation and optional skill selection do not narrow these obligations.
 
 ## Scope and Audience
 
 All C# contributors.
-
-## Domain Type Suffixes (Event Sourcing)
-
-For the retained illustrative suffix table, see the
-[local feature examples](../agent-guidance/event-sourced-feature-bindings.md#domain-type-suffix-examples).
-General C# naming remains governed by the Rules above.
-
-## References
-
-- Shared guardrails: `.github/instructions/shared-policies.instructions.md`
-- C# standards: `.github/instructions/csharp.instructions.md`
-- Domain modeling: `.github/instructions/domain-modeling.instructions.md`
-- Deterministic placement: `.github/instructions/namespace-folder-placement.instructions.md`
