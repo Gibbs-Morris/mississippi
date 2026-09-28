@@ -43,8 +43,11 @@ complete Spring domain test/source command.
 
 For custom test levels, invoke a wrapper from PowerShell with an array, for example
 `& ./eng/src/agent-scripts/unit-test-sample-solution.ps1 -TestLevels @('L0Tests','L1Tests','L2Tests')`.
-Levels filter project filenames, not a smoke level. Preserve the MTP runner and
-per-project TRX/nonempty checks; VSTest-only logger/collector flags do not apply.
+Levels first select project filenames, then filter tests within each selected
+project with `FullyQualifiedName~.<level>.` alternatives. Smoke is a suite, not
+a level. Inspect the selected test names as well as per-project TRX/nonempty
+execution: a nonempty result does not prove that tests with nonmatching names
+ran. Preserve the MTP runner; VSTest-only logger/collector flags do not apply.
 `-NoBuild` on focused quality is iteration evidence only after the required clean
 build exists; it does not replace final warning-free builds. Standalone build and
 cleanup wrappers are cataloged in the [script guide](../../eng/src/agent-scripts/README.md#script-catalogue).

@@ -23,8 +23,10 @@ The [portable skill](../../.agents/skills/verify-change/SKILL.md) has no Mississ
 paths, numeric quality thresholds, or tool pre-approvals. Its
 [local binding](verify-change-bindings.md) distinguishes iteration, final cleanup,
 L0/L1, separate L2/L3/docs/PowerShell/remote checks, and source-bound reuse.
-The old FullyQualifiedName filtering prose is replaced by the module's actual
-project-filename level selection. UX and semantic browser assertions remain
+The binding covers both actual selection stages: project filenames and the
+`FullyQualifiedName` filter within each selected project. Nonempty module
+execution alone does not prove that nonmatching test names ran.
+UX and semantic browser assertions remain
 with their existing policy owner. Custom agents, AGENTS, application code,
 scripts, packages, lockfiles, and workflows are unchanged.
 
@@ -55,14 +57,16 @@ results are reused only for their unchanged, recorded inputs.
 Initial accounting used base `a97d9561bed0bf4a189943468e3279dca159d7a3`.
 That snapshot is historical after restacking; use live PR ancestry and the latest
 issue #532 checkpoint for current gates. Its raw LF instruction blobs contain
-2,809 → 2,744 lines: 65 net instruction-directory lines removed.
-Copilot is separate: 82 → 50 lines, for another 32 removed. AGENTS is unchanged.
+2,809 â†’ 2,744 lines: 65 net instruction-directory lines removed.
+Copilot is separate: 82 â†’ 50 lines, for another 32 removed. AGENTS is unchanged.
 All 45 original adapter Rules, frontmatter, prefixes, and audiences are preserved.
 
 The skill LF SHA-256 is `9ed1fa8bd755e7453fc7a076fbb832fb0bd82e7927800bb75fe54d7250ded058`.
 The current local binding LF SHA-256 is
-`28fa308df14454b1320cb09791b97c4cfcec39cde02075f87ec25249424b7dec`.
+`ad4eec9e187b39fd771192920f9ee7698e41dead1308d69ed255e2ae88c706f5`.
 
+The following static counts describe the initial preparation snapshot; they
+have not been remeasured after the test-selection wording correction.
 The static `o200k_base` proxy includes both entrypoints, selected instruction
 bodies, and all repository skill name/description metadata. Activation adds this
 skill body and local binding. Other references, host framing, tools, and outputs
