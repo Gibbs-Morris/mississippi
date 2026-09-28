@@ -756,6 +756,20 @@ function Get-ContextTrackedFile {
     return $item
 }
 
+function Assert-ContextTrackedAttributes {
+    param([string]$Root, [string[]]$Paths)
+    $inputPaths = [string]::Join([string][char]0, $Paths) + [char]0
+    $attributes = (Invoke-ContextGit $Root @('check-attr', '-z', '--stdin', 'ident') -InputText $inputPaths -WithResult).Output.Split([char]0)
+    if ($attributes.Count -ne (3 * $Paths.Count + 1) -or $attributes[-1] -cne '') { throw 'Tracked attributes are incomplete; inspect the target manually.' }
+    for ($entry = 0; $entry -lt $Paths.Count; $entry++) {
+        $offset = 3 * $entry
+        if ($attributes[$offset] -cne $Paths[$entry] -or $attributes[$offset + 1] -cne 'ident') { throw 'Tracked attribute identity differs; inspect the target manually.' }
+        if ($attributes[$offset + 2] -cnotin @('unspecified', 'unset')) {
+            throw 'Git ident normalization requires manual inspection; normalized identities do not establish raw executable content.'
+        }
+    }
+}
+
 function Get-ContextTrackedContent {
     param([string]$Root, [string[]]$Index)
     $entries = @(foreach ($record in $Index) {
@@ -768,6 +782,7 @@ function Get-ContextTrackedContent {
     $present = @($entries | Where-Object { $_.Present })
     if ($present.Count -gt 0) {
         Assert-ContextInventoryTypes $Root @($present.Path)
+        Assert-ContextTrackedAttributes $Root @($present.Path)
         $inputPaths = (@($present | ForEach-Object { ConvertTo-ContextGitInputPath $_.Path }) -join "`n") + "`n"
         $hashes = @(Invoke-ContextGit $Root @('hash-object', '--stdin-paths') -InputText $inputPaths)
         if ($hashes.Count -ne $present.Count) { throw 'Tracked content identities are incomplete; inspect the target manually.' }

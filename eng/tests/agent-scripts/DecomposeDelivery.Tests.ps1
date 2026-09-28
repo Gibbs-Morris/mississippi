@@ -858,6 +858,45 @@ $termination
         (@([IO.Directory]::EnumerateFiles((Join-Path $fixture '.git/objects'), '*', [IO.SearchOption]::AllDirectories) | Sort-Object) -join "`n") | Should -BeExactly ($objects -join "`n")
     }
 
+    It 'rejects executable bytes concealed by ident from <AttributeSource> attributes' -ForEach @(
+        @{ AttributeSource = 'tracked' }, @{ AttributeSource = 'private' }
+    ) {
+        $relative = 'tools/execute.ps1'
+        $path = Join-Path $fixture $relative
+        $marker = Join-Path $TestDrive ([guid]::NewGuid().ToString('N') + '-ident-marker')
+        $attributePath = if ($AttributeSource -eq 'tracked') { '.gitattributes' } else { '.git/info/attributes' }
+        [IO.File]::WriteAllText((Join-Path $fixture $attributePath), "$relative ident`n")
+        [IO.File]::WriteAllText($path, '[Console]::WriteLine(''$Id$'')' + "`n")
+        Invoke-FixtureGit @('add', '.')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'ident baseline')
+        $expected = ([string](& git -C $fixture rev-parse ('HEAD:' + $relative))).Trim()
+        $payload = '[Console]::WriteLine(''$Id:''); [IO.File]::WriteAllText(''' + $marker.Replace("'", "''") + ''', ''executed''); [Console]::WriteLine(''$'')' + "`n"
+        [IO.File]::WriteAllText($path, $payload)
+        Invoke-FixtureGit @('add', $relative)
+        ([string](& git -C $fixture hash-object -- $relative)).Trim() | Should -BeExactly $expected
+        @(& git -C $fixture status --porcelain=v1).Count | Should -Be 0
+        & $shell -NoProfile -File $path | Out-Null
+        $LASTEXITCODE | Should -Be 0
+        [IO.File]::ReadAllText($marker) | Should -BeExactly 'executed'
+        $indexHash = (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash
+        $fileHash = (Get-FileHash -LiteralPath $path).Hash
+        $result = Invoke-BoundedSnapshot
+        $result.ExitCode | Should -Be 1
+        $result.Error | Should -Match 'Git ident normalization requires manual inspection'
+        $result.Output | Should -BeNullOrEmpty
+        (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash | Should -BeExactly $indexHash
+        (Get-FileHash -LiteralPath $path).Hash | Should -BeExactly $fileHash
+    }
+
+    It 'supports <Attribute> when ident normalization is disabled' -ForEach @(
+        @{ Attribute = '-ident' }, @{ Attribute = '!ident' }
+    ) {
+        [IO.File]::WriteAllText((Join-Path $fixture '.gitattributes'), "packages/widget/model.txt $Attribute`n")
+        Invoke-FixtureGit @('add', '.gitattributes')
+        Invoke-FixtureGit @('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'disabled ident')
+        (Get-FixtureSnapshot).Dirty | Should -BeFalse
+    }
+
     It 'preserves built-in CRLF normalization when checking tracked content' {
         [IO.File]::WriteAllText((Join-Path $fixture '.gitattributes'), "*.txt text eol=crlf`n")
         Invoke-FixtureGit @('add', '.gitattributes')

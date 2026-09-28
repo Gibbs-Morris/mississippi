@@ -194,6 +194,12 @@ per-directory case sensitivity is never assumed away.
 Status uses command-local default stat checks with ctime trusted and ignoreStat
 disabled. These overrides preserve configuration and index contents; a clean Git
 view alone is not validation evidence for deliberately preserved metadata.
+Tracked files with effective `ident` attributes require manual inspection before
+normalization or status. Git can remove executable bytes inside an `$Id:...$`
+expansion while producing the expected staged object identity. The helper checks
+effective attributes, including private attribute files; it does not treat that
+normalized identity as proof of raw checkout bytes. Disabled or unspecified
+`ident` attributes and ordinary line-ending normalization remain supported.
 On Unix, status also honors executable-bit changes for every tracked file using
 command-local `core.fileMode=true`, including files outside selected context.
 Windows retains its filesystem's configured mode behavior.
