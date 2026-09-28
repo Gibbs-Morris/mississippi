@@ -68,7 +68,11 @@ expansion before execution. An explicit refspec bypasses configured push mapping
 also disable mirror mode and follow-tags for that invocation, for example with
 `-c remote.NAME.mirror=false -c push.followTags=false` before `push` and
 `--no-mirror --no-follow-tags` after it. Replace `NAME` with the verified remote;
-check these options against current help. Do not infer the destination from
+check these options against current help. Reject or clear configured
+`push.pushOption` values, for example with `-c push.pushOption=` before `push`;
+they can alter server automation even when the destination ref is pinned.
+Supply any authorized server options explicitly with `--push-option` after
+checking the destination's semantics. Do not infer the destination from
 `HEAD`, upstream configuration or push defaults. Wider ref sets, deletion and tag
 publication require separate authorization and explicit expected destinations.
 Use fast-forward updates where possible. Where an authorized rewrite is necessary,
