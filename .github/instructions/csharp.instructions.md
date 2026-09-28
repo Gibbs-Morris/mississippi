@@ -10,33 +10,8 @@ Governing thought: Write SOLID, testable, cloud-ready C# with internal-by-defaul
 
 ## Rules (RFC 2119)
 
-- Code **MUST** follow SOLID and remain unit-testable via clear seams/DI; blocking calls and shared mutable state **MUST NOT** be introduced. Why: Keeps code maintainable and testable.
-- .NET analyzers **MUST** stay enabled; warnings are errors. Suppressions or `#pragma` **MUST NOT** be added without approval. Why: Zero-warnings is mandatory.
-- XML documentation **MUST NOT** include `<example>` or `<code>` blocks with code samples; examples drift over time and become stale/misleading. Readers can refer to real implementation code in the repository instead. Why: Prevents documentation drift and maintenance burden.
-- Injected dependencies **MUST** use the get-only property pattern (`private Type Name { get; }`); field injection/underscored fields **MUST NOT** be used. Why: Aligns with logging and analyzers.
-- Source files **MUST NOT** include copyright/license headers or banners at the top; repository-level licensing already applies. Why: Avoids noisy/stale headers and keeps diffs focused on behavior.
-- Configuration **MUST** use `IOptions<T>`/`IOptionsSnapshot<T>`/`IOptionsMonitor<T>`; constructors **MUST NOT** take raw config primitives. Why: Centralizes config and validation.
-- Nested classes **SHOULD NOT** be used except for truly private implementation details; test helpers and public/internal types **MUST** be top-level or in their own files. Why: Nested classes complicate mocking frameworks (NSubstitute/Castle.DynamicProxy) and reduce discoverability.
-- Access control: types **MUST** default to `internal`; public/protected/unsealed types **MUST** document justification in XML comments; implementation types **MUST** remain internal unless part of public API. Why: Protects API surface.
-- New/refactored APIs **MUST** follow established .NET BCL/runtime conventions (for example, `Try*`/`Parse`, `Async` suffixes, and `CancellationToken` for cancelable async work); when ambiguous, they **MUST** match widely used .NET APIs. Orleans-grain APIs **MUST** align with `.github/instructions/orleans.instructions.md` and common Orleans conventions (for example, `Task`/`Task<T>` returns and no synchronous blocking). Why: Minimizes context switching and improves DX.
-- Grain implementations **MUST** implement `IGrainBase`, be `sealed`, and **MUST NOT** inherit from `Grain`; grain interfaces **MUST** be public only when external callers need them. Why: Follows Orleans 7+ POCO guidance.
-- Orleans code **MUST NOT** use `Parallel.ForEach` or chatty inter-grain calls; prefer async + `Task.WhenAll`. Why: Preserves Orleans threading model.
-- Options and registration classes (`*Registrations`) **MAY** be public when part of consumer surface; otherwise **SHOULD** stay internal. Why: Keeps public surface intentional.
-- Public contracts **SHOULD** live in `.Abstractions` projects; implementations **MUST** stay in main projects. Why: Supports clean layering.
-- Classes **SHOULD** be records/immutable where feasible and only inheritable with clear need; interfaces **SHOULD** be public only when part of deliberate API; members **SHOULD** expose least privilege. Why: Reduces coupling and breaks.
-- New third-party dependencies **MAY** be added only with explicit approval or when extending already-adopted tech. Why: Limits supply-chain risk and sprawl.
-- All logging **SHOULD** use LoggerExtensions per logging rules. Why: Maintains performance and consistency.
-- Code that requires current date/time **MUST** inject `TimeProvider` rather than calling `DateTime.Now`, `DateTime.UtcNow`, or `DateTimeOffset.UtcNow` directly; tests **SHOULD** use `Microsoft.Extensions.TimeProvider.Testing.FakeTimeProvider` for deterministic assertions. Why: Enables deterministic testing and avoids flaky time-dependent tests.
+- Covered contributors **MUST** read the complete policy files for [C# contracts](../../src/AGENTS.md#c), [root engineering rules](../../AGENTS.md#engineering), [Orleans contracts](../../src/AGENTS.md#orleans) and apply their clauses within this instruction's original path, content, and audience scope. Why: Relocation and optional skill selection do not narrow these obligations.
 
 ## Scope and Audience
 
 C# contributors across Mississippi and Samples, including Orleans code.
-
-## References
-
-- Shared guardrails: `.github/instructions/shared-policies.instructions.md`
-- Naming/docs: `.github/instructions/naming.instructions.md`
-- Orleans specifics: `.github/instructions/orleans.instructions.md`
-- Service registration: `.github/instructions/service-registration.instructions.md`
-- Logging: `.github/instructions/logging-rules.instructions.md`
-- Compatibility baseline: [API and storage policy](backwards-compatibility.instructions.md).
