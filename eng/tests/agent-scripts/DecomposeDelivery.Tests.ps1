@@ -285,6 +285,61 @@ Describe 'Portable delivery context snapshots' -Skip:($null -ne $contextSuiteSki
         $snapshot.SelectedInputs.Path | Should -Contain 'tools/private-policy.txt'
     }
 
+    It 'rejects private Git excludes that conceal an automatically imported build input' {
+        $excludePath = Join-Path $fixture '.git/info/exclude'
+        [IO.File]::WriteAllText($excludePath, "Directory.Build.targets`n")
+        [IO.File]::WriteAllText((Join-Path $fixture 'Directory.Build.targets'), '<Project><Target Name="OwnedFixtureTarget" /></Project>')
+        @(& git -C $fixture status --porcelain=v1).Count | Should -Be 0
+        @(& git -C $fixture ls-files --cached --others --exclude-standard) | Should -Not -Contain 'Directory.Build.targets'
+        $indexHash = (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash
+        $excludeHash = (Get-FileHash -LiteralPath $excludePath).Hash
+        $result = Invoke-BoundedSnapshot
+        $result.ExitCode | Should -Be 1
+        $result.Error | Should -Match 'Private Git exclude patterns require manual inspection'
+        $result.Output | Should -BeNullOrEmpty
+        (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash | Should -BeExactly $indexHash
+        (Get-FileHash -LiteralPath $excludePath).Hash | Should -BeExactly $excludeHash
+    }
+
+    It 'accepts comment-only private Git excludes with CRLF line endings' {
+        [IO.File]::WriteAllText((Join-Path $fixture '.git/info/exclude'), "# Local comments`r`n`r`n# No active patterns`r`n")
+        (Get-FixtureSnapshot).Dirty | Should -BeFalse
+    }
+
+    It 'bounds oversized private Git excludes before parsing them' {
+        [IO.File]::WriteAllText((Join-Path $fixture '.git/info/exclude'), '#' + ('x' * 65536))
+        $result = Invoke-BoundedSnapshot
+        $result.ExitCode | Should -Be 1
+        $result.Error | Should -Match 'Git exclude inspection exceeded its bounds'
+        $result.Output | Should -BeNullOrEmpty
+    }
+
+    It 'rejects a non-regular private Git excludes file without blocking' -Skip:(-not $IsLinux) {
+        $excludePath = Join-Path $fixture '.git/info/exclude'
+        [IO.File]::Delete($excludePath)
+        & mkfifo -- $excludePath
+        $LASTEXITCODE | Should -Be 0
+        $result = Invoke-BoundedSnapshot
+        $result.ExitCode | Should -Be 1
+        $result.Error | Should -Match 'Non-regular context files require manual inspection'
+        $result.Output | Should -BeNullOrEmpty
+    }
+
+    It 'reveals build inputs hidden by a configured Git excludes file without changing configuration' {
+        $excludePath = Join-Path $fixture '.git/configured-ignore'
+        [IO.File]::WriteAllText($excludePath, "Directory.Build.targets`n")
+        Invoke-FixtureGit @('config', 'core.excludesFile', $excludePath)
+        [IO.File]::WriteAllText((Join-Path $fixture 'Directory.Build.targets'), '<Project />')
+        @(& git -C $fixture status --porcelain=v1).Count | Should -Be 0
+        $configHash = (Get-FileHash -LiteralPath (Join-Path $fixture '.git/config')).Hash
+        $indexHash = (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash
+        $snapshot = Get-FixtureSnapshot
+        $snapshot.Dirty | Should -BeTrue
+        $snapshot.Paths | Should -Contain 'Directory.Build.targets'
+        (Get-FileHash -LiteralPath (Join-Path $fixture '.git/config')).Hash | Should -BeExactly $configHash
+        (Get-FileHash -LiteralPath (Join-Path $fixture '.git/index')).Hash | Should -BeExactly $indexHash
+    }
+
     It 'rejects ignored embedded repositories that hide scoped guidance behind a directory entry' {
         [IO.File]::WriteAllText((Join-Path $fixture '.gitignore'), "nested/`n")
         Invoke-FixtureGit @('add', '.gitignore')

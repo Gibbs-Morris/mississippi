@@ -161,6 +161,13 @@ fallback. An owned timed child also bounds blocking enumerator advancement;
 the hidden `MetadataPath` parameter is its internal entry point. The traversal
 inspects each entry before descending into a directory.
 Inventory reads NUL-delimited UTF-8 paths with ordinal identity.
+Active `.git/info/exclude` patterns require manual inspection before Git runs;
+only blank lines and comments are accepted, within a 64-KiB regular-file limit.
+Every Git query disables `core.excludesFile` locally, including its default
+user-level ignore file, so those exclusions cannot conceal untracked inputs.
+Repository `.gitignore` rules still apply. Before running validation, independently
+inspect the target's automatically loaded build/tool inputs, including ignored
+files; a clean snapshot does not establish their provenance or authorize execution.
 Ignored `AGENTS.md`, `*.instructions.md`, `CLAUDE.md`, Copilot's repository guide,
 and explicitly selected context files also appear. Additional target-specific
 guidance conventions still need independent discovery and instruction selection.

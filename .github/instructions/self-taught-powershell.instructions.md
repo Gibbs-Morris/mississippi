@@ -38,6 +38,7 @@ Governing thought: Preserve explicit repository identity when PowerShell launche
 - Agents SHOULD inspect pending Git operation and lock markers before treating porcelain status as readiness evidence. Why: The [PR #803 operation fixtures](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) retained merge, bisect, index, HEAD or ref locks while reporting empty status and blocking the next mutation.
 - Agents SHOULD reject opaque Git inventory directories or discover their guidance independently. Why: The [PR #803 embedded-repository fixture](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) hid ignored scoped instructions behind one directory entry.
 - Agents SHOULD validate discovered instruction entry types and live link targets before returning readable paths. Why: The [PR #803 inventory fixtures](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) returned tracked or linked guidance targeting a FIFO or socket before the guard.
+- Agents SHOULD reconcile private Git exclusion sources before accepting a clean inventory. Why: The [PR #803 exclude fixtures](../../eng/tests/agent-scripts/DecomposeDelivery.Tests.ps1) concealed an untracked build input through `info/exclude` or `core.excludesFile` while status remained clean.
 
 ## Scope and Audience
 

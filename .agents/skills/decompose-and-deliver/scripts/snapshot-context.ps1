@@ -184,7 +184,7 @@ function Stop-ContextInspectionOwner {
 
 function Invoke-ContextGit {
     param([string]$Root, [string[]]$Arguments, [int[]]$AcceptedExitCodes = @(0), [switch]$WithResult, [string]$InputText)
-    $options = @('--no-replace-objects', '--no-optional-locks', '-c', 'core.fsmonitor=', '-c', 'core.trustctime=true', '-c', 'core.checkStat=default', '-c', 'core.ignoreStat=false', '-c', 'core.ignoreCase=false', '-c', 'core.commitGraph=false', '-c', 'core.untrackedCache=false', '-C', $root)
+    $options = @('--no-replace-objects', '--no-optional-locks', '-c', 'core.fsmonitor=', '-c', 'core.excludesFile=', '-c', 'core.trustctime=true', '-c', 'core.checkStat=default', '-c', 'core.ignoreStat=false', '-c', 'core.ignoreCase=false', '-c', 'core.commitGraph=false', '-c', 'core.untrackedCache=false', '-C', $root)
     if (-not $IsWindows) { $options = @('-c', 'core.fileMode=true') + $options }
     $inputOption = if ($PSBoundParameters.ContainsKey('InputText')) { @{ InputText = $InputText } } else { @{} }
     $application = $gitApplication
@@ -418,12 +418,39 @@ function Get-ContextPaths {
     return $inventory
 }
 
+function Assert-ContextPrivateExcludes {
+    param([IO.FileSystemInfo]$Item)
+    $null = Get-ContextFileMetadata $Item 'Git info/exclude'
+    $stream = [IO.FileStream]::new($Item.FullName, [IO.FileMode]::Open, [IO.FileAccess]::Read, ([IO.FileShare]::Read -bor [IO.FileShare]::Inheritable))
+    try {
+        $null = Get-ContextFileMetadata $Item 'Git info/exclude' $stream
+        $buffer = [byte[]]::new(65537)
+        $count = 0
+        do {
+            $read = $stream.Read($buffer, $count, $buffer.Length - $count)
+            $count += $read
+            if ($count -gt 65536) { throw 'Git exclude inspection exceeded its bounds; inspect this target manually.' }
+        } while ($read -ne 0)
+        $encoding = [Text.UTF8Encoding]::new($false, $true)
+        foreach ($line in $encoding.GetString($buffer, 0, $count).Split([char]10)) {
+            $pattern = $line.TrimEnd([char]13)
+            if ($pattern.Length -gt 0 -and -not $pattern.StartsWith('#', [StringComparison]::Ordinal)) {
+                throw 'Private Git exclude patterns require manual inspection; untracked build or tool inputs may be concealed.'
+            }
+        }
+    }
+    finally { $stream.Dispose() }
+}
+
 function Assert-ContextGitMetadataEntry {
     param([IO.DirectoryInfo]$Directory, [IO.FileSystemInfo]$Item)
     if ($null -ne $item.LinkTarget -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
         throw 'Linked Git metadata entries require manual inspection; refs, objects and index must belong to the selected repository.'
     }
     $metadataRelative = [IO.Path]::GetRelativePath($Directory.FullName, $item.FullName).Replace([IO.Path]::DirectorySeparatorChar, [char]'/')
+    if ($metadataRelative.Equals('info/exclude', [StringComparison]::OrdinalIgnoreCase)) {
+        Assert-ContextPrivateExcludes $item
+    }
     if ($metadataRelative.StartsWith('refs/', [StringComparison]::OrdinalIgnoreCase) -and $metadataRelative.EndsWith('.lock', [StringComparison]::OrdinalIgnoreCase)) {
         throw "Git ref locks require manual recovery before inspection: $metadataRelative"
     }
