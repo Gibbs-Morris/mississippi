@@ -15,6 +15,10 @@ Governing thought: Keep remote updates within the authorized destinations.
 - Agents SHOULD disable implicit tag expansion for pushes with enumerated destinations. Why: The PR #803 follow-tags control published an unrequested annotated tag from configuration.
 - Agents SHOULD reject or clear configured push options before publication. Why: The [PR #803 push-option controls](https://github.com/Gibbs-Morris/mississippi/pull/803#discussion_r4118048211) transmitted `ci.skip` and another server option despite pinned refs; command-local `push.pushOption=` cleared both without changing configuration.
 
+## Scope and Audience
+
+All agents planning, executing, or reviewing Git publication operations.
+
 ## References
 
 - [Self-improvement governance](self-improvement.instructions.md)
