@@ -36,6 +36,13 @@ illustrative names, sample visibility, generated output, or the portable skill.
 Mississippi sample generation rules stay local; another consumer's permitted
 manual path is governed by its own policy.
 
+Completion review clarified the relocated serialization example: serializer
+generation and alias attributes apply to the type, while IDs apply to serialized
+members. This corrects inherited illustrative wording to match the retained
+Rules; the example is not a verbatim copy. Historical accounting and trial
+records retain their original input boundary; the audit records the corrected
+binding hash separately.
+
 ## Accounting and validation
 
 The historical preparation LF instruction blobs total 356 lines before and 248 afterward: 108

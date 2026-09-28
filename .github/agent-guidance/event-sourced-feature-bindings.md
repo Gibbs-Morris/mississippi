@@ -87,5 +87,5 @@ These attribute shapes retain the former quick-start examples; they are not
 runnable samples or a universal compatibility promise. Read the [serialization Rules](../instructions/orleans-serialization.instructions.md#rules-rfc-2119)
 and [storage Rules](../instructions/storage-type-naming.instructions.md#rules-rfc-2119) for the applicable version and persistence boundary.
 
-- Add `[GenerateSerializer]`, `[Alias("Namespace.TypeName")]` (fully qualified type name), `[Id(n)]` (starting at 0) to members.
+- Add `[GenerateSerializer]` and `[Alias("Namespace.TypeName")]` to the type, using its fully qualified name for the alias; add `[Id(n)]` to each serialized member, starting at 0 per inheritance level.
 - Decorate types with `[EventStorageName("ORDER","FULFILLMENT","SHIPPED", version: 1)]` (or appropriate attribute).
