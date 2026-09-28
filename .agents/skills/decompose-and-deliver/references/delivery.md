@@ -66,8 +66,10 @@ refspec, such as `VERIFIED_SOURCE_OID:refs/heads/VERIFIED_BRANCH`. Inspect and r
 or neutralize `remote.<name>.mirror`, configured push refspecs and implicit tag
 expansion before execution. An explicit refspec bypasses configured push mappings;
 also disable mirror mode and follow-tags for that invocation, for example with
-`-c remote.NAME.mirror=false -c push.followTags=false` before `push` and
-`--no-mirror --no-follow-tags` after it. Replace `NAME` with the verified remote;
+`-c remote.NAME.mirror=false -c push.followTags=false -c push.recurseSubmodules=no`
+before `push` and `--no-mirror --no-follow-tags --recurse-submodules=no` after it.
+Submodule publication needs separate authorization; verify required submodule
+revisions are available before publishing the parent. Replace `NAME` with the verified remote;
 check these options against current help. Reject or clear configured
 `push.pushOption` values, for example with `-c push.pushOption=` before `push`;
 they can alter server automation even when the destination ref is pinned.
