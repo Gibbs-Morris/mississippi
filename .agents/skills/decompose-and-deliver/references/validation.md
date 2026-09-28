@@ -28,6 +28,8 @@ observable decisions and generated artifacts against the original requirements.
 Copy only the package into a separate safe repository with materially different
 layout, commands, branch convention and instruction structure. Deny access to
 initial-repository files where the test runtime supports filesystem isolation.
+Without that isolation, report transfer independence as unverified rather than
+claiming the portability requirement passed.
 Resolve repository and package roots independently, including invocation from a
 nested directory. Discover that target's actual commands and instructions. Change
 its source layout and remove an optional tool; verify adaptation/fallback without

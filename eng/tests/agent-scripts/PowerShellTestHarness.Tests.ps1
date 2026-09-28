@@ -36,8 +36,7 @@ Describe 'PowerShell test orchestration' {
             'run-validation-plan-tests.ps1',
             'run-issue-spec-tests.ps1',
             'run-agent-doctor-tests.ps1',
-            'run-agent-context-tests.ps1',
-            'run-decompose-delivery-tests.ps1'
+            'run-agent-context-tests.ps1'
         )
         $targetRunner = Join-Path $fixtureRunners $pesterRunners[0]
     }
@@ -56,48 +55,10 @@ Describe 'PowerShell test orchestration' {
         Set-Content (Join-Path $fixtureRunners 'verify-scratchpad-task-scripts.ps1') 'exit 0'
     }
 
-    It 'runs every applicable suite successfully and reports capability skips' {
+    It 'runs every required suite successfully' {
         $results = & $orchestrator -PassThru 6>$null
-        $results.Count | Should -Be 12
-        $optional = @($results | Where-Object Name -EQ 'run-decompose-delivery-tests.ps1')
-        $optional.Count | Should -Be 1
-        $available = $PSVersionTable.PSVersion -ge [version]'7.4' -and ($IsWindows -or $IsLinux)
-        if ($IsLinux) {
-            foreach ($command in @('stat', 'prlimit')) {
-                if ($null -eq (Get-Command $command -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1)) { $available = $false }
-            }
-        }
-        $optional[0].Status | Should -Be $(if ($available) { 'Passed' } else { 'Skipped' })
-        if (-not $available) { $optional[0].Reason | Should -Not -BeNullOrEmpty }
-        @($results | Where-Object { $_.Name -ne 'run-decompose-delivery-tests.ps1' -and $_.Status -ne 'Passed' }).Count | Should -Be 0
-    }
-
-    It 'skips the optional runner while executing unrelated suites for simulated <Capability>' -ForEach @(
-        @{ Capability = 'PowerShell 7.3'; Reason = '*PowerShell 7.4*'; Find = '$PSVersionTable.PSVersion'; Replacement = "([version]'7.3')" },
-        @{ Capability = 'unsupported platform'; Reason = '*Supported platforms*'; Find = "if (`$IsWindows) { 'Windows' } elseif (`$IsLinux) { 'Linux' } else { 'Other' }"; Replacement = "'Other'" },
-        @{ Capability = 'missing Linux prlimit'; Reason = '*prlimit*'; Find = '$null -eq $reason -and $IsLinux -and $runner.ContainsKey(''LinuxCommands'')'; Replacement = '$null -eq $reason -and $runner.ContainsKey(''LinuxCommands'')' }
-    ) {
-        # These are capability-routing simulations on the current engine.
-        $copy = Join-Path $fixtureTests 'capability-orchestrator.ps1'
-        $source = [IO.File]::ReadAllText($orchestrator)
-        $source.Contains($Find) | Should -BeTrue
-        $source = $source.Replace($Find, $Replacement)
-        if ($Capability -eq 'missing Linux prlimit') {
-            $probe = '$missing = @($runner.LinuxCommands | Where-Object { $null -eq (Get-Command $_ -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1) })'
-            $source.Contains($probe) | Should -BeTrue
-            $source = $source.Replace($probe, '$missing = @(''prlimit'')')
-        }
-        [IO.File]::WriteAllText($copy, $source)
-        $marker = Join-Path $fixtureRoot 'optional-runner.marker'
-        Set-Content (Join-Path $fixtureRunners 'run-decompose-delivery-tests.ps1') "param([switch]`$PassThru); [IO.File]::WriteAllText('$($marker.Replace("'", "''"))', 'executed'); throw 'A skipped runner executed'"
-        $results = & $copy -PassThru 6>$null
-        $results.Count | Should -Be 12
-        $optional = @($results | Where-Object Name -EQ 'run-decompose-delivery-tests.ps1')
-        $optional.Count | Should -Be 1
-        $optional[0].Status | Should -Be 'Skipped'
-        $optional[0].Reason | Should -BeLike $Reason
-        Test-Path -LiteralPath $marker | Should -BeFalse
-        @($results | Where-Object { $_.Name -ne 'run-decompose-delivery-tests.ps1' -and $_.Status -ne 'Passed' }).Count | Should -Be 0
+        $results.Count | Should -Be 11
+        @($results | Where-Object Status -NE 'Passed').Count | Should -Be 0
     }
 
     It 'fails a missing runner' {
@@ -146,8 +107,7 @@ Describe 'Standalone Pester runners' {
             @{ Runner = 'run-issue-spec-tests.ps1'; TestFile = 'IssueSpec.Tests.ps1' },
             @{ Runner = 'run-agent-doctor-tests.ps1'; TestFile = 'AgentDoctor.Tests.ps1' }
             @{ Runner = 'run-agent-doctor-tests.ps1'; TestFile = 'AgentDoctor.Tests.ps1' },
-            @{ Runner = 'run-agent-context-tests.ps1'; TestFile = 'AgentContext.Tests.ps1' },
-            @{ Runner = 'run-decompose-delivery-tests.ps1'; TestFile = 'DecomposeDelivery.Tests.ps1'; MinimumVersion = [version]'7.4' }
+            @{ Runner = 'run-agent-context-tests.ps1'; TestFile = 'AgentContext.Tests.ps1' }
         )) {
             foreach ($scenario in @(
                 @{ Case = 'passing'; Body = "Describe 'Suite' { It 'passes' { 1 | Should -Be 1 } }"; ExitCode = 0 },
@@ -155,14 +115,10 @@ Describe 'Standalone Pester runners' {
                 @{ Case = 'empty discovery'; Body = ''; ExitCode = 1 },
                 @{ Case = 'failed test'; Body = "Describe 'Suite' { It 'fails' { 1 | Should -Be 2 } }"; ExitCode = 1 }
             )) {
-                @{ Runner = $suite.Runner; TestFile = $suite.TestFile; Case = $scenario.Case; Body = $scenario.Body; ExitCode = $scenario.ExitCode; MinimumVersion = $(if ($suite.ContainsKey('MinimumVersion')) { $suite.MinimumVersion } else { [version]'7.0' }) }
+                @{ Runner = $suite.Runner; TestFile = $suite.TestFile; Case = $scenario.Case; Body = $scenario.Body; ExitCode = $scenario.ExitCode }
             }
         }
     ) {
-        if ($PSVersionTable.PSVersion -lt $MinimumVersion) {
-            Set-ItResult -Skipped -Because "This runner requires PowerShell $MinimumVersion or later."
-            return
-        }
         $fixture = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $fixture | Out-Null
         Copy-Item (Join-Path $PSScriptRoot $Runner) $fixture

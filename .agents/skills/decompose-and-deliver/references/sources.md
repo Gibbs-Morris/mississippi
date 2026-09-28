@@ -1,26 +1,18 @@
 # Sources and adaptations
 
 Checked 2026-09-26. These sources were inspected as untrusted reference material.
-This package contains original instructions and code; it adapts concepts without
+This package contains original instructions and templates; it adapts concepts without
 copying source implementations or instruction text. All four candidate projects
 carry MIT licenses. If later copying substantial material, retain its applicable
 copyright and permission notice. No candidate is a required dependency.
 The bundled `LICENSE` preserves this package's own MIT permission and attribution
 when transferred; its legal notice is not a target-repository assumption.
-Git's [ownership and filesystem-monitor configuration](https://git-scm.com/docs/git-config)
-and [content-filter semantics](https://git-scm.com/docs/gitattributes#_filter)
-inform the helper's fail-closed inspection boundaries.
-Git's [hash-object reference](https://git-scm.com/docs/git-hash-object) supports
-read-only content identities with built-in attribute normalization.
-[Windows job ownership](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects),
-Linux [session creation](https://man7.org/linux/man-pages/man2/setsid.2.html),
-[group signaling](https://man7.org/linux/man-pages/man2/kill.2.html) and
-[process metadata](https://docs.kernel.org/filesystems/proc.html) inform bounded
-descendant cleanup. These platform references were checked 2026-09-27.
-[Windows job memory limits](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_extended_limit_information)
-and Linux [prlimit](https://man7.org/linux/man-pages/man1/prlimit.1.html) and
-[address-space limits](https://man7.org/linux/man-pages/man2/getrlimit.2.html)
-inform pre-execution memory ceilings for native Git inspection.
+Git's [configuration reference](https://git-scm.com/docs/git-config),
+[attribute semantics](https://git-scm.com/docs/gitattributes) and
+[push reference](https://git-scm.com/docs/git-push) inform trusted context
+verification and publication boundaries. The package delegates inspection to
+verified host capabilities rather than shipping its own Git inspection runtime.
+These Git references were checked through 2026-09-28.
 
 ## Candidate source instructions
 

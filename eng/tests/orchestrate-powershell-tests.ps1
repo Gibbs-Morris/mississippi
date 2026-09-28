@@ -28,7 +28,6 @@ $testRunners = @(
     @{ Name = 'run-issue-spec-tests.ps1';        Type = 'Pester' },
     @{ Name = 'run-agent-doctor-tests.ps1';      Type = 'Pester' },
     @{ Name = 'run-agent-context-tests.ps1';    Type = 'Pester' },
-    @{ Name = 'run-decompose-delivery-tests.ps1'; Type = 'Pester'; MinimumVersion = [version]'7.4'; Platforms = @('Windows', 'Linux'); LinuxCommands = @('stat', 'prlimit') },
     @{ Name = 'verify-scratchpad-task-scripts.ps1';    Type = 'Script' }
 )
 
@@ -57,23 +56,6 @@ $results = @()
 $failureCount = 0
 
 foreach ($runner in $testRunners) {
-    $reason = $null
-    if ($runner.ContainsKey('MinimumVersion') -and $PSVersionTable.PSVersion -lt $runner.MinimumVersion) {
-        $reason = "Requires PowerShell $($runner.MinimumVersion) or later; current version is $($PSVersionTable.PSVersion)."
-    }
-    $platform = if ($IsWindows) { 'Windows' } elseif ($IsLinux) { 'Linux' } else { 'Other' }
-    if ($null -eq $reason -and $runner.ContainsKey('Platforms') -and $platform -notin $runner.Platforms) {
-        $reason = "Supported platforms: $($runner.Platforms -join ', '); current platform is $platform."
-    }
-    if ($null -eq $reason -and $IsLinux -and $runner.ContainsKey('LinuxCommands')) {
-        $missing = @($runner.LinuxCommands | Where-Object { $null -eq (Get-Command $_ -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1) })
-        if ($missing.Count -gt 0) { $reason = "Optional helper prerequisites are unavailable: $($missing -join ', ')." }
-    }
-    if ($null -ne $reason) {
-        Write-Host "Skipping: $($runner.Name): $reason" -ForegroundColor Yellow
-        $results += [pscustomobject]@{ Name = $runner.Name; Type = $runner.Type; Status = 'Skipped'; Failed = 0; Reason = $reason }
-        continue
-    }
     $path = Join-Path $testsRoot $runner.Name
     Write-Host "Executing: $($runner.Name)" -ForegroundColor Cyan
     try {
@@ -124,7 +106,7 @@ if ($failedSuites -and $failedSuites.Count -gt 0) {
 }
 else {
     Write-Host 'RESULT: SUCCESS' -ForegroundColor Green
-    Write-Host 'All applicable PowerShell test suites passed.' -ForegroundColor Green
+    Write-Host 'All PowerShell test suites passed.' -ForegroundColor Green
 }
 
 if ($PassThru) { return $results }
