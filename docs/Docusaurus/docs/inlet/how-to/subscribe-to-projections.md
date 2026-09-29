@@ -167,7 +167,7 @@ Create `samples/Spring/Spring.Client/Pages/ProjectionWatch.razor`:
 }
 else if (GetProjectionError<BankAccountBalanceProjectionDto>(AccountId) is not null)
 {
-    <p role="alert">The account could not be loaded. Try refreshing.</p>
+    <p role="alert">The account could not be loaded or subscribed. Check gateway access, then reconnect the workspace.</p>
 }
 else if (GetProjection<BankAccountBalanceProjectionDto>(AccountId) is { } account)
 {
@@ -203,9 +203,9 @@ The initial fetch maps HTTP 404 to `NotFound`: no projection data is available y
 
 Read `SignalRConnectionState.Status` for the shared transport indicator. Projection entry `IsConnected` is separately controlled by projection connection actions; use the transport feature for the connection display above.
 
-`RefreshProjection<T>(entityId)` requests the latest projection and publishes the result into Reservoir. Inlet also re-establishes active interests and refreshes them after a successful SignalR reconnection. Keep the loading, empty, error, and data presentation usable throughout that process.
+`RefreshProjection<T>(entityId)` requests the latest projection over HTTP and publishes the result into Reservoir. It does not retry a failed hub subscription. Inlet re-establishes active interests and refreshes them after a successful SignalR reconnection, but a failed initial subscription is not an active interest. Keep the loading, empty, error, and data presentation usable throughout that process.
 
-If the initial connection attempt fails, make the gateway available and select **Reconnect workspace**. This performs a full client reload, initializes a fresh store, and starts the application owner's subscription again. Local Reservoir state is reset by that reload; the account data remains on the server. Use **Refresh** for an established subscription's data read.
+If the initial connection or hub subscription fails, restore gateway access or correct the subscription policy, then select **Reconnect workspace**. This performs a full client reload, initializes a fresh store, and starts the application owner's subscription again. Local Reservoir state is reset by that reload; the account data remains on the server. Use **Refresh** to retry a data read only after the subscription is established. A successful HTTP refresh alone does not prove that live updates are active.
 
 ## Verify the result
 
@@ -223,6 +223,7 @@ Run Spring using the [sample startup instructions](https://github.com/Gibbs-Morr
 4. Repeat navigation while the initial projection request is delayed in browser Network tools. The application owner remains mounted while the request finishes.
 5. Click Refresh and confirm the latest data returns.
 6. Block the initial hub negotiation in browser Network tools, reload, then restore connectivity and select Reconnect workspace. Confirm the account loads and a later deposit still updates the page.
+7. If a hub subscription invocation fails after connection, restore access and select Reconnect workspace. Confirm that a later deposit updates the page; an HTTP-only Refresh is not sufficient verification.
 
 For Spring's existing automated browser validation, run `pwsh ./test-spring.ps1 -Doctor` and then `pwsh ./test-spring.ps1`. A `PASS` summary means tests executed successfully; the manual checks above exercise the additional workspace page specifically.
 
