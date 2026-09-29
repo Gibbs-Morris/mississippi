@@ -29,14 +29,15 @@ test('every published page renders without a diagram error or broken image', asy
 
       try {
         const response = await page.goto(path, { waitUntil: 'networkidle' });
-        await page.waitForTimeout(250);
 
         if (correctedDiagramPaths.has(path)) {
-          await page.locator('.docusaurus-mermaid-container svg').waitFor({ state: 'visible' });
+          await page.locator('.docusaurus-mermaid-container svg, [class*="errorBoundaryFallback"]')
+            .first().waitFor({ state: 'visible' });
         }
 
         const rendering = await page.evaluate(() => ({
           hasHeading: Boolean(document.querySelector('h1')),
+          diagramCount: document.querySelectorAll('.docusaurus-mermaid-container svg').length,
           diagramErrors: Array.from(document.querySelectorAll('[class*="errorBoundaryFallback"]'))
             .map((element) => element.textContent?.trim()),
           brokenImages: Array.from(document.images)
@@ -44,8 +45,8 @@ test('every published page renders without a diagram error or broken image', asy
             .map((image) => image.src),
         }));
 
-        if (!response?.ok() || !rendering.hasHeading || rendering.diagramErrors.length || rendering.brokenImages.length) {
-          failures.push(`${path}: HTTP ${response?.status()}, heading=${rendering.hasHeading}, diagram errors=${rendering.diagramErrors.join('; ')}, broken images=${rendering.brokenImages.join(', ')}`);
+        if (!response?.ok() || !rendering.hasHeading || (correctedDiagramPaths.has(path) && !rendering.diagramCount) || rendering.diagramErrors.length || rendering.brokenImages.length) {
+          failures.push(`${path}: HTTP ${response?.status()}, heading=${rendering.hasHeading}, diagrams=${rendering.diagramCount}, diagram errors=${rendering.diagramErrors.join('; ')}, broken images=${rendering.brokenImages.join(', ')}`);
         }
       } catch (error) {
         failures.push(`${path}: ${String(error)}`);
