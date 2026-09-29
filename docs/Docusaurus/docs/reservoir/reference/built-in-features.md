@@ -49,7 +49,7 @@ The action namespace is `Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions
 | `ScrollToAnchorAction` | `AnchorId` without `#`, `ReplaceHistory = false` | Navigate to the current page's fragment |
 | `LocationChangedAction` | `Location`, `IsNavigationIntercepted` | Record an observed browser location |
 
-Use these actions for application navigation. The effect accepts relative application paths and absolute URIs on the same origin; use normal links for external destinations. Navigation follows Blazor's `NavigationManager` behavior, including history and force-load semantics.
+Use these actions for application navigation. The effect accepts relative application paths and absolute URIs on the same origin; use normal links for external destinations. For a cross-origin absolute URI in `NavigateAction` or `ReplaceRouteAction`, the effect throws, but the store catches the effect failure. `Dispatch` returns without navigation or an error action, so do not wait for a location update or expect to catch that failure from `Dispatch`. Supported navigation follows Blazor's `NavigationManager` behavior, including history and force-load semantics.
 
 `NavigationState` uses feature key `reservoir:navigation` and exposes `CurrentUri`, `PreviousUri`, `IsNavigationIntercepted`, and `NavigationCount`. The location reducer moves the current URI to previous, records the new URI/interception flag, and increments the count.
 
