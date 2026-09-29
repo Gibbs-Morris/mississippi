@@ -54,6 +54,12 @@ function Resolve-SourceProjectPathFromTest {
 
     [xml]$proj = Get-Content -LiteralPath $TestProjectPath
     $dir = Split-Path -Parent $TestProjectPath
+    # An explicit project-relative target also works when no direct references exist.
+    $configuredSource = $proj.SelectSingleNode('//Project/PropertyGroup/MutationSourceProject')
+    if ($configuredSource -and -not [string]::IsNullOrWhiteSpace($configuredSource.InnerText)) {
+        return (Resolve-Path -LiteralPath (Join-Path $dir $configuredSource.InnerText.Trim()) -ErrorAction Stop).Path
+    }
+
     $projectRefs = @()
     # Use XPath to robustly locate all <ProjectReference> elements regardless of ItemGroup layout
     $nodes = $proj.SelectNodes('//Project/ItemGroup/ProjectReference')
@@ -66,12 +72,6 @@ function Resolve-SourceProjectPathFromTest {
     }
     if (-not $projectRefs -or @($projectRefs).Count -eq 0) {
         throw "Test project has no <ProjectReference>; cannot infer source project. Use -SourceProject."
-    }
-
-    # An explicit project-relative target avoids selecting a test-support reference.
-    $configuredSource = $proj.SelectSingleNode('//Project/PropertyGroup/MutationSourceProject')
-    if ($configuredSource -and -not [string]::IsNullOrWhiteSpace($configuredSource.InnerText)) {
-        return (Resolve-Path -LiteralPath (Join-Path $dir $configuredSource.InnerText.Trim()) -ErrorAction Stop).Path
     }
 
     # Prefer refs that live under /src/

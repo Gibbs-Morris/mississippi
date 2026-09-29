@@ -32,6 +32,16 @@ Describe 'Quality script source project resolution' {
         Resolve-SourceProjectPathFromTest -TestProjectPath $tests | Should -Be (Resolve-Path $client).Path
     }
 
+    It 'honors an explicit target without direct project references' {
+        Set-Content $tests '<Project><PropertyGroup><MutationSourceProject>../Client/Client.csproj</MutationSourceProject></PropertyGroup></Project>'
+        Resolve-SourceProjectPathFromTest -TestProjectPath $tests | Should -Be (Resolve-Path $client).Path
+    }
+
+    It 'requires references when no explicit target is configured' {
+        Set-Content $tests '<Project />'
+        { Resolve-SourceProjectPathFromTest -TestProjectPath $tests } | Should -Throw '*no <ProjectReference>*'
+    }
+
     It 'fails instead of falling back when the explicit target is missing' {
         Set-Content $tests '<Project><PropertyGroup><MutationSourceProject>../Missing/Missing.csproj</MutationSourceProject></PropertyGroup><ItemGroup><ProjectReference Include="../../src/TestHarness/TestHarness.csproj"/></ItemGroup></Project>'
         { Resolve-SourceProjectPathFromTest -TestProjectPath $tests } | Should -Throw
