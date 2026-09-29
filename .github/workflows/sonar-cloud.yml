@@ -14,6 +14,10 @@ on:
       - feature/**
       - topic/**
 
+permissions:
+  contents: read
+  pull-requests: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -27,6 +31,14 @@ env:
 jobs:
   Build:
     name: "Build"
+    # `SONAR_TOKEN` must exist only as a secret in the `sonar-analysis`
+    # environment. Restrict that environment to `main` and `refs/pull/*/merge`,
+    # and remove any repository- or organization-level secret with this name.
+    # Merge groups and non-main manual runs use the empty `sonar-no-token` environment.
+    # Merge-group candidates still run build/tests; Sonar analysis runs on the PR.
+    environment:
+      name: ${{ (github.event_name == 'merge_group' || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')) && 'sonar-no-token' || 'sonar-analysis' }}
+      deployment: false
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -38,6 +50,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.sha }}
+          persist-credentials: false
 
       - name: Setup Dotnet
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -97,28 +110,34 @@ jobs:
           dotnet tool restore
           true
 
-      - name: Sonar restore-build-report
+      - name: Explain merge-group Sonar boundary
+        if: github.event_name == 'merge_group'
+        run: echo "Merge-group candidates run build and tests without SONAR_TOKEN; Sonar analysis runs on the pull request."
+
+      - name: Sonar begin
+        if: >-
+          github.event_name != 'merge_group' &&
+          (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main') &&
+          (github.event_name != 'pull_request' ||
+           github.event.pull_request.head.repo.full_name == github.repository)
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          if [[ "$GITHUB_EVENT_NAME" == "merge_group" ]]; then
-            if [[ "$GITHUB_REF_TYPE" != "branch" || -z "$GITHUB_REF_NAME" ]]; then
-              echo "::error::Merge-group analysis requires a branch ref."
-              exit 1
-            fi
+          dotnet dotnet-sonarscanner begin /k:"${{ env.SONAR_PROJECT_KEY }}" /o:"${{ env.SONAR_ORGANIZATION }}" /d:sonar.token="$SONAR_TOKEN" /d:sonar.host.url="${{ env.SONAR_HOST_URL }}" /v:${{ steps.gitversion.outputs.SemVer }} /d:"sonar.cs.vscoveragexml.reportsPaths=coverage.xml" /d:sonar.exclusions="**/*.lock.json, **/*.DotSettings,**/packages.lock.json,docs/**" /d:sonar.cpd.exclusions="**/Inlet.Client.Generators/**,**/Inlet.Gateway.Generators/**,**/Inlet.Runtime.Generators/**,**/setup.ps1,**/Setup.Tests.ps1,**/AgentDoctor.Tests.ps1" /d:sonar.issue.ignore.multicriteria=s107 /d:sonar.issue.ignore.multicriteria.s107.ruleKey=csharpsquid:S107 /d:sonar.issue.ignore.multicriteria.s107.resourceKey='**/*.cs'
 
-            # Analyze the exact candidate as a short-lived branch targeting main.
-            set -- "/d:sonar.branch.name=$GITHUB_REF_NAME" "/d:sonar.branch.target=main" "/d:sonar.qualitygate.wait=true"
-          else
-            set --
-          fi
-
-          dotnet dotnet-sonarscanner begin /k:"${{ env.SONAR_PROJECT_KEY }}" /o:"${{ env.SONAR_ORGANIZATION }}" /d:sonar.token="$SONAR_TOKEN" /d:sonar.host.url="${{ env.SONAR_HOST_URL }}" /v:${{ steps.gitversion.outputs.SemVer }} /d:"sonar.cs.vscoveragexml.reportsPaths=coverage.xml" /d:sonar.exclusions="**/*.lock.json, **/*.DotSettings,**/packages.lock.json,docs/**" /d:sonar.cpd.exclusions="**/Inlet.Client.Generators/**,**/Inlet.Gateway.Generators/**,**/Inlet.Runtime.Generators/**,**/setup.ps1,**/Setup.Tests.ps1,**/AgentDoctor.Tests.ps1" /d:sonar.issue.ignore.multicriteria=s107 /d:sonar.issue.ignore.multicriteria.s107.ruleKey=csharpsquid:S107 /d:sonar.issue.ignore.multicriteria.s107.resourceKey='**/*.cs' "$@"
-
+      - name: Restore, build, and test
+        run: |
           dotnet restore ${{ env.SOLUTION_PATH }}
           dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
-
           dotnet dotnet-coverage collect "pwsh -NoProfile -File ./eng/src/agent-scripts/test-solution.ps1 -SolutionPath ${{ env.SOLUTION_PATH }} -Configuration ${{ env.CONFIGURATION }} -NoBuild" -f xml -o "coverage.xml"
 
-          dotnet dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+      - name: Sonar end
+        if: >-
+          github.event_name != 'merge_group' &&
+          (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main') &&
+          (github.event_name != 'pull_request' ||
+           github.event.pull_request.head.repo.full_name == github.repository)
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
 
