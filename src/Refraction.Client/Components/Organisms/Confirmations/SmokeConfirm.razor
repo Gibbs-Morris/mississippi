@@ -1,0 +1,19 @@
+<div @attributes="ForwardedAttributes"
+     class="@CssClass"
+     role="@RefractionAriaRoles.Dialog"
+     data-state="@State"
+     aria-labelledby="@TitleId"
+     aria-describedby="@DescribedBy">
+    <div class="rf-smoke-confirm__veil" aria-hidden="true"></div>
+    <div class="rf-smoke-confirm__pane">
+        <h2 id="@TitleId" class="rf-smoke-confirm__title">@Title</h2>
+        @if (!string.IsNullOrWhiteSpace(Consequence))
+        {
+            <p id="@ConsequenceId" class="rf-smoke-confirm__consequence">@Consequence</p>
+        }
+        <div class="rf-smoke-confirm__actions">
+            <button type="button" class="rf-smoke-confirm__cancel" disabled="@(!OnCancel.HasDelegate)" @onclick="OnCancel">@CancelText</button>
+            <button type="button" class="rf-smoke-confirm__confirm" disabled="@(!OnConfirm.HasDelegate)" @onclick="OnConfirm">@ConfirmText</button>
+        </div>
+    </div>
+</div>
