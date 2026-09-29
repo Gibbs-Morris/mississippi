@@ -71,7 +71,9 @@ Preserve the exact casing of top-level feature keys in restoration JSON. Their l
 
 ## Initialization Diagnostics
 
-The root initializer starts observation after rendering and captures the initial rollback point. A later ordinary `ActionDispatchedEvent` triggers connection and reporting. The registration also supplies a hosted initialization checker; in hosts that execute it, the default check delay is five seconds. An explicit `ThrowOnMissingInitializer` value controls its response; otherwise it throws in an injected Development host environment and logs a warning in other cases.
+The root initializer starts observation after rendering and captures the initial rollback point. A later ordinary `ActionDispatchedEvent` triggers connection and reporting. Because this event follows reduction, the first action initializes the extension with its resulting state and then sends that action with the same state. The first DevTools entry therefore does not show the pre-action state; dispatch a harmless warm-up action before the transition you want to inspect.
+
+The registration also supplies a hosted initialization checker; in hosts that execute it, the default check delay is five seconds. An explicit `ThrowOnMissingInitializer` value controls its response; otherwise it throws in an injected Development host environment and logs a warning in other cases.
 
 ## Source
 

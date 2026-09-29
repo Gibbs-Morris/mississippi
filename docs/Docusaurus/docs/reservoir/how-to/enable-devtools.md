@@ -72,9 +72,9 @@ Keep enough action identity and non-sensitive context to connect an action with 
 
 Build the client and run it in Development with the extension installed:
 
-1. After the root has rendered, dispatch a local action, such as an account-selection action from [Add a feature](./create-feature.md).
-2. Open browser developer tools, select the Redux DevTools instance named `Spring Sample`, and confirm the registered feature state appears.
-3. Inspect the action and resulting state, including any sanitizer output.
+1. After the root has rendered, dispatch a safe ordinary application action to establish the DevTools connection.
+2. Open browser developer tools, select the Redux DevTools instance named `Spring Sample`, and confirm the registered feature state appears. The first action establishes a baseline from its already reduced state, so it does not show a pre-action transition.
+3. Perform the action you want to diagnose, such as an account-selection action from [Add a feature](./create-feature.md), then inspect its action and resulting state, including any sanitizer output.
 4. When exploring jump/reset/rollback operations, observe the local state change separately from server projections and external effects.
 
 For repository validation, run:
