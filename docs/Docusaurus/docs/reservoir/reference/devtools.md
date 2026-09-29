@@ -73,6 +73,8 @@ Preserve the exact casing of top-level feature keys in restoration JSON. Their l
 
 The root initializer starts observation after rendering and captures the initial rollback point. A later ordinary `ActionDispatchedEvent` triggers connection and reporting. Because this event follows reduction, the first action initializes the extension with its resulting state and then sends that action with the same state. The first DevTools entry therefore does not show the pre-action state; dispatch a harmless warm-up action before the transition you want to inspect.
 
+If the extension is unavailable, each later ordinary action retries connection and can log another warning. Once marked connected, a caught `JSException` or `InvalidOperationException` during sending does not clear that flag, so later actions do not reconnect automatically. Reload the client after restoring the extension connection.
+
 The registration also supplies a hosted initialization checker; in hosts that execute it, the default check delay is five seconds. An explicit `ThrowOnMissingInitializer` value controls its response; otherwise it throws in an injected Development host environment and logs a warning in other cases.
 
 ## Source
