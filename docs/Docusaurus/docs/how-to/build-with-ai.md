@@ -36,11 +36,13 @@ Spring's [WithdrawFundsHandler](https://github.com/Gibbs-Morris/mississippi/blob
 | --- | --- | --- |
 | Open account with balance 100 | Withdraw 25 | One `FundsWithdrawn` event for 25; reduced balance 75 |
 | Open account with balance 100 | Withdraw 100 | One `FundsWithdrawn` event for 100; reduced balance 0 |
-| Open account with balance 100 | Withdraw 101 | Rejection with `InvalidCommand`; no withdrawal event |
+| Open account with balance 100 | Withdraw 101 | Rejection; no withdrawal event |
 | Open account with balance 100 | Withdraw 0 | Rejection with `InvalidCommand`; no withdrawal event |
 | Closed account | Withdraw 25 | Rejection with `InvalidState`; no withdrawal event |
 
 Use explicit outcomes such as these instead of a request like "make withdrawals work." They give the assistant a target that tests can check.
+
+The current Spring handler reports `InvalidCommand` for insufficient funds. For a new handler, follow the repository's domain-modeling guidance: a valid command rejected by aggregate state returns `InvalidState`. The case above checks rejection and absence of an event without prescribing an error code.
 
 ### 2. Assign Each Concern to Its Artifact
 
