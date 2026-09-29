@@ -118,6 +118,9 @@ Use this page as the current active reference for Reservoir's builder entry poin
 
 ## Next Steps
 
+- [Add a Reservoir feature](../how-to/create-feature.md) to define, register, dispatch, and select local state.
+- [State flow](../concepts/state-flow.md) for reducer, notification, and effect timing.
+- [Selector reference](./selectors.md) for store selection and memoization.
 - Read [Reservoir Concepts](../concepts/concepts.md).
 - Read [Inlet Reference](../../inlet/reference/reference.md) for the client-sync extensions that compose on top of Reservoir.
 - Use [Archived Reservoir Docs](../../archived/client-state-management/reservoir.md) for preserved deep material.
