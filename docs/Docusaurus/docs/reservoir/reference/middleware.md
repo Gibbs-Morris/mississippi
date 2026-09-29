@@ -33,6 +33,8 @@ The first registered middleware is the outermost wrapper. Its before-next work r
 
 The store resolves its middleware collection during construction and retains those instances across its dispatches. Treat mutable middleware fields as state shared by that store's operations; the transient DI registration does not create a fresh middleware instance for each action.
 
+The store does not serialize concurrent `Dispatch` calls. A retained middleware instance can therefore run concurrently for the same store. Avoid mutable instance state, synchronize access to it, or serialize dispatch at the application boundary.
+
 ## Execution Boundary
 
 `nextAction` is synchronous, but the store can start asynchronous effects during that call. Return from `nextAction` marks the synchronous downstream return, so observe effect completion through result actions and feature state.
