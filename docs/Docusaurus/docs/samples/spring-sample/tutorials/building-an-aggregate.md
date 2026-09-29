@@ -19,7 +19,9 @@ The closure policy is application logic for this exercise: require a reason, req
 - Use a disposable checkout of the Mississippi repository with the existing `samples/Spring` application. Keep this exercise on its own branch or worktree.
 - Install PowerShell 7 and the .NET SDK selected by the checkout's `global.json`.
 - Start with the six file paths below available for creation. Run every command from the repository root.
-- Read the existing [BankAccountAggregate](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/BankAccountAggregate.cs) and [BankAccountBalanceProjection](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Projections/BankAccountBalance/BankAccountBalanceProjection.cs). Both already expose `IsOpen` and `Balance`.
+- Read the existing [BankAccountAggregate](https://github.com/Gibbs-Morris/mississippi/blob/6002ab05a918c1e0c7391a7417db23a9f132d399/samples/Spring/Spring.Domain/Aggregates/BankAccount/BankAccountAggregate.cs) and [BankAccountBalanceProjection](https://github.com/Gibbs-Morris/mississippi/blob/6002ab05a918c1e0c7391a7417db23a9f132d399/samples/Spring/Spring.Domain/Projections/BankAccountBalance/BankAccountBalanceProjection.cs). Both already expose `IsOpen` and `Balance`.
+
+Source links in this tutorial point to commit `6002ab05` so later changes to `main` do not alter the referenced code. Check the equivalent files in your checkout when using another revision.
 
 The following are complete files to create in that working project. This exercise adds your own business behavior using the current framework contracts; keep the existing Spring project and generator configuration described in the [capability map](../../../reference/capability-map.md#build-time-generator-references).
 
@@ -59,7 +61,7 @@ public sealed record CloseAccount
 }
 ```
 
-The command names intent and carries the reason. `[GenerateCommand]` gives it the `close` route segment. The command is public because it appears in the generated gateway controller's public constructor signature through `IMapper<CloseAccountDto, CloseAccount>`. Spring's [friend-assembly declarations](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Spring.Domain.csproj) support internal handlers and events; the client generators produce their own transport artifacts. Orleans serialization uses the explicit alias and member ID.
+The command names intent and carries the reason. `[GenerateCommand]` gives it the `close` route segment. The command is public because it appears in the generated gateway controller's public constructor signature through `IMapper<CloseAccountDto, CloseAccount>`. Spring's [friend-assembly declarations](https://github.com/Gibbs-Morris/mississippi/blob/6002ab05a918c1e0c7391a7417db23a9f132d399/samples/Spring/Spring.Domain/Spring.Domain.csproj) support internal handlers and events; the client generators produce their own transport artifacts. Orleans serialization uses the explicit alias and member ID.
 
 The MCP metadata makes the generated tool's purpose and inputs explicit to AI clients. The handler below enforces the account and balance conditions.
 
@@ -249,7 +251,7 @@ Update the remarks in `samples/Spring/Spring.Domain/Projections/BankAccountBalan
 
 ## Step 6: Create the Acceptance Tests
 
-Create `samples/Spring/Spring.Domain.L0Tests/Aggregates/BankAccount/AccountClosureTests.cs`. The existing test project's [global imports](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain.L0Tests/GlobalUsings.cs) supply xUnit.
+Create `samples/Spring/Spring.Domain.L0Tests/Aggregates/BankAccount/AccountClosureTests.cs`. The existing test project's [global imports](https://github.com/Gibbs-Morris/mississippi/blob/6002ab05a918c1e0c7391a7417db23a9f132d399/samples/Spring/Spring.Domain.L0Tests/GlobalUsings.cs) supply xUnit.
 
 ```csharp
 using System.Collections.Generic;
@@ -433,7 +435,7 @@ pwsh ./build.ps1 -SkipMississippi -Configuration Release
 
 Require exit code 0, `ALL REQUESTED BUILDS COMPLETED SUCCESSFULLY`, and zero warnings and errors. This compiles the runtime, gateway, and client with the new domain types. Spring's existing `AddBankAccountAggregate()` and projection registration calls use the updated generated registrations after the build.
 
-The [aggregate registration generator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Runtime.Generators/AggregateSiloRegistrationGenerator.cs) discovers the command, handler, event, and aggregate reducer. The [projection registration generator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Runtime.Generators/ProjectionSiloRegistrationGenerator.cs) discovers the projection reducer. The reusable aggregate grain executes the operation; source generation supplies integration around it.
+The [aggregate registration generator](https://github.com/Gibbs-Morris/mississippi/blob/6002ab05a918c1e0c7391a7417db23a9f132d399/src/Inlet.Runtime.Generators/AggregateSiloRegistrationGenerator.cs) discovers the command, handler, event, and aggregate reducer. The [projection registration generator](https://github.com/Gibbs-Morris/mississippi/blob/6002ab05a918c1e0c7391a7417db23a9f132d399/src/Inlet.Runtime.Generators/ProjectionSiloRegistrationGenerator.cs) discovers the projection reducer. The reusable aggregate grain executes the operation; source generation supplies integration around it.
 
 ### Checkpoint: Trace the Result
 
@@ -475,9 +477,9 @@ pwsh ./build.ps1 -SkipMississippi -Configuration Release
 
 ## Framework Contracts
 
-- [CommandHandlerBase](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/CommandHandlerBase.cs) accepts a command and current state and returns events or a failure result.
-- [OperationResult](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/OperationResult.cs) carries success values or error codes and messages.
-- [EventReducerBase](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/EventReducerBase.cs) applies an event and checks that reference state is replaced.
+- [CommandHandlerBase](https://github.com/Gibbs-Morris/mississippi/blob/6002ab05a918c1e0c7391a7417db23a9f132d399/src/DomainModeling.Abstractions/CommandHandlerBase.cs) accepts a command and current state and returns events or a failure result.
+- [OperationResult](https://github.com/Gibbs-Morris/mississippi/blob/6002ab05a918c1e0c7391a7417db23a9f132d399/src/DomainModeling.Abstractions/OperationResult.cs) carries success values or error codes and messages.
+- [EventReducerBase](https://github.com/Gibbs-Morris/mississippi/blob/6002ab05a918c1e0c7391a7417db23a9f132d399/src/Tributary.Abstractions/EventReducerBase.cs) applies an event and checks that reference state is replaced.
 
 ## Summary
 
