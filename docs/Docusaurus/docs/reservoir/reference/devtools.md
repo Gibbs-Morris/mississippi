@@ -43,7 +43,7 @@ Prefer `Off` outside controlled development or diagnostic environments. Selectin
 
 ## Payloads
 
-The normal action payload includes the action type name and JSON serialized from the concrete action type. The normal state payload maps feature keys to JSON serialized from each concrete state type.
+The normal action payload has `{ type, payload }`: `type` is the simple CLR class name (without its namespace), and `payload` is JSON serialized from the concrete action type. Actions with the same class name in different namespaces therefore share a DevTools label; use `ActionSanitizer` if the label must distinguish them. The normal state payload maps feature keys to JSON serialized from each concrete state type.
 
 A non-null sanitizer result replaces that payload. A null result falls back to the normal payload. Sanitizers affect what the extension receives, so preserve the information needed for the debugging or restoration task you intend to perform.
 
