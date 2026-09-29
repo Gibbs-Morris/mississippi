@@ -34,9 +34,20 @@ Create `samples/Spring/Spring.Client/Components/AccountProjectionProvider.razor`
 @namespace MississippiSamples.Spring.Client.Components
 @inherits InletComponent
 @using Mississippi.Inlet.Client
-@using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos
+```
 
-@code {
+Create `samples/Spring/Spring.Client/Components/AccountProjectionProvider.razor.cs`:
+
+```csharp
+using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos;
+
+namespace MississippiSamples.Spring.Client.Components;
+
+/// <summary>
+///     Keeps the configured account projection subscribed for the client session.
+/// </summary>
+public sealed partial class AccountProjectionProvider
+{
     /// <summary>
     /// Identifies the account kept live throughout this client session.
     /// </summary>
@@ -151,11 +162,8 @@ Create `samples/Spring/Spring.Client/Pages/ProjectionWatch.razor`:
 @page "/projection-watch"
 @namespace MississippiSamples.Spring.Client.Pages
 @inherits InletComponent
-@using Microsoft.AspNetCore.Components
-@inject NavigationManager Navigation
 @using Mississippi.Inlet.Client
 @using Mississippi.Inlet.Client.SignalRConnection
-@using MississippiSamples.Spring.Client.Components
 @using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos
 
 <h1>Account balance</h1>
@@ -181,9 +189,27 @@ else
 
 <button type="button" @onclick="RefreshCurrent">Refresh</button>
 <button type="button" @onclick="ReloadWorkspace">Reconnect workspace</button>
+```
 
-@code {
+Create `samples/Spring/Spring.Client/Pages/ProjectionWatch.razor.cs`:
+
+```csharp
+using Microsoft.AspNetCore.Components;
+
+using MississippiSamples.Spring.Client.Components;
+using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos;
+
+namespace MississippiSamples.Spring.Client.Pages;
+
+/// <summary>
+///     Displays the application-owned account projection.
+/// </summary>
+public sealed partial class ProjectionWatch
+{
     private const string AccountId = AccountProjectionProvider.AccountId;
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
 
     private void ReloadWorkspace() =>
         Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
