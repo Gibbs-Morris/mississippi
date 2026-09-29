@@ -12,7 +12,7 @@ Governing thought: Use consistent, attribute-driven domain modeling with immutab
 
 ### Domain Record Visibility
 
-- Aggregate, command, and projection records **MUST** be internal by default and **MUST** be public when their types occur in public generated API signatures or are discovered through exported-type scanning. Why: Public C# signatures require accessible types, and exported-type discovery selects public types.
+- Aggregate, command, and projection records **MUST** be internal by default. They **MUST** be public when their types occur in public generated API signatures or are discovered through exported-type scanning. Why: Public C# signatures require accessible types, and exported-type discovery selects public types.
 - Contributors **MUST** verify visibility against the consuming generator and registration path. Why: Friend-assembly access permits internal access but does not relax public-signature accessibility requirements.
 
 Inlet's [aggregate controller generator](../../src/Inlet.Gateway.Generators/AggregateControllerGenerator.cs) exposes the aggregate type in its public base class and command types in public mapper constructor parameters. [Projection assembly scanning](../../src/Inlet.Runtime/InletSiloRegistrations.cs) uses `GetExportedTypes()`. Keep domain records public for these paths while retaining internal visibility for records without a public or discovery boundary.
