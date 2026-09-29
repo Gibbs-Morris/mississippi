@@ -47,6 +47,8 @@ The normal action payload has `{ type, payload }`: `type` is the simple CLR clas
 
 A non-null sanitizer result replaces that payload. A null result falls back to the normal payload. Sanitizers affect what the extension receives, so preserve the information needed for the debugging or restoration task you intend to perform.
 
+Reporting runs without awaiting the task from dispatch. If a sanitizer throws `InvalidOperationException`, DevTools reporting catches it and drops that update. Other sanitizer exceptions can fault that unobserved reporting task; dispatch can still succeed without the DevTools update. Keep sanitizers predictable and handle or log their failures within the sanitizer.
+
 ## Local State Restoration
 
 | DevTools operation | Reservoir behavior |
