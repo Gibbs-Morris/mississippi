@@ -41,7 +41,7 @@ See [IReservoirFeatureBuilder](https://github.com/Gibbs-Morris/mississippi/blob/
 
 The normal store pipeline reduces the originating action before triggering effects. An effect receives the feature state supplied when that effect pipeline is invoked. Use the action's inputs for the request itself, and make result handling explicit when other actions can change the feature while work is in progress.
 
-Typed effects are indexed by their declared action type and selected using the dispatched action's exact runtime type. Custom implementations outside those typed bases use the fallback `CanHandle` path. Matching effects are enumerated in sequence for a dispatch; separate dispatches can overlap while asynchronous work awaits completion.
+Typed effects are indexed by their declared action type and selected using the dispatched action's exact runtime type. Custom implementations outside those typed bases use the fallback `CanHandle` path. For one dispatch, the matching indexed typed effects run first, then matching fallback effects, regardless of registration order across those groups. Registration order is preserved within each group. Separate dispatches can overlap while asynchronous work awaits completion.
 
 The live store dispatches yielded actions back through its normal pipeline. A result action can therefore update state or trigger another effect. Design a terminating action sequence, with distinct request and result actions where that makes progress clear.
 
