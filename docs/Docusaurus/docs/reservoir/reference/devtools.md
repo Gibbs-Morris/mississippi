@@ -53,13 +53,15 @@ Reporting runs without awaiting the task from dispatch. If a sanitizer throws `I
 
 | DevTools operation | Reservoir behavior |
 | --- | --- |
-| `JUMP_TO_STATE`, `JUMP_TO_ACTION` | Deserializes the supplied state into registered feature types |
-| `RESET` | Dispatches the system action that restores initial feature states |
-| `COMMIT` | Records the current local snapshot as the rollback point |
-| `ROLLBACK` | Restores the committed local snapshot |
-| `IMPORT_STATE` | Restores the final `computedStates` entry's state from the imported payload |
+| `JUMP_TO_STATE`, `JUMP_TO_ACTION` | Deserializes the supplied state into registered feature types; a rejected restore reinitializes DevTools history from the current store snapshot |
+| `RESET` | Dispatches the system action that restores initial feature states, then reinitializes DevTools history |
+| `COMMIT` | Records the current local snapshot as the rollback point, then reinitializes DevTools history |
+| `ROLLBACK` | Restores the committed local snapshot, then reinitializes DevTools history |
+| `IMPORT_STATE` | Restores the final `computedStates` entry's state when available, then reinitializes DevTools history |
 
 The store's system restoration path updates local feature state directly and can notify listeners. It bypasses ordinary user reducers, effects, and middleware. Use application commands for server-side business changes.
+
+Reinitialization sends the current snapshot as the extension's new baseline, so save any action trace you need before using these commands. A successful jump does not reinitialize history.
 
 For JSON restoration, a missing feature, a null deserialized result, or a caught `JsonException` rejects the whole proposed restore in strict mode; default mode skips those entries and can apply the other valid features. Other exceptions from a state type or converter, such as `NotSupportedException`, propagate from message processing rather than following that skip/reject path. Extra input keys are outside the registered-feature iteration.
 
