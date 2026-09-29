@@ -21,7 +21,7 @@ All entry points extend `IReservoirBuilder` and are supplied by `Mississippi.Res
 | `AddBuiltInNavigation()` | Navigation state, location reducer, and navigation effect |
 | `AddBuiltInLifecycle()` | Lifecycle state and milestone reducers |
 
-Use the corresponding namespaces under `Mississippi.Reservoir.Client.BuiltIn`, `.Navigation`, or `.Lifecycle`. [Spring startup](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Program.cs) registers both features inside its Reservoir callback.
+Registration extensions live in `Mississippi.Reservoir.Client.BuiltIn`, `.BuiltIn.Navigation`, and `.BuiltIn.Lifecycle`. Navigation action types live in `.BuiltIn.Navigation.Actions`; lifecycle action types live in `.BuiltIn.Lifecycle.Actions`, while `LifecycleState` and `LifecyclePhase` live in `.BuiltIn.Lifecycle.State`. C# does not import child namespaces automatically. [Spring startup](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Program.cs) registers both features inside its Reservoir callback.
 
 ## Browser Location Observation
 
