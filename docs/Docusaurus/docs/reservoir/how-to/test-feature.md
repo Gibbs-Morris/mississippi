@@ -28,7 +28,7 @@ The complete example files are included in `Spring.Client.L0Tests`. To add the s
 dotnet add samples/Spring/Spring.Client.L0Tests/Spring.Client.L0Tests.csproj reference src/Reservoir.TestHarness/Reservoir.TestHarness.csproj
 ```
 
-For a consumer application, reference the matching `Mississippi.Reservoir.TestHarness` package in the test project. The example uses Spring's namespace and existing xUnit imports; adapt those to your test assembly when copying the files.
+For a consumer application using a Mississippi source checkout, add a project reference from your test project to that checkout's `src/Reservoir.TestHarness/Reservoir.TestHarness.csproj`. Adjust the relative path for your directory layout. The example uses Spring's namespace and existing xUnit imports; adapt those to your test assembly when copying the files.
 
 ## Steps
 
