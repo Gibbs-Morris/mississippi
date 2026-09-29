@@ -46,7 +46,7 @@ By the end of this page, you should know whether your question belongs to aggreg
 
 ## Current Scope
 
-This page covers package selection and subsystem orientation. For runnable aggregate and saga examples, see the [Spring sample tutorials](../../samples/spring-sample/tutorials/building-an-aggregate.md).
+This page covers package selection and subsystem orientation. For a runnable command, handler, and reducer exercise, [add an aggregate command](../../samples/spring-sample/tutorials/building-an-aggregate.md).
 
 ## Summary
 
