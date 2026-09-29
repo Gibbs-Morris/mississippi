@@ -35,6 +35,8 @@ Render one `ReservoirNavigationProvider` at the application root to connect `Nav
 
 The provider dispatches the current URI on initialization, forwards subsequent location changes, and unsubscribes when disposed. Its initial notification contributes to `NavigationCount`; that count represents handled location notifications rather than only user clicks.
 
+Before the provider's initial dispatch, or if no provider is rendered, registered `NavigationState` has `CurrentUri = null`, `PreviousUri = null`, `IsNavigationIntercepted = false`, and `NavigationCount = 0`. The initial dispatch records the current browser URI and increments the count to one.
+
 ## Navigation Actions
 
 The action namespace is `Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions`.
