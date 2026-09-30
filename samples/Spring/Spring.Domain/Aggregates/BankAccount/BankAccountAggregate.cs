@@ -12,7 +12,7 @@ namespace MississippiSamples.Spring.Domain.Aggregates.BankAccount;
 ///     This is never exposed externally; use projections for read queries.
 /// </summary>
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
-[SnapshotStorageName("SPRING", "BANKING", "ACCOUNTSTATE")]
+[SnapshotStorageName("SPRING", "BANKING", "ACCOUNTSTATE", 1)]
 [SnapshotRetention(20)]
 [GenerateAggregateEndpoints]
 [GenerateMcpTools]
