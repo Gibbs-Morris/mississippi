@@ -66,24 +66,24 @@ internal sealed class CosmosRepository : ICosmosRepository
             try
             {
                 TransactionalBatchResponse response = await batch.ExecuteAsync(cancellationToken);
-                if (response.IsSuccessStatusCode)
+                bool transient = !response.IsSuccessStatusCode &&
+                                 ((response.StatusCode == HttpStatusCode.TooManyRequests) ||
+                                  (response.StatusCode == HttpStatusCode.ServiceUnavailable) ||
+                                  (response.StatusCode == HttpStatusCode.RequestTimeout) ||
+                                  (response.StatusCode == HttpStatusCode.InternalServerError) ||
+                                  (response.StatusCode == HttpStatusCode.GatewayTimeout));
+                if (!transient)
                 {
                     return response;
                 }
 
-                // Transient statuses to retry on
-                if ((response.StatusCode == HttpStatusCode.TooManyRequests) ||
-                    (response.StatusCode == HttpStatusCode.ServiceUnavailable) ||
-                    (response.StatusCode == HttpStatusCode.RequestTimeout) ||
-                    (response.StatusCode == HttpStatusCode.InternalServerError) ||
-                    (response.StatusCode == HttpStatusCode.GatewayTimeout))
+                TimeSpan delay;
+                using (response)
                 {
-                    TimeSpan delay = response.RetryAfter ?? TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
-                    await Task.Delay(delay, cancellationToken);
-                    continue;
+                    delay = response.RetryAfter ?? TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 100);
                 }
 
-                return response; // non-transient failure; let caller decide
+                await Task.Delay(delay, cancellationToken);
             }
             catch (CosmosException ex)
             {
@@ -177,17 +177,21 @@ internal sealed class CosmosRepository : ICosmosRepository
             Position = finalPosition,
             BrookPartitionKey = brookId.ToString(),
         };
-
         ArgumentException.ThrowIfNullOrWhiteSpace(pendingETag);
         TransactionalBatch batch = Container.CreateTransactionalBatch(partitionKey)
-            .DeleteItem(CursorPending, new TransactionalBatchItemRequestOptions { IfMatchEtag = pendingETag })
+            .DeleteItem(
+                CursorPending,
+                new()
+                {
+                    IfMatchEtag = pendingETag,
+                })
             .UpsertItem(cursorDoc);
         using TransactionalBatchResponse response = await ExecuteBatchWithRetryAsync(batch, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
             throw new InvalidOperationException(
                 $"Cursor commit for brook '{brookId}' failed with Cosmos status {(int)response.StatusCode}; " +
-                "pending evidence was not cleared by this transaction.");
+                "the outcome of a prior attempt may be unknown. Reconcile cursor and pending evidence.");
         }
     }
 
