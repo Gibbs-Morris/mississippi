@@ -45,10 +45,7 @@ internal static class BankAccountCompositeSelectors
     public static Func<BankAccountAggregateState, ProjectionsFeatureState, string?> GetErrorMessage(
         string? entityId
     ) =>
-        (
-            aggregateState,
-            projectionsState
-        ) =>
+        (aggregateState, projectionsState) =>
         {
             ArgumentNullException.ThrowIfNull(aggregateState);
             ArgumentNullException.ThrowIfNull(projectionsState);
@@ -79,10 +76,7 @@ internal static class BankAccountCompositeSelectors
     public static Func<BankAccountAggregateState, ProjectionsFeatureState, bool> IsOperationInProgress(
         string? entityId
     ) =>
-        (
-            aggregateState,
-            projectionsState
-        ) =>
+        (aggregateState, projectionsState) =>
         {
             ArgumentNullException.ThrowIfNull(aggregateState);
             ArgumentNullException.ThrowIfNull(projectionsState);

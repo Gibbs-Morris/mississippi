@@ -85,23 +85,6 @@
           "System.IO.Hashing": "10.0.3"
         }
       },
-      "Microsoft.Orleans.Runtime": {
-        "type": "Transitive",
-        "resolved": "10.3.1",
-        "contentHash": "kmQEiKJ/y1BkE4LZzZr9yRqHjwxqIJ7W0UmNe9yBe+A8VkJ1yyvDxYwopb50CRBTSeBzIaa7oJYbvJAt5J2oaA==",
-        "dependencies": {
-          "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
-          "Microsoft.CodeAnalysis.Common": "5.0.0",
-          "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
-          "Microsoft.Extensions.DependencyModel": "10.0.5",
-          "Microsoft.Orleans.Core": "10.3.1",
-          "Newtonsoft.Json": "13.0.4",
-          "Polly": "8.6.4",
-          "Polly.Extensions": "8.6.5",
-          "System.IO.Hashing": "10.0.3",
-          "System.Memory.Data": "10.0.3"
-        }
-      },
       "Microsoft.Orleans.Serialization": {
         "type": "Transitive",
         "resolved": "10.3.1",
@@ -222,7 +205,8 @@
           "Microsoft.Orleans.Sdk": "[10.3.1, )",
           "Microsoft.Orleans.Streaming": "[10.3.1, )",
           "Mississippi.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.Brooks.Runtime.Storage.Abstractions": "[1.0.0, )"
+          "Mississippi.Brooks.Runtime.Storage.Abstractions": "[1.0.0, )",
+          "Mississippi.Hosting.Runtime.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Brooks.Runtime.Storage.Abstractions": {
@@ -251,6 +235,16 @@
           "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Runtime": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Hosting.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Hosting.Runtime.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Runtime": "[10.3.1, )",
+          "Mississippi.Hosting.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Inlet.Abstractions": {
@@ -346,6 +340,24 @@
           "Microsoft.Orleans.Core.Abstractions": "10.3.1",
           "Microsoft.Orleans.Runtime": "10.3.1",
           "Microsoft.Orleans.Sdk": "10.3.1",
+          "Newtonsoft.Json": "13.0.4",
+          "Polly": "8.6.4",
+          "Polly.Extensions": "8.6.5",
+          "System.IO.Hashing": "10.0.3",
+          "System.Memory.Data": "10.0.3"
+        }
+      },
+      "Microsoft.Orleans.Runtime": {
+        "type": "CentralTransitive",
+        "requested": "[10.3.1, )",
+        "resolved": "10.3.1",
+        "contentHash": "kmQEiKJ/y1BkE4LZzZr9yRqHjwxqIJ7W0UmNe9yBe+A8VkJ1yyvDxYwopb50CRBTSeBzIaa7oJYbvJAt5J2oaA==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
+          "Microsoft.CodeAnalysis.Common": "5.0.0",
+          "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
+          "Microsoft.Extensions.DependencyModel": "10.0.5",
+          "Microsoft.Orleans.Core": "10.3.1",
           "Newtonsoft.Json": "13.0.4",
           "Polly": "8.6.4",
           "Polly.Extensions": "8.6.5",

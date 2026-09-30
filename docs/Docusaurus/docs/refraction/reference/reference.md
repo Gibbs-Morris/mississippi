@@ -41,5 +41,8 @@ Use this page as the current reference boundary for what Refraction owns and whi
 
 ## Next Steps
 
+- Read [Scoped Refraction Themes](./themes.md) for theme modes and branding hooks.
+- Read [InputField](./input-field.md) for input identity, native attributes, and callback behavior.
+- Read [ProgressArc](./progress-arc.md) for completion, unknown duration, and motion behavior.
 - Read [Refraction Concepts](../concepts/concepts.md).
 - Use [Refraction Troubleshooting](../troubleshooting/troubleshooting.md) if you are still deciding whether the problem belongs here.

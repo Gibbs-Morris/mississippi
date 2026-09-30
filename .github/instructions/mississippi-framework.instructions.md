@@ -33,6 +33,7 @@ Governing thought: Build applications using the Mississippi framework with sourc
 
 ### Solution Structure
 
+- Orleans runtime hosts **MUST** compose Brooks through `silo.UseMississippi(runtime => runtime.AddEventSourcing(...))` using `RuntimeBuilder` from `Mississippi.Hosting.Runtime`. Why: The runtime builder unites Brooks service and option registration and validates terminal attachment.
 - New sample applications in this repository **MUST** follow the four-project structure: Runtime host (running in an Orleans silo), ASP.NET Gateway, Blazor WebAssembly Client, and Domain (see Scope and Audience). Why: Separates concerns and enables source generation.
 - An Aspire AppHost project **SHOULD** be included for local development orchestration. Why: Simplifies emulator setup for Cosmos, Azure Storage, and Orleans.
 - Runtime and Gateway host projects **MUST** contain only configuration, options, dependency wiring, and framework registration—not domain logic. Why: Keeps host projects thin.
@@ -41,6 +42,7 @@ Governing thought: Build applications using the Mississippi framework with sourc
 
 ### State Management (Reservoir)
 
+- Full Mississippi WebAssembly clients **MUST** compose features inside one `builder.UseMississippi(client => ...)` callback using `ClientBuilder` from `Mississippi.Hosting.Client`. Why: Terminal attachment validates the composition before committing its registrations; the client and nested builders cannot be configured after attachment.
 - All client-side domain and business state **MUST** be managed via the Reservoir store using actions and reducers; ephemeral UI state (e.g., hover, focus, temporary form input) **MAY** remain component-local. Why: Enforces predictable Redux/Flux-style state management for state that matters while allowing practical UI patterns. See `.github/instructions/blazor-ux-guidelines.instructions.md`.
 - Contributors **SHOULD** review how Reservoir is implemented in `src/Reservoir/` before building features. Why: Understanding the store pattern ensures correct usage.
 - Dispatching actions and obtaining feature state **MUST** go through the store; ad-hoc or component-local state management **MUST NOT** be used for domain state. Why: Prevents scattered state that cannot be inspected or replayed.
@@ -85,7 +87,7 @@ Governing thought: Build applications using the Mississippi framework with sourc
 ### Domain Modeling (Aggregates)
 
 - Contributors **SHOULD** review `samples/Spring/Spring.Domain/` to understand the domain modeling approach in detail. Why: Spring serves as the reference implementation.
-- Aggregates, commands, and events **MUST** be `internal sealed record` types with `[GenerateSerializer]` and `[Id(n)]` on each property; see `.github/instructions/domain-modeling.instructions.md` and Framework Attributes Reference for Orleans serialization requirements. Why: Ensures correct Orleans serialization and visibility.
+- Aggregates, commands, and events **MUST** be `sealed record` types with `[GenerateSerializer]` and `[Id(n)]` on each serialized property. Events **MUST** remain internal. Aggregate and command visibility **MUST** follow the [domain record visibility rule](domain-modeling.instructions.md#domain-record-visibility): internal by default, public where generated public signatures or exported-type discovery require it. See Framework Attributes Reference for serialization requirements. Why: Keeps sample guidance consistent with the actual generated API and discovery boundaries.
 - Aggregates **MUST** define commands, and command handlers **MUST** validate business logic before raising events. Why: Enforces invariants.
 - Aggregates **MUST** use `[BrookName]`, `[SnapshotStorageName]`, `[GenerateSerializer]`, and `[Alias]` attributes. Aggregates exposed via API **MUST** also use `[GenerateAggregateEndpoints]` (see Framework Attributes Reference). Why: Enables event sourcing and stable serialization; endpoint generation is conditional on API exposure.
 - Commands exposed to the UX **MUST** be annotated with `[GenerateCommand(Route = "...")]`. Why: Triggers endpoint and action generation.
@@ -159,6 +161,7 @@ Contributors **SHOULD** review all custom attributes under `src/` (particularly 
 |-----------|---------|-------------|------------|
 | `[BrookName]` | Identifies the event stream via hierarchical name `(APP, MODULE, NAME)` | Required on all aggregates and projections that share an event stream | Event stream alignment; projections and aggregates with matching brook names share events; names are immutable once deployed—use uppercase alphanumeric segments (see `.github/instructions/storage-type-naming.instructions.md`) |
 | `[SnapshotStorageName]` | Stable snapshot storage identity with versioning `(APP, MODULE, NAME, version)` | Required on aggregates and projections to persist state | Snapshot naming and storage; version enables schema evolution; names are immutable once deployed |
+| `[SnapshotRetention]` | Sets the checkpoint retention modulus for a state type | Optional on snapshot-enabled aggregates and projections; omit it to use a configured override or fallback | Stable storage-name and CLR type-name overrides take precedence, then this attribute, then the global default (50 unless configured); the modulus must be positive |
 | `[EventStorageName]` | Stable event storage identity with versioning `(APP, MODULE, NAME, version)` | Required on all event types | Event versioning; enables safe refactoring without breaking stored events; names are immutable once deployed |
 | `[GenerateAggregateEndpoints]` | Generates runtime registration, gateway controller, and client feature code | Required on aggregate records exposed via API | Endpoint generation; creates `Add{Aggregate}()` extension methods |
 | `[GenerateProjectionEndpoints]` | Generates read-only GET endpoint and SignalR subscription code | Required on projections exposed to clients | Endpoint generation; creates projection controller and client subscription |

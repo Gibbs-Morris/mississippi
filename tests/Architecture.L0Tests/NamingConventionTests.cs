@@ -116,6 +116,8 @@ public sealed class NamingConventionTests : ArchitectureTestBase
             .That()
             .ResideInNamespaceMatching(@"Mississippi\..*")
             .And()
+            .DoNotResideInNamespaceMatching(@"__Blazor\..*") // Blazor-generated namespaces are compiler output.
+            .And()
             .DoNotResideInNamespaceMatching(@"OrleansCodeGen\..*") // Exclude Orleans generated code
             .Should()
             .NotResideInNamespaceMatching(
@@ -162,6 +164,8 @@ public sealed class NamingConventionTests : ArchitectureTestBase
         IArchRule rule = Types()
             .That()
             .ResideInNamespaceMatching(@"Mississippi\..*")
+            .And()
+            .DoNotResideInNamespaceMatching(@"__Blazor\..*") // Blazor-generated namespaces are compiler output.
             .And()
             .DoNotResideInNamespaceMatching(@"OrleansCodeGen\..*") // Exclude Orleans generated code
             .Should()

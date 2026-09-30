@@ -338,16 +338,11 @@ public sealed class CommandClientActionsGenerator : IIncrementalGenerator
     {
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<List<CommandInfo>> commandsProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) => GetCommandsFromCompilation(source.Compilation, source.Options));
+        IncrementalValueProvider<List<CommandInfo>> commandsProvider =
+            compilationAndOptions.Select((source, _) => GetCommandsFromCompilation(source.Compilation, source.Options));
         context.RegisterSourceOutput(
             commandsProvider,
-            static (
-                spc,
-                commands
-            ) =>
+            static (spc, commands) =>
             {
                 // Generate per-command actions
                 foreach (CommandInfo command in commands)

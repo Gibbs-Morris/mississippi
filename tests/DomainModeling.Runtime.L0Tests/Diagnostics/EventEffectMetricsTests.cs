@@ -23,10 +23,7 @@ public sealed class EventEffectMetricsTests : IDisposable
     public EventEffectMetricsTests()
     {
         listener = new();
-        listener.InstrumentPublished = (
-            instrument,
-            meterListener
-        ) =>
+        listener.InstrumentPublished = (instrument, meterListener) =>
         {
             if (instrument.Meter.Name == EventEffectMetrics.MeterName)
             {

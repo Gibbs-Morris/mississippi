@@ -1,18 +1,23 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Common.Runtime.Storage.Abstractions.Retry;
 using Mississippi.Common.Runtime.Storage.Cosmos.Retry;
+using Mississippi.Hosting.Abstractions;
+using Mississippi.Hosting.Runtime.Abstractions;
 using Mississippi.Tributary.Abstractions;
 using Mississippi.Tributary.Runtime.Storage.Abstractions;
 using Mississippi.Tributary.Runtime.Storage.Cosmos.Mapping;
@@ -22,21 +27,106 @@ using Mississippi.Tributary.Runtime.Storage.Cosmos.Storage;
 namespace Mississippi.Tributary.Runtime.Storage.Cosmos;
 
 /// <summary>
-///     Extension methods for registering Cosmos snapshot storage provider services.
+///     Extension methods for composing Cosmos DB snapshot storage with the runtime builder.
 /// </summary>
 public static class SnapshotStorageProviderRegistrations
 {
+    private static ConditionalWeakTable<IRuntimeBuilder, object> Registrations { get; } = new();
+
     /// <summary>
-    ///     Registers Cosmos snapshot storage provider services using an externally provided <see cref="CosmosClient" /> and
-    ///     previously configured <see cref="SnapshotStorageOptions" />; ensures the container initializer runs at startup.
+    ///     Queues Cosmos DB snapshot storage using a host-owned keyed Cosmos client.
     /// </summary>
-    /// <param name="services">The service collection to update.</param>
-    /// <returns>The updated service collection.</returns>
-    public static IServiceCollection AddCosmosSnapshotStorageProvider(
-        this IServiceCollection services
+    /// <param name="builder">The runtime composition builder.</param>
+    /// <param name="configure">Optional configuration of the nested Cosmos storage scope.</param>
+    /// <returns>The runtime builder for chaining.</returns>
+    /// <remarks>
+    ///     The host must provide a keyed <see cref="CosmosClient" /> using the final
+    ///     <see cref="CosmosSnapshotStorageBuilder.CosmosClientServiceKey" />.
+    /// </remarks>
+    public static IRuntimeBuilder AddCosmosSnapshotStorageProvider(
+        this IRuntimeBuilder builder,
+        Action<CosmosSnapshotStorageBuilder>? configure = null
+    ) =>
+        AddCore(builder, configure, null, null);
+
+    /// <summary>
+    ///     Queues Cosmos DB snapshot storage with a lazily-created keyed Cosmos client.
+    /// </summary>
+    /// <param name="builder">The runtime composition builder.</param>
+    /// <param name="cosmosConnectionString">The Cosmos DB connection string.</param>
+    /// <param name="configure">Optional configuration of the nested Cosmos storage scope.</param>
+    /// <returns>The runtime builder for chaining.</returns>
+    public static IRuntimeBuilder AddCosmosSnapshotStorageProvider(
+        this IRuntimeBuilder builder,
+        string cosmosConnectionString,
+        Action<CosmosSnapshotStorageBuilder>? configure = null
     )
     {
-        // Register container operations abstraction (single point of Cosmos SDK contact)
+        ArgumentException.ThrowIfNullOrWhiteSpace(cosmosConnectionString);
+        return AddCore(builder, configure, null, cosmosConnectionString);
+    }
+
+    /// <summary>
+    ///     Queues Cosmos DB snapshot storage using a host-owned keyed Cosmos client and configuration binding.
+    /// </summary>
+    /// <param name="builder">The runtime composition builder.</param>
+    /// <param name="configuration">The configuration containing SnapshotStorageOptions property names.</param>
+    /// <returns>The runtime builder for chaining.</returns>
+    /// <remarks>
+    ///     The host must provide a keyed <see cref="CosmosClient" /> using the final configured client key.
+    /// </remarks>
+    public static IRuntimeBuilder AddCosmosSnapshotStorageProvider(
+        this IRuntimeBuilder builder,
+        IConfiguration configuration
+    )
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+        return AddCore(builder, null, configuration, null);
+    }
+
+    /// <summary>
+    ///     Queues Cosmos DB snapshot storage with a lazily-created keyed Cosmos client and configuration binding.
+    /// </summary>
+    /// <param name="builder">The runtime composition builder.</param>
+    /// <param name="cosmosConnectionString">The Cosmos DB connection string.</param>
+    /// <param name="configuration">The configuration containing SnapshotStorageOptions property names.</param>
+    /// <returns>The runtime builder for chaining.</returns>
+    public static IRuntimeBuilder AddCosmosSnapshotStorageProvider(
+        this IRuntimeBuilder builder,
+        string cosmosConnectionString,
+        IConfiguration configuration
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(cosmosConnectionString);
+        ArgumentNullException.ThrowIfNull(configuration);
+        return AddCore(builder, null, configuration, cosmosConnectionString);
+    }
+
+    /// <summary>
+    ///     Registers the validated Snapshot Cosmos graph into the staged silo services.
+    /// </summary>
+    /// <param name="services">The staged service collection.</param>
+    /// <param name="snapshot">The final validated options snapshot.</param>
+    /// <param name="cosmosConnectionString">The optional owned Cosmos connection string.</param>
+    internal static void RegisterCore(
+        IServiceCollection services,
+        SnapshotStorageOptions snapshot,
+        string? cosmosConnectionString
+    )
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(snapshot);
+        if (cosmosConnectionString is not null)
+        {
+            services.AddKeyedSingleton<CosmosClient>(
+                snapshot.CosmosClientServiceKey,
+                (_, _) => new(cosmosConnectionString));
+        }
+
+        services.AddOptions<SnapshotStorageOptions>()
+            .Configure(options => CopyOptions(snapshot, options))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<SnapshotStorageOptions>, SnapshotStorageOptionsValidator>();
         services.AddSingleton<ISnapshotContainerOperations, SnapshotContainerOperations>();
         services.AddSingleton<ISnapshotCosmosRepository, SnapshotCosmosRepository>();
         services.AddSingleton<IRetryPolicy, CosmosRetryPolicy>();
@@ -45,88 +135,112 @@ public static class SnapshotStorageProviderRegistrations
         services.AddMapper<SnapshotWriteModel, SnapshotStorageModel, SnapshotWriteModelToStorageMapper>();
         services.AddMapper<SnapshotStorageModel, SnapshotDocument, SnapshotStorageToDocumentMapper>();
         services.AddMapper<SnapshotDocument, SnapshotEnvelope, SnapshotDocumentToEnvelopeMapper>();
-        services.RegisterSnapshotStorageProvider<SnapshotStorageProvider>();
 
-        // Ensure container exists asynchronously on host start
+        // Preserve the default provider registration and mirror the effective descriptor lifetime for its aliases.
+        services.TryAddSingleton<ISnapshotStorageProvider, SnapshotStorageProvider>();
+        ServiceDescriptor providerDescriptor = GetEffectiveProviderDescriptor(services);
+        services.Add(
+            ServiceDescriptor.Describe(
+                typeof(ISnapshotStorageReader),
+                provider => provider.GetRequiredService<ISnapshotStorageProvider>(),
+                providerDescriptor.Lifetime));
+        services.Add(
+            ServiceDescriptor.Describe(
+                typeof(ISnapshotStorageWriter),
+                provider => provider.GetRequiredService<ISnapshotStorageProvider>(),
+                providerDescriptor.Lifetime));
         services.AddHostedService<CosmosContainerInitializer>();
-
-        // Provide container handle using keyed services to avoid conflicts with other Cosmos providers
-        // Uses CosmosClientServiceKey from options (defaults to SnapshotCosmosDefaults.CosmosClientServiceKey)
         services.AddKeyedSingleton<Container>(
             SnapshotCosmosDefaults.CosmosContainerServiceKey,
-            (
-                provider,
-                _
-            ) =>
+            (provider, _) =>
             {
                 SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;
                 CosmosClient client = provider.GetRequiredKeyedService<CosmosClient>(options.CosmosClientServiceKey);
                 Database database = client.GetDatabase(options.DatabaseId);
                 return database.GetContainer(options.ContainerId);
             });
-        return services;
     }
 
-    /// <summary>
-    ///     Creates a keyed <see cref="CosmosClient" /> from the supplied connection string and registers the Cosmos snapshot
-    ///     storage
-    ///     provider.
-    /// </summary>
-    /// <param name="services">The service collection to update.</param>
-    /// <param name="cosmosConnectionString">Cosmos connection string used for client creation.</param>
-    /// <param name="configureOptions">Optional options configuration applied during registration.</param>
-    /// <returns>The service collection configured with a keyed Cosmos client.</returns>
-    public static IServiceCollection AddCosmosSnapshotStorageProvider(
-        this IServiceCollection services,
-        string cosmosConnectionString,
-        Action<SnapshotStorageOptions>? configureOptions = null
+    private static IRuntimeBuilder AddCore(
+        IRuntimeBuilder builder,
+        Action<CosmosSnapshotStorageBuilder>? configure,
+        IConfiguration? configuration,
+        string? cosmosConnectionString
     )
     {
-        // Register keyed CosmosClient for Snapshots storage
-        services.AddKeyedSingleton<CosmosClient>(
-            SnapshotCosmosDefaults.CosmosClientServiceKey,
-            (
-                _,
-                _
-            ) => new(cosmosConnectionString));
-        if (configureOptions != null)
+        ArgumentNullException.ThrowIfNull(builder);
+        IReadOnlyList<BuilderDiagnostic> diagnostics = builder.Validate();
+        if (diagnostics.Count > 0)
         {
-            services.Configure(configureOptions);
+            throw new BuilderValidationException(diagnostics);
         }
 
-        return services.AddCosmosSnapshotStorageProvider();
+        if (!Registrations.TryAdd(builder, new()))
+        {
+            throw new BuilderValidationException(
+            [
+                new(
+                    SnapshotStorageBuilderDiagnosticCodes.DuplicateComposition,
+                    "Cosmos Snapshot storage has already been configured for this runtime.",
+                    "Combine Snapshot Cosmos settings in one AddCosmosSnapshotStorageProvider(...) callback."),
+            ]);
+        }
+
+        try
+        {
+            builder.ConfigureSilo(silo =>
+            {
+                CosmosSnapshotStorageBuilder snapshot = new(cosmosConnectionString);
+                try
+                {
+                    if (configuration is not null)
+                    {
+                        snapshot.Bind(configuration);
+                    }
+
+                    configure?.Invoke(snapshot);
+                    snapshot.Apply(silo);
+                }
+                finally
+                {
+                    snapshot.Close();
+                }
+            });
+            return builder;
+        }
+        catch
+        {
+            Registrations.Remove(builder);
+            throw;
+        }
     }
 
-    /// <summary>
-    ///     Applies the provided options configuration delegate and registers the Cosmos snapshot storage provider using an
-    ///     existing <see cref="CosmosClient" /> in DI.
-    /// </summary>
-    /// <param name="services">The service collection to update.</param>
-    /// <param name="configureOptions">Options configuration action applied before registration.</param>
-    /// <returns>The service collection with configured snapshot storage options.</returns>
-    public static IServiceCollection AddCosmosSnapshotStorageProvider(
-        this IServiceCollection services,
-        Action<SnapshotStorageOptions> configureOptions
+    private static void CopyOptions(
+        SnapshotStorageOptions source,
+        SnapshotStorageOptions target
     )
     {
-        services.Configure(configureOptions);
-        return services.AddCosmosSnapshotStorageProvider();
+        target.ContainerId = source.ContainerId;
+        target.CosmosClientServiceKey = source.CosmosClientServiceKey;
+        target.DatabaseId = source.DatabaseId;
+        target.QueryBatchSize = source.QueryBatchSize;
     }
 
-    /// <summary>
-    ///     Binds <see cref="SnapshotStorageOptions" /> from configuration and registers the Cosmos snapshot storage provider
-    ///     that relies on an external <see cref="CosmosClient" />.
-    /// </summary>
-    /// <param name="services">The service collection to update.</param>
-    /// <param name="configuration">Configuration section containing snapshot storage settings.</param>
-    /// <returns>The service collection with bound snapshot storage options.</returns>
-    public static IServiceCollection AddCosmosSnapshotStorageProvider(
-        this IServiceCollection services,
-        IConfiguration configuration
+    private static ServiceDescriptor GetEffectiveProviderDescriptor(
+        IServiceCollection services
     )
     {
-        services.Configure<SnapshotStorageOptions>(configuration);
-        return services.AddCosmosSnapshotStorageProvider();
+        for (int index = services.Count - 1; index >= 0; index--)
+        {
+            ServiceDescriptor descriptor = services[index];
+            if ((descriptor.ServiceType == typeof(ISnapshotStorageProvider)) && !descriptor.IsKeyedService)
+            {
+                return descriptor;
+            }
+        }
+
+        throw new InvalidOperationException(
+            "The unkeyed ISnapshotStorageProvider descriptor was not registered before its aliases.");
     }
 
     private sealed class CosmosContainerInitializer : IHostedService

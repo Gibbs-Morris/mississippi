@@ -10,7 +10,9 @@ param(
 
     [string]$SourceProject,
 
-    [switch]$NoBuild
+    [switch]$NoBuild,
+
+    [string]$LeaseDirectory
 )
 
 Set-StrictMode -Version Latest
@@ -52,6 +54,12 @@ function Resolve-SourceProjectPathFromTest {
 
     [xml]$proj = Get-Content -LiteralPath $TestProjectPath
     $dir = Split-Path -Parent $TestProjectPath
+    # An explicit project-relative target also works when no direct references exist.
+    $configuredSource = $proj.SelectSingleNode('//Project/PropertyGroup/MutationSourceProject')
+    if ($configuredSource -and -not [string]::IsNullOrWhiteSpace($configuredSource.InnerText)) {
+        return (Resolve-Path -LiteralPath (Join-Path $dir $configuredSource.InnerText.Trim()) -ErrorAction Stop).Path
+    }
+
     $projectRefs = @()
     # Use XPath to robustly locate all <ProjectReference> elements regardless of ItemGroup layout
     $nodes = $proj.SelectNodes('//Project/ItemGroup/ProjectReference')
@@ -179,19 +187,85 @@ Write-Host ""
 
 $testFailed = $false
 $mutationFailed = $false
+$trx = $null
+$cobertura = $null
+$trxSummary = $null
 Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
+$executionLease = $null
+$evidenceRun = $null
 
 try {
+    Write-Host "[1/7] Resolving test project path..." -ForegroundColor Cyan
+    $testProjectPath = Resolve-TestProjectPath -InputValue $TestProject
+    $testProjectName = [IO.Path]::GetFileNameWithoutExtension($testProjectPath)
+    $repoRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $testProjectPath)
+    $relativeTestProjectPath = [System.IO.Path]::GetRelativePath($repoRoot, $testProjectPath)
+    if ([System.IO.Path]::IsPathRooted($relativeTestProjectPath) -or $relativeTestProjectPath -match '^\.\.([\\/]|$)') {
+        throw "Test project '$testProjectPath' is outside repository root '$repoRoot'."
+    }
+    $relativeSourceProjectPath = $null
+    if (-not [string]::IsNullOrWhiteSpace($SourceProject)) {
+        $resolvedSourceProjectPath = (Resolve-Path -LiteralPath $SourceProject -ErrorAction Stop).Path
+        $relativeSourceProjectPath = [System.IO.Path]::GetRelativePath($repoRoot, $resolvedSourceProjectPath)
+        if ([System.IO.Path]::IsPathRooted($relativeSourceProjectPath) -or $relativeSourceProjectPath -match '^\.\.([\\/]|$)') {
+            throw "Source project '$SourceProject' is outside repository root '$repoRoot'."
+        }
+    }
+    Write-Host "Resolved test project: $testProjectName -> $testProjectPath" -ForegroundColor Green
+
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "quality-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $repoRoot = $executionLease.RepositoryRoot
+    $testProjectPath = Join-Path $executionLease.RepositoryRoot $relativeTestProjectPath
+    if (-not (Test-Path -LiteralPath $testProjectPath -PathType Leaf)) {
+        throw "Test project '$testProjectPath' was not found beneath the leased repository root."
+    }
+    $testProjectName = [IO.Path]::GetFileNameWithoutExtension($testProjectPath)
+    if ($null -ne $relativeSourceProjectPath) { $SourceProject = Join-Path $executionLease.RepositoryRoot $relativeSourceProjectPath }
+    $evidenceInputPaths = [System.Collections.Generic.List[string]]::new()
+    $evidenceProjectPaths = [System.Collections.Generic.List[string]]::new()
+    $projectQueue = [System.Collections.Generic.Queue[string]]::new()
+    $visitedProjects = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $projectQueue.Enqueue($testProjectPath)
+    if (-not [string]::IsNullOrWhiteSpace($SourceProject)) { $projectQueue.Enqueue($SourceProject) }
+    while ($projectQueue.Count -gt 0) {
+        $projectPath = $projectQueue.Dequeue()
+        if (-not $visitedProjects.Add($projectPath)) { continue }
+        $evidenceProjectPaths.Add($projectPath)
+        try {
+            [xml]$projectXml = Get-Content -LiteralPath $projectPath -Raw
+            foreach ($reference in @($projectXml.Project.ItemGroup.ProjectReference)) {
+                if ($null -ne $reference.Include) {
+                    $referencePath = (Resolve-Path -LiteralPath (Join-Path (Split-Path -Parent $projectPath) ([string]$reference.Include)) -ErrorAction Stop).Path
+                    $projectQueue.Enqueue($referencePath)
+                }
+            }
+        }
+        catch { Write-Verbose "Unable to enumerate focused project references for '$projectPath': $($_.Exception.Message)" }
+    }
+    $sharedInputNames = @('Directory.Build.props', 'Directory.Build.targets', 'Directory.Packages.props', 'global.json', 'NuGet.config', 'nuget.config', 'testconfig.json')
+    $ancestorDirectory = Split-Path -Parent $testProjectPath
+    while ($ancestorDirectory -and $ancestorDirectory.StartsWith($repoRoot, [StringComparison]::OrdinalIgnoreCase)) {
+        foreach ($sharedInputName in $sharedInputNames) {
+            $sharedInputPath = Join-Path $ancestorDirectory $sharedInputName
+            if (Test-Path -LiteralPath $sharedInputPath -PathType Leaf) { $evidenceInputPaths.Add($sharedInputPath) }
+        }
+        $parentDirectory = Split-Path -Parent $ancestorDirectory
+        if ($parentDirectory -eq $ancestorDirectory) { break }
+        $ancestorDirectory = $parentDirectory
+    }
+    foreach ($projectPath in @($evidenceProjectPaths | Select-Object -Unique)) {
+        $projectDirectory = Split-Path -Parent $projectPath
+        $relativeDirectory = [System.IO.Path]::GetRelativePath($repoRoot, $projectDirectory).Replace('\', '/')
+        $projectFiles = @(& git -c "safe.directory=$($repoRoot.Replace('\', '/'))" -C $repoRoot ls-files --cached --others --exclude-standard -- "$relativeDirectory/" 2>$null)
+        foreach ($projectFile in $projectFiles) { $evidenceInputPaths.Add((Join-Path $repoRoot ([string]$projectFile))) }
+    }
+    if ($evidenceInputPaths.Count -eq 0) { $evidenceInputPaths.Add($testProjectPath) }
+    $evidenceRun = New-ValidationEvidenceRun -RepositoryRoot $repoRoot -Scope "focused-quality:$TestProject" -InputPath @($evidenceInputPaths) -Arguments @('Configuration', $Configuration, 'SkipMutation', [string]$SkipMutation, 'NoBuild', [string]$NoBuild)
     if (Test-Path ".config/dotnet-tools.json") {
-        Write-Host "[1/7] Restoring dotnet tools..." -ForegroundColor Cyan
+        Write-Host "[2/7] Restoring dotnet tools..." -ForegroundColor Cyan
         dotnet tool restore
         if ($LASTEXITCODE -ne 0) { throw "Failed to restore dotnet tools" }
     }
-
-    Write-Host "[2/7] Resolving test project path..." -ForegroundColor Cyan
-    $testProjectPath = Resolve-TestProjectPath -InputValue $TestProject
-    $testProjectName = [IO.Path]::GetFileNameWithoutExtension($testProjectPath)
-    Write-Host "Resolved test project: $testProjectName -> $testProjectPath" -ForegroundColor Green
 
     $scratchpadRoot = Join-Path (Get-Location) ".scratchpad"
     $resultsRoot = Join-Path $scratchpadRoot "coverage-test-results"
@@ -296,9 +370,23 @@ try {
     if ($null -ne $coveragePercent) { Write-Host ("COVERAGE: {0}%" -f $coveragePercent) } else { Write-Host "COVERAGE: N/A" }
     }
 
-    if ($testFailed -or ($mutationFailed -and -not $SkipMutation)) { exit 1 } else { exit 0 }
+    $finalStatus = if ($testFailed -or ($mutationFailed -and -not $SkipMutation)) { 'FAIL' } else { 'PASS' }
+    $evidenceArtifacts = [System.Collections.Generic.List[string]]::new()
+    if ($null -ne $trx) { $evidenceArtifacts.Add($trx.FullName) }
+    if ($null -ne $cobertura) { $evidenceArtifacts.Add($cobertura.FullName) }
+    if (-not $SkipMutation -and $null -ne $mutationJson) { $evidenceArtifacts.Add($mutationJson.FullName) }
+    $executed = $null -ne $trxSummary -and [int]$trxSummary.Executed -gt 0
+    Complete-ValidationEvidenceRun -Run $evidenceRun -Status $finalStatus -Phase 'complete' -Executed $executed -TestCount $(if ($executed) { [int]$trxSummary.Executed } else { 0 }) -ExitCode $(if ($finalStatus -eq 'PASS') { 0 } else { 1 }) -ArtifactPath @($evidenceArtifacts) | Out-Null
+    if ($finalStatus -eq 'FAIL') { exit 1 } else { exit 0 }
 }
 catch {
+    if ($null -ne $evidenceRun) {
+        $failureArtifacts = [System.Collections.Generic.List[string]]::new()
+        if ($null -ne $trx) { $failureArtifacts.Add($trx.FullName) }
+        if ($null -ne $cobertura) { $failureArtifacts.Add($cobertura.FullName) }
+        $executed = $null -ne $trxSummary -and [int]$trxSummary.Executed -gt 0
+        Complete-ValidationEvidenceRun -Run $evidenceRun -Status FAIL -Phase 'error' -Executed $executed -TestCount $(if ($executed) { [int]$trxSummary.Executed } else { 0 }) -ExitCode 1 -ArtifactPath @($failureArtifacts) -ErrorMessage $_.Exception.Message | Out-Null
+    }
     Write-Error "ERROR: $_"
     # Attempt to still print what we have for easier parsing
     try {
@@ -307,5 +395,6 @@ catch {
     } catch {}
     exit 1
 }
-
-
+finally {
+    if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
+}

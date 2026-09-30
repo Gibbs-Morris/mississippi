@@ -1,4 +1,359 @@
+#!/usr/bin/env pwsh
+
 Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
+$activeRepositoryExecutionLeases = [System.Collections.Concurrent.ConcurrentDictionary[string, bool]]::new()
+$sharedExecutionLeaseStreamStates = @{}
+$sharedExecutionLeaseStreamGate = [object]::new()
+$sharedExecutionLeaseDirectoryMode = 365 # 0555
+$sharedExecutionLeaseWritableDirectoryMode = 493 # 0755
+$sharedExecutionLeaseFileMode = 438 # 0666
+$privateExecutionLeaseDirectoryMode = 448 # 0700
+$privateExecutionLeaseFileMode = 384 # 0600
+$coordinationTypeName = 'Mississippi.RepositoryExecutionLeaseCoordination'
+if ($null -eq ($coordinationTypeName -as [type])) {
+    try {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.Threading;
+
+namespace Mississippi
+{
+    public static class RepositoryExecutionLeaseCoordination
+    {
+        private sealed class Entry
+        {
+            public readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
+            public int References;
+        }
+
+        private static readonly object Gate = new object();
+        private static readonly Dictionary<string, Entry> Entries = new Dictionary<string, Entry>(StringComparer.Ordinal);
+
+        public static SemaphoreSlim Acquire(string key)
+        {
+            lock (Gate)
+            {
+                Entry entry;
+                if (!Entries.TryGetValue(key, out entry))
+                {
+                    entry = new Entry();
+                    Entries.Add(key, entry);
+                }
+                entry.References++;
+                return entry.Semaphore;
+            }
+        }
+
+        public static void Release(string key, SemaphoreSlim semaphore, bool acquired)
+        {
+            lock (Gate)
+            {
+                if (acquired) semaphore.Release();
+                Entry entry;
+                if (!Entries.TryGetValue(key, out entry) || !ReferenceEquals(entry.Semaphore, semaphore)) return;
+                entry.References--;
+                if (entry.References == 0)
+                {
+                    Entries.Remove(key);
+                    semaphore.Dispose();
+                }
+            }
+        }
+    }
+}
+'@ -ErrorAction Stop
+    }
+    catch {
+        if ($null -eq ($coordinationTypeName -as [type])) { throw }
+    }
+}
+$outputTypeName = 'Mississippi.BoundedProcessOutput'
+if ($null -eq ($outputTypeName -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+
+namespace Mississippi
+{
+    public sealed class BoundedProcessOutput
+    {
+        private readonly ConcurrentQueue<string> Lines = new ConcurrentQueue<string>();
+        private readonly int MaxLines;
+        private readonly int MaxLineLength;
+
+        public BoundedProcessOutput(int maxLines, int maxLineLength)
+        {
+            MaxLines = maxLines;
+            MaxLineLength = maxLineLength;
+        }
+
+        public bool Closed { get; private set; }
+        public bool Truncated { get; private set; }
+        public DataReceivedEventHandler Handler { get { return OnData; } }
+        public string Text { get { return string.Join(Environment.NewLine, Lines.ToArray()).TrimEnd('\r', '\n'); } }
+
+        private void OnData(object sender, DataReceivedEventArgs args)
+        {
+            if (args.Data == null)
+            {
+                Closed = true;
+                return;
+            }
+            var line = args.Data;
+            if (line.Length > MaxLineLength)
+            {
+                line = line.Substring(0, MaxLineLength);
+                Truncated = true;
+            }
+            Lines.Enqueue(line);
+            while (Lines.Count > MaxLines)
+            {
+                string ignored;
+                Lines.TryDequeue(out ignored);
+                Truncated = true;
+            }
+        }
+    }
+}
+'@ -ErrorAction Stop
+}
+
+function Test-RepositoryExecutionLeaseSharedMode {
+    [CmdletBinding()]
+    param([string]$LeaseDirectory)
+
+    return $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true' -or -not [string]::IsNullOrWhiteSpace($LeaseDirectory)
+}
+
+function Register-RepositoryExecutionLeaseIdentity {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Identity)
+
+    if (-not $activeRepositoryExecutionLeases.TryAdd($Identity, $true)) {
+        throw "Repository execution lease is already held in this process for '$Identity'. Use -ExistingLease for supported reentrancy."
+    }
+}
+
+function Unregister-RepositoryExecutionLeaseIdentity {
+    [CmdletBinding()]
+    param([string]$Identity)
+
+    if (-not [string]::IsNullOrWhiteSpace($Identity)) {
+        $removed = $false
+        $activeRepositoryExecutionLeases.TryRemove($Identity, [ref]$removed) | Out-Null
+    }
+}
+
+function Acquire-SharedRepositoryExecutionLeaseStream {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    $key = (Get-Item -LiteralPath $Path -Force -ErrorAction Stop).FullName
+    if ($IsWindows) { $key = $key.ToLowerInvariant() }
+    [System.Threading.Monitor]::Enter($sharedExecutionLeaseStreamGate)
+    try {
+        if ($sharedExecutionLeaseStreamStates.ContainsKey($key)) {
+            $state = $sharedExecutionLeaseStreamStates[$key]
+            $state.RefCount++
+            return $state
+        }
+        $stream = [System.IO.FileStream]::new($Path, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+        $state = [pscustomobject]@{ Key = $key; Stream = $stream; RefCount = 1; Gate = [object]::new(); Locked = $false }
+        $sharedExecutionLeaseStreamStates[$key] = $state
+        return $state
+    }
+    finally {
+        [System.Threading.Monitor]::Exit($sharedExecutionLeaseStreamGate)
+    }
+}
+
+function Release-SharedRepositoryExecutionLeaseStream {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$State)
+
+    [System.Threading.Monitor]::Enter($sharedExecutionLeaseStreamGate)
+    try {
+        $State.RefCount--
+        if ($State.RefCount -le 0) {
+            try { $State.Stream.Dispose() }
+            finally { $sharedExecutionLeaseStreamStates.Remove($State.Key) }
+        }
+    }
+    finally {
+        [System.Threading.Monitor]::Exit($sharedExecutionLeaseStreamGate)
+    }
+}
+
+function Unlock-SharedRepositoryExecutionLeaseSlot {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$State,
+        [Parameter(Mandatory)][long]$Offset
+    )
+
+    [System.Threading.Monitor]::Enter($State.Gate)
+    try {
+        if ($State.Locked) {
+            $State.Stream.Unlock($Offset, 1)
+            $State.Locked = $false
+        }
+    }
+    finally {
+        [System.Threading.Monitor]::Exit($State.Gate)
+    }
+}
+
+function Get-RepositoryExecutionLeaseHash {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$CanonicalRepoRoot)
+
+    $keyRoot = Get-RepositoryExecutionLeaseIdentityKey -CanonicalRepoRoot $CanonicalRepoRoot
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($keyRoot)
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $hash = $sha256.ComputeHash($bytes)
+    }
+    finally {
+        $sha256.Dispose()
+    }
+    return ,$hash
+}
+
+function Get-RepositoryExecutionUnixIdentity {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    if ($IsWindows) { return $null }
+    $statCommand = Get-Command -Name stat -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($null -eq $statCommand) { return $null }
+    foreach ($arguments in @(@('-c', '%d:%i'), @('-f', '%d:%i'))) {
+        try {
+            $identity = (& $statCommand.Source @arguments -- $Path 2>$null | Out-String).Trim()
+            if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($identity)) { return $identity }
+        }
+        catch {
+            Write-Verbose "Unable to read Unix filesystem identity for '$Path' with stat dialect '$($arguments[0])': $($_.Exception.Message)"
+        }
+    }
+    return $null
+}
+
+function Get-RepositoryExecutionLeaseIdentityKey {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$CanonicalRepoRoot)
+
+    $identity = Get-RepositoryExecutionUnixIdentity -Path $CanonicalRepoRoot
+    if (-not [string]::IsNullOrWhiteSpace($identity)) { return "filesystem:$identity" }
+    if ((Get-RepositoryPathComparison -RepoRoot $CanonicalRepoRoot) -eq [System.StringComparison]::OrdinalIgnoreCase) {
+        return $CanonicalRepoRoot.ToLowerInvariant()
+    }
+    return $CanonicalRepoRoot
+}
+
+function Get-RepositoryExecutionLeaseFileIdentityKey {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    $identity = Get-RepositoryExecutionUnixIdentity -Path $Path
+    if (-not [string]::IsNullOrWhiteSpace($identity)) { return "filesystem-file:$identity" }
+    return [System.IO.Path]::GetFullPath($Path).ToLowerInvariant()
+}
+
+function New-RepositoryExecutionLeaseProcessSemaphore {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Identity)
+
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try { $hash = $sha256.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Identity)) }
+    finally { $sha256.Dispose() }
+    $key = ([System.BitConverter]::ToString($hash).Replace('-', '').ToLowerInvariant())
+    return [pscustomobject]@{
+        Key = $key
+        Semaphore = [Mississippi.RepositoryExecutionLeaseCoordination]::Acquire($key)
+        Acquired = $false
+    }
+}
+
+function Set-RepositoryExecutionLeaseUnixMode {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][int]$Mode
+    )
+
+    if ($IsWindows) { return }
+
+    try {
+        $method = [System.IO.File].GetMethods() |
+            Where-Object { $_.Name -eq 'SetUnixFileMode' -and $_.GetParameters().Count -eq 2 -and $_.GetParameters()[0].ParameterType -eq [string] } |
+            Select-Object -First 1
+        if ($null -ne $method) {
+            $modeValue = [Enum]::ToObject($method.GetParameters()[1].ParameterType, $Mode)
+            $method.Invoke($null, @($Path, $modeValue)) | Out-Null
+        }
+        else {
+            $modeText = switch ($Mode) {
+                365 { '555'; break }
+                438 { '666'; break }
+                448 { '700'; break }
+                384 { '600'; break }
+                default { [Convert]::ToString($Mode, 8) }
+            }
+            & chmod $modeText -- $Path 2>&1 | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "chmod exited with code $LASTEXITCODE" }
+        }
+    }
+    catch {
+        throw "Unable to set shared execution lease permissions on '$Path': $($_.Exception.Message)"
+    }
+
+    Test-RepositoryExecutionLeaseUnixMode -Path $Path -Mode $Mode
+}
+
+function Test-RepositoryExecutionLeaseUnixMode {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][int]$Mode
+    )
+
+    if ($IsWindows) { return }
+
+    try {
+        $method = [System.IO.File].GetMethods() |
+            Where-Object { $_.Name -eq 'GetUnixFileMode' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType -eq [string] } |
+            Select-Object -First 1
+        if ($null -ne $method) {
+            $actualMode = [int]$method.Invoke($null, @($Path))
+        }
+        else {
+            $modeText = (& stat -c '%a' -- $Path 2>$null | Out-String).Trim()
+            if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($modeText)) {
+                $modeText = (& stat -f '%Lp' -- $Path 2>$null | Out-String).Trim()
+            }
+            if ([string]::IsNullOrWhiteSpace($modeText) -or $LASTEXITCODE -ne 0) { throw 'No compatible Unix mode API or stat command was available.' }
+            $actualMode = [Convert]::ToInt32($modeText, 8)
+        }
+    }
+    catch {
+        throw "Unable to inspect shared execution lease permissions on '$Path': $($_.Exception.Message)"
+    }
+
+    if (([int]$actualMode -band [int]$Mode) -ne [int]$Mode) {
+        throw "Shared execution lease permissions on '$Path' are insufficient for all participating accounts."
+    }
+
+    $writeBits = 146 # 0222
+    if (($Mode -band $writeBits) -eq 0 -and ($actualMode -band $writeBits) -ne 0) {
+        throw "Shared execution lease path '$Path' must not be writable by participating accounts."
+    }
+}
+
+Import-Module (Join-Path $PSScriptRoot 'ValidationEvidence.psm1') -Force
 
 function Get-RepositoryRoot {
     [CmdletBinding()]
@@ -22,6 +377,839 @@ function Get-RepositoryRoot {
     }
 
     throw "Unable to locate repository root from '$StartPath'."
+}
+
+function Get-RepositoryPathComparison {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$RepoRoot)
+
+    if ($IsWindows) { return [System.StringComparison]::OrdinalIgnoreCase }
+    if (-not $IsMacOS) { return [System.StringComparison]::Ordinal }
+
+    $probeName = '.mississippi-case-probe-' + [guid]::NewGuid().ToString('N')
+    $probePath = Join-Path $RepoRoot $probeName
+    try {
+        New-Item -ItemType Directory -LiteralPath $probePath -Force -ErrorAction Stop | Out-Null
+        if (Test-Path -LiteralPath (Join-Path $RepoRoot $probeName.ToUpperInvariant())) {
+            return [System.StringComparison]::OrdinalIgnoreCase
+        }
+    }
+    catch {
+        Write-Verbose "Unable to prove case-insensitive path comparison for '$RepoRoot': $($_.Exception.Message)"
+    }
+    finally {
+        Remove-Item -LiteralPath $probePath -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    return [System.StringComparison]::Ordinal
+}
+
+function Assert-RepositoryExecutionLeaseDirectoryAncestors {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    $root = [System.IO.Path]::GetPathRoot($fullPath)
+    $segments = @($fullPath.Substring($root.Length).Split([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) | Where-Object { $_ })
+    $current = $root
+    foreach ($segment in $segments) {
+        $candidate = Join-Path $current $segment
+        if (-not (Test-Path -LiteralPath $candidate)) { break }
+        $item = Get-Item -LiteralPath $candidate -Force -ErrorAction Stop
+        if ([bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            throw "Lease directory path contains a reparse-point ancestor: '$candidate'."
+        }
+        $current = $item.FullName
+    }
+}
+
+function Resolve-RepositoryExecutionLeaseDirectory {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$CanonicalRepoRoot,
+        [string]$LeaseDirectory
+    )
+
+    $candidate = if ([string]::IsNullOrWhiteSpace($LeaseDirectory)) {
+        $userProfile = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+        if ([string]::IsNullOrWhiteSpace($userProfile) -or -not [System.IO.Path]::IsPathRooted($userProfile) -or -not (Test-Path -LiteralPath $userProfile -PathType Container)) {
+            throw "Unable to resolve the default repository execution lease directory because the user profile directory is unavailable. Specify -LeaseDirectory with an absolute path."
+        }
+        Join-Path $userProfile '.mississippi/execution-leases'
+    }
+    elseif ([System.IO.Path]::IsPathRooted($LeaseDirectory)) {
+        $LeaseDirectory
+    }
+    else {
+        Join-Path $CanonicalRepoRoot $LeaseDirectory
+    }
+    $candidate = [System.IO.Path]::GetFullPath($candidate)
+    $missingSegments = [System.Collections.Generic.List[string]]::new()
+    $existingPath = $candidate
+    while (-not (Test-Path -LiteralPath $existingPath)) {
+        $segment = Split-Path -Leaf $existingPath
+        if ([string]::IsNullOrWhiteSpace($segment)) { throw "Unable to resolve lease directory parent for '$candidate'." }
+        $missingSegments.Add($segment)
+        $parent = Split-Path -Parent $existingPath
+        if ([string]::IsNullOrWhiteSpace($parent) -or $parent -eq $existingPath) { throw "Unable to resolve lease directory parent for '$candidate'." }
+        $existingPath = $parent
+    }
+    $resolved = (Resolve-Path -LiteralPath $existingPath -ErrorAction Stop).Path
+    for ($index = $missingSegments.Count - 1; $index -ge 0; $index--) {
+        $resolved = Join-Path $resolved $missingSegments[$index]
+    }
+    return [System.IO.Path]::GetFullPath($resolved)
+}
+
+function Ensure-RepositoryExecutionLeaseDirectory {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $Path
+    if (Test-Path -LiteralPath $Path) {
+        $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+        if (-not $item.PSIsContainer -or [bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            throw "Lease directory is not a trusted private directory: '$Path'."
+        }
+        Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $Path
+        return $false
+    }
+
+    $parent = Split-Path -Parent $Path
+    if (-not (Test-Path -LiteralPath $parent -PathType Container)) {
+        New-Item -ItemType Directory -Path $parent -Force | Out-Null
+    }
+    try {
+        New-Item -ItemType Directory -Path $Path -ErrorAction Stop | Out-Null
+        Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $Path
+        return $true
+    }
+    catch {
+        if (Test-Path -LiteralPath $Path -PathType Container) {
+            $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+            if ([bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+                throw "Lease directory is not a trusted private directory: '$Path'."
+            }
+            Assert-RepositoryExecutionLeaseDirectoryAncestors -Path $Path
+            return $false
+        }
+        throw
+    }
+}
+
+function Wait-RepositoryExecutionLeaseInitialization {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$LeasePath,
+        [Parameter(Mandatory)][string]$MetadataPath
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds(5)
+    do {
+        if ((Test-Path -LiteralPath $LeasePath -PathType Leaf) -and (Test-Path -LiteralPath $MetadataPath -PathType Leaf)) {
+            try {
+                if ($IsWindows) {
+                    Test-RepositoryExecutionLeaseWindowsAccess -Path (Split-Path -Parent $LeasePath)
+                    Test-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath
+                    Test-RepositoryExecutionLeaseWindowsAccess -Path $MetadataPath
+                }
+                else {
+                    Test-RepositoryExecutionLeaseUnixMode -Path (Split-Path -Parent $LeasePath) -Mode $sharedExecutionLeaseDirectoryMode
+                    Test-RepositoryExecutionLeaseUnixMode -Path $LeasePath -Mode $sharedExecutionLeaseFileMode
+                    Test-RepositoryExecutionLeaseUnixMode -Path $MetadataPath -Mode $sharedExecutionLeaseFileMode
+                }
+                return $true
+            }
+            catch {
+                Write-Verbose "Shared lease initialization is visible but its permissions are not fully published yet: $($_.Exception.Message)"
+            }
+        }
+        Start-Sleep -Milliseconds 50
+    } while ([DateTime]::UtcNow -lt $deadline)
+    return $false
+}
+
+function Create-SharedRepositoryExecutionLeaseFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$LeaseDirectory,
+        [Parameter(Mandatory)][string]$LeasePath
+    )
+
+    $placeholder = [System.IO.FileStream]::new($LeasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+    try { $placeholder.SetLength(1); $placeholder.Flush($true) }
+    finally { $placeholder.Dispose() }
+    if (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $LeasePath -Mode $sharedExecutionLeaseFileMode }
+    if ($IsWindows) { Set-RepositoryExecutionLeaseWindowsAccess -Path $LeasePath }
+}
+
+function Initialize-SharedRepositoryExecutionLeasePath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$LeaseDirectory,
+        [Parameter(Mandatory)][string]$LeasePath,
+        [Parameter(Mandatory)][string]$MetadataPath,
+        [Parameter(Mandatory)][bool]$LeaseDirectoryCreated
+    )
+
+    if (-not $LeaseDirectoryCreated) {
+        $initialized = Wait-RepositoryExecutionLeaseInitialization -LeasePath $LeasePath -MetadataPath $MetadataPath
+        if (-not $initialized) {
+            throw "Shared lease directory '$LeaseDirectory' exists without its coordination file. Refusing to modify a caller-owned directory; pre-provision '$LeasePath' or use a new dedicated coordination directory."
+        }
+        return
+    }
+    Create-SharedRepositoryExecutionLeaseFile -LeaseDirectory $LeaseDirectory -LeasePath $LeasePath
+    Ensure-RepositoryExecutionLeaseMetadataFile -Path $MetadataPath -SharedLease $true
+    Set-RepositoryExecutionLeaseUnixMode -Path $LeaseDirectory -Mode $sharedExecutionLeaseDirectoryMode
+}
+
+function Get-RepositoryExecutionLeaseCandidatePath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$CanonicalRepoRoot,
+        [string]$LeaseDirectory
+    )
+
+    $hash = Get-RepositoryExecutionLeaseHash -CanonicalRepoRoot $CanonicalRepoRoot
+    $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
+    $fileName = if ($sharedLease) { 'shared.lease' } else { ([System.BitConverter]::ToString($hash).Replace('-', '').ToLowerInvariant()) + '.lease' }
+    $resolvedLeaseDirectory = Resolve-RepositoryExecutionLeaseDirectory -CanonicalRepoRoot $CanonicalRepoRoot -LeaseDirectory $LeaseDirectory
+    return Join-Path $resolvedLeaseDirectory $fileName
+}
+
+function Get-RepositoryExecutionLeasePathForRoot {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$CanonicalRepoRoot,
+        [string]$LeaseDirectory
+    )
+
+    $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
+    $defaultLeaseDirectory = [string]::IsNullOrWhiteSpace($LeaseDirectory)
+    $leasePath = Get-RepositoryExecutionLeaseCandidatePath -CanonicalRepoRoot $CanonicalRepoRoot -LeaseDirectory $LeaseDirectory
+    $resolvedLeaseDirectory = Split-Path -Parent $leasePath
+    $leaseDirectoryCreated = Ensure-RepositoryExecutionLeaseDirectory -Path $resolvedLeaseDirectory
+    $metadataPath = "$leasePath.metadata"
+
+    if ($sharedLease) {
+        if ($IsWindows) {
+            if ($leaseDirectoryCreated) { Set-RepositoryExecutionLeaseWindowsAccess -Path $resolvedLeaseDirectory }
+        }
+        Initialize-SharedRepositoryExecutionLeasePath -LeaseDirectory $resolvedLeaseDirectory -LeasePath $leasePath -MetadataPath $metadataPath -LeaseDirectoryCreated $leaseDirectoryCreated
+    }
+    elseif ($defaultLeaseDirectory) {
+        Set-RepositoryExecutionLeaseUnixMode -Path $resolvedLeaseDirectory -Mode $privateExecutionLeaseDirectoryMode
+    }
+    return $leasePath
+}
+
+function Get-RepositoryExecutionLeasePath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [string]$LeaseDirectory
+    )
+
+    $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
+    return Get-RepositoryExecutionLeasePathForRoot -CanonicalRepoRoot $canonicalRoot -LeaseDirectory $LeaseDirectory
+}
+
+function Resolve-ReparseTargetPath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Item,
+        [Parameter(Mandatory)][string]$Candidate
+    )
+
+    $target = @($Item.Target | Select-Object -First 1)[0]
+    if ([string]::IsNullOrWhiteSpace([string]$target)) {
+        throw "Unable to resolve worktree path component '$Candidate'."
+    }
+    if (-not [System.IO.Path]::IsPathRooted([string]$target)) {
+        $target = Join-Path (Split-Path -Parent $Candidate) ([string]$target)
+    }
+    return [System.IO.Path]::GetFullPath([string]$target)
+}
+
+function Resolve-ReparsePathComponent {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [System.Collections.Generic.HashSet[string]]$SeenTargets
+    )
+
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    $root = [System.IO.Path]::GetPathRoot($fullPath)
+    $segments = @($fullPath.Substring($root.Length).Split([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) | Where-Object { $_ })
+    $current = $root
+    for ($index = 0; $index -lt $segments.Count; $index++) {
+        $candidate = Join-Path $current $segments[$index]
+        $item = Get-Item -LiteralPath $candidate -Force -ErrorAction Stop
+        if (-not [bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            $current = $item.FullName
+            continue
+        }
+
+        if (-not $SeenTargets.Add([System.IO.Path]::GetFullPath($candidate))) {
+            throw "Worktree path resolution loop detected at '$candidate'."
+        }
+        $resolvedTarget = Resolve-ReparseTargetPath -Item $item -Candidate $candidate
+        if ($index -lt ($segments.Count - 1)) {
+            $remaining = $segments[($index + 1)..($segments.Count - 1)] -join [System.IO.Path]::DirectorySeparatorChar
+            $resolvedTarget = Join-Path $resolvedTarget $remaining
+        }
+        return Resolve-ReparsePathComponent -Path $resolvedTarget -SeenTargets $SeenTargets
+    }
+
+    return $current
+}
+
+function Resolve-RepositoryExecutionRoot {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$RepoRoot)
+
+    return Resolve-RepositoryExecutionPath -Path $RepoRoot
+}
+
+function Resolve-RepositoryExecutionPath {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    if (-not (Test-Path -LiteralPath $fullPath)) {
+        throw "Execution path does not exist: '$Path'."
+    }
+
+    $comparisonRoot = Split-Path -Parent $fullPath
+    if ([string]::IsNullOrWhiteSpace($comparisonRoot)) { $comparisonRoot = [System.IO.Path]::GetPathRoot($fullPath) }
+    $comparison = Get-RepositoryPathComparison -RepoRoot $comparisonRoot
+    $comparer = if ($comparison -eq [System.StringComparison]::OrdinalIgnoreCase) { [System.StringComparer]::OrdinalIgnoreCase } else { [System.StringComparer]::Ordinal }
+    $seenTargets = [System.Collections.Generic.HashSet[string]]::new($comparer)
+    return Resolve-ReparsePathComponent -Path $fullPath -SeenTargets $seenTargets
+}
+
+function Get-ReentrantRepositoryExecutionLease {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][object]$ExistingLease,
+        [string]$LeaseDirectory
+    )
+
+    if ($null -eq $ExistingLease.Stream -or $ExistingLease.Stream.SafeFileHandle.IsClosed -or -not $ExistingLease.Stream.CanRead) {
+        throw 'Existing repository execution lease handle is closed or unavailable.'
+    }
+    $requestedRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
+    $existingRoot = Resolve-RepositoryExecutionRoot -RepoRoot ([string]$ExistingLease.RepositoryRoot)
+    $comparison = Get-RepositoryPathComparison -RepoRoot $requestedRoot
+    if (-not [string]::Equals($requestedRoot, $existingRoot, $comparison)) {
+        throw "Existing lease belongs to '$existingRoot', not requested worktree '$requestedRoot'."
+    }
+    $requestedLeasePath = Get-RepositoryExecutionLeaseCandidatePath -CanonicalRepoRoot $requestedRoot -LeaseDirectory $LeaseDirectory
+    $leaseComparison = Get-RepositoryPathComparison -RepoRoot (Split-Path -Parent $requestedLeasePath)
+    if (-not [string]::Equals([System.IO.Path]::GetFullPath($requestedLeasePath), [System.IO.Path]::GetFullPath([string]$ExistingLease.Path), $leaseComparison)) {
+        throw "Existing lease belongs to coordination path '$($ExistingLease.Path)', not requested path '$requestedLeasePath'."
+    }
+    return [pscustomobject]@{
+        Path = $ExistingLease.Path
+        OperationId = $ExistingLease.OperationId
+        RepositoryRoot = $ExistingLease.RepositoryRoot
+        Stream = $ExistingLease.Stream
+        OwnsStream = $false
+    }
+}
+
+function Test-RepositoryExecutionLeaseWindowsAccess {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (-not $IsWindows) { return }
+    try {
+        $sid = [System.Security.Principal.SecurityIdentifier]::new([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid, $null)
+        $acl = Get-Acl -LiteralPath $Path -ErrorAction Stop
+        $requiredRights = [System.Security.AccessControl.FileSystemRights]::Modify
+        $accessRules = $acl.GetAccessRules($true, $true, [System.Security.Principal.SecurityIdentifier])
+        $hasAccess = @(
+            $accessRules | Where-Object {
+                try {
+                    $identity = $_.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier])
+                    $identity.Value -eq $sid.Value -and $_.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow -and
+                        (([System.Security.AccessControl.FileSystemRights]$_.FileSystemRights -band $requiredRights) -eq $requiredRights)
+                }
+                catch { $false }
+            }
+        ).Count -gt 0
+        if (-not $hasAccess) { throw 'BUILTIN\Users does not have Modify access.' }
+    }
+    catch {
+        throw "Shared Windows lease path '$Path' is not accessible to all participating users: $($_.Exception.Message)"
+    }
+}
+
+function Set-RepositoryExecutionLeaseWindowsAccess {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (-not $IsWindows) { return }
+    try {
+        $sid = [System.Security.Principal.SecurityIdentifier]::new([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid, $null)
+        $acl = Get-Acl -LiteralPath $Path -ErrorAction Stop
+        $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+        $inheritance = if ($item.PSIsContainer) {
+            [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+        }
+        else {
+            [System.Security.AccessControl.InheritanceFlags]::None
+        }
+        $rule = [System.Security.AccessControl.FileSystemAccessRule]::new(
+            $sid,
+            [System.Security.AccessControl.FileSystemRights]::Modify,
+            $inheritance,
+            [System.Security.AccessControl.PropagationFlags]::None,
+            [System.Security.AccessControl.AccessControlType]::Allow)
+        $acl.SetAccessRule($rule)
+        Set-Acl -LiteralPath $Path -AclObject $acl -ErrorAction Stop
+        Test-RepositoryExecutionLeaseWindowsAccess -Path $Path
+    }
+    catch {
+        throw "Unable to provision shared Windows lease access on '$Path': $($_.Exception.Message)"
+    }
+}
+
+function Assert-RepositoryExecutionLeaseFile {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path)) { return }
+    $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+    if ($item.PSIsContainer -or [bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+        throw "Lease path is not a regular file: '$Path'."
+    }
+}
+
+function Get-RepositoryExecutionProcessStartUtc {
+    [CmdletBinding()]
+    param()
+
+    try { return (Get-Process -Id $PID -ErrorAction Stop).StartTime.ToUniversalTime() }
+    catch { return $null }
+}
+
+function New-RepositoryExecutionLeaseContext {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][string]$OperationId,
+        [string]$LeaseDirectory
+    )
+
+    $sharedLease = Test-RepositoryExecutionLeaseSharedMode -LeaseDirectory $LeaseDirectory
+    if ([string]::IsNullOrWhiteSpace($LeaseDirectory) -and $env:MISSISSIPPI_SHARED_WORKTREE -eq 'true') {
+        throw 'Cross-account shared worktrees require an explicit trusted -LeaseDirectory.'
+    }
+    $canonicalRoot = Resolve-RepositoryExecutionRoot -RepoRoot $RepoRoot
+    $leasePath = Get-RepositoryExecutionLeasePathForRoot -CanonicalRepoRoot $canonicalRoot -LeaseDirectory $LeaseDirectory
+    $metadataPath = "$leasePath.metadata"
+    Assert-RepositoryExecutionLeaseFile -Path $leasePath
+    Assert-RepositoryExecutionLeaseFile -Path $metadataPath
+    $repositoryKey = [System.BitConverter]::ToString((Get-RepositoryExecutionLeaseHash -CanonicalRepoRoot $canonicalRoot)).Replace('-', '').ToLowerInvariant()
+    $comparison = Get-RepositoryPathComparison -RepoRoot $canonicalRoot
+    $identityLeasePath = if ($comparison -eq [System.StringComparison]::OrdinalIgnoreCase) { $leasePath.ToLowerInvariant() } else { $leasePath }
+    $processStartUtc = Get-RepositoryExecutionProcessStartUtc
+    $metadata = [ordered]@{
+        operationId = $OperationId
+        repositoryKey = $repositoryKey
+        repositoryRoot = if ($canonicalRoot.Length -gt 256) { $canonicalRoot.Substring(0, 256) } else { $canonicalRoot }
+        processId = $PID
+        processStartUtc = if ($null -eq $processStartUtc) { $null } else { $processStartUtc.ToString('o') }
+        startedUtc = (Get-Date).ToUniversalTime().ToString('o')
+    } | ConvertTo-Json -Compress
+    return [pscustomobject]@{
+        SharedLease = $sharedLease
+        CanonicalRoot = $canonicalRoot
+        LeasePath = $leasePath
+        MetadataPath = $metadataPath
+        LeaseIdentity = "$repositoryKey|$identityLeasePath"
+        ProcessSynchronizationKey = if ($sharedLease) { Get-RepositoryExecutionLeaseFileIdentityKey -Path $leasePath } else { "$repositoryKey|$identityLeasePath" }
+        OperationId = $OperationId
+        Metadata = $metadata
+    }
+}
+
+function Lock-SharedRepositoryExecutionLease {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$State,
+        [Parameter(Mandatory)][string]$Path
+    )
+
+    [System.Threading.Monitor]::Enter($State.Gate)
+    try {
+        if ($State.Locked) { throw "Shared coordination file is already held in this process. Use separate coordination directories for concurrent worktrees." }
+        $State.Stream.Lock(0, 1)
+        $State.Locked = $true
+        Test-RepositoryExecutionLeaseUnixMode -Path $Path -Mode $sharedExecutionLeaseFileMode
+        return [long]0
+    }
+    finally {
+        [System.Threading.Monitor]::Exit($State.Gate)
+    }
+}
+
+function Lock-PrivateRepositoryExecutionLease {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Stream,
+        [Parameter(Mandatory)][string]$Path
+    )
+
+    Set-RepositoryExecutionLeaseUnixMode -Path $Path -Mode $privateExecutionLeaseFileMode
+    $Stream.Lock(0, 1)
+    return [long]0
+}
+
+function Release-RepositoryExecutionLeaseProcessSemaphore {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Lease)
+
+    if ($null -eq $Lease.ProcessSemaphore) { return }
+    try {
+        [Mississippi.RepositoryExecutionLeaseCoordination]::Release(
+            $Lease.ProcessSemaphore.Key,
+            $Lease.ProcessSemaphore.Semaphore,
+            [bool]$Lease.ProcessSemaphore.Acquired)
+    }
+    finally { $Lease.ProcessSemaphore.Acquired = $false }
+}
+
+function Release-RepositoryExecutionLeaseResources {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Resources)
+
+    try {
+        if ($null -ne $Resources.StreamState) {
+            try {
+                if ($null -ne $Resources.LeaseOffset) { Unlock-SharedRepositoryExecutionLeaseSlot -State $Resources.StreamState -Offset ([long]$Resources.LeaseOffset) }
+            }
+            finally { Release-SharedRepositoryExecutionLeaseStream -State $Resources.StreamState }
+        }
+        elseif ($null -ne $Resources.Stream) {
+            $Resources.Stream.Dispose()
+        }
+    }
+    finally {
+        Release-RepositoryExecutionLeaseProcessSemaphore -Lease $Resources
+        if ($Resources.LeaseRegistered) { Unregister-RepositoryExecutionLeaseIdentity -Identity $Resources.LeaseIdentity }
+    }
+}
+
+function Assert-RepositoryExecutionLeaseNotHeldByCurrentProcess {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][bool]$SharedLease
+    )
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return }
+    $owner = $null
+    try { $owner = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json }
+    catch { return }
+    if ($null -eq $owner -or [string]$owner.processId -ne [string]$PID) { return }
+    $recordedStart = $null
+    $processStartProperty = $owner.PSObject.Properties['processStartUtc']
+    if ($null -ne $processStartProperty) { $recordedStart = $processStartProperty.Value }
+    $currentStart = Get-RepositoryExecutionProcessStartUtc
+    if ([string]::IsNullOrWhiteSpace([string]$recordedStart) -or $null -eq $currentStart) { return }
+    try {
+        $recordedStartTime = [DateTime]::Parse([string]$recordedStart).ToUniversalTime()
+        if ([Math]::Abs(($recordedStartTime - $currentStart).TotalSeconds) -gt 1) { return }
+    }
+    catch { return }
+    if ($SharedLease) {
+        throw 'Shared coordination file is already held in this process; repository execution lease is already held. Use separate coordination directories for concurrent worktrees.'
+    }
+    throw "Repository execution lease is already held in this process for '$Path'. Use -ExistingLease for supported reentrancy."
+}
+
+function Test-RepositoryExecutionLeaseLockConflict {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][Exception]$Exception)
+
+    $current = $Exception
+    while ($null -ne $current) {
+        $errorCode = $current.HResult -band 0xFFFF
+        if ($errorCode -in @(11, 32, 33)) { return $true }
+        if ($current.Message -match '(?i)(resource temporarily unavailable|would block|sharing violation|lock violation|already locked)') { return $true }
+        $current = $current.InnerException
+    }
+    return $false
+}
+
+function Get-RepositoryExecutionLeaseOwner {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    try { return (Get-Content -LiteralPath $Path -Raw -ErrorAction Stop).Trim() }
+    catch {
+        Write-Verbose "Unable to read the current lease owner from '$Path': $($_.Exception.Message)"
+        return ''
+    }
+}
+
+function Throw-RepositoryExecutionLeaseOpenFailure {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Context,
+        [Parameter(Mandatory)][object]$Resources,
+        [Parameter(Mandatory)][Exception]$Exception,
+        [switch]$Unauthorized
+    )
+
+    $lockConflict = Test-RepositoryExecutionLeaseLockConflict -Exception $Exception
+    Release-RepositoryExecutionLeaseResources -Resources $Resources
+    if ($Unauthorized) {
+        if ($Context.SharedLease) {
+            throw "Shared execution lease '$($Context.LeasePath)' is not writable by this account. Ensure existing lease files in the shared directory are writable by all participating accounts."
+        }
+        throw $Exception
+    }
+    if (-not $lockConflict) { throw $Exception }
+    if ($Context.SharedLease) {
+        throw "Worktree execution lease is held for '$($Context.CanonicalRoot)' in shared coordination slot. Use a separate worktree or wait for the active operation."
+    }
+    $owner = Get-RepositoryExecutionLeaseOwner -Path $Context.MetadataPath
+    throw "Worktree execution lease is held for '$($Context.CanonicalRoot)'. Current owner: $owner. Use a separate worktree or wait for the active operation."
+}
+
+function Ensure-RepositoryExecutionLeaseMetadataFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][bool]$SharedLease
+    )
+
+    if (Test-Path -LiteralPath $Path -PathType Leaf) {
+        Assert-RepositoryExecutionLeaseFile -Path $Path
+        return
+    }
+    $directoryRelaxed = $false
+    if ($SharedLease -and -not $IsWindows) {
+        Set-RepositoryExecutionLeaseUnixMode -Path (Split-Path -Parent $Path) -Mode $sharedExecutionLeaseWritableDirectoryMode
+        $directoryRelaxed = $true
+    }
+    try {
+        $stream = [System.IO.FileStream]::new($Path, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+        try { $stream.SetLength(0); $stream.Flush($true) }
+        finally { $stream.Dispose() }
+        if ($IsWindows -and $SharedLease) { Set-RepositoryExecutionLeaseWindowsAccess -Path $Path }
+        elseif (-not $IsWindows -and $SharedLease) { Set-RepositoryExecutionLeaseUnixMode -Path $Path -Mode $sharedExecutionLeaseFileMode }
+        elseif (-not $IsWindows) { Set-RepositoryExecutionLeaseUnixMode -Path $Path -Mode $privateExecutionLeaseFileMode }
+    }
+    finally {
+        if ($directoryRelaxed) { Set-RepositoryExecutionLeaseUnixMode -Path (Split-Path -Parent $Path) -Mode $sharedExecutionLeaseDirectoryMode }
+    }
+}
+
+function Open-RepositoryExecutionLeaseResources {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Context)
+
+    $resources = [pscustomobject]@{
+        LeaseIdentity = $Context.LeaseIdentity
+        LeaseRegistered = $false
+        Stream = $null
+        StreamState = $null
+        LeaseOffset = $null
+        ProcessSemaphore = $null
+        ProcessSemaphoreAcquired = $false
+    }
+    try {
+        $resources.ProcessSemaphore = New-RepositoryExecutionLeaseProcessSemaphore -Identity $Context.ProcessSynchronizationKey
+        if (-not $resources.ProcessSemaphore.Semaphore.Wait(0)) {
+            if ($Context.SharedLease) {
+                throw 'Shared coordination file is already held in this process; repository execution lease is already held. Use separate coordination directories for concurrent worktrees.'
+            }
+            throw 'Repository execution lease is already held in this process. Use -ExistingLease for supported reentrancy.'
+        }
+        $resources.ProcessSemaphore.Acquired = $true
+        Register-RepositoryExecutionLeaseIdentity -Identity $Context.LeaseIdentity
+        $resources.LeaseRegistered = $true
+        if ($Context.SharedLease) {
+            $resources.StreamState = Acquire-SharedRepositoryExecutionLeaseStream -Path $Context.LeasePath
+            $resources.Stream = $resources.StreamState.Stream
+            $resources.LeaseOffset = Lock-SharedRepositoryExecutionLease -State $resources.StreamState -Path $Context.LeasePath
+        }
+        else {
+            $resources.Stream = [System.IO.FileStream]::new($Context.LeasePath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::Read)
+            $resources.LeaseOffset = Lock-PrivateRepositoryExecutionLease -Stream $resources.Stream -Path $Context.LeasePath
+        }
+        try {
+            Assert-RepositoryExecutionLeaseNotHeldByCurrentProcess -Path $Context.MetadataPath -SharedLease $Context.SharedLease
+        }
+        catch {
+            Clear-RepositoryExecutionLeaseMetadata -Lease ([pscustomobject]@{
+                Path = $Context.LeasePath
+                MetadataPath = $Context.MetadataPath
+                SharedStreamState = $resources.StreamState
+            })
+        }
+        return $resources
+    }
+    catch [System.UnauthorizedAccessException] {
+        Throw-RepositoryExecutionLeaseOpenFailure -Context $Context -Resources $resources -Exception $_.Exception -Unauthorized
+    }
+    catch [System.IO.IOException] {
+        Throw-RepositoryExecutionLeaseOpenFailure -Context $Context -Resources $resources -Exception $_.Exception
+    }
+    catch {
+        $exception = $_.Exception
+        $lockConflict = Test-RepositoryExecutionLeaseLockConflict -Exception $exception
+        if ($lockConflict) {
+            Throw-RepositoryExecutionLeaseOpenFailure -Context $Context -Resources $resources -Exception $exception
+        }
+        Release-RepositoryExecutionLeaseResources -Resources $resources
+        throw
+    }
+}
+
+function Write-RepositoryExecutionLeaseMetadata {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Context,
+        [Parameter(Mandatory)][object]$Resources
+    )
+
+    $metadataBytes = [System.Text.Encoding]::UTF8.GetBytes($Context.Metadata)
+    Ensure-RepositoryExecutionLeaseMetadataFile -Path $Context.MetadataPath -SharedLease $Context.SharedLease
+    $writeMetadata = {
+        $metadataStream = [System.IO.FileStream]::new($Context.MetadataPath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+        try {
+            $metadataStream.SetLength(0)
+            $metadataStream.Write($metadataBytes, 0, $metadataBytes.Length)
+            $metadataStream.Flush($true)
+        }
+        finally { $metadataStream.Dispose() }
+    }
+    if ($Context.SharedLease) {
+        [System.Threading.Monitor]::Enter($Resources.StreamState.Gate)
+        try {
+            & $writeMetadata
+        }
+        finally {
+            [System.Threading.Monitor]::Exit($Resources.StreamState.Gate)
+        }
+    }
+    else { & $writeMetadata }
+}
+
+function Clear-RepositoryExecutionLeaseMetadata {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Lease)
+
+    try {
+        $metadataPath = [string]$Lease.MetadataPath
+        if ($null -ne $Lease.SharedStreamState) {
+            [System.Threading.Monitor]::Enter($Lease.SharedStreamState.Gate)
+            try {
+                $metadataStream = [System.IO.FileStream]::new($metadataPath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+                try { $metadataStream.SetLength(0); $metadataStream.Flush($true) }
+                finally { $metadataStream.Dispose() }
+            }
+            finally {
+                [System.Threading.Monitor]::Exit($Lease.SharedStreamState.Gate)
+            }
+        }
+        else {
+            $metadataStream = [System.IO.FileStream]::new($metadataPath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite)
+            try { $metadataStream.SetLength(0); $metadataStream.Flush($true) }
+            finally { $metadataStream.Dispose() }
+        }
+    }
+    catch {
+        throw "Unable to clear repository execution lease metadata from '$($Lease.Path)': $($_.Exception.Message)"
+    }
+}
+
+function Enter-RepositoryExecutionLease {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [string]$OperationId = ([guid]::NewGuid().ToString('N')),
+        [object]$ExistingLease,
+        [string]$LeaseDirectory
+    )
+
+    if ($null -ne $ExistingLease) {
+        return Get-ReentrantRepositoryExecutionLease -RepoRoot $RepoRoot -ExistingLease $ExistingLease -LeaseDirectory $LeaseDirectory
+    }
+    $context = New-RepositoryExecutionLeaseContext -RepoRoot $RepoRoot -OperationId $OperationId -LeaseDirectory $LeaseDirectory
+    $resources = $null
+    try {
+        $resources = Open-RepositoryExecutionLeaseResources -Context $context
+        Write-RepositoryExecutionLeaseMetadata -Context $context -Resources $resources
+        return [pscustomobject]@{
+            Path = $context.LeasePath
+            MetadataPath = $context.MetadataPath
+            LeaseOffset = $resources.LeaseOffset
+            LeaseIdentity = $context.LeaseIdentity
+            OperationId = $context.OperationId
+            RepositoryRoot = $context.CanonicalRoot
+            Stream = $resources.Stream
+            SharedStreamState = $resources.StreamState
+            ProcessSemaphore = $resources.ProcessSemaphore
+            ProcessSemaphoreAcquired = $resources.ProcessSemaphoreAcquired
+            OwnsStream = $true
+        }
+    }
+    catch {
+        if ($null -ne $resources) {
+            if ($null -ne $resources.LeaseOffset) {
+                try {
+                    Clear-RepositoryExecutionLeaseMetadata -Lease ([pscustomobject]@{
+                        Path = $context.LeasePath
+                        MetadataPath = $context.MetadataPath
+                        SharedStreamState = $resources.StreamState
+                    })
+                }
+                catch {
+                    Write-Verbose "Unable to clear failed lease metadata from '$($context.MetadataPath)': $($_.Exception.Message)"
+                }
+            }
+            Release-RepositoryExecutionLeaseResources -Resources $resources
+        }
+        throw
+    }
+}
+
+function Exit-RepositoryExecutionLease {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Lease)
+
+    if ($Lease.OwnsStream -and $null -ne $Lease.Stream) {
+        $metadataFailure = $null
+        try { Clear-RepositoryExecutionLeaseMetadata -Lease $Lease }
+        catch { $metadataFailure = $_.Exception }
+        try {
+            if ($null -ne $Lease.SharedStreamState) {
+                try {
+                    if ($null -ne $Lease.LeaseOffset) { Unlock-SharedRepositoryExecutionLeaseSlot -State $Lease.SharedStreamState -Offset ([long]$Lease.LeaseOffset) }
+                }
+                finally { Release-SharedRepositoryExecutionLeaseStream -State $Lease.SharedStreamState }
+            }
+            else {
+                try {
+                    if ($null -ne $Lease.LeaseOffset) { $Lease.Stream.Unlock([long]$Lease.LeaseOffset, 1) }
+                }
+                finally { $Lease.Stream.Dispose() }
+            }
+        }
+        finally {
+            Release-RepositoryExecutionLeaseProcessSemaphore -Lease $Lease
+            Unregister-RepositoryExecutionLeaseIdentity -Identity ([string]$Lease.LeaseIdentity)
+        }
+        if ($null -ne $metadataFailure) { throw $metadataFailure }
+    }
 }
 
 function ConvertTo-ConsoleColor {
@@ -96,18 +1284,94 @@ function Invoke-AutomationStep {
         return $result
     }
     catch {
-        Write-Error "FAILURE: $Name : $($_.Exception.Message)"
+        Write-Error "FAILURE: $Name : $($_.Exception.Message)" -ErrorAction Continue
         throw
     }
 }
 
-function Invoke-RepositoryProcess {
+function Get-RepositoryProcessDescendantIds { # NOSONAR - bounded process-tree ownership snapshot intentionally traverses platform process metadata.
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][int]$RootProcessId)
+
+    $parents = @{}
+    try {
+        if ($IsWindows) {
+            foreach ($processInfo in @(Get-CimInstance -ClassName Win32_Process -ErrorAction Stop)) {
+                $parents[[int]$processInfo.ProcessId] = [int]$processInfo.ParentProcessId
+            }
+        }
+        else {
+            foreach ($line in @(& ps -eo 'pid=,ppid=' 2>$null)) {
+                if ($line -match '^\s*(?<pid>\d+)\s+(?<parent>\d+)\s*$') {
+                    $parents[[int]$Matches.pid] = [int]$Matches.parent
+                }
+            }
+        }
+    }
+    catch {
+        Write-Verbose "Unable to snapshot native process descendants: $($_.Exception.Message)"
+        return @()
+    }
+
+    $descendants = [System.Collections.Generic.HashSet[int]]::new()
+    $pending = [System.Collections.Generic.Queue[int]]::new()
+    $pending.Enqueue($RootProcessId)
+    while ($pending.Count -gt 0) {
+        $parentId = $pending.Dequeue()
+        foreach ($entry in $parents.GetEnumerator() | Where-Object { $_.Value -eq $parentId }) {
+            $childId = [int]$entry.Key
+            if ($descendants.Add($childId)) { $pending.Enqueue($childId) }
+        }
+    }
+    return @($descendants | ForEach-Object {
+        $process = Get-Process -Id ([int]$_) -ErrorAction SilentlyContinue
+        [pscustomobject]@{ Id = [int]$_; StartTime = if ($null -ne $process) { $process.StartTime.ToUniversalTime() } else { $null } }
+    })
+}
+
+function Stop-RepositoryProcessIds { # NOSONAR - termination helper deliberately handles platform-specific process cleanup branches.
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object[]]$ProcessRecords)
+
+    $errors = [System.Collections.Generic.List[string]]::new()
+    foreach ($record in @($ProcessRecords | Sort-Object Id -Descending -Unique)) {
+        $processId = [int]$record.Id
+        try {
+            $current = Get-Process -Id $processId -ErrorAction SilentlyContinue
+            if ($null -eq $current -or ($null -ne $record.StartTime -and [Math]::Abs(($current.StartTime.ToUniversalTime() - $record.StartTime).TotalSeconds) -gt 1)) { continue }
+            if ($IsWindows) { Stop-Process -Id $processId -Force -ErrorAction Stop }
+            else { Stop-Process -Id $processId -Force -ErrorAction Stop }
+        }
+        catch { $errors.Add("${processId}: $($_.Exception.Message)") }
+    }
+    Start-Sleep -Milliseconds 100
+    foreach ($record in @($ProcessRecords | Sort-Object Id -Descending -Unique)) {
+        $processId = [int]$record.Id
+        try {
+            $current = Get-Process -Id $processId -ErrorAction SilentlyContinue
+            if ($null -eq $current -or ($null -ne $record.StartTime -and [Math]::Abs(($current.StartTime.ToUniversalTime() - $record.StartTime).TotalSeconds) -gt 1)) { continue }
+            if ($IsWindows) {
+                if (Get-Process -Id $processId -ErrorAction SilentlyContinue) { Stop-Process -Id $processId -Force -ErrorAction Stop }
+            }
+            else {
+                Stop-Process -Id $processId -Force -ErrorAction Stop
+            }
+        }
+        catch { $errors.Add("${processId}: $($_.Exception.Message)") }
+    }
+    return ,$errors
+}
+
+function Invoke-RepositoryProcess { # NOSONAR - native process lifecycle, bounded capture, and descendant cleanup intentionally remain coordinated here.
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$FilePath,
         [string[]]$Arguments,
         [string]$ErrorMessage,
-        [switch]$SuppressCommandEcho
+        [switch]$SuppressCommandEcho,
+        [ValidateRange(0, 86400)][int]$TimeoutSeconds = 0,
+        [string]$WorkingDirectory,
+        [switch]$PassThru
     )
 
     $escapedArgs = if ($Arguments) {
@@ -127,13 +1391,127 @@ function Invoke-RepositoryProcess {
         }
     }
 
-    & $FilePath @Arguments
-    $exitCode = $LASTEXITCODE
-    if ($exitCode -ne 0) {
-        $message = if ($ErrorMessage) { $ErrorMessage } else { "Command '$FilePath' failed with exit code $exitCode." }
-        throw $message
+    if ($TimeoutSeconds -le 0 -and -not $PassThru -and [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
+        & $FilePath @Arguments
+        $exitCode = $LASTEXITCODE
+        if ($exitCode -ne 0) {
+            $message = if ($ErrorMessage) { $ErrorMessage } else { "Command '$FilePath' failed with exit code $exitCode." }
+            throw $message
+        }
+        return
     }
 
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $processFilePath = $FilePath
+    $processArguments = @($Arguments)
+    if ($IsWindows -and [System.IO.Path]::GetExtension($FilePath) -iin @('.cmd', '.bat')) {
+        $processFilePath = $env:ComSpec
+        $processArguments = @('/d', '/c', $FilePath) + @($Arguments)
+    }
+    $startInfo.FileName = $processFilePath
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    if ($WorkingDirectory) { $startInfo.WorkingDirectory = $WorkingDirectory }
+    foreach ($argument in $processArguments) { $null = $startInfo.ArgumentList.Add($argument) }
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    $startedUtc = (Get-Date).ToUniversalTime().ToString('o')
+    $trackedDescendants = @{}
+    $stdoutBuffer = [Mississippi.BoundedProcessOutput]::new(200, 4096)
+    $stderrBuffer = [Mississippi.BoundedProcessOutput]::new(200, 4096)
+    $stdoutHandler = $stdoutBuffer.Handler
+    $stderrHandler = $stderrBuffer.Handler
+    try {
+        if (-not $process.Start()) { throw "Command '$FilePath' could not be started." }
+        $process.add_OutputDataReceived($stdoutHandler)
+        $process.add_ErrorDataReceived($stderrHandler)
+        $process.BeginOutputReadLine()
+        $process.BeginErrorReadLine()
+        $deadline = if ($TimeoutSeconds -gt 0) { [DateTime]::UtcNow.AddSeconds($TimeoutSeconds) } else { $null }
+        $finished = $false
+        $nextDescendantScan = [DateTime]::UtcNow
+        while (-not $process.HasExited) {
+            if ([DateTime]::UtcNow -ge $nextDescendantScan) {
+                foreach ($descendant in @(Get-RepositoryProcessDescendantIds -RootProcessId $process.Id)) { $trackedDescendants[[int]$descendant.Id] = $descendant }
+                $nextDescendantScan = [DateTime]::UtcNow.AddMilliseconds(250)
+            }
+            if ($null -ne $deadline -and [DateTime]::UtcNow -ge $deadline) { break }
+            Start-Sleep -Milliseconds 50
+        }
+        $finished = $process.HasExited
+        $timedOut = $null -ne $deadline -and [DateTime]::UtcNow -ge $deadline
+        $terminationErrors = [System.Collections.Generic.List[string]]::new()
+        $terminationNotes = [System.Collections.Generic.List[string]]::new()
+        $terminated = $true
+        $captureDeadline = [DateTime]::UtcNow.AddMilliseconds(1000)
+        while (-not ($stdoutBuffer.Closed -and $stderrBuffer.Closed) -and [DateTime]::UtcNow -lt $captureDeadline) {
+            Start-Sleep -Milliseconds 25
+        }
+        $captureIncomplete = -not ($stdoutBuffer.Closed -and $stderrBuffer.Closed)
+        if ($timedOut -or $captureIncomplete) {
+            if ($timedOut) { $terminationNotes.Add("Command exceeded the $TimeoutSeconds second timeout.") }
+            if ($captureIncomplete) { $terminationNotes.Add('Native output streams remained open after the root process exited.') }
+            $terminationRecords = @($trackedDescendants.Values)
+            if (-not $process.HasExited) { $terminationRecords += [pscustomobject]@{ Id = $process.Id; StartTime = $process.StartTime.ToUniversalTime() } }
+            if ($terminationRecords.Count -gt 0) {
+                foreach ($terminationError in @(Stop-RepositoryProcessIds -ProcessRecords $terminationRecords)) { $terminationErrors.Add($terminationError) }
+            }
+            if (-not $process.HasExited) {
+                try { $process.Kill() } catch { $terminationErrors.Add($_.Exception.Message) }
+            }
+            $terminated = $process.WaitForExit(1000) -and $terminationErrors.Count -eq 0
+        }
+        $stdout = $stdoutBuffer.Text
+        $stderr = $stderrBuffer.Text
+        $result = [pscustomobject][ordered]@{
+            FilePath = $FilePath
+            Arguments = @($Arguments)
+            StartedUtc = $startedUtc
+            EndedUtc = (Get-Date).ToUniversalTime().ToString('o')
+            ExitCode = if ($timedOut) { 124 } else { $process.ExitCode }
+            TimedOut = $timedOut
+            Cancelled = $false
+            TerminationFailed = ($timedOut -or $captureIncomplete) -and (-not $terminated -or $terminationErrors.Count -gt 0)
+            TerminationErrors = @($terminationErrors)
+            TerminationNotes = @($terminationNotes)
+            CaptureIncomplete = $captureIncomplete
+            OutputTruncated = $stdoutBuffer.Truncated -or $stderrBuffer.Truncated
+            StdOut = $stdout
+            StdErr = $stderr
+            Success = -not $timedOut -and -not $captureIncomplete -and $process.ExitCode -eq 0
+        }
+        if ($PassThru) { return $result }
+        if (-not $result.Success) {
+            $message = if ($timedOut) { "Command '$FilePath' timed out after $TimeoutSeconds seconds." } elseif ($result.CaptureIncomplete) { "Command '$FilePath' exited before native output capture completed." } elseif ($ErrorMessage) { $ErrorMessage } else { "Command '$FilePath' failed with exit code $($result.ExitCode)." }
+            if ($stdout) { $message += " Native output: $stdout" }
+            if ($stderr) { $message += " Native error output: $stderr" }
+            if ($terminationNotes.Count -gt 0) { $message += " Process cleanup: $($terminationNotes -join '; ')" }
+            if ($result.TerminationFailed) { $message += " Process termination was not verified: $($result.TerminationErrors -join '; ')" }
+            throw $message
+        }
+        if ($stdout) { Write-Output $stdout }
+        if ($stderr) { Write-Output $stderr }
+    }
+    catch {
+        if ($PassThru) {
+            return [pscustomobject][ordered]@{
+                FilePath = $FilePath; Arguments = @($Arguments); StartedUtc = $startedUtc
+                EndedUtc = (Get-Date).ToUniversalTime().ToString('o'); ExitCode = -1
+                TimedOut = $false; Cancelled = $false; TerminationFailed = $false; CaptureIncomplete = $false
+                TerminationErrors = @(); TerminationNotes = @(); OutputTruncated = $false; StdOut = ''; StdErr = $_.Exception.Message; Success = $false
+            }
+        }
+        throw
+    }
+    finally {
+        try { $process.CancelOutputRead() } catch { Write-Verbose 'Native stdout reader was already closed.' }
+        try { $process.CancelErrorRead() } catch { Write-Verbose 'Native stderr reader was already closed.' }
+        try { $process.remove_OutputDataReceived($stdoutHandler) } catch { Write-Verbose 'Native stdout handler was already detached.' }
+        try { $process.remove_ErrorDataReceived($stderrHandler) } catch { Write-Verbose 'Native stderr handler was already detached.' }
+        $process.Dispose()
+    }
 }
 
 function Invoke-DotnetToolRestore {
@@ -424,13 +1802,278 @@ function Get-MutationReportPath {
     return $reports[0].FullName
 }
 
+function Get-StrykerBreakThreshold {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$ConfigPath)
+
+    $config = Get-Content -LiteralPath $ConfigPath -Raw -ErrorAction Stop | ConvertFrom-Json -AsHashtable
+    if ($config -isnot [System.Collections.IDictionary]) {
+        throw "Stryker configuration is not a JSON object: $ConfigPath"
+    }
+
+    $strykerConfig = $config['stryker-config']
+    $thresholds = if ($strykerConfig -is [System.Collections.IDictionary]) { $strykerConfig['thresholds'] } else { $null }
+    $breakValue = if ($thresholds -is [System.Collections.IDictionary]) { $thresholds['break'] } else { $null }
+    if ($null -eq $breakValue) {
+        return [double]0
+    }
+
+    try {
+        return [double]$breakValue
+    }
+    catch {
+        throw "Stryker break threshold is not numeric in configuration: $ConfigPath"
+    }
+}
+
+function Get-MutationReportMetrics {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$ReportPath)
+
+    $report = Read-MutationReport -ReportPath $ReportPath
+    $mutants = @(
+        foreach ($fileResult in $report['files'].Values) {
+            @($fileResult['mutants'])
+        }
+    )
+    $statuses = @('Killed', 'Timeout', 'Survived', 'NoCoverage', 'RuntimeError', 'CompileError', 'Ignored', 'Pending')
+    $counts = @{}
+    foreach ($status in $statuses) {
+        $counts[$status] = @($mutants | Where-Object { $_['status'] -eq $status }).Count
+    }
+
+    $detected = $counts['Killed'] + $counts['Timeout']
+    $valid = $detected + $counts['Survived'] + $counts['NoCoverage']
+    $rawScore = if ($valid -gt 0) { $detected / $valid * 100 } else { $null }
+    $score = if ($null -ne $rawScore) { [Math]::Round($rawScore, 2) } else { $null }
+    return [pscustomobject]@{
+        Score = $score
+        RawScore = $rawScore
+        Valid = $valid
+        Detected = $detected
+        Killed = $counts['Killed']
+        Timeout = $counts['Timeout']
+        Survived = $counts['Survived']
+        NoCoverage = $counts['NoCoverage']
+        RuntimeError = $counts['RuntimeError']
+        CompileError = $counts['CompileError']
+        Ignored = $counts['Ignored']
+        Pending = $counts['Pending']
+    }
+}
+
+function Get-MutationProjectStatus {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ExecutionStatus,
+        [Parameter(Mandatory)][bool]$ReportValid,
+        [Nullable[double]]$Score,
+        [double]$BreakThreshold
+    )
+
+    if ($ExecutionStatus -eq 'Skipped') { return 'SKIPPED' }
+    if (-not $ReportValid) { return 'NO_REPORT' }
+    if ($null -eq $Score) { return 'NO_SCORE' }
+    if ($BreakThreshold -gt 0 -and $Score -lt $BreakThreshold) { return 'BELOW_BREAK' }
+    return 'AT_OR_ABOVE_BREAK'
+}
+
+function Get-MutationProjectSummary {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$ProjectResult,
+        [double]$BreakThreshold
+    )
+
+    $projectName = [System.IO.Path]::GetFileNameWithoutExtension([string]$ProjectResult.Project)
+    $reportValid = $false
+    $reportError = $ProjectResult.ReportError
+    $metrics = $null
+    if ($ProjectResult.ReportPath -and (Test-Path -LiteralPath $ProjectResult.ReportPath -PathType Leaf)) {
+        try {
+            $metrics = Get-MutationReportMetrics -ReportPath $ProjectResult.ReportPath
+            $reportValid = $true
+        }
+        catch {
+            $reportError = $_.Exception.Message
+        }
+    }
+
+    $score = if ($metrics) { $metrics.Score } else { $null }
+    $rawScore = if ($metrics) { $metrics.RawScore } else { $null }
+    return [pscustomobject]@{
+        Project = $projectName
+        ExecutionStatus = switch ($ProjectResult.Status) {
+            'Failed' { 'FAILED' }
+            'ThresholdFailed' { 'COMPLETED_WITH_THRESHOLD_FAILURE' }
+            default { 'COMPLETED' }
+        }
+        Status = Get-MutationProjectStatus -ExecutionStatus $ProjectResult.Status -ReportValid $reportValid -Score $rawScore -BreakThreshold $BreakThreshold
+        Score = $score
+        RawScore = $rawScore
+        ValidMutants = if ($metrics) { $metrics.Valid } else { 0 }
+        DetectedMutants = if ($metrics) { $metrics.Detected } else { 0 }
+        ReportPath = $ProjectResult.ReportPath
+        ReportValid = $reportValid
+        Error = $ProjectResult.Error
+        ReportError = $reportError
+    }
+}
+
+function Get-MutationProjectMessage {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Project,
+        [Parameter(Mandatory)][string]$Fallback
+    )
+
+    if ($Project.Error) { return $Project.Error }
+    if ($Project.ReportError) { return $Project.ReportError }
+    return $Fallback
+}
+
+function Get-GitHubMutationSummaryDetailLines {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Summary)
+
+    $detailLines = @()
+    if ($Summary.BelowBreakThresholdCount -gt 0) {
+        $detailLines += ''
+        $detailLines += '### Projects below the advisory threshold'
+        foreach ($project in $Summary.BelowBreakThresholdProjects) {
+            $detailLines += "- $($project.Project): $($project.Score)%"
+        }
+    }
+    if ($Summary.NoScoreProjectCount -gt 0) {
+        $detailLines += ''
+        $detailLines += '### Projects without a mutation score'
+        foreach ($project in $Summary.NoScoreProjects) {
+            $detailLines += "- $($project.Project): $(Get-MutationProjectMessage -Project $project -Fallback 'No valid mutants were scored')"
+        }
+    }
+    if ($Summary.FailedProjectCount -gt 0) {
+        $detailLines += ''
+        $detailLines += '### Projects with execution failures'
+        foreach ($project in $Summary.FailedProjects) {
+            $detailLines += "- $($project.Project): $(Get-MutationProjectMessage -Project $project -Fallback $project.Status)"
+        }
+    }
+    return $detailLines
+}
+
+function Write-GitHubMutationSummary {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Summary)
+
+    if ([string]::IsNullOrWhiteSpace($env:GITHUB_STEP_SUMMARY)) { return }
+
+    $heading = switch ($Summary.MutationResult) {
+        'FAIL' { 'failed'; break }
+        'WARN' { 'completed with warnings'; break }
+        default { 'completed' }
+    }
+    $summaryLines = @(
+        "## Mutation testing: $heading"
+        ''
+        "- Execution: **$($Summary.ExecutionStatus)**"
+        "- Result: **$($Summary.MutationResult)**"
+        "- Complete reports: **$($Summary.CompleteReportCount)/$($Summary.ProjectCount)**"
+        "- Skipped projects: **$($Summary.SkippedProjectCount)**"
+        "- Threshold-only exits: **$($Summary.ThresholdFailureCount)**"
+        "- Scored projects: **$($Summary.ScoredProjectCount)**"
+        "- Unscored projects: **$($Summary.NoScoreProjectCount)**"
+        "- Below break threshold ($($Summary.BreakThreshold)%): **$($Summary.BelowBreakThresholdCount)**"
+    )
+    $summaryLines += Get-GitHubMutationSummaryDetailLines -Summary $Summary
+    Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value $summaryLines -Encoding utf8
+}
+
+function Show-MutationRunSummary {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$OutputPath,
+        [Parameter(Mandatory)][object[]]$ProjectResults,
+        [double]$BreakThreshold = 0
+    )
+
+    $projectSummaries = @($ProjectResults | ForEach-Object {
+        Get-MutationProjectSummary -ProjectResult $_ -BreakThreshold $BreakThreshold
+    })
+
+    $failedProjects = @($projectSummaries | Where-Object { $_.ExecutionStatus -eq 'FAILED' })
+    $thresholdFailures = @($projectSummaries | Where-Object { $_.ExecutionStatus -eq 'COMPLETED_WITH_THRESHOLD_FAILURE' })
+    $belowBreak = @($projectSummaries | Where-Object { $_.Status -eq 'BELOW_BREAK' })
+    $noScoreProjects = @($projectSummaries | Where-Object { $_.Status -eq 'NO_SCORE' })
+    $skippedProjects = @($projectSummaries | Where-Object { $_.Status -eq 'SKIPPED' })
+    $reportEligibleProjects = @($projectSummaries | Where-Object { $_.Status -ne 'SKIPPED' })
+    $completeReports = @($projectSummaries | Where-Object { $_.ReportValid })
+    $scoredReports = @($projectSummaries | Where-Object { $null -ne $_.Score })
+    $hasWarnings = $thresholdFailures.Count -gt 0 -or $belowBreak.Count -gt 0 -or $noScoreProjects.Count -gt 0
+    $executionStatus = if ($failedProjects.Count -gt 0) { 'FAILED' } elseif ($thresholdFailures.Count -gt 0 -or $noScoreProjects.Count -gt 0) { 'COMPLETED_WITH_WARNINGS' } else { 'COMPLETED' }
+    $mutationResult = if ($executionStatus -eq 'FAILED') { 'FAIL' } elseif ($hasWarnings) { 'WARN' } else { 'PASS' }
+
+    $summary = [ordered]@{
+        SchemaVersion = 1
+        ExecutionStatus = $executionStatus
+        MutationResult = $mutationResult
+        BreakThreshold = $BreakThreshold
+        ProjectCount = $reportEligibleProjects.Count
+        TargetProjectCount = $ProjectResults.Count
+        SkippedProjectCount = $skippedProjects.Count
+        CompleteReportCount = $completeReports.Count
+        ScoredProjectCount = $scoredReports.Count
+        BelowBreakThresholdCount = $belowBreak.Count
+        FailedProjectCount = $failedProjects.Count
+        ThresholdFailureCount = $thresholdFailures.Count
+        NoScoreProjectCount = $noScoreProjects.Count
+        BelowBreakThresholdProjects = @($belowBreak | Select-Object Project, Score)
+        FailedProjects = @($failedProjects | Select-Object Project, Status, ReportValid, Error, ReportError)
+        ThresholdFailureProjects = @($thresholdFailures | Select-Object Project, Score, RawScore)
+        NoScoreProjects = @($noScoreProjects | Select-Object Project, Error, ReportError)
+        Projects = $projectSummaries
+    }
+    $summaryPath = Join-Path $OutputPath 'mutation-summary.json'
+    $summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $summaryPath
+
+    Write-Host "MUTATION_EXECUTION: $executionStatus"
+    Write-Host "MUTATION_RESULT: $mutationResult"
+    Write-Host "MUTATION_REPORTS: $($completeReports.Count)/$($reportEligibleProjects.Count) complete (skipped: $($skippedProjects.Count))"
+    Write-Host "MUTATION_SCORED_PROJECTS: $($scoredReports.Count)"
+    Write-Host "MUTATION_UNSCORED_PROJECTS: $($noScoreProjects.Count)"
+    Write-Host "MUTATION_BELOW_BREAK: $($belowBreak.Count) (threshold $BreakThreshold%)"
+    Write-Host "MUTATION_THRESHOLD_FAILURES: $($thresholdFailures.Count)"
+    if ($belowBreak.Count -gt 0) {
+        $warningMessage = "Mutation analysis completed, but $($belowBreak.Count) project(s) scored below the configured break threshold."
+        Write-Warning "$warningMessage Threshold: $BreakThreshold%."
+        if ($env:GITHUB_ACTIONS -eq 'true') {
+            Write-Host "::warning title=Mutation score warning::$warningMessage"
+        }
+    }
+    if ($noScoreProjects.Count -gt 0) {
+        $warningMessage = "Mutation analysis completed, but $($noScoreProjects.Count) project(s) produced no mutation score."
+        Write-Warning $warningMessage
+        if ($env:GITHUB_ACTIONS -eq 'true') {
+            Write-Host "::warning title=Mutation score unavailable::$warningMessage"
+        }
+    }
+    if ($failedProjects.Count -gt 0) {
+        Write-Warning "Mutation analysis did not complete successfully for $($failedProjects.Count) project(s)."
+    }
+
+    Write-GitHubMutationSummary -Summary ([pscustomobject]$summary)
+
+    return [pscustomobject]$summary
+}
+
 function Invoke-StrykerMutationTestPerProject {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$ProjectPath,
         [Parameter(Mandatory)][string]$OutputPath,
         [Parameter(Mandatory)][string[]]$TestProjects,
-        [string]$Configuration = 'Release'
+        [string]$Configuration = 'Release',
+        [switch]$ReportOnly,
+        [switch]$ApplyThresholdAfterReport
     )
 
     $resolvedProject = (Resolve-Path -LiteralPath $ProjectPath).Path
@@ -444,6 +2087,10 @@ function Invoke-StrykerMutationTestPerProject {
     $arguments = @('stryker', '--project', [System.IO.Path]::GetFileName($resolvedProject), '--config-file', $configPath, '--configuration', $Configuration, '--output', $projectOutputPath, '--test-runner', 'mtp', '--disable-bail', '--break-on-initial-test-failure')
     foreach ($testProject in $TestProjects) {
         $arguments += @('--test-project', $testProject)
+    }
+    if ($ReportOnly -or $ApplyThresholdAfterReport) {
+        # Keep full-solution/report-only exits focused on execution/report generation; apply thresholds after validating the report.
+        $arguments += @('--break-at', '0')
     }
     # MTP reuses test servers; serialize mutants to isolate process-global state and integration fixtures.
     $arguments += @('--concurrency', '1')
@@ -521,12 +2168,93 @@ function Get-MutationTargets {
     return @($targets.Values | Sort-Object Project)
 }
 
+function Set-MutationResultMetrics {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$ProjectResult,
+        [Parameter(Mandatory)][string]$ReportPath
+    )
+
+    $metrics = Get-MutationReportMetrics -ReportPath $ReportPath
+    $ProjectResult.MutationScore = $metrics.Score
+    $ProjectResult.RawMutationScore = $metrics.RawScore
+    $ProjectResult.ValidMutants = $metrics.Valid
+    $ProjectResult.DetectedMutants = $metrics.Detected
+}
+
+function Set-MutationFailureResult {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$ProjectResult,
+        [Parameter(Mandatory)][object]$Failure
+    )
+
+    $ProjectResult.Output = $Failure.Exception.Data['OutputPath']
+    $ProjectResult.ReportPath = $Failure.Exception.Data['ReportPath']
+    $ProjectResult.Status = 'Failed'
+    $ProjectResult.Error = $Failure.Exception.Message
+    $ProjectResult.ReportError = $Failure.Exception.Data['ReportError']
+    if ($ProjectResult.ReportPath -and (Test-Path -LiteralPath $ProjectResult.ReportPath -PathType Leaf)) {
+        try {
+            Set-MutationResultMetrics -ProjectResult $ProjectResult -ReportPath $ProjectResult.ReportPath
+        }
+        catch {
+            if (-not $ProjectResult.ReportError) { $ProjectResult.ReportError = $_.Exception.Message }
+        }
+    }
+}
+
+function Invoke-MutationTarget {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Target,
+        [Parameter(Mandatory)][object]$ProjectResult,
+        [Parameter(Mandatory)][string]$OutputPath,
+        [Parameter(Mandatory)][string]$Configuration,
+        [double]$BreakThreshold,
+        [switch]$ReportOnly
+    )
+
+    if (-not $Target.HasSource) {
+        $ProjectResult.Status = 'Skipped'
+        $ProjectResult.Success = $true
+        $ProjectResult.Reason = 'No authored C# source'
+        return
+    }
+
+    try {
+        if ($Target.Tests.Count -eq 0) { throw "Authored source project has no declared test mapping: $($Target.Project)" }
+        $projectOutput = Invoke-StrykerMutationTestPerProject -ProjectPath $Target.Project -TestProjects $Target.Tests -OutputPath $OutputPath -Configuration $Configuration -ReportOnly:$ReportOnly -ApplyThresholdAfterReport
+        $reportPath = Get-MutationReportPath -OutputPath $projectOutput
+        Set-MutationResultMetrics -ProjectResult $ProjectResult -ReportPath $reportPath
+        $ProjectResult.Output = $projectOutput
+        $ProjectResult.ReportPath = $reportPath
+        if (-not $ReportOnly -and $BreakThreshold -gt 0 -and $null -ne $ProjectResult.RawMutationScore -and
+            $ProjectResult.RawMutationScore -lt $BreakThreshold) {
+            $ProjectResult.Status = 'ThresholdFailed'
+            $ProjectResult.ThresholdFailure = $true
+            $ProjectResult.Success = $false
+            $ProjectResult.Error = "Mutation score $($ProjectResult.RawMutationScore)% is below the configured break threshold $BreakThreshold%."
+            Write-Warning "  ! Threshold not met: $([System.IO.Path]::GetFileNameWithoutExtension($Target.Project)) - score $($ProjectResult.RawMutationScore)% (threshold $BreakThreshold%)"
+            return
+        }
+        $ProjectResult.Success = $true
+        $ProjectResult.Status = 'Completed'
+        Write-Host "  ✓ Completed: $([System.IO.Path]::GetFileNameWithoutExtension($Target.Project))" -ForegroundColor ([ConsoleColor]::Green)
+    }
+    catch {
+        Write-Warning "  ✗ Failed: $([System.IO.Path]::GetFileNameWithoutExtension($Target.Project)) - $($_.Exception.Message)"
+        Set-MutationFailureResult -ProjectResult $ProjectResult -Failure $_
+    }
+}
+
 function Invoke-StrykerMutationTest {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$SolutionPath,
         [Parameter(Mandatory)][string]$OutputPath,
-        [string]$Configuration = 'Release'
+        [string]$Configuration = 'Release',
+        [switch]$ReportOnly
     )
 
     $resolvedSolution = Resolve-Path -LiteralPath $SolutionPath
@@ -535,6 +2263,9 @@ function Invoke-StrykerMutationTest {
         $null = New-Item -ItemType Directory -Path $outputFullPath -Force
     }
 
+    $repoRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $resolvedSolution.Path)
+    $configPath = Join-Path $repoRoot 'stryker-config.json'
+    $breakThreshold = Get-StrykerBreakThreshold -ConfigPath $configPath
     $targets = @(Get-MutationTargets -SolutionPath $resolvedSolution.Path)
     if (@($targets | Where-Object HasSource).Count -eq 0) {
         throw "No source projects with tests were found in '$SolutionPath'."
@@ -542,7 +2273,9 @@ function Invoke-StrykerMutationTest {
 
     $projectResults = @($targets | ForEach-Object {
         @{ Project = $_.Project; Output = $null; ReportPath = $null; Success = $false;
-           Status = 'Pending'; Error = $null; ReportError = $null; Reason = $null }
+           Status = 'Pending'; Error = $null; ReportError = $null; Reason = $null;
+           MutationScore = $null; RawMutationScore = $null; ValidMutants = 0; DetectedMutants = 0;
+           ThresholdFailure = $false }
     })
     $manifestPath = Join-Path $outputFullPath 'project-results.json'
     $manifest = @{ Scope = 'Solution'; Solution = $resolvedSolution.Path; Projects = $projectResults }
@@ -550,43 +2283,30 @@ function Invoke-StrykerMutationTest {
     for ($index = 0; $index -lt $targets.Count; $index++) {
         $target = $targets[$index]
         $result = $projectResults[$index]
-        $sourceProject = $target.Project
-        if (-not $target.HasSource) {
-            $result.Status = 'Skipped'
-            $result.Success = $true
-            $result.Reason = 'No authored C# source'
-            ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content -LiteralPath $manifestPath
-            continue
-        }
-        try {
-            if ($target.Tests.Count -eq 0) { throw "Authored source project has no declared test mapping: $sourceProject" }
-            $projectOutput = Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects $target.Tests -OutputPath $outputFullPath -Configuration $Configuration
-            $reportPath = Get-MutationReportPath -OutputPath $projectOutput
-            $result.Output = $projectOutput
-            $result.ReportPath = $reportPath
-            $result.Success = $true
-            $result.Status = 'Completed'
-            Write-Host "  ✓ Completed: $([System.IO.Path]::GetFileNameWithoutExtension($sourceProject))" -ForegroundColor ([ConsoleColor]::Green)
-        }
-        catch {
-            Write-Warning "  ✗ Failed: $([System.IO.Path]::GetFileNameWithoutExtension($sourceProject)) - $($_.Exception.Message)"
-            $result.Output = $_.Exception.Data['OutputPath']
-            $result.ReportPath = $_.Exception.Data['ReportPath']
-            $result.Status = 'Failed'
-            $result.Error = $_.Exception.Message
-            $result.ReportError = $_.Exception.Data['ReportError']
-        }
+        Invoke-MutationTarget -Target $target -ProjectResult $result -OutputPath $outputFullPath -Configuration $Configuration -BreakThreshold $breakThreshold -ReportOnly:$ReportOnly
         ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content -LiteralPath $manifestPath
         Write-Host
     }
     ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content -LiteralPath $manifestPath
 
+    $null = Show-MutationRunSummary -OutputPath $outputFullPath -ProjectResults $projectResults -BreakThreshold $breakThreshold
+
     # Check if any projects failed
     $failedProjects = @($projectResults | Where-Object { -not $_.Success })
     if ($failedProjects.Count -gt 0) {
-        Write-Host "WARNING: $($failedProjects.Count) project(s) failed mutation testing" -ForegroundColor ([ConsoleColor]::Yellow)
-        foreach ($failed in $failedProjects) {
-            Write-Host "  - $([System.IO.Path]::GetFileNameWithoutExtension($failed.Project)): $($failed.Error)" -ForegroundColor ([ConsoleColor]::Yellow)
+        $thresholdFailures = @($failedProjects | Where-Object { $_.Status -eq 'ThresholdFailed' })
+        $executionFailures = @($failedProjects | Where-Object { $_.Status -ne 'ThresholdFailed' })
+        if ($thresholdFailures.Count -gt 0) {
+            Write-Warning "$($thresholdFailures.Count) project(s) completed but did not meet the configured mutation score threshold."
+            foreach ($failed in $thresholdFailures) {
+                Write-Host "  - $([System.IO.Path]::GetFileNameWithoutExtension($failed.Project)): $($failed.MutationScore)%" -ForegroundColor ([ConsoleColor]::Yellow)
+            }
+        }
+        if ($executionFailures.Count -gt 0) {
+            Write-Warning "$($executionFailures.Count) project(s) failed mutation execution."
+            foreach ($failed in $executionFailures) {
+                Write-Host "  - $([System.IO.Path]::GetFileNameWithoutExtension($failed.Project)): $($failed.Error)" -ForegroundColor ([ConsoleColor]::Yellow)
+            }
         }
         throw "Stryker mutation testing failed for $($failedProjects.Count) project(s). Reports: $outputFullPath"
     }
@@ -703,7 +2423,8 @@ function Invoke-MississippiSolutionUnitTests {
     param(
         [string]$Configuration = 'Release',
         [string]$RepoRoot = (Get-RepositoryRoot),
-        [string[]]$TestLevels = @('L0Tests', 'L1Tests')
+        [string[]]$TestLevels = @('L0Tests', 'L1Tests'),
+        [switch]$PassThru
     )
 
     $solutionPath = Join-Path $RepoRoot 'mississippi.slnx'
@@ -730,7 +2451,7 @@ function Invoke-MississippiSolutionUnitTests {
     Write-Host "Results directory: $runDirectory"
     Write-Host 'Logger: xUnit TRX reports, one per test module'
 
-    $coverageFiles = Get-ChildItem -Path $runDirectory -Recurse -Filter '*cobertura*.xml' -ErrorAction SilentlyContinue
+    $coverageFiles = @(Get-ChildItem -Path $runDirectory -Recurse -Filter '*cobertura*.xml' -ErrorAction SilentlyContinue)
     if (-not $coverageFiles -or $coverageFiles.Count -eq 0) {
         throw "Unit tests completed but no coverage reports were produced in '$runDirectory'."
     }
@@ -758,6 +2479,14 @@ function Invoke-MississippiSolutionUnitTests {
     $resultsFile = Join-Path $runDirectory '*/test_results*.trx'
     Write-Host "All tests passed | Results saved to: $resultsFile"
     Write-Host 'Coverage report ready for summarize-coverage-gaps.ps1' -ForegroundColor ([ConsoleColor]::Green)
+    if ($PassThru) {
+        return [pscustomobject][ordered]@{
+            ResultsDirectory = $runDirectory
+            CoverageReportPath = $finalCoveragePath
+            TestLevels = @($TestLevels)
+            Configuration = $Configuration
+        }
+    }
 }
 
 function Invoke-SampleSolutionUnitTests {
@@ -879,7 +2608,8 @@ function Invoke-MississippiSolutionMutationTests {
     [CmdletBinding()]
     param(
         [string]$RepoRoot = (Get-RepositoryRoot),
-        [string]$Configuration = 'Release'
+        [string]$Configuration = 'Release',
+        [switch]$ReportOnly
     )
 
     $slnxPath = Join-Path $RepoRoot 'mississippi.slnx'
@@ -911,32 +2641,64 @@ function Invoke-MississippiSolutionMutationTests {
     Write-Host "Target solution: $generatedSln"
 
     $outputDirectory = New-AutomationRunDirectory -Root $mutationRoot
-    Invoke-StrykerMutationTest -SolutionPath $generatedSln -OutputPath $outputDirectory -Configuration $Configuration | Out-Null
+    Invoke-StrykerMutationTest -SolutionPath $generatedSln -OutputPath $outputDirectory -Configuration $Configuration -ReportOnly:$ReportOnly | Out-Null
 
-    Write-Host 'SUCCESS: Mutation testing completed with acceptable scores' -ForegroundColor ([ConsoleColor]::Green)
+    $summaryPath = Join-Path $outputDirectory 'mutation-summary.json'
+    $summary = Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json
+    if ($summary.MutationResult -eq 'WARN') {
+        Write-Host 'COMPLETED WITH WARNINGS: Mutation analysis finished; score thresholds were not met for some projects.' -ForegroundColor ([ConsoleColor]::Yellow)
+    }
+    else {
+        Write-Host 'SUCCESS: Mutation analysis completed.' -ForegroundColor ([ConsoleColor]::Green)
+    }
+    Write-Host "Reports: $($summary.CompleteReportCount)/$($summary.ProjectCount) complete (skipped: $($summary.SkippedProjectCount)) | Below break threshold: $($summary.BelowBreakThresholdCount)"
     Write-Host
-    Write-Host '=== MISSISSIPPI SOLUTION MUTATION TESTING COMPLETED ===' -ForegroundColor ([ConsoleColor]::Green)
-    Write-Host 'Test quality validated | Mutation score meets project standards'
+    Write-Host '=== MISSISSIPPI SOLUTION MUTATION ANALYSIS COMPLETED ===' -ForegroundColor ([ConsoleColor]::Green)
 }
 
-function Invoke-SolutionsPipeline {
+function Get-ValidationPipelineTestCount {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$RepoRoot)
+    $count = 0
+    $resultsRoot = Join-Path $RepoRoot '.scratchpad/coverage-test-results'
+    foreach ($trx in @(Get-ChildItem -LiteralPath $resultsRoot -Recurse -Filter '*.trx' -File -ErrorAction SilentlyContinue)) {
+        try {
+            [xml]$xml = Get-Content -LiteralPath $trx.FullName -Raw
+            $count += [int]$xml.TestRun.ResultSummary.Counters.executed
+        }
+        catch { Write-Verbose "Unable to read a focused validation TRX artifact while counting tests: $($_.Exception.Message)" }
+    }
+    return $count
+}
+
+function Invoke-SolutionsPipeline { # NOSONAR - full repository pipeline orchestration intentionally coordinates dependent validation phases.
     [CmdletBinding()]
     param(
         [string]$Configuration = 'Release',
         [string]$RepoRoot = (Get-RepositoryRoot),
         [switch]$SkipCleanup,
-        [switch]$IncludeMutation
+        [switch]$IncludeMutation,
+        [string]$LeaseDirectory
     )
 
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $RepoRoot -OperationId "pipeline-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $RepoRoot = $executionLease.RepositoryRoot
+    try {
     $automationScriptsRoot = Join-Path (Join-Path (Join-Path $RepoRoot 'eng') 'src') 'agent-scripts'
     $coverageScript = Join-Path $automationScriptsRoot 'summarize-coverage-gaps.ps1'
     $mutationSummaryScript = Join-Path $automationScriptsRoot 'summarize-mutation-survivors.ps1'
+    $evidenceRun = New-ValidationEvidenceRun -RepositoryRoot $RepoRoot -Scope 'full-solutions-pipeline' -Arguments @('Configuration', $Configuration, 'SkipCleanup', [string]$SkipCleanup, 'IncludeMutation', [string]$IncludeMutation)
+    $testExecutionReached = $false
 
+    try {
     Write-AutomationBanner -Message '=== STARTING COMPLETE BUILD AND TEST PIPELINE ===' -ForegroundColor ([ConsoleColor]::Magenta) -InsertBlankLine
     Write-Host 'Pipeline will execute Mississippi solution followed by Sample solution'
     Write-Host 'Each step must complete successfully before proceeding to the next'
     if (-not $IncludeMutation) {
         Write-Host 'Mutation testing skipped (use -IncludeMutation to enable)'
+    }
+    if ($SkipCleanup) {
+        Write-Host 'Cleanup skipped; validation results are provisional for this intermediate run.' -ForegroundColor ([ConsoleColor]::Yellow)
     }
     Write-Host
 
@@ -944,26 +2706,52 @@ function Invoke-SolutionsPipeline {
 
     Write-AutomationBanner -Message '=== MISSISSIPPI SOLUTION PIPELINE ===' -ForegroundColor ([ConsoleColor]::Cyan)
     Invoke-AutomationStep -Name 'Build Mississippi Solution' -StepNumber ($step++) -Action { Invoke-MississippiSolutionBuild -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
-    Invoke-AutomationStep -Name 'Run Mississippi Unit Tests' -StepNumber ($step++) -Action { Invoke-MississippiSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
-    Invoke-AutomationStep -Name 'Summarize Coverage Gaps' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $coverageScript, '-EmitTasks') | Out-Host }
-    if ($IncludeMutation) {
-        Invoke-AutomationStep -Name 'Run and Summarize Mississippi Mutation Tests' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $mutationSummaryScript, '-Configuration', $Configuration, '-GenerateTasks') | Out-Host }
-    }
     if (-not $SkipCleanup) {
         Invoke-AutomationStep -Name 'Cleanup Mississippi Code Style' -StepNumber ($step++) -Action { Invoke-MississippiSolutionCleanup -RepoRoot $RepoRoot } -SilentSuccess
+    }
+    $testExecutionReached = $true
+    $mississippiTestResult = Invoke-AutomationStep -Name 'Run Mississippi Unit Tests' -StepNumber ($step++) -Action { Invoke-MississippiSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot -PassThru } -SilentSuccess
+    if ($null -eq $mississippiTestResult -or [string]::IsNullOrWhiteSpace([string]$mississippiTestResult.CoverageReportPath)) {
+        throw 'Mississippi unit-test operation did not return an aggregated coverage report path.'
+    }
+    Invoke-AutomationStep -Name 'Summarize Coverage Gaps' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $coverageScript, '-CoverageReportPath', $mississippiTestResult.CoverageReportPath, '-EmitTasks') | Out-Host }
+    if ($IncludeMutation) {
+        Invoke-AutomationStep -Name 'Run and Summarize Mississippi Mutation Tests' -StepNumber ($step++) -Action {
+            $mutationArguments = @('-NoProfile', '-File', $mutationSummaryScript, '-Configuration', $Configuration, '-GenerateTasks', '-SkipLease')
+            if (-not [string]::IsNullOrWhiteSpace($LeaseDirectory)) { $mutationArguments += @('-LeaseDirectory', $LeaseDirectory) }
+            Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments $mutationArguments | Out-Host
+        }
     }
 
     Write-AutomationBanner -Message '=== SAMPLE SOLUTION PIPELINE ===' -ForegroundColor ([ConsoleColor]::Cyan)
     Invoke-AutomationStep -Name 'Build Sample Solution' -StepNumber ($step++) -Action { Invoke-SampleSolutionBuild -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
-    Invoke-AutomationStep -Name 'Run Sample Unit Tests' -StepNumber ($step++) -Action { Invoke-SampleSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
     if (-not $SkipCleanup) {
         Invoke-AutomationStep -Name 'Cleanup Sample Code Style' -StepNumber ($step++) -Action { Invoke-SampleSolutionCleanup -RepoRoot $RepoRoot } -SilentSuccess
     }
+    $testExecutionReached = $true
+    Invoke-AutomationStep -Name 'Run Sample Unit Tests' -StepNumber ($step++) -Action { Invoke-SampleSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
 
     Invoke-AutomationStep -Name 'Final Build with Warnings as Errors' -StepNumber ($step++) -Action { Invoke-FinalSolutionsBuild -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
 
     Write-Host '=== PIPELINE COMPLETED SUCCESSFULLY ===' -ForegroundColor ([ConsoleColor]::Green)
-    Write-Host 'All steps completed without errors. Solutions are ready for deployment.'
+    if ($SkipCleanup) {
+        Write-Host 'Local build, test, coverage and final-build checks completed; cleanup was intentionally skipped, so this is not final handoff evidence.'
+    }
+    else {
+        Write-Host 'Local build, test, coverage, cleanup and final-build checks completed. Deployment, browser and external CI checks are outside this command.'
+    }
+    $pipelineArtifacts = @(Get-ChildItem -LiteralPath (Join-Path $RepoRoot '.scratchpad/coverage-test-results') -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in @('.trx', '.xml') } | Select-Object -ExpandProperty FullName)
+    Complete-ValidationEvidenceRun -Run $evidenceRun -Status PASS -Phase 'complete' -Executed $testExecutionReached -TestCount (Get-ValidationPipelineTestCount -RepoRoot $RepoRoot) -ExitCode 0 -ArtifactPath $pipelineArtifacts | Out-Null
+    }
+    catch {
+        $pipelineArtifacts = @(Get-ChildItem -LiteralPath (Join-Path $RepoRoot '.scratchpad/coverage-test-results') -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in @('.trx', '.xml') } | Select-Object -ExpandProperty FullName)
+        Complete-ValidationEvidenceRun -Run $evidenceRun -Status FAIL -Phase 'pipeline' -Executed $testExecutionReached -TestCount (Get-ValidationPipelineTestCount -RepoRoot $RepoRoot) -ExitCode 1 -ArtifactPath $pipelineArtifacts -ErrorMessage $_.Exception.Message | Out-Null
+        throw
+    }
+    }
+    finally {
+        Exit-RepositoryExecutionLease -Lease $executionLease
+    }
 }
 
 function Get-SpringTestResult {
@@ -997,7 +2785,441 @@ function Install-SpringBrowser {
     Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments $browserArguments
 }
 
-function Invoke-SpringValidation {
+function Get-PrReadinessGhJson {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string[]]$Arguments)
+
+    $output = & gh @Arguments 2>&1 | Out-String
+    if ($LASTEXITCODE -ne 0) { throw "GitHub read failed: $($output.Trim())" }
+    return ConvertFrom-Json -InputObject $output
+}
+
+function Get-PrReadinessExpectedCheckPatterns {
+    [CmdletBinding()]
+    param([string[]]$ChangedPaths = @(), [AllowEmptyString()][string]$BaseRef = 'main')
+
+    $patterns = [System.Collections.Generic.List[string]]::new()
+    foreach ($pattern in @(
+        '^CodeQL$',
+        '^SonarCloud$',
+        '^SonarCloud Code Analysis$',
+        '^Build \(ubuntu-latest\)$',
+        '^Build \(ubuntu-latest, mississippi\.slnx\)$',
+        '^Build \(ubuntu-latest, samples\.slnx\)$',
+        '^L0 Unit Tests \(ubuntu-latest, mississippi\.slnx\)$',
+        '^L0 Unit Tests \(ubuntu-latest, samples\.slnx\)$',
+        '^L1 Light Infrastructure Tests \(ubuntu-latest, mississippi\.slnx\)$',
+        '^L1 Light Infrastructure Tests \(ubuntu-latest, samples\.slnx\)$',
+        '^L2 Integration Tests \(Aspire\) \(ubuntu-latest, mississippi\.slnx\)$',
+        '^L2 Integration Tests \(Aspire\) \(ubuntu-latest, samples\.slnx\)$',
+        '^cleanup \(ubuntu-latest, mississippi\.slnx\)$',
+        '^cleanup \(ubuntu-latest, samples\.slnx\)$',
+        '^AppHost locked restore \(ubuntu-latest\)$',
+        '^AppHost locked restore \(windows-latest\)$',
+        '^pwsh-tests \(ubuntu-latest\)$',
+        '^pwsh-tests \(windows-latest\)$',
+        '^Markdown Lint$',
+        '^L3 Spring E2E \(Smoke\)$',
+        '^Validate repository issue reference$',
+        '^label-by-files$',
+        '^label-by-semver$',
+        '^Analyze \(csharp\)$',
+        '^Analyze \(actions\)$',
+        '^Analyze \(javascript-typescript\)$',
+        '^submit-nuget$'
+    )) { $patterns.Add($pattern) }
+
+    $standardWorkflowBase = $BaseRef -eq 'main' -or $BaseRef -match '^(?:feature|topic)/'
+    if (-not $standardWorkflowBase) {
+        $standardWorkflowPatterns = @(
+            '^SonarCloud$', '^SonarCloud Code Analysis$', '^Build \(ubuntu-latest\)$',
+            '^Build \(ubuntu-latest, mississippi\.slnx\)$', '^Build \(ubuntu-latest, samples\.slnx\)$',
+            '^L0 Unit Tests \(ubuntu-latest, mississippi\.slnx\)$', '^L0 Unit Tests \(ubuntu-latest, samples\.slnx\)$',
+            '^L1 Light Infrastructure Tests \(ubuntu-latest, mississippi\.slnx\)$', '^L1 Light Infrastructure Tests \(ubuntu-latest, samples\.slnx\)$',
+            '^L2 Integration Tests \(Aspire\) \(ubuntu-latest, mississippi\.slnx\)$', '^L2 Integration Tests \(Aspire\) \(ubuntu-latest, samples\.slnx\)$',
+            '^cleanup \(ubuntu-latest, mississippi\.slnx\)$', '^cleanup \(ubuntu-latest, samples\.slnx\)$',
+            '^AppHost locked restore \(ubuntu-latest\)$', '^AppHost locked restore \(windows-latest\)$',
+            '^pwsh-tests \(ubuntu-latest\)$', '^pwsh-tests \(windows-latest\)$', '^Markdown Lint$', '^L3 Spring E2E \(Smoke\)$'
+        )
+        foreach ($pattern in $standardWorkflowPatterns) { $null = $patterns.Remove($pattern) }
+    }
+
+    $docsApplicable = $standardWorkflowBase -and @($ChangedPaths | Where-Object { $_ -match '^(?:docs/|\.github/workflows/docusaurus\.yml$)' }).Count -gt 0
+    if ($docsApplicable) { $patterns.Add('^Build Docusaurus Site$') }
+    $csprojApplicable = @($ChangedPaths | Where-Object { $_ -match '^src/.+\.csproj$' }).Count -gt 0
+    if ($csprojApplicable) { $patterns.Add('^Validate src csproj descriptions$') }
+    $copilotSetupApplicable = @($ChangedPaths | Where-Object { $_ -eq '.github/workflows/copilot-setup-steps.yml' }).Count -gt 0
+    if ($copilotSetupApplicable) { $patterns.Add('^copilot-setup-steps$') }
+    return @($patterns)
+}
+
+function Get-PrReadinessCheckState {
+    param([Parameter(Mandatory)][object]$CheckRun)
+
+    if ([string]$CheckRun.conclusion -eq 'success') { return 'pass' }
+    if ([string]$CheckRun.conclusion -in @('skipped', 'neutral')) { return 'pass' }
+    if ([string]$CheckRun.status -eq 'completed') { return 'fail' }
+    return 'pending'
+}
+
+function Test-PrReadinessAdvisoryCheckName {
+    param([Parameter(Mandatory)][string]$Name)
+
+    return $Name -match '^(?:pr-metrics|CodeQL|label-by-files|label-by-semver)$'
+}
+
+function Test-PrReadinessCheckRunBelongsToPullRequest {
+    param([Parameter(Mandatory)][object]$CheckRun, [Parameter(Mandatory)][int]$PullRequestNumber, [AllowEmptyString()][string]$BaseRef)
+
+    $pullRequests = $CheckRun.PSObject.Properties['pull_requests']
+    if ($null -eq $pullRequests) { return $false }
+    return @($pullRequests.Value | Where-Object {
+        if ([int]$_.number -ne $PullRequestNumber) { return $false }
+        $base = $_.PSObject.Properties['base']
+        $null -eq $base -or [string]$base.Value.ref -eq $BaseRef
+    }).Count -gt 0
+}
+
+function Get-PrReadinessCommitStatusState {
+    param([Parameter(Mandatory)][object]$Status)
+
+    switch ([string]$Status.state.ToLowerInvariant()) {
+        'success' { return 'pass' }
+        'pending' { return 'pending' }
+        default { return 'fail' }
+    }
+}
+
+function Get-PrReadinessBodyText {
+    param([Parameter(Mandatory)][object]$Value)
+
+    $property = $Value.PSObject.Properties['body']
+    if ($null -eq $property) { return '' }
+    return [string]$property.Value
+}
+
+function Get-PrReadinessReviewAuthor {
+    param([Parameter(Mandatory)][object]$Value)
+
+    $user = $Value.PSObject.Properties['user']
+    if ($null -ne $user -and $null -ne $user.Value -and $null -ne $user.Value.PSObject.Properties['login']) {
+        return [string]$user.Value.login
+    }
+    # GitHub can retain review events after the account is deleted. A review ID
+    # is not a stable reviewer identity, so keep those events in one tombstone
+    # stream and let the aggregate review decision retire superseded requests.
+    return "review-deleted-$([string]$Value.id)"
+}
+
+function Assert-PrReadinessGraphQlPage {
+    param([Parameter(Mandatory)][object]$Page, [Parameter(Mandatory)][string]$Label)
+
+    if ($null -ne $Page.PSObject.Properties['errors'] -and @($Page.errors).Count -gt 0) {
+        throw "Readiness GraphQL $Label query returned errors: $($Page.errors | ConvertTo-Json -Compress)"
+    }
+    if ($null -eq $Page.PSObject.Properties['data'] -or
+        $null -eq $Page.data.repository -or
+        $null -eq $Page.data.repository.pullRequest -or
+        $null -eq $Page.data.repository.pullRequest.reviewThreads) {
+        throw "Readiness GraphQL $Label query returned an incomplete response."
+    }
+}
+
+function Get-PrReadinessBodyFingerprint {
+    param([Parameter(Mandatory)][object]$Value)
+
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes((Get-PrReadinessBodyText -Value $Value))
+    $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
+    return 'SHA256:' + (($hash | ForEach-Object { $_.ToString('x2') }) -join '')
+}
+
+function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally coordinates paginated GitHub checks, reviews, threads, and stability fingerprints.
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepositoryOwner,
+        [Parameter(Mandatory)][string]$RepositoryName,
+        [Parameter(Mandatory)][int]$PullRequestNumber,
+        [string]$TrustedReviewQueryPath,
+        [scriptblock]$GhJsonProvider,
+        [ValidateRange(0, 86400)][int]$PollingSeconds = 0
+    )
+
+    $getJson = if ($null -ne $GhJsonProvider) {
+        { param([string[]]$Arguments) & $GhJsonProvider $Arguments }
+    }
+    else {
+        { param([string[]]$Arguments) Get-PrReadinessGhJson -Arguments $Arguments }
+    }
+    $pullPath = "repos/$RepositoryOwner/$RepositoryName/pulls/$PullRequestNumber"
+    $pull = & $getJson @('api', $pullPath)
+    $headAtStart = [string]$pull.head.sha
+    $baseAtStart = [string]$pull.base.sha
+    $baseRefAtStart = if ($null -ne $pull.base.PSObject.Properties['ref']) { [string]$pull.base.ref } else { '' }
+    $filePages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/pulls/$PullRequestNumber/files", '--paginate', '--slurp'))
+    $changedPaths = @($filePages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | ForEach-Object {
+        if ($null -ne $_.PSObject.Properties['filename']) { [string]$_.filename }
+        if ($null -ne $_.PSObject.Properties['previous_filename']) { [string]$_.previous_filename }
+    } | Where-Object { $_ })
+    $checkPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$headAtStart/check-runs", '--paginate', '--slurp'))
+    $checkRuns = @($checkPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | ForEach-Object { @($_.check_runs) } | Where-Object { Test-PrReadinessCheckRunBelongsToPullRequest -CheckRun $_ -PullRequestNumber $PullRequestNumber -BaseRef $baseRefAtStart })
+    $statusPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$headAtStart/statuses", '--paginate', '--slurp'))
+    $statuses = @($statusPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | Group-Object context | ForEach-Object { $_.Group | Sort-Object created_at -Descending | Select-Object -First 1 })
+    $checks = [System.Collections.Generic.List[object]]::new()
+    foreach ($checkRun in $checkRuns) {
+        $checks.Add([pscustomobject]@{
+            Name = [string]$checkRun.name
+            State = Get-PrReadinessCheckState -CheckRun $checkRun
+            Required = -not (Test-PrReadinessAdvisoryCheckName -Name ([string]$checkRun.name))
+            ExpectedIdentity = $false
+        })
+    }
+    foreach ($status in $statuses) {
+        $checks.Add([pscustomobject]@{
+            Name = [string]$status.context
+            State = Get-PrReadinessCommitStatusState -Status $status
+            Required = $false
+            ExpectedIdentity = $false
+        })
+    }
+    $expectedPatterns = @(Get-PrReadinessExpectedCheckPatterns -ChangedPaths $changedPaths -BaseRef $baseRefAtStart)
+    foreach ($pattern in $expectedPatterns) {
+        if (@($checks | Where-Object { $_.Name -match $pattern }).Count -eq 0) {
+            $checks.Add([pscustomobject]@{ Name = "required:$pattern"; State = 'missing'; Required = $true; ExpectedIdentity = $true })
+        }
+        else {
+            foreach ($check in @($checks | Where-Object { $_.Name -match $pattern })) { $check.Required = $true; $check.ExpectedIdentity = $true }
+        }
+    }
+
+    $reviewsPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/pulls/$PullRequestNumber/reviews", '--paginate', '--slurp'))
+    $reviews = @($reviewsPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } })
+    $latestReviewByAuthor = @{}
+    foreach ($review in @($reviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object submitted_at)) {
+        $author = Get-PrReadinessReviewAuthor -Value $review
+        $latestReviewByAuthor[$author] = $review
+    }
+    $currentReviews = @($latestReviewByAuthor.Values)
+    $approvals = @($currentReviews | Where-Object { $_.state -eq 'APPROVED' }).Count
+    $reviewDecision = if (@($currentReviews | Where-Object { $_.state -eq 'CHANGES_REQUESTED' }).Count -gt 0) { 'CHANGES_REQUESTED' } elseif ($approvals -gt 0) { 'APPROVED' } else { '' }
+
+    $threadQuery = 'query($owner:String!,$repo:String!,$number:Int!,$cursor:String){repository(owner:$owner,name:$repo){pullRequest(number:$number){reviewDecision reviewThreads(first:100,after:$cursor){nodes{id isResolved isOutdated comments(first:20){nodes{databaseId body author{login} path line url}}} pageInfo{hasNextPage endCursor}}}}}'
+    $threadQueryExpectedDigest = 'SHA256:408a4e4a10fcf7a747ce76b4f2894f1933d62c01b8a51af6e0e9adc15ef45169'
+    $threadQueryArgument = "query=$threadQuery"
+    $threadQuerySwitch = '-f'
+    if ($null -eq $GhJsonProvider) {
+        if ([string]::IsNullOrWhiteSpace($TrustedReviewQueryPath)) {
+            throw 'A trusted, independently installed review-thread query file is required before invoking authenticated gh.'
+        }
+        $trustedQueryPath = (Resolve-Path -LiteralPath $TrustedReviewQueryPath -ErrorAction Stop).Path
+        $threadQuery = (Get-Content -LiteralPath $trustedQueryPath -Raw -ErrorAction Stop).Replace("`r`n", "`n").Trim()
+        $threadQueryArgument = "query=@$trustedQueryPath"
+        $threadQuerySwitch = '-F'
+    }
+    $threadQueryDigestBytes = [System.Text.Encoding]::UTF8.GetBytes($threadQuery)
+    $threadQueryDigestHash = [System.Security.Cryptography.SHA256]::HashData($threadQueryDigestBytes)
+    $threadQueryDigest = 'SHA256:' + (($threadQueryDigestHash | ForEach-Object { $_.ToString('x2') }) -join '')
+    if ($threadQueryDigest -ne $threadQueryExpectedDigest) { throw 'Readiness GraphQL query integrity verification failed.' }
+    $threads = [System.Collections.Generic.List[object]]::new()
+    $cursor = $null
+    $graphqlReviewDecision = ''
+    do {
+        $graphqlArguments = @('api', 'graphql', $threadQuerySwitch, $threadQueryArgument, '-F', "owner=$RepositoryOwner", '-F', "repo=$RepositoryName", '-F', "number=$PullRequestNumber", '-F', $(if ($null -eq $cursor) { 'cursor=null' } else { "cursor=$cursor" }))
+        $threadPage = & $getJson $graphqlArguments
+        Assert-PrReadinessGraphQlPage -Page $threadPage -Label 'thread'
+        $graphqlReviewDecision = [string]$threadPage.data.repository.pullRequest.reviewDecision
+        foreach ($thread in @($threadPage.data.repository.pullRequest.reviewThreads.nodes)) { $threads.Add($thread) }
+        $hasNextPage = [bool]$threadPage.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage
+        $cursor = [string]$threadPage.data.repository.pullRequest.reviewThreads.pageInfo.endCursor
+    } while ($hasNextPage)
+    if (-not [string]::IsNullOrWhiteSpace($graphqlReviewDecision)) { $reviewDecision = $graphqlReviewDecision }
+
+    if ($PollingSeconds -gt 0) { Start-Sleep -Seconds $PollingSeconds }
+    $pullAtEnd = & $getJson @('api', $pullPath)
+    $finalHead = [string]$pullAtEnd.head.sha
+    $baseRefAtEnd = if ($null -ne $pullAtEnd.base.PSObject.Properties['ref']) { [string]$pullAtEnd.base.ref } else { '' }
+    $finalCheckPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$finalHead/check-runs", '--paginate', '--slurp'))
+    $finalCheckRuns = @($finalCheckPages | ForEach-Object { @($_.check_runs) } | Where-Object { Test-PrReadinessCheckRunBelongsToPullRequest -CheckRun $_ -PullRequestNumber $PullRequestNumber -BaseRef $baseRefAtEnd })
+    $finalStatusPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$finalHead/statuses", '--paginate', '--slurp'))
+    $finalStatuses = @($finalStatusPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | Group-Object context | ForEach-Object { $_.Group | Sort-Object created_at -Descending | Select-Object -First 1 })
+    $statusFingerprintStart = (@($statuses | ForEach-Object { "$($_.context)=$([string](Get-PrReadinessCommitStatusState -Status $_))" } | Sort-Object) -join '|')
+    $statusFingerprintEnd = (@($finalStatuses | ForEach-Object { "$($_.context)=$([string](Get-PrReadinessCommitStatusState -Status $_))" } | Sort-Object) -join '|')
+    $checkFingerprintStart = (@($checkRuns | ForEach-Object { "$($_.name)=$([string](Get-PrReadinessCheckState -CheckRun $_))" } | Sort-Object) -join '|')
+    $checkFingerprintEnd = (@($finalCheckRuns | ForEach-Object { "$($_.name)=$([string](Get-PrReadinessCheckState -CheckRun $_))" } | Sort-Object) -join '|')
+    $checkFingerprintStart = "$checkFingerprintStart|$statusFingerprintStart"
+    $checkFingerprintEnd = "$checkFingerprintEnd|$statusFingerprintEnd"
+
+    $finalReviewsPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/pulls/$PullRequestNumber/reviews", '--paginate', '--slurp'))
+    $finalReviews = @($finalReviewsPages | ForEach-Object { @($_) })
+    $reviewFingerprintStart = (@($reviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object state, id | ForEach-Object { "$(Get-PrReadinessReviewAuthor -Value $_)=$($_.state)#$($_.id)" }) -join '|')
+    $reviewFingerprintEnd = (@($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object state, id | ForEach-Object { "$(Get-PrReadinessReviewAuthor -Value $_)=$($_.state)#$($_.id)" }) -join '|')
+    $commentFingerprintStart = (@($reviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) } | Sort-Object id | ForEach-Object { "$($_.id)=$(Get-PrReadinessBodyFingerprint -Value $_)" }) -join '|')
+    $commentFingerprintEnd = (@($finalReviews | Where-Object { $_.state -eq 'COMMENTED' -and -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) } | Sort-Object id | ForEach-Object { "$($_.id)=$(Get-PrReadinessBodyFingerprint -Value $_)" }) -join '|')
+    $finalLatestReviewByAuthor = @{}
+    foreach ($review in @($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED') } | Sort-Object submitted_at)) {
+        $author = Get-PrReadinessReviewAuthor -Value $review
+        $finalLatestReviewByAuthor[$author] = $review
+    }
+    $approvals = @($finalLatestReviewByAuthor.Values | Where-Object {
+        $_.state -eq 'APPROVED' -and [string]$_.commit_id -eq $finalHead
+    }).Count
+
+    $finalThreads = [System.Collections.Generic.List[object]]::new()
+    $finalCursor = $null
+    $finalHasNextPage = $false
+    do {
+        $finalGraphqlArguments = @('api', 'graphql', $threadQuerySwitch, $threadQueryArgument, '-F', "owner=$RepositoryOwner", '-F', "repo=$RepositoryName", '-F', "number=$PullRequestNumber", '-F', $(if ($null -eq $finalCursor) { 'cursor=null' } else { "cursor=$finalCursor" }))
+        $finalThreadPage = & $getJson $finalGraphqlArguments
+        Assert-PrReadinessGraphQlPage -Page $finalThreadPage -Label 'final thread'
+        if (-not [string]::IsNullOrWhiteSpace([string]$finalThreadPage.data.repository.pullRequest.reviewDecision)) {
+            $reviewDecision = [string]$finalThreadPage.data.repository.pullRequest.reviewDecision
+        }
+        foreach ($thread in @($finalThreadPage.data.repository.pullRequest.reviewThreads.nodes)) { $finalThreads.Add($thread) }
+        $finalHasNextPage = [bool]$finalThreadPage.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage
+        $finalCursor = [string]$finalThreadPage.data.repository.pullRequest.reviewThreads.pageInfo.endCursor
+    } while ($finalHasNextPage)
+    $reviewEventsByAuthor = @{}
+    foreach ($review in @($finalReviews | Where-Object { $_.state -in @('APPROVED', 'CHANGES_REQUESTED', 'COMMENTED', 'DISMISSED') } | Sort-Object submitted_at)) {
+        $author = Get-PrReadinessReviewAuthor -Value $review
+        if (-not $reviewEventsByAuthor.ContainsKey($author)) { $reviewEventsByAuthor[$author] = [System.Collections.Generic.List[object]]::new() }
+        $reviewEventsByAuthor[$author].Add($review)
+    }
+    $reviewDispositionList = [System.Collections.Generic.List[object]]::new()
+    foreach ($reviewEvents in $reviewEventsByAuthor.Values) {
+        $activeFeedback = [System.Collections.Generic.List[object]]::new()
+        foreach ($review in $reviewEvents) {
+            $body = Get-PrReadinessBodyText -Value $review
+            if ([string]$review.state -in @('APPROVED', 'DISMISSED')) {
+                $activeFeedback.Clear()
+                if (-not [string]::IsNullOrWhiteSpace($body)) {
+                    $reviewDispositionList.Add([pscustomobject]@{ Id = [string]$review.id; Author = Get-PrReadinessReviewAuthor -Value $review; State = [string]$review.state; Disposition = 'addressed' })
+                }
+            }
+            elseif ([string]$review.state -eq 'CHANGES_REQUESTED') {
+                $activeFeedback.Clear()
+                if (-not [string]::IsNullOrWhiteSpace($body)) { $activeFeedback.Add($review) }
+            }
+            elseif (-not [string]::IsNullOrWhiteSpace($body)) {
+                $activeFeedback.Add($review)
+            }
+        }
+        foreach ($review in $activeFeedback) {
+            $reviewDispositionList.Add([pscustomobject]@{ Id = [string]$review.id; Author = Get-PrReadinessReviewAuthor -Value $review; State = [string]$review.state; Disposition = 'pending' })
+        }
+    }
+    if ($reviewDecision -eq 'APPROVED') {
+        $filteredReviewDispositions = [System.Collections.Generic.List[object]]::new()
+        foreach ($disposition in @($reviewDispositionList | Where-Object {
+                    -not ([string]$_.Author.StartsWith('review-deleted-', [StringComparison]::Ordinal) -and [string]$_.State -eq 'CHANGES_REQUESTED')
+                })) {
+            $filteredReviewDispositions.Add($disposition)
+        }
+        $reviewDispositionList = $filteredReviewDispositions
+    }
+    $reviewDispositions = @($reviewDispositionList)
+    $threadFingerprintStart = (@($threads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated):$(@($_.comments.nodes | ForEach-Object { $_.databaseId }) -join ',')" }) -join '|')
+    $threadFingerprintEnd = (@($finalThreads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated):$(@($_.comments.nodes | ForEach-Object { $_.databaseId }) -join ',')" }) -join '|')
+    $mutableEvidenceStable = $checkFingerprintStart -eq $checkFingerprintEnd -and
+        $reviewFingerprintStart -eq $reviewFingerprintEnd -and
+        $commentFingerprintStart -eq $commentFingerprintEnd -and
+        $threadFingerprintStart -eq $threadFingerprintEnd
+    $generalComments = @()
+    try {
+        $commentPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/issues/$PullRequestNumber/comments", '--paginate', '--slurp'))
+        $generalComments = @($commentPages | ForEach-Object { @($_) } | Where-Object { -not [string]::IsNullOrWhiteSpace((Get-PrReadinessBodyText -Value $_)) })
+    }
+    catch {
+        # A provider that cannot expose discussion comments is incomplete.
+        $mutableEvidenceStable = $false
+    }
+    $pollingCompleted = $PollingSeconds -ge 300
+    [pscustomobject][ordered]@{
+        DataComplete = $true
+        HeadAtStart = $headAtStart
+        HeadAtEnd = [string]$pullAtEnd.head.sha
+        BaseAtStart = $baseAtStart
+        BaseAtEnd = [string]$pullAtEnd.base.sha
+        BaseRefAtStart = $baseRefAtStart
+        BaseRefAtEnd = $baseRefAtEnd
+        PullRequestState = [string]$pullAtEnd.state
+        IsDraft = [bool]$pullAtEnd.draft
+        MergeableState = [string]$pullAtEnd.mergeable_state
+        ReviewDecision = $reviewDecision
+        Checks = @($checks)
+        ReviewThreads = @($finalThreads | ForEach-Object {
+            $latestComment = @($_.comments.nodes | Sort-Object databaseId | Select-Object -Last 1)
+            [pscustomobject]@{
+                IsResolved = [bool]$_.isResolved
+                IsOutdated = [bool]$_.isOutdated
+                LatestCommentId = if ($latestComment.Count -gt 0) { [string]$latestComment[0].databaseId } else { '' }
+                LatestCommentBody = if ($latestComment.Count -gt 0) { Get-PrReadinessBodyText -Value $latestComment[0] } else { '' }
+                LatestCommentAuthor = if ($latestComment.Count -gt 0) { [string]$latestComment[0].author.login } else { '' }
+                Disposition = if ([bool]$_.isResolved -or [bool]$_.isOutdated) { 'addressed' } else { 'pending' }
+            }
+        })
+        Approvals = $approvals
+        IssueReferenceVerified = $false
+        DescriptionReviewed = $false
+        PollingCompleted = $pollingCompleted
+        EvidenceStable = $mutableEvidenceStable
+        GeneralFeedbackCount = @($generalComments).Count
+        ReviewDispositions = @($reviewDispositions)
+        ReviewFeedbackCount = @($reviewDispositions | Where-Object Disposition -EQ 'pending').Count
+        PullRequestUrl = [string]$pullAtEnd.html_url
+    }
+}
+
+function Get-PrReadinessReport { # NOSONAR - readiness reporting intentionally evaluates the complete mechanical and disposition gate.
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object]$Snapshot)
+
+    $blockers = [System.Collections.Generic.List[string]]::new()
+    if (-not $Snapshot.DataComplete) { $blockers.Add('Required GitHub data is incomplete or inaccessible.') }
+    if ($Snapshot.HeadAtStart -ne $Snapshot.HeadAtEnd) { $blockers.Add('PR head changed during collection; snapshot is stale.') }
+    if ($Snapshot.BaseAtStart -ne $Snapshot.BaseAtEnd -or ($null -ne $Snapshot.PSObject.Properties['BaseRefAtStart'] -and $Snapshot.BaseRefAtStart -ne $Snapshot.BaseRefAtEnd)) { $blockers.Add('PR base changed during collection; snapshot is stale.') }
+    $state = if ($null -ne $Snapshot.PSObject.Properties['PullRequestState']) { [string]$Snapshot.PullRequestState } else { 'open' }
+    $draft = if ($null -ne $Snapshot.PSObject.Properties['IsDraft']) { [bool]$Snapshot.IsDraft } else { $false }
+    $mergeableState = if ($null -ne $Snapshot.PSObject.Properties['MergeableState']) { [string]$Snapshot.MergeableState } else { 'clean' }
+    if ($state -ne 'open') { $blockers.Add("Pull request is not open (state: $state).") }
+    if ($draft) { $blockers.Add('Pull request is still a draft.') }
+    if ($mergeableState -ne 'clean') { $blockers.Add("Pull request cannot currently advance (mergeability: $mergeableState).") }
+    if (-not [string]::IsNullOrWhiteSpace([string]$Snapshot.ReviewDecision) -and [string]$Snapshot.ReviewDecision -ne 'APPROVED') { $blockers.Add("Aggregate review decision is $($Snapshot.ReviewDecision).") }
+    foreach ($check in @($Snapshot.Checks | Where-Object { $_.Required -and $_.State -ne 'pass' })) { $blockers.Add("Required check '$($check.Name)' is $($check.State).") }
+    foreach ($thread in @($Snapshot.ReviewThreads)) {
+        $disposition = $thread.PSObject.Properties['Disposition']
+        $pendingDisposition = $null -ne $disposition -and [string]$disposition.Value -eq 'pending'
+        if ($pendingDisposition -or -not [bool]$thread.IsResolved) {
+            $blockers.Add('An unresolved review thread remains.')
+        }
+    }
+    if ([int]$Snapshot.Approvals -lt 1) { $blockers.Add('Required current review approval evidence is missing.') }
+    if (-not $Snapshot.PollingCompleted) { $blockers.Add('Required post-push review polling evidence is incomplete.') }
+    if ($null -ne $Snapshot.PSObject.Properties['EvidenceStable'] -and -not [bool]$Snapshot.EvidenceStable) {
+        $blockers.Add('Mutable checks, reviews, or threads changed during collection; rerun the readiness snapshot.')
+    }
+    if ($null -ne $Snapshot.PSObject.Properties['GeneralFeedbackCount'] -and [int]$Snapshot.GeneralFeedbackCount -gt 0) {
+        $blockers.Add('General PR discussion comments require review disposition.')
+    }
+    if ($null -ne $Snapshot.PSObject.Properties['ReviewFeedbackCount'] -and [int]$Snapshot.ReviewFeedbackCount -gt 0) {
+        $blockers.Add('Comment-only review feedback requires review disposition.')
+    }
+    $mechanicalReady = $blockers.Count -eq 0
+    $semanticReady = [bool]$Snapshot.IssueReferenceVerified -and [bool]$Snapshot.DescriptionReviewed
+    [pscustomobject][ordered]@{
+        SchemaVersion = '1.0'
+        Status = if ($mechanicalReady -and $semanticReady) { 'READY' } elseif ($mechanicalReady) { 'MECHANICALLY_READY_SEMANTIC_REVIEW_REQUIRED' } else { 'INCOMPLETE' }
+        MechanicalGateReady = $mechanicalReady
+        SemanticReviewRequired = -not $semanticReady
+        Head = $Snapshot.HeadAtEnd
+        Base = $Snapshot.BaseAtEnd
+        PullRequestUrl = $Snapshot.PullRequestUrl
+        Blockers = @($blockers)
+        Checks = @($Snapshot.Checks)
+        Approvals = [int]$Snapshot.Approvals
+        ReviewThreads = @($Snapshot.ReviewThreads)
+    }
+}
+
+function Invoke-SpringValidation { # NOSONAR - Spring validation intentionally coordinates prerequisites, build, browser, and artifact phases.
     [CmdletBinding()]
     param(
         [string]$RepoRoot = (Get-RepositoryRoot),
@@ -1013,7 +3235,17 @@ function Invoke-SpringValidation {
     $RepoRoot = (Resolve-Path -LiteralPath $RepoRoot).Path
     $runDirectory = New-AutomationRunDirectory -Root (Join-Path $RepoRoot 'artifacts/spring') -Prefix "$TestLevel-$Suite-$([guid]::NewGuid().ToString('N'))"
     $project = Join-Path $RepoRoot "samples/Spring/Spring.${TestLevel}Tests/Spring.${TestLevel}Tests.csproj"
-    $summary = [ordered]@{ schemaVersion = 1; status = 'FAIL'; phase = 'selection'; testLevel = $TestLevel; suite = $Suite; project = $project; passed = 0; artifacts = $runDirectory }
+    $springEvidenceRoot = Join-Path $RepoRoot 'samples/Spring'
+    $springEvidenceInputs = if (Test-Path -LiteralPath $springEvidenceRoot -PathType Container) {
+        @(
+            Get-ChildItem -LiteralPath $springEvidenceRoot -Recurse -File -Force |
+                Where-Object { $_.FullName -notmatch '[\\/](?:bin|obj)[\\/]' } |
+                ForEach-Object FullName
+        )
+    }
+    else { @($project) }
+    $evidenceRun = New-ValidationEvidenceRun -RepositoryRoot $RepoRoot -Scope "spring:${TestLevel}:$Suite" -InputPath @($springEvidenceInputs) -Arguments @('TestLevel', $TestLevel, 'Suite', $Suite, 'Configuration', $Configuration)
+    $summary = [ordered]@{ schemaVersion = 1; status = 'FAIL'; phase = 'selection'; testLevel = $TestLevel; suite = $Suite; project = $project; passed = 0; artifacts = $runDirectory; error = $null }
     $timer = [System.Diagnostics.Stopwatch]::StartNew()
     $previousPath = $env:PATH
     $previousArtifacts = $env:SPRING_TEST_ARTIFACTS
@@ -1082,12 +3314,15 @@ function Invoke-SpringValidation {
         $summary.durationSeconds = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
         $summaryPath = Join-Path $runDirectory 'summary.json'
         $summary | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $summaryPath -Encoding utf8
+        $evidenceStatus = if ($summary.status -eq 'PASS') { 'PASS' } elseif ($summary.status -eq 'READY') { 'READY' } else { 'FAIL' }
+        Complete-ValidationEvidenceRun -Run $evidenceRun -Status $evidenceStatus -Phase ([string]$summary.phase) -Executed ($evidenceStatus -eq 'PASS') -TestCount ([int]$summary.passed) -ExitCode $(if ($evidenceStatus -eq 'PASS' -or $evidenceStatus -eq 'READY') { 0 } else { 1 }) -ArtifactPath @($summaryPath) -MirrorPath (Join-Path $runDirectory 'validation-evidence.json') -ErrorMessage ([string]$summary.error) | Out-Null
         Write-Output "RESULT: $($summary.status) | LEVEL: $TestLevel | SUITE: $Suite | PHASE: $($summary.phase) | PASSED: $($summary.passed)"
         Write-Output "SUMMARY: $summaryPath"
     }
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation
+Export-ModuleMember -Function Get-RepositoryRoot, Resolve-RepositoryExecutionPath, Get-RepositoryExecutionLeasePath, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease, Invoke-RepositoryProcess, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation, Get-PrReadinessGhJson, Get-PrReadinessExpectedCheckPatterns, Get-PrReadinessSnapshot, Get-PrReadinessReport
+Export-ModuleMember -Function Get-RepositoryRoot, Resolve-RepositoryExecutionPath, Get-RepositoryExecutionLeasePath, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease, Invoke-RepositoryProcess, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation, Get-ValidationSourceFingerprint, New-ValidationEvidenceRun, Complete-ValidationEvidenceRun, Write-ValidationEvidence, Test-ValidationEvidence, Get-PrReadinessGhJson, Get-PrReadinessExpectedCheckPatterns, Get-PrReadinessSnapshot, Get-PrReadinessReport
 
 
 

@@ -388,10 +388,7 @@ public class GenericAggregateGrainTests
         handlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
             .Returns(OperationResult.Ok<IReadOnlyList<object>>(new object[] { testEvent }));
         converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
-            .Returns((
-                BrookKey _,
-                IReadOnlyList<object> events
-            ) => ImmutableArray.Create(
+            .Returns((BrookKey _, IReadOnlyList<object> events) => ImmutableArray.Create(
                 new BrookEvent
                 {
                     Id = "event-" + events[0].GetHashCode(),
@@ -469,10 +466,7 @@ public class GenericAggregateGrainTests
         handlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
             .Returns(OperationResult.Ok<IReadOnlyList<object>>(new object[] { initialEvent }));
         converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
-            .Returns((
-                BrookKey _,
-                IReadOnlyList<object> events
-            ) => ImmutableArray.Create(
+            .Returns((BrookKey _, IReadOnlyList<object> events) => ImmutableArray.Create(
                 new BrookEvent
                 {
                     Id = "event-" + Guid.NewGuid(),

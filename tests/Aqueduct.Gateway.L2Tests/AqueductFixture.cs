@@ -1,6 +1,7 @@
 using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.Aqueduct.Runtime;
+using Mississippi.Hosting.Runtime;
 
 
 namespace Mississippi.Aqueduct.Gateway.L2Tests;
@@ -70,7 +71,7 @@ public sealed class AqueductFixture
                 })
 
                 // Use Aqueduct with MemoryStreams for testing
-                .UseAqueduct(options => { options.UseMemoryStreams(); });
+                .UseMississippi(runtime => runtime.AddAqueduct(aqueduct => aqueduct.UseMemoryStreams()));
         });
         return builder.Build();
     }

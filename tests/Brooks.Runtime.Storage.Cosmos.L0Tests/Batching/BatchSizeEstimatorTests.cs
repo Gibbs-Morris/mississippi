@@ -60,6 +60,13 @@ public sealed class BatchSizeEstimatorTests
         return ImmutableArray.Create(buffer);
     }
 
+    /// <summary>Verifies the configured request-size lower bound reuses the batch envelope constant.</summary>
+    [Fact]
+    public void BatchOverheadBytesDefinesRequestSizeLowerBound()
+    {
+        Assert.Equal(8_192, BatchSizeEstimator.BatchOverheadBytes);
+    }
+
     /// <summary>
     ///     Ensures size-based batching allows events whose combined size exactly matches the limit.
     /// </summary>
@@ -195,7 +202,7 @@ public sealed class BatchSizeEstimatorTests
         };
 
         // Use a tiny max size so that after accounting for batch overhead the single event is too large
-        long tinyMaxSize = 9_000; // BatchOverheadBytes is 8192, leaving only 808 bytes for event
+        long tinyMaxSize = BatchSizeEstimator.BatchOverheadBytes + 808; // Leaving only 808 bytes for the event.
 
         // Act & Assert
         Assert.Throws<InvalidOperationException>(() =>

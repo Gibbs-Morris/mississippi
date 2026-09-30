@@ -5,6 +5,7 @@ using Mississippi.Aqueduct.Runtime;
 using Mississippi.Brooks.Abstractions.Streaming;
 using Mississippi.Brooks.Runtime;
 using Mississippi.Brooks.Runtime.Storage.Abstractions;
+using Mississippi.Hosting.Runtime;
 using Mississippi.Inlet.Runtime.Abstractions;
 using Mississippi.Testing.Utilities.Storage;
 
@@ -29,17 +30,15 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
         siloBuilder.AddMemoryGrainStorage("PubSubStore");
 
         // Tell Brooks which stream provider to use
-        siloBuilder.AddEventSourcing();
-
-        // Configure Aqueduct for IAqueductGrainFactory
-        siloBuilder.UseAqueduct();
+        siloBuilder.UseMississippi(runtime =>
+        {
+            runtime.AddEventSourcing();
+            runtime.AddAqueduct();
+        });
         siloBuilder.ConfigureServices(services =>
         {
             // Register InletSilo services (IProjectionBrookRegistry)
             services.AddInletSilo();
-
-            // Add EventSourcing services for IStreamIdFactory
-            services.AddEventSourcingByService();
 
             // In-memory brook storage for tests
             services.AddSingleton<InMemoryBrookStorage>();

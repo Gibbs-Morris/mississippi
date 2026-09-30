@@ -19,6 +19,29 @@ namespace Mississippi.Reservoir.Core.L0Tests;
 /// </summary>
 public sealed class ReservoirRegistrationsTests
 {
+    private static void AssertRootRegistrationIsRejected(
+        Action<IReservoirBuilder> register
+    )
+    {
+        ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
+        ServiceDescriptor[] original = services.ToArray();
+        IReservoirFeatureBuilder<TestFeatureState>? captured = null;
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+            builder.AddFeatureState<TestFeatureState>(feature =>
+            {
+                captured = feature;
+                register(builder);
+            }));
+        Assert.Contains("feature callback", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(original, services);
+        Assert.NotNull(captured);
+        Assert.True(captured.Services.IsReadOnly);
+        builder.AddFeatureState<TestFeatureState>(feature => feature.AddActionEffect<TestActionEffect>());
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.Single(provider.GetServices<IActionEffect<TestFeatureState>>());
+    }
+
     private sealed class ExistingMarker : IMarker;
 
     /// <summary>
@@ -355,5 +378,79 @@ public sealed class ReservoirRegistrationsTests
 
         // Assert
         Assert.NotNull(rootReducer);
+    }
+
+    /// <summary>
+    ///     A failed feature callback closes its staged builder while the parent remains usable.
+    /// </summary>
+    [Fact]
+    public void FailedFeatureCallbackClosesCapturedScopeAndPermitsRetry()
+    {
+        ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
+        IReservoirFeatureBuilder<TestFeatureState>? captured = null;
+        Assert.Throws<InvalidOperationException>(() => builder.AddFeatureState<TestFeatureState>(feature =>
+        {
+            captured = feature;
+            throw new InvalidOperationException("Configuration failed.");
+        }));
+        Assert.NotNull(captured);
+        Assert.True(captured.Services.IsReadOnly);
+        Assert.Throws<InvalidOperationException>(() => captured.AddActionEffect<TestActionEffect>());
+        builder.AddFeatureState<TestFeatureState>(feature => feature.AddActionEffect<TestActionEffect>());
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.Single(provider.GetServices<IActionEffect<TestFeatureState>>());
+    }
+
+    /// <summary>
+    ///     Direct parent mutations are reported without overwriting the newly added registration.
+    /// </summary>
+    [Fact]
+    public void FeatureCallbackParentMutationIsRejectedWithoutLosingIt()
+    {
+        ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
+        ServiceDescriptor[] original = services.ToArray();
+        ServiceDescriptor added = ServiceDescriptor.Singleton(TimeProvider.System);
+        Assert.Throws<InvalidOperationException>(() =>
+            builder.AddFeatureState<TestFeatureState>(_ => ((IServiceCollection)services).Add(added)));
+        Assert.Equal(original.Append(added), services);
+    }
+
+    /// <summary>
+    ///     Nested root feature callbacks are rejected before invoking their application code.
+    /// </summary>
+    [Fact]
+    public void FeatureCallbackRejectsNestedRootCallback()
+    {
+        bool invoked = false;
+        AssertRootRegistrationIsRejected(builder => builder.AddFeatureState<TestFeatureState>(_ => invoked = true));
+        Assert.False(invoked);
+    }
+
+    /// <summary>
+    ///     Root feature registration is rejected while a feature scope is active.
+    /// </summary>
+    [Fact]
+    public void FeatureCallbackRejectsRootFeatureRegistration() =>
+        AssertRootRegistrationIsRejected(builder => builder.AddFeatureState<TestFeatureState>());
+
+    /// <summary>
+    ///     Root middleware registration is rejected while a feature scope is active.
+    /// </summary>
+    [Fact]
+    public void FeatureCallbackRejectsRootMiddlewareRegistration() =>
+        AssertRootRegistrationIsRejected(builder => builder.AddMiddleware<TestMiddleware>());
+
+    /// <summary>
+    ///     A completed Reservoir builder also rejects middleware registration.
+    /// </summary>
+    [Fact]
+    public void ReadOnlyReservoirRejectsMiddlewareRegistration()
+    {
+        ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
+        services.MakeReadOnly();
+        Assert.Throws<InvalidOperationException>(() => builder.AddMiddleware<TestMiddleware>());
     }
 }

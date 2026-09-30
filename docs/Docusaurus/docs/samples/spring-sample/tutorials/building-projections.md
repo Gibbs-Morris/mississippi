@@ -34,7 +34,7 @@ flowchart TB
 Before following this tutorial, read these pages:
 
 - [Spring Sample App](../index.md)
-- [Building an Aggregate](./building-an-aggregate.md)
+- [Add an Aggregate Command](./building-an-aggregate.md)
 - [Building a Saga](./building-a-saga.md)
 
 ## Step 1: Define the Projection State
@@ -68,6 +68,8 @@ Key attributes:
 | `[GenerateProjectionEndpoints]` | Source-generates API endpoints and real-time SignalR subscriptions |
 
 The projection uses a different `[SnapshotStorageName]` from the aggregate even though it subscribes to the same brook. This ensures the aggregate and projection snapshots are stored independently.
+
+This projection has no `[SnapshotRetention]` attribute, so it uses the configured default interval of 50 unless a configuration override for `SPRING.BANKING.ACCOUNTBALANCE.V1` is supplied.
 
 ([BankAccountBalanceProjection.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Projections/BankAccountBalance/BankAccountBalanceProjection.cs))
 
@@ -152,6 +154,7 @@ The ledger projection demonstrates a more complex read model. It maintains a sli
 [ProjectionPath("bank-account-ledger")]
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
 [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTLEDGER")]
+[SnapshotRetention(100)]
 [GenerateProjectionEndpoints]
 [GenerateSerializer]
 public sealed record BankAccountLedgerProjection

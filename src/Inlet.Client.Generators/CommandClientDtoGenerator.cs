@@ -201,18 +201,13 @@ public sealed class CommandClientDtoGenerator : IIncrementalGenerator
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
         // Use the combined provider to scan referenced assemblies with target namespace awareness
-        IncrementalValueProvider<List<CommandInfo>> commandsProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) => GetCommandsFromCompilation(source.Compilation, source.Options));
+        IncrementalValueProvider<List<CommandInfo>> commandsProvider =
+            compilationAndOptions.Select((source, _) => GetCommandsFromCompilation(source.Compilation, source.Options));
 
         // Register source output
         context.RegisterSourceOutput(
             commandsProvider,
-            static (
-                spc,
-                commands
-            ) =>
+            static (spc, commands) =>
             {
                 foreach (CommandInfo command in commands)
                 {

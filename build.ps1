@@ -4,10 +4,8 @@
 .SYNOPSIS
     Builds the Mississippi solution and (optionally) the Samples solution.
 .DESCRIPTION
-    Convenience wrapper that invokes:
-        • eng/src/agent-scripts/build-mississippi-solution.ps1
-        • eng/src/agent-scripts/build-sample-solution.ps1
-    in a predictable sequence with consistent logging. By default both
+    Convenience wrapper that invokes the shared build helpers directly in a
+    predictable sequence with consistent logging. By default both
     solutions are built in Release configuration with warnings treated as
     errors (enforced inside the underlying scripts / MSBuild settings).
 
@@ -26,6 +24,9 @@
 .PARAMETER SkipMississippi
     When present, skips building the core Mississippi solution.
 
+.PARAMETER LeaseDirectory
+    Shared coordination directory used for cross-account worktree execution leases.
+
 .EXAMPLE
     pwsh ./build.ps1
         Builds both solutions in Release.
@@ -43,19 +44,17 @@
 param(
     [string]$Configuration = 'Release',
     [switch]$SkipSamples,
-    [switch]$SkipMississippi
+    [switch]$SkipMississippi,
+    [string]$LeaseDirectory
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
 
 # Determine repository root (this script resides there)
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
-
-# Underlying scripts
-$buildMississippi = Join-Path $repoRoot 'eng' 'src' 'agent-scripts' 'build-mississippi-solution.ps1'
-$buildSamples     = Join-Path $repoRoot 'eng' 'src' 'agent-scripts' 'build-sample-solution.ps1'
+Import-Module (Join-Path $repoRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1')
+$executionLease = $null
 
 function Invoke-BuildStep {
     param(
@@ -64,25 +63,25 @@ function Invoke-BuildStep {
     )
     Write-Host "=== $Title ===" -ForegroundColor Yellow
     & $Action
-    if ($LASTEXITCODE -ne 0) {
-        throw "$Title failed with exit code $LASTEXITCODE"
-    }
     Write-Host "SUCCESS: $Title completed" -ForegroundColor Green
     Write-Host ''
 }
 
 try {
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "build-wrapper-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $repoRoot = $executionLease.RepositoryRoot
+
     if ($SkipMississippi -and $SkipSamples) {
         Write-Warning 'Both -SkipMississippi and -SkipSamples specified; nothing to build.'
         return
     }
 
     if (-not $SkipMississippi) {
-        Invoke-BuildStep -Title 'STEP 1: Build Mississippi Solution' -Action { & $powerShellPath -NoProfile -File $buildMississippi -Configuration $Configuration }
+        Invoke-BuildStep -Title 'STEP 1: Build Mississippi Solution' -Action { Invoke-MississippiSolutionBuild -Configuration $Configuration -RepoRoot $repoRoot }
     }
 
     if (-not $SkipSamples) {
-        Invoke-BuildStep -Title 'STEP 2: Build Samples Solution' -Action { & $powerShellPath -NoProfile -File $buildSamples -Configuration $Configuration }
+        Invoke-BuildStep -Title 'STEP 2: Build Samples Solution' -Action { Invoke-SampleSolutionBuild -Configuration $Configuration -RepoRoot $repoRoot }
     }
 
     Write-Host '=== ALL REQUESTED BUILDS COMPLETED SUCCESSFULLY ===' -ForegroundColor Green
@@ -90,6 +89,9 @@ try {
 catch {
     Write-Error "=== BUILD FAILED === $_"
     exit 1
+}
+finally {
+    if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
 }
 
 exit 0

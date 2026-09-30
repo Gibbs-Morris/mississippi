@@ -229,16 +229,11 @@ public sealed class CommandClientActionEffectsGenerator : IIncrementalGenerator
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
         IncrementalValueProvider<(List<CommandModel> Commands, string TargetRootNamespace)> commandsProvider =
-            compilationAndOptions.Select((
-                source,
-                _
-            ) => GetCommandsAndTargetFromCompilation(source.Compilation, source.Options));
+            compilationAndOptions.Select((source, _) =>
+                GetCommandsAndTargetFromCompilation(source.Compilation, source.Options));
         context.RegisterSourceOutput(
             commandsProvider,
-            static (
-                spc,
-                data
-            ) =>
+            static (spc, data) =>
             {
                 foreach (CommandModel command in data.Commands)
                 {

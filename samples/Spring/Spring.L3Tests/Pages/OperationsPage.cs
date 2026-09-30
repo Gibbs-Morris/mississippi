@@ -22,9 +22,11 @@ public sealed partial class OperationsPage
         this.page = page;
 
     /// <summary>
-    ///     Gets the first account panel locator (Account A).
+    ///     Gets an account panel locator from its accessible region name.
     /// </summary>
-    private ILocator AccountAPanel => page.Locator("div.operations-panel").First;
+    private ILocator AccountAPanel => page.Locator("#account-a-operations-panel");
+
+    private ILocator AccountBPanel => page.Locator("#account-b-operations-panel");
 
     /// <summary>
     ///     Regex pattern to match the "Deposit £" button text exactly (not quick deposit buttons).
@@ -86,7 +88,13 @@ public sealed partial class OperationsPage
     public async Task EnterDepositAmountAsync(
         decimal amount
     ) =>
-        await AccountAPanel.Locator("#deposit-amount-input").FillAsync(amount.ToString(CultureInfo.InvariantCulture));
+        await AccountAPanel.GetByLabel(
+                "Account A deposit amount (£)",
+                new()
+                {
+                    Exact = true,
+                })
+            .FillAsync(amount.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>
     ///     Enters the holder name for opening an account in the first account panel.
@@ -96,7 +104,13 @@ public sealed partial class OperationsPage
     public async Task EnterHolderNameAsync(
         string holderName
     ) =>
-        await AccountAPanel.Locator("#holder-name-input").FillAsync(holderName);
+        await AccountAPanel.GetByLabel(
+                "Account A holder name",
+                new()
+                {
+                    Exact = true,
+                })
+            .FillAsync(holderName);
 
     /// <summary>
     ///     Enters the initial deposit amount for opening an account in the first account panel.
@@ -106,7 +120,13 @@ public sealed partial class OperationsPage
     public async Task EnterInitialDepositAsync(
         decimal amount
     ) =>
-        await AccountAPanel.Locator("#initial-deposit-input").FillAsync(amount.ToString(CultureInfo.InvariantCulture));
+        await AccountAPanel.GetByLabel(
+                "Account A initial deposit (£)",
+                new()
+                {
+                    Exact = true,
+                })
+            .FillAsync(amount.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>
     ///     Enters the withdraw amount in the first account panel.
@@ -116,7 +136,13 @@ public sealed partial class OperationsPage
     public async Task EnterWithdrawAmountAsync(
         decimal amount
     ) =>
-        await AccountAPanel.Locator("#withdraw-amount-input").FillAsync(amount.ToString(CultureInfo.InvariantCulture));
+        await AccountAPanel.GetByLabel(
+                "Account A withdrawal amount (£)",
+                new()
+                {
+                    Exact = true,
+                })
+            .FillAsync(amount.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>
     ///     Gets the displayed account header from the first account panel.
@@ -124,14 +150,8 @@ public sealed partial class OperationsPage
     /// <returns>The account ID text, or null if not present.</returns>
     public async Task<string?> GetAccountHeaderAsync()
     {
-        // The account header shows "Account A: {id}" in a span within the panel
-        ILocator accountHeader = AccountAPanel.Locator("> div > span").First;
-        if (await accountHeader.CountAsync() > 0)
-        {
-            return await accountHeader.TextContentAsync();
-        }
-
-        return null;
+        ILocator accountHeader = AccountAPanel.Locator("#account-a-panel-heading");
+        return await accountHeader.TextContentAsync();
     }
 
     /// <summary>
@@ -195,11 +215,13 @@ public sealed partial class OperationsPage
     ///     Waits for the balance projection to appear in the first account panel.
     /// </summary>
     /// <param name="timeout">Optional timeout in milliseconds.</param>
+    /// <param name="account">The account slot, A or B.</param>
     /// <returns>A task representing the wait operation.</returns>
     public async Task WaitForBalanceAsync(
-        float? timeout = null
+        float? timeout = null,
+        string account = "A"
     ) =>
-        await AccountAPanel
+        await GetAccountPanel(account)
             .Locator("section:has(h2:text-is('Account Status')) div > div:has(> span:text-is('Balance:'))")
             .WaitForAsync(
                 new()
@@ -216,12 +238,14 @@ public sealed partial class OperationsPage
     ///     locales.
     /// </param>
     /// <param name="timeout">Optional timeout in milliseconds.</param>
+    /// <param name="account">The account slot, A or B.</param>
     /// <returns>A task representing the wait operation.</returns>
     public async Task WaitForBalanceValueAsync(
         string expectedBalance,
-        float? timeout = null
+        float? timeout = null,
+        string account = "A"
     ) =>
-        await AccountAPanel
+        await GetAccountPanel(account)
             .Locator("section:has(h2:text-is('Account Status')) div > div:has(> span:text-is('Balance:'))")
             .Filter(
                 new()
@@ -273,4 +297,14 @@ public sealed partial class OperationsPage
                     State = WaitForSelectorState.Visible,
                     Timeout = timeout,
                 });
+
+    private ILocator GetAccountPanel(
+        string account
+    ) =>
+        account switch
+        {
+            "A" => AccountAPanel,
+            "B" => AccountBPanel,
+            var _ => throw new ArgumentOutOfRangeException(nameof(account), account, "Account slot must be A or B."),
+        };
 }

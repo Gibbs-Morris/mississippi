@@ -54,7 +54,7 @@ Mississippi is a sophisticated .NET framework designed to streamline distributed
 
 ### Prerequisites
 
-- .NET SDK 10.0.400 or a later 10.0.4xx patch, as selected by [global.json](global.json). Its Roslyn 5.9 compiler is required to load the source generators.
+- .NET SDK 10.0.401 exactly, as pinned by [global.json](global.json); a later patch does not substitute. Run `dotnet --version` from the checkout and confirm it prints `10.0.401`. Install it from [Microsoft's .NET 10 downloads](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) if needed. Its Roslyn 5.9 compiler is required to load the source generators.
 - PowerShell 7.0 or later (for build scripts)
 - Aspire CLI for direct AppHost workflows (`dotnet tool install -g Aspire.Cli`). The AppHosts use the CLI bundle; `dotnet run` can fall back to the SDK-paired CLI through DNX when `aspire` is not on `PATH`.
 - JetBrains Rider or other compatible IDE
@@ -94,8 +94,9 @@ Common script entry points:
 
 - `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1 [-Configuration Debug|Release]` – build the Mississippi solution.
 - `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 [-Configuration Debug|Release]` – run L0/L1 tests with coverage for Mississippi projects.
-- `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` – execute Stryker.NET mutation testing.
+- `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1 -ReportOnly` – execute Stryker.NET mutation testing with advisory score warnings.
 - `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` – apply the repository’s ReSharper cleanup and analyzer inspections.
+- `pwsh ./doctor.ps1 -Profile Core|Docs|Spring|GitHub` – report read-only prerequisite readiness; it does not run tests or install tools.
 
 ## Samples
 
@@ -168,12 +169,13 @@ The framework includes comprehensive testing:
 pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
 
 # Optional mutation testing (Stryker)
-pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
+# Complete the analysis while treating configured score thresholds as warnings
+pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1 -ReportOnly
 ```
 
 Test results and coverage reports are generated in the `.scratchpad/coverage-test-results` directory, and mutation runs write reports under `.scratchpad/mutation-test-results`.
 
-Mutation testing is being adopted gradually. There is no mandatory repository mutation-score threshold, and mutation results are not an ordinary completion criterion. Prioritize correct delivery and meaningful unit-test coverage, add straightforward assertion improvements, and report significant gaps for dedicated follow-up. Avoid significant time or token expenditure chasing survivors unless explicitly requested. See the [mutation-testing policy](.github/instructions/mutation-testing.instructions.md).
+Mutation testing is being adopted gradually. There is no mandatory repository mutation-score threshold, and mutation results are not an ordinary completion criterion. `-ReportOnly` completes the full analysis and reports configured score shortfalls as warnings while still failing for test, tooling, or incomplete-report errors. Prioritize correct delivery and meaningful unit-test coverage, add straightforward assertion improvements, and report significant gaps for dedicated follow-up. Avoid significant time or token expenditure chasing survivors unless explicitly requested. See the [mutation-testing policy](.github/instructions/mutation-testing.instructions.md).
 
 For a fast loop on a single test project, use the helper script:
 
@@ -207,7 +209,7 @@ The PowerShell entry points (`build-*.ps1`, `unit-test-*.ps1`, `clean-up-*.ps1`,
 
 ## CI / Local pipeline options
 
-The top-level `go.ps1` forwards to `orchestrate-solutions.ps1`. By default it builds both solutions, runs their L0/L1 tests, summarizes Mississippi coverage, applies ReSharper cleanup, and performs a final build with warnings as errors. Mutation testing is opt-in with `-IncludeMutation`; `-SkipCleanup` skips formatting changes during an intermediate validation run.
+The top-level `go.ps1` forwards to `orchestrate-solutions.ps1`. By default it builds both solutions, applies ReSharper cleanup, runs their L0/L1 tests against the cleaned tree, summarizes Mississippi coverage, and performs a final build with warnings as errors. Mutation testing is opt-in with `-IncludeMutation`; `-SkipCleanup` skips formatting changes during an intermediate provisional validation run and is not final handoff evidence.
 
 Usage examples:
 

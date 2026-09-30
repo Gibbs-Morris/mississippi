@@ -1,93 +1,236 @@
 using System;
 using System.Linq;
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Brooks.Abstractions.Factory;
 using Mississippi.Brooks.Abstractions.Streaming;
+using Mississippi.Brooks.Runtime.Factory;
 using Mississippi.Brooks.Runtime.Reader;
+using Mississippi.Hosting.Abstractions;
+using Mississippi.Hosting.Runtime;
+using Mississippi.Hosting.Runtime.Abstractions;
+
+using Moq;
+
+using Orleans;
+using Orleans.Hosting;
 
 
 namespace Mississippi.Brooks.Runtime.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="BrooksRuntimeRegistrations" /> extension methods.
+///     Verifies the builder-first Brooks registration contract.
 /// </summary>
 public sealed class BrooksRuntimeRegistrationsTests
 {
+    private static ISiloBuilder CreateSilo(
+        IServiceCollection services
+    )
+    {
+        IConfiguration configuration = Mock.Of<IConfiguration>();
+        return Mock.Of<ISiloBuilder>(silo => (silo.Services == services) && (silo.Configuration == configuration));
+    }
+
     /// <summary>
-    ///     Verifies that <c>AddEventSourcingByService</c> uses default stream provider name.
+    ///     Stream-provider configuration no longer requires a separate native registration call.
     /// </summary>
     [Fact]
-    public void AddEventSourcingByServiceUsesDefaultStreamProviderName()
+    public void AddEventSourcingConfiguresTheChosenStreamProvider()
     {
-        ServiceCollection services = new();
-        services.AddEventSourcingByService();
+        ServiceCollection services = [];
+        CreateSilo(services)
+            .UseMississippi(runtime => Assert.Same(
+                runtime,
+                runtime.AddEventSourcing(options => options.OrleansStreamProviderName = "CustomStreams")));
         using ServiceProvider provider = services.BuildServiceProvider();
-        BrookProviderOptions options = provider.GetRequiredService<IOptions<BrookProviderOptions>>().Value;
-        Assert.Equal(BrookStreamingDefaults.OrleansStreamProviderName, options.OrleansStreamProviderName);
+        Assert.Equal(
+            "CustomStreams",
+            provider.GetRequiredService<IOptions<BrookProviderOptions>>().Value.OrleansStreamProviderName);
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IBrookGrainFactory));
     }
 
     /// <summary>
-    ///     Verifies that calling <c>AddEventSourcingByService</c> registers the expected singletons and options.
+    ///     One builder call registers core factories and default options together.
     /// </summary>
     [Fact]
-    public void AddEventSourcingRegistersExpectedServicesAndOptions()
+    public void AddEventSourcingRegistersFactoriesAndDefaultOptions()
     {
-        ServiceCollection services = new();
-        services.AddEventSourcingByService();
-
-        // Check that IBrookGrainFactory and IStreamIdFactory are registered as singletons
-        ServiceDescriptor? grainFactory = services.FirstOrDefault(d => d.ServiceType == typeof(IBrookGrainFactory));
-        ServiceDescriptor? streamIdFactory = services.FirstOrDefault(d => d.ServiceType == typeof(IStreamIdFactory));
-        Assert.NotNull(grainFactory);
-        Assert.Equal(ServiceLifetime.Singleton, grainFactory.Lifetime);
-        Assert.NotNull(streamIdFactory);
-        Assert.Equal(ServiceLifetime.Singleton, streamIdFactory.Lifetime);
-
-        // Build provider and resolve options to ensure the AddOptions registrations were applied.
+        ServiceCollection services = [];
+        CreateSilo(services).UseMississippi(runtime => runtime.AddEventSourcing());
+        Assert.Equal(
+            ServiceLifetime.Singleton,
+            Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IBrookGrainFactory)).Lifetime);
+        Assert.Equal(
+            ServiceLifetime.Singleton,
+            Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IStreamIdFactory)).Lifetime);
         using ServiceProvider provider = services.BuildServiceProvider();
-        IOptions<BrookReaderOptions>? readerOptions = provider.GetService<IOptions<BrookReaderOptions>>();
-        IOptions<BrookProviderOptions>? providerOptions = provider.GetService<IOptions<BrookProviderOptions>>();
-        Assert.NotNull(readerOptions);
-        Assert.NotNull(providerOptions);
+        Assert.NotNull(provider.GetRequiredService<IOptions<BrookReaderOptions>>());
+        Assert.Equal(
+            BrookStreamingDefaults.OrleansStreamProviderName,
+            provider.GetRequiredService<IOptions<BrookProviderOptions>>().Value.OrleansStreamProviderName);
     }
 
     /// <summary>
-    ///     Verifies that the HostApplicationBuilder extension accepts custom stream provider configuration.
+    ///     Captured runtime scopes cannot register services after terminal attachment.
     /// </summary>
-    /// <remarks>
-    ///     This test verifies options registration without calling <c>Build()</c> on the host builder,
-    ///     because building the full host would require complete Orleans membership table configuration.
-    ///     The test validates the options are properly registered in the service collection.
-    /// </remarks>
     [Fact]
-    public void HostApplicationBuilderAddEventSourcingAcceptsCustomStreamProviderName()
+    public void CompletedRuntimeRejectsBrooksComposition()
     {
-        HostApplicationBuilder builder = Host.CreateApplicationBuilder(Array.Empty<string>());
-        builder.AddEventSourcing(options => options.OrleansStreamProviderName = "CustomStreams");
-
-        // Build a minimal service provider for just the options without triggering full Orleans validation
-        using ServiceProvider provider = builder.Services.BuildServiceProvider();
-        BrookProviderOptions options = provider.GetRequiredService<IOptions<BrookProviderOptions>>().Value;
-        Assert.Equal("CustomStreams", options.OrleansStreamProviderName);
+        ServiceCollection services = [];
+        IRuntimeBuilder? captured = null;
+        CreateSilo(services).UseMississippi(runtime => captured = runtime);
+        Assert.NotNull(captured);
+        ServiceDescriptor[] original = services.ToArray();
+        BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
+            captured.AddEventSourcing());
+        Assert.Equal(BuilderDiagnosticCodes.BuilderAlreadyAttached, Assert.Single(exception.Diagnostics).Code);
+        Assert.Equal(original, services);
     }
 
     /// <summary>
-    ///     Verifies that the HostApplicationBuilder extension registers services (sanity smoke test).
+    ///     An existing singleton factory callback remains authoritative without moving its descriptor.
     /// </summary>
     [Fact]
-    public void HostApplicationBuilderAddEventSourcingAddsServicesAndConfiguresOrleans()
+    public void ExistingConcreteSingletonConfigurationIsPreserved()
     {
-        HostApplicationBuilder builder = Host.CreateApplicationBuilder(Array.Empty<string>());
+        ServiceCollection services = [];
+        services.AddLogging();
+        services.AddSingleton(Mock.Of<IGrainFactory>());
+        int calls = 0;
+        ServiceDescriptor configured = ServiceDescriptor.Singleton<BrookGrainFactory>(provider =>
+        {
+            calls++;
+            return ActivatorUtilities.CreateInstance<BrookGrainFactory>(provider);
+        });
+        int position = services.Count;
+        ((IServiceCollection)services).Add(configured);
+        CreateSilo(services).UseMississippi(runtime => runtime.AddEventSourcing());
+        Assert.Same(configured, services[position]);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        BrookGrainFactory canonical = provider.GetRequiredService<BrookGrainFactory>();
+        Assert.Same(canonical, provider.GetRequiredService<IBrookGrainFactory>());
+        Assert.Same(canonical, provider.GetRequiredService<IInternalBrookGrainFactory>());
+        Assert.Equal(1, calls);
+    }
 
-        // The extension method should complete and register services
-        // Note: Host is responsible for configuring streams before calling this
-        builder.AddEventSourcing();
-        IServiceCollection services = builder.Services;
-        Assert.Contains(services, d => d.ServiceType == typeof(IBrookGrainFactory));
-        Assert.Contains(services, d => d.ServiceType == typeof(IStreamIdFactory));
+    /// <summary>
+    ///     Existing host customizations survive default Brooks composition.
+    /// </summary>
+    [Fact]
+    public void ExistingStreamFactoryIsPreserved()
+    {
+        ServiceCollection services = [];
+        IStreamIdFactory custom = Mock.Of<IStreamIdFactory>();
+        services.AddSingleton(custom);
+        CreateSilo(services).UseMississippi(runtime => runtime.AddEventSourcing());
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.Same(custom, provider.GetRequiredService<IStreamIdFactory>());
+    }
+
+    /// <summary>
+    ///     Public and internal grain access use the same canonical factory even when the host registered another one.
+    /// </summary>
+    /// <param name="existingLifetime">The lifetime of the pre-existing concrete factory registration.</param>
+    /// <param name="duplicateExisting">Whether the host registered the concrete factory more than once.</param>
+    [Theory]
+    [InlineData(ServiceLifetime.Singleton, false)]
+    [InlineData(ServiceLifetime.Singleton, true)]
+    [InlineData(ServiceLifetime.Scoped, false)]
+    [InlineData(ServiceLifetime.Scoped, true)]
+    [InlineData(ServiceLifetime.Transient, false)]
+    [InlineData(ServiceLifetime.Transient, true)]
+    public void GrainFactoryRegistrationsRemainAuthoritativeAndConsistent(
+        ServiceLifetime existingLifetime,
+        bool duplicateExisting
+    )
+    {
+        ServiceCollection services = [];
+        services.AddLogging();
+        services.AddSingleton(Mock.Of<IGrainFactory>());
+        ((IServiceCollection)services).Add(
+            ServiceDescriptor.Describe(typeof(BrookGrainFactory), typeof(BrookGrainFactory), existingLifetime));
+        if (duplicateExisting)
+        {
+            ((IServiceCollection)services).Add(
+                ServiceDescriptor.Describe(typeof(BrookGrainFactory), typeof(BrookGrainFactory), existingLifetime));
+        }
+
+        IBrookGrainFactory custom = Mock.Of<IBrookGrainFactory>();
+        services.AddSingleton(custom);
+        CreateSilo(services).UseMississippi(runtime => runtime.AddEventSourcing());
+        using ServiceProvider provider = services.BuildServiceProvider();
+        BrookGrainFactory canonical = provider.GetRequiredService<BrookGrainFactory>();
+        Assert.Same(canonical, provider.GetRequiredService<IBrookGrainFactory>());
+        Assert.Same(canonical, provider.GetRequiredService<IInternalBrookGrainFactory>());
+        Assert.Same(canonical, provider.GetRequiredService<BrookGrainFactory>());
+        using IServiceScope scope = provider.CreateScope();
+        Assert.Same(canonical, scope.ServiceProvider.GetRequiredService<BrookGrainFactory>());
+        Assert.NotSame(custom, provider.GetRequiredService<IBrookGrainFactory>());
+        Assert.Same(canonical, Assert.Single(provider.GetServices<BrookGrainFactory>()));
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IBrookGrainFactory));
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IInternalBrookGrainFactory));
+    }
+
+    /// <summary>
+    ///     Tenant-specific keyed factories survive default runtime composition across all factory contracts.
+    /// </summary>
+    [Fact]
+    public void KeyedFactoriesRemainSeparateFromTheCanonicalDefault()
+    {
+        ServiceCollection services = [];
+        services.AddLogging();
+        services.AddSingleton(Mock.Of<IGrainFactory>());
+        BrookGrainFactory keyed = new(Mock.Of<IGrainFactory>(), Mock.Of<ILogger<BrookGrainFactory>>());
+        services.AddKeyedSingleton("tenant", keyed);
+        services.AddKeyedSingleton<IBrookGrainFactory>("tenant", keyed);
+        services.AddKeyedSingleton<IInternalBrookGrainFactory>("tenant", keyed);
+        CreateSilo(services)
+            .UseMississippi(runtime =>
+            {
+                runtime.AddEventSourcing();
+                runtime.AddEventSourcing();
+            });
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.Same(keyed, provider.GetRequiredKeyedService<BrookGrainFactory>("tenant"));
+        Assert.Same(keyed, provider.GetRequiredKeyedService<IBrookGrainFactory>("tenant"));
+        Assert.Same(keyed, provider.GetRequiredKeyedService<IInternalBrookGrainFactory>("tenant"));
+        BrookGrainFactory canonical = provider.GetRequiredService<BrookGrainFactory>();
+        Assert.NotSame(keyed, canonical);
+        Assert.Same(canonical, provider.GetRequiredService<IBrookGrainFactory>());
+        Assert.Same(canonical, provider.GetRequiredService<IInternalBrookGrainFactory>());
+    }
+
+    /// <summary>
+    ///     Null runtime builders are rejected at the public boundary.
+    /// </summary>
+    [Fact]
+    public void NullRuntimeIsRejected()
+    {
+        Assert.Throws<ArgumentNullException>(() => BrooksRuntimeRegistrations.AddEventSourcing(null!));
+    }
+
+    /// <summary>
+    ///     Repeated composition keeps one factory while preserving intentional option configuration order.
+    /// </summary>
+    [Fact]
+    public void RepeatedCompositionDoesNotDuplicateFactories()
+    {
+        ServiceCollection services = [];
+        CreateSilo(services)
+            .UseMississippi(runtime =>
+            {
+                runtime.AddEventSourcing(options => options.OrleansStreamProviderName = "First");
+                runtime.AddEventSourcing(options => options.OrleansStreamProviderName = "Second");
+            });
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IBrookGrainFactory));
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IStreamIdFactory));
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.Equal(
+            "Second",
+            provider.GetRequiredService<IOptions<BrookProviderOptions>>().Value.OrleansStreamProviderName);
     }
 }

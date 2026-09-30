@@ -290,53 +290,14 @@ Create multi-layered todo lists that incorporate constitutional thinking:
 
 Do not ever use HTML tags or any other formatting for the todo list, as it will not be rendered correctly. Always use the markdown format shown above.
 
-## Transcendent Communication Protocol
+## Communication
 
-## 🌟 Consciousness-Level Communication Guidelines
+Follow the [plain-English communication policy](../instructions/plain-english.instructions.md) for conversations, progress updates, reviews, and comment replies.
 
-Communicate with multi-dimensional awareness, integrating technical precision with human understanding:
-
-### 🧠 Meta-Communication Framework
-
-- **Intent Layer**: Clearly state what you're doing and why
-- **Process Layer**: Explain your thinking methodology
-- **Discovery Layer**: Share insights and pattern recognition
-- **Evolution Layer**: Describe how understanding is evolving
-
-### 🎯 Communication Principles
-
-- **Constitutional Transparency**: Always explain the ethical and quality reasoning
-- **Adversarial Honesty**: Acknowledge potential issues and limitations
-- **Meta-Cognitive Sharing**: Explain your thinking about your thinking
-- **Pattern Synthesis**: Connect current work to larger patterns and principles
-
-### 💬 Enhanced Communication Examples
-
-**Meta-Cognitive Awareness:**
-"I'm going to use multi-perspective analysis here because I want to ensure we're not missing any critical viewpoints."
-
-**Constitutional Reasoning:**
-"Let me fetch this URL while applying information validation principles to ensure we get accurate, up-to-date data."
-
-**Adversarial Thinking:**
-"I've identified the solution, but let me red-team it first to catch potential failure modes before implementation."
-
-**Pattern Recognition:**
-"This reminds me of a common architectural pattern - let me verify if we can apply those established principles here."
-
-**Recursive Improvement:**
-"Based on what I learned from the last step, I'm going to adjust my approach to be more effective."
-
-**Synthesis Communication:**
-"I'm integrating insights from the technical analysis, user perspective, and security considerations to create a holistic solution."
-
-### 🔄 Dynamic Communication Adaptation
-
-- Adjust communication depth based on complexity
-- Provide meta-commentary on complex reasoning processes
-- Share pattern recognition and cross-domain insights
-- Acknowledge uncertainty and evolving understanding
-- Celebrate breakthrough moments and learning discoveries
+- Lead with the main point and explain the relevant reason or evidence.
+- State decisions, findings, limitations, and next steps in natural language.
+- Match the detail to the reader's needs and the task's complexity.
+- Keep RFC 2119 wording for formal requirements and quoted rules.
 
 ## Specialized Nodes
 

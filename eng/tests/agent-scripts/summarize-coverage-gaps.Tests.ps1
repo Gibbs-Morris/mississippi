@@ -100,5 +100,55 @@ Describe 'summarize-coverage-gaps.ps1' {
         $pendingDir = Join-Path $testRepo '.scratchpad/tasks/pending'
         Test-Path -LiteralPath $pendingDir | Should -Be $false
     }
+
+    It 'summarizes the explicitly selected report instead of the newest report' {
+        $testRepo = Join-Path $TestDrive 'repo-coverage-selection'
+        New-Item -ItemType Directory -Path (Join-Path $testRepo '.git'), (Join-Path $testRepo 'src/Old'), (Join-Path $testRepo 'src/New'), (Join-Path $testRepo '.scratchpad/coverage-test-results/newer') -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $testRepo 'src/Old/Old.cs') -Value '// old'
+        Set-Content -LiteralPath (Join-Path $testRepo 'src/New/New.cs') -Value '// new'
+        $oldXml = @'
+<?xml version="1.0"?><coverage><packages><package><classes><class name="Old" filename="src/Old/Old.cs"><lines><line number="1" hits="0" /></lines></class></classes></package></packages></coverage>
+'@
+        $newXml = @'
+<?xml version="1.0"?><coverage><packages><package><classes><class name="New" filename="src/New/New.cs"><lines><line number="1" hits="0" /></lines></class></classes></package></packages></coverage>
+'@
+        $selectedPath = Join-Path $testRepo 'run-1/coverage.cobertura.xml'
+        $newerPath = Join-Path $testRepo '.scratchpad/coverage-test-results/newer/coverage.cobertura.xml'
+        New-Item -ItemType Directory -Path (Split-Path -Parent $selectedPath) -Force | Out-Null
+        Set-Content -LiteralPath $selectedPath -Value $oldXml
+        Set-Content -LiteralPath $newerPath -Value $newXml
+        (Get-Item -LiteralPath $newerPath).LastWriteTime = (Get-Date).AddMinutes(5)
+
+        & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -File $scriptPath -CoverageReportPath $selectedPath -Threshold 95 -RepoRoot $testRepo | Out-Null
+
+        $summary = Get-Content -LiteralPath (Join-Path $testRepo '.scratchpad/coverage-test-results/coverage-gaps-summary.json') -Raw | ConvertFrom-Json
+        $summary.reportPath | Should -Be $selectedPath
+        (@($summary.items).relativePath | ForEach-Object { $_ -replace '\\', '/' }) | Should -Contain 'src/Old/Old.cs'
+        (@($summary.items).relativePath | ForEach-Object { $_ -replace '\\', '/' }) | Should -Not -Contain 'src/New/New.cs'
+    }
+
+    It 'fails when an explicit current-run report is missing' {
+        $testRepo = Join-Path $TestDrive 'repo-coverage-missing'
+        New-Item -ItemType Directory -Path (Join-Path $testRepo '.git'), (Join-Path $testRepo '.scratchpad/coverage-test-results/older') -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $testRepo '.scratchpad/coverage-test-results/older/coverage.cobertura.xml') -Value '<coverage />'
+        $missingPath = Join-Path $testRepo 'current/coverage.cobertura.xml'
+
+        $output = & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -File $scriptPath -CoverageReportPath $missingPath -RepoRoot $testRepo 2>&1 | Out-String
+
+        $LASTEXITCODE | Should -Not -Be 0
+        $output | Should -Match 'Coverage report not found'
+    }
+
+    It 'fails on malformed explicit coverage XML' {
+        $testRepo = Join-Path $TestDrive 'repo-coverage-malformed'
+        New-Item -ItemType Directory -Path (Join-Path $testRepo '.git') -Force | Out-Null
+        $reportPath = Join-Path $testRepo 'coverage.cobertura.xml'
+        Set-Content -LiteralPath $reportPath -Value '<coverage><broken>'
+
+        $output = & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -File $scriptPath -CoverageReportPath $reportPath -RepoRoot $testRepo 2>&1 | Out-String
+
+        $LASTEXITCODE | Should -Not -Be 0
+        $output | Should -Match 'XML|Document|parse'
+    }
 }
 

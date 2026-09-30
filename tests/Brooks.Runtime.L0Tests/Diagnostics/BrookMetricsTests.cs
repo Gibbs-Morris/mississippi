@@ -29,22 +29,14 @@ public sealed class BrookMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == BrookMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -75,22 +67,14 @@ public sealed class BrookMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == BrookMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -100,12 +84,7 @@ public sealed class BrookMetricsTests
 
             measurements.Add(new(instrument.Name, measurement, 0, tagMap));
         });
-        listener.SetMeasurementEventCallback<double>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -146,22 +125,14 @@ public sealed class BrookMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == BrookMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -190,22 +161,14 @@ public sealed class BrookMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == BrookMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -215,12 +178,7 @@ public sealed class BrookMetricsTests
 
             measurements.Add(new(instrument.Name, measurement, 0, tagMap));
         });
-        listener.SetMeasurementEventCallback<double>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -230,12 +188,7 @@ public sealed class BrookMetricsTests
 
             measurements.Add(new(instrument.Name, 0, measurement, tagMap));
         });
-        listener.SetMeasurementEventCallback<int>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<int>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -282,22 +235,14 @@ public sealed class BrookMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == BrookMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -330,22 +275,14 @@ public sealed class BrookMetricsTests
         const string brookName = "ZeroCountTestBrook";
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == BrookMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -355,12 +292,7 @@ public sealed class BrookMetricsTests
 
             measurements.Add(new(instrument.Name, measurement, 0, tagMap));
         });
-        listener.SetMeasurementEventCallback<double>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -370,12 +302,7 @@ public sealed class BrookMetricsTests
 
             measurements.Add(new(instrument.Name, 0, measurement, tagMap));
         });
-        listener.SetMeasurementEventCallback<int>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<int>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)

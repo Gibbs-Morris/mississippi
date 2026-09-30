@@ -10,7 +10,9 @@ Governing thought: Agents follow repository instructions and iterate from correc
 
 ## Rules (RFC 2119)
 
+- Agents MUST use [plain English](.github/instructions/plain-english.instructions.md) when communicating with people, including conversations, reviews, and pull request comments or replies. Why: Readers should understand the message on first reading.
 - Agents MUST read `.github/copilot-instructions.md` first, then all globally scoped and task-applicable instruction files under `.github/instructions/`, before planning repository work, making changes, reviewing content, or answering repository questions. Why: Preserves authoritative requirements without preloading unrelated bodies.
+- Agents MUST use the instruction-loading inventory below for every `.github/instructions/*.instructions.md` file, including `self-taught-*.instructions.md`, so newly added global or task-applicable guidance is available to Codex. Why: Keeps Codex context aligned with repository guidance.
 - Agents MUST follow every rule and guideline in those documents when planning or writing code. Why: Keeps contributions consistent, reviewable, and compliant with quality gates.
 - Agents MUST follow [issue tracking and PR traceability](.github/instructions/issue-tracking.instructions.md), including its intake timing, ongoing updates, and issue link on every PR. Why: Requested work needs a durable record through delivery.
 - Instruction selection MUST cover the task's edited, reviewed, and generated content, languages, frameworks, and role/workflow, not just changed filenames. Why: A C# example or runtime explanation still needs its relevant guidance.
@@ -58,6 +60,8 @@ All agents working in this repository.
 ## At-a-Glance Quick-Start
 
 - Read `.github/copilot-instructions.md`, then discover instruction scopes and load all global plus task-applicable guidance.
+- For user-visible UX changes, follow [UX validation and PR evidence](.github/instructions/ux-validation.instructions.md), including Playwright screenshots in the PR.
+- When a resolved problem reveals a reusable failure mode, follow [self-improvement learning](.github/instructions/self-improvement.instructions.md) and record the validated lesson.
 - Consult `docs/key-principles/` for foundational thinking and reasoning frameworks.
 - Prioritize correctness first, cleanup next, and performance improvements last.
 
@@ -119,6 +123,14 @@ $instructionFiles.FullName
 Select-String -LiteralPath $instructionFiles.FullName -Pattern '^[ \t]*applyTo:' -List
 ```
 
+For a repeatable machine-readable inventory and conservative selection index,
+run `pwsh ./eng/src/agent-scripts/get-agent-context.ps1 -RepositoryRoot .`
+with the changed, intended, reviewed, content-domain, and workflow-role inputs
+that apply to the task. Consume its reasons, hashes, byte/word counts, and
+unresolved states as preparation evidence, then still read the selected bodies
+and apply this procedure. If the helper is unavailable, use the file-tool or
+PowerShell fallback above; the helper never replaces direct inspection.
+
 The file inventory includes candidates even when the scope search returns no
 match. The scope search reports candidate lines; it does not parse YAML.
 Check each candidate against the opening YAML frontmatter's `---` delimiters.
@@ -128,8 +140,9 @@ the file directly.
 Honor additional host-supplied guidance and scoped `AGENTS.md` files for the
 task's directories; this procedure does not replace their discovery or precedence.
 
-1. Read every instruction with global `applyTo: '**'` in full. Global scopes
-   remain global; selection does not weaken their rules or quality gates.
+1. Read every instruction with global `applyTo: '**'` in full, including
+   self-taught files with that scope. Global scopes remain global; selection
+   does not weaken their rules or quality gates.
 2. Read instructions matching repository-relative task paths and all relevant
    content/domain scopes. Include files being reviewed, examples being written,
    questions about runtime behavior, and any active agent workflow. Use the

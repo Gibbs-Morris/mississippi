@@ -32,7 +32,7 @@ flowchart TB
 Before following this tutorial, read these pages:
 
 - [Spring Sample App](../index.md)
-- [Building an Aggregate](./building-an-aggregate.md)
+- [Add an Aggregate Command](./building-an-aggregate.md)
 - [Event Sourcing Sagas](../../../archived/concepts/event-sourcing-sagas.md)
 
 ## Step 1: Define the Saga State
