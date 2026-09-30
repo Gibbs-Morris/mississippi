@@ -946,6 +946,52 @@ public class ProjectionEndpointsGeneratorTests
     }
 
     /// <summary>
+    ///     Generated mappers also preserve nullable enum values inside nested projection records.
+    /// </summary>
+    [Fact]
+    public void GeneratedNestedProjectionMapperPreservesNullableEnum()
+    {
+        const string projectionSource = """
+                                        using System.Collections.Immutable;
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.Sagas
+                                        {
+                                            public enum ResumeSource
+                                            {
+                                                Reminder = 0,
+                                                Manual = 1,
+                                            }
+
+                                            public sealed record RecoveryEntry
+                                            {
+                                                public ResumeSource? LastResumeSource { get; init; }
+                                            }
+
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("saga-status")]
+                                            public sealed record SagaStatusProjection
+                                            {
+                                                public ImmutableArray<RecoveryEntry> Entries { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Assert.Empty(diagnostics);
+        string? mapperSource = runResult.GeneratedTrees.FirstOrDefault(t =>
+                t.FilePath.EndsWith("RecoveryEntryDtoMapper.g.cs", StringComparison.Ordinal))
+            ?.GetText(TestContext.Current.CancellationToken)
+            .ToString();
+        Assert.NotNull(mapperSource);
+        Assert.Contains(
+            "LastResumeSource = source.LastResumeSource.HasValue ? (ResumeSourceDto?)source.LastResumeSource.Value : null",
+            mapperSource,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generated projection analysis should warn when authentication schemes metadata contains empty entries.
     /// </summary>
     [Fact]
@@ -1156,6 +1202,58 @@ public class ProjectionEndpointsGeneratorTests
         Assert.Contains(
             "AddMapper<SagaPhase, SagaPhaseDto, SagaPhaseDtoMapper>();",
             registrationsSource,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated projection DTOs and mappers preserve nullable custom enum properties.
+    /// </summary>
+    [Fact]
+    public void GeneratedProjectionIncludesNullableEnumDtoAndMapper()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.Sagas
+                                        {
+                                            public enum ResumeSource
+                                            {
+                                                Reminder = 0,
+                                                Manual = 1,
+                                            }
+
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("saga-status")]
+                                            public sealed record SagaStatusProjection
+                                            {
+                                                public ResumeSource? LastResumeSource { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Assert.Empty(diagnostics);
+        string? enumDtoSource = runResult.GeneratedTrees
+            .FirstOrDefault(t => t.FilePath.EndsWith("ResumeSourceDto.g.cs", StringComparison.Ordinal))
+            ?.GetText(TestContext.Current.CancellationToken)
+            .ToString();
+        Assert.NotNull(enumDtoSource);
+        Assert.Contains("public enum ResumeSourceDto", enumDtoSource, StringComparison.Ordinal);
+        string? dtoSource = runResult.GeneratedTrees
+            .FirstOrDefault(t => t.FilePath.EndsWith("SagaStatusDto.g.cs", StringComparison.Ordinal))
+            ?.GetText(TestContext.Current.CancellationToken)
+            .ToString();
+        Assert.NotNull(dtoSource);
+        Assert.Contains("Nullable<ResumeSourceDto> LastResumeSource", dtoSource, StringComparison.Ordinal);
+        string? mapperSource = runResult.GeneratedTrees.FirstOrDefault(t =>
+                t.FilePath.EndsWith("SagaStatusProjectionMapper.g.cs", StringComparison.Ordinal))
+            ?.GetText(TestContext.Current.CancellationToken)
+            .ToString();
+        Assert.NotNull(mapperSource);
+        Assert.Contains(
+            "LastResumeSource = source.LastResumeSource.HasValue ? (ResumeSourceDto?)source.LastResumeSource.Value : null",
+            mapperSource,
             StringComparison.Ordinal);
     }
 

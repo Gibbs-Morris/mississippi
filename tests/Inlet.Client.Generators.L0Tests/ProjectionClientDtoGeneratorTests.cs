@@ -160,6 +160,49 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Generated projection DTOs preserve nullable custom enum properties and emit their enum DTO.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoGeneratesNullableTopLevelEnumDto()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.Sagas
+                                        {
+                                            public enum ResumeSource
+                                            {
+                                                Reminder = 0,
+                                                Manual = 1,
+                                            }
+
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("saga-status")]
+                                            public sealed record SagaStatusProjection
+                                            {
+                                                public ResumeSource? LastResumeSource { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Assert.Empty(diagnostics);
+        string? dtoSource = runResult.GeneratedTrees.FirstOrDefault(t =>
+                t.FilePath.EndsWith("SagaStatusProjectionDto.g.cs", StringComparison.Ordinal))
+            ?.GetText(TestContext.Current.CancellationToken)
+            .ToString();
+        Assert.NotNull(dtoSource);
+        Assert.Contains("Nullable<ResumeSourceDto> LastResumeSource", dtoSource, StringComparison.Ordinal);
+        string? enumDtoSource = runResult.GeneratedTrees
+            .FirstOrDefault(t => t.FilePath.EndsWith("ResumeSourceDto.g.cs", StringComparison.Ordinal))
+            ?.GetText(TestContext.Current.CancellationToken)
+            .ToString();
+        Assert.NotNull(enumDtoSource);
+        Assert.Contains("public enum ResumeSourceDto", enumDtoSource, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generated DTOs should include enum DTOs for top-level enum properties.
     /// </summary>
     [Fact]

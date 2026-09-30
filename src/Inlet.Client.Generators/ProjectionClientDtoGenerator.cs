@@ -274,12 +274,12 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         HashSet<string> seen = new(StringComparer.Ordinal);
         foreach (PropertyModel prop in projection.Model.Properties)
         {
-            if (prop.IsEnum && prop.SourceTypeSymbol is INamedTypeSymbol enumType)
+            if (UnwrapNullable(prop.SourceTypeSymbol) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType)
             {
                 string key = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 if (seen.Add(key))
                 {
-                    enumInfos.Add(new(enumType, prop.DtoTypeName));
+                    enumInfos.Add(new(enumType, TypeAnalyzer.GetDtoTypeName(enumType)));
                 }
             }
 
