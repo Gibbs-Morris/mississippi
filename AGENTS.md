@@ -33,7 +33,7 @@ this session and verifies model, reasoning and client support. Other sessions
 use their host and user-selected settings under the governing instructions.
 
 - Agents using the selected recipe MUST read [the complete profile guidance](.codex/README.md). Why: Model support, role precedence and resource limits need current evidence.
-- Agents using the selected recipe MUST follow its scoped routing and coordination rules. Why: Optional selection does not make the selected contract optional.
+- Agents using the selected recipe MUST follow the [scoped routing and coordination rules](.github/instructions/codex-model-routing.instructions.md). Why: Optional selection does not make the selected contract optional.
 
 ## Scope and Audience
 
