@@ -1,23 +1,251 @@
-/**
- * CSS files with the .module.css suffix will be treated as CSS modules
- * and scoped locally.
- */
-
-.heroBanner {
-  padding: 4rem 0;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
+.page {
+  --ink: #112332;
+  --muted: #455c67;
+  --paper: #f5f1e8;
+  --line: #c7d2ce;
+  --accent: #1b7f70;
+  color: var(--ink);
+  background: var(--paper);
 }
 
-@media screen and (max-width: 996px) {
-  .heroBanner {
-    padding: 2rem;
-  }
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.8fr);
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: center;
+  max-width: 88rem;
+  min-height: 38rem;
+  margin: auto;
+  padding: clamp(3rem, 7vw, 7rem) clamp(1.5rem, 5vw, 5rem);
 }
 
-.buttons {
+.eyebrow, .sectionLabel, .modelLabel, .cardNumber {
+  color: var(--accent);
+  font-size: 0.79rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  max-width: 13ch;
+  margin: 1.25rem 0;
+  font-size: clamp(3rem, 6.3vw, 6rem);
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+}
+
+.lede {
+  max-width: 40rem;
+  color: var(--muted);
+  font-size: clamp(1.15rem, 1.8vw, 1.4rem);
+  line-height: 1.55;
+}
+
+.actions {
   display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+.actions a {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-height: 3.25rem;
+  padding: 0.7rem 1.15rem;
+  border-radius: 0.4rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+.primaryAction {
+  gap: 0.8rem;
+  color: #fff;
+  background: var(--ink);
+}
+.primaryAction:hover {
+  color: #fff;
+  background: #265164;
+}
+.secondaryAction {
+  color: var(--ink);
+  border: 1px solid var(--ink);
+}
+.secondaryAction:hover {
+  color: var(--ink);
+  background: #e8eee9;
+}
+.page a:focus-visible {
+  outline: 3px solid #c36b33;
+  outline-offset: 4px;
+}
+.maturity {
+  max-width: 35rem;
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.model {
+  padding: clamp(1.4rem, 3vw, 2.5rem);
+  border: 1px solid #588d88;
+  border-radius: 1rem;
+  color: #e6f3ee;
+  background: radial-gradient(circle at 100% 0, #275e60, #112e3c 70%);
+  box-shadow: 0 24px 55px #16374333;
+}
+.modelLabel {
+  color: #a9dfc8;
+}
+.model ol {
+  margin: 1.7rem 0;
+  padding: 0;
+  list-style: none;
+}
+.model li {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  column-gap: 0.8rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid #6e9a9b66;
+}
+.model li span {
+  grid-row: span 2;
+  color: #a9dfc8;
+  font-weight: 800;
+}
+.model li strong {
+  font-size: 1.1rem;
+}
+.model li small, .modelNote {
+  color: #bfd3d0;
+}
+.modelNote {
+  margin-bottom: 0;
+  font-size: 0.8rem;
+}
+
+.section, .proof {
+  padding: clamp(3rem, 7vw, 6rem) clamp(1.5rem, 5vw, 5rem);
+}
+.section {
+  border-top: 1px solid var(--line);
+  background: #e9eee9;
+}
+.sectionHeading, .cards, .proof {
+  max-width: 78rem;
+  margin: auto;
+}
+.sectionHeading h2, .proof h2 {
+  margin: 0.6rem 0 1rem;
+  font-size: clamp(2rem, 3.5vw, 3.4rem);
+  letter-spacing: -0.04em;
+}
+.sectionHeading > p:last-child, .proof > div > p:not(.sectionLabel) {
+  max-width: 42rem;
+  color: var(--muted);
+  font-size: 1.08rem;
+  line-height: 1.6;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+.cards article {
+  min-width: 0;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  background: #fffdf8;
+}
+.cards h3 {
+  margin: 0.9rem 0;
+}
+.cards p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.proof {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.8fr);
+  gap: clamp(2rem, 6vw, 6rem);
+}
+.proof a {
+  color: #12685c;
+  font-weight: 700;
+}
+.reading {
+  align-self: center;
+  padding: 1.5rem;
+  border-left: 4px solid var(--accent);
+  background: #e9eee9;
+}
+.reading h3 {
+  margin-top: 0;
+}
+.reading ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.reading li + li {
+  border-top: 1px solid var(--line);
+}
+.reading li a {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.8rem 0;
+}
+.reading li span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+:global([data-theme='dark']) .page {
+  --ink: #eaf2ed;
+  --muted: #b7c9c6;
+  --paper: #0d202b;
+  --line: #47615e;
+  --accent: #83d6bc;
+}
+:global([data-theme='dark']) .section,
+:global([data-theme='dark']) .reading {
+  background: #142d37;
+}
+:global([data-theme='dark']) .cards article {
+  background: #193640;
+}
+:global([data-theme='dark']) .primaryAction {
+  color: #102834;
+  background: #9de0c8;
+}
+:global([data-theme='dark']) .secondaryAction {
+  color: #eaf2ed;
+  border-color: #eaf2ed;
+}
+:global([data-theme='dark']) .proof a {
+  color: #9de0c8;
+}
+
+@media (max-width: 850px) {
+  .hero, .proof {
+    grid-template-columns: 1fr;
+  }
+  .hero {
+    min-height: 0;
+  }
+}
+@media (max-width: 700px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+  .reading li a {
+    flex-wrap: wrap;
+  }
 }
