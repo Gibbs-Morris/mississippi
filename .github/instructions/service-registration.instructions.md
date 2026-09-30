@@ -24,36 +24,10 @@ Governing thought: Use hierarchical `ServiceRegistration` extension methods with
 
 Developers adding or modifying DI registration in Mississippi/Samples, including Orleans integrations.
 
-## At-a-Glance Quick-Start
+## Registration workflow
 
-- Shape registrations as `services.Add{Feature}()` in `{Feature}Registrations.cs` under the feature namespace (e.g., `AggregateRegistrations.cs`, `InletSiloRegistrations.cs`).
-- Keep registration sync-only; move setup to `IHostedService` or Orleans lifecycle participants.
-- Provide overloads: explicit parameters, `Action<TOptions>`, `IConfiguration`; validate options on start.
-- Call child registrations instead of duplicating service lists.
-
-## Core Principles
-
-- Hierarchical DI keeps features composable.
-- Options + validation catch misconfig early.
-- Async work belongs in hosted services/lifecycle hooks, not registration.
-- Internal-by-default access reduces public API churn.
-
-## Domain Registration Patterns (Event Sourcing)
-
-For domain models using Mississippi event sourcing:
-
-| Method Pattern | Purpose | Example |
-|----------------|---------|---------|
-| `Add{Domain}Domain()` | Public entry point | `AddContosoDomain()` |
-| `Add{Aggregate}Aggregate()` | Private per-aggregate | `AddChannelAggregate()` |
-| `Add{Projection}Projection()` | Private per-projection | `AddUserProfileProjection()` |
-
-Registration order within aggregates/projections:
-
-1. `AddEventType<TEvent>()` - Register event types
-2. `AddCommandHandler<TCommand, TAggregate, THandler>()` - Register handlers
-3. `AddReducer<TEvent, TState, TReducer>()` - Register reducers
-4. `AddSnapshotStateConverter<TState>()` - Register snapshot converter
+Use [register-dotnet-services](../../.agents/skills/register-dotnet-services/SKILL.md) with the [local source bindings](../agent-guidance/service-registration-bindings.md).
+If discovery is unavailable or applicability is unclear, read both files directly; the Rules above remain effective independently of skill activation.
 
 ## References
 
