@@ -28,6 +28,11 @@ Governing thought: Agents follow repository instructions and iterate from correc
 
 ### Codex model routing and parallelism
 
+Apply this recipe only after an operator explicitly selects it for the session
+and verifies support for both requested models and reasoning settings. Read
+[the complete profile guidance](.codex/README.md) before selection. Other sessions
+use their host and user-selected settings under the governing instructions.
+
 - The primary agent MUST run as `gpt-6-astra` with `xhigh` reasoning and own the plan, architecture, acceptance criteria, decomposition, difficult and security-sensitive decisions, integration, and final review. The primary MAY make small integration corrections and SHOULD avoid unnecessary handoffs. Why: Central ownership keeps decisions coherent.
 - The primary MUST delegate well-specified implementation, refactoring, test-writing, and supporting investigation to Luna workers, except for small integration corrections. Why: Bounded delegation leaves ambiguous architecture and security-sensitive decisions with the primary.
 - Workers MUST use `gpt-5.6-luna` with `max` reasoning when the routing is supported. Why: Literal worker settings make delegation predictable.
