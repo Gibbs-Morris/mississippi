@@ -159,11 +159,13 @@ internal sealed class CosmosRepository : ICosmosRepository
     /// </summary>
     /// <param name="brookId">The brook identifier.</param>
     /// <param name="finalPosition">The final position to commit.</param>
+    /// <param name="pendingETag">The entity tag of the pending append attempt.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task CommitCursorPositionAsync(
         BrookKey brookId,
         long finalPosition,
+        string pendingETag,
         CancellationToken cancellationToken = default
     )
     {
@@ -176,17 +178,17 @@ internal sealed class CosmosRepository : ICosmosRepository
             BrookPartitionKey = brookId.ToString(),
         };
 
-        // Upsert cursor
-        await RetryPolicy.ExecuteAsync(
-            async () =>
-            {
-                await Container.UpsertItemAsync(cursorDoc, partitionKey, cancellationToken: cancellationToken);
-                return true;
-            },
-            cancellationToken);
-
-        // Delete pending cursor state
-        await DeletePendingCursorAsync(brookId, cancellationToken);
+        ArgumentException.ThrowIfNullOrWhiteSpace(pendingETag);
+        TransactionalBatch batch = Container.CreateTransactionalBatch(partitionKey)
+            .DeleteItem(CursorPending, new TransactionalBatchItemRequestOptions { IfMatchEtag = pendingETag })
+            .UpsertItem(cursorDoc);
+        using TransactionalBatchResponse response = await ExecuteBatchWithRetryAsync(batch, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(
+                $"Cursor commit for brook '{brookId}' failed with Cosmos status {(int)response.StatusCode}; " +
+                "pending evidence was not cleared by this transaction.");
+        }
     }
 
     /// <summary>
@@ -196,8 +198,8 @@ internal sealed class CosmosRepository : ICosmosRepository
     /// <param name="currentCursor">The current cursor position.</param>
     /// <param name="finalPosition">The final position to be committed.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task CreatePendingCursorAsync(
+    /// <returns>The entity tag of the new pending append attempt.</returns>
+    public async Task<string> CreatePendingCursorAsync(
         BrookKey brookId,
         BrookPosition currentCursor,
         long finalPosition,
@@ -213,12 +215,15 @@ internal sealed class CosmosRepository : ICosmosRepository
             BrookPartitionKey = brookId.ToString(),
         };
         PartitionKey partitionKey = new(brookId.ToString());
-        await RetryPolicy.ExecuteAsync(
+        ItemResponse<CursorDocument> response = await RetryPolicy.ExecuteAsync(
             async () => await Container.CreateItemAsync(
                 pendingCursorDoc,
                 partitionKey,
                 cancellationToken: cancellationToken),
             cancellationToken);
+        return !string.IsNullOrWhiteSpace(response.ETag)
+            ? response.ETag
+            : throw new InvalidOperationException("Cosmos did not return an entity tag for the pending append.");
     }
 
     /// <summary>
@@ -251,19 +256,26 @@ internal sealed class CosmosRepository : ICosmosRepository
     ///     Deletes the pending cursor document for a brook.
     /// </summary>
     /// <param name="brookId">The brook identifier.</param>
+    /// <param name="pendingETag">The entity tag of the pending append attempt.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task DeletePendingCursorAsync(
         BrookKey brookId,
+        string pendingETag,
         CancellationToken cancellationToken = default
     )
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(pendingETag);
         try
         {
             await Container.DeleteItemAsync<CursorDocument>(
                 CursorPending,
                 new(brookId.ToString()),
-                cancellationToken: cancellationToken);
+                new()
+                {
+                    IfMatchEtag = pendingETag,
+                },
+                cancellationToken);
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
@@ -355,7 +367,9 @@ internal sealed class CosmosRepository : ICosmosRepository
                 CursorDocumentId,
                 new(brookId.ToString()),
                 cancellationToken: cancellationToken);
-            return CursorDocumentMapper.Map(response.Resource);
+            CursorStorageModel model = CursorDocumentMapper.Map(response.Resource);
+            model.ETag = response.ETag;
+            return model;
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
@@ -421,7 +435,9 @@ internal sealed class CosmosRepository : ICosmosRepository
                 CursorPending,
                 new(brookId.ToString()),
                 cancellationToken: cancellationToken);
-            return CursorDocumentMapper.Map(response.Resource);
+            CursorStorageModel model = CursorDocumentMapper.Map(response.Resource);
+            model.ETag = response.ETag;
+            return model;
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {

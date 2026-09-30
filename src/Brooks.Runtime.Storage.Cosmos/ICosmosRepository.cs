@@ -35,11 +35,13 @@ internal interface ICosmosRepository
     /// </summary>
     /// <param name="brookId">The brook identifier specifying the target brook.</param>
     /// <param name="finalPosition">The final position to commit.</param>
+    /// <param name="pendingETag">The entity tag returned when this append created its pending document.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     Task CommitCursorPositionAsync(
         BrookKey brookId,
         long finalPosition,
+        string pendingETag,
         CancellationToken cancellationToken = default
     );
 
@@ -50,8 +52,8 @@ internal interface ICosmosRepository
     /// <param name="currentCursor">The current cursor position before the operation.</param>
     /// <param name="finalPosition">The expected final position after the operation.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    Task CreatePendingCursorAsync(
+    /// <returns>The entity tag that identifies the new pending append attempt.</returns>
+    Task<string> CreatePendingCursorAsync(
         BrookKey brookId,
         BrookPosition currentCursor,
         long finalPosition,
@@ -75,10 +77,12 @@ internal interface ICosmosRepository
     ///     Deletes the pending cursor document for the specified brook.
     /// </summary>
     /// <param name="brookId">The brook identifier specifying the target brook.</param>
+    /// <param name="pendingETag">The entity tag of the pending append attempt to delete.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     Task DeletePendingCursorAsync(
         BrookKey brookId,
+        string pendingETag,
         CancellationToken cancellationToken = default
     );
 

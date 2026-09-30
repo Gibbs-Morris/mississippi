@@ -56,7 +56,10 @@ public sealed class EventBrookWriterCommitBoundaryTests
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new();
         mapper.Setup(m => m.Map(It.IsAny<BrookEvent>())).Returns(new EventStorageModel());
         Mock<IBrookRecoveryService> recovery = new();
-        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(
+                key,
+                It.IsAny<IDistributedLock>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(originalPosition);
         List<long> retainedPositions = [originalPosition.Value];
         bool hasPendingEvidence = false;
@@ -67,7 +70,7 @@ public sealed class EventBrookWriterCommitBoundaryTests
                 finalPosition,
                 It.IsAny<CancellationToken>()))
             .Callback(() => hasPendingEvidence = true)
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("attempt-etag");
         repository.Setup(r => r.AppendEventBatchAsync(
                 key,
                 It.IsAny<IReadOnlyList<EventStorageModel>>(),
@@ -77,7 +80,11 @@ public sealed class EventBrookWriterCommitBoundaryTests
                 retainedPositions.Add(position))
             .Returns(Task.CompletedTask);
         InvalidOperationException failure = new("Cursor commit acknowledgement or pending cleanup failed.");
-        repository.Setup(r => r.CommitCursorPositionAsync(key, finalPosition, It.IsAny<CancellationToken>()))
+        repository.Setup(r => r.CommitCursorPositionAsync(
+                key,
+                finalPosition,
+                "attempt-etag",
+                It.IsAny<CancellationToken>()))
             .Callback(() =>
             {
                 cursor = isCursorCommitted ? finalPosition : originalPosition.Value;
@@ -87,7 +94,7 @@ public sealed class EventBrookWriterCommitBoundaryTests
         repository.Setup(r => r.DeleteEventAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()))
             .Callback<BrookKey, long, CancellationToken>((_, position, _) => retainedPositions.Remove(position))
             .Returns(Task.CompletedTask);
-        repository.Setup(r => r.DeletePendingCursorAsync(key, It.IsAny<CancellationToken>()))
+        repository.Setup(r => r.DeletePendingCursorAsync(key, "attempt-etag", It.IsAny<CancellationToken>()))
             .Callback(() => hasPendingEvidence = false)
             .Returns(Task.CompletedTask);
         repository.Setup(r => r.EventExistsAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()))
@@ -137,9 +144,11 @@ public sealed class EventBrookWriterCommitBoundaryTests
         Assert.Equal(!isPendingDeleted, hasPendingEvidence);
         Assert.Equal(isCursorCommitted ? finalPosition : originalPosition.Value, cursor);
         repository.Verify(
-            r => r.CommitCursorPositionAsync(key, finalPosition, It.IsAny<CancellationToken>()),
+            r => r.CommitCursorPositionAsync(key, finalPosition, "attempt-etag", It.IsAny<CancellationToken>()),
             Times.Once);
         repository.Verify(r => r.DeleteEventAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
-        repository.Verify(r => r.DeletePendingCursorAsync(key, It.IsAny<CancellationToken>()), Times.Never);
+        repository.Verify(
+            r => r.DeletePendingCursorAsync(key, "attempt-etag", It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 }

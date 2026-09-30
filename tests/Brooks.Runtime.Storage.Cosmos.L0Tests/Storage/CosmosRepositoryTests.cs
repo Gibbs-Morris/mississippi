@@ -227,46 +227,78 @@ public sealed class CosmosRepositoryTests
     }
 
     /// <summary>
-    ///     Verifies CommitCursorPositionAsync upserts cursor and deletes pending cursor.
+    ///     Verifies the pending attempt is matched before the cursor changes in one partition transaction.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
-    public async Task CommitCursorPositionAsyncUpsertsCursorAndDeletesPendingAsync()
+    public async Task CommitCursorPositionAsyncUsesConditionalAtomicBatchAsync()
     {
         // Arrange
         Mock<Container> container = new();
-        container.Setup(c => c.UpsertItemAsync(
-                It.IsAny<CursorDocument>(),
-                It.IsAny<PartitionKey>(),
-                null,
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Mock.Of<ItemResponse<CursorDocument>>());
-        container.Setup(c => c.DeleteItemAsync<CursorDocument>(
-                It.IsAny<string>(),
-                It.IsAny<PartitionKey>(),
-                null,
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Mock.Of<ItemResponse<CursorDocument>>());
+        Mock<TransactionalBatch> batch = new();
+        Mock<TransactionalBatchResponse> response = new();
+        response.SetupGet(r => r.IsSuccessStatusCode).Returns(true);
+        container.Setup(c => c.CreateTransactionalBatch(It.IsAny<PartitionKey>())).Returns(batch.Object);
+        batch.Setup(b => b.DeleteItem("cursor-pending", It.IsAny<TransactionalBatchItemRequestOptions>()))
+            .Returns(batch.Object);
+        batch.Setup(b => b.UpsertItem(It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
+        batch.Setup(b => b.ExecuteAsync(It.IsAny<CancellationToken>())).ReturnsAsync(response.Object);
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act
-        await sut.CommitCursorPositionAsync(new("type", "id"), 42, TestContext.Current.CancellationToken);
+        await sut.CommitCursorPositionAsync(
+            new("type", "id"),
+            42,
+            "attempt-etag",
+            TestContext.Current.CancellationToken);
 
         // Assert
+        batch.Verify(
+            b => b.DeleteItem(
+                "cursor-pending",
+                It.Is<TransactionalBatchItemRequestOptions>(o => o.IfMatchEtag == "attempt-etag")),
+            Times.Once);
+        batch.Verify(b => b.UpsertItem(It.Is<CursorDocument>(h => h.Id == "cursor" && h.Position == 42), null), Times.Once);
+        batch.Verify(b => b.ExecuteAsync(It.IsAny<CancellationToken>()), Times.Once);
         container.Verify(
             c => c.UpsertItemAsync(
-                It.Is<CursorDocument>(h => (h.Id == "cursor") && (h.Position == 42)),
-                It.IsAny<PartitionKey>(),
-                null,
-                It.IsAny<CancellationToken>()),
+                It.IsAny<CursorDocument>(), It.IsAny<PartitionKey>(), null, It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    /// <summary>
+    ///     A stale pending entity tag fails the entire commit instead of advancing the cursor.
+    /// </summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task CommitCursorPositionAsyncRejectsStalePendingAttemptAsync()
+    {
+        Mock<Container> container = new();
+        Mock<TransactionalBatch> batch = new();
+        Mock<TransactionalBatchResponse> response = new();
+        response.SetupGet(r => r.IsSuccessStatusCode).Returns(false);
+        response.SetupGet(r => r.StatusCode).Returns(HttpStatusCode.PreconditionFailed);
+        container.Setup(c => c.CreateTransactionalBatch(It.IsAny<PartitionKey>())).Returns(batch.Object);
+        batch.Setup(b => b.DeleteItem("cursor-pending", It.IsAny<TransactionalBatchItemRequestOptions>()))
+            .Returns(batch.Object);
+        batch.Setup(b => b.UpsertItem(It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
+        batch.Setup(b => b.ExecuteAsync(It.IsAny<CancellationToken>())).ReturnsAsync(response.Object);
+        CosmosRepository sut = CreateRepository(container.Object);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            sut.CommitCursorPositionAsync(new("type", "id"), 42, "old-attempt", TestContext.Current.CancellationToken));
+
+        Assert.Contains("412", exception.Message, StringComparison.Ordinal);
+        batch.Verify(
+            b => b.DeleteItem(
+                "cursor-pending",
+                It.Is<TransactionalBatchItemRequestOptions>(o => o.IfMatchEtag == "old-attempt")),
             Times.Once);
+        batch.Verify(b => b.ExecuteAsync(It.IsAny<CancellationToken>()), Times.Once);
         container.Verify(
-            c => c.DeleteItemAsync<CursorDocument>(
-                It.Is<string>(s => s == "cursor-pending"),
-                It.IsAny<PartitionKey>(),
-                null,
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+            c => c.UpsertItemAsync(
+                It.IsAny<CursorDocument>(), It.IsAny<PartitionKey>(), null, It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     /// <summary>
@@ -286,12 +318,12 @@ public sealed class CosmosRepositoryTests
                 It.IsAny<CancellationToken>()))
             .Callback((CursorDocument d, PartitionKey? pk, ItemRequestOptions? options, CancellationToken ct) =>
                 captured = d)
-            .ReturnsAsync(Mock.Of<ItemResponse<CursorDocument>>());
+            .ReturnsAsync(Mock.Of<ItemResponse<CursorDocument>>(r => r.ETag == "attempt-etag"));
         CosmosRepository sut = CreateRepository(container.Object);
         BrookKey key = new("type", "id");
 
         // Act
-        await sut.CreatePendingCursorAsync(key, new(5), 10, TestContext.Current.CancellationToken);
+        string pendingETag = await sut.CreatePendingCursorAsync(key, new(5), 10, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(captured);
@@ -300,6 +332,7 @@ public sealed class CosmosRepositoryTests
         Assert.Equal(10, captured.Position);
         Assert.Equal(5, captured.OriginalPosition);
         Assert.Equal(key.ToString(), captured.BrookPartitionKey);
+        Assert.Equal("attempt-etag", pendingETag);
         container.Verify(
             c => c.CreateItemAsync(
                 It.IsAny<CursorDocument>(),
@@ -355,14 +388,16 @@ public sealed class CosmosRepositoryTests
         container.Setup(c => c.DeleteItemAsync<CursorDocument>(
                 It.IsAny<string>(),
                 It.IsAny<PartitionKey>(),
-                null,
+                It.Is<ItemRequestOptions>(o => o.IfMatchEtag == "attempt-etag"),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(CreateCosmosException(HttpStatusCode.NotFound));
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act - should not throw
-        Exception? ex = await Record.ExceptionAsync(() =>
-            sut.DeletePendingCursorAsync(new("t", "i"), TestContext.Current.CancellationToken));
+        Exception? ex = await Record.ExceptionAsync(() => sut.DeletePendingCursorAsync(
+            new("t", "i"),
+            "attempt-etag",
+            TestContext.Current.CancellationToken));
 
         // Assert - delete was attempted exactly once and exception swallowed
         Assert.Null(ex);
@@ -370,7 +405,41 @@ public sealed class CosmosRepositoryTests
             c => c.DeleteItemAsync<CursorDocument>(
                 It.IsAny<string>(),
                 It.IsAny<PartitionKey>(),
-                null,
+                It.Is<ItemRequestOptions>(o => o.IfMatchEtag == "attempt-etag"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    ///     A delayed delete from an older attempt cannot remove a replacement pending document.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task DeletePendingCursorAsyncRejectsStaleAttemptAsync()
+    {
+        Mock<Container> container = new();
+        container.Setup(c => c.DeleteItemAsync<CursorDocument>(
+                "cursor-pending",
+                It.IsAny<PartitionKey>(),
+                It.Is<ItemRequestOptions>(o => o.IfMatchEtag == "old-attempt"),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(CreateCosmosException(HttpStatusCode.PreconditionFailed));
+        container.Setup(c => c.DeleteItemAsync<CursorDocument>(
+                "cursor-pending",
+                It.IsAny<PartitionKey>(),
+                It.Is<ItemRequestOptions>(o => o.IfMatchEtag == "new-attempt"),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<ItemResponse<CursorDocument>>());
+        CosmosRepository repository = CreateRepository(container.Object);
+        BrookKey key = new("test", "delayed-delete");
+        await Assert.ThrowsAsync<CosmosException>(() =>
+            repository.DeletePendingCursorAsync(key, "old-attempt", TestContext.Current.CancellationToken));
+        await repository.DeletePendingCursorAsync(key, "new-attempt", TestContext.Current.CancellationToken);
+        container.Verify(
+            c => c.DeleteItemAsync<CursorDocument>(
+                "cursor-pending",
+                It.IsAny<PartitionKey>(),
+                It.Is<ItemRequestOptions>(o => o.IfMatchEtag == "new-attempt"),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -605,6 +674,36 @@ public sealed class CosmosRepositoryTests
                 5,
             },
             result);
+    }
+
+    /// <summary>
+    ///     Carries the Cosmos response entity tag into pending recovery evidence.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task GetPendingCursorDocumentAsyncReturnsAttemptTagAsync()
+    {
+        Mock<Container> container = new();
+        Mock<ItemResponse<CursorDocument>> response = new();
+        response.SetupGet(r => r.Resource)
+            .Returns(
+                new CursorDocument
+                {
+                    Position = 3,
+                });
+        response.SetupGet(r => r.ETag).Returns("pending-attempt");
+        container.Setup(c => c.ReadItemAsync<CursorDocument>(
+                "cursor-pending",
+                It.IsAny<PartitionKey>(),
+                null,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response.Object);
+        CosmosRepository repository = CreateRepository(container.Object);
+        CursorStorageModel? pending = await repository.GetPendingCursorDocumentAsync(
+            new("test", "pending-etag"),
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(pending);
+        Assert.Equal("pending-attempt", pending.ETag);
     }
 
     /// <summary>

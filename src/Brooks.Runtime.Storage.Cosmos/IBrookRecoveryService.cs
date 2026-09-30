@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Locking;
 
 
 namespace Mississippi.Brooks.Runtime.Storage.Cosmos;
@@ -19,6 +20,19 @@ internal interface IBrookRecoveryService
     /// <returns>The current or recovered cursor position of the brook.</returns>
     Task<BrookPosition> GetOrRecoverCursorPositionAsync(
         BrookKey brookId,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    ///     Reconciles cursor evidence while the caller holds the brook writer lease.
+    /// </summary>
+    /// <param name="brookId">The brook identifier.</param>
+    /// <param name="writerLock">The caller-owned writer lease.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>The current or recovered cursor position.</returns>
+    Task<BrookPosition> GetOrRecoverCursorPositionAsync(
+        BrookKey brookId,
+        IDistributedLock writerLock,
         CancellationToken cancellationToken = default
     );
 }
