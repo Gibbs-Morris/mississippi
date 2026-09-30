@@ -1,3 +1,4 @@
+# Optional CLI profile example; see README.md before selecting it.
 # Primary agent: planning, architecture, integration and final review.
 model = "gpt-6-astra"
 model_reasoning_effort = "xhigh"
