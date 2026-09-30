@@ -73,6 +73,9 @@ expansion before execution. An explicit refspec bypasses configured push mapping
 also disable mirror mode and follow-tags for that invocation, for example with
 `-c remote.NAME.mirror=false -c push.followTags=false -c push.recurseSubmodules=no`
 before `push` and `--no-mirror --no-follow-tags --recurse-submodules=no` after it.
+Unless signed publication is expressly authorized, add `--no-signed` to neutralize
+implicit `push.gpgSign` behavior. Authorized signed publication requires verified
+signer provenance and the target's required signing policy; do not disable it.
 Submodule publication needs separate authorization; verify required submodule
 revisions are available before publishing the parent. Replace `NAME` with the verified remote;
 check these options against current help. Reject or clear configured
