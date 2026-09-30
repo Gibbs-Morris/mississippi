@@ -28,7 +28,7 @@ Governing thought: Agents follow repository instructions and iterate from correc
 
 ### Optional Codex model routing
 
-The Astra/Luna recipe applies only after an operator explicitly selects it for
+The Sol/Luna recipe applies only after an operator explicitly selects it for
 this session and verifies model, reasoning and client support. Other sessions
 use their host and user-selected settings under the governing instructions.
 

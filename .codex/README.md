@@ -1,6 +1,7 @@
-# Optional Astra and Luna routing
+# Optional Sol and Luna routing
 
-This directory contains an optional CLI profile recipe. The example file is
+This directory contains an optional CLI profile recipe for a GPT-6.1 Sol primary
+and GPT-6 Luna workers, both at literal `max` reasoning. The example file is
 not loaded automatically as repository configuration.
 
 Use a client whose installed help supports file-based profiles and whose
@@ -11,9 +12,13 @@ field definitions are in the [Codex configuration reference](https://learn.chatg
 ## Check support before selection
 
 Inspect the installed client's version, help and configuration reference. Check
-its current model catalog and account availability for both `gpt-6-astra` with
-`xhigh` reasoning and `gpt-5.6-luna` with `max` reasoning. A bundled catalog lists
+its current model catalog and account availability for both `gpt-6.1-sol` with
+`max` reasoning and `gpt-6-luna` with `max` reasoning. A bundled catalog lists
 known identifiers; it does not prove account access or successful execution.
+
+The official model references list `max` reasoning for both
+[GPT-6.1 Sol](https://developers.openai.com/api/docs/models/gpt-6.1-sol) and
+[GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna).
 
 If either model, reasoning setting or agent field is unsupported, leave the
 profile unselected and report the limitation. An explicit request for these
@@ -29,11 +34,12 @@ host's available slots and actual execution.
 ## Select the profile
 
 After completing those checks, copy
-`astra-luna.config.example.toml` to your configured Codex home as
-`astra-luna.config.toml`. Select it for a new CLI session with:
+`sol-luna.config.example.toml` to your configured Codex home as
+`sol-luna.config.toml`. The [profile selection documentation](https://learn.chatgpt.com/docs/config-file/config-advanced#profiles)
+describes this file layer. Select it for a new CLI session with:
 
 ```text
-codex --profile astra-luna
+codex --profile sol-luna
 ```
 
 This repository example does not change existing desktop chats or workers.
@@ -44,15 +50,15 @@ resource pressure can require a smaller worker set.
 ## Scoped routing and coordination rules
 
 These rules apply only to a session whose operator selected the supported
-Astra/Luna recipe. They grant no additional tool, publication or delegation
+Sol/Luna recipe. They grant no additional tool, publication or delegation
 permission beyond the session's governing instructions.
 
-- The primary MUST use `gpt-6-astra` with `xhigh` reasoning. Why: The selected recipe names literal primary settings.
+- The primary MUST use `gpt-6.1-sol` with `max` reasoning. Why: The selected recipe names literal primary settings.
 - The primary MUST own planning, architecture, acceptance criteria, decomposition, difficult and security-sensitive decisions, integration and final review. Why: One owner keeps decisions coherent.
 - The primary MAY make small integration corrections. Why: A handoff is unnecessary for a bounded integration correction.
 - The primary SHOULD avoid unnecessary handoffs. Why: Coordination should improve the outcome.
 - The primary MUST delegate well-specified implementation, refactoring, test-writing and supporting investigation to Luna workers, except small integration corrections. Why: Bounded workers execute work whose contract is already clear.
-- Workers MUST use `gpt-5.6-luna` with `max` reasoning when supported. Why: Literal worker settings make delegation predictable.
+- Workers MUST use `gpt-6-luna` with `max` reasoning when supported. Why: Literal worker settings make delegation predictable.
 - When spawn parameters support overrides, the primary MUST pass both model and reasoning explicitly. Why: Defaults alone do not establish the requested route.
 - The primary MUST check selected role settings and effective routing. Why: Custom role settings can override explicit spawn settings.
 - If requested routing is unsupported, the primary MUST report the limitation. Why: The missing capability needs a visible disposition.
