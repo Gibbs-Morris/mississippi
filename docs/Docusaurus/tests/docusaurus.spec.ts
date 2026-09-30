@@ -37,7 +37,7 @@ test.describe('Mississippi landing page', () => {
     }
     await expect(action).toBeFocused();
     await expect(action).toHaveCSS('outline-style', 'solid');
-    await action.click();
+    await page.keyboard.press('Enter');
 
     await expect(page).toHaveURL(/\/docs\/next\/concepts\/concepts-architectural-model\/?$/);
     await expect(page.getByRole('heading', {level: 1})).toHaveText('Architectural Model');
