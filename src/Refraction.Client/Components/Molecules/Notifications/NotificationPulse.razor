@@ -19,13 +19,17 @@
             {
                 <button class="rf-notification-pulse__action rf-notification-pulse__expand"
                         type="button"
-                        @onclick="HandleExpandAsync">@ExpandText</button>
+                        @onclick="HandleExpandAsync">
+                    @ExpandText
+                </button>
             }
             @if (OnDismiss.HasDelegate)
             {
                 <button class="rf-notification-pulse__action rf-notification-pulse__dismiss"
                         type="button"
-                        @onclick="HandleDismissAsync">@DismissText</button>
+                        @onclick="HandleDismissAsync">
+                    @DismissText
+                </button>
             }
         </div>
     }

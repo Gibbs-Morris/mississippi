@@ -52,20 +52,22 @@ public sealed partial class NotificationPulse : ComponentBase
     [Parameter]
     public string State { get; set; } = RefractionStates.New;
 
+    private string? CallerClass =>
+        AdditionalAttributes
+            ?.Where(attribute => string.Equals(attribute.Key, "class", StringComparison.OrdinalIgnoreCase))
+            .Select(attribute => attribute.Value?.ToString())
+            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+
     private string CssClass =>
         string.Join(
             " ",
             new[] { "rf-notification-pulse", Class, CallerClass }.Where(value => !string.IsNullOrWhiteSpace(value)));
 
-    private string? CallerClass => AdditionalAttributes?
-        .Where(attribute => string.Equals(attribute.Key, "class", StringComparison.OrdinalIgnoreCase))
-        .Select(attribute => attribute.Value?.ToString())
-        .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
-
-    private IReadOnlyDictionary<string, object>? ForwardedAttributes => AdditionalAttributes?
-        .Where(attribute => !string.Equals(attribute.Key, "class", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(attribute.Key, "data-state", StringComparison.OrdinalIgnoreCase))
-        .ToDictionary(attribute => attribute.Key, attribute => attribute.Value);
+    private IReadOnlyDictionary<string, object>? ForwardedAttributes =>
+        AdditionalAttributes
+            ?.Where(attribute => !string.Equals(attribute.Key, "class", StringComparison.OrdinalIgnoreCase) &&
+                                 !string.Equals(attribute.Key, "data-state", StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(attribute => attribute.Key, attribute => attribute.Value);
 
     /// <inheritdoc />
     protected override void OnParametersSet()
