@@ -8,6 +8,8 @@ description: Reference runtime composition, options, and storage ownership for t
 
 # Brooks Cosmos DB Provider
 
+## Overview
+
 The Brooks Cosmos DB provider stores event streams in Azure Cosmos DB and uses Azure Blob Storage for distributed
 locking. Register it through the runtime composition builder so its options and service graph are staged with the
 Orleans host.
@@ -124,6 +126,18 @@ changing an alias does not move data when it still resolves to the same account 
 storage identities when an existing deployment must continue reading its data.
 
 ## Errors and diagnostics
+
+### Cursor commit failures
+
+Large appends write event batches before committing the cursor. The commit operation upserts the cursor and then
+deletes pending metadata, so it can report failure after the cursor has advanced or after pending metadata was removed.
+After a commit attempt reports failure, the writer logs the brook and target position, preserves the original exception,
+and does not delete appended events or remaining pending metadata. The exception alone does not establish whether the
+cursor advanced.
+
+If the cursor advanced but pending metadata remains, the current recovery service skips that metadata when it sees the
+committed cursor. A later append can then fail while creating the fixed pending document. Safe reconciliation of that
+state remains separate from this data-preservation boundary.
 
 Scalar option failures, a closed nested scope, and duplicate composition are reported by
 `BuilderValidationException`. Its `Diagnostics` collection contains a stable `Code`, a `Message`, and `Remediation`
