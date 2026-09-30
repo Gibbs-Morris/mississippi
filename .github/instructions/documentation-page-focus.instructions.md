@@ -10,46 +10,9 @@ Governing thought: Every Mississippi documentation page should serve one reader 
 
 ## Rules (RFC 2119)
 
-- Authors **MUST** classify each page as exactly one of `getting-started`, `tutorials`, `how-to`, `concepts`, `reference`, `operations`, `troubleshooting`, `migration`, or `release-notes` before writing. Why: Structure and evidence requirements depend on the page type.
-- Pages **MUST NOT** blend tutorial, how-to, concept, and reference content into one undifferentiated page. Why: Mixed intent makes navigation and maintenance worse.
-- Each page **MUST** answer one primary question and **MUST** state that answer or scope directly in its opening. Why: Readers should know immediately whether the page matches their need.
-- Page type **MUST** be treated as the writing contract even when physical folder layout still reflects an older feature-oriented structure. Why: Mississippi is in a hybrid transition.
-- If a topic genuinely needs multiple page types, authors **MUST** split it into separate pages and cross-link them. Why: Readers should not dig through irrelevant sections to find the right material.
-- Placement within the docs tree **SHOULD** reinforce the page type when practical, but physical placement **MUST NOT** override the page-type contract. Why: Folder layout is migrating incrementally.
+- Covered contributors **MUST** read the complete policy files for [public-documentation contracts](../../docs/Docusaurus/docs/AGENTS.md#public-documentation) and apply their clauses within this instruction's original path, content, and audience scope. Why: Relocation and optional skill selection do not narrow these obligations.
+- For product-documentation drafting or validation, authors and reviewers **MUST** read the [shared skill](../../.agents/skills/author-technical-documentation/SKILL.md), its selected page-type contract, and the corresponding local guide in the [page-contract table](../../docs/Docusaurus/docs/AGENTS.md#selected-page-contracts). Why: Classification and required contracts are explicit; ADRs retain their dedicated layout.
 
 ## Scope and Audience
 
 All contributors and agents writing or updating public docs under `docs/Docusaurus/docs/`.
-
-## At-a-Glance Quick-Start
-
-- Choose the page type first.
-- State the page outcome or scope in the opening.
-- Keep one page for one reader intent.
-- Split and cross-link when the topic spans multiple intents.
-
-## Classification Questions
-
-Ask these questions before writing:
-
-- Is the reader trying to get to a first success?
-- Is the reader trying to learn by following a guided sequence?
-- Is the reader trying to complete a specific task quickly?
-- Is the reader trying to understand a model, guarantee, or trade-off?
-- Is the reader trying to look up exact facts?
-- Is the reader trying to run Mississippi safely in production?
-- Is the reader diagnosing a symptom?
-- Is the reader upgrading between versions?
-- Is the reader scanning a release summary?
-
-## Core Principles
-
-- **One Intent**: One page should answer one main question.
-- **Page Type Before Placement**: Content contract matters more than folder history.
-- **Split Before Stuffing**: If the page wants to do multiple jobs, break it apart.
-
-## References
-
-- Public guide: `docs/Docusaurus/docs/contributing/documentation-guide.md`
-- Documentation authoring: `.github/instructions/documentation-authoring.instructions.md`
-- Feature documentation structure: `.github/instructions/feature-documentation-structure.instructions.md`
