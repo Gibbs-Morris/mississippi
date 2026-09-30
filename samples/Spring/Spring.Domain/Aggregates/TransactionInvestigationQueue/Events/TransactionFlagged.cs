@@ -10,7 +10,7 @@ namespace MississippiSamples.Spring.Domain.Aggregates.TransactionInvestigationQu
 /// <summary>
 ///     Event raised when a high-value transaction is flagged for investigation.
 /// </summary>
-[EventStorageName("SPRING", "COMPLIANCE", "TRANSACTIONFLAGGED")]
+[EventStorageName("SPRING", "COMPLIANCE", "TRANSACTIONFLAGGED", 1)]
 [GenerateSerializer]
 [Alias("MississippiSamples.Spring.Domain.Aggregates.TransactionInvestigationQueue.Events.TransactionFlagged")]
 internal sealed record TransactionFlagged

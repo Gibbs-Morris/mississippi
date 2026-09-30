@@ -18,7 +18,7 @@ namespace MississippiSamples.Spring.Domain.Projections.BankAccountBalance;
 /// </remarks>
 [ProjectionPath("bank-account-balance")]
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
-[SnapshotStorageName("SPRING", "BANKING", "ACCOUNTBALANCE")]
+[SnapshotStorageName("SPRING", "BANKING", "ACCOUNTBALANCE", 1)]
 [GenerateProjectionEndpoints]
 [GenerateMcpReadTool(
     Title = "Get Bank Account Balance",

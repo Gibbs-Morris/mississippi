@@ -26,7 +26,7 @@ namespace MississippiSamples.Spring.Domain.Projections.FlaggedTransactions;
 /// </remarks>
 [ProjectionPath("flagged-transactions")]
 [BrookName("SPRING", "COMPLIANCE", "INVESTIGATION")]
-[SnapshotStorageName("SPRING", "COMPLIANCE", "FLAGGEDTXPROJECTION")]
+[SnapshotStorageName("SPRING", "COMPLIANCE", "FLAGGEDTXPROJECTION", 1)]
 [GenerateProjectionEndpoints]
 [GenerateMcpReadTool(
     Title = "Get Flagged Transactions",

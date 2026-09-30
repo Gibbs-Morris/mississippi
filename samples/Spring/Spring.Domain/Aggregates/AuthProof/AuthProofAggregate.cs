@@ -10,7 +10,7 @@ namespace MississippiSamples.Spring.Domain.Aggregates.AuthProof;
 ///     Aggregate used to prove generated endpoint authorization behaviors in local development.
 /// </summary>
 [BrookName("SPRING", "AUTHPROOF", "FLOW")]
-[SnapshotStorageName("SPRING", "AUTHPROOF", "FLOWSTATE")]
+[SnapshotStorageName("SPRING", "AUTHPROOF", "FLOWSTATE", 1)]
 [GenerateAggregateEndpoints]
 [GenerateSerializer]
 [Alias("MississippiSamples.Spring.Domain.Aggregates.AuthProof.AuthProofAggregate")]
