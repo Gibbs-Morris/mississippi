@@ -41,7 +41,14 @@ If a saga with a legacy hash reaches a guarded execution boundary, the runtime e
 
 ## Code and configuration changes
 
-No caller API or configuration key changes in this slice. Review registered step order, names, types, and compensation declarations before deployment; these fields now determine the persisted workflow identity. Method bodies and external configuration remain outside the hash check.
+The public `StartSagaCommandHandler<TSaga, TInput>` constructor changes its CLR signature:
+
+- Before: `(ISagaStepInfoProvider<TSaga>, TimeProvider)`.
+- After: `(ISagaStepInfoProvider<TSaga>, TimeProvider, ILogger<StartSagaCommandHandler<TSaga, TInput>>? logger = null)`.
+
+Existing two-argument source calls still compile because the logger argument is optional. Rebuild assemblies compiled against the old two-parameter constructor; the old binary signature is no longer present. Reflection callers must look up the three-parameter constructor and supply a third argument (`null` is accepted). No configuration key changes in this slice.
+
+Review registered step order, names, types, and compensation declarations before deployment; these fields now determine the persisted workflow identity. Method bodies and external configuration remain outside the hash check.
 
 ## Data, state, and serialization implications
 
