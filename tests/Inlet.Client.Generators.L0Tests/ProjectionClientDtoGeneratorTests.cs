@@ -830,12 +830,17 @@ public class ProjectionClientDtoGeneratorTests
     ///     Nullable custom enum collection elements receive enum DTO declarations while framework enums remain unchanged.
     /// </summary>
     /// <param name="collectionType">The collection shape containing nullable enum elements.</param>
+    /// <param name="nested">Whether only a nested history record contains the collection.</param>
     [Theory]
-    [InlineData("ImmutableArray<__Element__>")]
-    [InlineData("List<__Element__>")]
-    [InlineData("__Element__[]")]
+    [InlineData("ImmutableArray<__Element__>", false)]
+    [InlineData("List<__Element__>", false)]
+    [InlineData("__Element__[]", false)]
+    [InlineData("ImmutableArray<__Element__>", true)]
+    [InlineData("List<__Element__>", true)]
+    [InlineData("__Element__[]", true)]
     public void GeneratedNullableEnumCollectionDtosCompile(
-        string collectionType
+        string collectionType,
+        bool nested
     )
     {
         ArgumentNullException.ThrowIfNull(collectionType);
@@ -872,6 +877,25 @@ public class ProjectionClientDtoGeneratorTests
                 "__FrameworkCollection__",
                 collectionType.Replace("__Element__", "DayOfWeek?", StringComparison.Ordinal),
                 StringComparison.Ordinal);
+        if (nested)
+        {
+            projectionSource = projectionSource
+                .Replace("[GenerateProjectionEndpoints]", string.Empty, StringComparison.Ordinal)
+                .Replace("[ProjectionPath(\"saga-status\")]", string.Empty, StringComparison.Ordinal)
+                .Replace("SagaStatusProjection", "RecoveryEntry", StringComparison.Ordinal);
+            projectionSource += """
+                                namespace TestApp.Domain.Projections.Sagas
+                                {
+                                    [GenerateProjectionEndpoints]
+                                    [ProjectionPath("saga-status")]
+                                    public sealed record SagaStatusProjection
+                                    {
+                                        public ImmutableArray<RecoveryEntry> History { get; init; }
+                                    }
+                                }
+                                """;
+        }
+
         (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
         Assert.Empty(diagnostics);
@@ -884,8 +908,8 @@ public class ProjectionClientDtoGeneratorTests
         INamedTypeSymbol enumDto = outputCompilation.GetTypeByMetadataName($"{dtoNamespace}.ResumeSourceDto")!;
         Assert.NotNull(enumDto);
         Assert.Equal(TypeKind.Enum, enumDto.TypeKind);
-        INamedTypeSymbol projectionDto =
-            outputCompilation.GetTypeByMetadataName($"{dtoNamespace}.SagaStatusProjectionDto")!;
+        string targetDtoName = nested ? "RecoveryEntryDto" : "SagaStatusProjectionDto";
+        INamedTypeSymbol projectionDto = outputCompilation.GetTypeByMetadataName($"{dtoNamespace}.{targetDtoName}")!;
         Assert.NotNull(projectionDto);
         foreach (string propertyName in new[] { "Values", "Again", "Days" })
         {

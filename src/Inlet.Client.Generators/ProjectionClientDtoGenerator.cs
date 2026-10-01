@@ -267,8 +267,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         context.AddSource($"{targetNamespace}.{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
 
         // Check for enum properties that need DTO generation
-        IEnumerable<INamedTypeSymbol> enumTypes = properties.Select(p => p.Type)
-            .Select(UnwrapNullable)
+        IEnumerable<INamedTypeSymbol> enumTypes = properties.Select(p => GetEnumSourceType(p.Type))
             .OfType<INamedTypeSymbol>()
             .Where(t => (t.TypeKind == TypeKind.Enum) && !TypeAnalyzer.IsFrameworkType(t));
         foreach (INamedTypeSymbol enumType in enumTypes)
@@ -316,6 +315,21 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         }
 
         return enumInfos;
+    }
+
+    /// <summary>
+    ///     Gets the underlying source type used for enum discovery.
+    /// </summary>
+    /// <param name="sourceType">The property source type.</param>
+    /// <returns>The unwrapped collection element or property type.</returns>
+    private static ITypeSymbol GetEnumSourceType(
+        ITypeSymbol sourceType
+    )
+    {
+        ITypeSymbol enumSource = sourceType is IArrayTypeSymbol || TypeAnalyzer.IsCollectionType(sourceType)
+            ? TypeAnalyzer.GetCollectionElementType(sourceType) ?? sourceType
+            : sourceType;
+        return UnwrapNullable(enumSource);
     }
 
     /// <summary>
