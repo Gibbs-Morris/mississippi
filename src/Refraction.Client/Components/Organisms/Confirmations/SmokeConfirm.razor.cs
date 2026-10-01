@@ -115,8 +115,9 @@ public sealed partial class SmokeConfirm : ComponentBase
             return null;
         }
 
-        return AdditionalAttributes
+        object? value = AdditionalAttributes
             .FirstOrDefault(pair => string.Equals(pair.Key, name, StringComparison.OrdinalIgnoreCase))
-            .Value?.ToString();
+            .Value;
+        return value is bool ? null : value?.ToString();
     }
 }

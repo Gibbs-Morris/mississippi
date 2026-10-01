@@ -79,6 +79,34 @@ public sealed class SmokeConfirmTests : BunitContext
         Assert.Equal(expected, error.ParamName);
     }
 
+    /// <summary>Boolean caller attributes do not create IDs or classes.</summary>
+    /// <param name="callerValue">The conditional attribute value.</param>
+    /// <param name="consequence">The optional component description.</param>
+    [Theory]
+    [InlineData(false, null)]
+    [InlineData(true, null)]
+    [InlineData(false, "Cannot undo")]
+    [InlineData(true, "Cannot undo")]
+    public void BooleanCallerAttributesDoNotCreateRelationships(
+        bool callerValue,
+        string? consequence
+    )
+    {
+        IReadOnlyDictionary<string, object> attributes = new Dictionary<string, object>
+        {
+            ["aria-describedby"] = callerValue,
+            ["class"] = callerValue,
+        };
+        using IRenderedComponent<SmokeConfirm> cut = Render<SmokeConfirm>(p => p
+            .Add(c => c.Title, "Delete item")
+            .Add(c => c.Consequence, consequence)
+            .Add(c => c.AdditionalAttributes, attributes));
+        IElement root = cut.Find(".rf-smoke-confirm");
+        string? expectedDescription = consequence is null ? null : cut.Find(".rf-smoke-confirm__consequence").Id;
+        Assert.Equal(expectedDescription, root.GetAttribute("aria-describedby"));
+        Assert.Equal("rf-smoke-confirm", root.ClassName);
+    }
+
     /// <summary>Ensure distinct instances retain stable IDs as optional text changes.</summary>
     [Fact]
     public void DescriptionRelationshipsTrackParameterChanges()
