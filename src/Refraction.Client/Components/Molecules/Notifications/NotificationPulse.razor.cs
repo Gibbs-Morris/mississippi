@@ -56,7 +56,7 @@ public sealed partial class NotificationPulse : ComponentBase
     private string? CallerClass =>
         AdditionalAttributes
             ?.Where(attribute => string.Equals(attribute.Key, "class", StringComparison.OrdinalIgnoreCase))
-            .Select(attribute => attribute.Value?.ToString())
+            .Select(attribute => attribute.Value is bool ? null : attribute.Value?.ToString())
             .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
     private string CssClass =>

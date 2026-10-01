@@ -98,6 +98,29 @@ public sealed class NotificationPulseBehaviorTests : BunitContext
         Assert.False(cut.Find(".rf-notification-pulse").HasAttribute("aria-expanded"));
     }
 
+    /// <summary>Conditional Boolean caller classes do not become CSS tokens.</summary>
+    /// <param name="attributeName">The caller dictionary key.</param>
+    /// <param name="value">The conditional Boolean attribute value.</param>
+    [Theory]
+    [InlineData("class", false)]
+    [InlineData("class", true)]
+    [InlineData("CLASS", false)]
+    [InlineData("CLASS", true)]
+    public void BooleanCallerClassesAreOmitted(
+        string attributeName,
+        bool value
+    )
+    {
+        IReadOnlyDictionary<string, object> attributes = new Dictionary<string, object>
+        {
+            [attributeName] = value,
+        };
+        using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>(p => p
+            .Add(c => c.Class, "application-class")
+            .Add(c => c.AdditionalAttributes, attributes));
+        Assert.Equal("rf-notification-pulse application-class", cut.Find(".rf-notification-pulse").ClassName);
+    }
+
     /// <summary>Status content updates without changing the live-region contract.</summary>
     [Fact]
     public void StatusContentUpdates()
