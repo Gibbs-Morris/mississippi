@@ -101,6 +101,25 @@ public sealed class SmokeConfirmTests : BunitContext
         Assert.Equal(descriptionId, cut.Find(".rf-smoke-confirm__consequence").Id);
     }
 
+    /// <summary>Ensure case-distinct safe attributes can be forwarded without a rendering failure.</summary>
+    [Fact]
+    public void ForwardsCaseDistinctSafeAttributes()
+    {
+        IReadOnlyDictionary<string, object> attributes = new Dictionary<string, object>
+        {
+            ["data-note"] = "lower",
+            ["DATA-NOTE"] = "upper",
+            ["data-testid"] = "confirmation",
+        };
+        using IRenderedComponent<SmokeConfirm> cut = Render<SmokeConfirm>(p => p
+            .Add(c => c.Title, "Delete item")
+            .Add(c => c.AdditionalAttributes, attributes));
+        IElement root = cut.Find(".rf-smoke-confirm");
+        Assert.True(root.HasAttribute("data-note"));
+        Assert.Equal("confirmation", root.GetAttribute("data-testid"));
+        Assert.Equal("dialog", root.GetAttribute("role"));
+    }
+
     /// <summary>Ensure caller attributes cannot replace the component's accessible relationships.</summary>
     [Fact]
     public void OwnedAttributesStayProtectedWhileCallerMetadataComposes()

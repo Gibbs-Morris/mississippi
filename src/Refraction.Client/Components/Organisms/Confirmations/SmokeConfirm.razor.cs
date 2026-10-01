@@ -82,7 +82,7 @@ public sealed partial class SmokeConfirm : ComponentBase
 
     private IReadOnlyDictionary<string, object>? ForwardedAttributes =>
         AdditionalAttributes?.Where(pair => !OwnedAttributes.Contains(pair.Key))
-            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
+            .ToDictionary(pair => pair.Key, pair => pair.Value);
 
     private string TitleId { get; } = $"rf-smoke-confirm-title-{Guid.NewGuid():N}";
 
