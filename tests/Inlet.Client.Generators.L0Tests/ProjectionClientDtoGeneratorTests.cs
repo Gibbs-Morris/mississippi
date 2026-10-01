@@ -827,6 +827,45 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     A projection and an enum that normalize to one DTO name produce a diagnostic without generator failure.
+    /// </summary>
+    [Fact]
+    public void GeneratedProjectionDtoNameCollisionProducesDiagnostic()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.Sagas
+                                        {
+                                            public enum WorkflowProjectionState { Starting = 2, Ended = 9 }
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("workflow")]
+                                            public sealed record WorkflowProjection
+                                            {
+                                                public WorkflowProjectionState? State { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Diagnostic collision = Assert.Single(diagnostics);
+        Assert.Equal("INLETDTO001", collision.Id);
+        Assert.Equal(DiagnosticSeverity.Error, collision.Severity);
+        string message = collision.GetMessage(CultureInfo.InvariantCulture);
+        Assert.Contains("TestApp.Client.Features.Sagas.Dtos.WorkflowProjectionDto", message, StringComparison.Ordinal);
+        Assert.Contains(
+            "global::TestApp.Domain.Projections.Sagas.WorkflowProjection",
+            message,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "global::TestApp.Domain.Projections.Sagas.WorkflowProjectionState",
+            message,
+            StringComparison.Ordinal);
+        Assert.All(runResult.Results, result => Assert.Null(result.Exception));
+    }
+
+    /// <summary>
     ///     Generator should handle projection path with special characters.
     /// </summary>
     [Fact]

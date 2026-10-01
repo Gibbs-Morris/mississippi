@@ -75,6 +75,11 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         // Use client namespace convention
         string clientNamespace = NamingConventions.GetClientNamespace(projection.Namespace, targetRootNamespace);
         string dtoName = NamingConventions.GetDtoName(projection.TypeName);
+        if (!generatedNestedTypes.TryRegister(context, clientNamespace, dtoName, projection.SourceType))
+        {
+            return;
+        }
+
         StringBuilder sb = new();
 
         // File header
@@ -396,7 +401,12 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
 
         // Build projection model
         ProjectionModel model = new(typeSymbol, projectionPath!);
-        return new(typeSymbol.ContainingNamespace.ToDisplayString(), typeSymbol.Name, projectionPath!, model);
+        return new(
+            typeSymbol.ContainingNamespace.ToDisplayString(),
+            typeSymbol.Name,
+            projectionPath!,
+            model,
+            typeSymbol);
     }
 
     /// <summary>
@@ -480,13 +490,15 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
             string @namespace,
             string typeName,
             string path,
-            ProjectionModel model
+            ProjectionModel model,
+            INamedTypeSymbol sourceType
         )
         {
             Namespace = @namespace;
             TypeName = typeName;
             Path = path;
             Model = model;
+            SourceType = sourceType;
         }
 
         public ProjectionModel Model { get; }
@@ -494,6 +506,11 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         public string Namespace { get; }
 
         public string Path { get; }
+
+        /// <summary>
+        ///     Gets the projection source symbol.
+        /// </summary>
+        public INamedTypeSymbol SourceType { get; }
 
         public string TypeName { get; }
     }
