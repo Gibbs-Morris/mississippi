@@ -8,7 +8,7 @@ namespace MississippiSamples.Spring.Domain.Aggregates.AuthProof.Events;
 /// <summary>
 ///     Event raised when claim-policy endpoint access is authorized.
 /// </summary>
-[EventStorageName("SPRING", "AUTHPROOF", "POLICYACCESSRECORDED")]
+[EventStorageName("SPRING", "AUTHPROOF", "POLICYACCESSRECORDED", 1)]
 [GenerateSerializer]
 [Alias("MississippiSamples.Spring.Domain.Aggregates.AuthProof.Events.PolicyAccessRecorded")]
 internal sealed record PolicyAccessRecorded;

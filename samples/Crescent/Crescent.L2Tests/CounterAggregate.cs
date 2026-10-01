@@ -10,7 +10,7 @@ namespace MississippiSamples.Crescent.L2Tests;
 ///     This is never exposed externally; use projections for read queries.
 /// </summary>
 [BrookName("CRESCENT", "SAMPLE", "COUNTER")]
-[SnapshotStorageName("CRESCENT", "SAMPLE", "COUNTERSTATE")]
+[SnapshotStorageName("CRESCENT", "SAMPLE", "COUNTERSTATE", 1)]
 [GenerateSerializer]
 [Alias("MississippiSamples.Crescent.L2Tests.CounterAggregate")]
 internal sealed record CounterAggregate
