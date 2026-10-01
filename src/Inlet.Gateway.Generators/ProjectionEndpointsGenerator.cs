@@ -416,10 +416,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             sb.AppendUsing("System.Linq");
         }
 
-        if (projection.Model.HasImmutableArrayMappedProperties ||
-            projection.Model.Properties.Any(prop => prop.IsImmutableArray &&
-                                                    GetNullableEnumCollectionElement(
-                                                        prop.SourceTypeSymbol) is not null))
+        if (projection.Model.HasImmutableArrayMappedProperties || hasNullableEnumCollections)
         {
             sb.AppendUsing(SystemCollectionsImmutableNamespace);
         }
@@ -812,12 +809,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         if (GetNullableEnumCollectionElement(prop.SourceTypeSymbol) is { } collectionEnum)
         {
             string enumDtoTypeName = TypeAnalyzer.GetDtoTypeName(collectionEnum);
-            string toCollection = prop.IsImmutableArray ? ".ToImmutableArray()" : ".ToList()";
-            if (prop.SourceTypeSymbol is IArrayTypeSymbol)
-            {
-                toCollection = ".ToArray()";
-            }
-
+            string toCollection = GetNullableEnumCollectionMaterializer(prop);
             return
                 $"source.{prop.Name}.Select(value => value.HasValue ? ({enumDtoTypeName}?)value.Value : null){toCollection}";
         }
@@ -897,6 +889,34 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         }
 
         return null;
+    }
+
+    /// <summary>
+    ///     Selects a materializer compatible with the nullable enum collection.
+    /// </summary>
+    /// <param name="prop">The collection property.</param>
+    /// <returns>The LINQ materializer appended to the converted elements.</returns>
+    private static string GetNullableEnumCollectionMaterializer(
+        PropertyModel prop
+    )
+    {
+        if (prop.SourceTypeSymbol is IArrayTypeSymbol)
+        {
+            return ".ToArray()";
+        }
+
+        if (prop.IsImmutableArray)
+        {
+            return ".ToImmutableArray()";
+        }
+
+        if (prop.SourceTypeSymbol is INamedTypeSymbol { Name: "ImmutableList" } collectionType &&
+            (collectionType.ContainingNamespace.ToDisplayString() == SystemCollectionsImmutableNamespace))
+        {
+            return ".ToImmutableList()";
+        }
+
+        return ".ToList()";
     }
 
     /// <summary>

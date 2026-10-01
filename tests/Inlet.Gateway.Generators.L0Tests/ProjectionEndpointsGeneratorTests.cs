@@ -1491,9 +1491,11 @@ public class ProjectionEndpointsGeneratorTests
     /// <param name="nested">Whether only a nested history record contains the collection.</param>
     [Theory]
     [InlineData("ImmutableArray<__Element__>", false)]
+    [InlineData("ImmutableList<__Element__>", false)]
     [InlineData("List<__Element__>", false)]
     [InlineData("__Element__[]", false)]
     [InlineData("ImmutableArray<__Element__>", true)]
+    [InlineData("ImmutableList<__Element__>", true)]
     [InlineData("List<__Element__>", true)]
     [InlineData("__Element__[]", true)]
     public void GeneratedNullableEnumCollectionMappersCompileAndPreserveValues(
