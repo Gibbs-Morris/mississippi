@@ -55,6 +55,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
 
     private const string ProjectionSuffix = "Projection";
 
+    private const string SystemCollectionsGenericNamespace = "System.Collections.Generic";
+
     private const string SystemCollectionsImmutableNamespace = "System.Collections.Immutable";
 
     private const string SystemNamespace = "System";
@@ -120,6 +122,11 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         GeneratedDtoNameRegistry generatedNestedTypes
     )
     {
+        if (!ValidateNullableEnumCollectionShapes(context, projection))
+        {
+            return;
+        }
+
         if (!generatedNestedTypes.TryRegister(
                 context,
                 projection.OutputNamespace,
@@ -900,23 +907,27 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         PropertyModel prop
     )
     {
-        if (prop.SourceTypeSymbol is IArrayTypeSymbol)
+        if (prop.SourceTypeSymbol is IArrayTypeSymbol arrayType)
         {
-            return ".ToArray()";
+            return arrayType.Rank == 1 ? ".ToArray()" : string.Empty;
         }
 
-        if (prop.IsImmutableArray)
+        if (prop.SourceTypeSymbol is not INamedTypeSymbol { TypeArguments.Length: 1 } collectionType)
         {
-            return ".ToImmutableArray()";
+            return string.Empty;
         }
 
-        if (prop.SourceTypeSymbol is INamedTypeSymbol { Name: "ImmutableList" } collectionType &&
-            (collectionType.ContainingNamespace.ToDisplayString() == SystemCollectionsImmutableNamespace))
+        return (collectionType.ContainingNamespace.ToDisplayString(), collectionType.Name) switch
         {
-            return ".ToImmutableList()";
-        }
-
-        return ".ToList()";
+            (SystemCollectionsGenericNamespace, "List" or "IList" or "ICollection" or "IEnumerable" or "IReadOnlyList"
+                or "IReadOnlyCollection") => ".ToList()",
+            (SystemCollectionsGenericNamespace, "HashSet" or "ISet" or "IReadOnlySet") => ".ToHashSet()",
+            (SystemCollectionsImmutableNamespace, "ImmutableArray") => ".ToImmutableArray()",
+            (SystemCollectionsImmutableNamespace, "ImmutableList" or "IImmutableList") => ".ToImmutableList()",
+            (SystemCollectionsImmutableNamespace, "ImmutableHashSet" or "IImmutableSet") => ".ToImmutableHashSet()",
+            (SystemCollectionsImmutableNamespace, "ImmutableSortedSet") => ".ToImmutableSortedSet()",
+            var _ => string.Empty,
+        };
     }
 
     /// <summary>
@@ -1063,6 +1074,46 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         (namedType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
             ? namedType.TypeArguments[0]
             : typeSymbol;
+
+    /// <summary>
+    ///     Reports nullable enum collection shapes that cannot preserve their declared DTO collection type.
+    /// </summary>
+    /// <param name="context">The source production context.</param>
+    /// <param name="projection">The projection and its generated nested records.</param>
+    /// <returns>Whether every converted collection has a compatible materializer.</returns>
+    private static bool ValidateNullableEnumCollectionShapes(
+        SourceProductionContext context,
+        ProjectionInfo projection
+    )
+    {
+        IEnumerable<IPropertySymbol> properties = projection.SourceType.GetMembers()
+            .OfType<IPropertySymbol>()
+            .Concat(
+                projection.Model.Properties.SelectMany(prop =>
+                    prop.ElementTypeSymbol is INamedTypeSymbol { TypeKind: not TypeKind.Enum } nestedType
+                        ? nestedType.GetMembers().OfType<IPropertySymbol>()
+                        : Enumerable.Empty<IPropertySymbol>()))
+            .Where(prop => (prop.DeclaredAccessibility == Accessibility.Public) &&
+                           !prop.IsStatic &&
+                           prop.GetMethod is not null)
+            .Distinct(SymbolEqualityComparer.Default)
+            .OfType<IPropertySymbol>();
+        bool valid = true;
+        foreach (IPropertySymbol property in properties.Where(property =>
+                     GetNullableEnumCollectionElement(property.Type) is not null &&
+                     (GetNullableEnumCollectionMaterializer(new(property)).Length == 0)))
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    GeneratedProjectionDiagnostics.UnsupportedNullableEnumCollection,
+                    property.Locations.FirstOrDefault(location => location.IsInSource) ?? Location.None,
+                    property.Name,
+                    property.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+            valid = false;
+        }
+
+        return valid;
+    }
 
     /// <summary>
     ///     Initializes the generator pipeline.
