@@ -5,6 +5,7 @@ using AngleSharp.Dom;
 
 using Bunit;
 
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
 using Mississippi.Refraction.Client.Components.Molecules.Notifications;
@@ -62,9 +63,21 @@ public sealed class NotificationPulseBehaviorTests : BunitContext
         cut.Render(p => p.Add(c => c.OnExpand, _ => { }));
         Assert.Single(cut.FindAll(".rf-notification-pulse__action"));
         Assert.Equal("View details", cut.Find(".rf-notification-pulse__expand").TextContent);
-        cut.Render(p => p.Add(c => c.OnDismiss, () => { }));
+        cut.Render(p => p
+            .Add(c => c.OnExpand, _ => { })
+            .Add(c => c.OnDismiss, () => { }));
         Assert.Equal(2, cut.FindAll(".rf-notification-pulse__action").Count);
         Assert.Equal("Dismiss notification", cut.Find(".rf-notification-pulse__dismiss").TextContent);
+        cut.Render(p => p
+            .Add(c => c.OnExpand, default(EventCallback<MouseEventArgs>))
+            .Add(c => c.OnDismiss, () => { }));
+        Assert.Single(cut.FindAll(".rf-notification-pulse__action"));
+        Assert.Empty(cut.FindAll(".rf-notification-pulse__expand"));
+        Assert.Equal("Dismiss notification", cut.Find(".rf-notification-pulse__dismiss").TextContent);
+        cut.Render(p => p
+            .Add(c => c.OnExpand, default(EventCallback<MouseEventArgs>))
+            .Add(c => c.OnDismiss, default(EventCallback)));
+        Assert.Empty(cut.FindAll(".rf-notification-pulse__action"));
     }
 
     /// <summary>Actions are native buttons outside the stable status region.</summary>
