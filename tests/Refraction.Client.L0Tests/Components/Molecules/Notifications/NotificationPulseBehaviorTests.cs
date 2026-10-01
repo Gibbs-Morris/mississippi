@@ -64,9 +64,7 @@ public sealed class NotificationPulseBehaviorTests : BunitContext
         cut.Render(p => p.Add(c => c.OnExpand, _ => { }));
         Assert.Single(cut.FindAll(".rf-notification-pulse__action"));
         Assert.Equal("View details", cut.Find(".rf-notification-pulse__expand").TextContent);
-        cut.Render(p => p
-            .Add(c => c.OnExpand, _ => { })
-            .Add(c => c.OnDismiss, () => { }));
+        cut.Render(p => p.Add(c => c.OnExpand, _ => { }).Add(c => c.OnDismiss, () => { }));
         Assert.Equal(2, cut.FindAll(".rf-notification-pulse__action").Count);
         Assert.Equal("Dismiss notification", cut.Find(".rf-notification-pulse__dismiss").TextContent);
         cut.Render(p => p
