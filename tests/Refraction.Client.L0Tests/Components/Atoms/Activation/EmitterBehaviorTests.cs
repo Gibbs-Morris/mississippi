@@ -217,6 +217,35 @@ public sealed class EmitterBehaviorTests : BunitContext
         Assert.DoesNotContain("return false", button.OuterHtml, StringComparison.Ordinal);
     }
 
+    /// <summary>Conditional Boolean caller classes do not become CSS tokens.</summary>
+    /// <param name="attributeName">The caller dictionary key.</param>
+    /// <param name="value">The conditional Boolean attribute value.</param>
+    [Theory]
+    [InlineData("class", false)]
+    [InlineData("class", true)]
+    [InlineData("CLASS", false)]
+    [InlineData("CLASS", true)]
+    public void EmitterOmitsBooleanCallerClasses(
+        string attributeName,
+        bool value
+    )
+    {
+        // Arrange
+        IReadOnlyDictionary<string, object> attributes = new Dictionary<string, object>
+        {
+            [attributeName] = value,
+        };
+
+        // Act
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p
+            .Add(c => c.Label, "Activate")
+            .Add(c => c.Class, "application-class")
+            .Add(c => c.AdditionalAttributes, attributes));
+
+        // Assert
+        Assert.Equal("rf-emitter application-class", cut.Find("button").ClassName);
+    }
+
     /// <summary>
     ///     Emitter preserves the typed activation callback argument.
     /// </summary>
