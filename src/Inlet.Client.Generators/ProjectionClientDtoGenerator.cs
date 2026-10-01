@@ -87,6 +87,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
         sb.AppendLine("using System;");
+        sb.AppendLine("using System.Collections.Generic;");
         sb.AppendLine("using System.Collections.Immutable;");
         sb.AppendLine();
         sb.AppendLine("using Mississippi.Inlet.Abstractions;");
@@ -229,6 +230,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
         sb.AppendLine("using System;");
+        sb.AppendLine("using System.Collections.Generic;");
         sb.AppendLine("using System.Collections.Immutable;");
         sb.AppendLine();
 
@@ -302,14 +304,15 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
                 }
             }
 
-            if (prop.ElementIsEnum &&
-                prop.ElementTypeSymbol is INamedTypeSymbol elementEnum &&
-                prop.ElementDtoTypeName is not null)
+            if ((prop.IsCollection || prop.SourceTypeSymbol is IArrayTypeSymbol) &&
+                TypeAnalyzer.GetCollectionElementType(prop.SourceTypeSymbol) is { } elementType &&
+                UnwrapNullable(elementType) is INamedTypeSymbol { TypeKind: TypeKind.Enum } elementEnum &&
+                !TypeAnalyzer.IsFrameworkType(elementEnum))
             {
                 string key = elementEnum.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 if (seen.Add(key))
                 {
-                    enumInfos.Add(new(elementEnum, prop.ElementDtoTypeName));
+                    enumInfos.Add(new(elementEnum, TypeAnalyzer.GetDtoTypeName(elementEnum)));
                 }
             }
         }
