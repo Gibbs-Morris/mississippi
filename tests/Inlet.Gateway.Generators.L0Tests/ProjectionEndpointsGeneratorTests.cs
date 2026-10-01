@@ -1139,6 +1139,95 @@ public class ProjectionEndpointsGeneratorTests
     }
 
     /// <summary>
+    ///     Mapper name collisions report both source symbols without duplicate-hint generator failures.
+    /// </summary>
+    /// <param name="sourceShape">The enum or record property shape.</param>
+    /// <param name="placement">Zero for the same projection, one for an earlier projection, or two for a later projection.</param>
+    [Theory]
+    [InlineData("NullableEnum", 0)]
+    [InlineData("NullableEnum", 1)]
+    [InlineData("NullableEnum", 2)]
+    [InlineData("NestedNullableEnum", 0)]
+    [InlineData("NestedNullableEnum", 1)]
+    [InlineData("NestedNullableEnum", 2)]
+    [InlineData("EnumCollection", 0)]
+    [InlineData("EnumCollection", 1)]
+    [InlineData("EnumCollection", 2)]
+    [InlineData("RecordCollection", 0)]
+    [InlineData("RecordCollection", 1)]
+    [InlineData("RecordCollection", 2)]
+    public void GeneratedMapperNameCollisionProducesDiagnostic(
+        string sourceShape,
+        int placement
+    )
+    {
+        const string projectionTemplate = """
+                                          using System.Collections.Immutable;
+                                          using Mississippi.Inlet.Generators.Abstractions;
+                                          using Mississippi.Inlet.Abstractions;
+
+                                          namespace TestApp.Domain.Projections.Sagas
+                                          {
+                                              __WORKFLOW__
+                                              public sealed record HistoryEntry
+                                              {
+                                                  public Workflow? State { get; init; }
+                                              }
+                                              __EARLIER_PROJECTION__
+                                              [GenerateProjectionEndpoints]
+                                              [ProjectionPath("workflow-dto")]
+                                              public sealed record WorkflowDto
+                                              {
+                                                  __PROPERTY__
+                                              }
+                                              __LATER_PROJECTION__
+                                          }
+                                          """;
+        const string separateProjectionTemplate = """
+                                                  [GenerateProjectionEndpoints]
+                                                  [ProjectionPath("status")]
+                                                  public sealed record StatusProjection
+                                                  {
+                                                      __PROPERTY__
+                                                  }
+                                                  """;
+        string workflow = sourceShape switch
+        {
+            "RecordCollection" => "public sealed record Workflow(string Name);",
+            var _ => "public enum Workflow { Starting = 2, Ended = 9 }",
+        };
+        string property = sourceShape switch
+        {
+            "NullableEnum" => "public Workflow? State { get; init; }",
+            "NestedNullableEnum" => "public ImmutableArray<HistoryEntry> History { get; init; }",
+            "EnumCollection" or "RecordCollection" => "public ImmutableArray<Workflow> History { get; init; }",
+            var _ => throw new ArgumentOutOfRangeException(nameof(sourceShape)),
+        };
+        string separateProjection =
+            separateProjectionTemplate.Replace("__PROPERTY__", property, StringComparison.Ordinal);
+        string projectionSource = projectionTemplate.Replace("__WORKFLOW__", workflow, StringComparison.Ordinal)
+            .Replace("__PROPERTY__", placement == 0 ? property : string.Empty, StringComparison.Ordinal)
+            .Replace(
+                "__EARLIER_PROJECTION__",
+                placement == 1 ? separateProjection : string.Empty,
+                StringComparison.Ordinal)
+            .Replace(
+                "__LATER_PROJECTION__",
+                placement == 2 ? separateProjection : string.Empty,
+                StringComparison.Ordinal);
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Diagnostic collision = Assert.Single(diagnostics);
+        Assert.Equal("INLETDTO001", collision.Id);
+        Assert.Equal(DiagnosticSeverity.Error, collision.Severity);
+        string message = collision.GetMessage(CultureInfo.InvariantCulture);
+        Assert.Contains("TestAssembly.Controllers.Projections.WorkflowDtoMapper", message, StringComparison.Ordinal);
+        Assert.Contains("global::TestApp.Domain.Projections.Sagas.WorkflowDto", message, StringComparison.Ordinal);
+        Assert.Contains("global::TestApp.Domain.Projections.Sagas.Workflow", message, StringComparison.Ordinal);
+        Assert.All(runResult.Results, result => Assert.Null(result.Exception));
+    }
+
+    /// <summary>
     ///     Generated mapper registrations should have correct extension method.
     /// </summary>
     [Fact]

@@ -122,6 +122,11 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                 context,
                 projection.OutputNamespace,
                 projection.Model.DtoTypeName,
+                projection.SourceType) ||
+            !generatedNestedTypes.TryRegister(
+                context,
+                projection.OutputNamespace,
+                GetMapperTypeName(projection),
                 projection.SourceType))
         {
             return;
@@ -133,11 +138,17 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
 
         // Generate DTOs + mappers for enum properties on the projection
         foreach (EnumDtoInfo enumInfo in GetEnumDtosForProjection(projection)
-                     .Where(enumInfo => generatedNestedTypes.TryRegister(
-                         context,
-                         projection.OutputNamespace,
-                         enumInfo.DtoName,
-                         enumInfo.EnumType)))
+                     .Where(enumInfo =>
+                         generatedNestedTypes.TryRegister(
+                             context,
+                             projection.OutputNamespace,
+                             enumInfo.DtoName,
+                             enumInfo.EnumType) &&
+                         generatedNestedTypes.TryRegister(
+                             context,
+                             projection.OutputNamespace,
+                             enumInfo.DtoName + MapperSuffix,
+                             enumInfo.EnumType)))
         {
             string enumDtoSource = GenerateNestedEnumDto(
                 enumInfo.EnumType,
@@ -164,6 +175,11 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                     context,
                     projection.OutputNamespace,
                     prop.ElementDtoTypeName!,
+                    elementType) ||
+                !generatedNestedTypes.TryRegister(
+                    context,
+                    projection.OutputNamespace,
+                    prop.ElementDtoTypeName + MapperSuffix,
                     elementType))
             {
                 continue;
@@ -323,7 +339,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         foreach (INamedTypeSymbol enumType in enumTypes)
         {
             string enumDtoName = TypeAnalyzer.GetDtoTypeName(enumType);
-            if (generatedNestedTypes.TryRegister(context, outputNamespace, enumDtoName, enumType))
+            if (generatedNestedTypes.TryRegister(context, outputNamespace, enumDtoName, enumType) &&
+                generatedNestedTypes.TryRegister(context, outputNamespace, enumDtoName + MapperSuffix, enumType))
             {
                 string enumDtoSource = GenerateNestedEnumDto(enumType, enumDtoName, outputNamespace);
                 context.AddSource($"{enumDtoName}.g.cs", SourceText.From(enumDtoSource, Encoding.UTF8));
