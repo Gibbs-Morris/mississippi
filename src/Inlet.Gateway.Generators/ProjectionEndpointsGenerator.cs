@@ -478,8 +478,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             }
             else
             {
-                sb.AppendLine(
-                    $"private IMapper<{sourceTypeName}, {prop.DtoTypeName}> {prop.Name}Mapper {{ get; }}");
+                sb.AppendLine($"private IMapper<{sourceTypeName}, {prop.DtoTypeName}> {prop.Name}Mapper {{ get; }}");
             }
         }
 
