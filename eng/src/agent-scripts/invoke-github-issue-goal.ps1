@@ -23,6 +23,7 @@ param(
     [string[]]$OutstandingReviewWork,
     [string[]]$ResolvedReviewWork,
     [switch]$MergeAuthorized,
+    [switch]$RepositoryLowRiskMergeAuthorized,
     [switch]$EvidenceValidated,
     [switch]$Json
 )
@@ -434,6 +435,9 @@ function Remove-GoalMarkdownFencedBlocks {
 
 $checkpointLockStream = $null
 try {
+    if ($MergeAuthorized -and $RepositoryLowRiskMergeAuthorized) {
+        throw 'Select either explicit user merge authorization or conditional repository low-risk authorization, not both.'
+    }
     $root = (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
     if ((Get-GoalRepositoryIdentity -Root $root) -notcontains "$RepositoryOwner/$RepositoryName") {
         throw "Repository root '$root' does not match requested repository '$RepositoryOwner/$RepositoryName'."
@@ -745,7 +749,8 @@ try {
         Action = $Action
         Status = $status
         EvidenceFresh = $evidenceFresh
-        MergeBoundary = if ($MergeAuthorized) { 'MERGE_AUTHORIZED_BY_USER_BUT_NOT_PERFORMED' } else { 'PR_READY_NOT_MERGED' }
+        MergeAuthorizationSource = if ($MergeAuthorized) { 'user' } elseif ($RepositoryLowRiskMergeAuthorized) { 'repository-low-risk-policy' } else { 'none' }
+        MergeBoundary = if ($MergeAuthorized) { 'MERGE_AUTHORIZED_BY_USER_BUT_NOT_PERFORMED' } elseif ($RepositoryLowRiskMergeAuthorized) { 'MERGE_CONDITIONALLY_AUTHORIZED_BY_REPOSITORY_LOW_RISK_POLICY_BUT_NOT_PERFORMED' } else { 'PR_READY_NOT_MERGED' }
         Contract = $currentContract
         ValidatedContract = $validatedContract
         Decisions = ConvertTo-GoalArray -Values (Merge-GoalCollection -Existing (Get-GoalCollection -Object $previous -Name 'Decisions') -Added (Expand-GoalStringCollection -Values $Decisions))
@@ -768,6 +773,7 @@ try {
         CheckpointPath = $checkpoint
         EvidenceFresh = $evidenceFresh
         NextAction = $nextAction
+        MergeAuthorizationSource = $record.MergeAuthorizationSource
         MergeBoundary = $record.MergeBoundary
         Operation = $record.Operation
         IssueBodyDigest = $issueBodyDigest
