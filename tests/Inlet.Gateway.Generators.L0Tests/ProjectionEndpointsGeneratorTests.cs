@@ -1392,6 +1392,42 @@ public class ProjectionEndpointsGeneratorTests
     }
 
     /// <summary>
+    ///     A projection and an enum that normalize to one DTO name produce a diagnostic without generator failure.
+    /// </summary>
+    [Fact]
+    public void GeneratedProjectionDtoNameCollisionProducesDiagnostic()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.Sagas
+                                        {
+                                            public enum WorkflowState { Starting = 2, Ended = 9 }
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("workflow")]
+                                            public sealed record WorkflowProjection
+                                            {
+                                                public WorkflowState? State { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Diagnostic collision = Assert.Single(diagnostics);
+        Assert.Equal("INLETDTO001", collision.Id);
+        Assert.Equal(DiagnosticSeverity.Error, collision.Severity);
+        string message = collision.GetMessage(CultureInfo.InvariantCulture);
+        Assert.Contains("TestAssembly.Controllers.Projections.WorkflowDto", message, StringComparison.Ordinal);
+        Assert.Contains(
+            "global::TestApp.Domain.Projections.Sagas.WorkflowProjection",
+            message,
+            StringComparison.Ordinal);
+        Assert.Contains("global::TestApp.Domain.Projections.Sagas.WorkflowState", message, StringComparison.Ordinal);
+        Assert.All(runResult.Results, result => Assert.Null(result.Exception));
+    }
+
+    /// <summary>
     ///     Generated DTOs should include enum DTOs and mappers for top-level enum properties.
     /// </summary>
     [Fact]
