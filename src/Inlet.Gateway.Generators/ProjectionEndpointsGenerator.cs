@@ -468,6 +468,9 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         // Properties for injected mappers
         foreach (PropertyModel prop in mappedProps)
         {
+            string sourceTypeName = TypeAnalyzer.IsEnumType(prop.SourceTypeSymbol)
+                ? prop.SourceTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                : prop.SourceTypeName;
             if (prop.RequiresEnumerableMapper)
             {
                 sb.AppendLine(
@@ -476,7 +479,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             else
             {
                 sb.AppendLine(
-                    $"private IMapper<{prop.SourceTypeName}, {prop.DtoTypeName}> {prop.Name}Mapper {{ get; }}");
+                    $"private IMapper<{sourceTypeName}, {prop.DtoTypeName}> {prop.Name}Mapper {{ get; }}");
             }
         }
 
@@ -487,6 +490,9 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         for (int i = 0; i < mappedProps.Length; i++)
         {
             PropertyModel prop = mappedProps[i];
+            string sourceTypeName = TypeAnalyzer.IsEnumType(prop.SourceTypeSymbol)
+                ? prop.SourceTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                : prop.SourceTypeName;
             string comma = i < (mappedProps.Length - 1) ? "," : string.Empty;
             string paramName = ToCamelCase(prop.Name) + MapperSuffix;
             if (prop.RequiresEnumerableMapper)
@@ -496,7 +502,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             }
             else
             {
-                sb.AppendLine($"IMapper<{prop.SourceTypeName}, {prop.DtoTypeName}> {paramName}{comma}");
+                sb.AppendLine($"IMapper<{sourceTypeName}, {prop.DtoTypeName}> {paramName}{comma}");
             }
         }
 
@@ -546,7 +552,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         // Register enum mappers first
         foreach (EnumDtoInfo enumInfo in GetEnumDtosForProjection(projection))
         {
-            string enumSourceTypeName = enumInfo.EnumType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+            string enumSourceTypeName = enumInfo.EnumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             sb.AppendLine(
                 $"services.AddMapper<{enumSourceTypeName}, {enumInfo.DtoName}, {enumInfo.DtoName}{MapperSuffix}>();");
         }
