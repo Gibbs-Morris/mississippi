@@ -10,7 +10,7 @@ Governing thought: Keep test observation safe when process-wide callbacks can ru
 
 ## Rules (RFC 2119)
 
-- Metric tests using `MeterListener` **MUST** collect callbacks in a concurrent collection with snapshot-safe enumeration when parallel tests can emit the same meter. Why: The #815 full quality run threw `Collection was modified; enumeration operation may not execute` while `SnapshotStorageMetricsTests` enumerated a callback-fed `List`.
+- Metric tests using `MeterListener` **MUST** collect callbacks in a concurrent collection with snapshot-safe enumeration when parallel tests can emit the same meter. Why: The historical #815 full quality run threw `Collection was modified; enumeration operation may not execute` while `SnapshotStorageMetricsTests` enumerated a callback-fed `List`; issue #830 tracks the collector-safety correction.
 
 ## Scope and Audience
 
