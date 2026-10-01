@@ -6,10 +6,10 @@ using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
-using Mississippi.Refraction.Client.Components.Atoms;
+using Mississippi.Refraction.Client.Components.Molecules.Notifications;
 
 
-namespace Mississippi.Refraction.Client.L0Tests.Components.Atoms;
+namespace Mississippi.Refraction.Client.L0Tests.Components.Molecules.Notifications;
 
 /// <summary>
 ///     Tests for <see cref="NotificationPulse" /> component.
@@ -120,7 +120,7 @@ public sealed class NotificationPulseTests : BunitContext
             }));
 
         // Act
-        cut.Find(".rf-notification-pulse").Click();
+        cut.Find(".rf-notification-pulse__expand").Click();
 
         // Assert
         Assert.True(wasExpanded);
@@ -209,22 +209,21 @@ public sealed class NotificationPulseTests : BunitContext
         using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>();
 
         // Assert
-        string? role = cut.Find(".rf-notification-pulse").GetAttribute("role");
+        string? role = cut.Find(".rf-notification-pulse__status").GetAttribute("role");
         Assert.Equal("status", role);
     }
 
     /// <summary>
-    ///     NotificationPulse renders with tabindex for keyboard accessibility.
+    ///     NotificationPulse leaves keyboard focus on its native actions.
     /// </summary>
     [Fact]
-    public void NotificationPulseRendersWithTabindexForKeyboardAccessibility()
+    public void NotificationPulseRootHasNoTabStop()
     {
         // Act
         using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>();
 
         // Assert
-        string? tabindex = cut.Find(".rf-notification-pulse").GetAttribute("tabindex");
-        Assert.Equal("0", tabindex);
+        Assert.False(cut.Find(".rf-notification-pulse").HasAttribute("tabindex"));
     }
 
     /// <summary>
