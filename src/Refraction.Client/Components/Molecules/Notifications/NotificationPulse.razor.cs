@@ -13,6 +13,7 @@ namespace Mississippi.Refraction.Client.Components.Molecules.Notifications;
 ///     A status message with optional expansion and dismissal actions.
 /// </summary>
 /// <remarks>
+///     <para>Public so applications outside this assembly can compose notification status and actions in Razor markup.</para>
 ///     <para>
 ///         Status content remains in a live region. Native buttons report independent intents
 ///         through callbacks; the parent owns state, detail content, and dismissal.
