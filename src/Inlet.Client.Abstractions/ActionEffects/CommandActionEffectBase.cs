@@ -150,23 +150,26 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
             string endpoint = GetEndpoint(typedAction);
             TRequestDto requestBody = Mapper.Map(typedAction);
             using HttpResponseMessage response = await Http.PostAsJsonAsync(endpoint, requestBody, cancellationToken);
-
-            // Check for non-success status codes before trying to parse response
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                errorMessage = $"Server error ({(int)response.StatusCode}): {responseBody}";
-            }
-            else
-            {
-                try
+                // Check for non-success status codes before trying to parse response
+                if (!response.IsSuccessStatusCode)
+                {
+                    string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    errorMessage = $"Server error ({(int)response.StatusCode}): {responseBody}";
+                }
+                else
                 {
                     result = await response.Content.ReadFromJsonAsync<OperationResultDto>(cancellationToken);
                 }
-                catch (JsonException ex)
-                {
-                    errorMessage = $"Invalid response: {ex.Message}";
-                }
+            }
+            catch (JsonException ex)
+            {
+                errorMessage = $"Invalid response: {ex.Message}";
+            }
+            catch (InvalidOperationException ex)
+            {
+                errorMessage = $"Invalid response: {ex.Message}";
             }
         }
         catch (HttpRequestException ex)
