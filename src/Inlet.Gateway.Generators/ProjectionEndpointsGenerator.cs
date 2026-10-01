@@ -179,7 +179,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
 
         // Generate DTOs for nested custom types (e.g., collection element types)
         List<PropertyModel> nestedTypeProperties = projection.Model.Properties.Where(prop =>
-                prop.ElementTypeSymbol is INamedTypeSymbol && prop.ElementDtoTypeName is not null)
+                prop.ElementTypeSymbol is INamedTypeSymbol { TypeKind: not TypeKind.Enum } &&
+                prop.ElementDtoTypeName is not null)
             .ToList();
         foreach (PropertyModel prop in nestedTypeProperties)
         {
@@ -190,7 +191,6 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                     prop.ElementDtoTypeName!,
                     elementType,
                     out bool generateNestedDto) ||
-                (!generateNestedDto && (elementType.TypeKind == TypeKind.Enum)) ||
                 !generatedNestedTypes.TryRegister(
                     context,
                     projection.OutputNamespace + MappersNamespaceSuffix,
@@ -207,18 +207,6 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                     prop.ElementDtoTypeName!,
                     projection.OutputNamespace);
                 context.AddSource($"{prop.ElementDtoTypeName}.g.cs", SourceText.From(nestedDtoSource, Encoding.UTF8));
-            }
-
-            if (elementType.TypeKind == TypeKind.Enum)
-            {
-                string enumMapperSource = GenerateEnumMapper(
-                    elementType,
-                    prop.ElementDtoTypeName!,
-                    projection.OutputNamespace);
-                context.AddSource(
-                    $"{prop.ElementDtoTypeName}Mapper.g.cs",
-                    SourceText.From(enumMapperSource, Encoding.UTF8));
-                continue;
             }
 
             // Generate mapper for nested type

@@ -1861,15 +1861,23 @@ public class ProjectionEndpointsGeneratorTests
     /// <summary>
     ///     A projection and a nested declaration sharing a DTO name produce a diagnostic without generator failure.
     /// </summary>
-    /// <param name="useNestedRecord">Whether the conflicting declaration is a nested record.</param>
+    /// <param name="propertyType">The conflicting scalar or collection property shape.</param>
+    /// <param name="collidingType">The source declaration colliding with the projection DTO.</param>
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [InlineData("WorkflowState?", "WorkflowState")]
+    [InlineData("ImmutableArray<Workflow>", "Workflow")]
+    [InlineData("ImmutableArray<WorkflowState>", "WorkflowState")]
+    [InlineData("List<WorkflowState>", "WorkflowState")]
+    [InlineData("WorkflowState[]", "WorkflowState")]
     public void GeneratedProjectionDtoNameCollisionProducesDiagnostic(
-        bool useNestedRecord
+        string propertyType,
+        string collidingType
     )
     {
+        ArgumentNullException.ThrowIfNull(propertyType);
+        ArgumentNullException.ThrowIfNull(collidingType);
         const string projectionTemplate = """
+                                          using System.Collections.Generic;
                                           using System.Collections.Immutable;
                                           using Mississippi.Inlet.Generators.Abstractions;
                                           using Mississippi.Inlet.Abstractions;
@@ -1886,9 +1894,7 @@ public class ProjectionEndpointsGeneratorTests
                                               }
                                           }
                                           """;
-        string property = useNestedRecord
-            ? "public ImmutableArray<Workflow> History { get; init; }"
-            : "public WorkflowState? State { get; init; }";
+        string property = $"public {propertyType} State {{ get; init; }}";
         string projectionSource = projectionTemplate.Replace("__PROPERTY__", property, StringComparison.Ordinal);
         (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
@@ -1901,12 +1907,7 @@ public class ProjectionEndpointsGeneratorTests
             "global::TestApp.Domain.Projections.Sagas.WorkflowProjection",
             message,
             StringComparison.Ordinal);
-        Assert.Contains(
-            useNestedRecord
-                ? "global::TestApp.Domain.Projections.Sagas.Workflow"
-                : "global::TestApp.Domain.Projections.Sagas.WorkflowState",
-            message,
-            StringComparison.Ordinal);
+        Assert.Contains("global::TestApp.Domain.Projections.Sagas." + collidingType, message, StringComparison.Ordinal);
         Assert.All(runResult.Results, result => Assert.Null(result.Exception));
     }
 
