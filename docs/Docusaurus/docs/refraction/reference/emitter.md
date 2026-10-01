@@ -40,6 +40,8 @@ An absent or blank naming value throws `InvalidOperationException` during parame
 
 The previous prototype was in `Mississippi.Refraction.Client.Components.Atoms` and rendered a focusable `div`. Import the `Activation` namespace, provide a name, and update selectors or tests that assumed a `div`, explicit button role, or `tabindex="0"`.
 
+The component is now `sealed`. Consumers that subclassed the prototype must migrate to composition: render an `Emitter` from a parent component and handle `OnActivate` and `OnFocus` in that parent.
+
 ## Summary
 
 Emitter is a named native action control with parent-owned state and typed callbacks.
