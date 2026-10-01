@@ -140,7 +140,8 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
                 context,
                 (INamedTypeSymbol)prop.ElementTypeSymbol!,
                 prop.ElementDtoTypeName!,
-                clientNamespace);
+                clientNamespace,
+                generatedNestedTypes);
         }
     }
 
@@ -197,7 +198,8 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         SourceProductionContext context,
         INamedTypeSymbol sourceType,
         string dtoName,
-        string targetNamespace
+        string targetNamespace,
+        HashSet<string> generatedNestedTypes
     )
     {
         // If the source is an enum, generate an enum DTO
@@ -255,11 +257,14 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         IEnumerable<INamedTypeSymbol> enumTypes = properties.Select(p => p.Type)
             .Select(UnwrapNullable)
             .OfType<INamedTypeSymbol>()
-            .Where(t => t.TypeKind == TypeKind.Enum);
+            .Where(t => (t.TypeKind == TypeKind.Enum) && !TypeAnalyzer.IsFrameworkType(t));
         foreach (INamedTypeSymbol enumType in enumTypes)
         {
-            string enumDtoName = enumType.Name + "Dto";
-            GenerateNestedEnumDto(context, enumType, enumDtoName, targetNamespace);
+            string enumDtoName = TypeAnalyzer.GetDtoTypeName(enumType);
+            if (generatedNestedTypes.Add(enumDtoName))
+            {
+                GenerateNestedEnumDto(context, enumType, enumDtoName, targetNamespace);
+            }
         }
     }
 
@@ -274,7 +279,8 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         HashSet<string> seen = new(StringComparer.Ordinal);
         foreach (PropertyModel prop in projection.Model.Properties)
         {
-            if (UnwrapNullable(prop.SourceTypeSymbol) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType)
+            if (UnwrapNullable(prop.SourceTypeSymbol) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
+                !TypeAnalyzer.IsFrameworkType(enumType))
             {
                 string key = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 if (seen.Add(key))

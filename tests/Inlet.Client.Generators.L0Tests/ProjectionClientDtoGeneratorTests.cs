@@ -608,6 +608,69 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Generated DTOs compile when nullable and non-nullable enums occur on the projection and its history.
+    /// </summary>
+    [Fact]
+    public void GeneratedEnumDtosCompileWithSharedAndFrameworkEnums()
+    {
+        const string projectionSource = """
+                                        using System;
+                                        using System.Collections.Immutable;
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.Sagas
+                                        {
+                                            public enum ResumeSource { Reminder = 0, Manual = 7 }
+                                            public enum WorkflowState { Starting = 2, Ended = 9 }
+                                            public sealed record RecoveryEntry
+                                            {
+                                                public ResumeSource? LastResumeSource { get; init; }
+                                                public ResumeSource Source { get; init; }
+                                                public DayOfWeek? LastDay { get; init; }
+                                                public DayOfWeek Day { get; init; }
+                                                public WorkflowState? LastWorkflow { get; init; }
+                                                public WorkflowState Workflow { get; init; }
+                                            }
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("saga-status")]
+                                            public sealed record SagaStatusProjection
+                                            {
+                                                public ResumeSource? LastResumeSource { get; init; }
+                                                public ResumeSource Source { get; init; }
+                                                public DayOfWeek? LastDay { get; init; }
+                                                public DayOfWeek Day { get; init; }
+                                                public ImmutableArray<RecoveryEntry> History { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Assert.Empty(diagnostics);
+        Assert.Empty(
+            outputCompilation.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        using MemoryStream assembly = new();
+        Assert.True(outputCompilation.Emit(assembly, cancellationToken: TestContext.Current.CancellationToken).Success);
+        INamedTypeSymbol frameworkEnum = outputCompilation.GetTypeByMetadataName("System.DayOfWeek")!;
+        foreach (string dtoName in new[] { "SagaStatusProjectionDto", "RecoveryEntryDto" })
+        {
+            INamedTypeSymbol dto = Assert.Single(
+                outputCompilation.GetSymbolsWithName(dtoName, SymbolFilter.Type, TestContext.Current.CancellationToken)
+                    .OfType<INamedTypeSymbol>());
+            IPropertySymbol day = Assert.Single(dto.GetMembers("Day").OfType<IPropertySymbol>());
+            IPropertySymbol lastDay = Assert.Single(dto.GetMembers("LastDay").OfType<IPropertySymbol>());
+            INamedTypeSymbol nullableDay = Assert.IsType<INamedTypeSymbol>(lastDay.Type, false);
+            Assert.True(SymbolEqualityComparer.Default.Equals(frameworkEnum, day.Type));
+            Assert.True(SymbolEqualityComparer.Default.Equals(frameworkEnum, Assert.Single(nullableDay.TypeArguments)));
+        }
+
+        Assert.Single(
+            runResult.GeneratedTrees.Where(tree => Path.GetFileName(tree.FilePath) == "ResumeSourceDto.g.cs"));
+        Assert.Single(runResult.GeneratedTrees.Where(tree => Path.GetFileName(tree.FilePath) == "WorkflowDto.g.cs"));
+    }
+
+    /// <summary>
     ///     Generator should handle projection path with special characters.
     /// </summary>
     [Fact]

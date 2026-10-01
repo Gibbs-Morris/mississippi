@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.Loader;
+using System.Text.Json.Serialization;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -633,6 +636,146 @@ public class ProjectionEndpointsGeneratorTests
             .ToString();
         Assert.NotNull(dtoSource);
         Assert.Contains("public required decimal Balance", dtoSource, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Compiled mappers preserve nullable values and framework enum identities at both projection levels.
+    /// </summary>
+    /// <param name="resumeValue">The nullable source enum value.</param>
+    [Theory]
+    [InlineData(null)]
+    [InlineData(7)]
+    public void GeneratedEnumMappersCompileAndPreserveValues(
+        int? resumeValue
+    )
+    {
+        const string projectionSource = """
+                                        using System;
+                                        using System.Collections.Immutable;
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.Sagas
+                                        {
+                                            public enum ResumeSource { Reminder = 0, Manual = 7 }
+                                            public enum WorkflowState { Starting = 2, Ended = 9 }
+                                            public sealed record RecoveryEntry
+                                            {
+                                                public ResumeSource? LastResumeSource { get; init; }
+                                                public ResumeSource Source { get; init; }
+                                                public DayOfWeek? LastDay { get; init; }
+                                                public DayOfWeek Day { get; init; }
+                                                public WorkflowState? LastWorkflow { get; init; }
+                                                public WorkflowState Workflow { get; init; }
+                                            }
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("saga-status")]
+                                            public sealed record SagaStatusProjection
+                                            {
+                                                public ResumeSource? LastResumeSource { get; init; }
+                                                public ResumeSource Source { get; init; }
+                                                public DayOfWeek? LastDay { get; init; }
+                                                public DayOfWeek Day { get; init; }
+                                                public ImmutableArray<RecoveryEntry> History { get; init; }
+                                            }
+                                        }
+                                        """;
+        const string mappingSource = """
+                                     namespace Mississippi.Common.Abstractions.Mapping
+                                     {
+                                         public interface IMapper<in TFrom, out TTo> { TTo Map(TFrom input); }
+                                         public interface IEnumerableMapper<in TFrom, out TTo>
+                                             : IMapper<System.Collections.Generic.IEnumerable<TFrom>,
+                                                 System.Collections.Generic.IEnumerable<TTo>> { }
+                                     }
+                                     namespace TestAssembly.Verification
+                                     {
+                                         using System;
+                                         using System.Collections.Generic;
+                                         using System.Collections.Immutable;
+                                         using System.Linq;
+                                         using Mississippi.Common.Abstractions.Mapping;
+                                         using TestApp.Domain.Projections.Sagas;
+                                         using TestAssembly.Controllers.Projections;
+                                         using TestAssembly.Controllers.Projections.Mappers;
+
+                                         internal sealed class RecoveryEntriesMapper : IEnumerableMapper<RecoveryEntry, RecoveryEntryDto>
+                                         {
+                                             public IEnumerable<RecoveryEntryDto> Map(IEnumerable<RecoveryEntry> input)
+                                                 => input.Select(entry => new RecoveryEntryDtoMapper().Map(entry));
+                                         }
+                                         public static class EnumMappingProbe
+                                         {
+                                             public static int?[] Map(int? value)
+                                             {
+                                                 ResumeSource? resume = value.HasValue ? (ResumeSource)value.Value : null;
+                                                 DayOfWeek? day = value.HasValue ? DayOfWeek.Friday : null;
+                                                 RecoveryEntry entry = new()
+                                                 {
+                                                     LastResumeSource = resume,
+                                                     Source = ResumeSource.Manual,
+                                                     LastDay = day,
+                                                     Day = DayOfWeek.Monday,
+                                                     LastWorkflow = value.HasValue ? WorkflowState.Ended : null,
+                                                     Workflow = WorkflowState.Starting,
+                                                 };
+                                                 SagaStatusProjection source = new()
+                                                 {
+                                                     LastResumeSource = resume,
+                                                     Source = ResumeSource.Manual,
+                                                     LastDay = day,
+                                                     Day = DayOfWeek.Monday,
+                                                     History = [entry],
+                                                 };
+                                                 SagaStatusDto dto = new SagaStatusProjectionMapper(
+                                                     new ResumeSourceDtoMapper(), new RecoveryEntriesMapper()).Map(source);
+                                                 DayOfWeek retainedDay = dto.Day;
+                                                 DayOfWeek? retainedLastDay = dto.LastDay;
+                                                 return [(int?)dto.LastResumeSource, (int)dto.Source,
+                                                     (int?)dto.History[0].LastResumeSource, (int)dto.History[0].Source,
+                                                     (int)retainedDay, (int?)retainedLastDay,
+                                                     (int)dto.History[0].Day, (int?)dto.History[0].LastDay,
+                                                     (int?)dto.History[0].LastWorkflow, (int)dto.History[0].Workflow];
+                                             }
+                                         }
+                                     }
+                                     """;
+        (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Assert.Empty(diagnostics);
+        SyntaxTree[] hostTrees = runResult.GeneratedTrees.Where(tree =>
+                tree.FilePath.Contains("Controller.g.cs", StringComparison.Ordinal) ||
+                tree.FilePath.Contains("MapperRegistrations", StringComparison.Ordinal))
+            .ToArray();
+        Compilation mappingCompilation = outputCompilation.RemoveSyntaxTrees(hostTrees)
+            .AddSyntaxTrees(
+                CSharpSyntaxTree.ParseText(mappingSource, cancellationToken: TestContext.Current.CancellationToken))
+            .AddReferences(
+                MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(JsonRequiredAttribute).Assembly.Location));
+        Assert.Empty(
+            mappingCompilation.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        using MemoryStream assemblyStream = new();
+        Assert.True(
+            mappingCompilation.Emit(assemblyStream, cancellationToken: TestContext.Current.CancellationToken).Success);
+        assemblyStream.Position = 0;
+        AssemblyLoadContext context = new(nameof(GeneratedEnumMappersCompileAndPreserveValues), true);
+        try
+        {
+            Assembly assembly = context.LoadFromStream(assemblyStream);
+            MethodInfo map = assembly.GetType("TestAssembly.Verification.EnumMappingProbe")!.GetMethod("Map")!;
+            int?[] actual = Assert.IsType<int?[]>(map.Invoke(null, [resumeValue]));
+            int? expectedDay = resumeValue.HasValue ? 5 : null;
+            int? expectedWorkflow = resumeValue.HasValue ? 9 : null;
+            Assert.Equal(
+                new[] { resumeValue, 7, resumeValue, 7, 1, expectedDay, 1, expectedDay, expectedWorkflow, 2 },
+                actual);
+        }
+        finally
+        {
+            context.Unload();
+        }
     }
 
     /// <summary>
