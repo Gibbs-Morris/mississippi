@@ -121,6 +121,23 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
 
         // Add source
         context.AddSource($"{clientNamespace}.{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+    }
+
+    /// <summary>
+    ///     Generates dependencies after all projection DTOs have reserved their attributed declarations.
+    /// </summary>
+    /// <param name="context">The source production context.</param>
+    /// <param name="projection">The projection whose dependencies are generated.</param>
+    /// <param name="targetRootNamespace">The target project's root namespace.</param>
+    /// <param name="generatedNestedTypes">The generated declaration registry.</param>
+    private static void GenerateNestedDtosForProjection(
+        SourceProductionContext context,
+        ProjectionInfo projection,
+        string targetRootNamespace,
+        GeneratedDtoNameRegistry generatedNestedTypes
+    )
+    {
+        string clientNamespace = NamingConventions.GetClientNamespace(projection.Namespace, targetRootNamespace);
 
         // Generate enum DTOs for enum properties on the projection
         foreach (EnumDtoInfo enumInfo in GetEnumDtosForProjection(projection)
@@ -478,6 +495,11 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
                 foreach (ProjectionInfo projection in data.Projections)
                 {
                     GenerateClientDto(spc, projection, data.TargetRootNamespace, generatedNestedTypes);
+                }
+
+                foreach (ProjectionInfo projection in data.Projections)
+                {
+                    GenerateNestedDtosForProjection(spc, projection, data.TargetRootNamespace, generatedNestedTypes);
                 }
             });
     }

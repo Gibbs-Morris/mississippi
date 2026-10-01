@@ -827,6 +827,91 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Projection DTOs retain discovery metadata and nested dependencies in both discovery orders.
+    /// </summary>
+    /// <param name="nestedFirst">Whether the containing projection is discovered first.</param>
+    /// <param name="projectionSuffix">Whether the projection uses the conventional name suffix.</param>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void GeneratedNestedProjectionDtosKeepDiscoveryMetadata(
+        bool nestedFirst,
+        bool projectionSuffix
+    )
+    {
+        const string containingProjection = """
+                                            using System.Collections.Immutable;
+                                            using Mississippi.Inlet.Generators.Abstractions;
+                                            using Mississippi.Inlet.Abstractions;
+
+                                            namespace TestApp.Domain.Projections.Banking
+                                            {
+                                                [GenerateProjectionEndpoints]
+                                                [ProjectionPath("ledger")]
+                                                public sealed record LedgerProjection
+                                                {
+                                                    public ImmutableArray<BalanceProjection> Balances { get; init; }
+                                                }
+                                            }
+                                            """;
+        const string nestedProjection = """
+                                        using System.Collections.Immutable;
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.Banking
+                                        {
+                                            public enum ResumeSource { Manual = 7 }
+                                            public sealed record BalanceEntry
+                                            {
+                                                public ResumeSource? Source { get; init; }
+                                            }
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("balance")]
+                                            public sealed record BalanceProjection
+                                            {
+                                                public ImmutableArray<BalanceEntry> Entries { get; init; }
+                                            }
+                                        }
+                                        """;
+        string containingSource = projectionSuffix
+            ? containingProjection
+            : containingProjection.Replace("BalanceProjection", "Balance", StringComparison.Ordinal);
+        string nestedSource = projectionSuffix
+            ? nestedProjection
+            : nestedProjection.Replace("BalanceProjection", "Balance", StringComparison.Ordinal);
+        string projectionDtoName = projectionSuffix ? "BalanceProjectionDto" : "BalanceDto";
+        (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            nestedFirst
+                ? RunGenerator(AttributeStubs, containingSource, nestedSource)
+                : RunGenerator(AttributeStubs, nestedSource, containingSource);
+        Assert.Empty(diagnostics);
+        const string clientNamespace = "TestApp.Client.Features.Banking.Dtos";
+        INamedTypeSymbol projectionDto = outputCompilation.GetTypeByMetadataName(
+            clientNamespace + "." + projectionDtoName)!;
+        Assert.NotNull(projectionDto);
+        AttributeData projectionPath = Assert.Single(
+            projectionDto.GetAttributes()
+                .Where(attribute => attribute.AttributeClass?.ToDisplayString() ==
+                                    "Mississippi.Inlet.Abstractions.ProjectionPathAttribute"));
+        Assert.Equal("balance", projectionPath.ConstructorArguments[0].Value);
+        Assert.Single(
+            runResult.GeneratedTrees.Where(tree => tree.FilePath.EndsWith(
+                "." + projectionDtoName + ".g.cs",
+                StringComparison.Ordinal)));
+        Assert.NotNull(outputCompilation.GetTypeByMetadataName(clientNamespace + ".BalanceEntryDto"));
+        Assert.NotNull(outputCompilation.GetTypeByMetadataName(clientNamespace + ".ResumeSourceDto"));
+        Assert.Empty(
+            outputCompilation.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        using MemoryStream assemblyStream = new();
+        Assert.True(
+            outputCompilation.Emit(assemblyStream, cancellationToken: TestContext.Current.CancellationToken).Success);
+    }
+
+    /// <summary>
     ///     Nullable custom enum collection elements receive enum DTO declarations while framework enums remain unchanged.
     /// </summary>
     /// <param name="collectionType">The collection shape containing nullable enum elements.</param>
