@@ -53,8 +53,9 @@ Activate **Emit signal** in the emitter demonstration to follow
 `ChangeEmitterDisabledAction`; native button state and the activation count are
 controlled by the page and survive **Reset example**.
 
-The gallery identifies the verified input, theme, and progress surface separately from the
-library's prototype controls. It is not a whole-library accessibility
+The gallery identifies the verified input, theme, progress, and native emitter
+activation surface separately from the library's prototype controls. It is not
+a whole-library accessibility
 certification. Components are organized into atomic folders, with page-level
 store integration and separate markup, logic, and styles.
 
