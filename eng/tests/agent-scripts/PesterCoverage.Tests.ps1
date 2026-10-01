@@ -35,6 +35,30 @@ Describe 'Pester coverage import' {
         $report.coverage.file.lineToCover[1].covered | Should -Be 'false'
     }
 
+    It 'writes relative output in the PowerShell current location' {
+        Set-Content -LiteralPath $inputPath -Value '<report><package><sourcefile name="source &amp; helper.ps1"><line nr="1" ci="1"/></sourcefile></package></report>'
+        $processDirectory = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $processDirectory | Out-Null
+        $originalProcessDirectory = [Environment]::CurrentDirectory
+        $originalLocation = Get-Location
+        try {
+            [Environment]::CurrentDirectory = $processDirectory
+            Set-Location -LiteralPath $coverageRoot
+
+            $summary = ConvertTo-SonarCoverageReport -InputPath ./pester.xml -OutputPath ./sonar.xml -RepositoryRoot $coverageRoot
+
+            Test-Path -LiteralPath $outputPath | Should -BeTrue
+            Test-Path -LiteralPath (Join-Path $processDirectory 'sonar.xml') | Should -BeFalse
+            $summary.Covered | Should -Be 1
+            [xml]$report = Get-Content -LiteralPath $outputPath -Raw
+            $report.coverage.file.lineToCover.covered | Should -Be 'true'
+        }
+        finally {
+            Set-Location -LiteralPath $originalLocation.Path
+            [Environment]::CurrentDirectory = $originalProcessDirectory
+        }
+    }
+
     It 'rejects an empty coverage report' {
         Set-Content -LiteralPath $inputPath -Value '<report/>'
 

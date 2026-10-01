@@ -58,7 +58,8 @@ function ConvertTo-SonarCoverageReport {
         $fileCount++
     }
     if ($fileCount -eq 0) { throw 'No Pester line coverage found.' }
-    $sonarReport.Save([IO.Path]::GetFullPath($OutputPath))
+    $resolvedOutputPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputPath)
+    $sonarReport.Save($resolvedOutputPath)
     [pscustomobject]@{ Files = $fileCount; Lines = $lineCount; Covered = $coveredCount }
 }
 
