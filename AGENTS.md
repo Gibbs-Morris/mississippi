@@ -26,6 +26,15 @@ Governing thought: Agents follow repository instructions and iterate from correc
 - Agents MUST follow [PR size and stacked delivery](.github/instructions/pr-size-and-stacking.instructions.md), including the 600-line target, justified exceptions, and the CI/review gate before starting the next dependent PR. Why: Small, complete changes keep review manageable.
 - Agents MUST use the [gh-stack skill](https://github.com/github/gh-stack/blob/main/skills/gh-stack/SKILL.md) for stack work. Why: Native GitHub stacks need correct branch placement and lifecycle commands.
 
+### Optional Codex model routing
+
+The Sol/Luna recipe applies only after an operator explicitly selects it for
+this session and verifies model, reasoning and client support. Other sessions
+use their host and user-selected settings under the governing instructions.
+
+- Agents using the selected recipe MUST read [the complete profile guidance](.codex/README.md). Why: Model support, role precedence and resource limits need current evidence.
+- Agents using the selected recipe MUST follow the [scoped routing and coordination rules](.github/instructions/codex-model-routing.instructions.md). Why: Optional selection does not make the selected contract optional.
+
 ## Scope and Audience
 
 All agents working in this repository.
