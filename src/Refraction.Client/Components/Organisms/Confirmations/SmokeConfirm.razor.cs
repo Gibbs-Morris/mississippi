@@ -10,6 +10,7 @@ namespace Mississippi.Refraction.Client.Components.Organisms.Confirmations;
 /// <summary>
 ///     Render a parent-controlled confirmation surface with form-safe native actions.
 /// </summary>
+/// <remarks>Public so applications outside this assembly can compose this confirmation surface in Razor markup.</remarks>
 public sealed partial class SmokeConfirm : ComponentBase
 {
     private static readonly HashSet<string> OwnedAttributes = new(StringComparer.OrdinalIgnoreCase)
