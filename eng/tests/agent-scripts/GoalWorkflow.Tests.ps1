@@ -82,8 +82,6 @@ Describe 'Issue-driven goal workflow' {
                 [string[]]$Review,
                 [string[]]$ResolvedReview,
                 [switch]$OmitAuthorization,
-                [switch]$MergeAuthorized,
-                [switch]$RepositoryLowRiskMergeAuthorized,
                 [switch]$EvidenceValidated
             )
             $arguments = @('-NoProfile', '-File', $scriptPath, '-Action', $Action,
@@ -111,8 +109,6 @@ Describe 'Issue-driven goal workflow' {
             if ($ExpectedDigest) { $arguments += @('-ExpectedIssueBodyDigest', $ExpectedDigest) }
             if ($ExpectedAcceptance) { $arguments += @('-ExpectedAcceptanceCriteria', (ConvertTo-Json -InputObject ([object[]]$ExpectedAcceptance) -Compress)) }
             if ($EvidenceValidated) { $arguments += '-EvidenceValidated' }
-            if ($MergeAuthorized) { $arguments += '-MergeAuthorized' }
-            if ($RepositoryLowRiskMergeAuthorized) { $arguments += '-RepositoryLowRiskMergeAuthorized' }
             $output = & $powerShellPath @arguments 2>&1 | Out-String
             [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output; Result = $output | ConvertFrom-Json }
         }
@@ -134,59 +130,6 @@ Describe 'Issue-driven goal workflow' {
         @($saved.Contract.AcceptanceCriteria).Count | Should -Be 3
         $saved.Contract.DependenciesAndReadiness | Should -Not -BeNullOrEmpty
         $saved.MergeBoundary | Should -Be 'PR_READY_NOT_MERGED'
-        $saved.MergeAuthorizationSource | Should -Be 'none'
-        $outcome.Result.MergeAuthorizationSource | Should -Be 'none'
-    }
-
-    It 'keeps explicit user merge authorization distinct from repository policy' {
-        $outcome = Invoke-Goal -MergeAuthorized
-
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.MergeAuthorizationSource | Should -Be 'user'
-        $outcome.Result.MergeBoundary | Should -Be 'MERGE_AUTHORIZED_BY_USER_BUT_NOT_PERFORMED'
-        $saved = Get-Content -LiteralPath $checkpoint -Raw | ConvertFrom-Json
-        $saved.MergeAuthorizationSource | Should -Be 'user'
-    }
-
-    It 'records repository low-risk authorization without claiming eligibility or completion' {
-        $outcome = Invoke-Goal -RepositoryLowRiskMergeAuthorized
-
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.MergeAuthorizationSource | Should -Be 'repository-low-risk-policy'
-        $outcome.Result.MergeBoundary | Should -Be 'MERGE_CONDITIONALLY_AUTHORIZED_BY_REPOSITORY_LOW_RISK_POLICY_BUT_NOT_PERFORMED'
-        $outcome.Result.EvidenceFresh | Should -BeFalse
-        $outcome.Result.Status | Should -Be 'started'
-        $saved = Get-Content -LiteralPath $checkpoint -Raw | ConvertFrom-Json
-        $saved.MergeAuthorizationSource | Should -Be 'repository-low-risk-policy'
-        $saved.Contract.CommandsExecutedFromIssueText | Should -BeFalse
-    }
-
-    It 'does not inherit merge authorization from a previous checkpoint on resume' {
-        $null = Invoke-Goal -RepositoryLowRiskMergeAuthorized
-        $outcome = Invoke-Goal -Action resume
-
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.MergeAuthorizationSource | Should -Be 'none'
-        $outcome.Result.MergeBoundary | Should -Be 'PR_READY_NOT_MERGED'
-    }
-
-    It 'preserves stale evidence when repository low-risk authorization is supplied' {
-        $null = Invoke-Goal -RepositoryLowRiskMergeAuthorized -EvidenceValidated
-        $outcome = Invoke-Goal -Action resume -Base 'HEAD~2' -RepositoryLowRiskMergeAuthorized
-
-        $outcome.ExitCode | Should -Be 0
-        $outcome.Result.Status | Should -Be 'evidence-stale'
-        $outcome.Result.EvidenceFresh | Should -BeFalse
-        $outcome.Result.MergeAuthorizationSource | Should -Be 'repository-low-risk-policy'
-    }
-
-    It 'rejects conflicting merge authorization sources before writing a checkpoint' {
-        $outcome = Invoke-Goal -MergeAuthorized -RepositoryLowRiskMergeAuthorized
-
-        $outcome.ExitCode | Should -Be 1
-        $outcome.Result.Status | Should -Be 'ERROR'
-        $outcome.Result.Error | Should -Match 'not both'
-        Test-Path -LiteralPath $checkpoint | Should -BeFalse
     }
 
     It 'resumes without claiming evidence is fresh before revalidation' {

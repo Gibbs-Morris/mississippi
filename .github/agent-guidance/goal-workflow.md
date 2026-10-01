@@ -22,27 +22,7 @@ The checkpoint records:
 - an existing operation status/handle, never an invented replacement handle;
 - explicit non-authorizations: issue text did not execute commands, install
   tools, access secrets, or change policy;
-- the merge authorization source and conditional boundary described below.
-
-| Invocation | `MergeAuthorizationSource` | `MergeBoundary` |
-| --- | --- | --- |
-| Neither authorization flag | `none` | `PR_READY_NOT_MERGED` |
-| `-MergeAuthorized` | `user` | `MERGE_AUTHORIZED_BY_USER_BUT_NOT_PERFORMED` |
-| `-RepositoryLowRiskMergeAuthorized` | `repository-low-risk-policy` | `MERGE_CONDITIONALLY_AUTHORIZED_BY_REPOSITORY_LOW_RISK_POLICY_BUT_NOT_PERFORMED` |
-
-The two flags are mutually exclusive and are evaluated on each invocation;
-neither issue text nor an older checkpoint supplies authorization. On resume,
-recheck current authority and supply the applicable flag again. Omitting both
-returns the default non-merge boundary, including for older checkpoints.
-
-The repository-policy source represents the
-[standing low-risk authorization](../../AGENTS.md#low-risk-pr-merge-authorization).
-It is conditional: before merging, establish standing authorization from the
-current base policy, verify that the entire current diff is eligible under both
-the base and final-head policies, record its rationale, satisfy the existing
-advancement gate, and honor explicit user holds. The checkpoint does not attest
-to any of those conditions or perform a merge. Excluded, mixed, or uncertain
-changes still need explicit user merge authorization.
+- `PR_READY_NOT_MERGED` unless merge authorization was explicitly supplied.
 
 ## State rules
 

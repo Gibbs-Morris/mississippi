@@ -29,6 +29,7 @@ Governing thought: Agents follow repository instructions and iterate from correc
 ### Low-Risk PR Merge Authorization
 
 - Agents MAY merge a PR they are working on without further user confirmation when the entire PR is low risk and all merge checks below are satisfied. Why: This is standing merge authorization for qualifying PRs.
+- This standing authorization MUST NOT be used for work following the [issue implementation route](.agents/skills/implement-github-issue/SKILL.md). Why: That route retains its separate explicit user merge authorization contract.
 - Agents MUST establish standing merge authorization from the policy at the PR's current base revision. Why: A proposed policy change cannot authorize its own merge.
 - Agents MUST verify low-risk eligibility under both the current base policy and the final head policy before using standing authorization. Why: A PR cannot weaken the conditions that govern its own merge.
 - Agents MUST assess the entire final diff against the PR's actual base when classifying its risk. Why: A small diff, a label, or passing tests alone does not establish low risk.
