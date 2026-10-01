@@ -14,6 +14,7 @@ namespace Mississippi.Refraction.Client.Components.Atoms.Activation;
 ///     gestures and command reticle invocation.
 /// </summary>
 /// <remarks>
+///     <para>Public so applications outside this assembly can compose this native action control in Razor markup.</para>
 ///     <para>
 ///         This component follows the state-down, events-up pattern. All data is received
 ///         via parameters and all user interactions are reported via EventCallbacks.
