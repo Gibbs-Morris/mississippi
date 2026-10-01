@@ -50,6 +50,8 @@ A null, empty, or whitespace-only `Title`, `CancelText`, or `ConfirmText` throws
 
 The earlier prototype used `Mississippi.Refraction.Client.Components.Organisms`. Update the `@using` directive when adopting the confirmation-folder namespace above. This is a source-breaking namespace move.
 
+The component is now `sealed`. Consumers that subclassed the prototype must migrate to composition: render a `SmokeConfirm` from a parent component and handle `OnCancel` and `OnConfirm` in that parent. The parent continues to own visibility and any modal focus lifecycle.
+
 ## Summary
 
 `SmokeConfirm` is a parent-controlled confirmation surface with two independent, form-safe actions and a required accessible name.
