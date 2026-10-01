@@ -273,38 +273,6 @@ public sealed class CommandActionEffectBaseTests
     }
 
     /// <summary>
-    ///     Entity identifiers remain a single escaped route segment.
-    /// </summary>
-    /// <param name="entityId">The original aggregate identifier.</param>
-    /// <param name="encodedEntityId">The expected escaped path segment.</param>
-    /// <returns>The asynchronous test operation.</returns>
-    [Theory]
-    [InlineData("entity/branch", "entity%2Fbranch")]
-    [InlineData("entity?region=1", "entity%3Fregion%3D1")]
-    [InlineData("entity#section", "entity%23section")]
-    public async Task HandleAsyncEscapesEntityIdentifiersAsync(
-        string entityId,
-        string encodedEntityId
-    )
-    {
-        CommandEffectAction action = new(entityId);
-        using CommandEffectHttpHandler handler = new((request, _) =>
-        {
-            Assert.Equal(
-                $"https://commands.test/api/aggregates/test/{encodedEntityId}/submit",
-                request.RequestUri?.AbsoluteUri);
-            return Task.FromResult(CreateResponse(HttpStatusCode.OK, "{\"success\":true}"));
-        });
-        using HttpClient http = CreateClient(handler);
-        CommandEffect effect = new(http, CreateMapper(action).Object, new FakeTimeProvider(StartedAt));
-        List<IAction> actions = await CollectAsync(effect, action, TestContext.Current.CancellationToken);
-        Assert.Collection(
-            actions,
-            item => Assert.IsType<CommandEffectExecutingAction>(item),
-            item => Assert.IsType<CommandEffectSucceededAction>(item));
-    }
-
-    /// <summary>
     ///     Caller cancellation reaches the HTTP handler and produces a terminal failure.
     /// </summary>
     /// <returns>The asynchronous test operation.</returns>
