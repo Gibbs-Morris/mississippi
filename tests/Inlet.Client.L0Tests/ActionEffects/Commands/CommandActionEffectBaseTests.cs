@@ -218,6 +218,34 @@ public sealed class CommandActionEffectBaseTests
     }
 
     /// <summary>
+    ///     An unsupported response charset terminates the command with a correlated response failure.
+    /// </summary>
+    /// <param name="status">The server response status.</param>
+    /// <returns>The asynchronous test operation.</returns>
+    [Theory]
+    [InlineData(HttpStatusCode.OK)]
+    [InlineData(HttpStatusCode.BadRequest)]
+    public async Task HandleAsyncEmitsFailureForInvalidResponseCharsetAsync(
+        HttpStatusCode status
+    )
+    {
+        CommandEffectAction action = new("entity-1");
+        FakeTimeProvider clock = new(StartedAt);
+        using CommandEffectHttpHandler handler = new((_, _) =>
+        {
+            clock.Advance(TimeSpan.FromSeconds(2));
+            HttpResponseMessage response = CreateResponse(status, "{\"success\":true}");
+            response.Content.Headers.ContentType!.CharSet = "invalid-charset";
+            return Task.FromResult(response);
+        });
+        using HttpClient http = CreateClient(handler);
+        CommandEffect effect = new(http, CreateMapper(action).Object, clock);
+        List<IAction> actions = await CollectAsync(effect, action, TestContext.Current.CancellationToken);
+        CommandEffectFailedAction failed = AssertFailure(actions, "HttpError");
+        Assert.StartsWith("Invalid response: ", failed.ErrorMessage, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Invalid successful responses terminate the command rather than abandoning its executing state.
     /// </summary>
     /// <param name="body">The invalid server response.</param>
