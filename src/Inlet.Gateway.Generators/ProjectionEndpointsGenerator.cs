@@ -442,42 +442,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         {
             PropertyModel prop = projection.Model.Properties[i];
             string comma = i < (projection.Model.Properties.Length - 1) ? "," : string.Empty;
-            if (GetNullableEnumCollectionElement(prop.SourceTypeSymbol) is { } collectionEnum)
-            {
-                string enumDtoTypeName = TypeAnalyzer.GetDtoTypeName(collectionEnum);
-                string toCollection = prop.IsImmutableArray ? ".ToImmutableArray()" : ".ToList()";
-                if (prop.SourceTypeSymbol is IArrayTypeSymbol)
-                {
-                    toCollection = ".ToArray()";
-                }
-
-                sb.AppendLine(
-                    $"{prop.Name} = source.{prop.Name}.Select(value => value.HasValue ? ({enumDtoTypeName}?)value.Value : null){toCollection}{comma}");
-            }
-            else if (prop.RequiresEnumerableMapper)
-            {
-                // Collection with custom element type - use appropriate collection conversion
-                string toCollection = prop.IsImmutableArray ? ".ToImmutableArray()" : ".ToList()";
-                sb.AppendLine($"{prop.Name} = {prop.Name}Mapper.Map(source.{prop.Name}){toCollection}{comma}");
-            }
-            else if (prop.RequiresMapper)
-            {
-                // Single custom type
-                sb.AppendLine($"{prop.Name} = {prop.Name}Mapper.Map(source.{prop.Name}){comma}");
-            }
-            else if (UnwrapNullable(prop.SourceTypeSymbol) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
-                     !TypeAnalyzer.IsFrameworkType(enumType) &&
-                     !prop.IsEnum)
-            {
-                string enumDtoTypeName = TypeAnalyzer.GetDtoTypeName(enumType);
-                sb.AppendLine(
-                    $"{prop.Name} = source.{prop.Name}.HasValue ? ({enumDtoTypeName}?)source.{prop.Name}.Value : null{comma}");
-            }
-            else
-            {
-                // Direct assignment
-                sb.AppendLine($"{prop.Name} = source.{prop.Name}{comma}");
-            }
+            sb.AppendLine($"{prop.Name} = {GetMapperPropertyAssignment(prop)}{comma}");
         }
 
         sb.CloseBrace();
@@ -815,6 +780,50 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         }
 
         return enumInfos;
+    }
+
+    /// <summary>
+    ///     Gets the conversion expression assigned to a projection DTO property.
+    /// </summary>
+    /// <param name="prop">The projection property.</param>
+    /// <returns>The source-to-DTO property conversion expression.</returns>
+    private static string GetMapperPropertyAssignment(
+        PropertyModel prop
+    )
+    {
+        if (GetNullableEnumCollectionElement(prop.SourceTypeSymbol) is { } collectionEnum)
+        {
+            string enumDtoTypeName = TypeAnalyzer.GetDtoTypeName(collectionEnum);
+            string toCollection = prop.IsImmutableArray ? ".ToImmutableArray()" : ".ToList()";
+            if (prop.SourceTypeSymbol is IArrayTypeSymbol)
+            {
+                toCollection = ".ToArray()";
+            }
+
+            return
+                $"source.{prop.Name}.Select(value => value.HasValue ? ({enumDtoTypeName}?)value.Value : null){toCollection}";
+        }
+
+        if (prop.RequiresEnumerableMapper)
+        {
+            string toCollection = prop.IsImmutableArray ? ".ToImmutableArray()" : ".ToList()";
+            return $"{prop.Name}Mapper.Map(source.{prop.Name}){toCollection}";
+        }
+
+        if (prop.RequiresMapper)
+        {
+            return $"{prop.Name}Mapper.Map(source.{prop.Name})";
+        }
+
+        if (UnwrapNullable(prop.SourceTypeSymbol) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
+            !TypeAnalyzer.IsFrameworkType(enumType) &&
+            !prop.IsEnum)
+        {
+            string enumDtoTypeName = TypeAnalyzer.GetDtoTypeName(enumType);
+            return $"source.{prop.Name}.HasValue ? ({enumDtoTypeName}?)source.{prop.Name}.Value : null";
+        }
+
+        return $"source.{prop.Name}";
     }
 
     /// <summary>
