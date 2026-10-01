@@ -14,7 +14,7 @@ The retry repeats CreateItemAsync with the same position-based document ID. It d
 
 ## Trigger
 
-Cosmos accepts an event document, but the caller receives a retryable timeout or service failure before it knows that creation succeeded. The configured retry policy invokes the same create again.
+Cosmos accepts an event document, but the caller receives a CosmosException with a status that CosmosRetryPolicy treats as transient, such as HTTP 408, before it knows that creation succeeded. The retry repeats CreateItemAsync with the same document ID, and the service returns HTTP 409 because the first create succeeded.
 
 ## Potential impact
 
@@ -30,6 +30,10 @@ The append can fail even though its event was saved. The caller can enter cleanu
 ## Verification notes
 
 Simulate the first create saving the document and then returning a retryable failure. Make the repeated create return the actual duplicate status. Observe the append and recovery records. Verify how the deployed Cosmos SDK represents a lost response and whether its internal retries already reconcile this exact operation; an SDK guarantee that prevents the shown sequence would reject or narrow this finding. No network fault-injection run was performed.
+
+A TaskCanceledException is not the retry trigger in this implementation: [CosmosRetryPolicy.cs lines 95-104](https://github.com/Gibbs-Morris/mississippi/blob/aa4a686677ab41b25ecdfd445b280b45d2f43fb1/src/Common.Runtime.Storage.Cosmos/Retry/CosmosRetryPolicy.cs#L95-L104) converts it to OperationCanceledException without retrying. Verify the deployed SDK exception/status sequence.
+
+The [Cosmos SDK resilience guide](https://learn.microsoft.com/en-us/azure/cosmos-db/conceptual-resilient-sdk-applications#timeouts-and-connectivity-related-failures-http-408503) explains that a write timeout can have an unknown outcome and that repeating a create can return HTTP 409 after the first request succeeded.
 
 ## Confidence
 
