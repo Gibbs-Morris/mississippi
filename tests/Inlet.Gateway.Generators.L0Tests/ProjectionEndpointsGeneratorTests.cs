@@ -1341,12 +1341,17 @@ public class ProjectionEndpointsGeneratorTests
     ///     Compiled nullable enum collection mappers retain missing and present values and framework enum identities.
     /// </summary>
     /// <param name="collectionType">The collection shape containing nullable enum elements.</param>
+    /// <param name="nested">Whether only a nested history record contains the collection.</param>
     [Theory]
-    [InlineData("ImmutableArray<__Element__>")]
-    [InlineData("List<__Element__>")]
-    [InlineData("__Element__[]")]
+    [InlineData("ImmutableArray<__Element__>", false)]
+    [InlineData("List<__Element__>", false)]
+    [InlineData("__Element__[]", false)]
+    [InlineData("ImmutableArray<__Element__>", true)]
+    [InlineData("List<__Element__>", true)]
+    [InlineData("__Element__[]", true)]
     public void GeneratedNullableEnumCollectionMappersCompileAndPreserveValues(
-        string collectionType
+        string collectionType,
+        bool nested
     )
     {
         ArgumentNullException.ThrowIfNull(collectionType);
@@ -1382,52 +1387,82 @@ public class ProjectionEndpointsGeneratorTests
                 "__FrameworkCollection__",
                 collectionType.Replace("__Element__", "DayOfWeek?", StringComparison.Ordinal),
                 StringComparison.Ordinal);
-        const string mappingSource = """
-                                     namespace Microsoft.Extensions.DependencyInjection
-                                     {
-                                         public interface IServiceCollection { }
-                                     }
-                                     namespace Mississippi.Common.Abstractions.Mapping
-                                     {
-                                         public interface IMapper<in TFrom, out TTo> { TTo Map(TFrom input); }
-                                         public interface IEnumerableMapper<in TFrom, out TTo>
-                                             : IMapper<System.Collections.Generic.IEnumerable<TFrom>,
-                                                 System.Collections.Generic.IEnumerable<TTo>> { }
-                                         public static class MappingRegistrations
-                                         {
-                                             public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddMapper<TFrom, TTo, TMapper>(
-                                                 this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
-                                                 where TMapper : class, IMapper<TFrom, TTo> => services;
-                                             public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddIEnumerableMapper(
-                                                 this Microsoft.Extensions.DependencyInjection.IServiceCollection services) => services;
-                                         }
-                                     }
-                                     namespace TestAssembly.Verification
-                                     {
-                                         using System;
-                                         using System.Linq;
-                                         using TestApp.Domain.Shared;
-                                         using TestApp.Domain.Projections.Sagas;
-                                         using TestAssembly.Controllers.Projections;
-                                         using TestAssembly.Controllers.Projections.Mappers;
+        if (nested)
+        {
+            projectionSource = projectionSource
+                .Replace("[GenerateProjectionEndpoints]", string.Empty, StringComparison.Ordinal)
+                .Replace("[ProjectionPath(\"saga-status\")]", string.Empty, StringComparison.Ordinal)
+                .Replace("SagaStatusProjection", "RecoveryEntry", StringComparison.Ordinal);
+            projectionSource += """
+                                namespace TestApp.Domain.Projections.Sagas
+                                {
+                                    [GenerateProjectionEndpoints]
+                                    [ProjectionPath("saga-status")]
+                                    public sealed record SagaStatusProjection
+                                    {
+                                        public ImmutableArray<RecoveryEntry> History { get; init; }
+                                    }
+                                }
+                                """;
+        }
 
-                                         public static class NullableEnumCollectionMappingProbe
-                                         {
-                                             public static int?[] Map()
-                                             {
-                                                 SagaStatusProjection source = new()
-                                                 {
-                                                     Values = [null, ResumeSource.Manual, ResumeSource.Reminder],
-                                                     Days = [null, DayOfWeek.Friday, DayOfWeek.Monday],
-                                                 };
-                                                 SagaStatusDto dto = new SagaStatusProjectionMapper().Map(source);
-                                                 System.Collections.Generic.IEnumerable<DayOfWeek?> retainedDays = dto.Days;
-                                                 return dto.Values.Select(value => (int?)value)
-                                                     .Concat(retainedDays.Select(value => (int?)value)).ToArray();
-                                             }
-                                         }
-                                     }
-                                     """;
+        const string mappingTemplate = """
+                                       namespace Microsoft.Extensions.DependencyInjection
+                                       {
+                                           public interface IServiceCollection { }
+                                       }
+                                       namespace Mississippi.Common.Abstractions.Mapping
+                                       {
+                                           public interface IMapper<in TFrom, out TTo> { TTo Map(TFrom input); }
+                                           public interface IEnumerableMapper<in TFrom, out TTo>
+                                               : IMapper<System.Collections.Generic.IEnumerable<TFrom>,
+                                                   System.Collections.Generic.IEnumerable<TTo>> { }
+                                           public static class MappingRegistrations
+                                           {
+                                               public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddMapper<TFrom, TTo, TMapper>(
+                                                   this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+                                                   where TMapper : class, IMapper<TFrom, TTo> => services;
+                                               public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddIEnumerableMapper(
+                                                   this Microsoft.Extensions.DependencyInjection.IServiceCollection services) => services;
+                                           }
+                                       }
+                                       namespace TestAssembly.Verification
+                                       {
+                                           using System;
+                                           using System.Linq;
+                                           using TestApp.Domain.Shared;
+                                           using TestApp.Domain.Projections.Sagas;
+                                           using TestAssembly.Controllers.Projections;
+                                           using TestAssembly.Controllers.Projections.Mappers;
+
+                                           public static class NullableEnumCollectionMappingProbe
+                                           {
+                                               public static int?[] Map()
+                                               {
+                                                   SagaStatusProjection source = new()
+                                                   {
+                                                       Values = [null, ResumeSource.Manual, ResumeSource.Reminder],
+                                                       Days = [null, DayOfWeek.Friday, DayOfWeek.Monday],
+                                                   };
+                                                   SagaStatusDto dto = new SagaStatusProjectionMapper().Map(source);
+                                                   System.Collections.Generic.IEnumerable<DayOfWeek?> retainedDays = dto.Days;
+                                                   return dto.Values.Select(value => (int?)value)
+                                                       .Concat(retainedDays.Select(value => (int?)value)).ToArray();
+                                               }
+                                           }
+                                       }
+                                       """;
+        string mappingSource = nested
+            ? mappingTemplate
+                .Replace(
+                    "SagaStatusProjection source = new()",
+                    "RecoveryEntry source = new()",
+                    StringComparison.Ordinal)
+                .Replace(
+                    "SagaStatusDto dto = new SagaStatusProjectionMapper().Map(source);",
+                    "RecoveryEntryDto dto = new RecoveryEntryDtoMapper().Map(source);",
+                    StringComparison.Ordinal)
+            : mappingTemplate;
         (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
         Assert.Empty(diagnostics);
@@ -1444,8 +1479,7 @@ public class ProjectionEndpointsGeneratorTests
             mappingCompilation.GetDiagnostics(TestContext.Current.CancellationToken)
                 .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
         Assert.Single(
-            runResult.GeneratedTrees.Where(tree =>
-                Path.GetFileName(tree.FilePath) == "ResumeSourceDto.g.cs"));
+            runResult.GeneratedTrees.Where(tree => Path.GetFileName(tree.FilePath) == "ResumeSourceDto.g.cs"));
         using MemoryStream assemblyStream = new();
         Assert.True(
             mappingCompilation.Emit(assemblyStream, cancellationToken: TestContext.Current.CancellationToken).Success);
