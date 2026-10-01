@@ -8,14 +8,14 @@ using Microsoft.CodeAnalysis;
 namespace Mississippi.Inlet.Generators.Core.Analysis;
 
 /// <summary>
-///     Tracks the source symbols represented by generated DTO declarations.
+///     Tracks the source symbols represented by generated DTO and mapper declarations.
 /// </summary>
 public sealed class GeneratedDtoNameRegistry
 {
     private static readonly DiagnosticDescriptor DtoNameCollisionDescriptor = new(
         "INLETDTO001",
-        "Generated DTO name collision",
-        "Generated DTO '{0}' maps to both '{1}' and '{2}'. Rename one source type to produce distinct DTO names.",
+        "Generated DTO or mapper name collision",
+        "Generated DTO or mapper '{0}' maps to both '{1}' and '{2}'. Rename one source type to produce distinct generated names.",
         "Mississippi.Inlet.Projections",
         DiagnosticSeverity.Error,
         true);
@@ -23,11 +23,11 @@ public sealed class GeneratedDtoNameRegistry
     private Dictionary<string, INamedTypeSymbol> GeneratedTypes { get; } = new(StringComparer.Ordinal);
 
     /// <summary>
-    ///     Reserves a DTO name for its source symbol and reports conflicting source types.
+    ///     Reserves a generated declaration name and reports conflicting source types.
     /// </summary>
     /// <param name="context">The source production context.</param>
-    /// <param name="targetNamespace">The namespace of the generated DTO.</param>
-    /// <param name="dtoName">The generated DTO name.</param>
+    /// <param name="targetNamespace">The namespace of the generated declarations.</param>
+    /// <param name="dtoName">The generated DTO or mapper name.</param>
     /// <param name="sourceType">The source type represented by the DTO.</param>
     /// <returns>Whether a new declaration should be generated.</returns>
     public bool TryRegister(
