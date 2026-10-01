@@ -142,14 +142,18 @@ Describe 'Repository prerequisite doctor' {
         @{ NodeVersion = 'v18.20.0' },
         @{ NodeVersion = 'v20.19.0' },
         @{ NodeVersion = 'v22.0.0' },
-        @{ NodeVersion = 'v23.11.0' }
+        @{ NodeVersion = 'v23.11.0' },
+        @{ NodeVersion = 'v24'; ExpectedState = 'unknown' },
+        @{ NodeVersion = 'v24.0'; ExpectedState = 'unknown' },
+        @{ NodeVersion = 'v24.0.0-extra'; ExpectedState = 'unknown' },
+        @{ NodeVersion = 'prefix-v24.0.0'; ExpectedState = 'unknown' }
     ) {
-        param($NodeVersion)
+        param($NodeVersion, $ExpectedState = 'unsupported')
         $probes = @{} + $readyProbes
         $probes['node-version'] = [pscustomobject]@{ Available = $true; Output = $NodeVersion; ExitCode = 0; Error = '' }
         $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Docs -ProbeOverrides $probes
 
-        @($report.Checks | Where-Object Name -EQ 'node').State | Should -Be 'unsupported'
+        @($report.Checks | Where-Object Name -EQ 'node').State | Should -Be $ExpectedState
         $report.RequiredFailures | Should -Contain 'node'
     }
 
