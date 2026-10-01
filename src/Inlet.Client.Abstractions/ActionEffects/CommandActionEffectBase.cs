@@ -216,5 +216,5 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
     protected virtual string GetEndpoint(
         TAction action
     ) =>
-        $"{AggregateRoutePrefix}/{Uri.EscapeDataString(action.EntityId)}/{Route}";
+        $"{AggregateRoutePrefix}/{action.EntityId}/{Route}";
 }
