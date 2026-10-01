@@ -1392,26 +1392,37 @@ public class ProjectionEndpointsGeneratorTests
     }
 
     /// <summary>
-    ///     A projection and an enum that normalize to one DTO name produce a diagnostic without generator failure.
+    ///     A projection and a nested declaration sharing a DTO name produce a diagnostic without generator failure.
     /// </summary>
-    [Fact]
-    public void GeneratedProjectionDtoNameCollisionProducesDiagnostic()
+    /// <param name="useNestedRecord">Whether the conflicting declaration is a nested record.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GeneratedProjectionDtoNameCollisionProducesDiagnostic(
+        bool useNestedRecord
+    )
     {
-        const string projectionSource = """
-                                        using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
+        const string projectionTemplate = """
+                                          using System.Collections.Immutable;
+                                          using Mississippi.Inlet.Generators.Abstractions;
+                                          using Mississippi.Inlet.Abstractions;
 
-                                        namespace TestApp.Domain.Projections.Sagas
-                                        {
-                                            public enum WorkflowState { Starting = 2, Ended = 9 }
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("workflow")]
-                                            public sealed record WorkflowProjection
-                                            {
-                                                public WorkflowState? State { get; init; }
-                                            }
-                                        }
-                                        """;
+                                          namespace TestApp.Domain.Projections.Sagas
+                                          {
+                                              public enum WorkflowState { Starting = 2, Ended = 9 }
+                                              public sealed record Workflow(string Name);
+                                              [GenerateProjectionEndpoints]
+                                              [ProjectionPath("workflow")]
+                                              public sealed record WorkflowProjection
+                                              {
+                                                  __PROPERTY__
+                                              }
+                                          }
+                                          """;
+        string property = useNestedRecord
+            ? "public ImmutableArray<Workflow> History { get; init; }"
+            : "public WorkflowState? State { get; init; }";
+        string projectionSource = projectionTemplate.Replace("__PROPERTY__", property, StringComparison.Ordinal);
         (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
         Diagnostic collision = Assert.Single(diagnostics);
@@ -1423,7 +1434,12 @@ public class ProjectionEndpointsGeneratorTests
             "global::TestApp.Domain.Projections.Sagas.WorkflowProjection",
             message,
             StringComparison.Ordinal);
-        Assert.Contains("global::TestApp.Domain.Projections.Sagas.WorkflowState", message, StringComparison.Ordinal);
+        Assert.Contains(
+            useNestedRecord
+                ? "global::TestApp.Domain.Projections.Sagas.Workflow"
+                : "global::TestApp.Domain.Projections.Sagas.WorkflowState",
+            message,
+            StringComparison.Ordinal);
         Assert.All(runResult.Results, result => Assert.Null(result.Exception));
     }
 
