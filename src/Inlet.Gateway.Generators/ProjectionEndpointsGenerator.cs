@@ -122,7 +122,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                 context,
                 projection.OutputNamespace,
                 projection.Model.DtoTypeName,
-                projection.SourceType) ||
+                projection.SourceType,
+                out bool generateDto) ||
             !generatedNestedTypes.TryRegister(
                 context,
                 projection.OutputNamespace + MappersNamespaceSuffix,
@@ -132,9 +133,12 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             return;
         }
 
-        // Generate DTO
-        string dtoSource = GenerateDto(projection);
-        context.AddSource($"{projection.Model.DtoTypeName}.g.cs", SourceText.From(dtoSource, Encoding.UTF8));
+        // Generate DTO only when it has not already been emitted for this source.
+        if (generateDto)
+        {
+            string dtoSource = GenerateDto(projection);
+            context.AddSource($"{projection.Model.DtoTypeName}.g.cs", SourceText.From(dtoSource, Encoding.UTF8));
+        }
 
         // Generate DTOs + mappers for enum properties on the projection
         foreach (EnumDtoInfo enumInfo in GetEnumDtosForProjection(projection)
@@ -175,7 +179,9 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                     context,
                     projection.OutputNamespace,
                     prop.ElementDtoTypeName!,
-                    elementType) ||
+                    elementType,
+                    out bool generateNestedDto) ||
+                (!generateNestedDto && (elementType.TypeKind == TypeKind.Enum)) ||
                 !generatedNestedTypes.TryRegister(
                     context,
                     projection.OutputNamespace + MappersNamespaceSuffix,
@@ -185,11 +191,15 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                 continue;
             }
 
-            string nestedDtoSource = GenerateNestedTypeDto(
-                elementType,
-                prop.ElementDtoTypeName!,
-                projection.OutputNamespace);
-            context.AddSource($"{prop.ElementDtoTypeName}.g.cs", SourceText.From(nestedDtoSource, Encoding.UTF8));
+            if (generateNestedDto)
+            {
+                string nestedDtoSource = GenerateNestedTypeDto(
+                    elementType,
+                    prop.ElementDtoTypeName!,
+                    projection.OutputNamespace);
+                context.AddSource($"{prop.ElementDtoTypeName}.g.cs", SourceText.From(nestedDtoSource, Encoding.UTF8));
+            }
+
             if (elementType.TypeKind == TypeKind.Enum)
             {
                 string enumMapperSource = GenerateEnumMapper(

@@ -35,8 +35,27 @@ public sealed class GeneratedDtoNameRegistry
         string targetNamespace,
         string dtoName,
         INamedTypeSymbol sourceType
+    ) =>
+        TryRegister(context, targetNamespace, dtoName, sourceType, out bool shouldGenerate) && shouldGenerate;
+
+    /// <summary>
+    ///     Reserves or reuses a declaration name and reports conflicting source types.
+    /// </summary>
+    /// <param name="context">The source production context.</param>
+    /// <param name="targetNamespace">The namespace of the generated declarations.</param>
+    /// <param name="dtoName">The generated DTO or mapper name.</param>
+    /// <param name="sourceType">The source type represented by the declaration.</param>
+    /// <param name="shouldGenerate">Whether this is a newly reserved declaration.</param>
+    /// <returns>Whether the declaration name represents the same source type without a collision.</returns>
+    public bool TryRegister(
+        SourceProductionContext context,
+        string targetNamespace,
+        string dtoName,
+        INamedTypeSymbol sourceType,
+        out bool shouldGenerate
     )
     {
+        shouldGenerate = false;
         if (targetNamespace is null)
         {
             throw new ArgumentNullException(nameof(targetNamespace));
@@ -56,20 +75,22 @@ public sealed class GeneratedDtoNameRegistry
         if (!GeneratedTypes.TryGetValue(key, out INamedTypeSymbol? existingType))
         {
             GeneratedTypes.Add(key, sourceType);
+            shouldGenerate = true;
             return true;
         }
 
-        if (!SymbolEqualityComparer.Default.Equals(existingType, sourceType))
+        if (SymbolEqualityComparer.Default.Equals(existingType, sourceType))
         {
-            context.ReportDiagnostic(
-                Diagnostic.Create(
-                    DtoNameCollisionDescriptor,
-                    sourceType.Locations.FirstOrDefault(location => location.IsInSource) ?? Location.None,
-                    key,
-                    existingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                    sourceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+            return true;
         }
 
+        context.ReportDiagnostic(
+            Diagnostic.Create(
+                DtoNameCollisionDescriptor,
+                sourceType.Locations.FirstOrDefault(location => location.IsInSource) ?? Location.None,
+                key,
+                existingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                sourceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
         return false;
     }
 }
