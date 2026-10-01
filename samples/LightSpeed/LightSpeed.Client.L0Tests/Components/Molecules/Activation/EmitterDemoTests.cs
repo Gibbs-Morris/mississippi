@@ -42,6 +42,35 @@ public sealed class EmitterDemoTests : BunitContext
         Assert.Equal(2, cut.Instance.ActivationCount);
     }
 
+    /// <summary>Each demo retains unique title and description relationships across parameter updates.</summary>
+    [Fact]
+    public void DemoInstancesUseDistinctStableAriaTargets()
+    {
+        using IRenderedComponent<EmitterDemo> first = Render<EmitterDemo>();
+        using IRenderedComponent<EmitterDemo> second = Render<EmitterDemo>();
+        string? firstTitleId = first.Find("h2").Id;
+        string? secondTitleId = second.Find("h2").Id;
+        string? firstDescriptionId = first.Find(".emitter-preview p.note").Id;
+        string? secondDescriptionId = second.Find(".emitter-preview p.note").Id;
+        Assert.False(string.IsNullOrWhiteSpace(firstTitleId));
+        Assert.False(string.IsNullOrWhiteSpace(firstDescriptionId));
+        Assert.False(string.IsNullOrWhiteSpace(secondTitleId));
+        Assert.False(string.IsNullOrWhiteSpace(secondDescriptionId));
+        Assert.NotEqual(firstTitleId, secondTitleId);
+        Assert.NotEqual(firstDescriptionId, secondDescriptionId);
+        Assert.Equal(firstTitleId, first.Find("section").GetAttribute("aria-labelledby"));
+        Assert.Equal(secondTitleId, second.Find("section").GetAttribute("aria-labelledby"));
+        Assert.Equal(firstDescriptionId, first.Find("button.rf-emitter").GetAttribute("aria-describedby"));
+        Assert.Equal(secondDescriptionId, second.Find("button.rf-emitter").GetAttribute("aria-describedby"));
+        first.Render(p => p.Add(c => c.ActivationCount, 3).Add(c => c.IsDisabled, true));
+        Assert.Equal(firstTitleId, first.Find("h2").Id);
+        Assert.Equal(firstDescriptionId, first.Find(".emitter-preview p.note").Id);
+        Assert.Equal(firstTitleId, first.Find("section").GetAttribute("aria-labelledby"));
+        Assert.Equal(firstDescriptionId, first.Find("button.rf-emitter").GetAttribute("aria-describedby"));
+        Assert.Equal(secondTitleId, second.Find("h2").Id);
+        Assert.Equal(secondDescriptionId, second.Find(".emitter-preview p.note").Id);
+    }
+
     /// <summary>The molecule renders a visible label, count and controlled checkbox.</summary>
     [Fact]
     public void DemoRendersLabeledEmitterAndCount()

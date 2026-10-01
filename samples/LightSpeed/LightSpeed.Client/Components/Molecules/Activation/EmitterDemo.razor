@@ -1,12 +1,12 @@
 @using Mississippi.Refraction.Client.Components.Atoms.Activation
-<section class="emitter-demo" aria-labelledby="emitter-demo-title">
+<section class="emitter-demo" aria-labelledby="@TitleId">
     <p class="label">ATOM / EMITTER</p>
-    <h2 id="emitter-demo-title">Send an intent.</h2>
+    <h2 id="@TitleId">Send an intent.</h2>
     <div class="emitter-preview">
         <Emitter Label="Emit signal"
                  IsDisabled="@IsDisabled"
                  OnActivate="@Activated"
-                 aria-describedby="emitter-description"/>
+                 aria-describedby="@DescriptionId"/>
         <div>
             <p class="activation-count"
                data-testid="emitter-activation-count"
@@ -14,7 +14,7 @@
                aria-atomic="true">
                 @ActivationSummary
             </p>
-            <p id="emitter-description" class="note">The page records this presentational activation in Reservoir.</p>
+            <p id="@DescriptionId" class="note">The page records this presentational activation in Reservoir.</p>
         </div>
     </div>
     <label class="toggle">

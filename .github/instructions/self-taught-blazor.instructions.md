@@ -14,6 +14,8 @@ Governing thought: Preserve caller attribute inputs while protecting component-o
 
 - Agents **MUST** treat Boolean values as absent when composing string-valued ID references or CSS classes from `AdditionalAttributes`. Why: Conditional attributes became nonexistent `False`/`True` IDs in PR #814 and bogus CSS tokens in PR #815; preserve Razor conditional-attribute semantics instead.
 
+- Agents **MUST** generate unique per-instance ARIA target IDs and retain them across rerenders. Why: Two `EmitterDemo` instances in PR #817 shared fixed title/description IDs, so relationships could resolve to another instance.
+
 ## References
 
 - Self-improvement governance: [Self-Improvement Learning System](self-improvement.instructions.md).

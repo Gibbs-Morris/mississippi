@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
@@ -27,6 +28,10 @@ public sealed partial class EmitterDemo : ComponentBase
     public bool IsDisabled { get; set; }
 
     private string ActivationSummary => $"{ActivationCount} activation{(ActivationCount == 1 ? string.Empty : "s")}";
+
+    private string DescriptionId { get; } = $"emitter-demo-description-{Guid.NewGuid():N}";
+
+    private string TitleId { get; } = $"emitter-demo-title-{Guid.NewGuid():N}";
 
     private Task HandleDisabledChangedAsync(
         ChangeEventArgs e
