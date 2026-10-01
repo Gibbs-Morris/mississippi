@@ -118,6 +118,15 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         GeneratedDtoNameRegistry generatedNestedTypes
     )
     {
+        if (!generatedNestedTypes.TryRegister(
+                context,
+                projection.OutputNamespace,
+                projection.Model.DtoTypeName,
+                projection.SourceType))
+        {
+            return;
+        }
+
         // Generate DTO
         string dtoSource = GenerateDto(projection);
         context.AddSource($"{projection.Model.DtoTypeName}.g.cs", SourceText.From(dtoSource, Encoding.UTF8));
@@ -910,7 +919,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             generateAllowAnonymousAttribute,
             false);
         string outputNamespace = DeriveOutputNamespace(targetRootNamespace);
-        return new(model, outputNamespace, authorization, authorization.Diagnostics);
+        return new(model, outputNamespace, authorization, authorization.Diagnostics, typeSymbol);
     }
 
     /// <summary>
@@ -997,17 +1006,20 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         /// <param name="outputNamespace">The output namespace for generated code.</param>
         /// <param name="authorization">The resolved authorization metadata.</param>
         /// <param name="diagnostics">Diagnostics emitted during projection analysis.</param>
+        /// <param name="sourceType">The projection source symbol.</param>
         public ProjectionInfo(
             ProjectionModel model,
             string outputNamespace,
             GeneratedApiAuthorizationModel authorization,
-            ImmutableArray<Diagnostic> diagnostics
+            ImmutableArray<Diagnostic> diagnostics,
+            INamedTypeSymbol sourceType
         )
         {
             Model = model;
             OutputNamespace = outputNamespace;
             Authorization = authorization;
             Diagnostics = diagnostics;
+            SourceType = sourceType;
         }
 
         public GeneratedApiAuthorizationModel Authorization { get; }
@@ -1023,5 +1035,10 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         ///     Gets the output namespace.
         /// </summary>
         public string OutputNamespace { get; }
+
+        /// <summary>
+        ///     Gets the projection source symbol.
+        /// </summary>
+        public INamedTypeSymbol SourceType { get; }
     }
 }
