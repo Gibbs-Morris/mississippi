@@ -3,6 +3,25 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+function Resolve-PesterCoverageSourcePath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$SourcePath,
+        [Parameter(Mandatory)][string]$RepositoryRoot
+    )
+
+    $fullPath = [IO.Path]::GetFullPath($SourcePath, $RepositoryRoot)
+    $relativePath = [IO.Path]::GetRelativePath($RepositoryRoot, $fullPath)
+    if ([IO.Path]::IsPathRooted($relativePath) -or $relativePath -eq '..' -or
+        $relativePath.StartsWith('..' + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal)) {
+        throw "Coverage source is outside the repository: $SourcePath"
+    }
+    if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
+        throw "Coverage source does not exist: $SourcePath"
+    }
+    return $relativePath.Replace('\', '/')
+}
+
 function ConvertTo-SonarCoverageReport {
     [CmdletBinding()]
     param(
@@ -19,19 +38,11 @@ function ConvertTo-SonarCoverageReport {
     $root = [IO.Path]::GetFullPath($RepositoryRoot)
     foreach ($sourceFile in ($pesterReport.SelectNodes('/report/package/sourcefile') | Sort-Object name)) {
         $sourcePath = $sourceFile.GetAttribute('name')
-        $fullPath = [IO.Path]::GetFullPath($sourcePath, $root)
-        $relativePath = [IO.Path]::GetRelativePath($root, $fullPath)
-        if ([IO.Path]::IsPathRooted($relativePath) -or $relativePath -eq '..' -or
-            $relativePath.StartsWith('..' + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal)) {
-            throw "Coverage source is outside the repository: $sourcePath"
-        }
-        if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
-            throw "Coverage source does not exist: $sourcePath"
-        }
+        $relativePath = Resolve-PesterCoverageSourcePath -SourcePath $sourcePath -RepositoryRoot $root
         $lineGroups = @($sourceFile.SelectNodes('line') | Group-Object nr | Sort-Object { [int]$_.Name })
         if ($lineGroups.Count -eq 0) { continue }
         $file = $sonarReport.CreateElement('file')
-        $file.SetAttribute('path', $relativePath.Replace('\', '/'))
+        $file.SetAttribute('path', $relativePath)
         foreach ($lineGroup in $lineGroups) {
             $lineNumber = [int]$lineGroup.Name
             if ($lineNumber -le 0) { throw 'Coverage line numbers must be positive.' }
