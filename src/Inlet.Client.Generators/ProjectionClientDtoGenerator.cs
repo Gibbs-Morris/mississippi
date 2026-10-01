@@ -285,10 +285,10 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         IEnumerable<INamedTypeSymbol> enumTypes = properties.Select(p => p.Type)
             .Select(UnwrapNullable)
             .OfType<INamedTypeSymbol>()
-            .Where(t => t.TypeKind == TypeKind.Enum);
+            .Where(t => (t.TypeKind == TypeKind.Enum) && !TypeAnalyzer.IsFrameworkType(t));
         foreach (INamedTypeSymbol enumType in enumTypes)
         {
-            string enumDtoName = enumType.Name + "Dto";
+            string enumDtoName = TypeAnalyzer.GetDtoTypeName(enumType);
             GenerateNestedEnumDto(context, enumType, enumDtoName, targetNamespace, generatedEnumTypes);
         }
     }
@@ -304,7 +304,8 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         HashSet<string> seen = new(StringComparer.Ordinal);
         foreach (PropertyModel prop in projection.Model.Properties)
         {
-            if (UnwrapNullable(prop.SourceTypeSymbol) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType)
+            if (UnwrapNullable(prop.SourceTypeSymbol) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
+                !TypeAnalyzer.IsFrameworkType(enumType))
             {
                 string key = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 if (seen.Add(key))
