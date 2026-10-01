@@ -29,7 +29,8 @@ Governing thought: Agents follow repository instructions and iterate from correc
 ### Low-Risk PR Merge Authorization
 
 - Agents MAY merge a PR they are working on without further user confirmation when the entire PR is low risk and all merge checks below are satisfied. Why: This is standing merge authorization for qualifying PRs.
-- Agents MUST assess the entire final diff against the PR's actual base and record the low-risk rationale in its description. Why: A small diff, a label, or passing tests alone does not establish low risk.
+- Agents MUST assess the entire final diff against the PR's actual base when classifying its risk. Why: A small diff, a label, or passing tests alone does not establish low risk.
+- Agents MUST record the low-risk rationale in the PR description before using this standing authorization. Why: Reviewers need a visible basis for the merge decision.
 - Agents MUST limit low-risk classification to documentation changes, additional tests for existing behavior without production changes or weakened existing coverage, and small refactors that preserve behavior and public contracts while leaving existing tests unchanged. Why: These changes have a limited impact that can be verified.
 - Agents MUST NOT classify a PR as low risk if it includes core logic or behavior changes, public contract changes, storage or migration changes, security or authorization changes, dependency or tool upgrades, CI/CD or build/test automation changes, deployment changes, or changes to agent permissions or merge policy. Why: These changes need separate merge authorization even when CI/CD passes.
 - Agents MUST verify that all applicable CI/CD jobs have completed successfully for the current PR head and relevant base before merging. Why: Pending, failed, canceled, missing, stale, or unexpectedly skipped checks are not a pass.
