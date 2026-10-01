@@ -1341,6 +1341,150 @@ public class ProjectionEndpointsGeneratorTests
     }
 
     /// <summary>
+    ///     A projection reused as a nested DTO retains its own artifacts in both discovery orders.
+    /// </summary>
+    /// <param name="nestedFirst">Whether the containing projection is discovered first.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GeneratedNestedProjectionRetainsOwnArtifacts(
+        bool nestedFirst
+    )
+    {
+        const string containingProjection = """
+                                            using System.Collections.Immutable;
+                                            using Mississippi.Inlet.Generators.Abstractions;
+                                            using Mississippi.Inlet.Abstractions;
+
+                                            namespace TestApp.Domain.Projections
+                                            {
+                                                [GenerateProjectionEndpoints]
+                                                [ProjectionPath("ledger")]
+                                                public sealed record LedgerProjection
+                                                {
+                                                    public ImmutableArray<BalanceProjection> Balances { get; init; }
+                                                }
+                                            }
+                                            """;
+        const string nestedProjection = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("balance")]
+                                            public sealed record BalanceProjection
+                                            {
+                                                public int Value { get; init; }
+                                            }
+                                        }
+                                        """;
+        const string hostStubs = """
+                                 namespace Microsoft.AspNetCore.Mvc
+                                 {
+                                     public sealed class RouteAttribute : System.Attribute
+                                     {
+                                         public RouteAttribute(string route) { }
+                                     }
+                                 }
+                                 namespace Microsoft.Extensions.Logging
+                                 {
+                                     public interface ILogger { }
+                                     public interface ILogger<out T> : ILogger { }
+                                 }
+                                 namespace Microsoft.Extensions.DependencyInjection
+                                 {
+                                     public interface IServiceCollection { }
+                                 }
+                                 namespace Mississippi.Common.Abstractions.Mapping
+                                 {
+                                     public interface IMapper<in TFrom, out TTo> { TTo Map(TFrom source); }
+                                     public interface IEnumerableMapper<in TFrom, out TTo>
+                                         : IMapper<System.Collections.Generic.IEnumerable<TFrom>,
+                                             System.Collections.Generic.IEnumerable<TTo>> { }
+                                     public static class MappingRegistrations
+                                     {
+                                         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddMapper<TFrom, TTo, TMapper>(
+                                             this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+                                             where TMapper : IMapper<TFrom, TTo> => services;
+                                         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddIEnumerableMapper(
+                                             this Microsoft.Extensions.DependencyInjection.IServiceCollection services) => services;
+                                     }
+                                 }
+                                 namespace Mississippi.DomainModeling.Abstractions
+                                 {
+                                     public interface IUxProjectionGrainFactory { }
+                                 }
+                                 namespace Mississippi.DomainModeling.Gateway
+                                 {
+                                     public abstract class UxProjectionControllerBase<TProjection, TDto>
+                                     {
+                                         protected UxProjectionControllerBase(
+                                             Mississippi.DomainModeling.Abstractions.IUxProjectionGrainFactory factory,
+                                             Mississippi.Common.Abstractions.Mapping.IMapper<TProjection, TDto> mapper,
+                                             Microsoft.Extensions.Logging.ILogger logger) { }
+                                     }
+                                 }
+                                 namespace TestAssembly.Verification
+                                 {
+                                     public static class SharedProjectionProbe
+                                     {
+                                         public static int Map()
+                                             => new TestAssembly.Controllers.Projections.Mappers.BalanceProjectionMapper()
+                                                 .Map(new TestApp.Domain.Projections.BalanceProjection { Value = 42 }).Value;
+                                     }
+                                 }
+                                 """;
+        (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            nestedFirst
+                ? RunGenerator(AttributeStubs, containingProjection, nestedProjection)
+                : RunGenerator(AttributeStubs, nestedProjection, containingProjection);
+        Assert.Empty(diagnostics);
+        Assert.Single(
+            runResult.GeneratedTrees.Where(tree => tree.FilePath.EndsWith(
+                "BalanceDto.g.cs",
+                StringComparison.Ordinal)));
+        foreach (string artifact in new[]
+                 {
+                     "BalanceProjectionMapper.g.cs",
+                     "BalanceProjectionMapperRegistrations.g.cs",
+                     "BalanceController.g.cs",
+                     "BalanceDtoMapper.g.cs",
+                 })
+        {
+            Assert.Contains(
+                runResult.GeneratedTrees,
+                tree => tree.FilePath.EndsWith(artifact, StringComparison.Ordinal));
+        }
+
+        Compilation hostCompilation = outputCompilation
+            .AddSyntaxTrees(
+                CSharpSyntaxTree.ParseText(hostStubs, cancellationToken: TestContext.Current.CancellationToken))
+            .AddReferences(
+                MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(JsonRequiredAttribute).Assembly.Location));
+        Assert.Empty(
+            hostCompilation.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        using MemoryStream assemblyStream = new();
+        Assert.True(
+            hostCompilation.Emit(assemblyStream, cancellationToken: TestContext.Current.CancellationToken).Success);
+        assemblyStream.Position = 0;
+        AssemblyLoadContext context = new(nameof(GeneratedNestedProjectionRetainsOwnArtifacts), true);
+        try
+        {
+            Assembly assembly = context.LoadFromStream(assemblyStream);
+            MethodInfo map = assembly.GetType("TestAssembly.Verification.SharedProjectionProbe")!.GetMethod("Map")!;
+            Assert.Equal(42, Assert.IsType<int>(map.Invoke(null, null)));
+        }
+        finally
+        {
+            context.Unload();
+        }
+    }
+
+    /// <summary>
     ///     Compiled nullable enum collection mappers retain missing and present values and framework enum identities.
     /// </summary>
     /// <param name="collectionType">The collection shape containing nullable enum elements.</param>
