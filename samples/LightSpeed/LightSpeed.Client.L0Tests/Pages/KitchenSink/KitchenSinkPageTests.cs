@@ -13,6 +13,25 @@ namespace MississippiSamples.LightSpeed.Client.L0Tests.Pages.KitchenSink;
 /// <summary>Verifies the page connects rendered callbacks to the real Reservoir store.</summary>
 public sealed class KitchenSinkPageTests : BunitContext
 {
+    /// <summary>Emitter activation and disabled intent use the registered page store and survive reset.</summary>
+    [Fact]
+    public void EmitterActionsUpdateSelectedStateAndSurviveReset()
+    {
+        Services.AddReservoir().AddShowcaseFeature();
+        using IRenderedComponent<KitchenSinkPage> cut = Render<KitchenSinkPage>();
+        cut.Find("button.rf-emitter").Click();
+        Assert.Equal("1", cut.Find("[data-testid=state-emitter-count]").TextContent);
+        Assert.Equal(nameof(ActivateEmitterAction), cut.Find("[data-testid=last-action]").TextContent);
+        cut.Find("input[name=emitter-disabled]").Change(true);
+        Assert.True(cut.Find("button.rf-emitter").HasAttribute("disabled"));
+        Assert.Equal("true", cut.Find("[data-testid=state-emitter-disabled]").TextContent);
+        Assert.Equal(nameof(ChangeEmitterDisabledAction), cut.Find("[data-testid=last-action]").TextContent);
+        cut.Find("form button[type=button]").Click();
+        Assert.True(cut.Find("button.rf-emitter").HasAttribute("disabled"));
+        Assert.Equal("1", cut.Find("[data-testid=state-emitter-count]").TextContent);
+        Assert.Equal(nameof(ResetProfileAction), cut.Find("[data-testid=last-action]").TextContent);
+    }
+
     /// <summary>The rendered form validates and resets through selected store state.</summary>
     [Fact]
     public void FormActionsUpdateSelectedState()
