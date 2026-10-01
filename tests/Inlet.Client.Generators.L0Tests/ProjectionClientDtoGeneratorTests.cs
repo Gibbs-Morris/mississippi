@@ -1023,24 +1023,38 @@ public class ProjectionClientDtoGeneratorTests
     /// <summary>
     ///     A projection and an enum that normalize to one DTO name produce a diagnostic without generator failure.
     /// </summary>
-    [Fact]
-    public void GeneratedProjectionDtoNameCollisionProducesDiagnostic()
+    /// <param name="propertyType">The scalar or collection enum property shape.</param>
+    [Theory]
+    [InlineData("WorkflowProjectionState?")]
+    [InlineData("ImmutableArray<WorkflowProjectionState>")]
+    [InlineData("List<WorkflowProjectionState>")]
+    [InlineData("WorkflowProjectionState[]")]
+    public void GeneratedProjectionDtoNameCollisionProducesDiagnostic(
+        string propertyType
+    )
     {
-        const string projectionSource = """
-                                        using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
+        ArgumentNullException.ThrowIfNull(propertyType);
+        const string projectionTemplate = """
+                                          using System.Collections.Generic;
+                                          using System.Collections.Immutable;
+                                          using Mississippi.Inlet.Generators.Abstractions;
+                                          using Mississippi.Inlet.Abstractions;
 
-                                        namespace TestApp.Domain.Projections.Sagas
-                                        {
-                                            public enum WorkflowProjectionState { Starting = 2, Ended = 9 }
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("workflow")]
-                                            public sealed record WorkflowProjection
-                                            {
-                                                public WorkflowProjectionState? State { get; init; }
-                                            }
-                                        }
-                                        """;
+                                          namespace TestApp.Domain.Projections.Sagas
+                                          {
+                                              public enum WorkflowProjectionState { Starting = 2, Ended = 9 }
+                                              [GenerateProjectionEndpoints]
+                                              [ProjectionPath("workflow")]
+                                              public sealed record WorkflowProjection
+                                              {
+                                                  public __PropertyType__ State { get; init; }
+                                              }
+                                          }
+                                          """;
+        string projectionSource = projectionTemplate.Replace(
+            "__PropertyType__",
+            propertyType,
+            StringComparison.Ordinal);
         (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
         Diagnostic collision = Assert.Single(diagnostics);

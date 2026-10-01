@@ -152,7 +152,8 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
 
         // Generate DTOs for nested custom types (e.g., collection element types)
         List<PropertyModel> nestedTypeProperties = projection.Model.Properties.Where(prop =>
-                prop.ElementTypeSymbol is INamedTypeSymbol && prop.ElementDtoTypeName is not null)
+                prop.ElementTypeSymbol is INamedTypeSymbol { TypeKind: not TypeKind.Enum } &&
+                prop.ElementDtoTypeName is not null)
             .ToList();
         foreach (PropertyModel prop in nestedTypeProperties)
         {
