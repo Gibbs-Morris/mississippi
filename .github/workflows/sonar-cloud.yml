@@ -97,6 +97,25 @@ jobs:
           dotnet tool restore
           true
 
+      - name: Collect PowerShell coverage
+        shell: pwsh
+        run: |
+          Install-Module -Name Pester -Scope CurrentUser -Force -RequiredVersion 5.7.1 -ErrorAction Stop
+          Import-Module Pester -RequiredVersion 5.7.1
+          $configuration = New-PesterConfiguration
+          $configuration.Run.Path = @('./eng/tests/agent-scripts/RunDocs.Tests.ps1', './eng/tests/agent-scripts/AgentDoctor.Tests.ps1')
+          $configuration.Run.PassThru = $true
+          $configuration.CodeCoverage.Enabled = $true
+          $configuration.CodeCoverage.Path = @('./run-docs.ps1', './eng/src/agent-scripts/AgentDoctor.psm1', './eng/src/agent-scripts/PesterCoverage.psm1')
+          $configuration.CodeCoverage.OutputPath = Join-Path $PWD.Path 'pester-coverage.xml'
+          $configuration.CodeCoverage.OutputFormat = 'JaCoCo'
+          $result = Invoke-Pester -Configuration $configuration
+          if ($null -eq $result -or $result.Result -ne 'Passed' -or $result.TotalCount -lt 1) {
+            throw 'PowerShell coverage tests failed or produced no tests.'
+          }
+          Import-Module ./eng/src/agent-scripts/PesterCoverage.psm1 -Force
+          ConvertTo-SonarCoverageReport -InputPath ./pester-coverage.xml -OutputPath ./powershell-coverage.xml -RepositoryRoot $PWD.Path
+
       - name: Sonar restore-build-report
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -113,7 +132,7 @@ jobs:
             set --
           fi
 
-          dotnet dotnet-sonarscanner begin /k:"${{ env.SONAR_PROJECT_KEY }}" /o:"${{ env.SONAR_ORGANIZATION }}" /d:sonar.token="$SONAR_TOKEN" /d:sonar.host.url="${{ env.SONAR_HOST_URL }}" /v:${{ steps.gitversion.outputs.SemVer }} /d:"sonar.cs.vscoveragexml.reportsPaths=coverage.xml" /d:sonar.exclusions="**/*.lock.json, **/*.DotSettings,**/packages.lock.json,docs/**" /d:sonar.cpd.exclusions="**/Inlet.Client.Generators/**,**/Inlet.Gateway.Generators/**,**/Inlet.Runtime.Generators/**,**/setup.ps1,**/Setup.Tests.ps1,**/AgentDoctor.Tests.ps1" /d:sonar.issue.ignore.multicriteria=s107 /d:sonar.issue.ignore.multicriteria.s107.ruleKey=csharpsquid:S107 /d:sonar.issue.ignore.multicriteria.s107.resourceKey='**/*.cs' "$@"
+          dotnet dotnet-sonarscanner begin /k:"${{ env.SONAR_PROJECT_KEY }}" /o:"${{ env.SONAR_ORGANIZATION }}" /d:sonar.token="$SONAR_TOKEN" /d:sonar.host.url="${{ env.SONAR_HOST_URL }}" /v:${{ steps.gitversion.outputs.SemVer }} /d:"sonar.cs.vscoveragexml.reportsPaths=coverage.xml" /d:"sonar.coverageReportPaths=powershell-coverage.xml" /d:"sonar.test.inclusions=tests/**,eng/tests/**,samples/**/*Tests/**" /d:sonar.exclusions="**/*.lock.json, **/*.DotSettings,**/packages.lock.json,docs/**" /d:sonar.cpd.exclusions="**/Inlet.Client.Generators/**,**/Inlet.Gateway.Generators/**,**/Inlet.Runtime.Generators/**,**/setup.ps1,**/Setup.Tests.ps1,**/AgentDoctor.Tests.ps1" /d:sonar.issue.ignore.multicriteria=s107 /d:sonar.issue.ignore.multicriteria.s107.ruleKey=csharpsquid:S107 /d:sonar.issue.ignore.multicriteria.s107.resourceKey='**/*.cs' "$@"
 
           dotnet restore ${{ env.SOLUTION_PATH }}
           dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
