@@ -115,7 +115,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     private static void GenerateCode(
         SourceProductionContext context,
         ProjectionInfo projection,
-        HashSet<string> generatedNestedTypes
+        GeneratedDtoNameRegistry generatedNestedTypes
     )
     {
         // Generate DTO
@@ -124,9 +124,12 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
 
         // Generate DTOs + mappers for enum properties on the projection
         foreach (EnumDtoInfo enumInfo in GetEnumDtosForProjection(projection)
-                     .Where(enumInfo => !generatedNestedTypes.Contains(enumInfo.DtoName)))
+                     .Where(enumInfo => generatedNestedTypes.TryRegister(
+                         context,
+                         projection.OutputNamespace,
+                         enumInfo.DtoName,
+                         enumInfo.EnumType)))
         {
-            generatedNestedTypes.Add(enumInfo.DtoName);
             string enumDtoSource = GenerateNestedEnumDto(
                 enumInfo.EnumType,
                 enumInfo.DtoName,
@@ -142,18 +145,21 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         }
 
         // Generate DTOs for nested custom types (e.g., collection element types)
-        // Use GroupBy to avoid duplicate generation for the same DTO type name
-        List<PropertyModel> nestedTypeProperties = projection.Model.Properties
-            .Where(prop => prop.ElementTypeSymbol is INamedTypeSymbol &&
-                           prop.ElementDtoTypeName is string elementDtoTypeName &&
-                           !generatedNestedTypes.Contains(elementDtoTypeName))
-            .GroupBy(prop => prop.ElementDtoTypeName)
-            .Select(g => g.First())
+        List<PropertyModel> nestedTypeProperties = projection.Model.Properties.Where(prop =>
+                prop.ElementTypeSymbol is INamedTypeSymbol && prop.ElementDtoTypeName is not null)
             .ToList();
         foreach (PropertyModel prop in nestedTypeProperties)
         {
             INamedTypeSymbol elementType = (INamedTypeSymbol)prop.ElementTypeSymbol!;
-            generatedNestedTypes.Add(prop.ElementDtoTypeName!);
+            if (!generatedNestedTypes.TryRegister(
+                    context,
+                    projection.OutputNamespace,
+                    prop.ElementDtoTypeName!,
+                    elementType))
+            {
+                continue;
+            }
+
             string nestedDtoSource = GenerateNestedTypeDto(
                 elementType,
                 prop.ElementDtoTypeName!,
@@ -295,7 +301,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         SourceProductionContext context,
         INamedTypeSymbol sourceType,
         string outputNamespace,
-        HashSet<string> generatedNestedTypes
+        GeneratedDtoNameRegistry generatedNestedTypes
     )
     {
         IEnumerable<INamedTypeSymbol> enumTypes = sourceType.GetMembers()
@@ -308,7 +314,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         foreach (INamedTypeSymbol enumType in enumTypes)
         {
             string enumDtoName = TypeAnalyzer.GetDtoTypeName(enumType);
-            if (generatedNestedTypes.Add(enumDtoName))
+            if (generatedNestedTypes.TryRegister(context, outputNamespace, enumDtoName, enumType))
             {
                 string enumDtoSource = GenerateNestedEnumDto(enumType, enumDtoName, outputNamespace);
                 context.AddSource($"{enumDtoName}.g.cs", SourceText.From(enumDtoSource, Encoding.UTF8));
@@ -943,7 +949,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             projectionsProvider,
             static (spc, projections) =>
             {
-                HashSet<string> generatedNestedTypes = new();
+                GeneratedDtoNameRegistry generatedNestedTypes = new();
                 foreach (ProjectionInfo projection in projections)
                 {
                     foreach (Diagnostic diagnostic in projection.Diagnostics)

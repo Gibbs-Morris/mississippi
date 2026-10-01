@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -576,6 +577,64 @@ public class ProjectionEndpointsGeneratorTests
         Assert.Contains("Balance", dtoSource, StringComparison.Ordinal);
         Assert.Contains("Name", dtoSource, StringComparison.Ordinal);
         Assert.Contains("Count", dtoSource, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Different source symbols that normalize to one DTO name produce an actionable error.
+    /// </summary>
+    /// <param name="separateProjections">Whether the conflicting properties belong to separate projections.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GeneratedDtoNameCollisionProducesDiagnostic(
+        bool separateProjections
+    )
+    {
+        const string projectionTemplate = """
+                                          using System.Collections.Immutable;
+                                          using Mississippi.Inlet.Generators.Abstractions;
+                                          using Mississippi.Inlet.Abstractions;
+
+                                          namespace TestApp.Domain.Projections.Sagas
+                                          {
+                                              public enum WorkflowState { Starting = 2, Ended = 9 }
+                                              public sealed record Workflow(string Name);
+                                              [GenerateProjectionEndpoints]
+                                              [ProjectionPath("workflow")]
+                                              public sealed record StatusProjection
+                                              {
+                                                  public WorkflowState? State { get; init; }
+                                                  __HISTORY__
+                                              }
+                                              __SECOND_PROJECTION__
+                                          }
+                                          """;
+        const string secondProjection = """
+                                        [GenerateProjectionEndpoints]
+                                        [ProjectionPath("history")]
+                                        public sealed record HistoryProjection
+                                        {
+                                            public ImmutableArray<Workflow> History { get; init; }
+                                        }
+                                        """;
+        const string historyProperty = "public ImmutableArray<Workflow> History { get; init; }";
+        string projectionSource = projectionTemplate
+            .Replace("__HISTORY__", separateProjections ? string.Empty : historyProperty, StringComparison.Ordinal)
+            .Replace(
+                "__SECOND_PROJECTION__",
+                separateProjections ? secondProjection : string.Empty,
+                StringComparison.Ordinal);
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Diagnostic collision = Assert.Single(diagnostics);
+        Assert.Equal("INLETDTO001", collision.Id);
+        Assert.Equal(DiagnosticSeverity.Error, collision.Severity);
+        string message = collision.GetMessage(CultureInfo.InvariantCulture);
+        Assert.Contains("TestAssembly.Controllers.Projections.WorkflowDto", message, StringComparison.Ordinal);
+        Assert.Contains("global::TestApp.Domain.Projections.Sagas.WorkflowState", message, StringComparison.Ordinal);
+        Assert.Contains("global::TestApp.Domain.Projections.Sagas.Workflow", message, StringComparison.Ordinal);
+        Assert.True(collision.Location.IsInSource);
+        Assert.All(runResult.Results, result => Assert.Null(result.Exception));
     }
 
     /// <summary>
