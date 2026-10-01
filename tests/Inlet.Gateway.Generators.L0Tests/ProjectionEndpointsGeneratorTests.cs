@@ -1221,7 +1221,10 @@ public class ProjectionEndpointsGeneratorTests
         Assert.Equal("INLETDTO001", collision.Id);
         Assert.Equal(DiagnosticSeverity.Error, collision.Severity);
         string message = collision.GetMessage(CultureInfo.InvariantCulture);
-        Assert.Contains("TestAssembly.Controllers.Projections.WorkflowDtoMapper", message, StringComparison.Ordinal);
+        Assert.Contains(
+            "TestAssembly.Controllers.Projections.Mappers.WorkflowDtoMapper",
+            message,
+            StringComparison.Ordinal);
         Assert.Contains("global::TestApp.Domain.Projections.Sagas.WorkflowDto", message, StringComparison.Ordinal);
         Assert.Contains("global::TestApp.Domain.Projections.Sagas.Workflow", message, StringComparison.Ordinal);
         Assert.All(runResult.Results, result => Assert.Null(result.Exception));

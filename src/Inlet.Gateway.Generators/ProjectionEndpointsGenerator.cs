@@ -125,7 +125,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                 projection.SourceType) ||
             !generatedNestedTypes.TryRegister(
                 context,
-                projection.OutputNamespace,
+                projection.OutputNamespace + MappersNamespaceSuffix,
                 GetMapperTypeName(projection),
                 projection.SourceType))
         {
@@ -146,7 +146,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                              enumInfo.EnumType) &&
                          generatedNestedTypes.TryRegister(
                              context,
-                             projection.OutputNamespace,
+                             projection.OutputNamespace + MappersNamespaceSuffix,
                              enumInfo.DtoName + MapperSuffix,
                              enumInfo.EnumType)))
         {
@@ -178,7 +178,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                     elementType) ||
                 !generatedNestedTypes.TryRegister(
                     context,
-                    projection.OutputNamespace,
+                    projection.OutputNamespace + MappersNamespaceSuffix,
                     prop.ElementDtoTypeName + MapperSuffix,
                     elementType))
             {
@@ -340,7 +340,11 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         {
             string enumDtoName = TypeAnalyzer.GetDtoTypeName(enumType);
             if (generatedNestedTypes.TryRegister(context, outputNamespace, enumDtoName, enumType) &&
-                generatedNestedTypes.TryRegister(context, outputNamespace, enumDtoName + MapperSuffix, enumType))
+                generatedNestedTypes.TryRegister(
+                    context,
+                    outputNamespace + MappersNamespaceSuffix,
+                    enumDtoName + MapperSuffix,
+                    enumType))
             {
                 string enumDtoSource = GenerateNestedEnumDto(enumType, enumDtoName, outputNamespace);
                 context.AddSource($"{enumDtoName}.g.cs", SourceText.From(enumDtoSource, Encoding.UTF8));
