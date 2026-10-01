@@ -217,6 +217,43 @@ public sealed class EmitterBehaviorTests : BunitContext
         Assert.DoesNotContain("return false", button.OuterHtml, StringComparison.Ordinal);
     }
 
+    /// <summary>Absent caller classes do not hide a later meaningful case-variant class.</summary>
+    /// <param name="attributeName">The first caller dictionary key.</param>
+    /// <param name="ignoredValue">The absent conditional or blank class value.</param>
+    [Theory]
+    [InlineData("class", false)]
+    [InlineData("class", true)]
+    [InlineData("class", "")]
+    [InlineData("class", " ")]
+    [InlineData("class", null)]
+    [InlineData("CLASS", false)]
+    [InlineData("CLASS", true)]
+    [InlineData("CLASS", "")]
+    [InlineData("CLASS", " ")]
+    [InlineData("CLASS", null)]
+    public void EmitterKeepsMeaningfulClassAfterAbsentCaseVariant(
+        string attributeName,
+        object? ignoredValue
+    )
+    {
+        // Arrange
+        string meaningfulAttributeName = attributeName == "class" ? "CLASS" : "class";
+        IReadOnlyDictionary<string, object> attributes = new Dictionary<string, object>
+        {
+            [attributeName] = ignoredValue!,
+            [meaningfulAttributeName] = "caller-class",
+        };
+
+        // Act
+        using IRenderedComponent<Emitter> cut = Render<Emitter>(p => p
+            .Add(c => c.Label, "Activate")
+            .Add(c => c.Class, "application-class")
+            .Add(c => c.AdditionalAttributes, attributes));
+
+        // Assert
+        Assert.Equal("rf-emitter application-class caller-class", cut.Find("button").ClassName);
+    }
+
     /// <summary>Conditional Boolean caller classes do not become CSS tokens.</summary>
     /// <param name="attributeName">The caller dictionary key.</param>
     /// <param name="value">The conditional Boolean attribute value.</param>

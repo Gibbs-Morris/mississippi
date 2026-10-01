@@ -76,10 +76,10 @@ public sealed partial class Emitter : ComponentBase
     {
         get
         {
-            object? callerValue = AdditionalAttributes?.FirstOrDefault(attribute =>
-                    string.Equals(attribute.Key, "class", StringComparison.OrdinalIgnoreCase))
-                .Value;
-            string? callerClass = callerValue is bool ? null : callerValue?.ToString();
+            string? callerClass = AdditionalAttributes
+                ?.Where(attribute => string.Equals(attribute.Key, "class", StringComparison.OrdinalIgnoreCase))
+                .Select(attribute => attribute.Value is bool ? null : attribute.Value?.ToString())
+                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
             return string.Join(
                 " ",
                 new[] { "rf-emitter", Class, callerClass }.Where(value => !string.IsNullOrWhiteSpace(value)));
