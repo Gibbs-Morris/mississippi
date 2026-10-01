@@ -642,11 +642,15 @@ public class ProjectionEndpointsGeneratorTests
     ///     Compiled mappers preserve nullable values and framework enum identities at both projection levels.
     /// </summary>
     /// <param name="resumeValue">The nullable source enum value.</param>
+    /// <param name="nestedFirst">Whether nested-only discovery precedes the top-level projection.</param>
     [Theory]
-    [InlineData(null)]
-    [InlineData(7)]
+    [InlineData(null, false)]
+    [InlineData(null, true)]
+    [InlineData(7, false)]
+    [InlineData(7, true)]
     public void GeneratedEnumMappersCompileAndPreserveValues(
-        int? resumeValue
+        int? resumeValue,
+        bool nestedFirst
     )
     {
         const string projectionSource = """
@@ -680,13 +684,39 @@ public class ProjectionEndpointsGeneratorTests
                                             }
                                         }
                                         """;
+        const string historyProjectionSource = """
+                                               using System.Collections.Immutable;
+                                               using Mississippi.Inlet.Generators.Abstractions;
+                                               using Mississippi.Inlet.Abstractions;
+                                               namespace TestApp.Domain.Projections.Sagas
+                                               {
+                                                   [GenerateProjectionEndpoints]
+                                                   [ProjectionPath("history-only")]
+                                                   public sealed record HistoryOnlyProjection
+                                                   {
+                                                       public ImmutableArray<RecoveryEntry> History { get; init; }
+                                                   }
+                                               }
+                                               """;
         const string mappingSource = """
+                                     namespace Microsoft.Extensions.DependencyInjection
+                                     {
+                                         public interface IServiceCollection { }
+                                     }
                                      namespace Mississippi.Common.Abstractions.Mapping
                                      {
                                          public interface IMapper<in TFrom, out TTo> { TTo Map(TFrom input); }
                                          public interface IEnumerableMapper<in TFrom, out TTo>
                                              : IMapper<System.Collections.Generic.IEnumerable<TFrom>,
                                                  System.Collections.Generic.IEnumerable<TTo>> { }
+                                         public static class MappingRegistrations
+                                         {
+                                             public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddMapper<TFrom, TTo, TMapper>(
+                                                 this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+                                                 where TMapper : IMapper<TFrom, TTo> => services;
+                                             public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddIEnumerableMapper(
+                                                 this Microsoft.Extensions.DependencyInjection.IServiceCollection services) => services;
+                                         }
                                      }
                                      namespace TestAssembly.Verification
                                      {
@@ -741,11 +771,12 @@ public class ProjectionEndpointsGeneratorTests
                                      }
                                      """;
         (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, projectionSource);
+            nestedFirst
+                ? RunGenerator(AttributeStubs, historyProjectionSource, projectionSource)
+                : RunGenerator(AttributeStubs, projectionSource, historyProjectionSource);
         Assert.Empty(diagnostics);
         SyntaxTree[] hostTrees = runResult.GeneratedTrees.Where(tree =>
-                tree.FilePath.Contains("Controller.g.cs", StringComparison.Ordinal) ||
-                tree.FilePath.Contains("MapperRegistrations", StringComparison.Ordinal))
+                tree.FilePath.Contains("Controller.g.cs", StringComparison.Ordinal))
             .ToArray();
         Compilation mappingCompilation = outputCompilation.RemoveSyntaxTrees(hostTrees)
             .AddSyntaxTrees(
@@ -756,6 +787,10 @@ public class ProjectionEndpointsGeneratorTests
         Assert.Empty(
             mappingCompilation.GetDiagnostics(TestContext.Current.CancellationToken)
                 .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        Assert.Single(
+            runResult.GeneratedTrees.Where(tree => tree.FilePath.EndsWith(
+                "ResumeSourceDtoMapper.g.cs",
+                StringComparison.Ordinal)));
         using MemoryStream assemblyStream = new();
         Assert.True(
             mappingCompilation.Emit(assemblyStream, cancellationToken: TestContext.Current.CancellationToken).Success);

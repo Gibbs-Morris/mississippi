@@ -312,6 +312,10 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             {
                 string enumDtoSource = GenerateNestedEnumDto(enumType, enumDtoName, outputNamespace);
                 context.AddSource($"{enumDtoName}.g.cs", SourceText.From(enumDtoSource, Encoding.UTF8));
+                string enumMapperSource = GenerateEnumMapper(enumType, enumDtoName, outputNamespace);
+                context.AddSource(
+                    $"{enumDtoName}{MapperSuffix}.g.cs",
+                    SourceText.From(enumMapperSource, Encoding.UTF8));
             }
         }
     }
