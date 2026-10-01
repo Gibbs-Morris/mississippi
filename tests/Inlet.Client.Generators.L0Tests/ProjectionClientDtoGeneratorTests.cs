@@ -738,11 +738,14 @@ public class ProjectionClientDtoGeneratorTests
         using MemoryStream assembly = new();
         Assert.True(outputCompilation.Emit(assembly, cancellationToken: TestContext.Current.CancellationToken).Success);
         INamedTypeSymbol frameworkEnum = outputCompilation.GetTypeByMetadataName("System.DayOfWeek")!;
-        foreach (string dtoName in new[] { "SagaStatusProjectionDto", "RecoveryEntryDto" })
+        foreach (INamedTypeSymbol dto in new[] { "SagaStatusProjectionDto", "RecoveryEntryDto" }.Select(dtoName =>
+                     Assert.Single(
+                         outputCompilation.GetSymbolsWithName(
+                                 dtoName,
+                                 SymbolFilter.Type,
+                                 TestContext.Current.CancellationToken)
+                             .OfType<INamedTypeSymbol>())))
         {
-            INamedTypeSymbol dto = Assert.Single(
-                outputCompilation.GetSymbolsWithName(dtoName, SymbolFilter.Type, TestContext.Current.CancellationToken)
-                    .OfType<INamedTypeSymbol>());
             IPropertySymbol day = Assert.Single(dto.GetMembers("Day").OfType<IPropertySymbol>());
             IPropertySymbol lastDay = Assert.Single(dto.GetMembers("LastDay").OfType<IPropertySymbol>());
             INamedTypeSymbol nullableDay = Assert.IsType<INamedTypeSymbol>(lastDay.Type, false);
