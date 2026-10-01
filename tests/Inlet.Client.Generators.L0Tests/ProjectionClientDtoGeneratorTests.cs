@@ -44,6 +44,11 @@ public class ProjectionClientDtoGeneratorTests
                                           """;
 
     /// <summary>
+    ///     DTO names whose compiled enum identities are verified together.
+    /// </summary>
+    private static readonly string[] MixedEnumDtoNames = ["SagaStatusProjectionDto", "RecoveryEntryDto"];
+
+    /// <summary>
     ///     Creates a Roslyn compilation from the provided source code and runs the generator.
     /// </summary>
     /// <param name="sources">The source code to compile.</param>
@@ -738,13 +743,12 @@ public class ProjectionClientDtoGeneratorTests
         using MemoryStream assembly = new();
         Assert.True(outputCompilation.Emit(assembly, cancellationToken: TestContext.Current.CancellationToken).Success);
         INamedTypeSymbol frameworkEnum = outputCompilation.GetTypeByMetadataName("System.DayOfWeek")!;
-        foreach (INamedTypeSymbol dto in new[] { "SagaStatusProjectionDto", "RecoveryEntryDto" }.Select(dtoName =>
-                     Assert.Single(
-                         outputCompilation.GetSymbolsWithName(
-                                 dtoName,
-                                 SymbolFilter.Type,
-                                 TestContext.Current.CancellationToken)
-                             .OfType<INamedTypeSymbol>())))
+        foreach (INamedTypeSymbol dto in MixedEnumDtoNames.Select(dtoName => Assert.Single(
+                     outputCompilation.GetSymbolsWithName(
+                             dtoName,
+                             SymbolFilter.Type,
+                             TestContext.Current.CancellationToken)
+                         .OfType<INamedTypeSymbol>())))
         {
             IPropertySymbol day = Assert.Single(dto.GetMembers("Day").OfType<IPropertySymbol>());
             IPropertySymbol lastDay = Assert.Single(dto.GetMembers("LastDay").OfType<IPropertySymbol>());
