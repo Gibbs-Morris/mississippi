@@ -20,7 +20,8 @@ $testPaths = @(
     (Join-Path $PSScriptRoot 'Setup.Tests.ps1'),
     (Join-Path $PSScriptRoot 'GoalWorkflow.Tests.ps1'),
     (Join-Path $PSScriptRoot 'AgentEvaluation.Tests.ps1'),
-    (Join-Path $PSScriptRoot 'PrFeedbackSkill.Tests.ps1')
+    (Join-Path $PSScriptRoot 'PrFeedbackSkill.Tests.ps1'),
+    (Join-Path $PSScriptRoot 'PesterCoverage.Tests.ps1')
 )
 foreach ($testPath in $testPaths) {
     if (-not (Test-Path -LiteralPath $testPath -PathType Leaf)) { throw "Test file not found: $testPath" }
