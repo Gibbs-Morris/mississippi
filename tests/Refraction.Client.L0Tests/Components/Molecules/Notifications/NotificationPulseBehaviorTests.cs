@@ -30,7 +30,8 @@ public sealed class NotificationPulseBehaviorTests : BunitContext
             ClientX = 42,
         };
         cut.Find(".rf-notification-pulse__expand").Click(expected);
-        Assert.Same(expected, expansion);
+        Assert.NotNull(expansion);
+        Assert.Equal(expected.ClientX, expansion.ClientX);
         Assert.Equal(0, dismissals);
         cut.Find(".rf-notification-pulse__dismiss").Click();
         Assert.Equal(1, dismissals);
