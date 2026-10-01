@@ -21,18 +21,6 @@ Governing thought: Split stable public contracts into `{Vendor}.{Area}[.{Feature
 
 Applies whenever creating or updating libraries that expose contracts across assemblies/services.
 
-## At-a-Glance Quick-Start
-
-- If contracts cross assemblies/services and multiple implementations/stable API exist, create `*.Abstractions` first.
-- Keep implementations/DI/storage in main project; reference abstractions from main.
-- Ensure abstractions have minimal dependencies and stay contracts-only.
-
-## Core Principles
-
-- Contracts stay lightweight and reusable.
-- Implementations remain flexible and internal.
-- Dependency direction mirrors `Microsoft.Extensions.*` and Orleans packages.
-
 ## References
 
 - Naming: `.github/instructions/naming.instructions.md`

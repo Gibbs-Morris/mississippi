@@ -25,19 +25,6 @@ Governing thought: Build atomic, testable Blazor components with split markup/lo
 
 Developers authoring or reviewing Blazor components/pages.
 
-## At-a-Glance Quick-Start
-
-- Place components under a single root with atomic folders; one component per folder.
-- Keep logic in `.razor.cs` partial class; inject services there, not in markup.
-- Use Redux-style state + selectors; send intent via callbacks, not direct API calls.
-- Ensure accessibility (keyboard/ARIA), isolated styles, and L0 tests.
-
-## Core Principles
-
-- Atomic design supports reuse and consistent composition.
-- Separation of markup/logic/state keeps components portable and testable.
-- Accessibility and WASM readiness are defaults, not afterthoughts.
-
 ## References
 
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
