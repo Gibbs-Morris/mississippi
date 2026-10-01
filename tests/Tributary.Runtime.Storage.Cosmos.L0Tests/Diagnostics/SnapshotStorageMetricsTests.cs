@@ -27,7 +27,7 @@ public sealed class SnapshotStorageMetricsTests
     public void RecordDeleteEmitsMetric()
     {
         using MeterListener listener = new();
-        ConcurrentQueue<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotStorageMetrics.MeterName)
@@ -69,7 +69,7 @@ public sealed class SnapshotStorageMetricsTests
         // Use unique snapshot type to isolate from other tests running in parallel
         const string snapshotType = "PruneTestSnapshot";
         using MeterListener listener = new();
-        ConcurrentQueue<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotStorageMetrics.MeterName)
@@ -105,7 +105,7 @@ public sealed class SnapshotStorageMetricsTests
     public void RecordPruneEmitsMetricWithCount()
     {
         using MeterListener listener = new();
-        ConcurrentQueue<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotStorageMetrics.MeterName)
@@ -140,8 +140,8 @@ public sealed class SnapshotStorageMetricsTests
     public void RecordReadEmitsMetricsWhenFound()
     {
         using MeterListener listener = new();
-        ConcurrentQueue<MetricMeasurement> longMeasurements = [];
-        ConcurrentQueue<MetricMeasurement> doubleMeasurements = [];
+        ConcurrentQueue<MetricMeasurement> longMeasurements = new();
+        ConcurrentQueue<MetricMeasurement> doubleMeasurements = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotStorageMetrics.MeterName)
@@ -192,7 +192,7 @@ public sealed class SnapshotStorageMetricsTests
     public void RecordReadEmitsNotFoundResult()
     {
         using MeterListener listener = new();
-        ConcurrentQueue<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotStorageMetrics.MeterName)
@@ -232,7 +232,7 @@ public sealed class SnapshotStorageMetricsTests
         // Use unique snapshot type to isolate from other tests running in parallel
         const string snapshotType = "WriteNoSizeSnapshot";
         using MeterListener listener = new();
-        ConcurrentQueue<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotStorageMetrics.MeterName)
@@ -272,7 +272,7 @@ public sealed class SnapshotStorageMetricsTests
     public void RecordWriteEmitsFailureResult()
     {
         using MeterListener listener = new();
-        ConcurrentQueue<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotStorageMetrics.MeterName)
@@ -310,8 +310,8 @@ public sealed class SnapshotStorageMetricsTests
     public void RecordWriteEmitsMetricsWithSize()
     {
         using MeterListener listener = new();
-        ConcurrentQueue<MetricMeasurement> longMeasurements = [];
-        ConcurrentQueue<MetricMeasurement> doubleMeasurements = [];
+        ConcurrentQueue<MetricMeasurement> longMeasurements = new();
+        ConcurrentQueue<MetricMeasurement> doubleMeasurements = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == SnapshotStorageMetrics.MeterName)
