@@ -58,7 +58,7 @@
       "arguments": ["./docs/Docusaurus/test-docusaurus.ps1"],
       "scriptPaths": ["docs/Docusaurus/test-docusaurus.ps1"],
       "purpose": "Build and browser-test the Docusaurus site for documentation changes.",
-      "prerequisites": ["PowerShell 7", "Node.js 20+", "Playwright Chromium"],
+      "prerequisites": ["PowerShell 7", "Node.js 24+", "Playwright Chromium"],
       "expectedArtifacts": ["Docusaurus build output", "Playwright test report"]
     },
     {
