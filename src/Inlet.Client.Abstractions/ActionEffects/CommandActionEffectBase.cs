@@ -159,7 +159,14 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
             }
             else
             {
-                result = await response.Content.ReadFromJsonAsync<OperationResultDto>(cancellationToken);
+                try
+                {
+                    result = await response.Content.ReadFromJsonAsync<OperationResultDto>(cancellationToken);
+                }
+                catch (JsonException ex)
+                {
+                    errorMessage = $"Invalid response: {ex.Message}";
+                }
             }
         }
         catch (HttpRequestException ex)
@@ -169,10 +176,6 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
         catch (TaskCanceledException ex)
         {
             errorMessage = $"Request cancelled: {ex.Message}";
-        }
-        catch (JsonException ex)
-        {
-            errorMessage = $"Invalid response: {ex.Message}";
         }
 
         if (errorMessage is not null)
