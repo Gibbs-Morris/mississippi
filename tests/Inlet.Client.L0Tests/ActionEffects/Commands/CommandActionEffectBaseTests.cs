@@ -395,4 +395,30 @@ public sealed class CommandActionEffectBaseTests
         mapper.Verify(value => value.Map(action), Times.Once);
         mapper.VerifyNoOtherCalls();
     }
+
+    /// <summary>
+    ///     Mapping failures remain local exceptions rather than being classified as invalid server responses.
+    /// </summary>
+    /// <returns>The asynchronous test operation.</returns>
+    [Fact]
+    public async Task HandleAsyncPreservesRequestJsonExceptionsAsync()
+    {
+        CommandEffectAction action = new("entity-1");
+        JsonException expected = new("Request mapping failed.");
+        Mock<IMapper<CommandEffectAction, Dictionary<string, string>>> mapper = new(MockBehavior.Strict);
+        mapper.Setup(value => value.Map(action)).Throws(expected);
+        using CommandEffectHttpHandler handler = new((_, _) =>
+            throw new InvalidOperationException("Unexpected HTTP request."));
+        using HttpClient http = CreateClient(handler);
+        CommandEffect effect = new(http, mapper.Object, new FakeTimeProvider(StartedAt));
+        await using IAsyncEnumerator<IAction> enumerator = effect
+            .HandleAsync(action, new(), TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await enumerator.MoveNextAsync());
+        Assert.IsType<CommandEffectExecutingAction>(enumerator.Current);
+        JsonException actual = await Assert.ThrowsAsync<JsonException>(() => enumerator.MoveNextAsync().AsTask());
+        Assert.Same(expected, actual);
+        mapper.Verify(value => value.Map(action), Times.Once);
+        mapper.VerifyNoOtherCalls();
+    }
 }
