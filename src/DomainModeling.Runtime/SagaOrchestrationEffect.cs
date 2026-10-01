@@ -349,7 +349,8 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
                 return true;
             }
         }
-        catch (Exception exception) when (!ShouldPropagateException(exception, cancellationToken))
+        catch (Exception exception) when (exception is not OperationCanceledException &&
+                                          !ShouldPropagateException(exception, cancellationToken))
         {
             Logger?.SagaWorkflowChanged(typeof(TSaga).Name, brookKey, exception);
             return false;

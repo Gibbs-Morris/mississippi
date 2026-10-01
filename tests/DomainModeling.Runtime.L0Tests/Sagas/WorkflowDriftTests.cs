@@ -226,6 +226,49 @@ public sealed class WorkflowDriftTests
     }
 
     /// <summary>
+    ///     Verifies metadata cancellation propagates even when the caller token is not canceled.
+    /// </summary>
+    /// <param name="boundary">The replay boundary.</param>
+    /// <returns>A task representing the test.</returns>
+    [Theory]
+    [InlineData("Started")]
+    [InlineData("Completed")]
+    [InlineData("Compensating")]
+    [InlineData("Compensated")]
+    public async Task MetadataCancellationWithActiveCallerTokenPropagates(
+        string boundary
+    )
+    {
+        FakeTimeProvider timeProvider = new();
+        SagaStartedEvent started = CreateStartedEvent(timeProvider);
+        OperationCanceledException expected = new("Metadata acquisition canceled.", CancellationToken.None);
+        Mock<ISagaStepInfoProvider<TestSagaState>> metadata = new();
+        metadata.SetupGet(provider => provider.Steps).Throws(expected);
+        Mock<IServiceProvider> services = new(MockBehavior.Strict);
+        SagaOrchestrationEffect<TestSagaState> effect = new(metadata.Object, services.Object, timeProvider);
+        List<object> emitted = [];
+        OperationCanceledException actual = await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+        {
+            await foreach (object eventData in effect.HandleAsync(
+                               CreateBoundary(boundary, started),
+                               new()
+                               {
+                                   StepHash = started.StepHash,
+                               },
+                               "transfer",
+                               0,
+                               CancellationToken.None))
+            {
+                emitted.Add(eventData);
+            }
+        });
+        Assert.Same(expected, actual);
+        Assert.Empty(emitted);
+        metadata.VerifyGet(provider => provider.Steps, Times.Once);
+        services.Verify(provider => provider.GetService(It.IsAny<Type>()), Times.Never);
+    }
+
+    /// <summary>
     ///     Verifies missing persisted workflow identity is not permission to execute registered steps.
     /// </summary>
     /// <param name="stepHash">The invalid persisted workflow hash.</param>
