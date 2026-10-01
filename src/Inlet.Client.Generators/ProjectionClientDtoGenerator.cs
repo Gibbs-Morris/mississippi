@@ -114,13 +114,13 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         sb.AppendLine(");");
 
         // Add source
-        context.AddSource($"{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+        context.AddSource($"{clientNamespace}.{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
 
         // Generate enum DTOs for enum properties on the projection
         foreach (EnumDtoInfo enumInfo in GetEnumDtosForProjection(projection)
-                     .Where(enumInfo => !generatedNestedTypes.Contains(enumInfo.DtoName)))
+                     .Where(enumInfo => !generatedNestedTypes.Contains($"{clientNamespace}.{enumInfo.DtoName}")))
         {
-            generatedNestedTypes.Add(enumInfo.DtoName);
+            generatedNestedTypes.Add($"{clientNamespace}.{enumInfo.DtoName}");
             GenerateNestedEnumDto(context, enumInfo.EnumType, enumInfo.DtoName, clientNamespace);
         }
 
@@ -129,13 +129,13 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         List<PropertyModel> nestedTypeProperties = projection.Model.Properties
             .Where(prop => prop.ElementTypeSymbol is INamedTypeSymbol &&
                            prop.ElementDtoTypeName is string elementDtoTypeName &&
-                           !generatedNestedTypes.Contains(elementDtoTypeName))
+                           !generatedNestedTypes.Contains($"{clientNamespace}.{elementDtoTypeName}"))
             .GroupBy(prop => prop.ElementDtoTypeName)
             .Select(g => g.First())
             .ToList();
         foreach (PropertyModel prop in nestedTypeProperties)
         {
-            generatedNestedTypes.Add(prop.ElementDtoTypeName!);
+            generatedNestedTypes.Add($"{clientNamespace}.{prop.ElementDtoTypeName}");
             GenerateNestedTypeDto(
                 context,
                 (INamedTypeSymbol)prop.ElementTypeSymbol!,
@@ -188,7 +188,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         sb.AppendLine("}");
 
         // Add source
-        context.AddSource($"{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+        context.AddSource($"{targetNamespace}.{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }
 
     /// <summary>
@@ -251,7 +251,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         sb.AppendLine(");");
 
         // Add source
-        context.AddSource($"{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+        context.AddSource($"{targetNamespace}.{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
 
         // Check for enum properties that need DTO generation
         IEnumerable<INamedTypeSymbol> enumTypes = properties.Select(p => p.Type)
@@ -261,7 +261,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         foreach (INamedTypeSymbol enumType in enumTypes)
         {
             string enumDtoName = TypeAnalyzer.GetDtoTypeName(enumType);
-            if (generatedNestedTypes.Add(enumDtoName))
+            if (generatedNestedTypes.Add($"{targetNamespace}.{enumDtoName}"))
             {
                 GenerateNestedEnumDto(context, enumType, enumDtoName, targetNamespace);
             }
@@ -441,7 +441,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
             projectionsProvider,
             static (spc, data) =>
             {
-                HashSet<string> generatedNestedTypes = new();
+                HashSet<string> generatedNestedTypes = new(StringComparer.Ordinal);
                 foreach (ProjectionInfo projection in data.Projections)
                 {
                     GenerateClientDto(spc, projection, data.TargetRootNamespace, generatedNestedTypes);

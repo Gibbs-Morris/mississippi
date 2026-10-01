@@ -608,6 +608,91 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Each feature receives its own enum and nested DTO declarations with unique source hints.
+    /// </summary>
+    /// <param name="shareGeneratedNames">Whether both features use the same projection and history names.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GeneratedEnumDtosCompileAcrossFeatureNamespaces(
+        bool shareGeneratedNames
+    )
+    {
+        const string projectionTemplate = """
+                                          using System.Collections.Immutable;
+                                          using Mississippi.Inlet.Generators.Abstractions;
+                                          using Mississippi.Inlet.Abstractions;
+                                          using TestApp.Domain.Shared;
+
+                                          namespace TestApp.Domain.Shared
+                                          {
+                                              public enum SharedSourceState { Reminder = 0, Manual = 7 }
+                                              public sealed record FirstEntry
+                                              {
+                                                  public SharedSourceState? Kind { get; init; }
+                                              }
+                                              public sealed record SecondEntry
+                                              {
+                                                  public SharedSourceState? Kind { get; init; }
+                                              }
+                                          }
+                                          namespace TestApp.Domain.Projections.First
+                                          {
+                                              [GenerateProjectionEndpoints]
+                                              [ProjectionPath("first")]
+                                              public sealed record FirstProjection
+                                              {
+                                                  public ImmutableArray<FirstEntry> History { get; init; }
+                                              }
+                                          }
+                                          namespace TestApp.Domain.Projections.Second
+                                          {
+                                              [GenerateProjectionEndpoints]
+                                              [ProjectionPath("second")]
+                                              public sealed record __SecondProjection__
+                                              {
+                                                  public ImmutableArray<__SecondEntry__> History { get; init; }
+                                              }
+                                          }
+                                          """;
+        string secondProjection = shareGeneratedNames ? "FirstProjection" : "SecondProjection";
+        string secondEntry = shareGeneratedNames ? "FirstEntry" : "SecondEntry";
+        string projectionSource = projectionTemplate
+            .Replace("__SecondProjection__", secondProjection, StringComparison.Ordinal)
+            .Replace("__SecondEntry__", secondEntry, StringComparison.Ordinal);
+        (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Assert.Empty(diagnostics);
+        Assert.Empty(
+            outputCompilation.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        using MemoryStream assembly = new();
+        Assert.True(outputCompilation.Emit(assembly, cancellationToken: TestContext.Current.CancellationToken).Success);
+        Assert.Equal(6, runResult.GeneratedTrees.Length);
+        foreach ((string feature, string projection, string entry) in new[]
+                 {
+                     ("First", "FirstProjection", "FirstEntry"), ("Second", secondProjection, secondEntry),
+                 })
+        {
+            string clientNamespace = $"TestApp.Client.Features.{feature}.Dtos";
+            INamedTypeSymbol enumDto = outputCompilation.GetTypeByMetadataName($"{clientNamespace}.SharedSourceDto")!;
+            Assert.NotNull(enumDto);
+            INamedTypeSymbol entryDto = outputCompilation.GetTypeByMetadataName($"{clientNamespace}.{entry}Dto")!;
+            Assert.NotNull(entryDto);
+            IPropertySymbol kind = Assert.Single(entryDto.GetMembers("Kind").OfType<IPropertySymbol>());
+            INamedTypeSymbol nullableKind = Assert.IsType<INamedTypeSymbol>(kind.Type, false);
+            Assert.Equal(SpecialType.System_Nullable_T, nullableKind.OriginalDefinition.SpecialType);
+            Assert.True(SymbolEqualityComparer.Default.Equals(enumDto, Assert.Single(nullableKind.TypeArguments)));
+            foreach (string dtoName in new[] { projection + "Dto", entry + "Dto", "SharedSourceDto" })
+            {
+                Assert.Single(
+                    runResult.GeneratedTrees.Where(tree =>
+                        Path.GetFileName(tree.FilePath) == $"{clientNamespace}.{dtoName}.g.cs"));
+            }
+        }
+    }
+
+    /// <summary>
     ///     Generated DTOs compile when nullable and non-nullable enums occur on the projection and its history.
     /// </summary>
     [Fact]
@@ -666,8 +751,13 @@ public class ProjectionClientDtoGeneratorTests
         }
 
         Assert.Single(
-            runResult.GeneratedTrees.Where(tree => Path.GetFileName(tree.FilePath) == "ResumeSourceDto.g.cs"));
-        Assert.Single(runResult.GeneratedTrees.Where(tree => Path.GetFileName(tree.FilePath) == "WorkflowDto.g.cs"));
+            runResult.GeneratedTrees.Where(tree => tree.FilePath.EndsWith(
+                ".ResumeSourceDto.g.cs",
+                StringComparison.Ordinal)));
+        Assert.Single(
+            runResult.GeneratedTrees.Where(tree => tree.FilePath.EndsWith(
+                ".WorkflowDto.g.cs",
+                StringComparison.Ordinal)));
     }
 
     /// <summary>
