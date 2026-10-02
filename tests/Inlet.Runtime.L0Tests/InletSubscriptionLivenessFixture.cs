@@ -42,7 +42,7 @@ internal sealed class InletSubscriptionLivenessFixture : IDisposable
         stream.SubscribeAsync(Arg.Any<IAsyncObserver<BrookCursorMovedEvent>>()).Returns(Task.FromResult(Handle));
         Handle.UnsubscribeAsync().Returns(Task.CompletedTask);
         ServiceCollection services = [];
-        services.AddKeyedSingleton<IStreamProvider>("cleanup-streams", streamProvider);
+        services.AddKeyedSingleton("cleanup-streams", streamProvider);
         Services = services.BuildServiceProvider();
         IGrainContext context = GrainContextMockBuilder.Create()
             .WithGrainKey("connection")
