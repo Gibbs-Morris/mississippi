@@ -91,6 +91,8 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - The #405 integration layer **MUST** preserve native system-color mappings in `src/Refraction.Client/wwwroot/RefractionAccessibility.css`, loaded after generated tokens. Why: The bounded sRGB generator cannot encode forced-colors system keywords.
 - The accessibility companion stylesheet **MUST** map both `:root` and every `[data-rf-theme]` scope to native system colors in forced-colors mode. Why: Root defaults are supported even when content is outside a theme provider.
 - Forced-colors system mappings **MUST** take priority over normal inline branding through documented `!important` declarations or an equivalently validated cascade mechanism. Why: Loading a stylesheet later cannot override normal inline custom properties.
+- Consumers overriding color tokens in a descendant scope **MUST** provide forced-colors system-color rebindings on that same scope. Why: An ancestor's important declarations cannot override a descendant's own declarations through inheritance.
+- Consumer scope color rebindings **MUST** pass applicable forced-colors browser checks. Why: Supported branding must preserve native accessibility colors.
 - The accessibility companion stylesheet **MUST** pass applicable CSS validation and forced-colors browser checks. Why: Hand-authored accessibility mappings need executable regression evidence.
 - Responsive component layout **SHOULD** prefer intrinsic flexbox, grid, `gap`, `min()`, `max()`, `clamp()`, and `minmax()` behavior. Why: Components adapt to their available space instead of accumulating breakpoint exceptions.
 - Container-aware behavior **SHOULD** be used when available space is the meaningful constraint. Why: Component responsiveness often depends on its container rather than the viewport.
@@ -183,9 +185,17 @@ For the future token names above, a consumer-defined scope uses the same rebindi
     --rf-sys-color-action-primary: var(--brand-primary-color);
     --rf-comp-pane-accent-border: var(--rf-sys-color-action-primary);
 }
+
+@media (forced-colors: active) {
+    .example-brand-scope {
+        /* Accessibility: system colors take priority over normal branding. */
+        --rf-sys-color-action-primary: LinkText !important;
+        --rf-comp-pane-accent-border: var(--rf-sys-color-action-primary) !important;
+    }
+}
 ```
 
-The override documentation lists every dependent alias to redeclare, including intermediate aliases in longer chains. This contract also applies when a supported component token is overridden and other component tokens alias it. If the consumer deliberately customizes the Pane accent border separately, that explicit component value remains in place instead of being replaced with its default alias. These token names describe the future migration target, not the current checkout's API.
+The override documentation lists every dependent alias to redeclare, including intermediate aliases in longer chains. This contract also applies when a supported component token is overridden and other component tokens alias it. If the consumer deliberately customizes the Pane accent border separately, that explicit component value remains in place in normal color modes instead of being replaced with its default alias. Forced-colors system mappings take priority within the consumer's own scope. These token names describe the future migration target, not the current checkout's API.
 
 ## Initial DTCG input profile
 
