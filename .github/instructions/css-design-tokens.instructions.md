@@ -54,6 +54,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Hand-authored generated CSS **MUST NOT** be the token source of truth. Why: Source edits need to survive regeneration without being overwritten or silently diverging.
 - Generated token output **MUST** identify itself as generated. Why: Reviewers and tools must distinguish source from derived artifacts.
 - Token generation **MUST** be deterministic for identical inputs. Why: Reproducible output makes changes reviewable and stale output detectable.
+- Generated token CSS **MUST** follow the [canonical CSS serialization profile](#canonical-css-serialization-profile). Why: Literal values and file formatting need one reproducible representation.
 - Repository validation **MUST** fail when generated token output is stale. Why: A source change without regenerated output would otherwise ship inconsistent themes.
 - Reference tokens **MUST** describe values rather than UI purpose. Why: Semantic meaning belongs in the system layer.
 - Component CSS **MUST NOT** consume `--rf-ref-*` properties directly. Why: The system layer is the boundary between values and component meaning.
@@ -173,7 +174,24 @@ This selected DTCG 2025.10 input profile defines the accepted source shape and v
 | `cubicBezier` | Four finite numbers; x coordinates are 0..1 and y coordinates are unrestricted finite values. |
 | Aliases | A whole-token curly-brace alias such as `{ref.color.neo-blue.300}` may chain through targets. At every hop, `ref` aliases target only `ref`; `sys` aliases target `ref` or `sys`; `comp` aliases target `sys` or `comp`. An alias uses its token-local `$type` when present; otherwise it uses the resolved target token's type, regardless of the alias's inherited group `$type`. Each target resolves its own type recursively; literal targets use their token-local or closest inherited group type. Invalid layer direction, cycles, unresolved targets, and type mismatches are errors. |
 | Catalog scope | All `*.json` files directly in one selected catalog directory form one scope. The canonical directory is `src/Refraction.Client/Themes/Tokens/`; its reference, system, and component documents are loaded together before alias resolution. Additional catalog directories are independently selected, self-contained scopes without implicit inheritance or cross-directory aliases. Duplicate JSON properties, duplicate paths, and flattened CSS-name collisions are errors. |
-| Rejected / conformance | Composite types, property-level references or JSON Pointer, `$root`, `$extends`, extensions, deprecation metadata, and unknown constructs; this is selected input support, not full-format DTCG tool conformance. |
+| Rejected / conformance | Numeric precision outside the canonical serialization profile, NULL or unpaired surrogates in font-family names, composite types, property-level references or JSON Pointer, `$root`, `$extends`, extensions, deprecation metadata, and unknown constructs; this is selected input support, not full-format DTCG tool conformance. |
+
+## Canonical CSS serialization profile
+
+For the future generator, `N` is the culture-independent finite binary64 number serialization defined by [RFC 8785 section 3.2.2.3](https://www.rfc-editor.org/rfc/rfc8785.html#section-3.2.2.3), including negative zero becoming `0`. Numeric spelling may normalize, but a source decimal value that changes after binary64 parsing and serialization is rejected rather than rounded silently. No fixed decimal-place rounding or value clamping is used.
+
+| Literal type | CSS value |
+| --- | --- |
+| `color` | `color(srgb N N N / N)` in component order, with alpha `1` when omitted. |
+| `dimension` / `duration` | `N` followed immediately by the input's allowed unit; units are preserved without conversion. |
+| `number` | `N`. |
+| `fontWeight` | `N` for numeric values; DTCG named weights become their specified numeric equivalent before serialization. |
+| `fontFamily` | Preserve family order and join entries with a comma and one space. The initial generic set is `serif`, `sans-serif`, `system-ui`, `cursive`, `fantasy`, `math`, `monospace`, `ui-serif`, `ui-sans-serif`, `ui-monospace`, and `ui-rounded`; case-insensitive matches emit lowercase keywords. Other names use [CSSOM string serialization](https://www.w3.org/TR/cssom-1/#serialize-a-string), including quotes and escapes. NULL and unpaired Unicode surrogates are rejected. |
+| `cubicBezier` | `cubic-bezier(N, N, N, N)` in the input's four-coordinate order. |
+
+Within each selector block, declarations sort by generated property name using ordinal comparison. The output uses UTF-8 without a BOM, LF line endings, two-space declaration indentation, `name: value;` declarations, and one final newline. Generated provenance contains no timestamp, machine path, or other variable input. Alias output remains the immediate-target `var()` binding defined above.
+
+The generator layer includes byte-for-byte golden fixtures for each supported type, numeric edge cases, font-family escaping, aliases, and complete theme scopes before generated-output freshness becomes a gate. This serialization contract describes a future implementation; it does not introduce generated CSS here.
 
 ## Initial theme input and output mapping
 
