@@ -52,6 +52,7 @@ Describe 'Deterministic validation plan' {
 
         $outcome.Result.SelectedChecks.Id | Should -Contain 'docusaurus-final'
         @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'docusaurus-final').Arguments | Should -Contain './docs/Docusaurus/test-docusaurus.ps1'
+        @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'docusaurus-final').Prerequisites | Should -Contain 'Node.js 24+'
     }
 
     It 'does not report a browser gap when the Docusaurus gate covers CSS' {
