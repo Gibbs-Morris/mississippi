@@ -68,10 +68,6 @@ handoffs:
     agent: vfe-test-designer
     prompt: "Run vfe-test-designer for this VFE task. Include task folder path, objective, constraints, relevant artifacts, expected output shape, and escalation conditions."
     send: false
-  - label: Builder
-    agent: vfe-builder
-    prompt: "Run vfe-builder for this VFE task. Include task folder path, objective, constraints, relevant artifacts, expected output shape, and escalation conditions. Verify any explicitly selected model profile before dispatch and follow the CSS/design-token standard for styling work."
-    send: false
   - label: Product Strategy Reviewer
     agent: vfe-product-strategy-reviewer
     prompt: "Run vfe-product-strategy-reviewer for this VFE task. Include task folder path, objective, constraints, relevant artifacts, expected output shape, and escalation conditions."
@@ -242,6 +238,7 @@ The display name is inspired by Mark Schwartz's *A Seat at the Table*: connect e
 - Do not add unsupported fields such as a reasoning-mode field.
 - The `agents` allowlist is intentionally explicit so this public agent can only invoke the VFE internal subagents; a coding worker required by an explicitly selected model profile is managed by the separate verified host route.
 - The `handoffs` entries are user-visible delegation prompts. They are not the security boundary; they provide reviewed transition text with `send: false` so subagent context can be edited before dispatch.
+- Implementation has no fixed coding handoff. Select and verify the coding worker first, then dispatch through the VFE `agents` allowlist or the explicitly selected profile's verified host route. Why: A handoff prompt cannot override its fixed `agent` binding.
 - Frontmatter `metadata` is organizational tagging for repository tooling and discovery. Runtime delegation must not depend on `metadata` alone.
 - `.plan/` is intentionally different from `/plan/`: VFE keeps resumable working artifacts in a local gitignored folder, while the `flow` and `epic` agent families use tracked `/plan/` folders for plan handoff workflows.
 - Do not commit `.plan/` artifacts. If a task needs a tracked plan folder for PR handoff or mergeable planning work, use the `flow` or `epic` planner families instead.
