@@ -110,7 +110,8 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Compatibility aliases **MUST NOT** be permanent. Why: Pre-release freedom permits cleanup instead of preserving historical conventions.
 - Final migration completion **MUST** remove all temporary migration exclusions and compatibility aliases. Why: The final layer must leave one enforceable standard without transitional escape hatches.
 - Every other exception **MUST** have a documented technical reason and review condition. Why: Unexplained exceptions become accidental architecture.
-- Substantial CSS and design-system work **MUST** be planned as small `gh-stack` layers. Why: Independent outcomes make architectural changes easier to review and recover.
+- CSS and design-system work **MUST** follow [PR size and stacked delivery](pr-size-and-stacking.instructions.md) when choosing coherent PR boundaries and whether to stack. Why: The canonical policy preserves independent PRs and its documented fallback when a split or stack is unsuitable.
+- Stack work **MUST** use the `gh-stack` skill. Why: Native GitHub stacks need the repository's supported lifecycle commands.
 - Each stack layer **MUST** be independently valid and pass its applicable build, test, token, CSS, and review advancement gate before dependent work starts. Why: A later layer cannot be the hidden prerequisite for an earlier one.
 - CSS and design-system work **MUST** follow the governing [optional model routing policy](codex-model-routing.instructions.md), including its selection, verification, role-precedence, and host-capacity requirements when the operator explicitly selects the supported profile. Why: Styling work does not establish a separate model strategy.
 - CSS tasks **MUST NOT** select a model profile or introduce model, reasoning, or concurrency overrides on their own. Why: Sessions without an explicitly selected profile retain their host and user-selected settings.
