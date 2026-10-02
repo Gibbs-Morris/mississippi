@@ -14,7 +14,9 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Atomic Design levels **MUST** remain filesystem and composition concerns. Why: Moving a component between Atoms, Molecules, Organisms, Templates, or Pages should not rename its styling API.
 - Atomic Design level names **MUST NOT** appear in CSS class names. Why: Class names describe ownership and behavior rather than a component's current composition level.
 - Refraction-owned classes and custom properties **MUST** use the `rf` namespace. Why: Namespace ownership prevents application CSS from colliding with Refraction APIs.
-- Application and sample CSS **MUST NOT** invent `rf-*` classes or `--rf-*` properties. Why: Consumers need a clear boundary between their styles and the design system.
+- Refraction-owned keyframe identifiers **MUST** use `rf-k-{block}--{animation}`, with lowercase kebab-case block and animation names. Why: Blazor selector isolation does not isolate animation identifiers in the compiled stylesheet.
+- Refraction component animation references **MUST** use their owning block's keyframe identifier. Why: Explicit ownership prevents one component from replacing another component's animation.
+- Application and sample CSS **MUST NOT** invent `rf-*` classes, `rf-k-*` keyframes, or `--rf-*` properties. Why: Consumers need a clear boundary between their styles and the design system.
 - Docusaurus CSS Modules and unrelated third-party styles **MUST** remain under their own conventions and be excluded from Refraction-specific naming and token rules. Why: External styling systems have separate ownership and build constraints.
 - Refraction-owned component blocks **MUST** use lowercase kebab-case `rf-c-{block}` names. Why: The component namespace gives each public root a stable, predictable owner.
 - Refraction-owned component elements **MUST** use flat `rf-c-{block}__{element}` names with lowercase kebab-case element segments. Why: Flat, consistently named elements keep private structure refactorable and avoid nested selector APIs.
