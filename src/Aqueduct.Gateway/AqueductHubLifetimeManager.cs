@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 
 using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
+using Mississippi.Aqueduct.Abstractions.Keys;
 using Mississippi.Aqueduct.Abstractions.Messages;
 
 using Orleans;
@@ -48,6 +49,12 @@ namespace Mississippi.Aqueduct.Gateway;
 ///         Orleans streams are used for server-targeted messages and broadcasts.
 ///         Each server subscribes to its own stream and the hub's all-clients stream.
 ///     </para>
+///     <para>
+///         Connections with a nonempty user identifier automatically join a reserved user group.
+///         Group names beginning with "__aqueduct_user__" are reserved for this routing and cannot be
+///         used by ordinary group operations. Encoded user identifiers remain subject to the existing
+///         composite grain-key length limit.
+///     </para>
 /// </remarks>
 public sealed class AqueductHubLifetimeManager<THub>
     : HubLifetimeManager<THub>,
@@ -55,6 +62,8 @@ public sealed class AqueductHubLifetimeManager<THub>
       IDisposable
     where THub : Hub
 {
+    private const string UserGroupPrefix = "__aqueduct_user__";
+
     private readonly string hubName;
 
     private volatile bool backplaneInitialized;
@@ -111,6 +120,29 @@ public sealed class AqueductHubLifetimeManager<THub>
 
     private static string DeriveHubName() => typeof(THub).Name;
 
+    /// <summary>Encodes a case-sensitive user identifier into the reserved group namespace.</summary>
+    /// <param name="userId">The user identifier.</param>
+    /// <returns>A group name accepted by the default key factory.</returns>
+    private static string GetUserGroupName(
+        string userId
+    ) =>
+        UserGroupPrefix + Uri.EscapeDataString(userId);
+
+    /// <summary>Prevents ordinary group operations from accessing user-routing membership.</summary>
+    /// <param name="groupName">The ordinary group name.</param>
+    /// <exception cref="ArgumentException">Thrown for a reserved user group name.</exception>
+    private static void ThrowIfUserGroupName(
+        string groupName
+    )
+    {
+        if (groupName.StartsWith(UserGroupPrefix, StringComparison.Ordinal))
+        {
+            throw new ArgumentException(
+                $"Group names beginning with '{UserGroupPrefix}' are reserved for user routing.",
+                nameof(groupName));
+        }
+    }
+
     /// <inheritdoc />
     public override async Task AddToGroupAsync(
         string connectionId,
@@ -120,6 +152,7 @@ public sealed class AqueductHubLifetimeManager<THub>
     {
         ArgumentException.ThrowIfNullOrEmpty(connectionId);
         ArgumentException.ThrowIfNullOrEmpty(groupName);
+        ThrowIfUserGroupName(groupName);
         Logger.AddingToGroup(connectionId, groupName, hubName);
         ISignalRClientGrain clientGrain = GetClientGrain(connectionId);
         await clientGrain.AddToGroupAsync(groupName).ConfigureAwait(false);
@@ -144,11 +177,25 @@ public sealed class AqueductHubLifetimeManager<THub>
     {
         ArgumentNullException.ThrowIfNull(connection);
 
+        // Validate the encoded key before registering any connection state.
+        string? userGroupName = string.IsNullOrEmpty(connection.UserIdentifier)
+            ? null
+            : GetUserGroupName(connection.UserIdentifier);
+        if (userGroupName is not null)
+        {
+            _ = new SignalRGroupKey(hubName, userGroupName);
+        }
+
         // Shared backplane initialization must outlive an individual connection.
         await EnsureStreamSetupAsync(CancellationToken.None).ConfigureAwait(false);
         ConnectionRegistry.TryAdd(connection.ConnectionId, connection);
         ISignalRClientGrain clientGrain = GetClientGrain(connection.ConnectionId);
         await clientGrain.ConnectAsync(hubName, ServerId).ConfigureAwait(false);
+        if (userGroupName is not null)
+        {
+            await clientGrain.AddToGroupAsync(userGroupName).ConfigureAwait(false);
+        }
+
         Logger.ConnectionRegistered(connection.ConnectionId, hubName, ServerId);
     }
 
@@ -189,6 +236,7 @@ public sealed class AqueductHubLifetimeManager<THub>
     {
         ArgumentException.ThrowIfNullOrEmpty(connectionId);
         ArgumentException.ThrowIfNullOrEmpty(groupName);
+        ThrowIfUserGroupName(groupName);
         Logger.RemovingFromGroup(connectionId, groupName, hubName);
         ISignalRClientGrain clientGrain = GetClientGrain(connectionId);
         await clientGrain.RemoveFromGroupAsync(groupName).ConfigureAwait(false);
@@ -327,10 +375,10 @@ public sealed class AqueductHubLifetimeManager<THub>
     {
         ArgumentException.ThrowIfNullOrEmpty(userId);
         ArgumentException.ThrowIfNullOrEmpty(methodName);
-
-        // Users are tracked via groups named by user ID
-        string userGroupName = $"user:{userId}";
-        await SendGroupAsync(userGroupName, methodName, args, cancellationToken).ConfigureAwait(false);
+        string userGroupName = GetUserGroupName(userId);
+        Logger.SendingToGroup(userGroupName, methodName, hubName);
+        ISignalRGroupGrain groupGrain = GrainFactory.GetGroupGrain(hubName, userGroupName);
+        await groupGrain.SendMessageAsync(methodName, [.. args ?? []]).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -378,8 +426,11 @@ public sealed class AqueductHubLifetimeManager<THub>
 
     private ISignalRGroupGrain GetGroupGrain(
         string groupName
-    ) =>
-        GrainFactory.GetGroupGrain(hubName, groupName);
+    )
+    {
+        ThrowIfUserGroupName(groupName);
+        return GrainFactory.GetGroupGrain(hubName, groupName);
+    }
 
     private async Task OnAllMessageAsync(
         AllMessage message
