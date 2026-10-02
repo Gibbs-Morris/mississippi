@@ -104,7 +104,20 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - A cascade-layer decision **MUST** record the tested bundle behavior and the reason for adoption or deferral. Why: The decision should be revisitable when the build pipeline changes.
 - Refraction styles **MUST** use native CSS custom properties and platform features unless repository evidence requires another mechanism. Why: Readable native CSS keeps browser debugging and generated output straightforward.
 - Sass and Less **MUST NOT** be introduced merely for variables, nesting, naming, or token generation. Why: Custom properties and build-time generation cover those needs without a new styling toolchain.
-- The validation layer tracked in [issue #405](https://github.com/Gibbs-Morris/mississippi/issues/405) **MUST** implement mechanical checks for invalid Refraction names, raw tokens, direct reference-token consumption, hard-coded design colors, unjustified `::deep`, CSS ID selectors, exceptional `!important`, invalid token names, duplicate tokens, flattened output-name collisions, unresolved aliases, and stale generated output. Why: The architecture needs mechanical regression detection in addition to prose.
+- The #405 validation layer **MUST** mechanically detect invalid Refraction class names. Why: Class ownership needs mechanical regression detection.
+- The #405 validation layer **MUST** mechanically detect invalid Refraction keyframe identifiers. Why: Animation names share a compiled namespace.
+- The #405 validation layer **MUST** mechanically detect animation references that violate their owning-block contract. Why: A valid definition does not establish that references use the correct owner.
+- The #405 validation layer **MUST** mechanically detect forbidden raw-token declarations and references. Why: Migration exclusions must not silently expand.
+- The #405 validation layer **MUST** mechanically detect direct reference-token consumption in component CSS. Why: Components consume semantic tokens.
+- The #405 validation layer **MUST** mechanically detect hard-coded design colors. Why: Reusable design values belong in tokens.
+- The #405 validation layer **MUST** mechanically detect unjustified `::deep` selectors. Why: Private boundaries need explicit exceptions.
+- The #405 validation layer **MUST** mechanically detect CSS ID selectors. Why: Component styling uses reusable ownership selectors.
+- The #405 validation layer **MUST** mechanically detect `!important` declarations without their required exception evidence. Why: Overrides need an auditable reason.
+- The #405 validation layer **MUST** mechanically detect invalid token names. Why: Source and output names need a valid namespace.
+- The #405 validation layer **MUST** mechanically detect duplicate tokens. Why: One source path cannot have competing definitions.
+- The #405 validation layer **MUST** mechanically detect flattened output-name collisions. Why: Distinct source paths cannot emit the same property.
+- The #405 validation layer **MUST** mechanically detect unresolved aliases. Why: Every alias needs a valid target.
+- The #405 validation layer **MUST** mechanically detect stale generated output. Why: Source and derived output need to agree.
 - The validation layer tracked in [issue #405](https://github.com/Gibbs-Morris/mississippi/issues/405) **MUST** include rendered text and non-text contrast checks across every supported theme. Why: Valid token values alone do not establish sufficient contrast in composed controls and their states.
 - Mechanical CSS and token checks **MUST** become required delivery gates only after their validators land with runnable commands and pipeline integration. Why: An unavailable validator cannot be an executable gate.
 - Before those validators land, authors and reviewers **MUST** manually inspect the applicable authoring rules. Why: The authoring contract applies immediately while enforcement is introduced in a later layer.
