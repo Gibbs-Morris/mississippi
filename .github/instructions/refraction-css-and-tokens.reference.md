@@ -122,6 +122,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - The #405 validation layer **MUST** mechanically detect flattened output-name collisions. Why: Distinct source paths cannot emit the same property.
 - The #405 validation layer **MUST** mechanically detect unresolved aliases. Why: Every alias needs a valid target.
 - The #405 validation layer **MUST** mechanically reject Refraction-owned CSS `var()` references absent from the validated token catalog and temporary legacy allowlist. Why: Catalog alias validation cannot catch a misspelled or removed property in a CSS consumer.
+- The #405 validation layer **MUST** mechanically reject Refraction-owned custom-property declarations absent from the validated token catalog and temporary legacy allowlist, except definitions in the canonical generated artifact. Why: A misspelled override can remain unused without any invalid consumer reference.
 - Existing private component properties outside the catalog **MUST** be recorded as scoped temporary migration exclusions in #405. Why: Legacy component-local names are not supported token properties.
 - The #405 validation layer **MUST** mechanically detect stale generated output. Why: Source and derived output need to agree.
 - The validation layer tracked in [issue #405](https://github.com/Gibbs-Morris/mississippi/issues/405) **MUST** include rendered text and non-text contrast checks across every supported theme. Why: Valid token values alone do not establish sufficient contrast in composed controls and their states.
