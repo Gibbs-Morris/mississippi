@@ -59,7 +59,8 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Generated token CSS **MUST** follow the [canonical CSS serialization profile](#canonical-css-serialization-profile). Why: Literal values and file formatting need one reproducible representation.
 - Repository validation **MUST** fail when generated token output is stale. Why: A source change without regenerated output would otherwise ship inconsistent themes.
 - Reference tokens **MUST** describe values rather than UI purpose. Why: Semantic meaning belongs in the system layer.
-- Component CSS **MUST NOT** consume `--rf-ref-*` properties directly. Why: The system layer is the boundary between values and component meaning.
+- CSS outside the canonical generated token artifact **MUST NOT** reference `--rf-ref-*` properties. Why: Reference tokens are private inputs rather than a supported consumer API.
+- CSS outside the canonical generated token artifact **MUST NOT** declare `--rf-ref-*` properties. Why: Consumer overrides use system or deliberately exposed component tokens.
 - Reference scales **MUST** use an ordered direction such as `100`, `200`, and `300`. Why: Ordered scales make adjacent values predictable.
 - Reference scales **MUST** document whether increasing numbers mean lighter, darker, larger, or smaller values. Why: The numeric order alone does not explain the scale's meaning.
 - System tokens **MUST** describe semantic roles such as surface, text, action, status, border, focus, space, type, radius, motion, and layering. Why: Components should ask for meaning rather than palette implementation details.
@@ -116,7 +117,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - The #405 validation layer **MUST** mechanically detect invalid Refraction keyframe identifiers. Why: Animation names share a compiled namespace.
 - The #405 validation layer **MUST** mechanically detect animation references that violate their owning-block contract. Why: A valid definition does not establish that references use the correct owner.
 - The #405 validation layer **MUST** mechanically detect forbidden raw-token declarations and references. Why: Migration exclusions must not silently expand.
-- The #405 validation layer **MUST** mechanically detect direct reference-token consumption in component CSS. Why: Components consume semantic tokens.
+- The #405 validation layer **MUST** mechanically reject reference-token usage outside the canonical generated token artifact. Why: Application and global styles must preserve the same private-reference boundary as component styles.
 - The #405 validation layer **MUST** mechanically detect hard-coded design colors. Why: Reusable design values belong in tokens.
 - The #405 validation layer **MUST** report every `::deep` occurrence with its file and location. Why: Mechanical detection does not establish whether an exception is justified.
 - Reviewers **MUST** verify the documented justification of every reported `::deep` occurrence before delivery. Why: Boundary exceptions need a human ownership decision.
