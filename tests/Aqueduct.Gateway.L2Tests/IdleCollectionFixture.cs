@@ -78,13 +78,9 @@ public sealed class IdleCollectionFixture : IAsyncLifetime
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        try
+        using (host)
         {
             await host.StopAsync();
-        }
-        finally
-        {
-            host.Dispose();
         }
     }
 
