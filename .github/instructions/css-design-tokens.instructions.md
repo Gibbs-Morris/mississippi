@@ -93,13 +93,9 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Every other exception **MUST** have a documented technical reason and review condition. Why: Unexplained exceptions become accidental architecture.
 - Substantial CSS and design-system work **MUST** be planned as small `gh-stack` layers. Why: Independent outcomes make architectural changes easier to review and recover.
 - Each stack layer **MUST** be independently valid and pass its applicable build, test, token, CSS, and review advancement gate before dependent work starts. Why: A later layer cannot be the hidden prerequisite for an earlier one.
-- Substantial CSS and design-system planning **MUST** retain the configured high-reasoning orchestrator. Why: Architecture decisions benefit from deliberate analysis before implementation is delegated.
-- Implementation coding **MUST** use the installed GPT-5.6 Luna identifier (`gpt-5.6-luna`) at maximum supported reasoning. Why: Repetitive implementation work follows the approved model strategy.
-- Implementation-worker concurrency **MUST NOT** exceed eight per session. Why: Eight is the policy maximum rather than a requirement to manufacture parallel work.
-- The effective host concurrency ceiling **MAY** be lower than eight. Why: Host capacity remains a binding operational limit.
-- When repository worker defaults are configured, they **MUST** remain centralized in one verified repository Codex configuration. Why: One authority prevents conflicting per-agent settings.
-- Any configured worker defaults **MUST** be verified against the installed configuration contract before use or change. Why: Unsupported keys or stale assumptions can silently leave effective behavior unchanged.
-- Agent files **SHOULD** link this standard for CSS model routing rather than restating operational settings. Why: A configured repository source remains authoritative; otherwise the selected runtime assignment provides the evidence.
+- CSS and design-system work **MUST** follow the governing [optional model routing policy](codex-model-routing.instructions.md), including its selection, verification, role-precedence, and host-capacity requirements when the operator explicitly selects the supported profile. Why: Styling work does not establish a separate model strategy.
+- CSS tasks **MUST NOT** select a model profile or introduce model, reasoning, or concurrency overrides on their own. Why: Sessions without an explicitly selected profile retain their host and user-selected settings.
+- Agent files **SHOULD** link the governing model routing policy rather than restating operational settings. Why: One authority prevents stale or conflicting per-agent requirements.
 - Each layer **MUST** inspect the relevant selectors, token references, state bindings, generated output, and rendered behavior before handoff. Why: Search, build evidence, and visual evidence catch different classes of styling regression.
 
 ## Scope and audience
