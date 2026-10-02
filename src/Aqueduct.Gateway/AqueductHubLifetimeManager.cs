@@ -422,7 +422,8 @@ public sealed class AqueductHubLifetimeManager<THub>
     )
     {
         ArgumentNullException.ThrowIfNull(userIds);
-        IEnumerable<Task> tasks = userIds.Select(u => SendUserAsync(u, methodName, args, cancellationToken));
+        IEnumerable<Task> tasks = userIds.Distinct(StringComparer.Ordinal)
+            .Select(u => SendUserAsync(u, methodName, args, cancellationToken));
         await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
