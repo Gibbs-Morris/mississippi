@@ -79,6 +79,38 @@ public sealed class SignalRGroupLivenessTests
     }
 
     /// <summary>
+    ///     A slow member cannot cause the sweep to launch the entire membership at once.
+    /// </summary>
+    /// <returns>The test operation.</returns>
+    [Fact]
+    public async Task CleanupShouldBoundOutstandingLookups()
+    {
+        (SignalRGroupGrain group, Dictionary<string, ISignalRClientGrain> clients, Func<Task> cleanup, IGrainTimer _) =
+            await CreateGroupAsync(["one", "two", "three", "four", "five"]);
+        TaskCompletionSource<string?> pending = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int started = 0;
+        foreach (ISignalRClientGrain client in clients.Values)
+        {
+            client.GetServerIdAsync().Returns(pending.Task).AndDoes(_ => started++);
+        }
+
+        using IDisposable groupLifetime = group;
+        Task sweep = cleanup();
+        try
+        {
+            Assert.Equal(1, started);
+        }
+        finally
+        {
+            pending.TrySetResult("server");
+            await sweep;
+        }
+
+        Assert.Equal(5, started);
+        Assert.Equal(5, (await group.GetConnectionsAsync()).Count);
+    }
+
+    /// <summary>
     ///     The generated warning respects the logger's disabled level.
     /// </summary>
     [Fact]

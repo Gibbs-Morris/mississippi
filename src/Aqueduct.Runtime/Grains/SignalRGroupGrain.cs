@@ -237,12 +237,19 @@ internal sealed class SignalRGroupGrain
         }
     }
 
+    /// <summary>
+    ///     Sweeps an immutable snapshot with at most one outstanding lookup.
+    /// </summary>
+    /// <returns>The bounded membership sweep.</returns>
     private async Task RemoveOrphanedConnectionsAsync()
     {
         string hubName = ExtractHubName(this.GetPrimaryKeyString());
-        await Task.WhenAll(
-                state.ConnectionIds.Select(connectionId => RemoveDisconnectedConnectionAsync(hubName, connectionId)))
-            .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
+        ImmutableHashSet<string> connections = state.ConnectionIds;
+        foreach (string connectionId in connections)
+        {
+            await RemoveDisconnectedConnectionAsync(hubName, connectionId)
+                .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
+        }
     }
 
     /// <summary>
