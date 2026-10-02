@@ -1,3 +1,6 @@
+/* Temporary spacing/type/stroke token scope: #405 lightspeed-notification-token-migration.
+   https://github.com/Gibbs-Morris/mississippi/issues/405#issuecomment-5962718525 */
+
 .notification-demo {
     display: grid;
     gap: var(--rf-raw-space-4);

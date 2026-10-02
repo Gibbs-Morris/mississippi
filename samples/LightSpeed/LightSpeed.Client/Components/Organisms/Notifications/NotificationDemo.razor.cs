@@ -10,6 +10,7 @@ namespace MississippiSamples.LightSpeed.Client.Components.Organisms.Notification
 
 /// <summary>Demonstrates a controlled notification workflow without owning application state.</summary>
 /// <remarks>
+///     Public so the Blazor renderer can instantiate this sample component.
 ///     The parent supplies notification state and callbacks. This organism only tracks the next UI
 ///     focus target while a callback changes the rendered composition.
 /// </remarks>
