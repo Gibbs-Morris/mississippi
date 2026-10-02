@@ -43,6 +43,40 @@ public sealed class AqueductNativeUserRoutingTests
         Assert.Equal(new[] { second.ConnectionId }, remote.GetRecipients("encoded"));
     }
 
+    /// <summary>Unpaired surrogate code units must not share another user's routing key.</summary>
+    /// <returns>The test operation.</returns>
+    [Fact]
+    public async Task MalformedIdentifiersShouldRemainDistinctAcrossGateways()
+    {
+        string suffix = Guid.NewGuid().ToString("N");
+        string firstId = "\ud800" + suffix;
+        string secondId = "\ud801" + suffix;
+        string replacementId = "\ufffd" + suffix;
+        string literalEscapeId = "%uD800" + suffix;
+        await using UserRoutingGateway owner = new(TestClusterAccess.Cluster.Client);
+        await using UserRoutingGateway remote = new(TestClusterAccess.Cluster.Client);
+        await owner.InitializeAsync();
+        await remote.InitializeAsync();
+        (string UserId, HubConnectionContext Connection, bool Local)[] targets =
+        [
+            (firstId, await owner.ConnectAsync(firstId), true),
+            (secondId, await owner.ConnectAsync(secondId), true),
+            (replacementId, await remote.ConnectAsync(replacementId), false),
+            (literalEscapeId, await remote.ConnectAsync(literalEscapeId), false),
+            ("\udc00" + suffix, await remote.ConnectAsync("\udc00" + suffix), false),
+        ];
+        foreach ((string userId, HubConnectionContext connection, bool local) in targets)
+        {
+            string method = "malformed-" + Guid.NewGuid().ToString("N");
+            await owner.Manager.SendUserAsync(userId, method, [], TestContext.Current.CancellationToken);
+            await Task.WhenAll(owner.FlushAsync(), remote.FlushAsync());
+            string[] expectedLocal = local ? [connection.ConnectionId] : [];
+            string[] expectedRemote = local ? [] : [connection.ConnectionId];
+            Assert.Equal(expectedLocal, owner.GetRecipients(method));
+            Assert.Equal(expectedRemote, remote.GetRecipients(method));
+        }
+    }
+
     /// <summary>Single and multiple user sends isolate users across gateways and survive disconnect.</summary>
     /// <returns>The test operation.</returns>
     [Fact]
