@@ -161,7 +161,7 @@ This selected DTCG 2025.10 input profile defines the accepted source shape and v
 
 | Area | Profile |
 | --- | --- |
-| Documents | JSON groups may carry `$type`; nested groups inherit it and token-local `$type` overrides it. Every literal token requires a token-local or inherited group `$type`; no value-based type inference is supported. Tokens carry `$value`, with optional string `$description`. |
+| Documents | JSON groups may carry `$type`; nested groups inherit it. Every literal token uses its token-local `$type`, or the closest inherited group `$type` when no local type exists. Aliases use the precedence in the Aliases row. No value-based type inference is supported. Tokens carry `$value`, with optional string `$description`. |
 | Paths | Source paths begin `ref.*`, `sys.*`, or `comp.*`; segments use lowercase kebab-case, with numeric segments for ordered scales. |
 | `color` | An sRGB object (`colorSpace: "srgb"`) with exactly three finite components in 0..1 and optional alpha in 0..1. CSS strings are not color values. |
 | `dimension` | An object with a finite value and unit `px` or `rem`. CSS strings are not dimension values. |
