@@ -81,6 +81,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Consumer-defined scopes overriding supported system or component tokens **MUST** redeclare dependent default system and component aliases in that scope, including transitive dependencies. Why: A custom scope needs the same rebinding that generated themes provide.
 - Scope rebinding **MUST** preserve explicitly customized dependent token values. Why: Updating default aliases must not erase deliberate consumer customization.
 - Documentation for supported scoped system or component-token overrides **MUST** identify the required alias redeclarations. Why: Consumers need a complete override contract without running the repository generator.
+- Documentation for every supported color-token override **MUST** identify its same-scope forced-colors system-color mapping. Why: Token names do not establish the correct native accessibility color.
 - Component CSS **SHOULD** remain theme-agnostic. Why: Theme behavior belongs in token values and semantic mappings.
 - Theme definitions **MUST NOT** duplicate component selector rules solely to change theme values. Why: Semantic rebinding avoids a parallel theme-specific selector API.
 - Text and images of text **MUST** meet [WCAG 2.2 AA contrast minimums](https://www.w3.org/TR/WCAG22/#contrast-minimum), including the criterion's large-text thresholds and exceptions, in every supported theme. Why: Light, dark, high-contrast, and branded themes need readable text.
