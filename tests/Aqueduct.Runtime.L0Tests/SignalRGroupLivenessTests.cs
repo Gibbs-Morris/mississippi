@@ -192,6 +192,23 @@ public sealed class SignalRGroupLivenessTests
     }
 
     /// <summary>
+    ///     Live clients retain membership and the timer remains owned by the nonempty group.
+    /// </summary>
+    /// <returns>The test operation.</returns>
+    [Fact]
+    public async Task HealthyMembersShouldRemainAfterCleanup()
+    {
+        (SignalRGroupGrain group, Dictionary<string, ISignalRClientGrain> clients, Func<Task> cleanup,
+            IGrainTimer timer) = await CreateGroupAsync(["first", "second"]);
+        using IDisposable groupLifetime = group;
+        await cleanup();
+        Assert.Equal(2, (await group.GetConnectionsAsync()).Count);
+        await clients["first"].Received(1).GetServerIdAsync();
+        await clients["second"].Received(1).GetServerIdAsync();
+        timer.DidNotReceive().Dispose();
+    }
+
+    /// <summary>
     ///     Membership added during a suspended sweep remains outside its immutable snapshot.
     /// </summary>
     /// <returns>The test operation.</returns>
@@ -217,4 +234,19 @@ public sealed class SignalRGroupLivenessTests
         Assert.Equal("new", Assert.Single(await group.GetConnectionsAsync()));
     }
 
+    /// <summary>
+    ///     Removing every disconnected member releases the timer and empty activation.
+    /// </summary>
+    /// <returns>The test operation.</returns>
+    [Fact]
+    public async Task MissingMembersShouldReleaseTimer()
+    {
+        (SignalRGroupGrain group, Dictionary<string, ISignalRClientGrain> clients, Func<Task> cleanup,
+            IGrainTimer timer) = await CreateGroupAsync(["missing"]);
+        using IDisposable groupLifetime = group;
+        clients["missing"].GetServerIdAsync().Returns(Task.FromResult<string?>(null));
+        await cleanup();
+        Assert.Empty(await group.GetConnectionsAsync());
+        timer.Received(1).Dispose();
+    }
 }
