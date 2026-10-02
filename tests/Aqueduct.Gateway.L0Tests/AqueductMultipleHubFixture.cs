@@ -60,7 +60,7 @@ internal sealed class AqueductMultipleHubFixture : IDisposable
         services.AddSingleton(Grains);
         services.AddSingleton(Sender);
         services.AddSingleton(Heartbeat);
-        services.AddKeyedSingleton<IStreamProvider>(AqueductStreamDefaults.StreamProviderName, streams);
+        services.AddKeyedSingleton(AqueductStreamDefaults.StreamProviderName, streams);
         if (configureOptions)
         {
             services.AddAqueduct<TestAqueductHub>(_ => { });
