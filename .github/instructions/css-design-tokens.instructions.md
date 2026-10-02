@@ -139,7 +139,11 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - CSS and design-system work **MUST** follow the governing [optional model routing policy](codex-model-routing.instructions.md), including its selection, verification, role-precedence, and host-capacity requirements when the operator explicitly selects the supported profile. Why: Styling work does not establish a separate model strategy.
 - CSS tasks **MUST NOT** select a model profile or introduce model, reasoning, or concurrency overrides on their own. Why: Sessions without an explicitly selected profile retain their host and user-selected settings.
 - Agent files **SHOULD** link the governing model routing policy rather than restating operational settings. Why: One authority prevents stale or conflicting per-agent requirements.
-- Each layer **MUST** inspect the relevant selectors, token references, state bindings, generated output, and rendered behavior before handoff. Why: Search, build evidence, and visual evidence catch different classes of styling regression.
+- Each layer **MUST** inspect relevant selectors before handoff. Why: Selector ownership needs direct evidence.
+- Each layer **MUST** inspect relevant token references before handoff. Why: Consumers need supported properties.
+- Each layer **MUST** inspect relevant state bindings before handoff. Why: Visual and semantic state need to agree.
+- Each layer **MUST** inspect relevant generated output before handoff. Why: Derived artifacts need source-backed verification.
+- Each layer **MUST** inspect relevant rendered behavior before handoff. Why: Source and build evidence cannot establish the final user experience.
 
 ## Scope and Audience
 
