@@ -3,6 +3,7 @@ using System;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 using Mississippi.Aqueduct.Abstractions;
 
@@ -24,7 +25,9 @@ public static class AqueductRegistrations
     ///     <para>
     ///         This method registers <see cref="AqueductHubLifetimeManager{THub}" /> as the
     ///         <see cref="HubLifetimeManager{THub}" /> implementation for the specified hub.
-    ///         The lifetime manager uses Orleans grains for distributed message routing.
+    ///         The lifetime manager uses Orleans grains for distributed message routing. Connection registries
+    ///         and stream managers are keyed by the hub type; custom implementations must use that same key.
+    ///         Server identity and heartbeat remain shared by all hubs in this service provider.
     ///     </para>
     ///     <para>
     ///         Prerequisites:
@@ -42,11 +45,13 @@ public static class AqueductRegistrations
         ArgumentNullException.ThrowIfNull(services);
         services.TryAddSingleton<IServerIdProvider, ServerIdProvider>();
         services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
-        services.TryAddSingleton<IConnectionRegistry, ConnectionRegistry>();
         services.TryAddSingleton<ILocalMessageSender, LocalMessageSender>();
         services.TryAddSingleton<IHeartbeatManager, HeartbeatManager>();
-        services.TryAddSingleton<IStreamSubscriptionManager, StreamSubscriptionManager>();
-        services.TryAddSingleton<HubLifetimeManager<THub>, AqueductHubLifetimeManager<THub>>();
+        services.TryAddSingleton(provider => new HubConnectionRegistries(
+            provider.GetKeyedServices<IConnectionRegistry>(KeyedService.AnyKey)));
+        services.TryAddKeyedSingleton<IConnectionRegistry, ConnectionRegistry>(typeof(THub));
+        services.TryAddKeyedSingleton<IStreamSubscriptionManager, StreamSubscriptionManager>(typeof(THub));
+        services.TryAddSingleton<HubLifetimeManager<THub>>(CreateHubLifetimeManager<THub>);
         return services;
     }
 
@@ -61,7 +66,8 @@ public static class AqueductRegistrations
     ///     <para>
     ///         This method registers <see cref="AqueductHubLifetimeManager{THub}" /> and configures
     ///         the backplane options. Use this overload to customize stream provider names,
-    ///         heartbeat intervals, or stream namespaces.
+    ///         heartbeat intervals, or stream namespaces. Connection registries and stream managers are keyed
+    ///         by the hub type; custom implementations must use that key. Server identity and heartbeat remain shared.
     ///     </para>
     /// </remarks>
     public static IServiceCollection AddAqueduct<THub>(
@@ -73,14 +79,7 @@ public static class AqueductRegistrations
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configureOptions);
         services.Configure(configureOptions);
-        services.TryAddSingleton<IServerIdProvider, ServerIdProvider>();
-        services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
-        services.TryAddSingleton<IConnectionRegistry, ConnectionRegistry>();
-        services.TryAddSingleton<ILocalMessageSender, LocalMessageSender>();
-        services.TryAddSingleton<IHeartbeatManager, HeartbeatManager>();
-        services.TryAddSingleton<IStreamSubscriptionManager, StreamSubscriptionManager>();
-        services.TryAddSingleton<HubLifetimeManager<THub>, AqueductHubLifetimeManager<THub>>();
-        return services;
+        return services.AddAqueduct<THub>();
     }
 
     /// <summary>
@@ -131,4 +130,18 @@ public static class AqueductRegistrations
         services.TryAddSingleton<IAqueductNotifier, AqueductNotifier>();
         return services;
     }
+
+    private static AqueductHubLifetimeManager<THub> CreateHubLifetimeManager<THub>(
+        IServiceProvider provider
+    )
+        where THub : Hub =>
+        new(
+            provider.GetRequiredService<IServerIdProvider>(),
+            provider.GetRequiredService<IAqueductGrainFactory>(),
+            provider.GetRequiredKeyedService<IConnectionRegistry>(typeof(THub)),
+            provider.GetRequiredService<ILocalMessageSender>(),
+            provider.GetRequiredService<IHeartbeatManager>(),
+            provider.GetRequiredKeyedService<IStreamSubscriptionManager>(typeof(THub)),
+            provider.GetRequiredService<ILogger<AqueductHubLifetimeManager<THub>>>(),
+            provider.GetRequiredService<HubConnectionRegistries>());
 }
