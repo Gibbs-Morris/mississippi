@@ -11,7 +11,9 @@ Governing thought: Load only the styling contracts needed for the task.
 ## Rules (RFC 2119)
 
 - Styling authors **MUST** use the applicable [styling rules](refraction-css-and-tokens.reference.md#rules-rfc-2119). Why: Preserves ownership and accessibility.
-- Token and generator authors **MUST** use the [input and output contracts](refraction-css-and-tokens.reference.md#initial-dtcg-input-profile). Why: Keeps generation deterministic.
+- Token work **MUST** use the [input profile](refraction-css-and-tokens.reference.md#initial-dtcg-input-profile). Why: Defines valid catalogs.
+- Token work **MUST** use the [serialization profile](refraction-css-and-tokens.reference.md#canonical-css-serialization-profile). Why: Keeps output deterministic.
+- Token work **MUST** use the [theme mapping](refraction-css-and-tokens.reference.md#initial-theme-input-and-output-mapping). Why: Defines selector scopes.
 
 ## Scope and Audience
 
