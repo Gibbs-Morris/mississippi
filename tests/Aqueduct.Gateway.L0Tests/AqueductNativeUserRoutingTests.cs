@@ -91,7 +91,7 @@ public sealed class AqueductNativeUserRoutingTests
         await remote.InitializeAsync();
         HubConnectionContext first = await owner.ConnectAsync(alice);
         HubConnectionContext second = await owner.ConnectAsync(alice);
-        _ = await owner.ConnectAsync(alice.ToUpperInvariant());
+        HubConnectionContext caseDistinct = await owner.ConnectAsync(alice.ToUpperInvariant());
         _ = await owner.ConnectAsync(null);
         HubConnectionContext third = await remote.ConnectAsync(alice);
         HubConnectionContext fourth = await remote.ConnectAsync(bob);
@@ -108,6 +108,16 @@ public sealed class AqueductNativeUserRoutingTests
         await Task.WhenAll(owner.FlushAsync(), remote.FlushAsync());
         Assert.Equal(new[] { first.ConnectionId, second.ConnectionId }.Order(), owner.GetRecipients("multiple"));
         Assert.Equal(new[] { third.ConnectionId, fourth.ConnectionId }.Order(), remote.GetRecipients("multiple"));
+        await remote.Manager.SendUsersAsync(
+            [alice, bob, alice, alice.ToUpperInvariant(), bob],
+            "duplicates",
+            [],
+            TestContext.Current.CancellationToken);
+        await Task.WhenAll(owner.FlushAsync(), remote.FlushAsync());
+        Assert.Equal(
+            new[] { first.ConnectionId, second.ConnectionId, caseDistinct.ConnectionId }.Order(),
+            owner.GetRecipients("duplicates"));
+        Assert.Equal(new[] { third.ConnectionId, fourth.ConnectionId }.Order(), remote.GetRecipients("duplicates"));
         await owner.DisconnectAsync(first);
         Assert.Equal(
             new[] { second.ConnectionId, third.ConnectionId }.Order(),
