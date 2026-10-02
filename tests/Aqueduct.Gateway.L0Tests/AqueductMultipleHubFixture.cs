@@ -187,6 +187,11 @@ internal sealed class AqueductMultipleHubFixture : IDisposable
         Heartbeat.Dispose();
     }
 
+    /// <summary>
+    ///     Returns the captured broadcast stream for the specified routing channel.
+    /// </summary>
+    /// <param name="id">The production stream identifier for the channel.</param>
+    /// <returns>The stream substitute that captures callbacks and publications.</returns>
     private IAsyncStream<AllMessage> GetAllStream(
         StreamId id
     )

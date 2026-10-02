@@ -409,6 +409,10 @@ public sealed class AqueductHubLifetimeManager<THub>
     ) =>
         GrainFactory.GetClientGrain(hubName, connectionId);
 
+    /// <summary>
+    ///     Returns the shared heartbeat connection count, or the local count for direct construction.
+    /// </summary>
+    /// <returns>The number of connections reported to the heartbeat.</returns>
     private int GetConnectionCount() => ConnectionRegistries?.Count ?? ConnectionRegistry.Count;
 
     private ISignalRGroupGrain GetGroupGrain(
