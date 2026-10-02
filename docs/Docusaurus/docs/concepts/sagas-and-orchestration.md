@@ -60,6 +60,12 @@ The runtime behavior is:
 8. Compensation walks backward through prior steps. When no earlier step remains, the effect yields `SagaCompensated`.
 9. If a compensation step returns failure or throws a non-cancellation exception, the effect yields terminal `SagaFailed`.
 
+### Workflow definition checks
+
+The start command stores a hash of one snapshot of the registered, ordered step metadata. At each forward or compensation boundary, the orchestration effect captures one immutable snapshot, compares its hash with the stored value, and uses that same snapshot to select the step. A mismatch, missing hash, or metadata that cannot be snapshotted or hashed produces terminal `SagaFailed` with `SAGA_STEP_HASH_MISMATCH` before the runtime resolves or invokes a step. At start, the handler returns `InvalidState` before emitting lifecycle events if no steps are registered or metadata cannot be snapshotted or hashed. Metadata acquisition cancellation propagates even when the caller token has not been canceled. Critical runtime failures also propagate.
+
+The hash covers the step index, name, Orleans type identity, defining assembly identity (excluding its version), and compensation flag. It distinguishes delimiter-containing names and includes assembly identities for generic arguments and element types. It cannot detect changes inside a method body or external configuration. A hash error retains its exception in the runtime log; an ordinary mismatch has no hashing exception. See [Migrate saga workflow hashes](../domain-modeling/migration/saga-workflow-hash.md) before deploying this format while older sagas are active.
+
 ### Reminder-Based Resume
 
 Saga orchestration also has a durable wake-up path for lifecycle events that were recorded before a silo or pod stopped running the active grain.
