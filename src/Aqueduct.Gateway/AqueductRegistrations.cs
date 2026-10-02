@@ -131,6 +131,12 @@ public static class AqueductRegistrations
         return services;
     }
 
+    /// <summary>
+    ///     Creates the hub lifetime manager with hub-local routing and shared heartbeat services.
+    /// </summary>
+    /// <typeparam name="THub">The hub type that owns the routing services.</typeparam>
+    /// <param name="provider">The service provider containing the configured backplane services.</param>
+    /// <returns>The configured lifetime manager for the hub.</returns>
     private static AqueductHubLifetimeManager<THub> CreateHubLifetimeManager<THub>(
         IServiceProvider provider
     )
