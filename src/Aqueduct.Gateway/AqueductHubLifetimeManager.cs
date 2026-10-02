@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -120,13 +122,43 @@ public sealed class AqueductHubLifetimeManager<THub>
 
     private static string DeriveHubName() => typeof(THub).Name;
 
-    /// <summary>Encodes a case-sensitive user identifier into the reserved group namespace.</summary>
+    /// <summary>Encodes a case-sensitive user identifier without losing UTF-16 code units.</summary>
     /// <param name="userId">The user identifier.</param>
     /// <returns>A group name accepted by the default key factory.</returns>
     private static string GetUserGroupName(
         string userId
-    ) =>
-        UserGroupPrefix + Uri.EscapeDataString(userId);
+    )
+    {
+        StringBuilder encoded = new(UserGroupPrefix);
+        int segmentStart = 0;
+        int index = 0;
+        while (index < userId.Length)
+        {
+            char value = userId[index];
+            if (!char.IsSurrogate(value))
+            {
+                index++;
+                continue;
+            }
+
+            if (char.IsHighSurrogate(value) && ((index + 1) < userId.Length) && char.IsLowSurrogate(userId[index + 1]))
+            {
+                index += 2;
+                continue;
+            }
+
+            encoded.Append(Uri.EscapeDataString(userId[segmentStart..index]));
+
+            // URI escaping only emits %XX; %uXXXX keeps unmatched code units distinct.
+            encoded.Append("%u");
+            encoded.Append(((int)value).ToString("X4", CultureInfo.InvariantCulture));
+            index++;
+            segmentStart = index;
+        }
+
+        encoded.Append(Uri.EscapeDataString(userId[segmentStart..]));
+        return encoded.ToString();
+    }
 
     /// <summary>Prevents ordinary group operations from accessing user-routing membership.</summary>
     /// <param name="groupName">The ordinary group name.</param>
