@@ -278,6 +278,11 @@ internal sealed class InletSubscriptionGrain
             EntityId = entityId,
             BrookKey = brookKeyString,
         };
+        if (!BrookStreamHandles.ContainsKey(brookKeyString))
+        {
+            await SubscribeToBrookStreamAsync(brookKey, brookKeyString);
+        }
+
         Subscriptions[subscriptionId] = entry;
         if (!BrookToSubscriptions.TryGetValue(brookKeyString, out HashSet<string>? brookSubs))
         {
@@ -286,11 +291,6 @@ internal sealed class InletSubscriptionGrain
         }
 
         brookSubs.Add(subscriptionId);
-        if (!BrookStreamHandles.ContainsKey(brookKeyString))
-        {
-            await SubscribeToBrookStreamAsync(brookKey, brookKeyString);
-        }
-
         EnsureCleanupTimer();
         GrainRuntime.DelayDeactivation(GrainContext, Timeout.InfiniteTimeSpan);
         InletMetrics.RecordSubscription(path, "subscribe");
@@ -367,12 +367,12 @@ internal sealed class InletSubscriptionGrain
         string connectionId = this.GetPrimaryKeyString();
         BrookPosition initialPosition =
             await BrookStorageReader.ReadCursorPositionAsync(brookKey, CancellationToken.None);
-        BrookPositions[brookKeyString] = initialPosition;
         StreamId streamId = StreamIdFactory.Create(brookKey);
         IAsyncStream<BrookCursorMovedEvent>? stream = this
             .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
             .GetStream<BrookCursorMovedEvent>(streamId);
         StreamSubscriptionHandle<BrookCursorMovedEvent> handle = await stream.SubscribeAsync(this);
+        BrookPositions[brookKeyString] = initialPosition;
         BrookStreamHandles[brookKeyString] = handle;
         Logger.SubscribedToBrookStream(connectionId, brookKeyString, initialPosition.Value);
     }
