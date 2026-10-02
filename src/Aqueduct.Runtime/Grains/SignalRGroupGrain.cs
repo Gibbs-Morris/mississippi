@@ -211,15 +211,29 @@ internal sealed class SignalRGroupGrain
             });
     }
 
+    /// <summary>
+    ///     Removes a disconnected member while preserving failed lookups for the next sweep.
+    /// </summary>
+    /// <param name="hubName">The hub owning the group.</param>
+    /// <param name="connectionId">The member in the current sweep snapshot.</param>
+    /// <returns>The member's cleanup operation.</returns>
     private async Task RemoveDisconnectedConnectionAsync(
         string hubName,
         string connectionId
     )
     {
-        ISignalRClientGrain client = GrainFactory.GetGrain<ISignalRClientGrain>($"{hubName}:{connectionId}");
-        if (await client.GetServerIdAsync().ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext) is null)
+        try
         {
-            await RemoveConnectionAsync(connectionId).ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
+            ISignalRClientGrain client = GrainFactory.GetGrain<ISignalRClientGrain>($"{hubName}:{connectionId}");
+            if (await client.GetServerIdAsync().ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext) is null)
+            {
+                await RemoveConnectionAsync(connectionId)
+                    .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
+            }
+        }
+        catch (Exception ex) when (ex is OrleansException or TimeoutException)
+        {
+            Logger.ConnectionLivenessCheckFailed(this.GetPrimaryKeyString(), connectionId, ex);
         }
     }
 
