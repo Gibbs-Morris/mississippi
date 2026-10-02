@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,28 @@ public sealed class AqueductBuilder
     {
     }
 
+    /// <summary>Gets or sets the positive multiplier applied to the shared gateway heartbeat interval.</summary>
+    public int DeadServerTimeoutMultiplier
+    {
+        get => DeadServerTimeoutOverride ?? Options.DeadServerTimeoutMultiplier;
+        set
+        {
+            ThrowIfClosed();
+            DeadServerTimeoutOverride = value;
+        }
+    }
+
+    /// <summary>Gets or sets the positive gateway heartbeat interval, in minutes, used for runtime cleanup.</summary>
+    public int HeartbeatIntervalMinutes
+    {
+        get => HeartbeatIntervalOverride ?? Options.HeartbeatIntervalMinutes;
+        set
+        {
+            ThrowIfClosed();
+            HeartbeatIntervalOverride = value;
+        }
+    }
+
     /// <summary>Gets or sets the namespace used for server-targeted messages.</summary>
     public string ServerStreamNamespace
     {
@@ -43,6 +66,10 @@ public sealed class AqueductBuilder
             Options.StreamProviderName = value;
         }
     }
+
+    private int? DeadServerTimeoutOverride { get; set; }
+
+    private int? HeartbeatIntervalOverride { get; set; }
 
     private bool IsClosed { get; set; }
 
@@ -101,6 +128,25 @@ public sealed class AqueductBuilder
         }
 
         List<BuilderDiagnostic> diagnostics = [];
+        if (HeartbeatIntervalMinutes <= 0)
+        {
+            diagnostics.Add(
+                new(
+                    AqueductBuilderDiagnosticCodes.HeartbeatIntervalInvalid,
+                    "Aqueduct HeartbeatIntervalMinutes must be positive.",
+                    "Use the same positive heartbeat interval on gateway and runtime hosts."));
+        }
+
+        if ((DeadServerTimeoutMultiplier <= 0) ||
+            (((double)HeartbeatIntervalMinutes * DeadServerTimeoutMultiplier) > TimeSpan.MaxValue.TotalMinutes))
+        {
+            diagnostics.Add(
+                new(
+                    AqueductBuilderDiagnosticCodes.DeadServerTimeoutInvalid,
+                    "Aqueduct heartbeat timeout must be positive and fit within TimeSpan.",
+                    "Choose a positive DeadServerTimeoutMultiplier and a supported heartbeat duration."));
+        }
+
         ValidateName(
             StreamProviderName,
             nameof(StreamProviderName),
@@ -137,16 +183,31 @@ public sealed class AqueductBuilder
             silo.AddMemoryGrainStorage("PubSubStore");
         }
 
+        int? heartbeatInterval = HeartbeatIntervalOverride;
+        int? timeoutMultiplier = DeadServerTimeoutOverride;
         silo.Services.AddOptions<AqueductOptions>()
             .Configure(options =>
             {
                 options.StreamProviderName = snapshot.StreamProviderName;
                 options.ServerStreamNamespace = snapshot.ServerStreamNamespace;
+                if (heartbeatInterval.HasValue)
+                {
+                    options.HeartbeatIntervalMinutes = heartbeatInterval.Value;
+                }
+
+                if (timeoutMultiplier.HasValue)
+                {
+                    options.DeadServerTimeoutMultiplier = timeoutMultiplier.Value;
+                }
             })
             .Validate(
                 options => !string.IsNullOrWhiteSpace(options.StreamProviderName) &&
-                           !string.IsNullOrWhiteSpace(options.ServerStreamNamespace),
-                "Aqueduct requires nonempty stream names.")
+                           !string.IsNullOrWhiteSpace(options.ServerStreamNamespace) &&
+                           (options.HeartbeatIntervalMinutes > 0) &&
+                           (options.DeadServerTimeoutMultiplier > 0) &&
+                           (((double)options.HeartbeatIntervalMinutes * options.DeadServerTimeoutMultiplier) <=
+                            TimeSpan.MaxValue.TotalMinutes),
+                "Aqueduct requires nonempty stream names and positive heartbeat timing within TimeSpan range.")
             .ValidateOnStart();
         silo.Services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
     }
