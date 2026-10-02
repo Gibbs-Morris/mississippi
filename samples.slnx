@@ -5,6 +5,10 @@
         <File Path="global.json" />
     </Folder>
     <Folder Name="/Samples/" />
+    <Folder Name="/Samples/ConnectFour/">
+        <Project Path="samples\ConnectFour\ConnectFour.Domain\ConnectFour.Domain.csproj" />
+        <Project Path="samples\ConnectFour\ConnectFour.Domain.L0Tests\ConnectFour.Domain.L0Tests.csproj" />
+    </Folder>
     <Folder Name="/Samples/Crescent/">
         <Project Path="samples\Crescent\Crescent.AppHost\Crescent.AppHost.csproj" />
         <Project Path="samples\Crescent\Crescent.L0Tests\Crescent.L0Tests.csproj" />
