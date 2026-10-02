@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
+using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.Aqueduct.Runtime.Diagnostics;
 using Mississippi.Aqueduct.Runtime.Grains.State;
@@ -46,17 +49,23 @@ internal sealed class SignalRServerDirectoryGrain
     ///     Initializes a new instance of the <see cref="SignalRServerDirectoryGrain" /> class.
     /// </summary>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
+    /// <param name="options">The shared heartbeat timing that bounds directory recovery and stop markers.</param>
     /// <param name="logger">Logger instance for grain operations.</param>
     /// <param name="timeProvider">Time provider for timestamps. If null, uses <see cref="System.TimeProvider.System" />.</param>
     public SignalRServerDirectoryGrain(
         IGrainContext grainContext,
+        IOptions<AqueductOptions> options,
         ILogger<SignalRServerDirectoryGrain> logger,
         TimeProvider? timeProvider = null
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
+        Options = options ?? throw new ArgumentNullException(nameof(options));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         TimeProvider = timeProvider ?? TimeProvider.System;
+        RecoveryStartedAt = TimeProvider.GetUtcNow();
+        RecoveryTimeout = TimeSpan.FromMinutes(
+            (double)Options.Value.HeartbeatIntervalMinutes * Options.Value.DeadServerTimeoutMultiplier);
     }
 
     /// <inheritdoc />
@@ -64,7 +73,15 @@ internal sealed class SignalRServerDirectoryGrain
 
     private ILogger<SignalRServerDirectoryGrain> Logger { get; }
 
+    private IOptions<AqueductOptions> Options { get; }
+
+    private DateTimeOffset RecoveryStartedAt { get; }
+
+    private TimeSpan RecoveryTimeout { get; }
+
     private TimeProvider TimeProvider { get; }
+
+    private Dictionary<string, DateTimeOffset> Unregistrations { get; } = [];
 
     /// <inheritdoc />
     public Task<ImmutableList<string>> GetDeadServersAsync(
@@ -85,16 +102,23 @@ internal sealed class SignalRServerDirectoryGrain
     }
 
     /// <inheritdoc />
-    public Task HeartbeatAsync(
+    public async Task HeartbeatAsync(
         string serverId,
         int connectionCount
     )
     {
         ArgumentException.ThrowIfNullOrEmpty(serverId);
-        if (!state.ActiveServers.TryGetValue(serverId, out SignalRServerInfo? existing))
+        RemoveExpiredUnregistrations();
+        if (Unregistrations.ContainsKey(serverId))
         {
             Logger.HeartbeatFromUnknownServer(serverId);
-            return Task.CompletedTask;
+            return;
+        }
+
+        if (!state.ActiveServers.TryGetValue(serverId, out SignalRServerInfo? existing))
+        {
+            await RegisterServerAsync(serverId).ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
+            existing = state.ActiveServers[serverId];
         }
 
         SignalRServerInfo updated = existing with
@@ -108,7 +132,6 @@ internal sealed class SignalRServerDirectoryGrain
         };
         AqueductMetrics.RecordServerHeartbeat();
         Logger.ServerHeartbeat(serverId, connectionCount);
-        return Task.CompletedTask;
     }
 
     /// <inheritdoc />
@@ -119,8 +142,13 @@ internal sealed class SignalRServerDirectoryGrain
     {
         ArgumentException.ThrowIfNullOrEmpty(serverId);
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeout, TimeSpan.Zero);
-        bool isAlive = state.ActiveServers.TryGetValue(serverId, out SignalRServerInfo? server) &&
-                       (server.LastHeartbeat >= (TimeProvider.GetUtcNow() - timeout));
+        RemoveExpiredUnregistrations();
+        DateTimeOffset now = TimeProvider.GetUtcNow();
+        bool isAlive = state.ActiveServers.TryGetValue(serverId, out SignalRServerInfo? server)
+            ? (now - server.LastHeartbeat) <= timeout
+            : !Unregistrations.ContainsKey(serverId) &&
+              ((now - RecoveryStartedAt) <= timeout) &&
+              ((now - RecoveryStartedAt) <= RecoveryTimeout);
         return Task.FromResult(isAlive);
     }
 
@@ -139,6 +167,8 @@ internal sealed class SignalRServerDirectoryGrain
     )
     {
         ArgumentException.ThrowIfNullOrEmpty(serverId);
+        RemoveExpiredUnregistrations();
+        Unregistrations.Remove(serverId);
         Logger.RegisteringServer(serverId);
         SignalRServerInfo serverInfo = new()
         {
@@ -161,6 +191,8 @@ internal sealed class SignalRServerDirectoryGrain
     )
     {
         ArgumentException.ThrowIfNullOrEmpty(serverId);
+        RemoveExpiredUnregistrations();
+        Unregistrations[serverId] = TimeProvider.GetUtcNow();
         Logger.UnregisteringServer(serverId);
         if (!state.ActiveServers.ContainsKey(serverId))
         {
@@ -174,5 +206,20 @@ internal sealed class SignalRServerDirectoryGrain
         };
         Logger.ServerUnregistered(serverId, state.ActiveServers.Count);
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    ///     Bounds recent-stop metadata to one configured heartbeat timeout.
+    /// </summary>
+    private void RemoveExpiredUnregistrations()
+    {
+        DateTimeOffset now = TimeProvider.GetUtcNow();
+        string[] expired = Unregistrations.Where(entry => (now - entry.Value) > RecoveryTimeout)
+            .Select(entry => entry.Key)
+            .ToArray();
+        foreach (string serverId in expired)
+        {
+            Unregistrations.Remove(serverId);
+        }
     }
 }

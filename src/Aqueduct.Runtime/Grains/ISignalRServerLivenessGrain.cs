@@ -13,11 +13,11 @@ namespace Mississippi.Aqueduct.Runtime.Grains;
 internal interface ISignalRServerLivenessGrain : IGrainWithStringKey
 {
     /// <summary>
-    ///     Determines whether a registered server's last heartbeat is within the timeout.
+    ///     Determines whether a server has a current heartbeat or is within the bounded directory-recovery window.
     /// </summary>
     /// <param name="serverId">The server owning the connection.</param>
     /// <param name="timeout">The positive heartbeat timeout; the exact cutoff remains alive.</param>
-    /// <returns>Whether the server is registered and its heartbeat is current.</returns>
+    /// <returns>Whether cleanup should retain its route; recent explicit unregistrations return false.</returns>
     [Alias("IsServerAliveAsync")]
     Task<bool> IsServerAliveAsync(
         string serverId,
