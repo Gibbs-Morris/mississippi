@@ -5,9 +5,9 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'Mississippi Documentation',
-  tagline: 'Documentation for the Mississippi framework',
-  favicon: 'img/favicon.ico',
+  title: 'Mississippi',
+  tagline: 'Trace a business decision from intent to client state.',
+  favicon: 'img/logo.svg',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -62,6 +62,7 @@ const config: Config = {
   ],
 
   themeConfig: {
+    image: 'img/mississippi-social-card.png',
     navbar: {
       title: 'Mississippi',
       logo: {
@@ -74,10 +75,6 @@ const config: Config = {
           sidebarId: 'docsSidebar',
           position: 'left',
           label: 'Docs',
-        },
-        {
-          type: 'docsVersionDropdown',
-          position: 'right',
         },
         {
           // NOSONAR: GitHub repository URL is intentionally hardcoded for navigation
@@ -98,10 +95,14 @@ const config: Config = {
               // NOSONAR: GitHub repository URL is intentionally hardcoded for footer link
               href: 'https://github.com/Gibbs-Morris/mississippi',
             },
+            {
+              label: 'MIT License',
+              href: 'https://github.com/Gibbs-Morris/mississippi/blob/main/LICENSE',
+            },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Mississippi Project. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Mississippi contributors.`,
     },
     prism: {
       theme: prismThemes.github,
