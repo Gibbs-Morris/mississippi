@@ -244,11 +244,22 @@ The display name is inspired by Mark Schwartz's *A Seat at the Table*: connect e
 - Do not commit `.plan/` artifacts. If a task needs a tracked plan folder for PR handoff or mergeable planning work, use the `flow` or `epic` planner families instead.
 - When no supported model profile is explicitly selected, model entries are preferences: the orchestrator prefers `GPT-5.5 (copilot)`, then `GPT-5.4 (copilot)`, then `GPT-5 (copilot)`. If none is available in that unselected session, record the host-selected model in artifact metadata and continue only if it is adequate for the task.
 - Before intake, resume planning, or any delegation in an explicitly selected profile, verify the effective primary model, reasoning, and role ownership against the governing [model routing policy](../instructions/codex-model-routing.instructions.md). The qualifying primary owns the entire workflow, including planning, architecture, decomposition, integration, and final review. If the current host cannot provide that primary, stop the VFE workflow and record a routing blocker before planning; a qualifying coding worker alone cannot satisfy the primary contract. Why: Copilot frontmatter cannot guarantee a separately selected Codex profile.
-- Select and verify each delegated worker against the selected profile before dispatch, including supporting planning and review work; preserve the primary's decision ownership. Use the VFE preferences and `vfe-builder` only when no supported profile is explicitly selected. Why: Routing applies to every phase rather than only implementation.
+- Verify a qualifying owner and host route for every required specialist duty during the selected-profile preflight, before planning begins. Use the responsibility mapping below; missing routes block the workflow rather than falling back to Copilot models. Verify each delegated worker's effective settings before dispatch. Use VFE preferences and fixed custom-agent handoffs only when no supported profile is explicitly selected. Why: Routing needs to cover every required role.
 - CSS/design-token work follows the [CSS and design-token authoring standard](../instructions/css-design-tokens.instructions.md) without selecting a model profile. Why: Styling requirements and runtime selection have separate authorities.
 - An explicitly selected model profile requires the preflight and actual-runtime evidence specified by its governing policy before intake or planning; missing evidence blocks the workflow. Why: A prose preference is not proof of effective primary or worker execution.
 - VFE planning, review, and builder routing retain the existing preferences and rules when no supported profile is explicitly selected. Why: Reading styling guidance does not change the session settings.
 - When no supported model profile is explicitly selected, review and challenge subagents use a different preferred model family to reduce assumption echo.
+
+### Selected-profile responsibility mapping
+
+This mapping applies only after explicit profile selection. It assigns duties to the governing policy's primary and verified host workers; it does not create host capabilities or change Copilot agent declarations. Supply relevant specialist guidance as task context with the primary's ownership limits. Fixed Copilot handoffs do not provide these routes.
+
+| VFE duties | Selected-profile owner and route |
+| --- | --- |
+| Planning, architecture, challenge decisions, and final verification (`vfe-planner`, `vfe-c4-architect`, challengers, reviewers, and `vfe-final-verifier`) | The verified qualifying primary owns these decisions and their acceptance. Bounded supporting investigation may use a verified host worker under the selected policy. |
+| Repository research (`vfe-codebase-researcher`) | A verified host worker under the selected policy receives a bounded investigation assignment and reports evidence to the primary. |
+| Test writing, implementation, refactoring, and remediation (`vfe-test-designer` and `vfe-builder` duties) | A verified host worker under the selected policy receives the primary's approved scope, acceptance criteria, and validation contract. The primary retains test-strategy and acceptance decisions. |
+| Other allowlisted specialist duties | Classify each duty under the governing policy before planning: primary-owned decisions stay with the primary; eligible supporting work needs a verified host worker route. |
 
 ## Inputs expected
 
@@ -353,7 +364,7 @@ Use stable status values only: `Not started`, `In progress`, `Blocked`, `Skipped
 
 ```mermaid
 flowchart TD
-  A[User gives task to vfe-orchestrator] --> Profile{Selected-profile primary preflight satisfied?}
+  A[User gives task to vfe-orchestrator] --> Profile{Selected-profile preflight satisfied?}
   Profile -- No --> Blocked[Record routing blocker; stop before planning]
   Profile -- Yes or no profile selected --> B[Planner: outcome and slice clarification]
   B --> C[Codebase Researcher: inspect repository evidence]
