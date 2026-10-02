@@ -112,9 +112,11 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - The #405 validation layer **MUST** mechanically detect forbidden raw-token declarations and references. Why: Migration exclusions must not silently expand.
 - The #405 validation layer **MUST** mechanically detect direct reference-token consumption in component CSS. Why: Components consume semantic tokens.
 - The #405 validation layer **MUST** mechanically detect hard-coded design colors. Why: Reusable design values belong in tokens.
-- The #405 validation layer **MUST** mechanically detect unjustified `::deep` selectors. Why: Private boundaries need explicit exceptions.
+- The #405 validation layer **MUST** report every `::deep` occurrence with its file and location. Why: Mechanical detection does not establish whether an exception is justified.
+- Reviewers **MUST** verify the documented justification of every reported `::deep` occurrence before delivery. Why: Boundary exceptions need a human ownership decision.
 - The #405 validation layer **MUST** mechanically detect CSS ID selectors. Why: Component styling uses reusable ownership selectors.
-- The #405 validation layer **MUST** mechanically detect `!important` declarations without their required exception evidence. Why: Overrides need an auditable reason.
+- The #405 validation layer **MUST** report every `!important` occurrence with its file and location. Why: Mechanical detection does not establish whether an override is justified.
+- Reviewers **MUST** verify the documented justification of every reported `!important` occurrence before delivery. Why: Accessibility and interoperability exceptions need an auditable decision.
 - The #405 validation layer **MUST** mechanically detect invalid token names. Why: Source and output names need a valid namespace.
 - The #405 validation layer **MUST** mechanically detect duplicate tokens. Why: One source path cannot have competing definitions.
 - The #405 validation layer **MUST** mechanically detect flattened output-name collisions. Why: Distinct source paths cannot emit the same property.
