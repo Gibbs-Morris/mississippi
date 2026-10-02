@@ -115,8 +115,8 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - The #405 validation layer **MUST** mechanically detect invalid Refraction class names. Why: Class ownership needs mechanical regression detection.
 - Invalid-class-name validation **MUST** remain report-only until the #405 component-selector migrations are complete. Why: The validator layer must pass independently while unchanged legacy selectors remain.
 - The #405 validation layer **MUST** mechanically detect component block names assigned to multiple component owners. Why: Valid syntax does not prevent global ownership collisions.
-- The #405 validation layer **MUST** mechanically detect invalid Refraction keyframe identifiers. Why: Animation names share a compiled namespace.
-- The #405 validation layer **MUST** mechanically detect animation references that violate their owning-block contract. Why: A valid definition does not establish that references use the correct owner.
+- The #405 validation layer **MUST** mechanically detect invalid Refraction keyframe identifiers outside scoped temporary migration exclusions recorded in #405. Why: Animation names share a compiled namespace while legacy definitions need an explicit transition.
+- The #405 validation layer **MUST** mechanically detect animation references that violate their owning-block contract outside scoped temporary migration exclusions recorded in #405. Why: Legacy references need the same scoped transition as their definitions.
 - The #405 validation layer **MUST** mechanically detect forbidden raw-token declarations and references. Why: Migration exclusions must not silently expand.
 - The #405 validation layer **MUST** mechanically reject reference-token usage outside the canonical generated token artifact. Why: Application and global styles must preserve the same private-reference boundary as component styles.
 - The #405 validation layer **MUST** mechanically detect hard-coded design colors in CSS outside `src/Refraction.Client/wwwroot/RefractionTokens.generated.css`, the retained `src/Refraction.Client/wwwroot/RefractionTokens.css`, and scoped temporary migration exclusions. Why: Approved token definitions contain intentional literal values.
@@ -358,6 +358,8 @@ comp.pane.accent-border   (only when a stable public hook is justified)
 ## Status and references
 
 The existing `ProgressArc.razor.css` references to `--rf-progress-size` and `--rf-progress-stroke-width` are temporary legacy exclusions, not private token APIs. Their scope is the current ProgressArc component, their owner is Refraction component maintenance, and their reason is preservation of existing geometry before migration. The #405 `progress-arc-token-migration` layer replaces them with catalog-backed properties or typed state and removes the allowlist entries after validation. The issue records this inventory; this guide does not add new consumers.
+
+The existing `rf-progress-spin` definition and animation references in `src/Refraction.Client/Components/Atoms/Progress/ProgressArc.razor.css` are also a scoped temporary exclusion from keyframe naming and owning-block checks. The owner is Refraction component maintenance; the reason is preservation of the existing indeterminate spinner before component migration. The #405 `progress-arc-token-migration` layer renames the definition and references to the owning block's namespace, validates animation and both reduced-motion preferences, and removes this entry. No new consumers are covered.
 
 `src/Refraction.Abstractions/Theme/IRefractionTheme.cs` is a legacy interface with contract tests but no current runtime bridge to CSS tokens. It is not an input to generated catalogs. The #405 `legacy-theme-contract-removal` layer removes the interface and its contract tests after auditing usages, migrating any consumers found, and updating public documentation. This guide retains it in the interim and does not introduce a bridge.
 
