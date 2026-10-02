@@ -80,6 +80,8 @@ internal sealed class SignalRGroupGrain
 
     private ILogger<SignalRGroupGrain> Logger { get; }
 
+    private Dictionary<string, Guid> MembershipGenerations { get; } = new(StringComparer.Ordinal);
+
     private IOptions<AqueductOptions> Options { get; }
 
     private static string ExtractHubName(
@@ -105,6 +107,7 @@ internal sealed class SignalRGroupGrain
         Logger.AddingConnectionToGroup(connectionId, groupKey);
         if (state.ConnectionIds.Contains(connectionId))
         {
+            MembershipGenerations[connectionId] = Guid.NewGuid();
             Logger.ConnectionAlreadyInGroup(connectionId, groupKey);
             return Task.CompletedTask;
         }
@@ -115,6 +118,7 @@ internal sealed class SignalRGroupGrain
         {
             ConnectionIds = state.ConnectionIds.Add(connectionId),
         };
+        MembershipGenerations[connectionId] = Guid.NewGuid();
         string hubName = ExtractHubName(groupKey);
         AqueductMetrics.RecordGroupJoin(hubName);
         Logger.ConnectionAddedToGroup(connectionId, groupKey, state.ConnectionIds.Count);
@@ -162,6 +166,7 @@ internal sealed class SignalRGroupGrain
         {
             ConnectionIds = state.ConnectionIds.Remove(connectionId),
         };
+        MembershipGenerations.Remove(connectionId);
         string hubName = ExtractHubName(groupKey);
         AqueductMetrics.RecordGroupLeave(hubName);
         Logger.ConnectionRemovedFromGroup(connectionId, groupKey, state.ConnectionIds.Count);
@@ -219,16 +224,21 @@ internal sealed class SignalRGroupGrain
     /// </summary>
     /// <param name="hubName">The hub owning the group.</param>
     /// <param name="connectionId">The member in the current sweep snapshot.</param>
+    /// <param name="generation">The join generation owned when the lookup started.</param>
     /// <returns>The member's cleanup operation.</returns>
     private async Task RemoveDisconnectedConnectionAsync(
         string hubName,
-        string connectionId
+        string connectionId,
+        Guid generation
     )
     {
         try
         {
             ISignalRClientGrain client = GrainFactory.GetGrain<ISignalRClientGrain>($"{hubName}:{connectionId}");
-            if (await client.GetServerIdAsync().ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext) is null)
+            if (await client.GetServerIdAsync()
+                    .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext) is null &&
+                MembershipGenerations.TryGetValue(connectionId, out Guid currentGeneration) &&
+                (currentGeneration == generation))
             {
                 await RemoveConnectionAsync(connectionId)
                     .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
@@ -250,8 +260,11 @@ internal sealed class SignalRGroupGrain
         ImmutableHashSet<string> connections = state.ConnectionIds;
         foreach (string connectionId in connections)
         {
-            await RemoveDisconnectedConnectionAsync(hubName, connectionId)
-                .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
+            if (MembershipGenerations.TryGetValue(connectionId, out Guid generation))
+            {
+                await RemoveDisconnectedConnectionAsync(hubName, connectionId, generation)
+                    .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
+            }
         }
     }
 

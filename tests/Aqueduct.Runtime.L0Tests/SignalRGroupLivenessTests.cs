@@ -249,4 +249,46 @@ public sealed class SignalRGroupLivenessTests
         Assert.Empty(await group.GetConnectionsAsync());
         timer.Received(1).Dispose();
     }
+
+    /// <summary>
+    ///     A stale missing-client result cannot remove membership renewed while its lookup was suspended.
+    /// </summary>
+    /// <param name="removeBeforeRejoin">Whether the old membership is explicitly removed before it is renewed.</param>
+    /// <returns>The test operation.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RejoiningDuringCleanupShouldPreserveCurrentMembership(
+        bool removeBeforeRejoin
+    )
+    {
+        (SignalRGroupGrain group, Dictionary<string, ISignalRClientGrain> clients, Func<Task> cleanup, IGrainTimer _) =
+            await CreateGroupAsync(["same"]);
+        using IDisposable groupLifetime = group;
+        TaskCompletionSource<string?> pending = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        clients["same"].GetServerIdAsync().Returns(pending.Task);
+        Task sweep = cleanup();
+        try
+        {
+            if (removeBeforeRejoin)
+            {
+                await group.RemoveConnectionAsync("same");
+            }
+
+            await group.AddConnectionAsync("same");
+        }
+        finally
+        {
+            pending.TrySetResult(null);
+            await sweep;
+        }
+
+        Assert.Equal("same", Assert.Single(await group.GetConnectionsAsync()));
+        clients["same"].GetServerIdAsync().Returns(Task.FromResult<string?>("server"));
+        await cleanup();
+        Assert.Equal("same", Assert.Single(await group.GetConnectionsAsync()));
+        clients["same"].GetServerIdAsync().Returns(Task.FromResult<string?>(null));
+        await cleanup();
+        Assert.Empty(await group.GetConnectionsAsync());
+    }
 }
