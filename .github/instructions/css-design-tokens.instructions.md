@@ -119,7 +119,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Agent files **SHOULD** link the governing model routing policy rather than restating operational settings. Why: One authority prevents stale or conflicting per-agent requirements.
 - Each layer **MUST** inspect the relevant selectors, token references, state bindings, generated output, and rendered behavior before handoff. Why: Search, build evidence, and visual evidence catch different classes of styling regression.
 
-## Scope and audience
+## Scope and Audience
 
 This standard covers Refraction and consumer-facing styling work in CSS, Razor markup and code-behind, token JSON, and theme definitions. Refraction-specific naming and token ownership rules apply to Refraction-owned selectors; application-owned components keep their own namespace while following the general isolation and accessibility guidance. The Blazor guidance in [blazor-ux-guidelines.instructions.md](blazor-ux-guidelines.instructions.md) owns component behavior and delegates these styling concerns here.
 
