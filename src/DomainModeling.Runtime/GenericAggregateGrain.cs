@@ -12,6 +12,7 @@ using Microsoft.Extensions.Options;
 using Mississippi.Brooks.Abstractions;
 using Mississippi.Brooks.Abstractions.Attributes;
 using Mississippi.Brooks.Abstractions.Factory;
+using Mississippi.Brooks.Abstractions.Writer;
 using Mississippi.DomainModeling.Abstractions;
 using Mississippi.DomainModeling.Runtime.Diagnostics;
 using Mississippi.Tributary.Abstractions;
@@ -340,6 +341,28 @@ internal sealed class GenericAggregateGrain<TAggregate>
         }
     }
 
+    private async Task AppendEventsAndUpdatePositionAsync(
+        ImmutableArray<BrookEvent> events,
+        BrookPosition currentPosition,
+        CancellationToken cancellationToken
+    )
+    {
+        BrookPosition? expectedCursorPosition = currentPosition.NotSet ? null : currentPosition;
+        try
+        {
+            await BrookGrainFactory.GetBrookWriterGrain(brookKey)
+                .AppendEventsAsync(events, expectedCursorPosition, cancellationToken);
+        }
+        catch (BrookCursorPublicationException exception) when (!exception.Position.NotSet)
+        {
+            lastKnownPosition = exception.Position;
+            Logger.CommittedAppendPublicationFailed(brookKey, exception.Position.Value, exception);
+            throw;
+        }
+
+        lastKnownPosition = new BrookPosition(currentPosition.Value + events.Length);
+    }
+
     private async Task AppendSagaCompensationAsync(
         SagaStepFailed failed,
         BrookPosition confirmedPosition
@@ -446,9 +469,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
                     ImmutableArray<BrookEvent> brookEvents =
                         BrookEventConverter.ToStorageEvents(brookKey, [resultEvent]);
                     BrookPosition expectedPos = lastKnownPosition!.Value;
-                    await BrookGrainFactory.GetBrookWriterGrain(brookKey)
-                        .AppendEventsAsync(brookEvents, expectedPos, cancellationToken);
-                    lastKnownPosition = new BrookPosition(expectedPos.Value + 1);
+                    await AppendEventsAndUpdatePositionAsync(brookEvents, expectedPos, cancellationToken);
 
                     // Track yielded event with its position for subsequent effect dispatch
                     yieldedEvents.Add((resultEvent, lastKnownPosition.Value.Value));
@@ -687,10 +708,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
     {
         ImmutableArray<BrookEvent> brookEvents = BrookEventConverter.ToStorageEvents(brookKey, events);
         await RegisterSagaReminderIfNeededAsync(events);
-        BrookPosition? expectedCursorPosition = currentPosition.NotSet ? null : currentPosition;
-        await BrookGrainFactory.GetBrookWriterGrain(brookKey)
-            .AppendEventsAsync(brookEvents, expectedCursorPosition, cancellationToken);
-        lastKnownPosition = new BrookPosition(currentPosition.Value + brookEvents.Length);
+        await AppendEventsAndUpdatePositionAsync(brookEvents, currentPosition, cancellationToken);
         await DispatchSynchronousEffectsAsync(
             events,
             currentPosition,
