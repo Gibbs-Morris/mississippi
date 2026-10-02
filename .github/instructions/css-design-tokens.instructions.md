@@ -48,6 +48,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Canonical token JSON **SHOULD** live under `src/Refraction.Client/Themes/Tokens/` in reference, system, and optional component catalogs. Why: A predictable source location keeps token ownership discoverable.
 - DTCG source paths **MUST** begin with `ref.*`, `sys.*`, or optional `comp.*`. Why: The canonical JSON uses semantic source namespaces rather than CSS output names.
 - Generated token custom properties **MUST** replace source dots with hyphens and prefix the source layer with `--rf-`, producing `--rf-ref-*`, `--rf-sys-*`, or deliberately exposed `--rf-comp-*`. Why: The output namespace preserves source ownership while remaining valid CSS.
+- Whole-token DTCG aliases **MUST** emit a `var()` reference to the alias target's generated custom property rather than a flattened literal, preserving each link in a validated alias chain. Why: System and component defaults need live token bindings rather than copied values.
 - Hand-authored generated CSS **MUST NOT** be the token source of truth. Why: Source edits need to survive regeneration without being overwritten or silently diverging.
 - Generated token output **MUST** identify itself as generated. Why: Reviewers and tools must distinguish source from derived artifacts.
 - Token generation **MUST** be deterministic for identical inputs. Why: Reproducible output makes changes reviewable and stale output detectable.
@@ -68,6 +69,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - The layer that removes existing `--rf-raw-*` variables **MUST** be recorded as the removal layer in [issue #405](https://github.com/Gibbs-Morris/mississippi/issues/405). Why: Explicit removal ownership prevents a legacy file from being deleted prematurely or forgotten.
 - Final migration completion **MUST** remove every `--rf-raw-*` token and obsolete styling API. Why: The completed architecture cannot retain legacy selectors or token contracts.
 - Themes **SHOULD** rebind system tokens at a theme root. Why: Light, dark, high-contrast, and enterprise themes can change meaning without duplicating component selectors.
+- Generated theme output **MUST** redeclare dependent system and component aliases within each theme scope that overrides their targets, including transitive dependencies. Why: Custom-property references resolve before inheritance, so aliases computed at an ancestor do not automatically rebind to a descendant's token override.
 - Component CSS **SHOULD** remain theme-agnostic. Why: Theme behavior belongs in token values and semantic mappings.
 - Theme definitions **MUST NOT** duplicate component selector rules solely to change theme values. Why: Semantic rebinding avoids a parallel theme-specific selector API.
 - Interactive controls **MUST** retain a meaningful `:focus-visible` indication using shared focus tokens. Why: Keyboard users need a visible, consistent focus target.
@@ -129,6 +131,8 @@ The source/output distinction is illustrated by these mappings:
 | `ref.color.neo-blue.300` | `--rf-ref-color-neo-blue-300` |
 | `sys.color.action.primary` | `--rf-sys-color-action-primary` |
 | `comp.pane.accent-border` | `--rf-comp-pane-accent-border` |
+
+A whole-token alias `{sys.color.action.primary}` in `comp.pane.accent-border` emits `--rf-comp-pane-accent-border: var(--rf-sys-color-action-primary);`. A nested theme root that overrides the system token redeclares that component alias in the same scope.
 
 ## Initial DTCG input profile
 
@@ -224,3 +228,4 @@ Mechanical CSS/token validation and generated-output freshness checks become req
 - [Worker configuration follow-up issue #675](https://github.com/Gibbs-Morris/mississippi/issues/675)
 - [Official gh-stack skill](https://github.com/github/gh-stack/blob/main/skills/gh-stack/SKILL.md)
 - [DTCG format](https://www.designtokens.org/tr/2025.10/format/)
+- [CSS custom-property resolution and inheritance](https://www.w3.org/TR/css-variables-1/#cycles)
