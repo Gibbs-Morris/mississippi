@@ -19,9 +19,7 @@ namespace Mississippi.Aqueduct.Gateway.L2Tests;
 /// <summary>
 ///     Owns an isolated silo whose normal collector runs against short-lived routing activations.
 /// </summary>
-#pragma warning disable CA1515 // xUnit requires a public fixture.
-public sealed class IdleCollectionFixture : IAsyncLifetime
-#pragma warning restore CA1515
+internal sealed class IdleCollectionFixture : IAsyncLifetime
 {
     private readonly IHost host;
 

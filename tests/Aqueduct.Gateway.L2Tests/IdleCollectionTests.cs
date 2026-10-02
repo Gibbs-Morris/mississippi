@@ -9,21 +9,16 @@ namespace Mississippi.Aqueduct.Gateway.L2Tests;
 /// <summary>
 ///     Exercises live volatile state and cleanup across real ordinary activation collection.
 /// </summary>
-[Collection(IdleCollectionDefinition.Name)]
-#pragma warning disable CA1515 // xUnit requires a public test class.
-public sealed class IdleCollectionTests
-#pragma warning restore CA1515
+[Collection("Idle routing collection")]
+public sealed class IdleCollectionTests : IAsyncLifetime
 {
-    private readonly IdleCollectionFixture fixture;
+    private readonly IdleCollectionFixture fixture = new();
 
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="IdleCollectionTests" /> class.
-    /// </summary>
-    /// <param name="fixture">The isolated collector host.</param>
-    public IdleCollectionTests(
-        IdleCollectionFixture fixture
-    ) =>
-        this.fixture = fixture;
+    /// <inheritdoc />
+    public ValueTask DisposeAsync() => fixture.DisposeAsync();
+
+    /// <inheritdoc />
+    public ValueTask InitializeAsync() => fixture.InitializeAsync();
 
     private static string NewKey() => "IdleHub:" + Guid.NewGuid().ToString("N");
 
