@@ -83,7 +83,9 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - A cascade-layer decision **MUST** record the tested bundle behavior and the reason for adoption or deferral. Why: The decision should be revisitable when the build pipeline changes.
 - Refraction styles **MUST** use native CSS custom properties and platform features unless repository evidence requires another mechanism. Why: Readable native CSS keeps browser debugging and generated output straightforward.
 - Sass and Less **MUST NOT** be introduced merely for variables, nesting, naming, or token generation. Why: Custom properties and build-time generation cover those needs without a new styling toolchain.
-- CSS and token validation **MUST** detect invalid Refraction names, raw tokens, direct reference-token consumption, hard-coded design colors, unjustified `::deep`, IDs, exceptional `!important`, invalid token names, duplicate tokens, flattened output-name collisions, unresolved aliases, and stale generated output. Why: The architecture needs mechanical regression detection in addition to prose.
+- The validation layer tracked in [issue #405](https://github.com/Gibbs-Morris/mississippi/issues/405) **MUST** implement mechanical checks for invalid Refraction names, raw tokens, direct reference-token consumption, hard-coded design colors, unjustified `::deep`, IDs, exceptional `!important`, invalid token names, duplicate tokens, flattened output-name collisions, unresolved aliases, and stale generated output. Why: The architecture needs mechanical regression detection in addition to prose.
+- Mechanical CSS and token checks **MUST** become required delivery gates only after their validators land with runnable commands and pipeline integration. Why: An unavailable validator cannot be an executable gate.
+- Before those validators land, authors and reviewers **MUST** manually inspect the applicable authoring rules and record that review and the unavailable mechanical checks in the PR. Why: The authoring contract applies immediately while enforcement is introduced in a later layer.
 - Validation **SHOULD** use existing PowerShell and .NET infrastructure, adding Stylelint only when it materially improves coverage without an unrelated toolchain. Why: Enforcement should fit the repository's build model.
 - New or changed CSS, Razor visual state, themes, token sources, and Refraction components **MUST** follow this standard immediately. Why: New drift is more expensive than a later migration.
 - Existing legacy styles **MUST** be migrated in later independent, valid stack layers rather than hidden by undocumented compatibility rules. Why: Each migration layer remains reviewable while the target architecture stays clear.
@@ -212,6 +214,8 @@ comp.pane.accent-border   (only when a stable public hook is justified)
 ## Status and references
 
 This layer defines the forward-looking authoring contract. Token catalogs, generators, validators, compiled-bundle evidence, and complete consumer documentation belong to subsequent stack layers.
+
+Mechanical CSS/token validation and generated-output freshness checks become required gates when the validation layer lands with runnable commands and pipeline integration. Until then, PRs record manual authoring-review evidence and unavailable checks while continuing all existing applicable build, cleanup, lint, test, and browser gates.
 
 - [Blazor UX Guidelines](blazor-ux-guidelines.instructions.md)
 - [Namespace and Folder Placement](namespace-folder-placement.instructions.md)
