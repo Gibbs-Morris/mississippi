@@ -1,10 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+
+using Microsoft.Extensions.Logging;
 
 using Mississippi.Aqueduct.Abstractions.Messages;
 
 using NSubstitute;
+using NSubstitute.Core;
 
 using Orleans.Streams;
 
@@ -16,6 +20,27 @@ namespace Mississippi.Aqueduct.Gateway.L0Tests;
 /// </summary>
 public sealed class StreamSubscriptionRecoveryTests
 {
+    private static void AssertFailureLogged(
+        StreamSubscriptionRecoveryFixture fixture,
+        Exception exception,
+        int eventId,
+        string eventName
+    )
+    {
+        ICall call = Assert.Single(
+            fixture.Logger.ReceivedCalls(),
+            call => (call.GetMethodInfo().Name == "Log") && ReferenceEquals(call.GetArguments()[3], exception));
+        object?[] arguments = call.GetArguments();
+        Assert.Equal(LogLevel.Error, arguments[0]);
+        EventId actualEvent = Assert.IsType<EventId>(arguments[1]);
+        Assert.Equal(eventId, actualEvent.Id);
+        Assert.Equal(eventName, actualEvent.Name);
+        IReadOnlyList<KeyValuePair<string, object?>> fields =
+            Assert.IsType<IReadOnlyList<KeyValuePair<string, object?>>>(arguments[2], false);
+        Assert.Contains(fields, field => (field.Key == "HubName") && Equals(field.Value, "RecoveryHub"));
+        Assert.Contains(fields, field => (field.Key == "ServerId") && Equals(field.Value, "recovery-server"));
+    }
+
     /// <summary>
     ///     A broadcast setup failure must remove the accepted server subscription.
     /// </summary>
@@ -38,6 +63,7 @@ public sealed class StreamSubscriptionRecoveryTests
         Assert.False(fixture.Manager.IsInitialized);
         Assert.Equal(0, fixture.ActiveServerSubscriptions);
         Assert.Equal(1, fixture.UnsubscribeCalls);
+        AssertFailureLogged(fixture, failure, 3, "StreamInitializationFailed");
     }
 
     /// <summary>
@@ -90,6 +116,8 @@ public sealed class StreamSubscriptionRecoveryTests
             failure.InnerExceptions,
             exception => Assert.Same(setupFailure, exception),
             exception => Assert.Same(cleanupFailure, exception));
+        AssertFailureLogged(fixture, setupFailure, 3, "StreamInitializationFailed");
+        AssertFailureLogged(fixture, cleanupFailure, 4, "StreamSubscriptionCleanupFailed");
         Assert.Equal(1, fixture.ActiveServerSubscriptions);
         Assert.False(fixture.Manager.IsInitialized);
         Exception retryFailure = await Assert.ThrowsAsync<InvalidOperationException>(() =>
@@ -146,6 +174,25 @@ public sealed class StreamSubscriptionRecoveryTests
             await initialization;
             await retry;
         }
+    }
+
+    /// <summary>
+    ///     Disabled failure logging must preserve compensation and the original exception.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact]
+    public async Task DisabledFailureLoggingShouldPreserveCompensation()
+    {
+        using StreamSubscriptionRecoveryFixture fixture = new();
+        fixture.Logger.IsEnabled(LogLevel.Error).Returns(false);
+        InvalidOperationException failure = new("Broadcast unavailable");
+        fixture.AllSubscribeFailure = failure;
+        Exception actual = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            fixture.InitializeAsync(TestContext.Current.CancellationToken));
+        Assert.Same(failure, actual);
+        Assert.Equal(0, fixture.ActiveServerSubscriptions);
+        Assert.Equal(1, fixture.UnsubscribeCalls);
+        Assert.DoesNotContain(fixture.Logger.ReceivedCalls(), call => call.GetMethodInfo().Name == "Log");
     }
 
     /// <summary>
