@@ -12,6 +12,7 @@ Governing thought: Build atomic, testable Blazor components with split markup/lo
 
 - Agents **MUST** follow this guide when authoring/reviewing Razor components. Why: Keeps UX consistent.
 - Components **MUST** mirror atomic layers (Atoms/Molecules/Organisms/Templates/Pages). Why: Atomic layers make composition predictable.
+- Each component folder **MUST** contain exactly one component. Why: A component needs an unambiguous ownership boundary.
 - Components **MUST** keep their `.razor`, `.razor.cs`, and styles in one component folder. Why: Colocation keeps production markup, behavior, and presentation together.
 - Component tests **MUST** live in the matching component area of the test project. Why: Test placement follows the repository's production and test project boundaries.
 - Markup and logic **MUST** be split (`.razor` + `partial` `.razor.cs`, `sealed` unless extensibility is required). Why: Focused diffs and testability.
