@@ -59,7 +59,8 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Repository validation **MUST** fail when generated token output is stale. Why: A source change without regenerated output would otherwise ship inconsistent themes.
 - Reference tokens **MUST** describe values rather than UI purpose. Why: Semantic meaning belongs in the system layer.
 - Component CSS **MUST NOT** consume `--rf-ref-*` properties directly. Why: The system layer is the boundary between values and component meaning.
-- Reference scales **MUST** use an ordered direction such as `100`, `200`, and `300`, with that direction documented. Why: Names such as `n1` and `n2` do not communicate whether values become lighter, darker, larger, or smaller.
+- Reference scales **MUST** use an ordered direction such as `100`, `200`, and `300`. Why: Ordered scales make adjacent values predictable.
+- Reference scales **MUST** document whether increasing numbers mean lighter, darker, larger, or smaller values. Why: The numeric order alone does not explain the scale's meaning.
 - System tokens **MUST** describe semantic roles such as surface, text, action, status, border, focus, space, type, radius, motion, and layering. Why: Components should ask for meaning rather than palette implementation details.
 - System tokens **SHOULD** reference reference tokens. Why: Theme semantics remain separated from raw values and can be rebound coherently.
 - Component CSS **SHOULD** consume system tokens by default. Why: Semantic defaults keep components theme-agnostic and consistent.
