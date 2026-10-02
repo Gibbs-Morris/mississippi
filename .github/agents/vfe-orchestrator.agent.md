@@ -242,12 +242,13 @@ The display name is inspired by Mark Schwartz's *A Seat at the Table*: connect e
 - Frontmatter `metadata` is organizational tagging for repository tooling and discovery. Runtime delegation must not depend on `metadata` alone.
 - `.plan/` is intentionally different from `/plan/`: VFE keeps resumable working artifacts in a local gitignored folder, while the `flow` and `epic` agent families use tracked `/plan/` folders for plan handoff workflows.
 - Do not commit `.plan/` artifacts. If a task needs a tracked plan folder for PR handoff or mergeable planning work, use the `flow` or `epic` planner families instead.
-- Model entries are preferences. The orchestrator, and only the orchestrator, prefers `GPT-5.5 (copilot)`, then `GPT-5.4 (copilot)`, then `GPT-5 (copilot)`. If none of the configured preferences is available, record the host-selected model in artifact metadata and continue only if the model is adequate for the task.
-- Select the coding worker before test or implementation work: use `vfe-builder` under the existing VFE preferences unless the operator explicitly selects a supported model profile. For a selected profile, follow the governing [model routing policy](../instructions/codex-model-routing.instructions.md) for implementation, tests, refactoring, and remediation. If the VFE host cannot verify the required runtime, use a qualifying host worker or record a routing blocker before editing; do not silently fall back. Why: Copilot frontmatter cannot guarantee a separately selected Codex profile.
+- When no supported model profile is explicitly selected, model entries are preferences: the orchestrator prefers `GPT-5.5 (copilot)`, then `GPT-5.4 (copilot)`, then `GPT-5 (copilot)`. If none is available in that unselected session, record the host-selected model in artifact metadata and continue only if it is adequate for the task.
+- Before intake, resume planning, or any delegation in an explicitly selected profile, verify the effective primary model, reasoning, and role ownership against the governing [model routing policy](../instructions/codex-model-routing.instructions.md). The qualifying primary owns the entire workflow, including planning, architecture, decomposition, integration, and final review. If the current host cannot provide that primary, stop the VFE workflow and record a routing blocker before planning; a qualifying coding worker alone cannot satisfy the primary contract. Why: Copilot frontmatter cannot guarantee a separately selected Codex profile.
+- Select and verify each delegated worker against the selected profile before dispatch, including supporting planning and review work; preserve the primary's decision ownership. Use the VFE preferences and `vfe-builder` only when no supported profile is explicitly selected. Why: Routing applies to every phase rather than only implementation.
 - CSS/design-token work follows the [CSS and design-token authoring standard](../instructions/css-design-tokens.instructions.md) without selecting a model profile. Why: Styling requirements and runtime selection have separate authorities.
-- An explicitly selected model profile requires the preflight and actual-runtime evidence specified by its governing policy; missing evidence is a routing blocker before editing. Why: A prose preference is not proof of effective worker execution.
+- An explicitly selected model profile requires the preflight and actual-runtime evidence specified by its governing policy before intake or planning; missing evidence blocks the workflow. Why: A prose preference is not proof of effective primary or worker execution.
 - VFE planning, review, and builder routing retain the existing preferences and rules when no supported profile is explicitly selected. Why: Reading styling guidance does not change the session settings.
-- Review and challenge subagents use a different preferred model family to reduce assumption echo.
+- When no supported model profile is explicitly selected, review and challenge subagents use a different preferred model family to reduce assumption echo.
 
 ## Inputs expected
 
@@ -352,7 +353,9 @@ Use stable status values only: `Not started`, `In progress`, `Blocked`, `Skipped
 
 ```mermaid
 flowchart TD
-  A[User gives task to vfe-orchestrator] --> B[Planner: outcome and slice clarification]
+  A[User gives task to vfe-orchestrator] --> Profile{Selected-profile primary preflight satisfied?}
+  Profile -- No --> Blocked[Record routing blocker; stop before planning]
+  Profile -- Yes or no profile selected --> B[Planner: outcome and slice clarification]
   B --> C[Codebase Researcher: inspect repository evidence]
   C --> D[Just-enough architecture context]
   D --> E[Requirements and agile delivery challenge]
@@ -394,6 +397,7 @@ Do not blindly duplicate work when the user asks for the same thing again.
 
 ### Intake
 
+- Complete the selected-profile primary preflight in Platform decisions before planning or dispatching any handoff, including on resume.
 - Create `.plan/YYYY-MM-DD/<task-slug>/`.
 - Write `00-intake.md` with the user request, known context, constraints, non-goals, branch, base branch, and initial uncertainty.
 - Ask clarification only when blocked. Otherwise choose the safest reversible path and record the assumption.
