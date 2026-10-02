@@ -51,6 +51,8 @@ Execute the approved implementation plan with test-driven development: red, gree
 - Model preference is `GPT-5.4 (copilot)` with `GPT-5 (copilot)` fallback; record actual runtime model if visible to the orchestrator.
 - CSS and design-token work follows the [CSS and design-token authoring standard](../instructions/css-design-tokens.instructions.md). If the operator explicitly selects a supported model profile, verify that this host can satisfy the governing [model routing policy](../instructions/codex-model-routing.instructions.md) before editing. If the required runtime cannot be verified for that selected profile, report the routing blocker to the orchestrator.
 
+Styling work follows the [CSS and design-token authoring standard](../instructions/css-design-tokens.instructions.md).
+
 ## Workflow responsibilities
 
 1. Read the implementation and test plans before editing.

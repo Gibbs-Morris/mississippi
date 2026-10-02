@@ -231,6 +231,8 @@ The display name is inspired by Mark Schwartz's *A Seat at the Table*: connect e
 - Keep output shapes deterministic: use the required artifact headings, stable status values, sorted file paths, stable finding IDs, and no random naming.
 - When uncertain, record the uncertainty, choose the safest reversible path, prefer smaller slices, and ask for clarification only when genuinely blocked.
 
+Styling work follows the [CSS and design-token authoring standard](../instructions/css-design-tokens.instructions.md).
+
 ## Platform decisions
 
 - Custom-agent support was validated against the local VS Code Copilot customization reference and the official VS Code custom agents documentation.
