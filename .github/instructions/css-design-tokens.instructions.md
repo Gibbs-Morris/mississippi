@@ -1,5 +1,5 @@
 ---
-applyTo: '**/*.css,**/*.razor*,src/Refraction.Client/**,src/Refraction.Abstractions/**/Theme/**,**/Themes/**/*.json,**/*.tokens.json'
+applyTo: '**/*.css,**/*.scss,**/*.sass,**/*.less,**/*.razor*,src/Refraction.Client/**,src/Refraction.Abstractions/**/Theme/**,**/Themes/**/*.json,**/*.tokens.json'
 ---
 
 # CSS and Design Token Authoring
