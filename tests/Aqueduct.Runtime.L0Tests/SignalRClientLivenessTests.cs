@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,12 +26,17 @@ namespace Mississippi.Aqueduct.Runtime.L0Tests;
 public sealed class SignalRClientLivenessTests
 {
     private static async Task<(SignalRClientGrain Client, ISignalRServerLivenessGrain Directory,
-        Func<Task> Cleanup, IGrainTimer Timer)> CreateConnectedClientAsync()
+        Func<Task> Cleanup, IGrainTimer Timer)> CreateConnectedClientAsync(
+        IGrainFactory? sharedFactory = null,
+        ISignalRServerLivenessGrain? sharedDirectory = null,
+        SignalRServerLivenessCache? sharedCache = null,
+        string connectionKey = "hub:connection"
+    )
     {
-        IGrainContext context = GrainContextMockBuilder.Create().WithGrainKey("hub:connection").BuildObject();
+        IGrainContext context = GrainContextMockBuilder.Create().WithGrainKey(connectionKey).BuildObject();
         IGrainRuntime runtime = Substitute.For<IGrainRuntime>();
-        IGrainFactory factory = Substitute.For<IGrainFactory>();
-        ISignalRServerLivenessGrain directory = Substitute.For<ISignalRServerLivenessGrain>();
+        IGrainFactory factory = sharedFactory ?? Substitute.For<IGrainFactory>();
+        ISignalRServerLivenessGrain directory = sharedDirectory ?? Substitute.For<ISignalRServerLivenessGrain>();
         factory.GetGrain<ISignalRServerLivenessGrain>(SignalRServerDirectoryKey.Default).Returns(directory);
         directory.IsServerAliveAsync("server", TimeSpan.FromMinutes(6)).Returns(Task.FromResult(true));
         IGrainTimer timer = Substitute.For<IGrainTimer>();
@@ -44,19 +51,69 @@ public sealed class SignalRClientLivenessTests
             callback = call.Arg<Func<SignalRClientGrain, CancellationToken, Task>>();
             return timer;
         });
+        IOptions<AqueductOptions> options = Options.Create(
+            new AqueductOptions
+            {
+                HeartbeatIntervalMinutes = 2,
+            });
         SignalRClientGrain client = new(
             context,
             runtime,
+            factory,
+            sharedCache ?? new SignalRServerLivenessCache(factory, options),
+            options,
+            NullLogger<SignalRClientGrain>.Instance);
+        await client.ConnectAsync("hub", "server");
+        Assert.NotNull(callback);
+        return (client, directory, () => callback(client, CancellationToken.None), timer);
+    }
+
+    /// <summary>
+    ///     Many client cleanup callbacks share one pending directory lookup for the same server and timeout.
+    /// </summary>
+    /// <returns>The test operation.</returns>
+    [Fact]
+    public async Task ConcurrentClientsShouldShareServerLivenessLookup()
+    {
+        IGrainFactory factory = Substitute.For<IGrainFactory>();
+        ISignalRServerLivenessGrain directory = Substitute.For<ISignalRServerLivenessGrain>();
+        SignalRServerLivenessCache cache = new(
             factory,
             Options.Create(
                 new AqueductOptions
                 {
                     HeartbeatIntervalMinutes = 2,
-                }),
-            NullLogger<SignalRClientGrain>.Instance);
-        await client.ConnectAsync("hub", "server");
-        Assert.NotNull(callback);
-        return (client, directory, () => callback(client, CancellationToken.None), timer);
+                }));
+        List<(SignalRClientGrain Client, Func<Task> Cleanup)> clients = [];
+        TaskCompletionSource<bool> response = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        Task? sweep = null;
+        try
+        {
+            for (int index = 0; index < 64; index++)
+            {
+                (SignalRClientGrain client, ISignalRServerLivenessGrain _, Func<Task> cleanup, IGrainTimer _) =
+                    await CreateConnectedClientAsync(factory, directory, cache, $"hub:connection-{index}");
+                clients.Add((client, cleanup));
+            }
+
+            directory.ClearReceivedCalls();
+            directory.IsServerAliveAsync("server", TimeSpan.FromMinutes(6)).Returns(response.Task);
+            sweep = Task.WhenAll(clients.Select(client => client.Cleanup()));
+            _ = directory.Received(1).IsServerAliveAsync("server", TimeSpan.FromMinutes(6));
+        }
+        finally
+        {
+            response.TrySetResult(true);
+            if (sweep is not null)
+            {
+                await sweep;
+            }
+
+            foreach ((SignalRClientGrain client, Func<Task> _) in clients)
+            {
+                client.Dispose();
+            }
+        }
     }
 
     /// <summary>

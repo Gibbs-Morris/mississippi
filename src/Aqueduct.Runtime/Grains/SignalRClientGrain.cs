@@ -59,6 +59,7 @@ internal sealed class SignalRClientGrain
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
     /// <param name="grainRuntime">The Orleans runtime for activation lifecycle control.</param>
     /// <param name="grainFactory">The factory for resolving the client's group grains.</param>
+    /// <param name="livenessCache">The silo-wide cache of server-liveness requests.</param>
     /// <param name="options">Configuration options for the Orleans-SignalR bridge.</param>
     /// <param name="logger">Logger instance for grain operations.</param>
     /// <param name="timeProvider">Time provider for timestamps. If null, uses <see cref="System.TimeProvider.System" />.</param>
@@ -66,6 +67,7 @@ internal sealed class SignalRClientGrain
         IGrainContext grainContext,
         IGrainRuntime grainRuntime,
         IGrainFactory grainFactory,
+        SignalRServerLivenessCache livenessCache,
         IOptions<AqueductOptions> options,
         ILogger<SignalRClientGrain> logger,
         TimeProvider? timeProvider = null
@@ -74,6 +76,7 @@ internal sealed class SignalRClientGrain
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
         GrainRuntime = grainRuntime ?? throw new ArgumentNullException(nameof(grainRuntime));
         GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
+        LivenessCache = livenessCache ?? throw new ArgumentNullException(nameof(livenessCache));
         Options = options ?? throw new ArgumentNullException(nameof(options));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         TimeProvider = timeProvider ?? TimeProvider.System;
@@ -85,6 +88,8 @@ internal sealed class SignalRClientGrain
     private IGrainFactory GrainFactory { get; }
 
     private IGrainRuntime GrainRuntime { get; }
+
+    private SignalRServerLivenessCache LivenessCache { get; }
 
     private ILogger<SignalRClientGrain> Logger { get; }
 
@@ -288,8 +293,7 @@ internal sealed class SignalRClientGrain
         TimeSpan timeout = TimeSpan.FromMinutes(
             (double)Options.Value.HeartbeatIntervalMinutes * Options.Value.DeadServerTimeoutMultiplier);
         if (string.IsNullOrEmpty(state.ServerId) ||
-            !await GrainFactory.GetGrain<ISignalRServerLivenessGrain>(SignalRServerDirectoryKey.Default)
-                .IsServerAliveAsync(state.ServerId, timeout)
+            !await LivenessCache.IsServerAliveAsync(state.ServerId, timeout)
                 .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext))
         {
             await DisconnectAsync().ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);

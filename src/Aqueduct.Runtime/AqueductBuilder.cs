@@ -210,6 +210,7 @@ public sealed class AqueductBuilder
                 "Aqueduct requires nonempty stream names and positive heartbeat timing within TimeSpan range.")
             .ValidateOnStart();
         silo.Services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
+        silo.Services.TryAddSingleton<SignalRServerLivenessCache>();
     }
 
     /// <summary>Closes configuration after its callback completes or fails.</summary>

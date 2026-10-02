@@ -29,13 +29,16 @@ public sealed class SignalRClientGroupMembershipTests
     )
     {
         IGrainRuntime runtime = Substitute.For<IGrainRuntime>();
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        FakeTimeProvider clock = new();
         return new(
             GrainContextMockBuilder.Create().WithGrainKey("hub:connection").BuildObject(),
             runtime,
             factory,
-            Options.Create(new AqueductOptions()),
+            new(factory ?? Substitute.For<IGrainFactory>(), options, clock),
+            options,
             NullLogger<SignalRClientGrain>.Instance,
-            new FakeTimeProvider());
+            clock);
     }
 
     /// <summary>
