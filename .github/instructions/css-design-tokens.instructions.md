@@ -71,6 +71,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Component tokens **MUST** be added only for a stable public concept, intentional divergence, or a real per-component theming need. Why: Mechanical one-token-per-declaration APIs create noise and freeze implementation details.
 - Component tokens **SHOULD** default to system tokens. Why: Consumers receive coherent defaults while retaining an intentional customization point.
 - Reusable design decisions **SHOULD** use tokens for color, spacing, typography, radius, borders, shadows, opacity, motion, easing, focus, reusable sizes, and layering. Why: Repeated meaningful decisions need one semantic place to change.
+- Reusable shadows **MUST** be assembled from named primitive system or component tokens while composite shadow types remain unsupported. Why: Shadow decisions need the supported scalar input profile rather than an invalid complete shadow token.
 - Authors **MUST** treat repeated meaningful design literals as evidence of a missing token. Why: Duplication causes visual drift even when every individual declaration looks reasonable.
 - Structural values such as `0`, `100%`, `50%`, `auto`, `none`, `1fr`, and `currentColor` **MAY** remain literal. Why: Not every CSS value represents a reusable design decision.
 - New work **MUST NOT** introduce additional `--rf-raw-*` variables. Why: The reference/system/component hierarchy replaces ambiguous raw aliases in this pre-release repository.
@@ -184,6 +185,17 @@ This selected DTCG 2025.10 input profile defines the accepted source shape and v
 | Aliases | A whole-token curly-brace alias such as `{ref.color.neo-blue.300}` may chain through targets. At every hop, `ref` aliases target only `ref`; `sys` aliases target `ref` or `sys`; `comp` aliases target `sys` or `comp`. An alias uses its token-local `$type` when present; otherwise it uses the resolved target token's type, regardless of the alias's inherited group `$type`. Each target resolves its own type recursively; literal targets use their token-local or closest inherited group type. Invalid layer direction, cycles, unresolved targets, and type mismatches are errors. |
 | Catalog scope | All `*.json` files directly in one selected catalog directory form one scope. The canonical directory is `src/Refraction.Client/Themes/Tokens/`; its reference, system, and component documents are loaded together before alias resolution. Additional catalog directories are independently selected, self-contained scopes without implicit inheritance or cross-directory aliases. Duplicate JSON properties, duplicate paths, and flattened CSS-name collisions are errors. |
 | Rejected / conformance | Non-finite binary64 numeric results, NULL or unpaired surrogates in font-family names, composite types, property-level references or JSON Pointer, `$root`, `$extends`, extensions, deprecation metadata, and unknown constructs; this is selected input support, not full-format DTCG tool conformance. |
+
+A reusable shadow uses `dimension` tokens for its offsets, blur, and spread, plus a `color` token for its color. Component CSS assembles the CSS shadow value; there is no complete shadow-valued token in the initial profile. For example:
+
+```css
+box-shadow:
+  var(--rf-sys-shadow-elevation-offset-x)
+  var(--rf-sys-shadow-elevation-offset-y)
+  var(--rf-sys-shadow-elevation-blur)
+  var(--rf-sys-shadow-elevation-spread)
+  var(--rf-sys-shadow-elevation-color);
+```
 
 ## Canonical CSS serialization profile
 
