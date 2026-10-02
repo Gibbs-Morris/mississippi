@@ -53,6 +53,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Generated token custom properties **MUST** replace source dots with hyphens and prefix the source layer with `--rf-`, producing `--rf-ref-*`, `--rf-sys-*`, or deliberately exposed `--rf-comp-*`. Why: The output namespace preserves source ownership while remaining valid CSS.
 - Whole-token DTCG aliases **MUST** emit a `var()` reference to the alias target's generated custom property rather than a flattened literal, preserving each link in a validated alias chain. Why: System and component defaults need live token bindings rather than copied values.
 - Hand-authored generated CSS **MUST NOT** be the token source of truth. Why: Source edits need to survive regeneration without being overwritten or silently diverging.
+- The future generator **MUST** write its complete token CSS artifact to `src/Refraction.Client/wwwroot/RefractionTokens.generated.css`. Why: Generation and freshness validation need one canonical output path.
 - Generated token output **MUST** identify itself as generated. Why: Reviewers and tools must distinguish source from derived artifacts.
 - Token generation **MUST** be deterministic for identical inputs. Why: Reproducible output makes changes reviewable and stale output detectable.
 - Generated token CSS **MUST** follow the [canonical CSS serialization profile](#canonical-css-serialization-profile). Why: Literal values and file formatting need one reproducible representation.
@@ -193,6 +194,8 @@ For the future generator, JSON numbers use finite IEEE 754 binary64 semantics, i
 | `cubicBezier` | `cubic-bezier(N, N, N, N)` in the input's four-coordinate order. |
 
 Within each selector block, declarations sort by generated property name using ordinal comparison. The output uses UTF-8 without a BOM, LF line endings, two-space declaration indentation, `name: value;` declarations, and one final newline. Generated provenance contains no timestamp, machine path, or other variable input. Alias output remains the immediate-target `var()` binding defined above.
+
+The generator replaces the entire `RefractionTokens.generated.css` artifact on each run; freshness validation compares that file's complete bytes. This is an additional static asset, not a replacement for the current hand-authored `RefractionTokens.css`. The #405 integration layer loads the legacy stylesheet first and the generated asset after it, preserving consumed legacy properties and existing base or accessibility rules until their recorded migration layers. No generated asset or loading change is introduced here.
 
 The generator layer includes byte-for-byte golden fixtures for each supported type, numeric edge cases, font-family escaping, aliases, and complete theme scopes before generated-output freshness becomes a gate. This serialization contract describes a future implementation; it does not introduce generated CSS here.
 
