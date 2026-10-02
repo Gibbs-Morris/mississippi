@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -52,6 +51,7 @@ internal sealed class InletSubscriptionGrain
     ///     Initializes a new instance of the <see cref="InletSubscriptionGrain" /> class.
     /// </summary>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
+    /// <param name="grainRuntime">The Orleans runtime for activation lifecycle control.</param>
     /// <param name="grainFactory">Factory for creating grain references.</param>
     /// <param name="aqueductGrainFactory">Factory for resolving Aqueduct grains.</param>
     /// <param name="projectionBrookRegistry">Registry for projection path to brook mappings.</param>
@@ -61,6 +61,7 @@ internal sealed class InletSubscriptionGrain
     /// <param name="logger">Logger instance for logging subscription grain operations.</param>
     public InletSubscriptionGrain(
         IGrainContext grainContext,
+        IGrainRuntime grainRuntime,
         IGrainFactory grainFactory,
         IAqueductGrainFactory aqueductGrainFactory,
         IProjectionBrookRegistry projectionBrookRegistry,
@@ -71,6 +72,7 @@ internal sealed class InletSubscriptionGrain
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
+        GrainRuntime = grainRuntime ?? throw new ArgumentNullException(nameof(grainRuntime));
         GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
         AqueductGrainFactory = aqueductGrainFactory ?? throw new ArgumentNullException(nameof(aqueductGrainFactory));
         ProjectionBrookRegistry =
@@ -95,6 +97,8 @@ internal sealed class InletSubscriptionGrain
     private Dictionary<string, HashSet<string>> BrookToSubscriptions { get; } = [];
 
     private IGrainFactory GrainFactory { get; }
+
+    private IGrainRuntime GrainRuntime { get; }
 
     private ILogger<InletSubscriptionGrain> Logger { get; }
 
@@ -271,8 +275,7 @@ internal sealed class InletSubscriptionGrain
             await SubscribeToBrookStreamAsync(brookKey, brookKeyString);
         }
 
-        GrainContext.ActivationServices.GetRequiredService<IGrainRuntime>()
-            .DelayDeactivation(GrainContext, Timeout.InfiniteTimeSpan);
+        GrainRuntime.DelayDeactivation(GrainContext, Timeout.InfiniteTimeSpan);
         InletMetrics.RecordSubscription(path, "subscribe");
         Logger.SubscribedToProjection(connectionId, subscriptionId, path, entityId);
         return subscriptionId;
@@ -305,8 +308,7 @@ internal sealed class InletSubscriptionGrain
 
         if (Subscriptions.Count == 0)
         {
-            GrainContext.ActivationServices.GetRequiredService<IGrainRuntime>()
-                .DelayDeactivation(GrainContext, TimeSpan.Zero);
+            GrainRuntime.DelayDeactivation(GrainContext, TimeSpan.Zero);
         }
 
         InletMetrics.RecordSubscription(entry.Path, "unsubscribe");

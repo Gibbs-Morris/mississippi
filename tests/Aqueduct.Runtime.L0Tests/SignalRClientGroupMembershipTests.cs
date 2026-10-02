@@ -28,13 +28,12 @@ public sealed class SignalRClientGroupMembershipTests
         IGrainFactory factory
     )
     {
-        IServiceProvider services = Substitute.For<IServiceProvider>();
-        services.GetService(typeof(IGrainRuntime)).Returns(Substitute.For<IGrainRuntime>());
+        IGrainRuntime runtime = Substitute.For<IGrainRuntime>();
         return new(
             GrainContextMockBuilder.Create()
                 .WithGrainKey("hub:connection")
-                .Configure(context => context.Setup(value => value.ActivationServices).Returns(services))
                 .BuildObject(),
+            runtime,
             factory,
             Options.Create(new AqueductOptions()),
             NullLogger<SignalRClientGrain>.Instance,

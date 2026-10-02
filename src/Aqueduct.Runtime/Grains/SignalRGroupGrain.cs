@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.Aqueduct.Abstractions.Grains;
@@ -48,15 +47,18 @@ internal sealed class SignalRGroupGrain
     ///     Initializes a new instance of the <see cref="SignalRGroupGrain" /> class.
     /// </summary>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
+    /// <param name="grainRuntime">The Orleans runtime for activation lifecycle control.</param>
     /// <param name="grainFactory">Factory for creating grain references.</param>
     /// <param name="logger">Logger instance for grain operations.</param>
     public SignalRGroupGrain(
         IGrainContext grainContext,
+        IGrainRuntime grainRuntime,
         IGrainFactory grainFactory,
         ILogger<SignalRGroupGrain> logger
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
+        GrainRuntime = grainRuntime ?? throw new ArgumentNullException(nameof(grainRuntime));
         GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -65,6 +67,8 @@ internal sealed class SignalRGroupGrain
     public IGrainContext GrainContext { get; }
 
     private IGrainFactory GrainFactory { get; }
+
+    private IGrainRuntime GrainRuntime { get; }
 
     private ILogger<SignalRGroupGrain> Logger { get; }
 
@@ -95,8 +99,7 @@ internal sealed class SignalRGroupGrain
             return Task.CompletedTask;
         }
 
-        GrainContext.ActivationServices.GetRequiredService<IGrainRuntime>()
-            .DelayDeactivation(GrainContext, Timeout.InfiniteTimeSpan);
+        GrainRuntime.DelayDeactivation(GrainContext, Timeout.InfiniteTimeSpan);
         state = state with
         {
             ConnectionIds = state.ConnectionIds.Add(connectionId),

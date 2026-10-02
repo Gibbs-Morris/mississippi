@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -55,12 +54,14 @@ internal sealed class SignalRClientGrain
     ///     Initializes a new instance of the <see cref="SignalRClientGrain" /> class.
     /// </summary>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
+    /// <param name="grainRuntime">The Orleans runtime for activation lifecycle control.</param>
     /// <param name="grainFactory">The factory for resolving the client's group grains.</param>
     /// <param name="options">Configuration options for the Orleans-SignalR bridge.</param>
     /// <param name="logger">Logger instance for grain operations.</param>
     /// <param name="timeProvider">Time provider for timestamps. If null, uses <see cref="System.TimeProvider.System" />.</param>
     public SignalRClientGrain(
         IGrainContext grainContext,
+        IGrainRuntime grainRuntime,
         IGrainFactory grainFactory,
         IOptions<AqueductOptions> options,
         ILogger<SignalRClientGrain> logger,
@@ -68,6 +69,7 @@ internal sealed class SignalRClientGrain
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
+        GrainRuntime = grainRuntime ?? throw new ArgumentNullException(nameof(grainRuntime));
         GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
         Options = options ?? throw new ArgumentNullException(nameof(options));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -78,6 +80,8 @@ internal sealed class SignalRClientGrain
     public IGrainContext GrainContext { get; }
 
     private IGrainFactory GrainFactory { get; }
+
+    private IGrainRuntime GrainRuntime { get; }
 
     private ILogger<SignalRClientGrain> Logger { get; }
 
@@ -124,8 +128,7 @@ internal sealed class SignalRClientGrain
         ArgumentException.ThrowIfNullOrEmpty(serverId);
         string connectionId = ExtractConnectionId();
         Logger.ClientConnecting(connectionId, hubName, serverId);
-        GrainContext.ActivationServices.GetRequiredService<IGrainRuntime>()
-            .DelayDeactivation(GrainContext, Timeout.InfiniteTimeSpan);
+        GrainRuntime.DelayDeactivation(GrainContext, Timeout.InfiniteTimeSpan);
         state = new()
         {
             ConnectionId = connectionId,
