@@ -118,7 +118,8 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - The #405 validation layer **MUST** mechanically detect duplicate tokens. Why: One source path cannot have competing definitions.
 - The #405 validation layer **MUST** mechanically detect flattened output-name collisions. Why: Distinct source paths cannot emit the same property.
 - The #405 validation layer **MUST** mechanically detect unresolved aliases. Why: Every alias needs a valid target.
-- The #405 validation layer **MUST** mechanically detect Refraction-owned CSS `var()` references absent from the validated token catalog and temporary legacy allowlist. Why: Catalog alias validation cannot catch a misspelled or removed property in a CSS consumer.
+- The #405 validation layer **MUST** mechanically reject Refraction-owned CSS `var()` references absent from the validated token catalog and temporary legacy allowlist. Why: Catalog alias validation cannot catch a misspelled or removed property in a CSS consumer.
+- Existing private component properties outside the catalog **MUST** be recorded as scoped temporary migration exclusions in #405. Why: Legacy component-local names are not supported token properties.
 - The #405 validation layer **MUST** mechanically detect stale generated output. Why: Source and derived output need to agree.
 - The validation layer tracked in [issue #405](https://github.com/Gibbs-Morris/mississippi/issues/405) **MUST** include rendered text and non-text contrast checks across every supported theme. Why: Valid token values alone do not establish sufficient contrast in composed controls and their states.
 - Mechanical CSS and token checks **MUST** become required delivery gates only after their validators land with runnable commands and pipeline integration. Why: An unavailable validator cannot be an executable gate.
@@ -327,6 +328,8 @@ comp.pane.accent-border   (only when a stable public hook is justified)
 ```
 
 ## Status and references
+
+The existing `ProgressArc.razor.css` references to `--rf-progress-size` and `--rf-progress-stroke-width` are temporary legacy exclusions, not private token APIs. Their scope is the current ProgressArc component, their owner is Refraction component maintenance, and their reason is preservation of existing geometry before migration. The #405 `progress-arc-token-migration` layer replaces them with catalog-backed properties or typed state and removes the allowlist entries after validation. The issue records this inventory; this guide does not add new consumers.
 
 `src/Refraction.Abstractions/Theme/IRefractionTheme.cs` is a legacy interface with contract tests but no current runtime bridge to CSS tokens. It is not an input to generated catalogs. The #405 `legacy-theme-contract-removal` layer removes the interface and its contract tests after auditing usages, migrating any consumers found, and updating public documentation. This guide retains it in the interim and does not introduce a bridge.
 
