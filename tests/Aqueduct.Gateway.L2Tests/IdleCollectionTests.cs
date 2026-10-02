@@ -144,7 +144,7 @@ public sealed class IdleCollectionTests : IAsyncLifetime
         ISignalRClientGrain probe = fixture.Client.GetGrain<ISignalRClientGrain>(NewKey());
         Assert.Null(await probe.GetServerIdAsync());
         await ObserveProbeCollectionAsync(probe);
-        await Task.Delay(TimeSpan.FromSeconds(70), TestContext.Current.CancellationToken);
+        await fixture.WaitForCleanupQueriesAsync(client.GetGrainId(), group.GetGrainId(), subscription.GetGrainId());
         Assert.Equal("idle-server", await client.GetServerIdAsync());
         Assert.Contains(connectionId, await group.GetConnectionsAsync());
         Assert.Equal(id, Assert.Single(await subscription.GetSubscriptionsAsync()).SubscriptionId);

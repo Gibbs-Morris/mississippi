@@ -55,6 +55,7 @@ internal sealed class IdleCollectionFixture : IAsyncLifetime
                 })
                 .UseMississippi(runtime => runtime.AddAqueduct(aqueduct => aqueduct.UseMemoryStreams()));
         });
+        builder.Services.AddSingleton<IIncomingGrainCallFilter>(CleanupObserver);
         builder.Services.AddInletSilo();
         builder.Services.Configure<BrookProviderOptions>(options =>
             options.OrleansStreamProviderName = AqueductStreamDefaults.StreamProviderName);
@@ -74,6 +75,8 @@ internal sealed class IdleCollectionFixture : IAsyncLifetime
     ///     Gets the real client connected to this fixture's silo.
     /// </summary>
     public IClusterClient Client => host.Services.GetRequiredService<IClusterClient>();
+
+    private IdleCleanupObserver CleanupObserver { get; } = new();
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
@@ -97,6 +100,31 @@ internal sealed class IdleCollectionFixture : IAsyncLifetime
         await host.StartAsync();
         await Client.GetGrain<ISignalRServerDirectoryGrain>(SignalRServerDirectoryKey.Default)
             .RegisterServerAsync("idle-server");
+    }
+
+    /// <summary>
+    ///     Waits until all three live-state cleanup timers complete their ownership queries.
+    /// </summary>
+    /// <param name="clientId">The connected route activation.</param>
+    /// <param name="groupId">The owned group activation.</param>
+    /// <param name="subscriptionId">The subscribed activation.</param>
+    /// <returns>A bounded wait for the observed ownership queries.</returns>
+    public Task WaitForCleanupQueriesAsync(
+        GrainId clientId,
+        GrainId groupId,
+        GrainId subscriptionId
+    )
+    {
+        GrainId directoryId = Client.GetGrain<ISignalRServerDirectoryGrain>(SignalRServerDirectoryKey.Default)
+            .GetGrainId();
+        return Task.WhenAll(
+                CleanupObserver.WaitForCallAsync(clientId, directoryId, "IsServerAliveAsync"),
+                CleanupObserver.WaitForCallAsync(groupId, clientId, nameof(ISignalRClientGrain.GetServerIdAsync)),
+                CleanupObserver.WaitForCallAsync(
+                    subscriptionId,
+                    clientId,
+                    nameof(ISignalRClientGrain.GetServerIdAsync)))
+            .WaitAsync(TimeSpan.FromMinutes(2), TestContext.Current.CancellationToken);
     }
 
     /// <summary>
