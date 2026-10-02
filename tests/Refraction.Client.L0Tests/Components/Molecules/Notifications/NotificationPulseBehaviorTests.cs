@@ -222,5 +222,4 @@ public sealed class NotificationPulseBehaviorTests : BunitContext
         // Assert
         Assert.Contains("DetailsId", error.Message, StringComparison.Ordinal);
     }
-
 }
