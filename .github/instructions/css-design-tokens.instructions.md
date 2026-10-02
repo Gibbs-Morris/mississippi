@@ -43,6 +43,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - A component **MUST** own its internal layout while its parent owns external placement. Why: Components remain composable without hidden margins or page-specific positioning contracts.
 - Component rules **MUST NOT** prescribe external placement through incidental margins or page-specific offsets. Why: Placement belongs to the parent layout context.
 - The supported token API for theming and customization **MUST** consist of semantic system tokens and deliberately exposed component tokens. Why: Consumers can theme stable concepts without coupling to DOM details.
+- The legacy `IRefractionTheme` contract **MUST** remain until the `legacy-theme-contract-removal` layer recorded in [issue #405](https://github.com/Gibbs-Morris/mississippi/issues/405). Why: An existing public contract needs an explicit migration disposition.
 - Consumers **MUST NOT** depend on private BEM element selectors. Why: Internal elements may evolve without breaking supported customization.
 - Canonical token sources **MUST** be valid DTCG 2025.10 representations. Why: A standard source format enables validation and tooling without losing token meaning.
 - The supported DTCG 2025.10 subset **MUST** be documented in the [initial DTCG input profile](#initial-dtcg-input-profile). Why: Contributors need to know which standard constructs the repository intentionally accepts.
@@ -279,6 +280,8 @@ comp.pane.accent-border   (only when a stable public hook is justified)
 ```
 
 ## Status and references
+
+`src/Refraction.Abstractions/Theme/IRefractionTheme.cs` is a legacy interface with contract tests but no current runtime bridge to CSS tokens. It is not an input to generated catalogs. The #405 `legacy-theme-contract-removal` layer removes the interface and its contract tests after auditing usages, migrating any consumers found, and updating public documentation. This guide retains it in the interim and does not introduce a bridge.
 
 This layer defines the forward-looking authoring contract. Token catalogs, generators, validators, compiled-bundle evidence, and complete consumer documentation belong to subsequent stack layers.
 
