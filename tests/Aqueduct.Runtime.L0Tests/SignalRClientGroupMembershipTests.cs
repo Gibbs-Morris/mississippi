@@ -30,9 +30,7 @@ public sealed class SignalRClientGroupMembershipTests
     {
         IGrainRuntime runtime = Substitute.For<IGrainRuntime>();
         return new(
-            GrainContextMockBuilder.Create()
-                .WithGrainKey("hub:connection")
-                .BuildObject(),
+            GrainContextMockBuilder.Create().WithGrainKey("hub:connection").BuildObject(),
             runtime,
             factory,
             Options.Create(new AqueductOptions()),
@@ -48,7 +46,7 @@ public sealed class SignalRClientGroupMembershipTests
     public async Task ConcurrentRemovalsShouldEachClearTracking()
     {
         IGrainFactory factory = Substitute.For<IGrainFactory>();
-        SignalRClientGrain client = CreateGrain(factory);
+        using SignalRClientGrain client = CreateGrain(factory);
         await client.ConnectAsync("hub", "server");
         List<(ISignalRGroupGrain Grain, TaskCompletionSource Completion)> pending = [];
         for (int index = 0; index < 16; index++)
@@ -97,7 +95,7 @@ public sealed class SignalRClientGroupMembershipTests
     public async Task DisconnectedClientShouldIgnoreGroupOperations()
     {
         IGrainFactory factory = Substitute.For<IGrainFactory>();
-        SignalRClientGrain client = CreateGrain(factory);
+        using SignalRClientGrain client = CreateGrain(factory);
         await client.AddToGroupAsync("group");
         await client.RemoveFromGroupAsync("group");
         Assert.Empty(factory.ReceivedCalls());
@@ -113,7 +111,7 @@ public sealed class SignalRClientGroupMembershipTests
         IGrainFactory factory = Substitute.For<IGrainFactory>();
         ISignalRGroupGrain group = Substitute.For<ISignalRGroupGrain>();
         factory.GetGrain<ISignalRGroupGrain>("hub:group").Returns(group);
-        SignalRClientGrain client = CreateGrain(factory);
+        using SignalRClientGrain client = CreateGrain(factory);
         await client.ConnectAsync("hub", "server");
         await client.AddToGroupAsync("group");
         await client.AddToGroupAsync("group");
@@ -138,7 +136,7 @@ public sealed class SignalRClientGroupMembershipTests
         IGrainFactory factory = Substitute.For<IGrainFactory>();
         ISignalRGroupGrain group = Substitute.For<ISignalRGroupGrain>();
         factory.GetGrain<ISignalRGroupGrain>("hub:group").Returns(group);
-        SignalRClientGrain client = CreateGrain(factory);
+        using SignalRClientGrain client = CreateGrain(factory);
         await client.ConnectAsync("hub", "server");
         await client.AddToGroupAsync("group");
         await client.RemoveFromGroupAsync("group");
@@ -163,7 +161,7 @@ public sealed class SignalRClientGroupMembershipTests
         ISignalRGroupGrain healthy = Substitute.For<ISignalRGroupGrain>();
         factory.GetGrain<ISignalRGroupGrain>("hub:failed").Returns(failed);
         factory.GetGrain<ISignalRGroupGrain>("hub:healthy").Returns(healthy);
-        SignalRClientGrain client = CreateGrain(factory);
+        using SignalRClientGrain client = CreateGrain(factory);
         await client.ConnectAsync("hub", "server");
         await client.AddToGroupAsync("failed");
         await client.AddToGroupAsync("healthy");
@@ -190,7 +188,7 @@ public sealed class SignalRClientGroupMembershipTests
         ISignalRGroupGrain group = Substitute.For<ISignalRGroupGrain>();
         factory.GetGrain<ISignalRGroupGrain>("hub:group").Returns(group);
         group.AddConnectionAsync("connection").Returns(Task.FromException(new InvalidOperationException("uncertain")));
-        SignalRClientGrain client = CreateGrain(factory);
+        using SignalRClientGrain client = CreateGrain(factory);
         await client.ConnectAsync("hub", "server");
         await Assert.ThrowsAsync<InvalidOperationException>(() => client.AddToGroupAsync("group"));
         await client.DisconnectAsync();
@@ -207,7 +205,7 @@ public sealed class SignalRClientGroupMembershipTests
         IGrainFactory factory = Substitute.For<IGrainFactory>();
         ISignalRGroupGrain group = Substitute.For<ISignalRGroupGrain>();
         factory.GetGrain<ISignalRGroupGrain>("hub:group").Returns(group);
-        SignalRClientGrain client = CreateGrain(factory);
+        using SignalRClientGrain client = CreateGrain(factory);
         await client.ConnectAsync("hub", "server");
         await client.AddToGroupAsync("group");
         group.RemoveConnectionAsync("connection")
@@ -229,7 +227,7 @@ public sealed class SignalRClientGroupMembershipTests
         string? groupName
     )
     {
-        SignalRClientGrain client = CreateGrain(Substitute.For<IGrainFactory>());
+        using SignalRClientGrain client = CreateGrain(Substitute.For<IGrainFactory>());
         await Assert.ThrowsAnyAsync<ArgumentException>(() => client.AddToGroupAsync(groupName!));
         await Assert.ThrowsAnyAsync<ArgumentException>(() => client.RemoveFromGroupAsync(groupName!));
     }
@@ -247,7 +245,7 @@ public sealed class SignalRClientGroupMembershipTests
     )
     {
         IGrainFactory factory = Substitute.For<IGrainFactory>();
-        SignalRClientGrain client = CreateGrain(factory);
+        using SignalRClientGrain client = CreateGrain(factory);
         await client.ConnectAsync("hub", "server");
         string groupName = exceedsLength ? new('g', 4192) : "invalid:group";
         await Assert.ThrowsAsync<ArgumentException>(() => client.AddToGroupAsync(groupName));

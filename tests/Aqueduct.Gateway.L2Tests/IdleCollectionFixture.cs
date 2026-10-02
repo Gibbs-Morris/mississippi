@@ -1,6 +1,8 @@
 using System.Diagnostics;
 
 using Mississippi.Aqueduct.Abstractions;
+using Mississippi.Aqueduct.Abstractions.Grains;
+using Mississippi.Aqueduct.Abstractions.Keys;
 using Mississippi.Aqueduct.Runtime;
 using Mississippi.Brooks.Abstractions;
 using Mississippi.Brooks.Abstractions.Streaming;
@@ -90,19 +92,26 @@ internal sealed class IdleCollectionFixture : IAsyncLifetime
         Client.GetGrain<IManagementGrain>(0).GetDetailedGrainStatistics();
 
     /// <inheritdoc />
-    public async ValueTask InitializeAsync() => await host.StartAsync();
+    public async ValueTask InitializeAsync()
+    {
+        await host.StartAsync();
+        await Client.GetGrain<ISignalRServerDirectoryGrain>(SignalRServerDirectoryKey.Default)
+            .RegisterServerAsync("idle-server");
+    }
 
     /// <summary>
     ///     Waits for an observed activation to leave the catalog through normal or explicit collection.
     /// </summary>
     /// <param name="grainId">The activation's logical identity.</param>
+    /// <param name="collectionTimeout">An optional bound for background failure cleanup.</param>
     /// <returns>A task completed only after the activation is absent.</returns>
     public async Task WaitUntilCollectedAsync(
-        GrainId grainId
+        GrainId grainId,
+        TimeSpan? collectionTimeout = null
     )
     {
         Stopwatch timeout = Stopwatch.StartNew();
-        while (timeout.Elapsed < TimeSpan.FromSeconds(30))
+        while (timeout.Elapsed < (collectionTimeout ?? TimeSpan.FromSeconds(30)))
         {
             DetailedGrainStatistic[] statistics = await GetStatisticsAsync();
             if (!statistics.Any(statistic => statistic.GrainId == grainId))

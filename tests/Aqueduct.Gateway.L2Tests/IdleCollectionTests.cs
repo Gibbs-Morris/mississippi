@@ -1,4 +1,6 @@
 using Mississippi.Aqueduct.Abstractions.Grains;
+using Mississippi.Aqueduct.Abstractions.Keys;
+using Mississippi.Inlet.Gateway.Abstractions;
 using Mississippi.Inlet.Runtime.Grains;
 
 using Orleans.Runtime;
@@ -63,6 +65,45 @@ public sealed class IdleCollectionTests : IAsyncLifetime
     }
 
     /// <summary>
+    ///     An untracked group membership is released after its connection disappears.
+    /// </summary>
+    /// <returns>The test operation.</returns>
+    [Fact]
+    public async Task DisconnectedClientShouldReleaseOrphanedGroup()
+    {
+        string connectionId = Guid.NewGuid().ToString("N");
+        ISignalRClientGrain client = fixture.Client.GetGrain<ISignalRClientGrain>("IdleHub:" + connectionId);
+        await client.ConnectAsync("IdleHub", "idle-server");
+        ISignalRGroupGrain group = fixture.Client.GetGrain<ISignalRGroupGrain>(NewKey());
+        await group.AddConnectionAsync(connectionId);
+        Assert.Contains(connectionId, await group.GetConnectionsAsync());
+        await client.DisconnectAsync();
+        await fixture.WaitUntilCollectedAsync(client.GetGrainId());
+        await fixture.WaitUntilCollectedAsync(group.GetGrainId(), TimeSpan.FromMinutes(2));
+        Assert.Empty(await group.GetConnectionsAsync());
+    }
+
+    /// <summary>
+    ///     A missed clear-all callback does not retain stream subscriptions for a disconnected client.
+    /// </summary>
+    /// <returns>The test operation.</returns>
+    [Fact]
+    public async Task DisconnectedClientShouldReleaseOrphanedSubscriptions()
+    {
+        string connectionId = Guid.NewGuid().ToString("N");
+        ISignalRClientGrain client = fixture.Client.GetGrain<ISignalRClientGrain>(
+            InletHubConstants.HubName + ":" + connectionId);
+        await client.ConnectAsync(InletHubConstants.HubName, "idle-server");
+        IInletSubscriptionGrain subscription = fixture.Client.GetGrain<IInletSubscriptionGrain>(connectionId);
+        await subscription.SubscribeAsync("idle-projection", Guid.NewGuid().ToString("N"));
+        Assert.Single(await subscription.GetSubscriptionsAsync());
+        await client.DisconnectAsync();
+        await fixture.WaitUntilCollectedAsync(client.GetGrainId());
+        await fixture.WaitUntilCollectedAsync(subscription.GetGrainId(), TimeSpan.FromMinutes(2));
+        Assert.Empty(await subscription.GetSubscriptionsAsync());
+    }
+
+    /// <summary>
     ///     Group membership survives the pass which removes an unused group activation.
     /// </summary>
     /// <returns>The test operation.</returns>
@@ -80,6 +121,34 @@ public sealed class IdleCollectionTests : IAsyncLifetime
         Assert.Empty(await probe.GetConnectionsAsync());
         await ObserveProbeCollectionAsync(probe);
         Assert.Contains(connectionId, await group.GetConnectionsAsync());
+        await client.DisconnectAsync();
+    }
+
+    /// <summary>
+    ///     Real cleanup timers retain all three kinds of state while the registered server is healthy.
+    /// </summary>
+    /// <returns>The test operation.</returns>
+    [Fact]
+    public async Task HealthyServerShouldRetainStateAcrossCleanupInterval()
+    {
+        string connectionId = Guid.NewGuid().ToString("N");
+        ISignalRClientGrain client = fixture.Client.GetGrain<ISignalRClientGrain>(
+            InletHubConstants.HubName + ":" + connectionId);
+        await client.ConnectAsync(InletHubConstants.HubName, "idle-server");
+        string groupName = Guid.NewGuid().ToString("N");
+        await client.AddToGroupAsync(groupName);
+        ISignalRGroupGrain group = fixture.Client.GetGrain<ISignalRGroupGrain>(
+            InletHubConstants.HubName + ":" + groupName);
+        IInletSubscriptionGrain subscription = fixture.Client.GetGrain<IInletSubscriptionGrain>(connectionId);
+        string id = await subscription.SubscribeAsync("idle-projection", Guid.NewGuid().ToString("N"));
+        ISignalRClientGrain probe = fixture.Client.GetGrain<ISignalRClientGrain>(NewKey());
+        Assert.Null(await probe.GetServerIdAsync());
+        await ObserveProbeCollectionAsync(probe);
+        await Task.Delay(TimeSpan.FromSeconds(70), TestContext.Current.CancellationToken);
+        Assert.Equal("idle-server", await client.GetServerIdAsync());
+        Assert.Contains(connectionId, await group.GetConnectionsAsync());
+        Assert.Equal(id, Assert.Single(await subscription.GetSubscriptionsAsync()).SubscriptionId);
+        await subscription.ClearAllAsync();
         await client.DisconnectAsync();
     }
 
@@ -126,6 +195,22 @@ public sealed class IdleCollectionTests : IAsyncLifetime
         await ObserveProbeCollectionAsync(probe);
         Assert.Equal(id, Assert.Single(await subscription.GetSubscriptionsAsync()).SubscriptionId);
         await subscription.ClearAllAsync();
+    }
+
+    /// <summary>
+    ///     A missing gateway shutdown callback does not pin the connected route forever.
+    /// </summary>
+    /// <returns>The test operation.</returns>
+    [Fact]
+    public async Task ServerUnregisterShouldReleaseOrphanedClient()
+    {
+        ISignalRClientGrain client = fixture.Client.GetGrain<ISignalRClientGrain>(NewKey());
+        await client.ConnectAsync("IdleHub", "idle-server");
+        Assert.Equal("idle-server", await client.GetServerIdAsync());
+        await fixture.Client.GetGrain<ISignalRServerDirectoryGrain>(SignalRServerDirectoryKey.Default)
+            .UnregisterServerAsync("idle-server");
+        await fixture.WaitUntilCollectedAsync(client.GetGrainId(), TimeSpan.FromMinutes(2));
+        Assert.Null(await client.GetServerIdAsync());
     }
 
     /// <summary>

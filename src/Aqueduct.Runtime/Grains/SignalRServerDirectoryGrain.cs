@@ -37,6 +37,7 @@ namespace Mississippi.Aqueduct.Runtime.Grains;
 [Alias("Mississippi.Aqueduct.Runtime.Grains.SignalRServerDirectoryGrain")]
 internal sealed class SignalRServerDirectoryGrain
     : ISignalRServerDirectoryGrain,
+      ISignalRServerLivenessGrain,
       IGrainBase
 {
     private SignalRServerDirectoryState state = new();
@@ -108,6 +109,19 @@ internal sealed class SignalRServerDirectoryGrain
         AqueductMetrics.RecordServerHeartbeat();
         Logger.ServerHeartbeat(serverId, connectionCount);
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task<bool> IsServerAliveAsync(
+        string serverId,
+        TimeSpan timeout
+    )
+    {
+        ArgumentException.ThrowIfNullOrEmpty(serverId);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeout, TimeSpan.Zero);
+        bool isAlive = state.ActiveServers.TryGetValue(serverId, out SignalRServerInfo? server) &&
+                       (server.LastHeartbeat >= (TimeProvider.GetUtcNow() - timeout));
+        return Task.FromResult(isAlive);
     }
 
     /// <inheritdoc />

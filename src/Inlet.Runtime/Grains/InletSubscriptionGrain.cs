@@ -45,8 +45,11 @@ namespace Mississippi.Inlet.Runtime.Grains;
 internal sealed class InletSubscriptionGrain
     : IInletSubscriptionGrain,
       IAsyncObserver<BrookCursorMovedEvent>,
-      IGrainBase
+      IGrainBase,
+      IDisposable
 {
+    private IGrainTimer? cleanupTimer;
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="InletSubscriptionGrain" /> class.
     /// </summary>
@@ -54,6 +57,7 @@ internal sealed class InletSubscriptionGrain
     /// <param name="grainRuntime">The Orleans runtime for activation lifecycle control.</param>
     /// <param name="grainFactory">Factory for creating grain references.</param>
     /// <param name="aqueductGrainFactory">Factory for resolving Aqueduct grains.</param>
+    /// <param name="aqueductOptions">Configuration options for failure cleanup timing.</param>
     /// <param name="projectionBrookRegistry">Registry for projection path to brook mappings.</param>
     /// <param name="streamProviderOptions">Configuration options for the Orleans stream provider.</param>
     /// <param name="streamIdFactory">Factory for creating Orleans stream identifiers.</param>
@@ -64,6 +68,7 @@ internal sealed class InletSubscriptionGrain
         IGrainRuntime grainRuntime,
         IGrainFactory grainFactory,
         IAqueductGrainFactory aqueductGrainFactory,
+        IOptions<AqueductOptions> aqueductOptions,
         IProjectionBrookRegistry projectionBrookRegistry,
         IOptions<BrookProviderOptions> streamProviderOptions,
         IStreamIdFactory streamIdFactory,
@@ -75,6 +80,7 @@ internal sealed class InletSubscriptionGrain
         GrainRuntime = grainRuntime ?? throw new ArgumentNullException(nameof(grainRuntime));
         GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
         AqueductGrainFactory = aqueductGrainFactory ?? throw new ArgumentNullException(nameof(aqueductGrainFactory));
+        BridgeOptions = aqueductOptions ?? throw new ArgumentNullException(nameof(aqueductOptions));
         ProjectionBrookRegistry =
             projectionBrookRegistry ?? throw new ArgumentNullException(nameof(projectionBrookRegistry));
         StreamProviderOptions = streamProviderOptions ?? throw new ArgumentNullException(nameof(streamProviderOptions));
@@ -87,6 +93,8 @@ internal sealed class InletSubscriptionGrain
     public IGrainContext GrainContext { get; }
 
     private IAqueductGrainFactory AqueductGrainFactory { get; }
+
+    private IOptions<AqueductOptions> BridgeOptions { get; }
 
     private Dictionary<string, BrookPosition> BrookPositions { get; } = [];
 
@@ -136,8 +144,16 @@ internal sealed class InletSubscriptionGrain
         BrookToSubscriptions.Clear();
         BrookStreamHandles.Clear();
         BrookPositions.Clear();
+        Dispose();
         Logger.AllSubscriptionsCleared(connectionId);
         this.DeactivateOnIdle();
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        cleanupTimer?.Dispose();
+        cleanupTimer = null;
     }
 
     /// <inheritdoc />
@@ -275,6 +291,7 @@ internal sealed class InletSubscriptionGrain
             await SubscribeToBrookStreamAsync(brookKey, brookKeyString);
         }
 
+        EnsureCleanupTimer();
         GrainRuntime.DelayDeactivation(GrainContext, Timeout.InfiniteTimeSpan);
         InletMetrics.RecordSubscription(path, "subscribe");
         Logger.SubscribedToProjection(connectionId, subscriptionId, path, entityId);
@@ -308,11 +325,38 @@ internal sealed class InletSubscriptionGrain
 
         if (Subscriptions.Count == 0)
         {
+            Dispose();
             GrainRuntime.DelayDeactivation(GrainContext, TimeSpan.Zero);
         }
 
         InletMetrics.RecordSubscription(entry.Path, "unsubscribe");
         Logger.UnsubscribedFromProjection(connectionId, subscriptionId);
+    }
+
+    private void EnsureCleanupTimer()
+    {
+        TimeSpan interval = TimeSpan.FromMinutes(BridgeOptions.Value.HeartbeatIntervalMinutes);
+        cleanupTimer ??= GrainRuntime.TimerRegistry.RegisterGrainTimer(
+            GrainContext,
+            static (grain, _) => grain.RemoveOrphanedSubscriptionsAsync(),
+            this,
+            new()
+            {
+                DueTime = interval,
+                Period = interval,
+                Interleave = false,
+            });
+    }
+
+    private async Task RemoveOrphanedSubscriptionsAsync()
+    {
+        ISignalRClientGrain client = AqueductGrainFactory.GetClientGrain(
+            InletHubConstants.HubName,
+            this.GetPrimaryKeyString());
+        if (await client.GetServerIdAsync().ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext) is null)
+        {
+            await ClearAllAsync().ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
+        }
     }
 
     private async Task SubscribeToBrookStreamAsync(
