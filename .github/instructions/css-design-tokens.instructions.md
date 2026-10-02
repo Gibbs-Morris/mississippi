@@ -27,7 +27,8 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Refraction component modifier syntax **MUST** use only `rf-c-{block}--{modifier}` or `rf-c-{block}__{element}--{modifier}` with lowercase kebab-case segments. Why: A small grammar keeps component state explicit without expanding utility APIs.
 - Every modifier **MUST** accompany its corresponding base block or element class. Why: A modifier without its owner is ambiguous and difficult to compose.
 - Layout and utility classes **MUST NOT** define BEM modifiers. Why: Layout and utility contracts stay narrow and predictable.
-- BEM modifiers **SHOULD** be used only when native, ARIA, and `data-*` state mechanisms are unsuitable, with the reason documented. Why: Modifiers remain a deliberate fallback rather than a generic state channel.
+- BEM modifiers **SHOULD** be used only when native, ARIA, and `data-*` state mechanisms are unsuitable. Why: Modifiers remain a deliberate fallback rather than a generic state channel.
+- Authors **MUST** document the reason for using a BEM modifier instead of the preferred state mechanisms. Why: Reviewers need an explicit basis for the fallback.
 - BEM modifier visibility **MUST** default to private. Why: Private selectors remain implementation details rather than theming or customization APIs.
 - Deliberate public block modifier contracts **MUST** be explicitly documented. Why: Private element modifiers remain internal under the existing BEM API boundary.
 - Typed `State`, `Variant`, `Size`, and `Tone` values **SHOULD** bind to explicit `data-*` attributes when CSS needs them. Why: Stable data bindings avoid generated class permutations and preserve typed component state.
