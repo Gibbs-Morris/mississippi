@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -123,6 +124,8 @@ internal sealed class SignalRClientGrain
         ArgumentException.ThrowIfNullOrEmpty(serverId);
         string connectionId = ExtractConnectionId();
         Logger.ClientConnecting(connectionId, hubName, serverId);
+        GrainContext.ActivationServices.GetRequiredService<IGrainRuntime>()
+            .DelayDeactivation(GrainContext, Timeout.InfiniteTimeSpan);
         state = new()
         {
             ConnectionId = connectionId,

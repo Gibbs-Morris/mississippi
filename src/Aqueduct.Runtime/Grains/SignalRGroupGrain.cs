@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.Aqueduct.Abstractions.Grains;
@@ -94,6 +95,8 @@ internal sealed class SignalRGroupGrain
             return Task.CompletedTask;
         }
 
+        GrainContext.ActivationServices.GetRequiredService<IGrainRuntime>()
+            .DelayDeactivation(GrainContext, Timeout.InfiniteTimeSpan);
         state = state with
         {
             ConnectionIds = state.ConnectionIds.Add(connectionId),

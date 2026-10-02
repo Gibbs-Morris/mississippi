@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -270,6 +271,8 @@ internal sealed class InletSubscriptionGrain
             await SubscribeToBrookStreamAsync(brookKey, brookKeyString);
         }
 
+        GrainContext.ActivationServices.GetRequiredService<IGrainRuntime>()
+            .DelayDeactivation(GrainContext, Timeout.InfiniteTimeSpan);
         InletMetrics.RecordSubscription(path, "subscribe");
         Logger.SubscribedToProjection(connectionId, subscriptionId, path, entityId);
         return subscriptionId;
@@ -298,6 +301,12 @@ internal sealed class InletSubscriptionGrain
                 BrookToSubscriptions.Remove(entry.BrookKey);
                 await UnsubscribeFromBrookStreamAsync(entry.BrookKey);
             }
+        }
+
+        if (Subscriptions.Count == 0)
+        {
+            GrainContext.ActivationServices.GetRequiredService<IGrainRuntime>()
+                .DelayDeactivation(GrainContext, TimeSpan.Zero);
         }
 
         InletMetrics.RecordSubscription(entry.Path, "unsubscribe");

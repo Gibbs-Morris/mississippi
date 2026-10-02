@@ -14,6 +14,7 @@ using Mississippi.Testing.Utilities.Mocks;
 using NSubstitute;
 
 using Orleans;
+using Orleans.Runtime;
 
 
 namespace Mississippi.Aqueduct.Runtime.L0Tests;
@@ -25,13 +26,20 @@ public sealed class SignalRClientGroupMembershipTests
 {
     private static SignalRClientGrain CreateGrain(
         IGrainFactory factory
-    ) =>
-        new(
-            GrainContextMockBuilder.Create().WithGrainKey("hub:connection").BuildObject(),
+    )
+    {
+        IServiceProvider services = Substitute.For<IServiceProvider>();
+        services.GetService(typeof(IGrainRuntime)).Returns(Substitute.For<IGrainRuntime>());
+        return new(
+            GrainContextMockBuilder.Create()
+                .WithGrainKey("hub:connection")
+                .Configure(context => context.Setup(value => value.ActivationServices).Returns(services))
+                .BuildObject(),
             factory,
             Options.Create(new AqueductOptions()),
             NullLogger<SignalRClientGrain>.Instance,
             new FakeTimeProvider());
+    }
 
     /// <summary>
     ///     Outstanding removals can complete in any order without losing cleanup progress.

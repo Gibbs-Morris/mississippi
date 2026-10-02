@@ -17,6 +17,7 @@ using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 
 using Orleans;
+using Orleans.Runtime;
 
 
 namespace Mississippi.Aqueduct.Runtime.L0Tests;
@@ -42,8 +43,13 @@ public sealed class SignalRGroupBroadcastTests
         IGrainFactory factory = Substitute.For<IGrainFactory>();
         ILogger<SignalRGroupGrain> logger = Substitute.For<ILogger<SignalRGroupGrain>>();
         logger.IsEnabled(Arg.Any<LogLevel>()).Returns(true);
+        IServiceProvider services = Substitute.For<IServiceProvider>();
+        services.GetService(typeof(IGrainRuntime)).Returns(Substitute.For<IGrainRuntime>());
         SignalRGroupGrain group = new(
-            GrainContextMockBuilder.Create().WithGrainKey($"{hubName}:group").BuildObject(),
+            GrainContextMockBuilder.Create()
+                .WithGrainKey($"{hubName}:group")
+                .Configure(context => context.Setup(value => value.ActivationServices).Returns(services))
+                .BuildObject(),
             factory,
             logger);
         Dictionary<string, ISignalRClientGrain> clients = new();
@@ -175,8 +181,13 @@ public sealed class SignalRGroupBroadcastTests
         client.SendMessageAsync("update", Arg.Any<ImmutableArray<object?>>()).Returns(delivery.Task);
         ILogger<SignalRGroupGrain> logger = Substitute.For<ILogger<SignalRGroupGrain>>();
         logger.IsEnabled(Arg.Any<LogLevel>()).Returns(true);
+        IServiceProvider services = Substitute.For<IServiceProvider>();
+        services.GetService(typeof(IGrainRuntime)).Returns(Substitute.For<IGrainRuntime>());
         SignalRGroupGrain group = new(
-            GrainContextMockBuilder.Create().WithGrainKey($"{hubName}:group").BuildObject(),
+            GrainContextMockBuilder.Create()
+                .WithGrainKey($"{hubName}:group")
+                .Configure(context => context.Setup(value => value.ActivationServices).Returns(services))
+                .BuildObject(),
             factory,
             logger);
         await group.AddConnectionAsync("original");
