@@ -37,6 +37,8 @@ internal sealed class StreamSubscriptionManager
 
     private volatile bool initialized;
 
+    private StreamSubscriptionHandle<ServerMessage>? pendingServerSubscription;
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="StreamSubscriptionManager" /> class.
     /// </summary>
@@ -108,6 +110,7 @@ internal sealed class StreamSubscriptionManager
                 return;
             }
 
+            await CleanupPendingServerSubscriptionAsync().ConfigureAwait(false);
             Logger.InitializingStreams(hubName, ServerId);
             string streamProviderName = Options.Value.StreamProviderName;
             IStreamProvider streamProvider = ClusterClient.GetStreamProvider(streamProviderName);
@@ -115,15 +118,36 @@ internal sealed class StreamSubscriptionManager
             // Subscribe to server-specific stream
             StreamId serverStreamId = StreamId.Create(Options.Value.ServerStreamNamespace, ServerId);
             IAsyncStream<ServerMessage> serverStream = streamProvider.GetStream<ServerMessage>(serverStreamId);
-            await serverStream
+            pendingServerSubscription = await serverStream
                 .SubscribeAsync(async (message, token) => await onServerMessage(message).ConfigureAwait(false))
                 .ConfigureAwait(false);
+            try
+            {
+                // Subscribe to hub broadcast stream
+                StreamId allStreamId = StreamId.Create(Options.Value.AllClientsStreamNamespace, hubName);
+                allStream = streamProvider.GetStream<AllMessage>(allStreamId);
+                await allStream
+                    .SubscribeAsync(async (message, token) => await onAllMessage(message).ConfigureAwait(false))
+                    .ConfigureAwait(false);
+            }
+            catch (Exception initializationFailure)
+            {
+                try
+                {
+                    await CleanupPendingServerSubscriptionAsync().ConfigureAwait(false);
+                }
+                catch (Exception cleanupFailure)
+                {
+                    throw new AggregateException(
+                        "Stream initialization failed and the server subscription could not be removed.",
+                        initializationFailure,
+                        cleanupFailure);
+                }
 
-            // Subscribe to hub broadcast stream
-            StreamId allStreamId = StreamId.Create(Options.Value.AllClientsStreamNamespace, hubName);
-            allStream = streamProvider.GetStream<AllMessage>(allStreamId);
-            await allStream.SubscribeAsync(async (message, token) => await onAllMessage(message).ConfigureAwait(false))
-                .ConfigureAwait(false);
+                throw;
+            }
+
+            pendingServerSubscription = null;
             initialized = true;
             Logger.StreamsInitialized(hubName, ServerId);
         }
@@ -145,5 +169,14 @@ internal sealed class StreamSubscriptionManager
         }
 
         await allStream.OnNextAsync(message).ConfigureAwait(false);
+    }
+
+    private async Task CleanupPendingServerSubscriptionAsync()
+    {
+        if (pendingServerSubscription is { } subscription)
+        {
+            await subscription.UnsubscribeAsync().ConfigureAwait(false);
+            pendingServerSubscription = null;
+        }
     }
 }
