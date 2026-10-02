@@ -96,6 +96,8 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Consumers overriding color tokens in a descendant scope **MUST** provide forced-colors system-color rebindings on that same scope. Why: An ancestor's important declarations cannot override a descendant's own declarations through inheritance.
 - Consumer scope color rebindings **MUST** pass applicable forced-colors browser checks. Why: Supported branding must preserve native accessibility colors.
 - The accessibility companion stylesheet **MUST** pass applicable CSS validation and forced-colors browser checks. Why: Hand-authored accessibility mappings need executable regression evidence.
+- The accessibility companion stylesheet **MUST** preserve the built-in `color-scheme` mappings defined in the theme mapping. Why: Native controls need to agree with the provider mode after legacy theme rules are retired.
+- A `color-scheme` migration **MUST** pass native-control browser checks in every built-in mode and forced-colors mode. Why: Token contrast checks do not establish user-agent rendering.
 - Responsive component layout **SHOULD** prefer intrinsic flexbox, grid, `gap`, `min()`, `max()`, `clamp()`, and `minmax()` behavior. Why: Components adapt to their available space instead of accumulating breakpoint exceptions.
 - Container-aware behavior **SHOULD** be used when available space is the meaningful constraint. Why: Component responsiveness often depends on its container rather than the viewport.
 - Viewport queries **SHOULD** be reserved primarily for page or template composition. Why: Page composition owns viewport decisions while components own intrinsic layout.
@@ -277,6 +279,8 @@ The future generator uses complete, independent catalogs for the three existing 
 | High contrast | `src/Refraction.Client/Themes/Tokens/HighContrast/` | `[data-rf-theme="high-contrast"]` |
 
 Output emits the default block first, then Light, then HighContrast. Each theme catalog includes all of its reference, system, and component tokens; it does not inherit JSON from the default catalog. All modes expose the same system/component paths and types. Aliases targeting `sys` or `comp` use the same immediate target in every mode; reference-token targets and literal values may vary. The generator rejects differences in that public dependency graph before output. Each selector declares the complete validated catalog, including alias declarations, so a nested provider resets its defaults locally.
+
+`src/Refraction.Client/wwwroot/RefractionAccessibility.css` also owns hand-authored `color-scheme`: `dark` on `:root, [data-rf-theme]`, `light` on `[data-rf-theme="light"]`, and `dark` on `[data-rf-theme="high-contrast"]`. Its later `@media (forced-colors: active)` rule sets `light dark` on `:root, [data-rf-theme]`. These declarations stay outside the generated token artifact. Legacy declarations remain until this companion is loaded and the native-control checks pass.
 
 The selector names match `CascadingRefractionProvider` today; the JSON directories and generated output are future migration targets. Additional catalogs remain independently valid input scopes. Additional generated theme IDs require an explicit input/selector mapping and provider contract in a later architecture change; they are not inferred from arbitrary directory names. Consumer-defined branding scopes use the supported token override contract.
 
