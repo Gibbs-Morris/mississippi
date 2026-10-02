@@ -20,6 +20,11 @@ namespace Mississippi.Aqueduct.Gateway.L0Tests;
 /// </summary>
 public sealed class StreamSubscriptionRecoveryTests
 {
+    /// <summary>Checks that a failure retains its exception and structured gateway context.</summary>
+    /// <param name="fixture">The manager and captured logger calls.</param>
+    /// <param name="exception">The original failure object.</param>
+    /// <param name="eventId">The expected event identifier.</param>
+    /// <param name="eventName">The expected event name.</param>
     private static void AssertFailureLogged(
         StreamSubscriptionRecoveryFixture fixture,
         Exception exception,
