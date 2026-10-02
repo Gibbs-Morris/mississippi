@@ -32,7 +32,8 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Deliberate public block modifier contracts **MUST** be explicitly documented. Why: Private element modifiers remain internal under the existing BEM API boundary.
 - Typed `State`, `Variant`, `Size`, and `Tone` values **SHOULD** bind to explicit `data-*` attributes when CSS needs them. Why: Stable data bindings avoid generated class permutations and preserve typed component state.
 - CSS state **MUST** agree with the component's semantic and accessibility state. Why: Visual feedback must not contradict what assistive technology receives.
-- Reusable components **MUST** keep their `.razor`, `.razor.cs`, and `.razor.css` files colocated in one component folder, with tests in the matching component area. Why: Vertical ownership keeps markup, behavior, and presentation reviewable together.
+- Reusable components **MUST** keep their `.razor`, `.razor.cs`, and `.razor.css` files colocated in one component folder. Why: Vertical ownership keeps markup, behavior, and presentation reviewable together.
+- Component tests **MUST** live in the matching component area of the test project. Why: Consistent test placement keeps behavioral coverage discoverable.
 - Component-specific rules **MUST** live in the colocated `.razor.css` file. Why: Blazor isolation keeps private presentation with its component.
 - Global CSS **MUST** be limited to generated tokens, themes, reset or normalization, required base typography, layout primitives, utilities, and global accessibility helpers. Why: A small global surface reduces accidental coupling.
 - `::deep` **SHOULD** be avoided. Why: Deep selectors bypass ordinary component ownership and make composition fragile.
