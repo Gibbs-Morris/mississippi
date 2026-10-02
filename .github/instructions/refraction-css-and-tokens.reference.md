@@ -119,7 +119,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - The #405 validation layer **MUST** mechanically detect animation references that violate their owning-block contract. Why: A valid definition does not establish that references use the correct owner.
 - The #405 validation layer **MUST** mechanically detect forbidden raw-token declarations and references. Why: Migration exclusions must not silently expand.
 - The #405 validation layer **MUST** mechanically reject reference-token usage outside the canonical generated token artifact. Why: Application and global styles must preserve the same private-reference boundary as component styles.
-- The #405 validation layer **MUST** mechanically detect hard-coded design colors. Why: Reusable design values belong in tokens.
+- The #405 validation layer **MUST** mechanically detect hard-coded design colors in CSS outside `src/Refraction.Client/wwwroot/RefractionTokens.generated.css`, the retained `src/Refraction.Client/wwwroot/RefractionTokens.css`, and scoped temporary migration exclusions. Why: Approved token definitions contain intentional literal values.
 - The #405 validation layer **MUST** report every `::deep` occurrence with its file and location. Why: Mechanical detection does not establish whether an exception is justified.
 - Reviewers **MUST** verify the documented justification of every reported `::deep` occurrence before delivery. Why: Boundary exceptions need a human ownership decision.
 - The #405 validation layer **MUST** mechanically detect CSS ID selectors. Why: Component styling uses reusable ownership selectors.
