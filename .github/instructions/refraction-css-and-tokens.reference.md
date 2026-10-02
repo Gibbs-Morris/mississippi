@@ -15,6 +15,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Application and sample CSS **MUST NOT** invent `rf-*` classes, `rf-k-*` keyframes, or `--rf-*` properties. Why: Consumers need a clear boundary between their styles and the design system.
 - Docusaurus CSS Modules and unrelated third-party styles **MUST** remain under their own conventions and be excluded from Refraction-specific naming and token rules. Why: External styling systems have separate ownership and build constraints.
 - Refraction-owned component blocks **MUST** use lowercase kebab-case `rf-c-{block}` names. Why: The component namespace gives each public root a stable, predictable owner.
+- Each Refraction component block name **MUST** have exactly one component owner across the repository. Why: Atomic folders do not isolate public block names or their global keyframes.
 - Refraction-owned component elements **MUST** use flat `rf-c-{block}__{element}` names with lowercase kebab-case element segments. Why: Flat, consistently named elements keep private structure refactorable and avoid nested selector APIs.
 - Authors **SHOULD** add an element class only when styling ownership requires it. Why: Naming every DOM node exposes unnecessary private structure.
 - Refraction-owned reusable layout classes **MUST** use lowercase kebab-case `rf-l-{name}` names. Why: Layout primitives are intentionally separate from component ownership and remain mechanically recognizable.
@@ -111,6 +112,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Refraction styles **MUST** use native CSS custom properties and platform features unless repository evidence requires another mechanism. Why: Readable native CSS keeps browser debugging and generated output straightforward.
 - Sass and Less **MUST NOT** be introduced merely for variables, nesting, naming, or token generation. Why: Custom properties and build-time generation cover those needs without a new styling toolchain.
 - The #405 validation layer **MUST** mechanically detect invalid Refraction class names. Why: Class ownership needs mechanical regression detection.
+- The #405 validation layer **MUST** mechanically detect component block names assigned to multiple component owners. Why: Valid syntax does not prevent global ownership collisions.
 - The #405 validation layer **MUST** mechanically detect invalid Refraction keyframe identifiers. Why: Animation names share a compiled namespace.
 - The #405 validation layer **MUST** mechanically detect animation references that violate their owning-block contract. Why: A valid definition does not establish that references use the correct owner.
 - The #405 validation layer **MUST** mechanically detect forbidden raw-token declarations and references. Why: Migration exclusions must not silently expand.
