@@ -72,8 +72,8 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Final migration completion **MUST** remove every `--rf-raw-*` token and obsolete styling API. Why: The completed architecture cannot retain legacy selectors or token contracts.
 - Themes **SHOULD** rebind system tokens at a theme root. Why: Light, dark, high-contrast, and enterprise themes can change meaning without duplicating component selectors.
 - Generated theme output **MUST** redeclare dependent reference, system, and component aliases within each theme scope that overrides their targets, including transitive dependencies. Why: Custom-property references resolve before inheritance, so aliases computed at an ancestor do not automatically rebind to a descendant's token override.
-- Consumer-defined scopes overriding supported system tokens **MUST** redeclare dependent system and component aliases in that scope, including transitive dependencies, while preserving explicitly customized dependent token values. Why: A custom scope needs the same rebinding that generated themes provide.
-- Documentation for supported scoped system-token overrides **MUST** identify the required alias redeclarations. Why: Consumers need a complete override contract without running the repository generator.
+- Consumer-defined scopes overriding supported system or component tokens **MUST** redeclare dependent system and component aliases in that scope, including transitive dependencies, while preserving explicitly customized dependent token values. Why: A custom scope needs the same rebinding that generated themes provide.
+- Documentation for supported scoped system or component-token overrides **MUST** identify the required alias redeclarations. Why: Consumers need a complete override contract without running the repository generator.
 - Component CSS **SHOULD** remain theme-agnostic. Why: Theme behavior belongs in token values and semantic mappings.
 - Theme definitions **MUST NOT** duplicate component selector rules solely to change theme values. Why: Semantic rebinding avoids a parallel theme-specific selector API.
 - Text and images of text **MUST** meet [WCAG 2.2 AA contrast minimums](https://www.w3.org/TR/WCAG22/#contrast-minimum), including the criterion's large-text thresholds and exceptions, in every supported theme. Why: Light, dark, high-contrast, and branded themes need readable text.
@@ -152,7 +152,7 @@ For the future token names above, a consumer-defined scope uses the same rebindi
 }
 ```
 
-The override documentation lists every dependent alias to redeclare, including intermediate aliases in longer chains. If the consumer deliberately customizes the Pane accent border separately, that explicit component value remains in place instead of being replaced with its default alias. These token names describe the future migration target, not the current checkout's API.
+The override documentation lists every dependent alias to redeclare, including intermediate aliases in longer chains. This contract also applies when a supported component token is overridden and other component tokens alias it. If the consumer deliberately customizes the Pane accent border separately, that explicit component value remains in place instead of being replaced with its default alias. These token names describe the future migration target, not the current checkout's API.
 
 ## Initial DTCG input profile
 
