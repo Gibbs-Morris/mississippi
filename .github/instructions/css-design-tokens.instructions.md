@@ -102,7 +102,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Authors **MUST** record the manual authoring review in the PR until mechanical validators land. Why: Review evidence needs an attributable record.
 - Authors **MUST** list unavailable mechanical checks in the PR until their validators land. Why: Unavailable checks must remain visible validation gaps.
 - Validation **SHOULD** use existing PowerShell and .NET infrastructure, adding Stylelint only when it materially improves coverage without an unrelated toolchain. Why: Enforcement should fit the repository's build model.
-- New or changed CSS, Razor visual state, themes, token sources, and Refraction components **MUST** follow this standard immediately. Why: New drift is more expensive than a later migration.
+- New Refraction components and styling surfaces added or changed in existing CSS, Razor visual state, themes, and token sources **MUST** follow this standard immediately. Why: New styling needs the contract without making unrelated behavior changes trigger a full legacy migration.
 - Existing legacy styles **MUST** be migrated in later independent, valid stack layers rather than hidden by undocumented compatibility rules. Why: Each migration layer remains reviewable while the target architecture stays clear.
 - Temporary migration exclusions **MUST** name their scope, reason, owner, and removal layer in [issue #405](https://github.com/Gibbs-Morris/mississippi/issues/405). Why: Explicit inventory prevents temporary exceptions from becoming permanent APIs.
 - Compatibility aliases **MUST NOT** be permanent. Why: Pre-release freedom permits cleanup instead of preserving historical conventions.
