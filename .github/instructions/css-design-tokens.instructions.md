@@ -71,6 +71,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Existing `--rf-raw-*` variables **MUST** remain available until all of their consumers are migrated. Why: Removing a variable before its consumers move would make an intermediate stack layer invalid.
 - The layer that removes existing `--rf-raw-*` variables **MUST** be recorded as the removal layer in [issue #405](https://github.com/Gibbs-Morris/mississippi/issues/405). Why: Explicit removal ownership prevents a legacy file from being deleted prematurely or forgotten.
 - Final migration completion **MUST** remove every `--rf-raw-*` token and obsolete styling API. Why: The completed architecture cannot retain legacy selectors or token contracts.
+- Generated built-in themes **MUST** follow the [initial theme input and output mapping](#initial-theme-input-and-output-mapping). Why: Catalog ownership and provider selectors need one deterministic contract.
 - Themes **SHOULD** rebind system tokens at a theme root. Why: Light, dark, high-contrast, and enterprise themes can change meaning without duplicating component selectors.
 - Generated theme output **MUST** redeclare dependent reference, system, and component aliases within each theme scope that overrides their targets, including transitive dependencies. Why: Custom-property references resolve before inheritance, so aliases computed at an ancestor do not automatically rebind to a descendant's token override.
 - Consumer-defined scopes overriding supported system or component tokens **MUST** redeclare dependent default system and component aliases in that scope, including transitive dependencies. Why: A custom scope needs the same rebinding that generated themes provide.
@@ -173,6 +174,20 @@ This selected DTCG 2025.10 input profile defines the accepted source shape and v
 | Aliases | A whole-token curly-brace alias such as `{ref.color.neo-blue.300}` may chain through targets. At every hop, `ref` aliases target only `ref`; `sys` aliases target `ref` or `sys`; `comp` aliases target `sys` or `comp`. An alias uses its token-local `$type` when present; otherwise it uses the resolved target token's type, regardless of the alias's inherited group `$type`. Each target resolves its own type recursively; literal targets use their token-local or closest inherited group type. Invalid layer direction, cycles, unresolved targets, and type mismatches are errors. |
 | Catalog scope | All `*.json` files directly in one selected catalog directory form one scope. The canonical directory is `src/Refraction.Client/Themes/Tokens/`; its reference, system, and component documents are loaded together before alias resolution. Additional catalog directories are independently selected, self-contained scopes without implicit inheritance or cross-directory aliases. Duplicate JSON properties, duplicate paths, and flattened CSS-name collisions are errors. |
 | Rejected / conformance | Composite types, property-level references or JSON Pointer, `$root`, `$extends`, extensions, deprecation metadata, and unknown constructs; this is selected input support, not full-format DTCG tool conformance. |
+
+## Initial theme input and output mapping
+
+The future generator uses complete, independent catalogs for the three existing provider modes. Each row loads only JSON files directly in its directory, using the catalog-scope rules above.
+
+| Mode | Catalog directory | Generated selector |
+| --- | --- | --- |
+| Dark/default | `src/Refraction.Client/Themes/Tokens/` | `:root, [data-rf-theme]` |
+| Light | `src/Refraction.Client/Themes/Tokens/Light/` | `[data-rf-theme="light"]` |
+| High contrast | `src/Refraction.Client/Themes/Tokens/HighContrast/` | `[data-rf-theme="high-contrast"]` |
+
+Output emits the default block first, then Light, then HighContrast. Each theme catalog includes all of its reference, system, and component tokens; it does not inherit JSON from the default catalog. All modes expose the same system/component paths and types. Each selector declares the complete validated catalog, including alias declarations, so a nested provider resets its defaults locally.
+
+The selector names match `CascadingRefractionProvider` today; the JSON directories and generated output are future migration targets. Additional catalogs remain independently valid input scopes. Additional generated theme IDs require an explicit input/selector mapping and provider contract in a later architecture change; they are not inferred from arbitrary directory names. Consumer-defined branding scopes use the supported token override contract.
 
 ## Illustrative future target
 
