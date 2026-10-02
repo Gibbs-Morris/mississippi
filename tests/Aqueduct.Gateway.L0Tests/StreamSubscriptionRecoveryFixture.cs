@@ -72,6 +72,8 @@ internal sealed class StreamSubscriptionRecoveryFixture : IDisposable
                 AllObserver = call.Arg<IAsyncObserver<AllMessage>>();
                 return Task.FromResult(Substitute.For<StreamSubscriptionHandle<AllMessage>>());
             });
+        Logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
+        Logger.IsEnabled(LogLevel.Error).Returns(true);
         Manager = new(
             serverId,
             client,
@@ -80,7 +82,7 @@ internal sealed class StreamSubscriptionRecoveryFixture : IDisposable
                 {
                     StreamProviderName = "recovery-provider",
                 }),
-            Substitute.For<ILogger<StreamSubscriptionManager>>());
+            Logger);
     }
 
     /// <summary>Gets the number of accepted server subscriptions still active.</summary>
@@ -103,6 +105,9 @@ internal sealed class StreamSubscriptionRecoveryFixture : IDisposable
 
     /// <summary>Gets or sets an asynchronous barrier before compensation completes.</summary>
     internal Func<Task>? BeforeUnsubscribe { get; set; }
+
+    /// <summary>Gets the logger injected into the production manager.</summary>
+    internal ILogger<StreamSubscriptionManager> Logger { get; }
 
     /// <summary>Gets the production manager under test.</summary>
     internal StreamSubscriptionManager Manager { get; }

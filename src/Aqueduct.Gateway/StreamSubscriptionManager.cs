@@ -132,12 +132,14 @@ internal sealed class StreamSubscriptionManager
             }
             catch (Exception initializationFailure)
             {
+                Logger.StreamInitializationFailed(hubName, ServerId, initializationFailure);
                 try
                 {
                     await CleanupPendingServerSubscriptionAsync().ConfigureAwait(false);
                 }
                 catch (Exception cleanupFailure)
                 {
+                    Logger.StreamSubscriptionCleanupFailed(hubName, ServerId, cleanupFailure);
                     throw new AggregateException(
                         "Stream initialization failed and the server subscription could not be removed.",
                         initializationFailure,
