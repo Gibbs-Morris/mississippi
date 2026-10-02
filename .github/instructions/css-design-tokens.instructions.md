@@ -17,7 +17,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Application and sample CSS **MUST NOT** invent `rf-*` classes or `--rf-*` properties. Why: Consumers need a clear boundary between their styles and the design system.
 - Docusaurus CSS Modules and unrelated third-party styles **MUST** remain under their own conventions and be excluded from Refraction-specific naming and token rules. Why: External styling systems have separate ownership and build constraints.
 - Refraction-owned component blocks **MUST** use lowercase kebab-case `rf-c-{block}` names. Why: The component namespace gives each public root a stable, predictable owner.
-- Refraction-owned component elements **MUST** use flat `rf-c-{block}__{element}` names. Why: Flat elements keep private structure refactorable and avoid nested selector APIs.
+- Refraction-owned component elements **MUST** use flat `rf-c-{block}__{element}` names with lowercase kebab-case element segments. Why: Flat, consistently named elements keep private structure refactorable and avoid nested selector APIs.
 - Authors **SHOULD** add an element class only when styling ownership requires it. Why: Naming every DOM node exposes unnecessary private structure.
 - Refraction-owned reusable layout classes **MUST** use lowercase kebab-case `rf-l-{name}` names. Why: Layout primitives are intentionally separate from component ownership and remain mechanically recognizable.
 - Refraction-owned deliberate single-purpose utilities **MUST** use lowercase kebab-case `rf-u-{name}` names. Why: Narrow utilities remain useful without turning Refraction into a utility-first framework and remain mechanically recognizable.
