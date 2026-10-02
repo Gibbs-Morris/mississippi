@@ -191,4 +191,30 @@ public sealed class SignalRGroupLivenessTests
         await clients["failed"].Received(2).GetServerIdAsync();
     }
 
+    /// <summary>
+    ///     Membership added during a suspended sweep remains outside its immutable snapshot.
+    /// </summary>
+    /// <returns>The test operation.</returns>
+    [Fact]
+    public async Task JoiningDuringCleanupShouldPreserveNewMembership()
+    {
+        (SignalRGroupGrain group, Dictionary<string, ISignalRClientGrain> clients, Func<Task> cleanup, IGrainTimer _) =
+            await CreateGroupAsync(["old"]);
+        using IDisposable groupLifetime = group;
+        TaskCompletionSource<string?> pending = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        clients["old"].GetServerIdAsync().Returns(pending.Task);
+        Task sweep = cleanup();
+        try
+        {
+            await group.AddConnectionAsync("new");
+        }
+        finally
+        {
+            pending.TrySetResult(null);
+            await sweep;
+        }
+
+        Assert.Equal("new", Assert.Single(await group.GetConnectionsAsync()));
+    }
+
 }

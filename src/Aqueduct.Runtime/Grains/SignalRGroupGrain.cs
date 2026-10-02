@@ -196,6 +196,9 @@ internal sealed class SignalRGroupGrain
         Logger.SentToGroup(groupKey, method, connectionCount);
     }
 
+    /// <summary>
+    ///     Owns one timer whose awaited sweep does not block group broadcasts.
+    /// </summary>
     private void EnsureCleanupTimer()
     {
         TimeSpan interval = TimeSpan.FromMinutes(Options.Value.HeartbeatIntervalMinutes);
@@ -207,7 +210,7 @@ internal sealed class SignalRGroupGrain
             {
                 DueTime = interval,
                 Period = interval,
-                Interleave = false,
+                Interleave = true,
             });
     }
 
@@ -238,7 +241,7 @@ internal sealed class SignalRGroupGrain
     }
 
     /// <summary>
-    ///     Sweeps an immutable snapshot with at most one outstanding lookup.
+    ///     Sweeps an immutable snapshot with at most one outstanding lookup, allowing ordinary requests to interleave.
     /// </summary>
     /// <returns>The bounded membership sweep.</returns>
     private async Task RemoveOrphanedConnectionsAsync()
