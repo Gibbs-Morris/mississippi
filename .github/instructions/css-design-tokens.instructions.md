@@ -151,7 +151,7 @@ This selected DTCG 2025.10 input profile defines the accepted source shape and v
 | `number` / `fontFamily` | A finite numeric value; a non-empty name or a non-empty array of names. |
 | `fontWeight` | A numeric value from 1 through 1000 or a lowercase alias defined by DTCG 2025.10. |
 | `cubicBezier` | Four finite numbers; x coordinates are 0..1 and y coordinates are unrestricted finite values. |
-| Aliases | A whole-token curly-brace alias such as `{ref.color.neo-blue.300}` may chain through targets. Type resolution uses explicit, inherited-group, and target-token types; cycles, unresolved targets, and type mismatches are errors. |
+| Aliases | A whole-token curly-brace alias such as `{ref.color.neo-blue.300}` may chain through targets. At every hop, `ref` aliases target only `ref`; `sys` aliases target `ref` or `sys`; `comp` aliases target `sys` or `comp`. Type resolution uses explicit, inherited-group, and target-token types; invalid layer direction, cycles, unresolved targets, and type mismatches are errors. |
 | Catalog scope | All `*.json` files directly in one selected catalog directory form one scope. The canonical directory is `src/Refraction.Client/Themes/Tokens/`; its reference, system, and component documents are loaded together before alias resolution. Additional catalog directories are independently selected, self-contained scopes without implicit inheritance or cross-directory aliases. Duplicate JSON properties, duplicate paths, and flattened CSS-name collisions are errors. |
 | Rejected / conformance | Composite types, property-level references or JSON Pointer, `$root`, `$extends`, extensions, deprecation metadata, and unknown constructs; this is selected input support, not full-format DTCG tool conformance. |
 
