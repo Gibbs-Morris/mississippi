@@ -121,39 +121,6 @@ public sealed class NotificationPulseBehaviorTests : BunitContext
         Assert.Equal("rf-notification-pulse application-class", cut.Find(".rf-notification-pulse").ClassName);
     }
 
-    /// <summary>Status content updates without changing the live-region contract.</summary>
-    [Fact]
-    public void StatusContentUpdates()
-    {
-        using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>(p => p.AddChildContent("Ready"));
-        cut.Render(p => p.AddChildContent("Complete"));
-        IElement status = cut.Find(".rf-notification-pulse__status");
-        Assert.Contains("Complete", status.TextContent, StringComparison.Ordinal);
-        Assert.Equal("true", status.GetAttribute("aria-atomic"));
-        Assert.Single(cut.FindAll(".rf-notification-pulse__status"));
-    }
-
-    /// <summary>Caller attributes cannot replace component-owned class and state.</summary>
-    [Fact]
-    public void WrapperComposesCallerAttributes()
-    {
-        IReadOnlyDictionary<string, object> attributes = new Dictionary<string, object>
-        {
-            ["class"] = "host-class",
-            ["DATA-STATE"] = "host-state",
-            ["data-testid"] = "pulse-1",
-        };
-        using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>(p => p
-            .Add(c => c.Class, "application-class")
-            .Add(c => c.State, RefractionStates.Critical)
-            .Add(c => c.AdditionalAttributes, attributes));
-        IElement root = cut.Find(".rf-notification-pulse");
-        Assert.Contains("application-class", root.ClassName, StringComparison.Ordinal);
-        Assert.Contains("host-class", root.ClassName, StringComparison.Ordinal);
-        Assert.Equal(RefractionStates.Critical, root.GetAttribute("data-state"));
-        Assert.Equal("pulse-1", root.GetAttribute("data-testid"));
-    }
-
     /// <summary>
     ///     NotificationPulse omits disclosure attributes when controlled state is not supplied.
     /// </summary>
@@ -221,5 +188,38 @@ public sealed class NotificationPulseBehaviorTests : BunitContext
 
         // Assert
         Assert.Contains("DetailsId", error.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>Status content updates without changing the live-region contract.</summary>
+    [Fact]
+    public void StatusContentUpdates()
+    {
+        using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>(p => p.AddChildContent("Ready"));
+        cut.Render(p => p.AddChildContent("Complete"));
+        IElement status = cut.Find(".rf-notification-pulse__status");
+        Assert.Contains("Complete", status.TextContent, StringComparison.Ordinal);
+        Assert.Equal("true", status.GetAttribute("aria-atomic"));
+        Assert.Single(cut.FindAll(".rf-notification-pulse__status"));
+    }
+
+    /// <summary>Caller attributes cannot replace component-owned class and state.</summary>
+    [Fact]
+    public void WrapperComposesCallerAttributes()
+    {
+        IReadOnlyDictionary<string, object> attributes = new Dictionary<string, object>
+        {
+            ["class"] = "host-class",
+            ["DATA-STATE"] = "host-state",
+            ["data-testid"] = "pulse-1",
+        };
+        using IRenderedComponent<NotificationPulse> cut = Render<NotificationPulse>(p => p
+            .Add(c => c.Class, "application-class")
+            .Add(c => c.State, RefractionStates.Critical)
+            .Add(c => c.AdditionalAttributes, attributes));
+        IElement root = cut.Find(".rf-notification-pulse");
+        Assert.Contains("application-class", root.ClassName, StringComparison.Ordinal);
+        Assert.Contains("host-class", root.ClassName, StringComparison.Ordinal);
+        Assert.Equal(RefractionStates.Critical, root.GetAttribute("data-state"));
+        Assert.Equal("pulse-1", root.GetAttribute("data-testid"));
     }
 }
