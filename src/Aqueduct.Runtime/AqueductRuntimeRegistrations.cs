@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 
 using Microsoft.Extensions.Configuration;
@@ -82,6 +83,24 @@ public static class AqueductRuntimeRegistrations
         ArgumentNullException.ThrowIfNull(configuration);
         return builder.AddAqueduct(aqueduct =>
         {
+            int? heartbeatInterval = ReadTimingValue(
+                configuration,
+                nameof(AqueductOptions.HeartbeatIntervalMinutes),
+                AqueductBuilderDiagnosticCodes.HeartbeatIntervalInvalid);
+            int? timeoutMultiplier = ReadTimingValue(
+                configuration,
+                nameof(AqueductOptions.DeadServerTimeoutMultiplier),
+                AqueductBuilderDiagnosticCodes.DeadServerTimeoutInvalid);
+            if (heartbeatInterval.HasValue)
+            {
+                aqueduct.HeartbeatIntervalMinutes = heartbeatInterval.Value;
+            }
+
+            if (timeoutMultiplier.HasValue)
+            {
+                aqueduct.DeadServerTimeoutMultiplier = timeoutMultiplier.Value;
+            }
+
             aqueduct.StreamProviderName = configuration[nameof(AqueductOptions.StreamProviderName)] ??
                                           aqueduct.StreamProviderName;
             aqueduct.ServerStreamNamespace = configuration[nameof(AqueductOptions.ServerStreamNamespace)] ??
@@ -104,4 +123,32 @@ public static class AqueductRuntimeRegistrations
             aqueduct.StreamProviderName = streamProviderName;
             aqueduct.ServerStreamNamespace = serverStreamNamespace;
         });
+
+    /// <summary>Reads an optional integer timing setting without introducing a configuration binder dependency.</summary>
+    /// <param name="configuration">The shared Aqueduct configuration section.</param>
+    /// <param name="name">The option-property name.</param>
+    /// <param name="diagnosticCode">The stable diagnostic for an invalid configured value.</param>
+    /// <returns>The configured integer, or null when the key is omitted.</returns>
+    private static int? ReadTimingValue(
+        IConfiguration configuration,
+        string name,
+        string diagnosticCode
+    )
+    {
+        string? text = configuration[name];
+        if (text is null)
+        {
+            return null;
+        }
+
+        if (!int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
+        {
+            throw new BuilderValidationException(
+            [
+                new(diagnosticCode, $"Aqueduct {name} must be an integer.", $"Set {name} to a positive integer."),
+            ]);
+        }
+
+        return value;
+    }
 }

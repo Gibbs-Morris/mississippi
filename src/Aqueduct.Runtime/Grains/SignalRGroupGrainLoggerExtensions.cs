@@ -1,3 +1,5 @@
+using System;
+
 using Microsoft.Extensions.Logging;
 
 
@@ -37,6 +39,26 @@ internal static partial class SignalRGroupGrainLoggerExtensions
         this ILogger logger,
         string connectionId,
         string groupKey
+    );
+
+    /// <summary>
+    ///     Records a failed liveness lookup whose member remains owned for a later sweep.
+    /// </summary>
+    /// <param name="logger">The group grain logger.</param>
+    /// <param name="groupKey">The group whose member could not be checked.</param>
+    /// <param name="connectionId">The member retained for retry.</param>
+    /// <param name="exception">The remote lookup failure.</param>
+    [LoggerMessage(
+        EventId = 11,
+        EventName = nameof(ConnectionLivenessCheckFailed),
+        Level = LogLevel.Warning,
+        Message =
+            "Liveness check failed for connection '{ConnectionId}' in group '{GroupKey}'; retaining membership for retry")]
+    public static partial void ConnectionLivenessCheckFailed(
+        this ILogger logger,
+        string groupKey,
+        string connectionId,
+        Exception exception
     );
 
     [LoggerMessage(

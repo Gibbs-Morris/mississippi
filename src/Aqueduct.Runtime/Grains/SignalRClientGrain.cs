@@ -44,8 +44,11 @@ namespace Mississippi.Aqueduct.Runtime.Grains;
 [Alias("Mississippi.Aqueduct.Runtime.Grains.SignalRClientGrain")]
 internal sealed class SignalRClientGrain
     : ISignalRClientGrain,
-      IGrainBase
+      IGrainBase,
+      IDisposable
 {
+    private IGrainTimer? cleanupTimer;
+
     private ImmutableHashSet<string> groups = ImmutableHashSet.Create<string>(StringComparer.Ordinal);
 
     private SignalRClientState state = new();
@@ -54,20 +57,26 @@ internal sealed class SignalRClientGrain
     ///     Initializes a new instance of the <see cref="SignalRClientGrain" /> class.
     /// </summary>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
+    /// <param name="grainRuntime">The Orleans runtime for activation lifecycle control.</param>
     /// <param name="grainFactory">The factory for resolving the client's group grains.</param>
+    /// <param name="livenessCache">The silo-wide cache of server-liveness requests.</param>
     /// <param name="options">Configuration options for the Orleans-SignalR bridge.</param>
     /// <param name="logger">Logger instance for grain operations.</param>
     /// <param name="timeProvider">Time provider for timestamps. If null, uses <see cref="System.TimeProvider.System" />.</param>
     public SignalRClientGrain(
         IGrainContext grainContext,
+        IGrainRuntime grainRuntime,
         IGrainFactory grainFactory,
+        SignalRServerLivenessCache livenessCache,
         IOptions<AqueductOptions> options,
         ILogger<SignalRClientGrain> logger,
         TimeProvider? timeProvider = null
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
+        GrainRuntime = grainRuntime ?? throw new ArgumentNullException(nameof(grainRuntime));
         GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
+        LivenessCache = livenessCache ?? throw new ArgumentNullException(nameof(livenessCache));
         Options = options ?? throw new ArgumentNullException(nameof(options));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         TimeProvider = timeProvider ?? TimeProvider.System;
@@ -77,6 +86,10 @@ internal sealed class SignalRClientGrain
     public IGrainContext GrainContext { get; }
 
     private IGrainFactory GrainFactory { get; }
+
+    private IGrainRuntime GrainRuntime { get; }
+
+    private SignalRServerLivenessCache LivenessCache { get; }
 
     private ILogger<SignalRClientGrain> Logger { get; }
 
@@ -123,6 +136,8 @@ internal sealed class SignalRClientGrain
         ArgumentException.ThrowIfNullOrEmpty(serverId);
         string connectionId = ExtractConnectionId();
         Logger.ClientConnecting(connectionId, hubName, serverId);
+        EnsureCleanupTimer();
+        GrainRuntime.DelayDeactivation(GrainContext, Timeout.InfiniteTimeSpan);
         state = new()
         {
             ConnectionId = connectionId,
@@ -156,8 +171,16 @@ internal sealed class SignalRClientGrain
 
         // Failed removals remain tracked and retryable; only complete cleanup deactivates.
         state = new();
+        Dispose();
         Logger.ClientDisconnected(connectionId);
         this.DeactivateOnIdle();
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        cleanupTimer?.Dispose();
+        cleanupTimer = null;
     }
 
     /// <inheritdoc />
@@ -237,6 +260,21 @@ internal sealed class SignalRClientGrain
         AqueductMetrics.RecordClientMessageSent(state.HubName, method, sw.Elapsed.TotalMilliseconds);
     }
 
+    private void EnsureCleanupTimer()
+    {
+        TimeSpan interval = TimeSpan.FromMinutes(Options.Value.HeartbeatIntervalMinutes);
+        cleanupTimer ??= GrainRuntime.TimerRegistry.RegisterGrainTimer(
+            GrainContext,
+            static (grain, _) => grain.RemoveOrphanedStateAsync(),
+            this,
+            new()
+            {
+                DueTime = interval,
+                Period = interval,
+                Interleave = false,
+            });
+    }
+
     private string ExtractConnectionId()
     {
         // Grain key format: "ConnectionId" (or "HubName:ConnectionId" depending on usage)
@@ -249,4 +287,16 @@ internal sealed class SignalRClientGrain
         string groupName
     ) =>
         GrainFactory.GetGrain<ISignalRGroupGrain>(new SignalRGroupKey(state.HubName, groupName));
+
+    private async Task RemoveOrphanedStateAsync()
+    {
+        TimeSpan timeout = TimeSpan.FromMinutes(
+            (double)Options.Value.HeartbeatIntervalMinutes * Options.Value.DeadServerTimeoutMultiplier);
+        if (string.IsNullOrEmpty(state.ServerId) ||
+            !await LivenessCache.IsServerAliveAsync(state.ServerId, timeout)
+                .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext))
+        {
+            await DisconnectAsync().ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
+        }
+    }
 }

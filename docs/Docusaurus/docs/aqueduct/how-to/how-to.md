@@ -14,7 +14,8 @@ Configure the Aqueduct runtime backplane once inside the Orleans host's `UseMiss
 `AqueductBuilder` owns Aqueduct settings; the outer `RuntimeBuilder` remains the place for other runtime features and
 advanced native Orleans plumbing.
 
-The runtime builder controls the stream provider and server namespace. The gateway keeps ownership of the broadcast
+The runtime builder controls the stream provider, server namespace and cleanup timing. Gateway and runtime hosts must use
+the same heartbeat interval and dead-server timeout multiplier. The gateway keeps ownership of the broadcast
 namespace used among gateways.
 
 ## When to use this
@@ -89,7 +90,8 @@ Use this form when settings are stored under an `Aqueduct` configuration section
 runtime.AddAqueduct(builder.Configuration.GetSection("Aqueduct"));
 ```
 
-The overload reads `StreamProviderName` and `ServerStreamNamespace`. Omitted values retain their runtime defaults;
+The overload reads `StreamProviderName`, `ServerStreamNamespace`, `HeartbeatIntervalMinutes` and
+`DeadServerTimeoutMultiplier`. Omitted timing keys preserve existing colocated gateway options or their defaults;
 `AllClientsStreamNamespace` remains a gateway setting for broadcasts.
 
 #### Explicit settings
@@ -102,6 +104,29 @@ runtime.AddAqueduct(
     serverStreamNamespace: "mississippi-server");
 ```
 
+### Match heartbeat timing across gateway and runtime hosts
+
+The gateway sends heartbeats at `HeartbeatIntervalMinutes`; runtime cleanup considers a server dead after that interval
+multiplied by `DeadServerTimeoutMultiplier`. Both values must be positive, and their product must fit within `TimeSpan`.
+The defaults are one minute and a multiplier of three. A silo configured with a shorter timeout than its gateway's
+heartbeat cadence can discard healthy routing before the next heartbeat.
+
+Set timing in the same `AddAqueduct(...)` callback as the stream settings, or supply both keys in the shared configuration
+section. For a five-minute gateway heartbeat, the corresponding runtime callback can be:
+
+```csharp
+runtime.AddAqueduct(aqueduct =>
+{
+    aqueduct.StreamProviderName = "StreamProvider";
+    aqueduct.HeartbeatIntervalMinutes = 5;
+    aqueduct.DeadServerTimeoutMultiplier = 3;
+});
+```
+
+Configure `AqueductOptions.HeartbeatIntervalMinutes` and `AqueductOptions.DeadServerTimeoutMultiplier` with the same values
+on each gateway. Use one runtime `AddAqueduct(...)` call. In a colocated host, omitting timing overrides from the runtime
+callback preserves values already configured by the gateway. Separate processes must each receive the matching settings.
+
 ### Keep advanced native configuration on the runtime root
 
 Use `runtime.ConfigureSilo(...)` to queue synchronous native Orleans callbacks, and use `runtime.Services` only for
@@ -113,6 +138,8 @@ See [Runtime Composition](../../reference/runtime-composition.md) for the stagin
 - The host has exactly one `UseMississippi(...)` callback for its runtime composition.
 - The nested callback selects a nonempty stream provider and server namespace. Configure the gateway broadcast namespace
   separately on participating gateways.
+- Effective `IOptions<AqueductOptions>` on gateway and runtime hosts have matching positive heartbeat intervals and timeout
+  multipliers; check each process rather than assuming one callback configures both roles.
 - The selected stream provider exists on the host, unless `UseMemoryStreams(...)` created it for local development or
   tests.
 - The host can build and start using its normal Orleans validation. Provider resolution alone does not check external
