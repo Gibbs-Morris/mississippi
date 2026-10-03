@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.Aqueduct.Abstractions;
@@ -25,11 +27,13 @@ public sealed class AqueductUserRoutingTests
     /// <param name="orleans">The Orleans factory endpoint.</param>
     /// <param name="client">The connection grain endpoint.</param>
     /// <param name="group">The group grain endpoint.</param>
+    /// <param name="logger">The optional capturing manager logger.</param>
     /// <returns>The caller-owned manager.</returns>
     private static AqueductHubLifetimeManager<TestAqueductHub> CreateManager(
         IGrainFactory orleans,
         ISignalRClientGrain client,
-        ISignalRGroupGrain group
+        ISignalRGroupGrain group,
+        ILogger<AqueductHubLifetimeManager<TestAqueductHub>>? logger = null
     )
     {
         orleans.GetGrain<ISignalRClientGrain>(Arg.Any<string>()).Returns(client);
@@ -46,7 +50,7 @@ public sealed class AqueductUserRoutingTests
             Substitute.For<ILocalMessageSender>(),
             Substitute.For<IHeartbeatManager>(),
             subscriptions,
-            NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance);
+            logger ?? NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance);
     }
 
     /// <summary>Anonymous identities must not acquire a user group.</summary>
@@ -174,5 +178,42 @@ public sealed class AqueductUserRoutingTests
         await Assert.ThrowsAsync<ArgumentException>(() => manager.OnConnectedAsync(connection));
         Assert.DoesNotContain(orleans.ReceivedCalls(), call => call.GetMethodInfo().Name == "GetGrain");
         await client.DidNotReceiveWithAnyArgs().ConnectAsync(default!, default!);
+    }
+
+    /// <summary>Group keys and their logs must not disclose a reversibly encoded user identity.</summary>
+    /// <returns>The test operation.</returns>
+    [Fact]
+    public async Task UserRoutingShouldNotExposeIdentityInKeysOrLogs()
+    {
+        const string UserId = "person@example.invalid";
+        IGrainFactory orleans = Substitute.For<IGrainFactory>();
+        ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
+            Substitute.For<ILogger<AqueductHubLifetimeManager<TestAqueductHub>>>();
+        logger.IsEnabled(Arg.Any<LogLevel>()).Returns(true);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            orleans,
+            Substitute.For<ISignalRClientGrain>(),
+            Substitute.For<ISignalRGroupGrain>(),
+            logger);
+        HubConnectionContext connection = HubConnectionContextFactory.Create("privacy-control");
+        connection.UserIdentifier = UserId;
+        await manager.OnConnectedAsync(connection);
+        await manager.SendUserAsync(UserId, "privacy", [], TestContext.Current.CancellationToken);
+        string rawKey = Assert.IsType<string>(
+            Assert.Single(
+                    orleans.ReceivedCalls(),
+                    call => (call.GetMethodInfo().Name == "GetGrain") &&
+                            call.GetMethodInfo().GetGenericArguments().Contains(typeof(ISignalRGroupGrain)))
+                .GetArguments()[0]);
+        string logs = string.Join(
+            "\n",
+            logger.ReceivedCalls()
+                .Where(call => call.GetMethodInfo().Name == "Log")
+                .Select(call => call.GetArguments()[2]?.ToString()));
+        Assert.NotEmpty(logs);
+        Assert.DoesNotContain(UserId, rawKey, StringComparison.Ordinal);
+        Assert.DoesNotContain(Uri.EscapeDataString(UserId), rawKey, StringComparison.Ordinal);
+        Assert.DoesNotContain(UserId, logs, StringComparison.Ordinal);
+        Assert.DoesNotContain(Uri.EscapeDataString(UserId), logs, StringComparison.Ordinal);
     }
 }
