@@ -42,6 +42,8 @@ internal sealed class InletSignalRActionEffect
 
     private readonly IDisposable hubCallbackRegistration;
 
+    private readonly ConcurrentDictionary<(Type ProjectionType, string EntityId), byte> pendingSubscriptions = new();
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="InletSignalRActionEffect" /> class.
     /// </summary>
@@ -241,46 +243,57 @@ internal sealed class InletSignalRActionEffect
     )
     {
         (Type, string) key = (projectionType, entityId);
-
-        // Already subscribed?
-        if (activeSubscriptions.ContainsKey(key))
+        if (!pendingSubscriptions.TryAdd(key, 0))
         {
             yield break;
         }
 
-        // Look up the projection path from the DTO registry
-        string? path = ProjectionDtoRegistry.GetPath(projectionType);
-        if (path is null)
-        {
-            yield return ProjectionActionFactory.CreateError(
-                projectionType,
-                entityId,
-                new InvalidOperationException($"No projection path registered for DTO type {projectionType.Name}"));
-            yield break;
-        }
-
-        // Yield loading action
-        yield return ProjectionActionFactory.CreateLoading(projectionType, entityId);
-
-        // Subscribe via SignalR hub
-        string? subscriptionId = null;
         Exception? subscribeError = null;
         bool cancelled = false;
         try
         {
-            subscriptionId = await HubConnection.InvokeAsync<string>(
-                InletHubConstants.SubscribeMethod,
-                path,
-                entityId,
-                cancellationToken);
+            // Reserve the pair across the hub await so repeated intents cannot lose an ID.
+            if (activeSubscriptions.ContainsKey(key))
+            {
+                yield break;
+            }
+
+            string? path = ProjectionDtoRegistry.GetPath(projectionType);
+            if (path is null)
+            {
+                subscribeError = new InvalidOperationException(
+                    $"No projection path registered for DTO type {projectionType.Name}");
+            }
+            else
+            {
+                yield return ProjectionActionFactory.CreateLoading(projectionType, entityId);
+                string? subscriptionId = null;
+                try
+                {
+                    subscriptionId = await HubConnection.InvokeAsync<string>(
+                        InletHubConstants.SubscribeMethod,
+                        path,
+                        entityId,
+                        cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    cancelled = true;
+                }
+                catch (Exception ex)
+                {
+                    subscribeError = ex;
+                }
+
+                if (!cancelled && subscribeError is null)
+                {
+                    activeSubscriptions[key] = subscriptionId!;
+                }
+            }
         }
-        catch (OperationCanceledException)
+        finally
         {
-            cancelled = true;
-        }
-        catch (Exception ex)
-        {
-            subscribeError = ex;
+            pendingSubscriptions.TryRemove(key, out byte _);
         }
 
         if (cancelled)
@@ -293,8 +306,6 @@ internal sealed class InletSignalRActionEffect
             yield return ProjectionActionFactory.CreateError(projectionType, entityId, subscribeError);
             yield break;
         }
-
-        activeSubscriptions[key] = subscriptionId!;
 
         // Fetch initial data
         ProjectionFetchResult? result = null;
