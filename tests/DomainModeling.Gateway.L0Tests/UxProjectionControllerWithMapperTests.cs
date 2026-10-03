@@ -141,6 +141,49 @@ public sealed class UxProjectionControllerWithMapperTests
     }
 
     /// <summary>
+    ///     Verifies that valid matching conditional headers avoid retrieving and mapping the projection body.
+    /// </summary>
+    /// <param name="headerValues">The values of the If-None-Match header fields.</param>
+    /// <returns>Asynchronous test task.</returns>
+    [Theory]
+    [InlineData("W/\"42\"")]
+    [InlineData("\"41\", \"42\"")]
+    [InlineData("\"42\", \"43\"")]
+    [InlineData("\"41\", W/\"42\", \"43\"")]
+    [InlineData("\"41\"", "\"42\"")]
+    [InlineData("W/\"42\"", "\"43\"")]
+    [InlineData(" \t\"41\" ,\t W/\"42\" \t")]
+    [InlineData("*")]
+    public async Task GetAsyncReturns304ForValidMatchingIfNoneMatchForms(
+        params string[] headerValues
+    )
+    {
+        // Arrange
+        TestProjection projection = new(100);
+        TestDto dto = new("Mapped: 100");
+        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
+        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BrookPosition(42));
+        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(projection);
+        Mock<IUxProjectionGrainFactory> factoryMock = new();
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
+        Mock<IMapper<TestProjection, TestDto>> mapperMock = new();
+        mapperMock.Setup(m => m.Map(projection)).Returns(dto);
+        TestableControllerWithMapper controller = CreateController(factoryMock, mapperMock);
+        controller.Request.Headers.IfNoneMatch = new(headerValues);
+
+        // Act
+        ActionResult<TestDto> result = await controller.GetAsync(TestEntityId, TestContext.Current.CancellationToken);
+
+        // Assert
+        StatusCodeResult statusCodeResult = Assert.IsType<StatusCodeResult>(result.Result);
+        Assert.Equal(StatusCodes.Status304NotModified, statusCodeResult.StatusCode);
+        Assert.Null(result.Value);
+        grainMock.Verify(g => g.GetAsync(It.IsAny<CancellationToken>()), Times.Never);
+        mapperMock.Verify(m => m.Map(It.IsAny<TestProjection>()), Times.Never);
+    }
+
+    /// <summary>
     ///     Verifies that GetAsync returns 304 Not Modified when If-None-Match matches.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
@@ -165,6 +208,47 @@ public sealed class UxProjectionControllerWithMapperTests
         Assert.Equal(StatusCodes.Status304NotModified, statusCodeResult.StatusCode);
         grainMock.Verify(g => g.GetAsync(It.IsAny<CancellationToken>()), Times.Never);
         mapperMock.Verify(m => m.Map(It.IsAny<TestProjection>()), Times.Never);
+    }
+
+    /// <summary>
+    ///     Verifies that nonmatching entity tags return the current projection and its cache headers.
+    /// </summary>
+    /// <param name="headerValues">The values of the If-None-Match header fields.</param>
+    /// <returns>Asynchronous test task.</returns>
+    [Theory]
+    [InlineData("W/\"41\"")]
+    [InlineData("\"41\", \"43\"")]
+    [InlineData("\"41\"", "W/\"43\"")]
+    [InlineData("\"41,42\"")]
+    [InlineData("\"042\"")]
+    public async Task GetAsyncReturnsBodyForNonmatchingIfNoneMatchForms(
+        params string[] headerValues
+    )
+    {
+        // Arrange
+        TestProjection projection = new(100);
+        TestDto dto = new("Mapped: 100");
+        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
+        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BrookPosition(42));
+        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(projection);
+        Mock<IUxProjectionGrainFactory> factoryMock = new();
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
+        Mock<IMapper<TestProjection, TestDto>> mapperMock = new();
+        mapperMock.Setup(m => m.Map(projection)).Returns(dto);
+        TestableControllerWithMapper controller = CreateController(factoryMock, mapperMock);
+        controller.Request.Headers.IfNoneMatch = new(headerValues);
+
+        // Act
+        ActionResult<TestDto> result = await controller.GetAsync(TestEntityId, TestContext.Current.CancellationToken);
+
+        // Assert
+        OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Same(dto, okResult.Value);
+        Assert.Equal("\"42\"", controller.Response.Headers.ETag.ToString());
+        Assert.Equal("private, must-revalidate", controller.Response.Headers.CacheControl.ToString());
+        grainMock.Verify(g => g.GetAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mapperMock.Verify(m => m.Map(projection), Times.Once);
     }
 
     /// <summary>
@@ -256,6 +340,36 @@ public sealed class UxProjectionControllerWithMapperTests
         Assert.IsType<OkObjectResult>(result.Result);
         Assert.True(controller.Response.Headers.TryGetValue("ETag", out StringValues etag));
         Assert.Equal("\"42\"", etag.ToString());
+    }
+
+    /// <summary>
+    ///     Verifies that conditional headers do not match a projection with no events.
+    /// </summary>
+    /// <param name="headerValue">The value of the If-None-Match header field.</param>
+    /// <returns>Asynchronous test task.</returns>
+    [Theory]
+    [InlineData("*")]
+    [InlineData("W/\"42\"")]
+    public async Task GetAsyncReturnsNotFoundForConditionalRequestsWithoutEvents(
+        string headerValue
+    )
+    {
+        // Arrange
+        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
+        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BrookPosition(-1));
+        Mock<IUxProjectionGrainFactory> factoryMock = new();
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
+        Mock<IMapper<TestProjection, TestDto>> mapperMock = new();
+        TestableControllerWithMapper controller = CreateController(factoryMock, mapperMock, headerValue);
+
+        // Act
+        ActionResult<TestDto> result = await controller.GetAsync(TestEntityId, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.IsType<NotFoundResult>(result.Result);
+        grainMock.Verify(g => g.GetAsync(It.IsAny<CancellationToken>()), Times.Never);
+        mapperMock.Verify(m => m.Map(It.IsAny<TestProjection>()), Times.Never);
     }
 
     /// <summary>

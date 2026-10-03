@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Net.Http.Headers;
 
 using Mississippi.Brooks.Abstractions;
 using Mississippi.Common.Abstractions.Mapping;
@@ -135,10 +138,14 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
         }
 
         string currentETag = $"\"{position.Value}\"";
+        EntityTagHeaderValue currentEntityTag = new(currentETag);
 
         // Check If-None-Match header for conditional GET
-        string? ifNoneMatch = Request.Headers.IfNoneMatch.ToString();
-        if (!string.IsNullOrEmpty(ifNoneMatch) && (ifNoneMatch == currentETag))
+        if (EntityTagHeaderValue.TryParseList(
+                Request.Headers.IfNoneMatch,
+                out IList<EntityTagHeaderValue>? ifNoneMatch) &&
+            ifNoneMatch.Any(entityTag => entityTag.Equals(EntityTagHeaderValue.Any) ||
+                                         entityTag.Compare(currentEntityTag, false)))
         {
             Logger.ProjectionNotModified(entityId, position.Value, ProjectionTypeName);
             return StatusCode(304);
