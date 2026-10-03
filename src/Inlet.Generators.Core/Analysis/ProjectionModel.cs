@@ -67,7 +67,10 @@ public sealed class ProjectionModel
 
         // Determine which custom types need their own DTOs
         NestedCustomTypes = Properties.Where(p => p.RequiresMapper)
-            .Select(p => p.RequiresEnumerableMapper ? p.ElementSourceTypeName! : p.SourceTypeName)
+            .SelectMany(p => p.IsCollection
+                ? TypeAnalyzer.GetMappedCollectionTypes(p.SourceTypeSymbol)
+                    .Select(type => type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat))
+                : new[] { p.SourceTypeName })
             .Distinct()
             .ToImmutableArray();
     }
