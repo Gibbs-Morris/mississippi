@@ -182,8 +182,8 @@ public sealed class InletHub : Hub<IInletHubClient>
             }
         }
 
-        AuthenticateResult authenticationResult =
-            await new PolicyEvaluator(AuthorizationService).AuthenticateAsync(policy, httpContext);
+        IPolicyEvaluator policyEvaluator = httpContext.RequestServices.GetRequiredService<IPolicyEvaluator>();
+        AuthenticateResult authenticationResult = await policyEvaluator.AuthenticateAsync(policy, httpContext);
         return authenticationResult.Succeeded ? authenticationResult.Principal : null;
     }
 
