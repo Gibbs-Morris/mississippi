@@ -21,25 +21,13 @@ Governing thought: Fix each warning/error with the smallest safe edit in at most
 
 Agents fixing build/analyzer/style issues in Mississippi and Samples solutions.
 
-## At-a-Glance Quick-Start
+## Remediation workflow
 
-- Reproduce: `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1` (or Samples equivalent), then `clean-up-*.ps1`.
-- Plan: pick one warning/error code and one file at a time.
-- Fix: smallest edit only; prefer code changes over suppression.
-- Verify: rerun build/cleanup; stop after five attempts per issue and defer with a scratchpad task if still failing.
-
-## Core Principles
-
-- Precision over breadth; do not reformat unrelated code.
-- Count attempts per edit/verify cycle.
-- Keep shared guardrails in mind (zero warnings, CPM, DI/logging patterns).
-
-## Procedure
-
-1. Run the relevant build/cleanup script; capture warning/error codes.
-2. Choose one issue; design the minimal fix (initializers, null checks, `using` declarations, etc.).
-3. Apply the fix; rerun build/cleanup to confirm no new warnings.
-4. If unresolved after five cycles, revert to last compiling state, add a deferred scratchpad task with code/path/reason, and move on.
+Use [repair-build-failures](../../.agents/skills/repair-build-failures/SKILL.md)
+for the observed-failure diagnosis, repair, and verification workflow described
+by this adapter. If automatic skill discovery is unavailable, read the linked
+skill directly. The six rules above remain effective whether or not the skill
+is loaded.
 
 ## References
 
