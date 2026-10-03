@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 
 using Mississippi.Brooks.Abstractions;
@@ -141,11 +142,11 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
         EntityTagHeaderValue currentEntityTag = new(currentETag);
 
         // Check If-None-Match header for conditional GET
-        if (EntityTagHeaderValue.TryParseList(
-                Request.Headers.IfNoneMatch,
-                out IList<EntityTagHeaderValue>? ifNoneMatch) &&
-            ifNoneMatch.Any(entityTag => entityTag.Equals(EntityTagHeaderValue.Any) ||
-                                         entityTag.Compare(currentEntityTag, false)))
+        StringValues ifNoneMatch = Request.Headers.IfNoneMatch;
+        if (((ifNoneMatch.Count == 1) && (ifNoneMatch.ToString().Trim(' ', '\t') == "*")) ||
+            (EntityTagHeaderValue.TryParseStrictList(ifNoneMatch, out IList<EntityTagHeaderValue>? entityTags) &&
+             !entityTags.Any(entityTag => entityTag.Equals(EntityTagHeaderValue.Any)) &&
+             entityTags.Any(entityTag => entityTag.Compare(currentEntityTag, false))))
         {
             Logger.ProjectionNotModified(entityId, position.Value, ProjectionTypeName);
             return StatusCode(304);
