@@ -47,6 +47,9 @@ public sealed class InletSignalRSubscriptionTests : IAsyncDisposable
 
     private readonly IInletStore store;
 
+    private readonly Channel<TaskCompletionSource<object?>> subscriptionRequests =
+        Channel.CreateUnbounded<TaskCompletionSource<object?>>();
+
     private readonly ConcurrentQueue<TaskCompletionSource<object?>> subscriptions = new();
 
     private readonly ConcurrentQueue<string> unsubscribedIds = new();
@@ -65,6 +68,7 @@ public sealed class InletSignalRSubscriptionTests : IAsyncDisposable
             {
                 TaskCompletionSource<object?> response = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 subscriptions.Enqueue(response);
+                subscriptionRequests.Writer.TryWrite(response);
                 return response.Task;
             });
         hubConnection.Setup(connection => connection.InvokeCoreAsync(
@@ -176,6 +180,46 @@ public sealed class InletSignalRSubscriptionTests : IAsyncDisposable
             .WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
 
     /// <summary>
+    ///     Waits for the next hub invocation without relying on continuation scheduling.
+    /// </summary>
+    /// <returns>The controlled response for the next subscription request.</returns>
+    private async Task<TaskCompletionSource<object?>> ReadSubscriptionRequestAsync() =>
+        await subscriptionRequests.Reader.ReadAsync(TestContext.Current.CancellationToken)
+            .AsTask()
+            .WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+    /// <summary>
+    ///     Cancelling a waiting duplicate leaves the owner's pending request intact.
+    /// </summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task CancelledDuplicateLeavesOwnerPending()
+    {
+        await using InletSignalRActionEffect effect = new(
+            new(() => store),
+            serviceProvider.GetRequiredService<IHubConnectionProvider>(),
+            serviceProvider.GetRequiredService<IProjectionFetcher>(),
+            serviceProvider.GetRequiredService<IProjectionDtoRegistry>());
+        SubscribeToProjectionAction<TestProjection> action = new("entity-1");
+        Task<IAction[]> first = CollectAsync(effect.HandleAsync(action, new(), CancellationToken.None));
+        using CancellationTokenSource cancellation = new();
+        Task<IAction[]> duplicate = CollectAsync(effect.HandleAsync(action, new(), cancellation.Token));
+        await cancellation.CancelAsync();
+        Assert.Empty(await duplicate);
+        Assert.False(first.IsCompleted);
+        TaskCompletionSource<object?> response = await ReadSubscriptionRequestAsync();
+        response.SetResult("owner-subscription");
+        Assert.IsType<ProjectionLoadedAction<TestProjection>>((await first)[1]);
+        Assert.Single(subscriptions);
+        await CollectAsync(
+            effect.HandleAsync(
+                new UnsubscribeFromProjectionAction<TestProjection>("entity-1"),
+                new(),
+                CancellationToken.None));
+        Assert.Equal("owner-subscription", Assert.Single(unsubscribedIds));
+    }
+
+    /// <summary>
     ///     A cancelled hub request releases the pair so a later subscribe can succeed.
     /// </summary>
     /// <returns>A task representing the test.</returns>
@@ -281,5 +325,83 @@ public sealed class InletSignalRSubscriptionTests : IAsyncDisposable
         Assert.Empty(liveSubscriptions);
         Assert.Single(subscriptions);
         Assert.Equal("subscription-1", Assert.Single(unsubscribedIds));
+    }
+
+    /// <summary>
+    ///     A waiting duplicate retains its intent after the first attempt fails or is cancelled.
+    /// </summary>
+    /// <param name="cancelFirst">Whether the first attempt is cancelled instead of failing.</param>
+    /// <returns>A task representing the test.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PendingDuplicateRetriesAfterFailedAttempt(
+        bool cancelFirst
+    )
+    {
+        await using InletSignalRActionEffect effect = new(
+            new(() => store),
+            serviceProvider.GetRequiredService<IHubConnectionProvider>(),
+            serviceProvider.GetRequiredService<IProjectionFetcher>(),
+            serviceProvider.GetRequiredService<IProjectionDtoRegistry>());
+        using CancellationTokenSource cancellation = new();
+        SubscribeToProjectionAction<TestProjection> action = new("entity-1");
+        Task<IAction[]> first = CollectAsync(effect.HandleAsync(action, new(), cancellation.Token));
+        Task<IAction[]> duplicate = CollectAsync(effect.HandleAsync(action, new(), CancellationToken.None));
+        TaskCompletionSource<object?> firstResponse = await ReadSubscriptionRequestAsync();
+        if (cancelFirst)
+        {
+            await cancellation.CancelAsync();
+            firstResponse.SetCanceled(cancellation.Token);
+        }
+        else
+        {
+            firstResponse.SetException(new InvalidOperationException("Subscription failed"));
+        }
+
+        IAction[] firstActions = await first;
+        Assert.IsType<ProjectionLoadingAction<TestProjection>>(firstActions[0]);
+        Assert.Equal(cancelFirst ? 1 : 2, firstActions.Length);
+        Assert.False(duplicate.IsCompleted);
+        TaskCompletionSource<object?> retryResponse = await ReadSubscriptionRequestAsync();
+        retryResponse.SetResult("retry-subscription");
+        IAction[] duplicateActions = await duplicate;
+        Assert.Equal(2, duplicateActions.Length);
+        Assert.IsType<ProjectionLoadedAction<TestProjection>>(duplicateActions[1]);
+        Assert.Equal(2, subscriptions.Count);
+        await CollectAsync(
+            effect.HandleAsync(
+                new UnsubscribeFromProjectionAction<TestProjection>("entity-1"),
+                new(),
+                CancellationToken.None));
+        Assert.Equal("retry-subscription", Assert.Single(unsubscribedIds));
+    }
+
+    /// <summary>
+    ///     A duplicate coalesced with success cannot establish a new ID after unsubscribe.
+    /// </summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task SuccessfulPendingDuplicateDoesNotResubscribeAfterUnsubscribe()
+    {
+        await using InletSignalRActionEffect effect = new(
+            new(() => store),
+            serviceProvider.GetRequiredService<IHubConnectionProvider>(),
+            serviceProvider.GetRequiredService<IProjectionFetcher>(),
+            serviceProvider.GetRequiredService<IProjectionDtoRegistry>());
+        SubscribeToProjectionAction<TestProjection> action = new("entity-1");
+        Task<IAction[]> first = CollectAsync(effect.HandleAsync(action, new(), CancellationToken.None));
+        Task<IAction[]> duplicate = CollectAsync(effect.HandleAsync(action, new(), CancellationToken.None));
+        TaskCompletionSource<object?> response = await ReadSubscriptionRequestAsync();
+        response.SetResult("owner-subscription");
+        Assert.IsType<ProjectionLoadedAction<TestProjection>>((await first)[1]);
+        await CollectAsync(
+            effect.HandleAsync(
+                new UnsubscribeFromProjectionAction<TestProjection>("entity-1"),
+                new(),
+                CancellationToken.None));
+        Assert.Empty(await duplicate);
+        Assert.Single(subscriptions);
+        Assert.Equal("owner-subscription", Assert.Single(unsubscribedIds));
     }
 }

@@ -42,7 +42,8 @@ internal sealed class InletSignalRActionEffect
 
     private readonly IDisposable hubCallbackRegistration;
 
-    private readonly ConcurrentDictionary<(Type ProjectionType, string EntityId), byte> pendingSubscriptions = new();
+    private readonly ConcurrentDictionary<(Type ProjectionType, string EntityId), TaskCompletionSource<bool>>
+        pendingSubscriptions = new();
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="InletSignalRActionEffect" /> class.
@@ -250,18 +251,21 @@ internal sealed class InletSignalRActionEffect
     )
     {
         (Type, string) key = (projectionType, entityId);
-        if (!pendingSubscriptions.TryAdd(key, 0))
+        TaskCompletionSource<bool> reservation = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (!await TryReserveSubscriptionAsync(key, reservation, cancellationToken))
         {
             yield break;
         }
 
         Exception? subscribeError = null;
         bool cancelled = false;
+        bool established = false;
         try
         {
             // Reserve the pair across the hub await so repeated intents cannot lose an ID.
             if (activeSubscriptions.ContainsKey(key))
             {
+                established = true;
                 yield break;
             }
 
@@ -295,12 +299,14 @@ internal sealed class InletSignalRActionEffect
                 if (!cancelled && subscribeError is null)
                 {
                     activeSubscriptions[key] = subscriptionId!;
+                    established = true;
                 }
             }
         }
         finally
         {
-            pendingSubscriptions.TryRemove(key, out byte _);
+            pendingSubscriptions.TryRemove(key, out TaskCompletionSource<bool>? _);
+            reservation.TrySetResult(established);
         }
 
         if (cancelled)
@@ -376,6 +382,41 @@ internal sealed class InletSignalRActionEffect
             entityId,
             result.IsNotFound ? null : result.Data,
             result.Version);
+    }
+
+    /// <summary>
+    ///     Reserves a pair after failed attempts while coalescing an established subscription.
+    /// </summary>
+    /// <param name="key">The projection and entity pair to reserve.</param>
+    /// <param name="reservation">The completion source owned by this attempt.</param>
+    /// <param name="cancellationToken">The token used to cancel waiting for an earlier attempt.</param>
+    /// <returns>Whether this caller owns the reservation and should attempt subscription.</returns>
+    private async Task<bool> TryReserveSubscriptionAsync(
+        (Type ProjectionType, string EntityId) key,
+        TaskCompletionSource<bool> reservation,
+        CancellationToken cancellationToken
+    )
+    {
+        while (true)
+        {
+            TaskCompletionSource<bool> pending = pendingSubscriptions.GetOrAdd(key, reservation);
+            if (ReferenceEquals(pending, reservation))
+            {
+                return true;
+            }
+
+            try
+            {
+                if (await pending.Task.WaitAsync(cancellationToken))
+                {
+                    return false;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+        }
     }
 
     private async Task HandleUnsubscribeAsync(
