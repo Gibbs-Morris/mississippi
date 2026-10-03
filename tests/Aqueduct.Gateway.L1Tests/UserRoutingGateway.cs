@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Messages;
+using Mississippi.Aqueduct.Gateway;
 using Mississippi.Testing.Utilities.SignalR;
 
 using NSubstitute;
@@ -19,7 +20,7 @@ using Orleans.Runtime;
 using Orleans.Streams;
 
 
-namespace Mississippi.Aqueduct.Gateway.L0Tests;
+namespace MississippiTests.Aqueduct.Gateway.L1Tests;
 
 /// <summary>Owns a real gateway, native server subscription and its test connections.</summary>
 internal sealed class UserRoutingGateway : IAsyncDisposable
