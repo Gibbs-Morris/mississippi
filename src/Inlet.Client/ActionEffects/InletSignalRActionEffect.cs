@@ -314,10 +314,28 @@ internal sealed class InletSignalRActionEffect
             yield break;
         }
 
-        // Fetch initial data
+        await foreach (IAction action in FetchInitialProjectionAsync(projectionType, entityId, cancellationToken))
+        {
+            yield return action;
+        }
+    }
+
+    /// <summary>
+    ///     Fetches initial data after the server subscription has been established.
+    /// </summary>
+    /// <param name="projectionType">The registered projection DTO type.</param>
+    /// <param name="entityId">The subscribed entity identifier.</param>
+    /// <param name="cancellationToken">The token used to cancel the fetch.</param>
+    /// <returns>The loaded or error action produced by the initial fetch.</returns>
+    private async IAsyncEnumerable<IAction> FetchInitialProjectionAsync(
+        Type projectionType,
+        string entityId,
+        [EnumeratorCancellation] CancellationToken cancellationToken
+    )
+    {
         ProjectionFetchResult? result = null;
         Exception? fetchError = null;
-        cancelled = false;
+        bool cancelled = false;
         try
         {
             result = await ProjectionFetcher.FetchAsync(projectionType, entityId, cancellationToken);
