@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Connections.Features;
 using Microsoft.AspNetCore.Http.Features;
@@ -85,7 +87,8 @@ public sealed class InletHubAuthenticationReviewTests
         new(new ClaimsIdentity([new(ClaimTypes.NameIdentifier, userId), new("permission", permission)], userId));
 
     private static ServiceProvider CreateServices(
-        IAuthenticationService authenticationService
+        IAuthenticationService authenticationService,
+        AuthorizationPolicy? defaultPolicy = null
     )
     {
         ServiceCollection services = new();
@@ -94,6 +97,7 @@ public sealed class InletHubAuthenticationReviewTests
         services.AddSingleton(authenticationService);
         services.AddAuthorizationBuilder()
             .SetDefaultPolicy(
+                defaultPolicy ??
                 new AuthorizationPolicyBuilder().RequireAuthenticatedUser().RequireClaim("permission", "read").Build());
         return services.BuildServiceProvider();
     }
@@ -146,5 +150,50 @@ public sealed class InletHubAuthenticationReviewTests
         Assert.Equal("connection-1", Assert.Single(state, field => field.Key == "ConnectionId").Value);
         Assert.Equal(allowed ? LogLevel.Debug : LogLevel.Warning, arguments[0]);
         Assert.Null(arguments[3]);
+    }
+
+    /// <summary>
+    ///     The last successful selected handler should have the same primary identity as ASP.NET.
+    /// </summary>
+    /// <param name="reverseSchemes">Whether the policy selects the handlers in reverse order.</param>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SubscribePreservesSelectedHandlerIdentityPrecedence(
+        bool reverseSchemes
+    )
+    {
+        string firstScheme = reverseSchemes ? OtherScheme : BearerScheme;
+        string lastScheme = reverseSchemes ? BearerScheme : OtherScheme;
+        IAuthenticationService authenticationService = Substitute.For<IAuthenticationService>();
+        foreach (string scheme in new[] { BearerScheme, OtherScheme })
+        {
+            authenticationService.AuthenticateAsync(Arg.Any<HttpContext>(), scheme)
+                .Returns(AuthenticateResult.Success(new(CreatePrincipal(scheme), scheme)));
+        }
+
+        AuthorizationPolicy policy = new AuthorizationPolicyBuilder(firstScheme, lastScheme).RequireAuthenticatedUser()
+            .RequireAssertion(context => context.User.Identity?.AuthenticationType == lastScheme)
+            .Build();
+        await using ServiceProvider services = CreateServices(authenticationService, policy);
+        DefaultHttpContext referenceContext = new()
+        {
+            RequestServices = services,
+        };
+        IPolicyEvaluator evaluator = services.GetRequiredService<IPolicyEvaluator>();
+        AuthenticateResult authentication = await evaluator.AuthenticateAsync(policy, referenceContext);
+        Assert.True(authentication.Succeeded);
+        Assert.Equal(
+            new[] { lastScheme, firstScheme },
+            referenceContext.User.Identities.Select(identity => identity.AuthenticationType));
+        Assert.True((await evaluator.AuthorizeAsync(policy, authentication, referenceContext, null)).Succeeded);
+        using InletHub hub = CreateHub(
+            services,
+            firstScheme + ", " + lastScheme,
+            out IInletSubscriptionGrain grain,
+            out ILogger<InletHub> _);
+        Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+        await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
     }
 }
