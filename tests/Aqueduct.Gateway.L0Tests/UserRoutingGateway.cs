@@ -84,26 +84,22 @@ internal sealed class UserRoutingGateway : IAsyncDisposable
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        try
-        {
-            foreach (HubConnectionContext connection in connections)
-            {
-                await Manager.OnDisconnectedAsync(connection).ConfigureAwait(false);
-            }
-        }
-        finally
+        using (deliverySignal)
+        using (Manager)
         {
             try
+            {
+                foreach (HubConnectionContext connection in connections)
+                {
+                    await Manager.OnDisconnectedAsync(connection).ConfigureAwait(false);
+                }
+            }
+            finally
             {
                 if (subscription is not null)
                 {
                     await subscription.UnsubscribeAsync().ConfigureAwait(false);
                 }
-            }
-            finally
-            {
-                Manager.Dispose();
-                deliverySignal.Dispose();
             }
         }
     }
