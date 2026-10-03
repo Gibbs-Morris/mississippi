@@ -119,6 +119,11 @@ public sealed class InletSignalRSubscriptionTests : IAsyncDisposable
         await hubConnection.Object.DisposeAsync();
     }
 
+    /// <summary>
+    ///     Enumerates an effect directly so cancellation can be controlled by the test.
+    /// </summary>
+    /// <param name="actions">The effect actions to collect.</param>
+    /// <returns>The actions emitted before the effect completes.</returns>
     private static async Task<IAction[]> CollectAsync(
         IAsyncEnumerable<IAction> actions
     )
@@ -132,6 +137,11 @@ public sealed class InletSignalRSubscriptionTests : IAsyncDisposable
         return result.ToArray();
     }
 
+    /// <summary>
+    ///     Completes each pending hub response and waits for its loaded action.
+    /// </summary>
+    /// <param name="reverseCompletion">Whether to complete the queued responses in reverse order.</param>
+    /// <returns>A task representing completion of the pending subscriptions.</returns>
     private async Task CompleteSubscriptionsAsync(
         bool reverseCompletion = false
     )
@@ -156,6 +166,10 @@ public sealed class InletSignalRSubscriptionTests : IAsyncDisposable
         }
     }
 
+    /// <summary>
+    ///     Waits for a loaded or error action with a watchdog for stalled effects.
+    /// </summary>
+    /// <returns>The next effect result observed by the store middleware.</returns>
     private async Task<IAction> ReadResultAsync() =>
         await results.Reader.ReadAsync(TestContext.Current.CancellationToken)
             .AsTask()

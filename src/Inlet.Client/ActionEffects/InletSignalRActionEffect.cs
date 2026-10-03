@@ -236,6 +236,13 @@ internal sealed class InletSignalRActionEffect
             result.Version);
     }
 
+    /// <summary>
+    ///     Establishes one server subscription per projection and entity pair, then fetches initial data.
+    /// </summary>
+    /// <param name="projectionType">The registered projection DTO type.</param>
+    /// <param name="entityId">The entity identifier to subscribe to.</param>
+    /// <param name="cancellationToken">The token used to cancel subscription establishment.</param>
+    /// <returns>The loading, loaded, or error actions produced by the subscription.</returns>
     private async IAsyncEnumerable<IAction> HandleSubscribeAsync(
         Type projectionType,
         string entityId,
