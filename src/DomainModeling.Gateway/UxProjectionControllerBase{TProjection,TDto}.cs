@@ -1,13 +1,12 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Buffers;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
-using Microsoft.Net.Http.Headers;
 
 using Mississippi.Brooks.Abstractions;
 using Mississippi.Common.Abstractions.Mapping;
@@ -94,6 +93,131 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
     protected IUxProjectionGrainFactory UxProjectionGrainFactory { get; }
 
     /// <summary>
+    ///     Validates the complete condition and compares opaque tags using weak comparison.
+    /// </summary>
+    /// <param name="fieldValues">The conditional header field values.</param>
+    /// <param name="currentETag">The current quoted entity tag.</param>
+    /// <returns>Whether the condition is valid and matches the current representation.</returns>
+    private static bool MatchesIfNoneMatch(
+        StringValues fieldValues,
+        string currentETag
+    )
+    {
+        if ((fieldValues.Count == 1) && (fieldValues.ToString().Trim(' ', '\t') == "*"))
+        {
+            return true;
+        }
+
+        bool matches = false;
+        foreach (string? fieldValue in fieldValues)
+        {
+            if (!TryMatchEntityTagList(fieldValue.AsSpan(), currentETag.AsSpan(), out bool fieldMatches))
+            {
+                return false;
+            }
+
+            matches |= fieldMatches;
+        }
+
+        return matches;
+    }
+
+    /// <summary>
+    ///     Validates an entity-tag list and records any weak match.
+    /// </summary>
+    /// <param name="value">One conditional header field value.</param>
+    /// <param name="currentETag">The current quoted entity tag.</param>
+    /// <param name="matches">Whether any valid tag matches the current representation.</param>
+    /// <returns>Whether the complete list is valid.</returns>
+    private static bool TryMatchEntityTagList(
+        ReadOnlySpan<char> value,
+        ReadOnlySpan<char> currentETag,
+        out bool matches
+    )
+    {
+        matches = false;
+        while (!value.IsEmpty)
+        {
+            value = value.TrimStart(" \t");
+            if (value.IsEmpty)
+            {
+                return true;
+            }
+
+            // RFC 9110 permits recipients to ignore empty list members.
+            if (value[0] == ',')
+            {
+                value = value[1..];
+                continue;
+            }
+
+            if (value.StartsWith("W/", StringComparison.Ordinal))
+            {
+                value = value[2..];
+            }
+
+            if (!TryReadEntityTag(value, out int tagLength))
+            {
+                return false;
+            }
+
+            matches |= value[..tagLength].SequenceEqual(currentETag);
+            value = value[tagLength..].TrimStart(" \t");
+            if (!value.IsEmpty)
+            {
+                if (value[0] != ',')
+                {
+                    return false;
+                }
+
+                value = value[1..];
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    ///     Reads a quoted opaque tag using the entity-tag character grammar.
+    /// </summary>
+    /// <param name="value">The value beginning with a quoted tag.</param>
+    /// <param name="tagLength">The length of the complete quoted tag.</param>
+    /// <returns>Whether a valid complete tag was read.</returns>
+    private static bool TryReadEntityTag(
+        ReadOnlySpan<char> value,
+        out int tagLength
+    )
+    {
+        tagLength = 0;
+        if (value.IsEmpty || (value[0] != '"'))
+        {
+            return false;
+        }
+
+        int index = 1;
+        while ((index < value.Length) && (value[index] != '"'))
+        {
+            // Header strings are decoded; valid non-ASCII scalars encode as obs-text octets.
+            // Entity tags preserve backslashes literally rather than treating them as escapes.
+            if ((Rune.DecodeFromUtf16(value[index..], out Rune character, out int consumed) != OperationStatus.Done) ||
+                character.Value is < '!' or '\u007F')
+            {
+                return false;
+            }
+
+            index += consumed;
+        }
+
+        if (index == value.Length)
+        {
+            return false;
+        }
+
+        tagLength = index + 1;
+        return true;
+    }
+
+    /// <summary>
     ///     Gets the latest projection state for the specified entity.
     /// </summary>
     /// <param name="entityId">The entity identifier within the brook.</param>
@@ -139,14 +263,10 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
         }
 
         string currentETag = $"\"{position.Value}\"";
-        EntityTagHeaderValue currentEntityTag = new(currentETag);
 
         // Check If-None-Match header for conditional GET
         StringValues ifNoneMatch = Request.Headers.IfNoneMatch;
-        if (((ifNoneMatch.Count == 1) && (ifNoneMatch.ToString().Trim(' ', '\t') == "*")) ||
-            (EntityTagHeaderValue.TryParseStrictList(ifNoneMatch, out IList<EntityTagHeaderValue>? entityTags) &&
-             !entityTags.Any(entityTag => entityTag.Equals(EntityTagHeaderValue.Any)) &&
-             entityTags.Any(entityTag => entityTag.Compare(currentEntityTag, false))))
+        if (MatchesIfNoneMatch(ifNoneMatch, currentETag))
         {
             Logger.ProjectionNotModified(entityId, position.Value, ProjectionTypeName);
             return StatusCode(304);
