@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.Loader;
 using System.Text.Json.Serialization;
 
 using Microsoft.CodeAnalysis;
@@ -53,6 +56,93 @@ public class ProjectionEndpointsGeneratorTests
                                               }
                                           }
                                           """;
+
+    /// <summary>
+    ///     Executes emitted dictionary mappers and verifies associations, empty results, and unchanged primitives.
+    /// </summary>
+    private static void AssertDictionaryMapperResults(
+        Compilation compilation,
+        bool preserveStringComparer
+    )
+    {
+        using MemoryStream assemblyStream = new();
+        Assert.True(compilation.Emit(assemblyStream, cancellationToken: TestContext.Current.CancellationToken).Success);
+        assemblyStream.Position = 0;
+        AssemblyLoadContext loadContext = new("dictionary-mapper-regression", true);
+        try
+        {
+            Assembly assembly = loadContext.LoadFromStream(assemblyStream);
+            Type[] types = assembly.GetTypes();
+            object source = Activator.CreateInstance(types.Single(type => type.Name == "CatalogProjection"))!;
+            Type mapperType = types.Single(type => type.Name == "CatalogProjectionMapper");
+            ConstructorInfo constructor = mapperType
+                .GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                .Single();
+            object[] dependencies = constructor.GetParameters()
+                .Select(parameter => Activator.CreateInstance(
+                    types.Single(type =>
+                        type.Name == (parameter.ParameterType.GenericTypeArguments[1].Name + "Mapper")),
+                    true)!)
+                .ToArray();
+            object mapper = constructor.Invoke(dependencies);
+            object mapped = mapperType.GetMethod("Map")!.Invoke(mapper, [source])!;
+            object sourceEntries = source.GetType().GetProperty("Entries")!.GetValue(source)!;
+            object mappedEntries = mapped.GetType().GetProperty("Entries")!.GetValue(mapped)!;
+            Assert.Equal(2, mappedEntries.GetType().GetProperty("Count")!.GetValue(mappedEntries));
+            object empty = mapped.GetType().GetProperty("Empty")!.GetValue(mapped)!;
+            Assert.Equal(0, empty.GetType().GetProperty("Count")!.GetValue(empty));
+            Assert.Equal(
+                sourceEntries.GetType().GetGenericTypeDefinition(),
+                mappedEntries.GetType().GetGenericTypeDefinition());
+            Type keyType = mappedEntries.GetType().GenericTypeArguments[0];
+            object firstKey;
+            object secondKey;
+            if (keyType == typeof(string))
+            {
+                firstKey = preserveStringComparer ? "FIRST" : "first";
+                secondKey = preserveStringComparer ? "SECOND" : "second";
+            }
+            else if (keyType.IsEnum)
+            {
+                firstKey = Enum.ToObject(keyType, 2);
+                secondKey = Enum.ToObject(keyType, 7);
+            }
+            else
+            {
+                firstKey = Activator.CreateInstance(keyType)!;
+                keyType.GetProperty("Code")!.SetValue(firstKey, "first");
+                secondKey = Activator.CreateInstance(keyType)!;
+                keyType.GetProperty("Code")!.SetValue(secondKey, "second");
+            }
+
+            PropertyInfo indexer = mappedEntries.GetType().GetProperty("Item")!;
+            object firstValue = indexer.GetValue(mappedEntries, [firstKey])!;
+            object secondValue = indexer.GetValue(mappedEntries, [secondKey])!;
+            if (firstValue.GetType().Name == "EntryDto")
+            {
+                Assert.Equal(42m, firstValue.GetType().GetProperty("Amount")!.GetValue(firstValue));
+                Assert.Equal(99m, secondValue.GetType().GetProperty("Amount")!.GetValue(secondValue));
+            }
+            else
+            {
+                Assert.Equal(
+                    firstValue.GetType().IsEnum ? 2 : 42,
+                    Convert.ToInt32(firstValue, CultureInfo.InvariantCulture));
+                Assert.Equal(
+                    secondValue.GetType().IsEnum ? 7 : 99,
+                    Convert.ToInt32(secondValue, CultureInfo.InvariantCulture));
+            }
+
+            Assert.Same(
+                source.GetType().GetProperty("Values")!.GetValue(source),
+                mapped.GetType().GetProperty("Values")!.GetValue(mapped));
+            TestContext.Current.TestOutputHelper?.WriteLine("RUNTIME_DICTIONARY_ASSOCIATIONS=PASS");
+        }
+        finally
+        {
+            loadContext.Unload();
+        }
+    }
 
     /// <summary>
     ///     Creates a Roslyn compilation from the provided source code and runs the generator.
@@ -336,6 +426,155 @@ public class ProjectionEndpointsGeneratorTests
             "public sealed partial class AccountBalanceController",
             controllerSource,
             StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Dictionary keys and values generate compilable DTOs, registrations, and executable mapping.
+    /// </summary>
+    /// <param name="dictionaryType">The declared dictionary type.</param>
+    /// <param name="supplyGlobalUsing">Whether the fixture isolates discovery from generated imports.</param>
+    [Theory]
+    [InlineData("System.Collections.Generic.Dictionary<string, Entry>", true)]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary<string, Entry>", true)]
+    [InlineData("System.Collections.Generic.IDictionary<string, Entry>", true)]
+    [InlineData("System.Collections.Generic.IReadOnlyDictionary<string, Entry>", true)]
+    [InlineData("System.Collections.Immutable.IImmutableDictionary<string, Entry>", true)]
+    [InlineData("System.Collections.Generic.Dictionary<Key, Entry>", true)]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary<Key, Entry>", true)]
+    [InlineData("System.Collections.Generic.Dictionary<Key, int>", true)]
+    [InlineData("System.Collections.Generic.Dictionary<EntryStatus, EntryStatus>", true)]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary<EntryStatus, EntryStatus>", true)]
+    [InlineData("System.Collections.Generic.Dictionary<string, int>", true)]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary<string, int>", true)]
+    [InlineData("System.Collections.Generic.Dictionary<string, Entry>", false)]
+    public void GeneratedDictionaryDtoAndMapperCompileWithCustomValues(
+        string dictionaryType,
+        bool supplyGlobalUsing
+    )
+    {
+        ArgumentNullException.ThrowIfNull(dictionaryType);
+        string typeArguments = dictionaryType.Substring(dictionaryType.IndexOf('<', StringComparison.Ordinal) + 1)
+            .TrimEnd('>');
+        string[] arguments = typeArguments.Split(',');
+        string keyType = arguments[0].Trim();
+        string valueType = arguments[1].Trim();
+        string firstKey = keyType switch
+        {
+            "string" => "\"first\"",
+            "Key" => "new Key { Code = \"first\" }",
+            var _ => "EntryStatus.New",
+        };
+        string secondKey = keyType switch
+        {
+            "string" => "\"second\"",
+            "Key" => "new Key { Code = \"second\" }",
+            var _ => "EntryStatus.Complete",
+        };
+        string firstValue = valueType switch
+        {
+            "Entry" => "new Entry { Amount = 42m }",
+            "int" => "42",
+            var _ => "EntryStatus.New",
+        };
+        string secondValue = valueType switch
+        {
+            "Entry" => "new Entry { Amount = 99m }",
+            "int" => "99",
+            var _ => "EntryStatus.Complete",
+        };
+        bool immutable = dictionaryType.StartsWith("System.Collections.Immutable.", StringComparison.Ordinal);
+        string comparer = keyType == "string" ? "System.StringComparer.OrdinalIgnoreCase" : string.Empty;
+        string initializer = immutable
+            ? $"System.Collections.Immutable.ImmutableDictionary.Create<{typeArguments}>({comparer}).Add({firstKey}, {firstValue}).Add({secondKey}, {secondValue})"
+            : $"new System.Collections.Generic.Dictionary<{typeArguments}>({comparer}) {{ [{firstKey}] = {firstValue}, [{secondKey}] = {secondValue} }}";
+        string emptyInitializer = immutable
+            ? $"System.Collections.Immutable.ImmutableDictionary<{typeArguments}>.Empty"
+            : $"new System.Collections.Generic.Dictionary<{typeArguments}>()";
+        string source = $$"""
+                          {{(supplyGlobalUsing ? "global using System.Collections.Generic;" : string.Empty)}}
+                          using Mississippi.Inlet.Generators.Abstractions;
+                          using Mississippi.Inlet.Abstractions;
+
+                          namespace TestApp.Domain.Projections.Catalog;
+
+                          public sealed record Entry { public decimal Amount { get; init; } }
+                          public sealed record Key { public string Code { get; init; } = string.Empty; }
+                          public enum EntryStatus { New = 2, Complete = 7 }
+
+                          [GenerateProjectionEndpoints]
+                          [ProjectionPath("catalog")]
+                          public sealed record CatalogProjection
+                          {
+                              public {{dictionaryType}} Entries { get; init; } = {{initializer}};
+                              public {{dictionaryType}} Empty { get; init; } = {{emptyInitializer}};
+                              public System.Collections.Generic.Dictionary<string, int> Values { get; init; } =
+                                  new(System.StringComparer.OrdinalIgnoreCase) { ["keep"] = 7 };
+                          }
+                          """;
+        const string mappingContracts = """
+                                        namespace Microsoft.Extensions.DependencyInjection
+                                        {
+                                            public interface IServiceCollection { }
+                                        }
+                                        namespace Mississippi.Common.Abstractions.Mapping
+                                        {
+                                            public interface IMapper<in TFrom, out TTo> { TTo Map(TFrom input); }
+                                            public interface IEnumerableMapper<in TFrom, out TTo> :
+                                                IMapper<System.Collections.Generic.IEnumerable<TFrom>, System.Collections.Generic.IEnumerable<TTo>> { }
+                                        }
+                                        namespace Mississippi.Common.Abstractions.Mapping
+                                        {
+                                            using Microsoft.Extensions.DependencyInjection;
+                                            using Mississippi.Common.Abstractions.Mapping;
+                                            public static class MappingRegistrations
+                                            {
+                                                public static IServiceCollection AddMapper<TFrom, TTo, TMapper>(this IServiceCollection services)
+                                                    where TMapper : class, IMapper<TFrom, TTo> => services;
+                                                public static IServiceCollection AddIEnumerableMapper(this IServiceCollection services) => services;
+                                            }
+                                        }
+                                        """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, mappingContracts, source);
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Assert.Empty(
+            input.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        TestContext.Current.TestOutputHelper?.WriteLine($"INPUT_ERRORS=0;FIXTURE_GLOBAL_USING={supplyGlobalUsing}");
+        Assert.Empty(diagnostics);
+        Assert.All(result.Results, generatorResult => Assert.Null(generatorResult.Exception));
+        SyntaxTree[] dtoAndMapperTrees = result.GeneratedTrees.Where(tree =>
+                !tree.FilePath.Contains("Controller", StringComparison.Ordinal))
+            .ToArray();
+        Assert.NotEmpty(dtoAndMapperTrees);
+        foreach (SyntaxTree tree in dtoAndMapperTrees)
+        {
+            TestContext.Current.TestOutputHelper?.WriteLine(
+                $"{tree.FilePath}\n{tree.GetText(TestContext.Current.CancellationToken)}");
+        }
+
+        Compilation dtoAndMapperCompilation = input.AddSyntaxTrees(dtoAndMapperTrees);
+        Assert.Empty(
+            dtoAndMapperCompilation.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        INamedTypeSymbol projection =
+            input.GetTypeByMetadataName("TestApp.Domain.Projections.Catalog.CatalogProjection")!;
+        INamedTypeSymbol entries =
+            (INamedTypeSymbol)projection.GetMembers("Entries").OfType<IPropertySymbol>().Single().Type;
+        foreach (ITypeSymbol type in entries.TypeArguments.Where(type => type.ContainingNamespace.ToDisplayString()
+                         .StartsWith("TestApp.", StringComparison.Ordinal))
+                     .Distinct<ITypeSymbol>(SymbolEqualityComparer.Default))
+        {
+            Assert.Single(
+                result.GeneratedTrees,
+                tree => tree.FilePath.EndsWith(type.Name + "Dto.g.cs", StringComparison.Ordinal));
+        }
+
+        bool preserveStringComparer = dictionaryType.Contains("Dictionary<string, Entry>", StringComparison.Ordinal) &&
+                                      !dictionaryType.Contains("IDictionary", StringComparison.Ordinal) &&
+                                      !dictionaryType.Contains("IReadOnlyDictionary", StringComparison.Ordinal) &&
+                                      !dictionaryType.Contains("IImmutableDictionary", StringComparison.Ordinal);
+        AssertDictionaryMapperResults(dtoAndMapperCompilation, preserveStringComparer);
     }
 
     /// <summary>
