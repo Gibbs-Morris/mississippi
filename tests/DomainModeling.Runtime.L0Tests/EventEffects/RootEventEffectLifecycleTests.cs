@@ -115,6 +115,14 @@ public sealed class RootEventEffectLifecycleTests : IDisposable
 
     private Mock<ILogger<RootEventEffect<EffectLifecycleAggregate>>> Logger { get; } = new();
 
+    /// <summary>
+    ///     Verifies retained items, later-effect ordering and acquired enumerator ownership.
+    /// </summary>
+    /// <param name="point">The lifecycle boundary selected to fail.</param>
+    /// <param name="effect">The effect whose lifecycle is interrupted.</param>
+    /// <param name="following">The effect that should run afterward.</param>
+    /// <param name="results">The items collected from the dispatch stream.</param>
+    /// <param name="token">The cancellation token expected by both effects.</param>
     private static void AssertContinuation(
         EffectLifecyclePoint point,
         LifecycleEffect effect,
@@ -140,6 +148,12 @@ public sealed class RootEventEffectLifecycleTests : IDisposable
         AssertOwnership(EffectLifecyclePoint.None, following, token);
     }
 
+    /// <summary>
+    ///     Verifies lifecycle call counts, cancellation-token forwarding and disposal ownership.
+    /// </summary>
+    /// <param name="point">The lifecycle boundary selected to fail.</param>
+    /// <param name="effect">The effect recording its lifecycle operations.</param>
+    /// <param name="token">The cancellation token expected by invocation and acquisition.</param>
     private static void AssertOwnership(
         EffectLifecyclePoint point,
         LifecycleEffect effect,
@@ -158,6 +172,12 @@ public sealed class RootEventEffectLifecycleTests : IDisposable
         }
     }
 
+    /// <summary>
+    ///     Checks structured log state for the expected effect, event and aggregate type tags.
+    /// </summary>
+    /// <param name="state">The structured state supplied to the logger.</param>
+    /// <param name="effectType">The expected effect type name.</param>
+    /// <returns>Whether all three type tags match the expected context.</returns>
     private static bool HasContext(
         object state,
         string effectType
@@ -167,6 +187,12 @@ public sealed class RootEventEffectLifecycleTests : IDisposable
         tags.Any(tag => (tag.Key == "EventType") && Equals(tag.Value, nameof(EffectLifecycleEvent))) &&
         tags.Any(tag => (tag.Key == "AggregateType") && Equals(tag.Value, nameof(EffectLifecycleAggregate)));
 
+    /// <summary>
+    ///     Registers the typed effect directly or through an unindexed forwarding mock.
+    /// </summary>
+    /// <param name="effect">The effect whose lifecycle operations are exercised.</param>
+    /// <param name="fallback">Whether to use the unindexed fallback registration.</param>
+    /// <returns>The indexed effect or its forwarding fallback registration.</returns>
     private static IEventEffect<EffectLifecycleAggregate> Register(
         LifecycleEffect effect,
         bool fallback
@@ -192,6 +218,11 @@ public sealed class RootEventEffectLifecycleTests : IDisposable
         return registration.Object;
     }
 
+    /// <summary>
+    ///     Verifies ordinary-failure log context, exception identity and tagged error metric counts.
+    /// </summary>
+    /// <param name="effect">The registration whose type appears in the diagnostics.</param>
+    /// <param name="failures">The ordinary exceptions expected exactly once in the error logs.</param>
     private void AssertFailures(
         IEventEffect<EffectLifecycleAggregate> effect,
         params Exception[] failures
@@ -236,6 +267,13 @@ public sealed class RootEventEffectLifecycleTests : IDisposable
             });
     }
 
+    /// <summary>
+    ///     Exercises an ordinary lifecycle failure and verifies continuation, ownership and diagnostics.
+    /// </summary>
+    /// <param name="point">The lifecycle boundary selected to fail.</param>
+    /// <param name="asynchronousFault">Whether supported async operations return a faulted value task.</param>
+    /// <param name="fallback">Whether to register effects through the unindexed fallback.</param>
+    /// <returns>The asynchronous verification operation.</returns>
     private async Task AssertOrdinaryContinuationAsync(
         EffectLifecyclePoint point,
         bool asynchronousFault,
@@ -258,6 +296,12 @@ public sealed class RootEventEffectLifecycleTests : IDisposable
         AssertFailures(registration, failure);
     }
 
+    /// <summary>
+    ///     Dispatches one lifecycle-test event and collects its streamed items in order.
+    /// </summary>
+    /// <param name="effects">The effects registered in dispatch order.</param>
+    /// <param name="token">The cancellation token forwarded to the dispatcher.</param>
+    /// <returns>The items yielded by the registered effects, in streaming order.</returns>
     private async Task<List<object>> ConsumeAsync(
         IEventEffect<EffectLifecycleAggregate>[] effects,
         CancellationToken token
