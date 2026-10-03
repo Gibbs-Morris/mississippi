@@ -1,10 +1,13 @@
 using System;
-using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -76,24 +79,10 @@ public sealed class InletHub : Hub<IInletHubClient>
 
     private IProjectionAuthorizationRegistry ProjectionAuthorizationRegistry { get; }
 
-    private static bool HasMatchingAuthenticationScheme(
-        ClaimsPrincipal user,
-        AuthorizationPolicy policy
-    )
-    {
-        if (policy.AuthenticationSchemes.Count == 0)
-        {
-            return true;
-        }
-
-        return user.Identities.Any(identity => identity is not null &&
-                                               identity.IsAuthenticated &&
-                                               !string.IsNullOrWhiteSpace(identity.AuthenticationType) &&
-                                               policy.AuthenticationSchemes.Any(scheme => string.Equals(
-                                                   scheme,
-                                                   identity.AuthenticationType,
-                                                   StringComparison.OrdinalIgnoreCase)));
-    }
+    private static string? GetUserId(
+        ClaimsPrincipal? user
+    ) =>
+        user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user?.Identity?.Name;
 
     /// <inheritdoc />
     public override Task OnConnectedAsync()
@@ -167,6 +156,42 @@ public sealed class InletHub : Hub<IInletHubClient>
         Logger.UnsubscribedFromProjection(Context.ConnectionId, subscriptionId);
     }
 
+    private async Task<ClaimsPrincipal?> AuthenticateUserAsync(
+        AuthorizationPolicy policy
+    )
+    {
+        if (policy.AuthenticationSchemes.Count == 0)
+        {
+            return Context.User ?? new ClaimsPrincipal(new ClaimsIdentity());
+        }
+
+        HttpContext? httpContext = Context.GetHttpContext();
+        if (httpContext is null)
+        {
+            return null;
+        }
+
+        IAuthenticationSchemeProvider? schemeProvider =
+            httpContext.RequestServices.GetService<IAuthenticationSchemeProvider>();
+        if (schemeProvider is null)
+        {
+            return null;
+        }
+
+        foreach (string scheme in policy.AuthenticationSchemes)
+        {
+            AuthenticationScheme? registeredScheme = await schemeProvider.GetSchemeAsync(scheme);
+            if (registeredScheme is null)
+            {
+                return null;
+            }
+        }
+
+        IPolicyEvaluator policyEvaluator = httpContext.RequestServices.GetRequiredService<IPolicyEvaluator>();
+        AuthenticateResult authenticationResult = await policyEvaluator.AuthenticateAsync(policy, httpContext);
+        return authenticationResult.Succeeded ? authenticationResult.Principal : null;
+    }
+
     private async Task AuthorizeSubscriptionAsync(
         string path,
         string entityId
@@ -213,10 +238,10 @@ public sealed class InletHub : Hub<IInletHubClient>
         string? policyName
     )
     {
-        ClaimsPrincipal user = Context.User ?? new ClaimsPrincipal(new ClaimsIdentity());
-        if (!HasMatchingAuthenticationScheme(user, policy))
+        ClaimsPrincipal? user = await AuthenticateUserAsync(policy);
+        if (user is null)
         {
-            Logger.SubscriptionAuthorizationDenied(Context.ConnectionId, path, entityId, GetUserId(), policyName);
+            Logger.SubscriptionAuthorizationDenied(Context.ConnectionId, path, entityId, GetUserId(user), policyName);
             throw new HubException(InletHubConstants.SubscriptionDeniedMessage);
         }
 
@@ -226,11 +251,11 @@ public sealed class InletHub : Hub<IInletHubClient>
             policy.Requirements);
         if (authorizationResult.Succeeded)
         {
-            Logger.SubscriptionAuthorizationSucceeded(Context.ConnectionId, path, entityId, GetUserId());
+            Logger.SubscriptionAuthorizationSucceeded(Context.ConnectionId, path, entityId, GetUserId(user));
             return;
         }
 
-        Logger.SubscriptionAuthorizationDenied(Context.ConnectionId, path, entityId, GetUserId(), policyName);
+        Logger.SubscriptionAuthorizationDenied(Context.ConnectionId, path, entityId, GetUserId(user), policyName);
         throw new HubException(InletHubConstants.SubscriptionDeniedMessage);
     }
 
@@ -291,9 +316,6 @@ public sealed class InletHub : Hub<IInletHubClient>
 
         return builder.Build();
     }
-
-    private string? GetUserId() =>
-        Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? Context.User?.Identity?.Name;
 }
 
 /// <summary>
