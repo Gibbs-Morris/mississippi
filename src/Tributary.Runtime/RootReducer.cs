@@ -24,6 +24,10 @@ namespace Mississippi.Tributary.Runtime;
 ///         For each event type, only reducers registered for that exact type are considered,
 ///         preserving first-match-wins semantics within the original registration order.
 ///     </para>
+///     <para>
+///         The reducer hash includes the priority of competing indexed reducers. Reordering reducers
+///         for independent event types does not change snapshot compatibility.
+///     </para>
 /// </remarks>
 public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
 {
@@ -48,8 +52,8 @@ public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
         ArgumentNullException.ThrowIfNull(reducers);
         IEventReducer<TProjection>[] reducersArray = reducers.ToArray();
         Logger = logger ?? NullLogger<RootReducer<TProjection>>.Instance;
-        reducerHash = ComputeReducerHash(reducersArray);
         (reducerIndex, fallbackReducers) = BuildReducerIndex(reducersArray);
+        reducerHash = ComputeReducerHash(reducersArray, reducerIndex);
     }
 
     private ILogger<RootReducer<TProjection>> Logger { get; }
@@ -90,13 +94,16 @@ public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
     }
 
     private static string ComputeReducerHash(
-        IReadOnlyList<IEventReducer<TProjection>> reducers
+        IReadOnlyList<IEventReducer<TProjection>> reducers,
+        IReadOnlyDictionary<Type, ImmutableArray<IEventReducer<TProjection>>> index
     )
     {
-        string[] typeNames = reducers.Select(x => x.GetType().FullName ?? x.GetType().Name)
-            .Order(StringComparer.Ordinal)
-            .ToArray();
-        string input = string.Join("|", typeNames);
+        string[] typeNames = reducers.Select(x => GetTypeName(x.GetType())).Order(StringComparer.Ordinal).ToArray();
+        IEnumerable<string> competingTypeNames = index.Where(entry => entry.Value.Length > 1)
+            .OrderBy(entry => GetTypeName(entry.Key), StringComparer.Ordinal)
+            .SelectMany(entry => entry.Value)
+            .Select(reducer => GetTypeName(reducer.GetType()));
+        string input = string.Join("|", typeNames.Concat(competingTypeNames));
         byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
         return Convert.ToHexString(bytes);
     }
@@ -133,6 +140,14 @@ public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
 
         return null;
     }
+
+    /// <summary>
+    ///     Gets the stable type name used in reducer fingerprints.
+    /// </summary>
+    private static string GetTypeName(
+        Type type
+    ) =>
+        type.FullName ?? type.Name;
 
     /// <inheritdoc />
     public string GetReducerHash() => reducerHash;
