@@ -1,3 +1,6 @@
+/* Temporary spacing references: #405 spring-transfer-token-migration exclusion.
+ * Scope, owner and removal conditions: https://github.com/Gibbs-Morris/mississippi/issues/405#issuecomment-5964011855
+ */
 .spring-transfer__content {
     display: grid;
     gap: var(--rf-raw-space-4);
@@ -17,6 +20,10 @@
     min-width: 0;
 }
 
+/* These selectors cross isolation only to the Spring-marked TelemetryStrip public root.
+ * Wrapping and accents preserve its base classes and do not target private elements.
+ * Review when the component provides supported layout or accent parameters.
+ */
 .spring-transfer__content ::deep [data-spring-transfer-status="true"] {
     align-items: flex-start;
     flex-wrap: wrap;
