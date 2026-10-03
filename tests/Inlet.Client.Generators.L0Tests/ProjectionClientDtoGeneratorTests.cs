@@ -95,6 +95,80 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Dictionary keys and values generate their DTOs in compilable client output.
+    /// </summary>
+    /// <param name="dictionaryType">The declared dictionary type.</param>
+    /// <param name="supplyGlobalUsing">Whether the fixture isolates discovery from generated imports.</param>
+    [Theory]
+    [InlineData("System.Collections.Generic.Dictionary<string, Entry>", true)]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary<string, Entry>", true)]
+    [InlineData("System.Collections.Generic.IDictionary<string, Entry>", true)]
+    [InlineData("System.Collections.Generic.IReadOnlyDictionary<string, Entry>", true)]
+    [InlineData("System.Collections.Immutable.IImmutableDictionary<string, Entry>", true)]
+    [InlineData("System.Collections.Generic.Dictionary<Key, Entry>", true)]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary<Key, Entry>", true)]
+    [InlineData("System.Collections.Generic.Dictionary<Key, int>", true)]
+    [InlineData("System.Collections.Generic.Dictionary<EntryStatus, EntryStatus>", true)]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary<EntryStatus, EntryStatus>", true)]
+    [InlineData("System.Collections.Generic.Dictionary<string, int>", true)]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary<string, int>", true)]
+    [InlineData("System.Collections.Generic.Dictionary<string, Entry>", false)]
+    public void GeneratedDictionaryDtoCompilesWithCustomValues(
+        string dictionaryType,
+        bool supplyGlobalUsing
+    )
+    {
+        string source = $$"""
+                          {{(supplyGlobalUsing ? "global using System.Collections.Generic;" : string.Empty)}}
+                          using Mississippi.Inlet.Generators.Abstractions;
+                          using Mississippi.Inlet.Abstractions;
+
+                          namespace TestApp.Domain.Projections.Catalog;
+
+                          public sealed record Entry { public decimal Amount { get; init; } }
+                          public sealed record Key { public string Code { get; init; } = string.Empty; }
+                          public enum EntryStatus { New = 2, Complete = 7 }
+
+                          [GenerateProjectionEndpoints]
+                          [ProjectionPath("catalog")]
+                          public sealed record CatalogProjection
+                          {
+                              public {{dictionaryType}} Entries { get; init; } = default!;
+                          }
+                          """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Assert.Empty(
+            input.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        TestContext.Current.TestOutputHelper?.WriteLine($"INPUT_ERRORS=0;FIXTURE_GLOBAL_USING={supplyGlobalUsing}");
+        Assert.Empty(diagnostics);
+        Assert.All(result.Results, generatorResult => Assert.Null(generatorResult.Exception));
+        foreach (SyntaxTree tree in result.GeneratedTrees)
+        {
+            TestContext.Current.TestOutputHelper?.WriteLine(
+                $"{tree.FilePath}\n{tree.GetText(TestContext.Current.CancellationToken)}");
+        }
+
+        Assert.Empty(
+            output.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        INamedTypeSymbol projection =
+            input.GetTypeByMetadataName("TestApp.Domain.Projections.Catalog.CatalogProjection")!;
+        INamedTypeSymbol entries =
+            (INamedTypeSymbol)projection.GetMembers("Entries").OfType<IPropertySymbol>().Single().Type;
+        foreach (ITypeSymbol type in entries.TypeArguments.Where(type => type.ContainingNamespace.ToDisplayString()
+                         .StartsWith("TestApp.", StringComparison.Ordinal))
+                     .Distinct<ITypeSymbol>(SymbolEqualityComparer.Default))
+        {
+            Assert.Single(
+                result.GeneratedTrees,
+                tree => tree.FilePath.EndsWith(type.Name + "Dto.g.cs", StringComparison.Ordinal));
+        }
+    }
+
+    /// <summary>
     ///     Projection arrays generate their custom and enum element DTOs and compile alongside primitive arrays.
     /// </summary>
     [Fact]

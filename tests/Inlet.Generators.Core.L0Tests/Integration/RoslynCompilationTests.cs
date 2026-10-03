@@ -187,6 +187,53 @@ public class RoslynCompilationTests
     }
 
     /// <summary>
+    ///     Dictionary analysis follows values and accounts for both custom key and value types without sequence mapping.
+    /// </summary>
+    /// <param name="dictionaryType">The declared dictionary type.</param>
+    /// <param name="requiresMapper">Whether a key or value requires DTO conversion.</param>
+    [Theory]
+    [InlineData("System.Collections.Generic.Dictionary<string, Entry>", true)]
+    [InlineData("System.Collections.Generic.Dictionary<Key, int>", true)]
+    [InlineData("System.Collections.Generic.Dictionary<Key, Entry>", true)]
+    [InlineData("System.Collections.Generic.IDictionary<string, Entry>", true)]
+    [InlineData("System.Collections.Generic.IReadOnlyDictionary<string, Entry>", true)]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary<string, Entry>", true)]
+    [InlineData("System.Collections.Immutable.IImmutableDictionary<string, Entry>", true)]
+    [InlineData("System.Collections.Generic.Dictionary<string, int>", false)]
+    public void DictionaryAnalysisAccountsForKeysAndValues(
+        string dictionaryType,
+        bool requiresMapper
+    )
+    {
+        string source = $$"""
+                          namespace TestApp.Domain;
+                          public sealed record Entry { public decimal Amount { get; init; } }
+                          public sealed record Key { public string Code { get; init; } = string.Empty; }
+                          public sealed record CatalogProjection
+                          {
+                              public {{dictionaryType}} Entries { get; init; } = default!;
+                          }
+                          """;
+        CSharpCompilation compilation = CreateCompilation(source)
+            .AddReferences(MetadataReference.CreateFromFile(typeof(ImmutableDictionary<,>).Assembly.Location));
+        Assert.Empty(
+            compilation.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        TestContext.Current.TestOutputHelper?.WriteLine("INPUT_ERRORS=0");
+        INamedTypeSymbol projection = compilation.GetTypeByMetadataName("TestApp.Domain.CatalogProjection")!;
+        IPropertySymbol entries = projection.GetMembers("Entries").OfType<IPropertySymbol>().Single();
+        INamedTypeSymbol dictionary = (INamedTypeSymbol)entries.Type;
+        PropertyModel model = new(entries);
+        Assert.True(model.IsCollection);
+        Assert.True(
+            SymbolEqualityComparer.Default.Equals(
+                dictionary.TypeArguments[1],
+                TypeAnalyzer.GetCollectionElementType(dictionary)));
+        Assert.Equal(requiresMapper, model.RequiresMapper);
+        Assert.False(model.RequiresEnumerableMapper);
+    }
+
+    /// <summary>
     ///     GetFullNamespace should return correct namespace from real compilation.
     /// </summary>
     [Fact]
