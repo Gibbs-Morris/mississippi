@@ -92,7 +92,7 @@ public sealed class UxProjectionControllerHeaderValidationTests
         StatusCodeResult statusCodeResult = Assert.IsType<StatusCodeResult>(result.Result);
         Assert.Equal(StatusCodes.Status304NotModified, statusCodeResult.StatusCode);
         Assert.Null(result.Value);
-        grainMock.Verify(g => g.GetAsync(It.IsAny<CancellationToken>()), Times.Never);
+        grainMock.Verify(g => g.GetAsync(It.IsAny<CancellationToken>()), Times.Once);
         mapperMock.Verify(m => m.Map(It.IsAny<TestProjection>()), Times.Never);
     }
 }

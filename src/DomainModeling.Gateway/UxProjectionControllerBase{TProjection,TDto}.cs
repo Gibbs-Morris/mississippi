@@ -93,7 +93,7 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
     protected IUxProjectionGrainFactory UxProjectionGrainFactory { get; }
 
     /// <summary>
-    ///     Validates the complete condition and compares opaque tags using weak comparison.
+    ///     Validates an entity-tag condition and compares opaque tags using weak comparison.
     /// </summary>
     /// <param name="fieldValues">The conditional header field values.</param>
     /// <param name="currentETag">The current quoted entity tag.</param>
@@ -103,11 +103,6 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
         string currentETag
     )
     {
-        if ((fieldValues.Count == 1) && (fieldValues.ToString().Trim(' ', '\t') == "*"))
-        {
-            return true;
-        }
-
         bool hasMatch = false;
         foreach (string? fieldValue in fieldValues)
         {
@@ -266,7 +261,8 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
 
         // Check If-None-Match header for conditional GET
         StringValues ifNoneMatch = Request.Headers.IfNoneMatch;
-        if (MatchesIfNoneMatch(ifNoneMatch, currentETag))
+        bool isWildcard = (ifNoneMatch.Count == 1) && (ifNoneMatch.ToString().Trim(' ', '\t') == "*");
+        if (!isWildcard && MatchesIfNoneMatch(ifNoneMatch, currentETag))
         {
             Logger.ProjectionNotModified(entityId, position.Value, ProjectionTypeName);
             return StatusCode(304);
@@ -278,6 +274,12 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
         {
             Logger.ProjectionNotFound(entityId, ProjectionTypeName);
             return NotFound();
+        }
+
+        if (isWildcard)
+        {
+            Logger.ProjectionNotModified(entityId, position.Value, ProjectionTypeName);
+            return StatusCode(304);
         }
 
         // Set caching headers
