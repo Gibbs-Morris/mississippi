@@ -108,6 +108,7 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
 
                 // Publish the shared start before dispatching actions that can reenter readiness.
                 connectionStartTask = starter.Task.Unwrap();
+                reconnectionCompletion?.TrySetCanceled(CancellationToken.None);
             }
 
             starting = state is HubConnectionState.Disconnected or HubConnectionState.Connecting
