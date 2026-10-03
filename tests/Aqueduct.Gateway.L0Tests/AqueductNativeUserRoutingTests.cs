@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR;
@@ -95,8 +97,10 @@ public sealed class AqueductNativeUserRoutingTests
         _ = await owner.ConnectAsync(null);
         HubConnectionContext third = await remote.ConnectAsync(alice);
         HubConnectionContext fourth = await remote.ConnectAsync(bob);
+        string userGroupName = "__aqueduct_user__" +
+                               Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes("__aqueduct_user__" + alice)));
         ISignalRGroupGrain userGroup = TestClusterAccess.Cluster.Client.GetGrain<ISignalRGroupGrain>(
-            new SignalRGroupKey(nameof(TestAqueductHub), "__aqueduct_user__" + alice));
+            new SignalRGroupKey(nameof(TestAqueductHub), userGroupName));
         Assert.Equal(
             new[] { first.ConnectionId, second.ConnectionId, third.ConnectionId }.Order(),
             (await userGroup.GetConnectionsAsync()).Order());

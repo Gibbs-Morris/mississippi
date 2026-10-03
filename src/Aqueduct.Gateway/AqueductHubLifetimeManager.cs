@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -54,7 +55,8 @@ namespace Mississippi.Aqueduct.Gateway;
 ///     <para>
 ///         Connections with a nonempty user identifier automatically join a reserved user group.
 ///         Group names beginning with "__aqueduct_user__" are reserved for this routing and cannot be
-///         used by ordinary group operations. Encoded user identifiers remain subject to the existing
+///         used by ordinary group operations. Lossless identifier encodings are hashed into opaque routing tokens
+///         before reaching downstream logs. The encoded input remains subject to the existing
 ///         composite grain-key length limit.
 ///     </para>
 /// </remarks>
@@ -121,44 +123,6 @@ public sealed class AqueductHubLifetimeManager<THub>
     private IStreamSubscriptionManager StreamSubscriptionManager { get; }
 
     private static string DeriveHubName() => typeof(THub).Name;
-
-    /// <summary>Encodes a case-sensitive user identifier without losing UTF-16 code units.</summary>
-    /// <param name="userId">The user identifier.</param>
-    /// <returns>A group name accepted by the default key factory.</returns>
-    private static string GetUserGroupName(
-        string userId
-    )
-    {
-        StringBuilder encoded = new(UserGroupPrefix);
-        int segmentStart = 0;
-        int index = 0;
-        while (index < userId.Length)
-        {
-            char value = userId[index];
-            if (!char.IsSurrogate(value))
-            {
-                index++;
-                continue;
-            }
-
-            if (char.IsHighSurrogate(value) && ((index + 1) < userId.Length) && char.IsLowSurrogate(userId[index + 1]))
-            {
-                index += 2;
-                continue;
-            }
-
-            encoded.Append(Uri.EscapeDataString(userId[segmentStart..index]));
-
-            // URI escaping only emits %XX; %uXXXX keeps unmatched code units distinct.
-            encoded.Append("%u");
-            encoded.Append(((int)value).ToString("X4", CultureInfo.InvariantCulture));
-            index++;
-            segmentStart = index;
-        }
-
-        encoded.Append(Uri.EscapeDataString(userId[segmentStart..]));
-        return encoded.ToString();
-    }
 
     /// <summary>Prevents ordinary group operations from accessing user-routing membership.</summary>
     /// <param name="groupName">The ordinary group name.</param>
@@ -463,6 +427,46 @@ public sealed class AqueductHubLifetimeManager<THub>
     {
         ThrowIfUserGroupName(groupName);
         return GrainFactory.GetGroupGrain(hubName, groupName);
+    }
+
+    /// <summary>Derives an opaque routing token from a lossless user-identifier encoding.</summary>
+    /// <param name="userId">The user identifier.</param>
+    /// <returns>A group name accepted by the default key factory.</returns>
+    private string GetUserGroupName(
+        string userId
+    )
+    {
+        StringBuilder encoded = new(UserGroupPrefix);
+        int segmentStart = 0;
+        int index = 0;
+        while (index < userId.Length)
+        {
+            char value = userId[index];
+            if (!char.IsSurrogate(value))
+            {
+                index++;
+                continue;
+            }
+
+            if (char.IsHighSurrogate(value) && ((index + 1) < userId.Length) && char.IsLowSurrogate(userId[index + 1]))
+            {
+                index += 2;
+                continue;
+            }
+
+            encoded.Append(Uri.EscapeDataString(userId[segmentStart..index]));
+
+            // URI escaping only emits %XX; %uXXXX keeps unmatched code units distinct.
+            encoded.Append("%u");
+            encoded.Append(((int)value).ToString("X4", CultureInfo.InvariantCulture));
+            index++;
+            segmentStart = index;
+        }
+
+        encoded.Append(Uri.EscapeDataString(userId[segmentStart..]));
+        string encodedIdentifier = encoded.ToString();
+        _ = new SignalRGroupKey(hubName, encodedIdentifier);
+        return UserGroupPrefix + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(encodedIdentifier)));
     }
 
     private async Task OnAllMessageAsync(
