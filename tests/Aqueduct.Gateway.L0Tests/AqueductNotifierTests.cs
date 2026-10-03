@@ -353,6 +353,46 @@ public sealed class AqueductNotifierTests
     }
 
     /// <summary>
+    ///     Tests that notifier group sends respect the reserved user-routing namespace.
+    /// </summary>
+    /// <param name="groupName">The requested group name.</param>
+    /// <param name="reserved">Whether the name belongs to the reserved namespace.</param>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Theory(DisplayName = "SendToGroupAsync Respects Reserved User Namespace")]
+    [InlineData("__aqueduct_user__", true)]
+    [InlineData("__aqueduct_user__token", true)]
+    [InlineData("__AQUEDUCT_USER__token", false)]
+    public async Task SendToGroupAsyncShouldRespectReservedUserNamespace(
+        string groupName,
+        bool reserved
+    )
+    {
+        ISignalRGroupGrain groupGrain = Substitute.For<ISignalRGroupGrain>();
+        IClusterClient clusterClient = Substitute.For<IClusterClient>();
+        clusterClient.GetGrain<ISignalRGroupGrain>($"TestHub:{groupName}").Returns(groupGrain);
+        clusterClient.ClearReceivedCalls();
+        ILogger<AqueductNotifier> logger = Substitute.For<ILogger<AqueductNotifier>>();
+        AqueductNotifier notifier = new(clusterClient, Options.Create(new AqueductOptions()), logger);
+        if (reserved)
+        {
+            ArgumentException error = await Assert.ThrowsAsync<ArgumentException>(() => notifier.SendToGroupAsync(
+                "TestHub",
+                groupName,
+                "Notify",
+                [],
+                TestContext.Current.CancellationToken));
+            Assert.Equal("groupName", error.ParamName);
+            Assert.Empty(clusterClient.ReceivedCalls());
+            Assert.Empty(groupGrain.ReceivedCalls());
+            Assert.Empty(logger.ReceivedCalls());
+            return;
+        }
+
+        await notifier.SendToGroupAsync("TestHub", groupName, "Notify", [], TestContext.Current.CancellationToken);
+        await groupGrain.Received(1).SendMessageAsync("Notify", Arg.Any<ImmutableArray<object?>>());
+    }
+
+    /// <summary>
     ///     Tests that SendToGroupAsync throws when group name is empty.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>

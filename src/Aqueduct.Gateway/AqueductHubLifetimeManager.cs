@@ -66,8 +66,6 @@ public sealed class AqueductHubLifetimeManager<THub>
       IDisposable
     where THub : Hub
 {
-    private const string UserGroupPrefix = "__aqueduct_user__";
-
     private readonly string hubName;
 
     private volatile bool backplaneInitialized;
@@ -124,21 +122,6 @@ public sealed class AqueductHubLifetimeManager<THub>
 
     private static string DeriveHubName() => typeof(THub).Name;
 
-    /// <summary>Prevents ordinary group operations from accessing user-routing membership.</summary>
-    /// <param name="groupName">The ordinary group name.</param>
-    /// <exception cref="ArgumentException">Thrown for a reserved user group name.</exception>
-    private static void ThrowIfUserGroupName(
-        string groupName
-    )
-    {
-        if (groupName.StartsWith(UserGroupPrefix, StringComparison.Ordinal))
-        {
-            throw new ArgumentException(
-                $"Group names beginning with '{UserGroupPrefix}' are reserved for user routing.",
-                nameof(groupName));
-        }
-    }
-
     /// <inheritdoc />
     public override async Task AddToGroupAsync(
         string connectionId,
@@ -148,7 +131,7 @@ public sealed class AqueductHubLifetimeManager<THub>
     {
         ArgumentException.ThrowIfNullOrEmpty(connectionId);
         ArgumentException.ThrowIfNullOrEmpty(groupName);
-        ThrowIfUserGroupName(groupName);
+        AqueductUserGroupNamespace.ThrowIfReserved(groupName);
         Logger.AddingToGroup(connectionId, groupName, hubName);
         ISignalRClientGrain clientGrain = GetClientGrain(connectionId);
         await clientGrain.AddToGroupAsync(groupName).ConfigureAwait(false);
@@ -232,7 +215,7 @@ public sealed class AqueductHubLifetimeManager<THub>
     {
         ArgumentException.ThrowIfNullOrEmpty(connectionId);
         ArgumentException.ThrowIfNullOrEmpty(groupName);
-        ThrowIfUserGroupName(groupName);
+        AqueductUserGroupNamespace.ThrowIfReserved(groupName);
         Logger.RemovingFromGroup(connectionId, groupName, hubName);
         ISignalRClientGrain clientGrain = GetClientGrain(connectionId);
         await clientGrain.RemoveFromGroupAsync(groupName).ConfigureAwait(false);
@@ -425,7 +408,7 @@ public sealed class AqueductHubLifetimeManager<THub>
         string groupName
     )
     {
-        ThrowIfUserGroupName(groupName);
+        AqueductUserGroupNamespace.ThrowIfReserved(groupName);
         return GrainFactory.GetGroupGrain(hubName, groupName);
     }
 
@@ -436,7 +419,7 @@ public sealed class AqueductHubLifetimeManager<THub>
         string userId
     )
     {
-        StringBuilder encoded = new(UserGroupPrefix);
+        StringBuilder encoded = new(AqueductUserGroupNamespace.Prefix);
         int segmentStart = 0;
         int index = 0;
         while (index < userId.Length)
@@ -466,7 +449,8 @@ public sealed class AqueductHubLifetimeManager<THub>
         encoded.Append(Uri.EscapeDataString(userId[segmentStart..]));
         string encodedIdentifier = encoded.ToString();
         _ = new SignalRGroupKey(hubName, encodedIdentifier);
-        return UserGroupPrefix + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(encodedIdentifier)));
+        return AqueductUserGroupNamespace.Prefix +
+               Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(encodedIdentifier)));
     }
 
     private async Task OnAllMessageAsync(
