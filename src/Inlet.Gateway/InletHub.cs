@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -169,18 +170,9 @@ public sealed class InletHub : Hub<IInletHubClient>
             return null;
         }
 
-        ClaimsPrincipal? user = null;
-        foreach (string scheme in policy.AuthenticationSchemes)
-        {
-            AuthenticateResult authenticationResult = await httpContext.AuthenticateAsync(scheme);
-            if (authenticationResult.Succeeded && authenticationResult.Principal is { } principal)
-            {
-                user ??= new();
-                user.AddIdentities(principal.Identities);
-            }
-        }
-
-        return user;
+        AuthenticateResult authenticationResult =
+            await new PolicyEvaluator(AuthorizationService).AuthenticateAsync(policy, httpContext);
+        return authenticationResult.Succeeded ? authenticationResult.Principal : null;
     }
 
     private async Task AuthorizeSubscriptionAsync(
