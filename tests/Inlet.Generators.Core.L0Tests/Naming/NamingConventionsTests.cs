@@ -445,7 +445,7 @@ public class NamingConventionsTests
     public void GetServerCommandDtoNamespaceConvertsValidPattern()
     {
         string result = NamingConventions.GetServerCommandDtoNamespace("Spring.Domain.Aggregates.BankAccount.Commands");
-        Assert.Equal("Spring.Server.Controllers.Aggregates", result);
+        Assert.Equal("Spring.Server.Controllers.Aggregates.Commands.BankAccount", result);
     }
 
     /// <summary>
@@ -466,6 +466,43 @@ public class NamingConventionsTests
     {
         string result = NamingConventions.GetServerCommandDtoNamespace("MyApp.Domain");
         Assert.Equal("MyApp.Server", result);
+    }
+
+    /// <summary>
+    ///     Both server command namespace overloads must preserve aggregate namespace boundaries.
+    /// </summary>
+    /// <param name="aggregate">The aggregate namespace path.</param>
+    [Theory]
+    [InlineData("BankAccount")]
+    [InlineData("A.B")]
+    [InlineData("A_B")]
+    public void GetServerCommandDtoNamespaceRetainsAggregateNamespacePath(
+        string aggregate
+    )
+    {
+        string sourceNamespace = $"TestApp.Domain.Aggregates.{aggregate}.Commands";
+        Assert.Equal(
+            $"TestApp.Server.Controllers.Aggregates.Commands.{aggregate}",
+            NamingConventions.GetServerCommandDtoNamespace(sourceNamespace));
+        Assert.Equal(
+            $"Custom.Gateway.Controllers.Aggregates.Commands.{aggregate}",
+            NamingConventions.GetServerCommandDtoNamespace(
+                $"TestApp.Core.Aggregates.{aggregate}.Commands",
+                "Custom.Gateway"));
+    }
+
+    /// <summary>
+    ///     Commands outside an aggregate must retain the existing target-root and legacy fallbacks.
+    /// </summary>
+    [Fact]
+    public void GetServerCommandDtoNamespaceRetainsNonAggregateFallbacks()
+    {
+        Assert.Equal(
+            "Custom.Gateway.Controllers.Aggregates",
+            NamingConventions.GetServerCommandDtoNamespace("TestApp.Domain.Commands", "Custom.Gateway"));
+        Assert.Equal(
+            "TestApp.Server.Commands",
+            NamingConventions.GetServerCommandDtoNamespace("TestApp.Domain.Commands", string.Empty));
     }
 
     /// <summary>
