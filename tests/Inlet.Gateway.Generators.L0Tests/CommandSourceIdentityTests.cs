@@ -114,7 +114,7 @@ public sealed class CommandSourceIdentityTests
         List<MetadataReference> references =
         [
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Runtime.dll")),
+            MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Runtime.dll")),
         ];
         CSharpCompilation input = CSharpCompilation.Create(
             "TestApp.Server",
