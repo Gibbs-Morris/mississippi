@@ -89,12 +89,17 @@ public sealed class InletHubAuthenticationReviewTests
     private static ServiceProvider CreateServices(
         IAuthenticationService? authenticationService = null,
         AuthorizationPolicy? defaultPolicy = null,
-        IPolicyEvaluator? policyEvaluator = null
+        IPolicyEvaluator? policyEvaluator = null,
+        bool registerAuthentication = true
     )
     {
         ServiceCollection services = new();
         services.AddLogging();
-        services.AddAuthentication(BearerScheme).AddBearerToken(BearerScheme).AddBearerToken(OtherScheme);
+        if (registerAuthentication)
+        {
+            services.AddAuthentication(BearerScheme).AddBearerToken(BearerScheme).AddBearerToken(OtherScheme);
+        }
+
         if (authenticationService is not null)
         {
             services.AddSingleton(authenticationService);
@@ -110,6 +115,25 @@ public sealed class InletHubAuthenticationReviewTests
         }
 
         return services.BuildServiceProvider();
+    }
+
+    /// <summary>
+    ///     An unavailable authentication scheme provider should use the generic subscription denial.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Fact]
+    public async Task SubscribeDeniesUnavailableSchemeProvider()
+    {
+        await using ServiceProvider services = CreateServices(registerAuthentication: false);
+        using InletHub hub = CreateHub(
+            services,
+            BearerScheme,
+            out IInletSubscriptionGrain grain,
+            out ILogger<InletHub> _);
+        HubException exception =
+            await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+        Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+        await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
     }
 
     /// <summary>
@@ -261,6 +285,12 @@ public sealed class InletHubAuthenticationReviewTests
         bool authenticated
     )
     {
+        IAuthenticationService authenticationService = Substitute.For<IAuthenticationService>();
+        authenticationService.AuthenticateAsync(Arg.Any<HttpContext>(), BearerScheme)
+            .Returns(
+                authenticated
+                    ? AuthenticateResult.NoResult()
+                    : AuthenticateResult.Success(new(CreatePrincipal("handler-user"), BearerScheme)));
         IPolicyEvaluator evaluator = Substitute.For<IPolicyEvaluator>();
         ClaimsPrincipal selectedPrincipal = CreatePrincipal("configured-user");
         evaluator.AuthenticateAsync(Arg.Any<AuthorizationPolicy>(), Arg.Any<HttpContext>())
@@ -272,8 +302,27 @@ public sealed class InletHubAuthenticationReviewTests
                     ? AuthenticateResult.Success(new(selectedPrincipal, BearerScheme))
                     : AuthenticateResult.NoResult();
             });
-        await using ServiceProvider services = CreateServices(policyEvaluator: evaluator);
+        await using ServiceProvider services = CreateServices(authenticationService, policyEvaluator: evaluator);
         Assert.Same(evaluator, services.GetRequiredService<IPolicyEvaluator>());
+        if (!authenticated)
+        {
+            DefaultHttpContext referenceContext = new()
+            {
+                RequestServices = services,
+            };
+            AuthorizationPolicy referencePolicy = new AuthorizationPolicyBuilder(BearerScheme)
+                .RequireAuthenticatedUser()
+                .RequireClaim("permission", "read")
+                .Build();
+            PolicyEvaluator defaultEvaluator = new(services.GetRequiredService<IAuthorizationService>());
+            AuthenticateResult authentication =
+                await defaultEvaluator.AuthenticateAsync(referencePolicy, referenceContext);
+            Assert.True(authentication.Succeeded);
+            Assert.True(
+                (await defaultEvaluator.AuthorizeAsync(referencePolicy, authentication, referenceContext, null))
+                .Succeeded);
+        }
+
         using InletHub hub = CreateHub(
             services,
             BearerScheme,

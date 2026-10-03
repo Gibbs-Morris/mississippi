@@ -171,8 +171,13 @@ public sealed class InletHub : Hub<IInletHubClient>
             return null;
         }
 
-        IAuthenticationSchemeProvider schemeProvider =
-            httpContext.RequestServices.GetRequiredService<IAuthenticationSchemeProvider>();
+        IAuthenticationSchemeProvider? schemeProvider =
+            httpContext.RequestServices.GetService<IAuthenticationSchemeProvider>();
+        if (schemeProvider is null)
+        {
+            return null;
+        }
+
         foreach (string scheme in policy.AuthenticationSchemes)
         {
             AuthenticationScheme? registeredScheme = await schemeProvider.GetSchemeAsync(scheme);
