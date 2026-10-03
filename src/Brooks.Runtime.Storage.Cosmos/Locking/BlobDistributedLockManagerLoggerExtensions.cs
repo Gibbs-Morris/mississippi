@@ -1,3 +1,5 @@
+using System;
+
 using Microsoft.Extensions.Logging;
 
 
@@ -67,6 +69,22 @@ internal static partial class BlobDistributedLockManagerLoggerExtensions
         this ILogger logger,
         string lockKey,
         int maxAttempts
+    );
+
+    /// <summary>
+    ///     Logs when another caller creates the lock blob first.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="lockKey">The lock key.</param>
+    /// <param name="exception">The blob creation conflict.</param>
+    [LoggerMessage(
+        EventId = 6,
+        Level = LogLevel.Debug,
+        Message = "Lock blob for key '{LockKey}' was created by another caller")]
+    public static partial void LockBlobAlreadyExists(
+        this ILogger logger,
+        string lockKey,
+        Exception exception
     );
 
     /// <summary>
