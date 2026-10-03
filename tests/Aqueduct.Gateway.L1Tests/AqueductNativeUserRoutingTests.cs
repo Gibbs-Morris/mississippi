@@ -8,14 +8,12 @@ using Microsoft.AspNetCore.SignalR;
 
 using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.Aqueduct.Abstractions.Keys;
-using Mississippi.Aqueduct.Gateway.L0Tests.Infrastructure;
 using Mississippi.Testing.Utilities.Orleans;
 
 
-namespace Mississippi.Aqueduct.Gateway.L0Tests;
+namespace MississippiTests.Aqueduct.Gateway.L1Tests;
 
 /// <summary>Verifies user recipients through real grains, the configured provider and gateway callbacks.</summary>
-[Collection(ClusterTestSuite.Name)]
 public sealed class AqueductNativeUserRoutingTests
 {
     /// <summary>Colon, percent escapes and Unicode must identify separate user groups.</summary>
@@ -98,7 +96,8 @@ public sealed class AqueductNativeUserRoutingTests
         HubConnectionContext third = await remote.ConnectAsync(alice);
         HubConnectionContext fourth = await remote.ConnectAsync(bob);
         string userGroupName = "__aqueduct_user__" +
-                               Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes("__aqueduct_user__" + alice)));
+                               Convert.ToHexString(
+                                   SHA256.HashData(Encoding.UTF8.GetBytes("__aqueduct_user__" + alice)));
         ISignalRGroupGrain userGroup = TestClusterAccess.Cluster.Client.GetGrain<ISignalRGroupGrain>(
             new SignalRGroupKey(nameof(TestAqueductHub), userGroupName));
         Assert.Equal(
