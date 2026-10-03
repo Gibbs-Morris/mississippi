@@ -77,7 +77,7 @@ internal sealed class BrookSliceReaderGrain
     {
         BrookRangeKey brookRangeKey = this.GetPrimaryKeyString();
         Logger.SliceGrainActivating(brookRangeKey);
-        await PopulateCacheFromBrookAsync(brookRangeKey, token);
+        Cache = await ReadEventsFromBrookAsync(brookRangeKey, token);
         Logger.SliceCachePopulated(brookRangeKey, Cache.Length);
     }
 
@@ -100,7 +100,15 @@ internal sealed class BrookSliceReaderGrain
             (maxReadTo <= brookRangeKey.End) &&
             (maxReadTo.Value >= (brookRangeKey.Start.Value + Cache.Length)))
         {
-            await PopulateCacheFromBrookAsync(brookRangeKey, cancellationToken);
+            ImmutableArray<BrookEvent> refreshedCache =
+                await ReadEventsFromBrookAsync(brookRangeKey, cancellationToken);
+
+            // An incomplete query may omit positions, so only a complete refresh can replace the cache.
+            if ((refreshedCache.Length == brookRangeKey.Count) && (refreshedCache.Length > Cache.Length))
+            {
+                Cache = refreshedCache;
+            }
+
             Logger.SliceCachePopulated(brookRangeKey, Cache.Length);
         }
 
@@ -161,21 +169,17 @@ internal sealed class BrookSliceReaderGrain
         return [.. events];
     }
 
-    private async Task PopulateCacheFromBrookAsync(
+    private async Task<ImmutableArray<BrookEvent>> ReadEventsFromBrookAsync(
         BrookRangeKey brookRangeKey,
         CancellationToken cancellationToken
     )
     {
-        List<BrookEvent> l = new();
+        List<BrookEvent> events = new();
         await foreach (BrookEvent ev in BrookStorageReader.ReadEventsAsync(brookRangeKey, cancellationToken))
         {
-            l.Add(ev);
+            events.Add(ev);
         }
 
-        // Read-only grain calls may overlap, so a late short query must not shrink the cache.
-        if (l.Count > Cache.Length)
-        {
-            Cache = [.. l];
-        }
+        return [.. events];
     }
 }

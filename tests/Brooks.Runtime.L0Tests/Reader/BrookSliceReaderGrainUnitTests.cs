@@ -62,6 +62,27 @@ public sealed class BrookSliceReaderGrainUnitTests
         return [.. result];
     }
 
+    private static async Task<ImmutableArray<BrookEvent>> ReadRangeToAsync(
+        BrookSliceReaderGrain grain,
+        BrookRangeKey range,
+        BrookPosition readTo,
+        bool isBatch
+    )
+    {
+        if (isBatch)
+        {
+            return await grain.ReadBatchAsync(range.Start, readTo, TestContext.Current.CancellationToken);
+        }
+
+        List<BrookEvent> result = new();
+        await foreach (BrookEvent ev in grain.ReadAsync(range.Start, readTo, TestContext.Current.CancellationToken))
+        {
+            result.Add(ev);
+        }
+
+        return [.. result];
+    }
+
     private static async IAsyncEnumerable<BrookEvent> ToAsyncEnumerableAsync(
         BrookEvent[] events
     )
@@ -683,5 +704,58 @@ public sealed class BrookSliceReaderGrainUnitTests
         await sut.OnActivateAsync(CancellationToken.None);
         await Assert.ThrowsAsync<InvalidOperationException>(() => ReadRangeAsync(sut, range, isBatch));
         await Assert.ThrowsAsync<InvalidOperationException>(() => ReadRangeAsync(sut, range, isBatch));
+    }
+
+    /// <summary>
+    ///     Verifies a larger short refresh cannot shift event positions by replacing the cached prefix.
+    /// </summary>
+    /// <param name="isBatch">Whether to exercise batch rather than streaming reads.</param>
+    /// <param name="initialCount">The number of events cached before the shifted query.</param>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Theory]
+    [InlineData(false, 0)]
+    [InlineData(false, 1)]
+    [InlineData(true, 0)]
+    [InlineData(true, 1)]
+    public async Task ReadRangeRejectsShiftedIncompleteRefresh(
+        bool isBatch,
+        int initialCount
+    )
+    {
+        BrookRangeKey range = BrookRangeKey.FromBrookCompositeKey(new("test", "shifted"), 10, 3);
+        BrookEvent[] events =
+        [
+            new()
+            {
+                Id = "10",
+            },
+            new()
+            {
+                Id = "11",
+            },
+            new()
+            {
+                Id = "12",
+            },
+        ];
+        BrookEvent[] initialEvents = events.Take(initialCount).ToArray();
+        BrookEvent[] shiftedEvents = [events[1], events[2]];
+        (BrookSliceReaderGrain sut, Mock<IBrookStorageReader> storage, Mock<IGrainContext> context) = CreateGrain();
+        context.Setup(c => c.GrainId).Returns(GrainId.Create("slicereader", range.ToString()));
+        storage.SetupSequence(s => s.ReadEventsAsync(range, It.IsAny<CancellationToken>()))
+            .Returns(ToAsyncEnumerableAsync(initialEvents))
+            .Returns(ToAsyncEnumerableAsync(shiftedEvents))
+            .Returns(ToAsyncEnumerableAsync(events));
+        await sut.OnActivateAsync(CancellationToken.None);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => ReadRangeToAsync(
+            sut,
+            range,
+            range.Start + 1,
+            isBatch));
+        ImmutableArray<BrookEvent> recovered = await ReadRangeToAsync(sut, range, range.Start + 1, isBatch);
+        ImmutableArray<BrookEvent> cached = await ReadRangeAsync(sut, range, isBatch);
+        Assert.Equal(["10", "11"], recovered.Select(e => e.Id).ToArray());
+        Assert.Equal(events, cached);
+        storage.Verify(s => s.ReadEventsAsync(range, It.IsAny<CancellationToken>()), Times.Exactly(3));
     }
 }
