@@ -26,7 +26,7 @@ public sealed class UxProjectionControllerEntityTagGrammarTests
     /// </summary>
     /// <param name="codeUnit">The unpaired surrogate code unit.</param>
     /// <param name="length">The number of repeated unpaired code units.</param>
-    /// <param name="matchFirst">Whether the matching tag precedes the malformed field.</param>
+    /// <param name="isMatchFirst">Whether the matching tag precedes the malformed field.</param>
     /// <returns>An asynchronous test task.</returns>
     [Theory]
     [InlineData(0xD800, 1, false)]
@@ -35,20 +35,20 @@ public sealed class UxProjectionControllerEntityTagGrammarTests
     public async Task GetAsyncRejectsUnpairedSurrogates(
         int codeUnit,
         int length,
-        bool matchFirst
+        bool isMatchFirst
     )
     {
         char surrogate = (char)codeUnit;
         Assert.True(char.IsSurrogate(surrogate));
         string invalidTag = "\"bad" + new string(surrogate, length) + "value\"";
-        string[] headerValues = matchFirst ? ["\"42\"", invalidTag] : [invalidTag, "\"42\""];
+        string[] headerValues = isMatchFirst ? ["\"42\"", invalidTag] : [invalidTag, "\"42\""];
         await GetAsyncUsesEntityTagGrammar(false, headerValues);
     }
 
     /// <summary>
     ///     Verifies exact weak prefixes, opaque-tag characters, and complete list validation.
     /// </summary>
-    /// <param name="notModified">Whether the condition is valid and matches the current version.</param>
+    /// <param name="isNotModified">Whether the condition is valid and matches the current version.</param>
     /// <param name="headerValues">The conditional header field values.</param>
     /// <returns>An asynchronous test task.</returns>
     [Theory]
@@ -91,7 +91,7 @@ public sealed class UxProjectionControllerEntityTagGrammarTests
     [InlineData(true, "\"bad\uD7FFvalue\", \"42\"")]
     [InlineData(true, "\"bad\uE000value\", \"42\"")]
     public async Task GetAsyncUsesEntityTagGrammar(
-        bool notModified,
+        bool isNotModified,
         params string[] headerValues
     )
     {
@@ -113,7 +113,7 @@ public sealed class UxProjectionControllerEntityTagGrammarTests
         ActionResult<TestDto> result = await controller.GetAsync(TestEntityId, TestContext.Current.CancellationToken);
 
         // Assert
-        if (notModified)
+        if (isNotModified)
         {
             StatusCodeResult statusCodeResult = Assert.IsType<StatusCodeResult>(result.Result);
             Assert.Equal(StatusCodes.Status304NotModified, statusCodeResult.StatusCode);

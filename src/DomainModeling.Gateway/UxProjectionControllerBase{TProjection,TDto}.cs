@@ -108,18 +108,18 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
             return true;
         }
 
-        bool matches = false;
+        bool hasMatch = false;
         foreach (string? fieldValue in fieldValues)
         {
-            if (!TryMatchEntityTagList(fieldValue.AsSpan(), currentETag.AsSpan(), out bool fieldMatches))
+            if (!TryMatchEntityTagList(fieldValue.AsSpan(), currentETag.AsSpan(), out bool hasFieldMatch))
             {
                 return false;
             }
 
-            matches |= fieldMatches;
+            hasMatch |= hasFieldMatch;
         }
 
-        return matches;
+        return hasMatch;
     }
 
     /// <summary>
@@ -127,15 +127,15 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
     /// </summary>
     /// <param name="value">One conditional header field value.</param>
     /// <param name="currentETag">The current quoted entity tag.</param>
-    /// <param name="matches">Whether any valid tag matches the current representation.</param>
+    /// <param name="hasMatch">Whether any valid tag matches the current representation.</param>
     /// <returns>Whether the complete list is valid.</returns>
     private static bool TryMatchEntityTagList(
         ReadOnlySpan<char> value,
         ReadOnlySpan<char> currentETag,
-        out bool matches
+        out bool hasMatch
     )
     {
-        matches = false;
+        hasMatch = false;
         while (!value.IsEmpty)
         {
             value = value.TrimStart(" \t");
@@ -161,7 +161,7 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
                 return false;
             }
 
-            matches |= value[..tagLength].SequenceEqual(currentETag);
+            hasMatch |= value[..tagLength].SequenceEqual(currentETag);
             value = value[tagLength..].TrimStart(" \t");
             if (!value.IsEmpty)
             {
