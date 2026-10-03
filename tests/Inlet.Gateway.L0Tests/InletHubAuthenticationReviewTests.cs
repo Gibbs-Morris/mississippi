@@ -87,19 +87,42 @@ public sealed class InletHubAuthenticationReviewTests
         new(new ClaimsIdentity([new(ClaimTypes.NameIdentifier, userId), new("permission", permission)], userId));
 
     private static ServiceProvider CreateServices(
-        IAuthenticationService authenticationService,
+        IAuthenticationService? authenticationService = null,
         AuthorizationPolicy? defaultPolicy = null
     )
     {
         ServiceCollection services = new();
         services.AddLogging();
         services.AddAuthentication(BearerScheme).AddBearerToken(BearerScheme).AddBearerToken(OtherScheme);
-        services.AddSingleton(authenticationService);
+        if (authenticationService is not null)
+        {
+            services.AddSingleton(authenticationService);
+        }
+
         services.AddAuthorizationBuilder()
             .SetDefaultPolicy(
                 defaultPolicy ??
                 new AuthorizationPolicyBuilder().RequireAuthenticatedUser().RequireClaim("permission", "read").Build());
         return services.BuildServiceProvider();
+    }
+
+    /// <summary>
+    ///     An unregistered selected scheme should fail with the existing generic subscription denial.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Fact]
+    public async Task SubscribeDeniesUnregisteredSelectedScheme()
+    {
+        await using ServiceProvider services = CreateServices();
+        using InletHub hub = CreateHub(
+            services,
+            "Unregistered",
+            out IInletSubscriptionGrain grain,
+            out ILogger<InletHub> _);
+        HubException exception =
+            await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+        Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+        await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
     }
 
     /// <summary>
@@ -195,5 +218,28 @@ public sealed class InletHubAuthenticationReviewTests
             out ILogger<InletHub> _);
         Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
         await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+    }
+
+    /// <summary>
+    ///     Errors inside registered handlers should retain their original failure behavior.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Fact]
+    public async Task SubscribePropagatesRegisteredHandlerFailures()
+    {
+        IAuthenticationService authenticationService = Substitute.For<IAuthenticationService>();
+        InvalidOperationException failure = new("Registered handler failure");
+        authenticationService.AuthenticateAsync(Arg.Any<HttpContext>(), BearerScheme)
+            .Returns(Task.FromException<AuthenticateResult>(failure));
+        await using ServiceProvider services = CreateServices(authenticationService);
+        using InletHub hub = CreateHub(
+            services,
+            BearerScheme,
+            out IInletSubscriptionGrain grain,
+            out ILogger<InletHub> _);
+        Assert.Same(
+            failure,
+            await Assert.ThrowsAsync<InvalidOperationException>(() => hub.SubscribeAsync(ProjectionPath, EntityId)));
+        await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
     }
 }

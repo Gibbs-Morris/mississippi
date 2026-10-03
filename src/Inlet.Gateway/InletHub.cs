@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -168,6 +169,17 @@ public sealed class InletHub : Hub<IInletHubClient>
         if (httpContext is null)
         {
             return null;
+        }
+
+        IAuthenticationSchemeProvider schemeProvider =
+            httpContext.RequestServices.GetRequiredService<IAuthenticationSchemeProvider>();
+        foreach (string scheme in policy.AuthenticationSchemes)
+        {
+            AuthenticationScheme? registeredScheme = await schemeProvider.GetSchemeAsync(scheme);
+            if (registeredScheme is null)
+            {
+                return null;
+            }
         }
 
         AuthenticateResult authenticationResult =
