@@ -74,13 +74,19 @@ public sealed partial class NotificationPulse : ComponentBase
             " ",
             new[] { "rf-notification-pulse", Class, CallerClass }.Where(value => !string.IsNullOrWhiteSpace(value)));
 
-    private string? ExpandAriaExpanded =>
-        IsExpanded switch
+    private string? ExpandAriaExpanded
+    {
+        get
         {
-            true => "true",
-            false => "false",
-            null => null,
-        };
+            bool? isExpanded = IsExpanded;
+            if (!isExpanded.HasValue)
+            {
+                return null;
+            }
+
+            return isExpanded.Value ? "true" : "false";
+        }
+    }
 
     private IReadOnlyDictionary<string, object>? ForwardedAttributes =>
         AdditionalAttributes
