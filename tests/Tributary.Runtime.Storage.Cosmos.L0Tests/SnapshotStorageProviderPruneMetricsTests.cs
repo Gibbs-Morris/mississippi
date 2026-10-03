@@ -24,6 +24,12 @@ namespace MississippiTests.Tributary.Runtime.Storage.Cosmos.L0Tests;
 /// </summary>
 public sealed class SnapshotStorageProviderPruneMetricsTests
 {
+    /// <summary>
+    ///     Observes prune measurements for one unique snapshot type.
+    /// </summary>
+    /// <param name="snapshotType">The snapshot type used to isolate this test's measurements.</param>
+    /// <param name="measurements">The thread-safe measurement sink.</param>
+    /// <returns>The started listener, which the caller owns.</returns>
     private static MeterListener CreatePruneListener(
         string snapshotType,
         ConcurrentQueue<long> measurements
@@ -52,9 +58,18 @@ public sealed class SnapshotStorageProviderPruneMetricsTests
         return listener;
     }
 
+    /// <summary>
+    ///     Creates a unique snapshot stream key for metric isolation.
+    /// </summary>
+    /// <returns>A stream key with a test-specific snapshot storage name.</returns>
     private static SnapshotStreamKey CreateStreamKey() =>
         new("TEST.BROOK", $"PruneMetrics-{Guid.NewGuid():N}", "id", "hash");
 
+    /// <summary>
+    ///     Provides five snapshot versions for representative retention behavior.
+    /// </summary>
+    /// <param name="cancellationToken">The token used to cancel enumeration.</param>
+    /// <returns>The snapshot identifiers for versions one through five.</returns>
     private static async IAsyncEnumerable<SnapshotIdVersion> ReadSnapshotIdsAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
