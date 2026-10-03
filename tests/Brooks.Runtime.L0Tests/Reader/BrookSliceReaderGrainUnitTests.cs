@@ -42,11 +42,45 @@ public sealed class BrookSliceReaderGrainUnitTests
         yield break;
     }
 
+    private static async Task<ImmutableArray<BrookEvent>> ReadRangeAsync(
+        BrookSliceReaderGrain grain,
+        BrookRangeKey range,
+        bool isBatch
+    )
+    {
+        if (isBatch)
+        {
+            return await grain.ReadBatchAsync(range.Start, range.End, TestContext.Current.CancellationToken);
+        }
+
+        List<BrookEvent> result = new();
+        await foreach (BrookEvent ev in grain.ReadAsync(range.Start, range.End, TestContext.Current.CancellationToken))
+        {
+            result.Add(ev);
+        }
+
+        return [.. result];
+    }
+
     private static async IAsyncEnumerable<BrookEvent> ToAsyncEnumerableAsync(
         BrookEvent[] events
     )
     {
         await Task.CompletedTask;
+        foreach (BrookEvent ev in events)
+        {
+            yield return ev;
+        }
+    }
+
+    private static async IAsyncEnumerable<BrookEvent> WaitThenReturnEventsAsync(
+        TaskCompletionSource<bool> started,
+        Task release,
+        BrookEvent[] events
+    )
+    {
+        started.SetResult(true);
+        await release.WaitAsync(TestContext.Current.CancellationToken);
         foreach (BrookEvent ev in events)
         {
             yield return ev;
@@ -470,5 +504,184 @@ public sealed class BrookSliceReaderGrainUnitTests
         // Assert
         Assert.Equal(3, result.Length);
         Assert.Equal(["0", "1", "2"], result.Select(e => e.Id).ToArray());
+    }
+
+    /// <summary>
+    ///     Verifies complete initial caches satisfy repeated reads without another storage query.
+    /// </summary>
+    /// <param name="isBatch">Whether to exercise batch rather than streaming reads.</param>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ReadRangeKeepsCompleteInitialCache(
+        bool isBatch
+    )
+    {
+        BrookRangeKey range = BrookRangeKey.FromBrookCompositeKey(new("test", "complete"), 10, 3);
+        BrookEvent[] events =
+        [
+            new()
+            {
+                Id = "10",
+            },
+            new()
+            {
+                Id = "11",
+            },
+            new()
+            {
+                Id = "12",
+            },
+        ];
+        (BrookSliceReaderGrain sut, Mock<IBrookStorageReader> storage, Mock<IGrainContext> context) = CreateGrain();
+        context.Setup(c => c.GrainId).Returns(GrainId.Create("slicereader", range.ToString()));
+        storage.Setup(s => s.ReadEventsAsync(range, It.IsAny<CancellationToken>()))
+            .Returns(ToAsyncEnumerableAsync(events));
+        await sut.OnActivateAsync(CancellationToken.None);
+        ImmutableArray<BrookEvent> first = await ReadRangeAsync(sut, range, isBatch);
+        ImmutableArray<BrookEvent> second = await ReadRangeAsync(sut, range, isBatch);
+        Assert.Equal(events, first);
+        Assert.Equal(events, second);
+        storage.Verify(s => s.ReadEventsAsync(range, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    ///     Verifies a delayed short refresh cannot replace a complete cache from an overlapping read.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task ReadRangePreservesCompleteCacheAfterDelayedShortRefresh()
+    {
+        BrookRangeKey range = BrookRangeKey.FromBrookCompositeKey(new("test", "overlap"), 10, 3);
+        BrookEvent[] events =
+        [
+            new()
+            {
+                Id = "10",
+            },
+            new()
+            {
+                Id = "11",
+            },
+            new()
+            {
+                Id = "12",
+            },
+        ];
+        BrookEvent[] initialEvents = [events[0]];
+        TaskCompletionSource<bool> refreshStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<bool> releaseRefresh = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        (BrookSliceReaderGrain sut, Mock<IBrookStorageReader> storage, Mock<IGrainContext> context) = CreateGrain();
+        context.Setup(c => c.GrainId).Returns(GrainId.Create("slicereader", range.ToString()));
+        storage.SetupSequence(s => s.ReadEventsAsync(range, It.IsAny<CancellationToken>()))
+            .Returns(ToAsyncEnumerableAsync(initialEvents))
+            .Returns(WaitThenReturnEventsAsync(refreshStarted, releaseRefresh.Task, initialEvents))
+            .Returns(ToAsyncEnumerableAsync(events));
+        await sut.OnActivateAsync(CancellationToken.None);
+        Task<ImmutableArray<BrookEvent>> pendingRead = ReadRangeAsync(sut, range, true);
+        try
+        {
+            Task firstCompleted = await Task.WhenAny(refreshStarted.Task, pendingRead);
+            if (firstCompleted == pendingRead)
+            {
+                await pendingRead;
+            }
+
+            Assert.True(refreshStarted.Task.IsCompletedSuccessfully);
+            ImmutableArray<BrookEvent> recovered = await ReadRangeAsync(sut, range, true);
+            releaseRefresh.SetResult(true);
+            ImmutableArray<BrookEvent> delayed = await pendingRead;
+            ImmutableArray<BrookEvent> cached = await ReadRangeAsync(sut, range, true);
+            Assert.Equal(events, recovered);
+            Assert.Equal(events, delayed);
+            Assert.Equal(events, cached);
+            storage.Verify(s => s.ReadEventsAsync(range, It.IsAny<CancellationToken>()), Times.Exactly(3));
+        }
+        finally
+        {
+            releaseRefresh.TrySetResult(true);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies retrying the same slice succeeds after its initially short storage query recovers.
+    /// </summary>
+    /// <param name="isBatch">Whether to exercise batch rather than streaming reads.</param>
+    /// <param name="initialCount">The number of events visible before storage recovers.</param>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Theory]
+    [InlineData(false, 0)]
+    [InlineData(false, 1)]
+    [InlineData(true, 0)]
+    [InlineData(true, 1)]
+    public async Task ReadRangeRecoversAfterIncompleteInitialCache(
+        bool isBatch,
+        int initialCount
+    )
+    {
+        using CancellationTokenSource activationTokenSource = new();
+        BrookRangeKey range = BrookRangeKey.FromBrookCompositeKey(new("test", "recovery"), 10, 3);
+        BrookEvent[] events =
+        [
+            new()
+            {
+                Id = "10",
+            },
+            new()
+            {
+                Id = "11",
+            },
+            new()
+            {
+                Id = "12",
+            },
+        ];
+        BrookEvent[] initialEvents = events.Take(initialCount).ToArray();
+        (BrookSliceReaderGrain sut, Mock<IBrookStorageReader> storage, Mock<IGrainContext> context) = CreateGrain();
+        context.Setup(c => c.GrainId).Returns(GrainId.Create("slicereader", range.ToString()));
+        storage.SetupSequence(s => s.ReadEventsAsync(range, It.IsAny<CancellationToken>()))
+            .Returns(ToAsyncEnumerableAsync(initialEvents))
+            .Returns(ToAsyncEnumerableAsync(initialEvents))
+            .Returns(ToAsyncEnumerableAsync(events));
+        await sut.OnActivateAsync(activationTokenSource.Token);
+        InvalidOperationException initialFailure =
+            await Assert.ThrowsAsync<InvalidOperationException>(() => ReadRangeAsync(sut, range, isBatch));
+        Assert.Contains("exceeds cached range", initialFailure.Message, StringComparison.Ordinal);
+        ImmutableArray<BrookEvent> recovered = await ReadRangeAsync(sut, range, isBatch);
+        ImmutableArray<BrookEvent> cached = await ReadRangeAsync(sut, range, isBatch);
+        Assert.Equal(events, recovered);
+        Assert.Equal(events, cached);
+        storage.Verify(s => s.ReadEventsAsync(range, TestContext.Current.CancellationToken), Times.Exactly(2));
+        storage.Verify(s => s.ReadEventsAsync(range, It.IsAny<CancellationToken>()), Times.Exactly(3));
+    }
+
+    /// <summary>
+    ///     Verifies a persistently short storage query keeps failing without returning partial events.
+    /// </summary>
+    /// <param name="isBatch">Whether to exercise batch rather than streaming reads.</param>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ReadRangeRejectsPersistentlyIncompleteStorage(
+        bool isBatch
+    )
+    {
+        BrookRangeKey range = BrookRangeKey.FromBrookCompositeKey(new("test", "incomplete"), 10, 3);
+        BrookEvent[] events =
+        [
+            new()
+            {
+                Id = "10",
+            },
+        ];
+        (BrookSliceReaderGrain sut, Mock<IBrookStorageReader> storage, Mock<IGrainContext> context) = CreateGrain();
+        context.Setup(c => c.GrainId).Returns(GrainId.Create("slicereader", range.ToString()));
+        storage.Setup(s => s.ReadEventsAsync(range, It.IsAny<CancellationToken>()))
+            .Returns(ToAsyncEnumerableAsync(events));
+        await sut.OnActivateAsync(CancellationToken.None);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => ReadRangeAsync(sut, range, isBatch));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => ReadRangeAsync(sut, range, isBatch));
     }
 }

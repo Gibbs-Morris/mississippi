@@ -96,13 +96,21 @@ internal sealed class BrookSliceReaderGrain
     )
     {
         BrookRangeKey brookRangeKey = this.GetPrimaryKeyString();
+        if ((Cache.Length < brookRangeKey.Count) &&
+            (maxReadTo <= brookRangeKey.End) &&
+            (maxReadTo.Value >= (brookRangeKey.Start.Value + Cache.Length)))
+        {
+            await PopulateCacheFromBrookAsync(brookRangeKey, cancellationToken);
+            Logger.SliceCachePopulated(brookRangeKey, Cache.Length);
+        }
+
         long lastPositionOfCacheValue = Cache.Length == 0
             ? brookRangeKey.Start.Value - 1
             : (brookRangeKey.Start.Value + Cache.Length) - 1;
         BrookPosition lastPositionOfCache = BrookPosition.FromLong(lastPositionOfCacheValue);
 
         // Validate that the requested range is covered by the cache.
-        // The cache is populated on activation, so any request outside the cache is an error.
+        // Storage may still be incomplete after the refresh; do not return a partial result.
         if (maxReadTo > lastPositionOfCache)
         {
             throw new InvalidOperationException(
@@ -164,6 +172,10 @@ internal sealed class BrookSliceReaderGrain
             l.Add(ev);
         }
 
-        Cache = [.. l];
+        // Read-only grain calls may overlap, so a late short query must not shrink the cache.
+        if (l.Count > Cache.Length)
+        {
+            Cache = [.. l];
+        }
     }
 }
