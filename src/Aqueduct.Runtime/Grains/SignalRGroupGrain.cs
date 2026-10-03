@@ -87,10 +87,11 @@ internal sealed class SignalRGroupGrain
     {
         ArgumentException.ThrowIfNullOrEmpty(connectionId);
         string groupKey = this.GetPrimaryKeyString();
-        Logger.AddingConnectionToGroup(connectionId, groupKey);
+        string logGroupKey = AqueductGroupLogValue.ForKey(groupKey);
+        Logger.AddingConnectionToGroup(connectionId, logGroupKey);
         if (state.ConnectionIds.Contains(connectionId))
         {
-            Logger.ConnectionAlreadyInGroup(connectionId, groupKey);
+            Logger.ConnectionAlreadyInGroup(connectionId, logGroupKey);
             return Task.CompletedTask;
         }
 
@@ -100,7 +101,7 @@ internal sealed class SignalRGroupGrain
         };
         string hubName = ExtractHubName(groupKey);
         AqueductMetrics.RecordGroupJoin(hubName);
-        Logger.ConnectionAddedToGroup(connectionId, groupKey, state.ConnectionIds.Count);
+        Logger.ConnectionAddedToGroup(connectionId, logGroupKey, state.ConnectionIds.Count);
         return Task.CompletedTask;
     }
 
@@ -113,7 +114,8 @@ internal sealed class SignalRGroupGrain
     )
     {
         string groupKey = this.GetPrimaryKeyString();
-        Logger.GroupGrainActivated(groupKey, state.ConnectionIds.Count);
+        string logGroupKey = AqueductGroupLogValue.ForKey(groupKey);
+        Logger.GroupGrainActivated(logGroupKey, state.ConnectionIds.Count);
         return Task.CompletedTask;
     }
 
@@ -127,10 +129,11 @@ internal sealed class SignalRGroupGrain
     {
         ArgumentException.ThrowIfNullOrEmpty(connectionId);
         string groupKey = this.GetPrimaryKeyString();
-        Logger.RemovingConnectionFromGroup(connectionId, groupKey);
+        string logGroupKey = AqueductGroupLogValue.ForKey(groupKey);
+        Logger.RemovingConnectionFromGroup(connectionId, logGroupKey);
         if (!state.ConnectionIds.Contains(connectionId))
         {
-            Logger.ConnectionNotInGroup(connectionId, groupKey);
+            Logger.ConnectionNotInGroup(connectionId, logGroupKey);
             return Task.CompletedTask;
         }
 
@@ -140,12 +143,12 @@ internal sealed class SignalRGroupGrain
         };
         string hubName = ExtractHubName(groupKey);
         AqueductMetrics.RecordGroupLeave(hubName);
-        Logger.ConnectionRemovedFromGroup(connectionId, groupKey, state.ConnectionIds.Count);
+        Logger.ConnectionRemovedFromGroup(connectionId, logGroupKey, state.ConnectionIds.Count);
 
         // Deactivate if empty
         if (state.ConnectionIds.IsEmpty)
         {
-            Logger.GroupNowEmpty(groupKey);
+            Logger.GroupNowEmpty(logGroupKey);
             this.DeactivateOnIdle();
         }
 
@@ -160,15 +163,16 @@ internal sealed class SignalRGroupGrain
     {
         ArgumentException.ThrowIfNullOrEmpty(method);
         string groupKey = this.GetPrimaryKeyString();
+        string logGroupKey = AqueductGroupLogValue.ForKey(groupKey);
         string hubName = ExtractHubName(groupKey);
         ImmutableHashSet<string> connections = state.ConnectionIds;
         int connectionCount = connections.Count;
-        Logger.SendingToGroup(groupKey, method, connectionCount);
+        Logger.SendingToGroup(logGroupKey, method, connectionCount);
         IEnumerable<Task> sends = connections.Select(connectionId =>
             SendMessageToConnectionAsync(hubName, connectionId, method, args));
         await Task.WhenAll(sends).ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
         AqueductMetrics.RecordGroupMessageSent(hubName, method, connectionCount);
-        Logger.SentToGroup(groupKey, method, connectionCount);
+        Logger.SentToGroup(logGroupKey, method, connectionCount);
     }
 
     /// <summary>

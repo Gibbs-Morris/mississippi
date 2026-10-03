@@ -64,7 +64,10 @@ internal sealed class AqueductGrainFactory : IAqueductGrainFactory
         SignalRGroupKey groupKey
     )
     {
-        Logger.ResolvingGroupGrain(nameof(ISignalRGroupGrain), groupKey.HubName, groupKey.GroupName);
+        Logger.ResolvingGroupGrain(
+            nameof(ISignalRGroupGrain),
+            groupKey.HubName,
+            AqueductGroupLogValue.ForName(groupKey.GroupName));
         return GrainFactory.GetGrain<ISignalRGroupGrain>(groupKey);
     }
 

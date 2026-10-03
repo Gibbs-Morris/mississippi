@@ -132,7 +132,7 @@ public sealed class AqueductHubLifetimeManager<THub>
         ArgumentException.ThrowIfNullOrEmpty(connectionId);
         ArgumentException.ThrowIfNullOrEmpty(groupName);
         AqueductUserGroupNamespace.ThrowIfReserved(groupName);
-        Logger.AddingToGroup(connectionId, groupName, hubName);
+        Logger.AddingToGroup(connectionId, AqueductUserGroupNamespace.ForLog(groupName), hubName);
         ISignalRClientGrain clientGrain = GetClientGrain(connectionId);
         await clientGrain.AddToGroupAsync(groupName).ConfigureAwait(false);
     }
@@ -216,7 +216,7 @@ public sealed class AqueductHubLifetimeManager<THub>
         ArgumentException.ThrowIfNullOrEmpty(connectionId);
         ArgumentException.ThrowIfNullOrEmpty(groupName);
         AqueductUserGroupNamespace.ThrowIfReserved(groupName);
-        Logger.RemovingFromGroup(connectionId, groupName, hubName);
+        Logger.RemovingFromGroup(connectionId, AqueductUserGroupNamespace.ForLog(groupName), hubName);
         ISignalRClientGrain clientGrain = GetClientGrain(connectionId);
         await clientGrain.RemoveFromGroupAsync(groupName).ConfigureAwait(false);
     }
@@ -305,7 +305,7 @@ public sealed class AqueductHubLifetimeManager<THub>
     {
         ArgumentException.ThrowIfNullOrEmpty(groupName);
         ArgumentException.ThrowIfNullOrEmpty(methodName);
-        Logger.SendingToGroup(groupName, methodName, hubName);
+        Logger.SendingToGroup(AqueductUserGroupNamespace.ForLog(groupName), methodName, hubName);
         ISignalRGroupGrain groupGrain = GetGroupGrain(groupName);
         await groupGrain.SendMessageAsync(methodName, [.. args ?? []]).ConfigureAwait(false);
     }
@@ -355,7 +355,7 @@ public sealed class AqueductHubLifetimeManager<THub>
         ArgumentException.ThrowIfNullOrEmpty(userId);
         ArgumentException.ThrowIfNullOrEmpty(methodName);
         string userGroupName = GetUserGroupName(userId);
-        Logger.SendingToGroup(userGroupName, methodName, hubName);
+        Logger.SendingToGroup(AqueductUserGroupNamespace.ForLog(userGroupName), methodName, hubName);
         ISignalRGroupGrain groupGrain = GrainFactory.GetGroupGrain(hubName, userGroupName);
         await groupGrain.SendMessageAsync(methodName, [.. args ?? []]).ConfigureAwait(false);
     }
