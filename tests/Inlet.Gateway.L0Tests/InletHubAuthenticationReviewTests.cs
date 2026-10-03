@@ -88,7 +88,8 @@ public sealed class InletHubAuthenticationReviewTests
 
     private static ServiceProvider CreateServices(
         IAuthenticationService? authenticationService = null,
-        AuthorizationPolicy? defaultPolicy = null
+        AuthorizationPolicy? defaultPolicy = null,
+        IPolicyEvaluator? policyEvaluator = null
     )
     {
         ServiceCollection services = new();
@@ -103,6 +104,11 @@ public sealed class InletHubAuthenticationReviewTests
             .SetDefaultPolicy(
                 defaultPolicy ??
                 new AuthorizationPolicyBuilder().RequireAuthenticatedUser().RequireClaim("permission", "read").Build());
+        if (policyEvaluator is not null)
+        {
+            services.AddSingleton(policyEvaluator);
+        }
+
         return services.BuildServiceProvider();
     }
 
@@ -241,5 +247,54 @@ public sealed class InletHubAuthenticationReviewTests
             failure,
             await Assert.ThrowsAsync<InvalidOperationException>(() => hub.SubscribeAsync(ProjectionPath, EntityId)));
         await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+    }
+
+    /// <summary>
+    ///     Selected-scheme authentication should use the evaluator configured by the host.
+    /// </summary>
+    /// <param name="authenticated">Whether the configured evaluator authenticates the caller.</param>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SubscribeUsesConfiguredPolicyEvaluator(
+        bool authenticated
+    )
+    {
+        IPolicyEvaluator evaluator = Substitute.For<IPolicyEvaluator>();
+        ClaimsPrincipal selectedPrincipal = CreatePrincipal("configured-user");
+        evaluator.AuthenticateAsync(Arg.Any<AuthorizationPolicy>(), Arg.Any<HttpContext>())
+            .Returns(call =>
+            {
+                HttpContext httpContext = call.Arg<HttpContext>();
+                httpContext.User = authenticated ? selectedPrincipal : new(new ClaimsIdentity());
+                return authenticated
+                    ? AuthenticateResult.Success(new(selectedPrincipal, BearerScheme))
+                    : AuthenticateResult.NoResult();
+            });
+        await using ServiceProvider services = CreateServices(policyEvaluator: evaluator);
+        Assert.Same(evaluator, services.GetRequiredService<IPolicyEvaluator>());
+        using InletHub hub = CreateHub(
+            services,
+            BearerScheme,
+            out IInletSubscriptionGrain grain,
+            out ILogger<InletHub> _);
+        if (authenticated)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        await evaluator.Received(1)
+            .AuthenticateAsync(
+                Arg.Is<AuthorizationPolicy>(policy => policy.AuthenticationSchemes.Contains(BearerScheme)),
+                Arg.Any<HttpContext>());
     }
 }
