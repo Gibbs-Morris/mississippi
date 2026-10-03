@@ -413,6 +413,73 @@ public class RoslynCompilationTests
     }
 
     /// <summary>
+    ///     Real array symbols retain the metadata needed by projection DTO and mapper generation.
+    /// </summary>
+    /// <param name="propertyName">The projection property to analyze.</param>
+    /// <param name="expectedDtoTypeName">The expected array DTO type name.</param>
+    /// <param name="expectedElementDtoTypeName">The expected custom element DTO type name, if any.</param>
+    /// <param name="shouldRequireMapper">Whether element mapping is required.</param>
+    /// <param name="isEnumElement">Whether the array element is an enum.</param>
+    [Theory]
+    [InlineData("Entries", "EntryDto[]", "EntryDto", true, false)]
+    [InlineData("Statuses", "EntryStatusDto[]", "EntryStatusDto", true, true)]
+    [InlineData("Values", "int[]", null, false, false)]
+    public void PropertyModelAnalyzesRealArrayProperties(
+        string propertyName,
+        string expectedDtoTypeName,
+        string? expectedElementDtoTypeName,
+        bool shouldRequireMapper,
+        bool isEnumElement
+    )
+    {
+        const string source = """
+                              namespace TestApp.Domain;
+
+                              public sealed record Entry(decimal Amount);
+                              public enum EntryStatus { New, Complete }
+
+                              public sealed record ArrayProjection
+                              {
+                                  public Entry[] Entries { get; init; } = [];
+                                  public EntryStatus[] Statuses { get; init; } = [];
+                                  public int[] Values { get; init; } = [];
+                              }
+                              """;
+        CSharpCompilation compilation = CreateCompilation(source);
+        Assert.Empty(
+            compilation.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        INamedTypeSymbol? projection = compilation.GetTypeByMetadataName("TestApp.Domain.ArrayProjection");
+        Assert.NotNull(projection);
+        IPropertySymbol property = Assert.IsType<IPropertySymbol>(
+            Assert.Single(projection.GetMembers(propertyName)),
+            false);
+        IArrayTypeSymbol arrayType = Assert.IsType<IArrayTypeSymbol>(property.Type, false);
+        PropertyModel model = new(property);
+        Assert.True(TypeAnalyzer.IsCollectionType(arrayType));
+        Assert.True(model.IsCollection);
+        Assert.Equal(expectedDtoTypeName, model.DtoTypeName);
+        Assert.Equal(expectedElementDtoTypeName, model.ElementDtoTypeName);
+        Assert.Equal(shouldRequireMapper, model.RequiresMapper);
+        Assert.Equal(shouldRequireMapper, model.RequiresEnumerableMapper);
+        Assert.Equal(isEnumElement, model.ElementIsEnum);
+        Assert.True(
+            SymbolEqualityComparer.Default.Equals(
+                arrayType.ElementType,
+                TypeAnalyzer.GetCollectionElementType(arrayType)));
+        if (shouldRequireMapper)
+        {
+            Assert.True(SymbolEqualityComparer.Default.Equals(arrayType.ElementType, model.ElementTypeSymbol));
+            Assert.Equal(arrayType.ElementType.Name, model.ElementSourceTypeName);
+        }
+        else
+        {
+            Assert.Null(model.ElementTypeSymbol);
+            Assert.Null(model.ElementSourceTypeName);
+        }
+    }
+
+    /// <summary>
     ///     TypeAnalyzer.GetDtoTypeName should correctly transform types from real compilation.
     /// </summary>
     [Fact]

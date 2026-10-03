@@ -11,15 +11,20 @@ Governing thought: Build atomic, testable Blazor components with split markup/lo
 ## Rules (RFC 2119)
 
 - Agents **MUST** follow this guide when authoring/reviewing Razor components. Why: Keeps UX consistent.
-- Components **MUST** mirror atomic layers (Atoms/Molecules/Organisms/Templates/Pages) with one component per folder containing `.razor`, `.razor.cs`, styles, and tests. Why: Predictable structure.
+- Components **MUST** mirror atomic layers (Atoms/Molecules/Organisms/Templates/Pages). Why: Atomic layers make composition predictable.
+- Each component folder **MUST** contain exactly one component. Why: A component needs an unambiguous ownership boundary.
+- Components **MUST** keep their `.razor`, `.razor.cs`, and styles in one component folder. Why: Colocation keeps production markup, behavior, and presentation together.
+- Component tests **MUST** live in the matching component area of the test project. Why: Test placement follows the repository's production and test project boundaries.
 - Markup and logic **MUST** be split (`.razor` + `partial` `.razor.cs`, `sealed` unless extensibility is required). Why: Focused diffs and testability.
 - View-only components **MUST** stay presentational, exposing `[Parameter]` + `EventCallback`; child components **MUST NOT** call APIs or manage side effects; domain logic **MUST** live outside the UI. Why: Separation of concerns.
 - Redux-style state (actions/reducers/selectors/effects) **SHOULD** be used; selectors **MUST** feed components instead of raw store state; effects **MUST** call interfaces for IO. Why: Predictable updates and testability.
 - Templates **MUST NOT** fetch data; injection inside Razor markup **MUST NOT** be used (inject in partial class); server-only dependencies **MUST NOT** appear in shared components to keep WASM compatibility. Why: Portability and clarity.
-- `[Parameter]` members **MUST** be PascalCase; atoms **MUST NOT** rely on global styles; organisms **MUST NOT** access data stores directly. Why: Consistent APIs and layering.
+- `[Parameter]` members **MUST** be PascalCase. Why: Consistent public names make component APIs easier to use.
+- Organisms **MUST NOT** access data stores directly. Why: Domain and data access belong outside presentational composition.
+- CSS, class names, visual state, variants, tokens, and themes **MUST** follow the [CSS and design-token authoring standard](css-design-tokens.instructions.md). Why: Keeps styling ownership in one authoritative policy.
 - Interactive atoms **MUST** be keyboard accessible with required ARIA metadata; components **MUST** include L0 tests for state transitions/callbacks. Why: Accessibility and regression safety.
 - Atoms **SHOULD** forward `AdditionalAttributes`; duplicated markup **SHOULD** be refactored into slots/parameters; pages **SHOULD** implement `IAsyncDisposable` when holding resources. Why: Reuse and cleanup.
-- Global overrides **SHOULD NOT** be required for theming; missing accessibility audits **SHOULD** be tracked. Why: Portable styling and visibility of gaps.
+- Missing accessibility audits **SHOULD** be tracked. Why: Keeps known UX gaps visible.
 
 ## Scope and Audience
 
@@ -30,7 +35,7 @@ Developers authoring or reviewing Blazor components/pages.
 - Place components under a single root with atomic folders; one component per folder.
 - Keep logic in `.razor.cs` partial class; inject services there, not in markup.
 - Use Redux-style state + selectors; send intent via callbacks, not direct API calls.
-- Ensure accessibility (keyboard/ARIA), isolated styles, and L0 tests.
+- Ensure accessibility (keyboard/ARIA), follow the [CSS and design-token authoring standard](css-design-tokens.instructions.md) for styles, and add L0 tests.
 
 ## Core Principles
 
@@ -42,3 +47,4 @@ Developers authoring or reviewing Blazor components/pages.
 
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
 - Testing: `.github/instructions/testing.instructions.md`
+- CSS and design tokens: `.github/instructions/css-design-tokens.instructions.md`

@@ -1,101 +1,178 @@
 ---
 title: NotificationPulse
-description: Exact status, action, and parameter contract for Refraction NotificationPulse.
+description: Refraction's status message molecule with optional expansion and dismissal intents.
 sidebar_position: 6
 ---
 
 # NotificationPulse
 
-## Overview
-
-`NotificationPulse` renders a status region and optional native action buttons.
-It is a sealed presentational molecule in
-`Mississippi.Refraction.Client.Components.Molecules.Notifications`.
-The parent owns notification state, details, visibility, and focus after an action.
+`NotificationPulse` is a sealed presentational molecule in
+`Mississippi.Refraction.Client.Components.Molecules.Notifications`, supplied by
+`Mississippi.Refraction.Client`. It separates live status content from optional
+native action buttons and reports one-way intent to its parent.
 
 ## Parameters
 
 | Parameter | Default | Contract |
 | --- | --- | --- |
-| `ChildContent` | `null` | Content inside the status region. |
-| `State` | `RefractionStates.New` | Visual state on the wrapper's `data-state`; `Critical` changes the dot color. |
-| `OnExpand` | No delegate | `EventCallback<MouseEventArgs>` for a one-way expansion request. |
-| `OnDismiss` | No delegate | `EventCallback` for a dismissal request. |
-| `ExpandText` | `View details` | Visible button text when `OnExpand` has a delegate. |
-| `DismissText` | `Dismiss notification` | Visible button text when `OnDismiss` has a delegate. |
-| `Class` | `null` | Additional wrapper CSS classes. |
-| `AdditionalAttributes` | `null` | Unmatched HTML attributes on the wrapper. Caller `class` joins the component classes; `data-state` stays component-owned. |
+| `ChildContent` | `null` | Content rendered inside the stable status region. |
+| `Class` | `null` | Additional wrapper classes composed with `rf-notification-pulse`. |
+| `DetailsId` | `null` | Optional ID for the parent-controlled details region; must be nonblank when supplied with `OnExpand`. |
+| `ExpandText` | `View details` | Visible expansion action text; must be nonblank when `OnExpand` is supplied. |
+| `DismissText` | `Dismiss notification` | Visible dismissal action text; must be nonblank when `OnDismiss` is supplied. |
+| `IsExpanded` | `null` | Optional parent-controlled disclosure state rendered as lowercase `aria-expanded` when `OnExpand` is supplied. |
+| `OnExpand` | empty | Optional `EventCallback<MouseEventArgs>` for one-way expansion intent. |
+| `OnDismiss` | empty | Optional `EventCallback` for dismissal intent. |
+| `State` | `RefractionStates.New` | Visual state hook. `Critical` changes the attention dot color. |
+| `AdditionalAttributes` | `null` | Native attributes forwarded to the wrapper; `class` and `data-state` remain component-owned. |
 
-## Status and action behavior
+## Exceptions
 
-The inner content region has `role="status"` and `aria-atomic="true"`.
-The dot has `aria-hidden="true"`. Actions are siblings of the status region,
-so button text is outside the announced content. The component does not add
-an assertive alert, disclosure state, `aria-expanded`, a root click handler,
-or a root tab stop.
+When `OnExpand` has a delegate, a blank or whitespace-only `ExpandText` causes
+an `ArgumentException` with the message `ExpandText must be nonblank when
+OnExpand is supplied.` When `OnDismiss` has a delegate, the corresponding
+`DismissText` condition throws with `DismissText must be nonblank when OnDismiss
+is supplied.`
 
-An action appears only while its callback has a delegate. Each action is a
-native `<button type="button">`, so it receives native Enter and Space
-activation and does not submit a containing form. The callbacks report intent;
-the component does not change its own `State` or remove itself.
+When `OnExpand` has a delegate and `DetailsId` is supplied, a blank or
+whitespace-only value throws `ArgumentException` with `DetailsId must be
+nonblank when OnExpand is supplied and DetailsId is provided.` A null
+`DetailsId` omits `aria-controls`; a nonblank value is not checked for a
+matching or unique DOM target.
 
-The status text, callback availability, and visual state update when the parent
-supplies new parameters. `Critical` changes only styling, not the live-region
-role. The action row wraps long labels in narrow containers. Each action has a
-minimum 44px width and height and a visible keyboard focus outline.
+These checks run in `OnParametersSet`, so Blazor raises the exception while it
+applies the initial or updated parameter set, before that set is rendered. The
+exception uses a message-only constructor; consumers should not rely on a
+specific `ArgumentException.ParamName` value.
 
-## Validation failures
+## Status and actions
 
-When `OnExpand` has a delegate, blank or whitespace-only `ExpandText` throws
-`ArgumentException` during `OnParametersSet`. `OnDismiss` and `DismissText`
-follow the same rule. Initial rendering and later parameter updates can both
-trigger these failures. These message-only exceptions do not promise a
-`ParamName` value.
+The inner status content renders with `role="status"` and
+`aria-atomic="true"`. The attention dot is decorative and carries
+`aria-hidden="true"`. Action buttons are siblings outside that status region
+and appear only when their callbacks have delegates.
 
-## Example
+Each action is a native `<button type="button">`. The browser supplies Enter
+and Space activation without duplicate key handlers. The wrapper has no
+component-owned click handler or tab stop. The molecule does not toggle or
+invent disclosure state. When the parent supplies both `IsExpanded` and a
+nonblank `DetailsId` with `OnExpand`, the expand button exposes the current
+lowercase `aria-expanded` value and an `aria-controls` reference.
 
-This complete Razor component keeps the message and visibility in its parent:
+The parent owns visibility, status text, and the response to each typed intent.
+The following split Razor and code-behind example shows the default one-way
+intent form and keeps those responsibilities explicit:
 
-```razor
+```razor title="ExportNotification.razor"
+@namespace Example.Components
 @using Microsoft.AspNetCore.Components.Web
+@using Mississippi.Refraction.Client
 @using Mississippi.Refraction.Client.Components.Molecules.Notifications
 
-@if (visible)
+@if (isVisible)
 {
-    <NotificationPulse OnExpand="@ShowDetails" OnDismiss="@Dismiss">
-        Export complete.
+    <NotificationPulse State="@notificationState"
+                       ExpandText="View details"
+                       DismissText="Dismiss notification"
+                       OnExpand="@HandleExpandAsync"
+                       OnDismiss="@HandleDismissAsync">
+        <p>@statusMessage</p>
     </NotificationPulse>
-    @if (showDetails)
-    {
-        <p>24 rows exported.</p>
-    }
 }
-
-@code {
-    private bool visible = true;
-    private bool showDetails;
-
-    private void ShowDetails(MouseEventArgs _) => showDetails = true;
-    private void Dismiss() => visible = false;
+else
+{
+    <button type="button" @onclick="@HandleRestoreAsync">Restore notification</button>
 }
 ```
 
-## Pre-release API change
+```csharp title="ExportNotification.razor.cs"
+using System.Threading.Tasks;
 
-The prototype lived in `Mississippi.Refraction.Client.Components.Atoms`.
-Update imports to the molecule namespace above. The former focusable status
-root and its click behavior are replaced by an inner status region and
-callback-supported buttons; update selectors and event handling accordingly.
-The component is sealed. This describes a pre-release source change, not a
-versioned upgrade path.
+using Microsoft.AspNetCore.Components.Web;
 
-## Summary
+using Mississippi.Refraction.Client;
 
-`NotificationPulse` exposes status content and independent expansion and
-dismissal intents. The parent controls what those intents do.
+
+namespace Example.Components;
+
+/// <summary>Shows parent-owned notification state and actions.</summary>
+public sealed partial class ExportNotification
+{
+    private bool isVisible = true;
+
+    private string notificationState = RefractionStates.New;
+
+    private string statusMessage = "Export completed. Review the result before dismissing it.";
+
+    private Task HandleExpandAsync(
+        MouseEventArgs mouseEventArgs
+    )
+    {
+        _ = mouseEventArgs;
+        notificationState = RefractionStates.Expanded;
+        statusMessage = "Export completed: 24 rows exported.";
+        return Task.CompletedTask;
+    }
+
+    private Task HandleDismissAsync()
+    {
+        isVisible = false;
+        notificationState = RefractionStates.Acknowledged;
+        return Task.CompletedTask;
+    }
+
+    private Task HandleRestoreAsync(
+        MouseEventArgs mouseEventArgs
+    )
+    {
+        _ = mouseEventArgs;
+        isVisible = true;
+        notificationState = RefractionStates.New;
+        statusMessage = "Export completed. Review the result before dismissing it.";
+        return Task.CompletedTask;
+    }
+}
+```
+
+For controlled disclosure, keep a stable per-instance `DetailsId` target
+mounted, including while it is hidden, and pass matching `IsExpanded` and
+`DetailsId` values with `OnExpand`. The parent owns the state transition and
+focus destination after an accepted change. See the
+[LightSpeed notification walkthrough](../getting-started/lightspeed.md) for
+the complete parent-owned workflow. `Critical` remains a visual hook; this
+non-intrusive status molecule does not create an assertive alert, notification
+service, timer, or domain state.
+
+## Styling and composition
+
+The status content wraps long text and the optional actions retain visible
+focus rings and targets of at least 44px. Styles use Refraction surface, text,
+status, action, and focus tokens and wrap the action row at narrow widths.
+Unmatched attributes reach the wrapper, while its base class and `data-state`
+remain stable for composition and state styling.
+
+## Migration from the prototype
+
+Move imports from `Mississippi.Refraction.Client.Components.Atoms` to
+`Mississippi.Refraction.Client.Components.Molecules.Notifications`.
+`NotificationPulse` is sealed and now renders a status region plus optional
+native actions. Replace selectors that assumed the old root `role="status"`,
+`tabindex="0"`, or root click behavior. Supply `OnExpand` and/or `OnDismiss`
+when the parent owns those intents, and provide nonblank custom action text
+when replacing the defaults.
+
+The molecule remains presentational: parents own details, state, focus, and
+restoration behavior. When an action changes the surrounding view, the parent
+should move focus to the relevant heading or restore control.
 
 ## Next Steps
 
-- See the [Refraction reference](./reference.md) for related controls.
-- See [Refraction concepts](../concepts/concepts.md) for the state-down,
-  events-up boundary.
+- Read the [Refraction overview](../index.md) for the state-down, events-up UI
+  model that this molecule follows.
+- Use the [Refraction Reference](./reference.md) to review package boundaries
+  and adjacent component contracts.
+- Run [Explore Refraction in LightSpeed](../getting-started/lightspeed.md) to
+  inspect existing component examples and page-owned state flow in a working
+  sample.
+- Read [Refraction Concepts](../concepts/concepts.md) when deciding whether a
+  behavior belongs in the component or its parent state flow.

@@ -19,6 +19,8 @@
             {
                 <button class="rf-notification-pulse__action rf-notification-pulse__expand"
                         type="button"
+                        aria-expanded="@ExpandAriaExpanded"
+                        aria-controls="@DetailsId"
                         @onclick="HandleExpandAsync">
                     @ExpandText
                 </button>
