@@ -12,6 +12,8 @@ using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
 using Mississippi.Reservoir.Core.State;
 
+using Moq;
+
 
 namespace Mississippi.Reservoir.Core.L0Tests;
 
@@ -608,6 +610,70 @@ public sealed class StoreTests : IDisposable
         // Assert - should be back to initial state
         TestFeatureState state = store.GetState<TestFeatureState>();
         Assert.Equal(0, state.Counter);
+    }
+
+    /// <summary>
+    ///     ResetToInitialStateAction should restore the first initial value supplied by a registration.
+    /// </summary>
+    /// <param name="shouldChangeState">Whether to change the feature state before resetting.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ResetToInitialStateActionRestoresFirstRegisteredValue(
+        bool shouldChangeState
+    )
+    {
+        // Arrange
+        int initializationCount = 0;
+        Mock<IFeatureStateRegistration> registration = new();
+        registration.SetupGet(value => value.FeatureKey).Returns(TestFeatureState.FeatureKey);
+        registration.SetupGet(value => value.InitialState)
+            .Returns(() => new TestFeatureState
+            {
+                Counter = ++initializationCount,
+            });
+        registration.SetupGet(value => value.RootReducer).Returns(new TestFeatureRootReducer());
+        using Store store = new([registration.Object], [], TimeProvider.System);
+        TestFeatureState initialState = store.GetState<TestFeatureState>();
+        Assert.Equal(1, initialState.Counter);
+        if (shouldChangeState)
+        {
+            store.Dispatch(new IncrementAction());
+            Assert.Equal(2, store.GetState<TestFeatureState>().Counter);
+        }
+
+        // Act
+        store.Dispatch(new ResetToInitialStateAction());
+
+        // Assert
+        Assert.Equal(initialState.Counter, store.GetState<TestFeatureState>().Counter);
+        Assert.Same(initialState, store.GetState<TestFeatureState>());
+        store.Dispatch(new ResetToInitialStateAction());
+        Assert.Same(initialState, store.GetState<TestFeatureState>());
+        registration.VerifyGet(value => value.InitialState, Times.Once());
+    }
+
+    /// <summary>
+    ///     ResetToInitialStateAction should restore the initially exposed standard feature instance.
+    /// </summary>
+    [Fact]
+    public void ResetToInitialStateActionRestoresOriginalRegisteredInstance()
+    {
+        // Arrange
+        FeatureStateRegistration<TestFeatureState> registration = new(new TestFeatureRootReducer());
+        using Store store = new([registration], [], TimeProvider.System);
+        TestFeatureState initialState = store.GetState<TestFeatureState>();
+        store.Dispatch(new IncrementAction());
+        Assert.Equal(1, store.GetState<TestFeatureState>().Counter);
+
+        // Act
+        store.Dispatch(new ResetToInitialStateAction());
+
+        // Assert
+        Assert.Equal(0, store.GetState<TestFeatureState>().Counter);
+        Assert.Same(initialState, store.GetState<TestFeatureState>());
+        store.Dispatch(new ResetToInitialStateAction());
+        Assert.Same(initialState, store.GetState<TestFeatureState>());
     }
 
     /// <summary>
