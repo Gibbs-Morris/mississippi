@@ -3,12 +3,10 @@ using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.Brooks.Abstractions;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.DomainModeling.Abstractions;
-using Mississippi.DomainModeling.Gateway;
 using Mississippi.DomainModeling.Gateway.L0Tests;
 
 using Moq;
@@ -22,27 +20,6 @@ namespace MississippiTests.DomainModeling.Gateway.L0Tests;
 public sealed class UxProjectionControllerEntityTagGrammarTests
 {
     private const string TestEntityId = "entity-tag-grammar-123";
-
-    /// <summary>
-    ///     A testable mapped projection controller.
-    /// </summary>
-    private sealed class TestableController : UxProjectionControllerBase<TestProjection, TestDto>
-    {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="TestableController" /> class.
-        /// </summary>
-        /// <param name="factory">The projection grain factory.</param>
-        /// <param name="mapper">The projection mapper.</param>
-        public TestableController(
-            IUxProjectionGrainFactory factory,
-            IMapper<TestProjection, TestDto> mapper
-        )
-            : base(factory, mapper, NullLogger<UxProjectionControllerBase<TestProjection, TestDto>>.Instance) =>
-            ControllerContext = new()
-            {
-                HttpContext = new DefaultHttpContext(),
-            };
-    }
 
     /// <summary>
     ///     Constructs malformed UTF-16 at runtime so attribute string encoding cannot replace it.
@@ -129,7 +106,7 @@ public sealed class UxProjectionControllerEntityTagGrammarTests
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
         Mock<IMapper<TestProjection, TestDto>> mapperMock = new();
         mapperMock.Setup(m => m.Map(projection)).Returns(dto);
-        TestableController controller = new(factoryMock.Object, mapperMock.Object);
+        UxProjectionControllerTestController controller = new(factoryMock.Object, mapperMock.Object);
         controller.Request.Headers.IfNoneMatch = new(headerValues);
 
         // Act
