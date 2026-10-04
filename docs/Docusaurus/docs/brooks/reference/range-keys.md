@@ -68,7 +68,7 @@ String conversion does not validate either default state: `ToString()`, the impl
 
 - Passing a null name or entity ID to the four-argument constructor, or a null input string to `FromString()`, throws `ArgumentNullException`.
 - Calling `ToBrookCompositeKey()` on a default or parameterless range key throws `ArgumentNullException` in the destination constructor. `FromBrookCompositeKey()` also throws `ArgumentNullException` when given a default or parameterless `BrookKey`.
-- Passing a name containing `|` directly to the constructor throws `ArgumentException`. The constructor also throws `ArgumentException` when the normalized key length exceeds the limit.
+- Passing a brook name or entity ID containing `|` directly to the constructor throws `ArgumentException`. The constructor also throws `ArgumentException` when the normalized key length exceeds the limit.
 - A negative start or count throws `ArgumentOutOfRangeException`, including after successful numeric parsing.
 - Accessing `End` throws `ArgumentOutOfRangeException` if arithmetic overflow produces a position below `-1`.
 - Parsing a string with missing required separators, or a numeric component that cannot be parsed as `long`, throws `FormatException`. For example, `a|b|c|1|2` cannot be parsed as a range key; embedded separators are not treated as escaped name characters.
