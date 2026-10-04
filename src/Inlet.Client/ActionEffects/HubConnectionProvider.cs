@@ -1,9 +1,12 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.SignalRConnection;
@@ -30,17 +33,20 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
     /// <param name="timeProvider">
     ///     The time provider for timestamps. If null, uses <see cref="TimeProvider.System" />.
     /// </param>
+    /// <param name="logger">The logger for connection startup diagnostics.</param>
     public HubConnectionProvider(
         NavigationManager navigationManager,
         Lazy<IInletStore> lazyStore,
         InletSignalRActionEffectOptions? options = null,
-        TimeProvider? timeProvider = null
+        TimeProvider? timeProvider = null,
+        ILogger<HubConnectionProvider>? logger = null
     )
     {
         ArgumentNullException.ThrowIfNull(navigationManager);
         ArgumentNullException.ThrowIfNull(lazyStore);
         this.lazyStore = lazyStore;
         TimeProvider = timeProvider ?? TimeProvider.System;
+        Logger = logger ?? NullLogger<HubConnectionProvider>.Instance;
         InletSignalRActionEffectOptions effectOptions = options ?? new InletSignalRActionEffectOptions();
         Connection = new HubConnectionBuilder().WithUrl(navigationManager.ToAbsoluteUri(effectOptions.HubPath))
             .WithAutomaticReconnect()
@@ -57,6 +63,8 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
 
     /// <inheritdoc />
     public bool IsConnected => Connection.State == HubConnectionState.Connected;
+
+    private ILogger<HubConnectionProvider> Logger { get; }
 
     private IInletStore Store => lazyStore.Value;
 
@@ -76,12 +84,31 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
         CancellationToken cancellationToken = default
     )
     {
+        long started = Stopwatch.GetTimestamp();
+        Logger.EnsureConnectionStarted(Connection.State);
         if (Connection.State == HubConnectionState.Disconnected)
         {
             Store.Dispatch(new SignalRConnectingAction());
-            await Connection.StartAsync(cancellationToken);
+            try
+            {
+                await Connection.StartAsync(cancellationToken);
+            }
+            catch (Exception exception) when (Connection.State == HubConnectionState.Disconnected)
+            {
+                Logger.ConnectionStartFailed(
+                    exception is OperationCanceledException && cancellationToken.IsCancellationRequested
+                        ? LogLevel.Information
+                        : LogLevel.Error,
+                    exception,
+                    Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+                Store.Dispatch(new SignalRDisconnectedAction(exception.Message, TimeProvider.GetUtcNow()));
+                throw;
+            }
+
             Store.Dispatch(new SignalRConnectedAction(Connection.ConnectionId, TimeProvider.GetUtcNow()));
         }
+
+        Logger.EnsureConnectionCompleted(Connection.State, Stopwatch.GetElapsedTime(started).TotalMilliseconds);
     }
 
     /// <inheritdoc />
