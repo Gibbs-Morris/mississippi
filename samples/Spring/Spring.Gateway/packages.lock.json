@@ -4,15 +4,15 @@
     "net10.0": {
       "Aspire.Azure.Data.Tables": {
         "type": "Direct",
-        "requested": "[13.4.6, )",
-        "resolved": "13.4.6",
-        "contentHash": "zQP2CxOT3LPNUJ9SLGemTQl7t4jDK1e2pkphVPgwRINozWrhFeMiWodpQZC40GvDzk6C20JK27E3YRD7S4SbDQ==",
+        "requested": "[13.6.0, )",
+        "resolved": "13.6.0",
+        "contentHash": "CyGcaVVCDiiH/3O0mZ0Gmp09OqXp7cJunMwU1gXebtLsue0RJedR3p2tMmpROBgQTRRzMNSQvMvr8S/5EL7uCQ==",
         "dependencies": {
           "AspNetCore.HealthChecks.Azure.Data.Tables": "9.0.0",
-          "Azure.Core": "1.55.0",
-          "Azure.Data.Tables": "12.11.0",
-          "Microsoft.Extensions.Azure": "1.14.0",
-          "OpenTelemetry.Extensions.Hosting": "1.15.3"
+          "Azure.Core": "1.62.0",
+          "Azure.Data.Tables": "12.12.0",
+          "Microsoft.Extensions.Azure": "1.14.1",
+          "OpenTelemetry.Extensions.Hosting": "1.17.0"
         }
       },
       "IDisposableAnalyzers": {
@@ -23,45 +23,45 @@
       },
       "Microsoft.AspNetCore.Components.WebAssembly.Server": {
         "type": "Direct",
-        "requested": "[10.0.10, )",
-        "resolved": "10.0.10",
-        "contentHash": "4VZTIYe3nJ3im3ILpcpPp9LJbJ43lYeDAJSQQosAogz889by8FRaMCpjo8YFeXLBFDGpNYJSBPNBYLdeq8bn1A==",
+        "requested": "[10.0.12, )",
+        "resolved": "10.0.12",
+        "contentHash": "G/+1rd0e/oUtEt8z08YSl5kbK1xzbYXN1AbhSmew9BK16yowT62agw/ty0EGFVlUT6zMqMRKTxEvDj8COmqebQ==",
         "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "10.0.10"
+          "Microsoft.AspNetCore.Components.WebAssembly": "10.0.12"
         }
       },
       "Microsoft.AspNetCore.OpenApi": {
         "type": "Direct",
-        "requested": "[10.0.10, )",
-        "resolved": "10.0.10",
-        "contentHash": "d4Atx9IHq7JgX0F/h7Db+m9zAUzC+cKdI9k+OWnnyQIOUQtfvjIEuhvbjPigVMkAmPUgCbJ8Yp6M9ghUqHtJSQ==",
+        "requested": "[10.0.12, )",
+        "resolved": "10.0.12",
+        "contentHash": "7RnQ/UKn+kK3JDLmTpW+vVqNErWthGPAVAy1aIiBzv4ucQ6g9NFvOJUuT0PHcpvcJxGVxctMxj6t+NESWMrgHQ==",
         "dependencies": {
-          "Microsoft.OpenApi": "2.0.0"
+          "Microsoft.OpenApi": "[2.12.0, 3.0.0)"
         }
       },
       "Microsoft.CodeAnalysis.NetAnalyzers": {
         "type": "Direct",
-        "requested": "[10.0.302, )",
-        "resolved": "10.0.302",
-        "contentHash": "mbJSf5EOYkgnPQ0jO0qo4AByQYDGbBZDs0+23xdkK2ckuvYJGlPT1nPR0WCSnzwXdiVypOTZ4ArcT4H/X/f1mQ=="
+        "requested": "[10.0.401, )",
+        "resolved": "10.0.401",
+        "contentHash": "qGPLk4hknvVp6j9Lowa0qykw1cK7CyEyyy2aVs4dkOGroOMHJLRsMpUT53IKvYT6q78jxv96FZhzy3BrKCPgmA=="
       },
       "Microsoft.OpenApi": {
         "type": "Direct",
-        "requested": "[2.9.0, )",
-        "resolved": "2.9.0",
-        "contentHash": "uS2awDkgUvVhd735HEcNcOQdwbIDCAK3V1QzgWoszd/FPDLLVv9eF+fImmdJiGLIKKWJv2DMJQ7OSR9gYLd+uw=="
+        "requested": "[2.12.2, )",
+        "resolved": "2.12.2",
+        "contentHash": "ZkT7qiJe0Kj0+DTZOZo+xrDy1kNmdsWFQVPIQLNx9ZJ0T9cB2LG7r+Bi60so8/+yg1nkS7QCPadrzsTG4VPKrA=="
       },
       "Microsoft.Orleans.Client": {
         "type": "Direct",
-        "requested": "[10.2.2, )",
-        "resolved": "10.2.2",
-        "contentHash": "Y4Zq/2gf/Lyz36VQTVkpVaTxRFjMkxGV0UkOVKJblCbUQpitEuVADdS3y8iciScLLq9KBdNrNOTIPlZo/piGlg==",
+        "requested": "[10.3.1, )",
+        "resolved": "10.3.1",
+        "contentHash": "wPVSBIBSQUHZ6SoJnxnWx/jfcpKRRK9wewbW5lvxaXFlvdaBL4nKHAvDE49cNNkWtqRRVqOs/ST871qCMaNcAQ==",
         "dependencies": {
           "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
           "Microsoft.CodeAnalysis.Common": "5.0.0",
           "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
           "Microsoft.Extensions.DependencyModel": "10.0.5",
-          "Microsoft.Orleans.Sdk": "10.2.2",
+          "Microsoft.Orleans.Sdk": "10.3.1",
           "Newtonsoft.Json": "13.0.4",
           "System.IO.Hashing": "10.0.3",
           "System.Memory.Data": "10.0.3"
@@ -69,9 +69,9 @@
       },
       "Microsoft.Orleans.Clustering.AzureStorage": {
         "type": "Direct",
-        "requested": "[10.2.2, )",
-        "resolved": "10.2.2",
-        "contentHash": "3EBWY8N1QVxA+8KTsQLpKEu/qzlqvaP81LGZ/b2uc1ay2pZIu2rZz5073UiO5oMrV32Sr4faav4J+mYxlOndiQ==",
+        "requested": "[10.3.1, )",
+        "resolved": "10.3.1",
+        "contentHash": "3oaTkISdTYQ/3FVbLb1zDwFhdsX6SPEJ4zz+3bgpv8yRsXRLrFd2ubTUDSpYLVK+W6JSuat9Th5PsB/9hsRtzg==",
         "dependencies": {
           "Azure.Core": "1.51.1",
           "Azure.Data.Tables": "12.11.0",
@@ -79,10 +79,10 @@
           "Microsoft.CodeAnalysis.Common": "5.0.0",
           "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
           "Microsoft.Extensions.DependencyModel": "10.0.5",
-          "Microsoft.Orleans.Analyzers": "10.2.2",
-          "Microsoft.Orleans.CodeGenerator": "10.2.2",
-          "Microsoft.Orleans.Runtime": "10.2.2",
+          "Microsoft.Orleans.Runtime": "10.3.1",
           "Newtonsoft.Json": "13.0.4",
+          "Polly": "8.6.4",
+          "Polly.Extensions": "8.6.5",
           "System.IO.Hashing": "10.0.3",
           "System.Memory.Data": "10.0.3"
         }
@@ -95,69 +95,69 @@
       },
       "ModelContextProtocol.AspNetCore": {
         "type": "Direct",
-        "requested": "[1.4.1, )",
-        "resolved": "1.4.1",
-        "contentHash": "AoI+00fRxb0GAMMabMUgpV5QhNoa/F7I9oiVGHfJKtBZ4g/DEyoDdTS9Rp/m4e3MnXhhvSBeu2wTafhesdf52w==",
+        "requested": "[2.2.0, )",
+        "resolved": "2.2.0",
+        "contentHash": "3JelDMuFIwFzXybsh6K30G6wXu5gmqKnuRnieqgBMuR0FkqqXRv4B+NYZuPgthSyNq5UwRyvv2U2VJBE3RD3PQ==",
         "dependencies": {
-          "ModelContextProtocol": "1.4.1"
+          "ModelContextProtocol": "[2.2.0]"
         }
       },
       "OpenTelemetry.Exporter.OpenTelemetryProtocol": {
         "type": "Direct",
-        "requested": "[1.17.0, )",
-        "resolved": "1.17.0",
-        "contentHash": "R1omQOrQpGlS0Cp5UIr/TAiuEA48JrPlgr1NPV5gESiTU7HhWU+ILe2EBSYb1fKdsSavZ7nZkHcUxAzofPqr2A==",
+        "requested": "[1.19.1, )",
+        "resolved": "1.19.1",
+        "contentHash": "vsYYOBf/KxNubnuoja8pjJ9LG0zCC9HAYPay+R6N5ZKZMbhNdKWbaq6JZqJqTvK+55rudiqErJySekf9ql8okA==",
         "dependencies": {
-          "OpenTelemetry": "1.17.0"
+          "OpenTelemetry": "1.19.1"
         }
       },
       "OpenTelemetry.Extensions.Hosting": {
         "type": "Direct",
-        "requested": "[1.17.0, )",
-        "resolved": "1.17.0",
-        "contentHash": "t1OwL/4qgboGMobYVT+UV5zgWnFqCp4Pw8lcsmzh8m2K8PQsTKkyxrC32tqYTMYny3GOW4q5cltE3dTVzLmRew==",
+        "requested": "[1.19.1, )",
+        "resolved": "1.19.1",
+        "contentHash": "3qqZfVmW8mKA2/fRwI83o8z+yZd33KbEqRlXrlX0+3e/U7i+z0MQiCr0L3Axxa0jGdiylIrpWX4DIT9nAbJ00A==",
         "dependencies": {
-          "OpenTelemetry": "1.17.0"
+          "OpenTelemetry": "1.19.1"
         }
       },
       "OpenTelemetry.Instrumentation.AspNetCore": {
         "type": "Direct",
-        "requested": "[1.17.0, )",
-        "resolved": "1.17.0",
-        "contentHash": "rGbmk1vuy1kvgZmE0ps7Vb99YZvDap6AalrrF60FwnNit1uW/PbeFZj1cpb0T8MPkYmjhBrRJ1/JB6QqXkRjHA==",
+        "requested": "[1.19.0, )",
+        "resolved": "1.19.0",
+        "contentHash": "reypo7g0Nzyssg1EkbfWU6W58CVFgtgkSEGrFXtbpA+bNit7HUs7587DOkOdPCgqWr3IL4f6X9B2yhnU6POrFA==",
         "dependencies": {
-          "OpenTelemetry.Api.ProviderBuilderExtensions": "[1.17.0, 2.0.0)"
+          "OpenTelemetry.Api.ProviderBuilderExtensions": "[1.19.0, 2.0.0)"
         }
       },
       "OpenTelemetry.Instrumentation.Http": {
         "type": "Direct",
-        "requested": "[1.17.0, )",
-        "resolved": "1.17.0",
-        "contentHash": "uTwVtxIJ/xB96wGYTaDsbkJVeCFdUxTwvrlDUn2YJixy0UuKc8DvQMzwKNJMTzNFiiyYO9c40id6tUHTmWs33A==",
+        "requested": "[1.19.0, )",
+        "resolved": "1.19.0",
+        "contentHash": "+egJpWBRfYP3ldfexV2bmJyzOWkkOPVYikw/vUEtbUvf2exJfY3RGInXrYlubhBIH6rmNEn6sI/FmqenZJwkjw==",
         "dependencies": {
-          "OpenTelemetry.Api.ProviderBuilderExtensions": "[1.17.0, 2.0.0)"
+          "OpenTelemetry.Api.ProviderBuilderExtensions": "[1.19.0, 2.0.0)"
         }
       },
       "OpenTelemetry.Instrumentation.Runtime": {
         "type": "Direct",
-        "requested": "[1.17.0, )",
-        "resolved": "1.17.0",
-        "contentHash": "HyYenisDn/xdtyVXdjImsCl+RNC2gq01N0rvSR7tsYAylXR2sxX/YgMsyTajMXA27+r1vB7lNU8cWRhV0fwL+Q==",
+        "requested": "[1.19.0, )",
+        "resolved": "1.19.0",
+        "contentHash": "VIH2tQ2h31j4wQyZ9Utk8ZXIyj7Z1j0xIiyPRGjYu1MmZjJtpxRh0Y/NnB6fEBimNg/WrX0jDyfMeEjPQqmaMA==",
         "dependencies": {
-          "OpenTelemetry.Api": "[1.17.0, 2.0.0)"
+          "OpenTelemetry.Api": "[1.19.0, 2.0.0)"
         }
       },
       "Scalar.AspNetCore": {
         "type": "Direct",
-        "requested": "[2.16.16, )",
-        "resolved": "2.16.16",
-        "contentHash": "Ax0e0bIh+Upf92k1+pTBUom3e/kbpu20qsrDYmmS1NM721Eq2xF8c789x6IbiNrvW8WwySRzPv/icYYhb6idSg=="
+        "requested": "[2.17.12, )",
+        "resolved": "2.17.12",
+        "contentHash": "0sikVHhTJUvHk2XAw9Am5o5aws2dxj5+H+yTP2kQQHhtOlC087O7HTYDvFk+cNKdHao6wlHu9uWVLjWODyUguQ=="
       },
       "SonarAnalyzer.CSharp": {
         "type": "Direct",
-        "requested": "[10.28.0.143324, )",
-        "resolved": "10.28.0.143324",
-        "contentHash": "ZnmYHFiQw2Aph2ft9c7UqVrqe79aZR5l7oeG59+sgrSAO9J159meglP1Zo34+Mcw4etIUTC9btYnP0Ar/rQIyg=="
+        "requested": "[10.35.0.4138, )",
+        "resolved": "10.35.0.4138",
+        "contentHash": "T5o/tuyPw9pHRkyWxW07TkSri4I4pLpqwH922JuhphDjHAM7BUHaGE67h/w+65evHsIar8mYB2Ey6OmOLj9QDw=="
       },
       "StyleCop.Analyzers.Unstable": {
         "type": "Direct",
@@ -175,22 +175,22 @@
       },
       "Azure.Core": {
         "type": "Transitive",
-        "resolved": "1.55.0",
-        "contentHash": "c7femvYS/xEUrLP1sNZN+DoQZmx3X+G3ZXtOOz0RL/7cGMCM3JVqepVmRd3AwM4IK8AtTGS4GOigCO+d/zaSsQ==",
+        "resolved": "1.62.0",
+        "contentHash": "C0ijs91ZW2uhF/VwGLXeayb+RwTWhDxKnrsmqPWg5HkYtPQ93mzaydyMCjAzE0AG5yHc1bpaPc+NPlZUgz3w8g==",
         "dependencies": {
-          "Microsoft.Bcl.AsyncInterfaces": "10.0.3",
-          "Microsoft.Identity.Client": "4.83.1",
-          "Microsoft.Identity.Client.Extensions.Msal": "4.83.1",
-          "System.ClientModel": "1.11.0",
-          "System.Memory.Data": "10.0.3"
+          "Microsoft.Bcl.AsyncInterfaces": "10.0.10",
+          "Microsoft.Identity.Client": "4.84.2",
+          "Microsoft.Identity.Client.Extensions.Msal": "4.84.2",
+          "System.ClientModel": "1.15.0",
+          "System.Memory.Data": "10.0.10"
         }
       },
       "Azure.Data.Tables": {
         "type": "Transitive",
-        "resolved": "12.11.0",
-        "contentHash": "MabH2HegMvZA1ocaMhEfW/idyTa3CoH64s43/V9/KFRGdVqEj0EETvd3ItDe6Bbs2teiR40KE9Kz9NLDc5DJJw==",
+        "resolved": "12.12.0",
+        "contentHash": "q/bDOim1Qru3NrPJO0v8DnZxUFVf1KXh+BBksEgDFPqMvw9jstJEJ+efq4WfC4BLLER67fgzGfFjJevv+R94oA==",
         "dependencies": {
-          "Azure.Core": "1.44.1"
+          "Azure.Core": "1.62.0"
         }
       },
       "Humanizer.Core": {
@@ -200,40 +200,35 @@
       },
       "Microsoft.AspNetCore.Http.Connections.Client": {
         "type": "Transitive",
-        "resolved": "10.0.10",
-        "contentHash": "85adEQWKkB+d0fevCrToFlN99hhPfBPT7ZluCzrakxp8u63kKuA/5Wt9gRs0x6AMDOW6rOOJhh2TnCKlPeGq6g=="
+        "resolved": "10.0.12",
+        "contentHash": "HEO648tD8OyX6aUNQwJSl1eKQk5eQChuHTqpybv2ep7/518/M27yeDDFxAh2M/LW+22tbbooao6raNEHm7lBhA=="
       },
       "Microsoft.AspNetCore.SignalR.Client.Core": {
         "type": "Transitive",
-        "resolved": "10.0.10",
-        "contentHash": "1y+34HyOpeSUkkKKaQdXARnYtQLObre7GJoPK3TYbQJYe5GqXamL17WuEroX7EBDWzmTCylSc8QNMXXerGiirw=="
+        "resolved": "10.0.12",
+        "contentHash": "+kCyWCOvZteBkqfbpmoi+ejIR1XVJOY4ydDNYrYt1WdXv/ruJS4WjDfCizGZ5lvn/OmRdMuVdh8opopbNveQcw=="
       },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
-        "resolved": "10.0.3",
-        "contentHash": "TV62UsrJZPX6gbt3c4WrtXh7bmaDIcMqf9uft1cc4L6gJXOU07hDGEh+bFQh/L2Az0R1WVOkiT66lFqS6G2NmA=="
+        "resolved": "10.0.10",
+        "contentHash": "TFI6OKYE1XZz4SGuTSH70c6SBdPpFktXsoa1gCxTr3mKrhmXirnvaS0tKz+J3ZWICEAmMpEGn59nO4ICtUpQXA=="
       },
       "Microsoft.CodeAnalysis.Analyzers": {
         "type": "Transitive",
         "resolved": "3.11.0",
         "contentHash": "v/EW3UE8/lbEYHoC2Qq7AR/DnmvpgdtAMndfQNmpuIMx/Mto8L5JnuCfdBYtgvalQOtfNCnxFejxuRrryvUTsg=="
       },
-      "Microsoft.DotNet.HotReload.WebAssembly.Browser": {
-        "type": "Transitive",
-        "resolved": "10.0.110",
-        "contentHash": "v2QuCGg7GLcuILPU+S57gi2bnLMcROOBFvLjqFKb3fF420eimHOmmZdALkRkd+qMku83SaGLy2bsL8Z1WFWbVw=="
-      },
       "Microsoft.Extensions.AI.Abstractions": {
         "type": "Transitive",
-        "resolved": "10.5.2",
-        "contentHash": "Ei+YWV9Ybnps7pR1dgjlG29gelXEwZkhLVAcWmKe6HvXS6LNBYgSdWiY3Hk9OZXYtK34rv/NtLWBQYQGOBQYPQ=="
+        "resolved": "10.8.3",
+        "contentHash": "K0B05oApxmviWalNHPMBBcRC7erKiDATz3ENNR/jqTR9JwIwLRefgDhj2jCRwL1aca99pXUe0qyQC73/xIuZig=="
       },
       "Microsoft.Extensions.Azure": {
         "type": "Transitive",
-        "resolved": "1.14.0",
-        "contentHash": "g4d2TLfbAiZeXBcGkJdgIl2ZzqMcepMUbECENgg4XXqDU8uGAUwBxJb6x2DBpF6BY09vrHO0Ug3xZcH+cVbMrQ==",
+        "resolved": "1.14.1",
+        "contentHash": "und84BbwPu9u9GCOZ5WcqXctk+cqbY8vyXGKKU8a6VbZ5rFV19v7DA3EzDUkl0kb4TWtMEYqgMOPgMcsvBYq0Q==",
         "dependencies": {
-          "Azure.Core": "1.53.0"
+          "Azure.Core": "1.61.0"
         }
       },
       "Microsoft.Extensions.DependencyModel": {
@@ -243,18 +238,18 @@
       },
       "Microsoft.Identity.Client": {
         "type": "Transitive",
-        "resolved": "4.83.1",
-        "contentHash": "jOLIrZ3cynoqHLLO1cXplFFabrhrMEYs/EuKHvmCyrOm1axqiVFT6nCSnHxk7w5+d2BeQfCdM12Yf/0X7OeS1g==",
+        "resolved": "4.84.2",
+        "contentHash": "Va9FjmABSgj/lcUfHH0pBNQkmS7SNyepz2ERV7Yynp6QgEYpFdSqR6Vzy1WWipN8GS5pBHuXoZbqaDWuARCrHQ==",
         "dependencies": {
           "Microsoft.IdentityModel.Abstractions": "8.14.0"
         }
       },
       "Microsoft.Identity.Client.Extensions.Msal": {
         "type": "Transitive",
-        "resolved": "4.83.1",
-        "contentHash": "I3k4J4Hj4KbLEFanjeUzzDOVecukETaTgEkJ7h2pP/Yazs6SLp6TVUTo/Eo+ptPXMwvc+iX7rBFtMSUrA7R+Mg==",
+        "resolved": "4.84.2",
+        "contentHash": "+D98LaU3dOu/Nzs6kgbBJapMvH7iwYcAeC99XwSkpmEadsPv6rozecOl9P6m4A3RfpOuPt9e6J6TwwUUp3+M4w==",
         "dependencies": {
-          "Microsoft.Identity.Client": "4.83.1",
+          "Microsoft.Identity.Client": "4.84.2",
           "System.Security.Cryptography.ProtectedData": "4.5.0"
         }
       },
@@ -265,31 +260,29 @@
       },
       "Microsoft.JSInterop.WebAssembly": {
         "type": "Transitive",
-        "resolved": "10.0.10",
-        "contentHash": "FjPAGQWbCP85FWY2Wl9opHSsY+u9nZb8Ui6eTVHEMY/RJateOhW78jEtC4QOQ/6slkS1MKyIAF6ZHIrUR1fX/w=="
+        "resolved": "10.0.12",
+        "contentHash": "v8A9+3yOF6yD2nJzkDyINlkWxiB6ufCutO4Tgo3edn+CyI2WdstA8VzXy7sJrbtB+OaTfUZdaBET2JMMWuJyig=="
       },
       "Microsoft.Orleans.Analyzers": {
         "type": "Transitive",
-        "resolved": "10.2.2",
-        "contentHash": "IhN/7e8ClI9oJIGBTVBwUROdjeu8MODH00V/l/v0Y5BfyxMpUxfxBwHpLCN3G17OjxomwKZQBQQjq2PT9CpMVQ=="
+        "resolved": "10.3.1",
+        "contentHash": "uKqtFH9dFCV3UAE2O3bbhQ5fv5/WV79EzrMJqHOvsJjto1rDDKwy1rQPqgpZl3ZlyvGZeN9fFb3WCfSntf2pIw=="
       },
       "Microsoft.Orleans.CodeGenerator": {
         "type": "Transitive",
-        "resolved": "10.2.2",
-        "contentHash": "3vG6A4+aB83JJccJKuwnsewgaCiUz9kH25gAAP2PujRjRHmcm+myif/Pp/fOtbEoyicWUgl7ZlqO4Bc3K2hhgA=="
+        "resolved": "10.3.1",
+        "contentHash": "lyUvOwzNd6JIi17VCuuY1MsgtIU3G1Q18HNHZqTpq6NzjuAgGt9Nb0M4Pre+AOZOcjUfBEVo0J0Elesg03qeiA=="
       },
       "Microsoft.Orleans.Core": {
         "type": "Transitive",
-        "resolved": "10.2.2",
-        "contentHash": "2n0Vn/5go3qLeqF4NpJw4Zc8nvLBgIItVX3Z7p9wo6dA8gi5iaqGleHzRmO8imSrcopMSGNnvzIsBpj+qQhiLA==",
+        "resolved": "10.3.1",
+        "contentHash": "3kbHMGPYToFyFco5y587FYVXrVnf4rxVOS94/w2PCoZu2SbdNm3ffQ5wlOcXk/lgcSUYSNAd33lBmWoAWuahVg==",
         "dependencies": {
           "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
           "Microsoft.CodeAnalysis.Common": "5.0.0",
           "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
           "Microsoft.Extensions.DependencyModel": "10.0.5",
-          "Microsoft.Orleans.Analyzers": "10.2.2",
-          "Microsoft.Orleans.CodeGenerator": "10.2.2",
-          "Microsoft.Orleans.Core.Abstractions": "10.2.2",
+          "Microsoft.Orleans.Core.Abstractions": "10.3.1",
           "Newtonsoft.Json": "13.0.4",
           "System.IO.Hashing": "10.0.3",
           "System.Memory.Data": "10.0.3"
@@ -297,94 +290,94 @@
       },
       "Microsoft.Orleans.Core.Abstractions": {
         "type": "Transitive",
-        "resolved": "10.2.2",
-        "contentHash": "ykaLjcPnPFBTz33ETCD7uLsOhU0ZV3OoG7pV6AOTY6XXQmTaxvvZXp4jC+yb6h70nSmLWW2BnVe4W2xGqBgpVQ==",
+        "resolved": "10.3.1",
+        "contentHash": "yURhXrjnoDgz04Uv/C793QuD+yZvq2v+iHWZ3G7KlhoAsHtIA5f6MK2rKK14W9jFHe2TA4C7R7xWbHt+Hv7aqg==",
         "dependencies": {
           "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
           "Microsoft.CodeAnalysis.Common": "5.0.0",
           "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
           "Microsoft.Extensions.DependencyModel": "10.0.5",
-          "Microsoft.Orleans.Analyzers": "10.2.2",
-          "Microsoft.Orleans.CodeGenerator": "10.2.2",
-          "Microsoft.Orleans.Serialization": "10.2.2",
+          "Microsoft.Orleans.Serialization": "10.3.1",
           "System.IO.Hashing": "10.0.3"
-        }
-      },
-      "Microsoft.Orleans.Runtime": {
-        "type": "Transitive",
-        "resolved": "10.2.2",
-        "contentHash": "u1dYpZB8DvflJHoiYoe4OCcaqfFWVlsVhMNWhUZIPuXYIdj/fRuIdZ3ABXCiuN8VuZdFvdYWX8M9p9h2BVyeHg==",
-        "dependencies": {
-          "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
-          "Microsoft.CodeAnalysis.Common": "5.0.0",
-          "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
-          "Microsoft.Extensions.DependencyModel": "10.0.5",
-          "Microsoft.Orleans.Analyzers": "10.2.2",
-          "Microsoft.Orleans.CodeGenerator": "10.2.2",
-          "Microsoft.Orleans.Core": "10.2.2",
-          "Newtonsoft.Json": "13.0.4",
-          "System.IO.Hashing": "10.0.3",
-          "System.Memory.Data": "10.0.3"
         }
       },
       "Microsoft.Orleans.Serialization": {
         "type": "Transitive",
-        "resolved": "10.2.2",
-        "contentHash": "E9AtD26i2Kxf3fqZRtFXBnEvX9NUyQ97dSFS9aiPvKK8Fp7tCbQs/GIEXVzysmIcLet5yY3wywW7cwAQS04UCA==",
+        "resolved": "10.3.1",
+        "contentHash": "Aa1fX65dRByg69pFkPWPydQNdheYCgAcpcxvI0Z++heiLGCDmO87OuozaD/iWN5ZG+yNhUAjTIedemBooYP1iA==",
         "dependencies": {
           "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
           "Microsoft.CodeAnalysis.Common": "5.0.0",
           "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
           "Microsoft.Extensions.DependencyModel": "10.0.5",
-          "Microsoft.Orleans.Analyzers": "10.2.2",
-          "Microsoft.Orleans.CodeGenerator": "10.2.2",
-          "Microsoft.Orleans.Serialization.Abstractions": "10.2.2",
+          "Microsoft.Orleans.Serialization.Abstractions": "10.3.1",
           "System.IO.Hashing": "10.0.3"
         }
       },
       "ModelContextProtocol": {
         "type": "Transitive",
-        "resolved": "1.4.1",
-        "contentHash": "mP5hvBpoWe5EbWBqHWD09A4Dy6Pq+/vV2dumOV4uegCZcg+yqf8q8wrxtuZ3EQyXEJn9jzsnoiI/qyfJAihlZQ==",
+        "resolved": "2.2.0",
+        "contentHash": "4Pb9u02Nwsp0poueDsqNdyGRojFxOYpljB7zDBsq+aHL+Afou3OgxlBc3GWFVnsRMRJrUtWqDh3s6k2JgPzmrQ==",
         "dependencies": {
-          "ModelContextProtocol.Core": "1.4.1"
+          "ModelContextProtocol.Core": "[2.2.0]"
         }
       },
       "ModelContextProtocol.Core": {
         "type": "Transitive",
-        "resolved": "1.4.1",
-        "contentHash": "G/hOBZkJsvF3MSy0sOvXdxca5uRe2Sb4xk7xRuTWNZI45khVBjOLo6nSzGilctIICavNVxbxUF908fLYI9RxkQ==",
+        "resolved": "2.2.0",
+        "contentHash": "FeBfXU6T8k+jw4afg4sfxdEX2rL/e5oKOk9ROOGztu9k47+7Bz08sdaToYt2XvMY1opNbwxYQOFMj6wH9TInhA==",
         "dependencies": {
-          "Microsoft.Extensions.AI.Abstractions": "10.5.2"
+          "Microsoft.Extensions.AI.Abstractions": "10.8.3"
         }
       },
       "OpenTelemetry": {
         "type": "Transitive",
-        "resolved": "1.17.0",
-        "contentHash": "rMLOTftlMlTm7+MSrvXDHnJRjVkROFNKXHZrYjOsX+LankaFG7QSflx7qRRGjoqZoirohnxmJQ7GEb9occO4Gg==",
+        "resolved": "1.19.1",
+        "contentHash": "6ywhc3upf+dq8EsOohj7I7zS3l4yX9vfbtFkvyEC8xIUY4Z9iDIOVuke356eCAzIZaWtmwmmyl2UXYCp5n7I3Q==",
         "dependencies": {
-          "OpenTelemetry.Api.ProviderBuilderExtensions": "1.17.0"
+          "OpenTelemetry.Api.ProviderBuilderExtensions": "1.19.1"
         }
       },
       "OpenTelemetry.Api": {
         "type": "Transitive",
-        "resolved": "1.17.0",
-        "contentHash": "mSBxzomZgHIJu9CyVNqyDu/n2JHEtqVgfcCD1Br0cV5iLYogjZOMqhlVLt99PEp+0KGBNUR3GXgeOdN2GR3F9g=="
+        "resolved": "1.19.1",
+        "contentHash": "9JKIH+xrV0HNTFjQC8zrx9gZpDOMEljN5Htg/U0VE2IvO3N+7bKALCCsGy5tp09marX5dd8UkrgQFoLaulIBRw=="
       },
       "OpenTelemetry.Api.ProviderBuilderExtensions": {
         "type": "Transitive",
-        "resolved": "1.17.0",
-        "contentHash": "Xgc3Qf9B9TFMFpx6exTdGqMWuYIT2miNzkdMPutVvT9YuMFaEovXWke1Gb6z8NxYaQbbGF38vYLuSg1JCeui5Q==",
+        "resolved": "1.19.1",
+        "contentHash": "HtGe72B/IhzKqdU0a3fNE5osax/Cegwxd+p4u6lOFy20nsgmeaFuP2NRyFs1WvrOv/bpkII3IvvBkKoZXG8BLg==",
         "dependencies": {
-          "OpenTelemetry.Api": "1.17.0"
+          "OpenTelemetry.Api": "1.19.1"
+        }
+      },
+      "Polly": {
+        "type": "Transitive",
+        "resolved": "8.6.4",
+        "contentHash": "uuBsDoBw0oYrMe3uTWRjkT2sIkKh+ZZnnDrLb4Z+QANfeA4+7FJacx6E8CY5GAxXRoSgFrvUADEAQ7DPF6fGiw==",
+        "dependencies": {
+          "Polly.Core": "8.6.4"
+        }
+      },
+      "Polly.Core": {
+        "type": "Transitive",
+        "resolved": "8.6.5",
+        "contentHash": "t+sUVrIwvo7UmsgHGgOG9F0GDZSRIm47u2ylH17Gvcv1q5hNEwgD5GoBlFyc0kh/pebmPyrAgvGsR/65ZBaXlg=="
+      },
+      "Polly.Extensions": {
+        "type": "Transitive",
+        "resolved": "8.6.5",
+        "contentHash": "Ui+qN9zCgcy0/YEthA0wVm1mrDQe7+ud82Vz5wedbk22t17t6G+6nm/Q3GYxyCyTl5UFVoO2MbfmDv7a0K6Zww==",
+        "dependencies": {
+          "Polly.Core": "8.6.5"
         }
       },
       "System.ClientModel": {
         "type": "Transitive",
-        "resolved": "1.11.0",
-        "contentHash": "1Wl32zh7TbvN+HAO8NqDuaN0Ao2Qu/0j0NJSrXGDtpUQsTXQYJ3C6hd9/Ds2IrgP4agMQYFoXB35GZfC21ByHw==",
+        "resolved": "1.15.0",
+        "contentHash": "y6zQLInrpX+oGL1gXM04DrUSu1O1esWxt4rD/zrujTnzIFChn/noD1OiVVpTrU8ZvglwqO2Uw038svUR3SiAOg==",
         "dependencies": {
-          "System.Memory.Data": "10.0.3"
+          "System.Memory.Data": "10.0.9"
         }
       },
       "System.Composition": {
@@ -442,8 +435,8 @@
       },
       "System.Memory.Data": {
         "type": "Transitive",
-        "resolved": "10.0.3",
-        "contentHash": "MaGhRfGunmrj/nHjtsi9XkhlYJ/ERGWrbA+BiSKNtGnAjc9XlG5EhAvak6VRcX5LYzPF6pBO8nJ613dTgzabig=="
+        "resolved": "10.0.10",
+        "contentHash": "roR+5AeOpflUxJQlqSfsZs/Bvi1uw4KBuTkIgF1e8l0RdalG4AUn84+sjJLclEfOV85gAjc8+Pp540qjDE5UIg=="
       },
       "System.Security.Cryptography.ProtectedData": {
         "type": "Transitive",
@@ -453,14 +446,14 @@
       "Mississippi.Aqueduct.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.2.2, )"
+          "Microsoft.Orleans.Sdk": "[10.3.1, )"
         }
       },
       "Mississippi.Aqueduct.Gateway": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.2.2, )",
-          "Microsoft.Orleans.Streaming": "[10.2.2, )",
+          "Microsoft.Orleans.Sdk": "[10.3.1, )",
+          "Microsoft.Orleans.Streaming": "[10.3.1, )",
           "Mississippi.Aqueduct.Abstractions": "[1.0.0, )"
         }
       },
@@ -468,17 +461,18 @@
         "type": "Project",
         "dependencies": {
           "CloudNative.CloudEvents": "[2.9.0, )",
-          "Microsoft.Orleans.Sdk": "[10.2.2, )",
-          "Microsoft.Orleans.Streaming": "[10.2.2, )"
+          "Microsoft.Orleans.Sdk": "[10.3.1, )",
+          "Microsoft.Orleans.Streaming": "[10.3.1, )"
         }
       },
       "Mississippi.Brooks.Runtime": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.2.2, )",
-          "Microsoft.Orleans.Streaming": "[10.2.2, )",
+          "Microsoft.Orleans.Sdk": "[10.3.1, )",
+          "Microsoft.Orleans.Streaming": "[10.3.1, )",
           "Mississippi.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.Brooks.Runtime.Storage.Abstractions": "[1.0.0, )"
+          "Mississippi.Brooks.Runtime.Storage.Abstractions": "[1.0.0, )",
+          "Mississippi.Hosting.Runtime.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Brooks.Runtime.Storage.Abstractions": {
@@ -499,7 +493,7 @@
       "Mississippi.Common.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.2.2, )"
+          "Microsoft.Orleans.Sdk": "[10.3.1, )"
         }
       },
       "Mississippi.DomainModeling.Abstractions": {
@@ -520,8 +514,8 @@
       "Mississippi.DomainModeling.Runtime": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Reminders": "[10.2.2, )",
-          "Microsoft.Orleans.Sdk": "[10.2.2, )",
+          "Microsoft.Orleans.Reminders": "[10.3.1, )",
+          "Microsoft.Orleans.Sdk": "[10.3.1, )",
           "Mississippi.Brooks.Runtime": "[1.0.0, )",
           "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )",
           "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
@@ -529,12 +523,24 @@
           "Mississippi.Tributary.Runtime": "[1.0.0, )"
         }
       },
+      "Mississippi.Hosting.Abstractions": {
+        "type": "Project"
+      },
       "Mississippi.Hosting.Client": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.10, )",
+          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.12, )",
+          "Mississippi.Hosting.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
-          "Mississippi.Reservoir.Client": "[1.0.0, )"
+          "Mississippi.Reservoir.Client": "[1.0.0, )",
+          "Mississippi.Reservoir.Core": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Hosting.Runtime.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Runtime": "[10.3.1, )",
+          "Mississippi.Hosting.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Inlet.Abstractions": {
@@ -543,8 +549,8 @@
       "Mississippi.Inlet.Client": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.10, )",
-          "Microsoft.AspNetCore.SignalR.Client": "[10.0.10, )",
+          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.12, )",
+          "Microsoft.AspNetCore.SignalR.Client": "[10.0.12, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Client.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Gateway.Abstractions": "[1.0.0, )",
@@ -576,8 +582,8 @@
       "Mississippi.Inlet.Runtime": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.2.2, )",
-          "Microsoft.Orleans.Streaming": "[10.2.2, )",
+          "Microsoft.Orleans.Sdk": "[10.3.1, )",
+          "Microsoft.Orleans.Streaming": "[10.3.1, )",
           "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
           "Mississippi.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.DomainModeling.Runtime": "[1.0.0, )",
@@ -590,9 +596,12 @@
       "Mississippi.Inlet.Runtime.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.2.2, )",
+          "Microsoft.Orleans.Sdk": "[10.3.1, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
+      },
+      "Mississippi.Refraction.Client": {
+        "type": "Project"
       },
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
@@ -600,7 +609,7 @@
       "Mississippi.Reservoir.Client": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.10, )",
+          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.12, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Core": "[1.0.0, )"
         }
@@ -635,9 +644,9 @@
       "Mississippi.Spring.Client": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.10, )",
-          "Microsoft.AspNetCore.SignalR.Client": "[10.0.10, )",
-          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.110, )",
+          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.12, )",
+          "Microsoft.AspNetCore.SignalR.Client": "[10.0.12, )",
+          "Mississippi.Refraction.Client": "[1.0.0, )",
           "Mississippi.Sdk.Client": "[1.0.0, )",
           "Mississippi.Spring.Domain": "[1.0.0, )"
         }
@@ -645,7 +654,7 @@
       "Mississippi.Spring.Domain": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.2.2, )",
+          "Microsoft.Orleans.Sdk": "[10.3.1, )",
           "Mississippi.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.Common.Abstractions": "[1.0.0, )",
           "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
@@ -657,14 +666,14 @@
       "Mississippi.Tributary.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.2.2, )",
+          "Microsoft.Orleans.Sdk": "[10.3.1, )",
           "Mississippi.Brooks.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Tributary.Runtime": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.2.2, )",
+          "Microsoft.Orleans.Sdk": "[10.3.1, )",
           "Mississippi.Brooks.Runtime": "[1.0.0, )",
           "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Abstractions": "[1.0.0, )",
@@ -685,26 +694,26 @@
       },
       "Microsoft.AspNetCore.Components.WebAssembly": {
         "type": "CentralTransitive",
-        "requested": "[10.0.10, )",
-        "resolved": "10.0.10",
-        "contentHash": "0Zib7U6HmGw4Noj/+yJz1YuEJwo3XOV0iLezXDLFsrHTaC8L+KUOR/1+1tX7AAeipDG6jP3gPZOwpirk6G3LYQ==",
+        "requested": "[10.0.12, )",
+        "resolved": "10.0.12",
+        "contentHash": "/IEbzyCnW0t+1ZQcxcV3Aj65gus2ILsUaA8U0rnkSGRQbKlJxr/5YOifOLq0eLrM0m3kXEV/A3iEwrqT3tgwiw==",
         "dependencies": {
-          "Microsoft.JSInterop.WebAssembly": "10.0.10"
+          "Microsoft.JSInterop.WebAssembly": "10.0.12"
         }
       },
       "Microsoft.AspNetCore.SignalR.Client": {
         "type": "CentralTransitive",
-        "requested": "[10.0.10, )",
-        "resolved": "10.0.10",
-        "contentHash": "g4MtTk+83S4phUGVvilHgKWa0gfX9qhnRQGIaeq7Kgz3MIAHkPt1h9XnlK3bRTPcsDVFuKhb7rKAtFvxl7NtDQ==",
+        "requested": "[10.0.12, )",
+        "resolved": "10.0.12",
+        "contentHash": "p5EFZrp20HlS1MbYkreyhHy4nXeq/LrXVLWbQLBuAz2eFCdSnKfoNVlxZYbFoEjzJxa68CYdEFe9ObCaYTUP8Q==",
         "dependencies": {
-          "Microsoft.AspNetCore.Http.Connections.Client": "10.0.10",
-          "Microsoft.AspNetCore.SignalR.Client.Core": "10.0.10"
+          "Microsoft.AspNetCore.Http.Connections.Client": "10.0.12",
+          "Microsoft.AspNetCore.SignalR.Client.Core": "10.0.12"
         }
       },
       "Microsoft.CodeAnalysis.Common": {
         "type": "CentralTransitive",
-        "requested": "[5.0.0, )",
+        "requested": "[5.9.0, )",
         "resolved": "5.0.0",
         "contentHash": "ZXRAdvH6GiDeHRyd3q/km8Z44RoM6FBWHd+gen/la81mVnAdHTEsEkO5J0TCNXBymAcx5UYKt5TvgKBhaLJEow==",
         "dependencies": {
@@ -713,7 +722,7 @@
       },
       "Microsoft.CodeAnalysis.Workspaces.Common": {
         "type": "CentralTransitive",
-        "requested": "[5.0.0, )",
+        "requested": "[5.9.0, )",
         "resolved": "5.0.0",
         "contentHash": "ZbUmIvT6lqTNKiv06Jl5wf0MTMi1vQ1oH7ou4CLcs2C/no/L7EhP3T8y3XXvn9VbqMcJaJnEsNA1jwYUMgc5jg==",
         "dependencies": {
@@ -725,37 +734,55 @@
       },
       "Microsoft.Orleans.Reminders": {
         "type": "CentralTransitive",
-        "requested": "[10.2.2, )",
-        "resolved": "10.2.2",
-        "contentHash": "4PzjctdmBTmIxxYLLpdEAqOIhEp/IJU1GgUoeg5380aZPBDnrx/L6TIFEXAlBUBA4YZ/JFmLAg+t3gJgKaQsCA==",
+        "requested": "[10.3.1, )",
+        "resolved": "10.3.1",
+        "contentHash": "jOXQaO51PklR9Rz/sBmnPtd8qJRXXA7n8L8UbmWingXe2RHm2BKRklml6num+T2/XcOtwkdTzC1yINwW//B0wQ==",
         "dependencies": {
           "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
           "Microsoft.CodeAnalysis.Common": "5.0.0",
           "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
           "Microsoft.Extensions.DependencyModel": "10.0.5",
-          "Microsoft.Orleans.Analyzers": "10.2.2",
-          "Microsoft.Orleans.CodeGenerator": "10.2.2",
-          "Microsoft.Orleans.Core.Abstractions": "10.2.2",
-          "Microsoft.Orleans.Runtime": "10.2.2",
-          "Microsoft.Orleans.Sdk": "10.2.2",
+          "Microsoft.Orleans.Core.Abstractions": "10.3.1",
+          "Microsoft.Orleans.Runtime": "10.3.1",
+          "Microsoft.Orleans.Sdk": "10.3.1",
           "Newtonsoft.Json": "13.0.4",
+          "Polly": "8.6.4",
+          "Polly.Extensions": "8.6.5",
+          "System.IO.Hashing": "10.0.3",
+          "System.Memory.Data": "10.0.3"
+        }
+      },
+      "Microsoft.Orleans.Runtime": {
+        "type": "CentralTransitive",
+        "requested": "[10.3.1, )",
+        "resolved": "10.3.1",
+        "contentHash": "kmQEiKJ/y1BkE4LZzZr9yRqHjwxqIJ7W0UmNe9yBe+A8VkJ1yyvDxYwopb50CRBTSeBzIaa7oJYbvJAt5J2oaA==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
+          "Microsoft.CodeAnalysis.Common": "5.0.0",
+          "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
+          "Microsoft.Extensions.DependencyModel": "10.0.5",
+          "Microsoft.Orleans.Core": "10.3.1",
+          "Newtonsoft.Json": "13.0.4",
+          "Polly": "8.6.4",
+          "Polly.Extensions": "8.6.5",
           "System.IO.Hashing": "10.0.3",
           "System.Memory.Data": "10.0.3"
         }
       },
       "Microsoft.Orleans.Sdk": {
         "type": "CentralTransitive",
-        "requested": "[10.2.2, )",
-        "resolved": "10.2.2",
-        "contentHash": "sadctdbGXiraM813SqzaKU3bbz9La0M9ONdON+LUrSnLDyZ/WWa7vz0+lGCXzCepDEqFZgCWwht32Chjb8Y9qQ==",
+        "requested": "[10.3.1, )",
+        "resolved": "10.3.1",
+        "contentHash": "kmHUHEmjiK3wGhLUSOFAnmRT93rTuifwtZ3tE+lFg7nMY4iBnjJ51r4G9zNTLe9rPZK9M9n6a8rUwZlP9UrWEQ==",
         "dependencies": {
           "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
           "Microsoft.CodeAnalysis.Common": "5.0.0",
           "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
           "Microsoft.Extensions.DependencyModel": "10.0.5",
-          "Microsoft.Orleans.Analyzers": "10.2.2",
-          "Microsoft.Orleans.CodeGenerator": "10.2.2",
-          "Microsoft.Orleans.Core": "10.2.2",
+          "Microsoft.Orleans.Analyzers": "10.3.1",
+          "Microsoft.Orleans.CodeGenerator": "10.3.1",
+          "Microsoft.Orleans.Core": "10.3.1",
           "Newtonsoft.Json": "13.0.4",
           "System.IO.Hashing": "10.0.3",
           "System.Memory.Data": "10.0.3"
@@ -763,24 +790,24 @@
       },
       "Microsoft.Orleans.Serialization.Abstractions": {
         "type": "CentralTransitive",
-        "requested": "[10.2.2, )",
-        "resolved": "10.2.2",
-        "contentHash": "ON8/madVyLpJBKtncxTAgTS9HnStBv37D4ZwsvFEqxrFPK8UWAl6/iRiVk/4Bmin1GYh8GDtskmuMytG8y+l0w=="
+        "requested": "[10.3.1, )",
+        "resolved": "10.3.1",
+        "contentHash": "2AgjNAVYdyIN14lx4WuTErYuvM7LAdok6iIoEE/4mR0hX37pLHSzzfVtfHTV0sZKbP94cuRfxu8mBEvSMZS58Q=="
       },
       "Microsoft.Orleans.Streaming": {
         "type": "CentralTransitive",
-        "requested": "[10.2.2, )",
-        "resolved": "10.2.2",
-        "contentHash": "DTH+P/vcij/VKqXu+Cjt1ME0ULoyS/4mNq5/dsSDDx/0XrWMo3QTQK2ahAGBcs/4h+cIkE0GveLoA37FasQi5w==",
+        "requested": "[10.3.1, )",
+        "resolved": "10.3.1",
+        "contentHash": "Aj0O92zJDVnRfyDy1dPjaZFMWVqbziWgvlqrrlU/bguq3Gv8OfdrpZOVj2ILC0lzoUEZFp5bJthnBjAZMzqNgw==",
         "dependencies": {
           "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
           "Microsoft.CodeAnalysis.Common": "5.0.0",
           "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
           "Microsoft.Extensions.DependencyModel": "10.0.5",
-          "Microsoft.Orleans.Analyzers": "10.2.2",
-          "Microsoft.Orleans.CodeGenerator": "10.2.2",
-          "Microsoft.Orleans.Runtime": "10.2.2",
+          "Microsoft.Orleans.Runtime": "10.3.1",
           "Newtonsoft.Json": "13.0.4",
+          "Polly": "8.6.4",
+          "Polly.Extensions": "8.6.5",
           "System.IO.Hashing": "10.0.3",
           "System.Memory.Data": "10.0.3"
         }

@@ -57,10 +57,7 @@ public sealed class SnapshotCacheGrainTests
             snapshotStateConverterMock.Setup(c => c.ToEnvelope(
                     It.IsAny<SnapshotCacheGrainTestState>(),
                     It.IsAny<string>()))
-                .Returns((
-                    SnapshotCacheGrainTestState _,
-                    string hash
-                ) => new()
+                .Returns((SnapshotCacheGrainTestState _, string hash) => new()
                 {
                     Data = [1, 2, 3, 4],
                     DataContentType = "application/json",
@@ -69,6 +66,12 @@ public sealed class SnapshotCacheGrainTests
         }
 
         snapshotGrainFactoryMock ??= new();
+        Mock<ISnapshotCacheGrain<SnapshotCacheGrainTestState>> baseSnapshotGrainMock = new();
+        baseSnapshotGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>()))
+            .Returns(new ValueTask<SnapshotCacheGrainTestState>(new SnapshotCacheGrainTestState()));
+        snapshotGrainFactoryMock
+            .Setup(f => f.GetSnapshotCacheGrain<SnapshotCacheGrainTestState>(It.IsAny<SnapshotKey>()))
+            .Returns(baseSnapshotGrainMock.Object);
         retentionOptions ??= Options.Create(new SnapshotRetentionOptions());
         brookEventConverterMock ??= new();
         logger ??= NullLogger<SnapshotCacheGrain<SnapshotCacheGrainTestState>>.Instance;
@@ -385,8 +388,8 @@ public sealed class SnapshotCacheGrainTests
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act - call GetStateAsync multiple times
-        SnapshotCacheGrainTestState result1 = await grain.GetStateAsync();
-        SnapshotCacheGrainTestState result2 = await grain.GetStateAsync();
+        SnapshotCacheGrainTestState result1 = await grain.GetStateAsync(TestContext.Current.CancellationToken);
+        SnapshotCacheGrainTestState result2 = await grain.GetStateAsync(TestContext.Current.CancellationToken);
 
         // Assert - should return same cached state, only one deserialize call
         Assert.Same(result1, result2);
@@ -419,18 +422,21 @@ public sealed class SnapshotCacheGrainTests
         rootReducerMock.Setup(r => r.GetReducerHash()).Returns(reducerHash);
         Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
         converterMock.Setup(c => c.FromEnvelope(envelope)).Returns(expectedState);
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         SnapshotCacheGrain<SnapshotCacheGrainTestState> grain = CreateGrain(
             snapshotStorageReaderMock: storageReaderMock,
             rootReducerMock: rootReducerMock,
-            snapshotStateConverterMock: converterMock);
+            snapshotStateConverterMock: converterMock,
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
 
         // Act
         await grain.OnActivateAsync(CancellationToken.None);
-        SnapshotCacheGrainTestState result = await grain.GetStateAsync();
+        SnapshotCacheGrainTestState result = await grain.GetStateAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedState.Value, result.Value);
         converterMock.Verify(c => c.FromEnvelope(envelope), Times.Once);
+        snapshotGrainFactoryMock.Verify(f => f.GetSnapshotPersisterGrain(It.IsAny<SnapshotKey>()), Times.Never);
     }
 
     /// <summary>
@@ -474,7 +480,7 @@ public sealed class SnapshotCacheGrainTests
 
         // Act
         await grain.OnActivateAsync(CancellationToken.None);
-        SnapshotCacheGrainTestState result = await grain.GetStateAsync();
+        SnapshotCacheGrainTestState result = await grain.GetStateAsync(TestContext.Current.CancellationToken);
 
         // Assert - state should be the initial state created by the factory
         Assert.NotNull(result);
@@ -511,10 +517,7 @@ public sealed class SnapshotCacheGrainTests
             .Returns(readerGrainMock.Object);
         Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
         converterMock.Setup(c => c.ToEnvelope(It.IsAny<SnapshotCacheGrainTestState>(), It.IsAny<string>()))
-            .Returns((
-                SnapshotCacheGrainTestState _,
-                string hash
-            ) => new()
+            .Returns((SnapshotCacheGrainTestState _, string hash) => new()
             {
                 Data = [1, 2, 3, 4],
                 DataContentType = "application/json",
@@ -578,10 +581,7 @@ public sealed class SnapshotCacheGrainTests
             .Returns(readerGrainMock.Object);
         Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
         converterMock.Setup(c => c.ToEnvelope(It.IsAny<SnapshotCacheGrainTestState>(), It.IsAny<string>()))
-            .Returns((
-                SnapshotCacheGrainTestState _,
-                string hash
-            ) => new()
+            .Returns((SnapshotCacheGrainTestState _, string hash) => new()
             {
                 Data = [1, 2, 3, 4],
                 DataContentType = "application/json",
@@ -654,7 +654,12 @@ public sealed class SnapshotCacheGrainTests
             brookGrainFactoryMock: brookGrainFactoryMock,
             rootReducerMock: rootReducerMock,
             snapshotStateConverterMock: converterMock,
-            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock,
+            retentionOptions: Options.Create(
+                new SnapshotRetentionOptions
+                {
+                    DefaultRetainModulus = 5,
+                }));
 
         // Act
         await grain.OnActivateAsync(CancellationToken.None);
@@ -663,5 +668,148 @@ public sealed class SnapshotCacheGrainTests
         persisterGrainMock.Verify(
             p => p.PersistAsync(It.IsAny<SnapshotEnvelope>(), It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    /// <summary>
+    ///     Verifies that save-all persists an intermediate reconstructed version.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    public async Task OnActivateAsyncSaveAllPersistsIntermediateVersion()
+    {
+        const string reducerHash = "test-hash";
+        Mock<ISnapshotStorageReader> storageReaderMock = new();
+        storageReaderMock.Setup(r => r.ReadAsync(It.IsAny<SnapshotKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((SnapshotEnvelope?)null);
+        Mock<IRootReducer<SnapshotCacheGrainTestState>> rootReducerMock = new();
+        rootReducerMock.Setup(r => r.GetReducerHash()).Returns(reducerHash);
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<IBrookAsyncReaderGrain> readerGrainMock = new();
+        readerGrainMock.Setup(r => r.ReadEventsAsync(
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(GetEmptyEventsAsync);
+        brookGrainFactoryMock.Setup(f => f.GetBrookAsyncReaderGrain(It.IsAny<BrookKey>()))
+            .Returns(readerGrainMock.Object);
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        Mock<ISnapshotPersisterGrain> persisterGrainMock = new();
+        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotPersisterGrain(It.IsAny<SnapshotKey>()))
+            .Returns(persisterGrainMock.Object);
+        SnapshotCacheGrain<SnapshotCacheGrainTestState> grain = CreateGrain(
+            snapshotStorageReaderMock: storageReaderMock,
+            brookGrainFactoryMock: brookGrainFactoryMock,
+            rootReducerMock: rootReducerMock,
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock,
+            retentionOptions: Options.Create(
+                new SnapshotRetentionOptions
+                {
+                    DefaultRetainModulus = 50,
+                    ShouldPersistAllSnapshots = true,
+                }));
+        await grain.OnActivateAsync(CancellationToken.None);
+        snapshotGrainFactoryMock.Verify(f => f.GetSnapshotPersisterGrain(It.IsAny<SnapshotKey>()), Times.Once);
+        persisterGrainMock.Verify(
+            p => p.PersistAsync(It.IsAny<SnapshotEnvelope>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    ///     Verifies that an intermediate reconstructed version skips serialization and persister resolution.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    public async Task OnActivateAsyncSkipsPersistenceBeforeRetentionBoundary()
+    {
+        const string reducerHash = "test-hash";
+        Mock<ISnapshotStorageReader> storageReaderMock = new();
+        storageReaderMock.Setup(r => r.ReadAsync(It.IsAny<SnapshotKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((SnapshotEnvelope?)null);
+        Mock<IRootReducer<SnapshotCacheGrainTestState>> rootReducerMock = new();
+        rootReducerMock.Setup(r => r.GetReducerHash()).Returns(reducerHash);
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<IBrookAsyncReaderGrain> readerGrainMock = new();
+        readerGrainMock.Setup(r => r.ReadEventsAsync(
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(GetEmptyEventsAsync);
+        brookGrainFactoryMock.Setup(f => f.GetBrookAsyncReaderGrain(It.IsAny<BrookKey>()))
+            .Returns(readerGrainMock.Object);
+        Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        SnapshotCacheGrain<SnapshotCacheGrainTestState> grain = CreateGrain(
+            snapshotStorageReaderMock: storageReaderMock,
+            brookGrainFactoryMock: brookGrainFactoryMock,
+            rootReducerMock: rootReducerMock,
+            snapshotStateConverterMock: converterMock,
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+        await grain.OnActivateAsync(CancellationToken.None);
+        converterMock.Verify(
+            c => c.ToEnvelope(It.IsAny<SnapshotCacheGrainTestState>(), It.IsAny<string>()),
+            Times.Never);
+        snapshotGrainFactoryMock.Verify(f => f.GetSnapshotPersisterGrain(It.IsAny<SnapshotKey>()), Times.Never);
+    }
+
+    /// <summary>
+    ///     Verifies that checkpoint position zero is used as a real base for a later target.
+    /// </summary>
+    /// <returns>Asynchronous test task.</returns>
+    [Fact]
+    public async Task OnActivateAsyncUsesCheckpointZeroAsBaseForLaterVersion()
+    {
+        Mock<ISnapshotStorageReader> storageReaderMock = new();
+        storageReaderMock.Setup(r => r.ReadAsync(It.IsAny<SnapshotKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((SnapshotEnvelope?)null);
+        Mock<IRootReducer<SnapshotCacheGrainTestState>> rootReducerMock = new();
+        rootReducerMock.Setup(r => r.GetReducerHash()).Returns("test-hash");
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<IBrookAsyncReaderGrain> readerGrainMock = new();
+        BrookPosition? observedReadFrom = null;
+        BrookPosition? observedReadTo = null;
+        readerGrainMock.Setup(r => r.ReadEventsAsync(
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<BrookPosition?, BrookPosition?, CancellationToken>((from, to, _) =>
+            {
+                observedReadFrom = from;
+                observedReadTo = to;
+            })
+            .Returns(GetEmptyEventsAsync);
+        brookGrainFactoryMock.Setup(f => f.GetBrookAsyncReaderGrain(It.IsAny<BrookKey>()))
+            .Returns(readerGrainMock.Object);
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        Mock<ISnapshotPersisterGrain> persisterGrainMock = new();
+        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotPersisterGrain(It.IsAny<SnapshotKey>()))
+            .Returns(persisterGrainMock.Object);
+        SnapshotCacheGrain<SnapshotCacheGrainTestState> grain = CreateGrain(
+            snapshotStorageReaderMock: storageReaderMock,
+            brookGrainFactoryMock: brookGrainFactoryMock,
+            rootReducerMock: rootReducerMock,
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock,
+            retentionOptions: Options.Create(
+                new SnapshotRetentionOptions
+                {
+                    DefaultRetainModulus = 5,
+                }));
+        Mock<ISnapshotCacheGrain<SnapshotCacheGrainTestState>> baseSnapshotGrainMock = new();
+        baseSnapshotGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>()))
+            .Returns(
+                new ValueTask<SnapshotCacheGrainTestState>(
+                    new SnapshotCacheGrainTestState
+                    {
+                        Value = 10,
+                    }));
+        snapshotGrainFactoryMock
+            .Setup(f => f.GetSnapshotCacheGrain<SnapshotCacheGrainTestState>(
+                It.Is<SnapshotKey>(key => key.Version == 0)))
+            .Returns(baseSnapshotGrainMock.Object);
+        await grain.OnActivateAsync(CancellationToken.None);
+        snapshotGrainFactoryMock.Verify(
+            f => f.GetSnapshotCacheGrain<SnapshotCacheGrainTestState>(It.Is<SnapshotKey>(key => key.Version == 0)),
+            Times.Once);
+        Assert.Equal(1, observedReadFrom?.Value);
+        Assert.Equal(5, observedReadTo?.Value);
     }
 }

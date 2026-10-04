@@ -56,16 +56,11 @@ public sealed class SagaClientDtoGenerator : IIncrementalGenerator
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
         IncrementalValueProvider<List<SagaClientGeneratorHelper.SagaClientInfo>> sagasProvider =
-            compilationAndOptions.Select((
-                source,
-                _
-            ) => SagaClientGeneratorHelper.GetSagasFromCompilation(source.Compilation, source.Options));
+            compilationAndOptions.Select((source, _) =>
+                SagaClientGeneratorHelper.GetSagasFromCompilation(source.Compilation, source.Options));
         context.RegisterSourceOutput(
             sagasProvider,
-            static (
-                spc,
-                sagas
-            ) =>
+            static (spc, sagas) =>
             {
                 foreach (SagaClientGeneratorHelper.SagaClientInfo saga in sagas)
                 {

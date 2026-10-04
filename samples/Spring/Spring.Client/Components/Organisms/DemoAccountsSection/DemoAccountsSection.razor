@@ -1,24 +1,23 @@
 @namespace MississippiSamples.Spring.Client.Components.Organisms
 
-<section>
-    <h2>Demo Accounts</h2>
+<Pane Title="Demo Accounts" aria-label="Demo account setup">
     <p>Initialize two demo accounts to quickly exercise transfers and projections.</p>
     <button type="button" @onclick="OnInitialize" disabled="@IsExecutingOrLoading">
         Initialize demo accounts
     </button>
     @if (IsInitialized)
     {
-        <div>
+        <dl>
             <div>
-                <span>Account A:</span>
-                <span>@(AccountAName ?? "Account A")</span>
-                <span>@AccountAId</span>
+                <dt>Account A</dt>
+                <dd>@(AccountAName ?? "Account A")</dd>
+                <dd id="demo-account-a-id" aria-label="Account A ID">@AccountAId</dd>
             </div>
             <div>
-                <span>Account B:</span>
-                <span>@(AccountBName ?? "Account B")</span>
-                <span>@AccountBId</span>
+                <dt>Account B</dt>
+                <dd>@(AccountBName ?? "Account B")</dd>
+                <dd id="demo-account-b-id" aria-label="Account B ID">@AccountBId</dd>
             </div>
-        </div>
+        </dl>
     }
-</section>
+</Pane>

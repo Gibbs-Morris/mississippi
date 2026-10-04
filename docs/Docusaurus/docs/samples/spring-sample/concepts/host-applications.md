@@ -33,47 +33,101 @@ The silo runs Orleans grains that execute commands, apply events, run effects, a
 ```csharp
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-// One call registers all domain aggregates, sagas, effects, and `EventReducer`s
-builder.Services.AddSpringDomainSilo();
+// Generated domain registrations
+builder.Services.AddAuthProofAggregate();
+builder.Services.AddBankAccountAggregate();
+builder.Services.AddTransactionInvestigationQueueAggregate();
+builder.Services.AddAuthProofProjection();
+builder.Services.AddBankAccountBalanceProjection();
+builder.Services.AddBankAccountLedgerProjection();
+builder.Services.AddFlaggedTransactionsProjection();
+builder.Services.AddMoneyTransferStatusProjection();
+builder.Services.AddAuthProofSaga();
+builder.Services.AddMoneyTransferSaga();
 
 // Infrastructure: notification service stub
 builder.Services.AddSingleton<INotificationService, StubNotificationService>();
 
-// Infrastructure: telemetry, storage clients, event sourcing providers
+// Infrastructure: telemetry and host-owned storage clients
 builder.Services.AddHttpClient();
-builder.Services.AddOpenTelemetry()
-    .WithTracing(/* ... */)
-    .WithMetrics(/* ... */);
+// Existing telemetry registrations are omitted from this concept excerpt.
 
 builder.AddKeyedAzureTableServiceClient("clustering");
 builder.AddKeyedAzureBlobServiceClient("grainstate");
-builder.AddAzureCosmosClient("cosmos", /* ... */);
+builder.AddAzureCosmosClient(
+    "cosmos",
+    configureClientOptions: options =>
+    {
+        options.ConnectionMode = ConnectionMode.Gateway;
+        options.LimitToEndpoint = true;
+    });
+
+// The host owns the clients used by Brooks and Snapshot storage and forwards them under keyed identities.
+builder.AddKeyedAzureBlobServiceClient("blobs");
+builder.Services.AddKeyedSingleton(
+    BrookCosmosDefaults.BlobLockingServiceKey,
+    (sp, _) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
+const string sharedCosmosKey = "spring-cosmos";
+builder.Services.AddKeyedSingleton(
+    sharedCosmosKey,
+    (sp, _) => sp.GetRequiredService<CosmosClient>());
 
 // Mississippi infrastructure
 builder.Services.AddInletSilo();
 builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 builder.Services.AddJsonSerialization();
-builder.Services.AddEventSourcingByService();
 builder.Services.AddSnapshotCaching();
-builder.Services.AddCosmosBrookStorageProvider(/* ... */);
-builder.Services.AddCosmosSnapshotStorageProvider(/* ... */);
 
 // Orleans configuration
 builder.UseOrleans(siloBuilder =>
 {
-    siloBuilder.AddActivityPropagation();
-    siloBuilder.UseAqueduct(options =>
-        options.StreamProviderName = "StreamProvider");
-    siloBuilder.AddEventSourcing(options =>
-        options.OrleansStreamProviderName = "StreamProvider");
+    siloBuilder.UseMississippi(runtime =>
+    {
+        runtime.AddCosmosBrookStorageProvider(cosmos =>
+        {
+            cosmos.CosmosClientServiceKey = sharedCosmosKey;
+            cosmos.DatabaseId = "spring-db";
+            cosmos.ContainerId = "events";
+            cosmos.QueryBatchSize = 50;
+            cosmos.MaxEventsPerBatch = 50;
+        });
+        // Configure Cosmos storage for snapshots
+        runtime.AddCosmosSnapshotStorageProvider(snapshot =>
+        {
+            snapshot.CosmosClientServiceKey = sharedCosmosKey;
+            snapshot.DatabaseId = "spring-db";
+            snapshot.ContainerId = "snapshots";
+            snapshot.QueryBatchSize = 100;
+        });
+        runtime.AddAqueduct(aqueduct =>
+            aqueduct.StreamProviderName = "StreamProvider");
+        runtime.AddEventSourcing(options =>
+            options.OrleansStreamProviderName = "StreamProvider");
+        runtime.ConfigureSilo(configuredSilo => configuredSilo.AddActivityPropagation());
+        runtime.ApplyToSilo(siloBuilder);
+    });
 });
 
 WebApplication app = builder.Build();
-app.MapGet("/health", /* ... */);
+// The health endpoint mapping is omitted from this concept excerpt.
 await app.RunAsync();
 ```
 
-The single line `builder.Services.AddSpringDomainSilo()` registers every aggregate, saga, `CommandHandler`, `EventReducer`, effect, and projection defined in `Spring.Domain`. This method is **source-generated** by Mississippi - you do not write it manually.
+Spring uses generated aggregate, projection, and saga registration methods from its domain definitions. The host
+registers the Aspire-created Cosmos and Blob clients before the Orleans callback, then forwards them under the keyed
+identities expected by Brooks and Snapshot storage. `runtime.AddCosmosBrookStorageProvider(...)` and
+`runtime.AddCosmosSnapshotStorageProvider(...)` capture their settings and stage their graphs inside the same runtime
+composition. Both providers use the host-forwarded `sharedCosmosKey` alias, while Brooks writes to the `events` Cosmos
+container and Snapshot storage writes to the `snapshots` container. Snapshot storage also keeps its provider-owned keyed
+container alias, so the shared client does not merge the two persisted resource identities.
+
+The runtime composition callback registers Brooks, Snapshot storage, Aqueduct, and event-sourcing settings together, and
+stages native Orleans configuration before terminal attachment. Aqueduct selects the `StreamProvider` that
+Spring.AppHost supplies; it does not provision a second provider. `runtime.ApplyToSilo(siloBuilder)` is explicit in this
+sample, although the runtime terminal can apply queued native callbacks automatically when the hook is omitted. See
+[Runtime Composition](../../../reference/runtime-composition.md), [Brooks Cosmos Provider](../../../brooks/storage-providers/cosmos.md),
+[Snapshot Cosmos Provider](../../../tributary/storage-providers/cosmos.md), and [Aqueduct Reference](../../../aqueduct/reference/reference.md)
+for the attachment, storage ownership, and validation contracts.
 
 ([Spring.Runtime/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Runtime/Program.cs))
 
@@ -93,7 +147,9 @@ These files are infrastructure/support concerns rather than domain business logi
 
 ## Spring.Gateway: The API Host
 
-The gateway host serves ASP.NET controllers, the Inlet SignalR hub, and the static files for the Blazor client. It also connects to the Orleans silo as a client.
+The gateway host serves ASP.NET controllers, the Inlet SignalR hub, and the static files for the Blazor client. It also
+connects to the Orleans silo as a client. Its `builder.Services.AddAqueduct<InletHub>(...)` call is the gateway-side
+hub integration; the runtime host uses the separate nested `runtime.AddAqueduct(...)` extension shown above.
 
 ```csharp
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -216,7 +272,7 @@ builder.Services.AddScoped(sp =>
     };
 });
 
-builder.AddMississippiClient(client =>
+builder.UseMississippi(client =>
 {
     client.AddMississippiSamplesSpringDomainClient();
     client.Reservoir(reservoir =>
@@ -244,7 +300,7 @@ builder.AddMississippiClient(client =>
 await builder.Build().RunAsync();
 ```
 
-The client now starts with `builder.AddMississippiClient(...)`, uses the generated `AddMississippiSamplesSpringDomainClient()` domain compositor on `MississippiClientBuilder`, and then drops into `client.Reservoir(...)` for hand-written UI features plus Inlet registrations. The client still never directly calls Orleans grains or knows about event-sourcing internals.
+The client now starts with `builder.UseMississippi(...)`, uses the generated `AddMississippiSamplesSpringDomainClient()` domain compositor on `ClientBuilder`, and then drops into `client.Reservoir(...)` for hand-written UI features plus Inlet registrations. The client still never directly calls Orleans grains or knows about event-sourcing internals.
 
 ([Spring.Client/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Program.cs))
 
@@ -272,7 +328,7 @@ Mississippi's generators produce builder-based client feature registrations and 
 | `Add{Aggregate}AggregateFeature()`, `Add{Saga}SagaFeature()`, `AddProjectionsFeature()` | Client | Reservoir-level client feature registrations for generated state, reducers, effects, and projection support |
 | `Add{Domain}Client()` | Client | Mississippi client-builder convenience method that aggregates the generated Reservoir-level feature registrations |
 
-Gateway generators can emit a domain-level convenience method, but Spring.Gateway currently composes the generated mapper registrations explicitly in `Program.cs`. The client-side feature generators still target `IReservoirBuilder`, while the domain client generator now targets `MississippiClientBuilder` and routes its work through `client.Reservoir(...)`. Spring uses the generated domain client method for the write-side and projection slice, then adds hand-written UI and Inlet composition on the same Reservoir builder.
+Gateway generators can emit a domain-level convenience method, but Spring.Gateway currently composes the generated mapper registrations explicitly in `Program.cs`. The client-side feature generators still target `IReservoirBuilder`, while the domain client generator now targets `ClientBuilder` and routes its work through `client.Reservoir(...)`. Spring uses the generated domain client method for the write-side and projection slice, then adds hand-written UI and Inlet composition on the same Reservoir builder.
 
 `Spring.AppHost` is separate from those generated methods. It is an Aspire entry point that provisions Azurite, Cosmos emulator resources, Orleans configuration, and project startup order for local development.
 
@@ -293,7 +349,7 @@ The hosts are replaceable shells. The domain is the permanent asset. You could s
 
 ## Summary
 
-Mississippi's source generators transform domain annotations into infrastructure wiring. Spring.Runtime stays a thin Orleans host, Spring.Gateway composes generated gateway mapper registrations around its transport infrastructure, and Spring.Client now starts with `AddMississippiClient()`, uses the generated domain-level client method, and composes the remaining client features through `client.Reservoir(...)`.
+Mississippi's source generators transform domain annotations into infrastructure wiring. Spring.Runtime stays a thin Orleans host, Spring.Gateway composes generated gateway mapper registrations around its transport infrastructure, and Spring.Client now starts with `UseMississippi(...)`, uses the generated domain-level client method, and composes the remaining client features through `client.Reservoir(...)`.
 
 ## Next Steps
 

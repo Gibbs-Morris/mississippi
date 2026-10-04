@@ -46,11 +46,11 @@ public sealed class SagaStartedStatusReducerTests
             CorrelationId = "corr-1",
         };
         MoneyTransferStatusProjection result = reducer.Apply(initial, @event);
-        result.Phase.Should().Be(SagaPhase.Running);
-        result.StartedAt.Should().Be(startedAt);
-        result.LastCompletedStepIndex.Should().Be(-1);
-        result.ErrorCode.Should().BeNull();
-        result.ErrorMessage.Should().BeNull();
-        result.CompletedAt.Should().BeNull();
+        Assert.Equal(SagaPhase.Running, result.Phase);
+        Assert.Equal(startedAt, result.StartedAt);
+        Assert.Equal(-1, result.LastCompletedStepIndex);
+        Assert.Null(result.ErrorCode);
+        Assert.Null(result.ErrorMessage);
+        Assert.Null(result.CompletedAt);
     }
 }

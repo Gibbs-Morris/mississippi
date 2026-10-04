@@ -52,6 +52,33 @@ internal static partial class SignalRClientGrainLoggerExtensions
     );
 
     [LoggerMessage(
+        EventId = 9,
+        Level = LogLevel.Debug,
+        Message =
+            "Client '{ConnectionId}' group '{GroupName}' operation '{Operation}' completed (applied: {IsApplied}, tracked groups: {GroupCount}) in {ElapsedMilliseconds} ms")]
+    public static partial void ClientGroupChanged(
+        this ILogger logger,
+        string connectionId,
+        string groupName,
+        string operation,
+        bool isApplied,
+        int groupCount,
+        double elapsedMilliseconds
+    );
+
+    [LoggerMessage(
+        EventId = 8,
+        Level = LogLevel.Debug,
+        Message = "Client '{ConnectionId}' changing group '{GroupName}' on hub '{HubName}' (operation: {Operation})")]
+    public static partial void ClientGroupChanging(
+        this ILogger logger,
+        string connectionId,
+        string hubName,
+        string groupName,
+        string operation
+    );
+
+    [LoggerMessage(
         EventId = 7,
         Level = LogLevel.Warning,
         Message = "Cannot send message to client '{ConnectionId}' - connection not registered")]

@@ -41,7 +41,7 @@ public sealed class SagaStepFailedStatusReducerTests
             ErrorMessage = "failed",
         };
         MoneyTransferStatusProjection result = reducer.Apply(initial, @event);
-        result.ErrorCode.Should().Be("ERR");
-        result.ErrorMessage.Should().Be("failed");
+        Assert.Equal("ERR", result.ErrorCode);
+        Assert.Equal("failed", result.ErrorMessage);
     }
 }

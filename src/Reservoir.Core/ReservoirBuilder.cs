@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Linq;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,14 +24,25 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        Services = services;
+        ParentServices = services;
     }
 
     /// <summary>
     ///     Gets the underlying service collection for advanced extension scenarios.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Advanced)]
-    public IServiceCollection Services { get; }
+    public IServiceCollection Services
+    {
+        get
+        {
+            ThrowIfConfiguringFeature();
+            return ParentServices;
+        }
+    }
+
+    private bool IsConfiguringFeature { get; set; }
+
+    private IServiceCollection ParentServices { get; }
 
     /// <summary>
     ///     Adds a feature state without additional feature configuration.
@@ -40,6 +52,7 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
     public IReservoirBuilder AddFeatureState<TState>()
         where TState : class, IFeatureState, new()
     {
+        ThrowIfConfigurationUnavailable();
         ReservoirBuilderRegistrations.AddFeatureState<TState>(Services);
         return this;
     }
@@ -56,6 +69,7 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
         where TState : class, IFeatureState, new()
     {
         ArgumentNullException.ThrowIfNull(configure);
+        ThrowIfConfigurationUnavailable();
         AddFeatureStateTransactionally(configure);
         return this;
     }
@@ -68,6 +82,7 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
     public IReservoirBuilder AddMiddleware<TMiddleware>()
         where TMiddleware : class, IMiddleware
     {
+        ThrowIfConfigurationUnavailable();
         ReservoirBuilderRegistrations.AddMiddleware<TMiddleware>(Services);
         return this;
     }
@@ -77,18 +92,61 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
     )
         where TState : class, IFeatureState, new()
     {
-        IServiceCollection stagedServices = new ServiceCollection();
-        foreach (ServiceDescriptor descriptor in Services)
+        ServiceDescriptor[] originalServices = Services.ToArray();
+        ServiceCollection stagedServices = [];
+        foreach (ServiceDescriptor descriptor in originalServices)
         {
-            stagedServices.Add(descriptor);
+            ((IServiceCollection)stagedServices).Add(descriptor);
         }
 
-        ReservoirBuilderRegistrations.AddFeatureState<TState>(stagedServices);
-        configure(new ReservoirFeatureBuilder<TState>(stagedServices));
-        Services.Clear();
-        foreach (ServiceDescriptor descriptor in stagedServices)
+        try
         {
-            Services.Add(descriptor);
+            ReservoirBuilderRegistrations.AddFeatureState<TState>(stagedServices);
+            IsConfiguringFeature = true;
+            try
+            {
+                configure(new ReservoirFeatureBuilder<TState>(stagedServices));
+            }
+            finally
+            {
+                IsConfiguringFeature = false;
+            }
+
+            ThrowIfConfigurationUnavailable();
+            if (!Services.SequenceEqual(originalServices))
+            {
+                throw new InvalidOperationException(
+                    "Parent Reservoir services changed during a feature callback. Use the supplied feature builder, or configure parent services outside that callback.");
+            }
+
+            Services.Clear();
+            foreach (ServiceDescriptor descriptor in stagedServices)
+            {
+                Services.Add(descriptor);
+            }
+        }
+        finally
+        {
+            stagedServices.MakeReadOnly();
+        }
+    }
+
+    private void ThrowIfConfigurationUnavailable()
+    {
+        ThrowIfConfiguringFeature();
+        if (ParentServices.IsReadOnly)
+        {
+            throw new InvalidOperationException(
+                "Reservoir services are read-only. Configure features while the owning configuration scope is open.");
+        }
+    }
+
+    private void ThrowIfConfiguringFeature()
+    {
+        if (IsConfiguringFeature)
+        {
+            throw new InvalidOperationException(
+                "Reservoir root configuration is unavailable inside a feature callback. Use the supplied feature builder; register other states and middleware outside that callback.");
         }
     }
 }

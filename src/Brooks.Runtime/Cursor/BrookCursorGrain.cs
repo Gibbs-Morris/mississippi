@@ -169,7 +169,7 @@ internal sealed class BrookCursorGrain
     )
     {
         ArgumentNullException.ThrowIfNull(item);
-        if ((LastToken != null) && LastToken.Newer(token))
+        if ((LastToken != null) && ((token == null) || LastToken.Newer(token)))
         {
             return Task.CompletedTask;
         }

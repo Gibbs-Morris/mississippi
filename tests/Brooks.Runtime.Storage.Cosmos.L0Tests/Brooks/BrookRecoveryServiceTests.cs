@@ -100,7 +100,8 @@ public sealed class BrookRecoveryServiceTests
                     LeaseDurationSeconds = 5,
                 }),
             NullLogger<BrookRecoveryService>.Instance);
-        BrookPosition result = await service.GetOrRecoverCursorPositionAsync(brookId);
+        BrookPosition result =
+            await service.GetOrRecoverCursorPositionAsync(brookId, TestContext.Current.CancellationToken);
         Assert.Equal(3, result.Value);
         repo.Verify(r => r.CommitCursorPositionAsync(brookId, 3, It.IsAny<CancellationToken>()), Times.Once);
         repo.Verify(r => r.DeletePendingCursorAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -127,7 +128,9 @@ public sealed class BrookRecoveryServiceTests
             lockMgr.Object,
             Options.Create(new BrookStorageOptions()),
             NullLogger<BrookRecoveryService>.Instance);
-        BrookPosition result = await service.GetOrRecoverCursorPositionAsync(new("t", "i"));
+        BrookPosition result = await service.GetOrRecoverCursorPositionAsync(
+            new("t", "i"),
+            TestContext.Current.CancellationToken);
         Assert.Equal(-1, result.Value);
         repo.Verify(
             r => r.GetCursorDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()),
@@ -178,7 +181,8 @@ public sealed class BrookRecoveryServiceTests
                     LeaseDurationSeconds = 5,
                 }),
             NullLogger<BrookRecoveryService>.Instance);
-        BrookPosition result = await service.GetOrRecoverCursorPositionAsync(brookId);
+        BrookPosition result =
+            await service.GetOrRecoverCursorPositionAsync(brookId, TestContext.Current.CancellationToken);
 
         // After rollback there is no cursor document, so expect -1
         Assert.Equal(-1, result.Value);
@@ -223,7 +227,7 @@ public sealed class BrookRecoveryServiceTests
                 }),
             NullLogger<BrookRecoveryService>.Instance);
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await service.GetOrRecoverCursorPositionAsync(brookId));
+            await service.GetOrRecoverCursorPositionAsync(brookId, TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -266,7 +270,8 @@ public sealed class BrookRecoveryServiceTests
                     LeaseDurationSeconds = 1,
                 }),
             NullLogger<BrookRecoveryService>.Instance);
-        BrookPosition result = await service.GetOrRecoverCursorPositionAsync(brookId);
+        BrookPosition result =
+            await service.GetOrRecoverCursorPositionAsync(brookId, TestContext.Current.CancellationToken);
         Assert.Equal(7, result.Value);
     }
 }
