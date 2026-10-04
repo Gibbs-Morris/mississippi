@@ -308,11 +308,8 @@ internal sealed class InletSignalRActionEffect
 
         if (!isCurrentRequest)
         {
-            if (subscriptionId is not null)
-            {
-                // The owner released this request while the hub reply was pending.
-                await UnsubscribeFromHubAsync(subscriptionId, path, entityId, CancellationToken.None);
-            }
+            // The owner released this request while the hub reply was pending.
+            await UnsubscribeFromHubAsync(subscriptionId, path, entityId, CancellationToken.None);
 
             yield break;
         }
@@ -554,12 +551,17 @@ internal sealed class InletSignalRActionEffect
     }
 
     private async Task UnsubscribeFromHubAsync(
-        string subscriptionId,
+        string? subscriptionId,
         string path,
         string entityId,
         CancellationToken cancellationToken
     )
     {
+        if (subscriptionId is null)
+        {
+            return;
+        }
+
         try
         {
             await HubConnection.InvokeAsync(
