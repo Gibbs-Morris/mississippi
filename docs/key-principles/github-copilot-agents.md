@@ -54,8 +54,8 @@ specificity and capability:
 │  Layer 4: Custom Agents (.agent.md)              │
 │  Purpose-built personas with tools and handoffs  │
 ├──────────────────────────────────────────────────┤
-│  Layer 3: Skills (SKILL.md + tools)              │
-│  Reusable tool bundles agents can reference      │
+│  Layer 3: Skills (SKILL.md)                       │
+│  Reusable workflows with optional resources      │
 ├──────────────────────────────────────────────────┤
 │  Layer 2: Instruction Files (.instructions.md)   │
 │  Scoped rules auto-attached by glob pattern      │
@@ -127,19 +127,28 @@ apply simultaneously.
   ambiguous situations.
 - Reference other instruction files rather than duplicating content.
 
-### Layer 3 — Skills (Reusable Tool Bundles)
+### Layer 3 — Skills (Reusable Workflows)
 
-Skills are directories containing a `SKILL.md` file that describes a reusable
-capability — typically wrapping one or more tools (MCP servers, VS Code
-commands, terminal operations) into a coherent, documented action that agents
-can invoke.
+Skills are directories containing a `SKILL.md` file for a focused, reusable
+workflow. Instructions alone are sufficient; add scripts or other resources
+only when the workflow needs them. Keep mandatory repository policy in
+instructions and load detailed skill procedures only for relevant tasks.
 
-- **Location**: `.github/skills/<skill-name>/SKILL.md`
-- **Format**: Markdown with structured sections
+- **Shared repository location**: `.agents/skills/<skill-name>/SKILL.md`,
+  discovered by both Codex and Copilot. Copilot also supports `.github/skills`
+  and `.claude/skills`; avoid separately maintained copies.
+- **Format**: Markdown with YAML frontmatter containing `name` and `description`.
+- **Portability**: Discover the consuming project's policies, paths, and commands;
+  use relative links for bundled references instead of repository dependencies.
 
 #### Skill File Structure
 
 ```markdown
+---
+name: prepare-pull-request
+description: Prepare a pull request description from the actual diff and validation evidence. Use when drafting or updating a PR description.
+---
+
 # Skill Name
 
 Description of what this skill does.
@@ -148,10 +157,9 @@ Description of what this skill does.
 
 Conditions under which this skill should be invoked.
 
-## Tools Required
+## Supporting Resources (Optional)
 
-- `mcp_github_create_pull_request` — Creates a PR
-- `run_in_terminal` — Executes build commands
+Link bundled references or scripts here only when this workflow needs them.
 
 ## Procedure
 
@@ -170,8 +178,16 @@ Conditions under which this skill should be invoked.
 Description of what the skill produces.
 ```
 
-Skills are referenced by agents in their `tools` or description sections, and
-Copilot resolves them at invocation time.
+Skill names and descriptions support discovery; the body loads when selected.
+Link supporting references from the body and explain when to read them. An
+agent's tool permissions remain separate from skill discovery.
+
+Shared placement and format follow the
+[GitHub skill guidance](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/add-skills),
+[Codex skill guidance](https://learn.chatgpt.com/docs/build-skills), and
+[Agent Skills specification](https://agentskills.io/specification).
+For dated verification evidence, see the
+[pilot research record](../../.github/agent-guidance/logging-skill-pilot.md#research-decisions).
 
 ### Layer 4 — Custom Agents (Purpose-Built Personas)
 
@@ -505,6 +521,10 @@ matching instructions.
 ### Directory Structure
 
 ```text
+.agents/
+└── skills/
+    └── build-and-test/
+        └── SKILL.md
 .github/
 ├── copilot-instructions.md          # Global repo context
 ├── instructions/
@@ -512,14 +532,11 @@ matching instructions.
 │   ├── testing.instructions.md
 │   ├── logging-rules.instructions.md
 │   └── ...
-├── agents/
-│   ├── dev.agent.md
-│   ├── technical-writer.agent.md
-│   ├── CoV-coding.agent.md
-│   └── ...
-└── skills/
-    └── build-and-test/
-        └── SKILL.md
+└── agents/
+    ├── dev.agent.md
+    ├── technical-writer.agent.md
+    ├── CoV-coding.agent.md
+    └── ...
 ```
 
 ### Step-by-Step: Creating Your First Agent

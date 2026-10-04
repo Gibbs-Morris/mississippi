@@ -172,10 +172,7 @@ public class AggregateRegistrationsTests
     {
         ServiceCollection services = new();
         bool delegateCalled = false;
-        services.AddCommandHandler<TestCommand, TestState>((
-            _,
-            _
-        ) =>
+        services.AddCommandHandler<TestCommand, TestState>((_, _) =>
         {
             delegateCalled = true;
             return OperationResult.Ok<IReadOnlyList<object>>(Array.Empty<object>());
@@ -205,10 +202,9 @@ public class AggregateRegistrationsTests
     public void AddCommandHandlerWithDelegateThrowsWhenServicesIsNull()
     {
         IServiceCollection? services = null;
-        Assert.Throws<ArgumentNullException>(() => services!.AddCommandHandler<TestCommand, TestState>((
-            _,
-            _
-        ) => OperationResult.Ok<IReadOnlyList<object>>(Array.Empty<object>())));
+        Assert.Throws<ArgumentNullException>(() =>
+            services!.AddCommandHandler<TestCommand, TestState>((_, _) =>
+                OperationResult.Ok<IReadOnlyList<object>>(Array.Empty<object>())));
     }
 
     /// <summary>
@@ -226,8 +222,8 @@ public class AggregateRegistrationsTests
         IEnumerable<IEventEffect<TestState>> effects = provider.GetServices<IEventEffect<TestState>>();
 
         // Assert
-        Assert.Single(effects);
-        Assert.IsType<TestEventEffect>(effects.First());
+        IEventEffect<TestState> item = Assert.Single(effects);
+        Assert.IsType<TestEventEffect>(item);
     }
 
     /// <summary>

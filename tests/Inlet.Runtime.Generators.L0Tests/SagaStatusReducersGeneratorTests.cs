@@ -155,9 +155,9 @@ public sealed class SagaStatusReducersGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, projectionSource);
-        string? reducersSource = runResult.GeneratedTrees.FirstOrDefault(t =>
-                t.FilePath.Contains("SagaStatusReducers", StringComparison.Ordinal))
-            ?.GetText()
+        string? reducersSource = runResult.GeneratedTrees
+            .FirstOrDefault(t => t.FilePath.Contains("SagaStatusReducers", StringComparison.Ordinal))
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(reducersSource);
         Assert.Contains("class SagaStartedStatusReducer", reducersSource, StringComparison.Ordinal);

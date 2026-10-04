@@ -29,8 +29,8 @@ public sealed class SagaCompensatedStatusReducerTests
             CompletedAt = completedAt,
         };
         MoneyTransferStatusProjection result = reducer.Apply(initial, @event);
-        result.Phase.Should().Be(SagaPhase.Compensated);
-        result.CompletedAt.Should().Be(completedAt);
+        Assert.Equal(SagaPhase.Compensated, result.Phase);
+        Assert.Equal(completedAt, result.CompletedAt);
     }
 
     /// <summary>

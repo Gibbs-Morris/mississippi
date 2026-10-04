@@ -25,9 +25,9 @@ public sealed class CommandOrbitTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
-        Assert.True(attr!.CaptureUnmatchedValues);
+        Assert.True(attr.CaptureUnmatchedValues);
     }
 
     /// <summary>
@@ -41,7 +41,7 @@ public sealed class CommandOrbitTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        Assert.Equal(typeof(RenderFragment), prop!.PropertyType);
+        Assert.Equal(typeof(RenderFragment), prop.PropertyType);
         ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
     }
@@ -57,7 +57,7 @@ public sealed class CommandOrbitTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        Assert.True(prop!.PropertyType.IsGenericType);
+        Assert.True(prop.PropertyType.IsGenericType);
         ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
     }
@@ -88,7 +88,7 @@ public sealed class CommandOrbitTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
     }
 

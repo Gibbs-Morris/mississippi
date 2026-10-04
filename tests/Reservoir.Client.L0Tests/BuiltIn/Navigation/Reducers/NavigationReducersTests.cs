@@ -1,5 +1,3 @@
-using FluentAssertions;
-
 using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
 using Mississippi.Reservoir.Client.BuiltIn.Navigation.Reducers;
 using Mississippi.Reservoir.Client.BuiltIn.Navigation.State;
@@ -19,7 +17,7 @@ public sealed class NavigationReducersTests
     public void InitialStateShouldHaveCorrectFeatureKey()
     {
         // Assert
-        NavigationState.FeatureKey.Should().Be("reservoir:navigation");
+        Assert.Equal("reservoir:navigation", NavigationState.FeatureKey);
     }
 
     /// <summary>
@@ -38,10 +36,10 @@ public sealed class NavigationReducersTests
         };
 
         // Assert
-        initialState.CurrentUri.Should().Be("about:blank");
-        initialState.PreviousUri.Should().BeNull();
-        initialState.IsNavigationIntercepted.Should().BeFalse();
-        initialState.NavigationCount.Should().Be(0);
+        Assert.Equal("about:blank", initialState.CurrentUri);
+        Assert.Null(initialState.PreviousUri);
+        Assert.False(initialState.IsNavigationIntercepted);
+        Assert.Equal(0, initialState.NavigationCount);
     }
 
     /// <summary>
@@ -68,9 +66,9 @@ public sealed class NavigationReducersTests
         NavigationState stateAfterSecond = NavigationReducers.OnLocationChanged(stateAfterFirst, action2);
 
         // Assert
-        stateAfterSecond.CurrentUri.Should().Be("https://example.com/page3");
-        stateAfterSecond.PreviousUri.Should().Be(page2);
-        stateAfterSecond.NavigationCount.Should().Be(2);
+        Assert.Equal("https://example.com/page3", stateAfterSecond.CurrentUri);
+        Assert.Equal(page2, stateAfterSecond.PreviousUri);
+        Assert.Equal(2, stateAfterSecond.NavigationCount);
     }
 
     /// <summary>
@@ -93,7 +91,7 @@ public sealed class NavigationReducersTests
         NavigationState result = NavigationReducers.OnLocationChanged(initialState, action);
 
         // Assert
-        result.NavigationCount.Should().Be(6);
+        Assert.Equal(6, result.NavigationCount);
     }
 
     /// <summary>
@@ -117,7 +115,7 @@ public sealed class NavigationReducersTests
         NavigationState result = NavigationReducers.OnLocationChanged(initialState, action);
 
         // Assert
-        result.PreviousUri.Should().Be(originalUri);
+        Assert.Equal(originalUri, result.PreviousUri);
     }
 
     /// <summary>
@@ -140,7 +138,7 @@ public sealed class NavigationReducersTests
         NavigationState result = NavigationReducers.OnLocationChanged(initialState, action);
 
         // Assert
-        result.CurrentUri.Should().Be("https://example.com/new-page");
+        Assert.Equal("https://example.com/new-page", result.CurrentUri);
     }
 
     /// <summary>
@@ -163,6 +161,6 @@ public sealed class NavigationReducersTests
         NavigationState result = NavigationReducers.OnLocationChanged(initialState, action);
 
         // Assert
-        result.IsNavigationIntercepted.Should().BeTrue();
+        Assert.True(result.IsNavigationIntercepted);
     }
 }

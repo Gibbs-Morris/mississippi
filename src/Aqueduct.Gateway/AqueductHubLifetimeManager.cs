@@ -57,6 +57,8 @@ public sealed class AqueductHubLifetimeManager<THub>
 {
     private readonly string hubName;
 
+    private volatile bool backplaneInitialized;
+
     private bool disposed;
 
     private IDisposable? lifecycleSubscription;
@@ -119,8 +121,8 @@ public sealed class AqueductHubLifetimeManager<THub>
         ArgumentException.ThrowIfNullOrEmpty(connectionId);
         ArgumentException.ThrowIfNullOrEmpty(groupName);
         Logger.AddingToGroup(connectionId, groupName, hubName);
-        ISignalRGroupGrain groupGrain = GetGroupGrain(groupName);
-        await groupGrain.AddConnectionAsync(connectionId).ConfigureAwait(false);
+        ISignalRClientGrain clientGrain = GetClientGrain(connectionId);
+        await clientGrain.AddToGroupAsync(groupName).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -141,7 +143,9 @@ public sealed class AqueductHubLifetimeManager<THub>
     )
     {
         ArgumentNullException.ThrowIfNull(connection);
-        await EnsureStreamSetupAsync().ConfigureAwait(false);
+
+        // Shared backplane initialization must outlive an individual connection.
+        await EnsureStreamSetupAsync(CancellationToken.None).ConfigureAwait(false);
         ConnectionRegistry.TryAdd(connection.ConnectionId, connection);
         ISignalRClientGrain clientGrain = GetClientGrain(connection.ConnectionId);
         await clientGrain.ConnectAsync(hubName, ServerId).ConfigureAwait(false);
@@ -186,8 +190,8 @@ public sealed class AqueductHubLifetimeManager<THub>
         ArgumentException.ThrowIfNullOrEmpty(connectionId);
         ArgumentException.ThrowIfNullOrEmpty(groupName);
         Logger.RemovingFromGroup(connectionId, groupName, hubName);
-        ISignalRGroupGrain groupGrain = GetGroupGrain(groupName);
-        await groupGrain.RemoveConnectionAsync(connectionId).ConfigureAwait(false);
+        ISignalRClientGrain clientGrain = GetClientGrain(connectionId);
+        await clientGrain.RemoveFromGroupAsync(groupName).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -346,7 +350,7 @@ public sealed class AqueductHubLifetimeManager<THub>
         CancellationToken cancellationToken = default
     )
     {
-        if (StreamSubscriptionManager.IsInitialized)
+        if (backplaneInitialized && StreamSubscriptionManager.IsInitialized)
         {
             return;
         }
@@ -363,6 +367,7 @@ public sealed class AqueductHubLifetimeManager<THub>
 
         // Start heartbeat manager
         await HeartbeatManager.StartAsync(() => ConnectionRegistry.Count, cancellationToken).ConfigureAwait(false);
+        backplaneInitialized = true;
         Logger.BackplaneInitialized(hubName, ServerId);
     }
 

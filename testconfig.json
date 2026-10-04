@@ -1,0 +1,12 @@
+{
+  "platformOptions": {
+    "Coverlet": {
+      "format": "cobertura",
+      "exclude": "[coverlet.*]*,[xunit.*]*,[Microsoft.Testing.*]*,[Microsoft.TestPlatform*]*,[Microsoft.VisualStudio.TestPlatform*]*,[testhost*]*",
+      "excludeByAttribute": "",
+      "includeTestAssembly": false,
+      "skipAutoProps": false,
+      "excludeAssembliesWithoutSources": "MissingAll"
+    }
+  }
+}

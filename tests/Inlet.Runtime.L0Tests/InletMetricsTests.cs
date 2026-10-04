@@ -29,10 +29,7 @@ public sealed class InletMetricsTests : IDisposable
     {
         listener = new()
         {
-            InstrumentPublished = (
-                instrument,
-                listener
-            ) =>
+            InstrumentPublished = (instrument, listener) =>
             {
                 if (instrument.Meter.Name == InletMetrics.MeterName)
                 {

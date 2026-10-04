@@ -544,7 +544,9 @@ Describe 'CleanupCode invocation' {
         Set-Content -LiteralPath $solutionPath -Value '<Project />' -Encoding utf8
         Set-Content -LiteralPath $settingsPath -Value '<ApplicationSettings />' -Encoding utf8
 
-        Mock -CommandName Invoke-RepositoryProcess -ModuleName RepositoryAutomation -MockWith { }
+        Mock -CommandName Invoke-RepositoryProcess -ModuleName RepositoryAutomation -MockWith {
+            if ($Arguments.Count -eq 1 -and $Arguments[0] -eq '--version') { return '10.0.401' }
+        }
 
         Invoke-ReSharperCleanup `
             -SolutionPath $solutionPath `
@@ -780,6 +782,18 @@ Describe 'Canonical cleanup entry point' {
         $LASTEXITCODE | Should -Be 0
         $plan = ($json -join "`n") | ConvertFrom-Json
         $plan.Mode | Should -Be 'NoOp'
+    }
+
+    It 'preserves explicit-file and solution-selection compatibility in the targeted entrypoint' {
+        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+        $scriptPath = Join-Path $repoRoot 'clean-up-targeted.ps1'
+        $json = @(& pwsh -NoProfile -File $scriptPath -Files README.md -SkipSamples -PlanOnly)
+        $LASTEXITCODE | Should -Be 0
+        ($json -join "`n" | ConvertFrom-Json).Mode | Should -Be 'NoOp'
+
+        $leaseDirectory = Join-Path $TestDrive 'targeted-compatibility-leases'
+        & pwsh -NoProfile -File $scriptPath -Files README.md -SkipSamples -LeaseDirectory $leaseDirectory
+        $LASTEXITCODE | Should -Be 0
     }
 
     It 'returns a failure when the targeted base cannot be resolved' {

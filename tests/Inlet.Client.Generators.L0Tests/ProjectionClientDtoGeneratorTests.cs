@@ -95,6 +95,67 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Projection arrays generate their custom and enum element DTOs and compile alongside primitive arrays.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoCompilesForCustomAndEnumArrays()
+    {
+        const string source = """
+                              using Mississippi.Inlet.Generators.Abstractions;
+                              using Mississippi.Inlet.Abstractions;
+
+                              namespace TestApp.Domain.Projections.Array;
+
+                              public sealed record Entry
+                              {
+                                  public decimal Amount { get; init; }
+                              }
+
+                              public enum EntryStatus { New, Complete }
+
+                              [GenerateProjectionEndpoints]
+                              [ProjectionPath("array")]
+                              public sealed record ArrayProjection
+                              {
+                                  public Entry[] Entries { get; init; } = [];
+                                  public EntryStatus[] Statuses { get; init; } = [];
+                                  public int[] Values { get; init; } = [];
+                              }
+                              """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Assert.Empty(
+            input.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        Assert.Empty(diagnostics);
+        Assert.All(result.Results, generatorResult => Assert.Null(generatorResult.Exception));
+        foreach (SyntaxTree tree in result.GeneratedTrees)
+        {
+            TestContext.Current.TestOutputHelper?.WriteLine(
+                $"{tree.FilePath}\n{tree.GetText(TestContext.Current.CancellationToken)}");
+        }
+
+        Assert.Empty(
+            output.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        Assert.Contains(
+            result.GeneratedTrees,
+            tree => tree.FilePath.EndsWith("EntryDto.g.cs", StringComparison.Ordinal));
+        Assert.Contains(
+            result.GeneratedTrees,
+            tree => tree.FilePath.EndsWith("EntryStatusDto.g.cs", StringComparison.Ordinal));
+        string projectionDto = Assert.Single(
+                result.GeneratedTrees,
+                tree => tree.FilePath.EndsWith("ArrayProjectionDto.g.cs", StringComparison.Ordinal))
+            .GetText(TestContext.Current.CancellationToken)
+            .ToString();
+        Assert.Contains("EntryDto[] Entries", projectionDto, StringComparison.Ordinal);
+        Assert.Contains("EntryStatusDto[] Statuses", projectionDto, StringComparison.Ordinal);
+        Assert.Contains("int[] Values", projectionDto, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generated DTO file should have correct naming convention.
     /// </summary>
     [Fact]
@@ -155,7 +216,7 @@ public class ProjectionClientDtoGeneratorTests
 
         // Should generate main DTO
         Assert.True(runResult.GeneratedTrees.Length >= 1);
-        string dtoCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string dtoCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("AccountBalanceProjectionDto", dtoCode, StringComparison.Ordinal);
     }
 
@@ -187,9 +248,9 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        string? enumDtoSource = runResult.GeneratedTrees.FirstOrDefault(t =>
-                t.FilePath.Contains("SagaPhaseDto", StringComparison.Ordinal))
-            ?.GetText()
+        string? enumDtoSource = runResult.GeneratedTrees
+            .FirstOrDefault(t => t.FilePath.Contains("SagaPhaseDto", StringComparison.Ordinal))
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(enumDtoSource);
         Assert.Contains("public enum SagaPhaseDto", enumDtoSource, StringComparison.Ordinal);
@@ -224,9 +285,14 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-
-        // Should generate main DTO and nested DTO
-        Assert.True(runResult.GeneratedTrees.Length >= 1);
+        string? nestedDtoSource = runResult.GeneratedTrees.FirstOrDefault(t =>
+                t.FilePath.Contains("TransactionRecordDto.g.cs", StringComparison.Ordinal))
+            ?.GetText(TestContext.Current.CancellationToken)
+            .ToString();
+        Assert.NotNull(nestedDtoSource);
+        Assert.Contains("public sealed record TransactionRecordDto", nestedDtoSource, StringComparison.Ordinal);
+        Assert.Contains("Amount", nestedDtoSource, StringComparison.Ordinal);
+        Assert.Contains("Description", nestedDtoSource, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -252,8 +318,8 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        Assert.Single(runResult.GeneratedTrees);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        SyntaxTree item = Assert.Single(runResult.GeneratedTrees);
+        string generatedCode = item.GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("CreatedAt", generatedCode, StringComparison.Ordinal);
     }
 
@@ -280,8 +346,8 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        Assert.Single(runResult.GeneratedTrees);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        SyntaxTree item = Assert.Single(runResult.GeneratedTrees);
+        string generatedCode = item.GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("Id", generatedCode, StringComparison.Ordinal);
     }
 
@@ -308,7 +374,7 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("ImmutableArray<decimal> TransactionAmounts", generatedCode, StringComparison.Ordinal);
     }
 
@@ -335,8 +401,8 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        Assert.Single(runResult.GeneratedTrees);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        SyntaxTree item = Assert.Single(runResult.GeneratedTrees);
+        string generatedCode = item.GetText(TestContext.Current.CancellationToken).ToString();
 
         // The generator should preserve nullable annotations
         Assert.Contains("OptionalBalance", generatedCode, StringComparison.Ordinal);
@@ -365,7 +431,7 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("// <auto-generated", generatedCode, StringComparison.Ordinal);
     }
 
@@ -391,7 +457,7 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("public sealed record AccountBalanceProjectionDto(", generatedCode, StringComparison.Ordinal);
     }
 
@@ -417,7 +483,7 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("#nullable enable", generatedCode, StringComparison.Ordinal);
     }
 
@@ -443,7 +509,7 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("[ProjectionPath(\"account-balance\")]", generatedCode, StringComparison.Ordinal);
     }
 
@@ -470,7 +536,7 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("decimal Balance", generatedCode, StringComparison.Ordinal);
         Assert.Contains("string AccountName", generatedCode, StringComparison.Ordinal);
     }
@@ -497,7 +563,7 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("/// <summary>", generatedCode, StringComparison.Ordinal);
         Assert.Contains("Client-side DTO", generatedCode, StringComparison.Ordinal);
     }
@@ -524,7 +590,7 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("using Mississippi.Inlet.Abstractions;", generatedCode, StringComparison.Ordinal);
     }
 
@@ -550,7 +616,7 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
 
         // Domain.Projections.* -> Client.Features.*.Dtos
         Assert.Contains(
@@ -581,7 +647,7 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("[ProjectionPath(\"account-balance/v2\")]", generatedCode, StringComparison.Ordinal);
     }
 
@@ -604,8 +670,8 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        Assert.Single(runResult.GeneratedTrees);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        SyntaxTree item = Assert.Single(runResult.GeneratedTrees);
+        string generatedCode = item.GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("public sealed record EmptyProjectionDto()", generatedCode, StringComparison.Ordinal);
     }
 
@@ -632,7 +698,7 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("decimal Balance", generatedCode, StringComparison.Ordinal);
         Assert.DoesNotContain("StaticValue", generatedCode, StringComparison.Ordinal);
     }
@@ -729,7 +795,7 @@ public class ProjectionClientDtoGeneratorTests
         // Assembly is named "TestApp.Client" which becomes the root namespace
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
 
         // Should use TestApp.Client as root and transform Domain → Client
         Assert.Contains("namespace TestApp.Client", generatedCode, StringComparison.Ordinal);

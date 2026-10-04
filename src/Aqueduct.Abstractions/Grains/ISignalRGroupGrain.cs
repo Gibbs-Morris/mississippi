@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Threading.Tasks;
 
 using Orleans;
+using Orleans.Concurrency;
 
 
 namespace Mississippi.Aqueduct.Abstractions.Grains;
@@ -26,9 +27,11 @@ public interface ISignalRGroupGrain : IGrainWithStringKey
     /// <summary>
     ///     Adds a connection to this group.
     /// </summary>
+    /// <remarks>Implementations must safely interleave membership updates with in-flight broadcasts.</remarks>
     /// <param name="connectionId">The SignalR connection identifier to add.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Alias("AddConnectionAsync")]
+    [AlwaysInterleave]
     Task AddConnectionAsync(
         string connectionId
     );
@@ -43,9 +46,11 @@ public interface ISignalRGroupGrain : IGrainWithStringKey
     /// <summary>
     ///     Removes a connection from this group.
     /// </summary>
+    /// <remarks>Implementations must safely interleave membership updates with in-flight broadcasts.</remarks>
     /// <param name="connectionId">The SignalR connection identifier to remove.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Alias("RemoveConnectionAsync")]
+    [AlwaysInterleave]
     Task RemoveConnectionAsync(
         string connectionId
     );

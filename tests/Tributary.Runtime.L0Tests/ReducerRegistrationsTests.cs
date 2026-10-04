@@ -53,10 +53,7 @@ public sealed class ReducerRegistrationsTests
     public void AddReducerDelegateOverloadShouldRegisterReducerAndRootReducer()
     {
         ServiceCollection services = new();
-        services.AddReducer<TestEvent, TestProjection>((
-            state,
-            e
-        ) => new($"{state.Value}-{e.Value}"));
+        services.AddReducer<TestEvent, TestProjection>((state, e) => new($"{state.Value}-{e.Value}"));
         using ServiceProvider provider = services.BuildServiceProvider();
         IEventReducer<TestEvent, TestProjection> eventReducer =
             provider.GetRequiredService<IEventReducer<TestEvent, TestProjection>>();

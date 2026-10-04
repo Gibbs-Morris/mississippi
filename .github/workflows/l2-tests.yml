@@ -1,6 +1,9 @@
 name: "L2 Tests"
 on:
   workflow_dispatch:
+  merge_group:
+    types: [checks_requested]
+    branches: [main]
   pull_request:
     branches:
       - main
@@ -18,8 +21,6 @@ jobs:
   l2-tests:
     name: "L2 Integration Tests (Aspire)"
     runs-on: ${{ matrix.os }}
-    # L2 tests use containers and Aspire - failures are informational, not blocking
-    continue-on-error: true
     strategy:
       matrix:
         os: [ ubuntu-latest ]
@@ -27,49 +28,48 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
       - name: Setup Dotnet
-        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
 
       - name: Cache GitVersion tools
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.gitversion
           key: ${{ runner.os }}-gitversion
           restore-keys: ${{ runner.os }}-gitversion
 
       - name: Cache nugets
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
             ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
 
-      - name: Install Aspire workload
+      - name: Ensure matching Aspire CLI
+        shell: pwsh
         run: |
-          dotnet workload install aspire
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+          [xml]$packages = Get-Content Directory.Packages.props -Raw
+          $version = ($packages.Project.ItemGroup.PackageVersion | Where-Object Include -eq 'Aspire.Hosting.AppHost').Version
+          dotnet tool update --global Aspire.Cli --version $version --allow-downgrade
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@51d325634925d7d9ce0a7efc2c586c0bc2b9eee6 # v3.2.1
+        uses: gittools/actions/gitversion/setup@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
         with:
-          versionSpec: "6.0.5"
+          versionSpec: "6.5.1"
 
       - name: Determine Version
         id: gitversion
-        uses: gittools/actions/gitversion/execute@51d325634925d7d9ce0a7efc2c586c0bc2b9eee6 # v3.2.1
+        uses: gittools/actions/gitversion/execute@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
         with:
-          useConfigFile: true
+          configFilePath: "GitVersion.yml"
 
       - name: Restore dotnet packages
         run: |
@@ -83,25 +83,15 @@ jobs:
         run: |
           dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
 
-      - name: Install Playwright Browsers
-        run: |
-          # Find the first playwright.ps1 in any L2Tests project bin folder
-          PLAYWRIGHT_SCRIPT=$(find . -path "*L2Tests/bin/*" -name "playwright.ps1" -print -quit 2>/dev/null)
-          if [ -n "$PLAYWRIGHT_SCRIPT" ]; then
-            echo "Found Playwright script: $PLAYWRIGHT_SCRIPT"
-            pwsh "$PLAYWRIGHT_SCRIPT" install --with-deps
-          else
-            echo "No playwright.ps1 found - Playwright tests may not have browser dependencies"
-          fi
-
       - name: Run L2 Tests
+        shell: pwsh
         run: |
-          mkdir -p "${{ github.workspace }}/.scratchpad/coverage-test-results"
-          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --no-build --configuration ${{ env.CONFIGURATION }} --filter "FullyQualifiedName~.L2Tests." --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
+          Invoke-SolutionTests -SolutionPath '${{ matrix.solution }}' -Configuration $env:CONFIGURATION -TestLevels L2Tests -AdditionalArguments '--no-build' -ResultsRoot (Join-Path $env:GITHUB_WORKSPACE '.scratchpad/coverage-test-results') | Out-Host
 
       - name: Upload Test Results
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: test-results-${{ matrix.solution }}-${{ matrix.os }}-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
           path: ${{ github.workspace }}/.scratchpad/coverage-test-results

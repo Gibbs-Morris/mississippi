@@ -86,10 +86,7 @@ public sealed class BrookGrainFactoryTests
         string? capturedKey2 = null;
         int callCount = 0;
         grainFactory.Setup(g => g.GetGrain<IBrookAsyncReaderGrain>(It.IsAny<string>(), It.IsAny<string?>()))
-            .Callback<string, string?>((
-                grainKey,
-                _
-            ) =>
+            .Callback<string, string?>((grainKey, _) =>
             {
                 if (callCount == 0)
                 {

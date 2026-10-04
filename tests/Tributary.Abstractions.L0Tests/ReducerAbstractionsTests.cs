@@ -60,7 +60,7 @@ public sealed class ReducerAbstractionsTests
         Assert.True(reducerType.IsInterface);
         MethodInfo? reduceMethod = reducerType.GetMethod("TryReduce", BindingFlags.Public | BindingFlags.Instance);
         Assert.NotNull(reduceMethod);
-        ParameterInfo[] parameters = reduceMethod!.GetParameters();
+        ParameterInfo[] parameters = reduceMethod.GetParameters();
         Assert.Equal(3, parameters.Length);
         Assert.True(parameters[0].ParameterType.IsGenericParameter);
         Assert.Equal(typeof(object), parameters[1].ParameterType);
@@ -83,10 +83,10 @@ public sealed class ReducerAbstractionsTests
             "GetReducerHash",
             BindingFlags.Public | BindingFlags.Instance);
         Assert.NotNull(getReducerHashMethod);
-        Assert.Equal(typeof(string), getReducerHashMethod!.ReturnType);
+        Assert.Equal(typeof(string), getReducerHashMethod.ReturnType);
         MethodInfo? reduceMethod = rootReducerType.GetMethod("Reduce", BindingFlags.Public | BindingFlags.Instance);
         Assert.NotNull(reduceMethod);
-        ParameterInfo[] reduceParameters = reduceMethod!.GetParameters();
+        ParameterInfo[] reduceParameters = reduceMethod.GetParameters();
         Assert.Equal(2, reduceParameters.Length);
         Assert.True(reduceParameters[0].ParameterType.IsGenericParameter);
         Assert.Equal(typeof(object), reduceParameters[1].ParameterType);
