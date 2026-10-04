@@ -2177,6 +2177,8 @@ public class ProjectionEndpointsGeneratorTests
     [InlineData("Queue<ResumeSource?>", true)]
     [InlineData("IImmutableQueue<ResumeSource?>", false)]
     [InlineData("IImmutableQueue<ResumeSource?>", true)]
+    [InlineData("ResumeSource?[,]", false)]
+    [InlineData("ResumeSource?[,]", true)]
     public void GeneratedUnsupportedNullableEnumCollectionProducesDiagnostic(
         string collectionType,
         bool nested
@@ -2225,8 +2227,11 @@ public class ProjectionEndpointsGeneratorTests
         Assert.Equal("INLETDTO002", diagnostic.Id);
         Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
         Assert.Contains("Values", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("one-dimensional array", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
         Assert.Contains(
-            collectionType[..collectionType.IndexOf('<', StringComparison.Ordinal)],
+            collectionType.Contains('<', StringComparison.Ordinal)
+                ? collectionType[..collectionType.IndexOf('<', StringComparison.Ordinal)]
+                : collectionType,
             diagnostic.GetMessage(CultureInfo.InvariantCulture),
             StringComparison.Ordinal);
         Assert.All(runResult.Results, result => Assert.Null(result.Exception));
