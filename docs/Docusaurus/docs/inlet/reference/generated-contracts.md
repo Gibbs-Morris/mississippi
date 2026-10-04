@@ -50,7 +50,11 @@ The domain name comes from the domain root namespace. The domain-level generated
 
 You can compose individual generated registrations instead. Spring's runtime and gateway currently select individual methods, while its client calls the domain-level method. For example, `AddBankAccountAggregate()` registers runtime behavior, `AddBankAccountAggregateMappers()` registers gateway mappings, and `AddBankAccountAggregateFeature()` registers client command handling on `IReservoirBuilder`.
 
-Individual gateway mapper extensions live in the consuming project's `.Controllers.Aggregates.Mappers` and `.Controllers.Projections.Mappers` namespaces. The combined domain Server extension above lives in `.Controllers.Mappers`.
+Individual gateway mapper extensions live in the consuming project's `.Controllers.Aggregates.Commands.<Aggregate>.Mappers` and `.Controllers.Projections.Mappers` namespaces. For example, Spring's bank account mapper extensions live in `MississippiSamples.Spring.Gateway.Controllers.Aggregates.Commands.BankAccount.Mappers`. The combined domain Server extension above lives in `.Controllers.Mappers`.
+
+Gateway command DTOs live in `<Gateway>.Controllers.Aggregates.Commands.<Aggregate>`, and their mappers live in that namespace's `.Mappers` child. The fixed `Commands` segment keeps these namespaces separate from generated controller types. The aggregate segment retains the domain aggregate namespace path, so commands with the same name in different aggregates have distinct C# contracts. Generated controllers keep their `<Gateway>.Controllers.Aggregates` namespace.
+
+When upgrading from the shared `.Controllers.Aggregates` DTO namespace or `.Controllers.Aggregates.Mappers` mapper namespace, update direct `using` directives and fully qualified DTO and mapper references to include the `Commands` and aggregate segments. Generated type names, HTTP routes and JSON payloads stay the same.
 
 ### Infrastructure Around Generated Registrations
 
