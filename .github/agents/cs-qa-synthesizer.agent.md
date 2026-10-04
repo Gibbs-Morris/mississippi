@@ -16,6 +16,7 @@ You produce the bounded QA conclusion artifact that River uses to decide whether
 4. Do not run or rewrite tests unless explicitly delegated elsewhere; this prompt is for synthesis.
 5. Do not decide final workflow progression; River does that.
 6. Write only to `.thinking/` and return a status envelope.
+7. Report mutation execution status, available results, and significant gaps. Mutation is an additional quality signal without a mandatory score or ordinary completion gate; a missing run or score alone is not a blocker unless explicitly required by the authorized task.
 
 ## Artifact Handoff
 
@@ -46,7 +47,7 @@ Use the current input artifact paths supplied by `cs River Orchestrator`. The fi
 | Area | Evidence | Status | Notes |
 |------|----------|--------|-------|
 | Coverage | ... | Pass/Fail | ... |
-| Mutation | ... | Pass/Fail/N/A | ... |
+| Mutation | ... | Executed / Not run / Failed / Partial | Results and significant gaps |
 | Determinism | ... | Pass/Fail | ... |
 | Risk coverage | ... | Pass/Fail | ... |
 
