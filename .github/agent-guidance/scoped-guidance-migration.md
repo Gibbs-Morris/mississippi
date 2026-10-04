@@ -288,6 +288,7 @@ policy route. New current-main instruction files remain discoverable.
 All earlier counts, hashes, inventories, native assessments, build and browser
 results above retain their stated historical inputs. They are not fresh passes
 for this synchronized tree. Current cleanup/build/test, docs/browser and remote
-checks require their own receipts. Independent CODEOWNER approval and the
-unverified native Copilot/Codex matrix and consuming Cosmos fixture remain
-open; no layer is merge-ready on historical evidence alone.
+checks require their own receipts. The native loading/host acceptance gaps remain open. The Cosmos fixture belongs
+to #805. Effective review requirements need per-PR verification: configured zero
+reviews plus CODEOWNER enforcement do not alone prove a missing independent
+approval. No layer is merge-ready on historical evidence alone.
