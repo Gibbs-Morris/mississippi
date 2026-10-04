@@ -15,8 +15,9 @@ test levels, and commands.
 - Put the test in the level that matches its dependencies. In Mississippi, new
   pure tests belong in `<ProductionProjectName>.L0Tests` (for example,
   `Widget.Abstractions` maps to `Widget.Abstractions.L0Tests`); do not insert
-  the class name into the project name. Infrastructure contracts belong in L2,
-  and browser journeys belong in L3. Smoke is a suite within a level.
+  the class name into the project name. Use L1 for light infrastructure such as
+  temporary files; use L2 when a contract needs real services or an HTTP API.
+  Browser journeys belong in L3. Smoke is a suite within a level.
 - Use `[Fact]` for one case and `[Theory]` with `[InlineData]` or `[MemberData]`
   for meaningful variants. Reach for a custom data source only when simpler
   forms make the test harder to understand.
@@ -49,4 +50,5 @@ For Spring integration or browser tests, follow `samples/Spring/TESTING.md` and
 and any missing coverage; a compiled test is not evidence that it executed.
 
 Adapted from the [awesome-copilot csharp-xunit skill](https://github.com/github/awesome-copilot/blob/997e95a6e42869c350f8ca6ec4c066287697c9f0/skills/csharp-xunit/SKILL.md)
-(MIT license). Repository instructions take precedence over upstream examples.
+(MIT license; the upstream notice is retained in [LICENSE.txt](LICENSE.txt)).
+Repository instructions take precedence over upstream examples.
