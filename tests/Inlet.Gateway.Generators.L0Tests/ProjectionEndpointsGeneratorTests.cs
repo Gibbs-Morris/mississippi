@@ -661,11 +661,15 @@ public class ProjectionEndpointsGeneratorTests
     ///     Different source symbols that normalize to one DTO name produce an actionable error.
     /// </summary>
     /// <param name="separateProjections">Whether the conflicting properties belong to separate projections.</param>
+    /// <param name="repeatConflict">Whether the same conflicting type is used more than once.</param>
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
     public void GeneratedDtoNameCollisionProducesDiagnostic(
-        bool separateProjections
+        bool separateProjections,
+        bool repeatConflict
     )
     {
         const string projectionTemplate = """
@@ -702,6 +706,14 @@ public class ProjectionEndpointsGeneratorTests
                 "__SECOND_PROJECTION__",
                 separateProjections ? secondProjection : string.Empty,
                 StringComparison.Ordinal);
+        if (repeatConflict)
+        {
+            projectionSource = projectionSource.Replace(
+                historyProperty,
+                historyProperty + " public ImmutableArray<Workflow> RepeatedHistory { get; init; }",
+                StringComparison.Ordinal);
+        }
+
         (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
         Diagnostic collision = Assert.Single(diagnostics);
