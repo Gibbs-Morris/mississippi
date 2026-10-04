@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 
 
@@ -18,9 +17,8 @@ public sealed class OrleansSerializationAliasArchitectureTests : ArchitectureTes
     [Fact]
     public void OrleansTypeAliasesShouldMatchCurrentFullTypeName()
     {
-        List<string> mismatches = AppDomain.CurrentDomain.GetAssemblies()
-            .Where(assembly => assembly.GetName().Name?.StartsWith("Mississippi.", StringComparison.Ordinal) == true)
-            .SelectMany(GetLoadableTypes)
+        List<string> mismatches = MississippiAssemblies
+            .SelectMany(assembly => assembly.GetTypes())
             .Select(
                 type => new
                 {
@@ -39,17 +37,5 @@ public sealed class OrleansSerializationAliasArchitectureTests : ArchitectureTes
         Assert.True(
             mismatches.Count == 0,
             $"Found Orleans alias mismatches:{Environment.NewLine}{string.Join(Environment.NewLine, mismatches)}");
-    }
-
-    private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
-    {
-        try
-        {
-            return assembly.GetTypes();
-        }
-        catch (ReflectionTypeLoadException exception)
-        {
-            return exception.Types.Where(type => type is not null).Cast<Type>();
-        }
     }
 }
