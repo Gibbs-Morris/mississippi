@@ -1,10 +1,14 @@
 ---
+id: projection-cache-keys
 title: Projection Cache Keys
 description: Reference the active versioned projection cache identity, parser constraints, and factory routing.
 sidebar_position: 8
+sidebar_label: Projection Cache Keys
 ---
 
 # Projection Cache Keys
+
+## Overview
 
 `UxProjectionVersionedCacheKey` identifies a versioned projection cache using a brook name, entity ID, and brook position. The projection type is supplied separately as the grain factory's generic type argument.
 
@@ -45,6 +49,8 @@ The default struct bypasses component validation: its name and entity ID are nul
 The [factory](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionGrainFactory.cs) accepts either this key or an entity ID plus version. The latter overload derives the brook name from `TProjection`'s `[BrookName]` attribute before constructing the key.
 
 The [projection runtime](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionGrain.cs) uses this three-part identity for versioned reads. Latest projection grains use the entity ID as their primary key. Versioned caches are typed by `TProjection`, so the same encoded string does not erase the projection type's grain identity.
+
+Activation of the [versioned cache](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionVersionedCacheGrain.cs) also derives snapshot storage identity from `TProjection`'s `[SnapshotStorageName]` attribute. A missing attribute throws `InvalidOperationException`; `[BrookName]` alone does not make this cache path usable.
 
 The [cache-key tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.Abstractions.L0Tests/UxProjectionVersionedCacheKeyTests.cs) cover validation, parsing, conversions, zero versions, and string encoding. The [factory tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.Runtime.L0Tests/UxProjectionGrainFactoryTests.cs) verify routing.
 
