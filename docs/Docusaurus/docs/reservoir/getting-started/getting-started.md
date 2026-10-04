@@ -14,7 +14,7 @@ Use this page when you need the first verified Reservoir-only startup path.
 
 Reservoir now starts from a builder-based registration model. The first successful outcome is creating an `IReservoirBuilder` with `AddReservoir()` and then composing feature registrations on that builder.
 
-If you are building a full Mississippi client application, start with `AddMississippiClient()` instead and use `client.Reservoir(...)` to reach this same subsystem builder.
+If you are building a full Mississippi client application, start with `UseMississippi(...)` instead and use `client.Reservoir(...)` to reach this same subsystem builder.
 
 ## First Working Setup
 
@@ -44,7 +44,7 @@ Reservoir exposes two verified entry points that both produce the same public bu
 - `services.AddReservoir()` when startup code begins from an `IServiceCollection`
 - `builder.AddReservoir()` when startup code begins from a `WebAssemblyHostBuilder`
 
-Both return `IReservoirBuilder`. That builder is the public composition surface for Reservoir-only apps and for higher-level callers such as `MississippiClientBuilder.Reservoir(...)`.
+Both return `IReservoirBuilder`. That builder is the public composition surface for Reservoir-only apps and for higher-level callers such as `ClientBuilder.Reservoir(...)`.
 
 Source code:
 
@@ -91,6 +91,8 @@ Stay in Reservoir when the concern is the state-management model itself: store b
 Reservoir-only startup begins by creating `IReservoirBuilder` with `AddReservoir()` and composing feature registrations on that builder.
 
 ## Next Steps
+
+- [Add a Reservoir Feature](../how-to/create-feature.md) to connect typed state, actions, reducers, and selectors.
 
 - Read [Reservoir Concepts](../concepts/concepts.md) for the top-level builder and feature-builder mental model.
 - Read [Reservoir Reference](../reference/reference.md) for the exact public registration surface.

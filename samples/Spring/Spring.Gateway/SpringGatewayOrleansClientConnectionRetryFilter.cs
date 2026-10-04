@@ -2,6 +2,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging;
+
 using Orleans;
 
 
@@ -12,11 +14,29 @@ namespace MississippiSamples.Spring.Gateway;
 /// </summary>
 internal sealed class SpringGatewayOrleansClientConnectionRetryFilter : IClientConnectionRetryFilter
 {
-    private const int MaxConnectionAttempts = 60;
+    private const int MaxConnectionRetries = 60;
 
     private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(1);
 
-    private int connectionAttempts;
+    private int connectionRetries;
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="SpringGatewayOrleansClientConnectionRetryFilter" /> class.
+    /// </summary>
+    /// <param name="timeProvider">The clock used for retry delays.</param>
+    /// <param name="logger">The logger used for connection retry diagnostics.</param>
+    public SpringGatewayOrleansClientConnectionRetryFilter(
+        TimeProvider timeProvider,
+        ILogger<SpringGatewayOrleansClientConnectionRetryFilter> logger
+    )
+    {
+        TimeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    private ILogger<SpringGatewayOrleansClientConnectionRetryFilter> Logger { get; }
+
+    private TimeProvider TimeProvider { get; }
 
     /// <inheritdoc />
     public async Task<bool> ShouldRetryConnectionAttempt(
@@ -24,24 +44,32 @@ internal sealed class SpringGatewayOrleansClientConnectionRetryFilter : IClientC
         CancellationToken cancellationToken
     )
     {
+        Logger.ConnectionRetryStarted(exception);
         if (exception is null || cancellationToken.IsCancellationRequested)
         {
+            Logger.ConnectionRetryCompleted(false);
             return false;
         }
 
-        int attempt = Interlocked.Increment(ref connectionAttempts);
-        if (attempt > MaxConnectionAttempts)
+        int retry = Interlocked.Increment(ref connectionRetries);
+        if (retry > MaxConnectionRetries)
         {
+            Logger.ConnectionRetriesExhausted(MaxConnectionRetries);
+            Logger.ConnectionRetryCompleted(false);
             return false;
         }
 
         try
         {
-            await Task.Delay(RetryDelay, cancellationToken);
-            return true;
+            await Task.Delay(RetryDelay, TimeProvider, cancellationToken);
+            bool shouldRetry = !cancellationToken.IsCancellationRequested;
+            Logger.ConnectionRetryCompleted(shouldRetry);
+            return shouldRetry;
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException canceledException) when (cancellationToken.IsCancellationRequested)
         {
+            Logger.ConnectionRetryCanceled(canceledException);
+            Logger.ConnectionRetryCompleted(false);
             return false;
         }
     }

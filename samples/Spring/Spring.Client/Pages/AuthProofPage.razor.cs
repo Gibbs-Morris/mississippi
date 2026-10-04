@@ -67,12 +67,7 @@ public sealed partial class AuthProofPage
         }
 
         PropertyInfo[] properties = snapshot.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
-        Array.Sort(
-            properties,
-            static (
-                left,
-                right
-            ) => string.CompareOrdinal(left.Name, right.Name));
+        Array.Sort(properties, static (left, right) => string.CompareOrdinal(left.Name, right.Name));
         List<(string Name, string Value)> rows = [];
         foreach (PropertyInfo property in properties)
         {

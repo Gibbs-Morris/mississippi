@@ -3,49 +3,133 @@ id: aqueduct-operations
 title: Aqueduct Operations
 sidebar_label: Operations
 sidebar_position: 1
-description: Current operational scope for Aqueduct and the evidence gaps that still need dedicated runtime guidance.
+description: Change Aqueduct stream identities with a coordinated maintenance procedure and explicit recovery boundaries.
 ---
 
 # Aqueduct Operations
 
-## Operational Goal
+## Overview
 
-The operational concern for Aqueduct is keeping the Orleans-backed SignalR backplane correctly placed between gateway and runtime hosts.
+Changing an Aqueduct stream provider or server stream namespace changes the routing identity shared by the backplane's
+runtime and gateway hosts. Changing the gateway broadcast namespace changes all-client routing among gateways. Treat
+either change as a coordinated maintenance operation across every participating host.
 
-## When This Matters
+## When this matters
 
-Use this page when your question is operational rather than conceptual, but you need to stay within currently verified documentation.
+Use this page when changing `StreamProviderName` or `ServerStreamNamespace` across runtimes and gateways, changing
+`AllClientsStreamNamespace` among gateways, or recovering after a restart or failover that removed in-memory
+connections, groups, or server-directory state.
 
-## Prerequisites And Assumptions
+An API-only cutover that preserves the existing identities should follow the [Aqueduct Runtime Composition
+Migration](../migration/migration.md) guidance. The maintenance procedure below is for an identity or provider change.
 
-- You already understand the [Aqueduct overview](../index.md).
-- You know whether you are looking at gateway-side hosting, runtime-side hosting, or a higher-level Inlet scenario.
+## Prerequisites and assumptions
 
-## Current Verified Operational Scope
+- Inventory the exact `StreamProviderName` and `ServerStreamNamespace` on every runtime and gateway that participates in
+  the backplane. Inventory `AllClientsStreamNamespace` on every participating gateway.
+- Identify all message producers, SignalR gateways, Orleans runtimes, and clients that must move together.
+- Confirm the provider-specific procedure for preserving or recovering any durable stream or subscription metadata.
+- Treat Aqueduct connection, group-membership, and server-directory state as volatile in-memory state. Aqueduct does not
+  persist that state through `IGrainStorage`.
+- Do not assume mixed runtime versions, mixed stream identities, a drain API, automatic replay, or zero-loss behavior;
+  those behaviors are not established by the current implementation.
 
-The active docs currently verify that Aqueduct owns gateway-side hub lifetime management, notifier registration, and runtime-side backplane registration.
+## Recommended baseline
 
-## Current Scope
+Keep `StreamProviderName` and `ServerStreamNamespace` unchanged and identical across participating runtimes and
+gateways for the ordinary runtime API cutover. Keep `AllClientsStreamNamespace` unchanged and identical among
+participating gateways. The broadcast namespace is gateway-owned; the runtime builder does not set or validate it.
+Configure the provider and server namespace through the runtime builder on runtimes and the corresponding gateway
+options on gateways. Configure the broadcast namespace only through gateway options, keeping one matching role-specific
+configuration set across participating hosts.
 
-This page covers the operational boundary for Aqueduct gateway and runtime hosting. For package-level details, see the [Aqueduct Reference](../reference/reference.md).
+If an identity must change, schedule a maintenance window that stops message production, new traffic, and all
+participating gateways and runtimes before any host receives the new values. The whole participating backplane is the
+blast radius: old and new identities address different streams, so a partially updated fleet can partition delivery.
+
+## Procedure
+
+1. Record the current provider and server-namespace values on every runtime and gateway, the broadcast namespace on
+   every gateway, deployment versions, provider-owned durable metadata locations, and the clients or subscriptions that
+   must be re-established.
+2. Stop application producers and stop accepting traffic that can create or use SignalR connections. Do not assume a
+   drain operation exists; keep traffic stopped for the identity change.
+3. Stop participating gateway hosts first, then stop all participating runtime hosts. Verify that no old host remains
+   able to publish or consume backplane messages.
+4. Apply one matching provider and server-namespace configuration set to every runtime and gateway deployment. Apply
+   one matching broadcast namespace to every gateway. Keep the provider-owned durable metadata configuration explicit
+   and unchanged unless the provider migration is intentional.
+5. Start all runtime hosts first. Wait for their normal Orleans health signal and verify that each runtime has the same
+   provider and server-namespace values.
+6. Start the gateway hosts. Verify that each gateway has the same provider and server-namespace values as the runtimes
+   and the same broadcast namespace as the other gateways. Allow each gateway to initialize its server and all-client
+   stream subscriptions and register its heartbeat with the server directory.
+7. Re-establish client connections, group membership, and application subscriptions. Treat all previous in-memory
+   membership as lost until these flows complete.
+8. Send controlled messages through the real connection, group, and broadcast paths. Verify receipt by the intended
+   clients and confirm host health before resuming normal traffic.
 
 ## Validation
 
-For now, validate your understanding by confirming that the problem is truly about the backplane boundary and not about projection generation, domain behavior, or client state.
+The change is ready for traffic only when all of the following are true:
 
-## Failure Modes And Rollback
+- Every participating runtime and gateway reports the same provider and server-namespace configuration.
+- Every participating gateway reports the same `AllClientsStreamNamespace`.
+- Runtime hosts report their normal Orleans started/healthy state.
+- Gateway logs show `Orleans streams initialized for hub`, `Heartbeat manager started`, and `Orleans backplane
+  initialized` for each active hub/server; investigate any `Heartbeat failed` warning.
+- Clients have reconnected, groups have been rejoined, and application subscriptions have been recreated.
+- Controlled direct-connection, group, and broadcast messages traverse the intended paths and are observed by the
+  intended clients.
+- No `MSB201`, `MSB202`, `MSB206`, or `MSB207` composition diagnostics are present.
+- Provider-owned durable stream or subscription metadata has passed its provider-specific recovery check, when such
+  metadata exists.
 
-Refer to the [Aqueduct Reference](../reference/reference.md) for failure behavior at the package level. Orleans cluster diagnostics apply to any silo hosting Aqueduct components.
+## Failure modes and rollback
 
-## Telemetry To Watch
+Changing identities can make messages on the previous streams invisible to hosts using the new streams. Messages in
+flight during shutdown can be lost, and Aqueduct does not provide automatic replay. Stopping hosts also loses the
+in-memory client, group, and server-directory state; clients must reconnect, rejoin groups, and recreate subscriptions.
+This volatile membership is separate from any durable metadata owned by an external stream provider.
 
-Monitor standard Orleans silo metrics and cluster health dashboards for any silo hosting Aqueduct backplane components.
+If validation fails while traffic is still stopped, roll back as one coordinated unit:
+
+1. Stop the gateways and runtimes using the new configuration.
+2. Restore the previous binary, provider and server-namespace configuration on every participating runtime and gateway,
+   and restore the previous broadcast namespace on every gateway.
+3. Start the previous runtime set first and verify its Orleans health, provider, and server-namespace configuration.
+4. Start the previous gateway set and verify its provider and server namespace, broadcast namespace, stream
+   initialization, and server registration.
+5. Reconnect clients, rejoin groups, recreate subscriptions, and repeat controlled direct, group, and broadcast message
+   checks.
+6. Resume traffic only after the previous configuration and real message paths are healthy.
+
+Recover provider-owned durable metadata through that provider's documented procedure. Do not treat volatile Aqueduct
+membership as recoverable storage, and do not resume traffic with old and new identity sets mixed.
+
+## Telemetry to watch
+
+Watch the host's Orleans health and stream-provider signals, plus Aqueduct's structured logs:
+
+- `Orleans streams initialized for hub` confirms gateway stream subscriptions completed.
+- `Heartbeat manager started` confirms gateway server registration began.
+- `Orleans backplane initialized for hub` confirms the gateway completed backplane setup.
+- `Heartbeat failed for server` is a warning requiring investigation before traffic resumes.
+- Runtime and gateway health checks should remain healthy after clients reconnect and controlled messages succeed.
+
+These signals show initialization and liveness activity. They do not prove zero message loss or durable membership
+recovery.
 
 ## Summary
 
-This page establishes the operational boundary for Aqueduct gateway and runtime hosting.
+Keep the provider and server namespace stable and matching across runtimes and gateways for ordinary API-only changes,
+and keep the broadcast namespace stable and matching among gateways. For an intentional identity change, stop the whole
+participating fleet, apply one matching configuration set, start runtimes before gateways, rebuild volatile state,
+validate real message paths, and roll back the complete set while traffic remains stopped if validation fails.
 
 ## Next Steps
 
-- Use [Aqueduct Reference](../reference/reference.md) for the currently verified package surface.
-- Use [Archived Documentation](../../archived/index.md) for additional preserved material on Aqueduct operations.
+- Follow [Aqueduct Runtime Composition (Next)](../migration/migration.md) for the API cutover and identity-preservation
+  constraints.
+- Use [Aqueduct Reference](../reference/reference.md) for options and diagnostic codes.
+- Read [Aqueduct Troubleshooting](../troubleshooting/troubleshooting.md) for composition and provider failures.

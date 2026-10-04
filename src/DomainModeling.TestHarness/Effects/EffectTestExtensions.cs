@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using FluentAssertions;
+using Xunit;
 
 
 namespace Mississippi.DomainModeling.TestHarness.Effects;
@@ -10,6 +10,10 @@ namespace Mississippi.DomainModeling.TestHarness.Effects;
 /// <summary>
 ///     Extension methods for effect testing assertions.
 /// </summary>
+/// <remarks>
+///     Assertions throw immediately when an expected dispatch is missing; a failed assertion
+///     does not return a command or a default dispatch record.
+/// </remarks>
 public static class EffectTestExtensions
 {
     // ShouldHaveDispatched overloads grouped together
@@ -26,9 +30,9 @@ public static class EffectTestExtensions
         where TCommand : class
     {
         ArgumentNullException.ThrowIfNull(commands);
-        commands.Any(c => c.Command is TCommand)
-            .Should()
-            .BeTrue($"because a {typeof(TCommand).Name} command should have been dispatched");
+        Assert.True(
+            commands.Any(c => c.Command is TCommand),
+            $"because a {typeof(TCommand).Name} command should have been dispatched");
         (Type AggregateType, string EntityId, object Command) match = commands.First(c => c.Command is TCommand);
         return (TCommand)match.Command;
     }
@@ -64,10 +68,12 @@ public static class EffectTestExtensions
         where TAggregate : class
     {
         ArgumentNullException.ThrowIfNull(commands);
-        (Type AggregateType, string EntityId, object Command)? match = commands.FirstOrDefault(c =>
+        (Type AggregateType, string EntityId, object Command) match = commands.FirstOrDefault(c =>
             (c.AggregateType == typeof(TAggregate)) && ((entityId == null) || (c.EntityId == entityId)));
-        match.Should().NotBeNull($"because a command should have been dispatched to {typeof(TAggregate).Name}");
-        return match!.Value;
+        Assert.True(
+            match.AggregateType is not null,
+            $"because a command should have been dispatched to {typeof(TAggregate).Name}");
+        return match;
     }
 
     /// <summary>
@@ -98,7 +104,7 @@ public static class EffectTestExtensions
     )
     {
         ArgumentNullException.ThrowIfNull(commands);
-        commands.Should().BeEmpty("because no commands should have been dispatched");
+        Assert.Empty(commands);
     }
 
     /// <summary>
