@@ -2227,7 +2227,10 @@ public class ProjectionEndpointsGeneratorTests
         Assert.Equal("INLETDTO002", diagnostic.Id);
         Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
         Assert.Contains("Values", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
-        Assert.Contains("one-dimensional array", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains(
+            "one-dimensional array",
+            diagnostic.GetMessage(CultureInfo.InvariantCulture),
+            StringComparison.Ordinal);
         Assert.Contains(
             collectionType.Contains('<', StringComparison.Ordinal)
                 ? collectionType[..collectionType.IndexOf('<', StringComparison.Ordinal)]
@@ -2238,52 +2241,6 @@ public class ProjectionEndpointsGeneratorTests
         Assert.DoesNotContain(
             runResult.GeneratedTrees,
             tree => Path.GetFileName(tree.FilePath) == "SagaStatusProjectionMapper.g.cs");
-    }
-
-    /// <summary>
-    ///     Shared invalid nested records report each unsupported property once while rejecting every projection.
-    /// </summary>
-    [Fact]
-    public void SharedUnsupportedNullableEnumCollectionReportsOnceAndRejectsEveryProjection()
-    {
-        const string source = """
-                              using System.Collections.Generic;
-                              using System.Collections.Immutable;
-                              using Mississippi.Inlet.Generators.Abstractions;
-                              using Mississippi.Inlet.Abstractions;
-
-                              namespace TestApp.Domain.Projections.Sagas
-                              {
-                                  public enum ResumeSource { Reminder = 0, Manual = 7 }
-                                  public sealed record RecoveryEntry
-                                  {
-                                      public Queue<ResumeSource?> Values { get; init; }
-                                  }
-
-                                  [GenerateProjectionEndpoints]
-                                  [ProjectionPath("first")]
-                                  public sealed record FirstProjection
-                                  {
-                                      public ImmutableArray<RecoveryEntry> History { get; init; }
-                                  }
-
-                                  [GenerateProjectionEndpoints]
-                                  [ProjectionPath("second")]
-                                  public sealed record SecondProjection
-                                  {
-                                      public ImmutableArray<RecoveryEntry> History { get; init; }
-                                  }
-                              }
-                              """;
-        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, source);
-        Diagnostic diagnostic = Assert.Single(diagnostics);
-        Assert.Equal("INLETDTO002", diagnostic.Id);
-        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
-        Assert.True(diagnostic.Location.IsInSource);
-        Assert.Contains("Values", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
-        Assert.All(runResult.Results, result => Assert.Null(result.Exception));
-        Assert.Empty(runResult.GeneratedTrees);
     }
 
     /// <summary>
@@ -2487,5 +2444,51 @@ public class ProjectionEndpointsGeneratorTests
             t.FilePath.Contains("TransactionHistoryController", StringComparison.Ordinal));
         Assert.True(hasAccountBalanceController);
         Assert.True(hasTransactionHistoryController);
+    }
+
+    /// <summary>
+    ///     Shared invalid nested records report each unsupported property once while rejecting every projection.
+    /// </summary>
+    [Fact]
+    public void SharedUnsupportedNullableEnumCollectionReportsOnceAndRejectsEveryProjection()
+    {
+        const string source = """
+                              using System.Collections.Generic;
+                              using System.Collections.Immutable;
+                              using Mississippi.Inlet.Generators.Abstractions;
+                              using Mississippi.Inlet.Abstractions;
+
+                              namespace TestApp.Domain.Projections.Sagas
+                              {
+                                  public enum ResumeSource { Reminder = 0, Manual = 7 }
+                                  public sealed record RecoveryEntry
+                                  {
+                                      public Queue<ResumeSource?> Values { get; init; }
+                                  }
+
+                                  [GenerateProjectionEndpoints]
+                                  [ProjectionPath("first")]
+                                  public sealed record FirstProjection
+                                  {
+                                      public ImmutableArray<RecoveryEntry> History { get; init; }
+                                  }
+
+                                  [GenerateProjectionEndpoints]
+                                  [ProjectionPath("second")]
+                                  public sealed record SecondProjection
+                                  {
+                                      public ImmutableArray<RecoveryEntry> History { get; init; }
+                                  }
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        Diagnostic diagnostic = Assert.Single(diagnostics);
+        Assert.Equal("INLETDTO002", diagnostic.Id);
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
+        Assert.True(diagnostic.Location.IsInSource);
+        Assert.Contains("Values", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.All(runResult.Results, result => Assert.Null(result.Exception));
+        Assert.Empty(runResult.GeneratedTrees);
     }
 }
