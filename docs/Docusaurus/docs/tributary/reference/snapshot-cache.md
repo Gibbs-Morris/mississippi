@@ -1,10 +1,14 @@
 ---
+id: snapshot-cache
 title: Snapshot Cache Reads
 description: Reference snapshot activation, cached state reads, and failures during hydration and reconstruction.
 sidebar_position: 4
+sidebar_label: Snapshot Cache Reads
 ---
 
 # Snapshot Cache Reads
+
+## Overview
 
 `ISnapshotCacheGrain<TSnapshot>` serves state for one exact snapshot version. The built-in implementation hydrates that state during activation, then returns it from memory.
 
@@ -12,7 +16,7 @@ sidebar_position: 4
 
 - `Mississippi.Tributary.Abstractions.ISnapshotCacheGrain<TSnapshot>`
 - The built-in `SnapshotCacheGrain<TSnapshot>` implementation
-- Snapshot state types with a parameterless constructor
+- Snapshot state types satisfying `new()`: value types, or nonabstract reference types with a public parameterless constructor
 
 ## Identity And Cached Reads
 
@@ -20,7 +24,9 @@ The [factory](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributar
 
 [`GetStateAsync(CancellationToken = default)`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/ISnapshotCacheGrain.cs) returns `ValueTask<TSnapshot>`. After activation, the built-in method returns the cached field without storage I/O or a cancellation check.
 
-For reference-type state, repeated calls within that activation return the same cached instance. The method does not clone the result or deeply freeze its members. Consumers should preserve immutable state when using it within the runtime.
+For reference-type state, the implementation reuses its cached field within an activation. This does not promise reference identity to ordinary grain callers: Orleans [copies return values](https://learn.microsoft.com/en-us/dotnet/orleans/host/configuration-guide/serialization-immutability) unless applicable immutability metadata opts out. Mutating a returned copy does not imply mutation of the cache; preserve immutable state when sharing values within the runtime.
+
+The field lasts only for the current activation. Idle collection, deactivation, or a silo restart loses that memory; a later activation loads or rebuilds state again under Orleans [activation collection](https://learn.microsoft.com/en-us/dotnet/orleans/host/configuration-guide/activation-collection).
 
 ## Activation Load Decision
 
@@ -38,9 +44,9 @@ Storage reads, matching-envelope conversion, event conversion, and reducer failu
 
 After reconstruction, eligible state is serialized before a one-way call to the snapshot persister. Envelope conversion or persister resolution can therefore fail activation before background work is dispatched.
 
-The cache discards the persister call's task. Successful cache activation does not confirm completion of that storage write. Retention-skipped versions remain available in memory without serializing a persistence envelope.
+The cache discards the persister call's task and does not forward its activation token to `PersistAsync`. Successful cache activation does not confirm completion of that newly requested storage write. Retention-skipped versions remain available in memory without serializing a persistence envelope.
 
-The [existing tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Tributary.Runtime.L0Tests/SnapshotCacheGrainTests.cs) cover cached instance reuse, loading a matching envelope without a rewrite, replay for missing or incompatible envelopes, and using checkpoint zero for a later target.
+The [existing tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Tributary.Runtime.L0Tests/SnapshotCacheGrainTests.cs) call the implementation directly and cover cached field reuse, loading a matching envelope without a rewrite, replay for missing or incompatible envelopes, and using checkpoint zero for a later target. They do not establish reference identity across Orleans calls.
 
 ## Summary
 
