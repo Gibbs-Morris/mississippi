@@ -29,12 +29,12 @@ namespace Mississippi.DomainModeling.Gateway;
 ///         in the repository for concrete usage patterns.
 ///     </para>
 ///     <para>
-///         This provides three endpoints:
+///         These endpoints are relative to the route declared by the derived controller:
 ///         <list type="bullet">
-///             <item><c>GET /api/users/{entityId}</c> - Returns the latest projection state as a DTO.</item>
-///             <item><c>GET /api/users/{entityId}/version</c> - Returns the latest version number.</item>
+///             <item><c>GET</c> - Returns the projection at the latest known version as a DTO.</item>
+///             <item><c>GET version</c> - Returns the latest known version number without DTO mapping.</item>
 ///             <item>
-///                 <c>GET /api/users/{entityId}/at/{version}</c> - Returns the projection at a specific version as a
+///                 <c>GET at/{version}</c> - Returns the projection at a specific version as a
 ///                 DTO.
 ///             </item>
 ///         </list>

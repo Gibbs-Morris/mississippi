@@ -30,7 +30,10 @@ namespace Mississippi.DomainModeling.Gateway;
 ///         This base class provides:
 ///         <list type="bullet">
 ///             <item>Common logging for command execution at the API layer.</item>
-///             <item>Consistent error handling and HTTP response formatting.</item>
+///             <item>
+///                 HTTP response formatting for command results and caught
+///                 <see cref="InvalidOperationException" /> instances.
+///             </item>
 ///             <item>The <c>ExecuteAsync</c> helper method that delegates to service methods.</item>
 ///         </list>
 ///     </para>

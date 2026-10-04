@@ -20,12 +20,6 @@ namespace MississippiSamples.Spring.Client.Features.BankAccountBalance.Selectors
 ///         Factory selectors enable memoization per entity while keeping selectors pure and testable.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///     // In a component:
-///     private bool IsAccountOpen => Select(BankAccountProjectionSelectors.IsAccountOpen(SelectedEntityId));
-///     </code>
-/// </example>
 internal static class BankAccountProjectionSelectors
 {
     /// <summary>
