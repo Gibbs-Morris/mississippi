@@ -1,10 +1,14 @@
 ---
+id: command-history
 title: Client Command History
 description: Reference command lifecycle state, history retention, in-flight IDs, and outcome fields.
 sidebar_position: 9
+sidebar_label: Client Command History
 ---
 
 # Client Command History
+
+## Overview
 
 `AggregateCommandStateBase` records command lifecycle actions in Reservoir. Its in-flight set, history list, and latest outcome fields answer different questions and can contain different information.
 
@@ -13,6 +17,7 @@ sidebar_position: 9
 - `Mississippi.Inlet.Client.Abstractions.State.AggregateCommandStateBase`
 - `IAggregateCommandState` and `AggregateCommandStateReducers`
 - `CommandHistoryEntry` and `CommandStatus`
+- Generated aggregate-command and saga-start state/reducers, which share this base and these lifecycle helpers
 
 ## State And Entry Defaults
 
@@ -34,17 +39,23 @@ Completion does not create a missing history entry. Starting the same ID more th
 
 The latest outcome flag follows the last reduced lifecycle action. It is independent of `IsExecuting`, so another command can remain in flight after a completion sets the flag to true or false.
 
+Mapping, JSON processing, or another ordinary effect failure after an executing action can end enumeration without a terminal action. The [root action effect](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/RootActionEffect.cs) swallows non-critical iterator failures; an entry and its in-flight ID can remain executing until an explicit terminal action or state reset.
+
 ## History Retention
 
 Starting a command enforces a FIFO history cap, defaulting to [`IAggregateCommandState.DefaultMaxHistoryEntries`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Abstractions/State/IAggregateCommandState.cs), which is 200. Excess entries are removed from the beginning of the list, in insertion order. Completion does not reorder the list or enforce the cap again.
 
+Only direct callers of `ComputeCommandExecuting` or `ReduceCommandExecuting` can supply a different `maxHistoryEntries`. The [generated command reducers](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Generators/CommandClientReducersGenerator.cs) and [saga reducers](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Generators/SagaClientReducersGenerator.cs) always use 200. A constructed or restored oversized list remains oversized until another executing reduction trims it.
+
 Retention does not protect executing entries or remove their IDs from the in-flight set. A later completion can therefore remove an ID without finding a retained entry to update. A zero cap retains no history; a negative cap is not validated and causes the underlying range removal to fail.
+
+This is in-memory feature state in Reservoir's scoped store. A client reload or new scope starts from registered initial state, and resetting to the normal initial state clears its history. Persistence and rehydration belong to the application; the retained list is not a durable audit log.
 
 The [state tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Client.L0Tests/AggregateCommandStateBaseTests.cs), [history-entry tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Client.L0Tests/CommandHistoryEntryTests.cs), and [reducer tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Client.L0Tests/AggregateCommandStateReducersTests.cs) cover defaults, entry factories, lifecycle updates, error/outcome fields, and the configured history cap.
 
 ## Summary
 
-Use the in-flight set for current execution, the retained history for per-command observations, and top-level fields for the latest lifecycle outcome. The history list is bounded independently of active commands.
+Use the in-flight set for recorded unfinished commands, history for retained observations, and top-level fields for the latest lifecycle outcome. Executing reductions trim history independently of active IDs; neither retention nor an in-flight ID establishes durable or ongoing server work.
 
 ## Next Steps
 
