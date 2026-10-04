@@ -20,6 +20,8 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Batching;
 /// </summary>
 public sealed class BatchSizeEstimatorTests
 {
+    private static readonly DateTimeOffset BaseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
     private static BrookEvent Clone(
         BrookEvent source
     ) =>
@@ -58,6 +60,13 @@ public sealed class BatchSizeEstimatorTests
         return ImmutableArray.Create(buffer);
     }
 
+    /// <summary>Verifies the configured request-size lower bound reuses the batch envelope constant.</summary>
+    [Fact]
+    public void BatchOverheadBytesDefinesRequestSizeLowerBound()
+    {
+        Assert.Equal(8_192, BatchSizeEstimator.BatchOverheadBytes);
+    }
+
     /// <summary>
     ///     Ensures size-based batching allows events whose combined size exactly matches the limit.
     /// </summary>
@@ -71,7 +80,7 @@ public sealed class BatchSizeEstimatorTests
             Source = "src",
             EventType = "type",
             Data = CreatePayload(512, 0x33),
-            Time = DateTimeOffset.UtcNow,
+            Time = BaseTime,
         };
         BrookEvent[] events =
         [
@@ -82,8 +91,8 @@ public sealed class BatchSizeEstimatorTests
         long overhead = estimator.EstimateBatchSize(Array.Empty<BrookEvent>());
         long maxSize = overhead + (singleEventSize * events.Length);
         List<IReadOnlyList<BrookEvent>> batches = estimator.CreateSizeLimitedBatches(events, 10, maxSize).ToList();
-        Assert.Single(batches);
-        Assert.Equal(events.Length, batches[0].Count);
+        IReadOnlyList<BrookEvent> item = Assert.Single(batches);
+        Assert.Equal(events.Length, item.Count);
     }
 
     /// <summary>
@@ -193,7 +202,7 @@ public sealed class BatchSizeEstimatorTests
         };
 
         // Use a tiny max size so that after accounting for batch overhead the single event is too large
-        long tinyMaxSize = 9_000; // BatchOverheadBytes is 8192, leaving only 808 bytes for event
+        long tinyMaxSize = BatchSizeEstimator.BatchOverheadBytes + 808; // Leaving only 808 bytes for the event.
 
         // Act & Assert
         Assert.Throws<InvalidOperationException>(() =>
@@ -342,7 +351,7 @@ public sealed class BatchSizeEstimatorTests
             EventType = "BIG",
             DataContentType = "application/octet-stream",
             Data = ImmutableArray.CreateRange(largeData),
-            Time = DateTimeOffset.UtcNow,
+            Time = BaseTime.AddSeconds(1),
         };
 
         // Act
@@ -362,10 +371,11 @@ public sealed class BatchSizeEstimatorTests
     public void EstimateEventSizeSmallEventIncludesStringMetadata()
     {
         BatchSizeEstimator estimator = new();
+        DateTimeOffset eventTime = DateTimeOffset.FromUnixTimeSeconds(200);
         BrookEvent baseline = new()
         {
             Data = CreatePayload(64, 0x21),
-            Time = DateTimeOffset.FromUnixTimeSeconds(200),
+            Time = eventTime,
         };
         long baselineSize = estimator.EstimateEventSize(baseline);
         BrookEvent rich = baseline with
@@ -380,12 +390,12 @@ public sealed class BatchSizeEstimatorTests
             Id = "sample",
             Type = "event",
             Position = 1,
-            EventId = rich.Id!,
+            EventId = rich.Id,
             Source = rich.Source,
-            EventType = rich.EventType!,
+            EventType = rich.EventType,
             DataContentType = rich.DataContentType,
             Data = rich.Data.ToArray(),
-            Time = rich.Time!.Value,
+            Time = eventTime,
         };
         string serialized = JsonConvert.SerializeObject(expectedDoc);
         long expected = (long)(Encoding.UTF8.GetByteCount(serialized) * 1.3);
@@ -409,7 +419,7 @@ public sealed class BatchSizeEstimatorTests
             EventType = "T",
             DataContentType = "application/octet-stream",
             Data = ImmutableArray.CreateRange(Enumerable.Range(0, 100).Select(i => (byte)i)),
-            Time = DateTimeOffset.UtcNow,
+            Time = BaseTime.AddSeconds(2),
         };
 
         // Act

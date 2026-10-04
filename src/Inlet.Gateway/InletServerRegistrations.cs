@@ -40,6 +40,10 @@ public static class InletServerRegistrations
     ///         that uses grains for connection tracking, group management, and
     ///         cross-server message routing.
     ///     </para>
+    ///     <para>
+    ///         Stream/backplane settings are owned by Aqueduct. Configure them via
+    ///         <c>AddAqueduct&lt;InletHub&gt;(options =&gt; ...)</c>.
+    ///     </para>
     /// </remarks>
     public static IServiceCollection AddInletServer(
         this IServiceCollection services,

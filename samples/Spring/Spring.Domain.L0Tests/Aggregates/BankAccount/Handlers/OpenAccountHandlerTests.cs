@@ -2,13 +2,13 @@ using System.Collections.Generic;
 
 using Mississippi.DomainModeling.Abstractions;
 
-using Spring.Domain.Aggregates.BankAccount;
-using Spring.Domain.Aggregates.BankAccount.Commands;
-using Spring.Domain.Aggregates.BankAccount.Events;
-using Spring.Domain.Aggregates.BankAccount.Handlers;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Commands;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Handlers;
 
 
-namespace Spring.Domain.L0Tests.Aggregates.BankAccount.Handlers;
+namespace MississippiSamples.Spring.Domain.L0Tests.Aggregates.BankAccount.Handlers;
 
 /// <summary>
 ///     Tests for <see cref="OpenAccountHandler" />.
@@ -89,15 +89,15 @@ public sealed class OpenAccountHandlerTests
         IReadOnlyList<object> events = handler.ShouldSucceed(null, command);
 
         // Assert
-        events.Should().ContainSingle();
-        events[0]
-            .Should()
-            .BeEquivalentTo(
-                new AccountOpened
-                {
-                    HolderName = "Jane Doe",
-                    InitialDeposit = 0m,
-                });
+        object item = Assert.Single(events);
+        Assert.Equivalent(
+            new AccountOpened
+            {
+                HolderName = "Jane Doe",
+                InitialDeposit = 0m,
+            },
+            item,
+            true);
     }
 
     /// <summary>

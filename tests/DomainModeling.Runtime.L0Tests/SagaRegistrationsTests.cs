@@ -12,7 +12,44 @@ namespace Mississippi.DomainModeling.Runtime.L0Tests;
 /// </summary>
 public sealed class SagaRegistrationsTests
 {
+    private sealed record SecondTestInput(string Value);
+
+    private sealed record SecondTestSagaState : ISagaState
+    {
+        public string? CorrelationId { get; init; }
+
+        public int LastCompletedStepIndex { get; } = -1;
+
+        public SagaPhase Phase { get; init; }
+
+        public Guid SagaId { get; init; }
+
+        public DateTimeOffset? StartedAt { get; init; }
+
+        public string? StepHash { get; init; }
+    }
+
     private sealed record TestInput(string Value);
+
+    /// <summary>
+    ///     Verifies multiple saga orchestrations can register distinct saga input event types.
+    /// </summary>
+    [Fact]
+    public void AddSagaOrchestrationRegistersDistinctNamesForMultipleSagaInputTypes()
+    {
+        ServiceCollection services = new();
+        services.AddSagaOrchestration<TestSagaState, TestInput>();
+        services.AddSagaOrchestration<SecondTestSagaState, SecondTestInput>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEventTypeRegistry registry = provider.GetRequiredService<IEventTypeRegistry>();
+        string? firstEventName = registry.ResolveName(typeof(SagaInputProvided<TestInput>));
+        string? secondEventName = registry.ResolveName(typeof(SagaInputProvided<SecondTestInput>));
+        Assert.NotNull(firstEventName);
+        Assert.NotNull(secondEventName);
+        Assert.NotEqual(firstEventName, secondEventName);
+        Assert.Equal(typeof(SagaInputProvided<TestInput>), registry.ResolveType(firstEventName));
+        Assert.Equal(typeof(SagaInputProvided<SecondTestInput>), registry.ResolveType(secondEventName));
+    }
 
     /// <summary>
     ///     Verifies saga input event type is registered.

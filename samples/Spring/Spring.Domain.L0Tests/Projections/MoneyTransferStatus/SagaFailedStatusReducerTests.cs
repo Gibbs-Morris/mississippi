@@ -1,10 +1,10 @@
 using Mississippi.DomainModeling.Abstractions;
 
-using Spring.Domain.Projections.MoneyTransferStatus;
-using Spring.Domain.Projections.MoneyTransferStatus.Reducers;
+using MississippiSamples.Spring.Domain.Projections.MoneyTransferStatus;
+using MississippiSamples.Spring.Domain.Projections.MoneyTransferStatus.Reducers;
 
 
-namespace Spring.Domain.L0Tests.Projections.MoneyTransferStatus;
+namespace MississippiSamples.Spring.Domain.L0Tests.Projections.MoneyTransferStatus;
 
 /// <summary>
 ///     Tests for <see cref="SagaFailedStatusReducer" />.
@@ -31,10 +31,10 @@ public sealed class SagaFailedStatusReducerTests
             FailedAt = failedAt,
         };
         MoneyTransferStatusProjection result = reducer.Apply(initial, @event);
-        result.Phase.Should().Be(SagaPhase.Failed);
-        result.ErrorCode.Should().Be(@event.ErrorCode);
-        result.ErrorMessage.Should().Be(@event.ErrorMessage);
-        result.CompletedAt.Should().Be(failedAt);
+        Assert.Equal(SagaPhase.Failed, result.Phase);
+        Assert.Equal(@event.ErrorCode, result.ErrorCode);
+        Assert.Equal(@event.ErrorMessage, result.ErrorMessage);
+        Assert.Equal(failedAt, result.CompletedAt);
     }
 
     /// <summary>

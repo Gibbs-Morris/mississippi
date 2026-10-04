@@ -1,6 +1,7 @@
+using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.Aqueduct.Runtime;
-using Mississippi.Common.Abstractions;
+using Mississippi.Hosting.Runtime;
 
 
 namespace Mississippi.Aqueduct.Gateway.L2Tests;
@@ -70,7 +71,7 @@ public sealed class AqueductFixture
                 })
 
                 // Use Aqueduct with MemoryStreams for testing
-                .UseAqueduct(options => { options.UseMemoryStreams(); });
+                .UseMississippi(runtime => runtime.AddAqueduct(aqueduct => aqueduct.UseMemoryStreams()));
         });
         return builder.Build();
     }
@@ -87,7 +88,7 @@ public sealed class AqueductFixture
     }
 
     /// <inheritdoc />
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (orleansHost is not null)
         {
@@ -143,11 +144,11 @@ public sealed class AqueductFixture
     public IStreamProvider GetStreamProvider()
     {
         EnsureInitialized();
-        return ClusterClient.GetStreamProvider(MississippiDefaults.StreamProviderName);
+        return ClusterClient.GetStreamProvider(AqueductStreamDefaults.StreamProviderName);
     }
 
     /// <inheritdoc />
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         try
         {

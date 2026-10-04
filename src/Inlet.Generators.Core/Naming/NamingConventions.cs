@@ -537,10 +537,10 @@ public static class NamingConventions
     /// <param name="domainNamespace">
     ///     The domain namespace (e.g., "Contoso.Domain.Aggregates.BankAccount.Commands").
     /// </param>
-    /// <returns>The server namespace (e.g., "Contoso.Server.Controllers.Aggregates").</returns>
+    /// <returns>The server namespace (e.g., "Contoso.Server.Controllers.Aggregates.Commands.BankAccount").</returns>
     /// <remarks>
     ///     <para>
-    ///         Replaces ".Domain.Aggregates.{Aggregate}.Commands" with ".Server.Controllers.Aggregates".
+    ///         Replaces ".Domain.Aggregates.{Aggregate}.Commands" with ".Server.Controllers.Aggregates.Commands.{Aggregate}".
     ///         Falls back to simple ".Domain" → ".Server" replacement if pattern doesn't match.
     ///     </para>
     /// </remarks>
@@ -553,7 +553,7 @@ public static class NamingConventions
             return domainNamespace;
         }
 
-        // Pattern: Contoso.Domain.Aggregates.BankAccount.Commands → Contoso.Server.Controllers.Aggregates
+        // Pattern: Contoso.Domain.Aggregates.BankAccount.Commands → Contoso.Server.Controllers.Aggregates.Commands.BankAccount
         if (domainNamespace.Contains(DomainAggregatesSegment) &&
             domainNamespace.EndsWith(CommandsSuffix, StringComparison.Ordinal))
         {
@@ -562,7 +562,9 @@ public static class NamingConventions
             if (domainIndex > 0)
             {
                 string product = domainNamespace.Substring(0, domainIndex);
-                return product + ".Server.Controllers.Aggregates";
+                return product +
+                       ".Server.Controllers.Aggregates.Commands." +
+                       GetAggregateNameFromNamespace(domainNamespace);
             }
         }
 
@@ -586,7 +588,7 @@ public static class NamingConventions
     /// </summary>
     /// <param name="sourceNamespace">The source namespace containing the command.</param>
     /// <param name="targetRootNamespace">The target project's root namespace (e.g., "MyApp.AspServer").</param>
-    /// <returns>The server namespace (e.g., "MyApp.AspServer.Controllers.Aggregates").</returns>
+    /// <returns>The server namespace (e.g., "MyApp.AspServer.Controllers.Aggregates.Commands.BankAccount").</returns>
     public static string GetServerCommandDtoNamespace(
         string sourceNamespace,
         string targetRootNamespace
@@ -597,8 +599,10 @@ public static class NamingConventions
             return GetServerCommandDtoNamespace(sourceNamespace);
         }
 
-        // For server, we always use Controllers.Aggregates
-        return $"{targetRootNamespace}.Controllers.Aggregates";
+        string? aggregateName = TargetNamespaceResolver.ExtractAggregateName(sourceNamespace);
+        return string.IsNullOrEmpty(aggregateName)
+            ? $"{targetRootNamespace}.Controllers.Aggregates"
+            : $"{targetRootNamespace}.Controllers.Aggregates.Commands.{aggregateName}";
     }
 
     /// <summary>

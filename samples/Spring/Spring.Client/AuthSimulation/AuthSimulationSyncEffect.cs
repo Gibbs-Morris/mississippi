@@ -3,10 +3,10 @@ using System.Threading.Tasks;
 
 using Mississippi.Reservoir.Abstractions;
 
-using Spring.Client.Features.AuthSimulation;
+using MississippiSamples.Spring.Client.Features.AuthSimulation;
 
 
-namespace Spring.Client.AuthSimulation;
+namespace MississippiSamples.Spring.Client.AuthSimulation;
 
 /// <summary>
 ///     Action effect that synchronizes <see cref="AuthSimulationState" /> to the

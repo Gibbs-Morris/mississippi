@@ -22,6 +22,8 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Locking;
 /// </summary>
 public sealed class BlobDistributedLockManagerTests
 {
+    private static readonly DateTimeOffset BaseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>
     ///     Validates initial acquire path creates container and blob when missing.
     /// </summary>
@@ -57,7 +59,7 @@ public sealed class BlobDistributedLockManagerTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Response.FromValue(
-                    BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-1"),
+                    BlobsModelFactory.BlobLease(new("\"etag\""), BaseTime, "lease-1"),
                     Mock.Of<Response>()))
             .Verifiable();
         BlobDistributedLockManager sut = new(
@@ -67,7 +69,10 @@ public sealed class BlobDistributedLockManagerTests
             NullLogger<BlobDistributedLockManager>.Instance);
 
         // Act
-        await using IDistributedLock l = await sut.AcquireLockAsync("k", TimeSpan.FromSeconds(15));
+        await using IDistributedLock l = await sut.AcquireLockAsync(
+            "k",
+            TimeSpan.FromSeconds(15),
+            TestContext.Current.CancellationToken);
 
         // Assert
         lease.Verify(
@@ -108,14 +113,10 @@ public sealed class BlobDistributedLockManagerTests
                 It.IsAny<TimeSpan>(),
                 It.IsAny<RequestConditions?>(),
                 It.IsAny<CancellationToken>()))
-            .Callback((
-                TimeSpan d,
-                RequestConditions? conditions,
-                CancellationToken ct
-            ) => captured = d)
+            .Callback((TimeSpan d, RequestConditions? conditions, CancellationToken ct) => captured = d)
             .ReturnsAsync(
                 Response.FromValue(
-                    BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-3"),
+                    BlobsModelFactory.BlobLease(new("\"etag\""), BaseTime, "lease-3"),
                     Mock.Of<Response>()));
         BlobDistributedLockManager sut = new(
             svc.Object,
@@ -124,7 +125,10 @@ public sealed class BlobDistributedLockManagerTests
             NullLogger<BlobDistributedLockManager>.Instance);
 
         // Act
-        await using IDistributedLock lockHandle = await sut.AcquireLockAsync("k", TimeSpan.FromSeconds(13));
+        await using IDistributedLock lockHandle = await sut.AcquireLockAsync(
+            "k",
+            TimeSpan.FromSeconds(13),
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(TimeSpan.FromSeconds(13), captured);
@@ -171,7 +175,7 @@ public sealed class BlobDistributedLockManagerTests
                 }
 
                 return Response.FromValue(
-                    BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-2"),
+                    BlobsModelFactory.BlobLease(new("\"etag\""), BaseTime, "lease-2"),
                     Mock.Of<Response>());
             });
         BlobDistributedLockManager sut = new(
@@ -181,7 +185,10 @@ public sealed class BlobDistributedLockManagerTests
             NullLogger<BlobDistributedLockManager>.Instance);
 
         // Act
-        await using IDistributedLock l = await sut.AcquireLockAsync("k", TimeSpan.FromSeconds(15));
+        await using IDistributedLock l = await sut.AcquireLockAsync(
+            "k",
+            TimeSpan.FromSeconds(15),
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(l);
@@ -220,7 +227,7 @@ public sealed class BlobDistributedLockManagerTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Response.FromValue(
-                    BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-first"),
+                    BlobsModelFactory.BlobLease(new("\"etag\""), BaseTime, "lease-first"),
                     Mock.Of<Response>()))
             .Verifiable();
         BlobDistributedLockManager sut = new(
@@ -230,7 +237,10 @@ public sealed class BlobDistributedLockManagerTests
             NullLogger<BlobDistributedLockManager>.Instance);
 
         // Act
-        await using IDistributedLock handle = await sut.AcquireLockAsync("k", TimeSpan.FromSeconds(15));
+        await using IDistributedLock handle = await sut.AcquireLockAsync(
+            "k",
+            TimeSpan.FromSeconds(15),
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(handle);
@@ -279,6 +289,9 @@ public sealed class BlobDistributedLockManagerTests
             NullLogger<BlobDistributedLockManager>.Instance);
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.AcquireLockAsync("k", TimeSpan.FromSeconds(15)));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.AcquireLockAsync(
+            "k",
+            TimeSpan.FromSeconds(15),
+            TestContext.Current.CancellationToken));
     }
 }

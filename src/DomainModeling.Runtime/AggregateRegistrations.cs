@@ -66,6 +66,7 @@ public static class AggregateRegistrations
         });
         services.TryAddTransient<IBrookEventConverter, BrookEventConverter>();
         services.TryAddTransient<IAggregateGrainFactory, AggregateGrainFactory>();
+        services.TryAddSingleton<ISagaReminderRegistry, OrleansSagaReminderRegistry>();
         services.TryAddSingleton(TimeProvider.System);
         return services;
     }
@@ -367,8 +368,9 @@ public static class AggregateRegistrations
             IEventTypeRegistry registry
         )
         {
+            Type eventType = typeof(TEvent);
             string eventName = EventStorageNameHelper.GetStorageName<TEvent>();
-            registry.Register(eventName, typeof(TEvent));
+            registry.Register(eventName, eventType);
         }
     }
 

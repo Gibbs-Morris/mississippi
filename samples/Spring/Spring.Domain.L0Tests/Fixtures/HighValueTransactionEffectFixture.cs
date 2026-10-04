@@ -3,13 +3,13 @@ using System.Threading.Tasks;
 
 using Mississippi.DomainModeling.Abstractions;
 
-using Spring.Domain.Aggregates.BankAccount;
-using Spring.Domain.Aggregates.BankAccount.Effects;
-using Spring.Domain.Aggregates.BankAccount.Events;
-using Spring.Domain.Aggregates.TransactionInvestigationQueue;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Effects;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
+using MississippiSamples.Spring.Domain.Aggregates.TransactionInvestigationQueue;
 
 
-namespace Spring.Domain.L0Tests.Fixtures;
+namespace MississippiSamples.Spring.Domain.L0Tests.Fixtures;
 
 /// <summary>
 ///     Simplified fixture for testing HighValueTransactionEffect with minimal boilerplate.
@@ -40,11 +40,7 @@ public static class HighValueTransactionEffectFixture
             EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
                 .WithGrainKey(accountId)
                 .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>("global", OperationResult.Ok());
-        HighValueTransactionEffect effect = harness.Build((
-            factory,
-            _,
-            logger
-        ) => new(factory, logger));
+        HighValueTransactionEffect effect = harness.Build((factory, _, logger) => new(factory, logger));
         FundsDeposited eventData = new()
         {
             Amount = depositAmount,

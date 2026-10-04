@@ -1,4 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
   <PropertyGroup>
     <Description>Public contracts and abstractions for Reservoir.</Description>
   </PropertyGroup>

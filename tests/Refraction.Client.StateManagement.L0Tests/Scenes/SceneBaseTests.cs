@@ -99,7 +99,7 @@ public sealed class SceneBaseTests
 
         // Assert
         Assert.NotNull(storeProperty);
-        InjectAttribute? injectAttr = storeProperty!.GetCustomAttribute<InjectAttribute>();
+        InjectAttribute? injectAttr = storeProperty.GetCustomAttribute<InjectAttribute>();
         Assert.NotNull(injectAttr);
     }
 

@@ -1,13 +1,7 @@
-using Crescent.Crescent.L2Tests.Domain.Counter;
-using Crescent.Crescent.L2Tests.Domain.Counter.Commands;
-using Crescent.Crescent.L2Tests.Domain.CounterSummary;
-
 using Mississippi.DomainModeling.Abstractions;
 
-using Xunit.Abstractions;
 
-
-namespace Crescent.Crescent.L2Tests;
+namespace MississippiSamples.Crescent.L2Tests;
 
 /// <summary>
 ///     Comprehensive end-to-end tests validating the complete event sourcing pipeline:
@@ -59,30 +53,30 @@ public sealed class ComprehensiveE2ETests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Initialize with 0
-        await counter.ExecuteAsync(new InitializeCounter());
+        await counter.ExecuteAsync(new InitializeCounter(), TestContext.Current.CancellationToken);
 
         // Act - Decrement to go negative
         for (int i = 0; i < 5; i++)
         {
-            await counter.ExecuteAsync(new DecrementCounter());
+            await counter.ExecuteAsync(new DecrementCounter(), TestContext.Current.CancellationToken);
         }
 
         // Assert - Verify projection shows negative
         IUxProjectionGrain<CounterSummaryProjection> projGrain = fixture.UxProjectionGrainFactory
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? projection = await projGrain.GetAsync(CancellationToken.None);
-        projection.Should().NotBeNull();
+        Assert.NotNull(projection);
 
         // Expected: 0 - 5 = -5, IsPositive = false, 6 operations
-        projection!.CurrentCount.Should().Be(-5, "Count should be -5");
-        projection.TotalOperations.Should().Be(6, "Operations should be 6");
-        projection.IsPositive.Should().BeFalse("IsPositive should be false for negative count");
+        Assert.Equal(-5, projection.CurrentCount);
+        Assert.Equal(6, projection.TotalOperations);
+        Assert.False(projection.IsPositive, "IsPositive should be false for negative count");
         output.WriteLine($"[Test] Boundary: Count={projection.CurrentCount}, IsPositive={projection.IsPositive}");
 
         // Act - Increment back to zero
         for (int i = 0; i < 5; i++)
         {
-            await counter.ExecuteAsync(new IncrementCounter());
+            await counter.ExecuteAsync(new IncrementCounter(), TestContext.Current.CancellationToken);
         }
 
         // Wait for projection to catch up
@@ -99,12 +93,12 @@ public sealed class ComprehensiveE2ETests
 
             output.WriteLine(
                 $"[Test] Waiting for projection to return to zero (attempt {attempt}/{MaxAttempts}). CurrentCount={afterZero?.CurrentCount}");
-            await Task.Delay(RetryDelayMs);
+            await Task.Delay(RetryDelayMs, TestContext.Current.CancellationToken);
         }
 
-        afterZero.Should().NotBeNull("Projection should exist after incrementing back");
-        CounterSummaryProjection finalProjection = afterZero!;
-        finalProjection.CurrentCount.Should().Be(0, "Count should be 0 after incrementing back");
+        Assert.True(afterZero is not null, "Projection should exist after incrementing back");
+        CounterSummaryProjection finalProjection = afterZero;
+        Assert.Equal(0, finalProjection.CurrentCount);
         output.WriteLine("[Test] PASSED: Boundary conditions handled correctly!");
     }
 
@@ -125,21 +119,25 @@ public sealed class ComprehensiveE2ETests
             .GetGenericAggregate<CounterAggregate>(counterId2);
 
         // Act - Initialize counter1 with 100, counter2 with 200
-        OperationResult init1 = await counter1.ExecuteAsync(new InitializeCounter(100));
-        OperationResult init2 = await counter2.ExecuteAsync(new InitializeCounter(200));
-        init1.Success.Should().BeTrue();
-        init2.Success.Should().BeTrue();
+        OperationResult init1 = await counter1.ExecuteAsync(
+            new InitializeCounter(100),
+            TestContext.Current.CancellationToken);
+        OperationResult init2 = await counter2.ExecuteAsync(
+            new InitializeCounter(200),
+            TestContext.Current.CancellationToken);
+        Assert.True(init1.Success);
+        Assert.True(init2.Success);
 
         // Act - Increment counter1 by 10 operations
         for (int i = 0; i < 10; i++)
         {
-            await counter1.ExecuteAsync(new IncrementCounter());
+            await counter1.ExecuteAsync(new IncrementCounter(), TestContext.Current.CancellationToken);
         }
 
         // Act - Decrement counter2 by 5 operations
         for (int i = 0; i < 5; i++)
         {
-            await counter2.ExecuteAsync(new DecrementCounter());
+            await counter2.ExecuteAsync(new DecrementCounter(), TestContext.Current.CancellationToken);
         }
 
         // Assert - Verify projections are isolated
@@ -149,16 +147,16 @@ public sealed class ComprehensiveE2ETests
             .GetUxProjectionGrain<CounterSummaryProjection>(counterId2);
         CounterSummaryProjection? projection1 = await proj1.GetAsync(CancellationToken.None);
         CounterSummaryProjection? projection2 = await proj2.GetAsync(CancellationToken.None);
-        projection1.Should().NotBeNull();
-        projection2.Should().NotBeNull();
+        Assert.NotNull(projection1);
+        Assert.NotNull(projection2);
 
         // Counter1: 100 + 10 = 110, 11 operations
-        projection1!.CurrentCount.Should().Be(110, "Counter1 should be 100 + 10 = 110");
-        projection1.TotalOperations.Should().Be(11, "Counter1 should have 11 operations");
+        Assert.Equal(110, projection1.CurrentCount);
+        Assert.Equal(11, projection1.TotalOperations);
 
         // Counter2: 200 - 5 = 195, 6 operations
-        projection2!.CurrentCount.Should().Be(195, "Counter2 should be 200 - 5 = 195");
-        projection2.TotalOperations.Should().Be(6, "Counter2 should have 6 operations");
+        Assert.Equal(195, projection2.CurrentCount);
+        Assert.Equal(6, projection2.TotalOperations);
         output.WriteLine($"[Test] Counter1: Count={projection1.CurrentCount}, Ops={projection1.TotalOperations}");
         output.WriteLine($"[Test] Counter2: Count={projection2.CurrentCount}, Ops={projection2.TotalOperations}");
         output.WriteLine("[Test] PASSED: Isolated aggregates have independent projections!");
@@ -179,22 +177,24 @@ public sealed class ComprehensiveE2ETests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Initialize
-        await counter.ExecuteAsync(new InitializeCounter());
+        await counter.ExecuteAsync(new InitializeCounter(), TestContext.Current.CancellationToken);
 
         // Act - Perform many increments
         for (int i = 0; i < opCount; i++)
         {
-            OperationResult result = await counter.ExecuteAsync(new IncrementCounter());
-            result.Success.Should().BeTrue($"Increment[{i}] should succeed");
+            OperationResult result = await counter.ExecuteAsync(
+                new IncrementCounter(),
+                TestContext.Current.CancellationToken);
+            Assert.True(result.Success, $"Increment[{i}] should succeed");
         }
 
         // Assert - Verify projection
         IUxProjectionGrain<CounterSummaryProjection> projGrain = fixture.UxProjectionGrainFactory
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? projection = await projGrain.GetAsync(CancellationToken.None);
-        projection.Should().NotBeNull();
-        projection!.CurrentCount.Should().Be(opCount, $"Count should be {opCount}");
-        projection.TotalOperations.Should().Be(opCount + 1, $"Operations should be {opCount + 1}");
+        Assert.NotNull(projection);
+        Assert.Equal(opCount, projection.CurrentCount);
+        Assert.Equal(opCount + 1, projection.TotalOperations);
         output.WriteLine(
             $"[Test] Large sequence completed: Count={projection.CurrentCount}, Ops={projection.TotalOperations}");
         output.WriteLine("[Test] PASSED: Large operation sequence maintains correct state!");
@@ -214,34 +214,34 @@ public sealed class ComprehensiveE2ETests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Setup: Initialize and perform operations
-        await counter.ExecuteAsync(new InitializeCounter(25));
+        await counter.ExecuteAsync(new InitializeCounter(25), TestContext.Current.CancellationToken);
         for (int i = 0; i < 10; i++)
         {
-            await counter.ExecuteAsync(new IncrementCounter());
+            await counter.ExecuteAsync(new IncrementCounter(), TestContext.Current.CancellationToken);
         }
 
         // Act - First read
         IUxProjectionGrain<CounterSummaryProjection> projGrain = fixture.UxProjectionGrainFactory
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? beforeDeactivation = await projGrain.GetAsync(CancellationToken.None);
-        beforeDeactivation.Should().NotBeNull();
-        int expectedCount = beforeDeactivation!.CurrentCount;
+        Assert.NotNull(beforeDeactivation);
+        int expectedCount = beforeDeactivation.CurrentCount;
         int expectedOps = beforeDeactivation.TotalOperations;
 
         // Small delay to simulate some idle time
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
 
         // Act - Read again (simulating after potential deactivation)
         CounterSummaryProjection? afterDeactivation = await projGrain.GetAsync(CancellationToken.None);
-        afterDeactivation.Should().NotBeNull();
+        Assert.NotNull(afterDeactivation);
 
         // Assert - Values should match
-        afterDeactivation!.CurrentCount.Should().Be(expectedCount, "Count should persist");
-        afterDeactivation.TotalOperations.Should().Be(expectedOps, "Operations should persist");
+        Assert.Equal(expectedCount, afterDeactivation.CurrentCount);
+        Assert.Equal(expectedOps, afterDeactivation.TotalOperations);
 
         // Expected: 25 + 10 = 35, 11 operations
-        expectedCount.Should().Be(35, "Expected count should be 35");
-        expectedOps.Should().Be(11, "Expected operations should be 11");
+        Assert.Equal(35, expectedCount);
+        Assert.Equal(11, expectedOps);
         output.WriteLine($"[Test] Before: Count={expectedCount}, Ops={expectedOps}");
         output.WriteLine(
             $"[Test] After: Count={afterDeactivation.CurrentCount}, Ops={afterDeactivation.TotalOperations}");
@@ -262,10 +262,10 @@ public sealed class ComprehensiveE2ETests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Initialize and perform some operations
-        await counter.ExecuteAsync(new InitializeCounter(50));
+        await counter.ExecuteAsync(new InitializeCounter(50), TestContext.Current.CancellationToken);
         for (int i = 0; i < 5; i++)
         {
-            await counter.ExecuteAsync(new IncrementCounter());
+            await counter.ExecuteAsync(new IncrementCounter(), TestContext.Current.CancellationToken);
         }
 
         // Act - Read projection multiple times
@@ -276,17 +276,17 @@ public sealed class ComprehensiveE2ETests
         CounterSummaryProjection? third = await projGrain.GetAsync(CancellationToken.None);
 
         // Assert - All reads should return same values
-        first.Should().NotBeNull();
-        second.Should().NotBeNull();
-        third.Should().NotBeNull();
-        first!.CurrentCount.Should().Be(second!.CurrentCount);
-        second.CurrentCount.Should().Be(third!.CurrentCount);
-        first.TotalOperations.Should().Be(second.TotalOperations);
-        second.TotalOperations.Should().Be(third.TotalOperations);
+        Assert.NotNull(first);
+        Assert.NotNull(second);
+        Assert.NotNull(third);
+        Assert.Equal(second.CurrentCount, first.CurrentCount);
+        Assert.Equal(third.CurrentCount, second.CurrentCount);
+        Assert.Equal(second.TotalOperations, first.TotalOperations);
+        Assert.Equal(third.TotalOperations, second.TotalOperations);
 
         // Expected: 50 + 5 = 55, 6 operations
-        first.CurrentCount.Should().Be(55, "Count should be 50 + 5 = 55");
-        first.TotalOperations.Should().Be(6, "Operations should be 6");
+        Assert.Equal(55, first.CurrentCount);
+        Assert.Equal(6, first.TotalOperations);
         output.WriteLine($"[Test] All three reads returned: Count={first.CurrentCount}, Ops={first.TotalOperations}");
         output.WriteLine("[Test] PASSED: Projection re-reads are consistent!");
     }
@@ -305,7 +305,7 @@ public sealed class ComprehensiveE2ETests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Initialize
-        await counter.ExecuteAsync(new InitializeCounter());
+        await counter.ExecuteAsync(new InitializeCounter(), TestContext.Current.CancellationToken);
 
         // Act - Rapid fire: increment by different amounts (+1, +2, +3, +4, +5 = 15)
         for (int i = 1; i <= 5; i++)
@@ -314,8 +314,9 @@ public sealed class ComprehensiveE2ETests
                 new IncrementCounter
                 {
                     Amount = i,
-                });
-            result.Success.Should().BeTrue($"Increment({i}) should succeed");
+                },
+                TestContext.Current.CancellationToken);
+            Assert.True(result.Success, $"Increment({i}) should succeed");
         }
 
         // Act - Then decrement: -1, -2 = -3, net = 15 - 3 = 12
@@ -325,18 +326,19 @@ public sealed class ComprehensiveE2ETests
                 new DecrementCounter
                 {
                     Amount = i,
-                });
+                },
+                TestContext.Current.CancellationToken);
         }
 
         // Assert - Verify projection
         IUxProjectionGrain<CounterSummaryProjection> projGrain = fixture.UxProjectionGrainFactory
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? projection = await projGrain.GetAsync(CancellationToken.None);
-        projection.Should().NotBeNull();
+        Assert.NotNull(projection);
 
         // Expected: 0 + (1+2+3+4+5) - (1+2) = 12, 8 operations
-        projection!.CurrentCount.Should().Be(12, "Count should be 12");
-        projection.TotalOperations.Should().Be(8, "Operations should be 8");
+        Assert.Equal(12, projection.CurrentCount);
+        Assert.Equal(8, projection.TotalOperations);
         output.WriteLine($"[Test] Rapid updates: Count={projection.CurrentCount}, Ops={projection.TotalOperations}");
         output.WriteLine("[Test] PASSED: Rapid sequential updates maintain correct order!");
     }
@@ -355,10 +357,10 @@ public sealed class ComprehensiveE2ETests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Initialize and increment
-        await counter.ExecuteAsync(new InitializeCounter(10));
+        await counter.ExecuteAsync(new InitializeCounter(10), TestContext.Current.CancellationToken);
         for (int i = 0; i < 5; i++)
         {
-            await counter.ExecuteAsync(new IncrementCounter());
+            await counter.ExecuteAsync(new IncrementCounter(), TestContext.Current.CancellationToken);
         }
 
         // Act - Reset to 1000
@@ -366,24 +368,25 @@ public sealed class ComprehensiveE2ETests
             new ResetCounter
             {
                 NewValue = 1000,
-            });
-        resetResult.Success.Should().BeTrue("Reset should succeed");
+            },
+            TestContext.Current.CancellationToken);
+        Assert.True(resetResult.Success, "Reset should succeed");
 
         // Act - Increment 3 more times after reset
         for (int i = 0; i < 3; i++)
         {
-            await counter.ExecuteAsync(new IncrementCounter());
+            await counter.ExecuteAsync(new IncrementCounter(), TestContext.Current.CancellationToken);
         }
 
         // Assert - Verify projection
         IUxProjectionGrain<CounterSummaryProjection> projGrain = fixture.UxProjectionGrainFactory
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? projection = await projGrain.GetAsync(CancellationToken.None);
-        projection.Should().NotBeNull();
+        Assert.NotNull(projection);
 
         // Expected: 1000 + 3 = 1003, 10 operations (1 init + 5 inc + 1 reset + 3 inc)
-        projection!.CurrentCount.Should().Be(1003, "Count should be 1000 + 3 = 1003");
-        projection.TotalOperations.Should().Be(10, "Operations should be 10");
+        Assert.Equal(1003, projection.CurrentCount);
+        Assert.Equal(10, projection.TotalOperations);
         output.WriteLine(
             $"[Test] Reset and recovery: Count={projection.CurrentCount}, Ops={projection.TotalOperations}");
         output.WriteLine("[Test] PASSED: Reset and recovery projects correctly!");

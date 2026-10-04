@@ -1,4 +1,3 @@
-#pragma warning disable ASPIRECOSMOSDB001 // RunAsPreviewEmulator is experimental
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
@@ -21,12 +20,15 @@ IResourceBuilder<AzureBlobStorageResource> blobs = storage.AddBlobs("blobs");
 // Add Azure Table Storage for Orleans clustering
 IResourceBuilder<AzureTableStorageResource> clusteringTable = storage.AddTables("clustering");
 
+// Add Azure Table Storage for Orleans reminders
+IResourceBuilder<AzureTableStorageResource> reminderTable = storage.AddTables("reminders");
+
 // Add Azure Blob Storage for Orleans grain state
 IResourceBuilder<AzureBlobStorageResource> grainState = storage.AddBlobs("grainstate");
 
-// Add Cosmos DB using PREVIEW emulator for event sourcing storage (Brooks + Snapshots)
+// Add Cosmos DB using the Linux vNext emulator for event sourcing storage (Brooks + Snapshots)
 IResourceBuilder<AzureCosmosDBResource> cosmos = builder.AddAzureCosmosDB("cosmos")
-    .RunAsPreviewEmulator(emulator =>
+    .RunAsEmulator(emulator =>
     {
         emulator.WithDataExplorer();
 #pragma warning disable ASPIRECERTIFICATES001
@@ -38,14 +40,15 @@ _ = cosmos.AddCosmosDatabase("spring-db");
 // Configure Orleans with Azure Storage for clustering, grain state, and in-memory streaming
 OrleansService orleans = builder.AddOrleans("default")
     .WithClustering(clusteringTable)
+    .WithReminders(reminderTable)
     .WithGrainStorage("Default", grainState)
     .WithMemoryGrainStorage("PubSubStore")
     .WithMemoryStreaming("StreamProvider");
 
-// Add Spring.Silo - Orleans server that hosts grains
+// Add MississippiSamples.Spring.Runtime - business runtime host (runs in an Orleans silo)
 // WithReference cosmos/blobs for event sourcing storage (Brooks + Snapshots)
-// WithHealthCheck ensures the silo is fully ready before dependents start
-IResourceBuilder<ProjectResource> silo = builder.AddProject<Spring_Silo>("spring-silo")
+// WithHealthCheck ensures the runtime host is fully ready before dependents start
+IResourceBuilder<ProjectResource> springRuntime = builder.AddProject<Spring_Runtime>("spring-runtime")
     .WithReference(orleans)
     .WithReference(cosmos)
     .WithReference(blobs)
@@ -53,17 +56,20 @@ IResourceBuilder<ProjectResource> silo = builder.AddProject<Spring_Silo>("spring
     .WaitFor(cosmos)
     .WithHttpHealthCheck("/health");
 
-// Add Spring.Server with resource references
-// This is an Orleans client that connects to the silo
-// WaitFor ensures the server doesn't start until dependencies are ready
-IResourceBuilder<ProjectResource> springServer = builder.AddProject<Spring_Server>("spring-server")
+// Add MississippiSamples.Spring.Gateway with resource references
+// This host is an Orleans client that connects to the runtime host's Orleans silo
+// WaitFor ensures the gateway doesn't start until dependencies are ready
+IResourceBuilder<ProjectResource> springGateway = builder.AddProject<Spring_Gateway>("spring-gateway")
     .WithReference(orleans.AsClient())
     .WaitFor(storage)
-    .WaitFor(silo)
+    .WaitFor(springRuntime)
+    .WithHttpHealthCheck("/health", endpointName: "http")
     .WithExternalHttpEndpoints();
 if (springAuthProofModeEnabled)
 {
-    springServer.WithEnvironment("SpringAuth__Enabled", "true");
+    springGateway.WithEnvironment("SpringAuth__Enabled", "true");
+    springGateway.WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development");
+    springGateway.WithEnvironment("DOTNET_ENVIRONMENT", "Development");
 }
 
 await builder.Build().RunAsync();

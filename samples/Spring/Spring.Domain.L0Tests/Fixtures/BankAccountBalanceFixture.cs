@@ -1,9 +1,9 @@
-using Spring.Domain.Aggregates.BankAccount.Events;
-using Spring.Domain.Projections.BankAccountBalance;
-using Spring.Domain.Projections.BankAccountBalance.Reducers;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
+using MississippiSamples.Spring.Domain.Projections.BankAccountBalance;
+using MississippiSamples.Spring.Domain.Projections.BankAccountBalance.Reducers;
 
 
-namespace Spring.Domain.L0Tests.Fixtures;
+namespace MississippiSamples.Spring.Domain.L0Tests.Fixtures;
 
 /// <summary>
 ///     Pre-wired test fixture for BankAccountBalance projection testing.

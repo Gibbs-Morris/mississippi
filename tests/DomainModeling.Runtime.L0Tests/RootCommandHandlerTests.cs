@@ -234,10 +234,7 @@ public sealed class RootCommandHandlerTests
     public void HandlePassesStateToMatchedHandler()
     {
         TestState? capturedState = null;
-        DelegateCommandHandler<CreateCommand, TestState> createHandler = new((
-            _,
-            state
-        ) =>
+        DelegateCommandHandler<CreateCommand, TestState> createHandler = new((_, state) =>
         {
             capturedState = state;
             return OperationResult.Ok<IReadOnlyList<object>>(Array.Empty<object>());
@@ -259,7 +256,7 @@ public sealed class RootCommandHandlerTests
         RootCommandHandler<TestState> handler = new(new ICommandHandler<TestState>[] { firstHandler, secondHandler });
         OperationResult<IReadOnlyList<object>> result = handler.Handle(new CreateCommand("test"), null);
         Assert.True(result.Success);
-        Assert.Single(result.Value!);
+        Assert.Single(result.Value);
         Assert.Equal(1, firstHandler.InvocationCount);
         Assert.Equal(0, secondHandler.InvocationCount);
     }

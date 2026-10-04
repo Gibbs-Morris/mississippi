@@ -158,7 +158,7 @@ public sealed class UxProjectionControllerWithMapperTests
         TestableControllerWithMapper controller = CreateController(factoryMock, mapperMock, "\"42\"");
 
         // Act
-        ActionResult<TestDto> result = await controller.GetAsync(TestEntityId);
+        ActionResult<TestDto> result = await controller.GetAsync(TestEntityId, TestContext.Current.CancellationToken);
 
         // Assert
         StatusCodeResult statusCodeResult = Assert.IsType<StatusCodeResult>(result.Result);
@@ -188,7 +188,7 @@ public sealed class UxProjectionControllerWithMapperTests
         TestableControllerWithMapper controller = CreateController(factoryMock, mapperMock);
 
         // Act
-        await controller.GetAsync(TestEntityId);
+        await controller.GetAsync(TestEntityId, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(controller.Response.Headers.TryGetValue("Cache-Control", out StringValues cacheControl));
@@ -217,7 +217,7 @@ public sealed class UxProjectionControllerWithMapperTests
         TestableControllerWithMapper controller = CreateController(factoryMock, mapperMock, "\"41\"");
 
         // Act
-        ActionResult<TestDto> result = await controller.GetAsync(TestEntityId);
+        ActionResult<TestDto> result = await controller.GetAsync(TestEntityId, TestContext.Current.CancellationToken);
 
         // Assert
         OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -250,7 +250,7 @@ public sealed class UxProjectionControllerWithMapperTests
         TestableControllerWithMapper controller = CreateController(factoryMock, mapperMock);
 
         // Act
-        ActionResult<TestDto> result = await controller.GetAsync(TestEntityId);
+        ActionResult<TestDto> result = await controller.GetAsync(TestEntityId, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.IsType<OkObjectResult>(result.Result);
@@ -275,7 +275,7 @@ public sealed class UxProjectionControllerWithMapperTests
         TestableControllerWithMapper controller = CreateController(factoryMock, mapperMock);
 
         // Act
-        ActionResult<TestDto> result = await controller.GetAsync(TestEntityId);
+        ActionResult<TestDto> result = await controller.GetAsync(TestEntityId, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.IsType<NotFoundResult>(result.Result);
@@ -300,7 +300,7 @@ public sealed class UxProjectionControllerWithMapperTests
         TestableControllerWithMapper controller = CreateController(factoryMock, mapperMock);
 
         // Act
-        ActionResult<TestDto> result = await controller.GetAsync(TestEntityId);
+        ActionResult<TestDto> result = await controller.GetAsync(TestEntityId, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.IsType<NotFoundResult>(result.Result);
@@ -327,7 +327,7 @@ public sealed class UxProjectionControllerWithMapperTests
         TestableControllerWithMapper controller = CreateController(factoryMock, mapperMock);
 
         // Act
-        ActionResult<TestDto> result = await controller.GetAsync(TestEntityId);
+        ActionResult<TestDto> result = await controller.GetAsync(TestEntityId, TestContext.Current.CancellationToken);
 
         // Assert
         OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -353,7 +353,10 @@ public sealed class UxProjectionControllerWithMapperTests
         TestableControllerWithMapper controller = CreateController(factoryMock, mapperMock);
 
         // Act
-        ActionResult<TestDto> result = await controller.GetAtVersionAsync(TestEntityId, 10);
+        ActionResult<TestDto> result = await controller.GetAtVersionAsync(
+            TestEntityId,
+            10,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.IsType<NotFoundResult>(result.Result);
@@ -374,10 +377,7 @@ public sealed class UxProjectionControllerWithMapperTests
         BrookPosition? capturedVersion = null;
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
         grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
-            .Callback<BrookPosition, CancellationToken>((
-                v,
-                _
-            ) => capturedVersion = v)
+            .Callback<BrookPosition, CancellationToken>((v, _) => capturedVersion = v)
             .ReturnsAsync(expectedProjection);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
@@ -386,7 +386,10 @@ public sealed class UxProjectionControllerWithMapperTests
         TestableControllerWithMapper controller = CreateController(factoryMock, mapperMock);
 
         // Act
-        ActionResult<TestDto> result = await controller.GetAtVersionAsync(TestEntityId, version);
+        ActionResult<TestDto> result = await controller.GetAtVersionAsync(
+            TestEntityId,
+            version,
+            TestContext.Current.CancellationToken);
 
         // Assert
         OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -414,7 +417,9 @@ public sealed class UxProjectionControllerWithMapperTests
         TestableControllerWithMapper controller = CreateController(factoryMock, mapperMock);
 
         // Act
-        ActionResult<long> result = await controller.GetLatestVersionAsync(TestEntityId);
+        ActionResult<long> result = await controller.GetLatestVersionAsync(
+            TestEntityId,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.IsType<NotFoundResult>(result.Result);
@@ -437,7 +442,9 @@ public sealed class UxProjectionControllerWithMapperTests
         TestableControllerWithMapper controller = CreateController(factoryMock, mapperMock);
 
         // Act
-        ActionResult<long> result = await controller.GetLatestVersionAsync(TestEntityId);
+        ActionResult<long> result = await controller.GetLatestVersionAsync(
+            TestEntityId,
+            TestContext.Current.CancellationToken);
 
         // Assert
         OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -468,7 +475,10 @@ public sealed class UxProjectionControllerWithMapperTests
         TestableControllerWithMapper controller = CreateController(factoryMock, mapperMock);
 
         // Act
-        ActionResult<TestDto> result = await controller.GetAtVersionAsync(TestEntityId, 5);
+        ActionResult<TestDto> result = await controller.GetAtVersionAsync(
+            TestEntityId,
+            5,
+            TestContext.Current.CancellationToken);
 
         // Assert
         OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -501,7 +511,7 @@ public sealed class UxProjectionControllerWithMapperTests
         TestableControllerWithMapper controller = CreateController(factoryMock, mapperMock);
 
         // Act
-        await controller.GetAsync(TestEntityId);
+        await controller.GetAsync(TestEntityId, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(capturedProjection);

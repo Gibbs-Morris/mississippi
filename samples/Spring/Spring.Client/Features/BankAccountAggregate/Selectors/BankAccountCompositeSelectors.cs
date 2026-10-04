@@ -2,11 +2,11 @@ using System;
 
 using Mississippi.Inlet.Client.Abstractions.State;
 
-using Spring.Client.Features.BankAccountAggregate.State;
-using Spring.Client.Features.BankAccountBalance.Dtos;
+using MississippiSamples.Spring.Client.Features.BankAccountAggregate.State;
+using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos;
 
 
-namespace Spring.Client.Features.BankAccountAggregate.Selectors;
+namespace MississippiSamples.Spring.Client.Features.BankAccountAggregate.Selectors;
 
 /// <summary>
 ///     Composite selectors that derive values from multiple feature states.
@@ -45,10 +45,7 @@ internal static class BankAccountCompositeSelectors
     public static Func<BankAccountAggregateState, ProjectionsFeatureState, string?> GetErrorMessage(
         string? entityId
     ) =>
-        (
-            aggregateState,
-            projectionsState
-        ) =>
+        (aggregateState, projectionsState) =>
         {
             ArgumentNullException.ThrowIfNull(aggregateState);
             ArgumentNullException.ThrowIfNull(projectionsState);
@@ -79,10 +76,7 @@ internal static class BankAccountCompositeSelectors
     public static Func<BankAccountAggregateState, ProjectionsFeatureState, bool> IsOperationInProgress(
         string? entityId
     ) =>
-        (
-            aggregateState,
-            projectionsState
-        ) =>
+        (aggregateState, projectionsState) =>
         {
             ArgumentNullException.ThrowIfNull(aggregateState);
             ArgumentNullException.ThrowIfNull(projectionsState);

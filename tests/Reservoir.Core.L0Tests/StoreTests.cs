@@ -223,8 +223,8 @@ public sealed class StoreTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddActionEffect<TestFeatureState, ReturningActionEffect>();
-        services.AddReservoir();
+        IReservoirBuilder builder = services.AddReservoir();
+        builder.AddFeatureState<TestFeatureState>(feature => feature.AddActionEffect<ReturningActionEffect>());
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
@@ -235,7 +235,7 @@ public sealed class StoreTests : IDisposable
         store.Dispatch(new IncrementAction());
 
         // Assert
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
         Assert.True(dispatchCount >= 2); // Initial + returned action
     }
 
@@ -251,9 +251,9 @@ public sealed class StoreTests : IDisposable
         ServiceCollection services = [];
         services.AddTransient<IActionEffect<TestFeatureState>, ThrowingActionEffect>();
         services.AddTransient<IActionEffect<TestFeatureState>>(_ => new TestActionEffect(() => secondEffectRan = true));
-        services.AddRootActionEffect<TestFeatureState>();
-        services.AddFeatureState<TestFeatureState>();
-        services.AddReservoir();
+        services.AddTransient<IRootActionEffect<TestFeatureState>, RootActionEffect<TestFeatureState>>();
+        IReservoirBuilder builder = services.AddReservoir();
+        builder.AddFeatureState<TestFeatureState>();
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
@@ -262,7 +262,7 @@ public sealed class StoreTests : IDisposable
         store.Dispatch(new IncrementAction());
 
         // Assert
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
         Assert.True(secondEffectRan);
     }
 
@@ -386,9 +386,9 @@ public sealed class StoreTests : IDisposable
         bool effectHandled = false;
         ServiceCollection services = [];
         services.AddTransient<IActionEffect<TestFeatureState>>(_ => new TestActionEffect(() => effectHandled = true));
-        services.AddRootActionEffect<TestFeatureState>();
-        services.AddFeatureState<TestFeatureState>();
-        services.AddReservoir();
+        services.AddTransient<IRootActionEffect<TestFeatureState>, RootActionEffect<TestFeatureState>>();
+        IReservoirBuilder builder = services.AddReservoir();
+        builder.AddFeatureState<TestFeatureState>();
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
@@ -397,7 +397,7 @@ public sealed class StoreTests : IDisposable
         store.Dispatch(new IncrementAction());
 
         // Assert
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
         Assert.True(effectHandled);
     }
 
@@ -409,8 +409,8 @@ public sealed class StoreTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddFeatureState<TestFeatureState>();
-        services.AddReservoir();
+        IReservoirBuilder builder = services.AddReservoir();
+        builder.AddFeatureState<TestFeatureState>();
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
 
@@ -515,8 +515,9 @@ public sealed class StoreTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReducer<IncrementAction, TestFeatureState, TestFeatureActionReducer>();
-        services.AddReservoir();
+        IReservoirBuilder builder = services.AddReservoir();
+        builder.AddFeatureState<TestFeatureState>(feature => feature
+            .AddReducer<IncrementAction, TestFeatureActionReducer>());
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore diStore = scope.ServiceProvider.GetRequiredService<IStore>();

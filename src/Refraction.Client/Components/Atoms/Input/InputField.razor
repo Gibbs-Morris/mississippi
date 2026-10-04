@@ -1,0 +1,27 @@
+<div class="rf-input-field" data-state="@State" @attributes="AdditionalAttributes">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="rf-input-field__label" for="@EffectiveId">@Label</label>
+    }
+    <input @attributes="InputAttributes"
+           class="rf-input-field__input"
+           id="@EffectiveId"
+           type="@Type"
+           value="@Value"
+           placeholder="@Placeholder"
+           disabled="@IsDisabled"
+           readonly="@IsReadOnly"
+           aria-describedby="@DescribedBy"
+           aria-invalid="@AriaInvalid"
+           @oninput="HandleInputAsync"
+           @onfocus="HandleFocusAsync"
+           @onblur="HandleBlurAsync"/>
+    @if (HasHelperText)
+    {
+        <p id="@HelperId" class="rf-input-field__helper">@HelperText</p>
+    }
+    @if (HasErrorText)
+    {
+        <p id="@ErrorId" class="rf-input-field__error" role="alert">@ErrorText</p>
+    }
+</div>

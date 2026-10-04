@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
@@ -28,23 +29,15 @@ public sealed class BrookMetricsTests
     public void RecordCursorReadEmitsMetricWithReadType()
     {
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        ConcurrentQueue<MetricMeasurement> measurements = new();
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == BrookMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -52,7 +45,7 @@ public sealed class BrookMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.Start();
         BrookKey brookKey = new("TestBrook", "entity-1");
@@ -74,23 +67,15 @@ public sealed class BrookMetricsTests
     public void RecordReadEmitsAllMetrics()
     {
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        ConcurrentQueue<MetricMeasurement> measurements = new();
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == BrookMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -98,14 +83,9 @@ public sealed class BrookMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
-        listener.SetMeasurementEventCallback<double>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -113,7 +93,7 @@ public sealed class BrookMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, 0, measurement, tagMap));
+            measurements.Enqueue(new(instrument.Name, 0, measurement, tagMap));
         });
         listener.Start();
         BrookKey brookKey = new("TestBrook", "entity-1");
@@ -145,23 +125,15 @@ public sealed class BrookMetricsTests
     public void RecordSliceFanOutEmitsMetric()
     {
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        ConcurrentQueue<MetricMeasurement> measurements = new();
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == BrookMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -169,7 +141,7 @@ public sealed class BrookMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.Start();
         BrookKey brookKey = new("TestBrook", "entity-1");
@@ -189,23 +161,15 @@ public sealed class BrookMetricsTests
     public void RecordWriteEmitsAllMetrics()
     {
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        ConcurrentQueue<MetricMeasurement> measurements = new();
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == BrookMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -213,14 +177,9 @@ public sealed class BrookMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
-        listener.SetMeasurementEventCallback<double>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -228,14 +187,9 @@ public sealed class BrookMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, 0, measurement, tagMap));
+            measurements.Enqueue(new(instrument.Name, 0, measurement, tagMap));
         });
-        listener.SetMeasurementEventCallback<int>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<int>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -243,7 +197,7 @@ public sealed class BrookMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.Start();
         BrookKey brookKey = new("TestBrook", "entity-1");
@@ -281,23 +235,15 @@ public sealed class BrookMetricsTests
     public void RecordWriteErrorEmitsErrorMetric()
     {
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        ConcurrentQueue<MetricMeasurement> measurements = new();
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == BrookMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -305,7 +251,7 @@ public sealed class BrookMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.Start();
         BrookKey brookKey = new("TestBrook", "entity-1");
@@ -329,23 +275,15 @@ public sealed class BrookMetricsTests
         // Use unique brook name to isolate from other tests running in parallel
         const string brookName = "ZeroCountTestBrook";
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        ConcurrentQueue<MetricMeasurement> measurements = new();
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == BrookMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -353,14 +291,9 @@ public sealed class BrookMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
-        listener.SetMeasurementEventCallback<double>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -368,14 +301,9 @@ public sealed class BrookMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, 0, measurement, tagMap));
+            measurements.Enqueue(new(instrument.Name, 0, measurement, tagMap));
         });
-        listener.SetMeasurementEventCallback<int>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<int>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -383,7 +311,7 @@ public sealed class BrookMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.Start();
         BrookKey brookKey = new(brookName, "entity-1");

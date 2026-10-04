@@ -1,5 +1,5 @@
 ---
-description: 'Spring Bank virtual teller — open accounts, deposit, withdraw, and check balances via the SpringBank MCP server.'
+description: 'Spring Bank virtual teller — open accounts, deposit, withdraw, and check balances via the SpringBank MCP gateway.'
 name: Spring Bank Teller
 tools: [springbank/*]
 ---

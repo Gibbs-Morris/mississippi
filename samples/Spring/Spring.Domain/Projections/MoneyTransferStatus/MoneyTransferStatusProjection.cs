@@ -8,7 +8,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Projections.MoneyTransferStatus;
+namespace MississippiSamples.Spring.Domain.Projections.MoneyTransferStatus;
 
 /// <summary>
 ///     Read-optimized projection for tracking money transfer saga status.
@@ -22,7 +22,7 @@ namespace Spring.Domain.Projections.MoneyTransferStatus;
     Description = "Retrieves the current status and phase of a money transfer saga.")]
 [GenerateSerializer]
 [GenerateSagaStatusReducers]
-[Alias("Spring.Domain.Projections.MoneyTransferStatus.MoneyTransferStatusProjection")]
+[Alias("MississippiSamples.Spring.Domain.Projections.MoneyTransferStatus.MoneyTransferStatusProjection")]
 public sealed record MoneyTransferStatusProjection
 {
     /// <summary>

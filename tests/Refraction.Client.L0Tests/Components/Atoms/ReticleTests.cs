@@ -25,9 +25,9 @@ public sealed class ReticleTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
-        Assert.True(attr!.CaptureUnmatchedValues);
+        Assert.True(attr.CaptureUnmatchedValues);
     }
 
     /// <summary>
@@ -41,9 +41,9 @@ public sealed class ReticleTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
-        Assert.Equal(typeof(string), prop!.PropertyType);
+        Assert.Equal(typeof(string), prop.PropertyType);
     }
 
     /// <summary>
@@ -57,7 +57,7 @@ public sealed class ReticleTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
     }
 

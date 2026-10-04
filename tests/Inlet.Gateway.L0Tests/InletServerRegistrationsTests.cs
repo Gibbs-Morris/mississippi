@@ -46,15 +46,15 @@ public sealed class InletServerRegistrationsTests
     {
         // Arrange
         ServiceCollection services = new();
-        string customNamespace = "Custom.Namespace";
+        const string customPolicy = "custom.generated.api";
 
         // Act
-        services.AddInletServer(options => options.AllClientsStreamNamespace = customNamespace);
+        services.AddInletServer(options => options.GeneratedApiAuthorization.DefaultPolicy = customPolicy);
         using ServiceProvider provider = services.BuildServiceProvider();
         IOptions<InletServerOptions> options = provider.GetRequiredService<IOptions<InletServerOptions>>();
 
         // Assert
-        Assert.Equal(customNamespace, options.Value.AllClientsStreamNamespace);
+        Assert.Equal(customPolicy, options.Value.GeneratedApiAuthorization.DefaultPolicy);
     }
 
     /// <summary>

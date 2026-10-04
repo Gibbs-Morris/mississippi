@@ -1,8 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Brooks.Abstractions.Streaming;
 using Mississippi.Brooks.Runtime;
 using Mississippi.Brooks.Runtime.Storage.Abstractions;
-using Mississippi.Common.Abstractions;
+using Mississippi.Hosting.Runtime;
 using Mississippi.Testing.Utilities.Storage;
 
 using Orleans.Hosting;
@@ -22,14 +23,14 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
     )
     {
         // Host configures stream infrastructure
-        siloBuilder.AddMemoryStreams(MississippiDefaults.StreamProviderName);
+        siloBuilder.AddMemoryStreams(BrookStreamingDefaults.OrleansStreamProviderName);
+        siloBuilder.UseInMemoryReminderService();
 
         // Tell Brooks which stream provider to use
-        siloBuilder.AddEventSourcing();
+        siloBuilder.UseMississippi(runtime => runtime.AddEventSourcing());
         siloBuilder.ConfigureServices(services =>
         {
             services.AddUxProjections();
-            services.AddEventSourcingByService(); // Registers IStreamIdFactory
             services.AddSingleton<InMemoryBrookStorage>();
             services.AddSingleton<IBrookStorageReader>(sp => sp.GetRequiredService<InMemoryBrookStorage>());
         });

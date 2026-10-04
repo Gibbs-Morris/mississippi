@@ -12,8 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.Common.Abstractions;
-
 
 namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Locking;
 
@@ -31,7 +29,7 @@ internal sealed class BlobDistributedLockManager : IDistributedLockManager
     /// <param name="logger">The logger for diagnostic output.</param>
     /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
     public BlobDistributedLockManager(
-        [FromKeyedServices(MississippiDefaults.ServiceKeys.BlobLocking)]
+        [FromKeyedServices(BrookCosmosDefaults.BlobLockingServiceKey)]
         BlobServiceClient blobServiceClient,
         IOptions<BrookStorageOptions> options,
         IBlobLeaseClientFactory leaseClientFactory,
@@ -74,7 +72,18 @@ internal sealed class BlobDistributedLockManager : IDistributedLockManager
         if (!await blobClient.ExistsAsync(cancellationToken))
         {
             Logger.CreatingLockBlob(lockKey);
-            await blobClient.UploadAsync(new BinaryData("lock"), cancellationToken);
+            try
+            {
+                await blobClient.UploadAsync(new BinaryData("lock"), cancellationToken);
+            }
+            catch (RequestFailedException ex) when ((ex.Status == 409) &&
+                                                    string.Equals(
+                                                        ex.ErrorCode,
+                                                        BlobErrorCode.BlobAlreadyExists.ToString(),
+                                                        StringComparison.Ordinal))
+            {
+                Logger.LockBlobAlreadyExists(lockKey, ex);
+            }
         }
 
         IBlobLeaseClient leaseClient = LeaseClientFactory.Create(blobClient);

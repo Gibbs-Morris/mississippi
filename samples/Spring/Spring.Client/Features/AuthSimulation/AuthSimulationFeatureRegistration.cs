@@ -1,11 +1,9 @@
-using Microsoft.Extensions.DependencyInjection;
+using Mississippi.Reservoir.Abstractions;
 
-using Mississippi.Reservoir.Core;
-
-using Spring.Client.AuthSimulation;
+using MississippiSamples.Spring.Client.AuthSimulation;
 
 
-namespace Spring.Client.Features.AuthSimulation;
+namespace MississippiSamples.Spring.Client.Features.AuthSimulation;
 
 /// <summary>
 ///     Extension methods for registering auth simulation feature.
@@ -15,14 +13,15 @@ internal static class AuthSimulationFeatureRegistration
     /// <summary>
     ///     Adds the auth simulation feature to the service collection.
     /// </summary>
-    /// <param name="services">Service collection.</param>
-    /// <returns>Service collection for chaining.</returns>
-    public static IServiceCollection AddAuthSimulationFeature(
-        this IServiceCollection services
+    /// <param name="builder">The Reservoir builder.</param>
+    /// <returns>The builder for chaining.</returns>
+    public static IReservoirBuilder AddAuthSimulationFeature(
+        this IReservoirBuilder builder
     )
     {
-        services.AddReducer<SetAuthSimulationProfileAction, AuthSimulationState>(AuthSimulationReducers.SetProfile);
-        services.AddActionEffect<AuthSimulationState, AuthSimulationSyncEffect>();
-        return services;
+        builder.AddFeatureState<AuthSimulationState>(feature => feature
+            .AddReducer<SetAuthSimulationProfileAction>(AuthSimulationReducers.SetProfile)
+            .AddActionEffect<AuthSimulationSyncEffect>());
+        return builder;
     }
 }

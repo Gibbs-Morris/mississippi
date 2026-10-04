@@ -40,16 +40,16 @@ namespace Mississippi.Tributary.Runtime;
 ///         </list>
 ///     </para>
 ///     <para>
-///         For example, with a modulus of 100, requesting state at version 364:
+///         For example, with a modulus of 50, requesting state at version 364:
 ///         <list type="bullet">
-///             <item>Base snapshot at version 300 is retrieved (or built recursively).</item>
-///             <item>Only events 301-364 (64 events) are replayed.</item>
+///             <item>Base snapshot at version 350 is retrieved (or built recursively).</item>
+///             <item>Only events 351-364 (14 events) are replayed.</item>
 ///         </list>
 ///     </para>
 ///     <para>
-///         After state is built (from storage or rebuilt), a one-way call is made to an
-///         <see cref="ISnapshotPersisterGrain" /> for background persistence if the snapshot
-///         was rebuilt.
+///         After state is rebuilt, a one-way call is made to an <see cref="ISnapshotPersisterGrain" />
+///         only when the version is selected by <see cref="SnapshotRetentionOptions" />. Intermediate
+///         versions are skipped before serialization unless save-all is enabled.
 ///     </para>
 ///     <para>
 ///         The brook name is read from the grain key, eliminating the need for custom derived
@@ -143,6 +143,12 @@ internal sealed class SnapshotCacheGrain<TSnapshot>
         bool success = false;
         try
         {
+            int retainModulus = RetentionOptions.GetRetainModulus<TSnapshot>();
+            Logger.RetentionPolicyApplied(
+                snapshotTypeName,
+                snapshotKey.Stream.SnapshotStorageName,
+                retainModulus,
+                RetentionOptions.ShouldPersistAllSnapshots);
             string currentReducerHash = RootReducer.GetReducerHash();
             SnapshotEnvelope? envelope = await SnapshotStorageReader.ReadAsync(snapshotKey, token);
             if (envelope is not null)
@@ -174,8 +180,8 @@ internal sealed class SnapshotCacheGrain<TSnapshot>
             // Rebuild state from the event stream
             await RebuildStateFromStreamAsync(token);
 
-            // Request background persistence since we rebuilt
-            RequestBackgroundPersistence(currentReducerHash);
+            // Request background persistence when this reconstructed version is eligible.
+            RequestBackgroundPersistence(currentReducerHash, retainModulus);
             Logger.Activated(primaryKey);
             success = true;
         }
@@ -204,9 +210,9 @@ internal sealed class SnapshotCacheGrain<TSnapshot>
         long targetVersion = snapshotKey.Version;
         long baseVersion = RetentionOptions.GetBaseSnapshotVersion<TSnapshot>(targetVersion);
         BrookPosition readFrom;
-        if (baseVersion > 0)
+        if (targetVersion > 0)
         {
-            // We have a base snapshot to build from
+            // Position zero is a real checkpoint for every later target version.
             long deltaEvents = targetVersion - baseVersion;
             SnapshotMetrics.RecordBaseUsed(snapshotTypeName);
             Logger.UsingBaseSnapshot(baseVersion, targetVersion, deltaEvents);
@@ -248,7 +254,8 @@ internal sealed class SnapshotCacheGrain<TSnapshot>
     }
 
     private void RequestBackgroundPersistence(
-        string reducerHash
+        string reducerHash,
+        int retainModulus
     )
     {
         if (state is null)
@@ -258,6 +265,20 @@ internal sealed class SnapshotCacheGrain<TSnapshot>
 
         string keyString = snapshotKey;
         string snapshotTypeName = typeof(TSnapshot).Name;
+        string snapshotStorageName = snapshotKey.Stream.SnapshotStorageName;
+        bool shouldPersist = RetentionOptions.ShouldPersistAllSnapshots || ((snapshotKey.Version % retainModulus) == 0);
+        if (!shouldPersist)
+        {
+            SnapshotMetrics.RecordPersistSkipped(snapshotStorageName);
+            Logger.PersistenceSkipped(
+                snapshotTypeName,
+                snapshotKey.Version,
+                retainModulus,
+                RetentionOptions.ShouldPersistAllSnapshots);
+            return;
+        }
+
+        SnapshotMetrics.RecordPersistRequested(snapshotStorageName);
         Logger.RequestingPersistence(keyString);
         SnapshotEnvelope envelope = SnapshotStateConverter.ToEnvelope(state, reducerHash);
 

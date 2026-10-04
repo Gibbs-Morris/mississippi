@@ -2,7 +2,7 @@ using System;
 
 using Microsoft.Extensions.Configuration;
 
-using Mississippi.Common.Abstractions;
+using Mississippi.Brooks.Abstractions.Streaming;
 
 using Orleans.Hosting;
 using Orleans.TestingHost;
@@ -22,6 +22,6 @@ public sealed class DefaultClientConfigurator : IClientBuilderConfigurator
     )
     {
         ArgumentNullException.ThrowIfNull(clientBuilder);
-        clientBuilder.AddMemoryStreams(MississippiDefaults.StreamProviderName);
+        clientBuilder.AddMemoryStreams(BrookStreamingDefaults.OrleansStreamProviderName);
     }
 }

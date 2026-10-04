@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Preserve the product namespace used by the existing hosting client tests. -->
+    <RootNamespace>$(AssemblyName)</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Hosting.Client\Hosting.Client.csproj" />
+    <ProjectReference Include="..\..\src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

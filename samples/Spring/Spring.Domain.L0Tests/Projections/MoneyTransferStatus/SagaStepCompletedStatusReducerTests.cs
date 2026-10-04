@@ -1,10 +1,10 @@
 using Mississippi.DomainModeling.Abstractions;
 
-using Spring.Domain.Projections.MoneyTransferStatus;
-using Spring.Domain.Projections.MoneyTransferStatus.Reducers;
+using MississippiSamples.Spring.Domain.Projections.MoneyTransferStatus;
+using MississippiSamples.Spring.Domain.Projections.MoneyTransferStatus.Reducers;
 
 
-namespace Spring.Domain.L0Tests.Projections.MoneyTransferStatus;
+namespace MississippiSamples.Spring.Domain.L0Tests.Projections.MoneyTransferStatus;
 
 /// <summary>
 ///     Tests for <see cref="SagaStepCompletedStatusReducer" />.
@@ -40,6 +40,6 @@ public sealed class SagaStepCompletedStatusReducerTests
             CompletedAt = new(2026, 2, 3, 10, 0, 0, TimeSpan.Zero),
         };
         MoneyTransferStatusProjection result = reducer.Apply(initial, @event);
-        result.LastCompletedStepIndex.Should().Be(1);
+        Assert.Equal(1, result.LastCompletedStepIndex);
     }
 }

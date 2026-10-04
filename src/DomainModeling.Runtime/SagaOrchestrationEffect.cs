@@ -19,6 +19,10 @@ namespace Mississippi.DomainModeling.Runtime;
 public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
     where TSaga : class, ISagaState
 {
+    private const string CompensationExceptionErrorCode = "COMPENSATION_EXCEPTION";
+
+    private const string SagaStepExceptionErrorCode = "SAGA_STEP_EXCEPTION";
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="SagaOrchestrationEffect{TSaga}" /> class.
     /// </summary>
@@ -50,14 +54,20 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
 
     private TimeProvider TimeProvider { get; }
 
+    private static bool ShouldPropagateException(
+        Exception exception,
+        CancellationToken cancellationToken
+    ) =>
+        exception is OutOfMemoryException or StackOverflowException or ThreadInterruptedException ||
+        (exception is OperationCanceledException && cancellationToken.IsCancellationRequested);
+
     /// <inheritdoc />
     public bool CanHandle(
         object eventData
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);
-        return eventData is SagaStartedEvent or SagaStepCompleted or SagaStepFailed or SagaCompensating
-            or SagaStepCompensated;
+        return SagaLifecycleEventClassifier.IsOrchestrationLifecycleEvent(eventData);
     }
 
     /// <inheritdoc />
@@ -128,7 +138,17 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         }
 
         Logger?.SagaStepCompensating(typeof(TSaga).Name, stepInfo.StepName, stepIndex);
-        CompensationResult result = await compensatable.CompensateAsync(state, cancellationToken).ConfigureAwait(false);
+        CompensationResult result;
+        try
+        {
+            result = await compensatable.CompensateAsync(state, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (!ShouldPropagateException(ex, cancellationToken))
+        {
+            Logger?.SagaStepCompensationException(typeof(TSaga).Name, stepInfo.StepName, stepIndex, ex);
+            result = CompensationResult.Failed(CompensationExceptionErrorCode, ex.Message);
+        }
+
         if (result.Success || result.Skipped)
         {
             yield return new SagaStepCompensated
@@ -202,7 +222,17 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
 
         ISagaStep<TSaga> step = ResolveStep(stepInfo);
         Logger?.SagaStepExecuting(typeof(TSaga).Name, stepInfo.StepName, stepIndex);
-        StepResult result = await step.ExecuteAsync(state, cancellationToken).ConfigureAwait(false);
+        StepResult result;
+        try
+        {
+            result = await step.ExecuteAsync(state, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (!ShouldPropagateException(ex, cancellationToken))
+        {
+            Logger?.SagaStepExecutionException(typeof(TSaga).Name, stepInfo.StepName, stepIndex, ex);
+            result = StepResult.Failed(SagaStepExceptionErrorCode, ex.Message);
+        }
+
         if (result.Success)
         {
             foreach (object evt in result.Events)

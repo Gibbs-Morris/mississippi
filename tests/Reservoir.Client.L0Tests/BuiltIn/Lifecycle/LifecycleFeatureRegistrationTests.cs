@@ -32,8 +32,8 @@ public sealed class LifecycleFeatureRegistrationTests : IDisposable
         fakeTimeProvider.SetUtcNow(new(2024, 1, 15, 10, 30, 0, TimeSpan.Zero));
         ServiceCollection services = [];
         services.AddSingleton<TimeProvider>(fakeTimeProvider);
-        services.AddReservoir();
-        services.AddBuiltInLifecycle();
+        IReservoirBuilder builder = services.AddReservoir();
+        builder.AddBuiltInLifecycle();
         serviceProvider = services.BuildServiceProvider();
         store = serviceProvider.GetRequiredService<IStore>();
     }
@@ -110,13 +110,13 @@ public sealed class LifecycleFeatureRegistrationTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReservoir();
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        IServiceCollection result = services.AddBuiltInLifecycle();
+        IReservoirBuilder result = builder.AddBuiltInLifecycle();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(builder, result);
     }
 
     /// <summary>

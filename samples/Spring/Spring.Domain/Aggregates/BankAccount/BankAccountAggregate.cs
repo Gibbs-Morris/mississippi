@@ -1,10 +1,11 @@
 using Mississippi.Brooks.Abstractions.Attributes;
 using Mississippi.Inlet.Generators.Abstractions;
+using Mississippi.Tributary.Abstractions.Attributes;
 
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.BankAccount;
+namespace MississippiSamples.Spring.Domain.Aggregates.BankAccount;
 
 /// <summary>
 ///     Internal aggregate state for the bank account.
@@ -12,10 +13,11 @@ namespace Spring.Domain.Aggregates.BankAccount;
 /// </summary>
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
 [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTSTATE")]
+[SnapshotRetention(20)]
 [GenerateAggregateEndpoints]
 [GenerateMcpTools]
 [GenerateSerializer]
-[Alias("Spring.Domain.BankAccount.BankAccountAggregate")]
+[Alias("MississippiSamples.Spring.Domain.Aggregates.BankAccount.BankAccountAggregate")]
 public sealed record BankAccountAggregate
 {
     /// <summary>

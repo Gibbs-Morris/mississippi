@@ -1,17 +1,14 @@
-// <copyright file="CrescentFixture.cs" company="Gibbs-Morris LLC">
-// Licensed under the Gibbs-Morris commercial license.
-// </copyright>
-
-using Crescent.Crescent.L2Tests.Domain.Counter;
-
 using Microsoft.Extensions.Hosting;
 
+using Mississippi.Brooks.Abstractions.Streaming;
 using Mississippi.Brooks.Runtime;
 using Mississippi.Brooks.Runtime.Storage.Cosmos;
 using Mississippi.Brooks.Serialization.Json;
-using Mississippi.Common.Abstractions;
 using Mississippi.DomainModeling.Abstractions;
+using Mississippi.Hosting.Runtime;
+using Mississippi.Tributary.Abstractions;
 using Mississippi.Tributary.Runtime;
+using Mississippi.Tributary.Runtime.Storage.Abstractions;
 using Mississippi.Tributary.Runtime.Storage.Cosmos;
 
 using Orleans;
@@ -21,7 +18,7 @@ using Orleans.Hosting;
 using Projects;
 
 
-namespace Crescent.Crescent.L2Tests;
+namespace MississippiSamples.Crescent.L2Tests;
 
 /// <summary>
 ///     xUnit fixture that starts the Crescent AppHost with Cosmos DB and Azure Storage emulators.
@@ -96,6 +93,34 @@ public sealed class CrescentFixture
         orleansHost?.Services.GetRequiredService<IUxProjectionGrainFactory>() ??
         throw new InvalidOperationException("Orleans host not initialized.");
 
+    /// <summary>
+    ///     Gets the root reducer used to compute the counter aggregate's reducer hash.
+    /// </summary>
+    internal IRootReducer<CounterAggregate> CounterRootReducer =>
+        orleansHost?.Services.GetRequiredService<IRootReducer<CounterAggregate>>() ??
+        throw new InvalidOperationException("Orleans host not initialized.");
+
+    /// <summary>
+    ///     Gets the converter used to deserialize counter aggregate snapshots.
+    /// </summary>
+    internal ISnapshotStateConverter<CounterAggregate> CounterSnapshotStateConverter =>
+        orleansHost?.Services.GetRequiredService<ISnapshotStateConverter<CounterAggregate>>() ??
+        throw new InvalidOperationException("Orleans host not initialized.");
+
+    /// <summary>
+    ///     Gets the storage reader for the configured Cosmos snapshot provider.
+    /// </summary>
+    internal ISnapshotStorageReader SnapshotStorageReader =>
+        orleansHost?.Services.GetRequiredService<ISnapshotStorageReader>() ??
+        throw new InvalidOperationException("Orleans host not initialized.");
+
+    /// <summary>
+    ///     Gets the storage writer for the configured Cosmos snapshot provider.
+    /// </summary>
+    internal ISnapshotStorageWriter SnapshotStorageWriter =>
+        orleansHost?.Services.GetRequiredService<ISnapshotStorageWriter>() ??
+        throw new InvalidOperationException("Orleans host not initialized.");
+
     private static IHost BuildOrleansHost(
         string cosmosConnectionString,
         string blobConnectionString
@@ -114,9 +139,6 @@ public sealed class CrescentFixture
         builder.Logging.AddFilter("Orleans", LogLevel.Warning);
         builder.Logging.AddFilter("Mississippi", LogLevel.Debug);
 
-        // Add Mississippi event sourcing services
-        builder.Services.AddEventSourcingByService();
-
         // Add JSON serialization for event sourcing
         builder.Services.AddJsonSerialization();
 
@@ -126,13 +148,10 @@ public sealed class CrescentFixture
         // Pre-register CosmosClient as keyed service with Gateway mode for Aspire emulator compatibility
         // IMPORTANT: Must be registered BEFORE UseOrleans() so Orleans grains can resolve them
         // See: https://github.com/dotnet/aspire/issues/5364
-        // Brooks expects it as a keyed service with key MississippiDefaults.ServiceKeys.CosmosBrooksClient
+        // Brooks expects it as a keyed service with key BrookCosmosDefaults.CosmosClientServiceKey
         builder.Services.AddKeyedSingleton(
-            MississippiDefaults.ServiceKeys.CosmosBrooksClient,
-            (
-                _,
-                _
-            ) => new CosmosClient(
+            BrookCosmosDefaults.CosmosClientServiceKey,
+            (_, _) => new CosmosClient(
                 cosmosConnectionString,
                 new()
                 {
@@ -142,11 +161,8 @@ public sealed class CrescentFixture
 
         // Snapshots also need a keyed CosmosClient
         builder.Services.AddKeyedSingleton(
-            MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
-            (
-                _,
-                _
-            ) => new CosmosClient(
+            SnapshotCosmosDefaults.CosmosClientServiceKey,
+            (_, _) => new CosmosClient(
                 cosmosConnectionString,
                 new()
                 {
@@ -155,32 +171,10 @@ public sealed class CrescentFixture
                 }));
 
         // Pre-register BlobServiceClient as keyed service for distributed locking
-        // BlobDistributedLockManager uses [FromKeyedServices(MississippiDefaults.ServiceKeys.BlobLocking)]
+        // BlobDistributedLockManager uses [FromKeyedServices(BrookCosmosDefaults.BlobLockingServiceKey)]
         builder.Services.AddKeyedSingleton(
-            MississippiDefaults.ServiceKeys.BlobLocking,
-            (
-                _,
-                _
-            ) => new BlobServiceClient(blobConnectionString));
-
-        // Configure Cosmos DB storage for brooks (event streams)
-        // Use the overload without connection strings since we pre-registered the clients
-        builder.Services.AddCosmosBrookStorageProvider(o =>
-        {
-            o.CosmosClientServiceKey = MississippiDefaults.ServiceKeys.CosmosBrooksClient;
-            o.DatabaseId = "aspire-l2tests";
-            o.QueryBatchSize = 50;
-            o.MaxEventsPerBatch = 50;
-        });
-
-        // Configure Cosmos DB storage for snapshots
-        builder.Services.AddCosmosSnapshotStorageProvider(options =>
-        {
-            options.CosmosClientServiceKey = MississippiDefaults.ServiceKeys.CosmosSnapshotsClient;
-            options.DatabaseId = "aspire-l2tests";
-            options.ContainerId = "snapshots";
-            options.QueryBatchSize = 100;
-        });
+            BrookCosmosDefaults.BlobLockingServiceKey,
+            (_, _) => new BlobServiceClient(blobConnectionString));
 
         // Register Counter aggregate domain (events, handlers, reducers, projections)
         builder.Services.AddCounterAggregate();
@@ -197,11 +191,31 @@ public sealed class CrescentFixture
                 });
 
             // Host configures stream infrastructure
-            silo.AddMemoryStreams(MississippiDefaults.StreamProviderName);
+            silo.AddMemoryStreams(BrookStreamingDefaults.OrleansStreamProviderName);
             silo.AddMemoryGrainStorage("PubSubStore");
 
-            // Tell Brooks which stream provider to use
-            silo.AddEventSourcing();
+            // Tell Brooks which stream provider to use and configure its Cosmos event storage.
+            silo.UseMississippi(runtime =>
+            {
+                // The keyed Cosmos and Blob clients were pre-registered above; this is host-owned mode.
+                runtime.AddCosmosBrookStorageProvider(cosmos =>
+                {
+                    cosmos.CosmosClientServiceKey = BrookCosmosDefaults.CosmosClientServiceKey;
+                    cosmos.DatabaseId = "aspire-l2tests";
+                    cosmos.QueryBatchSize = 50;
+                    cosmos.MaxEventsPerBatch = 50;
+                });
+
+                // Configure Cosmos DB storage for snapshots
+                runtime.AddCosmosSnapshotStorageProvider(snapshot =>
+                {
+                    snapshot.CosmosClientServiceKey = SnapshotCosmosDefaults.CosmosClientServiceKey;
+                    snapshot.DatabaseId = "aspire-l2tests";
+                    snapshot.ContainerId = "snapshots";
+                    snapshot.QueryBatchSize = 100;
+                });
+                runtime.AddEventSourcing();
+            });
         });
         IHost host = builder.Build();
 
@@ -210,6 +224,49 @@ public sealed class CrescentFixture
         Console.WriteLine("[Fixture] Orleans host built, database will be created on first access.");
         return host;
     }
+
+    private static CosmosClientOptions CreateCosmosClientOptions(
+        string cosmosConnectionString
+    )
+    {
+        // Detect if we're using the preview emulator (HTTP) or regular emulator (HTTPS)
+        bool isHttpEndpoint = cosmosConnectionString.Contains("http://", StringComparison.OrdinalIgnoreCase);
+        CosmosClientOptions options = new()
+        {
+            ConnectionMode = ConnectionMode.Gateway, // Emulator works better with Gateway mode
+            LimitToEndpoint = true, // Required for emulator - prevents SDK from trying to discover replicas
+        };
+
+        // Only add certificate bypass for HTTPS endpoints (non-preview emulator)
+        if (!isHttpEndpoint)
+        {
+#pragma warning disable CA5400 // HttpClient certificate check - emulator uses self-signed cert
+#pragma warning disable IDISP014, IDISP001 // Use a single instance of HttpClient - CosmosClient manages its own lifecycle
+            options.HttpClientFactory = () =>
+            {
+                HttpClientHandler handler = new()
+                {
+                    ServerCertificateCustomValidationCallback =
+                        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+                };
+                return new(handler);
+            };
+#pragma warning restore IDISP014, IDISP001
+#pragma warning restore CA5400
+        }
+
+        return options;
+    }
+
+    private static bool IsTransientCosmosReadinessFailure(
+        CosmosException exception
+    ) =>
+        (exception.StatusCode == HttpStatusCode.NotFound) ||
+        (exception.StatusCode == HttpStatusCode.ServiceUnavailable) ||
+        (exception.StatusCode == HttpStatusCode.RequestTimeout) ||
+        (exception.StatusCode == HttpStatusCode.TooManyRequests) ||
+        ((int)exception.StatusCode >= 500) ||
+        exception.Message.Contains("pgcosmos extension is still starting", StringComparison.OrdinalIgnoreCase);
 
     private static string MaskConnectionString(
         string connectionString
@@ -224,6 +281,65 @@ public sealed class CrescentFixture
         return connectionString.Length > 50
             ? $"{connectionString[..50]}...(length={connectionString.Length})"
             : connectionString;
+    }
+
+    private static async Task WaitForCosmosDataPlaneReadyAsync(
+        string cosmosConnectionString,
+        CancellationToken cancellationToken
+    )
+    {
+        int attempt = 0;
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            attempt++;
+            try
+            {
+                Console.WriteLine($"[Fixture] Cosmos readiness attempt {attempt}: validating data plane access...");
+                using CancellationTokenSource probeCts = CancellationTokenSource.CreateLinkedTokenSource(
+                    cancellationToken);
+                probeCts.CancelAfter(TimeSpan.FromSeconds(30));
+                using CosmosClient bootstrapClient = new(
+                    cosmosConnectionString,
+                    CreateCosmosClientOptions(cosmosConnectionString));
+                DatabaseResponse runtimeDatabaseResponse = await bootstrapClient.CreateDatabaseIfNotExistsAsync(
+                    "aspire-l2tests",
+                    cancellationToken: probeCts.Token);
+                await runtimeDatabaseResponse.Database.CreateContainerIfNotExistsAsync(
+                    "brooks",
+                    "/brookPartitionKey",
+                    cancellationToken: probeCts.Token);
+                await runtimeDatabaseResponse.Database.CreateContainerIfNotExistsAsync(
+                    "snapshots",
+                    "/snapshotPartitionKey",
+                    cancellationToken: probeCts.Token);
+                using CosmosClient verificationClient = new(
+                    cosmosConnectionString,
+                    CreateCosmosClientOptions(cosmosConnectionString));
+                await verificationClient.GetDatabase("testdb")
+                    .GetContainer("testcontainer")
+                    .ReadContainerAsync(cancellationToken: probeCts.Token);
+                await verificationClient.GetDatabase("aspire-l2tests")
+                    .GetContainer("brooks")
+                    .ReadContainerAsync(cancellationToken: probeCts.Token);
+                await verificationClient.GetDatabase("aspire-l2tests")
+                    .GetContainer("snapshots")
+                    .ReadContainerAsync(cancellationToken: probeCts.Token);
+                Console.WriteLine($"[Fixture] Cosmos data plane became ready on attempt {attempt}.");
+                return;
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                Console.WriteLine($"[Fixture] Cosmos readiness attempt {attempt} timed out; retrying...");
+            }
+            catch (CosmosException ex) when (IsTransientCosmosReadinessFailure(ex))
+            {
+                Console.WriteLine(
+                    $"[Fixture] Cosmos readiness attempt {attempt} returned {ex.StatusCode}: {ex.Message}");
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+        }
     }
 
     /// <summary>
@@ -255,37 +371,16 @@ public sealed class CrescentFixture
         // Detect if we're using the preview emulator (HTTP) or regular emulator (HTTPS)
         bool isHttpEndpoint = CosmosConnectionString.Contains("http://", StringComparison.OrdinalIgnoreCase);
         Console.WriteLine($"[CreateCosmosClient] Is HTTP endpoint: {isHttpEndpoint}");
-        CosmosClientOptions options = new()
-        {
-            ConnectionMode = ConnectionMode.Gateway, // Emulator works better with Gateway mode
-            LimitToEndpoint = true, // Required for emulator - prevents SDK from trying to discover replicas
-        };
-
-        // Only add certificate bypass for HTTPS endpoints (non-preview emulator)
         if (!isHttpEndpoint)
         {
             Console.WriteLine("[CreateCosmosClient] Using HTTPS - adding certificate bypass for self-signed cert");
-#pragma warning disable CA5400 // HttpClient certificate check - emulator uses self-signed cert
-#pragma warning disable IDISP014, IDISP001 // Use a single instance of HttpClient - CosmosClient manages its own lifecycle
-            options.HttpClientFactory = () =>
-            {
-                Console.WriteLine("[CreateCosmosClient] HttpClientFactory invoked - creating handler with cert bypass");
-                HttpClientHandler handler = new()
-                {
-                    ServerCertificateCustomValidationCallback =
-                        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
-                };
-                return new(handler);
-            };
-#pragma warning restore IDISP014, IDISP001
-#pragma warning restore CA5400
         }
         else
         {
             Console.WriteLine("[CreateCosmosClient] Using HTTP (preview emulator) - no certificate bypass needed");
         }
 
-        CosmosClient client = new(CosmosConnectionString, options);
+        CosmosClient client = new(CosmosConnectionString, CreateCosmosClientOptions(CosmosConnectionString));
         Console.WriteLine($"[CreateCosmosClient] CosmosClient created successfully, endpoint: {client.Endpoint}");
         Console.WriteLine("=== END CREATE COSMOS CLIENT DEBUG ===");
         return client;
@@ -303,7 +398,7 @@ public sealed class CrescentFixture
     }
 
     /// <inheritdoc />
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (orleansHost is not null)
         {
@@ -320,7 +415,7 @@ public sealed class CrescentFixture
 
     /// <inheritdoc />
 #pragma warning disable IDISP001 // Dispose created - appHost implements builder pattern; BuildAsync returns app that we dispose
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         try
         {
@@ -355,8 +450,16 @@ public sealed class CrescentFixture
             await app.ResourceNotifications.WaitForResourceHealthyAsync("cosmos", cts.Token)
                 .WaitAsync(DefaultTimeout, cts.Token);
 
+            // Wait for Cosmos data-plane child resources so the emulator has finished provisioning.
+            await app.ResourceNotifications.WaitForResourceHealthyAsync("testdb", cts.Token)
+                .WaitAsync(DefaultTimeout, cts.Token);
+            await app.ResourceNotifications.WaitForResourceHealthyAsync("testcontainer", cts.Token)
+                .WaitAsync(DefaultTimeout, cts.Token);
+
             // Wait for Azure Storage emulator (Azurite)
             await app.ResourceNotifications.WaitForResourceHealthyAsync("storage", cts.Token)
+                .WaitAsync(DefaultTimeout, cts.Token);
+            await app.ResourceNotifications.WaitForResourceHealthyAsync("blobs", cts.Token)
                 .WaitAsync(DefaultTimeout, cts.Token);
 
             // Get connection strings for tests
@@ -374,6 +477,10 @@ public sealed class CrescentFixture
             Console.WriteLine($"[Fixture] Full Cosmos connection string: {CosmosConnectionString}");
             Console.WriteLine("=== END FIXTURE DEBUG ===");
 
+            // The preview emulator can report healthy before pgcosmos finishes starting.
+            // Probe the actual data plane before Orleans or tests begin using Cosmos.
+            await WaitForCosmosDataPlaneReadyAsync(CosmosConnectionString, cts.Token);
+
             // Start Orleans silo with Mississippi event sourcing configured to use the Crescent emulators
             Console.WriteLine("[Fixture] Starting Orleans silo with Mississippi...");
             orleansHost = BuildOrleansHost(CosmosConnectionString, BlobConnectionString);
@@ -387,6 +494,38 @@ public sealed class CrescentFixture
             IsInitialized = false;
 
             // Re-throw to fail the test fixture, but keep the error captured for diagnostics
+            throw;
+        }
+    }
+
+    /// <summary>
+    ///     Restarts the Orleans host while leaving the Aspire-owned Cosmos and Azure Storage resources running.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation token to cancel the restart.</param>
+    /// <returns>A task representing the asynchronous restart operation.</returns>
+    internal async Task RestartOrleansHostAsync(
+        CancellationToken cancellationToken
+    )
+    {
+        EnsureInitialized();
+        IHost currentHost = orleansHost ?? throw new InvalidOperationException("Orleans host not initialized.");
+        orleansHost = null;
+        IsInitialized = false;
+        using (currentHost)
+        {
+            await currentHost.StopAsync(cancellationToken);
+        }
+
+        IHost restartedHost = BuildOrleansHost(CosmosConnectionString, BlobConnectionString);
+        try
+        {
+            await restartedHost.StartAsync(cancellationToken);
+            orleansHost = restartedHost;
+            IsInitialized = true;
+        }
+        catch
+        {
+            restartedHost.Dispose();
             throw;
         }
     }

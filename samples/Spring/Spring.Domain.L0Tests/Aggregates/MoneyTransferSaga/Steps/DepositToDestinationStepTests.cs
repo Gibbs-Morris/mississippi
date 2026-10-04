@@ -3,15 +3,15 @@ using System.Threading.Tasks;
 
 using Mississippi.DomainModeling.Abstractions;
 
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Commands;
+using MississippiSamples.Spring.Domain.Aggregates.MoneyTransferSaga;
+using MississippiSamples.Spring.Domain.Aggregates.MoneyTransferSaga.Steps;
+
 using Moq;
 
-using Spring.Domain.Aggregates.BankAccount;
-using Spring.Domain.Aggregates.BankAccount.Commands;
-using Spring.Domain.Aggregates.MoneyTransferSaga;
-using Spring.Domain.Aggregates.MoneyTransferSaga.Steps;
 
-
-namespace Spring.Domain.L0Tests.Aggregates.MoneyTransferSaga.Steps;
+namespace MississippiSamples.Spring.Domain.L0Tests.Aggregates.MoneyTransferSaga.Steps;
 
 /// <summary>
 ///     Tests for <see cref="DepositToDestinationStep" />.
@@ -41,7 +41,7 @@ public sealed class DepositToDestinationStepTests
             },
         };
         StepResult result = await step.ExecuteAsync(state, CancellationToken.None);
-        result.Success.Should().BeTrue();
+        Assert.True(result.Success);
         grain.Verify(g => g.ExecuteAsync(It.IsAny<DepositFunds>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -64,8 +64,8 @@ public sealed class DepositToDestinationStepTests
             },
         };
         StepResult result = await step.ExecuteAsync(state, CancellationToken.None);
-        result.Success.Should().BeFalse();
-        result.ErrorCode.Should().Be(AggregateErrorCodes.InvalidCommand);
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
     }
 
     /// <summary>
@@ -79,7 +79,7 @@ public sealed class DepositToDestinationStepTests
         DepositToDestinationStep step = new(factory.Object);
         MoneyTransferSagaState state = new();
         StepResult result = await step.ExecuteAsync(state, CancellationToken.None);
-        result.Success.Should().BeFalse();
-        result.ErrorCode.Should().Be(AggregateErrorCodes.InvalidState);
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
     }
 }

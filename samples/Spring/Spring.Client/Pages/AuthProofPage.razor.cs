@@ -6,15 +6,15 @@ using System.Reflection;
 
 using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
 
-using Spring.Client.Features.AuthProof.Dtos;
-using Spring.Client.Features.AuthProofAggregate.Actions;
-using Spring.Client.Features.AuthProofAggregate.State;
-using Spring.Client.Features.AuthProofSaga.Actions;
-using Spring.Client.Features.AuthProofSaga.State;
-using Spring.Client.Features.AuthSimulation;
+using MississippiSamples.Spring.Client.Features.AuthProof.Dtos;
+using MississippiSamples.Spring.Client.Features.AuthProofAggregate.Actions;
+using MississippiSamples.Spring.Client.Features.AuthProofAggregate.State;
+using MississippiSamples.Spring.Client.Features.AuthProofSaga.Actions;
+using MississippiSamples.Spring.Client.Features.AuthProofSaga.State;
+using MississippiSamples.Spring.Client.Features.AuthSimulation;
 
 
-namespace Spring.Client.Pages;
+namespace MississippiSamples.Spring.Client.Pages;
 
 /// <summary>
 ///     Auth proof demonstration page.
@@ -67,12 +67,7 @@ public sealed partial class AuthProofPage
         }
 
         PropertyInfo[] properties = snapshot.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
-        Array.Sort(
-            properties,
-            static (
-                left,
-                right
-            ) => string.CompareOrdinal(left.Name, right.Name));
+        Array.Sort(properties, static (left, right) => string.CompareOrdinal(left.Name, right.Name));
         List<(string Name, string Value)> rows = [];
         foreach (PropertyInfo property in properties)
         {

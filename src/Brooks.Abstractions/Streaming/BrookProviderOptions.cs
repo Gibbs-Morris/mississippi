@@ -1,6 +1,3 @@
-using Mississippi.Common.Abstractions;
-
-
 namespace Mississippi.Brooks.Abstractions.Streaming;
 
 /// <summary>
@@ -11,8 +8,8 @@ public sealed class BrookProviderOptions
 {
     /// <summary>
     ///     Gets or sets the name of the Orleans stream provider used for brook operations.
-    ///     Default value is <see cref="MississippiDefaults.StreamProviderName" />.
+    ///     Default value is <see cref="BrookStreamingDefaults.OrleansStreamProviderName" />.
     /// </summary>
     /// <value>The name of the Orleans stream provider.</value>
-    public string OrleansStreamProviderName { get; set; } = MississippiDefaults.StreamProviderName;
+    public string OrleansStreamProviderName { get; set; } = BrookStreamingDefaults.OrleansStreamProviderName;
 }
