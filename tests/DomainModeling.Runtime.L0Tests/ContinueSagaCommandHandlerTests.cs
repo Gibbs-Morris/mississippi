@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.DomainModeling.Abstractions;
-using Mississippi.DomainModeling.Abstractions;
 
 
 namespace Mississippi.DomainModeling.Runtime.L0Tests;
@@ -26,9 +25,7 @@ public sealed class ContinueSagaCommandHandlerTests
             SagaId = Guid.NewGuid(),
             CorrelationId = "corr-1",
         };
-
         OperationResult<IReadOnlyList<object>> result = handler.Handle(command, null);
-
         Assert.False(result.Success);
         Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
     }
@@ -53,9 +50,7 @@ public sealed class ContinueSagaCommandHandlerTests
             Phase = SagaPhase.Failed,
             LastCompletedStepIndex = 0,
         };
-
         OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
-
         Assert.True(result.Success);
         SagaResumeRequested resumeRequested = Assert.IsType<SagaResumeRequested>(Assert.Single(result.Value));
         Assert.Equal(command.SagaId, resumeRequested.SagaId);

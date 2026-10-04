@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 
 using Mississippi.DomainModeling.Abstractions;
-using Mississippi.DomainModeling.Abstractions;
 
 
 namespace Mississippi.DomainModeling.Runtime;
@@ -35,7 +34,7 @@ public sealed class ContinueSagaCommandHandler<TSaga> : CommandHandlerBase<Conti
     )
     {
         ArgumentNullException.ThrowIfNull(command);
-        if (state is null || state.Phase == SagaPhase.NotStarted)
+        if (state is null || (state.Phase == SagaPhase.NotStarted))
         {
             return OperationResult.Fail<IReadOnlyList<object>>(
                 AggregateErrorCodes.InvalidState,
@@ -48,7 +47,6 @@ public sealed class ContinueSagaCommandHandler<TSaga> : CommandHandlerBase<Conti
             CorrelationId = command.CorrelationId,
             RequestedAt = TimeProvider.GetUtcNow(),
         };
-
         return OperationResult.Ok<IReadOnlyList<object>>([resumeRequested]);
     }
 }

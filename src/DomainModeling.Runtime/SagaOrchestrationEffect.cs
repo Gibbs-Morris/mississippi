@@ -67,7 +67,8 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);
-        return SagaLifecycleEventClassifier.IsOrchestrationLifecycleEvent(eventData) || eventData is SagaResumeRequested;
+        return SagaLifecycleEventClassifier.IsOrchestrationLifecycleEvent(eventData) ||
+               eventData is SagaResumeRequested;
     }
 
     /// <inheritdoc />
@@ -100,33 +101,6 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
             SagaResumeRequested => ExecuteResumeAsync(currentState, cancellationToken),
             var _ => AsyncEnumerable.Empty<object>(),
         };
-    }
-
-    private async IAsyncEnumerable<object> ExecuteResumeAsync(
-        TSaga state,
-        [EnumeratorCancellation] CancellationToken cancellationToken
-    )
-    {
-        switch (state.Phase)
-        {
-            case SagaPhase.Running:
-            case SagaPhase.Failed:
-                await foreach (object evt in ExecuteStepAsync(state, state.LastCompletedStepIndex + 1, cancellationToken))
-                {
-                    yield return evt;
-                }
-
-                break;
-            case SagaPhase.Compensating:
-                await foreach (object evt in ExecuteCompensationAsync(state, state.LastCompletedStepIndex, cancellationToken))
-                {
-                    yield return evt;
-                }
-
-                break;
-            default:
-                yield break;
-        }
     }
 
     private async IAsyncEnumerable<object> ExecuteCompensationAsync(
@@ -229,6 +203,39 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         await foreach (object evt in ExecuteCompensationAsync(state, nextIndex, cancellationToken))
         {
             yield return evt;
+        }
+    }
+
+    private async IAsyncEnumerable<object> ExecuteResumeAsync(
+        TSaga state,
+        [EnumeratorCancellation] CancellationToken cancellationToken
+    )
+    {
+        switch (state.Phase)
+        {
+            case SagaPhase.Running:
+            case SagaPhase.Failed:
+                await foreach (object evt in ExecuteStepAsync(
+                                   state,
+                                   state.LastCompletedStepIndex + 1,
+                                   cancellationToken))
+                {
+                    yield return evt;
+                }
+
+                break;
+            case SagaPhase.Compensating:
+                await foreach (object evt in ExecuteCompensationAsync(
+                                   state,
+                                   state.LastCompletedStepIndex,
+                                   cancellationToken))
+                {
+                    yield return evt;
+                }
+
+                break;
+            default:
+                yield break;
         }
     }
 

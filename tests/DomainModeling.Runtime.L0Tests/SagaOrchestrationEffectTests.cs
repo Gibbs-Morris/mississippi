@@ -127,83 +127,6 @@ public sealed class SagaOrchestrationEffectTests
     }
 
     /// <summary>
-    ///     Verifies manual resume in failed phase executes the next step.
-    /// </summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Fact]
-    public async Task HandleAsyncResumesNextStepWhenResumeRequestedInFailedPhase()
-    {
-        DateTimeOffset now = new(2025, 2, 20, 13, 0, 0, TimeSpan.Zero);
-        FakeTimeProvider timeProvider = new(now);
-        SagaStepInfo[] steps =
-        [
-            new(0, "Debit", typeof(SagaSuccessStep), false),
-            new(1, "Credit", typeof(SagaSuccessStep), false),
-        ];
-        using ServiceProvider provider = CreateProvider(services => services.AddTransient<SagaSuccessStep>());
-        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider, timeProvider);
-        TestSagaState state = new()
-        {
-            Phase = SagaPhase.Failed,
-            LastCompletedStepIndex = 0,
-        };
-
-        List<object> events = await CollectAsync(
-            effect.HandleAsync(
-                new SagaResumeRequested
-                {
-                    SagaId = Guid.NewGuid(),
-                    RequestedAt = now,
-                },
-                state,
-                "saga",
-                0,
-                CancellationToken.None));
-
-        Assert.Collection(
-            events,
-            item => Assert.IsType<SagaMarkerEvent>(item),
-            item =>
-            {
-                SagaStepCompleted completed = Assert.IsType<SagaStepCompleted>(item);
-                Assert.Equal(1, completed.StepIndex);
-                Assert.Equal("Credit", completed.StepName);
-                Assert.Equal(now, completed.CompletedAt);
-            });
-    }
-
-    /// <summary>
-    ///     Verifies manual resume in completed phase is a no-op.
-    /// </summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Fact]
-    public async Task HandleAsyncReturnsNoEventsWhenResumeRequestedInCompletedPhase()
-    {
-        DateTimeOffset now = new(2025, 2, 20, 14, 0, 0, TimeSpan.Zero);
-        using ServiceProvider provider = CreateProvider();
-        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(Array.Empty<SagaStepInfo>(), provider);
-        TestSagaState state = new()
-        {
-            Phase = SagaPhase.Completed,
-            LastCompletedStepIndex = 0,
-        };
-
-        List<object> events = await CollectAsync(
-            effect.HandleAsync(
-                new SagaResumeRequested
-                {
-                    SagaId = Guid.NewGuid(),
-                    RequestedAt = now,
-                },
-                state,
-                "saga",
-                0,
-                CancellationToken.None));
-
-        Assert.Empty(events);
-    }
-
-    /// <summary>
     ///     Verifies non-compensatable steps are treated as compensated.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
@@ -573,6 +496,50 @@ public sealed class SagaOrchestrationEffectTests
     }
 
     /// <summary>
+    ///     Verifies manual resume in failed phase executes the next step.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Fact]
+    public async Task HandleAsyncResumesNextStepWhenResumeRequestedInFailedPhase()
+    {
+        DateTimeOffset now = new(2025, 2, 20, 13, 0, 0, TimeSpan.Zero);
+        FakeTimeProvider timeProvider = new(now);
+        SagaStepInfo[] steps =
+        [
+            new(0, "Debit", typeof(SagaSuccessStep), false),
+            new(1, "Credit", typeof(SagaSuccessStep), false),
+        ];
+        using ServiceProvider provider = CreateProvider(services => services.AddTransient<SagaSuccessStep>());
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider, timeProvider);
+        TestSagaState state = new()
+        {
+            Phase = SagaPhase.Failed,
+            LastCompletedStepIndex = 0,
+        };
+        List<object> events = await CollectAsync(
+            effect.HandleAsync(
+                new SagaResumeRequested
+                {
+                    SagaId = Guid.NewGuid(),
+                    RequestedAt = now,
+                },
+                state,
+                "saga",
+                0,
+                CancellationToken.None));
+        Assert.Collection(
+            events,
+            item => Assert.IsType<SagaMarkerEvent>(item),
+            item =>
+            {
+                SagaStepCompleted completed = Assert.IsType<SagaStepCompleted>(item);
+                Assert.Equal(1, completed.StepIndex);
+                Assert.Equal("Credit", completed.StepName);
+                Assert.Equal(now, completed.CompletedAt);
+            });
+    }
+
+    /// <summary>
     ///     Verifies saga step failed events yield no output.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
@@ -606,6 +573,35 @@ public sealed class SagaOrchestrationEffectTests
         using ServiceProvider provider = CreateProvider();
         SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(Array.Empty<SagaStepInfo>(), provider);
         List<object> events = await CollectAsync(effect.HandleAsync(new(), new(), "saga", 0, CancellationToken.None));
+        Assert.Empty(events);
+    }
+
+    /// <summary>
+    ///     Verifies manual resume in completed phase is a no-op.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Fact]
+    public async Task HandleAsyncReturnsNoEventsWhenResumeRequestedInCompletedPhase()
+    {
+        DateTimeOffset now = new(2025, 2, 20, 14, 0, 0, TimeSpan.Zero);
+        using ServiceProvider provider = CreateProvider();
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(Array.Empty<SagaStepInfo>(), provider);
+        TestSagaState state = new()
+        {
+            Phase = SagaPhase.Completed,
+            LastCompletedStepIndex = 0,
+        };
+        List<object> events = await CollectAsync(
+            effect.HandleAsync(
+                new SagaResumeRequested
+                {
+                    SagaId = Guid.NewGuid(),
+                    RequestedAt = now,
+                },
+                state,
+                "saga",
+                0,
+                CancellationToken.None));
         Assert.Empty(events);
     }
 

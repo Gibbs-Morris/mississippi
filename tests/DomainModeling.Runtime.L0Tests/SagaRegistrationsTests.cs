@@ -32,6 +32,21 @@ public sealed class SagaRegistrationsTests
     private sealed record TestInput(string Value);
 
     /// <summary>
+    ///     Verifies continue-saga command handler is registered.
+    /// </summary>
+    [Fact]
+    public void AddSagaOrchestrationRegistersContinueSagaCommandHandler()
+    {
+        ServiceCollection services = new();
+        services.AddSagaOrchestration<TestSagaState, TestInput>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ICommandHandler<ContinueSagaCommand, TestSagaState>? handler = provider
+            .GetService<ICommandHandler<ContinueSagaCommand, TestSagaState>>();
+        Assert.NotNull(handler);
+        Assert.IsType<ContinueSagaCommandHandler<TestSagaState>>(handler);
+    }
+
+    /// <summary>
     ///     Verifies multiple saga orchestrations can register distinct saga input event types.
     /// </summary>
     [Fact]
@@ -77,21 +92,6 @@ public sealed class SagaRegistrationsTests
         IEventTypeRegistry registry = provider.GetRequiredService<IEventTypeRegistry>();
         string? eventName = registry.ResolveName(typeof(SagaResumeRequested));
         Assert.NotNull(eventName);
-    }
-
-    /// <summary>
-    ///     Verifies continue-saga command handler is registered.
-    /// </summary>
-    [Fact]
-    public void AddSagaOrchestrationRegistersContinueSagaCommandHandler()
-    {
-        ServiceCollection services = new();
-        services.AddSagaOrchestration<TestSagaState, TestInput>();
-        using ServiceProvider provider = services.BuildServiceProvider();
-        ICommandHandler<ContinueSagaCommand, TestSagaState>? handler = provider
-            .GetService<ICommandHandler<ContinueSagaCommand, TestSagaState>>();
-        Assert.NotNull(handler);
-        Assert.IsType<ContinueSagaCommandHandler<TestSagaState>>(handler);
     }
 
     /// <summary>
