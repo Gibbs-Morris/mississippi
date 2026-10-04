@@ -119,10 +119,11 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     private static void GenerateCode(
         SourceProductionContext context,
         ProjectionInfo projection,
-        GeneratedDtoNameRegistry generatedNestedTypes
+        GeneratedDtoNameRegistry generatedNestedTypes,
+        HashSet<IPropertySymbol> reportedUnsupportedProperties
     )
     {
-        if (!ValidateNullableEnumCollectionShapes(context, projection))
+        if (!ValidateNullableEnumCollectionShapes(context, projection, reportedUnsupportedProperties))
         {
             return;
         }
@@ -1073,10 +1074,12 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     /// </summary>
     /// <param name="context">The source production context.</param>
     /// <param name="projection">The projection and its generated nested records.</param>
+    /// <param name="reportedUnsupportedProperties">Source properties already reported during this output pass.</param>
     /// <returns>Whether every converted collection has a compatible materializer.</returns>
     private static bool ValidateNullableEnumCollectionShapes(
         SourceProductionContext context,
-        ProjectionInfo projection
+        ProjectionInfo projection,
+        HashSet<IPropertySymbol> reportedUnsupportedProperties
     )
     {
         IEnumerable<IPropertySymbol> properties = projection.SourceType.GetMembers()
@@ -1096,12 +1099,16 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                      GetNullableEnumCollectionElement(property.Type) is not null &&
                      (GetNullableEnumCollectionMaterializer(new(property)).Length == 0)))
         {
-            context.ReportDiagnostic(
-                Diagnostic.Create(
-                    GeneratedProjectionDiagnostics.UnsupportedNullableEnumCollection,
-                    property.Locations.FirstOrDefault(location => location.IsInSource) ?? Location.None,
-                    property.Name,
-                    property.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+            if (reportedUnsupportedProperties.Add(property))
+            {
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        GeneratedProjectionDiagnostics.UnsupportedNullableEnumCollection,
+                        property.Locations.FirstOrDefault(location => location.IsInSource) ?? Location.None,
+                        property.Name,
+                        property.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+            }
+
             valid = false;
         }
 
@@ -1139,6 +1146,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             static (spc, projections) =>
             {
                 GeneratedDtoNameRegistry generatedNestedTypes = new();
+                HashSet<IPropertySymbol> reportedUnsupportedProperties = new(SymbolEqualityComparer.Default);
                 foreach (ProjectionInfo projection in projections)
                 {
                     foreach (Diagnostic diagnostic in projection.Diagnostics)
@@ -1146,7 +1154,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                         spc.ReportDiagnostic(diagnostic);
                     }
 
-                    GenerateCode(spc, projection, generatedNestedTypes);
+                    GenerateCode(spc, projection, generatedNestedTypes, reportedUnsupportedProperties);
                 }
             });
     }
