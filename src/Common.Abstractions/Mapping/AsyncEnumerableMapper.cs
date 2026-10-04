@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 
 namespace Mississippi.Common.Abstractions.Mapping;
@@ -33,18 +35,22 @@ public sealed class AsyncEnumerableMapper<TFrom, TTo> : IAsyncEnumerableMapper<T
     /// </summary>
     /// <param name="input">The source asynchronous collection to map from.</param>
     /// <returns>The mapped asynchronous collection of objects of type <typeparamref name="TTo" />.</returns>
-    [SuppressMessage(
-        "Major Code Smell",
-        "S4456:Parameter validation in yielding methods should be wrapped",
-        Justification = "Required for IAsyncEnumerable.")]
-    public async IAsyncEnumerable<TTo> Map(
+    /// <remarks>The consumer's enumeration cancellation token is forwarded to the source.</remarks>
+    public IAsyncEnumerable<TTo> Map(
         IAsyncEnumerable<TFrom> input
     )
     {
-        ArgumentNullException.ThrowIfNull(input);
-        await foreach (TFrom item in input)
+        return MapAsync();
+
+        async IAsyncEnumerable<TTo> MapAsync(
+            [EnumeratorCancellation] CancellationToken cancellationToken = default
+        )
         {
-            yield return Mapper.Map(item);
+            ArgumentNullException.ThrowIfNull(input);
+            await foreach (TFrom item in input.WithCancellation(cancellationToken))
+            {
+                yield return Mapper.Map(item);
+            }
         }
     }
 }

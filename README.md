@@ -35,6 +35,7 @@ Mississippi is a sophisticated .NET framework designed to streamline distributed
   - New/refactored APIs align with primary .NET behaviors and patterns.
   - When design is ambiguous, follow widely used .NET conventions.
   - Orleans-grain APIs match Orleans developer expectations to minimize context switching and strengthen Developer Experience (DX).
+- **CSS and design tokens** — The [CSS and design-token authoring standard](https://github.com/Gibbs-Morris/mississippi/blob/main/.github/instructions/css-design-tokens.instructions.md) governs new and changed Refraction styling. [Issue #405](https://github.com/Gibbs-Morris/mississippi/issues/405) tracks the migration of existing styles.
 
 ## Technology Stack
 
