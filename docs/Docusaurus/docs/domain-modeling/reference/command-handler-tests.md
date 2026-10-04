@@ -1,10 +1,14 @@
 ---
+id: command-handler-tests
 title: Command Handler Test Assertions
 description: Reference isolated command-handler execution, event assertions, and failure-result checks.
 sidebar_position: 11
+sidebar_label: Command Handler Test Assertions
 ---
 
 # Command Handler Test Assertions
+
+## Overview
 
 `CommandHandlerTestExtensions` executes a command handler directly and checks its returned operation result. These helpers support focused in-memory tests without running an aggregate grain.
 
@@ -12,7 +16,7 @@ sidebar_position: 11
 
 - `Mississippi.DomainModeling.TestHarness.Aggregates.CommandHandlerTestExtensions`
 - `ICommandHandler<TCommand, TAggregate>` implementations
-- Aggregate types with a parameterless constructor and reference-type commands
+- Aggregate types satisfying `new()` (value types or nonabstract reference types with a public parameterless constructor), and reference-type commands
 
 ## Execution And State
 
@@ -34,7 +38,7 @@ Each assertion helper executes the handler for that call. Chaining separate help
 
 The [structural comparer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.TestHarness/StructuralAssertions.cs) compares expected public data members recursively and permits additional actual members. Properties can match fields with the same name; member-based comparison does not require identical CLR types. Add an explicit type assertion when the event's type is part of the test's intent.
 
-`ShouldEmit` uses unordered matching for ordinary nested sequences, preserving collection counts and duplicate occurrences. Byte arrays remain ordered. `ShouldEmitEvents` enables ordering throughout its structural comparison. Dictionaries match keys and counts rather than insertion order.
+`ShouldEmit` uses unordered matching for ordinary expected nested sequences, preserving collection counts and duplicate occurrences. Expected byte arrays remain ordered. `ShouldEmitEvents` enables ordering throughout its structural comparison. Expected dictionaries select key/count matching rather than insertion order.
 
 ## Failed Results
 
