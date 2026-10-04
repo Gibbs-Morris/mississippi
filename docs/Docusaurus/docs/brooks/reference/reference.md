@@ -49,5 +49,6 @@ Use this page as the current active reference for what Brooks owns and which pac
 - Read [Brooks Event Envelope](./event-envelope.md) for persisted fields, payload bytes, and metadata defaults.
 - Read [Brooks Cursor Notifications](./cursor-notifications.md) for payload fields and observer filtering.
 - Read [Brooks Stream Provider Identity](./stream-provider-identity.md) for provider selection and compatible cursor stream IDs.
+- Read [Brooks Event Conversion](./event-conversion.md) for synchronous conversion and generated metadata.
 - Read [Brooks Concepts](../concepts/concepts.md).
 - Use [Brooks Operations](../operations/operations.md) for the current operational scope.
