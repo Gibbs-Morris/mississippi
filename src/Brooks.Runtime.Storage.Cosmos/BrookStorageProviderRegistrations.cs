@@ -267,6 +267,11 @@ public static class BrookStorageProviderRegistrations
 
         private IServiceProvider ServiceProvider { get; }
 
+        /// <summary>
+        ///     Initializes Cosmos resources using the client selected by runtime options.
+        /// </summary>
+        /// <param name="cancellationToken">A token to cancel resource initialization.</param>
+        /// <returns>A task representing asynchronous database and container initialization.</returns>
         public async Task StartAsync(
             CancellationToken cancellationToken
         )
