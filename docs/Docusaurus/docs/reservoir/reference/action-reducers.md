@@ -1,10 +1,14 @@
 ---
+id: action-reducers
 title: Reservoir Action Reducers
 description: Reference root reducer indexing, chaining, fallback order, and delegate reducer behavior.
 sidebar_position: 6
+sidebar_label: Reservoir Action Reducers
 ---
 
 # Reservoir Action Reducers
+
+## Overview
 
 `RootReducer<TState>` applies all successful reducers selected for an action, passing each result to the next reducer. It builds its dispatch index when constructed, preserving order within the typed and fallback groups.
 
