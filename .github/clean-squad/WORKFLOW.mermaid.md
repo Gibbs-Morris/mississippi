@@ -28,10 +28,10 @@ flowchart TD
 
     subgraph EntryPoint["Public Intake"]
         User([User request]) -->|rough idea| Entrepreneur["cs Entrepreneur shapes one Story Pack candidate before governed intake"]
-        User -->|direct governed intake| ProductOwner["cs River Orchestrator starts governed work and remains the sole governed orchestrator"]
+        User -->|direct governed intake| RiverOrchestrator["cs River Orchestrator starts governed work and remains the sole governed orchestrator"]
         Entrepreneur --> StoryPack["Story Pack candidate"]
         StoryPack --> G0{"G0 Intake Gate<br/>Story Pack candidate"}
-        G0 -->|APPROVED| ProductOwner
+        G0 -->|APPROVED| RiverOrchestrator
         G0 -->|NOT APPROVED| G0NotApproved["Stop or rework outside governed workflow<br/>(see G0 gate outcomes in WORKFLOW.md)"]
     end
 
@@ -175,7 +175,7 @@ flowchart TD
         P9Cap -- Yes --> P9Stop
             P9Comments -- No --> P9Ready --> G3
             G3 --|APPROVED| P9Done
-        G3 --|CHANGES_REQUESTED| ProductOwner
+        G3 --|CHANGES_REQUESTED| RiverOrchestrator
         G3 --|DEFERRED or CANCELLED| Stop3(["Stop or hold after late-stage review"])
     end
 
@@ -185,13 +185,13 @@ flowchart TD
     P2Gaps -- No --> G1
     P2Questions --> G1
     G1 --|APPROVED| P3Architect
-    G1 --|CHANGES_REQUESTED| ProductOwner
+    G1 --|CHANGES_REQUESTED| RiverOrchestrator
     G1 --|DEFERRED or CANCELLED| Stop1(["Stop or hold after scope review"])
     P1Synthesis --> P2Invoke
     P3Adr --> P4Draft
     P4Final --> G2
     G2 --|APPROVED| P5Branch
-    G2 --|CHANGES_REQUESTED| ProductOwner
+    G2 --|CHANGES_REQUESTED| RiverOrchestrator
     G2 --|DEFERRED or CANCELLED| Stop2(["Stop or hold before implementation"])
     P5Full --> P6Diff
     P6Findings -- No --> P7Lead
@@ -200,10 +200,10 @@ flowchart TD
     P8Skip --> P9Manager
     P8Validate --> P9Manager
 
-    Authority -.-> ProductOwner
-    Principles -.-> ProductOwner
+    Authority -.-> RiverOrchestrator
+    Principles -.-> RiverOrchestrator
     SharedState -.-> P1Setup
-    AuditOwnership -.-> ProductOwner
+    AuditOwnership -.-> RiverOrchestrator
     AuditDelegation -.-> P9Manager
     AuditEventContract -.-> P1Setup
     StateSupportContract -.-> P1Setup
@@ -215,7 +215,7 @@ flowchart TD
     SummaryContract -.-> P9Scribe
     FailureMatrix -.-> P9Manager
     AuditRules -.-> P9Manager
-    Delegation -.-> ProductOwner
+    Delegation -.-> RiverOrchestrator
 
     P3AdrNote["Architecture note:<br/>For each significant architectural decision, invoke cs ADR Keeper to publish an ADR."]
     P3ExpertNote["Architecture note:<br/>cs River Orchestrator may invoke approved domain experts from the Agent Roster when specialist architectural input is needed."]
