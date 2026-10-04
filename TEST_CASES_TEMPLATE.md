@@ -50,6 +50,8 @@ Keep scenarios behaviorally distinct; avoid duplicating pure parameter permutati
 
 ## Mutation Testing Considerations
 
+Apply the [mutation-testing policy](.github/instructions/mutation-testing.instructions.md): use mutation as an additional signal, add straightforward assertion improvements, and report significant gaps for follow-up. There is no mandatory repository score threshold; avoid significant survivor remediation unless explicitly requested.
+
 - Include at least one assertion per logical branch.
 - Include tests that would fail if comparison operators changed (`>`, `>=`, etc.) where critical.
 

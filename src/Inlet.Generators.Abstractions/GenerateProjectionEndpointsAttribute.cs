@@ -15,14 +15,14 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///     </para>
 ///     <list type="bullet">
 ///         <item>
-///             <term>Sdk.Silo.Generators</term>
+///             <term>Sdk.Runtime.Generators</term>
 ///             <description>
 ///                 <c>Add{Projection}()</c> extension method that registers
 ///                 reducers and snapshot converters.
 ///             </description>
 ///         </item>
 ///         <item>
-///             <term>Sdk.Server.Generators</term>
+///             <term>Sdk.Gateway.Generators</term>
 ///             <description>
 ///                 <c>{Projection}Controller</c> - Read-only GET endpoint.<br />
 ///                 <c>{Projection}Dto</c> - Response DTO.<br />

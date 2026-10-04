@@ -1,11 +1,11 @@
 using System;
 
-using Mississippi.EventSourcing.Reducers.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
-using Spring.Domain.Aggregates.BankAccount.Events;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
 
 
-namespace Spring.Domain.Aggregates.BankAccount.Reducers;
+namespace MississippiSamples.Spring.Domain.Aggregates.BankAccount.Reducers;
 
 /// <summary>
 ///     Reducer for <see cref="AccountOpened" /> events.

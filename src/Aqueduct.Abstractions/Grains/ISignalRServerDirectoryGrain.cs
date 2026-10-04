@@ -21,7 +21,7 @@ namespace Mississippi.Aqueduct.Abstractions.Grains;
 ///         by a constant value (e.g., "default").
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.Aqueduct.ISignalRServerDirectoryGrain")]
+[Alias("Mississippi.Aqueduct.Abstractions.Grains.ISignalRServerDirectoryGrain")]
 public interface ISignalRServerDirectoryGrain : IGrainWithStringKey
 {
     /// <summary>

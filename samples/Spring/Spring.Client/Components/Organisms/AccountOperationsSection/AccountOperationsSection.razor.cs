@@ -1,17 +1,29 @@
+using System;
+using System.Globalization;
+
 using Microsoft.AspNetCore.Components;
 
-using Spring.Client.Features.BankAccountBalance.Dtos;
-using Spring.Client.Features.BankAccountLedger.Dtos;
-using Spring.Client.Features.MoneyTransferStatus.Dtos;
+using Mississippi.Refraction.Client;
+
+using MississippiSamples.Spring.Client.Components.Atoms.AmountInputAdapter;
+using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos;
+using MississippiSamples.Spring.Client.Features.BankAccountLedger.Dtos;
+using MississippiSamples.Spring.Client.Features.MoneyTransferStatus.Dtos;
 
 
-namespace Spring.Client.Components.Organisms;
+namespace MississippiSamples.Spring.Client.Components.Organisms;
 
 /// <summary>
 ///     Bank account operations section.
 /// </summary>
 public sealed partial class AccountOperationsSection
 {
+    private bool isDepositAmountValid = true;
+
+    private bool isInitialDepositValid = true;
+
+    private bool isWithdrawAmountValid = true;
+
     /// <summary>Gets or sets the balance projection.</summary>
     [Parameter]
     public BankAccountBalanceProjectionDto BalanceProjection { get; set; } = default!;
@@ -43,6 +55,10 @@ public sealed partial class AccountOperationsSection
     /// <summary>Gets or sets the callback when the initial deposit changes.</summary>
     [Parameter]
     public EventCallback<decimal> InitialDepositChanged { get; set; }
+
+    /// <summary>Gets or sets the stable prefix used for this panel's native input IDs.</summary>
+    [Parameter]
+    public string InputIdPrefix { get; set; } = "account";
 
     /// <summary>Gets or sets a value indicating whether the account is open.</summary>
     [Parameter]
@@ -147,4 +163,85 @@ public sealed partial class AccountOperationsSection
     /// <summary>Gets or sets the callback when the withdraw amount changes.</summary>
     [Parameter]
     public EventCallback<decimal> WithdrawAmountChanged { get; set; }
+
+    private string DepositAmountInputId => GetInputId("deposit-amount-input");
+
+    private string HolderNameInputId => GetInputId("holder-name-input");
+
+    private string InitialDepositInputId => GetInputId("initial-deposit-input");
+
+    private string LastCompletedStepText =>
+        TransferStatusProjection is not null && (TransferStatusProjection.LastCompletedStepIndex >= 0)
+            ? TransferStatusProjection.LastCompletedStepIndex.ToString(CultureInfo.CurrentCulture)
+            : "None";
+
+    private string PanelHeadingId => GetInputId("panel-heading");
+
+    private string TransferAmountInputId => GetInputId("transfer-amount-input");
+
+    private string TransferDestinationInputId => GetInputId("transfer-destination-input");
+
+    private string TransferPanelId => GetInputId("transfer-panel");
+
+    private string TransferStatusId => GetInputId("transfer-status");
+
+    private string TransferStatusState =>
+        TransferStatusProjection?.Phase switch
+        {
+            SagaPhaseDto.Completed => RefractionStates.Complete,
+            SagaPhaseDto.Compensated => RefractionStates.Alert,
+            SagaPhaseDto.Compensating or SagaPhaseDto.Running => RefractionStates.Busy,
+            SagaPhaseDto.Failed => RefractionStates.Error,
+            var _ => RefractionStates.Quiet,
+        };
+
+    private string WithdrawAmountInputId => GetInputId("withdraw-amount-input");
+
+    private static string FormatTransferTimestamp(
+        DateTimeOffset? timestamp
+    ) =>
+        timestamp?.ToLocalTime().ToString("g", CultureInfo.CurrentCulture) ?? string.Empty;
+
+    private string GetInputId(
+        string inputName
+    ) =>
+        $"{InputIdPrefix}-{inputName}";
+
+    private RenderFragment RenderAmountInput(
+        string inputId,
+        string label,
+        decimal value,
+        EventCallback<decimal> valueChanged,
+        Action<bool> validityChanged,
+        bool isDisabled
+    ) =>
+        builder =>
+        {
+            builder.OpenComponent<SpringAmountInput>(0);
+            builder.AddAttribute(1, nameof(SpringAmountInput.InputId), inputId);
+            builder.AddAttribute(2, nameof(SpringAmountInput.Label), label);
+            builder.AddAttribute(3, nameof(SpringAmountInput.Value), value);
+            builder.AddAttribute(4, nameof(SpringAmountInput.ValueChanged), valueChanged);
+            builder.AddAttribute(
+                5,
+                nameof(SpringAmountInput.IsValidChanged),
+                EventCallback.Factory.Create(this, validityChanged));
+            builder.AddAttribute(6, nameof(SpringAmountInput.IsDisabled), isDisabled);
+            builder.CloseComponent();
+        };
+
+    private void SetDepositAmountValidity(
+        bool isValid
+    ) =>
+        isDepositAmountValid = isValid;
+
+    private void SetInitialDepositValidity(
+        bool isValid
+    ) =>
+        isInitialDepositValid = isValid;
+
+    private void SetWithdrawAmountValidity(
+        bool isValid
+    ) =>
+        isWithdrawAmountValid = isValid;
 }

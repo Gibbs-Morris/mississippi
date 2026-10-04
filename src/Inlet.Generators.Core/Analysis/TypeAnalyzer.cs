@@ -124,15 +124,15 @@ public static class TypeAnalyzer
         ITypeSymbol typeSymbol
     )
     {
-        if (typeSymbol is not INamedTypeSymbol namedType)
-        {
-            return false;
-        }
-
-        // Array types
+        // Array types are not named type symbols.
         if (typeSymbol is IArrayTypeSymbol)
         {
             return true;
+        }
+
+        if (typeSymbol is not INamedTypeSymbol namedType)
+        {
+            return false;
         }
 
         // Check for generic collection interfaces
@@ -273,12 +273,7 @@ public static class TypeAnalyzer
     {
         string[] suffixes = { "Projection", "Aggregate", "State" };
         string result = suffixes.Where(suffix => typeName.EndsWith(suffix, StringComparison.Ordinal))
-            .Aggregate(
-                typeName,
-                (
-                    current,
-                    suffix
-                ) => current.Substring(0, current.Length - suffix.Length));
+            .Aggregate(typeName, (current, suffix) => current.Substring(0, current.Length - suffix.Length));
         return result == typeName ? typeName : result;
     }
 }

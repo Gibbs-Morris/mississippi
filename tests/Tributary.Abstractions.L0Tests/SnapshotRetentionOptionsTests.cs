@@ -1,0 +1,328 @@
+using System;
+
+using Mississippi.Brooks.Abstractions.Attributes;
+using Mississippi.Tributary.Abstractions.Attributes;
+
+
+namespace Mississippi.Tributary.Abstractions.L0Tests;
+
+/// <summary>
+///     Tests for <see cref="SnapshotRetentionOptions" /> to verify base snapshot version calculation.
+/// </summary>
+public sealed class SnapshotRetentionOptionsTests
+{
+    /// <summary>
+    ///     Test snapshot type with a storage name attribute.
+    /// </summary>
+    [SnapshotStorageName("TESTAPP", "TESTMODULE", "TESTSNAP")]
+    [SnapshotRetention(20)]
+    private sealed record AttributedSnapshot;
+
+    /// <summary>
+    ///     Test snapshot with an invalid retention attribute.
+    /// </summary>
+    [SnapshotRetention(0)]
+    private sealed record InvalidRetentionSnapshot;
+
+    /// <summary>
+    ///     Test snapshot type used for retention options testing.
+    /// </summary>
+    /// <param name="Value">Gets a placeholder value for the test snapshot.</param>
+    private sealed record TestSnapshot(int Value = 0);
+
+    /// <summary>
+    ///     Verifies the default persistence policy.
+    /// </summary>
+    [Fact]
+    public void DefaultsUseModulusFiftyAndDisableSaveAll()
+    {
+        SnapshotRetentionOptions options = new();
+        Assert.Equal(50, options.DefaultRetainModulus);
+        Assert.False(options.ShouldPersistAllSnapshots);
+        Assert.Empty(options.StateTypeOverrides);
+    }
+
+    /// <summary>
+    ///     Verifies that the generic overload delegates correctly.
+    /// </summary>
+    [Fact]
+    public void GetBaseSnapshotVersionGenericDelegatesToNonGeneric()
+    {
+        SnapshotRetentionOptions options = new()
+        {
+            DefaultRetainModulus = 5,
+        };
+        long result = options.GetBaseSnapshotVersion<TestSnapshot>(7);
+        Assert.Equal(5, result);
+    }
+
+    /// <summary>
+    ///     Verifies that state type overrides are respected.
+    /// </summary>
+    [Fact]
+    public void GetBaseSnapshotVersionRespectsTypeOverride()
+    {
+        SnapshotRetentionOptions options = new()
+        {
+            DefaultRetainModulus = 100,
+        };
+        options.StateTypeOverrides[typeof(TestSnapshot).FullName!] = 10;
+        long result = options.GetBaseSnapshotVersion<TestSnapshot>(25);
+        Assert.Equal(20, result);
+    }
+
+    /// <summary>
+    ///     Verifies that base version is calculated correctly for non-boundary cases.
+    /// </summary>
+    /// <param name="targetVersion">The target version to calculate the base for.</param>
+    /// <param name="modulus">The retention modulus interval.</param>
+    /// <param name="expectedBase">The expected base version result.</param>
+    [Theory]
+    [InlineData(1, 5, 0)]
+    [InlineData(4, 5, 0)]
+    [InlineData(6, 5, 5)]
+    [InlineData(9, 5, 5)]
+    [InlineData(11, 5, 10)]
+    [InlineData(99, 100, 0)]
+    [InlineData(101, 100, 100)]
+    [InlineData(199, 100, 100)]
+    [InlineData(364, 100, 300)]
+    [InlineData(50, 50, 0)]
+    [InlineData(51, 50, 50)]
+    public void GetBaseSnapshotVersionReturnsCorrectBaseForNonBoundary(
+        long targetVersion,
+        int modulus,
+        long expectedBase
+    )
+    {
+        SnapshotRetentionOptions options = new()
+        {
+            DefaultRetainModulus = modulus,
+        };
+        long result = options.GetBaseSnapshotVersion<TestSnapshot>(targetVersion);
+        Assert.Equal(expectedBase, result);
+    }
+
+    /// <summary>
+    ///     Verifies that base version is strictly less than target when target equals modulus.
+    ///     This prevents self-referential grain calls that cause deadlocks.
+    /// </summary>
+    /// <param name="targetVersion">The target version to calculate the base for.</param>
+    /// <param name="modulus">The retention modulus interval.</param>
+    /// <param name="expectedBase">The expected base version result.</param>
+    [Theory]
+    [InlineData(5, 5, 0)]
+    [InlineData(10, 5, 5)]
+    [InlineData(100, 100, 0)]
+    [InlineData(200, 100, 100)]
+    public void GetBaseSnapshotVersionReturnsStrictlyLessThanTargetAtBoundary(
+        long targetVersion,
+        int modulus,
+        long expectedBase
+    )
+    {
+        SnapshotRetentionOptions options = new()
+        {
+            DefaultRetainModulus = modulus,
+        };
+        long result = options.GetBaseSnapshotVersion<TestSnapshot>(targetVersion);
+        Assert.Equal(expectedBase, result);
+        Assert.True(result < targetVersion, $"Base {result} should be strictly less than target {targetVersion}");
+    }
+
+    /// <summary>
+    ///     Verifies that zero or negative target versions return zero.
+    /// </summary>
+    /// <param name="targetVersion">The target version to test.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(-100)]
+    public void GetBaseSnapshotVersionReturnsZeroForZeroOrNegativeTarget(
+        long targetVersion
+    )
+    {
+        SnapshotRetentionOptions options = new()
+        {
+            DefaultRetainModulus = 100,
+        };
+        long result = options.GetBaseSnapshotVersion<TestSnapshot>(targetVersion);
+        Assert.Equal(0, result);
+    }
+
+    /// <summary>
+    ///     Verifies boundary behavior with small modulus to confirm no self-reference.
+    /// </summary>
+    [Fact]
+    public void GetBaseSnapshotVersionWithModulusOneNeverReturnsSameAsTarget()
+    {
+        SnapshotRetentionOptions options = new()
+        {
+            DefaultRetainModulus = 1,
+        };
+        for (long target = 1; target <= 10; target++)
+        {
+            long result = options.GetBaseSnapshotVersion<TestSnapshot>(target);
+            Assert.True(result < target, $"Base {result} should be strictly less than target {target}");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that an invalid retention attribute is surfaced when metadata is inspected.
+    /// </summary>
+    [Fact]
+    public void GetRetainModulusDoesNotIgnoreInvalidAttribute()
+    {
+        SnapshotRetentionOptions options = new();
+        Assert.Throws<ArgumentOutOfRangeException>(() => options.GetRetainModulus<InvalidRetentionSnapshot>());
+    }
+
+    /// <summary>
+    ///     Verifies that the generic GetRetainModulus delegates to the non-generic overload.
+    /// </summary>
+    [Fact]
+    public void GetRetainModulusGenericReturnsDefaultWhenNoOverride()
+    {
+        SnapshotRetentionOptions options = new()
+        {
+            DefaultRetainModulus = 42,
+        };
+        int result = options.GetRetainModulus<TestSnapshot>();
+        Assert.Equal(42, result);
+    }
+
+    /// <summary>
+    ///     Verifies that a CLR type-name override takes precedence over the retention attribute.
+    /// </summary>
+    [Fact]
+    public void GetRetainModulusPrefersClrTypeNameOverrideOverAttribute()
+    {
+        SnapshotRetentionOptions options = new();
+        options.StateTypeOverrides[typeof(AttributedSnapshot).FullName!] = 75;
+        Assert.Equal(75, options.GetRetainModulus<AttributedSnapshot>());
+    }
+
+    /// <summary>
+    ///     Verifies that GetRetainModulus prefers snapshot storage name over CLR type name.
+    /// </summary>
+    [Fact]
+    public void GetRetainModulusPrefersSnapshotStorageNameOverClrTypeName()
+    {
+        SnapshotRetentionOptions options = new()
+        {
+            DefaultRetainModulus = 100,
+        };
+
+        // Set override using storage name (format: AppName.ModuleName.Name.V{Version})
+        options.StateTypeOverrides["TESTAPP.TESTMODULE.TESTSNAP.V1"] = 50;
+
+        // Set override using CLR name (should be ignored when storage name matches)
+        options.StateTypeOverrides[typeof(AttributedSnapshot).FullName!] = 75;
+        int result = options.GetRetainModulus<AttributedSnapshot>();
+        Assert.Equal(50, result);
+    }
+
+    /// <summary>
+    ///     Verifies the public options object rejects an invalid default modulus without registration validation.
+    /// </summary>
+    [Fact]
+    public void GetRetainModulusRejectsInvalidDefaultWhenOptionsAreUsedDirectly()
+    {
+        SnapshotRetentionOptions options = new()
+        {
+            DefaultRetainModulus = 0,
+        };
+        InvalidOperationException exception =
+            Assert.Throws<InvalidOperationException>(() => options.GetRetainModulus<TestSnapshot>());
+        Assert.Contains(typeof(TestSnapshot).FullName!, exception.Message, StringComparison.Ordinal);
+        Assert.Contains("was 0", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Verifies the public options object rejects an invalid state-type override without registration validation.
+    /// </summary>
+    [Fact]
+    public void GetRetainModulusRejectsInvalidTypeOverrideWhenOptionsAreUsedDirectly()
+    {
+        const int invalidModulus = -1;
+        SnapshotRetentionOptions options = new();
+        string stateTypeName = typeof(TestSnapshot).FullName!;
+        options.StateTypeOverrides[stateTypeName] = invalidModulus;
+        InvalidOperationException exception =
+            Assert.Throws<InvalidOperationException>(() => options.GetRetainModulus<TestSnapshot>());
+        Assert.Contains(stateTypeName, exception.Message, StringComparison.Ordinal);
+        Assert.Contains($"was {invalidModulus}", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Verifies that GetRetainModulus respects type override using CLR type name.
+    /// </summary>
+    [Fact]
+    public void GetRetainModulusRespectsClrTypeNameOverride()
+    {
+        SnapshotRetentionOptions options = new()
+        {
+            DefaultRetainModulus = 100,
+        };
+        options.StateTypeOverrides[typeof(TestSnapshot).FullName!] = 25;
+        int result = options.GetRetainModulus<TestSnapshot>();
+        Assert.Equal(25, result);
+    }
+
+    /// <summary>
+    ///     Verifies that GetRetainModulus throws for null type.
+    /// </summary>
+    [Fact]
+    public void GetRetainModulusThrowsForNullType()
+    {
+        SnapshotRetentionOptions options = new();
+        Assert.Throws<ArgumentNullException>(() => options.GetRetainModulus(null!));
+    }
+
+    /// <summary>
+    ///     Verifies that the retention attribute is used after configuration overrides and before the global default.
+    /// </summary>
+    [Fact]
+    public void GetRetainModulusUsesAttributeWhenNoOverrideExists()
+    {
+        SnapshotRetentionOptions options = new();
+        Assert.Equal(20, options.GetRetainModulus<AttributedSnapshot>());
+    }
+
+    /// <summary>
+    ///     Verifies that negative snapshot versions are rejected.
+    /// </summary>
+    [Fact]
+    public void ShouldPersistSnapshotRejectsNegativeVersion()
+    {
+        SnapshotRetentionOptions options = new();
+        Assert.Throws<ArgumentOutOfRangeException>(() => options.ShouldPersistSnapshot<TestSnapshot>(-1));
+    }
+
+    /// <summary>
+    ///     Verifies that the non-generic persistence eligibility overload rejects a null state type.
+    /// </summary>
+    [Fact]
+    public void ShouldPersistSnapshotRejectsNullStateType()
+    {
+        SnapshotRetentionOptions options = new();
+        Assert.Throws<ArgumentNullException>(() => options.ShouldPersistSnapshot(null!, 0));
+    }
+
+    /// <summary>
+    ///     Verifies that persistence eligibility uses the interval and save-all override.
+    /// </summary>
+    [Fact]
+    public void ShouldPersistSnapshotUsesModulusAndSaveAll()
+    {
+        SnapshotRetentionOptions options = new()
+        {
+            DefaultRetainModulus = 5,
+        };
+        Assert.True(options.ShouldPersistSnapshot<TestSnapshot>(0));
+        Assert.False(options.ShouldPersistSnapshot<TestSnapshot>(1));
+        Assert.True(options.ShouldPersistSnapshot<TestSnapshot>(5));
+        options.ShouldPersistAllSnapshots = true;
+        Assert.True(options.ShouldPersistSnapshot<TestSnapshot>(1));
+    }
+}

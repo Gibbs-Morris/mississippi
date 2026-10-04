@@ -1,0 +1,8 @@
+label: Tutorials
+position: 3
+collapsed: false
+collapsible: true
+link:
+  type: generated-index
+  title: Spring Tutorials
+  description: Guided walkthroughs that build the Spring sample domain end to end.

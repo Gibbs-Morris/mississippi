@@ -1,14 +1,7 @@
-using Crescent.Crescent.L2Tests.Domain.Counter;
-using Crescent.Crescent.L2Tests.Domain.Counter.Commands;
-using Crescent.Crescent.L2Tests.Domain.CounterSummary;
-
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.UxProjections.Abstractions;
-
-using Xunit.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Crescent.Crescent.L2Tests;
+namespace MississippiSamples.Crescent.L2Tests;
 
 /// <summary>
 ///     Tests validating aggregate lifecycle, concurrency, throughput, and validation.
@@ -60,15 +53,19 @@ public sealed class AggregateLifecycleTests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Initialize
-        OperationResult initResult = await counter.ExecuteAsync(new InitializeCounter());
-        initResult.Success.Should().BeTrue("Initialize should succeed");
+        OperationResult initResult = await counter.ExecuteAsync(
+            new InitializeCounter(),
+            TestContext.Current.CancellationToken);
+        Assert.True(initResult.Success, "Initialize should succeed");
         output.WriteLine("[Test] Initialize() succeeded");
 
         // Act - Increment 10 times
         for (int i = 0; i < 10; i++)
         {
-            OperationResult incResult = await counter.ExecuteAsync(new IncrementCounter());
-            incResult.Success.Should().BeTrue($"Increment[{i + 1}] should succeed");
+            OperationResult incResult = await counter.ExecuteAsync(
+                new IncrementCounter(),
+                TestContext.Current.CancellationToken);
+            Assert.True(incResult.Success, $"Increment[{i + 1}] should succeed");
         }
 
         output.WriteLine("[Test] Increment x10 succeeded");
@@ -76,8 +73,10 @@ public sealed class AggregateLifecycleTests
         // Act - Decrement 5 times
         for (int i = 0; i < 5; i++)
         {
-            OperationResult decResult = await counter.ExecuteAsync(new DecrementCounter());
-            decResult.Success.Should().BeTrue($"Decrement[{i + 1}] should succeed");
+            OperationResult decResult = await counter.ExecuteAsync(
+                new DecrementCounter(),
+                TestContext.Current.CancellationToken);
+            Assert.True(decResult.Success, $"Decrement[{i + 1}] should succeed");
         }
 
         output.WriteLine("[Test] Decrement x5 succeeded");
@@ -87,8 +86,9 @@ public sealed class AggregateLifecycleTests
             new ResetCounter
             {
                 NewValue = 100,
-            });
-        resetResult.Success.Should().BeTrue("Reset should succeed");
+            },
+            TestContext.Current.CancellationToken);
+        Assert.True(resetResult.Success, "Reset should succeed");
         output.WriteLine("[Test] Reset(100) succeeded");
 
         // Act - Increment 3 more times by different amounts
@@ -98,8 +98,9 @@ public sealed class AggregateLifecycleTests
                 new IncrementCounter
                 {
                     Amount = i * 10,
-                });
-            incResult.Success.Should().BeTrue($"Increment({i * 10}) should succeed");
+                },
+                TestContext.Current.CancellationToken);
+            Assert.True(incResult.Success, $"Increment({i * 10}) should succeed");
         }
 
         output.WriteLine("[Test] Increment by 10, 20, 30 succeeded");
@@ -110,9 +111,9 @@ public sealed class AggregateLifecycleTests
         IUxProjectionGrain<CounterSummaryProjection> projectionGrain = fixture.UxProjectionGrainFactory
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? projection = await projectionGrain.GetAsync(CancellationToken.None);
-        projection.Should().NotBeNull();
-        projection!.CurrentCount.Should().Be(160, "Final count should be 100 + 10 + 20 + 30 = 160");
-        projection.TotalOperations.Should().Be(20, "Operations: 1 + 10 + 5 + 1 + 3 = 20");
+        Assert.NotNull(projection);
+        Assert.Equal(160, projection.CurrentCount);
+        Assert.Equal(20, projection.TotalOperations);
         output.WriteLine(
             $"[Test] Projection verified: Count={projection.CurrentCount}, Operations={projection.TotalOperations}");
         output.WriteLine("[Test] PASSED: BasicLifecycle completed successfully!");
@@ -134,29 +135,31 @@ public sealed class AggregateLifecycleTests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Initialize
-        OperationResult initResult = await counter.ExecuteAsync(new InitializeCounter());
-        initResult.Success.Should().BeTrue("Initialize should succeed");
+        OperationResult initResult = await counter.ExecuteAsync(
+            new InitializeCounter(),
+            TestContext.Current.CancellationToken);
+        Assert.True(initResult.Success, "Initialize should succeed");
 
         // Act - Fire concurrent increment commands
         List<Task<OperationResult>> tasks = [];
         for (int i = 0; i < concurrentOps; i++)
         {
-            tasks.Add(counter.ExecuteAsync(new IncrementCounter()));
+            tasks.Add(counter.ExecuteAsync(new IncrementCounter(), TestContext.Current.CancellationToken));
         }
 
         OperationResult[] results = await Task.WhenAll(tasks);
 
         // Assert - All should succeed (Orleans serializes grain calls)
         int successCount = results.Count(r => r.Success);
-        successCount.Should().Be(concurrentOps, "All concurrent operations should succeed");
+        Assert.Equal(concurrentOps, successCount);
 
         // Verify projection
         IUxProjectionGrain<CounterSummaryProjection> projectionGrain = fixture.UxProjectionGrainFactory
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? projection = await projectionGrain.GetAsync(CancellationToken.None);
-        projection.Should().NotBeNull();
-        projection!.CurrentCount.Should().Be(concurrentOps, $"Count should be {concurrentOps}");
-        projection.TotalOperations.Should().Be(concurrentOps + 1, $"Operations should be {concurrentOps + 1}");
+        Assert.NotNull(projection);
+        Assert.Equal(concurrentOps, projection.CurrentCount);
+        Assert.Equal(concurrentOps + 1, projection.TotalOperations);
         output.WriteLine($"[Test] Concurrent completed: {successCount}/{concurrentOps} operations succeeded");
         output.WriteLine("[Test] PASSED: Concurrent commands all succeeded!");
     }
@@ -178,14 +181,18 @@ public sealed class AggregateLifecycleTests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Initialize
-        OperationResult initResult = await counter.ExecuteAsync(new InitializeCounter());
-        initResult.Success.Should().BeTrue("Initialize should succeed");
+        OperationResult initResult = await counter.ExecuteAsync(
+            new InitializeCounter(),
+            TestContext.Current.CancellationToken);
+        Assert.True(initResult.Success, "Initialize should succeed");
 
         // Act - Run rapid increments
         int successCount = 0;
         for (int i = 0; i < operationCount; i++)
         {
-            OperationResult result = await counter.ExecuteAsync(new IncrementCounter());
+            OperationResult result = await counter.ExecuteAsync(
+                new IncrementCounter(),
+                TestContext.Current.CancellationToken);
             if (result.Success)
             {
                 successCount++;
@@ -193,18 +200,17 @@ public sealed class AggregateLifecycleTests
         }
 
         // Assert
-        successCount.Should().Be(operationCount, "All operations should succeed");
+        Assert.Equal(operationCount, successCount);
         output.WriteLine($"[Test] All {operationCount} increment operations completed");
 
         // Verify projection - add a small delay to allow projection catch-up under heavy emulator load
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
         IUxProjectionGrain<CounterSummaryProjection> projectionGrain = fixture.UxProjectionGrainFactory
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? projection = await projectionGrain.GetAsync(CancellationToken.None);
-        projection.Should().NotBeNull();
-        projection!.CurrentCount.Should().Be(operationCount, $"Count should be {operationCount}");
-        projection.TotalOperations.Should()
-            .Be(operationCount + 1, $"Operations should be {operationCount + 1} (1 init + {operationCount} inc)");
+        Assert.NotNull(projection);
+        Assert.Equal(operationCount, projection.CurrentCount);
+        Assert.Equal(operationCount + 1, projection.TotalOperations);
         output.WriteLine($"[Test] Throughput completed: {successCount}/{operationCount} operations succeeded");
         output.WriteLine("[Test] PASSED: Throughput scenario completed!");
     }
@@ -223,19 +229,25 @@ public sealed class AggregateLifecycleTests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Attempt increment before initialization (should fail)
-        OperationResult incResultBeforeInit = await counter.ExecuteAsync(new IncrementCounter());
-        incResultBeforeInit.Success.Should().BeFalse("Increment before init should fail");
+        OperationResult incResultBeforeInit = await counter.ExecuteAsync(
+            new IncrementCounter(),
+            TestContext.Current.CancellationToken);
+        Assert.False(incResultBeforeInit.Success, "Increment before init should fail");
         output.WriteLine($"[Test] Increment before init failed as expected: {incResultBeforeInit.ErrorMessage}");
 
         // Act - Now initialize
-        OperationResult initResult = await counter.ExecuteAsync(new InitializeCounter(10));
-        initResult.Success.Should().BeTrue("Initialize should succeed");
+        OperationResult initResult = await counter.ExecuteAsync(
+            new InitializeCounter(10),
+            TestContext.Current.CancellationToken);
+        Assert.True(initResult.Success, "Initialize should succeed");
         output.WriteLine("[Test] Initialize(10) succeeded");
 
         // Act - Attempt to re-initialize (should fail)
-        OperationResult reinitResult = await counter.ExecuteAsync(new InitializeCounter(20));
-        reinitResult.Success.Should().BeFalse("Re-initialization should fail");
-        reinitResult.ErrorCode.Should().Be(AggregateErrorCodes.AlreadyExists);
+        OperationResult reinitResult = await counter.ExecuteAsync(
+            new InitializeCounter(20),
+            TestContext.Current.CancellationToken);
+        Assert.False(reinitResult.Success, "Re-initialization should fail");
+        Assert.Equal(AggregateErrorCodes.AlreadyExists, reinitResult.ErrorCode);
         output.WriteLine($"[Test] Re-initialize failed as expected: {reinitResult.ErrorMessage}");
 
         // Act - Attempt decrement with zero amount (should fail validation)
@@ -243,17 +255,18 @@ public sealed class AggregateLifecycleTests
             new DecrementCounter
             {
                 Amount = 0,
-            });
-        zeroDecResult.Success.Should().BeFalse("Decrement(0) should fail validation");
+            },
+            TestContext.Current.CancellationToken);
+        Assert.False(zeroDecResult.Success, "Decrement(0) should fail validation");
         output.WriteLine($"[Test] Decrement(0) failed as expected: {zeroDecResult.ErrorMessage}");
 
         // Assert - Projection should only reflect successful operations
         IUxProjectionGrain<CounterSummaryProjection> projectionGrain = fixture.UxProjectionGrainFactory
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? projection = await projectionGrain.GetAsync(CancellationToken.None);
-        projection.Should().NotBeNull();
-        projection!.CurrentCount.Should().Be(10, "Count should be 10 (only init succeeded)");
-        projection.TotalOperations.Should().Be(1, "Only 1 successful operation (init)");
+        Assert.NotNull(projection);
+        Assert.Equal(10, projection.CurrentCount);
+        Assert.Equal(1, projection.TotalOperations);
         output.WriteLine("[Test] PASSED: Validation errors properly detected!");
     }
 }

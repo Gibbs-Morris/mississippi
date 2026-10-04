@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <ItemGroup>
     <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
     <ProjectReference Include="..\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
   </ItemGroup>
-
+  <PropertyGroup>
+    <Description>Public contracts and abstractions for Inlet.Client.</Description>
+  </PropertyGroup>
 </Project>

@@ -7,6 +7,8 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />
     </ItemGroup>
     <ItemGroup>
+        <ProjectReference Include="..\..\src\Hosting.Client\Hosting.Client.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Client.Generators\Inlet.Client.Generators.csproj" />
+        <ProjectReference Include="..\..\src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
     </ItemGroup>
 </Project>

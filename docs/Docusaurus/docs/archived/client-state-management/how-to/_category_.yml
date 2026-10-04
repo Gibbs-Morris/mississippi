@@ -1,0 +1,8 @@
+label: How-To
+position: 3
+collapsed: false
+collapsible: true
+link:
+  type: generated-index
+  title: Reservoir How-To Guides
+  description: Task-oriented guides for testing and integrating Reservoir features.

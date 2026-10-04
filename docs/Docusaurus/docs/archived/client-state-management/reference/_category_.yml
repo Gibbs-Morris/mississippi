@@ -1,0 +1,8 @@
+label: Reference
+position: 2
+collapsed: false
+collapsible: true
+link:
+  type: generated-index
+  title: Reservoir Reference
+  description: Contract and API guidance for Reservoir state-management surfaces.

@@ -1,0 +1,133 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
+
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Cursor;
+using Mississippi.Brooks.Abstractions.Reader;
+using Mississippi.Brooks.Abstractions.Writer;
+using Mississippi.Brooks.Runtime.L0Tests.Infrastructure;
+using Mississippi.Brooks.Runtime.Reader;
+using Mississippi.Testing.Utilities.Orleans;
+
+using Orleans.TestingHost;
+
+
+namespace Mississippi.Brooks.Runtime.L0Tests.Reader;
+
+/// <summary>
+///     Integration tests for <see cref="IBrookSliceReaderGrain" />.
+/// </summary>
+[Collection(ClusterTestSuite.Name)]
+public sealed class BrookSliceReaderGrainTests
+{
+    private readonly TestCluster cluster = TestClusterAccess.Cluster;
+
+    /// <summary>
+    ///     Verifies slice reader populates cache and respects requested range.
+    /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
+    [Fact]
+    public async Task ReadAsyncPopulatesCacheAndRespectsRange()
+    {
+        BrookKey key = new("t", "slice1");
+
+        // Seed events via writer to fill storage and cursor positions
+        IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
+        ImmutableArray<BrookEvent> batch = Enumerable.Range(0, 10)
+            .Select(i => new BrookEvent
+            {
+                Id = i.ToString(CultureInfo.InvariantCulture),
+            })
+            .ToImmutableArray();
+        await writer.AppendEventsAsync(batch, cancellationToken: TestContext.Current.CancellationToken);
+
+        // Ensure cursor cache has advanced before slice read
+        IBrookCursorGrain cursor = cluster.GrainFactory.GetGrain<IBrookCursorGrain>(key);
+        await cursor.GetLatestPositionConfirmedAsync();
+        BrookRangeKey sliceKey = BrookRangeKey.FromBrookCompositeKey(key, 2, 8); // covers [2..10)
+        IBrookSliceReaderGrain slice = cluster.GrainFactory.GetGrain<IBrookSliceReaderGrain>(sliceKey);
+        List<BrookEvent> got = new();
+        await foreach (BrookEvent e in slice.ReadAsync(3, 6, TestContext.Current.CancellationToken))
+        {
+            got.Add(e);
+        }
+
+        Assert.Equal(4, got.Count); // positions 3,4,5,6
+        Assert.Equal(["3", "4", "5", "6"], got.Select(x => x.Id).ToArray());
+    }
+
+    /// <summary>
+    ///     Verifies batch slice read returns expected immutable array.
+    /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
+    [Fact]
+    public async Task ReadBatchAsyncReturnsImmutableArray()
+    {
+        BrookKey key = new("t", "slice2");
+        IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
+        ImmutableArray<BrookEvent> batch = Enumerable.Range(0, 5)
+            .Select(i => new BrookEvent
+            {
+                Id = i.ToString(CultureInfo.InvariantCulture),
+            })
+            .ToImmutableArray();
+        await writer.AppendEventsAsync(batch, cancellationToken: TestContext.Current.CancellationToken);
+        IBrookCursorGrain cursor = cluster.GrainFactory.GetGrain<IBrookCursorGrain>(key);
+        await cursor.GetLatestPositionConfirmedAsync();
+        BrookRangeKey sliceKey = BrookRangeKey.FromBrookCompositeKey(key, 0, 5);
+        IBrookSliceReaderGrain slice = cluster.GrainFactory.GetGrain<IBrookSliceReaderGrain>(sliceKey);
+        ImmutableArray<BrookEvent> got = await slice.ReadBatchAsync(1, 3, TestContext.Current.CancellationToken);
+        Assert.Equal(["1", "2", "3"], got.Select(e => e.Id).ToArray());
+    }
+
+    /// <summary>
+    ///     Verifies the public reader can retry the same explicit range after missing events are appended.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task ReadEventsBatchAsyncRecoversSameRangeAfterAppend()
+    {
+        BrookKey key = new("t", $"slice-recovery-{Guid.NewGuid():N}");
+        IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
+        await writer.AppendEventsAsync(
+            [
+                new()
+                {
+                    Id = "0",
+                },
+                new()
+                {
+                    Id = "1",
+                },
+            ],
+            cancellationToken: TestContext.Current.CancellationToken);
+        IBrookReaderGrain reader = cluster.GrainFactory.GetGrain<IBrookReaderGrain>(key);
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            reader.ReadEventsBatchAsync(0, 2, TestContext.Current.CancellationToken));
+        await writer.AppendEventsAsync(
+            [
+                new()
+                {
+                    Id = "2",
+                },
+            ],
+            cancellationToken: TestContext.Current.CancellationToken);
+        ImmutableArray<BrookEvent> recovered = await reader.ReadEventsBatchAsync(
+            0,
+            2,
+            TestContext.Current.CancellationToken);
+        IBrookSliceReaderGrain sameSlice = cluster.GrainFactory.GetGrain<IBrookSliceReaderGrain>(
+            BrookRangeKey.FromBrookCompositeKey(key, 0, 3));
+        ImmutableArray<BrookEvent> cached = await sameSlice.ReadBatchAsync(0, 2, TestContext.Current.CancellationToken);
+        Assert.Equal(["0", "1", "2"], recovered.Select(e => e.Id).ToArray());
+        Assert.Equal(recovered, cached);
+    }
+}

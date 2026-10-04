@@ -1,0 +1,53 @@
+using Mississippi.Brooks.Abstractions.Attributes;
+
+
+namespace Mississippi.DomainModeling.Abstractions;
+
+/// <summary>
+///     Defines a factory for resolving aggregate grains by their key.
+/// </summary>
+/// <remarks>
+///     <para>
+///         This factory provides resolution of aggregate grains using entity IDs.
+///         The brook name is derived from the
+///         <see cref="BrookNameAttribute" />
+///         on the aggregate type.
+///     </para>
+/// </remarks>
+public interface IAggregateGrainFactory
+{
+    /// <summary>
+    ///     Retrieves a generic aggregate grain for the specified aggregate type using an entity ID.
+    /// </summary>
+    /// <typeparam name="TAggregate">
+    ///     The aggregate state type, decorated with
+    ///     <see cref="BrookNameAttribute" />.
+    /// </typeparam>
+    /// <param name="entityId">The entity identifier within the brook.</param>
+    /// <returns>The generic aggregate grain instance.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         This method resolves the grain using entity ID only. The brook name is derived
+    ///         from the <see cref="BrookNameAttribute" />
+    ///         on the <typeparamref name="TAggregate" /> type.
+    ///     </para>
+    /// </remarks>
+    IGenericAggregateGrain<TAggregate> GetGenericAggregate<TAggregate>(
+        string entityId
+    )
+        where TAggregate : class;
+
+    /// <summary>
+    ///     Retrieves a generic aggregate grain for the specified aggregate type using an aggregate key.
+    /// </summary>
+    /// <typeparam name="TAggregate">
+    ///     The aggregate state type, decorated with
+    ///     <see cref="BrookNameAttribute" />.
+    /// </typeparam>
+    /// <param name="aggregateKey">The aggregate key identifying the aggregate.</param>
+    /// <returns>The generic aggregate grain instance.</returns>
+    IGenericAggregateGrain<TAggregate> GetGenericAggregate<TAggregate>(
+        AggregateKey aggregateKey
+    )
+        where TAggregate : class;
+}

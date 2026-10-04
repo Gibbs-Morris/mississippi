@@ -90,7 +90,9 @@ public sealed class CommandClientDtoGenerator : IIncrementalGenerator
         sb.AppendLine($"internal sealed record {command.RequestDtoTypeName}({parameters});");
 
         // Add source
-        context.AddSource($"{command.RequestDtoTypeName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+        context.AddSource(
+            $"{command.OutputNamespace}.{command.RequestDtoTypeName}.g.cs",
+            SourceText.From(sb.ToString(), Encoding.UTF8));
     }
 
     /// <summary>
@@ -201,18 +203,13 @@ public sealed class CommandClientDtoGenerator : IIncrementalGenerator
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
         // Use the combined provider to scan referenced assemblies with target namespace awareness
-        IncrementalValueProvider<List<CommandInfo>> commandsProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) => GetCommandsFromCompilation(source.Compilation, source.Options));
+        IncrementalValueProvider<List<CommandInfo>> commandsProvider =
+            compilationAndOptions.Select((source, _) => GetCommandsFromCompilation(source.Compilation, source.Options));
 
         // Register source output
         context.RegisterSourceOutput(
             commandsProvider,
-            static (
-                spc,
-                commands
-            ) =>
+            static (spc, commands) =>
             {
                 foreach (CommandInfo command in commands)
                 {

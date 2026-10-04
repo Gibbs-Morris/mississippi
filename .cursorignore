@@ -59,7 +59,6 @@ coverage.*
 *.trx
 *.testlog
 lcov.info
-.nunit/
 
 # ===== Static analysis =====
 .sonarqube/

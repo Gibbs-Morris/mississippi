@@ -1,4 +1,4 @@
-using Mississippi.Inlet.Server.Abstractions;
+using Mississippi.Inlet.Gateway.Abstractions;
 
 
 namespace Mississippi.Inlet.Abstractions.L0Tests;
@@ -36,6 +36,16 @@ public sealed class InletHubConstantsTests
     {
         // Assert
         Assert.Equal("SubscribeAsync", InletHubConstants.SubscribeMethod);
+    }
+
+    /// <summary>
+    ///     SubscriptionDeniedMessage should have expected value.
+    /// </summary>
+    [Fact]
+    public void SubscriptionDeniedMessageHasExpectedValue()
+    {
+        // Assert
+        Assert.Equal("Subscription denied.", InletHubConstants.SubscriptionDeniedMessage);
     }
 
     /// <summary>

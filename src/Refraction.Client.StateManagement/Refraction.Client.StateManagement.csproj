@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Refraction.Client\Refraction.Client.csproj" />
+    <ProjectReference Include="..\Refraction.Abstractions\Refraction.Abstractions.csproj" />
+    <ProjectReference Include="..\Reservoir.Core\Reservoir.Core.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Page composition helpers for Refraction-powered applications.</Description>
+  </PropertyGroup>
+</Project>

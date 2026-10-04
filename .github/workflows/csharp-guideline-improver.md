@@ -39,7 +39,7 @@ You are a repository improvement agent focused on C# code quality and architectu
 4. Implement fixes that are behavior-preserving and low risk:
    - Do not change software intent or business behavior.
    - Do not introduce UX changes.
-   - Do not introduce breaking changes to public APIs.
+   - While the repo is pre-1.0, breaking changes to public APIs are permitted provided all consumers (samples, tests) are updated in the same PR (see `.github/instructions/backwards-compatibility.instructions.md`). Post-1.0, do not introduce breaking changes to public APIs without a migration plan.
    - Keep edits minimal and scoped.
 5. Validate changes with the narrowest relevant tests/build checks first, then the required repository scripts if needed.
 6. If at least one safe fix is completed, create exactly one pull request with a concise summary of what was fixed and why those items were highest impact.

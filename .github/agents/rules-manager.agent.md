@@ -1,7 +1,6 @@
 ---
 description: Manages Copilot rules - creates new rules, ensures consistency, resolves conflicts across all rule files
 name: Rules Manager
-model: "Claude Opus 4.5"
 ---
 
 # Rules Manager Agent
@@ -78,7 +77,7 @@ Use `applyTo` patterns aggressively to prevent irrelevant rules from loading:
 
 ### Rule Compression Techniques
 
-1. **Use shorthand** - "fn" not "function", "impl" not "implementation"
+1. **Use clear words** - Remove repetition instead of shortening words into unfamiliar abbreviations; follow the [plain-English communication policy](../instructions/plain-english.instructions.md).
 2. **Imply context** - In a TS file, don't say "in TypeScript"
 3. **Trust intelligence** - Don't over-explain, Copilot understands concepts
 4. **Group related** - One bullet with sub-items vs multiple bullets
@@ -191,11 +190,11 @@ After all changes, do one final pass:
 | Language-specific   | `.github/instructions/{lang}.instructions.md`  | Only for specific file types |
 | Task-specific       | `.github/prompts/{task}.prompt.md`             | On-demand workflows          |
 | Persona/role        | `.github/agents/{role}.agent.md`               | Specialized AI behavior      |
-| Agent skill         | `.github/skills/{skill-name}/SKILL.md`         | Specialized task automation  |
+| Agent skill         | `.agents/skills/{skill-name}/SKILL.md`         | Specialized task automation  |
 
 ## Agent Skills Workflow
 
-Agent Skills are modular folders containing instructions and resources for specialized, repeatable tasks. GitHub Copilot automatically detects and loads relevant skills when your prompt matches a skill's purpose.
+Agent Skills are modular folders containing instructions and resources for specialized, repeatable tasks. Codex and GitHub Copilot discover the shared `.agents/skills/` root and load a relevant skill based on its description. Inspect other supported roots for overlap before creating a duplicate; keep this repository's canonical skills in the shared root.
 
 **Reference:** [Agent Skills Specification](https://agentskills.io/specification) | [GitHub Copilot Skills Support](https://github.blog/changelog/2025-12-18-github-copilot-now-supports-agent-skills/)
 
@@ -216,7 +215,7 @@ Agent Skills are modular folders containing instructions and resources for speci
 #### 1. Directory Structure
 
 ```text
-.github/skills/
+.agents/skills/
 └── {skill-name}/
     ├── SKILL.md          # Required: Skill definition
     ├── scripts/          # Optional: Supporting scripts

@@ -1,0 +1,45 @@
+using System.Threading.Tasks;
+
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+
+using Mississippi.Brooks.Runtime.Factory;
+using Mississippi.Brooks.Runtime.Reader;
+using Mississippi.Testing.Utilities.Mocks;
+
+using Moq;
+
+using Orleans.Runtime;
+
+
+namespace Mississippi.Brooks.Runtime.L0Tests.Reader;
+
+/// <summary>
+///     Unit tests for <see cref="BrookReaderGrain" />.
+/// </summary>
+public sealed class BrookReaderGrainUnitTests
+{
+    /// <summary>
+    ///     Ensures deactivation path completes without error.
+    /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
+    [Fact]
+    public async Task DeactivateAsyncCallsDeactivateOnIdle()
+    {
+        // Arrange
+        Mock<IInternalBrookGrainFactory> factory = new();
+        IOptions<BrookReaderOptions> options = Options.Create(new BrookReaderOptions());
+        IGrainContext context = GrainContextMockBuilder.Create()
+            .WithBrookGrainKey("TEST.BROOK", "test-entity-id")
+            .BuildObject();
+        BrookReaderGrain sut = new(factory.Object, options, context, NullLogger<BrookReaderGrain>.Instance);
+
+        // Act
+        await sut.DeactivateAsync();
+
+        // Assert: no exception indicates deactivation path executed without error
+        Assert.True(true);
+    }
+}

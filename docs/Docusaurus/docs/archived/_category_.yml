@@ -1,0 +1,7 @@
+label: Archived
+position: 12
+collapsed: true
+collapsible: true
+link:
+  type: doc
+  id: archived-overview

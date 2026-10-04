@@ -1,37 +1,58 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <ItemGroup>
-        <PackageReference Include="TngTech.ArchUnitNET.xUnit" />
-    </ItemGroup>
 
     <!-- Reference all src projects to include them in architecture analysis -->
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Aqueduct\Aqueduct.csproj" />
+        <ProjectReference Include="..\..\src\DomainModeling.TestHarness\DomainModeling.TestHarness.csproj" />
+        <ProjectReference Include="..\..\src\Aqueduct.Gateway\Aqueduct.Gateway.csproj" />
         <ProjectReference Include="..\..\src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
-        <ProjectReference Include="..\..\src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
+        <ProjectReference Include="..\..\src\Aqueduct.Runtime\Aqueduct.Runtime.csproj" />
         <ProjectReference Include="..\..\src\Common.Abstractions\Common.Abstractions.csproj" />
-        <ProjectReference Include="..\..\src\Common.Cosmos\Common.Cosmos.csproj" />
-        <ProjectReference Include="..\..\src\Common.Cosmos.Abstractions\Common.Cosmos.Abstractions.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Serialization.Abstractions\EventSourcing.Serialization.Abstractions.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.UxProjections.Abstractions\EventSourcing.UxProjections.Abstractions.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
+        <ProjectReference Include="..\..\src\Hosting.Abstractions\Hosting.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Hosting.Client\Hosting.Client.csproj" />
+        <ProjectReference Include="..\..\src\Hosting.Runtime\Hosting.Runtime.csproj" />
+        <ProjectReference Include="..\..\src\Hosting.Runtime.Abstractions\Hosting.Runtime.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Common.Runtime.Storage.Cosmos\Common.Runtime.Storage.Cosmos.csproj" />
+        <ProjectReference Include="..\..\src\Common.Runtime.Storage.Abstractions\Common.Runtime.Storage.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\DomainModeling.Runtime\DomainModeling.Runtime.csproj" />
+        <ProjectReference Include="..\..\src\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\DomainModeling.Gateway\DomainModeling.Gateway.csproj" />
+        <ProjectReference Include="..\..\src\Brooks.Runtime\Brooks.Runtime.csproj" />
+        <ProjectReference Include="..\..\src\Brooks.Abstractions\Brooks.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Brooks.Runtime.Storage.Abstractions\Brooks.Runtime.Storage.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Brooks.Runtime.Storage.Cosmos\Brooks.Runtime.Storage.Cosmos.csproj" />
+        <ProjectReference Include="..\..\src\Tributary.Runtime\Tributary.Runtime.csproj" />
+        <ProjectReference Include="..\..\src\Tributary.Abstractions\Tributary.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Abstractions\Tributary.Runtime.Storage.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
+        <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Client\Inlet.Client.csproj" />
-        <ProjectReference Include="..\..\src\Inlet.Silo\Inlet.Silo.csproj" />
-        <ProjectReference Include="..\..\src\Inlet.Server\Inlet.Server.csproj" />
-        <ProjectReference Include="..\..\src\Reservoir\Reservoir.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Runtime\Inlet.Runtime.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Gateway\Inlet.Gateway.csproj" />
+        <ProjectReference Include="..\..\src\Reservoir.Core\Reservoir.Core.csproj" />
         <ProjectReference Include="..\..\src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
-        <ProjectReference Include="..\..\src\Reservoir.Blazor\Reservoir.Blazor.csproj" />
+        <ProjectReference Include="..\..\src\Reservoir.Client\Reservoir.Client.csproj" />
+        <ProjectReference Include="..\..\src\Refraction.Abstractions\Refraction.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Refraction.Client\Refraction.Client.csproj" />
+        <ProjectReference Include="..\..\src\Refraction.Client.StateManagement\Refraction.Client.StateManagement.csproj" />
+        <ProjectReference Include="..\..\src\Reservoir.TestHarness\Reservoir.TestHarness.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Client.Abstractions\Inlet.Client.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Gateway.Abstractions\Inlet.Gateway.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Runtime.Abstractions\Inlet.Runtime.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Sdk.Client\Sdk.Client.csproj" />
+        <ProjectReference Include="..\..\src\Sdk.Gateway\Sdk.Gateway.csproj" />
+        <ProjectReference Include="..\..\src\Sdk.Runtime\Sdk.Runtime.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Client.Generators\Inlet.Client.Generators.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Gateway.Generators\Inlet.Gateway.Generators.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Runtime.Generators\Inlet.Runtime.Generators.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Generators.Core\Inlet.Generators.Core.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="Microsoft.CodeAnalysis.Common" />
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+      <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" />
+      <PackageReference Include="TngTech.ArchUnitNET.xUnitV3" />
     </ItemGroup>
 </Project>
