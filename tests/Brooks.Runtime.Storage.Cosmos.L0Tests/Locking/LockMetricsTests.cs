@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
@@ -25,8 +27,9 @@ public sealed class LockMetricsTests
     [Fact]
     public void LockKeySanitizationExtractsBrookName()
     {
+        string brookName = $"CASCADE|CHAT|CONVERSATION-{Guid.NewGuid():N}";
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == LockMetrics.MeterName)
@@ -42,17 +45,19 @@ public sealed class LockMetricsTests
                 tagDict[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, 0, tagDict));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, 0, tagDict));
         });
         listener.Start();
 
         // Act - key has pipe-separated segments with instance ID at end
-        LockMetrics.RecordContentionWait("CASCADE|CHAT|CONVERSATION|demo-conversation-123");
+        LockMetrics.RecordContentionWait($"{brookName}|demo-conversation-123");
 
         // Assert - should extract just the brook name portion
-        MetricMeasurement? contentionMeasurement = measurements.Find(m => m.InstrumentName == "lock.contention.waits");
+        MetricMeasurement? contentionMeasurement = Assert.Single(
+            measurements.ToArray(),
+            m => (m.Tags["lock.key"] as string == brookName) && (m.InstrumentName == "lock.contention.waits"));
         Assert.NotNull(contentionMeasurement);
-        Assert.Equal("CASCADE|CHAT|CONVERSATION", contentionMeasurement.Tags["lock.key"]);
+        Assert.Equal(brookName, contentionMeasurement.Tags["lock.key"]);
     }
 
     /// <summary>
@@ -61,8 +66,9 @@ public sealed class LockMetricsTests
     [Fact]
     public void RecordAcquireFailureEmitsAcquireCount()
     {
+        string brookName = $"RecordAcquireFailureEmitsAcquireCount-{Guid.NewGuid():N}";
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == LockMetrics.MeterName)
@@ -78,7 +84,7 @@ public sealed class LockMetricsTests
                 tagDict[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, 0, tagDict));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, 0, tagDict));
         });
         listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
@@ -88,7 +94,7 @@ public sealed class LockMetricsTests
                 tagDict[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, 0, measurement, 0, tagDict));
+            measurements.Enqueue(new(instrument.Name, 0, measurement, 0, tagDict));
         });
         listener.SetMeasurementEventCallback<int>((instrument, measurement, tags, _) =>
         {
@@ -98,18 +104,20 @@ public sealed class LockMetricsTests
                 tagDict[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, 0, 0, measurement, tagDict));
+            measurements.Enqueue(new(instrument.Name, 0, 0, measurement, tagDict));
         });
         listener.Start();
 
         // Act
-        LockMetrics.RecordAcquireFailure("CASCADE|CHAT|CONVERSATION|id123", 5000.0, 3);
+        LockMetrics.RecordAcquireFailure($"{brookName}|id123", 5000.0, 3);
 
         // Assert
-        MetricMeasurement? acquireMeasurement = measurements.Find(m =>
-            (m.InstrumentName == "lock.acquire.count") &&
-            m.Tags.TryGetValue("result", out object? result) &&
-            ((string?)result == "failure"));
+        MetricMeasurement? acquireMeasurement = Assert.Single(
+            measurements.ToArray(),
+            m => (m.Tags["lock.key"] as string == brookName) &&
+                 (m.InstrumentName == "lock.acquire.count") &&
+                 m.Tags.TryGetValue("result", out object? result) &&
+                 ((string?)result == "failure"));
         Assert.NotNull(acquireMeasurement);
         Assert.Equal(1, acquireMeasurement.LongValue);
     }
@@ -120,8 +128,9 @@ public sealed class LockMetricsTests
     [Fact]
     public void RecordAcquireFailureEmitsDuration()
     {
+        string brookName = $"RecordAcquireFailureEmitsDuration-{Guid.NewGuid():N}";
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == LockMetrics.MeterName)
@@ -137,15 +146,17 @@ public sealed class LockMetricsTests
                 tagDict[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, 0, measurement, 0, tagDict));
+            measurements.Enqueue(new(instrument.Name, 0, measurement, 0, tagDict));
         });
         listener.Start();
 
         // Act
-        LockMetrics.RecordAcquireFailure("CASCADE|CHAT|CONVERSATION|id123", 5000.0, 3);
+        LockMetrics.RecordAcquireFailure($"{brookName}|id123", 5000.0, 3);
 
         // Assert
-        MetricMeasurement? durationMeasurement = measurements.Find(m => m.InstrumentName == "lock.acquire.duration");
+        MetricMeasurement? durationMeasurement = Assert.Single(
+            measurements.ToArray(),
+            m => (m.Tags["lock.key"] as string == brookName) && (m.InstrumentName == "lock.acquire.duration"));
         Assert.NotNull(durationMeasurement);
         Assert.Equal(5000.0, durationMeasurement.DoubleValue);
     }
@@ -156,8 +167,9 @@ public sealed class LockMetricsTests
     [Fact]
     public void RecordAcquireFailureEmitsFailureCount()
     {
+        string brookName = $"RecordAcquireFailureEmitsFailureCount-{Guid.NewGuid():N}";
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == LockMetrics.MeterName)
@@ -173,15 +185,17 @@ public sealed class LockMetricsTests
                 tagDict[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, 0, tagDict));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, 0, tagDict));
         });
         listener.Start();
 
         // Act
-        LockMetrics.RecordAcquireFailure("CASCADE|CHAT|CONVERSATION|id123", 5000.0, 3);
+        LockMetrics.RecordAcquireFailure($"{brookName}|id123", 5000.0, 3);
 
         // Assert
-        MetricMeasurement? failureMeasurement = measurements.Find(m => m.InstrumentName == "lock.acquire.failures");
+        MetricMeasurement? failureMeasurement = Assert.Single(
+            measurements.ToArray(),
+            m => (m.Tags["lock.key"] as string == brookName) && (m.InstrumentName == "lock.acquire.failures"));
         Assert.NotNull(failureMeasurement);
         Assert.Equal(1, failureMeasurement.LongValue);
     }
@@ -192,8 +206,9 @@ public sealed class LockMetricsTests
     [Fact]
     public void RecordAcquireSuccessEmitsAcquireCount()
     {
+        string brookName = $"RecordAcquireSuccessEmitsAcquireCount-{Guid.NewGuid():N}";
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == LockMetrics.MeterName)
@@ -209,7 +224,7 @@ public sealed class LockMetricsTests
                 tagDict[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, 0, tagDict));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, 0, tagDict));
         });
         listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
@@ -219,7 +234,7 @@ public sealed class LockMetricsTests
                 tagDict[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, 0, measurement, 0, tagDict));
+            measurements.Enqueue(new(instrument.Name, 0, measurement, 0, tagDict));
         });
         listener.SetMeasurementEventCallback<int>((instrument, measurement, tags, _) =>
         {
@@ -229,18 +244,20 @@ public sealed class LockMetricsTests
                 tagDict[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, 0, 0, measurement, tagDict));
+            measurements.Enqueue(new(instrument.Name, 0, 0, measurement, tagDict));
         });
         listener.Start();
 
         // Act
-        LockMetrics.RecordAcquireSuccess("CASCADE|CHAT|CONVERSATION|id456", 100.0, 1);
+        LockMetrics.RecordAcquireSuccess($"{brookName}|id456", 100.0, 1);
 
         // Assert
-        MetricMeasurement? acquireMeasurement = measurements.Find(m =>
-            (m.InstrumentName == "lock.acquire.count") &&
-            m.Tags.TryGetValue("result", out object? result) &&
-            ((string?)result == "success"));
+        MetricMeasurement? acquireMeasurement = Assert.Single(
+            measurements.ToArray(),
+            m => (m.Tags["lock.key"] as string == brookName) &&
+                 (m.InstrumentName == "lock.acquire.count") &&
+                 m.Tags.TryGetValue("result", out object? result) &&
+                 ((string?)result == "success"));
         Assert.NotNull(acquireMeasurement);
         Assert.Equal(1, acquireMeasurement.LongValue);
     }
@@ -251,8 +268,9 @@ public sealed class LockMetricsTests
     [Fact]
     public void RecordAcquireSuccessEmitsRetryAttempts()
     {
+        string brookName = $"RecordAcquireSuccessEmitsRetryAttempts-{Guid.NewGuid():N}";
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == LockMetrics.MeterName)
@@ -268,15 +286,17 @@ public sealed class LockMetricsTests
                 tagDict[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, 0, 0, measurement, tagDict));
+            measurements.Enqueue(new(instrument.Name, 0, 0, measurement, tagDict));
         });
         listener.Start();
 
         // Act
-        LockMetrics.RecordAcquireSuccess("CASCADE|CHAT|CONVERSATION|id456", 100.0, 2);
+        LockMetrics.RecordAcquireSuccess($"{brookName}|id456", 100.0, 2);
 
         // Assert
-        MetricMeasurement? attemptsMeasurement = measurements.Find(m => m.InstrumentName == "lock.acquire.attempts");
+        MetricMeasurement? attemptsMeasurement = Assert.Single(
+            measurements.ToArray(),
+            m => (m.Tags["lock.key"] as string == brookName) && (m.InstrumentName == "lock.acquire.attempts"));
         Assert.NotNull(attemptsMeasurement);
         Assert.Equal(2, attemptsMeasurement.IntValue);
     }
@@ -287,8 +307,9 @@ public sealed class LockMetricsTests
     [Fact]
     public void RecordContentionWaitEmitsCount()
     {
+        string brookName = $"RecordContentionWaitEmitsCount-{Guid.NewGuid():N}";
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == LockMetrics.MeterName)
@@ -304,15 +325,17 @@ public sealed class LockMetricsTests
                 tagDict[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, 0, tagDict));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, 0, tagDict));
         });
         listener.Start();
 
         // Act
-        LockMetrics.RecordContentionWait("CASCADE|CHAT|CONVERSATION|id789");
+        LockMetrics.RecordContentionWait($"{brookName}|id789");
 
         // Assert
-        MetricMeasurement? contentionMeasurement = measurements.Find(m => m.InstrumentName == "lock.contention.waits");
+        MetricMeasurement? contentionMeasurement = Assert.Single(
+            measurements.ToArray(),
+            m => (m.Tags["lock.key"] as string == brookName) && (m.InstrumentName == "lock.contention.waits"));
         Assert.NotNull(contentionMeasurement);
         Assert.Equal(1, contentionMeasurement.LongValue);
     }
@@ -323,8 +346,9 @@ public sealed class LockMetricsTests
     [Fact]
     public void RecordHeldDurationEmitsDuration()
     {
+        string brookName = $"RecordHeldDurationEmitsDuration-{Guid.NewGuid():N}";
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == LockMetrics.MeterName)
@@ -340,16 +364,60 @@ public sealed class LockMetricsTests
                 tagDict[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, 0, measurement, 0, tagDict));
+            measurements.Enqueue(new(instrument.Name, 0, measurement, 0, tagDict));
         });
         listener.Start();
 
         // Act
-        LockMetrics.RecordHeldDuration("CASCADE|CHAT|CONVERSATION|id101", 1500.0);
+        LockMetrics.RecordHeldDuration($"{brookName}|id101", 1500.0);
 
         // Assert
-        MetricMeasurement? heldMeasurement = measurements.Find(m => m.InstrumentName == "lock.held.duration");
+        MetricMeasurement? heldMeasurement = Assert.Single(
+            measurements.ToArray(),
+            m => (m.Tags["lock.key"] as string == brookName) && (m.InstrumentName == "lock.held.duration"));
         Assert.NotNull(heldMeasurement);
         Assert.Equal(1500.0, heldMeasurement.DoubleValue);
+    }
+
+    /// <summary>
+    ///     Held duration assertions should select the expected brook despite other lock measurements.
+    /// </summary>
+    [Fact]
+    public void RecordHeldDurationSeparatesLocksWithDifferentBrookNames()
+    {
+        string brookName = $"{nameof(RecordHeldDurationSeparatesLocksWithDifferentBrookNames)}-{Guid.NewGuid():N}";
+        string otherBrookName = $"OtherBrook-{Guid.NewGuid():N}";
+        using MeterListener listener = new();
+        ConcurrentQueue<MetricMeasurement> measurements = new();
+        listener.InstrumentPublished = (instrument, listener) =>
+        {
+            if (instrument.Meter.Name == LockMetrics.MeterName)
+            {
+                listener.EnableMeasurementEvents(instrument);
+            }
+        };
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
+        {
+            Dictionary<string, object?> tagDict = [];
+            foreach (KeyValuePair<string, object?> tag in tags)
+            {
+                tagDict[tag.Key] = tag.Value;
+            }
+
+            measurements.Enqueue(new(instrument.Name, 0, measurement, 0, tagDict));
+        });
+        listener.Start();
+        LockMetrics.RecordHeldDuration($"{otherBrookName}|other-instance", 3.7668);
+        LockMetrics.RecordHeldDuration($"{brookName}|expected-instance", 1500.0);
+        MetricMeasurement expected = Assert.Single(
+            measurements.ToArray(),
+            measurement => (measurement.InstrumentName == "lock.held.duration") &&
+                           (measurement.Tags["lock.key"] as string == brookName));
+        MetricMeasurement other = Assert.Single(
+            measurements.ToArray(),
+            measurement => (measurement.InstrumentName == "lock.held.duration") &&
+                           (measurement.Tags["lock.key"] as string == otherBrookName));
+        Assert.Equal(1500.0, expected.DoubleValue);
+        Assert.Equal(3.7668, other.DoubleValue);
     }
 }

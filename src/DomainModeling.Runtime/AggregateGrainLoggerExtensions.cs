@@ -70,6 +70,25 @@ internal static partial class AggregateGrainLoggerExtensions
     );
 
     /// <summary>
+    ///     Logs a cursor publication failure with the confirmed committed aggregate position.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="position">The confirmed committed position.</param>
+    /// <param name="exception">The cursor publication failure.</param>
+    [LoggerMessage(
+        24,
+        LogLevel.Error,
+        "Events for aggregate {AggregateKey} committed at position {Position}, but cursor publication failed",
+        EventName = nameof(CommittedAppendPublicationFailed))]
+    public static partial void CommittedAppendPublicationFailed(
+        this ILogger logger,
+        string aggregateKey,
+        long position,
+        Exception exception
+    );
+
+    /// <summary>
     ///     Logs when effect dispatch fails after command events are persisted.
     /// </summary>
     /// <param name="logger">The logger.</param>
