@@ -228,10 +228,7 @@
       "Mississippi.Reservoir.TestHarness": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Extensions.TimeProvider.Testing": "[10.10.0, )",
-          "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
-          "Mississippi.Reservoir.Core": "[1.0.0, )",
-          "Moq": "[4.20.72, )"
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
       "Microsoft.AspNetCore.Components.WebAssembly": {
@@ -242,12 +239,6 @@
         "dependencies": {
           "Microsoft.JSInterop.WebAssembly": "10.0.12"
         }
-      },
-      "Microsoft.Extensions.TimeProvider.Testing": {
-        "type": "CentralTransitive",
-        "requested": "[10.10.0, )",
-        "resolved": "10.10.0",
-        "contentHash": "8duZdxuO3Oo8tlyQXVq1drXee6GJC9DjUU97Pq3YaIqf92jrAHsWxbbRKwvjQI48Mer3IANwUKF0elqvHeY4Rw=="
       },
       "xunit.v3.assert": {
         "type": "CentralTransitive",

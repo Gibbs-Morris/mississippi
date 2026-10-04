@@ -48,6 +48,17 @@
         <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     </PropertyGroup>
 
+    <!-- Diagnostic restores use separate locks; ordinary builds keep their committed inputs. -->
+    <PropertyGroup Condition="'$(EnableReferenceTrimmer)' == 'true'">
+        <_ReferenceTrimmerRepositoryRoot>$([System.String]::Copy('$(MSBuildThisFileDirectory)').Replace('\', '/'))</_ReferenceTrimmerRepositoryRoot>
+        <_ReferenceTrimmerProjectDirectory>$([System.String]::Copy('$(MSBuildProjectDirectory)').Replace('\', '/'))/</_ReferenceTrimmerProjectDirectory>
+        <_ReferenceTrimmerSourceProject Condition="$([System.String]::Copy('$(_ReferenceTrimmerProjectDirectory)').StartsWith('$(_ReferenceTrimmerRepositoryRoot)src/'))">true</_ReferenceTrimmerSourceProject>
+        <_ReferenceTrimmerExcludedProject Condition="$([System.String]::Copy('$(MSBuildProjectName)').StartsWith('Sdk')) or $([System.String]::Copy('$(MSBuildProjectName)').Contains('.Generators'))">true</_ReferenceTrimmerExcludedProject>
+        <NuGetLockFilePath>$(MSBuildProjectDirectory)/obj/reference-trimmer/packages.lock.json</NuGetLockFilePath>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(EnableReferenceTrimmer)' == 'true' and '$(_ReferenceTrimmerSourceProject)' == 'true' and '$(_ReferenceTrimmerExcludedProject)' != 'true'">
+        <PackageReference Include="ReferenceTrimmer" PrivateAssets="all" />
+    </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="$(AssemblyName).Tests" />
         <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
