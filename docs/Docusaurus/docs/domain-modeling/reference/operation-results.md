@@ -1,4 +1,5 @@
 ---
+id: operation-results
 title: Domain Operation Results
 description: Reference success and failure factories, typed values, conversion, and default result behavior.
 sidebar_position: 7
@@ -6,6 +7,8 @@ sidebar_label: Operation Results
 ---
 
 # Domain Operation Results
+
+## Overview
 
 `OperationResult` carries an operation's success flag or failure details. `OperationResult<T>` also carries a success value, such as the event list returned by a command handler.
 
