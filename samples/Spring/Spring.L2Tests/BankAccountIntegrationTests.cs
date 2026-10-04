@@ -10,10 +10,10 @@ using Mississippi.DomainModeling.Abstractions;
 namespace MississippiSamples.Spring.L2Tests;
 
 /// <summary>
-///     End-to-end integration tests for the BankAccount aggregate and projection.
+///     Functional API integration tests for the BankAccount aggregate and projection.
 ///     Tests the full flow from API commands through event sourcing to projection query.
 /// </summary>
-[Collection(SpringTestCollection.Name)]
+[Collection(SpringApiCollectionDefinition.Name)]
 public sealed class BankAccountIntegrationTests
 {
     private const int CompletedSagaPhase = (int)SagaPhase.Completed;
@@ -28,14 +28,14 @@ public sealed class BankAccountIntegrationTests
     /// </summary>
     private static readonly TimeSpan PollingInterval = TimeSpan.FromMilliseconds(500);
 
-    private readonly SpringFixture fixture;
+    private readonly SpringApplicationFixture fixture;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="BankAccountIntegrationTests" /> class.
     /// </summary>
     /// <param name="fixture">The shared Spring fixture.</param>
     public BankAccountIntegrationTests(
-        SpringFixture fixture
+        SpringApplicationFixture fixture
     ) =>
         this.fixture = fixture;
 
@@ -193,14 +193,14 @@ public sealed class BankAccountIntegrationTests
     public async Task CompleteBankAccountFlowShouldUpdateProjectionCorrectly()
     {
         // Arrange
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        using HttpClient client = fixture.CreateHttpClient();
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
+        HttpClient client = fixture.GatewayClient;
         string bankAccountId = $"test-account-{Guid.NewGuid():N}";
         const string holderName = "John Doe";
-        const decimal initialDeposit = 100.00m;
-        const decimal firstDeposit = 250.00m;
-        const decimal secondDeposit = 150.00m;
-        const decimal withdrawal = 75.00m;
+        const decimal initialDeposit = 100.25m;
+        const decimal firstDeposit = 250.34m;
+        const decimal secondDeposit = 150.12m;
+        const decimal withdrawal = 75.46m;
         decimal expectedBalance = (initialDeposit + firstDeposit + secondDeposit) - withdrawal;
 
         // Act - Step 1: Open account with initial deposit
@@ -210,9 +210,10 @@ public sealed class BankAccountIntegrationTests
                    {
                        HolderName = holderName,
                        InitialDeposit = initialDeposit,
-                   }))
+                   },
+                   TestContext.Current.CancellationToken))
         {
-            openResponse.StatusCode.Should().Be(HttpStatusCode.OK, "opening account should succeed");
+            Assert.Equal(HttpStatusCode.OK, openResponse.StatusCode);
         }
 
         // Act - Step 2: First deposit
@@ -221,9 +222,10 @@ public sealed class BankAccountIntegrationTests
                    new
                    {
                        Amount = firstDeposit,
-                   }))
+                   },
+                   TestContext.Current.CancellationToken))
         {
-            deposit1Response.StatusCode.Should().Be(HttpStatusCode.OK, "first deposit should succeed");
+            Assert.Equal(HttpStatusCode.OK, deposit1Response.StatusCode);
         }
 
         // Act - Step 3: Second deposit
@@ -232,9 +234,10 @@ public sealed class BankAccountIntegrationTests
                    new
                    {
                        Amount = secondDeposit,
-                   }))
+                   },
+                   TestContext.Current.CancellationToken))
         {
-            deposit2Response.StatusCode.Should().Be(HttpStatusCode.OK, "second deposit should succeed");
+            Assert.Equal(HttpStatusCode.OK, deposit2Response.StatusCode);
         }
 
         // Act - Step 4: Withdraw
@@ -243,9 +246,10 @@ public sealed class BankAccountIntegrationTests
                    new
                    {
                        Amount = withdrawal,
-                   }))
+                   },
+                   TestContext.Current.CancellationToken))
         {
-            withdrawResponse.StatusCode.Should().Be(HttpStatusCode.OK, "withdrawal should succeed");
+            Assert.Equal(HttpStatusCode.OK, withdrawResponse.StatusCode);
         }
 
         // Act - Step 5: Wait for eventual consistency and poll projection
@@ -253,10 +257,10 @@ public sealed class BankAccountIntegrationTests
             await WaitForProjectionAsync(client, bankAccountId, expectedBalance);
 
         // Assert
-        projectionResult.Should().NotBeNull("projection should exist after commands");
-        projectionResult!.HolderName.Should().Be(holderName);
-        projectionResult.IsOpen.Should().BeTrue();
-        projectionResult.Balance.Should().Be(expectedBalance, "balance should reflect all transactions");
+        Assert.NotNull(projectionResult);
+        Assert.Equal(holderName, projectionResult.HolderName);
+        Assert.True(projectionResult.IsOpen);
+        Assert.Equal(expectedBalance, projectionResult.Balance);
     }
 
     /// <summary>
@@ -266,8 +270,8 @@ public sealed class BankAccountIntegrationTests
     [Fact]
     public async Task MoneyTransferSagaShouldCompleteAndUpdateBothAccounts()
     {
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        using HttpClient client = fixture.CreateHttpClient();
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
+        HttpClient client = fixture.GatewayClient;
         string sourceAccountId = $"transfer-source-{Guid.NewGuid():N}";
         string destinationAccountId = $"transfer-destination-{Guid.NewGuid():N}";
         Guid sagaId = Guid.NewGuid();
@@ -280,9 +284,10 @@ public sealed class BankAccountIntegrationTests
                    {
                        HolderName = "Source Holder",
                        InitialDeposit = sourceInitialDeposit,
-                   }))
+                   },
+                   TestContext.Current.CancellationToken))
         {
-            openSourceResponse.StatusCode.Should().Be(HttpStatusCode.OK, "opening the source account should succeed");
+            Assert.Equal(HttpStatusCode.OK, openSourceResponse.StatusCode);
         }
 
         using (HttpResponseMessage openDestinationResponse = await client.PostAsJsonAsync(
@@ -291,10 +296,10 @@ public sealed class BankAccountIntegrationTests
                    {
                        HolderName = "Destination Holder",
                        InitialDeposit = destinationInitialDeposit,
-                   }))
+                   },
+                   TestContext.Current.CancellationToken))
         {
-            openDestinationResponse.StatusCode.Should()
-                .Be(HttpStatusCode.OK, "opening the destination account should succeed");
+            Assert.Equal(HttpStatusCode.OK, openDestinationResponse.StatusCode);
         }
 
         using HttpResponseMessage startTransferResponse = await client.PostAsJsonAsync(
@@ -305,20 +310,24 @@ public sealed class BankAccountIntegrationTests
                 DestinationAccountId = destinationAccountId,
                 SourceAccountId = sourceAccountId,
                 CorrelationId = (string?)null,
-            });
-        string startTransferBody = await startTransferResponse.Content.ReadAsStringAsync();
-        startTransferResponse.StatusCode.Should()
-            .Be(
-                HttpStatusCode.OK,
-                $"starting the money transfer saga should succeed, but got {(int)startTransferResponse.StatusCode}: {startTransferBody}");
+            },
+            TestContext.Current.CancellationToken);
+        string startTransferBody =
+            await startTransferResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.True(
+            startTransferResponse.StatusCode == HttpStatusCode.OK,
+            $"starting the money transfer saga should succeed, but got {(int)startTransferResponse.StatusCode}: {startTransferBody}");
         MoneyTransferStatusResponse? transferProjection = await WaitForTransferProjectionAsync(
             client,
             sagaId,
             projection => projection.Phase == CompletedSagaPhase);
-        transferProjection.Should().NotBeNull("the transfer status projection should be created for the saga");
-        transferProjection!.Phase.Should()
-            .Be(CompletedSagaPhase, transferProjection.ErrorMessage ?? "the saga should complete successfully");
-        transferProjection.LastCompletedStepIndex.Should().BeGreaterThanOrEqualTo(1);
+        Assert.NotNull(transferProjection);
+        Assert.True(
+            transferProjection.Phase == CompletedSagaPhase,
+            transferProjection.ErrorMessage ?? "the saga should complete successfully");
+        Assert.True(
+            transferProjection.LastCompletedStepIndex >= 1,
+            $"Expected at least 1, but was {transferProjection.LastCompletedStepIndex}.");
         BankAccountBalanceResponse? sourceProjection = await WaitForProjectionAsync(
             client,
             sourceAccountId,
@@ -327,10 +336,10 @@ public sealed class BankAccountIntegrationTests
             client,
             destinationAccountId,
             destinationInitialDeposit + transferAmount);
-        sourceProjection.Should().NotBeNull("the source account projection should exist after the transfer");
-        destinationProjection.Should().NotBeNull("the destination account projection should exist after the transfer");
-        sourceProjection!.Balance.Should().Be(sourceInitialDeposit - transferAmount);
-        destinationProjection!.Balance.Should().Be(destinationInitialDeposit + transferAmount);
+        Assert.NotNull(sourceProjection);
+        Assert.NotNull(destinationProjection);
+        Assert.Equal(sourceInitialDeposit - transferAmount, sourceProjection.Balance);
+        Assert.Equal(destinationInitialDeposit + transferAmount, destinationProjection.Balance);
     }
 
     /// <summary>
@@ -341,8 +350,8 @@ public sealed class BankAccountIntegrationTests
     public async Task OpenAccountShouldCreateProjection()
     {
         // Arrange
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        using HttpClient client = fixture.CreateHttpClient();
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
+        HttpClient client = fixture.GatewayClient;
         string bankAccountId = $"test-account-{Guid.NewGuid():N}";
         const string holderName = "Jane Smith";
         const decimal initialDeposit = 500.00m;
@@ -354,9 +363,10 @@ public sealed class BankAccountIntegrationTests
                    {
                        HolderName = holderName,
                        InitialDeposit = initialDeposit,
-                   }))
+                   },
+                   TestContext.Current.CancellationToken))
         {
-            openResponse.StatusCode.Should().Be(HttpStatusCode.OK, "opening account should succeed");
+            Assert.Equal(HttpStatusCode.OK, openResponse.StatusCode);
         }
 
         // Act - Wait for projection
@@ -364,9 +374,9 @@ public sealed class BankAccountIntegrationTests
             await WaitForProjectionAsync(client, bankAccountId, initialDeposit);
 
         // Assert
-        projectionResult.Should().NotBeNull("projection should exist after opening account");
-        projectionResult!.HolderName.Should().Be(holderName);
-        projectionResult.IsOpen.Should().BeTrue();
-        projectionResult.Balance.Should().Be(initialDeposit);
+        Assert.NotNull(projectionResult);
+        Assert.Equal(holderName, projectionResult.HolderName);
+        Assert.True(projectionResult.IsOpen);
+        Assert.Equal(initialDeposit, projectionResult.Balance);
     }
 }

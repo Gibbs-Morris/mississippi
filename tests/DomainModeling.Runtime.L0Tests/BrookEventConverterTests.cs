@@ -213,8 +213,8 @@ public class BrookEventConverterTests
             new TestEvent("value1"),
         };
         ImmutableArray<BrookEvent> result = converter.ToStorageEvents(source, domainEvents);
-        Assert.Single(result);
-        Assert.Equal(expectedTime, result[0].Time);
+        BrookEvent item = Assert.Single(result);
+        Assert.Equal(expectedTime, item.Time);
     }
 
     /// <summary>
@@ -237,8 +237,8 @@ public class BrookEventConverterTests
         DateTimeOffset systemTimeLowerBound = TimeProvider.System.GetUtcNow();
         ImmutableArray<BrookEvent> result = converter.ToStorageEvents(source, domainEvents);
         DateTimeOffset systemTimeUpperBound = TimeProvider.System.GetUtcNow();
-        Assert.Single(result);
-        Assert.NotNull(result[0].Time);
+        BrookEvent item = Assert.Single(result);
+        Assert.NotNull(item.Time);
         Assert.InRange(result[0].Time!.Value, systemTimeLowerBound, systemTimeUpperBound);
     }
 

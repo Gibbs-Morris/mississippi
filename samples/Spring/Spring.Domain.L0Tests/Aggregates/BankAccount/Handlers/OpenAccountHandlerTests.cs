@@ -89,15 +89,15 @@ public sealed class OpenAccountHandlerTests
         IReadOnlyList<object> events = handler.ShouldSucceed(null, command);
 
         // Assert
-        events.Should().ContainSingle();
-        events[0]
-            .Should()
-            .BeEquivalentTo(
-                new AccountOpened
-                {
-                    HolderName = "Jane Doe",
-                    InitialDeposit = 0m,
-                });
+        object item = Assert.Single(events);
+        Assert.Equivalent(
+            new AccountOpened
+            {
+                HolderName = "Jane Doe",
+                InitialDeposit = 0m,
+            },
+            item,
+            true);
     }
 
     /// <summary>

@@ -23,12 +23,6 @@ public sealed class SagaInputProvidedReducer<TSaga, TInput> : EventReducerBase<S
         ArgumentNullException.ThrowIfNull(eventData);
         return SagaStateMutator.CreateUpdated(
             state,
-            (
-                map,
-                instance
-            ) =>
-            {
-                map.TrySetProperty(instance, "Input", eventData.Input);
-            });
+            (map, instance) => { map.TrySetProperty(instance, "Input", eventData.Input); });
     }
 }

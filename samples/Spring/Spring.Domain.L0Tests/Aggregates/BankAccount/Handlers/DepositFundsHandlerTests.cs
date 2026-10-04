@@ -65,9 +65,9 @@ public sealed class DepositFundsHandlerTests
         IReadOnlyList<object> events = handler.ShouldSucceed(OpenAccount, command);
 
         // Assert
-        events.Should().ContainSingle();
-        FundsDeposited deposited = events[0].Should().BeOfType<FundsDeposited>().Subject;
-        deposited.Amount.Should().Be(1_000_000m);
+        object item = Assert.Single(events);
+        FundsDeposited deposited = Assert.IsType<FundsDeposited>(item);
+        Assert.Equal(1_000_000m, deposited.Amount);
     }
 
     /// <summary>

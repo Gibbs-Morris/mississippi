@@ -52,7 +52,7 @@ public sealed class AsyncEnumerableMapperTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            await asyncEnumerableMapper.Map(null!).ToListAsync());
+            await asyncEnumerableMapper.Map(null!).ToListAsync(TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public sealed class AsyncEnumerableMapperTests
             });
 
         // Act
-        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync();
+        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(
@@ -110,7 +110,7 @@ public sealed class AsyncEnumerableMapperTests
             });
 
         // Act
-        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync();
+        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(
@@ -136,7 +136,7 @@ public sealed class AsyncEnumerableMapperTests
         IAsyncEnumerable<int> input = GetAsyncEnumerableAsync(new List<int>());
 
         // Act
-        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync();
+        List<string> result = await asyncEnumerableMapper.Map(input).ToListAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Empty(result);

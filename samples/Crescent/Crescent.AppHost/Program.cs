@@ -2,7 +2,6 @@
 // Licensed under the Gibbs-Morris commercial license.
 // </copyright>
 
-#pragma warning disable ASPIRECOSMOSDB001 // RunAsPreviewEmulator is experimental
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
@@ -14,10 +13,9 @@ IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(ar
 IResourceBuilder<AzureStorageResource> storage = builder.AddAzureStorage("storage").RunAsEmulator();
 _ = storage.AddBlobs("blobs");
 
-// Add Cosmos DB using PREVIEW emulator (Linux-based) which has proper HTTP health check
-// The preview emulator exposes an HTTP /ready endpoint that properly indicates readiness
+// Add Cosmos DB using the Linux vNext emulator with its HTTP /ready health check
 IResourceBuilder<AzureCosmosDBResource> cosmos = builder.AddAzureCosmosDB("cosmos")
-    .RunAsPreviewEmulator(emulator =>
+    .RunAsEmulator(emulator =>
     {
         // Enable Data Explorer for debugging at http://localhost:{port}
         emulator.WithDataExplorer();

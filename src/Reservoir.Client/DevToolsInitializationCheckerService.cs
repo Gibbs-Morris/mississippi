@@ -6,6 +6,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Reservoir.Client.Components.Organisms.ReservoirDevToolsInitializer;
+
 
 namespace Mississippi.Reservoir.Client;
 
@@ -30,16 +32,6 @@ internal sealed class DevToolsInitializationCheckerService : BackgroundService
     internal static readonly TimeSpan DefaultCheckDelay = TimeSpan.FromSeconds(5);
 
     private readonly TimeSpan checkDelay;
-
-    private readonly IHostEnvironment? hostEnvironment;
-
-    private readonly ILogger<DevToolsInitializationCheckerService> logger;
-
-    private readonly ReservoirDevToolsOptions options;
-
-    private readonly TimeProvider timeProvider;
-
-    private readonly DevToolsInitializationTracker tracker;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="DevToolsInitializationCheckerService" /> class.
@@ -83,13 +75,23 @@ internal sealed class DevToolsInitializationCheckerService : BackgroundService
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(options);
-        this.tracker = tracker;
-        this.logger = logger;
-        this.timeProvider = timeProvider;
-        this.options = options.Value;
-        this.hostEnvironment = hostEnvironment;
+        InitializationTracker = tracker;
+        Logger = logger;
+        TimeProvider = timeProvider;
+        Options = options.Value;
+        HostEnvironment = hostEnvironment;
         this.checkDelay = checkDelay;
     }
+
+    private IHostEnvironment? HostEnvironment { get; }
+
+    private DevToolsInitializationTracker InitializationTracker { get; }
+
+    private ILogger<DevToolsInitializationCheckerService> Logger { get; }
+
+    private ReservoirDevToolsOptions Options { get; }
+
+    private TimeProvider TimeProvider { get; }
 
     /// <inheritdoc />
     protected override async Task ExecuteAsync(
@@ -104,23 +106,23 @@ internal sealed class DevToolsInitializationCheckerService : BackgroundService
 
         try
         {
-            await Task.Delay(checkDelay, timeProvider, stoppingToken);
-            logger.DevToolsInitializationCheckResult(tracker.WasInitialized);
-            if (tracker.WasInitialized)
+            await Task.Delay(checkDelay, TimeProvider, stoppingToken);
+            Logger.DevToolsInitializationCheckResult(InitializationTracker.WasInitialized);
+            if (InitializationTracker.WasInitialized)
             {
                 return;
             }
 
             if (ShouldThrow())
             {
-                logger.DevToolsNotInitializedError();
+                Logger.DevToolsNotInitializedError();
                 throw new InvalidOperationException(
                     "DevTools is registered and enabled but Initialize() was not called. " +
                     "Add <ReservoirDevToolsInitializerComponent/> to your App.razor or root layout. " +
                     "Set ThrowOnMissingInitializer to false in ReservoirDevToolsOptions to log a warning instead.");
             }
 
-            logger.DevToolsNotInitialized();
+            Logger.DevToolsNotInitialized();
         }
         catch (OperationCanceledException)
         {
@@ -130,10 +132,10 @@ internal sealed class DevToolsInitializationCheckerService : BackgroundService
 
     private bool IsEnabled()
     {
-        return options.Enablement switch
+        return Options.Enablement switch
         {
             ReservoirDevToolsEnablement.Always => true,
-            ReservoirDevToolsEnablement.DevelopmentOnly => hostEnvironment?.IsDevelopment() == true,
+            ReservoirDevToolsEnablement.DevelopmentOnly => HostEnvironment?.IsDevelopment() == true,
             var _ => false,
         };
     }
@@ -141,12 +143,12 @@ internal sealed class DevToolsInitializationCheckerService : BackgroundService
     private bool ShouldThrow()
     {
         // Explicit configuration takes precedence
-        if (options.ThrowOnMissingInitializer.HasValue)
+        if (Options.ThrowOnMissingInitializer.HasValue)
         {
-            return options.ThrowOnMissingInitializer.Value;
+            return Options.ThrowOnMissingInitializer.Value;
         }
 
         // Default: throw in development, warn in production
-        return hostEnvironment?.IsDevelopment() == true;
+        return HostEnvironment?.IsDevelopment() == true;
     }
 }

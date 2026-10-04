@@ -201,8 +201,8 @@ public sealed class RootActionEffectTests
         }
 
         // Assert
-        Assert.Single(results);
-        Assert.IsType<SecondAction>(results[0]);
+        IAction item = Assert.Single(results);
+        Assert.IsType<SecondAction>(item);
     }
 
     /// <summary>

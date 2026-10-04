@@ -158,19 +158,16 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
         jsModuleMock.Setup(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()))
-            .Callback<string, object[]>((
-                method,
-                args
-            ) => capturedActionPayload = args[0]);
+            .Callback<string, object[]>((method, args) => capturedActionPayload = args[0]);
         service.Initialize();
 
         // Dispatch to establish connection
         store.Dispatch(new TestAction());
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         // Act - dispatch sensitive action
         store.Dispatch(new SensitiveAction("my-secret-password"));
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         // Assert - sanitizer should have been called (payload should be sanitized)
         // Note: The actual verification depends on the mock setup capturing the payload
@@ -195,15 +192,12 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
         jsModuleMock.Setup(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()))
-            .Callback<string, object[]>((
-                method,
-                args
-            ) => capturedActionPayload = args[0]);
+            .Callback<string, object[]>((method, args) => capturedActionPayload = args[0]);
         service.Initialize();
 
         // Act
         store.Dispatch(new TestAction());
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         // Assert - default serialization should have been used
         Assert.NotNull(capturedActionPayload);
@@ -226,15 +220,12 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
         jsModuleMock.Setup(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()))
-            .Callback<string, object[]>((
-                method,
-                args
-            ) => sendCalled = true);
+            .Callback<string, object[]>((method, args) => sendCalled = true);
         service.Initialize();
 
         // Act
         store.Dispatch(new TestAction());
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(sendCalled);
@@ -275,7 +266,7 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
 
         // Act
         store.Dispatch(new TestAction());
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         // Assert - actual store state should be unchanged
         SensitiveFeatureState state = store.GetState<SensitiveFeatureState>();
@@ -332,15 +323,12 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
         jsModuleMock.Setup(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()))
-            .Callback<string, object[]>((
-                method,
-                args
-            ) => capturedStatePayload = args[1]);
+            .Callback<string, object[]>((method, args) => capturedStatePayload = args[1]);
         service.Initialize();
 
         // Act
         store.Dispatch(new TestAction());
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(capturedStatePayload);

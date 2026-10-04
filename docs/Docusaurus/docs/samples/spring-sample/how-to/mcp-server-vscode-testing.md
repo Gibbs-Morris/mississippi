@@ -24,6 +24,7 @@ Reference: [Spring.Gateway Program.cs](https://github.com/Gibbs-Morris/mississip
 - VS Code with GitHub Copilot Chat enabled
 - This repository checked out locally
 - .NET SDK installed
+- Aspire CLI installed with `dotnet tool install -g Aspire.Cli` for direct AppHost workflows. When `aspire` is not on `PATH`, `dotnet run` can use the SDK-paired CLI through DNX.
 
 ## Step 1: Start Spring Locally
 
@@ -99,7 +100,7 @@ Spring exposes MCP tools at `http://localhost:5101/mcp` in Development, with bot
 
 ## Next Steps
 
-- Run through [Building an Aggregate](../tutorials/building-an-aggregate.md) and test generated command tools over MCP.
+- Run through [Add an Aggregate Command](../tutorials/building-an-aggregate.md) and test generated command tools over MCP.
 - Run through [Building Projections](../tutorials/building-projections.md) and test projection read tools over MCP.
 - Extend your local MCP prompts using the Spring tool names validated in this page.
 - [Host Architecture](../concepts/host-applications.md) - Revisit how the MCP surface fits into the Spring gateway host.

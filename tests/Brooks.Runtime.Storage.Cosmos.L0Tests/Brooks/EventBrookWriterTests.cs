@@ -93,10 +93,7 @@ public sealed class EventBrookWriterTests
         sizeEstimator.Setup(s => s.EstimateBatchSize(events)).Returns(10);
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
+            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         mapper.Setup(m => m.Map(events[0]))
             .Returns(
@@ -124,7 +121,7 @@ public sealed class EventBrookWriterTests
             logger.Object);
 
         // Act
-        BrookPosition result = await sut.AppendEventsAsync(brook, events, null);
+        BrookPosition result = await sut.AppendEventsAsync(brook, events, null, TestContext.Current.CancellationToken);
 
         // Assert (sequence ensures CreatePendingCursorAsync happened before AppendEventBatchAsync)
         Assert.Equal(1, result.Value);
@@ -176,15 +173,9 @@ public sealed class EventBrookWriterTests
         sizeEstimator.Setup(s => s.CreateSizeLimitedBatches(allEvents, 2, It.IsAny<long>())).Returns(new[] { b1, b2 });
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
+            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
+            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         mapper.Setup(m => m.Map(allEvents[0]))
             .Returns(
@@ -262,7 +253,7 @@ public sealed class EventBrookWriterTests
 
         // Act + Assert
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await sut.AppendEventsAsync(brook, allEvents, null));
+            await sut.AppendEventsAsync(brook, allEvents, null, TestContext.Current.CancellationToken));
         repository.VerifyAll();
         sizeEstimator.VerifyAll();
         mapper.VerifyAll();
@@ -285,15 +276,9 @@ public sealed class EventBrookWriterTests
         Mock<IBatchSizeEstimator> sizeEstimator = new(MockBehavior.Strict);
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
+            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
+            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
         Mock<ILogger<EventBrookWriter>> logger = new();
@@ -310,9 +295,13 @@ public sealed class EventBrookWriterTests
         BrookKey brook = new("type", "id");
 
         // Act + Assert
-        await Assert.ThrowsAsync<ArgumentException>(async () => await sut.AppendEventsAsync(brook, null!, null));
         await Assert.ThrowsAsync<ArgumentException>(async () =>
-            await sut.AppendEventsAsync(brook, Array.Empty<BrookEvent>(), null));
+            await sut.AppendEventsAsync(brook, null!, null, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(async () => await sut.AppendEventsAsync(
+            brook,
+            Array.Empty<BrookEvent>(),
+            null,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -394,7 +383,7 @@ public sealed class EventBrookWriterTests
 
         // Act + Assert
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await sut.AppendEventsAsync(brook, events, null));
+            await sut.AppendEventsAsync(brook, events, null, TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -424,8 +413,11 @@ public sealed class EventBrookWriterTests
             logger.Object);
 
         // Act + Assert
-        await Assert.ThrowsAsync<ArgumentException>(async () =>
-            await sut.AppendEventsAsync(new("t", "1"), hugeList, null));
+        await Assert.ThrowsAsync<ArgumentException>(async () => await sut.AppendEventsAsync(
+            new("t", "1"),
+            hugeList,
+            null,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -470,8 +462,11 @@ public sealed class EventBrookWriterTests
             logger.Object);
 
         // Act + Assert
-        await Assert.ThrowsAsync<OptimisticConcurrencyException>(async () =>
-            await sut.AppendEventsAsync(brook, events, new BrookPosition(3)));
+        await Assert.ThrowsAsync<OptimisticConcurrencyException>(async () => await sut.AppendEventsAsync(
+            brook,
+            events,
+            new BrookPosition(3),
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -529,10 +524,7 @@ public sealed class EventBrookWriterTests
             .Returns(new[] { b1, b2, b3 });
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
+            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         mapper.Setup(m => m.Map(allEvents[0]))
             .Returns(
@@ -613,7 +605,11 @@ public sealed class EventBrookWriterTests
             logger.Object);
 
         // Act
-        BrookPosition result = await sut.AppendEventsAsync(brook, allEvents, null);
+        BrookPosition result = await sut.AppendEventsAsync(
+            brook,
+            allEvents,
+            null,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(final, result.Value);
@@ -665,10 +661,7 @@ public sealed class EventBrookWriterTests
         sizeEstimator.Setup(s => s.EstimateBatchSize(events)).Returns(100);
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
+            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         mapper.Setup(m => m.Map(It.Is<BrookEvent>(e => e.Id == "e1")))
             .Returns(
@@ -719,7 +712,7 @@ public sealed class EventBrookWriterTests
             logger.Object);
 
         // Act
-        BrookPosition result = await sut.AppendEventsAsync(brook, events, null);
+        BrookPosition result = await sut.AppendEventsAsync(brook, events, null, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(final, result.Value);
@@ -773,10 +766,7 @@ public sealed class EventBrookWriterTests
         sizeEstimator.Setup(s => s.CreateSizeLimitedBatches(allEvents, 2, It.IsAny<long>())).Returns(batches);
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
+            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         foreach (BrookEvent ev in allEvents)
         {
@@ -828,7 +818,11 @@ public sealed class EventBrookWriterTests
             logger.Object);
 
         // Act
-        BrookPosition result = await sut.AppendEventsAsync(brook, allEvents, null);
+        BrookPosition result = await sut.AppendEventsAsync(
+            brook,
+            allEvents,
+            null,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(final, result.Value);

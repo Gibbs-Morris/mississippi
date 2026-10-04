@@ -151,7 +151,10 @@ public sealed class CosmosDbTests : IAsyncDisposable
                 Value = i * 10,
                 CreatedAt = CreatedAtUtc,
             };
-            await container.CreateItemAsync(doc, new PartitionKey(doc.Id));
+            await container.CreateItemAsync(
+                doc,
+                new PartitionKey(doc.Id),
+                cancellationToken: TestContext.Current.CancellationToken);
         }
 
         // Act
@@ -160,13 +163,15 @@ public sealed class CosmosDbTests : IAsyncDisposable
         using FeedIterator<TestDocument> iterator = container.GetItemQueryIterator<TestDocument>(query);
         while (iterator.HasMoreResults)
         {
-            FeedResponse<TestDocument> batch = await iterator.ReadNextAsync();
+            FeedResponse<TestDocument> batch = await iterator.ReadNextAsync(TestContext.Current.CancellationToken);
             results.AddRange(batch);
         }
 
         // Assert
-        results.Should().HaveCount(3, "we created 3 documents with the matching prefix");
-        results.Should().AllSatisfy(doc => { doc.Name.Should().StartWith($"Query Test {uniquePrefix}"); });
+        Assert.Equal(3, results.Count);
+        Assert.All(
+            results,
+            doc => { Assert.StartsWith($"Query Test {uniquePrefix}", doc.Name, StringComparison.Ordinal); });
     }
 
     /// <summary>
@@ -188,17 +193,23 @@ public sealed class CosmosDbTests : IAsyncDisposable
         Container container = await GetOrCreateContainerAsync();
 
         // Write the document first
-        await container.CreateItemAsync(document, new PartitionKey(testId));
+        await container.CreateItemAsync(
+            document,
+            new PartitionKey(testId),
+            cancellationToken: TestContext.Current.CancellationToken);
 
         // Act
-        ItemResponse<TestDocument> readResponse = await container.ReadItemAsync<TestDocument>(testId, new(testId));
+        ItemResponse<TestDocument> readResponse = await container.ReadItemAsync<TestDocument>(
+            testId,
+            new(testId),
+            cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
-        readResponse.StatusCode.Should().Be(HttpStatusCode.OK, "the document should be read successfully");
-        readResponse.Resource.Should().NotBeNull();
-        readResponse.Resource.Id.Should().Be(testId);
-        readResponse.Resource.Name.Should().Be("Read Test Document");
-        readResponse.Resource.Value.Should().Be(123);
+        Assert.Equal(HttpStatusCode.OK, readResponse.StatusCode);
+        Assert.NotNull(readResponse.Resource);
+        Assert.Equal(testId, readResponse.Resource.Id);
+        Assert.Equal("Read Test Document", readResponse.Resource.Name);
+        Assert.Equal(123, readResponse.Resource.Value);
     }
 
     /// <summary>
@@ -216,9 +227,8 @@ public sealed class CosmosDbTests : IAsyncDisposable
         Func<Task> act = async () => await container.ReadItemAsync<TestDocument>(nonExistentId, new(nonExistentId));
 
         // Assert
-        await act.Should()
-            .ThrowAsync<CosmosException>("the document does not exist")
-            .Where(e => e.StatusCode == HttpStatusCode.NotFound);
+        CosmosException exception = await Assert.ThrowsAnyAsync<CosmosException>(act);
+        Assert.Equal(HttpStatusCode.NotFound, exception.StatusCode);
     }
 
     /// <summary>
@@ -240,12 +250,15 @@ public sealed class CosmosDbTests : IAsyncDisposable
         Container container = await GetOrCreateContainerAsync();
 
         // Act
-        ItemResponse<TestDocument> response = await container.CreateItemAsync(document, new PartitionKey(testId));
+        ItemResponse<TestDocument> response = await container.CreateItemAsync(
+            document,
+            new PartitionKey(testId),
+            cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created, "the document should be created successfully");
-        response.Resource.Should().NotBeNull();
-        response.Resource.Id.Should().Be(testId);
-        response.Resource.Name.Should().Be("Test Document");
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.NotNull(response.Resource);
+        Assert.Equal(testId, response.Resource.Id);
+        Assert.Equal("Test Document", response.Resource.Name);
     }
 }
