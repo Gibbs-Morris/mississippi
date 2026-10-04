@@ -1,10 +1,14 @@
 ---
+id: reducer-tests
 title: Isolated Reducer Test Assertions
 description: Reference direct reducer invocation, structural projection checks, and exception matching.
 sidebar_position: 13
+sidebar_label: Isolated Reducer Test Assertions
 ---
 
 # Isolated Reducer Test Assertions
+
+## Overview
 
 `ReducerTestExtensions` invokes one typed event reducer directly. Use these helpers when the test concerns that reducer's output or exception rather than a configured multi-reducer replay.
 
@@ -12,7 +16,7 @@ sidebar_position: 13
 
 - `Mississippi.DomainModeling.TestHarness.Projections.ReducerTestExtensions`
 - `IEventReducer<TEvent, TProjection>` implementations
-- Reference-type events and projection types with a parameterless constructor
+- Reference-type events and projection types satisfying `new()`: value types, or nonabstract reference types with a public parameterless constructor
 
 ## Apply And ShouldProduce
 
@@ -22,7 +26,7 @@ A supplied state is passed through without cloning. The helper does not select a
 
 `ShouldProduce` uses the same invocation and compares the result with a non-null expected projection. The [structural comparison](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.TestHarness/StructuralAssertions.cs) checks expected public members recursively and allows additional actual members. It does not require identical CLR types for member-based comparison.
 
-Ordinary nested sequences are unordered, with exact counts and duplicate occurrences. Byte arrays remain ordered; dictionaries match keys and counts. Use direct `Apply` followed by explicit assertions when exact type or collection order is part of the test.
+The expected value selects collection comparison. Ordinary expected sequences are unordered, with exact counts and duplicate occurrences; an expected `byte[]` is ordered, and expected dictionaries match keys and counts. An actual byte array compared with an ordinary expected sequence can therefore be treated as unordered. Use direct `Apply` followed by explicit assertions when exact type or collection order is part of the test.
 
 ## ShouldThrow
 
