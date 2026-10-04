@@ -35,6 +35,25 @@ Describe 'Pester coverage import' {
         $report.coverage.file.lineToCover[1].covered | Should -Be 'false'
     }
 
+    It 'uses repository-relative source names without duplicating the JaCoCo package path' {
+        $nestedDirectory = Join-Path $coverageRoot 'eng/src/agent-scripts'
+        New-Item -ItemType Directory -Path $nestedDirectory -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $nestedDirectory 'Nested.psm1') -Value @('Write-Output 1', 'Write-Output 2')
+        Set-Content -LiteralPath $inputPath -Value '<report><package name="mississippi/eng/src/agent-scripts"><sourcefile name="eng/src/agent-scripts/Nested.psm1"><line nr="1" ci="0"/><line nr="2" ci="1"/></sourcefile></package></report>'
+
+        $summary = ConvertTo-SonarCoverageReport -InputPath $inputPath -OutputPath $outputPath -RepositoryRoot $coverageRoot
+
+        $summary.Files | Should -Be 1
+        $summary.Lines | Should -Be 2
+        $summary.Covered | Should -Be 1
+        [xml]$report = Get-Content -LiteralPath $outputPath -Raw
+        $report.coverage.file.path | Should -Be 'eng/src/agent-scripts/Nested.psm1'
+        $report.coverage.file.lineToCover[0].lineNumber | Should -Be '1'
+        $report.coverage.file.lineToCover[0].covered | Should -Be 'false'
+        $report.coverage.file.lineToCover[1].lineNumber | Should -Be '2'
+        $report.coverage.file.lineToCover[1].covered | Should -Be 'true'
+    }
+
     It 'writes relative output in the PowerShell current location' {
         Set-Content -LiteralPath $inputPath -Value '<report><package><sourcefile name="source &amp; helper.ps1"><line nr="1" ci="1"/></sourcefile></package></report>'
         $processDirectory = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
