@@ -25,12 +25,21 @@ namespace MississippiTests.Inlet.Client.L0Tests.ActionEffects;
 /// <summary>
 ///     Verifies that notification fetches keep projection data and its returned version together.
 /// </summary>
+/// <remarks>
+///     This class is public so xUnit can discover its tests.
+/// </remarks>
 public sealed class InletSignalRNotificationTests
 {
     private const string EntityId = "entity-1";
 
     private const string ProjectionPath = "test/projection";
 
+    /// <summary>
+    ///     Verifies the dispatched action and reducer state keep the returned data and version together.
+    /// </summary>
+    /// <param name="actions">The actions dispatched by the notification handler.</param>
+    /// <param name="expectedData">The fetched projection data.</param>
+    /// <param name="expectedVersion">The version returned with the data.</param>
     private static void AssertUpdatedState(
         List<IAction> actions,
         TestProjection expectedData,
@@ -49,6 +58,13 @@ public sealed class InletSignalRNotificationTests
         Assert.Equal(expectedVersion, update.Version);
     }
 
+    /// <summary>
+    ///     Creates an established subscription and captures the real notification callback without network IO.
+    /// </summary>
+    /// <param name="fetcher">The fetcher used by the notification handler.</param>
+    /// <param name="actions">The destination for dispatched actions.</param>
+    /// <param name="notification">The registered projection update callback.</param>
+    /// <returns>The effect that owns the captured callback.</returns>
     private static InletSignalRActionEffect CreateSubscribedEffect(
         IProjectionFetcher fetcher,
         List<IAction> actions,
