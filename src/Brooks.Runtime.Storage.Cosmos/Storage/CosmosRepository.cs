@@ -118,11 +118,29 @@ internal sealed class CosmosRepository : ICosmosRepository
     /// <param name="startPosition">The starting position for the batch.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task AppendEventBatchAsync(
+    public Task AppendEventBatchAsync(
         BrookKey brookId,
         IReadOnlyList<EventStorageModel> events,
         long startPosition,
         CancellationToken cancellationToken = default
+    ) =>
+        AppendEventBatchAsync(brookId, events, startPosition, null, cancellationToken);
+
+    /// <summary>
+    ///     Appends a batch of events to a brook starting at the specified position.
+    /// </summary>
+    /// <param name="brookId">The brook identifier.</param>
+    /// <param name="events">The events to append.</param>
+    /// <param name="startPosition">The starting position for the batch.</param>
+    /// <param name="beforeDispatch">The append ownership check, or null for an ordinary standalone call.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public async Task AppendEventBatchAsync(
+        BrookKey brookId,
+        IReadOnlyList<EventStorageModel> events,
+        long startPosition,
+        Action? beforeDispatch,
+        CancellationToken cancellationToken
     )
     {
         PartitionKey partitionKey = new(brookId.ToString());
@@ -146,6 +164,8 @@ internal sealed class CosmosRepository : ICosmosRepository
             await RetryPolicy.ExecuteAsync(
                 async () =>
                 {
+                    beforeDispatch?.Invoke();
+                    cancellationToken.ThrowIfCancellationRequested();
                     await Container.CreateItemAsync(eventDoc, partitionKey, cancellationToken: cancellationToken);
                     return true;
                 },
@@ -161,10 +181,26 @@ internal sealed class CosmosRepository : ICosmosRepository
     /// <param name="finalPosition">The final position to commit.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task CommitCursorPositionAsync(
+    public Task CommitCursorPositionAsync(
         BrookKey brookId,
         long finalPosition,
         CancellationToken cancellationToken = default
+    ) =>
+        CommitCursorPositionAsync(brookId, finalPosition, null, cancellationToken);
+
+    /// <summary>
+    ///     Commits the cursor position for a brook by finalizing the pending position.
+    /// </summary>
+    /// <param name="brookId">The brook identifier.</param>
+    /// <param name="finalPosition">The final position to commit.</param>
+    /// <param name="beforeDispatch">The append ownership check, or null for an ordinary standalone call.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public async Task CommitCursorPositionAsync(
+        BrookKey brookId,
+        long finalPosition,
+        Action? beforeDispatch,
+        CancellationToken cancellationToken
     )
     {
         PartitionKey partitionKey = new(brookId.ToString());
@@ -180,13 +216,15 @@ internal sealed class CosmosRepository : ICosmosRepository
         await RetryPolicy.ExecuteAsync(
             async () =>
             {
+                beforeDispatch?.Invoke();
+                cancellationToken.ThrowIfCancellationRequested();
                 await Container.UpsertItemAsync(cursorDoc, partitionKey, cancellationToken: cancellationToken);
                 return true;
             },
             cancellationToken);
 
         // Delete pending cursor state
-        await DeletePendingCursorAsync(brookId, cancellationToken);
+        await DeletePendingCursorAsync(brookId, beforeDispatch, cancellationToken);
     }
 
     /// <summary>
@@ -197,11 +235,29 @@ internal sealed class CosmosRepository : ICosmosRepository
     /// <param name="finalPosition">The final position to be committed.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task CreatePendingCursorAsync(
+    public Task CreatePendingCursorAsync(
         BrookKey brookId,
         BrookPosition currentCursor,
         long finalPosition,
         CancellationToken cancellationToken = default
+    ) =>
+        CreatePendingCursorAsync(brookId, currentCursor, finalPosition, null, cancellationToken);
+
+    /// <summary>
+    ///     Creates a pending cursor document for a brook transaction.
+    /// </summary>
+    /// <param name="brookId">The brook identifier.</param>
+    /// <param name="currentCursor">The current cursor position.</param>
+    /// <param name="finalPosition">The final position to be committed.</param>
+    /// <param name="beforeDispatch">The append ownership check, or null for an ordinary standalone call.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public async Task CreatePendingCursorAsync(
+        BrookKey brookId,
+        BrookPosition currentCursor,
+        long finalPosition,
+        Action? beforeDispatch,
+        CancellationToken cancellationToken
     )
     {
         CursorDocument pendingCursorDoc = new()
@@ -214,10 +270,15 @@ internal sealed class CosmosRepository : ICosmosRepository
         };
         PartitionKey partitionKey = new(brookId.ToString());
         await RetryPolicy.ExecuteAsync(
-            async () => await Container.CreateItemAsync(
-                pendingCursorDoc,
-                partitionKey,
-                cancellationToken: cancellationToken),
+            async () =>
+            {
+                beforeDispatch?.Invoke();
+                cancellationToken.ThrowIfCancellationRequested();
+                return await Container.CreateItemAsync(
+                    pendingCursorDoc,
+                    partitionKey,
+                    cancellationToken: cancellationToken);
+            },
             cancellationToken);
     }
 
@@ -228,12 +289,30 @@ internal sealed class CosmosRepository : ICosmosRepository
     /// <param name="position">The position of the event to delete.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task DeleteEventAsync(
+    public Task DeleteEventAsync(
         BrookKey brookId,
         long position,
         CancellationToken cancellationToken = default
+    ) =>
+        DeleteEventAsync(brookId, position, null, cancellationToken);
+
+    /// <summary>
+    ///     Deletes an event at the specified position from a brook.
+    /// </summary>
+    /// <param name="brookId">The brook identifier.</param>
+    /// <param name="position">The position of the event to delete.</param>
+    /// <param name="beforeDispatch">The append ownership check, or null for an ordinary standalone call.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public async Task DeleteEventAsync(
+        BrookKey brookId,
+        long position,
+        Action? beforeDispatch,
+        CancellationToken cancellationToken
     )
     {
+        beforeDispatch?.Invoke();
+        cancellationToken.ThrowIfCancellationRequested();
         try
         {
             await Container.DeleteItemAsync<EventDocument>(
@@ -253,11 +332,27 @@ internal sealed class CosmosRepository : ICosmosRepository
     /// <param name="brookId">The brook identifier.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task DeletePendingCursorAsync(
+    public Task DeletePendingCursorAsync(
         BrookKey brookId,
         CancellationToken cancellationToken = default
+    ) =>
+        DeletePendingCursorAsync(brookId, null, cancellationToken);
+
+    /// <summary>
+    ///     Deletes the pending cursor document for a brook.
+    /// </summary>
+    /// <param name="brookId">The brook identifier.</param>
+    /// <param name="beforeDispatch">The append ownership check, or null for an ordinary standalone call.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public async Task DeletePendingCursorAsync(
+        BrookKey brookId,
+        Action? beforeDispatch,
+        CancellationToken cancellationToken
     )
     {
+        beforeDispatch?.Invoke();
+        cancellationToken.ThrowIfCancellationRequested();
         try
         {
             await Container.DeleteItemAsync<CursorDocument>(
