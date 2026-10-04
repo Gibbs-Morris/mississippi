@@ -1,10 +1,14 @@
 ---
+id: alias-validation
 title: Alias Validation Helper
 description: Reference Orleans type-alias scanning, exception matching, and architecture-test diagnostics.
 sidebar_position: 15
+sidebar_label: Alias Validation Helper
 ---
 
 # Alias Validation Helper
+
+## Overview
 
 `AliasValidation.AnalyzeAssemblies` compares declared type-level Orleans aliases with current CLR type names. It returns diagnostics for a consumer architecture test to evaluate.
 
@@ -16,7 +20,7 @@ sidebar_position: 15
 
 ## Scan Boundary
 
-The [helper](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.TestHarness/Architecture/AliasValidation.cs) rejects null assembly and exception-rule collections. It filters null assembly items, deduplicates assemblies by ordinal `FullName`, and orders the scan deterministically.
+The [helper](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.TestHarness/Architecture/AliasValidation.cs) rejects null assembly and exception-rule collections. It filters null assembly items, deduplicates assemblies by ordinal `FullName`, and orders candidates by simple assembly name and type name. Distinct assemblies sharing the same simple name and candidate type name tie on those keys, so their relative order can depend on the supplied assembly order.
 
 Candidate types must declare a type-level `AliasAttribute`; inherited aliases are not selected. Missing type aliases and method-level aliases are outside this scan. When `Assembly.GetTypes` throws `ReflectionTypeLoadException`, the helper uses its non-null loadable types rather than failing the entire scan.
 
@@ -32,7 +36,7 @@ Mismatch records contain assembly name, type name, actual and expected aliases, 
 
 Rule identifiers are trimmed; whitespace-only identifiers become null. A rule matches when either its `TypeFullName` or `ExpectedAlias` equals the scanned type's corresponding value by ordinal comparison. Supplying both does not require both to match.
 
-Configuration diagnostics cover missing identifiers, blank reasons, `*` in identifiers, duplicate identifier/classification combinations, and stale rules that match no scanned candidate. Classification and owner metadata do not add conditions to the identifier match.
+Configuration diagnostics cover missing identifiers, blank reasons, `*` in identifiers, duplicate combinations of normalized `TypeFullName`, normalized `ExpectedAlias`, and classification, and stale rules that match no scanned candidate. Classification and owner metadata do not add conditions to the identifier match.
 
 The [summary](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.TestHarness/Architecture/AliasValidationSummary.cs) separates:
 
@@ -40,7 +44,7 @@ The [summary](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainMo
 - `ConfigurationErrors`: invalid or stale exception-rule diagnostics.
 - `ActiveExceptions`: rules matching at least one scanned candidate.
 
-Configuration errors do not themselves prevent a matching rule from suppressing a mismatch. A consumer deciding whether a test passes should inspect both mismatches and configuration errors. `FormatReport` provides deterministic text including active exceptions.
+Configuration errors do not themselves prevent a matching rule from suppressing a mismatch. A consumer deciding whether a test passes should inspect both mismatches and configuration errors. `FormatReport` formats the ordered results, including active exceptions, subject to the scan's ordering ties above.
 
 ## Optional Report Output
 
