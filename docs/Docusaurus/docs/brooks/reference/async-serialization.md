@@ -1,4 +1,5 @@
 ---
+id: async-serialization
 title: Brooks Asynchronous Serialization
 description: Reference stream serialization methods, JSON buffering and cancellation, and service-registration boundaries.
 sidebar_position: 10
@@ -6,6 +7,8 @@ sidebar_label: Asynchronous Serialization
 ---
 
 # Brooks Asynchronous Serialization
+
+## Overview
 
 The asynchronous serialization interfaces read from or write to a `Stream`. The supplied JSON provider implements those interfaces alongside its synchronous memory-based methods.
 
@@ -33,7 +36,11 @@ The [JSON provider](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Br
 
 `SerializeAsync<T>` checks that the destination is non-null, serializes the complete value to a UTF-8 byte array, and then awaits `destination.WriteAsync` with the token. The token is passed to the write; it does not cancel the preceding synchronous serialization step.
 
-Asynchronous writing therefore still buffers the complete encoded payload. The method does not provide incremental encoding or a fixed memory limit. Neither asynchronous method disposes the caller's stream.
+Asynchronous writing therefore still buffers the complete encoded payload. The method does not provide incremental encoding or a fixed memory limit. It does not call `Flush` or `FlushAsync`; the caller owns flushing and disposal of the stream. Neither asynchronous method disposes it.
+
+These serializer calls supply no `JsonSerializerOptions`. They use the platform defaults and applicable type attributes; this provider exposes no custom naming, converter, or other options callback.
+
+Null source or destination streams throw `ArgumentNullException`. Malformed JSON can throw `JsonException`, and serializer or stream I/O failures propagate without provider retry. A null decoded value instead uses the `InvalidOperationException` described above.
 
 The [existing provider tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Brooks.Serialization.Json.L0Tests/JsonSerializationProviderTests.cs) cover successful stream reads and writes, null deserialization results, format identity, and canceled operations.
 
@@ -49,6 +56,8 @@ Interface inheritance and dependency-injection registration are separate. The tw
 [`AddJsonSerialization`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Serialization.Json/ServiceRegistration.cs) does not add individual inherited-interface aliases. Code resolving `ISerializationProvider` can call its inherited methods, but registering that interface alone does not register `IAsyncSerializationReader` as a separate service.
 
 The [generic helper](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Serialization.Abstractions/SerializationStorageProviderExtensions.cs) does not register `ISerializationProvider`. Its four mappings each have their own singleton instance, rather than aliases to one shared instance. The [registration tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Brooks.Serialization.Abstractions.L0Tests/SerializationStorageProviderExtensionsTests.cs) verify repeated resolutions are singleton within each interface.
+
+`JsonSerializationProvider` is internal, so an external application cannot name it as that generic helper's type argument. If it needs the separate JSON reader/writer services, the host can register aliases that resolve its existing `ISerializationProvider` instance.
 
 ## Summary
 
