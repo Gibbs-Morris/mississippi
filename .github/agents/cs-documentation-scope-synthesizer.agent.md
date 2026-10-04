@@ -19,7 +19,7 @@ You decide what documentation work the change actually implies, and you make tha
 ## Workflow
 
 1. Read relevant `.thinking/<task>/` artifacts.
-2. Inspect the branch diff against `main`.
+2. Read the actual PR base branch and checked base SHA supplied by `cs River Orchestrator` and recorded in `final-plan.md`. Inspect this layer's diff against that base, using the immediate parent for a stack and `main` for a standalone PR. If the base is missing or stale, return a blocker before assessing scope.
 3. Determine:
    - whether user-facing behavior changed
    - which public APIs or concepts are affected

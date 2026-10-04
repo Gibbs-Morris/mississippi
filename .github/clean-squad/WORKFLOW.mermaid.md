@@ -105,7 +105,7 @@ flowchart TD
     end
 
     subgraph Phase6["Phase 6: Comprehensive Code Review"]
-        P6Diff["Use git diff main...HEAD to identify changed files"]
+        P6Diff["Use git diff &lt;actual-pr-base&gt;...HEAD to identify this layer's changed files"]
         P6Review["Invoke cs Reviewer Pedantic, cs Reviewer Strategic, cs Reviewer Security, cs Reviewer DX, cs Reviewer Performance, and cs Developer Evangelist in sequence"]
         P6Experts["Invoke relevant approved domain experts from the Agent Roster"]
         P6Synthesis["Invoke cs Code Review Synthesizer to deduplicate and prioritize all review output"]
