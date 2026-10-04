@@ -1,12 +1,16 @@
 ---
+id: event-effect-dispatch
 title: Event Effect Dispatch
 description: Reference root effect matching, sequential ordering, streamed results, and failure isolation.
 sidebar_position: 3
+sidebar_label: Event Effect Dispatch
 ---
 
 # Event Effect Dispatch
 
-`RootEventEffect<TAggregate>` composes awaited event effects. It invokes all selected effects whose `CanHandle` returns true and streams their yielded objects to its caller.
+## Overview
+
+`RootEventEffect<TAggregate>` composes awaited event effects. When its result is fully enumerated, it invokes all selected effects whose `CanHandle` returns true and streams their yielded objects to its caller.
 
 ## Applies To
 
@@ -31,6 +35,8 @@ Matching effects run sequentially. The root enumerates all results from one effe
 
 Dispatch returns an asynchronous enumerable. A null event is rejected immediately with `ArgumentNullException`; handler work runs as that enumerable is consumed. The root yields objects rather than persisting them itself.
 
+Stopping enumeration early disposes the active handler enumerator; later matching effects are not invoked. The [lifecycle tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.Runtime.L0Tests/EventEffects/RootEventEffectLifecycleTests.cs) verify that early termination retains disposal ownership.
+
 The [root tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.Runtime.L0Tests/RootEventEffectTests.cs) cover matching, fallback dispatch, multiple matching effects, unmatched events, and continuation after an effect fails.
 
 ## Failure Isolation
@@ -45,7 +51,7 @@ The [lifecycle tests](https://github.com/Gibbs-Morris/mississippi/blob/main/test
 
 ## Summary
 
-Root dispatch uses exact-type indexing plus fallback matching, processes all matches sequentially, and isolates ordinary handler lifecycle failures. Selection predicates and critical failures have a different propagation boundary.
+Root dispatch uses exact-type indexing plus fallback matching and processes matches sequentially as results are consumed. It isolates ordinary handler lifecycle failures; selection predicates and critical failures have a different propagation boundary.
 
 ## Next Steps
 
