@@ -1,4 +1,5 @@
 ---
+id: stream-provider-identity
 title: Brooks Stream Provider Identity
 description: Reference the Orleans provider name, cursor stream namespace, and publisher/subscriber identity boundary.
 sidebar_position: 8
@@ -7,13 +8,15 @@ sidebar_label: Stream Provider Identity
 
 # Brooks Stream Provider Identity
 
+## Overview
+
 Cursor notifications use an Orleans stream provider and a stream identity within that provider. The provider name, stream namespace, and brook key are separate values.
 
 ## Applies To
 
 - `Mississippi.Brooks.Abstractions.Streaming.BrookProviderOptions`
 - `Mississippi.Brooks.Abstractions.Streaming.IStreamIdFactory`
-- The built-in Brooks publisher, cursor subscriber, and Inlet subscriber
+- The built-in Brooks publisher, Brooks and UX cursor subscribers, and Inlet subscriber
 
 ## Default Identity
 
@@ -33,11 +36,13 @@ The entity ID alone is not the default stream key. Brooks with different names r
 
 `IRuntimeBuilder.AddEventSourcing` accepts an optional `Action<BrookProviderOptions>` callback. Set `OrleansStreamProviderName` there to select the host's provider. The host supplies Orleans streams and storage; this registration does not create the selected provider.
 
+Registration does not validate that the named provider exists. An incorrect name fails later when a publisher or activating subscriber calls Orleans `GetStreamProvider`. Register the matching provider in the host before using this path.
+
 The [registration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Runtime/BrooksRuntimeRegistrations.cs) adds the default factory with `TryAddSingleton<IStreamIdFactory, StreamIdFactory>`, preserving an existing unkeyed registration. Its [tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Brooks.Runtime.L0Tests/BrooksRuntimeRegistrationsTests.cs) verify preservation and singleton lifetime. Use [Runtime Composition](../../reference/runtime-composition.md) for the complete host registration flow.
 
 ## Custom Factory Boundary
 
-The [Brooks cursor grain](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Runtime/Cursor/BrookCursorGrain.cs) and [Inlet subscription grain](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Runtime/Grains/InletSubscriptionGrain.cs) obtain their subscription stream IDs from `IStreamIdFactory`. Both select the provider named by `BrookProviderOptions`.
+The [Brooks cursor grain](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Runtime/Cursor/BrookCursorGrain.cs), [UX projection cursor grain](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionCursorGrain.cs), and [Inlet subscription grain](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Runtime/Grains/InletSubscriptionGrain.cs) obtain their subscription stream IDs from `IStreamIdFactory`. All three select the provider named by `BrookProviderOptions`.
 
 The [built-in writer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Runtime/Writer/BrookWriterGrain.cs) selects that provider but constructs its stream ID directly from `BrookCursorUpdates` and its full brook key. It does not call `IStreamIdFactory`.
 
