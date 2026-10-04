@@ -1,10 +1,14 @@
 ---
+id: routing-keys
 title: Aqueduct Routing Keys
 description: Reference group, client, and server-directory key formats, length limits, and parsing failures.
 sidebar_position: 2
+sidebar_label: Aqueduct Routing Keys
 ---
 
 # Aqueduct Routing Keys
+
+## Overview
 
 Aqueduct uses distinct key types for SignalR groups, clients, and the server directory. Group and client identities include the hub name; directory identities contain one value.
 
@@ -22,7 +26,7 @@ Their constructors apply the same rules:
 
 - Neither component can be null.
 - Neither component can contain a colon.
-- The combined length, including the separator, cannot exceed 4,192 characters.
+- The combined length, including the separator, cannot exceed 4,192 UTF-16 code units (`string.Length`).
 
 The constructors permit empty or whitespace components and preserve them without trimming or case normalization. String conversion and `ToString` use the stored values directly. For example, hub `Orders` and group `admins` produce `Orders:admins`.
 
@@ -37,11 +41,13 @@ Both `Parse` methods split the input at its first colon and pass the two parts t
 
 An empty component on either side of the separator is accepted by the constructor. These methods do not translate every invalid input into `FormatException`.
 
+Default struct values bypass the constructor and have null components. They stringify as `:`, but parsing `:` creates empty strings instead of nulls, so that parsed key is not equal to the default struct.
+
 ## Server Directory Keys
 
-[`SignalRServerDirectoryKey`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Abstractions/Keys/SignalRServerDirectoryKey.cs) stores one `Value`. Its constructor and parser reject null and values longer than 4,192 characters. They do not split on a separator; colons, empty text, and whitespace are permitted.
+[`SignalRServerDirectoryKey`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Abstractions/Keys/SignalRServerDirectoryKey.cs) stores one `Value`. Its constructor and parser reject null and values longer than 4,192 UTF-16 code units. They do not split on a separator; colons, empty text, and whitespace are permitted.
 
-Its named `Default` field contains the value `default`. Use that field when selecting the conventional directory identity. A C# default struct value does not run the constructor or initialize that named default.
+Its named `Default` field contains the value `default`. Use that field when selecting the conventional directory identity. A C# default struct value does not run the constructor or initialize that named default: its `Value` and implicit string conversion are null.
 
 The [group](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Aqueduct.Abstractions.L0Tests/Keys/SignalRGroupKeyTests.cs), [client](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Aqueduct.Abstractions.L0Tests/Keys/SignalRClientKeyTests.cs), and [directory tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Aqueduct.Abstractions.L0Tests/Keys/SignalRServerDirectoryKeyTests.cs) cover valid identities, null/length guards, conversions, equality, and parse round trips. Group/client tests also cover separator rejection and missing-separator parsing.
 
