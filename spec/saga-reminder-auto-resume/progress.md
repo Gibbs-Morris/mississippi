@@ -17,6 +17,7 @@ The October source refresh supersedes historical claims that the runtime lacked 
 - Replaced crash-survival assertions with unverified acceptance requirements and fault-injection cases.
 - Replaced the single-last-token sample with a partial per-schedule generation/sequence sketch that persists no-op progress.
 - Identified #404/#581 as unresolved recovery dependencies and #361 as separate, unmerged manual continuation.
+- Recorded the reproduced recovery-direction/cursor failure mode in a [scoped shared lesson](../../.github/instructions/self-taught-saga-recovery.instructions.md), after overlap and duplicate checks under repository policy.
 - Corrected the Brook identity shape and removed the unsupported claim that `System.Type` cannot be serialized.
 - Left serializer contracts, reminder-provider constraints, external-effect ambiguity and integration proof as explicit implementation work.
 
