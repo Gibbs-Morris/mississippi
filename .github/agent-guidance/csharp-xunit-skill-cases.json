@@ -5,6 +5,11 @@
     "expected": "Use Widget.Abstractions.L0Tests, xUnit v3 Fact/Theory with xUnit Assert.Equal(42, ...) and Assert.Throws<FormatException> for 'x' and '', plus the repository's test-project-quality.ps1 -SkipMutation command. Do not invent another parser grammar or exception-message contract, add a redundant nonnull assertion after Throws, or suggest MSTest, FluentAssertions, network access, or a VSTest-only logger."
   },
   {
+    "id": "xunit-l1-light-infrastructure",
+    "prompt": "Use $csharp-xunit to choose a test level for a C# file adapter in Mississippi. The test needs a unique temporary directory and real file reads and writes, but no network, HTTP API, database server, or Aspire host. No files should be changed. The owning project is Widget.Runtime. Name the test project and state the focused validation command.",
+    "expected": "Use Widget.Runtime.L1Tests with isolated temporary files and reliable cleanup, then test-project-quality.ps1 -TestProject Widget.Runtime.L1Tests -SkipMutation. Do not classify file IO as pure L0 or require L2/Aspire merely because the test uses light infrastructure."
+  },
+  {
     "id": "spring-browser-boundary",
     "prompt": "Use $csharp-xunit to decide where a Spring browser journey belongs and how to validate it. It starts the Aspire AppHost, clicks through the UI, and checks a rendered page. No edits or test execution are requested.",
     "expected": "Place the browser journey in Spring.L3Tests, keep smoke as a suite within L3, and point to the Spring validation workflow. Do not classify it as L2 merely because it starts Aspire."
