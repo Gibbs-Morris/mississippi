@@ -30,6 +30,23 @@ internal static partial class HubConnectionProviderLoggerExtensions
     );
 
     /// <summary>
+    ///     Logs a secondary failure while publishing the original startup outcome.
+    /// </summary>
+    /// <param name="logger">The provider's logger.</param>
+    /// <param name="exception">The status publication exception.</param>
+    /// <param name="elapsedMilliseconds">The elapsed connection-check time.</param>
+    [LoggerMessage(
+        EventId = 4,
+        EventName = "ConnectionStatusPublicationFailed",
+        Level = LogLevel.Error,
+        Message = "Publishing failed SignalR startup status failed after {ElapsedMilliseconds} ms")]
+    public static partial void ConnectionStatusPublicationFailed(
+        this ILogger logger,
+        Exception exception,
+        double elapsedMilliseconds
+    );
+
+    /// <summary>
     ///     Logs successful completion of the connection check.
     /// </summary>
     /// <param name="logger">The provider's logger.</param>

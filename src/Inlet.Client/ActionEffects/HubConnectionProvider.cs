@@ -24,6 +24,8 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
 
     private int reconnectAttemptCount;
 
+    private Task stateTransition = Task.CompletedTask;
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="HubConnectionProvider" /> class.
     /// </summary>
@@ -41,6 +43,27 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
         TimeProvider? timeProvider = null,
         ILogger<HubConnectionProvider>? logger = null
     )
+        : this(navigationManager, lazyStore, options, timeProvider, logger, null)
+    {
+    }
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="HubConnectionProvider" /> class with an internal startup invocation.
+    /// </summary>
+    /// <param name="navigationManager">The navigation manager for resolving the hub URL.</param>
+    /// <param name="lazyStore">The lazy store reference.</param>
+    /// <param name="options">The hub connection options.</param>
+    /// <param name="timeProvider">The timestamp provider, or the system provider when null.</param>
+    /// <param name="logger">The startup logger, or the null logger when null.</param>
+    /// <param name="connectionStarter">The internal startup invocation, or real SignalR startup when null.</param>
+    internal HubConnectionProvider(
+        NavigationManager navigationManager,
+        Lazy<IInletStore> lazyStore,
+        InletSignalRActionEffectOptions? options,
+        TimeProvider? timeProvider,
+        ILogger<HubConnectionProvider>? logger,
+        Func<CancellationToken, Task>? connectionStarter
+    )
     {
         ArgumentNullException.ThrowIfNull(navigationManager);
         ArgumentNullException.ThrowIfNull(lazyStore);
@@ -51,6 +74,7 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
         Connection = new HubConnectionBuilder().WithUrl(navigationManager.ToAbsoluteUri(effectOptions.HubPath))
             .WithAutomaticReconnect()
             .Build();
+        ConnectionStarter = connectionStarter ?? Connection.StartAsync;
 
         // Subscribe to lifecycle events and dispatch actions directly
         Connection.Closed += OnClosedAsync;
@@ -63,6 +87,8 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
 
     /// <inheritdoc />
     public bool IsConnected => Connection.State == HubConnectionState.Connected;
+
+    private Func<CancellationToken, Task> ConnectionStarter { get; }
 
     private ILogger<HubConnectionProvider> Logger { get; }
 
@@ -86,22 +112,48 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
     {
         long started = Stopwatch.GetTimestamp();
         Logger.EnsureConnectionStarted(Connection.State);
-        if (Connection.State == HubConnectionState.Disconnected)
+        (bool startedConnection, Task starting) = await RunStateTransitionAsync<(bool Started, Task Starting)>(() =>
         {
+            if (Connection.State != HubConnectionState.Disconnected)
+            {
+                return (false, Task.CompletedTask);
+            }
+
             Store.Dispatch(new SignalRConnectingAction());
+            return (true, BeginConnectionAsync(cancellationToken));
+        });
+        if (startedConnection)
+        {
             try
             {
-                await Connection.StartAsync(cancellationToken);
+                await starting;
             }
-            catch (Exception exception) when (Connection.State == HubConnectionState.Disconnected)
+            catch (Exception exception)
             {
-                Logger.ConnectionStartFailed(
-                    exception is OperationCanceledException && cancellationToken.IsCancellationRequested
-                        ? LogLevel.Information
-                        : LogLevel.Error,
-                    exception,
-                    Stopwatch.GetElapsedTime(started).TotalMilliseconds);
-                Store.Dispatch(new SignalRDisconnectedAction(exception.Message, TimeProvider.GetUtcNow()));
+                await RunStateTransitionAsync(() =>
+                {
+                    if (Connection.State == HubConnectionState.Disconnected)
+                    {
+                        Logger.ConnectionStartFailed(
+                            exception is OperationCanceledException && cancellationToken.IsCancellationRequested
+                                ? LogLevel.Information
+                                : LogLevel.Error,
+                            exception,
+                            Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+                        try
+                        {
+                            Store.Dispatch(new SignalRDisconnectedAction(exception.Message, TimeProvider.GetUtcNow()));
+                        }
+                        catch (Exception publicationException) when (!ReferenceEquals(publicationException, exception))
+                        {
+                            Logger.ConnectionStatusPublicationFailed(
+                                publicationException,
+                                Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+                        }
+                    }
+
+                    return true;
+                });
                 throw;
             }
 
@@ -142,6 +194,16 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
     ) =>
         Connection.On(methodName, handler);
 
+    /// <summary>
+    ///     Captures a synchronous startup failure in the returned task.
+    /// </summary>
+    /// <param name="cancellationToken">The caller's startup cancellation token.</param>
+    /// <returns>A task representing transport startup.</returns>
+    private async Task BeginConnectionAsync(
+        CancellationToken cancellationToken
+    ) =>
+        await ConnectionStarter(cancellationToken);
+
     private Task OnClosedAsync(
         Exception? exception
     )
@@ -167,5 +229,28 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
         reconnectAttemptCount++;
         Store.Dispatch(new SignalRReconnectingAction(exception?.Message, reconnectAttemptCount));
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    ///     Orders startup initiation and failed-status publication without holding the queue during network I/O.
+    /// </summary>
+    /// <typeparam name="TResult">The transition result type.</typeparam>
+    /// <param name="transition">The synchronous state transition.</param>
+    /// <returns>A task representing the ordered transition.</returns>
+    private async Task<TResult> RunStateTransitionAsync<TResult>(
+        Func<TResult> transition
+    )
+    {
+        TaskCompletionSource completed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        Task previous = Interlocked.Exchange(ref stateTransition, completed.Task);
+        await previous;
+        try
+        {
+            return transition();
+        }
+        finally
+        {
+            completed.SetResult();
+        }
     }
 }
