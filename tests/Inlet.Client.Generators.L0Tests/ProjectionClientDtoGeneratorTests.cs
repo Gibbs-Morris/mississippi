@@ -6,6 +6,7 @@ using System.Linq;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 
 namespace Mississippi.Inlet.Client.Generators.L0Tests;
@@ -42,6 +43,60 @@ public class ProjectionClientDtoGeneratorTests
                                               }
                                           }
                                           """;
+
+    private static void AssertSuccessfulEnumOutput(
+        Compilation output,
+        ImmutableArray<Diagnostic> diagnostics,
+        GeneratorDriverRunResult result,
+        params string[] enumNames
+    )
+    {
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Diagnostic[] inputErrors = input.GetDiagnostics(TestContext.Current.CancellationToken)
+            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+        TestContext.Current.TestOutputHelper?.WriteLine($"Input errors: {inputErrors.Length}");
+        Assert.Empty(inputErrors);
+        foreach (Diagnostic diagnostic in diagnostics)
+        {
+            TestContext.Current.TestOutputHelper?.WriteLine(diagnostic.ToString());
+        }
+
+        foreach (GeneratorRunResult generatorResult in result.Results)
+        {
+            TestContext.Current.TestOutputHelper?.WriteLine($"Generator exception: {generatorResult.Exception}");
+        }
+
+        foreach (SyntaxTree tree in result.GeneratedTrees)
+        {
+            TestContext.Current.TestOutputHelper?.WriteLine(
+                $"{tree.FilePath}\n{tree.GetText(TestContext.Current.CancellationToken)}");
+        }
+
+        Assert.Empty(diagnostics);
+        Assert.All(result.Results, generatorResult => Assert.Null(generatorResult.Exception));
+        Assert.Empty(
+            output.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        GeneratorRunResult generated = Assert.Single(result.Results);
+        Assert.Equal(
+            generated.GeneratedSources.Length,
+            generated.GeneratedSources.Select(item => item.HintName).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(
+            enumNames.Length,
+            result.GeneratedTrees
+                .SelectMany(tree => tree.GetRoot(TestContext.Current.CancellationToken).DescendantNodes())
+                .OfType<EnumDeclarationSyntax>()
+                .Count());
+        foreach (string enumName in enumNames)
+        {
+            INamedTypeSymbol enumType = Assert.IsType<INamedTypeSymbol>(output.GetTypeByMetadataName(enumName), false);
+            Assert.Equal(TypeKind.Enum, enumType.TypeKind);
+            Assert.Single(enumType.DeclaringSyntaxReferences);
+            Assert.Equal(3, Assert.Single(enumType.GetMembers("Pending").OfType<IFieldSymbol>()).ConstantValue);
+            Assert.Equal(7, Assert.Single(enumType.GetMembers("Complete").OfType<IFieldSymbol>()).ConstantValue);
+        }
+    }
 
     /// <summary>
     ///     Creates a Roslyn compilation from the provided source code and runs the generator.
@@ -842,5 +897,196 @@ public class ProjectionClientDtoGeneratorTests
             StringComparison.Ordinal));
         Assert.True(hasAccountBalanceDto);
         Assert.True(hasTransactionHistoryDto);
+    }
+
+    /// <summary>
+    ///     Distinct client namespaces each retain their required enum DTO, including same-named source enums.
+    /// </summary>
+    /// <param name="hasSharedSourceEnum">Whether both namespaces reference the same source enum.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NestedEnumOutputPreservesNamespaceIdentity(
+        bool hasSharedSourceEnum
+    )
+    {
+        string source = $$"""
+                          using System.Collections.Immutable;
+                          using Mississippi.Inlet.Generators.Abstractions;
+                          using Mississippi.Inlet.Abstractions;
+
+                          namespace TestApp.Domain.Common
+                          {
+                              public enum Status { Pending = 3, Complete = 7 }
+                          }
+
+                          namespace TestApp.Domain.Projections.First
+                          {
+                              public enum Status { Pending = 3, Complete = 7 }
+                              public sealed record FirstEntry
+                              {
+                                  public {{(hasSharedSourceEnum ? "TestApp.Domain.Common.Status" : "Status")}} Status { get; init; }
+                              }
+
+                              [GenerateProjectionEndpoints]
+                              [ProjectionPath("first")]
+                              public sealed record FirstProjection
+                              {
+                                  public ImmutableArray<FirstEntry> Entries { get; init; } = [];
+                              }
+                          }
+
+                          namespace TestApp.Domain.Projections.Second
+                          {
+                              public enum Status { Pending = 3, Complete = 7 }
+                              public sealed record SecondEntry
+                              {
+                                  public {{(hasSharedSourceEnum ? "TestApp.Domain.Common.Status" : "Status")}} Status { get; init; }
+                              }
+
+                              [GenerateProjectionEndpoints]
+                              [ProjectionPath("second")]
+                              public sealed record SecondProjection
+                              {
+                                  public ImmutableArray<SecondEntry> Entries { get; init; } = [];
+                              }
+                          }
+                          """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        AssertSuccessfulEnumOutput(
+            output,
+            diagnostics,
+            result,
+            "TestApp.Client.Features.First.Dtos.StatusDto",
+            "TestApp.Client.Features.Second.Dtos.StatusDto");
+        Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.First.Dtos.FirstProjectionDto"));
+        Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.Second.Dtos.SecondProjectionDto"));
+        Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.First.Dtos.FirstEntryDto"));
+        Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.Second.Dtos.SecondEntryDto"));
+    }
+
+    /// <summary>
+    ///     Separate collection elements share their enum with direct and collection projection properties.
+    /// </summary>
+    /// <param name="hasProjectionEnum">Whether the projection also references the shared enum.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NestedEnumOutputReusesEnumAcrossNestedDtos(
+        bool hasProjectionEnum
+    )
+    {
+        string source = $$"""
+                          using System.Collections.Immutable;
+                          using Mississippi.Inlet.Generators.Abstractions;
+                          using Mississippi.Inlet.Abstractions;
+
+                          namespace TestApp.Domain.Projections.Shared;
+
+                          public enum Status { Pending = 3, Complete = 7 }
+                          public sealed record FirstEntry { public Status Status { get; init; } }
+                          public sealed record SecondEntry { public Status? Status { get; init; } }
+
+                          [GenerateProjectionEndpoints]
+                          [ProjectionPath("shared")]
+                          public sealed record SharedProjection
+                          {
+                              public ImmutableArray<FirstEntry> First { get; init; } = [];
+                              public ImmutableArray<SecondEntry> Second { get; init; } = [];
+                              {{(hasProjectionEnum ? "public Status Status { get; init; } public ImmutableArray<Status> Statuses { get; init; } = [];" : string.Empty)}}
+                          }
+                          """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        AssertSuccessfulEnumOutput(output, diagnostics, result, "TestApp.Client.Features.Shared.Dtos.StatusDto");
+        Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.Shared.Dtos.FirstEntryDto"));
+        Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.Shared.Dtos.SecondEntryDto"));
+        Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.Shared.Dtos.SharedProjectionDto"));
+    }
+
+    /// <summary>
+    ///     Enum output is shared across projections that generate DTOs into the same namespace.
+    /// </summary>
+    [Fact]
+    public void NestedEnumOutputReusesEnumAcrossProjections()
+    {
+        const string source = """
+                              using System.Collections.Immutable;
+                              using Mississippi.Inlet.Generators.Abstractions;
+                              using Mississippi.Inlet.Abstractions;
+
+                              namespace TestApp.Domain.Projections.Shared;
+
+                              public enum Status { Pending = 3, Complete = 7 }
+                              public sealed record FirstEntry { public Status Status { get; init; } }
+                              public sealed record SecondEntry { public Status Status { get; init; } }
+
+                              [GenerateProjectionEndpoints]
+                              [ProjectionPath("first")]
+                              public sealed record FirstProjection
+                              {
+                                  public ImmutableArray<FirstEntry> Entries { get; init; } = [];
+                              }
+
+                              [GenerateProjectionEndpoints]
+                              [ProjectionPath("second")]
+                              public sealed record SecondProjection
+                              {
+                                  public ImmutableArray<SecondEntry> Entries { get; init; } = [];
+                              }
+                              """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        AssertSuccessfulEnumOutput(output, diagnostics, result, "TestApp.Client.Features.Shared.Dtos.StatusDto");
+        Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.Shared.Dtos.FirstProjectionDto"));
+        Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.Shared.Dtos.SecondProjectionDto"));
+        Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.Shared.Dtos.FirstEntryDto"));
+        Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.Shared.Dtos.SecondEntryDto"));
+    }
+
+    /// <summary>
+    ///     Repeated enum properties on one collection element share a single generated enum.
+    /// </summary>
+    /// <param name="isNullable">Whether the second property is nullable.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NestedEnumOutputReusesEnumForRepeatedProperties(
+        bool isNullable
+    )
+    {
+        string source = $$"""
+                          using System.Collections.Immutable;
+                          using Mississippi.Inlet.Generators.Abstractions;
+                          using Mississippi.Inlet.Abstractions;
+
+                          namespace TestApp.Domain.Projections.Repeated;
+
+                          public enum Status { Pending = 3, Complete = 7 }
+                          public sealed record Entry
+                          {
+                              public Status First { get; init; }
+                              public Status{{(isNullable ? "?" : string.Empty)}} Second { get; init; }
+                          }
+
+                          [GenerateProjectionEndpoints]
+                          [ProjectionPath("repeated")]
+                          public sealed record RepeatedProjection
+                          {
+                              public ImmutableArray<Entry> Entries { get; init; } = [];
+                          }
+                          """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        AssertSuccessfulEnumOutput(output, diagnostics, result, "TestApp.Client.Features.Repeated.Dtos.StatusDto");
+        INamedTypeSymbol entry = Assert.IsType<INamedTypeSymbol>(
+            output.GetTypeByMetadataName("TestApp.Client.Features.Repeated.Dtos.EntryDto"),
+            false);
+        Assert.Equal(
+            isNullable ? "StatusDto?" : "StatusDto",
+            Assert.Single(entry.GetMembers("Second").OfType<IPropertySymbol>())
+                .Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
+        Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.Repeated.Dtos.RepeatedProjectionDto"));
     }
 }
