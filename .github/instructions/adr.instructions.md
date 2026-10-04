@@ -6,11 +6,11 @@ applyTo: 'docs/Docusaurus/docs/adr/[0-9][0-9][0-9][0-9]-*.md'
 
 Governing thought: ADRs use the MADR 4.0.0 template, live in `docs/Docusaurus/docs/adr/` for Docusaurus publishing, and are immutable once accepted.
 
-> Drift check: Review the MADR 4.0.0 specification at <https://adr.github.io/madr/> before modifying the template; check `docs/key-principles/architecture-decision-records.md` for foundational thinking.
+> Drift check: Review the MADR 4.0.0 specification at <https://adr.github.io/madr/> before modifying the [skill's MADR body template](../../.agents/skills/author-architecture-decision/assets/madr-body.md); check `docs/key-principles/architecture-decision-records.md` for foundational thinking.
 
 ## Rules (RFC 2119)
 
-- ADRs **MUST** live in `docs/Docusaurus/docs/adr/` and follow the MADR 4.0.0 template defined in this file. Why: Single published location ensures discoverability via the Docusaurus site.
+- ADRs **MUST** live in `docs/Docusaurus/docs/adr/` and follow the MADR 4.0.0 body template in the [ADR authoring skill](../../.agents/skills/author-architecture-decision/SKILL.md), adding the frontmatter required below. Why: Single published location ensures discoverability via the Docusaurus site.
 - ADR filenames **MUST** follow the pattern `NNNN-title-with-dashes.md` where `NNNN` is a zero-padded sequential number and the title uses lowercase dashes. Why: MADR convention; sequential numbers provide stable cross-references.
 - When a feature branch adds ADRs, their branch-local numbers **MUST** be treated as provisional until merge preparation; before merging, the author **MUST** rebase onto the latest `main`, renumber new ADRs as a contiguous block after the highest ADR on `main`, and update filenames, `ADR-NNNN` titles, `sidebar_position`, and relative ADR links. Why: Parallel PRs can race on sequential numbering and create filename/sidebar conflicts.
 - ADR frontmatter **MUST** include `title`, `description`, `sidebar_position` (matching the `NNNN` number), `status`, and `date`; `decision_makers`, `consulted`, and `informed` fields **SHOULD** be included when applicable. Why: Combines Docusaurus rendering requirements with MADR metadata.
@@ -30,106 +30,25 @@ Governing thought: ADRs use the MADR 4.0.0 template, live in `docs/Docusaurus/do
 
 All contributors creating or modifying ADRs; the cs ADR Keeper agent is the primary author within the Clean Squad workflow.
 
-## At-a-Glance Quick-Start
+## Procedure and Template
 
-- Create: copy the template below to `docs/Docusaurus/docs/adr/NNNN-title-with-dashes.md`
-- Treat ADR numbers on feature branches as provisional until the PR is rebased and ready to merge
-- Set `sidebar_position` to the `NNNN` number so ADRs sort chronologically
-- Fill in required sections: Context and Problem Statement, Considered Options, Decision Outcome
-- Add Mermaid when the ADR documents both a multi-step flow or multi-component structural relationship and a relationship that would be materially harder to understand from prose alone; otherwise Mermaid remains optional
-- If a qualifying ADR intentionally omits Mermaid, include a short omission rationale
-- Set status to `proposed`; update to `accepted` after approval
+Use the [author-architecture-decision skill](../../.agents/skills/author-architecture-decision/SKILL.md)
+for drafting, revisions, superseding decisions, and verification. Its
+[portable MADR body](../../.agents/skills/author-architecture-decision/assets/madr-body.md)
+replaces the inline template; add the repository's required frontmatter and
+apply all rules above before saving an ADR. Those rules apply even when the
+skill is not selected or available. Read the linked files directly if automatic
+skill discovery is unavailable.
 
-## Qualifying Test
+Retain these local bindings from the former template when filling the body:
 
-A qualifying ADR normally has both of these properties:
-
-1. It documents a multi-step flow or multi-component structural relationship.
-2. That relationship would be materially harder to understand from prose alone.
-
-If either property is absent, Mermaid remains optional.
-
-## MADR 4.0.0 Template (Mississippi)
-
-````markdown
----
-title: "ADR-NNNN: Title of Decision"
-description: One-sentence summary of the decision
-sidebar_position: NNNN
-status: "proposed"
-date: YYYY-MM-DD
-decision_makers:
-  - Name or role
-consulted:
-  - Name or role
-informed:
-  - Name or role
----
-
-# ADR-NNNN: Title of Decision
-
-## Context and Problem Statement
-
-Describe the context and problem statement in two to three sentences.
-Articulate the problem as a question when possible.
-
-When the ADR meets the qualifying Mermaid test above, place the diagram directly under the section it clarifies and keep the prose authoritative.
-
-## Decision Drivers
-
-- Driver 1 (e.g., performance requirement)
-- Driver 2 (e.g., team expertise)
-
-## Considered Options
-
-- Option 1
-- Option 2
-- Option 3
-
-## Decision Outcome
-
-Chosen option: "Option N", because [justification].
-
-### Consequences
-
-- Good, because [positive consequence]
-- Bad, because [negative consequence]
-
-### Confirmation
-
-Describe how compliance with this ADR will be confirmed (e.g., code review, architecture test, CI check).
-
-## Pros and Cons of the Options
-
-### Option 1
-
-Description or pointer to more information.
-
-- Good, because [argument]
-- Neutral, because [argument]
-- Bad, because [argument]
-
-### Option 2
-
-Description or pointer to more information.
-
-- Good, because [argument]
-- Bad, because [argument]
-
-## More Information
-
-Links to related ADRs, RFCs, design documents, or external references.
-
-If the ADR would normally benefit from Mermaid but intentionally omits one, add a brief omission rationale near the relevant discussion or in this section.
-````
-
-## Core Principles
-
-- MADR 4.0.0 is the standard; keep the mandatory minimum low, optional sections available.
-- Immutability preserves historical reasoning; supersede, never edit.
-- Published in Docusaurus so the whole team can find and read decisions.
-- Sequential numbering provides stable, unambiguous identifiers.
-- Mermaid should raise clarity for complex flows and structures, not become decorative ceremony.
+| Field                    | Local binding                                        |
+| ------------------------ | ---------------------------------------------------- |
+| Frontmatter `title`      | `"ADR-NNNN: <Decision title>"` (quoted YAML string)   |
+| H1                      | `ADR-NNNN: <Decision title>`                         |
+| `sidebar_position`       | Numeric value of `NNNN`, matching the ADR identifier |
+| Date                     | `YYYY-MM-DD`                                         |
+| Initial status           | `proposed`; change to `accepted` after approval      |
 
 ## References
 

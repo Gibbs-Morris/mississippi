@@ -97,7 +97,7 @@ public class GenericAggregateGrainTests
         sagaReminderRegistryMock ??= new();
         fireAndForgetEffectRegistrations ??= [];
         return new(
-            throwOnNullContext ? null! : grainContextMock!.Object,
+            throwOnNullContext ? null! : grainContextMock.Object,
             grainFactoryMock.Object,
             brookGrainFactoryMock.Object,
             brookEventConverterMock.Object,
@@ -325,6 +325,65 @@ public class GenericAggregateGrainTests
     }
 
     /// <summary>
+    ///     An append failure without a confirmed position must preserve the previous cached state.
+    /// </summary>
+    /// <param name="isPublicationFailure">Whether the failure is an unpositioned publication exception.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ExecuteAsyncKeepsPreviousPositionWhenAppendFailureIsUnconfirmed(
+        bool isPublicationFailure
+    )
+    {
+        Mock<IRootCommandHandler<AggregateGrainTestAggregate>> handlerMock = new();
+        Mock<IBrookGrainFactory> brookFactoryMock = new();
+        Mock<IBrookEventConverter> converterMock = new();
+        Mock<ISnapshotGrainFactory> snapshotFactoryMock = new();
+        Mock<IBrookCursorGrain> cursorMock = new();
+        Mock<IBrookWriterGrain> writerMock = new();
+        Mock<ISnapshotCacheGrain<AggregateGrainTestAggregate>> snapshotMock = new();
+        AggregateGrainTestAggregate initialState = new(1, "before");
+        cursorMock.Setup(c => c.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(5));
+        brookFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorMock.Object);
+        brookFactoryMock.Setup(f => f.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerMock.Object);
+        snapshotMock.Setup(s => s.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(initialState);
+        snapshotFactoryMock.Setup(f => f.GetSnapshotCacheGrain<AggregateGrainTestAggregate>(It.IsAny<SnapshotKey>()))
+            .Returns(snapshotMock.Object);
+        handlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
+            .Returns(OperationResult.Ok<IReadOnlyList<object>>([new AggregateGrainTestEvent("attempted")]));
+        ImmutableArray<BrookEvent> brookEvents =
+        [
+            new()
+            {
+                Id = "event",
+                EventType = "TestEvent",
+            },
+        ];
+        converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
+            .Returns(brookEvents);
+        Exception appendFailure = isPublicationFailure
+            ? new BrookCursorPublicationException("No position supplied.", new InvalidOperationException("Failure."))
+            : new InvalidOperationException("Unconfirmed storage failure.");
+        writerMock.Setup(w => w.AppendEventsAsync(brookEvents, new BrookPosition(5), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(appendFailure);
+        GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
+            handlerMock,
+            brookFactoryMock,
+            snapshotFactoryMock,
+            converterMock);
+        Exception observed = await Assert.ThrowsAnyAsync<Exception>(() => grain.ExecuteAsync(
+            new AggregateGrainTestCommand("attempted"),
+            CancellationToken.None));
+        Assert.Same(appendFailure, observed);
+        Assert.Same(initialState, await grain.GetStateAsync(CancellationToken.None));
+        snapshotFactoryMock.Verify(
+            f => f.GetSnapshotCacheGrain<AggregateGrainTestAggregate>(It.Is<SnapshotKey>(k => k.Version == 5)),
+            Times.Exactly(2));
+        cursorMock.Verify(c => c.GetLatestPositionAsync(), Times.Once);
+    }
+
+    /// <summary>
     ///     ExecuteAsync should persist events when handler returns events.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -388,10 +447,7 @@ public class GenericAggregateGrainTests
         handlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
             .Returns(OperationResult.Ok<IReadOnlyList<object>>(new object[] { testEvent }));
         converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
-            .Returns((
-                BrookKey _,
-                IReadOnlyList<object> events
-            ) => ImmutableArray.Create(
+            .Returns((BrookKey _, IReadOnlyList<object> events) => ImmutableArray.Create(
                 new BrookEvent
                 {
                     Id = "event-" + events[0].GetHashCode(),
@@ -469,10 +525,7 @@ public class GenericAggregateGrainTests
         handlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
             .Returns(OperationResult.Ok<IReadOnlyList<object>>(new object[] { initialEvent }));
         converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
-            .Returns((
-                BrookKey _,
-                IReadOnlyList<object> events
-            ) => ImmutableArray.Create(
+            .Returns((BrookKey _, IReadOnlyList<object> events) => ImmutableArray.Create(
                 new BrookEvent
                 {
                     Id = "event-" + Guid.NewGuid(),
@@ -513,6 +566,198 @@ public class GenericAggregateGrainTests
         // Then loop exits because iteration >= maxIterations
         // So we expect exactly 2 dispatch calls total
         Assert.Equal(2, dispatchCount);
+    }
+
+    /// <summary>
+    ///     A committed publication failure must not leave reads or commands on the previous version.
+    /// </summary>
+    /// <param name="initialPosition">The position before the failed publication.</param>
+    /// <param name="isLogEnabled">Whether error logging is enabled.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Theory]
+    [InlineData(-1, true)]
+    [InlineData(-1, false)]
+    [InlineData(5, true)]
+    [InlineData(5, false)]
+    public async Task ExecuteAsyncRetainsCommittedPositionAfterPublicationFailure(
+        long initialPosition,
+        bool isLogEnabled
+    )
+    {
+        Mock<IRootCommandHandler<AggregateGrainTestAggregate>> handlerMock = new();
+        Mock<IBrookGrainFactory> brookFactoryMock = new();
+        Mock<IBrookEventConverter> converterMock = new();
+        Mock<ISnapshotGrainFactory> snapshotFactoryMock = new();
+        Mock<IBrookCursorGrain> cursorMock = new();
+        Mock<IBrookWriterGrain> writerMock = new();
+        Mock<ISnapshotCacheGrain<AggregateGrainTestAggregate>> initialSnapshotMock = new();
+        Mock<ISnapshotCacheGrain<AggregateGrainTestAggregate>> committedSnapshotMock = new();
+        Mock<ILogger<GenericAggregateGrain<AggregateGrainTestAggregate>>> loggerMock = new();
+        loggerMock.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(isLogEnabled);
+        BrookPosition committedPosition = new(initialPosition + 2);
+        AggregateGrainTestAggregate initialState = new(0, "before");
+        AggregateGrainTestAggregate committedState = new(2, "committed");
+        cursorMock.Setup(c => c.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(initialPosition));
+        brookFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorMock.Object);
+        brookFactoryMock.Setup(f => f.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerMock.Object);
+        initialSnapshotMock.Setup(s => s.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(initialState);
+        committedSnapshotMock.Setup(s => s.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(committedState);
+        snapshotFactoryMock.Setup(f => f.GetSnapshotCacheGrain<AggregateGrainTestAggregate>(It.IsAny<SnapshotKey>()))
+            .Returns((SnapshotKey key) => key.Version == committedPosition.Value
+                ? committedSnapshotMock.Object
+                : initialSnapshotMock.Object);
+        AggregateGrainTestEvent testEvent = new("committed");
+        handlerMock.Setup(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
+            .Returns(OperationResult.Ok<IReadOnlyList<object>>([testEvent, testEvent]));
+        ImmutableArray<BrookEvent> brookEvents =
+        [
+            new()
+            {
+                Id = "event-1",
+                EventType = "TestEvent",
+            },
+            new()
+            {
+                Id = "event-2",
+                EventType = "TestEvent",
+            },
+        ];
+        converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
+            .Returns(brookEvents);
+        BrookCursorPublicationException publicationFailure = new(
+            committedPosition,
+            new InvalidOperationException("Publication failed after commit."));
+        writerMock.SetupSequence(w => w.AppendEventsAsync(
+                brookEvents,
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(publicationFailure)
+            .ReturnsAsync(new BrookPosition(committedPosition.Value + 2));
+        GenericAggregateGrain<AggregateGrainTestAggregate> grain = CreateGrain(
+            rootCommandHandlerMock: handlerMock,
+            brookGrainFactoryMock: brookFactoryMock,
+            snapshotGrainFactoryMock: snapshotFactoryMock,
+            brookEventConverterMock: converterMock,
+            loggerMock: loggerMock);
+        await grain.OnActivateAsync(CancellationToken.None);
+        BrookCursorPublicationException observed = await Assert.ThrowsAsync<BrookCursorPublicationException>(() =>
+            grain.ExecuteAsync(new AggregateGrainTestCommand("first"), CancellationToken.None));
+        Assert.Same(publicationFailure, observed);
+        object[][] errorLogs = loggerMock.Invocations.Where(i => i.Method.Name == "Log")
+            .Select(i => i.Arguments.ToArray())
+            .ToArray();
+        if (isLogEnabled)
+        {
+            object[] log = Assert.Single(errorLogs);
+            Assert.Equal(LogLevel.Error, log[0]);
+            EventId eventId = Assert.IsType<EventId>(log[1]);
+            Assert.Equal(24, eventId.Id);
+            Assert.Equal("CommittedAppendPublicationFailed", eventId.Name);
+            Dictionary<string, object?> fields = Assert
+                .IsType<IEnumerable<KeyValuePair<string, object?>>>(log[2], false)
+                .ToDictionary(p => p.Key, p => p.Value);
+            Assert.Equal("TEST.AGGREGATES.BROOK|" + TestEntityId, fields["AggregateKey"]);
+            Assert.Equal(committedPosition.Value, fields["Position"]);
+            Assert.Equal(
+                "Events for aggregate {AggregateKey} committed at position {Position}, but cursor publication failed",
+                fields["{OriginalFormat}"]);
+            Assert.Same(publicationFailure, log[3]);
+        }
+        else
+        {
+            Assert.Empty(errorLogs);
+        }
+
+        Assert.Same(committedState, await grain.GetStateAsync(CancellationToken.None));
+        AggregateGrainTestCommand nextCommand = new("next");
+        OperationResult nextResult = await grain.ExecuteAsync(nextCommand, committedPosition, CancellationToken.None);
+        Assert.True(nextResult.Success);
+        handlerMock.Verify(h => h.Handle(nextCommand, committedState), Times.Once);
+        writerMock.Verify(
+            w => w.AppendEventsAsync(brookEvents, committedPosition, It.IsAny<CancellationToken>()),
+            Times.Once);
+        cursorMock.Verify(c => c.GetLatestPositionAsync(), Times.Once);
+    }
+
+    /// <summary>
+    ///     A committed effect append must remain visible after the effect failure is isolated.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ExecuteAsyncRetainsCommittedPositionAfterYieldedEventPublicationFailure()
+    {
+        Mock<IRootCommandHandler<AggregateGrainTestAggregate>> handlerMock = new();
+        Mock<IBrookGrainFactory> brookFactoryMock = new();
+        Mock<IBrookEventConverter> converterMock = new();
+        Mock<ISnapshotGrainFactory> snapshotFactoryMock = new();
+        Mock<IBrookCursorGrain> cursorMock = new();
+        Mock<IBrookWriterGrain> writerMock = new();
+        Mock<ISnapshotCacheGrain<AggregateGrainTestAggregate>> snapshotMock = new();
+        Mock<ISnapshotCacheGrain<AggregateGrainTestAggregate>> committedSnapshotMock = new();
+        Mock<IRootEventEffect<AggregateGrainTestAggregate>> effectMock = new();
+        AggregateGrainTestAggregate committedState = new(2, "effect committed");
+        cursorMock.Setup(c => c.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(5));
+        brookFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorMock.Object);
+        brookFactoryMock.Setup(f => f.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerMock.Object);
+        snapshotMock.Setup(s => s.GetStateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AggregateGrainTestAggregate(1, "before effect"));
+        committedSnapshotMock.Setup(s => s.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(committedState);
+        snapshotFactoryMock.Setup(f => f.GetSnapshotCacheGrain<AggregateGrainTestAggregate>(It.IsAny<SnapshotKey>()))
+            .Returns((SnapshotKey key) => key.Version == 7 ? committedSnapshotMock.Object : snapshotMock.Object);
+        AggregateGrainTestEvent testEvent = new("command event");
+        AggregateGrainTestEvent yieldedEvent = new("effect event");
+        handlerMock.SetupSequence(h => h.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
+            .Returns(OperationResult.Ok<IReadOnlyList<object>>([testEvent]))
+            .Returns(OperationResult.Ok<IReadOnlyList<object>>([]));
+        ImmutableArray<BrookEvent> brookEvents =
+        [
+            new()
+            {
+                Id = "event",
+                EventType = "TestEvent",
+            },
+        ];
+        converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
+            .Returns(brookEvents);
+        writerMock.SetupSequence(w => w.AppendEventsAsync(
+                brookEvents,
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BrookPosition(6))
+            .ThrowsAsync(
+                new BrookCursorPublicationException(
+                    new BrookPosition(7),
+                    new InvalidOperationException("Publication failed.")));
+        effectMock.Setup(e => e.EffectCount).Returns(1);
+        effectMock.Setup(e => e.DispatchAsync(
+                testEvent,
+                It.IsAny<AggregateGrainTestAggregate>(),
+                It.IsAny<string>(),
+                It.IsAny<long>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(ToAsyncEnumerable<object>(yieldedEvent));
+        GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
+            handlerMock,
+            brookFactoryMock,
+            snapshotFactoryMock,
+            converterMock,
+            rootEventEffect: effectMock.Object);
+        OperationResult result = await grain.ExecuteAsync(
+            new AggregateGrainTestCommand("first"),
+            CancellationToken.None);
+        Assert.True(result.Success);
+        Assert.Same(committedState, await grain.GetStateAsync(CancellationToken.None));
+        AggregateGrainTestCommand nextCommand = new("next");
+        OperationResult nextResult = await grain.ExecuteAsync(
+            nextCommand,
+            new BrookPosition(7),
+            CancellationToken.None);
+        Assert.True(nextResult.Success);
+        handlerMock.Verify(h => h.Handle(nextCommand, committedState), Times.Once);
+        writerMock.Verify(
+            w => w.AppendEventsAsync(brookEvents, new BrookPosition(6), It.IsAny<CancellationToken>()),
+            Times.Once);
+        cursorMock.Verify(c => c.GetLatestPositionAsync(), Times.Once);
     }
 
     /// <summary>

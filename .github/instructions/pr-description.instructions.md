@@ -4,7 +4,7 @@ applyTo: '**'
 
 # Pull Request Description Authoring
 
-Governing thought: PR descriptions should communicate business value, explain the holistic design, and enable reviewers and future maintainers to understand both what changed and why.
+Governing thought: PR descriptions explain one change, why it matters, and how it was verified, with detail proportional to review complexity.
 
 > Drift check: Open `.github/PULL_REQUEST_TEMPLATE.md` before writing descriptions; the template defines the expected structure.
 
@@ -34,89 +34,33 @@ Governing thought: PR descriptions should communicate business value, explain th
 
 ### PR Descriptions
 
+- Every PR description **MUST** link a relevant repository issue under [issue tracking and PR traceability](issue-tracking.instructions.md). Why: Reviewers need the planned outcome and current task record.
 - PR descriptions **MUST** be updated on each commit/push when a PR exists for the branch. Why: Keeps the description synchronized with the actual changes.
-- Authors **MUST** compare the branch against `main` to understand all changes before writing or updating the description. Why: Ensures the description reflects the complete diff.
+- Authors **MUST** compare the branch against the PR's actual base (`main` for a standalone PR, the immediate parent for a stack layer). Why: Descriptions explain this layer rather than repeating ancestor changes.
+- Authors **MUST** include the single outcome, stack position and dependencies when applicable, and any size-exception rationale from [PR size and stacked delivery](pr-size-and-stacking.instructions.md). Why: Reviewers need clear boundaries and an efficient review path.
 - Authors **MUST** include a Business Value section explaining why the change matters. Why: Reviewers and future maintainers need context beyond "what" to understand "why".
-- Authors **MUST** include a How It Works section with architectural overview. Why: Holistic understanding prevents incorrect usage and aids code review.
-- Authors **SHOULD** include Common Use Cases with concrete examples across different domains. Why: Helps users understand applicability to their problems.
+- Authors **SHOULD** include How It Works and concrete use cases when they help explain a non-trivial change. Why: Small fixes and documentation edits do not need an architecture essay.
 - Authors **SHOULD** include architecture diagrams (ASCII or Mermaid) for non-trivial changes. Why: Visual representations accelerate understanding.
-- Authors **MUST** list all new and modified files with brief descriptions. Why: Provides a roadmap for reviewers and documents the change scope.
+- Authors **SHOULD** identify key files or groups in review order rather than repeat GitHub's file manifest. Why: A review map explains where to focus without duplicating the diff.
 - Authors **MUST** document breaking changes with before/after code examples. Why: Enables users to migrate without guessing.
 - Authors **SHOULD** include code examples that demonstrate typical usage. Why: Copy-paste examples reduce adoption friction.
 - Descriptions **MUST NOT** contain stale information from previous iterations. Why: Outdated content misleads reviewers.
+- Descriptions **MUST NOT** contain invented benefits, unmeasured performance claims, boilerplate filler, or claims that unrun checks passed. Why: Authors remain accountable for generated descriptions and validation evidence.
+- Authors **MUST** report actual validation results, pending checks, and applicable omissions. Why: Checkboxes alone do not establish the advancement gate.
 
 ## Scope and Audience
 
 All contributors creating or updating pull requests.
 
-## At-a-Glance Quick-Start
-
-- Title format: `<Human-readable summary> +semver: <feature|fix|breaking|skip>`
-- Before writing: `git diff main...HEAD --stat` to see all changes
-- Use the PR template in `.github/PULL_REQUEST_TEMPLATE.md`
-- Update title and description on every push if PR exists
-- Focus on business value first, implementation details second
-
 ## Procedure
 
-### Initial PR Description
-
-1. Run `git diff main...HEAD --stat` to list all changed files
-2. Read through each changed file to understand what was done
-3. Identify the business problem being solved
-4. Write the Business Value section first
-5. Add Common Use Cases with real-world examples
-6. Document How It Works with architecture overview
-7. List all files changed with brief descriptions
-8. Add code examples for new APIs or patterns
-9. Document any breaking changes with migration guidance
-
-### Updating on Subsequent Commits
-
-1. After each commit/push, review changes since last description update
-2. Update file lists if files were added/removed/renamed
-3. Update code examples if APIs changed
-4. Verify Business Value still accurately reflects the PR scope
-5. Remove any stale information that no longer applies
-
-## Template Structure
-
-The PR template includes these sections (all should be completed for significant changes):
-
-1. **Business Value** - Why this matters (required)
-2. **Common Use Cases** - Real-world applications (recommended)
-3. **How It Works** - Architecture and design (required for non-trivial changes)
-4. **Observability** - Metrics/logging added (if applicable)
-5. **Files Changed** - Complete file manifest (required)
-6. **Quality Gates** - Checklist of requirements (required)
-7. **Migration Notes** - Breaking change guidance (if applicable)
-8. **Related Issues** - Links to issues/discussions (if applicable)
-
-## Good vs Bad Examples
-
-### Bad: Implementation-focused
-
-> "Added FireAndForgetEffectWorkerGrain.cs that implements IFireAndForgetEffectWorkerGrain interface"
-
-### Good: Value-focused
-
-> "Commands now return immediately without waiting for external API calls. Effects like sending notifications or updating analytics run asynchronously in background worker grains, reducing p99 latency by up to 500ms for commands with I/O-heavy side effects."
-
-### Bad: Missing context
-
-> "Changed HandleAsync signature to include brookKey parameter"
-
-### Good: Complete context
-
-> "**Breaking change**: The `HandleAsync` method on `EventEffectBase` now requires `brookKey` and `eventPosition` parameters. This enables effects to correlate with specific aggregate instances and event positions for debugging and idempotency. Existing effects must add these parameters (they can be ignored if not needed)."
-
-## Core Principles
-
-- Lead with business value, not implementation details
-- Write for the reviewer who has no context
-- Include enough detail that someone could implement similar functionality
-- Keep descriptions synchronized with actual code changes
-- Use tables and diagrams to convey complex relationships
+When drafting or updating a PR title or description, use the
+[write-pull-request-description skill](../../.agents/skills/write-pull-request-description/SKILL.md)
+with the rules above and the [repository PR template](../PULL_REQUEST_TEMPLATE.md).
+The skill owns the drafting and evidence-reconciliation procedure; this file
+retains the repository's mandatory title, content, and validation requirements.
+The rules above apply even when the skill is not selected or available. If the
+host cannot discover skills automatically, read the linked skill file directly.
 
 ## References
 

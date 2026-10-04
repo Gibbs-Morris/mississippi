@@ -51,10 +51,7 @@ public class AggregateGrainFactoryTests
             .Setup(f => f.GetGrain<IGenericAggregateGrain<AggregateGrainTestAggregate>>(
                 It.IsAny<string>(),
                 It.IsAny<string?>()))
-            .Callback<string, string?>((
-                key,
-                _
-            ) => capturedKey = key)
+            .Callback<string, string?>((key, _) => capturedKey = key)
             .Returns(grainMock.Object);
         AggregateGrainFactory factory = new(grainFactoryMock.Object, loggerMock.Object);
         IGenericAggregateGrain<AggregateGrainTestAggregate> result =
@@ -103,10 +100,7 @@ public class AggregateGrainFactoryTests
             .Setup(f => f.GetGrain<IGenericAggregateGrain<AggregateGrainTestAggregate>>(
                 It.IsAny<string>(),
                 It.IsAny<string?>()))
-            .Callback<string, string?>((
-                key,
-                _
-            ) => capturedKey = key)
+            .Callback<string, string?>((key, _) => capturedKey = key)
             .Returns(grainMock.Object);
         AggregateGrainFactory factory = new(grainFactoryMock.Object, loggerMock.Object);
         IGenericAggregateGrain<AggregateGrainTestAggregate> result =
