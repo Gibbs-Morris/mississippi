@@ -31,7 +31,7 @@ Scope: numbered `docs/Docusaurus/docs/adr/NNNN-*.md` files (four digits); contri
 - ADR5.6: Omitting a diagram when the normal trigger applies **SHOULD** have a short rationale.
 - ADR5.7: Authors **SHOULD** prefer sequenceDiagram(time), flowchart(process/decisions), simple architecture/C4(structure).
 - ADR6: Accepted Context/Decision Outcome **MUST NOT** change.
-- ADR6.2: Changed accepted decisions **MUST** create a new ADR and set original status to superseded by [ADR-NNNN](NNNN-title.md).
+- ADR6.2: Changed accepted decisions **MUST** create a new ADR and set original status to `superseded by [ADR-NNNN](NNNN-title.md)`.
 - ADR6.3: ADR status **MUST** be proposed/accepted/deprecated/or that supersession link.
 - ADR6.4: ADR cross-references **MUST** be relative Markdown.
 - ADR7: ADRs **SHOULD** accompany or precede decisions, avoiding retrospective lost context.
