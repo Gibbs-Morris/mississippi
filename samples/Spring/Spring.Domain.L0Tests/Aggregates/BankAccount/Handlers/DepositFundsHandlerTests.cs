@@ -1,14 +1,14 @@
 using System.Collections.Generic;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
-using Spring.Domain.Aggregates.BankAccount;
-using Spring.Domain.Aggregates.BankAccount.Commands;
-using Spring.Domain.Aggregates.BankAccount.Events;
-using Spring.Domain.Aggregates.BankAccount.Handlers;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Commands;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Handlers;
 
 
-namespace Spring.Domain.L0Tests.Aggregates.BankAccount.Handlers;
+namespace MississippiSamples.Spring.Domain.L0Tests.Aggregates.BankAccount.Handlers;
 
 /// <summary>
 ///     Tests for <see cref="DepositFundsHandler" />.
@@ -65,9 +65,9 @@ public sealed class DepositFundsHandlerTests
         IReadOnlyList<object> events = handler.ShouldSucceed(OpenAccount, command);
 
         // Assert
-        events.Should().ContainSingle();
-        FundsDeposited deposited = events[0].Should().BeOfType<FundsDeposited>().Subject;
-        deposited.Amount.Should().Be(1_000_000m);
+        object item = Assert.Single(events);
+        FundsDeposited deposited = Assert.IsType<FundsDeposited>(item);
+        Assert.Equal(1_000_000m, deposited.Amount);
     }
 
     /// <summary>

@@ -1,10 +1,10 @@
-using Mississippi.EventSourcing.Sagas.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
-using Spring.Domain.Projections.MoneyTransferStatus;
-using Spring.Domain.Projections.MoneyTransferStatus.Reducers;
+using MississippiSamples.Spring.Domain.Projections.MoneyTransferStatus;
+using MississippiSamples.Spring.Domain.Projections.MoneyTransferStatus.Reducers;
 
 
-namespace Spring.Domain.L0Tests.Projections.MoneyTransferStatus;
+namespace MississippiSamples.Spring.Domain.L0Tests.Projections.MoneyTransferStatus;
 
 /// <summary>
 ///     Tests for <see cref="SagaCompensatedStatusReducer" />.
@@ -29,8 +29,8 @@ public sealed class SagaCompensatedStatusReducerTests
             CompletedAt = completedAt,
         };
         MoneyTransferStatusProjection result = reducer.Apply(initial, @event);
-        result.Phase.Should().Be(SagaPhase.Compensated);
-        result.CompletedAt.Should().Be(completedAt);
+        Assert.Equal(SagaPhase.Compensated, result.Phase);
+        Assert.Equal(completedAt, result.CompletedAt);
     }
 
     /// <summary>

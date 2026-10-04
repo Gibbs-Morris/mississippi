@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Orleans.Sdk" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Public contracts and abstractions for Inlet.Runtime.</Description>
+  </PropertyGroup>
+</Project>

@@ -45,10 +45,9 @@ Generated\ Files/
 [Bb]uild[Ll]og.*
 *.trx
 
-# NUnit
+# Legacy test reports
 *.VisualState.xml
 TestResult.xml
-nunit-*.xml
 
 # Custom test output directories (legacy paths retained for safety)
 test-results/
@@ -58,6 +57,15 @@ StrykerOutput/
 # Local agent scratchpad (ephemeral, do not commit)
 .scratchpad/
 !.scratchpad/.gitignore
+
+# Local VFE planning artifacts (ephemeral, do not commit)
+.plan/
+
+# Local Clean Squad working state (ephemeral, do not commit)
+.thinking/
+
+# Aspire CLI local AppHost selection
+aspire.config.json
 
 # Temporary Claude files (ephemeral, do not commit)
 tmpclaude-*
@@ -74,6 +82,9 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 artifacts/
+.tools/npm-global/
+.tools/dotnet-home/
+.tools/activate-*.ps1
 
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt

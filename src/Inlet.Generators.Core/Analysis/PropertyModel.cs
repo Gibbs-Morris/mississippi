@@ -1,6 +1,9 @@
 using System;
+using System.Globalization;
+using System.Linq;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 
 namespace Mississippi.Inlet.Generators.Core.Analysis;
@@ -40,6 +43,7 @@ public sealed class PropertyModel
                                     SpecialType.System_Nullable_T);
         IsNullable = isNullableAnnotation || isNullableValueType;
         HasDefaultValue = HasPropertyDefaultValue(propertySymbol);
+        DefaultValueExpression = ExtractDefaultValueExpression(propertySymbol);
         IsRequired = !IsNullable && !HasDefaultValue;
 
         // For collections with custom element types, extract the element info
@@ -59,6 +63,11 @@ public sealed class PropertyModel
             ElementIsEnum = elementType is not null && TypeAnalyzer.IsEnumType(elementType);
         }
     }
+
+    /// <summary>
+    ///     Gets the default value expression as a C# literal string, or <c>null</c> if no default is declared.
+    /// </summary>
+    public string? DefaultValueExpression { get; }
 
     /// <summary>
     ///     Gets the DTO type name.
@@ -146,50 +155,183 @@ public sealed class PropertyModel
     public ITypeSymbol SourceTypeSymbol { get; }
 
     /// <summary>
+    ///     Extracts the default value expression from a property's syntax or its corresponding constructor parameter.
+    /// </summary>
+    /// <param name="propertySymbol">The property symbol.</param>
+    /// <returns>The C# literal expression (e.g., <c>" = 100.0m"</c>), or <c>null</c> if none.</returns>
+    private static string? ExtractDefaultValueExpression(
+        IPropertySymbol propertySymbol
+    )
+    {
+        string? syntaxDefaultValue = ExtractDefaultValueExpressionFromSyntax(propertySymbol);
+        if (syntaxDefaultValue is not null)
+        {
+            return syntaxDefaultValue;
+        }
+
+        return ExtractDefaultValueExpressionFromConstructors(propertySymbol);
+    }
+
+    private static string? ExtractDefaultValueExpressionFromConstructors(
+        IPropertySymbol propertySymbol
+    )
+    {
+        if (propertySymbol.ContainingType is not INamedTypeSymbol containingType)
+        {
+            return null;
+        }
+
+        foreach (IMethodSymbol constructor in containingType.InstanceConstructors)
+        {
+            IParameterSymbol? parameter = constructor.Parameters.FirstOrDefault(p => string.Equals(
+                p.Name,
+                propertySymbol.Name,
+                StringComparison.Ordinal));
+            if (parameter is null || !parameter.HasExplicitDefaultValue)
+            {
+                continue;
+            }
+
+            return " = " + FormatDefaultValue(parameter.ExplicitDefaultValue, parameter.Type);
+        }
+
+        return null;
+    }
+
+    private static string? ExtractDefaultValueExpressionFromSyntax(
+        IPropertySymbol propertySymbol
+    )
+    {
+        foreach (SyntaxNode syntax in
+                 propertySymbol.DeclaringSyntaxReferences.Select(syntaxRef => syntaxRef.GetSyntax()))
+        {
+            if (syntax is PropertyDeclarationSyntax propertyDeclaration && propertyDeclaration.Initializer is not null)
+            {
+                return " = " + propertyDeclaration.Initializer.Value;
+            }
+
+            if (syntax is ParameterSyntax parameterSyntax && parameterSyntax.Default is not null)
+            {
+                return " = " + parameterSyntax.Default.Value;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     Formats a compile-time constant value as a C# literal.
+    /// </summary>
+    private static string FormatDefaultValue(
+        object? value,
+        ITypeSymbol type
+    )
+    {
+        if (value is null)
+        {
+            return "null";
+        }
+
+        if (value is string s)
+        {
+            return "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+        }
+
+        if (value is char c)
+        {
+            return c switch
+            {
+                '\\' => "'\\\\'",
+                '\'' => "'\\\''",
+                var _ => "'" + c + "'",
+            };
+        }
+
+        if (value is bool b)
+        {
+            return b ? "true" : "false";
+        }
+
+        if (value is decimal d)
+        {
+            return d.ToString(CultureInfo.InvariantCulture) + "m";
+        }
+
+        if (value is float f)
+        {
+            return f.ToString(CultureInfo.InvariantCulture) + "f";
+        }
+
+        if (value is double dbl)
+        {
+            return dbl.ToString(CultureInfo.InvariantCulture) + "d";
+        }
+
+        if (value is long l)
+        {
+            return l.ToString(CultureInfo.InvariantCulture) + "L";
+        }
+
+        if (type.TypeKind == TypeKind.Enum)
+        {
+            return "(" + type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat) + ")" + value;
+        }
+
+        return value.ToString();
+    }
+
+    private static bool HasDefaultValueInConstructors(
+        IPropertySymbol propertySymbol
+    )
+    {
+        if (propertySymbol.ContainingType is not INamedTypeSymbol containingType)
+        {
+            return false;
+        }
+
+        foreach (IMethodSymbol constructor in containingType.InstanceConstructors)
+        {
+            IParameterSymbol? parameter = constructor.Parameters.FirstOrDefault(p => string.Equals(
+                p.Name,
+                propertySymbol.Name,
+                StringComparison.Ordinal));
+            if (parameter?.HasExplicitDefaultValue is true)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasDefaultValueInSyntax(
+        IPropertySymbol propertySymbol
+    )
+    {
+        foreach (SyntaxReference syntaxRef in propertySymbol.DeclaringSyntaxReferences)
+        {
+            SyntaxNode syntax = syntaxRef.GetSyntax();
+            if (syntax is PropertyDeclarationSyntax propertyDeclaration && propertyDeclaration.Initializer is not null)
+            {
+                return true;
+            }
+
+            if (syntax is ParameterSyntax parameterSyntax && parameterSyntax.Default is not null)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     ///     Determines whether a property has a default value.
     /// </summary>
     /// <param name="propertySymbol">The property symbol.</param>
     /// <returns><c>true</c> if the property has a default value.</returns>
     private static bool HasPropertyDefaultValue(
         IPropertySymbol propertySymbol
-    )
-    {
-        // Check for initializer in declaring syntax
-        // This handles both regular property initializers (public int X { get; } = 5)
-        // and positional record parameter defaults (record Foo(int X = 5))
-        foreach (SyntaxReference syntaxRef in propertySymbol.DeclaringSyntaxReferences)
-        {
-            SyntaxNode syntax = syntaxRef.GetSyntax();
-            string syntaxText = syntax.ToString();
-
-            // Look for "= ..." pattern (property initializer or parameter default)
-            // Handle various spacing: "= 0", " = 0", "= default", etc.
-            if (syntaxText.Contains("= "))
-            {
-                return true;
-            }
-        }
-
-        // For positional record properties, check if the associated parameter has a default
-        // Positional record properties are synthesized and may have empty DeclaringSyntaxReferences
-        // We need to check the containing type's primary constructor parameters
-        if (propertySymbol.ContainingType is INamedTypeSymbol containingType)
-        {
-            // Find matching primary constructor parameter by name
-            foreach (IMethodSymbol constructor in containingType.InstanceConstructors)
-            {
-                // Primary constructor is the one generated from record parameters
-                foreach (IParameterSymbol parameter in constructor.Parameters)
-                {
-                    if (string.Equals(parameter.Name, propertySymbol.Name, StringComparison.Ordinal) &&
-                        parameter.HasExplicitDefaultValue)
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
+    ) =>
+        HasDefaultValueInSyntax(propertySymbol) || HasDefaultValueInConstructors(propertySymbol);
 }

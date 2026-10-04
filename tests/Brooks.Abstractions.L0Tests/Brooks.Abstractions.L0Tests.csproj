@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Brooks.Abstractions\Brooks.Abstractions.csproj" />
+    </ItemGroup>
+</Project>

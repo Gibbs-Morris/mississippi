@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.Abstractions.Commands;
+using Mississippi.Inlet.Client.L0Tests.Helpers;
 
 
 namespace Mississippi.Inlet.Client.L0Tests;
@@ -12,6 +13,8 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// </summary>
 public sealed class AggregateCommandStateReducersTests
 {
+    private static readonly DateTimeOffset BaseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>
     ///     ComputeCommandExecuting adds entry to history.
     /// </summary>
@@ -20,15 +23,15 @@ public sealed class AggregateCommandStateReducersTests
     {
         // Arrange
         TestAggregateState state = new();
-        TestCommandExecutingAction action = new("cmd-123", "TestCommand", DateTimeOffset.UtcNow);
+        TestCommandExecutingAction action = new("cmd-123", "TestCommand", BaseTime);
 
         // Act
         (ImmutableHashSet<string> _, ImmutableList<CommandHistoryEntry> history) =
             AggregateCommandStateReducers.ComputeCommandExecuting(state, action);
 
         // Assert
-        Assert.Single(history);
-        Assert.Equal("cmd-123", history[0].CommandId);
+        CommandHistoryEntry item = Assert.Single(history);
+        Assert.Equal("cmd-123", item.CommandId);
     }
 
     /// <summary>
@@ -39,7 +42,7 @@ public sealed class AggregateCommandStateReducersTests
     {
         // Arrange
         TestAggregateState state = new();
-        TestCommandExecutingAction action = new("cmd-123", "TestCommand", DateTimeOffset.UtcNow);
+        TestCommandExecutingAction action = new("cmd-123", "TestCommand", BaseTime);
 
         // Act
         (ImmutableHashSet<string> inFlight, ImmutableList<CommandHistoryEntry> _) =
@@ -57,7 +60,7 @@ public sealed class AggregateCommandStateReducersTests
     {
         // Arrange
         TestAggregateState state = new();
-        TestCommandExecutingAction action = new("cmd-123", "TestCommand", DateTimeOffset.UtcNow);
+        TestCommandExecutingAction action = new("cmd-123", "TestCommand", BaseTime);
 
         // Act
         (ImmutableHashSet<string> _, ImmutableList<CommandHistoryEntry> history) =
@@ -77,14 +80,14 @@ public sealed class AggregateCommandStateReducersTests
         ImmutableList<CommandHistoryEntry>.Builder historyBuilder = ImmutableList.CreateBuilder<CommandHistoryEntry>();
         for (int i = 0; i < 5; i++)
         {
-            historyBuilder.Add(CommandHistoryEntry.CreateExecuting($"old-{i}", "OldCommand", DateTimeOffset.UtcNow));
+            historyBuilder.Add(CommandHistoryEntry.CreateExecuting($"old-{i}", "OldCommand", BaseTime.AddSeconds(i)));
         }
 
         TestAggregateState state = new()
         {
             CommandHistory = historyBuilder.ToImmutable(),
         };
-        TestCommandExecutingAction action = new("new-cmd", "TestCommand", DateTimeOffset.UtcNow);
+        TestCommandExecutingAction action = new("new-cmd", "TestCommand", BaseTime.AddSeconds(5));
 
         // Act
         (ImmutableHashSet<string> _, ImmutableList<CommandHistoryEntry> history) =
@@ -115,7 +118,7 @@ public sealed class AggregateCommandStateReducersTests
     public void ComputeCommandExecutingThrowsOnNullState()
     {
         // Arrange
-        TestCommandExecutingAction action = new("cmd-123", "TestCommand", DateTimeOffset.UtcNow);
+        TestCommandExecutingAction action = new("cmd-123", "TestCommand", BaseTime);
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
@@ -133,7 +136,7 @@ public sealed class AggregateCommandStateReducersTests
         {
             InFlightCommands = ImmutableHashSet.Create("cmd-123"),
         };
-        TestCommandFailedAction action = new("cmd-123", DateTimeOffset.UtcNow, "ERR001", "Failed");
+        TestCommandFailedAction action = new("cmd-123", BaseTime, "ERR001", "Failed");
 
         // Act
         (ImmutableHashSet<string> inFlight, ImmutableList<CommandHistoryEntry> _) =
@@ -163,7 +166,7 @@ public sealed class AggregateCommandStateReducersTests
     public void ComputeCommandFailedThrowsOnNullState()
     {
         // Arrange
-        TestCommandFailedAction action = new("cmd-123", DateTimeOffset.UtcNow, "ERR", "Error");
+        TestCommandFailedAction action = new("cmd-123", BaseTime, "ERR", "Error");
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => AggregateCommandStateReducers.ComputeCommandFailed(null!, action));
@@ -176,24 +179,21 @@ public sealed class AggregateCommandStateReducersTests
     public void ComputeCommandFailedUpdatesHistoryEntryToFailed()
     {
         // Arrange
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
-            "cmd-123",
-            "TestCommand",
-            DateTimeOffset.UtcNow);
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", "TestCommand", BaseTime);
         TestAggregateState state = new()
         {
             InFlightCommands = ImmutableHashSet.Create("cmd-123"),
             CommandHistory = ImmutableList.Create(entry),
         };
-        TestCommandFailedAction action = new("cmd-123", DateTimeOffset.UtcNow.AddSeconds(5), "ERR001", "Failed");
+        TestCommandFailedAction action = new("cmd-123", BaseTime.AddSeconds(5), "ERR001", "Failed");
 
         // Act
         (ImmutableHashSet<string> _, ImmutableList<CommandHistoryEntry> history) =
             AggregateCommandStateReducers.ComputeCommandFailed(state, action);
 
         // Assert
-        Assert.Single(history);
-        Assert.Equal(CommandStatus.Failed, history[0].Status);
+        CommandHistoryEntry item = Assert.Single(history);
+        Assert.Equal(CommandStatus.Failed, item.Status);
     }
 
     /// <summary>
@@ -207,7 +207,7 @@ public sealed class AggregateCommandStateReducersTests
         {
             InFlightCommands = ImmutableHashSet.Create("cmd-123"),
         };
-        TestCommandSucceededAction action = new("cmd-123", DateTimeOffset.UtcNow);
+        TestCommandSucceededAction action = new("cmd-123", BaseTime);
 
         // Act
         (ImmutableHashSet<string> inFlight, ImmutableList<CommandHistoryEntry> _) =
@@ -237,7 +237,7 @@ public sealed class AggregateCommandStateReducersTests
     public void ComputeCommandSucceededThrowsOnNullState()
     {
         // Arrange
-        TestCommandSucceededAction action = new("cmd-123", DateTimeOffset.UtcNow);
+        TestCommandSucceededAction action = new("cmd-123", BaseTime);
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
@@ -251,24 +251,21 @@ public sealed class AggregateCommandStateReducersTests
     public void ComputeCommandSucceededUpdatesHistoryEntryToSucceeded()
     {
         // Arrange
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
-            "cmd-123",
-            "TestCommand",
-            DateTimeOffset.UtcNow);
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", "TestCommand", BaseTime);
         TestAggregateState state = new()
         {
             InFlightCommands = ImmutableHashSet.Create("cmd-123"),
             CommandHistory = ImmutableList.Create(entry),
         };
-        TestCommandSucceededAction action = new("cmd-123", DateTimeOffset.UtcNow.AddSeconds(5));
+        TestCommandSucceededAction action = new("cmd-123", BaseTime.AddSeconds(5));
 
         // Act
         (ImmutableHashSet<string> _, ImmutableList<CommandHistoryEntry> history) =
             AggregateCommandStateReducers.ComputeCommandSucceeded(state, action);
 
         // Assert
-        Assert.Single(history);
-        Assert.Equal(CommandStatus.Succeeded, history[0].Status);
+        CommandHistoryEntry item = Assert.Single(history);
+        Assert.Equal(CommandStatus.Succeeded, item.Status);
     }
 
     /// <summary>
@@ -279,7 +276,7 @@ public sealed class AggregateCommandStateReducersTests
     {
         // Arrange
         TestAggregateState state = new();
-        TestCommandExecutingAction action = new("cmd-456", "TestCommand", DateTimeOffset.UtcNow);
+        TestCommandExecutingAction action = new("cmd-456", "TestCommand", BaseTime);
 
         // Act
         TestAggregateState result = AggregateCommandStateReducers.ReduceCommandExecuting(state, action);
@@ -300,7 +297,7 @@ public sealed class AggregateCommandStateReducersTests
             ErrorCode = "PREV_ERR",
             ErrorMessage = "Previous error",
         };
-        TestCommandExecutingAction action = new("cmd-123", "TestCommand", DateTimeOffset.UtcNow);
+        TestCommandExecutingAction action = new("cmd-123", "TestCommand", BaseTime);
 
         // Act
         TestAggregateState result = AggregateCommandStateReducers.ReduceCommandExecuting(state, action);
@@ -321,7 +318,7 @@ public sealed class AggregateCommandStateReducersTests
         {
             LastCommandSucceeded = true,
         };
-        TestCommandExecutingAction action = new("cmd-123", "TestCommand", DateTimeOffset.UtcNow);
+        TestCommandExecutingAction action = new("cmd-123", "TestCommand", BaseTime);
 
         // Act
         TestAggregateState result = AggregateCommandStateReducers.ReduceCommandExecuting(state, action);
@@ -337,7 +334,7 @@ public sealed class AggregateCommandStateReducersTests
     public void ReduceCommandExecutingThrowsOnNullState()
     {
         // Arrange
-        TestCommandExecutingAction action = new("cmd-123", "TestCommand", DateTimeOffset.UtcNow);
+        TestCommandExecutingAction action = new("cmd-123", "TestCommand", BaseTime);
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
@@ -351,16 +348,13 @@ public sealed class AggregateCommandStateReducersTests
     public void ReduceCommandFailedSetsErrorState()
     {
         // Arrange
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
-            "cmd-123",
-            "TestCommand",
-            DateTimeOffset.UtcNow);
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", "TestCommand", BaseTime);
         TestAggregateState state = new()
         {
             InFlightCommands = ImmutableHashSet.Create("cmd-123"),
             CommandHistory = ImmutableList.Create(entry),
         };
-        TestCommandFailedAction action = new("cmd-123", DateTimeOffset.UtcNow, "INSUFFICIENT_FUNDS", "Not enough");
+        TestCommandFailedAction action = new("cmd-123", BaseTime.AddSeconds(5), "INSUFFICIENT_FUNDS", "Not enough");
 
         // Act
         TestAggregateState result = AggregateCommandStateReducers.ReduceCommandFailed(state, action);
@@ -377,16 +371,13 @@ public sealed class AggregateCommandStateReducersTests
     public void ReduceCommandFailedSetsLastCommandSucceededToFalse()
     {
         // Arrange
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
-            "cmd-123",
-            "TestCommand",
-            DateTimeOffset.UtcNow);
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", "TestCommand", BaseTime);
         TestAggregateState state = new()
         {
             InFlightCommands = ImmutableHashSet.Create("cmd-123"),
             CommandHistory = ImmutableList.Create(entry),
         };
-        TestCommandFailedAction action = new("cmd-123", DateTimeOffset.UtcNow, "ERR", "Error");
+        TestCommandFailedAction action = new("cmd-123", BaseTime.AddSeconds(5), "ERR", "Error");
 
         // Act
         TestAggregateState result = AggregateCommandStateReducers.ReduceCommandFailed(state, action);
@@ -402,7 +393,7 @@ public sealed class AggregateCommandStateReducersTests
     public void ReduceCommandFailedThrowsOnNullState()
     {
         // Arrange
-        TestCommandFailedAction action = new("cmd-123", DateTimeOffset.UtcNow, "ERR", "Error");
+        TestCommandFailedAction action = new("cmd-123", BaseTime, "ERR", "Error");
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
@@ -416,10 +407,7 @@ public sealed class AggregateCommandStateReducersTests
     public void ReduceCommandSucceededClearsErrorState()
     {
         // Arrange
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
-            "cmd-123",
-            "TestCommand",
-            DateTimeOffset.UtcNow);
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", "TestCommand", BaseTime);
         TestAggregateState state = new()
         {
             InFlightCommands = ImmutableHashSet.Create("cmd-123"),
@@ -427,7 +415,7 @@ public sealed class AggregateCommandStateReducersTests
             ErrorCode = "PREV_ERR",
             ErrorMessage = "Previous error",
         };
-        TestCommandSucceededAction action = new("cmd-123", DateTimeOffset.UtcNow);
+        TestCommandSucceededAction action = new("cmd-123", BaseTime.AddSeconds(5));
 
         // Act
         TestAggregateState result = AggregateCommandStateReducers.ReduceCommandSucceeded(state, action);
@@ -444,16 +432,13 @@ public sealed class AggregateCommandStateReducersTests
     public void ReduceCommandSucceededSetsLastCommandSucceededToTrue()
     {
         // Arrange
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
-            "cmd-123",
-            "TestCommand",
-            DateTimeOffset.UtcNow);
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", "TestCommand", BaseTime);
         TestAggregateState state = new()
         {
             InFlightCommands = ImmutableHashSet.Create("cmd-123"),
             CommandHistory = ImmutableList.Create(entry),
         };
-        TestCommandSucceededAction action = new("cmd-123", DateTimeOffset.UtcNow.AddSeconds(5));
+        TestCommandSucceededAction action = new("cmd-123", BaseTime.AddSeconds(5));
 
         // Act
         TestAggregateState result = AggregateCommandStateReducers.ReduceCommandSucceeded(state, action);
@@ -469,7 +454,7 @@ public sealed class AggregateCommandStateReducersTests
     public void ReduceCommandSucceededThrowsOnNullState()
     {
         // Arrange
-        TestCommandSucceededAction action = new("cmd-123", DateTimeOffset.UtcNow);
+        TestCommandSucceededAction action = new("cmd-123", BaseTime);
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>

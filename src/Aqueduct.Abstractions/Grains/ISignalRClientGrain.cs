@@ -20,9 +20,20 @@ namespace Mississippi.Aqueduct.Abstractions.Grains;
 ///         state helps with graceful cleanup and recovery.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.Aqueduct.ISignalRClientGrain")]
+[Alias("Mississippi.Aqueduct.Abstractions.Grains.ISignalRClientGrain")]
 public interface ISignalRClientGrain : IGrainWithStringKey
 {
+    /// <summary>
+    ///     Adds the connected client to a group and tracks it for disconnect cleanup.
+    /// </summary>
+    /// <remarks>Clients that have not connected or have disconnected do not join groups.</remarks>
+    /// <param name="groupName">The group name within this client's hub.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Alias("AddToGroupAsync")]
+    Task AddToGroupAsync(
+        string groupName
+    );
+
     /// <summary>
     ///     Registers the connection with the specified hub and server.
     /// </summary>
@@ -36,8 +47,9 @@ public interface ISignalRClientGrain : IGrainWithStringKey
     );
 
     /// <summary>
-    ///     Disconnects and cleans up the client state.
+    ///     Stops delivery and removes tracked group memberships before clearing the client state.
     /// </summary>
+    /// <remarks>Failed group removals propagate and remain tracked for a subsequent cleanup attempt.</remarks>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Alias("DisconnectAsync")]
     Task DisconnectAsync();
@@ -50,6 +62,16 @@ public interface ISignalRClientGrain : IGrainWithStringKey
     /// </returns>
     [Alias("GetServerIdAsync")]
     Task<string?> GetServerIdAsync();
+
+    /// <summary>
+    ///     Removes the client from a group and its disconnect cleanup tracking.
+    /// </summary>
+    /// <param name="groupName">The group name within this client's hub.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Alias("RemoveFromGroupAsync")]
+    Task RemoveFromGroupAsync(
+        string groupName
+    );
 
     /// <summary>
     ///     Sends a message to this client via the Orleans stream backplane.

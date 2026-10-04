@@ -1,0 +1,8 @@
+label: Concepts
+position: 2
+collapsed: false
+collapsible: true
+link:
+  type: generated-index
+  title: Spring Concepts
+  description: Architecture and vocabulary for the Spring sample.
