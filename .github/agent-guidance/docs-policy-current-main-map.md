@@ -1,6 +1,6 @@
 # Docs policy current-main migration map
 
-This slice rebuilds the Docs portion of [original PR #809](https://github.com/Gibbs-Morris/mississippi/pull/809) from current `main`. The source is the six instruction bodies at current base `64ae58b89b6e19a8c226c02e758d789bb7b5b0b5`; these bodies are unchanged from `92a7a2b9f3c7eff10ef1eb971210f313f3f71693`. Targets remain mandatory even when no skill activates. The instruction filenames and `applyTo` values remain exact compatibility selectors.
+This slice rebuilds the Docs portion of [original PR #809](https://github.com/Gibbs-Morris/mississippi/pull/809) from current `main`. The source is the six instruction bodies at original base `64ae58b89b6e19a8c226c02e758d789bb7b5b0b5`; these bodies are unchanged from `92a7a2b9f3c7eff10ef1eb971210f313f3f71693`. The 4 October refresh integrates `main` at `c8da151e607bcc8f3b253519317a8e7418d26261`; all six source bodies are unchanged at that revision, so the same 58-rule map applies. Targets remain mandatory even when no skill activates. The instruction filenames and `applyTo` values remain exact compatibility selectors.
 
 | Source | Path, content, and audience trigger | Target |
 | --- | --- | --- |
