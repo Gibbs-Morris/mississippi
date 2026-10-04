@@ -38,6 +38,12 @@ With start `0` and count `0`, the end is `-1`, the unset value supported by [Bro
 
 The [existing range-key tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Brooks.Abstractions.L0Tests/BrookRangeKeyTests.cs) verify both the inclusive-end calculation and the zero-count case.
 
+## Endpoint Arithmetic
+
+For a nonempty range, choose start and count so the inclusive end is representable as a nonnegative `long`. The constructor validates start and count separately; it does not validate this arithmetic constraint.
+
+`End` calculates `(Start + Count) - 1` using unchecked `long` arithmetic, then converts the result to `BrookPosition`. A start of `long.MaxValue` and count of `2` passes construction, but the calculation wraps to `long.MinValue`. Accessing `End` then throws `ArgumentOutOfRangeException` because that position is below `-1`.
+
 ## Construction And Parsing
 
 The constructor accepts the brook name, entity ID, start, and count. `FromBrookCompositeKey()` supplies the name and ID from a `BrookKey` and takes start and count separately. `ToBrookCompositeKey()` returns the name and ID without the range fields.
@@ -55,6 +61,7 @@ The separator is a delimiter; the key type does not provide an escaping scheme f
 - A null name, entity ID, or input string throws `ArgumentNullException`.
 - A separator in a name or a combined key length above the limit throws `ArgumentException`.
 - A negative start or count throws `ArgumentOutOfRangeException`, including after successful numeric parsing.
+- Accessing `End` throws `ArgumentOutOfRangeException` if arithmetic overflow produces a position below `-1`.
 - Missing separators or a numeric component that cannot be parsed as `long` throws `FormatException`.
 
 Parsing uses the default `long.TryParse` overload. These rules describe the key representation; the reader's slice-size validation is documented separately in [Brooks Reader Options](./reader-options.md).
