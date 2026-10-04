@@ -1,10 +1,14 @@
 ---
+id: signalr-endpoint
 title: SignalR Endpoint Configuration
 description: Reference the Inlet hub path, client URI resolution, and separate HTTP projection route.
 sidebar_position: 5
+sidebar_label: SignalR Endpoint Configuration
 ---
 
 # SignalR Endpoint Configuration
+
+## Overview
 
 Inlet configures the client hub address and gateway hub mapping separately. Both default to `/hubs/inlet`; changing one side does not rewrite the other.
 
@@ -20,7 +24,7 @@ Inlet configures the client hub address and gateway hub mapping separately. Both
 
 That method rejects null, empty, or whitespace-only values. Other values are stored unchanged: it does not trim the string, check that an endpoint exists, or validate a deployment's routing arrangement.
 
-Configure the builder inside `AddInletBlazorSignalR`'s callback. Configuration closes when registration begins or the callback exits, including a failed callback. Subsequent configuration and configuration with a read-only parent service collection throw `InvalidOperationException`.
+Configure the builder inside `AddInletBlazorSignalR`'s callback, while configuration remains open. `Build()` closes it after its initial guard and before registering services. The enclosing `finally` also closes it when the callback/build path exits, including failure. Subsequent configuration and configuration with a read-only parent service collection throw `InvalidOperationException`.
 
 Build uses `TryAddSingleton` for the options and `TryAddScoped` for `IHubConnectionProvider`. Existing registrations are preserved; registering options earlier can therefore determine the object resolved by the provider.
 
