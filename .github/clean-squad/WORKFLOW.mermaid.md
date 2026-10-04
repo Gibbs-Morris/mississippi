@@ -273,14 +273,14 @@ Canonical event property-order mirror:
 
 ```json
 {
-    "sequence": 1,
+    "sequence": 13,
     "eventUtc": "2026-03-25T00:00:00.0000000Z",
     "logicalEventId": "phase-03-start",
     "actor": "cs River Orchestrator",
     "phase": "architecture",
     "eventType": "phase-started",
     "appendPrecondition": {
-        "expectedPriorSequence": 0
+        "expectedPriorSequence": 12
     },
     "workItemId": "work.architecture.solution-design",
     "rootWorkItemId": "work.architecture.solution-design",
