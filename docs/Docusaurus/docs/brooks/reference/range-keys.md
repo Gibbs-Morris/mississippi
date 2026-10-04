@@ -1,4 +1,5 @@
 ---
+id: range-keys
 title: Brooks Range Keys
 description: Reference the Brooks range-key fields, inclusive endpoints, string format, and validation rules.
 sidebar_position: 3
@@ -6,6 +7,8 @@ sidebar_label: Range Keys
 ---
 
 # Brooks Range Keys
+
+## Overview
 
 `BrookRangeKey` identifies a range within one brook using a starting position and an event count. Its `End` property is inclusive.
 
