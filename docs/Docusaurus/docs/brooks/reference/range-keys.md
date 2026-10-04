@@ -52,9 +52,9 @@ The constructor accepts the brook name, entity ID, start, and count. `FromBrookC
 
 - Brook name and entity ID must be non-null and must not contain `|`. This key type does not reject empty strings.
 - Start and count must be nonnegative.
-- The length check counts the names, invariant-culture decimal representations of the parsed start and count, and three separators. That normalized length must not exceed `4192` characters.
+- The length check counts the names, invariant-culture decimal representations of the parsed start and count, and three separators. That normalized length must not exceed `4192` UTF-16 code units, the unit counted by [`string.Length`](https://learn.microsoft.com/en-us/dotnet/api/system.string.length).
 
-Numeric fields are parsed before the length check, so their surrounding whitespace and leading zeroes do not count toward the limit. The original input string can exceed `4192` characters when its normalized components pass this check.
+Numeric fields are parsed before the length check, so their surrounding whitespace and leading zeroes do not count toward the limit. The original input string can exceed `4192` UTF-16 code units when its normalized components pass this check. A supplementary Unicode character occupies two code units and therefore uses two units of the limit.
 
 The separator is a delimiter; the key type does not provide an escaping scheme for names containing it.
 
