@@ -55,6 +55,10 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
 
     private const string ProjectionSuffix = "Projection";
 
+    private const string SystemCollectionsGenericNamespace = "System.Collections.Generic";
+
+    private const string SystemCollectionsImmutableNamespace = "System.Collections.Immutable";
+
     private const string SystemNamespace = "System";
 
     /// <summary>
@@ -115,18 +119,51 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     private static void GenerateCode(
         SourceProductionContext context,
         ProjectionInfo projection,
-        HashSet<string> generatedNestedTypes
+        GeneratedDtoNameRegistry generatedNestedTypes,
+        HashSet<IPropertySymbol> reportedUnsupportedProperties
     )
     {
-        // Generate DTO
-        string dtoSource = GenerateDto(projection);
-        context.AddSource($"{projection.Model.DtoTypeName}.g.cs", SourceText.From(dtoSource, Encoding.UTF8));
+        if (!ValidateNullableEnumCollectionShapes(context, projection, reportedUnsupportedProperties))
+        {
+            return;
+        }
+
+        if (!generatedNestedTypes.TryRegister(
+                context,
+                projection.OutputNamespace,
+                projection.Model.DtoTypeName,
+                projection.SourceType,
+                out bool generateDto) ||
+            !generatedNestedTypes.TryRegister(
+                context,
+                projection.OutputNamespace + MappersNamespaceSuffix,
+                GetMapperTypeName(projection),
+                projection.SourceType))
+        {
+            return;
+        }
+
+        // Generate DTO only when it has not already been emitted for this source.
+        if (generateDto)
+        {
+            string dtoSource = GenerateDto(projection);
+            context.AddSource($"{projection.Model.DtoTypeName}.g.cs", SourceText.From(dtoSource, Encoding.UTF8));
+        }
 
         // Generate DTOs + mappers for enum properties on the projection
         foreach (EnumDtoInfo enumInfo in GetEnumDtosForProjection(projection)
-                     .Where(enumInfo => !generatedNestedTypes.Contains(enumInfo.DtoName)))
+                     .Where(enumInfo =>
+                         generatedNestedTypes.TryRegister(
+                             context,
+                             projection.OutputNamespace,
+                             enumInfo.DtoName,
+                             enumInfo.EnumType) &&
+                         generatedNestedTypes.TryRegister(
+                             context,
+                             projection.OutputNamespace + MappersNamespaceSuffix,
+                             enumInfo.DtoName + MapperSuffix,
+                             enumInfo.EnumType)))
         {
-            generatedNestedTypes.Add(enumInfo.DtoName);
             string enumDtoSource = GenerateNestedEnumDto(
                 enumInfo.EnumType,
                 enumInfo.DtoName,
@@ -142,33 +179,35 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         }
 
         // Generate DTOs for nested custom types (e.g., collection element types)
-        // Use GroupBy to avoid duplicate generation for the same DTO type name
-        List<PropertyModel> nestedTypeProperties = projection.Model.Properties
-            .Where(prop => prop.ElementTypeSymbol is INamedTypeSymbol &&
-                           prop.ElementDtoTypeName is string elementDtoTypeName &&
-                           !generatedNestedTypes.Contains(elementDtoTypeName))
-            .GroupBy(prop => prop.ElementDtoTypeName)
-            .Select(g => g.First())
+        List<PropertyModel> nestedTypeProperties = projection.Model.Properties.Where(prop =>
+                prop.ElementTypeSymbol is INamedTypeSymbol { TypeKind: not TypeKind.Enum } &&
+                prop.ElementDtoTypeName is not null)
             .ToList();
         foreach (PropertyModel prop in nestedTypeProperties)
         {
             INamedTypeSymbol elementType = (INamedTypeSymbol)prop.ElementTypeSymbol!;
-            generatedNestedTypes.Add(prop.ElementDtoTypeName!);
-            string nestedDtoSource = GenerateNestedTypeDto(
-                elementType,
-                prop.ElementDtoTypeName!,
-                projection.OutputNamespace);
-            context.AddSource($"{prop.ElementDtoTypeName}.g.cs", SourceText.From(nestedDtoSource, Encoding.UTF8));
-            if (elementType.TypeKind == TypeKind.Enum)
+            if (!generatedNestedTypes.TryRegister(
+                    context,
+                    projection.OutputNamespace,
+                    prop.ElementDtoTypeName!,
+                    elementType,
+                    out bool generateNestedDto) ||
+                !generatedNestedTypes.TryRegister(
+                    context,
+                    projection.OutputNamespace + MappersNamespaceSuffix,
+                    prop.ElementDtoTypeName + MapperSuffix,
+                    elementType))
             {
-                string enumMapperSource = GenerateEnumMapper(
+                continue;
+            }
+
+            if (generateNestedDto)
+            {
+                string nestedDtoSource = GenerateNestedTypeDto(
                     elementType,
                     prop.ElementDtoTypeName!,
                     projection.OutputNamespace);
-                context.AddSource(
-                    $"{prop.ElementDtoTypeName}Mapper.g.cs",
-                    SourceText.From(enumMapperSource, Encoding.UTF8));
-                continue;
+                context.AddSource($"{prop.ElementDtoTypeName}.g.cs", SourceText.From(nestedDtoSource, Encoding.UTF8));
             }
 
             // Generate mapper for nested type
@@ -268,7 +307,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         SourceBuilder sb = new();
         sb.AppendAutoGeneratedHeader();
         sb.AppendUsing("System");
-        sb.AppendUsing("System.Collections.Immutable");
+        sb.AppendUsing("System.Collections.Generic");
+        sb.AppendUsing(SystemCollectionsImmutableNamespace);
         sb.AppendUsing("System.Text.Json.Serialization");
         sb.AppendFileScopedNamespace(projection.OutputNamespace);
         sb.AppendLine();
@@ -295,23 +335,31 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         SourceProductionContext context,
         INamedTypeSymbol sourceType,
         string outputNamespace,
-        HashSet<string> generatedNestedTypes
+        GeneratedDtoNameRegistry generatedNestedTypes
     )
     {
         IEnumerable<INamedTypeSymbol> enumTypes = sourceType.GetMembers()
             .OfType<IPropertySymbol>()
             .Where(p => (p.DeclaredAccessibility == Accessibility.Public) && !p.IsStatic && p.GetMethod is not null)
-            .Select(p => p.Type)
-            .Select(UnwrapNullable)
+            .Select(p => GetEnumSourceType(p.Type))
             .OfType<INamedTypeSymbol>()
-            .Where(t => t.TypeKind == TypeKind.Enum);
+            .Where(t => (t.TypeKind == TypeKind.Enum) && !TypeAnalyzer.IsFrameworkType(t));
         foreach (INamedTypeSymbol enumType in enumTypes)
         {
-            string enumDtoName = enumType.Name + "Dto";
-            if (generatedNestedTypes.Add(enumDtoName))
+            string enumDtoName = TypeAnalyzer.GetDtoTypeName(enumType);
+            if (generatedNestedTypes.TryRegister(context, outputNamespace, enumDtoName, enumType) &&
+                generatedNestedTypes.TryRegister(
+                    context,
+                    outputNamespace + MappersNamespaceSuffix,
+                    enumDtoName + MapperSuffix,
+                    enumType))
             {
                 string enumDtoSource = GenerateNestedEnumDto(enumType, enumDtoName, outputNamespace);
                 context.AddSource($"{enumDtoName}.g.cs", SourceText.From(enumDtoSource, Encoding.UTF8));
+                string enumMapperSource = GenerateEnumMapper(enumType, enumDtoName, outputNamespace);
+                context.AddSource(
+                    $"{enumDtoName}{MapperSuffix}.g.cs",
+                    SourceText.From(enumMapperSource, Encoding.UTF8));
             }
         }
     }
@@ -357,14 +405,16 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         SourceBuilder sb = new();
         sb.AppendAutoGeneratedHeader();
         sb.AppendUsing(SystemNamespace);
-        if (projection.Model.HasEnumerableMappedProperties)
+        bool hasNullableEnumCollections = projection.Model.Properties.Any(prop =>
+            GetNullableEnumCollectionElement(prop.SourceTypeSymbol) is not null);
+        if (projection.Model.HasEnumerableMappedProperties || hasNullableEnumCollections)
         {
             sb.AppendUsing("System.Linq");
         }
 
-        if (projection.Model.HasImmutableArrayMappedProperties)
+        if (projection.Model.HasImmutableArrayMappedProperties || hasNullableEnumCollections)
         {
-            sb.AppendUsing("System.Collections.Immutable");
+            sb.AppendUsing(SystemCollectionsImmutableNamespace);
         }
 
         sb.AppendUsing(MappingNamespace);
@@ -400,27 +450,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         {
             PropertyModel prop = projection.Model.Properties[i];
             string comma = i < (projection.Model.Properties.Length - 1) ? "," : string.Empty;
-            if (prop.RequiresEnumerableMapper)
-            {
-                // Collection with custom element type - use appropriate collection conversion
-                string toCollection = prop.SourceTypeSymbol switch
-                {
-                    IArrayTypeSymbol => ".ToArray()",
-                    var _ when prop.IsImmutableArray => ".ToImmutableArray()",
-                    var _ => ".ToList()",
-                };
-                sb.AppendLine($"{prop.Name} = {prop.Name}Mapper.Map(source.{prop.Name}){toCollection}{comma}");
-            }
-            else if (prop.RequiresMapper)
-            {
-                // Single custom type
-                sb.AppendLine($"{prop.Name} = {prop.Name}Mapper.Map(source.{prop.Name}){comma}");
-            }
-            else
-            {
-                // Direct assignment
-                sb.AppendLine($"{prop.Name} = source.{prop.Name}{comma}");
-            }
+            sb.AppendLine($"{prop.Name} = {GetMapperPropertyAssignment(prop)}{comma}");
         }
 
         sb.CloseBrace();
@@ -446,6 +476,9 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         // Properties for injected mappers
         foreach (PropertyModel prop in mappedProps)
         {
+            string sourceTypeName = TypeAnalyzer.IsEnumType(prop.SourceTypeSymbol)
+                ? prop.SourceTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                : prop.SourceTypeName;
             if (prop.RequiresEnumerableMapper)
             {
                 sb.AppendLine(
@@ -453,8 +486,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             }
             else
             {
-                sb.AppendLine(
-                    $"private IMapper<{prop.SourceTypeName}, {prop.DtoTypeName}> {prop.Name}Mapper {{ get; }}");
+                sb.AppendLine($"private IMapper<{sourceTypeName}, {prop.DtoTypeName}> {prop.Name}Mapper {{ get; }}");
             }
         }
 
@@ -465,6 +497,9 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         for (int i = 0; i < mappedProps.Length; i++)
         {
             PropertyModel prop = mappedProps[i];
+            string sourceTypeName = TypeAnalyzer.IsEnumType(prop.SourceTypeSymbol)
+                ? prop.SourceTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                : prop.SourceTypeName;
             string comma = i < (mappedProps.Length - 1) ? "," : string.Empty;
             string paramName = ToCamelCase(prop.Name) + MapperSuffix;
             if (prop.RequiresEnumerableMapper)
@@ -474,7 +509,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             }
             else
             {
-                sb.AppendLine($"IMapper<{prop.SourceTypeName}, {prop.DtoTypeName}> {paramName}{comma}");
+                sb.AppendLine($"IMapper<{sourceTypeName}, {prop.DtoTypeName}> {paramName}{comma}");
             }
         }
 
@@ -524,7 +559,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         // Register enum mappers first
         foreach (EnumDtoInfo enumInfo in GetEnumDtosForProjection(projection))
         {
-            string enumSourceTypeName = enumInfo.EnumType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+            string enumSourceTypeName = enumInfo.EnumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             sb.AppendLine(
                 $"services.AddMapper<{enumSourceTypeName}, {enumInfo.DtoName}, {enumInfo.DtoName}{MapperSuffix}>();");
         }
@@ -610,7 +645,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         SourceBuilder sb = new();
         sb.AppendAutoGeneratedHeader();
         sb.AppendUsing(SystemNamespace);
-        sb.AppendUsing("System.Collections.Immutable");
+        sb.AppendUsing("System.Collections.Generic");
+        sb.AppendUsing(SystemCollectionsImmutableNamespace);
         sb.AppendUsing("System.Text.Json.Serialization");
         sb.AppendFileScopedNamespace(outputNamespace);
         sb.AppendLine();
@@ -645,9 +681,19 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         string outputNamespace
     )
     {
+        IPropertySymbol[] properties = sourceType.GetMembers()
+            .OfType<IPropertySymbol>()
+            .Where(p => (p.DeclaredAccessibility == Accessibility.Public) && !p.IsStatic && p.GetMethod is not null)
+            .ToArray();
         SourceBuilder sb = new();
         sb.AppendAutoGeneratedHeader();
         sb.AppendUsing(SystemNamespace);
+        if (properties.Any(prop => GetNullableEnumCollectionElement(prop.Type) is not null))
+        {
+            sb.AppendUsing("System.Linq");
+            sb.AppendUsing(SystemCollectionsImmutableNamespace);
+        }
+
         sb.AppendUsing(MappingNamespace);
         sb.AppendUsing(sourceType.ContainingNamespace.ToDisplayString());
         sb.AppendUsing(outputNamespace); // For DTO types like EnumDto
@@ -670,26 +716,11 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.AppendLine("ArgumentNullException.ThrowIfNull(source);");
         sb.AppendLine("return new()");
         sb.OpenBrace();
-        IPropertySymbol[] properties = sourceType.GetMembers()
-            .OfType<IPropertySymbol>()
-            .Where(p => (p.DeclaredAccessibility == Accessibility.Public) && !p.IsStatic && p.GetMethod is not null)
-            .ToArray();
         for (int i = 0; i < properties.Length; i++)
         {
             IPropertySymbol prop = properties[i];
             string comma = i < (properties.Length - 1) ? "," : string.Empty;
-
-            // Check if this property is a custom enum that needs casting
-            if (TypeAnalyzer.IsEnumType(prop.Type) && !TypeAnalyzer.IsFrameworkType(prop.Type))
-            {
-                string enumTypeName = prop.Type.Name;
-                string enumDtoTypeName = enumTypeName + "Dto";
-                sb.AppendLine($"{prop.Name} = ({enumDtoTypeName})source.{prop.Name}{comma}");
-            }
-            else
-            {
-                sb.AppendLine($"{prop.Name} = source.{prop.Name}{comma}");
-            }
+            sb.AppendLine($"{prop.Name} = {GetNestedMapperPropertyAssignment(prop)}{comma}");
         }
 
         sb.CloseBrace();
@@ -721,28 +752,89 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         HashSet<string> seen = new(StringComparer.Ordinal);
         foreach (PropertyModel prop in projection.Model.Properties)
         {
-            if (prop.IsEnum && prop.SourceTypeSymbol is INamedTypeSymbol enumType)
+            if (UnwrapNullable(prop.SourceTypeSymbol) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
+                !TypeAnalyzer.IsFrameworkType(enumType))
             {
                 string key = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 if (seen.Add(key))
                 {
-                    enumInfos.Add(new(enumType, prop.DtoTypeName));
+                    enumInfos.Add(new(enumType, TypeAnalyzer.GetDtoTypeName(enumType)));
                 }
             }
 
-            if (prop.ElementIsEnum &&
-                prop.ElementTypeSymbol is INamedTypeSymbol elementEnum &&
-                prop.ElementDtoTypeName is not null)
+            if ((prop.IsCollection || prop.SourceTypeSymbol is IArrayTypeSymbol) &&
+                TypeAnalyzer.GetCollectionElementType(prop.SourceTypeSymbol) is { } elementType &&
+                UnwrapNullable(elementType) is INamedTypeSymbol { TypeKind: TypeKind.Enum } elementEnum &&
+                !TypeAnalyzer.IsFrameworkType(elementEnum))
             {
                 string key = elementEnum.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 if (seen.Add(key))
                 {
-                    enumInfos.Add(new(elementEnum, prop.ElementDtoTypeName));
+                    enumInfos.Add(new(elementEnum, TypeAnalyzer.GetDtoTypeName(elementEnum)));
                 }
             }
         }
 
         return enumInfos;
+    }
+
+    /// <summary>
+    ///     Gets the underlying source type used for enum discovery.
+    /// </summary>
+    /// <param name="sourceType">The property source type.</param>
+    /// <returns>The unwrapped collection element or property type.</returns>
+    private static ITypeSymbol GetEnumSourceType(
+        ITypeSymbol sourceType
+    )
+    {
+        ITypeSymbol enumSource = sourceType is IArrayTypeSymbol || TypeAnalyzer.IsCollectionType(sourceType)
+            ? TypeAnalyzer.GetCollectionElementType(sourceType) ?? sourceType
+            : sourceType;
+        return UnwrapNullable(enumSource);
+    }
+
+    /// <summary>
+    ///     Gets the conversion expression assigned to a projection DTO property.
+    /// </summary>
+    /// <param name="prop">The projection property.</param>
+    /// <returns>The source-to-DTO property conversion expression.</returns>
+    private static string GetMapperPropertyAssignment(
+        PropertyModel prop
+    )
+    {
+        if (GetNullableEnumCollectionElement(prop.SourceTypeSymbol) is { } collectionEnum)
+        {
+            string enumDtoTypeName = TypeAnalyzer.GetDtoTypeName(collectionEnum);
+            string toCollection = GetNullableEnumCollectionMaterializer(prop);
+            return
+                $"source.{prop.Name}.Select(value => value.HasValue ? ({enumDtoTypeName}?)value.Value : null){toCollection}";
+        }
+
+        if (prop.RequiresEnumerableMapper)
+        {
+            string toCollection = prop.SourceTypeSymbol switch
+            {
+                IArrayTypeSymbol => ".ToArray()",
+                var _ when prop.IsImmutableArray => ".ToImmutableArray()",
+                var _ => ".ToList()",
+            };
+            return $"{prop.Name}Mapper.Map(source.{prop.Name}){toCollection}";
+        }
+
+        if (prop.RequiresMapper)
+        {
+            return $"{prop.Name}Mapper.Map(source.{prop.Name})";
+        }
+
+        if (UnwrapNullable(prop.SourceTypeSymbol) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
+            !TypeAnalyzer.IsFrameworkType(enumType) &&
+            !prop.IsEnum)
+        {
+            string enumDtoTypeName = TypeAnalyzer.GetDtoTypeName(enumType);
+            return $"source.{prop.Name}.HasValue ? ({enumDtoTypeName}?)source.{prop.Name}.Value : null";
+        }
+
+        return $"source.{prop.Name}";
     }
 
     /// <summary>
@@ -752,6 +844,85 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         ProjectionInfo projection
     ) =>
         projection.Model.TypeName + MapperSuffix;
+
+    /// <summary>
+    ///     Gets the conversion expression assigned to a nested DTO property.
+    /// </summary>
+    /// <param name="prop">The nested source property.</param>
+    /// <returns>The source-to-DTO property conversion expression.</returns>
+    private static string GetNestedMapperPropertyAssignment(
+        IPropertySymbol prop
+    )
+    {
+        if (GetNullableEnumCollectionElement(prop.Type) is not null)
+        {
+            return GetMapperPropertyAssignment(new(prop));
+        }
+
+        if (UnwrapNullable(prop.Type) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
+            !TypeAnalyzer.IsFrameworkType(enumType))
+        {
+            string enumDtoTypeName = TypeAnalyzer.GetDtoTypeName(enumType);
+            return TypeAnalyzer.IsEnumType(prop.Type)
+                ? $"({enumDtoTypeName})source.{prop.Name}"
+                : $"source.{prop.Name}.HasValue ? ({enumDtoTypeName}?)source.{prop.Name}.Value : null";
+        }
+
+        return $"source.{prop.Name}";
+    }
+
+    /// <summary>
+    ///     Gets the custom enum wrapped in nullable collection elements.
+    /// </summary>
+    /// <param name="sourceType">The collection source type.</param>
+    /// <returns>The custom enum element, or <c>null</c> for other types.</returns>
+    private static INamedTypeSymbol? GetNullableEnumCollectionElement(
+        ITypeSymbol sourceType
+    )
+    {
+        if ((sourceType is IArrayTypeSymbol || TypeAnalyzer.IsCollectionType(sourceType)) &&
+            TypeAnalyzer.GetCollectionElementType(sourceType) is INamedTypeSymbol elementType &&
+            (elementType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T) &&
+            UnwrapNullable(elementType) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
+            !TypeAnalyzer.IsFrameworkType(enumType))
+        {
+            return enumType;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     Selects a materializer compatible with the nullable enum collection.
+    /// </summary>
+    /// <param name="prop">The collection property.</param>
+    /// <returns>The LINQ materializer appended to the converted elements.</returns>
+    private static string GetNullableEnumCollectionMaterializer(
+        PropertyModel prop
+    )
+    {
+        if (prop.SourceTypeSymbol is IArrayTypeSymbol arrayType)
+        {
+            return arrayType.Rank == 1 ? ".ToArray()" : string.Empty;
+        }
+
+        if (prop.SourceTypeSymbol is not INamedTypeSymbol { TypeArguments.Length: 1 } collectionType)
+        {
+            return string.Empty;
+        }
+
+        return (collectionType.ContainingNamespace.ToDisplayString(), collectionType.Name) switch
+        {
+            (SystemCollectionsGenericNamespace, "List" or "IList" or "ICollection" or "IEnumerable" or "IReadOnlyList"
+                or "IReadOnlyCollection") => ".ToList()",
+            (SystemCollectionsGenericNamespace, "HashSet" or "ISet" or "IReadOnlySet") => ".ToHashSet()",
+            (SystemCollectionsImmutableNamespace, "ImmutableArray") => ".ToImmutableArray()",
+            (SystemCollectionsImmutableNamespace, "ImmutableList" or "IImmutableList") => ".ToImmutableList()",
+            (SystemCollectionsImmutableNamespace, "ImmutableHashSet" or "IImmutableSet") => ".ToImmutableHashSet()",
+            (SystemCollectionsImmutableNamespace, "ImmutableSortedSet") => ".ToImmutableSortedSet()",
+            var _ => string.Empty,
+        };
+    }
 
     /// <summary>
     ///     Gets projection information from the compilation, including referenced assemblies.
@@ -882,7 +1053,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             generateAllowAnonymousAttribute,
             false);
         string outputNamespace = DeriveOutputNamespace(targetRootNamespace);
-        return new(model, outputNamespace, authorization, authorization.Diagnostics);
+        return new(model, outputNamespace, authorization, authorization.Diagnostics, typeSymbol);
     }
 
     /// <summary>
@@ -897,6 +1068,52 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         (namedType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
             ? namedType.TypeArguments[0]
             : typeSymbol;
+
+    /// <summary>
+    ///     Reports nullable enum collection shapes that cannot preserve their declared DTO collection type.
+    /// </summary>
+    /// <param name="context">The source production context.</param>
+    /// <param name="projection">The projection and its generated nested records.</param>
+    /// <param name="reportedUnsupportedProperties">Source properties already reported during this output pass.</param>
+    /// <returns>Whether every converted collection has a compatible materializer.</returns>
+    private static bool ValidateNullableEnumCollectionShapes(
+        SourceProductionContext context,
+        ProjectionInfo projection,
+        HashSet<IPropertySymbol> reportedUnsupportedProperties
+    )
+    {
+        IEnumerable<IPropertySymbol> properties = projection.SourceType.GetMembers()
+            .OfType<IPropertySymbol>()
+            .Concat(
+                projection.Model.Properties.SelectMany(prop =>
+                    prop.ElementTypeSymbol is INamedTypeSymbol { TypeKind: not TypeKind.Enum } nestedType
+                        ? nestedType.GetMembers().OfType<IPropertySymbol>()
+                        : Enumerable.Empty<IPropertySymbol>()))
+            .Where(prop => (prop.DeclaredAccessibility == Accessibility.Public) &&
+                           !prop.IsStatic &&
+                           prop.GetMethod is not null)
+            .Distinct(SymbolEqualityComparer.Default)
+            .OfType<IPropertySymbol>();
+        bool valid = true;
+        foreach (IPropertySymbol property in properties.Where(property =>
+                     GetNullableEnumCollectionElement(property.Type) is not null &&
+                     (GetNullableEnumCollectionMaterializer(new(property)).Length == 0)))
+        {
+            if (reportedUnsupportedProperties.Add(property))
+            {
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        GeneratedProjectionDiagnostics.UnsupportedNullableEnumCollection,
+                        property.Locations.FirstOrDefault(location => location.IsInSource) ?? Location.None,
+                        property.Name,
+                        property.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+            }
+
+            valid = false;
+        }
+
+        return valid;
+    }
 
     /// <summary>
     ///     Initializes the generator pipeline.
@@ -928,7 +1145,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             projectionsProvider,
             static (spc, projections) =>
             {
-                HashSet<string> generatedNestedTypes = new();
+                GeneratedDtoNameRegistry generatedNestedTypes = new();
+                HashSet<IPropertySymbol> reportedUnsupportedProperties = new(SymbolEqualityComparer.Default);
                 foreach (ProjectionInfo projection in projections)
                 {
                     foreach (Diagnostic diagnostic in projection.Diagnostics)
@@ -936,7 +1154,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                         spc.ReportDiagnostic(diagnostic);
                     }
 
-                    GenerateCode(spc, projection, generatedNestedTypes);
+                    GenerateCode(spc, projection, generatedNestedTypes, reportedUnsupportedProperties);
                 }
             });
     }
@@ -969,17 +1187,20 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         /// <param name="outputNamespace">The output namespace for generated code.</param>
         /// <param name="authorization">The resolved authorization metadata.</param>
         /// <param name="diagnostics">Diagnostics emitted during projection analysis.</param>
+        /// <param name="sourceType">The projection source symbol.</param>
         public ProjectionInfo(
             ProjectionModel model,
             string outputNamespace,
             GeneratedApiAuthorizationModel authorization,
-            ImmutableArray<Diagnostic> diagnostics
+            ImmutableArray<Diagnostic> diagnostics,
+            INamedTypeSymbol sourceType
         )
         {
             Model = model;
             OutputNamespace = outputNamespace;
             Authorization = authorization;
             Diagnostics = diagnostics;
+            SourceType = sourceType;
         }
 
         public GeneratedApiAuthorizationModel Authorization { get; }
@@ -995,5 +1216,10 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         ///     Gets the output namespace.
         /// </summary>
         public string OutputNamespace { get; }
+
+        /// <summary>
+        ///     Gets the projection source symbol.
+        /// </summary>
+        public INamedTypeSymbol SourceType { get; }
     }
 }

@@ -69,12 +69,17 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         SourceProductionContext context,
         ProjectionInfo projection,
         string targetRootNamespace,
-        HashSet<string> generatedNestedTypes
+        GeneratedDtoNameRegistry generatedNestedTypes
     )
     {
         // Use client namespace convention
         string clientNamespace = NamingConventions.GetClientNamespace(projection.Namespace, targetRootNamespace);
         string dtoName = NamingConventions.GetDtoName(projection.TypeName);
+        if (!generatedNestedTypes.TryRegister(context, clientNamespace, dtoName, projection.SourceType))
+        {
+            return;
+        }
+
         StringBuilder sb = new();
 
         // File header
@@ -82,6 +87,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
         sb.AppendLine("using System;");
+        sb.AppendLine("using System.Collections.Generic;");
         sb.AppendLine("using System.Collections.Immutable;");
         sb.AppendLine();
         sb.AppendLine("using Mississippi.Inlet.Abstractions;");
@@ -114,33 +120,58 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         sb.AppendLine(");");
 
         // Add source
-        context.AddSource($"{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+        context.AddSource($"{clientNamespace}.{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+    }
+
+    /// <summary>
+    ///     Generates dependencies after all projection DTOs have reserved their attributed declarations.
+    /// </summary>
+    /// <param name="context">The source production context.</param>
+    /// <param name="projection">The projection whose dependencies are generated.</param>
+    /// <param name="targetRootNamespace">The target project's root namespace.</param>
+    /// <param name="generatedNestedTypes">The generated declaration registry.</param>
+    private static void GenerateNestedDtosForProjection(
+        SourceProductionContext context,
+        ProjectionInfo projection,
+        string targetRootNamespace,
+        GeneratedDtoNameRegistry generatedNestedTypes
+    )
+    {
+        string clientNamespace = NamingConventions.GetClientNamespace(projection.Namespace, targetRootNamespace);
 
         // Generate enum DTOs for enum properties on the projection
         foreach (EnumDtoInfo enumInfo in GetEnumDtosForProjection(projection)
-                     .Where(enumInfo => !generatedNestedTypes.Contains(enumInfo.DtoName)))
+                     .Where(enumInfo => generatedNestedTypes.TryRegister(
+                         context,
+                         clientNamespace,
+                         enumInfo.DtoName,
+                         enumInfo.EnumType)))
         {
-            generatedNestedTypes.Add(enumInfo.DtoName);
             GenerateNestedEnumDto(context, enumInfo.EnumType, enumInfo.DtoName, clientNamespace);
         }
 
         // Generate DTOs for nested custom types (e.g., collection element types)
-        // Use GroupBy to avoid duplicate generation for the same DTO type name
-        List<PropertyModel> nestedTypeProperties = projection.Model.Properties
-            .Where(prop => prop.ElementTypeSymbol is INamedTypeSymbol &&
-                           prop.ElementDtoTypeName is string elementDtoTypeName &&
-                           !generatedNestedTypes.Contains(elementDtoTypeName))
-            .GroupBy(prop => prop.ElementDtoTypeName)
-            .Select(g => g.First())
+        List<PropertyModel> nestedTypeProperties = projection.Model.Properties.Where(prop =>
+                prop.ElementTypeSymbol is INamedTypeSymbol { TypeKind: not TypeKind.Enum } &&
+                prop.ElementDtoTypeName is not null)
             .ToList();
         foreach (PropertyModel prop in nestedTypeProperties)
         {
-            generatedNestedTypes.Add(prop.ElementDtoTypeName!);
+            if (!generatedNestedTypes.TryRegister(
+                    context,
+                    clientNamespace,
+                    prop.ElementDtoTypeName!,
+                    (INamedTypeSymbol)prop.ElementTypeSymbol!))
+            {
+                continue;
+            }
+
             GenerateNestedTypeDto(
                 context,
                 (INamedTypeSymbol)prop.ElementTypeSymbol!,
                 prop.ElementDtoTypeName!,
-                clientNamespace);
+                clientNamespace,
+                generatedNestedTypes);
         }
     }
 
@@ -187,7 +218,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         sb.AppendLine("}");
 
         // Add source
-        context.AddSource($"{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+        context.AddSource($"{targetNamespace}.{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }
 
     /// <summary>
@@ -197,7 +228,8 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         SourceProductionContext context,
         INamedTypeSymbol sourceType,
         string dtoName,
-        string targetNamespace
+        string targetNamespace,
+        GeneratedDtoNameRegistry generatedNestedTypes
     )
     {
         // If the source is an enum, generate an enum DTO
@@ -214,6 +246,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
         sb.AppendLine("using System;");
+        sb.AppendLine("using System.Collections.Generic;");
         sb.AppendLine("using System.Collections.Immutable;");
         sb.AppendLine();
 
@@ -249,17 +282,19 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         sb.AppendLine(");");
 
         // Add source
-        context.AddSource($"{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+        context.AddSource($"{targetNamespace}.{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
 
         // Check for enum properties that need DTO generation
-        IEnumerable<INamedTypeSymbol> enumTypes = properties.Select(p => p.Type)
-            .Select(UnwrapNullable)
+        IEnumerable<INamedTypeSymbol> enumTypes = properties.Select(p => GetEnumSourceType(p.Type))
             .OfType<INamedTypeSymbol>()
-            .Where(t => t.TypeKind == TypeKind.Enum);
+            .Where(t => (t.TypeKind == TypeKind.Enum) && !TypeAnalyzer.IsFrameworkType(t));
         foreach (INamedTypeSymbol enumType in enumTypes)
         {
-            string enumDtoName = enumType.Name + "Dto";
-            GenerateNestedEnumDto(context, enumType, enumDtoName, targetNamespace);
+            string enumDtoName = TypeAnalyzer.GetDtoTypeName(enumType);
+            if (generatedNestedTypes.TryRegister(context, targetNamespace, enumDtoName, enumType))
+            {
+                GenerateNestedEnumDto(context, enumType, enumDtoName, targetNamespace);
+            }
         }
     }
 
@@ -274,28 +309,45 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         HashSet<string> seen = new(StringComparer.Ordinal);
         foreach (PropertyModel prop in projection.Model.Properties)
         {
-            if (prop.IsEnum && prop.SourceTypeSymbol is INamedTypeSymbol enumType)
+            if (UnwrapNullable(prop.SourceTypeSymbol) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
+                !TypeAnalyzer.IsFrameworkType(enumType))
             {
                 string key = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 if (seen.Add(key))
                 {
-                    enumInfos.Add(new(enumType, prop.DtoTypeName));
+                    enumInfos.Add(new(enumType, TypeAnalyzer.GetDtoTypeName(enumType)));
                 }
             }
 
-            if (prop.ElementIsEnum &&
-                prop.ElementTypeSymbol is INamedTypeSymbol elementEnum &&
-                prop.ElementDtoTypeName is not null)
+            if ((prop.IsCollection || prop.SourceTypeSymbol is IArrayTypeSymbol) &&
+                TypeAnalyzer.GetCollectionElementType(prop.SourceTypeSymbol) is { } elementType &&
+                UnwrapNullable(elementType) is INamedTypeSymbol { TypeKind: TypeKind.Enum } elementEnum &&
+                !TypeAnalyzer.IsFrameworkType(elementEnum))
             {
                 string key = elementEnum.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 if (seen.Add(key))
                 {
-                    enumInfos.Add(new(elementEnum, prop.ElementDtoTypeName));
+                    enumInfos.Add(new(elementEnum, TypeAnalyzer.GetDtoTypeName(elementEnum)));
                 }
             }
         }
 
         return enumInfos;
+    }
+
+    /// <summary>
+    ///     Gets the underlying source type used for enum discovery.
+    /// </summary>
+    /// <param name="sourceType">The property source type.</param>
+    /// <returns>The unwrapped collection element or property type.</returns>
+    private static ITypeSymbol GetEnumSourceType(
+        ITypeSymbol sourceType
+    )
+    {
+        ITypeSymbol enumSource = sourceType is IArrayTypeSymbol || TypeAnalyzer.IsCollectionType(sourceType)
+            ? TypeAnalyzer.GetCollectionElementType(sourceType) ?? sourceType
+            : sourceType;
+        return UnwrapNullable(enumSource);
     }
 
     /// <summary>
@@ -384,7 +436,12 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
 
         // Build projection model
         ProjectionModel model = new(typeSymbol, projectionPath!);
-        return new(typeSymbol.ContainingNamespace.ToDisplayString(), typeSymbol.Name, projectionPath!, model);
+        return new(
+            typeSymbol.ContainingNamespace.ToDisplayString(),
+            typeSymbol.Name,
+            projectionPath!,
+            model,
+            typeSymbol);
     }
 
     /// <summary>
@@ -435,10 +492,15 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
             projectionsProvider,
             static (spc, data) =>
             {
-                HashSet<string> generatedNestedTypes = new();
+                GeneratedDtoNameRegistry generatedNestedTypes = new();
                 foreach (ProjectionInfo projection in data.Projections)
                 {
                     GenerateClientDto(spc, projection, data.TargetRootNamespace, generatedNestedTypes);
+                }
+
+                foreach (ProjectionInfo projection in data.Projections)
+                {
+                    GenerateNestedDtosForProjection(spc, projection, data.TargetRootNamespace, generatedNestedTypes);
                 }
             });
     }
@@ -468,13 +530,15 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
             string @namespace,
             string typeName,
             string path,
-            ProjectionModel model
+            ProjectionModel model,
+            INamedTypeSymbol sourceType
         )
         {
             Namespace = @namespace;
             TypeName = typeName;
             Path = path;
             Model = model;
+            SourceType = sourceType;
         }
 
         public ProjectionModel Model { get; }
@@ -482,6 +546,11 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         public string Namespace { get; }
 
         public string Path { get; }
+
+        /// <summary>
+        ///     Gets the projection source symbol.
+        /// </summary>
+        public INamedTypeSymbol SourceType { get; }
 
         public string TypeName { get; }
     }
