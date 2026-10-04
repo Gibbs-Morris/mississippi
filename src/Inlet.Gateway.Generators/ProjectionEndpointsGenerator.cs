@@ -811,7 +811,12 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
 
         if (prop.RequiresEnumerableMapper)
         {
-            string toCollection = prop.IsImmutableArray ? ".ToImmutableArray()" : ".ToList()";
+            string toCollection = prop.SourceTypeSymbol switch
+            {
+                IArrayTypeSymbol => ".ToArray()",
+                var _ when prop.IsImmutableArray => ".ToImmutableArray()",
+                var _ => ".ToList()",
+            };
             return $"{prop.Name}Mapper.Map(source.{prop.Name}){toCollection}";
         }
 
