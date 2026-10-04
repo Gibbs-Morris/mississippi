@@ -272,9 +272,9 @@ public static class SnapshotStorageProviderRegistrations
         {
             SnapshotStorageOptions o = Options.Value;
 
-            // Acceptable IServiceProvider exception: runtime configuration selects the keyed CosmosClient.
-            // This initializer acts as a startup factory for deferred async resource creation, and replacing it
-            // with a delegate would still wrap the same GetRequiredKeyedService<CosmosClient>(...) call.
+            // Runtime options select the keyed CosmosClient for asynchronous resource creation at hosted startup.
+            // The service-provider dependency is used only for this configured keyed lookup.
+            // A resolver delegate would wrap the same GetRequiredKeyedService<CosmosClient>(...) call.
             CosmosClient cosmosClient = ServiceProvider.GetRequiredKeyedService<CosmosClient>(o.CosmosClientServiceKey);
             DatabaseResponse db = await cosmosClient.CreateDatabaseIfNotExistsAsync(
                 o.DatabaseId,
