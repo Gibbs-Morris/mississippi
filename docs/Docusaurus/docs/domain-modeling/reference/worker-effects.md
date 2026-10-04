@@ -1,4 +1,5 @@
 ---
+id: worker-effects
 title: Worker Event Effects
 description: Reference background effect envelopes, worker routing, supplied state, and failure observation.
 sidebar_position: 5
@@ -6,6 +7,8 @@ sidebar_label: Worker Effects
 ---
 
 # Worker Event Effects
+
+## Overview
 
 Background event effects receive an envelope through an Orleans worker grain. The aggregate dispatches the handoff without waiting for the effect's business operation to finish.
 
@@ -27,7 +30,7 @@ The [sealed record](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Do
 | `EventPosition` | The triggering event's position; defaults to `0` |
 | `EffectTypeName` | CLR effect identity for worker resolution; defaults to an empty string |
 
-The record itself does not validate those values. The [registration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/FireAndForgetEffectRegistration.cs) fills them from its arguments without making a local deep copy of the event or state.
+The record itself does not validate those values. The [registration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/FireAndForgetEffectRegistration.cs) supplies event, state, key, and position from its arguments without making a local deep copy. It derives `EffectTypeName` from `typeof(TEffect).FullName`, falling back to the simple name; callers do not supply that string to `Dispatch`.
 
 ## Aggregate Handoff
 
@@ -37,11 +40,17 @@ It loads the aggregate snapshot at the last known position after awaited effects
 
 The registration routes to a worker keyed by the aggregate type's full CLR name, falling back to its simple name. That routing key is not the entity ID. It discards the task returned by `ExecuteAsync` and supplies the default cancellation token. The [worker contract](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/IFireAndForgetEffectWorkerGrain.cs) marks this call `[OneWay]`.
 
+Orleans [one-way delivery](https://learn.microsoft.com/en-us/dotnet/orleans/grains/oneway) provides no receipt, failure, or completion signal and can lose a message before the worker receives it. [Stateless workers](https://learn.microsoft.com/en-us/dotnet/orleans/grains/stateless-worker-grains) can have several activations, so the routing key does not guarantee execution or completion order for one entity.
+
+A committed append can fail cursor publication before this handoff, and loading the post-event snapshot can fail or be canceled after commitment. Those paths can leave committed events without worker dispatch; the built-in handoff does not automatically replay them. See [Brook Append Outcomes](../../reference/brook-append-outcomes.md).
+
 The [registration tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.Runtime.L0Tests/FireAndForgetEffectRegistrationTests.cs) verify the routing key, envelope arguments, default token, and omission of unmatched event types.
 
 ## Worker Resolution And Failures
 
 The [stateless worker](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/FireAndForgetEffectWorkerGrain.cs) resolves registered `IFireAndForgetEventEffect<TEvent, TAggregate>` implementations and selects the first whose CLR `FullName` exactly matches `EffectTypeName`.
+
+Renaming an effect or moving it to another namespace changes this identity. During a rolling upgrade, an envelope with an old name can reach a worker that logs a missing effect and returns. Orleans serialization aliases do not translate this application-level string.
 
 A missing implementation, null event, or null aggregate state is logged and recorded as a failure metric, then execution returns. Ordinary exceptions from resolution or handling, including cancellation exceptions, are logged and swallowed by the worker. `OutOfMemoryException`, `StackOverflowException`, and `ThreadInterruptedException` propagate. A null envelope is rejected before that protected handling block.
 
