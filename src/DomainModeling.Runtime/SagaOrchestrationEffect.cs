@@ -98,7 +98,8 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
                 currentState,
                 compensated.StepIndex,
                 cancellationToken),
-            SagaResumeRequested => ExecuteResumeAsync(currentState, cancellationToken),
+            SagaResumeRequested resume when resume.SagaId != Guid.Empty && resume.SagaId == currentState.SagaId =>
+                ExecuteResumeAsync(currentState, cancellationToken),
             var _ => AsyncEnumerable.Empty<object>(),
         };
     }

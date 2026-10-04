@@ -34,11 +34,25 @@ public sealed class ContinueSagaCommandHandler<TSaga> : CommandHandlerBase<Conti
     )
     {
         ArgumentNullException.ThrowIfNull(command);
+        if (command.SagaId == Guid.Empty)
+        {
+            return OperationResult.Fail<IReadOnlyList<object>>(
+                AggregateErrorCodes.InvalidCommand,
+                "Saga identifier must not be empty.");
+        }
+
         if (state is null || (state.Phase == SagaPhase.NotStarted))
         {
             return OperationResult.Fail<IReadOnlyList<object>>(
                 AggregateErrorCodes.InvalidState,
                 $"Saga '{typeof(TSaga).Name}' has not started.");
+        }
+
+        if (state.SagaId != command.SagaId)
+        {
+            return OperationResult.Fail<IReadOnlyList<object>>(
+                AggregateErrorCodes.InvalidState,
+                "The resume command does not identify the current saga instance.");
         }
 
         if (state.Phase == SagaPhase.Failed)
@@ -53,6 +67,13 @@ public sealed class ContinueSagaCommandHandler<TSaga> : CommandHandlerBase<Conti
             return OperationResult.Fail<IReadOnlyList<object>>(
                 AggregateErrorCodes.InvalidState,
                 "A compensating saga cannot continue without a durable compensation cursor.");
+        }
+
+        if (state.Phase != SagaPhase.Running)
+        {
+            return OperationResult.Fail<IReadOnlyList<object>>(
+                AggregateErrorCodes.InvalidState,
+                "Only a running saga can continue.");
         }
 
         SagaResumeRequested resumeRequested = new()

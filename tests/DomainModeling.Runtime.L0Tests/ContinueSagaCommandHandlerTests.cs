@@ -99,4 +99,82 @@ public sealed class ContinueSagaCommandHandlerTests
         Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
         Assert.Null(result.Value);
     }
+    /// <summary>
+    ///     Verifies input validation takes precedence over unavailable saga state.
+    /// </summary>
+    [Fact]
+    public void HandleRejectsEmptySagaIdentifierBeforeStateValidation()
+    {
+        ContinueSagaCommandHandler<TestSagaState> handler = new(new FakeTimeProvider());
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(new ContinueSagaCommand
+        {
+            SagaId = Guid.Empty,
+        }, null);
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
+        Assert.Null(result.Value);
+    }
+
+    /// <summary>
+    ///     Verifies a command for another saga is rejected before an event is emitted.
+    /// </summary>
+    [Fact]
+    public void HandleRejectsMismatchedSagaIdentifier()
+    {
+        ContinueSagaCommandHandler<TestSagaState> handler = new(new FakeTimeProvider());
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(new ContinueSagaCommand
+        {
+            SagaId = Guid.NewGuid(),
+        }, new TestSagaState
+        {
+            SagaId = Guid.NewGuid(),
+            Phase = SagaPhase.Running,
+        });
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
+        Assert.Null(result.Value);
+    }
+
+    /// <summary>
+    ///     Verifies only running saga states accept manual continuation.
+    /// </summary>
+    /// <param name="phase">The state that must reject continuation.</param>
+    [Theory]
+    [InlineData(SagaPhase.NotStarted)]
+    [InlineData(SagaPhase.Completed)]
+    [InlineData(SagaPhase.Compensated)]
+    [InlineData((SagaPhase)99)]
+    public void HandleRejectsNonRunningSagaPhase(SagaPhase phase)
+    {
+        ContinueSagaCommandHandler<TestSagaState> handler = new(new FakeTimeProvider());
+        Guid sagaId = Guid.NewGuid();
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(new ContinueSagaCommand
+        {
+            SagaId = sagaId,
+        }, new TestSagaState
+        {
+            SagaId = sagaId,
+            Phase = phase,
+        });
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
+        Assert.Null(result.Value);
+    }
+
+    /// <summary>
+    ///     Verifies null time providers are rejected at construction.
+    /// </summary>
+    [Fact]
+    public void ConstructorRejectsNullTimeProvider() =>
+        Assert.Throws<ArgumentNullException>(() => new ContinueSagaCommandHandler<TestSagaState>(null!));
+
+    /// <summary>
+    ///     Verifies null commands are rejected.
+    /// </summary>
+    [Fact]
+    public void HandleRejectsNullCommand()
+    {
+        ContinueSagaCommandHandler<TestSagaState> handler = new(new FakeTimeProvider());
+        Assert.Throws<ArgumentNullException>(() => handler.Handle(null!, null));
+    }
 }

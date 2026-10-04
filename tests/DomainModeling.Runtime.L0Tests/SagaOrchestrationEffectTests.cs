@@ -513,6 +513,7 @@ public sealed class SagaOrchestrationEffectTests
         SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider, timeProvider);
         TestSagaState state = new()
         {
+            SagaId = Guid.NewGuid(),
             Phase = SagaPhase.Running,
             LastCompletedStepIndex = 0,
         };
@@ -520,7 +521,7 @@ public sealed class SagaOrchestrationEffectTests
             effect.HandleAsync(
                 new SagaResumeRequested
                 {
-                    SagaId = Guid.NewGuid(),
+                    SagaId = state.SagaId,
                     RequestedAt = now,
                 },
                 state,
@@ -787,4 +788,26 @@ public sealed class SagaOrchestrationEffectTests
         Assert.Empty(events);
     }
 
+    /// <summary>
+    ///     Verifies a resume request for another saga cannot invoke the current saga step.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Fact]
+    public async Task HandleAsyncIgnoresResumeForAnotherSaga()
+    {
+        SagaStepInfo[] steps = [new(0, "Debit", typeof(SagaSuccessStep), false)];
+        using ServiceProvider provider = CreateProvider();
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider);
+        TestSagaState state = new()
+        {
+            SagaId = Guid.NewGuid(),
+            Phase = SagaPhase.Running,
+        };
+        List<object> events = await CollectAsync(effect.HandleAsync(new SagaResumeRequested
+        {
+            SagaId = Guid.NewGuid(),
+            RequestedAt = new(2026, 10, 4, 0, 0, 0, TimeSpan.Zero),
+        }, state, "saga", 0, TestContext.Current.CancellationToken));
+        Assert.Empty(events);
+    }
 }
