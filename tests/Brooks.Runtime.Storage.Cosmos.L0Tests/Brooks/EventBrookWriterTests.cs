@@ -231,7 +231,6 @@ public sealed class EventBrookWriterTests
                 cursor.Value + 3,
                 It.IsAny<CancellationToken>()))
             .Returns(Task.FromException(new InvalidOperationException("batch failure")));
-
         Mock<ILogger<EventBrookWriter>> logger = new();
         EventBrookWriter sut = new(
             repository.Object,
@@ -252,7 +251,9 @@ public sealed class EventBrookWriterTests
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await sut.AppendEventsAsync(brook, allEvents, null, TestContext.Current.CancellationToken));
         repository.Verify(r => r.DeleteEventAsync(brook, It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
-        repository.Verify(r => r.DeletePendingCursorAsync(brook, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        repository.Verify(
+            r => r.DeletePendingCursorAsync(brook, It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
         repository.VerifyAll();
         sizeEstimator.VerifyAll();
         mapper.VerifyAll();

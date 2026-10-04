@@ -330,7 +330,16 @@ internal sealed class EventBrookWriter : IEventBrookWriter
             throw;
         }
 
-        await Repository.CommitCursorPositionAsync(brookId, finalPosition, pendingETag, cancellationToken);
+        try
+        {
+            await Repository.CommitCursorPositionAsync(brookId, finalPosition, pendingETag, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            Logger.CursorCommitFailed(exception, brookId, finalPosition);
+            throw;
+        }
+
         LogSingleBatchCommitted(Logger, brookId, finalPosition, 200, 0, null);
         return new(finalPosition);
     }
