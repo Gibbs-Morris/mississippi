@@ -38,7 +38,16 @@ public sealed partial class KitchenSinkPage
     ) =>
         Dispatch(new ChangeThemeAction(mode));
 
+    private void DismissNotification() => Dispatch(new DismissNotificationAction());
+
+    private void ExpandNotification(
+        MouseEventArgs mouseEventArgs
+    ) =>
+        Dispatch(new ExpandNotificationAction());
+
     private void ResetProfile() => Dispatch(new ResetProfileAction());
+
+    private void RestoreNotification() => Dispatch(new RestoreNotificationAction());
 
     private void ValidateProfile() => Dispatch(new ValidateProfileAction());
 }

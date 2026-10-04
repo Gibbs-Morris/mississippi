@@ -50,6 +50,8 @@ Execute the approved implementation plan with test-driven development: red, gree
 - Keep output shape deterministic: update build-log entries in chronological order with stable command-result fields.
 - Model preference is `GPT-5.4 (copilot)` with `GPT-5 (copilot)` fallback; record actual runtime model if visible to the orchestrator.
 
+Styling work follows the [CSS and design-token authoring standard](../instructions/css-design-tokens.instructions.md).
+
 ## Workflow responsibilities
 
 1. Read the implementation and test plans before editing.
