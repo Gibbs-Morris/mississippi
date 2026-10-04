@@ -1,0 +1,58 @@
+/* Temporary spacing references: #405 spring-transfer-token-migration exclusion.
+ * Scope, owner and removal conditions: https://github.com/Gibbs-Morris/mississippi/issues/405#issuecomment-5964011855
+ */
+.spring-transfer__content {
+    display: grid;
+    gap: var(--rf-raw-space-4);
+    min-width: 0;
+}
+
+.spring-transfer__form {
+    display: grid;
+    gap: var(--rf-raw-space-4);
+    min-width: 0;
+    margin: 0;
+}
+
+.spring-transfer__field {
+    display: grid;
+    gap: var(--rf-raw-space-2);
+    min-width: 0;
+}
+
+/* These selectors cross isolation only to the Spring-marked TelemetryStrip public root.
+ * Wrapping and accents preserve its base classes and do not target private elements.
+ * Review when the component provides supported layout or accent parameters.
+ */
+.spring-transfer__content ::deep [data-spring-transfer-status="true"] {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    min-width: 0;
+    border-inline-start: 0.25rem solid var(--rf-color-text-accent);
+    overflow-wrap: anywhere;
+}
+
+.spring-transfer__status-details {
+    display: grid;
+    flex: 1 1 100%;
+    gap: var(--rf-raw-space-2);
+    min-width: 0;
+}
+
+.spring-transfer__content ::deep [data-spring-transfer-status="true"][data-state="complete"] {
+    border-inline-start-color: var(--rf-color-status-success);
+}
+
+.spring-transfer__content ::deep [data-spring-transfer-status="true"][data-state="alert"] {
+    border-inline-start-color: var(--rf-color-status-warning);
+}
+
+.spring-transfer__content ::deep [data-spring-transfer-status="true"][data-state="error"] {
+    border-inline-start-color: var(--rf-color-status-error);
+}
+
+@media (max-width: 600px) {
+    .spring-transfer__form button {
+        width: 100%;
+    }
+}

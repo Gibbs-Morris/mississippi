@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 
 using Mississippi.Brooks.Abstractions;
 using Mississippi.Brooks.Abstractions.Cursor;
+using Mississippi.Brooks.Abstractions.Reader;
 using Mississippi.Brooks.Abstractions.Writer;
 using Mississippi.Brooks.Runtime.L0Tests.Infrastructure;
 using Mississippi.Brooks.Runtime.Reader;
@@ -84,5 +86,48 @@ public sealed class BrookSliceReaderGrainTests
         IBrookSliceReaderGrain slice = cluster.GrainFactory.GetGrain<IBrookSliceReaderGrain>(sliceKey);
         ImmutableArray<BrookEvent> got = await slice.ReadBatchAsync(1, 3, TestContext.Current.CancellationToken);
         Assert.Equal(["1", "2", "3"], got.Select(e => e.Id).ToArray());
+    }
+
+    /// <summary>
+    ///     Verifies the public reader can retry the same explicit range after missing events are appended.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task ReadEventsBatchAsyncRecoversSameRangeAfterAppend()
+    {
+        BrookKey key = new("t", $"slice-recovery-{Guid.NewGuid():N}");
+        IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
+        await writer.AppendEventsAsync(
+            [
+                new()
+                {
+                    Id = "0",
+                },
+                new()
+                {
+                    Id = "1",
+                },
+            ],
+            cancellationToken: TestContext.Current.CancellationToken);
+        IBrookReaderGrain reader = cluster.GrainFactory.GetGrain<IBrookReaderGrain>(key);
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            reader.ReadEventsBatchAsync(0, 2, TestContext.Current.CancellationToken));
+        await writer.AppendEventsAsync(
+            [
+                new()
+                {
+                    Id = "2",
+                },
+            ],
+            cancellationToken: TestContext.Current.CancellationToken);
+        ImmutableArray<BrookEvent> recovered = await reader.ReadEventsBatchAsync(
+            0,
+            2,
+            TestContext.Current.CancellationToken);
+        IBrookSliceReaderGrain sameSlice = cluster.GrainFactory.GetGrain<IBrookSliceReaderGrain>(
+            BrookRangeKey.FromBrookCompositeKey(key, 0, 3));
+        ImmutableArray<BrookEvent> cached = await sameSlice.ReadBatchAsync(0, 2, TestContext.Current.CancellationToken);
+        Assert.Equal(["0", "1", "2"], recovered.Select(e => e.Id).ToArray());
+        Assert.Equal(recovered, cached);
     }
 }

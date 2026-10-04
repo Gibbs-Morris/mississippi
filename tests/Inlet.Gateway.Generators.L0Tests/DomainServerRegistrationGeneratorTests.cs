@@ -168,7 +168,7 @@ public sealed class DomainServerRegistrationGeneratorTests
             .First(tree => tree.FilePath.Contains("DomainServerRegistrations", StringComparison.Ordinal))
             .GetText(TestContext.Current.CancellationToken)
             .ToString();
-        Assert.Contains("Controllers.Aggregates.Mappers;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("Controllers.Aggregates.Commands.Order.Mappers;", generatedCode, StringComparison.Ordinal);
         Assert.DoesNotContain("Controllers.Projections.Mappers;", generatedCode, StringComparison.Ordinal);
     }
 

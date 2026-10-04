@@ -90,7 +90,9 @@ public sealed class CommandClientDtoGenerator : IIncrementalGenerator
         sb.AppendLine($"internal sealed record {command.RequestDtoTypeName}({parameters});");
 
         // Add source
-        context.AddSource($"{command.RequestDtoTypeName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+        context.AddSource(
+            $"{command.OutputNamespace}.{command.RequestDtoTypeName}.g.cs",
+            SourceText.From(sb.ToString(), Encoding.UTF8));
     }
 
     /// <summary>
