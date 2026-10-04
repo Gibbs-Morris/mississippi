@@ -43,5 +43,6 @@ Use this page as the current active reference for what Brooks owns and which pac
 ## Next Steps
 
 - Use [Brooks Reader Options](./reader-options.md) for read-slice sizing and validation.
+- Use [Brooks Range Keys](./range-keys.md) for range encoding, counts, and inclusive endpoints.
 - Read [Brooks Concepts](../concepts/concepts.md).
 - Use [Brooks Operations](../operations/operations.md) for the current operational scope.
