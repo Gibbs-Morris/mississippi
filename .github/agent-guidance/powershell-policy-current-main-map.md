@@ -12,7 +12,7 @@ including for PowerShell content outside `eng/`; skill activation is not needed.
 | Rule 2: explicit process exit | `eng/AGENTS.md` PS2, PS2.2 | Every matching script; no implicit success |
 | Rule 3: no hidden global state or swallowed helper errors | `eng/AGENTS.md` PS3, PS3.2 | Scripts and modules |
 | Rule 4: typed, validated parameters and shared helpers | `eng/AGENTS.md` PS4, PS4.2 | Recommendation for PowerShell automation |
-| Rule 5: cross-platform paths and structured output | `eng/AGENTS.md` PS5, PS5.2 | Recommendation for portable scripts and consumers |
+| Rule 5: cross-platform paths and structured output | `eng/AGENTS.md` PS5, PS5.2 | Recommend portable cmdlets; return structured data when automation consumes results |
 | Quick start: template, input checks, module scope, test runner | `eng/AGENTS.md` PS6 | Workflow remains executable on current main |
 
 The test command is the current `eng/tests/orchestrate-powershell-tests.ps1`.

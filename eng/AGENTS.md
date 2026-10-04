@@ -23,7 +23,7 @@ Scope: All **/*.ps* paths and PowerShell scripts/modules/examples authored, revi
 - PS4: Parameters/outputs **SHOULD** be typed/validated.
 - PS4.2: RepositoryAutomation.psm1 helpers **SHOULD** replace duplicate logic.
 - PS5: Cross-platform Join-Path/Resolve-Path/Test-Path **SHOULD** be used.
-- PS5.2: Structured data **SHOULD** serve automation.
+- PS5.2: Structured data **SHOULD** be returned when automation consumes results.
 - PS6: Retained template: shebang → CmdletBinding+param → strict mode → shared-helper imports → try/catch+explicit exit; validate inputs, avoid implicit output, keep module scope clean. Validate changes with `pwsh ./eng/tests/orchestrate-powershell-tests.ps1`; this check is separate from go.ps1.
 
 ## References
