@@ -1,4 +1,5 @@
 ---
+id: event-envelope
 title: Brooks Event Envelope
 description: Reference persisted event fields, default metadata, payload bytes, and downstream validation boundaries.
 sidebar_position: 6
@@ -6,6 +7,8 @@ sidebar_label: Event Envelope
 ---
 
 # Brooks Event Envelope
+
+## Overview
 
 `BrookEvent` carries serialized event bytes and their metadata across the Brooks read/write boundary. It is a sealed record with init-only properties.
 
