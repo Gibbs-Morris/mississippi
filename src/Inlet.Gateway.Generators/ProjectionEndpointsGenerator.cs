@@ -576,7 +576,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendSummary($"Response DTO for {sourceType.Name}.");
         sb.AppendGeneratedCodeAttribute(GeneratorName);
-        sb.AppendLine($"public enum {dtoName}");
+        string underlyingType = sourceType.EnumUnderlyingType!.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+        sb.AppendLine($"public enum {dtoName} : {underlyingType}");
         sb.OpenBrace();
         IEnumerable<IFieldSymbol> enumMembers = sourceType.GetMembers()
             .OfType<IFieldSymbol>()

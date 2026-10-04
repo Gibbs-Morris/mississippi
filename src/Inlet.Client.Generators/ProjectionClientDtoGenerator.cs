@@ -197,7 +197,8 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         sb.AppendLine(
             $"///     Client-side DTO for <see cref=\"{sourceType.ContainingNamespace}.{sourceType.Name}\"/>.");
         sb.AppendLine("/// </summary>");
-        sb.AppendLine($"public enum {dtoName}");
+        string underlyingType = sourceType.EnumUnderlyingType!.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+        sb.AppendLine($"public enum {dtoName} : {underlyingType}");
         sb.AppendLine("{");
 
         // Generate enum members
