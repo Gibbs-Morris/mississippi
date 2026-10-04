@@ -5,6 +5,7 @@ using System.Reflection;
 
 using Mississippi.Brooks.Abstractions.Attributes;
 using Mississippi.DomainModeling.Abstractions;
+using Mississippi.Tributary.Abstractions.Attributes;
 
 
 namespace Mississippi.DomainModeling.Runtime;
@@ -41,6 +42,7 @@ internal sealed class SnapshotTypeRegistry : ISnapshotTypeRegistry
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(snapshotName);
         ArgumentNullException.ThrowIfNull(snapshotType);
+        _ = snapshotType.GetCustomAttribute<SnapshotRetentionAttribute>(false);
 
         // Use TryAdd to avoid overwriting - first registration wins
         if (nameToType.TryAdd(snapshotName, snapshotType))

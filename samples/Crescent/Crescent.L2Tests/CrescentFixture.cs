@@ -6,7 +6,9 @@ using Mississippi.Brooks.Runtime.Storage.Cosmos;
 using Mississippi.Brooks.Serialization.Json;
 using Mississippi.DomainModeling.Abstractions;
 using Mississippi.Hosting.Runtime;
+using Mississippi.Tributary.Abstractions;
 using Mississippi.Tributary.Runtime;
+using Mississippi.Tributary.Runtime.Storage.Abstractions;
 using Mississippi.Tributary.Runtime.Storage.Cosmos;
 
 using Orleans;
@@ -89,6 +91,34 @@ public sealed class CrescentFixture
     /// </summary>
     public IUxProjectionGrainFactory UxProjectionGrainFactory =>
         orleansHost?.Services.GetRequiredService<IUxProjectionGrainFactory>() ??
+        throw new InvalidOperationException("Orleans host not initialized.");
+
+    /// <summary>
+    ///     Gets the root reducer used to compute the counter aggregate's reducer hash.
+    /// </summary>
+    internal IRootReducer<CounterAggregate> CounterRootReducer =>
+        orleansHost?.Services.GetRequiredService<IRootReducer<CounterAggregate>>() ??
+        throw new InvalidOperationException("Orleans host not initialized.");
+
+    /// <summary>
+    ///     Gets the converter used to deserialize counter aggregate snapshots.
+    /// </summary>
+    internal ISnapshotStateConverter<CounterAggregate> CounterSnapshotStateConverter =>
+        orleansHost?.Services.GetRequiredService<ISnapshotStateConverter<CounterAggregate>>() ??
+        throw new InvalidOperationException("Orleans host not initialized.");
+
+    /// <summary>
+    ///     Gets the storage reader for the configured Cosmos snapshot provider.
+    /// </summary>
+    internal ISnapshotStorageReader SnapshotStorageReader =>
+        orleansHost?.Services.GetRequiredService<ISnapshotStorageReader>() ??
+        throw new InvalidOperationException("Orleans host not initialized.");
+
+    /// <summary>
+    ///     Gets the storage writer for the configured Cosmos snapshot provider.
+    /// </summary>
+    internal ISnapshotStorageWriter SnapshotStorageWriter =>
+        orleansHost?.Services.GetRequiredService<ISnapshotStorageWriter>() ??
         throw new InvalidOperationException("Orleans host not initialized.");
 
     private static IHost BuildOrleansHost(
@@ -464,6 +494,38 @@ public sealed class CrescentFixture
             IsInitialized = false;
 
             // Re-throw to fail the test fixture, but keep the error captured for diagnostics
+            throw;
+        }
+    }
+
+    /// <summary>
+    ///     Restarts the Orleans host while leaving the Aspire-owned Cosmos and Azure Storage resources running.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation token to cancel the restart.</param>
+    /// <returns>A task representing the asynchronous restart operation.</returns>
+    internal async Task RestartOrleansHostAsync(
+        CancellationToken cancellationToken
+    )
+    {
+        EnsureInitialized();
+        IHost currentHost = orleansHost ?? throw new InvalidOperationException("Orleans host not initialized.");
+        orleansHost = null;
+        IsInitialized = false;
+        using (currentHost)
+        {
+            await currentHost.StopAsync(cancellationToken);
+        }
+
+        IHost restartedHost = BuildOrleansHost(CosmosConnectionString, BlobConnectionString);
+        try
+        {
+            await restartedHost.StartAsync(cancellationToken);
+            orleansHost = restartedHost;
+            IsInitialized = true;
+        }
+        catch
+        {
+            restartedHost.Dispose();
             throw;
         }
     }

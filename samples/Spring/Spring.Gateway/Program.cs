@@ -16,7 +16,9 @@ using Mississippi.Inlet.Runtime;
 
 using MississippiSamples.Spring.Domain.Projections.BankAccountBalance;
 using MississippiSamples.Spring.Gateway;
-using MississippiSamples.Spring.Gateway.Controllers.Aggregates.Mappers;
+using MississippiSamples.Spring.Gateway.Controllers.Aggregates.Commands.AuthProof.Mappers;
+using MississippiSamples.Spring.Gateway.Controllers.Aggregates.Commands.BankAccount.Mappers;
+using MississippiSamples.Spring.Gateway.Controllers.Aggregates.Commands.MoneyTransferSaga.Mappers;
 using MississippiSamples.Spring.Gateway.Controllers.Projections.Mappers;
 using MississippiSamples.Spring.Gateway.McpTools;
 

@@ -30,5 +30,6 @@ public sealed class BankAccountPageHeaderTests : BunitContext
         Assert.True(toggled);
         Assert.True(navigated);
         Assert.True(cut.Find("header button").HasAttribute("aria-expanded"));
+        Assert.Equal("Account actions", cut.Find("nav").GetAttribute("aria-label"));
     }
 }

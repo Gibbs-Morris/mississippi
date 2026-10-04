@@ -1,4 +1,8 @@
+using System.IO;
+
 using MississippiSamples.Spring.L3Tests.Pages;
+
+using static Microsoft.Playwright.Assertions;
 
 
 namespace MississippiSamples.Spring.L3Tests.Smoke;
@@ -17,6 +21,102 @@ public sealed class BankAccountSmokeTests
         Fixture = fixture;
 
     private SpringBrowserFixture Fixture { get; }
+
+    private static async Task SaveShellEvidenceAsync(
+        IPage page
+    )
+    {
+        string? directory = Environment.GetEnvironmentVariable("SPRING_TEST_ARTIFACTS");
+
+        async Task SaveScreenshotAsync(
+            string fileName
+        )
+        {
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                await page.ScreenshotAsync(
+                    new()
+                    {
+                        Path = Path.Join(directory, fileName),
+                        FullPage = true,
+                    });
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        await page.SetViewportSizeAsync(1440, 900);
+        await SaveScreenshotAsync("shell-dark-desktop.png");
+        await SaveScreenshotAsync("account-operations-dark-desktop.png");
+        await Expect(
+                page.GetByLabel(
+                    "Account A deposit amount (£)",
+                    new()
+                    {
+                        Exact = true,
+                    }))
+            .ToHaveAttributeAsync("id", "account-a-deposit-amount-input");
+        await Expect(
+                page.GetByLabel(
+                    "Account B deposit amount (£)",
+                    new()
+                    {
+                        Exact = true,
+                    }))
+            .ToHaveAttributeAsync("id", "account-b-deposit-amount-input");
+        await page.SetViewportSizeAsync(390, 844);
+        await SaveScreenshotAsync("account-operations-dark-mobile.png");
+        bool hasNoHorizontalOverflow = await page.EvaluateAsync<bool>(
+            "document.documentElement.scrollWidth <= document.documentElement.clientWidth");
+        string mobileOverflowEvidence = await page.EvaluateAsync<string>(
+            "() => JSON.stringify({clientWidth: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth, offenders: Array.from(document.querySelectorAll('body *')).filter(element => { const rect = element.getBoundingClientRect(); return rect.left < -1 || rect.right > document.documentElement.clientWidth + 1; }).slice(0, 8).map(element => { const rect = element.getBoundingClientRect(); return {tag: element.tagName, id: element.id, className: element.getAttribute('class'), left: rect.left, right: rect.right}; })})");
+        Assert.True(
+            hasNoHorizontalOverflow,
+            $"the mobile operations page should not overflow horizontally: {mobileOverflowEvidence}");
+        await page.SetViewportSizeAsync(1440, 900);
+        await Expect(page.Locator("html")).ToHaveAttributeAsync("data-rf-theme", "dark");
+        ILocator lightThemeButton = page.GetByRole(
+            AriaRole.Button,
+            new()
+            {
+                Name = "Light",
+                Exact = true,
+            });
+        await lightThemeButton.ClickAsync();
+        await Expect(page.Locator(".spring-theme[data-rf-theme]")).ToHaveAttributeAsync("data-rf-theme", "light");
+        await Expect(page.Locator("html")).ToHaveAttributeAsync("data-rf-theme", "light");
+        await SaveScreenshotAsync("shell-light-desktop.png");
+        ILocator highContrastThemeButton = page.GetByRole(
+            AriaRole.Button,
+            new()
+            {
+                Name = "High contrast",
+                Exact = true,
+            });
+        await highContrastThemeButton.ClickAsync();
+        await Expect(page.Locator(".spring-theme[data-rf-theme]"))
+            .ToHaveAttributeAsync("data-rf-theme", "high-contrast");
+        await Expect(page.Locator("html")).ToHaveAttributeAsync("data-rf-theme", "high-contrast");
+        await page.SetViewportSizeAsync(390, 844);
+        bool hasNoHighContrastHorizontalOverflow = await page.EvaluateAsync<bool>(
+            "document.documentElement.scrollWidth <= document.documentElement.clientWidth");
+        Assert.True(hasNoHighContrastHorizontalOverflow, "the mobile operations page should not overflow horizontally");
+        await SaveScreenshotAsync("shell-high-contrast-mobile.png");
+        await page.GetByRole(
+                AriaRole.Link,
+                new()
+                {
+                    Name = "Skip to content",
+                    Exact = true,
+                })
+            .PressAsync("Enter");
+        Assert.Contains("/operations", page.Url, StringComparison.Ordinal);
+        Assert.Equal("main-content", await page.EvaluateAsync<string>("document.activeElement?.id ?? ''"));
+        await page.SetViewportSizeAsync(1440, 900);
+    }
 
     /// <summary>
     ///     Verifies the complete bank account flow via UI: open, deposit, withdraw,
@@ -42,9 +142,13 @@ public sealed class BankAccountSmokeTests
 
             // Demo accounts are pre-opened with £500 each
             OperationsPage operationsPage = await BankAccountScenario.PrepareAsync(Fixture, page, ProjectionTimeout);
-            bool hasStyles = await page.Locator("link[rel='stylesheet']")
+            bool hasRefractionTokens = await page.Locator("link[href*='RefractionTokens.css']")
                 .EvaluateAsync<bool>("link => link.sheet !== null && link.sheet.cssRules.length > 0");
-            Assert.True(hasStyles, "the generated CSS isolation bundle must load successfully");
+            bool hasScopedStyles = await page.Locator("link[href$='.styles.css']")
+                .EvaluateAsync<bool>("link => link.sheet !== null && link.sheet.cssRules.length > 0");
+            Assert.True(hasRefractionTokens, "the Refraction token stylesheet must load successfully");
+            Assert.True(hasScopedStyles, "the generated CSS isolation bundle must load successfully");
+            await SaveShellEvidenceAsync(page);
 
             // Wait for projection to show the balance via SignalR
             await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
