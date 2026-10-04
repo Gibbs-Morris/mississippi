@@ -1,10 +1,14 @@
 ---
+id: projection-cursors
 title: Projection Cursors
 description: Reference shared brook/entity cursor identity, cached progress, and notification filtering.
 sidebar_position: 9
+sidebar_label: Projection Cursors
 ---
 
 # Projection Cursors
+
+## Overview
 
 `IUxProjectionCursorGrain` exposes the latest brook position known to its activation. Projection readers use that cached position to select a version to read; the cursor itself does not build projection state.
 
@@ -18,7 +22,7 @@ sidebar_position: 9
 
 The [cursor key](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/UxProjectionCursorKey.cs) contains `BrookName` and `EntityId`, encoded as `brookName|entityId`. It contains no projection CLR type or version.
 
-Both components must be non-null, nonempty, non-whitespace, and pipe-free. The combined name, separator, and entity ID may contain at most 4192 UTF-16 code units. `Parse` requires exactly two parts and reuses constructor validation; `TryParse` returns false with a default output for invalid input. `FromBrookKey` and `ToBrookKey` preserve the two components.
+Successful constructor and `Parse` results have non-null, nonempty, non-whitespace, pipe-free components. The combined name, separator, and entity ID may contain at most 4192 UTF-16 code units. `Parse` requires exactly two parts and reuses constructor validation; `TryParse` returns false with a default output for invalid input. The default struct bypasses validation and has null components. `FromBrookKey` and `ToBrookKey` preserve the two supplied components through constructor validation.
 
 The [factory](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionGrainFactory.cs) derives the brook name from `TProjection` for its typed convenience overload, then resolves the non-generic cursor grain by that key. Projection types consuming the same brook for the same entity therefore share this cursor identity.
 
