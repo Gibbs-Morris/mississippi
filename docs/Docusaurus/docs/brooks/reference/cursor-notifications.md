@@ -1,4 +1,5 @@
 ---
+id: cursor-notifications
 title: Brooks Cursor Notifications
 description: Reference cursor-movement payloads, position filtering, sequence tokens, and client-delivery boundaries.
 sidebar_position: 7
@@ -7,16 +8,18 @@ sidebar_label: Cursor Notifications
 
 # Brooks Cursor Notifications
 
+## Overview
+
 `BrookCursorMovedEvent` tells stream observers that a brook cursor has moved. It carries a stream identity and position; it does not contain event payload bytes.
 
 ## Applies To
 
 - `Mississippi.Brooks.Abstractions.Streaming.BrookCursorMovedEvent`
-- The built-in Brooks cursor observer and Inlet projection-subscription observer
+- The built-in Brooks cursor, UX projection cursor, and Inlet projection-subscription observers
 
 ## Payload
 
-The [sealed positional record](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Abstractions/Streaming/BrookCursorMovedEvent.cs) has two fields:
+The [sealed positional record](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Abstractions/Streaming/BrookCursorMovedEvent.cs) has two properties:
 
 | Property | Meaning |
 |----------|---------|
@@ -37,11 +40,17 @@ The [Brooks cursor grain](https://github.com/Gibbs-Morris/mississippi/blob/main/
 
 The [cursor unit tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Brooks.Runtime.L0Tests/Cursor/BrookCursorGrainUnitTests.cs) verify that a tokenless delivery does not clear an established sequence watermark.
 
-The [Inlet subscription grain](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Runtime/Grains/InletSubscriptionGrain.cs) uses the payload's exact key string to find interested subscriptions. It ignores unknown brooks and positions at or below the recorded value. Its sequence-token parameter is unused. For a newer position, it sends each interested client the projection path, entity ID, and version, as covered by the [existing subscription tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Runtime.L0Tests/InletSubscriptionSetupTests.cs).
+The [UX projection cursor](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionCursorGrain.cs) applies the same token and increasing-position filters. Both cursor implementations keep the sequence watermark only in their current activation. Reactivation reloads the position from storage and starts without a recorded token.
+
+The [Inlet subscription grain](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Runtime/Grains/InletSubscriptionGrain.cs) uses the payload's exact key string to find interested subscriptions. On the first subscription to a brook, it initializes the position from `ReadCursorPositionAsync` without notifying that initial version. It ignores unknown brooks and positions at or below the recorded value; its sequence-token parameter is unused.
+
+For a newer position, the implementation sends a projection path, entity ID, and version for each interested subscription. Several subscriptions can produce several notifications for one connection. The [existing subscription tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Runtime.L0Tests/InletSubscriptionSetupTests.cs) assert notification counts and paths; the entity/version forwarding described here comes from the implementation.
 
 ## Delivery Boundary
 
 These filters govern local observer state. Inlet records the newer position before attempting client notifications, so repeating that position does not by itself retry a failed client send. Successful publication does not prove that every projection or client has processed the update.
+
+On a stream error, both cursor implementations request idle deactivation, allowing a later activation to subscribe again. UX cursor completion only logs; Inlet error and completion callbacks also only log and do not themselves resubscribe.
 
 ## Summary
 
