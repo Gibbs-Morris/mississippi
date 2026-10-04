@@ -1,10 +1,14 @@
 ---
+id: snapshot-persistence
 title: Snapshot Persistence
 description: Reference the one-way snapshot persister, storage forwarding, and write failure observation.
 sidebar_position: 5
+sidebar_label: Snapshot Persistence
 ---
 
 # Snapshot Persistence
+
+## Overview
 
 `ISnapshotPersisterGrain` receives an already-serialized snapshot envelope and forwards it to storage. Its Orleans method is one-way, so a cache caller does not wait for the storage write to complete.
 
@@ -26,7 +30,9 @@ The persister does not rebuild state, serialize it, compare the envelope's reduc
 
 The [interface](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/ISnapshotPersisterGrain.cs) marks `PersistAsync` with Orleans `[OneWay]`. The [cache caller](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Runtime/SnapshotCacheGrain.cs) discards its returned task after constructing an eligible envelope.
 
-A successful cache read therefore does not confirm that a durable snapshot now exists. Awaiting the implementation directly in a unit test exercises its storage await; that is a different observation boundary from the remote one-way call.
+A successful cache read does not confirm completion of a newly requested background write. A cache hit loaded from snapshot storage already used a stored snapshot. Awaiting the implementation directly in a unit test exercises its storage await; that is a different observation boundary from the remote one-way call.
+
+Orleans [one-way calls](https://learn.microsoft.com/en-us/dotnet/orleans/grains/oneway) provide no receipt or completion signal and can lose the message before the writer runs. Provider retries cannot cover a handoff the provider never receives; this path has no separate handoff retry queue.
 
 - A null envelope throws `ArgumentNullException` before the write's metric/logging try/catch.
 - A successful write records a successful persistence metric and completion log.
