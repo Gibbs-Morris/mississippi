@@ -78,4 +78,25 @@ public sealed class ContinueSagaCommandHandlerTests
         Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
         Assert.Null(result.Value);
     }
+    /// <summary>
+    ///     Verifies compensation is rejected without emitting a resume event when its cursor is unavailable.
+    /// </summary>
+    [Fact]
+    public void HandleRejectsCompensatingSagaWithoutDurableCursor()
+    {
+        ContinueSagaCommandHandler<TestSagaState> handler = new(new FakeTimeProvider());
+        TestSagaState state = new()
+        {
+            SagaId = Guid.NewGuid(),
+            Phase = SagaPhase.Compensating,
+            LastCompletedStepIndex = 1,
+        };
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(new ContinueSagaCommand
+        {
+            SagaId = state.SagaId,
+        }, state);
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
+        Assert.Null(result.Value);
+    }
 }

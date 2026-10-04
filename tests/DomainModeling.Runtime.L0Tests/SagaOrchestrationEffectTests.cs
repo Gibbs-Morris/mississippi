@@ -753,4 +753,38 @@ public sealed class SagaOrchestrationEffectTests
         Assert.Empty(events);
     }
 
+    /// <summary>
+    ///     Verifies a resume request cannot repeat rollback without a durable compensation cursor.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Fact]
+    public async Task HandleAsyncDoesNotResumeCompensationWithoutDurableCursor()
+    {
+        SagaStepInfo[] steps =
+        [
+            new(0, "Debit", typeof(SagaCompensationSuccessStep), true),
+            new(1, "Credit", typeof(SagaCompensationSuccessStep), true),
+        ];
+        using ServiceProvider provider = CreateProvider();
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider);
+        TestSagaState state = new()
+        {
+            SagaId = Guid.NewGuid(),
+            Phase = SagaPhase.Compensating,
+            LastCompletedStepIndex = 1,
+        };
+        List<object> events = await CollectAsync(
+            effect.HandleAsync(
+                new SagaResumeRequested
+                {
+                    SagaId = state.SagaId,
+                    RequestedAt = new(2026, 10, 4, 0, 0, 0, TimeSpan.Zero),
+                },
+                state,
+                "saga",
+                1,
+                TestContext.Current.CancellationToken));
+        Assert.Empty(events);
+    }
+
 }

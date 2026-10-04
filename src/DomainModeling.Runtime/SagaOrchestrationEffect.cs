@@ -223,16 +223,6 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
                 }
 
                 break;
-            case SagaPhase.Compensating:
-                await foreach (object evt in ExecuteCompensationAsync(
-                                   state,
-                                   state.LastCompletedStepIndex,
-                                   cancellationToken))
-                {
-                    yield return evt;
-                }
-
-                break;
             default:
                 yield break;
         }

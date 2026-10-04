@@ -48,6 +48,13 @@ public sealed class ContinueSagaCommandHandler<TSaga> : CommandHandlerBase<Conti
                 "A failed saga cannot continue without durable recovery direction and progress.");
         }
 
+        if (state.Phase == SagaPhase.Compensating)
+        {
+            return OperationResult.Fail<IReadOnlyList<object>>(
+                AggregateErrorCodes.InvalidState,
+                "A compensating saga cannot continue without a durable compensation cursor.");
+        }
+
         SagaResumeRequested resumeRequested = new()
         {
             SagaId = command.SagaId,
