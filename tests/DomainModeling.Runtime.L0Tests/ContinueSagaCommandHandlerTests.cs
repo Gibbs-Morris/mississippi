@@ -47,7 +47,7 @@ public sealed class ContinueSagaCommandHandlerTests
         TestSagaState state = new()
         {
             SagaId = command.SagaId,
-            Phase = SagaPhase.Failed,
+            Phase = SagaPhase.Running,
             LastCompletedStepIndex = 0,
         };
         OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
@@ -56,5 +56,26 @@ public sealed class ContinueSagaCommandHandlerTests
         Assert.Equal(command.SagaId, resumeRequested.SagaId);
         Assert.Equal(command.CorrelationId, resumeRequested.CorrelationId);
         Assert.Equal(now, resumeRequested.RequestedAt);
+    }
+    /// <summary>
+    ///     Verifies failed saga recovery is rejected without emitting a resume event.
+    /// </summary>
+    [Fact]
+    public void HandleRejectsFailedSagaWithoutRecoveryDirection()
+    {
+        ContinueSagaCommandHandler<TestSagaState> handler = new(new FakeTimeProvider());
+        TestSagaState state = new()
+        {
+            SagaId = Guid.NewGuid(),
+            Phase = SagaPhase.Failed,
+            LastCompletedStepIndex = 0,
+        };
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(new ContinueSagaCommand
+        {
+            SagaId = state.SagaId,
+        }, state);
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
+        Assert.Null(result.Value);
     }
 }

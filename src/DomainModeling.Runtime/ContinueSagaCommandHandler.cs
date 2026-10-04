@@ -41,6 +41,13 @@ public sealed class ContinueSagaCommandHandler<TSaga> : CommandHandlerBase<Conti
                 $"Saga '{typeof(TSaga).Name}' has not started.");
         }
 
+        if (state.Phase == SagaPhase.Failed)
+        {
+            return OperationResult.Fail<IReadOnlyList<object>>(
+                AggregateErrorCodes.InvalidState,
+                "A failed saga cannot continue without durable recovery direction and progress.");
+        }
+
         SagaResumeRequested resumeRequested = new()
         {
             SagaId = command.SagaId,

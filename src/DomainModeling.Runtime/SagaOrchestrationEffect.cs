@@ -214,7 +214,6 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         switch (state.Phase)
         {
             case SagaPhase.Running:
-            case SagaPhase.Failed:
                 await foreach (object evt in ExecuteStepAsync(
                                    state,
                                    state.LastCompletedStepIndex + 1,

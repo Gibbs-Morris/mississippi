@@ -496,11 +496,11 @@ public sealed class SagaOrchestrationEffectTests
     }
 
     /// <summary>
-    ///     Verifies manual resume in failed phase executes the next step.
+    ///     Verifies manual resume in running phase executes the next step.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
-    public async Task HandleAsyncResumesNextStepWhenResumeRequestedInFailedPhase()
+    public async Task HandleAsyncResumesNextStepWhenResumeRequestedInRunningPhase()
     {
         DateTimeOffset now = new(2025, 2, 20, 13, 0, 0, TimeSpan.Zero);
         FakeTimeProvider timeProvider = new(now);
@@ -513,7 +513,7 @@ public sealed class SagaOrchestrationEffectTests
         SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider, timeProvider);
         TestSagaState state = new()
         {
-            Phase = SagaPhase.Failed,
+            Phase = SagaPhase.Running,
             LastCompletedStepIndex = 0,
         };
         List<object> events = await CollectAsync(
@@ -719,4 +719,38 @@ public sealed class SagaOrchestrationEffectTests
         Assert.Equal("COMPENSATION_FAILED", failed.ErrorCode);
         Assert.Equal("nope", failed.ErrorMessage);
     }
+    /// <summary>
+    ///     Verifies a resume request cannot restart forward work after rollback failure.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Fact]
+    public async Task HandleAsyncDoesNotResumeFailedSagaAfterRollbackFailure()
+    {
+        SagaStepInfo[] steps =
+        [
+            new(0, "Debit", typeof(SagaSuccessStep), false),
+            new(1, "Credit", typeof(SagaSuccessStep), false),
+        ];
+        using ServiceProvider provider = CreateProvider();
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider);
+        TestSagaState state = new()
+        {
+            SagaId = Guid.NewGuid(),
+            Phase = SagaPhase.Failed,
+            LastCompletedStepIndex = 0,
+        };
+        List<object> events = await CollectAsync(
+            effect.HandleAsync(
+                new SagaResumeRequested
+                {
+                    SagaId = state.SagaId,
+                    RequestedAt = new(2026, 10, 4, 0, 0, 0, TimeSpan.Zero),
+                },
+                state,
+                "saga",
+                1,
+                TestContext.Current.CancellationToken));
+        Assert.Empty(events);
+    }
+
 }
