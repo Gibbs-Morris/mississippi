@@ -1,10 +1,14 @@
 ---
+id: command-dto-properties
 title: Generated Command DTO Properties
 description: Reference command property selection, server JSON names, and nullable/default-based required inference.
 sidebar_position: 11
+sidebar_label: Generated Command DTO Properties
 ---
 
 # Generated Command DTO Properties
+
+## Overview
 
 The command DTO generators select source properties through a shared `CommandModel`. Server required-field inference and client constructor parameters then follow different emission rules.
 
