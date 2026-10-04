@@ -214,8 +214,11 @@ public class CommandServerDtoGeneratorTests
             .ToString();
         Assert.NotNull(dtoSource);
 
-        // Domain.Aggregates.*.Commands → Server.Controllers.Aggregates
-        Assert.Contains("namespace TestApp.Server.Controllers.Aggregates;", dtoSource, StringComparison.Ordinal);
+        // Domain.Aggregates.Order.Commands → Server.Controllers.Aggregates.Commands.Order
+        Assert.Contains(
+            "namespace TestApp.Server.Controllers.Aggregates.Commands.Order;",
+            dtoSource,
+            StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -514,7 +517,7 @@ public class CommandServerDtoGeneratorTests
             .ToString();
         Assert.NotNull(mapperSource);
         Assert.Contains(
-            "namespace TestApp.Server.Controllers.Aggregates.Mappers;",
+            "namespace TestApp.Server.Controllers.Aggregates.Commands.Order.Mappers;",
             mapperSource,
             StringComparison.Ordinal);
     }
