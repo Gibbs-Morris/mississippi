@@ -141,7 +141,7 @@ public sealed class CommandClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendLine("/// <inheritdoc />");
         sb.AppendLine($"protected override string Route => \"{command.Route}\";");
         sb.CloseBrace();
-        context.AddSource($"{effectTypeName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+        context.AddSource($"{effectsNamespace}.{effectTypeName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }
 
     /// <summary>

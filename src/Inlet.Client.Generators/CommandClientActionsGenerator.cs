@@ -121,7 +121,9 @@ public sealed class CommandClientActionsGenerator : IIncrementalGenerator
         sb.AppendLine("new(commandId, commandType, timestamp);");
         sb.DecreaseIndent();
         sb.CloseBrace();
-        context.AddSource($"{actionName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+        context.AddSource(
+            $"{command.ActionsNamespace}.{actionName}.g.cs",
+            SourceText.From(sb.ToString(), Encoding.UTF8));
     }
 
     /// <summary>
@@ -167,7 +169,9 @@ public sealed class CommandClientActionsGenerator : IIncrementalGenerator
         sb.AppendLine("new(commandId, errorCode, errorMessage, timestamp);");
         sb.DecreaseIndent();
         sb.CloseBrace();
-        context.AddSource($"{actionName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+        context.AddSource(
+            $"{command.ActionsNamespace}.{actionName}.g.cs",
+            SourceText.From(sb.ToString(), Encoding.UTF8));
     }
 
     /// <summary>
@@ -205,7 +209,9 @@ public sealed class CommandClientActionsGenerator : IIncrementalGenerator
         }
 
         sb.AppendLine($"internal sealed record {actionName}({parameters}) : ICommandAction;");
-        context.AddSource($"{actionName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+        context.AddSource(
+            $"{command.ActionsNamespace}.{actionName}.g.cs",
+            SourceText.From(sb.ToString(), Encoding.UTF8));
     }
 
     /// <summary>
@@ -243,7 +249,9 @@ public sealed class CommandClientActionsGenerator : IIncrementalGenerator
         sb.AppendLine("new(commandId, timestamp);");
         sb.DecreaseIndent();
         sb.CloseBrace();
-        context.AddSource($"{actionName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+        context.AddSource(
+            $"{command.ActionsNamespace}.{actionName}.g.cs",
+            SourceText.From(sb.ToString(), Encoding.UTF8));
     }
 
     /// <summary>

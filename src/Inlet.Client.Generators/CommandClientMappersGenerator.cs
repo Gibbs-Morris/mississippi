@@ -97,7 +97,9 @@ public sealed class CommandClientMappersGenerator : IIncrementalGenerator
 
         sb.DecreaseIndent();
         sb.CloseBrace();
-        context.AddSource($"{mapperName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+        context.AddSource(
+            $"{command.MappersNamespace}.{mapperName}.g.cs",
+            SourceText.From(sb.ToString(), Encoding.UTF8));
     }
 
     /// <summary>

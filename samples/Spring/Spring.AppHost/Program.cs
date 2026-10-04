@@ -1,4 +1,3 @@
-#pragma warning disable ASPIRECOSMOSDB001 // RunAsPreviewEmulator is experimental
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
@@ -27,9 +26,9 @@ IResourceBuilder<AzureTableStorageResource> reminderTable = storage.AddTables("r
 // Add Azure Blob Storage for Orleans grain state
 IResourceBuilder<AzureBlobStorageResource> grainState = storage.AddBlobs("grainstate");
 
-// Add Cosmos DB using PREVIEW emulator for event sourcing storage (Brooks + Snapshots)
+// Add Cosmos DB using the Linux vNext emulator for event sourcing storage (Brooks + Snapshots)
 IResourceBuilder<AzureCosmosDBResource> cosmos = builder.AddAzureCosmosDB("cosmos")
-    .RunAsPreviewEmulator(emulator =>
+    .RunAsEmulator(emulator =>
     {
         emulator.WithDataExplorer();
 #pragma warning disable ASPIRECERTIFICATES001

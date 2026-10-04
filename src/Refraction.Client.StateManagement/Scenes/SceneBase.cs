@@ -136,6 +136,6 @@ public abstract class SceneBase<TState>
     {
         base.OnInitialized();
         storeSubscription?.Dispose();
-        storeSubscription = Store.Subscribe(StateHasChanged);
+        storeSubscription = Store.Subscribe(() => _ = InvokeAsync(StateHasChanged));
     }
 }

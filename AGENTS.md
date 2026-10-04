@@ -26,6 +26,38 @@ Governing thought: Agents follow repository instructions and iterate from correc
 - Agents MUST follow [PR size and stacked delivery](.github/instructions/pr-size-and-stacking.instructions.md), including the 600-line target, justified exceptions, and the CI/review gate before starting the next dependent PR. Why: Small, complete changes keep review manageable.
 - Agents MUST use the [gh-stack skill](https://github.com/github/gh-stack/blob/main/skills/gh-stack/SKILL.md) for stack work. Why: Native GitHub stacks need correct branch placement and lifecycle commands.
 
+### Low-Risk PR Merge Authorization
+
+- Agents MAY merge a PR they are working on without further user confirmation when the entire PR is low risk and all merge checks below are satisfied. Why: This is standing merge authorization for qualifying PRs.
+- This standing authorization MUST NOT be used for work following the [issue implementation route](.agents/skills/implement-github-issue/SKILL.md). Why: That route retains its separate explicit user merge authorization contract.
+- Agents MUST establish standing merge authorization from the policy at the PR's current base revision. Why: A proposed policy change cannot authorize its own merge.
+- Agents MUST verify low-risk eligibility under both the current base policy and the final head policy before using standing authorization. Why: A PR cannot weaken the conditions that govern its own merge.
+- Agents MUST verify risk eligibility independently for every PR included in a merge, including unmerged ancestors in a stack, under each PR's own base and final head policy. Why: A low-risk child does not establish its parents' eligibility.
+- Agents MUST verify merge authorization independently for every PR included in a merge, including unmerged ancestors in a stack, under each PR's own base and final head policy. Why: Authorization for a low-risk child does not authorize its parents.
+- Agents MUST verify all merge checks independently for every PR included in a merge, including unmerged ancestors in a stack. Why: Passing checks for a child does not establish its parents' readiness.
+- Agents MUST assess the entire final diff against the PR's actual base when classifying its risk. Why: A small diff, a label, or passing tests alone does not establish low risk.
+- Agents MUST record the low-risk rationale in the PR description before using this standing authorization. Why: Reviewers need a visible basis for the merge decision.
+- Agents MUST limit low-risk classification to documentation changes that describe existing behavior without changing rules or obligations, additional tests for existing behavior that leave production code and existing tests and assertions unchanged, and small refactors that preserve behavior and public contracts while leaving existing tests unchanged. Why: These changes have a limited impact that can be verified without weakening existing regression protection.
+- Agents MUST NOT classify a PR as low risk if it includes core logic or behavior changes, public contract changes, storage or migration changes, security or authorization changes, legal, licensing or ownership changes, dependency or tool changes, CI/CD or build/test automation changes, deployment changes, agent guidance, skills or prompts, or repository workflow-policy changes (including permissions and merge policy). Why: These changes need separate merge authorization even when stored in documentation and CI/CD passes.
+- Agents MUST verify that all applicable CI/CD jobs have completed successfully for the current PR head and relevant base before merging. Why: Pending, failed, canceled, missing, stale, or unexpectedly skipped checks are not a pass.
+- Agents MUST verify that every review comment has been addressed before merging. Why: Each comment needs a validated fix or an agreed disposition.
+- Agents MUST verify that every review thread is resolved, including bot and outdated threads, before merging. Why: Resolving a thread does not replace implementing and validating its agreed fix.
+- Agents MUST satisfy the existing [advancement gate](.github/instructions/pr-size-and-stacking.instructions.md#advancement-gate), including required reviews, CODEOWNER approvals, no outstanding changes requested, and current issue and PR records. Why: Standing merge authorization preserves existing delivery requirements.
+- Agents MUST merge through the repository's normal protected merge process, including any required merge queue. Why: Low risk does not waive checks, approvals, or permitted merge methods.
+- Agents MUST recheck the risk assessment immediately before merging and after any push, rebase, base change, or new feedback. Why: Earlier classification may no longer describe the proposed merge.
+- Agents MUST recheck the merge checks immediately before merging and after any push, rebase, base change, or new feedback. Why: Earlier validation and review evidence may no longer be current.
+- Agents MUST honor explicit user instructions to hold a PR or not merge it. Why: Task-specific instructions take precedence over standing authorization.
+- Agents MUST obtain explicit user merge authorization for PRs that are not low risk, mix eligible and excluded changes, or have uncertain risk. Why: This standing authorization covers only verified low-risk work.
+
+### Optional Codex model routing
+
+The Sol/Luna recipe applies only after an operator explicitly selects it for
+this session and verifies model, reasoning and client support. Other sessions
+use their host and user-selected settings under the governing instructions.
+
+- Agents using the selected recipe MUST read [the complete profile guidance](.codex/README.md). Why: Model support, role precedence and resource limits need current evidence.
+- Agents using the selected recipe MUST follow the [scoped routing and coordination rules](.github/instructions/codex-model-routing.instructions.md). Why: Optional selection does not make the selected contract optional.
+
 ## Scope and Audience
 
 All agents working in this repository.
