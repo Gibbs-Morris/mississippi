@@ -77,7 +77,7 @@ internal sealed class BrookSliceReaderGrain
     {
         BrookRangeKey brookRangeKey = this.GetPrimaryKeyString();
         Logger.SliceGrainActivating(brookRangeKey);
-        await PopulateCacheFromBrookAsync(brookRangeKey, token);
+        Cache = await ReadEventsFromBrookAsync(brookRangeKey, token);
         Logger.SliceCachePopulated(brookRangeKey, Cache.Length);
     }
 
@@ -96,13 +96,29 @@ internal sealed class BrookSliceReaderGrain
     )
     {
         BrookRangeKey brookRangeKey = this.GetPrimaryKeyString();
+        if ((Cache.Length < brookRangeKey.Count) &&
+            (maxReadTo <= brookRangeKey.End) &&
+            (maxReadTo.Value >= (brookRangeKey.Start.Value + Cache.Length)))
+        {
+            ImmutableArray<BrookEvent> refreshedCache =
+                await ReadEventsFromBrookAsync(brookRangeKey, cancellationToken);
+
+            // An incomplete query may omit positions, so only a complete refresh can replace the cache.
+            if ((refreshedCache.Length == brookRangeKey.Count) && (refreshedCache.Length > Cache.Length))
+            {
+                Cache = refreshedCache;
+            }
+
+            Logger.SliceCachePopulated(brookRangeKey, Cache.Length);
+        }
+
         long lastPositionOfCacheValue = Cache.Length == 0
             ? brookRangeKey.Start.Value - 1
             : (brookRangeKey.Start.Value + Cache.Length) - 1;
         BrookPosition lastPositionOfCache = BrookPosition.FromLong(lastPositionOfCacheValue);
 
         // Validate that the requested range is covered by the cache.
-        // The cache is populated on activation, so any request outside the cache is an error.
+        // Storage may still be incomplete after the refresh; do not return a partial result.
         if (maxReadTo > lastPositionOfCache)
         {
             throw new InvalidOperationException(
@@ -153,17 +169,17 @@ internal sealed class BrookSliceReaderGrain
         return [.. events];
     }
 
-    private async Task PopulateCacheFromBrookAsync(
+    private async Task<ImmutableArray<BrookEvent>> ReadEventsFromBrookAsync(
         BrookRangeKey brookRangeKey,
         CancellationToken cancellationToken
     )
     {
-        List<BrookEvent> l = new();
+        List<BrookEvent> events = new();
         await foreach (BrookEvent ev in BrookStorageReader.ReadEventsAsync(brookRangeKey, cancellationToken))
         {
-            l.Add(ev);
+            events.Add(ev);
         }
 
-        Cache = [.. l];
+        return [.. events];
     }
 }

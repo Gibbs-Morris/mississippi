@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Components.Web;
+
 using Mississippi.Refraction.Client.Infrastructure.Theming;
 
 using MississippiSamples.LightSpeed.Client.Features.Showcase;
@@ -11,10 +13,20 @@ public sealed partial class KitchenSinkPage
 {
     private ShowcaseView View => Select<ShowcaseState, ShowcaseView>(ShowcaseSelectors.GetView);
 
+    private void ActivateEmitter(
+        MouseEventArgs mouseEventArgs
+    ) =>
+        Dispatch(new ActivateEmitterAction());
+
     private void ChangeEmail(
         string email
     ) =>
         Dispatch(new ChangeEmailAction(email));
+
+    private void ChangeEmitterDisabled(
+        bool isDisabled
+    ) =>
+        Dispatch(new ChangeEmitterDisabledAction(isDisabled));
 
     private void ChangeProgress(
         int? percent
@@ -26,7 +38,16 @@ public sealed partial class KitchenSinkPage
     ) =>
         Dispatch(new ChangeThemeAction(mode));
 
+    private void DismissNotification() => Dispatch(new DismissNotificationAction());
+
+    private void ExpandNotification(
+        MouseEventArgs mouseEventArgs
+    ) =>
+        Dispatch(new ExpandNotificationAction());
+
     private void ResetProfile() => Dispatch(new ResetProfileAction());
+
+    private void RestoreNotification() => Dispatch(new RestoreNotificationAction());
 
     private void ValidateProfile() => Dispatch(new ValidateProfileAction());
 }

@@ -72,7 +72,18 @@ internal sealed class BlobDistributedLockManager : IDistributedLockManager
         if (!await blobClient.ExistsAsync(cancellationToken))
         {
             Logger.CreatingLockBlob(lockKey);
-            await blobClient.UploadAsync(new BinaryData("lock"), cancellationToken);
+            try
+            {
+                await blobClient.UploadAsync(new BinaryData("lock"), cancellationToken);
+            }
+            catch (RequestFailedException ex) when ((ex.Status == 409) &&
+                                                    string.Equals(
+                                                        ex.ErrorCode,
+                                                        BlobErrorCode.BlobAlreadyExists.ToString(),
+                                                        StringComparison.Ordinal))
+            {
+                Logger.LockBlobAlreadyExists(lockKey, ex);
+            }
         }
 
         IBlobLeaseClient leaseClient = LeaseClientFactory.Create(blobClient);

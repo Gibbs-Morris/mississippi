@@ -6,7 +6,7 @@ sidebar_position: 2
 
 # Explore Refraction in LightSpeed
 
-LightSpeed demonstrates Refraction inputs, progress arcs, and scoped themes with
+LightSpeed demonstrates Refraction inputs, progress arcs, an Emitter action, and scoped themes with
 Reservoir client state. Its kitchen sink shows the selected state after each action.
 
 ## What you will achieve
@@ -42,10 +42,23 @@ In **Completion at a glance**, select a percentage or **Unknown duration**.
 The arc and the inspector follow the same action. Resetting the form preserves
 this selection; no background operation starts.
 
+In **Send an intent**, activate **Emit signal** and watch the count change.
+Select **Disable emitter** and try the action again. **Reset example** leaves
+the emitter count and disabled choice in place.
+
+In **Keep the team moving**, choose **View details** to open the separate
+details region, **Dismiss notification** to hide and collapse the message, and
+**Restore notification** to show it again in the collapsed state. Each action
+travels from the presentational organism through the page and Reservoir to the
+selected inspector values. Focus moves to the changed details, restore action,
+or stable section heading after the parent state update; the organism does not
+steal the initial route-heading focus.
+
 ## Verify it works
 
 The form displays an associated error for an empty submitted address.
-The state inspector updates its email, action count, and last action.
+The state inspector updates its email, emitter count, notification visibility
+and expansion, action count, and last action.
 Theme choices persist between the overview and kitchen-sink routes in the same
 browser session. Reloading starts a new in-memory store.
 
@@ -59,11 +72,16 @@ The sample does not persist profile changes or make domain API calls.
 ## Summary
 
 The running gallery connects presentational controls to one local Reservoir
-feature, with a visible action and state trail.
+feature, with a visible action and state trail. The notification organism keeps
+the message and details presentational while the page owns visibility and
+expansion; the organism coordinates the pending focus target around those parent
+state updates.
 
 ## Next Steps
 
 - [InputField contract](../reference/input-field.md)
 - [ProgressArc contract](../reference/progress-arc.md)
+- [Emitter contract](../reference/emitter.md)
+- [NotificationPulse contract](../reference/notification-pulse.md)
 - [Scoped themes](../reference/themes.md)
 - [Reservoir overview](../../reservoir/index.md)
