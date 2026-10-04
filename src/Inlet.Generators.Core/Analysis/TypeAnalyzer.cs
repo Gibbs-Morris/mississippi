@@ -124,15 +124,15 @@ public static class TypeAnalyzer
         ITypeSymbol typeSymbol
     )
     {
-        if (typeSymbol is not INamedTypeSymbol namedType)
-        {
-            return false;
-        }
-
-        // Array types
+        // Array types are not named type symbols.
         if (typeSymbol is IArrayTypeSymbol)
         {
             return true;
+        }
+
+        if (typeSymbol is not INamedTypeSymbol namedType)
+        {
+            return false;
         }
 
         // Check for generic collection interfaces
