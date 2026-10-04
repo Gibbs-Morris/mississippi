@@ -1,10 +1,14 @@
 ---
+id: enumerable-mapping
 title: Enumerable Mapping
 description: Reference lazy sequence mapping, element handling, and transient mapper registration.
 sidebar_position: 3
+sidebar_label: Enumerable Mapping
 ---
 
 # Enumerable Mapping
+
+## Overview
 
 Collection mappers adapt an element-level `IMapper<TFrom, TTo>` to synchronous or asynchronous sequences. They preserve enumeration order and invoke that same element mapper for each item.
 
@@ -41,6 +45,8 @@ The [registration extensions](https://github.com/Gibbs-Morris/mississippi/blob/m
 | `AddIAsyncEnumerableMapper()` | Open generic `IAsyncEnumerableMapper<,>` implemented by `AsyncEnumerableMapper<,>` |
 
 Register the element mapper separately. The collection extensions only register their adapters. Each extension uses `AddTransient` and returns the service collection; repeated calls add registrations rather than using `TryAdd` to suppress duplicates.
+
+`AddMapper<TFrom, TTo, TMapper>` requires `TMapper : class, IMapper<TFrom, TTo>`. A value-type mapper cannot be used as that registration helper's implementation argument.
 
 Existing [synchronous](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Common.Abstractions.L0Tests/Mapping/EnumerableMapperTests.cs) and [asynchronous](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Common.Abstractions.L0Tests/Mapping/AsyncEnumerableMapperTests.cs) tests cover null inputs, ordered results, null elements, and empty inputs. [Cancellation tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Common.Abstractions.L0Tests/Mapping/AsyncEnumerableMapperCancellationTests.cs) verify lazy enumeration, deferred null validation, token forwarding, and source disposal after cancellation.
 
