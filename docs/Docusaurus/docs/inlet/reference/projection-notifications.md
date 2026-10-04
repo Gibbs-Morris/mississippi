@@ -1,10 +1,14 @@
 ---
+id: projection-notifications
 title: Projection Update Notifications
 description: Reference the client projection notifier's dispatched actions, validation, and store integration boundary.
 sidebar_position: 13
+sidebar_label: Projection Update Notifications
 ---
 
 # Projection Update Notifications
+
+## Overview
 
 `IProjectionUpdateNotifier` provides a dispatch bridge from a notification source to Reservoir. The default `ProjectionNotifier` constructs an action and calls the store; registered reducers determine the resulting state changes.
 
