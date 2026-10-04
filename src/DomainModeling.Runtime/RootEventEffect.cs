@@ -290,18 +290,60 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
         IAsyncEnumerator<object>? enumerator = null;
         try
         {
-            enumerator = effect.HandleAsync(eventData, currentState, brookKey, eventPosition, cancellationToken)
-                .GetAsyncEnumerator(cancellationToken);
+            try
+            {
+                enumerator = effect.HandleAsync(eventData, currentState, brookKey, eventPosition, cancellationToken)
+                    .GetAsyncEnumerator(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                yield break;
+            }
+            catch (Exception ex) when (!IsCriticalException(ex))
+            {
+                Logger.EventEffectFailed(effectTypeName, eventTypeName, aggregateTypeName, ex);
+                EventEffectMetrics.RecordEffectError(aggregateTypeName, effectTypeName, eventTypeName);
+                yield break;
+            }
+
             while (await TryMoveNextAsync(enumerator, effectTypeName, eventTypeName, aggregateTypeName))
             {
-                yield return enumerator.Current;
+                object yieldedEvent;
+                try
+                {
+                    yieldedEvent = enumerator.Current;
+                }
+                catch (OperationCanceledException)
+                {
+                    yield break;
+                }
+                catch (Exception ex) when (!IsCriticalException(ex))
+                {
+                    Logger.EventEffectFailed(effectTypeName, eventTypeName, aggregateTypeName, ex);
+                    EventEffectMetrics.RecordEffectError(aggregateTypeName, effectTypeName, eventTypeName);
+                    yield break;
+                }
+
+                yield return yieldedEvent;
             }
         }
         finally
         {
             if (enumerator is not null)
             {
-                await enumerator.DisposeAsync();
+                try
+                {
+                    await enumerator.DisposeAsync();
+                }
+                catch (OperationCanceledException)
+                {
+                    // Expected when effect disposal is cancelled.
+                }
+                catch (Exception ex) when (!IsCriticalException(ex))
+                {
+                    Logger.EventEffectFailed(effectTypeName, eventTypeName, aggregateTypeName, ex);
+                    EventEffectMetrics.RecordEffectError(aggregateTypeName, effectTypeName, eventTypeName);
+                }
             }
         }
     }
