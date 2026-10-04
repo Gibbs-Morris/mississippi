@@ -24,9 +24,10 @@ namespace Mississippi.DomainModeling.Gateway;
 ///         the internal projection representation from the public API contract.
 ///     </para>
 ///     <para>
-///         Derived classes should apply a <c>[Route]</c> attribute and inherit the constructor,
-///         passing in the factory, mapper, and logger dependencies. Refer to sample implementations
-///         in the repository for concrete usage patterns.
+///         Derived classes should apply a <c>[Route]</c> attribute and define their own constructor.
+///         Pass the projection grain factory, mapper, and logger to the base constructor, using
+///         <c>UxProjectionControllerBase&lt;TProjection, TDto&gt;</c> as the logger category.
+///         Refer to sample implementations in the repository for concrete usage patterns.
 ///     </para>
 ///     <para>
 ///         These endpoints are relative to the route declared by the derived controller:
