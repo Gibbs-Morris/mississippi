@@ -129,7 +129,12 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine();
         if (includesAggregateMappers)
         {
-            sb.AppendLine($"using {targetRootNamespace}.Controllers.Aggregates.Mappers;");
+            foreach (string aggregate in models.SelectMany(model => model.AggregateNames)
+                         .Distinct(StringComparer.Ordinal)
+                         .OrderBy(name => name, StringComparer.Ordinal))
+            {
+                sb.AppendLine($"using {targetRootNamespace}.Controllers.Aggregates.Commands.{aggregate}.Mappers;");
+            }
         }
 
         if (includesProjectionMappers)

@@ -42,6 +42,10 @@ internal static class ShowcaseSelectors
             state.ActionCount,
             state.LastAction)
         {
+            EmitterActivationCount = state.EmitterActivationCount,
+            IsEmitterDisabled = state.IsEmitterDisabled,
+            IsNotificationVisible = state.IsNotificationVisible,
+            IsNotificationExpanded = state.IsNotificationExpanded,
             ProgressPercent = state.ProgressPercent,
         };
     }
