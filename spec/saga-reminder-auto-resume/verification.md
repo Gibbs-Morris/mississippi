@@ -1,74 +1,50 @@
-# Verification
+# Verification Status and Required Evidence
 
-## Claim List
+This specification is a draft proposal. Source inspection against main `c8da151e607bcc8f3b253519317a8e7418d26261` on 4 October 2026 refreshes repository facts; it does not validate the proposed scheduler or its crash guarantees.
 
-- C1: Aggregate scheduled commands can be a reusable framework feature beyond sagas.
-- C2: Attribute-first DX on aggregate state can reduce boilerplate while preserving explicit runtime control.
-- C3: Reminder lifecycle (register/update/cancel) can be made safe and deterministic.
-- C4: Duplicate/delayed reminder ticks are survivable with enforced idempotency.
-- C5: The scheduler grain itself must remain infrastructure-only with no domain state storage. Opt-in audit state (via `ScheduleAuditAggregate`) is *infrastructure observability data*, not domain business state, and lives in a separate dedicated aggregate stream. This distinction is explicit: domain state describes the business entity (e.g., world units, saga phase), while audit state describes scheduler operational history (e.g., tick timestamps, attempt counts).
-- C6: Saga auto-resume can be implemented in phase 2 as a consumer of phase 1 primitives.
-- C7: Observability must expose schedule lifecycle and execution outcomes.
-- C8: Multiple reminders per aggregate instance must be supported.
-- C9: Schedules must not auto-start from attributes alone.
-- C10: Durable scheduler history must be stored via aggregate event streams when audit mode is enabled.
-- C11: Splitting business and infrastructure grains is valid as long as durable state policy is preserved.
+## Source Findings
 
-## Verification Questions
+| Question | Evidence and result |
+| --- | --- |
+| Does the repository already use saga reminders? | Yes. `GenericAggregateGrain` implements `IRemindable`; `OrleansSagaReminderRegistry` registers and unregisters reminders. |
+| Are reminder packages already referenced? | Yes. `DomainModeling.Runtime.csproj` references `Microsoft.Orleans.Reminders`; versions are centrally managed. |
+| Is the generic scheduled-command API implemented? | No implementation of the proposed scheduling attributes, manager or audit aggregate was found in the inspected `src` tree. |
+| Is a manual saga continue command merged? | No. PR #361 is separate unmerged work. |
+| Can phase and last completed forward step establish rollback progress? | No. `ISagaState` has no remaining compensation cursor, and the compensation/failure reducers only set phase. |
+| Is an in-memory last-tick token sufficient for delayed older deliveries? | No. It only recognizes the most recently recorded token; the earlier examples omit retention/generation/checkpoint behavior. |
+| Do source references prove a configured persistent reminder store? | No. Actual host configuration and restart tests are required for the target deployment. |
 
-1. Is there a current generic aggregate scheduling feature in the repository?
-2. Are Orleans reminders durable enough for this framework pattern?
-3. Can attributes on aggregate state provide good defaults without forcing static-only behavior?
-4. Can runtime API override attribute defaults for per-instance behavior?
-5. Can one scheduler grain key (`AggregateType|AggregateId|ScheduleName`) safely isolate schedules?
-6. Do duplicate/delayed ticks threaten correctness if command handlers are idempotent?
-7. Should scheduler grain persist business data or remain infrastructure-only?
-8. Can this design serve non-saga scenarios (for example game world ticks)?
-9. Can saga resume be modeled as just another scheduled command in phase 2?
-10. Is startup validation needed to enforce idempotent scheduled handlers?
-11. Are logs alone enough, or are schedule lifecycle events also needed?
-12. Is this an approval-checkpoint change due to broad aggregate runtime impact?
-13. Can one aggregate instance run multiple independent schedules safely?
-14. Should schedule activation require explicit start API/command instead of auto-start?
-15. If audit durability is required, should scheduler history be persisted in a dedicated aggregate stream?
-16. Is business/infrastructure grain split aligned with repository architecture rules?
+See [learned.md](learned.md) for direct source links. The February design arguments remain proposals; they are not evidence that these APIs or runtime guarantees are implemented.
 
-## Independent Answers
+## Proposed Acceptance Requirements
 
-1. No; there is no current generic aggregate scheduling feature. **Verified**.
-2. Yes; Orleans reminders are durable when backed by a persistent provider (e.g., Azure Table Storage, ADO.NET). This repository does not currently use any reminder-related APIs (no `IRemindable`, `RegisterOrUpdateReminder`, or `UnregisterReminder` references exist in `src/`). The specific reminder provider must be configured during implementation. **UNVERIFIED — platform capability assumption; requires confirmation of which reminder storage provider will be used in this repo.**
-3. Yes; attributes are suitable for defaults and discoverability. **Verified by DX analysis**.
-4. Yes; runtime registration API should support override for dynamic cases. **Verified by design requirement**.
-5. Yes; including schedule name in key isolates multiple schedules per aggregate instance. **Verified by key design analysis**.
-6. They do not, if handlers are idempotent and terminal/disabled checks are explicit. **Verified by distributed-systems reasoning**.
-7. Scheduler grain should remain infrastructure-only; business data remains in aggregate events/state. Opt-in audit state (via `ScheduleAuditAggregate`) is infrastructure observability data, not domain state, and is stored in a separate dedicated aggregate stream. This reconciles C5 with the proposed audit model. **Verified by architecture alignment; C5 clarified.**
-8. Yes; game tick scenario is a direct fit for scheduled commands. **Verified by scenario mapping**.
-9. Yes; `ContinueSagaCommand` can be one scheduled command binding in phase 2. **Verified by composition analysis**.
-10. Yes; startup/build validation is preferred over documentation-only policy. **Verified by quality gate rationale**.
-11. Recommended default is logs/metrics; standardized events should be opt-in for audit-sensitive domains. **Verified by observability trade-off**.
-12. Yes; this affects core aggregate runtime and contracts. **Verified**.
-13. Yes; schedule key including schedule name isolates multiple reminders safely. **Verified by key design analysis**.
-14. Yes; explicit start avoids unintended background behavior and preserves domain intent. **Verified by operational safety rationale**.
-15. Yes; use `ScheduleAuditAggregate` for durable scheduler history while keeping scheduler grain infrastructure-only. **Verified by architectural policy alignment**.
-16. Yes; separate grains for concerns are valid when state ownership remains explicit and aggregate-backed for persistence. **Verified by design constraints**.
+- Persist active/disabled state, registration generation, command binding, policy, next due identity and retry/checkpoint progress regardless of optional audit mode.
+- Reconcile proven absence separately from lookup/append timeouts and other unknown storage outcomes. An exception cannot prove that a write did not commit.
+- Validate a request's schedule generation and authoritative aggregate checkpoint when the command executes. Single-grain serialization does not invalidate a stale plan already sent elsewhere.
+- Use a stable tick identity across retries and a durable per-schedule replay strategy that handles older delayed deliveries, rather than one last-token equality check.
+- Separate internal event deduplication from arbitrary external-effect outcomes. Require downstream deduplication/reconciliation or explicit intervention when the outcome is unknown.
+- Stop/update must invalidate stale ticks. Unregistering a reminder cannot retract a command already dispatched or a callback already queued.
+- Saga recovery must preserve direction and remaining compensation position, block incompatible workflow definitions, obey bounded policy, and meet #404's operator authorization/comment/audit requirements.
+- Keep the existing saga reminder owner coherent with any future generic scheduler. This PR does not authorize a second automatic recovery owner.
 
-## Crash Matrix
+## Crash Matrix to Implement and Test
 
-| Crash Window | Expected State on Restart | Recovery Action | Survives? | Preconditions |
-| --- | --- | --- | --- | --- |
-| Before schedule registration request | No schedule | Caller retries registration or command path retries | Yes | Idempotent registration |
-| After registration request, before reminder persisted | Uncertain schedule presence | Reconciliation ensures schedule exists | Yes | Reconciliation enabled |
-| During reminder tick command dispatch | Active schedule | Next tick re-dispatches command | Yes | Idempotent command handler |
-| After command side effect, before event append | Domain state not advanced | Tick retries command | Yes | Strong idempotency key |
-| During cancellation | Terminal/disabled | Later tick detects terminal and unregisters | Yes | Terminal no-op logic |
-| Full cluster outage | Schedules paused | Reminders resume after cluster recovery | Yes | Durable reminder provider |
-| Duplicate reminders/ticks | Extra dispatch attempts | Handler deduplicates and no-ops safely | Yes | Idempotency enforcement |
-| Metadata exists but schedule never started | No active reminder | No tick occurs until explicit start | Yes | Explicit start API/command |
-| Scheduler grain loses volatile context | Audit required | Reconstruct from `ScheduleAuditAggregate` + active reminder reconciliation | Yes | Audit mode enabled |
+Every row below is **unverified for the proposed scheduler**. The expected outcome is an acceptance requirement, not a passing test result.
 
-## What Changed After Verification
+| Boundary | Required decision and outcome | Evidence still required |
+| --- | --- | --- |
+| Start request before control state commits | Retry with the same operation identity; distinguish absence from uncertainty. | Fault injection before and after the durable control append. |
+| Control state commits before reminder registration completes | Reconcile the confirmed active generation without inventing registration success. | Restart and provider-failure tests. |
+| Reminder callback after stop/update | Reject obsolete generation at authoritative execution; do not start new obsolete work. | Queued callback and in-flight dispatch race tests. |
+| Dispatch commits but its acknowledgement is lost | Retry/reconcile the same tick identity without a second transition. | Commit/acknowledgement fault injection and durable dedup tests. |
+| External effect succeeds before completion is recorded | Preserve unknown outcome; use downstream deduplication/reconciliation or intervention. | Non-idempotent effect tests and policy tests. |
+| Older tick arrives after a newer tick | Apply the defined ordering/missed-tick policy; never rely only on last-token equality. | Reordered and repeated delivery cases. |
+| Scheduler restarts with audit disabled | Rebuild control state and reconcile the intended reminder. | Audit-off restart and provider integration tests. |
+| Saga resumes after partial rollback | Preserve compensation direction and remaining cursor, or reject when evidence is absent. | Recorded refund/release-stock regression and lifecycle tests. |
+| Full cluster/store outage | Report unavailable/unknown state; recover only when confirmed state and provider permit it. | Deployment-specific recovery tests. |
 
-- Reframed scope to aggregate-first scheduling capability.
-- Kept reconciliation and idempotency enforcement as mandatory requirements.
-- Moved saga-specific checkpoints/resume logic to phase 2 on top of phase 1 primitives.
-- Added explicit durable audit path using `ScheduleAuditAggregate`.
+## Document Validation
+
+Markdown lint, links and source mappings must be checked on the final PR revision. Build/test/cleanup evidence for the repository must be reported separately. Passing those checks validates the proposed documents and unchanged code baseline; it cannot prove an unimplemented scheduler works.
+
+Mutation testing is optional under current repository policy. No mutation result or runtime scheduler coverage is claimed by this specification.

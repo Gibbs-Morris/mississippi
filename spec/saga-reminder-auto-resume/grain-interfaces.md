@@ -1,12 +1,14 @@
 # Grain Interfaces (Draft)
 
+> Draft proposal only. Source facts were refreshed against main `c8da151e607bcc8f3b253519317a8e7418d26261` on 4 October 2026. Scheduling types shown here are proposed contracts. They are not implemented or validated by this PR. Recovery requirements remain tracked in [#404](https://github.com/Gibbs-Morris/mississippi/issues/404) and [#581](https://github.com/Gibbs-Morris/mississippi/issues/581).
+
 ## Intent
 
 This document defines the interface shape for scheduler control-plane grains and related service abstractions.
 
 ## 1) Scheduler manager interface (app-facing)
 
-> **`TAggregate` identity:** The manager resolves `AggregateType` from `BrookNameHelper.GetBrookName<TAggregate>()` (reads `[BrookName]` attribute). If the type lacks `[BrookName]`, falls back to `typeof(TAggregate).Name`. This keeps grain keys stable across namespace refactors.
+> **Aggregate identity:** Resolve the required `[BrookName]` identity. Reject missing storage identities; a CLR type name fallback can collide and change after refactoring.
 
 ```csharp
 public interface IAggregateScheduleManager
@@ -50,7 +52,7 @@ public interface IAggregateScheduleGrain : IGrainWithStringKey
 
     /// <summary>
     ///     Stops the schedule and unregisters the underlying Orleans reminder.
-    ///     After this call, no further ticks will fire. The grain's persisted state
+    ///     Queued callbacks and dispatched commands may still arrive; obsolete generations must be rejected. The persisted state
     ///     is updated to Active = false. This MUST call UnregisterReminder to
     ///     prevent resource leaks and storage cost accumulation.
     /// </summary>
@@ -66,11 +68,13 @@ Key convention:
 
 - Grain key format: `<AggregateType>|<AggregateId>|<ScheduleName>`
 
-**Concurrency:** All method calls and reminder tick callbacks are serialized by Orleans' single-threaded grain model. No additional locking is needed.
+**Concurrency:** Require non-reentrant local execution and durable generation/checkpoint validation at authoritative aggregate execution. Local serialization does not prevent stale commands already sent to another grain.
 
 ## 3) Schedule contracts
 
-> **`System.Type` is not Orleans-serializable.** All type references use `string` (the command type's alias or assembly-qualified name) instead of `Type`. This is consistent with the framework's use of `[Alias]` attributes for type identity.
+These are deliberate partial interface sketches. They are not registered or compiled contracts in this PR. Implementations still need serializer aliases/member IDs, storage names for persisted events, complete update-generation semantics and runtime validation.
+
+> The proposed wire contract uses explicit stable command aliases. This is an identity/versioning choice; no claim is made here that `System.Type` cannot be serialized. Registration must validate every mapped command alias.
 
 ```csharp
 public sealed record ScheduleRegistration(
@@ -78,6 +82,7 @@ public sealed record ScheduleRegistration(
     string AggregateId,
     string ScheduleName,
     string CommandTypeName,
+    long Generation,
     TimeSpan InitialDelay,
     TimeSpan Interval,
     ScheduleBackoff Backoff,
@@ -96,9 +101,11 @@ public sealed record ScheduleUpdate(
 
 public sealed record ScheduleStatus(
     bool Active,
+    long Generation,
     int Attempt,
     DateTimeOffset? LastTriggeredAt,
     DateTimeOffset? NextDueAt,
+    long LastAppliedTickSequence,
     string? LastErrorCode,
     string? LastErrorMessage);
 ```
@@ -117,6 +124,8 @@ public interface IScheduledCommandDispatcher
         string commandTypeName,
         DateTimeOffset tickAt,
         string tickToken,
+        long generation,
+        long tickSequence,
         int attempt,
         CancellationToken cancellationToken = default);
 }
@@ -124,7 +133,7 @@ public interface IScheduledCommandDispatcher
 
 ## 5) Optional audit aggregate interface
 
-> **Strongly typed audit events.** The previous `object` parameter is replaced with a discriminated union base record. Each audit event type is a concrete record inheriting from `ScheduleAuditEvent`, ensuring Orleans serialization and compile-time safety.
+> **Strongly typed audit events.** The previous `object` parameter is replaced with a discriminated union base record. Each audit event type is a concrete record inheriting from `ScheduleAuditEvent`, making the intended event alternatives explicit. These sketches omit serialization attributes/member IDs and storage identities; complete contracts and round-trip tests are still required.
 
 ```csharp
 /// <summary>
@@ -240,5 +249,5 @@ public sealed class ScheduledCommandAttribute : Attribute
 
 - Keep scheduler grain infrastructure-focused.
 - Keep domain/business state in business aggregates.
-- Use `ScheduleAuditAggregate` only when durable audit is required.
+- Persist operational control state in every mode through a proposed `ScheduleControlAggregate`; use `ScheduleAuditAggregate` only for optional historical observations.
 - Ensure all scheduled command handlers are idempotent.

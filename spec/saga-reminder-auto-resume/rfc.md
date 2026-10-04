@@ -1,5 +1,7 @@
 # RFC: Aggregate Scheduled Commands (Phase 1) + Saga Auto-Resume (Phase 2)
 
+> Draft proposal only. Source facts were refreshed against main `c8da151e607bcc8f3b253519317a8e7418d26261` on 4 October 2026. Scheduling types shown here are proposed contracts. They are not implemented or validated by this PR. Recovery requirements remain tracked in [#404](https://github.com/Gibbs-Morris/mississippi/issues/404) and [#581](https://github.com/Gibbs-Morris/mississippi/issues/581).
+
 ## Problem Statement
 
 The framework lacks a first-class way for aggregates to schedule future command execution using durable reminders. Teams need this for periodic domain behavior (for example, game world ticks, cooldown expirations, billing cycles) and for reliability patterns like saga resume.
@@ -26,10 +28,10 @@ Without a general scheduling primitive, each feature must create custom reminder
 
 ## Current State
 
-- Aggregate command execution already exists in `GenericAggregateGrain<TAggregate>`.
-- No generic aggregate scheduling abstraction exists today.
-- No reminder ownership pattern exists in aggregate infrastructure.
-- Saga auto-resume remains a specific feature built on top of aggregate behavior, not yet implemented.
+- Aggregate command execution lives in `src/DomainModeling.Runtime/GenericAggregateGrain.cs`.
+- The inspected main already implements saga-specific Orleans reminder recovery. `OrleansSagaReminderRegistry` owns registration/unregistration calls, and `SagaLifecycleEventClassifier` defines recognized recovery boundaries.
+- Generic aggregate scheduling attributes, manager, control aggregate and audit aggregate remain unimplemented proposals.
+- This alternative design must reconcile with the existing saga reminder owner before adoption. It does not supply missing compensation progress or approve #361's recovery contract.
 
 ## Proposed Design
 
@@ -53,11 +55,11 @@ Proposed shape:
   InitialDelaySeconds = 5,
   IntervalSeconds = 60,
   Backoff = ScheduleBackoff.Constant,
-  MaxAttempts = 0,
+  MaxAttempts = 5,
   JitterPercent = 10)]
 [ScheduledCommand(typeof(SpawnUnitsTickCommand), Name = "spawn-units", IntervalSeconds = 60)]
 [ScheduledCommand(typeof(DecayTickCommand), Name = "decay", IntervalSeconds = 300)]
-public sealed class WorldAggregate
+public sealed record WorldAggregate
 {
 }
 ```
@@ -94,7 +96,7 @@ This key design enables multiple schedules for one aggregate instance.
 
 **Command dispatch without service locator:** The scheduler grain receives an `IScheduledCommandDispatcher` via constructor injection. This dispatcher knows how to construct the command instance (using the `commandTypeName` string from `ScheduleRegistration` and the tick metadata) and forward it to the target aggregate grain's `ExecuteAsync` method. The dispatcher does not need `IServiceProvider` — it uses a pre-registered mapping of command type names to factory delegates, built during DI/startup scanning from `[ScheduledCommand]` attribute metadata. This satisfies the shared policy against `IServiceProvider` injection.
 
-**Scheduler grain concurrency:** The scheduler grain relies on Orleans' single-threaded grain execution guarantee. All calls to `StartAsync`, `UpdateAsync`, `StopAsync`, and reminder tick callbacks are serialized by the Orleans runtime. No additional locking or concurrency control is needed within the grain.
+**Scheduler concurrency:** Local grain serialization is only one part of the contract. Persist a schedule generation and expected checkpoint, reject stale callbacks after stop/update, and validate again at authoritative aggregate command execution. A previously dispatched plan can remain stale even when each grain serializes its own requests.
 
 ### 4. Idempotency as a framework rule
 
@@ -102,22 +104,18 @@ Scheduled commands must be idempotent by design because duplicate/delayed ticks 
 
 Proposed enforcement options:
 
-- marker interface on handlers (for example `IIdempotentScheduledCommandHandler<TCommand, TSnapshot>`), or
-- attribute flag validated at registration/build-time.
+- marker interface documenting an obligation on handlers (for example `IIdempotentScheduledCommandHandler<TCommand, TSnapshot>`), or
+- attribute flag validated at registration/build-time. Neither option proves idempotency; durable replay decisions and executable duplicate/out-of-order/unknown-outcome tests are required.
 
 > **Naming convention note:** The second type parameter follows the framework's `TSnapshot` naming (not `TAggregate`). `CommandHandlerBase<TCommand, TSnapshot>` uses `TSnapshot` because the parameter represents the aggregate's projected state/snapshot. Concrete types like `WorldAggregate` are valid `TSnapshot` values.
 
-### 5. Phase 2: saga auto-resume
+### 5. Proposed saga adoption prerequisites
 
-After phase 1 is stable, implement saga resume using scheduled commands:
+Main already has saga-specific reminder recovery. A future generic scheduler would need an explicit ownership transition; adding a second recovery owner by attribute alone is unsafe.
 
-- schedule `ContinueSagaCommand` on start/active saga phases,
-- cancel on terminal phases,
-- keep saga-specific progress logic in saga contracts/reducers.
+Saga adoption depends on [#404](https://github.com/Gibbs-Morris/mississippi/issues/404) and [#581](https://github.com/Gibbs-Morris/mississippi/issues/581): durable direction and remaining compensation position, authoritative checkpoint/generation validation, workflow drift detection, bounded retries, unknown-effect handling, and the operator authorization/comment/audit contract.
 
-**Interaction with existing `SagaOrchestrationEffect`:** Today, saga orchestration runs via `IEventEffect<TSaga>` (event effects), not via commands. `ContinueSagaCommand` is a *command* dispatched by the scheduler grain to the aggregate grain's command handler pipeline. It does **not** replace `SagaOrchestrationEffect` — the effect continues to handle forward-step orchestration in response to saga lifecycle events (`SagaStartedEvent`, `SagaStepCompleted`, etc.). Instead, `ContinueSagaCommand` serves as a *resume trigger*: when the scheduler grain fires a tick, it dispatches `ContinueSagaCommand` to the aggregate, which re-evaluates the saga's current phase and re-enters the orchestration pipeline if the saga is stalled. The command handler for `ContinueSagaCommand` should check the saga state and either no-op (if the saga has progressed) or emit a synthetic event that re-triggers the existing `SagaOrchestrationEffect`. This ensures the two mechanisms are complementary, not conflicting.
-
-> **Design decision required:** Define the exact event that `ContinueSagaCommand` handler emits to re-trigger orchestration (e.g., `SagaResumeRequested`), and ensure `SagaOrchestrationEffect.CanHandle` recognizes it.
+`ContinueSagaCommand` and `SagaResumeRequested` in the sketches refer to separate unmerged [PR #361](https://github.com/Gibbs-Morris/mississippi/pull/361). They are not present in the inspected main and do not establish the broader recovery contract. A phase-only resume decision must be rejected when it cannot establish safe work. A scheduler must not infer that `Failed` means forward execution, or use the last completed forward step as the remaining compensation cursor.
 
 ### 6. Storage and eventing model
 
@@ -126,7 +124,7 @@ Recommended architecture:
 - Use a system-level scheduler grain (infrastructure concern) to own active reminders.
 - Do not persist scheduler business state into domain aggregate streams by default.
 - Keep domain business state in domain aggregate events/state.
-- Persist durable scheduler/audit state in a dedicated system aggregate (`ScheduleAuditAggregate`) when audit mode is enabled.
+- Persist operational control state in a proposed `ScheduleControlAggregate` in every mode. It must retain active/disabled state, generation, binding, policy, due identity and progress. Optional `ScheduleAuditAggregate` stores additional historical observations; disabling audit must not disable restart recovery.
 
 Architecture rule:
 
@@ -196,8 +194,8 @@ The result is a fully-populated `ScheduleRegistration` passed to the scheduler g
 flowchart LR
     subgraph AsIs[As-Is]
       D1[Domain Feature] --> G1[GenericAggregateGrain]
-      G1 --> C1[Only client-driven commands]
-      C1 --> F1[No durable scheduled trigger]
+      G1 --> C1[Commands and existing saga reminder recovery]
+      C1 --> F1[No generic scheduled-command API]
     end
 
     subgraph ToBe[To-Be]
@@ -239,38 +237,21 @@ sequenceDiagram
     end
 ```
 
-## Crash Survivability Summary
+## Recovery Requirements and Limits
 
-- Silo crash: scheduled command resumes on next reminder tick.
-- Cluster outage: reminders resume when cluster/storage returns.
-- Duplicate/delayed ticks: expected behavior, handled by command idempotency.
-- Feature-specific recovery (for example saga compensation) remains phase 2 domain logic.
+The proposed scheduler has no passing crash tests yet. The requirements below must be implemented and tested before claiming recovery:
 
-### Reconciliation Design
+- Persist control state independently of optional audit mode, then reconcile the confirmed active generation with the reminder service after activation.
+- Distinguish proven absence from registration/append/lookup timeouts and unknown outcomes. Do not translate every reminder-service exception into permission to register again or discard protection.
+- Generate one durable logical tick identity before dispatch and reuse it across retries. Retain sufficient per-schedule deduplication/order state to reject delayed older ticks.
+- Stop/update must invalidate old generations at authoritative execution. A dispatched command or queued callback may still arrive after reminder unregistration.
+- Preserve an unknown external-effect outcome. Resume only under downstream deduplication/reconciliation policy, otherwise expose intervention. This proposal does not promise exactly-once arbitrary side effects.
 
-Reconciliation addresses the case where the scheduler grain's in-memory state indicates an active schedule, but the Orleans reminder was lost (e.g., storage transient failure during registration, or reminder storage compaction).
+### Reconciliation Design Still Required
 
-**Algorithm:**
+A proposed `ScheduleControlAggregate` is the durable source of intended active state, independently of audit verbosity. On activation, read its confirmed generation and progress, then inspect the reminder. Re-register only for proven absence of the intended reminder and reconcile conflicts/unknown writes explicitly. A disabled generation rejects stale tick dispatch even if a callback was already queued.
 
-1. On grain activation (`OnActivateAsync`), the scheduler grain reads its persisted state.
-2. If state indicates `Active = true` and a registered reminder name, call `GetReminder(reminderName)`.
-3. If the reminder does not exist (returns null / throws `ReminderException`), re-register via `RegisterOrUpdateReminder` using the persisted interval/policy.
-4. If the reminder exists, no action needed — normal tick flow resumes.
-5. If state indicates `Active = false`, ensure no orphaned reminder exists by calling `GetReminder` and unregistering if found.
-
-This is safe because `RegisterOrUpdateReminder` is idempotent — calling it when the reminder already exists simply updates the schedule. The grain's persisted state is the source of truth for whether a schedule *should* be active.
-
-```mermaid
-flowchart TD
-    A[Grain Activation] --> B{State says Active?}
-    B -->|Yes| C[GetReminder]
-    C -->|Found| D[Normal operation]
-    C -->|Not found| E[Re-register reminder from persisted policy]
-    E --> D
-    B -->|No| F[GetReminder]
-    F -->|Found| G[Unregister orphaned reminder]
-    F -->|Not found| H[Clean state]
-```
+The control-append/reminder-registration ordering, compensation for partial registration, due-time identity, repeated requests, and concurrent stop/update operations need a defined protocol and fault-injection tests. Calling `RegisterOrUpdateReminder` again cannot alone prove that these cross-store boundaries are safe.
 
 ## Alternatives Considered
 
@@ -305,15 +286,15 @@ flowchart TD
 - Excessive logging/noise if every tick emits high-cardinality logs.
 - High-volume tick event auditing can increase event storage costs.
 
-## Resolved Decisions
+## Proposed Choices Pending Approval
 
-- **`MaxAttempts = 0` semantics:** `0` means "unlimited retries" (no cap). A value of `1` means "run once, no retries." This matches common retry-policy conventions (e.g., Polly, Azure SDK). Document this in attribute XML docs and validate that negative values are rejected at startup.
-- **Concurrency model for scheduler grain:** The scheduler grain relies on Orleans' single-threaded grain execution guarantee. Concurrent calls to `StartAsync`, `UpdateAsync`, and `StopAsync` are serialized by the Orleans runtime. This is an explicit design assumption, not an accident. Document it in the grain implementation.
+- **`MaxAttempts = 0` semantics:** `0` means "unlimited retries" (no cap). A value of `1` means "run once, no retries." This is a proposed convention for general schedules. Saga recovery must select a finite attempt bound under #404; unlimited generic scheduling must not become unlimited recovery retries. Document this in attribute XML docs and validate that negative values are rejected at startup.
+- **Concurrency model:** Require non-reentrant local execution plus durable generation/checkpoint checks at the aggregate boundary. Local serialization alone is not stale-request protection.
 - **`StopAsync` must unregister the Orleans reminder** via `UnregisterReminder` to prevent resource leaks and storage cost accumulation. It must not merely mark the schedule as "disabled" in grain state.
 - **Duplicate schedule name validation:** Multiple `[ScheduledCommand]` attributes on the same aggregate type with the same `Name` must cause a startup validation exception. This is checked during DI/startup scanning. Silent override is not permitted.
 - **Audit mode "Log Only":** "Log Only" means emitting structured log entries via `LoggerExtensions` with well-defined EventIds and structured properties (`AggregateType`, `AggregateId`, `ScheduleName`, `CommandType`, `TickToken`, `Attempt`, etc.). It does **not** write to the `ScheduleAuditAggregate`. The specific EventIds and property schema must be defined in the observability section of the implementation plan.
-- **`TickToken` generation strategy:** `TickToken` is derived deterministically as `$"{ScheduleName}:{AggregateId}:{TickDueTimeUtc.Ticks}"`. This ensures the same logical tick always produces the same token, even across retries. Orleans reminder tick times may have minor jitter, so `TickDueTimeUtc` should use the *scheduled* due time from the reminder registration, not the actual callback wall-clock time. The scheduler grain must persist the last registered due time in its state to generate stable tokens.
-- **`TAggregate` type identity in grain key (`AggregateType`):** Derived from `BrookNameHelper.GetBrookName<TAggregate>()` which reads the `[BrookName]` attribute. If the type lacks `[BrookName]`, use `typeof(TAggregate).Name` as a fallback. This keeps grain keys stable across refactors.
+- **Tick identity:** Persist generation and logical tick sequence before dispatch; retries reuse the same identity. The encoding must include stable aggregate identity, entity and schedule components without delimiter collisions. Exact encoding and retention remain open. Callback wall-clock time must not generate a new identity on retry.
+- **Aggregate identity:** Resolve the required `[BrookName]` storage identity. Reject missing identities; a CLR type name fallback is unstable across renames and may collide.
 
 ## Open Decisions
 
@@ -327,29 +308,27 @@ flowchart TD
 ### 1. Aggregate attributes
 
 ```csharp
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
+using Mississippi.Brooks.Abstractions.Attributes;
 
-[BrookName("world")]
+[BrookName("GAME", "WORLDS", "WORLD")]
 [AggregateScheduleDefaults(
   InitialDelaySeconds = 5,
   IntervalSeconds = 60,
   Backoff = ScheduleBackoff.Exponential,
-  MaxAttempts = 0,
+  MaxAttempts = 5,
   JitterPercent = 10,
   MaxIntervalSeconds = 300)]
 [ScheduledCommand(typeof(SpawnUnitsTickCommand), Name = "spawn-units", IntervalSeconds = 60)]
 [ScheduledCommand(typeof(DecayTickCommand), Name = "decay", IntervalSeconds = 300)]
-public sealed class WorldAggregate
+public sealed record WorldAggregate
 {
   public int Units { get; init; }
 
   public int TickVersion { get; init; }
 
-  /// <summary>
-  /// Last tick token successfully applied (idempotency guard).
-  /// </summary>
-  public string? LastAppliedTickToken { get; init; }
+  public IReadOnlyDictionary<string, ScheduleCheckpoint> Schedules { get; init; }
+    = new Dictionary<string, ScheduleCheckpoint>();
 }
 ```
 
@@ -362,7 +341,7 @@ Notes:
 ### 2. Runtime schedule API
 
 ```csharp
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 public interface IAggregateScheduleManager
 {
@@ -403,55 +382,73 @@ public interface IAggregateScheduleGrain : IGrainWithStringKey
 // Grain key format: <AggregateType>|<AggregateId>|<ScheduleName>
 ```
 
-### 4. Scheduled command handler (idempotent)
+### 4. Scheduled command handler (partial sketch)
 
-> **Naming convention:** `CommandHandlerBase<TCommand, TSnapshot>` uses `TSnapshot` as the second type parameter. `WorldAggregate` is the concrete snapshot type.
+This example requires an active generation and contiguous per-schedule logical sequence. A reducer must persist the checkpoint and domain change together, even for zero-unit ticks. The durable generation handshake and out-of-order reconciliation protocol still need implementation and tests. See [code-samples.md](code-samples.md) for these limits.
 
 ```csharp
+public sealed record ScheduleCheckpoint(
+    long Generation,
+    bool Active,
+    long LastAppliedSequence);
+
 public sealed record SpawnUnitsTickCommand(
-  string ScheduleName,
-  DateTimeOffset TickAt,
-  string TickToken);
+    string ScheduleName,
+    long Generation,
+    long TickSequence,
+    DateTimeOffset TickAt,
+    string TickToken);
+
+public sealed record UnitsTickApplied(
+    string ScheduleName,
+    long Generation,
+    long TickSequence,
+    string TickToken,
+    int Count,
+    DateTimeOffset TickAt);
 
 public sealed class SpawnUnitsTickCommandHandler
-  : CommandHandlerBase<SpawnUnitsTickCommand, WorldAggregate>,
-    IIdempotentScheduledCommandHandler<SpawnUnitsTickCommand, WorldAggregate>
+    : CommandHandlerBase<SpawnUnitsTickCommand, WorldAggregate>,
+      IIdempotentScheduledCommandHandler<SpawnUnitsTickCommand, WorldAggregate>
 {
-  protected override OperationResult<IReadOnlyList<object>> HandleCore(
-    SpawnUnitsTickCommand command,
-    WorldAggregate? state)
-  {
-    state ??= new WorldAggregate();
-
-    // Idempotency: check if this tick token was already applied.
-    // TickToken is derived deterministically as "{ScheduleName}:{AggregateId}:{TickDueTimeUtc.Ticks}".
-    if (state.LastAppliedTickToken == command.TickToken)
+    protected override OperationResult<IReadOnlyList<object>> HandleCore(
+        SpawnUnitsTickCommand command,
+        WorldAggregate? state)
     {
-      return OperationResult.Ok<IReadOnlyList<object>>(Array.Empty<object>());
+        if (state is null ||
+            !state.Schedules.TryGetValue(command.ScheduleName, out var checkpoint) ||
+            !checkpoint.Active ||
+            checkpoint.Generation != command.Generation)
+        {
+            return OperationResult.Fail<IReadOnlyList<object>>(
+                AggregateErrorCodes.InvalidState,
+                "The schedule generation is inactive or obsolete.");
+        }
+
+        if (command.TickSequence <= checkpoint.LastAppliedSequence)
+        {
+            return OperationResult.Ok<IReadOnlyList<object>>(Array.Empty<object>());
+        }
+
+        if (command.TickSequence != checkpoint.LastAppliedSequence + 1)
+        {
+            return OperationResult.Fail<IReadOnlyList<object>>(
+                AggregateErrorCodes.InvalidCommand,
+                "A prior logical tick must be reconciled first.");
+        }
+
+        int spawned = (state.TickVersion + command.TickAt.Minute) % 3;
+        return OperationResult.Ok<IReadOnlyList<object>>(
+        [
+            new UnitsTickApplied(
+                command.ScheduleName,
+                command.Generation,
+                command.TickSequence,
+                command.TickToken,
+                spawned,
+                command.TickAt),
+        ]);
     }
-
-    int spawned = ComputeSpawnCount(state.TickVersion, command.TickAt);
-    if (spawned <= 0)
-    {
-      return OperationResult.Ok<IReadOnlyList<object>>(Array.Empty<object>());
-    }
-
-    return OperationResult.Ok<IReadOnlyList<object>>(
-    [
-      new UnitsSpawned
-      {
-        Count = spawned,
-        TickToken = command.TickToken,
-        SpawnedAt = command.TickAt,
-      },
-    ]);
-  }
-
-  private static int ComputeSpawnCount(int tickVersion, DateTimeOffset tickAt)
-  {
-    // Deterministic placeholder; production may use seeded pseudo-random logic.
-    return (tickVersion + tickAt.Minute) % 3;
-  }
 }
 ```
 
@@ -483,9 +480,9 @@ await scheduleManager.StopScheduleAsync<WorldAggregate>(
 ### 6. Phase 2 saga usage (example)
 
 ```csharp
-[AggregateScheduleDefaults(IntervalSeconds = 30, Backoff = ScheduleBackoff.Exponential)]
-[ScheduledCommand(typeof(ContinueSagaCommand), Name = "saga-resume", IntervalSeconds = 30)]
-public sealed class PaymentSagaState : ISagaState
+[AggregateScheduleDefaults(IntervalSeconds = 60, Backoff = ScheduleBackoff.Exponential)]
+[ScheduledCommand(typeof(ContinueSagaCommand), Name = "saga-resume", IntervalSeconds = 60)]
+public sealed record PaymentSagaState : ISagaState
 {
   public Guid SagaId { get; init; }
 

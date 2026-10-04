@@ -1,5 +1,7 @@
 # Implementation Plan
 
+> Draft proposal only. Source facts were refreshed against main `c8da151e607bcc8f3b253519317a8e7418d26261` on 4 October 2026. Scheduling types shown here are proposed contracts. They are not implemented or validated by this PR. Recovery requirements remain tracked in [#404](https://github.com/Gibbs-Morris/mississippi/issues/404) and [#581](https://github.com/Gibbs-Morris/mississippi/issues/581).
+
 ## Summary
 
 Implement a general aggregate scheduled-command framework first, then adopt it for saga auto-resume in phase 2.
@@ -14,12 +16,9 @@ Architectural policy for this feature:
 
 ### Phase 1: Aggregate Scheduling Contracts and DX
 
-0. **Package dependency setup:**
-   - Add `Microsoft.Orleans.Reminders` (or equivalent Orleans reminder package) to `Directory.Packages.props` via CPM.
-   - The scheduler grain project (`src/EventSourcing.Aggregates`) will need `<PackageReference Include="Microsoft.Orleans.Reminders" />` (no `Version` attribute per CPM rules).
-   - **Note:** No files in the current `src/` tree reference `IRemindable`, `RegisterOrUpdateReminder`, or `UnregisterReminder`. This is a net-new Orleans API surface for the codebase.
+0. **Verify existing dependencies:** `DomainModeling.Runtime.csproj` already references `Microsoft.Orleans.Reminders`; versions are central in `Directory.Packages.props`. Add or change a package only if a reviewed implementation needs it. Preserve locked restore and current main versions.
 
-1. Add scheduling contracts in `src/EventSourcing.Aggregates.Abstractions`:
+1. Add scheduling contracts in `src/DomainModeling.Abstractions`:
    - `AggregateScheduleDefaultsAttribute`
    - `ScheduledCommandAttribute`
    - `ScheduleBackoff` enum
@@ -34,19 +33,19 @@ Architectural policy for this feature:
 
 ### Phase 1.1: Runtime Infrastructure
 
-1. Implement scheduler grain (infrastructure only, no business state persistence):
+1. Implement scheduler grain (infrastructure execution with separately owned durable control state):
 
    - key by `<AggregateType>|<AggregateId>|<ScheduleName>`
    - own Orleans reminder lifecycle
    - dispatch mapped command to aggregate grain on tick
    - apply backoff/jitter/max-attempt policies.
    - support multiple concurrent schedules per aggregate instance.
-   - emit optional audit events to `ScheduleAuditAggregate` when audit mode is enabled.
+   - persist control generation, active/disabled intent, due identity, policy and retry/checkpoint progress in every mode; optional audit verbosity cannot gate durability.
 
 2. Add reconciliation behavior:
 
    - detect active schedule metadata with missing reminder
-   - recreate reminder safely and idempotently.
+   - define and test control-append/reminder-registration ordering, partial failures and repeated reconciliation before claiming safe recreation.
 
 3. Ensure metadata registration does not auto-start reminders.
 
@@ -91,7 +90,7 @@ Architectural policy for this feature:
    - duplicate schedule name startup validation rejection
    - `MaxAttempts = 0` means unlimited; negative values rejected.
 
-2. Add crash-matrix-driven tests for duplicate ticks, delayed ticks, and cancel race.
+2. Add fault-injection tests for control/reminder ordering, stale generations, lost acknowledgements, no-op checkpoints, delayed/out-of-order ticks and stop races. Record the unverified cases in verification.md.
 
 3. Add audit-mode tests:
 
@@ -105,24 +104,24 @@ Architectural policy for this feature:
    - Tick callback → command dispatch integration
    - Grain activation reconciliation with actual reminder service
    - Schedule start → tick → stop full lifecycle
-   - Test project: `tests/EventSourcing.Aggregates.L1Tests/` (new)
+   - Test project: `tests/DomainModeling.Runtime.L1Tests/` (new)
 
 ### Phase 2: Saga Adoption
 
-1. Add `ContinueSagaCommand` and saga-specific resume logic.
+1. Reconcile saga adoption with existing reminder ownership and #404/#581 before implementation. The similarly named command in #361 remains a separate unmerged proposal.
 2. Bind saga schedules using phase 1 attributes/runtime API.
 3. Define the `SagaResumeRequested` event that `ContinueSagaCommand` handler emits; ensure `SagaOrchestrationEffect.CanHandle` recognizes it.
-4. Add saga-specific progress checkpointing and tests for compensation resume.
+4. Define and persist safe direction/compensation progress, workflow compatibility, stale request conflicts, bounded retry and unknown-effect intervention before enabling resume. Test partial rollback, repeated requests and lost acknowledgements.
 
 ## File/Module Touch List (Planned)
 
-- `Directory.Packages.props` — add Orleans reminders package
-- `src/EventSourcing.Aggregates.Abstractions/*` — scheduling attributes, contracts, policy models, audit event types
-- `src/EventSourcing.Aggregates/*` — scheduler grain, dispatcher, reconciliation, logging extensions
-- `tests/EventSourcing.Aggregates.L0Tests/*` — L0 unit tests (mocked dependencies)
-- `tests/EventSourcing.Aggregates.L1Tests/*` — **new** L1 tests with Orleans test cluster for reminder integration
-- optional audit mode: `src/EventSourcing.Aggregates.Abstractions/*Audit*`, `src/EventSourcing.Aggregates/*Audit*`
-- phase 2: `src/EventSourcing.Sagas.Abstractions/*`, `src/EventSourcing.Sagas/*`, `tests/EventSourcing.Sagas.L0Tests/*`
+- `Directory.Packages.props` — inspect existing central dependency inputs; no automatic reminders package addition
+- `src/DomainModeling.Abstractions/*` — scheduling attributes, contracts, policy models, audit event types
+- `src/DomainModeling.Runtime/*` — scheduler grain, dispatcher, reconciliation, logging extensions
+- `tests/DomainModeling.Runtime.L0Tests/*` — L0 unit tests (mocked dependencies)
+- `tests/DomainModeling.Runtime.L1Tests/*` — L1/L2 placement selected from actual infrastructure dependencies; persistent provider and crash proof require appropriate integration coverage
+- optional audit mode: `src/DomainModeling.Abstractions/*Audit*`, `src/DomainModeling.Runtime/*Audit*`
+- phase 2: `src/DomainModeling.Abstractions/*`, `src/DomainModeling.Runtime/*`, `tests/DomainModeling.Runtime.L0Tests/*`
 
 ## API/Compatibility Strategy
 
@@ -148,7 +147,9 @@ Architectural policy for this feature:
 - Build: `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1`
 - Cleanup: `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1`
 - Unit tests: `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1`
-- Mutation: `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1`
+- Routine quality: `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject DomainModeling.Runtime.L0Tests -SkipMutation`
+- Full pipeline: `pwsh ./go.ps1`
+- Mutation: optional under repository policy; report actual execution status and any gaps.
 
 ## Monitoring Checklist
 
@@ -162,7 +163,7 @@ Architectural policy for this feature:
 ## Risks and Mitigations
 
 - Duplicate command execution side effects
-  - Mitigation: strict idempotency contracts + startup validation.
+  - Mitigation: durable per-generation duplicate decisions, delayed/out-of-order tests, downstream deduplication or reconciliation for unknown external results. Startup markers cannot prove this behavior.
 - Retry storms and synchronized bursts
   - Mitigation: exponential backoff + jitter + max attempt policies.
 - Missing reminder due to registration race
