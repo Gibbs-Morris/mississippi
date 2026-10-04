@@ -51,5 +51,6 @@ Use this page as the current active reference for what Brooks owns and which pac
 - Read [Brooks Stream Provider Identity](./stream-provider-identity.md) for provider selection and compatible cursor stream IDs.
 - Read [Brooks Event Conversion](./event-conversion.md) for synchronous conversion and generated metadata.
 - Read [Brooks Asynchronous Serialization](./async-serialization.md) for stream methods, buffering, and service resolution.
+- Read [Brooks Slice Cache Reads](./slice-cache.md) for incomplete-query failures and later refresh recovery.
 - Read [Brooks Concepts](../concepts/concepts.md).
 - Use [Brooks Operations](../operations/operations.md) for the current operational scope.
