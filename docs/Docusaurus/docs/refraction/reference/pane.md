@@ -1,10 +1,14 @@
 ---
+id: pane
 title: Pane
 description: Reference Pane title, main content and footer slots, presentation markers, and interaction ownership.
 sidebar_position: 10
+sidebar_label: Pane
 ---
 
 # Pane
+
+## Overview
 
 `Pane` wraps application content in a section with an optional title and footer. It accepts presentation markers and render fragments; application code owns the interactions inside and around that surface.
 
@@ -33,9 +37,13 @@ The variant, state, and depth inputs are strings without component-level validat
 
 The [Razor markup](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Refraction.Client/Components/Organisms/Pane.razor) always renders its root `section` and main content wrapper.
 
+`AdditionalAttributes` is applied last. A colliding `class`, `data-variant`, `data-state`, or `data-depth` overrides the explicit value under Blazor's [attribute precedence](https://learn.microsoft.com/en-us/aspnet/core/blazor/components/splat-attributes-and-arbitrary-parameters#arbitrary-attributes). A supplied class replaces `rf-pane`; retain the base class when adding classes and avoid unintended marker overrides.
+
 The header and `h2` render only when `Title` is neither null nor empty. Whitespace-only titles still satisfy that condition. A null `ChildContent` leaves the main content wrapper present without fragment content.
 
 The footer wrapper renders whenever `Footer` is non-null. An empty render fragment therefore still produces a footer wrapper; a null fragment omits the entire footer.
+
+The [isolated stylesheet](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Refraction.Client/Components/Organisms/Pane.razor.css) uses class selectors for the basic surface, spacing, and typography. It has no variant, state, or depth selectors. Those data markers are hooks for application styling; changing one alone supplies no component-owned visual treatment.
 
 ## Composition Boundary
 
@@ -47,7 +55,7 @@ Existing [Pane tests](https://github.com/Gibbs-Morris/mississippi/blob/main/test
 
 ## Summary
 
-Use `Pane` as a content surface with independently optional title and footer slots. Its markup and markers provide presentation while the parent application owns interaction and accessible composition.
+Use `Pane` as a content surface with independently optional title and footer slots. Its stylesheet provides the basic appearance; the parent owns marker-specific styling, interaction, and accessible composition.
 
 ## Next Steps
 
