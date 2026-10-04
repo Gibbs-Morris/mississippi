@@ -48,7 +48,7 @@ internal static class ConnectFourBoard
     {
         ImmutableArray<DiscColor> normalizedBoard = Normalize(board);
         ValidatePosition(column, row);
-        if (color is DiscColor.Empty)
+        if (color is not (DiscColor.Red or DiscColor.Yellow))
         {
             throw new ArgumentException("A placed disc must have a player color.", nameof(color));
         }
@@ -81,7 +81,7 @@ internal static class ConnectFourBoard
     {
         ImmutableArray<DiscColor> normalizedBoard = Normalize(board);
         ValidatePosition(column, row);
-        if (color is DiscColor.Empty || (normalizedBoard[ToIndex(column, row)] != color))
+        if (color is not (DiscColor.Red or DiscColor.Yellow) || (normalizedBoard[ToIndex(column, row)] != color))
         {
             return [];
         }
@@ -152,7 +152,7 @@ internal static class ConnectFourBoard
         ImmutableArray<DiscColor> normalizedBoard = Normalize(board);
         updatedBoard = normalizedBoard;
         row = -1;
-        if (((uint)column >= ColumnCount) || color is DiscColor.Empty)
+        if (((uint)column >= ColumnCount) || color is not (DiscColor.Red or DiscColor.Yellow))
         {
             return false;
         }
