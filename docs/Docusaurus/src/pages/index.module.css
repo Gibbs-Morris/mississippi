@@ -229,6 +229,9 @@
   color: #eaf2ed;
   border-color: #eaf2ed;
 }
+:global([data-theme='dark']) .secondaryAction:hover {
+  background: #193640;
+}
 :global([data-theme='dark']) .proof a {
   color: #9de0c8;
 }

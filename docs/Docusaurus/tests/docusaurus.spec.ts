@@ -43,6 +43,25 @@ test.describe('Mississippi landing page', () => {
     await expect(page.getByRole('heading', {level: 1})).toHaveText('Architectural Model');
   });
 
+  test('dark source action stays legible while hovered', async ({page}) => {
+    await page.addInitScript(() => localStorage.setItem('theme', 'dark'));
+    await page.goto('./');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    const source = page.getByRole('link', {name: 'Inspect the source'});
+    await source.hover();
+    const contrast = await source.evaluate(element => {
+      const style = getComputedStyle(element);
+      const luminance = (color: string) => color.match(/[\d.]+/g)!.slice(0, 3)
+        .map(Number).map(channel => channel / 255)
+        .map(channel => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4)
+        .reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+      const foreground = luminance(style.color);
+      const background = luminance(style.backgroundColor);
+      return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+    });
+    expect(contrast).toBeGreaterThanOrEqual(4.5);
+  });
+
   for (const width of [390, 768]) {
     test(`fits a ${width}px viewport without horizontal overflow`, async ({page}) => {
       await page.setViewportSize({width, height: 844});
