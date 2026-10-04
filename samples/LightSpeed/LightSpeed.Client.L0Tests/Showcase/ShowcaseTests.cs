@@ -42,6 +42,50 @@ public sealed class ShowcaseTests
         Assert.Equal(nameof(ChangeEmailAction), changed.LastAction);
     }
 
+    /// <summary>Emitter activation is immutable and records the latest action.</summary>
+    [Fact]
+    public void EmitterActivationIsImmutable()
+    {
+        ShowcaseState initial = new();
+        ShowcaseState changed = ShowcaseReducers.ActivateEmitter(initial, new());
+        Assert.NotSame(initial, changed);
+        Assert.Equal(0, initial.EmitterActivationCount);
+        Assert.Equal(1, changed.EmitterActivationCount);
+        Assert.Equal(1, changed.ActionCount);
+        Assert.Equal(nameof(ActivateEmitterAction), changed.LastAction);
+    }
+
+    /// <summary>Emitter disabled intent is immutable and updates the selected state.</summary>
+    [Fact]
+    public void EmitterDisabledChangesAreImmutable()
+    {
+        ShowcaseState initial = new();
+        ShowcaseState changed = ShowcaseReducers.ChangeEmitterDisabled(initial, new(true));
+        Assert.NotSame(initial, changed);
+        Assert.False(initial.IsEmitterDisabled);
+        Assert.True(changed.IsEmitterDisabled);
+        Assert.Equal(1, changed.ActionCount);
+        Assert.Equal(nameof(ChangeEmitterDisabledAction), changed.LastAction);
+    }
+
+    /// <summary>The registered emitter actions reach the selector view.</summary>
+    [Fact]
+    public void EmitterRegistrationConnectsActionsToState()
+    {
+        ServiceCollection services = new();
+        services.AddLogging();
+        services.AddReservoir().AddShowcaseFeature();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IStore store = provider.GetRequiredService<IStore>();
+        store.Dispatch(new ActivateEmitterAction());
+        store.Dispatch(new ChangeEmitterDisabledAction(true));
+        ShowcaseView view = ShowcaseSelectors.GetView(store.GetState<ShowcaseState>());
+        Assert.Equal(1, view.EmitterActivationCount);
+        Assert.True(view.IsEmitterDisabled);
+        Assert.Equal(2, view.ActionCount);
+        Assert.Equal(nameof(ChangeEmitterDisabledAction), view.LastAction);
+    }
+
     /// <summary>Invalid demo percentages do not produce misleading state.</summary>
     /// <param name="percent">An out-of-range selection.</param>
     [Theory]
@@ -53,6 +97,58 @@ public sealed class ShowcaseTests
     {
         ShowcaseState state = new();
         Assert.Same(state, ShowcaseReducers.ChangeProgress(state, new(percent)));
+    }
+
+    /// <summary>The registered notification intents reach the selected view.</summary>
+    [Fact]
+    public void NotificationRegistrationConnectsActionsToState()
+    {
+        ServiceCollection services = new();
+        services.AddLogging();
+        services.AddReservoir().AddShowcaseFeature();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IStore store = provider.GetRequiredService<IStore>();
+        store.Dispatch(new ExpandNotificationAction());
+        store.Dispatch(new DismissNotificationAction());
+        store.Dispatch(new RestoreNotificationAction());
+        ShowcaseView view = ShowcaseSelectors.GetView(store.GetState<ShowcaseState>());
+        Assert.True(view.IsNotificationVisible);
+        Assert.False(view.IsNotificationExpanded);
+        Assert.Equal(3, view.ActionCount);
+        Assert.Equal(nameof(RestoreNotificationAction), view.LastAction);
+    }
+
+    /// <summary>Notification intents preserve immutable state and reject invalid visibility transitions.</summary>
+    [Fact]
+    public void NotificationTransitionsAreImmutable()
+    {
+        ShowcaseState initial = new();
+        ShowcaseState expanded = ShowcaseReducers.ExpandNotification(initial, new());
+        ShowcaseState dismissed = ShowcaseReducers.DismissNotification(expanded, new());
+        ShowcaseState ignoredDismissal = ShowcaseReducers.DismissNotification(dismissed, new());
+        ShowcaseState ignoredExpansion = ShowcaseReducers.ExpandNotification(dismissed, new());
+        ShowcaseState restored = ShowcaseReducers.RestoreNotification(dismissed, new());
+        ShowcaseState ignoredRestore = ShowcaseReducers.RestoreNotification(restored, new());
+        Assert.NotSame(initial, expanded);
+        Assert.True(initial.IsNotificationVisible);
+        Assert.False(initial.IsNotificationExpanded);
+        Assert.True(expanded.IsNotificationVisible);
+        Assert.True(expanded.IsNotificationExpanded);
+        Assert.Equal(nameof(ExpandNotificationAction), expanded.LastAction);
+        Assert.Equal(1, expanded.ActionCount);
+        Assert.False(dismissed.IsNotificationVisible);
+        Assert.False(dismissed.IsNotificationExpanded);
+        Assert.Equal(nameof(DismissNotificationAction), dismissed.LastAction);
+        Assert.Equal(2, dismissed.ActionCount);
+        Assert.Same(dismissed, ignoredDismissal);
+        Assert.Equal(nameof(DismissNotificationAction), ignoredDismissal.LastAction);
+        Assert.Equal(2, ignoredDismissal.ActionCount);
+        Assert.Same(dismissed, ignoredExpansion);
+        Assert.True(restored.IsNotificationVisible);
+        Assert.False(restored.IsNotificationExpanded);
+        Assert.Equal(nameof(RestoreNotificationAction), restored.LastAction);
+        Assert.Equal(3, restored.ActionCount);
+        Assert.Same(restored, ignoredRestore);
     }
 
     /// <summary>Completion changes preserve the original state and unrelated form data.</summary>
@@ -102,11 +198,19 @@ public sealed class ShowcaseTests
             Email = "edited",
             IsSubmitted = true,
             ActionCount = 4,
+            EmitterActivationCount = 2,
+            IsEmitterDisabled = true,
+            IsNotificationVisible = true,
+            IsNotificationExpanded = true,
         };
         ShowcaseState reset = ShowcaseReducers.Reset(state, new());
         Assert.Equal(RefractionThemeMode.Light, reset.ThemeMode);
         Assert.Equal("alex@contoso.example", reset.Email);
         Assert.False(reset.IsSubmitted);
+        Assert.Equal(2, reset.EmitterActivationCount);
+        Assert.True(reset.IsEmitterDisabled);
+        Assert.True(reset.IsNotificationVisible);
+        Assert.True(reset.IsNotificationExpanded);
         Assert.Equal(5, reset.ActionCount);
         Assert.Equal(nameof(ResetProfileAction), reset.LastAction);
     }
