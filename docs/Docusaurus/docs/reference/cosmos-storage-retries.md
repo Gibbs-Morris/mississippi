@@ -1,10 +1,14 @@
 ---
+id: cosmos-storage-retries
 title: Cosmos Storage Retries
 description: Reference the shared Cosmos retry policy's attempt count, delay selection, cancellation, and exception behavior.
 sidebar_position: 42
+sidebar_label: Cosmos Storage Retries
 ---
 
 # Cosmos Storage Retries
+
+## Overview
 
 `CosmosRetryPolicy` is the shared retry implementation registered by the Brooks and Tributary Cosmos storage providers. It retries selected Cosmos failures around one supplied asynchronous operation.
 
@@ -36,6 +40,8 @@ The [interface](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Common
 The delegate has no token parameter. Canceling the policy token therefore does not automatically cancel a running operation; the supplied operation needs its own token handling.
 
 A `TaskCanceledException` from the operation is wrapped in `OperationCanceledException`, with the original exception as its inner exception and the policy token attached. The message distinguishes a requested cancellation from an operation canceled before completion. Neither case is retried.
+
+Cancellation detected before entering an attempt, or during the retry delay, escapes directly from the token check or `Task.Delay`. Those paths do not use the operation's custom cancellation wrapper or message.
 
 ## Failure Outcomes
 
