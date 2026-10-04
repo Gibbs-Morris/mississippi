@@ -22,6 +22,8 @@ public sealed class GeneratedDtoNameRegistry
 
     private Dictionary<string, INamedTypeSymbol> GeneratedTypes { get; } = new(StringComparer.Ordinal);
 
+    private Dictionary<string, HashSet<INamedTypeSymbol>> ReportedConflicts { get; } = new(StringComparer.Ordinal);
+
     /// <summary>
     ///     Reserves a generated declaration name and reports conflicting source types.
     /// </summary>
@@ -84,13 +86,23 @@ public sealed class GeneratedDtoNameRegistry
             return true;
         }
 
-        context.ReportDiagnostic(
-            Diagnostic.Create(
-                DtoNameCollisionDescriptor,
-                sourceType.Locations.FirstOrDefault(location => location.IsInSource) ?? Location.None,
-                key,
-                existingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                sourceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+        if (!ReportedConflicts.TryGetValue(key, out HashSet<INamedTypeSymbol>? reportedSources))
+        {
+            reportedSources = new(SymbolEqualityComparer.Default);
+            ReportedConflicts.Add(key, reportedSources);
+        }
+
+        if (reportedSources.Add(sourceType))
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    DtoNameCollisionDescriptor,
+                    sourceType.Locations.FirstOrDefault(location => location.IsInSource) ?? Location.None,
+                    key,
+                    existingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                    sourceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+        }
+
         return false;
     }
 }
