@@ -174,9 +174,9 @@ flowchart TD
         P9Cap -- No --> P9Wait
         P9Cap -- Yes --> P9Stop
             P9Comments -- No --> P9Ready --> G3
-            G3 --|APPROVED| P9Done
-        G3 --|CHANGES_REQUESTED| RiverOrchestrator
-        G3 --|DEFERRED or CANCELLED| Stop3(["Stop or hold after late-stage review"])
+            G3 -->|APPROVED| P9Done
+        G3 -->|CHANGES_REQUESTED| RiverOrchestrator
+        G3 -->|DEFERRED or CANCELLED| Stop3(["Stop or hold after late-stage review"])
     end
 
     G1{"G1 Scope Gate<br/>requirements-synthesis.md + synthesis.md"}
@@ -184,15 +184,15 @@ flowchart TD
 
     P2Gaps -- No --> G1
     P2Questions --> G1
-    G1 --|APPROVED| P3Architect
-    G1 --|CHANGES_REQUESTED| RiverOrchestrator
-    G1 --|DEFERRED or CANCELLED| Stop1(["Stop or hold after scope review"])
+    G1 -->|APPROVED| P3Architect
+    G1 -->|CHANGES_REQUESTED| RiverOrchestrator
+    G1 -->|DEFERRED or CANCELLED| Stop1(["Stop or hold after scope review"])
     P1Synthesis --> P2Invoke
     P3Adr --> P4Draft
     P4Final --> G2
-    G2 --|APPROVED| P5Branch
-    G2 --|CHANGES_REQUESTED| RiverOrchestrator
-    G2 --|DEFERRED or CANCELLED| Stop2(["Stop or hold before implementation"])
+    G2 -->|APPROVED| P5Branch
+    G2 -->|CHANGES_REQUESTED| RiverOrchestrator
+    G2 -->|DEFERRED or CANCELLED| Stop2(["Stop or hold before implementation"])
     P5Full --> P6Diff
     P6Findings -- No --> P7Lead
     P7Remediate --> P5Tests
