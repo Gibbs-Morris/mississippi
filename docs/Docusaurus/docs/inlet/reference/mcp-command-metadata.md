@@ -1,10 +1,14 @@
 ---
+id: mcp-command-metadata
 title: Generated MCP Command Metadata
 description: Reference command tool hints, titles, descriptions, and parameter-description precedence.
 sidebar_position: 12
+sidebar_label: Generated MCP Command Metadata
 ---
 
 # Generated MCP Command Metadata
+
+## Overview
 
 `McpAggregateToolsGenerator` emits MCP command tools with descriptions and behavioral annotations. These values help a tool caller understand the command; the generated method still executes the aggregate command.
 
@@ -31,7 +35,7 @@ A null description falls back to a sentence naming the command and aggregate. An
 
 ## Parameter Descriptions
 
-[`GenerateMcpParameterDescription`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateMcpParameterDescriptionAttribute.cs) accepts description text on a command property or constructor parameter. The generator first collects descriptions from public instance properties with getters, then considers constructor parameters for positional records where no corresponding description was already found.
+[`GenerateMcpParameterDescription`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateMcpParameterDescriptionAttribute.cs) accepts description text on a command property or constructor parameter. The generator first collects descriptions from public instance properties with getters. For a record, it then selects the first non-static constructor with parameters and fills descriptions not already supplied by properties. This includes an explicit parameterized record constructor, rather than only positional-record syntax; parameter names must match the selected property names for emission.
 
 Null or empty description text is ignored; whitespace text is retained. At emission, a selected property's name is used to look up its description. Without a matching custom description, the generator derives human-readable text from that name. The generated method parameter name is the camelCase form of the property name.
 
