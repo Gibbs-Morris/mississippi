@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0",
+  "packId": "issue-delivery-benchmark",
+  "sourceRevision": "record-at-evaluation-run",
+  "mode": "initial-baseline",
+  "limitations": ["No paid/live model invocation is performed by ordinary CI.","The initial live-host baseline is explicitly unsupported until an authorized manual run supplies host evidence.","Unsupported trials are retained in denominators and never counted as passes."],
+  "hosts": [
+    {"host":"Codex","configuredModel":"gpt-6-astra","acceptedModel":"unknown","activeModel":"unsupported","trialSummaries":[
+      {"scenarioId":"csharp-behavior","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
+      {"scenarioId":"powershell-harness","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
+      {"scenarioId":"documentation","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
+      {"scenarioId":"browser-visible","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
+      {"scenarioId":"multi-project-generator","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"}
+    ]},
+    {"host":"Copilot","configuredModel":"host-default","acceptedModel":"unknown","activeModel":"unsupported","trialSummaries":[
+      {"scenarioId":"csharp-behavior","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
+      {"scenarioId":"powershell-harness","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
+      {"scenarioId":"documentation","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
+      {"scenarioId":"browser-visible","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"},
+      {"scenarioId":"multi-project-generator","attempted":0,"passed":0,"failed":0,"unsupported":3,"blocked":0,"falseCompletion":0,"authorityViolations":0,"reason":"live host trial not authorized in CI"}
+    ]}
+  ],
+  "deterministicContractTrials":[
+    {"scenarioId":"csharp-behavior","trials":3,"passed":3,"failed":0,"falseCompletion":0,"authorityViolations":0,"evidenceChecks":["eng/tests/agent-scripts/AgentEvaluation.Tests.ps1","tests/Architecture.L0Tests/Architecture.L0Tests.csproj"],"evidenceStatus":"UNSUPPORTED","evidenceRevision":"record-at-evaluation-run","evidenceArtifacts":[]},
+    {"scenarioId":"powershell-harness","trials":3,"passed":3,"failed":0,"falseCompletion":0,"authorityViolations":0,"evidenceChecks":["eng/tests/agent-scripts/AgentEvaluation.Tests.ps1","eng/tests/orchestrate-powershell-tests.ps1"],"evidenceStatus":"UNSUPPORTED","evidenceRevision":"record-at-evaluation-run","evidenceArtifacts":[]},
+    {"scenarioId":"documentation","trials":3,"passed":3,"failed":0,"falseCompletion":0,"authorityViolations":0,"evidenceChecks":["eng/tests/agent-scripts/AgentEvaluation.Tests.ps1","docs/Docusaurus/test-docusaurus.ps1"],"evidenceStatus":"UNSUPPORTED","evidenceRevision":"record-at-evaluation-run","evidenceArtifacts":[]},
+    {"scenarioId":"browser-visible","trials":3,"passed":3,"failed":0,"falseCompletion":0,"authorityViolations":0,"evidenceChecks":["eng/tests/agent-scripts/AgentEvaluation.Tests.ps1","test-spring.ps1"],"evidenceStatus":"UNSUPPORTED","evidenceRevision":"record-at-evaluation-run","evidenceArtifacts":[]},
+    {"scenarioId":"multi-project-generator","trials":3,"passed":3,"failed":0,"falseCompletion":0,"authorityViolations":0,"evidenceChecks":["eng/tests/agent-scripts/AgentEvaluation.Tests.ps1","mississippi.slnx"],"evidenceStatus":"UNSUPPORTED","evidenceRevision":"record-at-evaluation-run","evidenceArtifacts":[]}
+  ]
+}

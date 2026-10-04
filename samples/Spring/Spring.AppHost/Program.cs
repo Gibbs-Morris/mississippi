@@ -1,4 +1,3 @@
-#pragma warning disable ASPIRECOSMOSDB001 // RunAsPreviewEmulator is experimental
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
@@ -21,12 +20,15 @@ IResourceBuilder<AzureBlobStorageResource> blobs = storage.AddBlobs("blobs");
 // Add Azure Table Storage for Orleans clustering
 IResourceBuilder<AzureTableStorageResource> clusteringTable = storage.AddTables("clustering");
 
+// Add Azure Table Storage for Orleans reminders
+IResourceBuilder<AzureTableStorageResource> reminderTable = storage.AddTables("reminders");
+
 // Add Azure Blob Storage for Orleans grain state
 IResourceBuilder<AzureBlobStorageResource> grainState = storage.AddBlobs("grainstate");
 
-// Add Cosmos DB using PREVIEW emulator for event sourcing storage (Brooks + Snapshots)
+// Add Cosmos DB using the Linux vNext emulator for event sourcing storage (Brooks + Snapshots)
 IResourceBuilder<AzureCosmosDBResource> cosmos = builder.AddAzureCosmosDB("cosmos")
-    .RunAsPreviewEmulator(emulator =>
+    .RunAsEmulator(emulator =>
     {
         emulator.WithDataExplorer();
 #pragma warning disable ASPIRECERTIFICATES001
@@ -38,6 +40,7 @@ _ = cosmos.AddCosmosDatabase("spring-db");
 // Configure Orleans with Azure Storage for clustering, grain state, and in-memory streaming
 OrleansService orleans = builder.AddOrleans("default")
     .WithClustering(clusteringTable)
+    .WithReminders(reminderTable)
     .WithGrainStorage("Default", grainState)
     .WithMemoryGrainStorage("PubSubStore")
     .WithMemoryStreaming("StreamProvider");
@@ -60,10 +63,13 @@ IResourceBuilder<ProjectResource> springGateway = builder.AddProject<Spring_Gate
     .WithReference(orleans.AsClient())
     .WaitFor(storage)
     .WaitFor(springRuntime)
+    .WithHttpHealthCheck("/health", endpointName: "http")
     .WithExternalHttpEndpoints();
 if (springAuthProofModeEnabled)
 {
     springGateway.WithEnvironment("SpringAuth__Enabled", "true");
+    springGateway.WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development");
+    springGateway.WithEnvironment("DOTNET_ENVIRONMENT", "Development");
 }
 
 await builder.Build().RunAsync();

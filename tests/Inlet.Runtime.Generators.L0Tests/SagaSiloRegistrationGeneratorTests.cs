@@ -213,7 +213,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                   """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, sagaSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains(
             "AddSagaOrchestration<global::TestApp.Domain.Sagas.TransferSagaState",
             generatedCode,
@@ -267,7 +267,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                   """;
         (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, sagaSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.DoesNotContain("AddSagaStepInfo", generatedCode, StringComparison.Ordinal);
         Diagnostic diagnostic = Assert.Single(diagnostics.Where(d => d.Id == "MSI1004"));
         Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
@@ -298,7 +298,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                   """;
         (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, sagaSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.DoesNotContain("AddSagaStepInfo", generatedCode, StringComparison.Ordinal);
         Diagnostic diagnostic = Assert.Single(diagnostics.Where(d => d.Id == "MSI1007"));
         Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);

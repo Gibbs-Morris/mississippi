@@ -70,7 +70,7 @@ internal sealed class SnapshotStorageProvider : ISnapshotStorageProvider
         ArgumentNullException.ThrowIfNull(retainModuli);
         Logger.PruningSnapshots(streamKey, retainModuli.Count);
         await Repository.PruneAsync(streamKey, retainModuli, cancellationToken).ConfigureAwait(false);
-        SnapshotStorageMetrics.RecordPrune(streamKey.SnapshotStorageName, retainModuli.Count);
+        SnapshotStorageMetrics.RecordPrune(streamKey.SnapshotStorageName, 1);
     }
 
     /// <inheritdoc />

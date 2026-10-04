@@ -26,8 +26,9 @@ public sealed class SampleTests
     public void BlobConnectionStringShouldBeAvailable()
     {
         // Assert
-        fixture.BlobConnectionString.Should()
-            .NotBeNullOrEmpty("the Azurite emulator should provide a connection string");
+        Assert.False(
+            string.IsNullOrEmpty(fixture.BlobConnectionString),
+            "the Azurite emulator should provide a connection string");
     }
 
     /// <summary>
@@ -37,10 +38,10 @@ public sealed class SampleTests
     public void CosmosConnectionStringShouldBeAvailable()
     {
         // Assert
-        fixture.CosmosConnectionString.Should()
-            .NotBeNullOrEmpty("the Cosmos DB emulator should provide a connection string");
-        fixture.CosmosConnectionString.Should()
-            .Contain("AccountEndpoint=", "the connection string should contain an account endpoint");
+        Assert.False(
+            string.IsNullOrEmpty(fixture.CosmosConnectionString),
+            "the Cosmos DB emulator should provide a connection string");
+        Assert.Contains("AccountEndpoint=", fixture.CosmosConnectionString, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -50,7 +51,7 @@ public sealed class SampleTests
     public void FixtureShouldBeInitialized()
     {
         // Assert
-        fixture.IsInitialized.Should().BeTrue("the Crescent AppHost should start successfully with all emulators");
-        fixture.InitializationError.Should().BeNull("there should be no initialization errors");
+        Assert.True(fixture.IsInitialized, "the Crescent AppHost should start successfully with all emulators");
+        Assert.Null(fixture.InitializationError);
     }
 }

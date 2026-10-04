@@ -1,0 +1,6 @@
+.rf-theme {
+    color: var(--rf-color-text-primary);
+    background-color: var(--rf-color-surface-void);
+    font-family: var(--rf-raw-font-sans);
+    font-size: var(--rf-raw-text-base);
+}

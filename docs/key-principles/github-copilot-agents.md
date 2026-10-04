@@ -54,8 +54,8 @@ specificity and capability:
 │  Layer 4: Custom Agents (.agent.md)              │
 │  Purpose-built personas with tools and handoffs  │
 ├──────────────────────────────────────────────────┤
-│  Layer 3: Skills (SKILL.md + tools)              │
-│  Reusable tool bundles agents can reference      │
+│  Layer 3: Skills (SKILL.md)                       │
+│  Reusable workflows with optional resources      │
 ├──────────────────────────────────────────────────┤
 │  Layer 2: Instruction Files (.instructions.md)   │
 │  Scoped rules auto-attached by glob pattern      │
@@ -67,10 +67,10 @@ specificity and capability:
 
 ### Layer 1 — Copilot Instructions (Global Context)
 
-A file at `.github/copilot‑instructions.md` provides global context that is
+A file at `.github/copilot-instructions.md` provides global context that is
 automatically included in every Copilot chat interaction in the repository.
 
-- **Location**: `.github/copilot‑instructions.md`
+- **Location**: `.github/copilot-instructions.md`
 - **Scope**: All Copilot interactions in the repository
 - **Format**: Markdown
 - **Purpose**: High-level project context, coding standards, architectural
@@ -127,19 +127,28 @@ apply simultaneously.
   ambiguous situations.
 - Reference other instruction files rather than duplicating content.
 
-### Layer 3 — Skills (Reusable Tool Bundles)
+### Layer 3 — Skills (Reusable Workflows)
 
-Skills are directories containing a `SKILL.md` file that describes a reusable
-capability — typically wrapping one or more tools (MCP servers, VS Code
-commands, terminal operations) into a coherent, documented action that agents
-can invoke.
+Skills are directories containing a `SKILL.md` file for a focused, reusable
+workflow. Instructions alone are sufficient; add scripts or other resources
+only when the workflow needs them. Keep mandatory repository policy in
+instructions and load detailed skill procedures only for relevant tasks.
 
-- **Location**: `.github/skills/<skill-name>/SKILL.md`
-- **Format**: Markdown with structured sections
+- **Shared repository location**: `.agents/skills/<skill-name>/SKILL.md`,
+  discovered by both Codex and Copilot. Copilot also supports `.github/skills`
+  and `.claude/skills`; avoid separately maintained copies.
+- **Format**: Markdown with YAML frontmatter containing `name` and `description`.
+- **Portability**: Discover the consuming project's policies, paths, and commands;
+  use relative links for bundled references instead of repository dependencies.
 
 #### Skill File Structure
 
 ```markdown
+---
+name: prepare-pull-request
+description: Prepare a pull request description from the actual diff and validation evidence. Use when drafting or updating a PR description.
+---
+
 # Skill Name
 
 Description of what this skill does.
@@ -148,10 +157,9 @@ Description of what this skill does.
 
 Conditions under which this skill should be invoked.
 
-## Tools Required
+## Supporting Resources (Optional)
 
-- `mcp_github_create_pull_request` — Creates a PR
-- `run_in_terminal` — Executes build commands
+Link bundled references or scripts here only when this workflow needs them.
 
 ## Procedure
 
@@ -170,8 +178,16 @@ Conditions under which this skill should be invoked.
 Description of what the skill produces.
 ```
 
-Skills are referenced by agents in their `tools` or description sections, and
-Copilot resolves them at invocation time.
+Skill names and descriptions support discovery; the body loads when selected.
+Link supporting references from the body and explain when to read them. An
+agent's tool permissions remain separate from skill discovery.
+
+Shared placement and format follow the
+[GitHub skill guidance](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/add-skills),
+[Codex skill guidance](https://learn.chatgpt.com/docs/build-skills), and
+[Agent Skills specification](https://agentskills.io/specification).
+For dated verification evidence, see the
+[pilot research record](../../.github/agent-guidance/logging-skill-pilot.md#research-decisions).
 
 ### Layer 4 — Custom Agents (Purpose-Built Personas)
 
@@ -219,8 +235,32 @@ You are a [role description]. Your job is to [mission].
 |---|---|---|---|
 | `name` | Yes | string | Display name of the agent |
 | `description` | Yes | string | One-line description shown in the picker and used for routing |
-| `metadata` | No | object | Arbitrary key-value pairs for organisational use |
-| `handoffs` | No | array | Sub-agent delegation definitions (see Key-Line 3) |
+| `tools` | No | array | Tool aliases, extension tools, or MCP tool groups available to the agent |
+| `model` | No | string or array | Preferred model or ordered fallback list; host default is used when omitted |
+| `argument-hint` | No | string | Input guidance shown for user-invocable agents |
+| `agents` | No | array | Restricts which custom agents this agent may invoke as sub-agents; omit to allow all, or use an empty array to allow none |
+| `user-invocable` | No | boolean | Whether the agent appears in the picker; defaults to `true` |
+| `disable-model-invocation` | No | boolean | Whether other agents are prevented from invoking this agent as a sub-agent; defaults to `false` |
+| `metadata` | No | object | Arbitrary key-value pairs for organizational use; agent behavior must not depend on hosts preserving it |
+| `handoffs` | No | array | User-visible transition definitions to other agents (see Key-Line 3) |
+| `hooks` | No | object | Inline lifecycle hooks scoped to the agent |
+
+Common tool aliases include:
+
+| Alias | Purpose |
+|---|---|
+| `read` | Read file contents |
+| `search` | Search files or text |
+| `edit` | Edit files |
+| `execute` | Run shell commands |
+| `agent` | Invoke custom agents as sub-agents |
+| `web` | Fetch URLs and web content |
+| `todo` | Manage task lists |
+
+Agents should still use the smallest practical tool set. For example, review
+agents usually need `read`, `search`, and sometimes `execute`, while builder or
+orchestrator agents may need `edit`, `execute`, `agent`, or `todo` because their
+role requires delegation, validation, or task tracking.
 
 ### The Markdown Body (System Prompt)
 
@@ -286,14 +326,34 @@ Sub-agents are other custom agents that an agent can **delegate work to**. This
 enables multi-agent workflows where a coordinator agent breaks a task into parts
 and hands each part to a specialist.
 
-### Defining Handoffs
+### Restricting Available Sub-Agents
 
-Handoffs are defined in the YAML frontmatter of the delegating agent:
+Use the `agents` frontmatter field when a coordinator should only invoke a
+specific set of sub-agents:
 
 ```yaml
 ---
 name: "Coordinator"
 description: "Coordinates multi-step implementation tasks."
+tools: [agent, read, search]
+agents: [test-writer, technical-writer, reviewer]
+---
+```
+
+The `agents` field is the delegation allowlist. Omit it to allow all available
+custom agents, or set it to an empty array to prevent sub-agent invocation.
+
+### Defining Handoffs
+
+Handoffs are user-visible transitions defined in the YAML frontmatter of the
+delegating agent. They should target agents that are also present in the
+`agents` allowlist when an allowlist is configured:
+
+```yaml
+---
+name: "Coordinator"
+description: "Coordinates multi-step implementation tasks."
+agents: [test-writer, technical-writer]
 handoffs:
   - label: "Write Tests"
     agent: test-writer
@@ -314,6 +374,20 @@ handoffs:
 | `agent` | Yes | string | Name of the target agent file (without `.agent.md`) |
 | `prompt` | No | string | Pre-filled prompt text for the handoff |
 | `send` | No | boolean | If `true`, the handoff is sent automatically. If `false` (default), the user can review and edit before sending. |
+
+### Agents vs Handoffs
+
+`agents` and `handoffs` solve different problems:
+
+| Field | Primary job | Use it for |
+|---|---|---|
+| `agents` | Sub-agent invocation control | Constraining which agents a coordinator can invoke |
+| `handoffs` | User-facing transitions | Providing labelled next-step prompts with reviewable context |
+
+A workflow coordinator should use `agents` to bound the available sub-agents and
+`handoffs` to make common transitions explicit. Handoff prompts should include
+enough context for a stateless sub-agent: task folder path, objective,
+constraints, input artifacts, expected output shape, and escalation conditions.
 
 ### How Handoffs Work at Runtime
 
@@ -447,21 +521,22 @@ matching instructions.
 ### Directory Structure
 
 ```text
+.agents/
+└── skills/
+    └── build-and-test/
+        └── SKILL.md
 .github/
-├── copilot‑instructions.md          # Global repo context
+├── copilot-instructions.md          # Global repo context
 ├── instructions/
 │   ├── shared-policies.instructions.md
 │   ├── testing.instructions.md
 │   ├── logging-rules.instructions.md
 │   └── ...
-├── agents/
-│   ├── dev.agent.md
-│   ├── technical-writer.agent.md
-│   ├── CoV-coding.agent.md
-│   └── ...
-└── skills/
-    └── build-and-test/
-        └── SKILL.md
+└── agents/
+    ├── dev.agent.md
+    ├── technical-writer.agent.md
+    ├── CoV-coding.agent.md
+    └── ...
 ```
 
 ### Step-by-Step: Creating Your First Agent
@@ -502,9 +577,11 @@ matching instructions.
 ### Step-by-Step: Adding a Sub-Agent Handoff
 
 1. **Ensure the target agent exists** (e.g., `.github/agents/reviewer.agent.md`).
-2. **Add `handoffs` to the parent agent's frontmatter**:
+2. **Add the target to the parent agent's `agents` allowlist and define a
+   `handoffs` entry**:
 
    ```yaml
+   agents: [reviewer]
    handoffs:
      - label: "Review Changes"
        agent: reviewer
@@ -597,9 +674,9 @@ This enables tooling to discover and organise related agents programmatically.
 
 | Source | Reference |
 |---|---|
-| **VS Code Custom Agents** | *Custom chat agents*. VS Code documentation. <https://code.visualstudio.com/docs/copilot/copilot-extensibility-overview> |
+| **VS Code Custom Agents** | *Custom agents*. VS Code documentation. <https://code.visualstudio.com/docs/copilot/customization/custom-agents> |
 | **VS Code Custom Instructions** | *Custom instructions*. VS Code documentation. <https://code.visualstudio.com/docs/copilot/copilot-customization> |
-| **VS Code Sub-Agents** | *Sub-agents*. VS Code documentation. <https://code.visualstudio.com/docs/copilot/copilot-extensibility-overview#_subagents> |
+| **VS Code Sub-Agents** | *Sub-agents*. VS Code documentation. <https://code.visualstudio.com/docs/copilot/customization/custom-agents#_subagents> |
 | **GitHub Copilot Customization** | *Customizing Copilot*. GitHub documentation. <https://docs.github.com/en/copilot/customizing-copilot> |
 | **Chain of Verification** | Dhuliawala, S. et al. (2023). *Chain-of-Verification Reduces Hallucination in Large Language Models*. arXiv:2309.11495 |
 | **Mississippi Repository** | Real-world examples under `.github/agents/` and `.github/instructions/` in this repository |

@@ -44,7 +44,9 @@ public sealed class BrookWriterGrainTests
                 Id = "2",
             },
         ];
-        BrookPosition newPos = await writer.AppendEventsAsync(events);
+        BrookPosition newPos = await writer.AppendEventsAsync(
+            events,
+            cancellationToken: TestContext.Current.CancellationToken);
 
         // Cursor represents last written position (0-based), so 2 events means position 1
         Assert.Equal(1, newPos.Value);
@@ -75,7 +77,7 @@ public sealed class BrookWriterGrainTests
 
         // Empty brook has cursor -1, so expected version for first write is -1
         // After writing 1 event, cursor becomes 0 (last written position)
-        BrookPosition pos1 = await writer.AppendEventsAsync(e1, -1);
+        BrookPosition pos1 = await writer.AppendEventsAsync(e1, -1, TestContext.Current.CancellationToken);
         Assert.Equal(0, pos1.Value);
         ImmutableArray<BrookEvent> e2 =
         [
@@ -86,6 +88,7 @@ public sealed class BrookWriterGrainTests
         ];
 
         // Trying to append with stale expected version (-1) should throw
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => await writer.AppendEventsAsync(e2, -1));
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await writer.AppendEventsAsync(e2, -1, TestContext.Current.CancellationToken));
     }
 }
