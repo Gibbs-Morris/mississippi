@@ -1,10 +1,14 @@
 ---
+id: callout-line
 title: CalloutLine
 description: Reference the current CalloutLine markup, label and state parameters, and composition boundary.
 sidebar_position: 8
+sidebar_label: CalloutLine
 ---
 
 # CalloutLine
+
+## Overview
 
 `CalloutLine` renders a small visual anchor, leader line, and optional text label. Its current implementation supplies presentation; application code owns target placement and interaction.
 
@@ -28,6 +32,8 @@ The [component parameters](https://github.com/Gibbs-Morris/mississippi/blob/main
 ## Rendered Anatomy
 
 The [Razor markup](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Refraction.Client/Components/Atoms/CalloutLine.razor) uses a root `div` containing an anchor span and a line span. Both spans render even when the label is absent.
+
+`AdditionalAttributes` is applied after the root's explicit attributes, so collisions override `class` or `data-state` under Blazor's [attribute precedence](https://learn.microsoft.com/en-us/aspnet/core/blazor/components/splat-attributes-and-arbitrary-parameters#arbitrary-attributes). A supplied class replaces `rf-callout-line` instead of appending to it; retain that base class when adding classes, and avoid unintended marker overrides.
 
 The label span renders only when `Label` is neither null nor empty. Whitespace-only labels still pass that condition. Blazor renders the value as text.
 
