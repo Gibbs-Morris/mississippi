@@ -62,6 +62,8 @@ The separator is a delimiter; the key type does not provide an escaping scheme f
 
 `default(BrookRangeKey)` and parameterless `new BrookRangeKey()` bypass the validating four-argument constructor. Their name and entity ID are null, and start and count are zero. Use the constructor or parsing methods when you need the validated representation described above.
 
+String conversion does not validate either default state: `ToString()`, the implicit conversion, and `FromBrookRangeKey()` produce `||0|0`. Parsing that string succeeds with empty name and ID components, so a string round trip does not reject a default key or preserve its null fields.
+
 ## Failure Behavior
 
 - Passing a null name or entity ID to the four-argument constructor, or a null input string to `FromString()`, throws `ArgumentNullException`.
