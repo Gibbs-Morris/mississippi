@@ -99,7 +99,7 @@ public sealed class CommandClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendLine("/// <remarks>");
         sb.AppendLine("///     <para>");
         sb.AppendLine($"///         This action effect posts to the {aggregateRouteSegment} aggregate endpoint");
-        sb.AppendLine($"///         at <c>/api/aggregates/{aggregateRouteSegment}/{{entityId}}/{command.Route}</c>.");
+        sb.AppendLine($"///         at <c>api/aggregates/{aggregateRouteSegment}/{{entityId}}/{command.Route}</c>.");
         sb.AppendLine("///     </para>");
         sb.AppendLine("/// </remarks>");
         sb.AppendGeneratedCodeAttribute("CommandClientActionEffectsGenerator");
@@ -134,7 +134,7 @@ public sealed class CommandClientActionEffectsGenerator : IIncrementalGenerator
         // AggregateRoutePrefix property
         sb.AppendLine("/// <inheritdoc />");
         sb.AppendLine(
-            $"protected override string AggregateRoutePrefix => \"/api/aggregates/{aggregateRouteSegment}\";");
+            $"protected override string AggregateRoutePrefix => \"api/aggregates/{aggregateRouteSegment}\";");
         sb.AppendLine();
 
         // Route property
