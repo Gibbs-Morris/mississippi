@@ -8,11 +8,11 @@ using Orleans;
 namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
-///     Event emitted when manual saga resume is requested.
+///     Event emitted when manual continuation of a running saga is requested.
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.DomainModeling.Abstractions.SagaResumeRequested")]
-[EventStorageName("MISSISSIPPI", "SAGAS", "SAGARESUMEREQUESTED")]
+[EventStorageName("MISSISSIPPI", "SAGAS", "SAGARESUMEREQUESTED", 1)]
 public sealed record SagaResumeRequested
 {
     /// <summary>

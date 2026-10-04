@@ -207,27 +207,13 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         }
     }
 
-    private async IAsyncEnumerable<object> ExecuteResumeAsync(
+    private IAsyncEnumerable<object> ExecuteResumeAsync(
         TSaga state,
-        [EnumeratorCancellation] CancellationToken cancellationToken
-    )
-    {
-        switch (state.Phase)
-        {
-            case SagaPhase.Running:
-                await foreach (object evt in ExecuteStepAsync(
-                                   state,
-                                   state.LastCompletedStepIndex + 1,
-                                   cancellationToken))
-                {
-                    yield return evt;
-                }
-
-                break;
-            default:
-                yield break;
-        }
-    }
+        CancellationToken cancellationToken
+    ) =>
+        state.Phase == SagaPhase.Running
+            ? ExecuteNextOrCompleteAsync(state, state.LastCompletedStepIndex, cancellationToken)
+            : AsyncEnumerable.Empty<object>();
 
     private async IAsyncEnumerable<object> ExecuteStepAsync(
         TSaga state,

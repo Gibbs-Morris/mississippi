@@ -810,4 +810,29 @@ public sealed class SagaOrchestrationEffectTests
         }, state, "saga", 0, TestContext.Current.CancellationToken));
         Assert.Empty(events);
     }
+    /// <summary>
+    ///     Verifies continuation completes a running saga whose last step is already recorded.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Fact]
+    public async Task HandleAsyncCompletesRunningSagaAfterLastRecordedStep()
+    {
+        DateTimeOffset now = new(2026, 10, 4, 0, 0, 0, TimeSpan.Zero);
+        SagaStepInfo[] steps = [new(0, "Debit", typeof(SagaSuccessStep), false)];
+        using ServiceProvider provider = CreateProvider();
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider, new FakeTimeProvider(now));
+        TestSagaState state = new()
+        {
+            SagaId = Guid.NewGuid(),
+            Phase = SagaPhase.Running,
+            LastCompletedStepIndex = 0,
+        };
+        List<object> events = await CollectAsync(effect.HandleAsync(new SagaResumeRequested
+        {
+            SagaId = state.SagaId,
+            RequestedAt = now,
+        }, state, "saga", 1, TestContext.Current.CancellationToken));
+        SagaCompleted completed = Assert.IsType<SagaCompleted>(Assert.Single(events));
+        Assert.Equal(now, completed.CompletedAt);
+    }
 }

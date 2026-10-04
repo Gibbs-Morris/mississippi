@@ -6,7 +6,7 @@ using Orleans;
 namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
-///     Command that requests manual saga resume from a client or UX action.
+///     Command that requests manual continuation of a running saga.
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.DomainModeling.Abstractions.ContinueSagaCommand")]
