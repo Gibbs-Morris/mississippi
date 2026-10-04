@@ -1,10 +1,14 @@
 ---
+id: effect-tests
 title: Effect Test Capture
 description: Reference effect harness invocation, captured aggregate commands, and dispatch assertions.
 sidebar_position: 14
+sidebar_label: Effect Test Capture
 ---
 
 # Effect Test Capture
+
+## Overview
 
 Domain Modeling's effect test harnesses invoke effects in memory and capture calls to mocked aggregate grains. They let consumers inspect command targets separately from any events yielded by the effect.
 
@@ -26,7 +30,9 @@ These direct calls do not exercise root-effect matching, Orleans worker dispatch
 
 ## Captured Commands And Results
 
-In either harness, `WithAggregateGrainResponse<TTargetAggregate>(entityId, response)` configures the target grain's `ExecuteAsync` response. Each such call records `(AggregateType, EntityId, Command)` before returning that configured response.
+In either harness, `WithAggregateGrainResponse<TTargetAggregate>(entityId, response)` configures the factory's string-entity-ID overload and the grain's two-argument `ExecuteAsync(command, cancellationToken)` overload. Calls through those setups record `(AggregateType, EntityId, Command)` before returning the configured response.
+
+The factory overload taking an `AggregateKey` is not configured and fails through the strict factory mock. The grain's overload taking an expected version is not part of this capture setup; it does not record a command through this callback.
 
 A captured command therefore proves a call was made even when the configured operation result reports failure. It does not prove that the target accepted or persisted the command. An unconfigured factory lookup fails through the strict mock.
 
