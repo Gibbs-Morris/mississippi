@@ -1,4 +1,5 @@
 ---
+id: event-conversion
 title: Brooks Event Conversion
 description: Reference the synchronous event converter, generated storage metadata, and type-resolution failures.
 sidebar_position: 9
@@ -6,6 +7,8 @@ sidebar_label: Event Conversion
 ---
 
 # Brooks Event Conversion
+
+## Overview
 
 `IBrookEventConverter` converts domain event objects to storage records and reconstructs domain objects from those records. Conversion prepares data; it does not append events to a brook.
 
@@ -44,7 +47,7 @@ It does not select a different serializer from `DataContentType` or validate `Da
 ## Failure Boundary
 
 - A null event list or null storage event throws `ArgumentNullException`.
-- An unresolved runtime type name during writing, or unresolved stored event name during reading, throws `InvalidOperationException`.
+- During writing, `ResolveName` receives the object's runtime `Type`; an unregistered type throws `InvalidOperationException`. During reading, an unresolved stored event name throws the same exception type.
 - A null element inside a non-null list reaches `GetType()` and throws `NullReferenceException`; there is no per-element null guard.
 - Registry, serializer, and time-provider exceptions propagate from the call.
 
