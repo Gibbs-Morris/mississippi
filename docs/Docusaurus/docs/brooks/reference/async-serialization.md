@@ -1,0 +1,60 @@
+---
+title: Brooks Asynchronous Serialization
+description: Reference stream serialization methods, JSON buffering and cancellation, and service-registration boundaries.
+sidebar_position: 10
+sidebar_label: Asynchronous Serialization
+---
+
+# Brooks Asynchronous Serialization
+
+The asynchronous serialization interfaces read from or write to a `Stream`. The supplied JSON provider implements those interfaces alongside its synchronous memory-based methods.
+
+## Applies To
+
+- `Mississippi.Brooks.Serialization.Abstractions`
+- `Mississippi.Brooks.Serialization.Json`
+
+## Method Shapes
+
+| Interface | Method and result |
+|-----------|-------------------|
+| `IAsyncSerializationReader` | `DeserializeAsync<T>(Stream, CancellationToken)` returns `ValueTask<T>` |
+| `IAsyncSerializationWriter` | `SerializeAsync<T>(T, Stream, CancellationToken)` returns `ValueTask` |
+
+Both methods have an optional token defaulting to `default`. Their [reader](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Serialization.Abstractions/IAsyncSerializationReader.cs) and [writer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Serialization.Abstractions/IAsyncSerializationWriter.cs) contracts expose generic methods; there is no asynchronous runtime-`Type` overload.
+
+[`ISerializationProvider`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Serialization.Abstractions/ISerializationProvider.cs) inherits both asynchronous interfaces and `ISerializationReader` and `ISerializationWriter`. The synchronous methods use `ReadOnlyMemory<byte>`; the reader also has a runtime-`Type` overload. The combined provider adds the `Format` property.
+
+## JSON Stream Behavior
+
+The [JSON provider](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Serialization.Json/JsonSerializationProvider.cs) reports `System.Text.Json` as its format.
+
+`DeserializeAsync<T>` calls `JsonSerializer.DeserializeAsync<T>` with the source stream and token. If deserialization produces null, it throws `InvalidOperationException`, matching the provider's synchronous null-result behavior.
+
+`SerializeAsync<T>` checks that the destination is non-null, serializes the complete value to a UTF-8 byte array, and then awaits `destination.WriteAsync` with the token. The token is passed to the write; it does not cancel the preceding synchronous serialization step.
+
+Asynchronous writing therefore still buffers the complete encoded payload. The method does not provide incremental encoding or a fixed memory limit. Neither asynchronous method disposes the caller's stream.
+
+The [existing provider tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Brooks.Serialization.Json.L0Tests/JsonSerializationProviderTests.cs) cover successful stream reads and writes, null deserialization results, format identity, and canceled operations.
+
+## Service Resolution
+
+Interface inheritance and dependency-injection registration are separate. The two registration helpers expose different service contracts:
+
+| Helper | Registered services |
+|--------|---------------------|
+| `AddJsonSerialization()` | A singleton `ISerializationProvider` using the JSON implementation |
+| `RegisterSerializationStorageProvider<TProvider>()` | Separate singleton mappings for the four reader/writer interfaces |
+
+[`AddJsonSerialization`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Serialization.Json/ServiceRegistration.cs) does not add individual inherited-interface aliases. Code resolving `ISerializationProvider` can call its inherited methods, but registering that interface alone does not register `IAsyncSerializationReader` as a separate service.
+
+The [generic helper](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Serialization.Abstractions/SerializationStorageProviderExtensions.cs) does not register `ISerializationProvider`. Its four mappings each have their own singleton instance, rather than aliases to one shared instance. The [registration tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Brooks.Serialization.Abstractions.L0Tests/SerializationStorageProviderExtensionsTests.cs) verify repeated resolutions are singleton within each interface.
+
+## Summary
+
+Use the stream methods through the service contract actually registered by the host. The supplied JSON writer performs asynchronous I/O after buffering the entire payload, with cancellation forwarded to that I/O.
+
+## Next Steps
+
+- Read [Brooks Storage Providers](../storage-providers/index.md) for persistence contracts.
+- Read [Runtime Composition](../../reference/runtime-composition.md) for host registration boundaries.
