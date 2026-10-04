@@ -52,14 +52,16 @@ The constructor accepts the brook name, entity ID, start, and count. `FromBrookC
 
 - Brook name and entity ID must be non-null and must not contain `|`. This key type does not reject empty strings.
 - Start and count must be nonnegative.
-- The combined length of the names, numeric components, and three separators must not exceed `4192` characters.
+- The length check counts the names, invariant-culture decimal representations of the parsed start and count, and three separators. That normalized length must not exceed `4192` characters.
+
+Numeric fields are parsed before the length check, so their surrounding whitespace and leading zeroes do not count toward the limit. The original input string can exceed `4192` characters when its normalized components pass this check.
 
 The separator is a delimiter; the key type does not provide an escaping scheme for names containing it.
 
 ## Failure Behavior
 
 - A null name, entity ID, or input string throws `ArgumentNullException`.
-- A separator in a name or a combined key length above the limit throws `ArgumentException`.
+- A separator in a name or a normalized key length above the limit throws `ArgumentException`.
 - A negative start or count throws `ArgumentOutOfRangeException`, including after successful numeric parsing.
 - Accessing `End` throws `ArgumentOutOfRangeException` if arithmetic overflow produces a position below `-1`.
 - Missing separators or a numeric component that cannot be parsed as `long` throws `FormatException`.
