@@ -1,10 +1,14 @@
 ---
+id: event-reducers
 title: Event Reducer Composition
 description: Reference event reducer matching, first-match dispatch, immutable results, registration, and hash identity.
 sidebar_position: 6
+sidebar_label: Event Reducer Composition
 ---
 
 # Event Reducer Composition
+
+## Overview
 
 `RootReducer<TProjection>` chooses one reducer for each event. Replaying several events applies that choice repeatedly to the state returned by the previous event.
 
@@ -17,6 +21,8 @@ sidebar_position: 6
 ## Matching And Priority
 
 At construction, the [root implementation](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Runtime/RootReducer.cs) materializes the supplied reducers. It indexes recognized `IEventReducer<TEvent, TProjection>` implementations by event type when their projection argument matches this root's `TProjection`.
+
+For each reducer, extraction stops at the first matching typed interface returned by reflection. A reducer implementing several event types is indexed under only that first type; its other interfaces do not create additional indexed or fallback entries. Use separate reducer implementations when each event type needs routing.
 
 For each `Reduce(state, eventData)` call:
 
