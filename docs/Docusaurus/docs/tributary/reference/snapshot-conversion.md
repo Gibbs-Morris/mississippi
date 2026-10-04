@@ -1,10 +1,14 @@
 ---
+id: snapshot-conversion
 title: Snapshot Conversion
 description: Reference snapshot state conversion, envelope metadata, and serializer failure boundaries.
 sidebar_position: 3
+sidebar_label: Snapshot Conversion
 ---
 
 # Snapshot Conversion
+
+## Overview
 
 `ISnapshotStateConverter<TSnapshot>` converts state to a `SnapshotEnvelope` and back. The built-in converter uses the configured `ISerializationProvider` for synchronous payload encoding.
 
