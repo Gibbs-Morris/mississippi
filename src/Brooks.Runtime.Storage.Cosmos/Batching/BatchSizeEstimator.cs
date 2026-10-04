@@ -18,7 +18,9 @@ internal sealed class BatchSizeEstimator : IBatchSizeEstimator
 {
     // More realistic batch overhead based on Cosmos DB transactional batch structure
     // This includes: batch headers, response metadata, and internal overhead
-    private const long BatchOverheadBytes = 8192; // be conservative for transactional batch envelope
+
+    /// <summary>Gets the estimated transactional batch envelope size in bytes.</summary>
+    internal const long BatchOverheadBytes = 8192; // be conservative for transactional batch envelope
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="BatchSizeEstimator" /> class.

@@ -26,8 +26,8 @@ public sealed class ReservoirBlazorBuiltInRegistrationsTests : IDisposable
     {
         ServiceCollection services = [];
         services.AddSingleton<NavigationManager>(new FakeNavigationManager());
-        services.AddReservoir();
-        services.AddReservoirBlazorBuiltIns();
+        IReservoirBuilder builder = services.AddReservoir();
+        builder.AddReservoirBlazorBuiltIns();
         serviceProvider = services.BuildServiceProvider();
     }
 
@@ -116,12 +116,12 @@ public sealed class ReservoirBlazorBuiltInRegistrationsTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReservoir();
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        IServiceCollection result = services.AddReservoirBlazorBuiltIns();
+        IReservoirBuilder result = builder.AddReservoirBlazorBuiltIns();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(builder, result);
     }
 }

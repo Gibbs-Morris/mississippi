@@ -24,6 +24,8 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Brooks;
 /// </summary>
 public sealed class EventBrookReaderTests
 {
+    private static readonly DateTimeOffset BaseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>
     ///     Verifies that the <see cref="EventBrookReader" /> constructor throws when <c>options</c> is null.
     /// </summary>
@@ -62,7 +64,7 @@ public sealed class EventBrookReaderTests
             EventType = "T1",
             DataContentType = "application/octet-stream",
             Data = Array.Empty<byte>(),
-            Time = DateTimeOffset.UtcNow,
+            Time = BaseTime,
         };
         EventStorageModel e2 = new()
         {
@@ -71,7 +73,7 @@ public sealed class EventBrookReaderTests
             EventType = "T2",
             DataContentType = "application/octet-stream",
             Data = Array.Empty<byte>(),
-            Time = DateTimeOffset.UtcNow,
+            Time = BaseTime.AddSeconds(1),
         };
         EventStorageModel e3 = new()
         {
@@ -80,7 +82,7 @@ public sealed class EventBrookReaderTests
             EventType = "T3",
             DataContentType = "application/octet-stream",
             Data = Array.Empty<byte>(),
-            Time = DateTimeOffset.UtcNow,
+            Time = BaseTime.AddSeconds(2),
         };
 
         static async IAsyncEnumerable<EventStorageModel> SequenceAsync(
@@ -135,7 +137,7 @@ public sealed class EventBrookReaderTests
         List<BrookEvent> results = new();
 
         // Act
-        await foreach (BrookEvent ev in reader.ReadEventsAsync(range))
+        await foreach (BrookEvent ev in reader.ReadEventsAsync(range, TestContext.Current.CancellationToken))
         {
             results.Add(ev);
         }
@@ -193,11 +195,7 @@ public sealed class EventBrookReaderTests
         }
 
         repositoryMock.Setup(r => r.QueryEventsAsync(range, options.QueryBatchSize, It.IsAny<CancellationToken>()))
-            .Returns((
-                BrookRangeKey _,
-                int _,
-                CancellationToken t
-            ) => SequenceUntilCancelledAsync(e1, e2, t));
+            .Returns((BrookRangeKey _, int _, CancellationToken t) => SequenceUntilCancelledAsync(e1, e2, t));
         mapperMock.Setup(m => m.Map(e1))
             .Returns(
                 new BrookEvent
@@ -233,8 +231,8 @@ public sealed class EventBrookReaderTests
                 }
             }
         });
-        Assert.Single(results);
-        Assert.Equal("T1", results[0].EventType);
+        BrookEvent item = Assert.Single(results);
+        Assert.Equal("T1", item.EventType);
         repositoryMock.Verify(
             r => r.QueryEventsAsync(range, options.QueryBatchSize, It.IsAny<CancellationToken>()),
             Times.Once);

@@ -1,12 +1,12 @@
 ---
 id: inlet-overview
-title: Inlet
+title: API & Client Sync (Inlet)
 sidebar_label: Overview
 sidebar_position: 1
-description: Inlet keeps Mississippi client, HTTP, and runtime surfaces aligned through source generation and runtime wiring.
+description: Understand Inlet, Mississippi's API, client, and runtime alignment layer.
 ---
 
-# Inlet
+# API & Client Sync (Inlet)
 
 ## Overview
 
@@ -45,11 +45,11 @@ It composes with Aqueduct for real-time delivery, with Reservoir on the client, 
 
 Start here when you need to understand generated projection, API, and registration alignment across the full Mississippi stack.
 
-## Current Coverage
+## Build With Inlet
 
-This section now includes typed boundary pages for getting started, concepts, package selection, reference, operations, and troubleshooting.
+Use [Generated Application Contracts](./reference/generated-contracts.md) to connect domain inputs to each host's registrations. Then [keep a workspace projection live](./how-to/subscribe-to-projections.md) across Blazor page navigation.
 
-They establish the composition and source-generation boundary while deeper generated-surface documentation is still being written.
+The generated contracts let teams concentrate their review on business rules and typed boundaries. Those same boundaries give AI-assisted implementation a repeatable path from domain changes to consumer verification.
 
 ## Learn More
 

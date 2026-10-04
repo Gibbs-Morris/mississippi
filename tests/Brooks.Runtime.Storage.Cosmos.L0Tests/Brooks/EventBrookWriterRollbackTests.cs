@@ -26,6 +26,8 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Brooks;
 /// </summary>
 public sealed class EventBrookWriterRollbackTests
 {
+    private static readonly DateTimeOffset MapperFallbackTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>
     ///     When initial append fails with no processed events, rollback should clean up the pending cursor entry without
     ///     aggregate
@@ -52,10 +54,7 @@ public sealed class EventBrookWriterRollbackTests
         IBatchSizeEstimator sizeEstimator = new BatchSizeEstimator();
         Mock<IRetryPolicy> retry = new();
         retry.Setup(r => r.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns<Func<Task<bool>>, CancellationToken>(async (
-                op,
-                _
-            ) => await op());
+            .Returns<Func<Task<bool>>, CancellationToken>(async (op, _) => await op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new();
         mapper.Setup(m => m.Map(It.IsAny<BrookEvent>())).Returns(new EventStorageModel());
         Mock<IBrookRecoveryService> recovery = new();
@@ -90,7 +89,11 @@ public sealed class EventBrookWriterRollbackTests
         repo.Setup(r => r.EventExistsAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         // Act
-        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.AppendEventsAsync(key, events, null));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.AppendEventsAsync(
+            key,
+            events,
+            null,
+            TestContext.Current.CancellationToken));
 
         // Assert: no specific verifications, just that rollback completed without AggregateException
         repo.Verify(r => r.DeletePendingCursorAsync(key, It.IsAny<CancellationToken>()), Times.Once);
@@ -122,10 +125,7 @@ public sealed class EventBrookWriterRollbackTests
         IBatchSizeEstimator sizeEstimator = new BatchSizeEstimator();
         Mock<IRetryPolicy> retry = new();
         retry.Setup(r => r.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns(async (
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => await op());
+            .Returns(async (Func<Task<bool>> op, CancellationToken _) => await op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new();
         mapper.Setup(m => m.Map(It.IsAny<BrookEvent>()))
             .Returns<BrookEvent>(e => new()
@@ -135,7 +135,7 @@ public sealed class EventBrookWriterRollbackTests
                 Data = e.Data.ToArray(),
                 DataContentType = e.DataContentType,
                 Source = e.Source,
-                Time = e.Time ?? DateTimeOffset.UtcNow,
+                Time = e.Time ?? MapperFallbackTime,
             });
         Mock<IBrookRecoveryService> recovery = new();
         recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<CancellationToken>()))
@@ -184,10 +184,7 @@ public sealed class EventBrookWriterRollbackTests
                 It.IsAny<long>(),
                 It.IsAny<CancellationToken>()))
             .Returns((
-                BrookKey keyArg,
-                IReadOnlyList<EventStorageModel> batch,
-                long startingPosition,
-                CancellationToken ct
+                BrookKey keyArg, IReadOnlyList<EventStorageModel> batch, long startingPosition, CancellationToken ct
             ) =>
             {
                 appendCalls++;
@@ -210,6 +207,10 @@ public sealed class EventBrookWriterRollbackTests
         repo.Setup(r => r.EventExistsAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act & Assert
-        await Assert.ThrowsAsync<AggregateException>(() => sut.AppendEventsAsync(key, events, null));
+        await Assert.ThrowsAsync<AggregateException>(() => sut.AppendEventsAsync(
+            key,
+            events,
+            null,
+            TestContext.Current.CancellationToken));
     }
 }

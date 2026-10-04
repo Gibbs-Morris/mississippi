@@ -23,6 +23,8 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Storage;
 /// </summary>
 public sealed class CosmosRepositoryTests
 {
+    private static readonly DateTimeOffset BaseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
     private static bool CaptureMaxItemCount(
         QueryRequestOptions options,
         out int count
@@ -171,12 +173,8 @@ public sealed class CosmosRepositoryTests
                 It.IsAny<PartitionKey>(),
                 null,
                 It.IsAny<CancellationToken>()))
-            .Callback((
-                EventDocument d,
-                PartitionKey? pk,
-                ItemRequestOptions? options,
-                CancellationToken ct
-            ) => created.Add(d))
+            .Callback((EventDocument d, PartitionKey? pk, ItemRequestOptions? options, CancellationToken ct) =>
+                created.Add(d))
             .ReturnsAsync(Mock.Of<ItemResponse<EventDocument>>());
         CosmosRepository sut = CreateRepository(container.Object);
         BrookKey key = new("type", "id");
@@ -187,19 +185,19 @@ public sealed class CosmosRepositoryTests
                 EventId = "e1",
                 EventType = "A",
                 Data = new byte[] { 1 },
-                Time = DateTimeOffset.UtcNow,
+                Time = BaseTime,
             },
             new()
             {
                 EventId = "e2",
                 EventType = "B",
                 Data = new byte[] { 2 },
-                Time = DateTimeOffset.UtcNow,
+                Time = BaseTime.AddSeconds(1),
             },
         };
 
         // Act
-        await sut.AppendEventBatchAsync(key, events, 10);
+        await sut.AppendEventBatchAsync(key, events, 10, TestContext.Current.CancellationToken);
 
         // Assert
         // Expect two created items; detailed assertions below verify each created document
@@ -213,8 +211,8 @@ public sealed class CosmosRepositoryTests
                 Assert.Equal(key.ToString(), d.BrookPartitionKey);
                 Assert.Equal("e1", d.EventId);
                 Assert.Equal("A", d.EventType);
-                Assert.Single(d.Data);
-                Assert.Equal(1, d.Data[0]);
+                byte item = Assert.Single(d.Data);
+                Assert.Equal(1, item);
             },
             d =>
             {
@@ -223,8 +221,8 @@ public sealed class CosmosRepositoryTests
                 Assert.Equal(key.ToString(), d.BrookPartitionKey);
                 Assert.Equal("e2", d.EventId);
                 Assert.Equal("B", d.EventType);
-                Assert.Single(d.Data);
-                Assert.Equal(2, d.Data[0]);
+                byte item = Assert.Single(d.Data);
+                Assert.Equal(2, item);
             });
     }
 
@@ -252,7 +250,7 @@ public sealed class CosmosRepositoryTests
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act
-        await sut.CommitCursorPositionAsync(new("type", "id"), 42);
+        await sut.CommitCursorPositionAsync(new("type", "id"), 42, TestContext.Current.CancellationToken);
 
         // Assert
         container.Verify(
@@ -286,22 +284,18 @@ public sealed class CosmosRepositoryTests
                 It.IsAny<PartitionKey>(),
                 null,
                 It.IsAny<CancellationToken>()))
-            .Callback((
-                CursorDocument d,
-                PartitionKey? pk,
-                ItemRequestOptions? options,
-                CancellationToken ct
-            ) => captured = d)
+            .Callback((CursorDocument d, PartitionKey? pk, ItemRequestOptions? options, CancellationToken ct) =>
+                captured = d)
             .ReturnsAsync(Mock.Of<ItemResponse<CursorDocument>>());
         CosmosRepository sut = CreateRepository(container.Object);
         BrookKey key = new("type", "id");
 
         // Act
-        await sut.CreatePendingCursorAsync(key, new(5), 10);
+        await sut.CreatePendingCursorAsync(key, new(5), 10, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(captured);
-        Assert.Equal("cursor-pending", captured!.Id);
+        Assert.Equal("cursor-pending", captured.Id);
         Assert.Equal("cursor-pending", captured.Type);
         Assert.Equal(10, captured.Position);
         Assert.Equal(5, captured.OriginalPosition);
@@ -333,7 +327,10 @@ public sealed class CosmosRepositoryTests
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act - should not throw
-        Exception? ex = await Record.ExceptionAsync(() => sut.DeleteEventAsync(new("t", "i"), 9));
+        Exception? ex = await Record.ExceptionAsync(() => sut.DeleteEventAsync(
+            new("t", "i"),
+            9,
+            TestContext.Current.CancellationToken));
 
         // Assert - delete was attempted exactly once and exception swallowed
         Assert.Null(ex);
@@ -364,7 +361,8 @@ public sealed class CosmosRepositoryTests
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act - should not throw
-        Exception? ex = await Record.ExceptionAsync(() => sut.DeletePendingCursorAsync(new("t", "i")));
+        Exception? ex = await Record.ExceptionAsync(() =>
+            sut.DeletePendingCursorAsync(new("t", "i"), TestContext.Current.CancellationToken));
 
         // Assert - delete was attempted exactly once and exception swallowed
         Assert.Null(ex);
@@ -395,7 +393,7 @@ public sealed class CosmosRepositoryTests
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act
-        bool exists = await sut.EventExistsAsync(new("type", "id"), 7);
+        bool exists = await sut.EventExistsAsync(new("type", "id"), 7, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(exists);
@@ -419,7 +417,7 @@ public sealed class CosmosRepositoryTests
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act
-        bool exists = await sut.EventExistsAsync(new("type", "id"), 7);
+        bool exists = await sut.EventExistsAsync(new("type", "id"), 7, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(exists);
@@ -448,7 +446,8 @@ public sealed class CosmosRepositoryTests
             new("t", "i"),
             Array.Empty<EventStorageModel>(),
             new(0),
-            1);
+            1,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Same(nonTransient.Object, resp);
@@ -479,7 +478,8 @@ public sealed class CosmosRepositoryTests
                 new("t", "i"),
                 Array.Empty<EventStorageModel>(),
                 new(0),
-                1);
+                1,
+                TestContext.Current.CancellationToken);
         });
     }
 
@@ -522,7 +522,8 @@ public sealed class CosmosRepositoryTests
             new("t", "i"),
             Array.Empty<EventStorageModel>(),
             new(1),
-            2);
+            2,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Same(r2.Object, response);
@@ -549,7 +550,9 @@ public sealed class CosmosRepositoryTests
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act
-        CursorStorageModel? result = await sut.GetCursorDocumentAsync(new("type", "id"));
+        CursorStorageModel? result = await sut.GetCursorDocumentAsync(
+            new("type", "id"),
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Null(result);
@@ -587,7 +590,11 @@ public sealed class CosmosRepositoryTests
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act
-        ISet<long> result = await sut.GetExistingEventPositionsAsync(new("t", "i"), 1, 6);
+        ISet<long> result = await sut.GetExistingEventPositionsAsync(
+            new("t", "i"),
+            1,
+            6,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(
@@ -618,10 +625,71 @@ public sealed class CosmosRepositoryTests
         CosmosRepository sut = CreateRepository(container.Object);
 
         // Act
-        CursorStorageModel? result = await sut.GetPendingCursorDocumentAsync(new("type", "id"));
+        CursorStorageModel? result = await sut.GetPendingCursorDocumentAsync(
+            new("type", "id"),
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Null(result);
+    }
+
+    /// <summary>
+    ///     Verifies QueryEventsAsync forwards dynamic batch sizing and drains continuation pages.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task QueryEventsAsyncForwardsDynamicBatchSizeAndDrainsContinuationPagesAsync()
+    {
+        // Arrange
+        Mock<Container> container = new();
+        int capturedBatchSize = 0;
+        using FakeFeedIterator<EventDocument> iterator = new(
+            new List<List<EventDocument>>
+            {
+                new()
+                {
+                    new()
+                    {
+                        EventId = "e1",
+                        EventType = "A",
+                    },
+                },
+                new(),
+                new()
+                {
+                    new()
+                    {
+                        EventId = "e2",
+                        EventType = "B",
+                    },
+                },
+            });
+        container.Setup(c => c.GetItemQueryIterator<EventDocument>(
+                It.IsAny<QueryDefinition>(),
+                null,
+                It.Is<QueryRequestOptions>(o => CaptureMaxItemCount(o, out capturedBatchSize))))
+            .Returns(iterator);
+        Mock<IMapper<EventDocument, EventStorageModel>> eventMapper = new();
+        eventMapper.Setup(m => m.Map(It.IsAny<EventDocument>()))
+            .Returns<EventDocument>(d => new()
+            {
+                EventId = d.EventId,
+                EventType = d.EventType,
+            });
+        CosmosRepository sut = CreateRepository(container.Object, eventMapper: eventMapper.Object);
+        BrookRangeKey range = new("t", "i", 0, 10);
+
+        // Act
+        List<EventStorageModel> results = new();
+        await foreach (EventStorageModel m in sut.QueryEventsAsync(range, -1, TestContext.Current.CancellationToken))
+        {
+            results.Add(m);
+        }
+
+        // Assert
+        Assert.Equal(-1, capturedBatchSize);
+        Assert.Collection(results.Select(r => r.EventId), id => Assert.Equal("e1", id), id => Assert.Equal("e2", id));
+        Assert.False(iterator.HasMoreResults);
     }
 
     /// <summary>
@@ -721,7 +789,7 @@ public sealed class CosmosRepositoryTests
 
         // Act
         List<EventStorageModel> results = new();
-        await foreach (EventStorageModel m in sut.QueryEventsAsync(range, 2))
+        await foreach (EventStorageModel m in sut.QueryEventsAsync(range, 2, TestContext.Current.CancellationToken))
         {
             results.Add(m);
         }

@@ -1,12 +1,12 @@
 ---
 id: domain-modeling-overview
-title: Domain Modeling
+title: Domain Behavior (Domain Modeling)
 sidebar_label: Overview
 sidebar_position: 1
-description: Domain Modeling provides the aggregate, saga, and UX projection surfaces used to express Mississippi domain behavior.
+description: Understand Domain Modeling, Mississippi's domain behavior layer for aggregates, sagas, effects, and UX projections.
 ---
 
-# Domain Modeling
+# Domain Behavior (Domain Modeling)
 
 ## Overview
 

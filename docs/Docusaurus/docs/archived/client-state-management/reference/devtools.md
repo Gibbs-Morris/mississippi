@@ -21,8 +21,8 @@ This page covers the registration requirements, configuration options, enablemen
 Register DevTools after `AddReservoir()` in your `Program.cs`:
 
 ```csharp
-builder.Services.AddReservoir();
-builder.Services.AddReservoirDevTools(options =>
+IReservoirBuilder reservoir = builder.AddReservoir();
+reservoir.AddReservoirDevTools(options =>
 {
     options.Enablement = ReservoirDevToolsEnablement.DevelopmentOnly;
 });
@@ -88,7 +88,7 @@ public enum ReservoirDevToolsEnablement
 ### Example
 
 ```csharp
-builder.Services.AddReservoirDevTools(options =>
+reservoir.AddReservoirDevTools(options =>
 {
     // Only enable in development
     options.Enablement = ReservoirDevToolsEnablement.DevelopmentOnly;
@@ -122,7 +122,7 @@ The `ReservoirDevToolsOptions` class provides configuration for the DevTools int
 ### Example Configuration
 
 ```csharp
-builder.Services.AddReservoirDevTools(options =>
+reservoir.AddReservoirDevTools(options =>
 {
     options.Enablement = ReservoirDevToolsEnablement.DevelopmentOnly;
     options.Name = "My Blazor App";
@@ -218,7 +218,7 @@ flowchart TB
 ### Configuration Example
 
 ```csharp
-builder.Services.AddReservoirDevTools(options =>
+reservoir.AddReservoirDevTools(options =>
 {
     options.Enablement = ReservoirDevToolsEnablement.DevelopmentOnly;
     
@@ -268,7 +268,7 @@ By default, time-travel operations use best-effort rehydration: if a feature sta
 Enable strict mode to require all registered feature states to be present and valid in the incoming payload:
 
 ```csharp
-builder.Services.AddReservoirDevTools(options =>
+reservoir.AddReservoirDevTools(options =>
 {
     options.Enablement = ReservoirDevToolsEnablement.DevelopmentOnly;
     options.IsStrictStateRehydrationEnabled = true;
@@ -331,7 +331,7 @@ Func<IReadOnlyDictionary<string, object>, object?>? StateSanitizer
 Receives each dispatched `IAction` and can return a replacement object for DevTools display:
 
 ```csharp
-builder.Services.AddReservoirDevTools(options =>
+reservoir.AddReservoirDevTools(options =>
 {
     options.ActionSanitizer = action =>
     {
@@ -352,7 +352,7 @@ builder.Services.AddReservoirDevTools(options =>
 Receives the full state snapshot (keyed by feature key) and can return a modified snapshot:
 
 ```csharp
-builder.Services.AddReservoirDevTools(options =>
+reservoir.AddReservoirDevTools(options =>
 {
     options.StateSanitizer = state =>
     {

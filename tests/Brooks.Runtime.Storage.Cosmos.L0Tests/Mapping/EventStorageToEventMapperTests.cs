@@ -29,7 +29,7 @@ public sealed class EventStorageToEventMapperTests
             DataContentType = "application/octet-stream",
             Data = new byte[] { 9, 8, 7 },
             DataSizeBytes = 3,
-            Time = DateTimeOffset.UtcNow,
+            Time = DateTimeOffset.FromUnixTimeSeconds(2),
         };
         EventStorageToEventMapper mapper = new();
 

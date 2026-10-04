@@ -26,7 +26,7 @@ public sealed class EventDocumentToStorageMapperTests
             DataContentType = "ct",
             Data = new byte[] { 1, 2 },
             DataSizeBytes = 2,
-            Time = DateTimeOffset.UtcNow,
+            Time = DateTimeOffset.FromUnixTimeSeconds(1),
         };
         EventDocumentToStorageMapper mapper = new();
         EventStorageModel result = mapper.Map(doc);

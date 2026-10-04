@@ -1,12 +1,12 @@
 ---
 id: refraction-overview
-title: Refraction
+title: Blazor UI (Refraction)
 sidebar_label: Overview
 sidebar_position: 1
-description: Refraction is a Blazor UX component library built around a state-down, events-up interaction model.
+description: Understand Refraction, Mississippi's Blazor UI layer built around a state-down, events-up model.
 ---
 
-# Refraction
+# Blazor UI (Refraction)
 
 ## Overview
 

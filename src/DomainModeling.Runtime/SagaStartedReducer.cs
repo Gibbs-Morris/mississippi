@@ -22,10 +22,7 @@ public sealed class SagaStartedReducer<TSaga> : EventReducerBase<SagaStartedEven
         ArgumentNullException.ThrowIfNull(eventData);
         return SagaStateMutator.CreateUpdated(
             state,
-            (
-                map,
-                instance
-            ) =>
+            (map, instance) =>
             {
                 map.SetProperty(instance, nameof(ISagaState.SagaId), eventData.SagaId);
                 map.SetProperty(instance, nameof(ISagaState.Phase), SagaPhase.Running);

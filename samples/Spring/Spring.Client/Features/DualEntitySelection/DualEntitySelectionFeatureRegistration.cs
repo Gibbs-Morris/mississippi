@@ -1,6 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
-
-using Mississippi.Reservoir.Core;
+using Mississippi.Reservoir.Abstractions;
 
 
 namespace MississippiSamples.Spring.Client.Features.DualEntitySelection;
@@ -11,16 +9,17 @@ namespace MississippiSamples.Spring.Client.Features.DualEntitySelection;
 internal static class DualEntitySelectionFeatureRegistration
 {
     /// <summary>
-    ///     Adds the dual entity selection feature to the service collection.
+    ///     Adds the dual entity selection feature to the Reservoir builder.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddDualEntitySelectionFeature(
-        this IServiceCollection services
+    /// <param name="builder">The Reservoir builder.</param>
+    /// <returns>The builder for chaining.</returns>
+    public static IReservoirBuilder AddDualEntitySelectionFeature(
+        this IReservoirBuilder builder
     )
     {
-        services.AddReducer<SetEntityAIdAction, DualEntitySelectionState>(DualEntitySelectionReducers.SetEntityAId);
-        services.AddReducer<SetEntityBIdAction, DualEntitySelectionState>(DualEntitySelectionReducers.SetEntityBId);
-        return services;
+        builder.AddFeatureState<DualEntitySelectionState>(feature => feature
+            .AddReducer<SetEntityAIdAction>(DualEntitySelectionReducers.SetEntityAId)
+            .AddReducer<SetEntityBIdAction>(DualEntitySelectionReducers.SetEntityBId));
+        return builder;
     }
 }

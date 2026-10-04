@@ -325,18 +325,14 @@ public class TypeAnalyzerTests
     }
 
     /// <summary>
-    ///     IsCollectionType should return false for pure array types (implementation quirk).
+    ///     IsCollectionType should return true for array types.
     /// </summary>
-    /// <remarks>
-    ///     Note: The implementation checks for INamedTypeSymbol first, so pure IArrayTypeSymbol
-    ///     returns false. This test documents actual behavior.
-    /// </remarks>
     [Fact]
-    public void IsCollectionTypeReturnsFalseForPureArrayType()
+    public void IsCollectionTypeReturnsTrueForArrayType()
     {
         IArrayTypeSymbol arrayType = Substitute.For<IArrayTypeSymbol>();
         bool result = TypeAnalyzer.IsCollectionType(arrayType);
-        Assert.False(result);
+        Assert.True(result);
     }
 
     /// <summary>

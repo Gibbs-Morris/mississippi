@@ -20,15 +20,15 @@ Use this page to look up the built-in navigation surface, its actions, and its s
 
 ```csharp
 // Program.cs
-builder.Services.AddReservoir();
-builder.Services.AddReservoirBlazorBuiltIns(); // Registers navigation + lifecycle
+IReservoirBuilder reservoir = builder.AddReservoir();
+reservoir.AddReservoirBlazorBuiltIns(); // Registers navigation + lifecycle
 ```
 
 Or register navigation only:
 
 ```csharp
-builder.Services.AddReservoir();
-builder.Services.AddBuiltInNavigation();
+IReservoirBuilder reservoir = builder.AddReservoir();
+reservoir.AddBuiltInNavigation();
 ```
 
 ### 2. Add the Navigation Provider

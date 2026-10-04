@@ -1,12 +1,12 @@
 ---
 id: brooks-overview
-title: Brooks
+title: Event Streams (Brooks)
 sidebar_label: Overview
 sidebar_position: 1
-description: Brooks provides event streams and the storage surfaces used to persist and read them.
+description: Understand Brooks, Mississippi's event-stream and storage foundation.
 ---
 
-# Brooks
+# Event Streams (Brooks)
 
 ## Overview
 

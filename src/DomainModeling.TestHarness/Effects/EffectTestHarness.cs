@@ -175,10 +175,8 @@ public sealed class EffectTestHarness<TEffect, TEvent, TAggregate>
     {
         Mock<IGenericAggregateGrain<TTargetAggregate>> grainMock = new();
         grainMock.Setup(g => g.ExecuteAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
-            .Callback<object, CancellationToken>((
-                cmd,
-                _
-            ) => dispatchedCommands.Add((typeof(TTargetAggregate), entityId, cmd)))
+            .Callback<object, CancellationToken>((cmd, _) =>
+                dispatchedCommands.Add((typeof(TTargetAggregate), entityId, cmd)))
             .ReturnsAsync(response);
         aggregateGrainFactoryMock.Setup(f => f.GetGenericAggregate<TTargetAggregate>(entityId))
             .Returns(grainMock.Object);

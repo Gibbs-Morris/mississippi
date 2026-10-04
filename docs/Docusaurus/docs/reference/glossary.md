@@ -48,6 +48,7 @@ Look up Mississippi and event-sourcing terminology in one place.
 | Brook key | The composite identity (aggregate type + entity ID) that uniquely addresses a single brook. |
 | Cursor | The tracked latest position of a brook or stream. Mississippi uses cursor grains to observe and expose brook version progress. |
 | Grain | An Orleans virtual actor: a single-threaded, addressable unit of state and logic activated on demand within a silo. Mississippi grains host aggregates, projections, cursors, and other runtime components. |
+| Reminder | An Orleans durable timer associated with a grain. Mississippi uses reminders to wake saga aggregate grains after lifecycle events so orchestration can resume if a silo or pod stops before the next saga effect runs. |
 | Silo | An Orleans host process that manages a set of grains and participates in the cluster. Mississippi applications run one or more silos. |
 | Subscription | A client's registration to receive projection change notifications. In Mississippi, Inlet manages SignalR subscriptions by projection path and entity ID and deduplicates underlying brook subscriptions per connection. |
 | UX projection | A Mississippi projection specifically designed for driving UI state. UX projections are defined in Domain Modeling and synchronized to clients through Inlet. |

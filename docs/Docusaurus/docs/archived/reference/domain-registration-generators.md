@@ -20,7 +20,7 @@ Three generators emit host-specific extension classes and methods:
 
 | Host | Generated Class | Method Suffix | Typical Call |
 |------|------------------|---------------|--------------|
-| Client | `DomainFeatureRegistrations` | `Client` | `services.AddSpringDomainClient();` |
+| Client | `DomainFeatureRegistrations` | `Client` | `reservoir.AddSpringDomainClient();` |
 | Server | `DomainServerRegistrations` | `Server` | `services.AddSpringDomainServer();` |
 | Silo | `DomainSiloRegistrations` | `Silo` | `services.AddSpringDomainSilo();` |
 
@@ -67,17 +67,17 @@ Each host generator composes different generated feature types:
 
 | Host | Included generated registrations | Key discovery attributes |
 |------|----------------------------------|--------------------------|
-| Client | Aggregate features, saga features, and projection features | `GenerateCommand`, `GenerateSagaEndpoints`, `GenerateProjectionEndpoints` |
+| Client | Aggregate features, saga features, projection features, and optional domain-level builder composition | `GenerateCommand`, `GenerateSagaEndpoints`, `GenerateProjectionEndpoints` |
 | Server | Aggregate mappers and projection mappers | `GenerateCommand`, `GenerateProjectionEndpoints`, `ProjectionPath` |
 | Silo | Aggregate, saga, and projection registrations | `GenerateAggregateEndpoints`, `GenerateSagaEndpoints`, `GenerateProjectionEndpoints` |
 
 ## Example Usage
 
-The Spring sample now uses one domain-level call per host:
+The generated client registration receiver is now `IReservoirBuilder`, so the client startup shape is:
 
 ```csharp
-// Spring.Client
-builder.Services.AddSpringDomainClient();
+IReservoirBuilder reservoir = builder.AddReservoir();
+reservoir.AddSpringDomainClient();
 
 // Spring.Gateway
 builder.Services.AddSpringDomainServer();
@@ -86,23 +86,25 @@ builder.Services.AddSpringDomainServer();
 builder.Services.AddSpringDomainSilo();
 ```
 
-Source:
+Representative source:
 
-- [Spring.Client Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Program.cs)
 - [Spring.Gateway Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs)
 - [Spring.Runtime Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Runtime/Program.cs)
+- [DomainClientRegistrationGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Generators/DomainClientRegistrationGenerator.cs)
 
 ## Notes
 
 - Domain registration generators reduce host startup wiring by composing generated feature registrations into one method per host surface.
+- Client domain registration generators compose on `IReservoirBuilder`.
 - This page documents the generated registration layer only. Authorization, migration, and release-specific topics should be documented on their own pages instead of being embedded here.
 
 ## Summary
 
 - Domain registration generators reduce per-feature startup wiring.
+- Client domain registration methods extend `IReservoirBuilder`.
 - Generated method names are host-suffixed (`Client`, `Server`, `Silo`).
 - Method prefixes come from the detected domain root namespace.
-- Spring demonstrates the intended usage pattern in all three hosts.
+- Runtime and gateway hosts still demonstrate the domain-level registration pattern directly.
 
 ## Next Steps
 

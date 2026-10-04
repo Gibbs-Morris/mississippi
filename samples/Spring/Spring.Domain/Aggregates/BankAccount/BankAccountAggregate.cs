@@ -1,5 +1,6 @@
 using Mississippi.Brooks.Abstractions.Attributes;
 using Mississippi.Inlet.Generators.Abstractions;
+using Mississippi.Tributary.Abstractions.Attributes;
 
 using Orleans;
 
@@ -12,6 +13,7 @@ namespace MississippiSamples.Spring.Domain.Aggregates.BankAccount;
 /// </summary>
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
 [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTSTATE")]
+[SnapshotRetention(20)]
 [GenerateAggregateEndpoints]
 [GenerateMcpTools]
 [GenerateSerializer]

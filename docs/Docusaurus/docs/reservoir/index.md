@@ -1,12 +1,12 @@
 ---
 id: reservoir-overview
-title: Reservoir
+title: Client State (Reservoir)
 sidebar_label: Overview
 sidebar_position: 1
-description: Reservoir provides Redux-style client state management for Mississippi applications.
+description: Understand Reservoir, Mississippi's Redux-style client state-management layer.
 ---
 
-# Reservoir
+# Client State (Reservoir)
 
 ## Overview
 
@@ -43,13 +43,24 @@ Within the broader stack, it is commonly used beneath Refraction and Inlet-power
 
 Start here when you need the client-state model itself: store behavior, reducers, effects, selectors, middleware, or the Blazor integration surface.
 
-## Current Coverage
+## Choose a Reading Path
 
-The active section now includes typed boundary pages for getting started, concepts, package selection, reference, and troubleshooting.
+Start with a feature recipe, the local state-flow model, and the selector reference to connect actions to the values your screens display.
 
-The archived section still contains the deepest preserved material while the active Reservoir pages are rebuilt around the new information architecture.
+Use the registration reference for builder composition, then follow the focused guides below.
 
 ## Learn More
+
+- [Enable DevTools](./how-to/enable-devtools.md) - Inspect local actions and snapshots
+- [Navigation and Lifecycle](./reference/built-in-features.md) - Use built-in client features
+- [Middleware](./reference/middleware.md) - Understand dispatch interception
+
+- [Test a Feature and Effect](./how-to/test-feature.md) - Inspect state, emitted actions, and cancellation
+- [Action Effects](./reference/action-effects.md) - Choose and register an effect contract
+
+- [Add a Reservoir Feature](./how-to/create-feature.md) - Define, register, dispatch, and select local state
+- [State Flow](./concepts/state-flow.md) - Understand reducer, notification, and effect timing
+- [Selectors](./reference/selectors.md) - Compose derived values and use memoization
 
 - [Documentation Home](../index.md) - Return to the product-area docs landing page
 - [Reservoir Getting Started](./getting-started/getting-started.md) - Start with the state-management entry points

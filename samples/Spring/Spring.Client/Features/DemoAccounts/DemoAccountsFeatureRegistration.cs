@@ -1,6 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
-
-using Mississippi.Reservoir.Core;
+using Mississippi.Reservoir.Abstractions;
 
 
 namespace MississippiSamples.Spring.Client.Features.DemoAccounts;
@@ -13,13 +11,14 @@ internal static class DemoAccountsFeatureRegistration
     /// <summary>
     ///     Adds the demo accounts feature to the service collection.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddDemoAccountsFeature(
-        this IServiceCollection services
+    /// <param name="builder">The Reservoir builder.</param>
+    /// <returns>The builder for chaining.</returns>
+    public static IReservoirBuilder AddDemoAccountsFeature(
+        this IReservoirBuilder builder
     )
     {
-        services.AddReducer<SetDemoAccountsAction, DemoAccountsState>(DemoAccountsReducers.SetDemoAccounts);
-        return services;
+        builder.AddFeatureState<DemoAccountsState>(feature =>
+            feature.AddReducer<SetDemoAccountsAction>(DemoAccountsReducers.SetDemoAccounts));
+        return builder;
     }
 }

@@ -44,54 +44,21 @@
     <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
-    </PropertyGroup>
-    <PropertyGroup>
-        <_NormalizedRepoRoot>$([System.String]::Copy('$(MSBuildThisFileDirectory)').Replace('\', '/'))</_NormalizedRepoRoot>
-        <_NormalizedProjectDirectory>$([System.String]::Copy('$(MSBuildProjectDirectory)').Replace('\', '/'))/</_NormalizedProjectDirectory>
-        <_IsSrcProject Condition="$([System.String]::Copy('$(_NormalizedProjectDirectory)').StartsWith('$(_NormalizedRepoRoot)src/'))">true</_IsSrcProject>
-        <_IsTestsProjectDirectory Condition="$([System.String]::Copy('$(_NormalizedProjectDirectory)').StartsWith('$(_NormalizedRepoRoot)tests/'))">true</_IsTestsProjectDirectory>
-        <_IsSamplesProject Condition="$([System.String]::Copy('$(_NormalizedProjectDirectory)').StartsWith('$(_NormalizedRepoRoot)samples/'))">true</_IsSamplesProject>
-        <_IsSdkProject Condition="$([System.String]::Copy('$(MSBuildProjectName)').StartsWith('Sdk'))">true</_IsSdkProject>
-        <_ShouldInjectReferenceTrimmer Condition="'$(_IsSdkProject)' != 'true' and ('$(_IsSrcProject)' == 'true' or ('$(ReferenceTrimmerIncludeTestsAndSamples)' == 'true' and ('$(_IsTestsProjectDirectory)' == 'true' or '$(_IsSamplesProject)' == 'true')))">true</_ShouldInjectReferenceTrimmer>
+        <OutputType>Exe</OutputType>
+        <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     </PropertyGroup>
 
-    <!-- Aspire AppHost projects: use OS/RID-specific NuGet lock file paths to avoid churn from runtime-specific packages -->
-    <PropertyGroup Condition="$([System.String]::Copy('$(MSBuildProjectName)').EndsWith('.AppHost'))">
-
-        <!-- Prefer an explicit *single* RID (e.g. dotnet restore/publish -r win-x64).
-             Guard against accidental multi-values (semicolon list) which would produce an invalid filename on Windows. -->
-        <_LockRid Condition="'$(RuntimeIdentifier)' != '' and !$([System.String]::Copy('$(RuntimeIdentifier)').Contains(';'))">$([System.String]::Copy('$(RuntimeIdentifier)').Trim())</_LockRid>
-
-        <!-- Otherwise compute from host OS + *process* architecture -->
-        <_Arch Condition="'$(_LockRid)' == ''">$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</_Arch>
-
-        <_BaseOs Condition="'$(_LockRid)' == '' and $([MSBuild]::IsOsPlatform('Windows'))">win</_BaseOs>
-        <_BaseOs Condition="'$(_LockRid)' == '' and $([MSBuild]::IsOsPlatform('Linux'))">linux</_BaseOs>
-        <_BaseOs Condition="'$(_LockRid)' == '' and $([MSBuild]::IsOsPlatform('OSX'))">osx</_BaseOs>
-        <_BaseOs Condition="'$(_LockRid)' == '' and $([MSBuild]::IsOsPlatform('FreeBSD'))">freebsd</_BaseOs>
-
-        <!-- Linux: split glibc vs musl (Alpine etc.) -->
-        <_IsMusl Condition="'$(_BaseOs)' == 'linux' and $([System.IO.File]::Exists('/etc/alpine-release'))">true</_IsMusl>
-        <_IsMusl Condition="'$(_BaseOs)' == 'linux' and '$(_IsMusl)' == '' and $([System.String]::Copy('$([System.Runtime.InteropServices.RuntimeInformation]::RuntimeIdentifier)').Contains('musl'))">true</_IsMusl>
-
-        <_LockRid Condition="'$(_LockRid)' == '' and '$(_BaseOs)' == 'linux' and '$(_IsMusl)' == 'true'">linux-musl-$(_Arch)</_LockRid>
-        <_LockRid Condition="'$(_LockRid)' == '' and '$(_BaseOs)' != ''">$(_BaseOs)-$(_Arch)</_LockRid>
-
-        <!-- Last-resort fallback (can be distro/version specific) -->
-        <_LockRid Condition="'$(_LockRid)' == ''">$([System.Runtime.InteropServices.RuntimeInformation]::RuntimeIdentifier.ToLowerInvariant())</_LockRid>
-
-        <!-- One-line value to avoid accidental newline/whitespace in the path -->
-        <NuGetLockFilePath Condition="'$(_LockRid)' != ''">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.$(_LockRid).lock.json'))</NuGetLockFilePath>
-
+    <!-- Diagnostic restores use separate locks; ordinary builds keep their committed inputs. -->
+    <PropertyGroup Condition="'$(EnableReferenceTrimmer)' == 'true'">
+        <_ReferenceTrimmerRepositoryRoot>$([System.String]::Copy('$(MSBuildThisFileDirectory)').Replace('\', '/'))</_ReferenceTrimmerRepositoryRoot>
+        <_ReferenceTrimmerProjectDirectory>$([System.String]::Copy('$(MSBuildProjectDirectory)').Replace('\', '/'))/</_ReferenceTrimmerProjectDirectory>
+        <_ReferenceTrimmerSourceProject Condition="$([System.String]::Copy('$(_ReferenceTrimmerProjectDirectory)').StartsWith('$(_ReferenceTrimmerRepositoryRoot)src/'))">true</_ReferenceTrimmerSourceProject>
+        <_ReferenceTrimmerExcludedProject Condition="$([System.String]::Copy('$(MSBuildProjectName)').StartsWith('Sdk')) or $([System.String]::Copy('$(MSBuildProjectName)').Contains('.Generators'))">true</_ReferenceTrimmerExcludedProject>
+        <NuGetLockFilePath>$(MSBuildProjectDirectory)/obj/reference-trimmer/packages.lock.json</NuGetLockFilePath>
     </PropertyGroup>
-
-
-
-    <!-- Keep the legacy label so the RT0002 workflow can detect committed configuration without XML mutation. -->
-    <ItemGroup Label="ReferenceTrimmerCiInjection" Condition="'$(_ShouldInjectReferenceTrimmer)' == 'true'">
+    <ItemGroup Condition="'$(EnableReferenceTrimmer)' == 'true' and '$(_ReferenceTrimmerSourceProject)' == 'true' and '$(_ReferenceTrimmerExcludedProject)' != 'true'">
         <PackageReference Include="ReferenceTrimmer" PrivateAssets="all" />
     </ItemGroup>
-
     <ItemGroup>
         <InternalsVisibleTo Include="$(AssemblyName).Tests" />
         <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
@@ -125,24 +92,20 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.SourceLink.GitHub">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
     </ItemGroup>
     <ItemGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
         <PackageReference Include="Moq" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
-        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.v3" />
         <PackageReference Include="xunit.runner.visualstudio">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="coverlet.collector">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PackageReference Include="coverlet.MTP">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <Using Include="Xunit" />
+        <None Include="$(MSBuildThisFileDirectory)testconfig.json" Link="testconfig.json" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
     <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Benchmarks'))">
         <IsPackable>false</IsPackable>

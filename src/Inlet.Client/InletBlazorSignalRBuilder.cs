@@ -11,7 +11,7 @@ using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.ActionEffects;
 using Mississippi.Inlet.Client.SignalRConnection;
-using Mississippi.Reservoir.Core;
+using Mississippi.Reservoir.Abstractions;
 
 
 namespace Mississippi.Inlet.Client;
@@ -19,9 +19,15 @@ namespace Mississippi.Inlet.Client;
 /// <summary>
 ///     Builder for configuring Inlet Blazor SignalR services.
 /// </summary>
+/// <remarks>
+///     Public for application startup callbacks. Configuration closes when service registration begins
+///     or the parent service collection becomes read-only, and always closes when its configuration callback exits.
+/// </remarks>
 public sealed class InletBlazorSignalRBuilder
 {
     private readonly List<Assembly> assembliesToScan = [];
+
+    private bool isConfigurationClosed;
 
     private InletSignalRActionEffectOptions options = new();
 
@@ -34,14 +40,17 @@ public sealed class InletBlazorSignalRBuilder
     /// <summary>
     ///     Initializes a new instance of the <see cref="InletBlazorSignalRBuilder" /> class.
     /// </summary>
-    /// <param name="services">The service collection.</param>
+    /// <param name="builder">The Reservoir builder.</param>
     public InletBlazorSignalRBuilder(
-        IServiceCollection services
+        IReservoirBuilder builder
     )
     {
-        ArgumentNullException.ThrowIfNull(services);
-        Services = services;
+        ArgumentNullException.ThrowIfNull(builder);
+        ReservoirBuilder = builder;
+        Services = builder.Services;
     }
+
+    private IReservoirBuilder ReservoirBuilder { get; }
 
     private IServiceCollection Services { get; }
 
@@ -53,6 +62,7 @@ public sealed class InletBlazorSignalRBuilder
     public InletBlazorSignalRBuilder AddProjectionFetcher<TFetcher>()
         where TFetcher : class, IProjectionFetcher
     {
+        ThrowIfConfigurationClosed();
         projectionFetcherType = typeof(TFetcher);
         useAutoFetcher = false;
         return this;
@@ -76,6 +86,7 @@ public sealed class InletBlazorSignalRBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(assemblies);
+        ThrowIfConfigurationClosed();
         assembliesToScan.AddRange(assemblies);
         useAutoFetcher = true;
         return this;
@@ -91,6 +102,7 @@ public sealed class InletBlazorSignalRBuilder
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(hubPath);
+        ThrowIfConfigurationClosed();
         options = new()
         {
             HubPath = hubPath,
@@ -108,6 +120,7 @@ public sealed class InletBlazorSignalRBuilder
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(prefix);
+        ThrowIfConfigurationClosed();
         routePrefix = prefix;
         return this;
     }
@@ -117,6 +130,9 @@ public sealed class InletBlazorSignalRBuilder
     /// </summary>
     internal void Build()
     {
+        ThrowIfConfigurationClosed();
+        CloseConfiguration();
+
         // Register options
         Services.TryAddSingleton(options);
 
@@ -157,11 +173,22 @@ public sealed class InletBlazorSignalRBuilder
         // Store resolves IActionEffect[] → InletSignalRActionEffect needs Store.
         // By using Lazy<IInletStore>, the effect defers resolution until first use.
         Services.TryAddScoped<Lazy<IInletStore>>(sp => new(() => sp.GetRequiredService<IInletStore>()));
+        ReservoirBuilder.AddFeatureState<InletConnectionState>(feature => feature
+            .AddActionEffect<InletSignalRActionEffect>());
+        ReservoirBuilder.AddSignalRConnectionFeature();
+    }
 
-        // Register the Inlet connection feature state and SignalR effect
-        Services.AddActionEffect<InletConnectionState, InletSignalRActionEffect>();
+    /// <summary>
+    ///     Closes configuration after successful or failed callback completion.
+    /// </summary>
+    internal void CloseConfiguration() => isConfigurationClosed = true;
 
-        // Register the SignalR connection feature (state, reducers, and lifecycle effect)
-        Services.AddSignalRConnectionFeature();
+    private void ThrowIfConfigurationClosed()
+    {
+        if (isConfigurationClosed || Services.IsReadOnly)
+        {
+            throw new InvalidOperationException(
+                "Inlet SignalR configuration is closed or its parent services are read-only. Configure inside AddInletBlazorSignalR(...) while the parent scope is open.");
+        }
     }
 }
