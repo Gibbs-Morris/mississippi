@@ -1,10 +1,14 @@
 ---
+id: generated-http-authorization
 title: Generated HTTP Authorization Options
 description: Reference generated MVC authorization defaults, controller selection, and explicit metadata precedence.
 sidebar_position: 4
+sidebar_label: Generated HTTP Authorization Options
 ---
 
 # Generated HTTP Authorization Options
+
+## Overview
 
 `InletServerOptions.GeneratedApiAuthorization` configures Inlet's generated MVC authorization convention. Its defaults leave generated application models unchanged while preserving explicitly generated authorization metadata.
 
@@ -26,6 +30,8 @@ The [options](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Ga
 
 The convention ignores whitespace-only default strings and copies other values without trimming or parsing them itself. Assigning these options does not register the named policy or authentication schemes; the host owns that setup.
 
+When force mode adds a filter and all three default strings are null or blank, its empty `AuthorizeAttribute` uses the host's configured ASP.NET Core default authorization policy. The platform default requires an authenticated user; null option values do not remove authorization.
+
 ## Which Controllers Are Selected
 
 [`AddInletServer`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/InletServerRegistrations.cs) registers an MVC options setup that installs the convention using resolved server options.
@@ -36,11 +42,13 @@ It does not infer generated ownership from a controller's namespace or class nam
 
 ## Force Mode And Explicit Metadata
 
-In force mode, the convention adds a default controller `AuthorizeFilter` only when the controller has no preserved anonymous metadata and neither the controller nor any action has explicit authorization metadata or an authorization filter.
+In force mode, the convention adds a default controller `AuthorizeFilter` only when the controller has no preserved anonymous metadata and neither the controller nor any action has `IAuthorizeData` attributes or an `AuthorizeFilter`. Other custom `IAuthorizationFilter` or `IAsyncAuthorizationFilter` implementations do not count in this detection.
 
 An explicit authorization annotation on even one action suppresses this controller fallback. Other unannotated actions in that mixed controller do not receive individual default filters from the convention. Review each action's actual authorization metadata when using mixed controllers.
 
 With `AllowAnonymousOptOut = true`, anonymous controller/action metadata remains. With it set to false, the convention removes anonymous attributes and anonymous filters from selected controllers and actions. Removing that metadata does not change the explicit-authorization test that controls fallback creation.
+
+In MVC, preserved controller-level `[AllowAnonymous]` bypasses `[Authorize]` on that controller and its actions. An action annotation therefore does not protect an endpoint under an anonymous controller unless the host supplies a separate guard. See Microsoft's [MVC authorization precedence](https://learn.microsoft.com/en-us/aspnet/core/mvc/security/authorization/simple#authorize-attribute).
 
 `Disabled` skips these convention changes; it does not remove existing authorization or force every endpoint to be anonymous.
 
