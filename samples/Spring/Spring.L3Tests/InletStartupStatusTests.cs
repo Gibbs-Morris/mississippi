@@ -38,21 +38,40 @@ public sealed class InletStartupStatusTests
 
         Directory.CreateDirectory(directory);
         await page.SetViewportSizeAsync(1440, 900);
-        await page.ScreenshotAsync(new() { Path = Path.Join(directory, $"inlet-startup-{state}-desktop.png"), FullPage = true });
+        await page.ScreenshotAsync(
+            new()
+            {
+                Path = Path.Join(directory, $"inlet-startup-{state}-desktop.png"),
+                FullPage = true,
+            });
         await page.SetViewportSizeAsync(390, 844);
-        await page.ScreenshotAsync(new() { Path = Path.Join(directory, $"inlet-startup-{state}-mobile.png"), FullPage = true });
+        await page.ScreenshotAsync(
+            new()
+            {
+                Path = Path.Join(directory, $"inlet-startup-{state}-mobile.png"),
+                FullPage = true,
+            });
         await File.WriteAllTextAsync(
             Path.Join(directory, $"inlet-startup-{state}.json"),
-            JsonSerializer.Serialize(new
-            {
-                Route = page.Url,
-                State = state,
-                FailedNegotiationStatus = 503,
-                Browser = "Chromium",
-                BrowserVersion = page.Context.Browser?.Version,
-                Desktop = new { Width = 1440, Height = 900 },
-                Mobile = new { Width = 390, Height = 844 },
-            }),
+            JsonSerializer.Serialize(
+                new
+                {
+                    Route = page.Url,
+                    State = state,
+                    FailedNegotiationStatus = 503,
+                    Browser = "Chromium",
+                    BrowserVersion = page.Context.Browser?.Version,
+                    Desktop = new
+                    {
+                        Width = 1440,
+                        Height = 900,
+                    },
+                    Mobile = new
+                    {
+                        Width = 390,
+                        Height = 844,
+                    },
+                }),
             TestContext.Current.CancellationToken);
         await page.SetViewportSizeAsync(1440, 900);
     }
@@ -66,23 +85,52 @@ public sealed class InletStartupStatusTests
     {
         Assert.True(Fixture.IsInitialized, "The Spring application and browser must be initialized.");
         IPage page = await Fixture.CreatePageAsync();
-        await page.Context.Tracing.StartAsync(new() { Screenshots = true, Snapshots = true, Sources = true });
+        await page.Context.Tracing.StartAsync(
+            new()
+            {
+                Screenshots = true,
+                Snapshots = true,
+                Sources = true,
+            });
         try
         {
             const string negotiationPattern = "**/hubs/inlet/negotiate**";
             await page.RouteAsync(
                 negotiationPattern,
-                route => route.FulfillAsync(new() { Status = 503, ContentType = "text/plain", Body = "Controlled initial negotiation failure" }));
+                route => route.FulfillAsync(
+                    new()
+                    {
+                        Status = 503,
+                        ContentType = "text/plain",
+                        Body = "Controlled initial negotiation failure",
+                    }));
             AccountsPage accounts = new(page);
             await accounts.NavigateAsync(Fixture.GatewayBaseUri);
             await accounts.WaitForConnectionStatusAsync("Disconnected", 120_000);
-            ILocator lostConnection = page.GetByRole(AriaRole.Dialog).Filter(new() { Has = page.GetByRole(AriaRole.Heading, new() { Name = "Connection Lost", Exact = true }) });
+            ILocator lostConnection = page.GetByRole(AriaRole.Dialog)
+                .Filter(
+                    new()
+                    {
+                        Has = page.GetByRole(
+                            AriaRole.Heading,
+                            new()
+                            {
+                                Name = "Connection Lost",
+                                Exact = true,
+                            }),
+                    });
             await Expect(lostConnection).ToBeVisibleAsync();
             await Expect(lostConnection).ToContainTextAsync("503");
             await SaveStateEvidenceAsync(page, "disconnected");
-
             await page.UnrouteAsync(negotiationPattern);
-            await lostConnection.GetByRole(AriaRole.Button, new() { Name = "Reconnect", Exact = true }).ClickAsync();
+            await lostConnection.GetByRole(
+                    AriaRole.Button,
+                    new()
+                    {
+                        Name = "Reconnect",
+                        Exact = true,
+                    })
+                .ClickAsync();
             await accounts.WaitForConnectionStatusAsync("Connected", 120_000);
             await Expect(lostConnection).ToHaveCountAsync(0);
             await SaveStateEvidenceAsync(page, "connected");

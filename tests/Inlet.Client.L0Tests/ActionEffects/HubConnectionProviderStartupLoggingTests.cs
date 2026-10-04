@@ -51,7 +51,7 @@ public sealed class HubConnectionProviderStartupLoggingTests
         }
 
         Dictionary<string, object?> fields = Assert
-            .IsType<IEnumerable<KeyValuePair<string, object?>>>(log.Arguments[2], exactMatch: false)
+            .IsType<IEnumerable<KeyValuePair<string, object?>>>(log.Arguments[2], false)
             .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
         Assert.Equal(template, fields["{OriginalFormat}"]);
         return fields;
@@ -92,7 +92,9 @@ public sealed class HubConnectionProviderStartupLoggingTests
             CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         await cancellation.CancelAsync();
         Task starting = provider.EnsureConnectedAsync(cancellation.Token);
-        OperationCanceledException exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => starting.WaitAsync(TestContext.Current.CancellationToken));
+        OperationCanceledException exception =
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                starting.WaitAsync(TestContext.Current.CancellationToken));
         Assert.True(starting.IsCanceled);
         Assert.Equal(HubConnectionState.Disconnected, provider.Connection.State);
         Assert.Collection(
