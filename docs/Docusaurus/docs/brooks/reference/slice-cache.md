@@ -1,4 +1,5 @@
 ---
+id: slice-cache
 title: Brooks Slice Cache Reads
 description: Reference incomplete slice-cache refresh, read failures, and recovery when a later storage query is complete.
 sidebar_position: 11
@@ -6,6 +7,8 @@ sidebar_label: Slice Cache Reads
 ---
 
 # Brooks Slice Cache Reads
+
+## Overview
 
 A Brooks slice reader caches the events returned for its fixed range. If a requested upper position exceeds that cache, the read can fail even though a later complete storage query would allow the same grain to recover.
 
