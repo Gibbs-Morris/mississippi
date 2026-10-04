@@ -1,4 +1,5 @@
 ---
+id: effect-iterations
 title: Aggregate Effect Iterations
 description: Reference the awaited effect cascade's iteration limit, immediate event persistence, and limit outcomes.
 sidebar_position: 4
@@ -6,6 +7,8 @@ sidebar_label: Effect Iterations
 ---
 
 # Aggregate Effect Iterations
+
+## Overview
 
 Awaited aggregate effects can yield events that trigger another round of effects. `AggregateEffectOptions.MaxEffectIterations` limits those cascade rounds in the generic aggregate runtime.
 
