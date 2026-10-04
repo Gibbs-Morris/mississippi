@@ -182,7 +182,7 @@ public sealed class CommandClientReducersGenerator : IIncrementalGenerator
         Dictionary<string, AggregateInfo> aggregates = new();
         foreach (CommandModel command in commands)
         {
-            string? aggregateName = NamingConventions.GetAggregateNameFromNamespace(command.Namespace);
+            string? aggregateName = TargetNamespaceResolver.ExtractAggregateName(command.Namespace);
             if (aggregateName is null)
             {
                 continue;

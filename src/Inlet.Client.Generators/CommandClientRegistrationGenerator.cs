@@ -158,7 +158,7 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
         return commands.Select(c => new
             {
                 Command = c,
-                AggregateName = NamingConventions.GetAggregateNameFromNamespace(c.Namespace),
+                AggregateName = TargetNamespaceResolver.ExtractAggregateName(c.Namespace),
             })
             .Where(x => x.AggregateName is not null)
             .GroupBy(x => x.AggregateName!)
