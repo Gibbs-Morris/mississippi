@@ -24,11 +24,11 @@ An empty sequence produces no elements. A null element passes to the element map
 
 ## Asynchronous Sequences
 
-[`AsyncEnumerableMapper.Map`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Common.Abstractions/Mapping/AsyncEnumerableMapper.cs) is an async iterator. Its null-input guard runs when enumeration starts, rather than when the iterator is obtained.
+[`AsyncEnumerableMapper.Map`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Common.Abstractions/Mapping/AsyncEnumerableMapper.cs) returns a lazy async sequence. Its null-input guard runs when enumeration starts, rather than when the iterator is obtained.
 
 For each asynchronously received input item, it calls the synchronous element mapper and yields that result before moving to the next item. It does not start parallel mapping tasks or materialize the entire input. Empty inputs, null elements, and mapper failures follow the same per-element boundary as synchronous mapping.
 
-The adapter exposes no cancellation-token parameter and does not forward a consumer enumeration token to the input's enumerator. Applications requiring that forwarding need an adapter that implements it explicitly.
+`Map` exposes no cancellation-token parameter. Supply the consumer token when enumerating its output, such as through `WithCancellation(token)`. The returned iterator forwards that token to the input's enumerator; cancellation depends on the input honoring it.
 
 ## Service Registration
 
@@ -42,7 +42,7 @@ The [registration extensions](https://github.com/Gibbs-Morris/mississippi/blob/m
 
 Register the element mapper separately. The collection extensions only register their adapters. Each extension uses `AddTransient` and returns the service collection; repeated calls add registrations rather than using `TryAdd` to suppress duplicates.
 
-Existing [synchronous](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Common.Abstractions.L0Tests/Mapping/EnumerableMapperTests.cs) and [asynchronous](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Common.Abstractions.L0Tests/Mapping/AsyncEnumerableMapperTests.cs) tests cover null inputs, ordered results, null elements, and empty inputs. Deferred execution and token forwarding above are verified from the implementations.
+Existing [synchronous](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Common.Abstractions.L0Tests/Mapping/EnumerableMapperTests.cs) and [asynchronous](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Common.Abstractions.L0Tests/Mapping/AsyncEnumerableMapperTests.cs) tests cover null inputs, ordered results, null elements, and empty inputs. [Cancellation tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Common.Abstractions.L0Tests/Mapping/AsyncEnumerableMapperCancellationTests.cs) verify lazy enumeration, deferred null validation, token forwarding, and source disposal after cancellation.
 
 ## Summary
 
