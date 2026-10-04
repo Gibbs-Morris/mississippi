@@ -1,4 +1,5 @@
 ---
+id: type-registries
 title: Persisted Type Registries
 description: Reference event and snapshot type lookup, registration collisions, and assembly-scan counts.
 sidebar_position: 6
@@ -6,6 +7,8 @@ sidebar_label: Type Registries
 ---
 
 # Persisted Type Registries
+
+## Overview
 
 Event and snapshot registries map persisted names to CLR types and types back to names. Their built-in implementations share the same lookup and collision behavior.
 
@@ -38,6 +41,8 @@ Registering a second distinct name for an already registered type adds another n
 The two directions therefore need not be a one-to-one mapping. They are updated through separate dictionary additions, rather than one atomic paired update. A duplicate name is not reported as a registration exception.
 
 Manual `Register` uses the supplied name. It does not derive or cross-check that name against the type's event or snapshot storage-name attribute; attribute-name extraction belongs to scanning and the higher-level registration helpers.
+
+Snapshot registration does inspect `[SnapshotRetention]` before adding either mapping. Constructing that attribute with a nonpositive modulus throws `ArgumentOutOfRangeException`, so an invalid attributed type fails manual registration and assembly scanning before its mappings are added. The [snapshot registry tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.Runtime.L0Tests/SnapshotTypeRegistryTests.cs) cover this retention failure.
 
 ## Assembly Scanning
 
