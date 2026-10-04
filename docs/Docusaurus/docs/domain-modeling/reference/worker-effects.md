@@ -1,0 +1,59 @@
+---
+title: Worker Event Effects
+description: Reference background effect envelopes, worker routing, supplied state, and failure observation.
+sidebar_position: 5
+sidebar_label: Worker Effects
+---
+
+# Worker Event Effects
+
+Background event effects receive an envelope through an Orleans worker grain. The aggregate dispatches the handoff without waiting for the effect's business operation to finish.
+
+## Applies To
+
+- `Mississippi.DomainModeling.Abstractions.FireAndForgetEffectEnvelope<TEvent, TAggregate>`
+- `Mississippi.DomainModeling.Abstractions.IFireAndForgetEffectWorkerGrain<TEvent, TAggregate>`
+- The built-in aggregate registration and worker implementation
+
+## Envelope
+
+The [sealed record](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/FireAndForgetEffectEnvelope.cs) has five init-only properties:
+
+| Property | Meaning and default |
+|----------|---------------------|
+| `EventData` | The triggering event; defaults to null |
+| `AggregateState` | The supplied aggregate state; defaults to null |
+| `BrookKey` | Full brook identity; defaults to an empty string |
+| `EventPosition` | The triggering event's position; defaults to `0` |
+| `EffectTypeName` | CLR effect identity for worker resolution; defaults to an empty string |
+
+The record itself does not validate those values. The [registration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/FireAndForgetEffectRegistration.cs) fills them from its arguments without making a local deep copy of the event or state.
+
+## Aggregate Handoff
+
+The [aggregate runtime](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/GenericAggregateGrain.cs) dispatches registrations whose `EventType` equals the original event's exact runtime type. It supplies each event's brook position from the original persisted batch.
+
+It loads the aggregate snapshot at the last known position after awaited effects have run, then uses that state for all original events in the batch. The envelope therefore does not necessarily contain the historical state immediately after its individual event.
+
+The registration routes to a worker keyed by the aggregate type's full CLR name, falling back to its simple name. That routing key is not the entity ID. It discards the task returned by `ExecuteAsync` and supplies the default cancellation token. The [worker contract](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/IFireAndForgetEffectWorkerGrain.cs) marks this call `[OneWay]`.
+
+The [registration tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.Runtime.L0Tests/FireAndForgetEffectRegistrationTests.cs) verify the routing key, envelope arguments, default token, and omission of unmatched event types.
+
+## Worker Resolution And Failures
+
+The [stateless worker](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/FireAndForgetEffectWorkerGrain.cs) resolves registered `IFireAndForgetEventEffect<TEvent, TAggregate>` implementations and selects the first whose CLR `FullName` exactly matches `EffectTypeName`.
+
+A missing implementation, null event, or null aggregate state is logged and recorded as a failure metric, then execution returns. Ordinary exceptions from resolution or handling, including cancellation exceptions, are logged and swallowed by the worker. `OutOfMemoryException`, `StackOverflowException`, and `ThreadInterruptedException` propagate. A null envelope is rejected before that protected handling block.
+
+The [existing worker tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.Runtime.L0Tests/FireAndForgetEffectWorkerGrainTests.cs) cover valid execution, a missing event, and an ordinary effect exception.
+
+The built-in handoff does not provide a durable retry queue or application-level idempotency mechanism. Aggregate command completion does not establish that the worker's external side effect completed.
+
+## Summary
+
+Worker effects receive an event, supplied state, and routing metadata after persistence. Their execution is outside the aggregate's awaited completion path, with ordinary failures observed through worker logs and metrics.
+
+## Next Steps
+
+- Read [Domain Modeling Concepts](../concepts/concepts.md) for effect ownership.
+- Read [Spring Key Concepts](../../samples/spring-sample/concepts/key-concepts.md) for the sample's background effect role.
