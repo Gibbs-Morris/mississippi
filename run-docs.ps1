@@ -67,7 +67,12 @@ if ($null -eq $nodeCommand) {
     Stop-Script -Message 'Node.js was not found on PATH. Install Node.js 24 or newer.'
 }
 
-$nodeVersion = & $nodeCommand.Source --version
+$nodeVersion = if ($nodeCommand.Source.EndsWith('.ps1', [System.StringComparison]::OrdinalIgnoreCase)) {
+    & pwsh -NoProfile -File $nodeCommand.Source --version
+}
+else {
+    & $nodeCommand.Source --version
+}
 $nodeVersionMatch = [regex]::Match(([string]$nodeVersion).Trim(), '^v?(?<Major>\d+)\.\d+\.\d+$')
 if ($LASTEXITCODE -ne 0 -or -not $nodeVersionMatch.Success -or [int]$nodeVersionMatch.Groups['Major'].Value -lt 24) {
     Stop-Script -Message "Node.js 24 or newer is required (found: $nodeVersion)."

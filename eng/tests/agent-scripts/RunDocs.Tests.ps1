@@ -11,13 +11,14 @@ Describe 'Documentation runtime prerequisites' {
         $scriptPath = Join-Path $repoRoot 'run-docs.ps1'
 
         function Invoke-DocsScript {
-            param([string]$Version = 'v24.0.0', [int]$NodeExit = 0, [switch]$MissingNode)
+            param([string]$Version = 'v24.0.0', [int]$NodeExit = 0, [switch]$MissingNode, [switch]$OmitNodeExit)
 
             $shimRoot = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
             New-Item -ItemType Directory -Path $shimRoot | Out-Null
             $npmLog = Join-Path $shimRoot 'npm-arguments.json'
             if (-not $MissingNode) {
                 $nodeScript = "Write-Output '$Version'" + [Environment]::NewLine + "exit $NodeExit"
+                if ($OmitNodeExit) { $nodeScript = "Write-Output '$Version'" }
                 Set-Content -LiteralPath (Join-Path $shimRoot 'node.ps1') -Value $nodeScript
             }
             Set-Content -LiteralPath (Join-Path $shimRoot 'npm.ps1') -Value ('$args | ConvertTo-Json -AsArray -Compress | Set-Content -LiteralPath $env:MISSISSIPPI_RUN_DOCS_TEST_LOG' + [Environment]::NewLine + 'exit 0')
@@ -27,7 +28,7 @@ Describe 'Documentation runtime prerequisites' {
             $env:MISSISSIPPI_RUN_DOCS_TEST_LOG = $npmLog
             try {
                 try {
-                    $output = & $scriptPath -Mode Build -SkipInstall 2>&1 | Out-String
+                    $output = & pwsh -NoProfile -File $scriptPath -Mode Build -SkipInstall 2>&1 | Out-String
                     $exitCode = $LASTEXITCODE
                 }
                 catch {
@@ -77,6 +78,15 @@ Describe 'Documentation runtime prerequisites' {
         $outcome.ExitCode | Should -Be 1
         $outcome.Output | Should -Match 'Node.js 24 or newer is required'
         $outcome.NpmArguments.Count | Should -Be 0
+    }
+
+    It 'runs npm when a supported PowerShell node shim has no explicit exit' {
+        $outcome = Invoke-DocsScript -OmitNodeExit
+
+        $outcome.ExitCode | Should -Be 0
+        $outcome.NpmArguments.Count | Should -Be 2
+        $outcome.NpmArguments[0] | Should -Be 'run'
+        $outcome.NpmArguments[1] | Should -Be 'build'
     }
 
     It 'runs the requested npm command for supported node version <Version>' -ForEach @(
