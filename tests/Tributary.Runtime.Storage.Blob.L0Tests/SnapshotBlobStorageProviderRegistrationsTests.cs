@@ -12,13 +12,14 @@ using Mississippi.Hosting.Abstractions;
 using Mississippi.Hosting.Runtime;
 using Mississippi.Hosting.Runtime.Abstractions;
 using Mississippi.Tributary.Runtime.Storage.Abstractions;
+using Mississippi.Tributary.Runtime.Storage.Blob;
 
 using Moq;
 
 using Orleans.Hosting;
 
 
-namespace Mississippi.Tributary.Runtime.Storage.Blob.L0Tests;
+namespace MississippiTests.Tributary.Runtime.Storage.Blob.L0Tests;
 
 /// <summary>
 ///     Tests staged Blob snapshot runtime composition.
@@ -54,6 +55,22 @@ public sealed class SnapshotBlobStorageProviderRegistrationsTests
         Assert.True(options.EnableCompression);
     }
 
+    /// <summary>Verifies a pre-registered scoped provider keeps scoped reader and writer aliases.</summary>
+    [Fact]
+    public void AddBlobSnapshotStorageProviderPreservesCustomProviderLifetime()
+    {
+        ServiceCollection services = new();
+        services.AddScoped<ISnapshotStorageProvider>(_ => Mock.Of<ISnapshotStorageProvider>());
+        CreateSilo(services).UseMississippi(runtime => runtime.AddBlobSnapshotStorageProvider());
+        using ServiceProvider provider = services.BuildServiceProvider();
+        using IServiceScope firstScope = provider.CreateScope();
+        using IServiceScope secondScope = provider.CreateScope();
+        ISnapshotStorageProvider first = firstScope.ServiceProvider.GetRequiredService<ISnapshotStorageProvider>();
+        Assert.Same(first, firstScope.ServiceProvider.GetRequiredService<ISnapshotStorageReader>());
+        Assert.Same(first, firstScope.ServiceProvider.GetRequiredService<ISnapshotStorageWriter>());
+        Assert.NotSame(first, secondScope.ServiceProvider.GetRequiredService<ISnapshotStorageProvider>());
+    }
+
     /// <summary>Verifies host-owned Blob composition and the shared snapshot aliases.</summary>
     [Fact]
     public void AddBlobSnapshotStorageProviderRegistersProviderRoles()
@@ -78,30 +95,12 @@ public sealed class SnapshotBlobStorageProviderRegistrationsTests
         Assert.False(provider.GetRequiredService<IOptions<SnapshotBlobStorageOptions>>().Value.EnableCompression);
     }
 
-    /// <summary>Verifies a pre-registered scoped provider keeps scoped reader and writer aliases.</summary>
-    [Fact]
-    public void AddBlobSnapshotStorageProviderPreservesCustomProviderLifetime()
-    {
-        ServiceCollection services = new();
-        services.AddScoped<ISnapshotStorageProvider>(_ => Mock.Of<ISnapshotStorageProvider>());
-        CreateSilo(services).UseMississippi(runtime => runtime.AddBlobSnapshotStorageProvider());
-
-        using ServiceProvider provider = services.BuildServiceProvider();
-        using IServiceScope firstScope = provider.CreateScope();
-        using IServiceScope secondScope = provider.CreateScope();
-        ISnapshotStorageProvider first = firstScope.ServiceProvider.GetRequiredService<ISnapshotStorageProvider>();
-        Assert.Same(first, firstScope.ServiceProvider.GetRequiredService<ISnapshotStorageReader>());
-        Assert.Same(first, firstScope.ServiceProvider.GetRequiredService<ISnapshotStorageWriter>());
-        Assert.NotSame(first, secondScope.ServiceProvider.GetRequiredService<ISnapshotStorageProvider>());
-    }
-
     /// <summary>Verifies invalid connection strings fail before runtime staging.</summary>
     /// <param name="connectionString">The invalid connection string.</param>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]
-
     public void AddBlobSnapshotStorageProviderRejectsBlankConnectionString(
         string? connectionString
     )
@@ -148,6 +147,26 @@ public sealed class SnapshotBlobStorageProviderRegistrationsTests
                     runtime.AddBlobSnapshotStorageProvider(options => options.ContainerName = "INVALID_CONTAINER")));
         Assert.Contains(nameof(SnapshotBlobStorageOptions.ContainerName), exception.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(ISnapshotStorageProvider));
+    }
+
+    /// <summary>
+    ///     Verifies an unused Blob provider does not require a client during hosted startup.
+    /// </summary>
+    [Fact]
+    public void AddBlobSnapshotStorageProviderSkipsInitializerForCustomProvider()
+    {
+        ServiceCollection services = new();
+        services.AddLogging();
+        ISnapshotStorageProvider customProvider = Mock.Of<ISnapshotStorageProvider>();
+        services.AddSingleton(customProvider);
+        CreateSilo(services).UseMississippi(runtime => runtime.AddBlobSnapshotStorageProvider());
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.Same(customProvider, provider.GetRequiredService<ISnapshotStorageProvider>());
+        Assert.Same(customProvider, provider.GetRequiredService<ISnapshotStorageReader>());
+        Assert.Same(customProvider, provider.GetRequiredService<ISnapshotStorageWriter>());
+        Assert.DoesNotContain(
+            provider.GetServices<IHostedService>(),
+            service => service is SnapshotBlobContainerInitializer);
     }
 
     /// <summary>Verifies an externally registered client key selects the intended account.</summary>

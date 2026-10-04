@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -121,10 +120,7 @@ public sealed class SnapshotBlobRepositoryTests
                     SnapshotBlobPath.BuildSnapshotBlobName(new(StreamKey, 2)),
                 ]));
         operations.Setup(o => o.DeleteIfExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback<string, CancellationToken>((
-                blobName,
-                _
-            ) => deleted.Add(blobName))
+            .Callback<string, CancellationToken>((blobName, _) => deleted.Add(blobName))
             .ReturnsAsync(true);
         SnapshotBlobRepository repository = CreateRepository(operations);
         await repository.DeleteAllAsync(StreamKey, CancellationToken.None);
@@ -196,10 +192,7 @@ public sealed class SnapshotBlobRepositoryTests
             value => value.Log(
                 LogLevel.Debug,
                 It.Is<EventId>(eventId => eventId.Id == 2),
-                It.Is<It.IsAnyType>((
-                    state,
-                    _
-                ) => state.ToString()!.Contains(blobName, StringComparison.Ordinal)),
+                It.Is<It.IsAnyType>((state, _) => state.ToString()!.Contains(blobName, StringComparison.Ordinal)),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             isExisting ? Times.Once() : Times.Never());
@@ -227,10 +220,7 @@ public sealed class SnapshotBlobRepositoryTests
         operations.Setup(value => value.ListBlobNamesAsync(prefix, CancellationToken.None))
             .Returns(ToAsyncEnumerableAsync([firstOldBlob, latestBlob, secondOldBlob]));
         operations.Setup(value => value.DeleteIfExistsAsync(It.IsAny<string>(), CancellationToken.None))
-            .Callback<string, CancellationToken>((
-                blobName,
-                _
-            ) => deleted.Add(blobName))
+            .Callback<string, CancellationToken>((blobName, _) => deleted.Add(blobName))
             .ReturnsAsync(true);
         SnapshotBlobRepository repository = CreateRepository(operations);
         int deletedCount = await repository.PruneAsync(StreamKey, retainModuli, CancellationToken.None);
@@ -268,10 +258,7 @@ public sealed class SnapshotBlobRepositoryTests
                     foreignBlob,
                 ]));
         operations.Setup(o => o.DeleteIfExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback<string, CancellationToken>((
-                blobName,
-                _
-            ) => deleted.Add(blobName))
+            .Callback<string, CancellationToken>((blobName, _) => deleted.Add(blobName))
             .ReturnsAsync(true);
         SnapshotBlobRepository repository = CreateRepository(operations);
         int deletedCount = await repository.PruneAsync(StreamKey, [2], CancellationToken.None);
@@ -595,11 +582,7 @@ public sealed class SnapshotBlobRepositoryTests
         BinaryData? uploadedDocument = null;
         Mock<ISnapshotBlobOperations> operations = new();
         operations.Setup(o => o.UploadAsync(It.IsAny<string>(), It.IsAny<BinaryData>(), It.IsAny<CancellationToken>()))
-            .Callback<string, BinaryData, CancellationToken>((
-                blobName,
-                document,
-                _
-            ) =>
+            .Callback<string, BinaryData, CancellationToken>((blobName, document, _) =>
             {
                 uploadedBlobName = blobName;
                 uploadedDocument = document;

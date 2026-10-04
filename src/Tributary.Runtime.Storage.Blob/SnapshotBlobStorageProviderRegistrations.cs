@@ -184,7 +184,11 @@ public static class SnapshotBlobStorageProviderRegistrations
                 typeof(ISnapshotStorageWriter),
                 provider => provider.GetRequiredService<ISnapshotStorageProvider>(),
                 providerDescriptor.Lifetime));
-        services.AddHostedService<SnapshotBlobContainerInitializer>();
+        if (providerDescriptor.ImplementationType == typeof(SnapshotBlobStorageProvider))
+        {
+            services.AddHostedService<SnapshotBlobContainerInitializer>();
+        }
+
         services.AddKeyedSingleton<BlobContainerClient>(
             SnapshotBlobDefaults.BlobContainerClientServiceKey,
             (provider, _) =>

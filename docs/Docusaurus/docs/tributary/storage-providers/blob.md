@@ -50,7 +50,8 @@ than adding another runtime root. The connection-string overload creates a lazy 
 | `AddBlobSnapshotStorageProvider(IConfiguration)` | Host-owned keyed client | Bound section |
 | `AddBlobSnapshotStorageProvider(string, IConfiguration)` | Connection string | Bound section |
 
-The provider registers a hosted initializer that creates the configured container if absent when the host starts.
+When Blob is the selected snapshot provider, it registers a hosted initializer that creates the configured container if absent
+when the host starts. A pre-registered snapshot provider remains selected and does not start the unused Blob initializer.
 Composition itself does not contact Blob Storage. A connection string cannot be combined with a custom client key.
 
 ## Options and limits

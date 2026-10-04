@@ -140,7 +140,10 @@ internal sealed class SnapshotBlobOperations : ISnapshotBlobOperations
                     document,
                     new BlobUploadOptions
                     {
-                        Conditions = new BlobRequestConditions { IfNoneMatch = ETag.All },
+                        Conditions = new()
+                        {
+                            IfNoneMatch = ETag.All,
+                        },
                         HttpHeaders = new()
                         {
                             ContentType = "application/json",
@@ -149,10 +152,12 @@ internal sealed class SnapshotBlobOperations : ISnapshotBlobOperations
                     cancellationToken)
                 .ConfigureAwait(false);
         }
-        catch (RequestFailedException exception) when (
-            (exception.Status == 412) ||
-            ((exception.Status == 409) &&
-             string.Equals(exception.ErrorCode, "BlobAlreadyExists", StringComparison.Ordinal)))
+        catch (RequestFailedException exception) when ((exception.Status == 412) ||
+                                                       ((exception.Status == 409) &&
+                                                        string.Equals(
+                                                            exception.ErrorCode,
+                                                            "BlobAlreadyExists",
+                                                            StringComparison.Ordinal)))
         {
             throw new SnapshotBlobDuplicateVersionException($"Snapshot Blob '{blobName}' already exists.", exception);
         }

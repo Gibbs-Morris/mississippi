@@ -1,5 +1,6 @@
 using System;
 
+
 namespace Mississippi.Tributary.Runtime.Storage.Blob;
 
 /// <summary>
@@ -14,7 +15,9 @@ public sealed class SnapshotBlobDuplicateVersionException : InvalidOperationExce
 
     /// <summary>Initializes a new instance of the <see cref="SnapshotBlobDuplicateVersionException" /> class.</summary>
     /// <param name="message">The conflict description.</param>
-    public SnapshotBlobDuplicateVersionException(string message)
+    public SnapshotBlobDuplicateVersionException(
+        string message
+    )
         : base(message)
     {
     }
@@ -22,7 +25,10 @@ public sealed class SnapshotBlobDuplicateVersionException : InvalidOperationExce
     /// <summary>Initializes a new instance of the <see cref="SnapshotBlobDuplicateVersionException" /> class.</summary>
     /// <param name="message">The conflict description.</param>
     /// <param name="innerException">The Azure Storage failure.</param>
-    public SnapshotBlobDuplicateVersionException(string message, Exception innerException)
+    public SnapshotBlobDuplicateVersionException(
+        string message,
+        Exception innerException
+    )
         : base(message, innerException)
     {
     }

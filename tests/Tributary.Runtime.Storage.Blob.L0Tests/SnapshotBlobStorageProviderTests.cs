@@ -40,22 +40,14 @@ public sealed class SnapshotBlobStorageProviderTests
     )
     {
         MeterListener listener = new();
-        listener.InstrumentPublished = (
-            instrument,
-            meterListener
-        ) =>
+        listener.InstrumentPublished = (instrument, meterListener) =>
         {
             if (instrument.Meter.Name == SnapshotBlobStorageMetrics.MeterName)
             {
                 meterListener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -215,6 +207,43 @@ public sealed class SnapshotBlobStorageProviderTests
     }
 
     /// <summary>
+    ///     Verifies caller cancellation propagates without failure telemetry.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task WriteAsyncShouldNotRecordCallerCancellationAsFailure()
+    {
+        const string snapshotType = nameof(WriteAsyncShouldNotRecordCallerCancellationAsFailure);
+        SnapshotKey snapshotKey = new(
+            new(StreamKey.BrookName, snapshotType, StreamKey.EntityId, StreamKey.ReducersHash),
+            5);
+        SnapshotEnvelope envelope = new();
+        ConcurrentQueue<MetricMeasurement> measurements = new();
+        using MeterListener listener = CreateMetricsListener(snapshotType, measurements);
+        using CancellationTokenSource cancellation = new();
+        await cancellation.CancelAsync();
+        Mock<ISnapshotBlobRepository> repository = new(MockBehavior.Strict);
+        repository.Setup(value => value.WriteAsync(snapshotKey, envelope, cancellation.Token))
+            .ThrowsAsync(new OperationCanceledException(cancellation.Token));
+        Mock<ILogger<SnapshotBlobStorageProvider>> logger = new();
+        logger.Setup(value => value.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        SnapshotBlobStorageProvider provider = new(repository.Object, logger.Object);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => provider.WriteAsync(
+            snapshotKey,
+            envelope,
+            cancellation.Token));
+        Assert.DoesNotContain(measurements, measurement => measurement.InstrumentName == "blob.snapshot.write.count");
+        logger.Verify(
+            value => value.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
+    }
+
+    /// <summary>
     ///     Verifies failed writes preserve the storage exception and record failure metrics and snapshot context.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -252,50 +281,11 @@ public sealed class SnapshotBlobStorageProviderTests
             value => value.Log(
                 LogLevel.Error,
                 It.Is<EventId>(eventId => eventId.Id == 12),
-                It.Is<It.IsAnyType>((
-                    state,
-                    _
-                ) => state.ToString()!.Contains(snapshotKey.ToString(), StringComparison.Ordinal)),
+                It.Is<It.IsAnyType>((state, _) =>
+                    state.ToString()!.Contains(snapshotKey.ToString(), StringComparison.Ordinal)),
                 failure,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
         repository.Verify(value => value.WriteAsync(snapshotKey, envelope, cancellation.Token), Times.Once);
-    }
-
-    /// <summary>
-    ///     Verifies caller cancellation propagates without failure telemetry.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
-    public async Task WriteAsyncShouldNotRecordCallerCancellationAsFailure()
-    {
-        const string snapshotType = nameof(WriteAsyncShouldNotRecordCallerCancellationAsFailure);
-        SnapshotKey snapshotKey = new(
-            new(StreamKey.BrookName, snapshotType, StreamKey.EntityId, StreamKey.ReducersHash),
-            5);
-        SnapshotEnvelope envelope = new();
-        ConcurrentQueue<MetricMeasurement> measurements = new();
-        using MeterListener listener = CreateMetricsListener(snapshotType, measurements);
-        using CancellationTokenSource cancellation = new();
-        await cancellation.CancelAsync();
-        Mock<ISnapshotBlobRepository> repository = new(MockBehavior.Strict);
-        repository.Setup(value => value.WriteAsync(snapshotKey, envelope, cancellation.Token))
-            .ThrowsAsync(new OperationCanceledException(cancellation.Token));
-        Mock<ILogger<SnapshotBlobStorageProvider>> logger = new();
-        logger.Setup(value => value.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
-        SnapshotBlobStorageProvider provider = new(repository.Object, logger.Object);
-
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            provider.WriteAsync(snapshotKey, envelope, cancellation.Token));
-        Assert.DoesNotContain(measurements, measurement =>
-            measurement.InstrumentName == "blob.snapshot.write.count");
-        logger.Verify(
-            value => value.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
-                It.IsAny<Exception?>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Never);
     }
 }

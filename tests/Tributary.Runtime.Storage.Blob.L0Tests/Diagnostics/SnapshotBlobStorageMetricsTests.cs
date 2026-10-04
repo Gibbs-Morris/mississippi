@@ -22,22 +22,14 @@ public sealed class SnapshotBlobStorageMetricsTests
         const string expectedSnapshotType = nameof(RecordDeleteEmitsMetric);
         using MeterListener listener = new();
         ConcurrentQueue<MetricMeasurement> measurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            meterListener
-        ) =>
+        listener.InstrumentPublished = (instrument, meterListener) =>
         {
             if (instrument.Meter.Name == SnapshotBlobStorageMetrics.MeterName)
             {
                 meterListener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -77,22 +69,14 @@ public sealed class SnapshotBlobStorageMetricsTests
         const string expectedSnapshotType = nameof(RecordPruneDoesNotEmitWhenCountIsZeroOrNegative);
         using MeterListener listener = new();
         ConcurrentQueue<MetricMeasurement> measurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            meterListener
-        ) =>
+        listener.InstrumentPublished = (instrument, meterListener) =>
         {
             if (instrument.Meter.Name == SnapshotBlobStorageMetrics.MeterName)
             {
                 meterListener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -126,22 +110,14 @@ public sealed class SnapshotBlobStorageMetricsTests
         const string expectedSnapshotType = nameof(RecordPruneEmitsMetricWhenCountIsPositive);
         using MeterListener listener = new();
         ConcurrentQueue<MetricMeasurement> measurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            meterListener
-        ) =>
+        listener.InstrumentPublished = (instrument, meterListener) =>
         {
             if (instrument.Meter.Name == SnapshotBlobStorageMetrics.MeterName)
             {
                 meterListener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -177,22 +153,14 @@ public sealed class SnapshotBlobStorageMetricsTests
         using MeterListener listener = new();
         ConcurrentQueue<MetricMeasurement> longMeasurements = new();
         ConcurrentQueue<MetricMeasurement> doubleMeasurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            meterListener
-        ) =>
+        listener.InstrumentPublished = (instrument, meterListener) =>
         {
             if (instrument.Meter.Name == SnapshotBlobStorageMetrics.MeterName)
             {
                 meterListener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -208,12 +176,7 @@ public sealed class SnapshotBlobStorageMetricsTests
 
             longMeasurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
-        listener.SetMeasurementEventCallback<double>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -252,22 +215,14 @@ public sealed class SnapshotBlobStorageMetricsTests
         const string expectedSnapshotType = nameof(RecordReadEmitsMetricsWhenNotFound);
         using MeterListener listener = new();
         ConcurrentQueue<MetricMeasurement> measurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            meterListener
-        ) =>
+        listener.InstrumentPublished = (instrument, meterListener) =>
         {
             if (instrument.Meter.Name == SnapshotBlobStorageMetrics.MeterName)
             {
                 meterListener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -303,22 +258,14 @@ public sealed class SnapshotBlobStorageMetricsTests
         using MeterListener listener = new();
         ConcurrentQueue<MetricMeasurement> longMeasurements = new();
         ConcurrentQueue<MetricMeasurement> doubleMeasurements = new();
-        listener.InstrumentPublished = (
-            instrument,
-            meterListener
-        ) =>
+        listener.InstrumentPublished = (instrument, meterListener) =>
         {
             if (instrument.Meter.Name == SnapshotBlobStorageMetrics.MeterName)
             {
                 meterListener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -334,12 +281,7 @@ public sealed class SnapshotBlobStorageMetricsTests
 
             longMeasurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
-        listener.SetMeasurementEventCallback<double>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
