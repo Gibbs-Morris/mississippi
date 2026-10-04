@@ -300,6 +300,10 @@ governed work begins:
     decision-log.md                 # All decisions with reasoning
 ```
 
+The delegated filenames in this layout and the phase and gate descriptions identify artifact roles and initial locations. On later passes, `cs River Orchestrator` MUST declare fresh output paths or bundle directories, pass the current input bindings to specialists, and record the actual returned paths and content digests. Specialists MUST NOT overwrite previously handed-back artifacts.
+
+Human gate packages MUST bind the exact current artifact paths and content digests. A new path does not preserve an earlier approval for materially changed content; the stale approval rule still requires a fresh explicit decision.
+
 `cs Entrepreneur` is explicitly pre-governed and MUST NOT create or use this
 shared state.
 

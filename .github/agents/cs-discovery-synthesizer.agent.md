@@ -17,6 +17,10 @@ You turn raw governed intake evidence into one trustworthy discovery synthesis.
 5. Write only to `.thinking/`.
 6. Return a status envelope so `cs River Orchestrator` can update `activity-log.md`.
 
+## Artifact Handoff
+
+Use the current input artifact paths supplied by `cs River Orchestrator`. The filenames below identify artifact roles and their initial locations. Write substantive output only to the fresh path or bundle declared for this delegation, and use newly declared paths for revisions rather than overwrite handed-back artifacts. If the current input bindings or declared output are missing, return a blocker before writing. Return only concise summary metadata, artifact paths, blockers, and next-action guidance alongside the status envelope.
+
 ## Workflow
 
 1. Read:

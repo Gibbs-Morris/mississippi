@@ -315,6 +315,8 @@ differ, [WORKFLOW.md](WORKFLOW.md) governs.
 - Every bounded delegation names one fresh single artifact path or one fresh bundle directory in `details.expectedOutputPath` unless the delegation explicitly authorizes a different target.
 - Delegated specialists write substantive outputs only to that declared path or bundle and return only a concise summary, metadata-sized status information, artifact paths, blockers, and next-action guidance.
 - Material revisions to previously handed-back delegated artifacts publish new paths rather than silently overwriting the earlier delegated output in place.
+- Delegated filenames in the layout and phase or gate descriptions identify artifact roles and initial locations. Later passes use fresh declared outputs and current input bindings; River records the returned paths and content digests.
+- Human gate packages bind the exact current artifact paths and content digests. A new path does not preserve approval for materially changed content; a fresh explicit decision is still required.
 - `cs River Orchestrator` validates returned artifact existence and path containment before recording delegated completion canonically.
 - `artifactTransitions` is the preferred lineage mechanism when a delegated artifact is revised, replaced, or superseded.
 
