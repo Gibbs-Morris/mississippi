@@ -71,9 +71,9 @@ String conversion does not validate either default state: `ToString()`, the impl
 - Passing a name containing `|` directly to the constructor throws `ArgumentException`. The constructor also throws `ArgumentException` when the normalized key length exceeds the limit.
 - A negative start or count throws `ArgumentOutOfRangeException`, including after successful numeric parsing.
 - Accessing `End` throws `ArgumentOutOfRangeException` if arithmetic overflow produces a position below `-1`.
-- Parsing a string with missing or extra separators, or a numeric component that cannot be parsed as `long`, throws `FormatException`. For example, `a|b|c|1|2` cannot be parsed as a range key; embedded separators are not treated as escaped name characters.
+- Parsing a string with missing required separators, or a numeric component that cannot be parsed as `long`, throws `FormatException`. For example, `a|b|c|1|2` cannot be parsed as a range key; embedded separators are not treated as escaped name characters.
 
-Parsing uses the default `long.TryParse` overload. These rules describe the key representation; the reader's slice-size validation is documented separately in [Brooks Reader Options](./reader-options.md).
+Parsing uses the default `long.TryParse` overload, so numeric acceptance depends on the current culture. These rules describe the key representation; the reader's slice-size validation is documented separately in [Brooks Reader Options](./reader-options.md).
 
 ## Summary
 
