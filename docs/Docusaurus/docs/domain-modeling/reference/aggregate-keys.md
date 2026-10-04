@@ -1,10 +1,14 @@
 ---
+id: aggregate-keys
 title: Aggregate Keys
 description: Reference aggregate entity identity, raw string conversion, validation, and the separate brook-key boundary.
 sidebar_position: 2
+sidebar_label: Aggregate Keys
 ---
 
 # Aggregate Keys
+
+## Overview
 
 `AggregateKey` represents an aggregate's entity ID. Its string representation contains that ID alone; it does not contain the aggregate's brook name.
 
