@@ -24,7 +24,7 @@ Use the current input artifact paths supplied by `cs River Orchestrator`. The fi
 ## Workflow
 
 1. Read the current late-stage artifacts, including review, QA, documentation, PR, and audit evidence.
-2. Check whether the merge-readiness package is complete and current.
+2. Check whether the merge-readiness package is complete and current for the actual PR head and checked base SHA. Verify all applicable CI jobs and required check-provider identities, required reviews and CODEOWNER approvals, no outstanding changes requested, and disposition of every comment plus resolution of every thread, including bot and outdated threads. Missing, pending, failed, canceled, stale, or unexpectedly skipped checks are blockers.
 3. Identify blockers, stale evidence, and decision dependencies.
 4. Write the result to `.thinking/<task>/09-pr-merge/merge-readiness.md`.
 
@@ -41,11 +41,11 @@ Use the current input artifact paths supplied by `cs River Orchestrator`. The fi
 | Check | Status | Evidence |
 |-------|--------|----------|
 | PR exists | Pass/Fail | ... |
-| Review obligations complete | Pass/Fail | ... |
+| Required reviews, CODEOWNER approvals, and review disposition complete | Pass/Fail | ... |
 | QA conclusion current | Pass/Fail | ... |
 | Documentation conclusion current | Pass/Fail | ... |
 | Reviewer audit summary current | Pass/Fail | ... |
-| CI evidence current | Pass/Fail | ... |
+| All applicable CI successful for current head and checked base, with required provider identities | Pass/Fail | ... |
 
 ## Blocking Reasons
 - <reason or none>
