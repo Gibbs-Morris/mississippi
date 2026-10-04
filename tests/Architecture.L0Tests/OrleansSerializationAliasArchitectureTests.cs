@@ -30,7 +30,7 @@ public sealed class OrleansSerializationAliasArchitectureTests : ArchitectureTes
                         .Select(attribute => attribute.ConstructorArguments[0].Value as string)
                         .SingleOrDefault(),
                 })
-            .Where(result => !string.IsNullOrWhiteSpace(result.Alias) && result.Alias!.Contains('.', StringComparison.Ordinal))
+            .Where(result => !string.IsNullOrWhiteSpace(result.Alias) && result.Alias.Contains('.', StringComparison.Ordinal))
             .Where(result => result.Alias != result.Type.FullName)
             .Select(result => $"{result.Type.FullName} => {result.Alias}")
             .OrderBy(value => value, StringComparer.Ordinal)
