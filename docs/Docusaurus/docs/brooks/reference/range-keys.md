@@ -46,7 +46,9 @@ For a nonempty range, choose start and count so the inclusive end is representab
 
 ## Construction And Parsing
 
-The constructor accepts the brook name, entity ID, start, and count. `FromBrookCompositeKey()` supplies the name and ID from a `BrookKey` and takes start and count separately. `ToBrookCompositeKey()` returns the name and ID without the range fields.
+The constructor accepts the brook name, entity ID, start, and count. `FromBrookCompositeKey()` supplies the name and ID from a `BrookKey` and takes start and count separately. `ToBrookCompositeKey()` constructs a `BrookKey` from the name and ID without the range fields. Both helpers run the destination key's constructor validation.
+
+A valid `BrookKey` can still exceed the range-key limit after the numeric fields and extra separators are added. For example, a name of `4191` UTF-16 code units with an empty entity ID uses the stream key's full `4192`-unit allowance. Converting it with start `0` and count `0` requires `4196` units and throws `ArgumentException`.
 
 `FromString()` and the implicit conversion from a string parse the four components, then call the constructor. The constructor applies the same validation to directly constructed and parsed keys:
 
