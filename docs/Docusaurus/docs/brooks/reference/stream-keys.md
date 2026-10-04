@@ -1,4 +1,5 @@
 ---
+id: stream-keys
 title: Brooks Stream Keys
 description: Reference BrookKey identity, string encoding, constructor validation, and typed name factories.
 sidebar_position: 4
@@ -6,6 +7,8 @@ sidebar_label: Stream Keys
 ---
 
 # Brooks Stream Keys
+
+## Overview
 
 `BrookKey` identifies one event stream by its brook name and entity ID. Typed factories can obtain the name from a type's `[BrookName]` attribute.
 
