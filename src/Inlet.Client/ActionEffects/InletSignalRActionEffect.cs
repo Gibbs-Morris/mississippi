@@ -438,7 +438,7 @@ internal sealed class InletSignalRActionEffect
                 CancellationToken.None);
             if (result is not null)
             {
-                IAction action = ProjectionActionFactory.CreateUpdated(dtoType, entityId, result.Data, newVersion);
+                IAction action = ProjectionActionFactory.CreateUpdated(dtoType, entityId, result.Data, result.Version);
                 Store.Dispatch(action);
             }
         }
