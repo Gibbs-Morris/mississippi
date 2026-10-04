@@ -1,12 +1,16 @@
 ---
+id: state-restoration
 title: Reservoir State Restoration
 description: Reference local reset and restore actions, snapshot compatibility, notifications, and dispatch events.
 sidebar_position: 5
+sidebar_label: Reservoir State Restoration
 ---
 
 # Reservoir State Restoration
 
-Reset and restore actions replace local store values through a dedicated system-action path. They do not run the application's ordinary middleware, reducers, or effects.
+## Overview
+
+Reset and restore actions entering through `Store.Dispatch` replace local store values through a dedicated system-action path. That path bypasses the application's ordinary middleware, reducers, and effects.
 
 ## Applies To
 
@@ -36,6 +40,8 @@ Restoration can therefore be partial. The check uses the current object's runtim
 ## Events And Notifications
 
 After ordinary dispatch guards, `Store.Dispatch` recognizes `ISystemAction` before building its middleware pipeline. For reset or restore it emits `ActionDispatchingEvent`, applies the values, and emits [`StateRestoredEvent`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Events/StateRestoredEvent.cs) with previous/new snapshots and the causing action.
+
+Middleware calling `nextAction` with a replacement reset/restore action does not re-enter this check. The pipeline ends at ordinary `CoreDispatch`, so that replacement runs the ordinary reduction/listener/effect path without restoring state. Dedicated restoration requires entry through `Store.Dispatch`.
 
 It then calls state listeners only when `NotifyListeners` is true. Setting the flag false suppresses those listener calls, rather than the restoration events. No ordinary `ActionDispatchedEvent` is emitted, and user reducers/effects are not invoked by this path.
 
