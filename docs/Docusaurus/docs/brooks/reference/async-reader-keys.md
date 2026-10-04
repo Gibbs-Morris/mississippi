@@ -1,4 +1,5 @@
 ---
+id: async-reader-keys
 title: Brooks Streaming Reader Keys
 description: Reference streaming-reader grain identity, GUID suffixes, parsing, and factory lifecycle boundaries.
 sidebar_position: 5
@@ -6,6 +7,8 @@ sidebar_label: Streaming Reader Keys
 ---
 
 # Brooks Streaming Reader Keys
+
+## Overview
 
 `BrookAsyncReaderKey` identifies a streaming-reader grain using an event-stream key and an instance GUID. Resolve a streaming reader through `IBrookGrainFactory.GetBrookAsyncReaderGrain(brookKey)`.
 
