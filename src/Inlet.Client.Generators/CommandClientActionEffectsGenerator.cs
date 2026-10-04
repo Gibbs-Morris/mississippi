@@ -133,8 +133,7 @@ public sealed class CommandClientActionEffectsGenerator : IIncrementalGenerator
 
         // AggregateRoutePrefix property
         sb.AppendLine("/// <inheritdoc />");
-        sb.AppendLine(
-            $"protected override string AggregateRoutePrefix => \"api/aggregates/{aggregateRouteSegment}\";");
+        sb.AppendLine($"protected override string AggregateRoutePrefix => \"api/aggregates/{aggregateRouteSegment}\";");
         sb.AppendLine();
 
         // Route property
