@@ -766,6 +766,7 @@ Describe 'Canonical cleanup entry point' {
         Copy-Item -LiteralPath (Join-Path $repoRoot 'clean-up-targeted.ps1') -Destination $fixtureRoot
         Copy-Item -LiteralPath (Join-Path $repoRoot 'clean-up.ps1') -Destination $fixtureRoot
         Copy-Item -LiteralPath (Join-Path $repoRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1') -Destination $fixtureScriptsRoot
+        Copy-Item -LiteralPath (Join-Path $repoRoot 'eng/src/agent-scripts/ValidationEvidence.psm1') -Destination $fixtureScriptsRoot
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'README.md') -Value 'cleanup fixture' -Encoding utf8
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('init') | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('branch', '-M', 'main') | Out-Null

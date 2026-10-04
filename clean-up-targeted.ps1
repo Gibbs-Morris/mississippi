@@ -33,11 +33,11 @@ try {
         $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId ('cleanup-targeted-' + [guid]::NewGuid().ToString('N')) -LeaseDirectory $LeaseDirectory
         $repoRoot = $executionLease.RepositoryRoot
     }
-    $changedPaths = switch ($PSCmdlet.ParameterSetName) {
+    $changedPaths = @(switch ($PSCmdlet.ParameterSetName) {
         'ExplicitFiles' { @($Files) }
         'FileList' { @(Read-CleanupPathList -Path $FileListPath) }
         default { @(Get-CleanupChangedPaths -RepoRoot $repoRoot -BaseRef $BaseRef -HeadRef $HeadRef) }
-    }
+    })
     Write-Verbose "Discovered $($changedPaths.Count) changed path(s) for cleanup."
     if ($PlanOnly) {
         Get-CleanupPlan -Paths ([string[]]@($changedPaths)) -RepoRoot $repoRoot -SkipSamples:$SkipSamples -SkipMississippi:$SkipMississippi |
