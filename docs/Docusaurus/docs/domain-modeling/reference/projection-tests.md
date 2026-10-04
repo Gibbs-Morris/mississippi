@@ -1,10 +1,14 @@
 ---
+id: projection-tests
 title: Projection Test Scenarios
 description: Reference projection harness setup, event replay, scenario state, and assertion boundaries.
 sidebar_position: 12
+sidebar_label: Projection Test Scenarios
 ---
 
 # Projection Test Scenarios
+
+## Overview
 
 `ReducerTestHarness<TProjection>` composes reducers for in-memory projection tests. `ProjectionScenario<TProjection>` accumulates state as historical and new events are applied.
 
@@ -12,20 +16,20 @@ sidebar_position: 12
 
 - `Mississippi.DomainModeling.TestHarness.Projections.ReducerTestHarness<TProjection>`
 - `Mississippi.DomainModeling.TestHarness.Projections.ProjectionScenario<TProjection>`
-- Projection types with a parameterless constructor
+- Projection types satisfying `new()`: value types, or nonabstract reference types with a public parameterless constructor
 
 ## Setup And State Ownership
 
-The [harness](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.TestHarness/Projections/ReducerTestHarness.cs) starts with a new projection instance. `WithInitialState` replaces it with the supplied non-null value. `WithReducer<TReducer>` constructs a reducer using its parameterless constructor; the instance overload accepts a supplied non-null reducer.
+The [harness](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.TestHarness/Projections/ReducerTestHarness.cs) starts with a new projection instance. `WithInitialState` replaces it with the supplied non-null value. `WithReducer<TReducer>` requires `new()` and constructs a reducer using its public parameterless constructor; the instance overload accepts a supplied non-null reducer.
 
-`CreateScenario` uses the configured initial state and reducer list without defensive cloning. Preserve immutable state and finish registration before creating scenarios; the scenario does not freeze a separate configuration snapshot.
+`CreateScenario` captures the initial state value/reference at creation, without cloning it, and shares the harness's reducer list. Later `WithInitialState` replacement does not change an existing scenario's starting state; later reducer registration is visible to it. Finish configuration before creating scenarios and preserve immutable state.
 
 Direct harness runs start from the configured initial state each time:
 
-- `ApplyEvent<TEvent>` selects the first reducer implementing `IEventReducer<TEvent, TProjection>` for that generic argument.
+- `ApplyEvent<TEvent>` uses `OfType<IEventReducer<TEvent, TProjection>>` and takes the first assignable reducer. Event-type contravariance can select an earlier base-event reducer for a derived `TEvent`, ahead of a later exact-type reducer.
 - `ApplyEvents` applies its events in order to a local state variable, selecting the first registered reducer with an interface for each event's exact runtime type.
 
-These calls return their result without replacing the harness's configured initial state.
+These calls return their result without replacing the harness's configured initial state. They reuse that state reference: a reducer that mutates it in place can affect later runs. Independent replay requires nonmutating reducers or a fresh initial state/harness.
 
 ## Given And When
 
@@ -35,7 +39,7 @@ The [scenario](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainM
 
 `AppliedEvents` records each non-null event before reduction is attempted. A missing reducer or reducer failure can therefore leave the attempted event in that list while `State` retains the prior assignment. Treat the list as recorded attempts rather than proof that every reduction succeeded.
 
-Missing matching reducers throw `InvalidOperationException`. The runtime-type route invokes the typed `Reduce` method through reflection; it does not run the production root reducer's indexed/fallback `TryReduce` pipeline.
+Missing matching reducers throw `InvalidOperationException`. The runtime-type route invokes the typed `Reduce` method through reflection, which wraps reducer-thrown exceptions in `TargetInvocationException`. Direct `ApplyEvent<TEvent>` instead lets them propagate directly. Neither route runs the production root reducer's indexed/fallback `TryReduce` pipeline.
 
 ## Assertions
 
@@ -43,13 +47,13 @@ Missing matching reducers throw `InvalidOperationException`. The runtime-type ro
 - The predicate overload of `ThenShouldSatisfy` requires true and uses the supplied reason in its xUnit assertion.
 - `ThenEquals` and its `ThenShouldBe` alias compare expected public members structurally, allowing additional actual members.
 
-Structural assertions require matching collection counts and duplicate occurrences, but ordinary nested sequences are unordered. Byte arrays remain ordered; dictionaries match keys and counts. Use explicit callback assertions when sequence order or exact CLR type is part of the outcome.
+Structural assertions require matching collection counts and duplicate occurrences. The expected value selects comparison: expected byte arrays are ordered, ordinary expected sequences are unordered, and expected dictionaries match keys and counts. Use explicit callback assertions when sequence order or exact CLR type is part of the outcome.
 
 The [contract tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.TestHarness.L0Tests/AssertionContractTests.cs) demonstrate expected-member subsets, unordered projection collections, and rejection of incomplete collections. The [source README](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.TestHarness/README.md) links executable Spring fixtures.
 
 ## Summary
 
-Use a scenario for accumulating event history and direct harness methods for independent replay results. These helpers verify in-memory reducer outcomes; their routing and event ledger have their own contracts.
+Use a scenario for accumulating event history and direct harness methods for replay from the configured initial state. These helpers verify in-memory reducer outcomes; routing, mutable state, and the event ledger have their own boundaries.
 
 ## Next Steps
 
