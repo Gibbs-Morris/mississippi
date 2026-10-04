@@ -1,0 +1,48 @@
+{
+  "Report": 28,
+  "Issue": 914,
+  "PullRequest": 938,
+  "SourceHead": "ceda64dfe18c74fe0eea9ce6e741d5017df7e5ff",
+  "Route": "http://localhost:53611/accounts",
+  "Browser": "Chromium",
+  "BrowserVersion": "153.0.8010.12",
+  "Desktop": {
+    "Width": 1440,
+    "Height": 900
+  },
+  "Mobile": {
+    "Width": 390,
+    "Height": 844
+  },
+  "Capture": "Unaltered Playwright full-page screenshots",
+  "Failure": "Initial SignalR negotiation rejected with HTTP503; feature renders Disconnected and original error",
+  "Recovery": "Route interception removed; manual Reconnect reaches Connected and closes dialog",
+  "Reproduction": "pwsh ./test-spring.ps1 -TestLevel L3 -Suite Full",
+  "Files": [
+    {
+      "Name": "inlet-startup-disconnected-desktop.png",
+      "Sha256": "4E3B45A57026826621DD54667E88F34B1280C9508D938F7B6568C6A148255A7E",
+      "Bytes": 41107,
+      "CaptureUtc": "2026-10-04T17:59:43.5975927Z"
+    },
+    {
+      "Name": "inlet-startup-disconnected-mobile.png",
+      "Sha256": "BEB49F06ED6753907D6D0B3B971D829D6792FA4F7D75D0CFC20C478FAA5CAEE2",
+      "Bytes": 35074,
+      "CaptureUtc": "2026-10-04T17:59:43.6489184Z"
+    },
+    {
+      "Name": "inlet-startup-connected-desktop.png",
+      "Sha256": "64C568C32761A6497C341944955F91EC42463CB44AC4FC5AB67E8C9B21E39211",
+      "Bytes": 35420,
+      "CaptureUtc": "2026-10-04T17:59:43.8836804Z"
+    },
+    {
+      "Name": "inlet-startup-connected-mobile.png",
+      "Sha256": "E2FFCE34BA3A79253E06862C925D6F6610FE16B7712E2CE02A66846E3CF2B072",
+      "Bytes": 31599,
+      "CaptureUtc": "2026-10-04T17:59:43.9303314Z"
+    }
+  ],
+  "ValidatedUtc": "2026-10-04T18:14:44.0700014+00:00"
+}
