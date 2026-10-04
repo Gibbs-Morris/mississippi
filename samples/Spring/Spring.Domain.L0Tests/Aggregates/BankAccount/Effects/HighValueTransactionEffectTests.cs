@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 
-using FluentAssertions.Execution;
-
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.DomainModeling.Abstractions;
@@ -43,11 +41,7 @@ public sealed class HighValueTransactionEffectTests
             EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
                 .WithGrainKey("acc-123")
                 .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>("global", OperationResult.Ok());
-        HighValueTransactionEffect effect = harness.Build((
-            factory,
-            _,
-            logger
-        ) => new(factory, logger));
+        HighValueTransactionEffect effect = harness.Build((factory, _, logger) => new(factory, logger));
         FundsDeposited eventData = new()
         {
             Amount = 15_000m,
@@ -60,13 +54,13 @@ public sealed class HighValueTransactionEffectTests
         };
 
         // Act
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert
-        harness.DispatchedCommands.Should().HaveCount(1);
+        Assert.Single(harness.DispatchedCommands);
         FlagTransaction command = harness.DispatchedCommands.ShouldHaveDispatched<FlagTransaction>();
-        command.AccountId.Should().Be("acc-123");
-        command.Amount.Should().Be(15_000m);
+        Assert.Equal("acc-123", command.AccountId);
+        Assert.Equal(15_000m, command.Amount);
     }
 
     /// <summary>
@@ -80,11 +74,7 @@ public sealed class HighValueTransactionEffectTests
         EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate> harness =
             EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
                 .WithGrainKey("acc-123");
-        HighValueTransactionEffect effect = harness.Build((
-            factory,
-            _,
-            logger
-        ) => new(factory, logger));
+        HighValueTransactionEffect effect = harness.Build((factory, _, logger) => new(factory, logger));
         FundsDeposited eventData = new()
         {
             Amount = HighValueTransactionEffect.AmlThreshold,
@@ -97,11 +87,11 @@ public sealed class HighValueTransactionEffectTests
         };
 
         // Act
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert
         harness.DispatchedCommands.ShouldHaveNoDispatches();
-        Assert.Throws<XunitException>(() => harness.ToResult().ShouldHaveDispatchedTo<BankAccountAggregate>());
+        Assert.ThrowsAny<XunitException>(() => harness.ToResult().ShouldHaveDispatchedTo<BankAccountAggregate>());
     }
 
     /// <summary>
@@ -115,11 +105,7 @@ public sealed class HighValueTransactionEffectTests
         EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate> harness =
             EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
                 .WithGrainKey("acc-123");
-        HighValueTransactionEffect effect = harness.Build((
-            factory,
-            _,
-            logger
-        ) => new(factory, logger));
+        HighValueTransactionEffect effect = harness.Build((factory, _, logger) => new(factory, logger));
         FundsDeposited eventData = new()
         {
             Amount = 5_000m,
@@ -132,13 +118,12 @@ public sealed class HighValueTransactionEffectTests
         };
 
         // Act
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert
         harness.DispatchedCommands.ShouldHaveNoDispatches();
-        using AssertionScope scope = new();
-        harness.DispatchedCommands.ShouldHaveDispatchedTo<BankAccountAggregate>();
-        Assert.Single(scope.Discard());
+        Assert.ThrowsAny<XunitException>(() =>
+            harness.DispatchedCommands.ShouldHaveDispatchedTo<BankAccountAggregate>());
     }
 
     /// <summary>
@@ -154,11 +139,7 @@ public sealed class HighValueTransactionEffectTests
             EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
                 .WithGrainKey("acc-789")
                 .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>("global", OperationResult.Ok());
-        HighValueTransactionEffect effect = harness.Build((
-            factory,
-            _,
-            logger
-        ) => new(factory, logger));
+        HighValueTransactionEffect effect = harness.Build((factory, _, logger) => new(factory, logger));
         FundsDeposited eventData = new()
         {
             Amount = justAboveThreshold,
@@ -171,12 +152,12 @@ public sealed class HighValueTransactionEffectTests
         };
 
         // Act
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert
-        harness.DispatchedCommands.Should().HaveCount(1);
+        Assert.Single(harness.DispatchedCommands);
         FlagTransaction command = harness.DispatchedCommands.ShouldHaveDispatched<FlagTransaction>();
-        command.Amount.Should().Be(justAboveThreshold);
+        Assert.Equal(justAboveThreshold, command.Amount);
     }
 
     /// <summary>
@@ -192,11 +173,8 @@ public sealed class HighValueTransactionEffectTests
             EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
                 .WithGrainKey("acc-timestamp")
                 .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>("global", OperationResult.Ok());
-        HighValueTransactionEffect effect = harness.Build((
-            factory,
-            _,
-            logger
-        ) => new(factory, logger, fakeTimeProvider));
+        HighValueTransactionEffect effect =
+            harness.Build((factory, _, logger) => new(factory, logger, fakeTimeProvider));
         FundsDeposited eventData = new()
         {
             Amount = 100_000m,
@@ -209,11 +187,11 @@ public sealed class HighValueTransactionEffectTests
         };
 
         // Act
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert
         FlagTransaction command = harness.DispatchedCommands.ShouldHaveDispatched<FlagTransaction>();
-        command.Timestamp.Should().Be(TestTimestamp);
+        Assert.Equal(TestTimestamp, command.Timestamp);
     }
 
     /// <summary>
@@ -228,11 +206,7 @@ public sealed class HighValueTransactionEffectTests
             EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
                 .WithGrainKey("acc-456")
                 .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>("global", OperationResult.Ok());
-        HighValueTransactionEffect effect = harness.Build((
-            factory,
-            _,
-            logger
-        ) => new(factory, logger));
+        HighValueTransactionEffect effect = harness.Build((factory, _, logger) => new(factory, logger));
         FundsDeposited eventData = new()
         {
             Amount = 50_000m,
@@ -245,16 +219,16 @@ public sealed class HighValueTransactionEffectTests
         };
 
         // Act
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert
         (Type AggregateType, string EntityId, object Command) dispatch =
             harness.DispatchedCommands.ShouldHaveDispatchedTo<TransactionInvestigationQueueAggregate>("global");
-        dispatch.EntityId.Should().Be("global");
-        dispatch.Command.Should().BeSameAs(harness.DispatchedCommands[0].Command);
+        Assert.Equal("global", dispatch.EntityId);
+        Assert.Same(harness.DispatchedCommands[0].Command, dispatch.Command);
         Action wrongEntity = () => harness.DispatchedCommands
             .ShouldHaveDispatchedTo<TransactionInvestigationQueueAggregate>("other");
-        wrongEntity.Should().Throw<XunitException>();
+        Assert.ThrowsAny<XunitException>(wrongEntity);
     }
 
     /// <summary>
@@ -271,11 +245,7 @@ public sealed class HighValueTransactionEffectTests
                 .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>(
                     "global",
                     OperationResult.Fail("QUEUE_FULL", "Investigation queue is full"));
-        HighValueTransactionEffect effect = harness.Build((
-            factory,
-            _,
-            logger
-        ) => new(factory, logger));
+        HighValueTransactionEffect effect = harness.Build((factory, _, logger) => new(factory, logger));
         FundsDeposited eventData = new()
         {
             Amount = 20_000m,
@@ -288,9 +258,9 @@ public sealed class HighValueTransactionEffectTests
         };
 
         // Act - should not throw, effect logs the failure instead
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert - command was still dispatched even though it failed
-        harness.DispatchedCommands.Should().HaveCount(1);
+        Assert.Single(harness.DispatchedCommands);
     }
 }

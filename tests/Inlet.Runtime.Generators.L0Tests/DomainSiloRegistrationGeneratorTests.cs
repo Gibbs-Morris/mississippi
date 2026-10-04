@@ -146,7 +146,7 @@ public sealed class DomainSiloRegistrationGeneratorTests
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees
             .First(tree => tree.FilePath.Contains("DomainSiloRegistrations", StringComparison.Ordinal))
-            .GetText()
+            .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains("AddTestAppDomainSilo", generatedCode, StringComparison.Ordinal);
         Assert.Contains("services.AddOrderAggregate();", generatedCode, StringComparison.Ordinal);
@@ -174,7 +174,7 @@ public sealed class DomainSiloRegistrationGeneratorTests
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees
             .First(tree => tree.FilePath.Contains("DomainSiloRegistrations", StringComparison.Ordinal))
-            .GetText()
+            .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains("AddCoreLogicSilo", generatedCode, StringComparison.Ordinal);
         Assert.Contains("services.AddOrderAggregate();", generatedCode, StringComparison.Ordinal);

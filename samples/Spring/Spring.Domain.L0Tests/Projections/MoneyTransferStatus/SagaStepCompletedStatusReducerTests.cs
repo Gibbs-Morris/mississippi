@@ -40,6 +40,6 @@ public sealed class SagaStepCompletedStatusReducerTests
             CompletedAt = new(2026, 2, 3, 10, 0, 0, TimeSpan.Zero),
         };
         MoneyTransferStatusProjection result = reducer.Apply(initial, @event);
-        result.LastCompletedStepIndex.Should().Be(1);
+        Assert.Equal(1, result.LastCompletedStepIndex);
     }
 }

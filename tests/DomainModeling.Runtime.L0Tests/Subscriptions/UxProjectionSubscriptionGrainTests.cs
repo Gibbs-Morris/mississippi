@@ -209,8 +209,8 @@ public sealed class UxProjectionSubscriptionGrainTests
         Assert.NotNull(subscriptionId);
         Assert.NotEmpty(subscriptionId);
         ImmutableList<UxProjectionSubscriptionRequest> subscriptions = await grain.GetSubscriptionsAsync();
-        Assert.Single(subscriptions);
-        Assert.Equal(request, subscriptions[0]);
+        UxProjectionSubscriptionRequest item = Assert.Single(subscriptions);
+        Assert.Equal(request, item);
     }
 
     /// <summary>

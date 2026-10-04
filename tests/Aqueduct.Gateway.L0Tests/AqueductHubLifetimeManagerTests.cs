@@ -55,23 +55,23 @@ public sealed class AqueductHubLifetimeManagerTests
     }
 
     /// <summary>
-    ///     AddToGroupAsync should call group grain.
+    ///     AddToGroupAsync should route through the client grain that owns cleanup.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
-    [Fact(DisplayName = "AddToGroupAsync Calls Group Grain")]
-    public async Task AddToGroupAsyncShouldCallGroupGrain()
+    [Fact(DisplayName = "AddToGroupAsync Calls Client Grain")]
+    public async Task AddToGroupAsyncShouldCallClientGrain()
     {
         // Arrange
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
-        ISignalRGroupGrain groupGrain = Substitute.For<ISignalRGroupGrain>();
-        grainFactory.GetGroupGrain("TestAqueductHub", "group1").Returns(groupGrain);
+        ISignalRClientGrain clientGrain = Substitute.For<ISignalRClientGrain>();
+        grainFactory.GetClientGrain("TestAqueductHub", "conn1").Returns(clientGrain);
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(grainFactory: grainFactory);
 
         // Act
-        await manager.AddToGroupAsync("conn1", "group1");
+        await manager.AddToGroupAsync("conn1", "group1", TestContext.Current.CancellationToken);
 
         // Assert
-        await groupGrain.Received(1).AddConnectionAsync("conn1");
+        await clientGrain.Received(1).AddToGroupAsync("group1");
     }
 
     /// <summary>
@@ -85,7 +85,10 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => manager.AddToGroupAsync(string.Empty, "group1"));
+        await Assert.ThrowsAsync<ArgumentException>(() => manager.AddToGroupAsync(
+            string.Empty,
+            "group1",
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -99,7 +102,10 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => manager.AddToGroupAsync("conn1", string.Empty));
+        await Assert.ThrowsAsync<ArgumentException>(() => manager.AddToGroupAsync(
+            "conn1",
+            string.Empty,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -146,14 +152,14 @@ public sealed class AqueductHubLifetimeManagerTests
                     : manager.SendAllAsync("Canceled", [], caller.Token);
                 await caller.CancelAsync();
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-                    canceledSend.WaitAsync(TimeSpan.FromSeconds(5)));
+                    canceledSend.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
             }
 
             Assert.False(stopping.IsCancellationRequested);
-            Task healthySend = manager.SendAllAsync("Healthy", []);
+            Task healthySend = manager.SendAllAsync("Healthy", [], TestContext.Current.CancellationToken);
             Assert.False(healthySend.IsCompleted);
             setup.SetResult();
-            await healthySend.WaitAsync(TimeSpan.FromSeconds(5));
+            await healthySend.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
             await streams.Received(1)
                 .EnsureInitializedAsync(
                     Arg.Any<string>(),
@@ -248,18 +254,18 @@ public sealed class AqueductHubLifetimeManagerTests
             Task secondSend = manager.SendAllExceptAsync("Canceled", [], ["excluded"], secondCaller.Token);
             await firstCaller.CancelAsync();
             await secondCaller.CancelAsync();
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => firstSend.WaitAsync(TimeSpan.FromSeconds(5)));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => firstSend.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-                secondSend.WaitAsync(TimeSpan.FromSeconds(5)));
+                secondSend.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
             Assert.False(stopping.IsCancellationRequested);
             InvalidOperationException expected = new("Shared initialization failed");
             setup.SetException(expected);
-            Exception? loggedException = await failureLogged.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Exception? loggedException = await failureLogged.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
             AggregateException aggregate = Assert.IsType<AggregateException>(loggedException);
             Assert.Same(expected, Assert.Single(aggregate.InnerExceptions));
             Assert.Equal(1, failureCount);
-            await manager.SendAllAsync("Retry", []).WaitAsync(TimeSpan.FromSeconds(5));
-            await manager.SendAllExceptAsync("Ready", [], ["excluded"]).WaitAsync(TimeSpan.FromSeconds(5));
+            await manager.SendAllAsync("Retry", [], TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            await manager.SendAllExceptAsync("Ready", [], ["excluded"], TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
             await streams.Received(2)
                 .EnsureInitializedAsync(
                     Arg.Any<string>(),
@@ -297,7 +303,7 @@ public sealed class AqueductHubLifetimeManagerTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => excludeConnections
             ? manager.SendAllExceptAsync("Message", [], ["excluded"], canceledToken)
             : manager.SendAllAsync("Message", [], canceledToken));
-        await streams.DidNotReceiveWithAnyArgs().EnsureInitializedAsync(default!, default!, default!);
+        await streams.DidNotReceiveWithAnyArgs().EnsureInitializedAsync(default!, default!, default!, Arg.Any<CancellationToken>());
         await streams.DidNotReceiveWithAnyArgs().PublishToAllAsync(default!);
     }
 
@@ -640,7 +646,7 @@ public sealed class AqueductHubLifetimeManagerTests
         OperationCanceledException actual = await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
             delivery switch
             {
-                "direct" => manager.SendConnectionAsync("connection", "Message", []),
+                "direct" => manager.SendConnectionAsync("connection", "Message", [], TestContext.Current.CancellationToken),
                 "broadcast" => broadcast(
                     new()
                     {
@@ -699,7 +705,7 @@ public sealed class AqueductHubLifetimeManagerTests
             streamSubscriptionManager: streamSubscriptionManager);
 
         // Act
-        await manager.SendAllAsync("MethodName", args);
+        await manager.SendAllAsync("MethodName", args, TestContext.Current.CancellationToken);
         Func<AllMessage, Task> callback = onAllMessage ??
                                           throw new InvalidOperationException("All-message callback was not captured.");
         Task callbackTask = callback(
@@ -821,7 +827,7 @@ public sealed class AqueductHubLifetimeManagerTests
             streamSubscriptionManager: streamSubscriptionManager);
 
         // Act
-        await manager.SendAllAsync("MethodName", args);
+        await manager.SendAllAsync("MethodName", args, TestContext.Current.CancellationToken);
         Func<ServerMessage, Task> callback = onServerMessage ??
                                              throw new InvalidOperationException(
                                                  "Server-message callback was not captured.");
@@ -875,7 +881,7 @@ public sealed class AqueductHubLifetimeManagerTests
             streamSubscriptionManager: streamSubscriptionManager);
 
         // Act
-        await manager.SendAllAsync("MethodName", args);
+        await manager.SendAllAsync("MethodName", args, TestContext.Current.CancellationToken);
         Func<ServerMessage, Task> callback = onServerMessage ??
                                              throw new InvalidOperationException(
                                                  "Server-message callback was not captured.");
@@ -891,23 +897,23 @@ public sealed class AqueductHubLifetimeManagerTests
     }
 
     /// <summary>
-    ///     RemoveFromGroupAsync should call group grain.
+    ///     RemoveFromGroupAsync should update the client grain's cleanup ownership.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
-    [Fact(DisplayName = "RemoveFromGroupAsync Calls Group Grain")]
-    public async Task RemoveFromGroupAsyncShouldCallGroupGrain()
+    [Fact(DisplayName = "RemoveFromGroupAsync Calls Client Grain")]
+    public async Task RemoveFromGroupAsyncShouldCallClientGrain()
     {
         // Arrange
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
-        ISignalRGroupGrain groupGrain = Substitute.For<ISignalRGroupGrain>();
-        grainFactory.GetGroupGrain("TestAqueductHub", "group1").Returns(groupGrain);
+        ISignalRClientGrain clientGrain = Substitute.For<ISignalRClientGrain>();
+        grainFactory.GetClientGrain("TestAqueductHub", "conn1").Returns(clientGrain);
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(grainFactory: grainFactory);
 
         // Act
-        await manager.RemoveFromGroupAsync("conn1", "group1");
+        await manager.RemoveFromGroupAsync("conn1", "group1", TestContext.Current.CancellationToken);
 
         // Assert
-        await groupGrain.Received(1).RemoveConnectionAsync("conn1");
+        await clientGrain.Received(1).RemoveFromGroupAsync("group1");
     }
 
     /// <summary>
@@ -921,7 +927,8 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => manager.RemoveFromGroupAsync(string.Empty, "group1"));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            manager.RemoveFromGroupAsync(string.Empty, "group1", TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -935,7 +942,8 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => manager.RemoveFromGroupAsync("conn1", string.Empty));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            manager.RemoveFromGroupAsync("conn1", string.Empty, TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -1088,7 +1096,7 @@ public sealed class AqueductHubLifetimeManagerTests
         await callerCancellation.CancelAsync();
         write.SetCanceled(deliveryToken);
         OperationCanceledException exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            send.WaitAsync(TimeSpan.FromSeconds(5)));
+            send.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
         Assert.Equal(deliveryToken, exception.CancellationToken);
     }
 
@@ -1111,7 +1119,7 @@ public sealed class AqueductHubLifetimeManagerTests
         object?[] args = ["arg1", 42];
 
         // Act
-        await manager.SendConnectionAsync("conn1", "MethodName", args);
+        await manager.SendConnectionAsync("conn1", "MethodName", args, TestContext.Current.CancellationToken);
 
         // Assert
         await clientGrain.Received(1).SendMessageAsync("MethodName", Arg.Any<ImmutableArray<object?>>());
@@ -1169,7 +1177,11 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => manager.SendConnectionAsync(string.Empty, "method", []));
+        await Assert.ThrowsAsync<ArgumentException>(() => manager.SendConnectionAsync(
+            string.Empty,
+            "method",
+            [],
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -1183,7 +1195,11 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => manager.SendConnectionAsync("conn1", string.Empty, []));
+        await Assert.ThrowsAsync<ArgumentException>(() => manager.SendConnectionAsync(
+            "conn1",
+            string.Empty,
+            [],
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -1233,7 +1249,8 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => manager.SendConnectionsAsync(null!, "method", []));
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            manager.SendConnectionsAsync(null!, "method", [], TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -1251,7 +1268,7 @@ public sealed class AqueductHubLifetimeManagerTests
         object?[] args = ["arg1"];
 
         // Act
-        await manager.SendGroupAsync("group1", "MethodName", args);
+        await manager.SendGroupAsync("group1", "MethodName", args, TestContext.Current.CancellationToken);
 
         // Assert
         await groupGrain.Received(1).SendMessageAsync("MethodName", Arg.Any<ImmutableArray<object?>>());
@@ -1268,7 +1285,11 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => manager.SendGroupAsync(string.Empty, "method", []));
+        await Assert.ThrowsAsync<ArgumentException>(() => manager.SendGroupAsync(
+            string.Empty,
+            "method",
+            [],
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -1282,7 +1303,11 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => manager.SendGroupAsync("group1", string.Empty, []));
+        await Assert.ThrowsAsync<ArgumentException>(() => manager.SendGroupAsync(
+            "group1",
+            string.Empty,
+            [],
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -1296,7 +1321,12 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => manager.SendGroupExceptAsync(string.Empty, "method", [], []));
+        await Assert.ThrowsAsync<ArgumentException>(() => manager.SendGroupExceptAsync(
+            string.Empty,
+            "method",
+            [],
+            [],
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -1310,7 +1340,12 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => manager.SendGroupExceptAsync("group1", string.Empty, [], []));
+        await Assert.ThrowsAsync<ArgumentException>(() => manager.SendGroupExceptAsync(
+            "group1",
+            string.Empty,
+            [],
+            [],
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -1324,7 +1359,11 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => manager.SendGroupsAsync(null!, "method", []));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => manager.SendGroupsAsync(
+            null!,
+            "method",
+            [],
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -1338,7 +1377,11 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => manager.SendUserAsync("user1", string.Empty, []));
+        await Assert.ThrowsAsync<ArgumentException>(() => manager.SendUserAsync(
+            "user1",
+            string.Empty,
+            [],
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -1352,7 +1395,11 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => manager.SendUserAsync(string.Empty, "method", []));
+        await Assert.ThrowsAsync<ArgumentException>(() => manager.SendUserAsync(
+            string.Empty,
+            "method",
+            [],
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -1366,7 +1413,11 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => manager.SendUsersAsync(null!, "method", []));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => manager.SendUsersAsync(
+            null!,
+            "method",
+            [],
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -1387,9 +1438,9 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
             streamSubscriptionManager: streams,
             heartbeatManager: heartbeat);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => manager.SendAllAsync("Canceled", []));
-        await manager.SendAllAsync("Retry", []);
-        await manager.SendAllAsync("Ready", []);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => manager.SendAllAsync("Canceled", [], TestContext.Current.CancellationToken));
+        await manager.SendAllAsync("Retry", [], TestContext.Current.CancellationToken);
+        await manager.SendAllAsync("Ready", [], TestContext.Current.CancellationToken);
         await streams.Received(2)
             .EnsureInitializedAsync(
                 Arg.Any<string>(),
@@ -1427,9 +1478,9 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
             streamSubscriptionManager: streams,
             heartbeatManager: heartbeat);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => manager.SendAllAsync("First", []));
-        await manager.SendAllAsync("Retry", []);
-        await manager.SendAllAsync("Ready", []);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => manager.SendAllAsync("First", [], TestContext.Current.CancellationToken));
+        await manager.SendAllAsync("Retry", [], TestContext.Current.CancellationToken);
+        await manager.SendAllAsync("Ready", [], TestContext.Current.CancellationToken);
         await heartbeat.Received(2).StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>());
         await streams.Received(2).PublishToAllAsync(Arg.Any<AllMessage>());
     }

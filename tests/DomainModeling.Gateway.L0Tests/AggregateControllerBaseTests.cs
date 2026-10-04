@@ -167,7 +167,8 @@ public sealed class AggregateControllerBaseTests
         ActionResult<OperationResult> result = await controller.TestExecuteAsync(
             "entity-1",
             command,
-            ThrowingServiceMethodAsync);
+            ThrowingServiceMethodAsync,
+            TestContext.Current.CancellationToken);
 
         // Assert
         BadRequestObjectResult badResult = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -199,7 +200,8 @@ public sealed class AggregateControllerBaseTests
         ActionResult<OperationResult> result = await controller.TestExecuteAsync(
             "entity-1",
             command,
-            FailingServiceMethodAsync);
+            FailingServiceMethodAsync,
+            TestContext.Current.CancellationToken);
 
         // Assert
         BadRequestObjectResult badResult = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -223,7 +225,8 @@ public sealed class AggregateControllerBaseTests
         ActionResult<OperationResult> result = await controller.TestExecuteAsync(
             "entity-1",
             command,
-            ServiceMethodAsync);
+            ServiceMethodAsync,
+            TestContext.Current.CancellationToken);
 
         // Assert
         OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -242,8 +245,11 @@ public sealed class AggregateControllerBaseTests
         TestableAggregateController controller = new(NullControllerLogger);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            controller.TestExecuteAsync<TestCommand>("entity-1", null!, ServiceMethodAsync));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => controller.TestExecuteAsync<TestCommand>(
+            "entity-1",
+            null!,
+            ServiceMethodAsync,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -258,8 +264,11 @@ public sealed class AggregateControllerBaseTests
         TestCommand command = new("test");
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<ArgumentException>(() =>
-            controller.TestExecuteAsync(string.Empty, command, ServiceMethodAsync));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => controller.TestExecuteAsync(
+            string.Empty,
+            command,
+            ServiceMethodAsync,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -274,8 +283,11 @@ public sealed class AggregateControllerBaseTests
         TestCommand command = new("test");
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<ArgumentException>(() =>
-            controller.TestExecuteAsync(null!, command, ServiceMethodAsync));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => controller.TestExecuteAsync(
+            null!,
+            command,
+            ServiceMethodAsync,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -290,8 +302,11 @@ public sealed class AggregateControllerBaseTests
         TestCommand command = new("test");
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<ArgumentException>(() =>
-            controller.TestExecuteAsync("   ", command, ServiceMethodAsync));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => controller.TestExecuteAsync(
+            "   ",
+            command,
+            ServiceMethodAsync,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -306,7 +321,8 @@ public sealed class AggregateControllerBaseTests
         TestCommand command = new("test");
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => controller.TestExecuteAsync("entity-1", command, null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            controller.TestExecuteAsync("entity-1", command, null!, TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -334,7 +350,11 @@ public sealed class AggregateControllerBaseTests
         TestCommand command = new("test");
 
         // Act
-        await controller.TestExecuteAsync("entity-1", command, ServiceMethodAsync);
+        await controller.TestExecuteAsync(
+            "entity-1",
+            command,
+            ServiceMethodAsync,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(controller.OnAfterExecuteCalled);
@@ -370,7 +390,8 @@ public sealed class AggregateControllerBaseTests
         ActionResult<OperationResult> result = await controller.TestExecuteAsync(
             "entity-1",
             command,
-            TrackingServiceMethodAsync);
+            TrackingServiceMethodAsync,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(serviceMethodCalled);
@@ -389,7 +410,11 @@ public sealed class AggregateControllerBaseTests
         TestCommand command = new("test");
 
         // Act
-        await controller.TestExecuteAsync("entity-1", command, ServiceMethodAsync);
+        await controller.TestExecuteAsync(
+            "entity-1",
+            command,
+            ServiceMethodAsync,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(controller.OnBeforeExecuteCalled);

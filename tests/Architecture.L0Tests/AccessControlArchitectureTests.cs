@@ -1,5 +1,5 @@
 using ArchUnitNET.Fluent;
-using ArchUnitNET.xUnit;
+using ArchUnitNET.xUnitV3;
 
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
@@ -56,6 +56,12 @@ public sealed class AccessControlArchitectureTests : ArchitectureTestBase
             .DoNotResideInNamespaceMatching(@"Mississippi\..*\.Abstractions.*")
             .And()
             .DoNotResideInNamespaceMatching(@"Mississippi\..*\.TestHarness.*")
+            .And()
+            .DoNotResideInNamespaceMatching(
+                @"Mississippi\..*\.Generators(\..*)?") // Generator APIs are intentionally public.
+            .And()
+            .DoNotResideInNamespaceMatching(
+                @"Mississippi\.Refraction\.Client\.Components(\..*)?") // Public UI components are consumer-facing APIs.
             .And()
             .DoNotResideInNamespaceMatching(@"OrleansCodeGen\..*") // Exclude Orleans generated code
             .And()

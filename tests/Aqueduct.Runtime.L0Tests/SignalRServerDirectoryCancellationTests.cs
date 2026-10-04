@@ -38,7 +38,7 @@ public sealed class SignalRServerDirectoryCancellationTests
             time);
         if (alreadyRegistered)
         {
-            await grain.RegisterServerAsync("server");
+            await grain.RegisterServerAsync("server", TestContext.Current.CancellationToken);
         }
 
         time.Advance(TimeSpan.FromMinutes(10));

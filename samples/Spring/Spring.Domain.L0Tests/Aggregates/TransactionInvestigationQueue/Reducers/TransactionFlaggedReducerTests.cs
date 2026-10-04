@@ -37,7 +37,7 @@ public sealed class TransactionFlaggedReducerTests
         TransactionInvestigationQueueAggregate result = reducer.Apply(initial, evt);
 
         // Assert
-        result.TotalFlaggedCount.Should().Be(6);
+        Assert.Equal(6, result.TotalFlaggedCount);
     }
 
     /// <summary>
@@ -71,7 +71,7 @@ public sealed class TransactionFlaggedReducerTests
         TransactionInvestigationQueueAggregate result2 = reducer.Apply(result1, evt2);
 
         // Assert
-        result2.TotalFlaggedCount.Should().Be(12);
+        Assert.Equal(12, result2.TotalFlaggedCount);
     }
 
     /// <summary>
@@ -93,8 +93,8 @@ public sealed class TransactionFlaggedReducerTests
         TransactionInvestigationQueueAggregate result = reducer.Apply(null!, evt);
 
         // Assert
-        result.Should().NotBeNull();
-        result.TotalFlaggedCount.Should().Be(1);
+        Assert.NotNull(result);
+        Assert.Equal(1, result.TotalFlaggedCount);
     }
 
     /// <summary>
@@ -120,7 +120,7 @@ public sealed class TransactionFlaggedReducerTests
         TransactionInvestigationQueueAggregate result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Should().NotBeSameAs(initial);
+        Assert.NotSame(initial, result);
     }
 
     /// <summary>
@@ -139,6 +139,6 @@ public sealed class TransactionFlaggedReducerTests
         Action act = () => reducer.Apply(initial, null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        Assert.ThrowsAny<ArgumentNullException>(act);
     }
 }

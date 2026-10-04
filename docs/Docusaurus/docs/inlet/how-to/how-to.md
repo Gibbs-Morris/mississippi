@@ -12,7 +12,11 @@ description: Compose Mississippi client, Reservoir, Inlet, SignalR support, and 
 
 Use this page when you need to wire a Blazor client that combines the Mississippi client builder, Reservoir, Inlet client support, built-in Reservoir features, SignalR projection updates, and generated client feature registrations.
 
-## Before You Begin
+## When to use this
+
+Use this guide when configuring a Blazor client that sends generated commands and consumes live projections through Inlet. Start from Spring's host setup or an application with equivalent gateway and runtime infrastructure.
+
+## Before you begin
 
 - Read [Reservoir Getting Started](../../reservoir/getting-started/getting-started.md).
 - Read [Inlet Getting Started](../getting-started/getting-started.md).
@@ -20,12 +24,12 @@ Use this page when you need to wire a Blazor client that combines the Mississipp
 
 ## Steps
 
-1. Create the top-level Mississippi client builder.
+1. Configure and attach the top-level Mississippi client builder.
 
-This step establishes the public client root for a full Mississippi app.
+Keep steps 2–5 inside this single callback. `UseMississippi(...)` validates and attaches the completed composition when the callback returns; the client and its nested builders cannot be configured afterward.
 
 ```csharp
-builder.AddMississippiClient(client =>
+builder.UseMississippi(client =>
 {
     // Additional composition steps go here.
 });
@@ -65,11 +69,9 @@ This registers the projection registry, `ProjectionsFeatureState`, `IInletStore`
 
 1. Configure projection-path composition.
 
-Choose one of these patterns based on what your client code already has:
+The generated domain method above includes `AddProjectionsFeature()`. That registers the generated projection reducers with the store. `AddProjectionPath<T>(path)` separately supports explicit mappings in `IProjectionRegistry` for consumers of that registry.
 
-- use generated projection registrations such as `AddProjectionsFeature()` when the client generator produced them
-- add explicit projection paths with `AddProjectionPath<T>(path)` when you need a manual mapping
-- use `ScanProjectionDtos(...)` inside the SignalR builder when you want automatic DTO discovery for fetch operations
+The SignalR fetcher has a separate DTO registry. Configure `ScanProjectionDtos(...)` in the next step so it can translate notification paths into DTO types and HTTP reads. Keep both registrations in the generated Spring composition.
 
 1. Add SignalR projection refresh support.
 
@@ -100,7 +102,7 @@ await builder.Build().RunAsync();
 This excerpt matches the current Spring sample startup shape.
 
 ```csharp
-builder.AddMississippiClient(client =>
+builder.UseMississippi(client =>
 {
     client.AddMississippiSamplesSpringDomainClient();
     client.Reservoir(reservoir =>
@@ -126,13 +128,13 @@ builder.AddMississippiClient(client =>
 
 Source code: [Spring.Client/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Program.cs)
 
-## Verify The Result
+## Verify the result
 
-- Full Mississippi client startup should begin with `AddMississippiClient(...)`.
+- Full Mississippi client startup should begin with `UseMississippi(...)`.
 - Reservoir registrations should all hang off the same `IReservoirBuilder` value inside `client.Reservoir(...)`.
 - Inlet client registrations should extend that Reservoir builder instead of calling unrelated `IServiceCollection` helpers.
 - SignalR configuration should be expressed inside `AddInletBlazorSignalR(...)`.
-- Generated domain registration methods should read like `Add{Domain}Client()` on `MississippiClientBuilder`.
+- Generated domain registration methods should read like `Add{Domain}Client()` on `ClientBuilder`.
 - Generated feature registration methods should still read like `AddProjectionsFeature()` or `Add{Aggregate}AggregateFeature()` on `IReservoirBuilder`.
 
 ## Source Code
@@ -148,10 +150,13 @@ Source code: [Spring.Client/Program.cs](https://github.com/Gibbs-Morris/mississi
 
 ## Summary
 
-Compose Inlet in full Mississippi client apps by starting with `AddMississippiClient()`, then layering Reservoir and Inlet registrations inside `client.Reservoir(...)`. Stay with `AddReservoir()` only when the app is intentionally Reservoir-only.
+Compose Inlet in full Mississippi client apps by starting with `UseMississippi(...)`, then layering Reservoir and Inlet registrations inside `client.Reservoir(...)`. Stay with `AddReservoir()` only when the app is intentionally Reservoir-only.
 
 ## Next Steps
 
+- Use [Generated Application Contracts](../reference/generated-contracts.md) for runtime, gateway, and client registration responsibilities.
+- Use [Keep a Workspace Projection Live](./subscribe-to-projections.md) to share an application-owned projection between pages.
+- Use [Enable DevTools](../../reservoir/how-to/enable-devtools.md) for application environment selection and state inspection.
 - Use [Inlet Reference](../reference/reference.md) for the exact method surface.
 - Use [Read Models and Client Sync](../../concepts/read-models-and-client-sync.md) for the end-to-end projection delivery model.
 - Use [Spring Host Architecture](../../samples/spring-sample/concepts/host-applications.md) to see the client composition in the sample application.

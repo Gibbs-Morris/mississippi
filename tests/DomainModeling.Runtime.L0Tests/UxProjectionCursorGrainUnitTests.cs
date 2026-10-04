@@ -237,10 +237,7 @@ public sealed class UxProjectionCursorGrainUnitTests
                 It.Is<EventId>(id =>
                     (id.Id == 2) &&
                     (id.Name == nameof(UxProjectionCursorGrainLoggerExtensions.CursorGrainInvalidPrimaryKey))),
-                It.Is<It.IsAnyType>((
-                    state,
-                    _
-                ) => state.ToString()!.Contains(InvalidPrimaryKey)),
+                It.Is<It.IsAnyType>((state, _) => state.ToString()!.Contains(InvalidPrimaryKey)),
                 It.Is<Exception>(ex => ex is FormatException),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);

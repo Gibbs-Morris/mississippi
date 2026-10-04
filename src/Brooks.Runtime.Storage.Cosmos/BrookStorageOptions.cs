@@ -30,11 +30,13 @@ public sealed class BrookStorageOptions
     /// <summary>
     ///     Gets or sets the duration in seconds for lease expiration.
     /// </summary>
+    /// <remarks>Runtime composition accepts finite Blob lease durations from 15 through 60 seconds.</remarks>
     public int LeaseDurationSeconds { get; set; } = 60;
 
     /// <summary>
     ///     Gets or sets the threshold in seconds for lease renewal operations.
     /// </summary>
+    /// <remarks>The threshold must be nonnegative and less than <see cref="LeaseDurationSeconds" />.</remarks>
     public int LeaseRenewalThresholdSeconds { get; set; } = 20;
 
     /// <summary>
@@ -51,11 +53,12 @@ public sealed class BrookStorageOptions
     /// <summary>
     ///     Gets or sets the maximum request size in bytes for Cosmos DB operations.
     /// </summary>
-    // Keep under 2MB server-side limit, allow some headroom
+    /// <remarks>Runtime composition requires this value to exceed the local batch envelope used by the estimator.</remarks>
     public long MaxRequestSizeBytes { get; set; } = 1_700_000;
 
     /// <summary>
     ///     Gets or sets the batch size for query operations.
     /// </summary>
+    /// <remarks>Runtime composition accepts positive values or -1 for the Cosmos SDK dynamic page size.</remarks>
     public int QueryBatchSize { get; set; } = 100;
 }

@@ -38,13 +38,13 @@ public sealed class GeneratedApiAuthorizationAnalysisTests
         Assert.NotNull(runtimeDirectory);
         CSharpCompilation compilation = CSharpCompilation.Create(
             "AuthorizationTests",
-            [CSharpSyntaxTree.ParseText(source)],
+            [CSharpSyntaxTree.ParseText(source, cancellationToken: TestContext.Current.CancellationToken)],
             [
                 MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
                 MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Runtime.dll")),
             ],
             new(OutputKind.DynamicallyLinkedLibrary));
-        Assert.Empty(compilation.GetDiagnostics());
+        Assert.Empty(compilation.GetDiagnostics(TestContext.Current.CancellationToken));
         INamedTypeSymbol? typeSymbol = compilation.GetTypeByMetadataName("Endpoint");
         INamedTypeSymbol? authorizationAttribute = compilation.GetTypeByMetadataName("GenerateAuthorizationAttribute");
         Assert.NotNull(typeSymbol);

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Mississippi.Aqueduct.Abstractions.Grains;
@@ -25,7 +26,7 @@ public sealed class SignalRServerDirectoryGrainTests
         // Arrange
         ISignalRServerDirectoryGrain grain =
             TestClusterAccess.Cluster.Client.GetGrain<ISignalRServerDirectoryGrain>("test-directory-7");
-        await grain.RegisterServerAsync("fresh-server");
+        await grain.RegisterServerAsync("fresh-server", TestContext.Current.CancellationToken);
         await grain.HeartbeatAsync("fresh-server", 1);
 
         // Act
@@ -45,7 +46,7 @@ public sealed class SignalRServerDirectoryGrainTests
         // Arrange
         ISignalRServerDirectoryGrain grain =
             TestClusterAccess.Cluster.Client.GetGrain<ISignalRServerDirectoryGrain>("test-directory-8");
-        await grain.RegisterServerAsync("stale-server");
+        await grain.RegisterServerAsync("stale-server", TestContext.Current.CancellationToken);
 
         // Act - use zero timeout so any server is considered stale
         ImmutableList<string> deadServers = await grain.GetDeadServersAsync(TimeSpan.Zero);
@@ -82,7 +83,7 @@ public sealed class SignalRServerDirectoryGrainTests
         // Arrange
         ISignalRServerDirectoryGrain grain =
             TestClusterAccess.Cluster.Client.GetGrain<ISignalRServerDirectoryGrain>("test-directory-5");
-        await grain.RegisterServerAsync("server-heartbeat");
+        await grain.RegisterServerAsync("server-heartbeat", TestContext.Current.CancellationToken);
 
         // Act
         await grain.HeartbeatAsync("server-heartbeat", 5);
@@ -104,9 +105,9 @@ public sealed class SignalRServerDirectoryGrainTests
             TestClusterAccess.Cluster.Client.GetGrain<ISignalRServerDirectoryGrain>("test-directory-9");
 
         // Act
-        await grain.RegisterServerAsync("multi-server-1");
-        await grain.RegisterServerAsync("multi-server-2");
-        await grain.RegisterServerAsync("multi-server-3");
+        await grain.RegisterServerAsync("multi-server-1", TestContext.Current.CancellationToken);
+        await grain.RegisterServerAsync("multi-server-2", TestContext.Current.CancellationToken);
+        await grain.RegisterServerAsync("multi-server-3", TestContext.Current.CancellationToken);
 
         // Assert
         ImmutableList<string> deadServers = await grain.GetDeadServersAsync(TimeSpan.Zero);
@@ -125,8 +126,8 @@ public sealed class SignalRServerDirectoryGrainTests
             TestClusterAccess.Cluster.Client.GetGrain<ISignalRServerDirectoryGrain>("test-directory-2");
 
         // Act
-        await grain.RegisterServerAsync("server-idem");
-        await grain.RegisterServerAsync("server-idem");
+        await grain.RegisterServerAsync("server-idem", TestContext.Current.CancellationToken);
+        await grain.RegisterServerAsync("server-idem", TestContext.Current.CancellationToken);
 
         // Assert - should not throw and server exists
         ImmutableList<string> deadServers = await grain.GetDeadServersAsync(TimeSpan.Zero);
@@ -145,7 +146,7 @@ public sealed class SignalRServerDirectoryGrainTests
             TestClusterAccess.Cluster.Client.GetGrain<ISignalRServerDirectoryGrain>("test-directory-1");
 
         // Act
-        await grain.RegisterServerAsync("server1");
+        await grain.RegisterServerAsync("server1", TestContext.Current.CancellationToken);
 
         // Assert - server should be registered (check via dead servers with zero timeout)
         ImmutableList<string> deadServers = await grain.GetDeadServersAsync(TimeSpan.Zero);
@@ -180,7 +181,7 @@ public sealed class SignalRServerDirectoryGrainTests
         // Arrange
         ISignalRServerDirectoryGrain grain =
             TestClusterAccess.Cluster.Client.GetGrain<ISignalRServerDirectoryGrain>("test-directory-3");
-        await grain.RegisterServerAsync("server-unreg");
+        await grain.RegisterServerAsync("server-unreg", TestContext.Current.CancellationToken);
 
         // Act
         await grain.UnregisterServerAsync("server-unreg");

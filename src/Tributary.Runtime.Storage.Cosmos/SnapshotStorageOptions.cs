@@ -28,7 +28,7 @@ public sealed class SnapshotStorageOptions
     public string DatabaseId { get; set; } = SnapshotCosmosDefaults.DatabaseId;
 
     /// <summary>
-    ///     Gets or sets the batch size for snapshot queries.
+    ///     Gets or sets the maximum number of snapshot items requested per query page, or -1 for dynamic sizing.
     /// </summary>
     public int QueryBatchSize { get; set; } = 100;
 }

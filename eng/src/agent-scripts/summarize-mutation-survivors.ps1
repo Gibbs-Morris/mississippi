@@ -1,7 +1,14 @@
+#!/usr/bin/env pwsh
+
 [CmdletBinding()]
 param(
     [switch]$SkipMutationRun,
+    [switch]$SkipLease,
+    [string]$LeaseDirectory,
     [string]$MutationScriptPath,
+    [string]$RunPath,
+    [ValidateSet('Debug', 'Release')]
+    [string]$Configuration = 'Release',
     [int]$Top,
     [int]$ContextLines = 3,
     [ValidateSet('Simple','Weighted')]
@@ -14,10 +21,11 @@ param(
     [string]$Project
 )
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $modulePath = Join-Path $PSScriptRoot 'RepositoryAutomation.psm1'
-Import-Module -Name $modulePath -Force
+Import-Module -Name $modulePath
 
 
 
@@ -116,20 +124,48 @@ function New-SurvivorKey
     return '{0}|{1}|{2}|{3}|{4}|{5}|{6}' -f $fileKey, $mutatorKey, $StartLine, $EndLine, $replacementKey, $StartColumn, $EndColumn
 }
 
-function Get-LatestMutationReportPath
+function Get-MutationRun
 {
-    param([string]$MutationOutputPath)
+    param([string]$MutationOutputPath, [string]$SelectedRun)
 
-    if (-not (Test-Path -Path $MutationOutputPath -PathType Container)) { return $null }
-
-    $candidateDirs = Get-ChildItem -Path $MutationOutputPath -Directory -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending
-    foreach ($dir in $candidateDirs)
-    {
-        $reportPath = Join-Path $dir.FullName 'reports/mutation-report.json'
-        if (Test-Path -Path $reportPath -PathType Leaf) { return $reportPath }
+    $runs = if ($SelectedRun) { @(Get-Item -LiteralPath $SelectedRun) }
+        else { @(Get-ChildItem -LiteralPath $MutationOutputPath -Directory | Sort-Object Name -Descending) }
+    foreach ($run in $runs) {
+        if (-not $run.PSIsContainer) { throw "Mutation run path must be a directory: $($run.FullName)" }
+        $manifestPath = Join-Path $run.FullName 'project-results.json'
+        if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { throw "Mutation run manifest missing: $manifestPath" }
+        $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -AsHashtable
+        if ($manifest -isnot [System.Collections.IDictionary] -or $manifest.Scope -notin @('Solution', 'Project')) {
+            throw "Mutation run scope is missing or invalid: $manifestPath"
+        }
+        if ($SelectedRun -or $manifest.Scope -eq 'Solution') {
+            return @{ Path = $run.FullName; Manifest = $manifest }
+        }
     }
+    throw "No solution mutation run was found under '$MutationOutputPath'. Use -RunPath to select a focused run."
+}
 
-    return $null
+function Get-MutationRunReportPaths
+{
+    param([System.Collections.IDictionary]$Run)
+    $manifestPath = Join-Path $Run.Path 'project-results.json'
+    $projects = @($Run.Manifest.Projects)
+    if ($projects.Count -eq 0) { throw "Mutation run manifest is empty: $manifestPath" }
+    $paths = @()
+    foreach ($project in $projects) {
+        if ($project.Status -eq 'Skipped') { continue }
+        if ($project.Status -notin @('Completed', 'Failed', 'ThresholdFailed') -or -not $project.ReportPath) {
+            throw "Mutation run is incomplete for '$($project.Project)': $manifestPath"
+        }
+        $path = (Resolve-Path -LiteralPath $project.ReportPath).Path
+        $relative = [System.IO.Path]::GetRelativePath($Run.Path, $path)
+        if ([System.IO.Path]::IsPathRooted($relative) -or $relative -match '^\.\.([\\/]|$)') {
+            throw "Mutation report is outside the selected run: $path"
+        }
+        $paths += $path
+    }
+    if (@($paths | Sort-Object -Unique).Count -ne $paths.Count) { throw "Duplicate mutation reports in $manifestPath" }
+    return $paths
 }
 
 function Get-MutationReportSurvivors
@@ -139,30 +175,30 @@ function Get-MutationReportSurvivors
         [Parameter(Mandatory)][string]$RepoRoot
     )
 
-    $content = Get-Content -Path $ReportPath -Raw -ErrorAction Stop
-    if ([string]::IsNullOrWhiteSpace($content)) { return @() }
-
-    $report = $content | ConvertFrom-Json
-    if ($null -eq $report -or $null -eq $report.files) { return @() }
+    $report = Read-MutationReport -ReportPath $ReportPath
 
     $results = New-Object System.Collections.Generic.List[object]
-    foreach ($fileProp in $report.files.PSObject.Properties)
+    foreach ($fileProp in $report.files.GetEnumerator())
     {
-        $fullPath = $fileProp.Name
+        $fullPath = $fileProp.Key
+        if (-not [System.IO.Path]::IsPathRooted($fullPath)) {
+            $projectRoot = if ($report.ContainsKey('projectRoot')) { $report.projectRoot } else { $RepoRoot }
+            $fullPath = [System.IO.Path]::GetFullPath((Join-Path $projectRoot $fullPath))
+        }
         $fileData = $fileProp.Value
         if ($null -eq $fileData -or $null -eq $fileData.mutants) { continue }
 
     foreach ($mutant in $fileData.mutants)
     {
-        $mutantProps = $mutant.PSObject.Properties.Name
+        $mutantProps = $mutant.Keys
         $status = if ($mutantProps -contains 'status') { [string]$mutant.status } else { $null }
         if ($status -ne 'Survived') { continue }
 
         $location = if ($mutantProps -contains 'location') { $mutant.location } else { $null }
-        $startLine = if ($location -and $location.start -and ($location.start.PSObject.Properties.Name -contains 'line')) { [int]$location.start.line } else { 0 }
-        $endLine = if ($location -and $location.end -and ($location.end.PSObject.Properties.Name -contains 'line')) { [int]$location.end.line } else { $startLine }
-        $startColumn = if ($location -and $location.start -and ($location.start.PSObject.Properties.Name -contains 'column')) { [int]$location.start.column } else { 0 }
-        $endColumn = if ($location -and $location.end -and ($location.end.PSObject.Properties.Name -contains 'column')) { [int]$location.end.column } else { 0 }
+        $startLine = if ($location -and $location.start -and $location.start.ContainsKey('line')) { [int]$location.start.line } else { 0 }
+        $endLine = if ($location -and $location.end -and $location.end.ContainsKey('line')) { [int]$location.end.line } else { $startLine }
+        $startColumn = if ($location -and $location.start -and $location.start.ContainsKey('column')) { [int]$location.start.column } else { 0 }
+        $endColumn = if ($location -and $location.end -and $location.end.ContainsKey('column')) { [int]$location.end.column } else { 0 }
 
         $mutatorName = if ($mutantProps -contains 'mutatorName') { [string]$mutant.mutatorName } elseif ($mutantProps -contains 'mutator') { [string]$mutant.mutator } else { $null }
         $replacement = if ($mutantProps -contains 'replacement') { [string]$mutant.replacement } else { $null }
@@ -202,6 +238,13 @@ if (-not (Test-Path -LiteralPath $taskModulePath -PathType Leaf)) {
 
 Import-Module -Name $taskModulePath -Force
 
+$executionLease = $null
+if (-not $SkipLease) {
+    $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId "mutation-summary-$([guid]::NewGuid().ToString('N'))" -LeaseDirectory $LeaseDirectory
+    $repoRoot = $executionLease.RepositoryRoot
+}
+
+try {
 if (-not $TasksPath) {
     $TasksPath = Join-Path $repoRoot '.scratchpad/testing/mutation-tasks.md'
 }
@@ -305,133 +348,84 @@ function ConvertTo-SanitizedIdentifier {
 
 if ([string]::IsNullOrWhiteSpace($MutationScriptPath))
 {
-    $MutationScriptPath = Join-Path $scriptRoot 'mutation-test-mississippi-solution.ps1'
+    $MutationScriptPath = Join-Path $repoRoot 'eng/src/agent-scripts/mutation-test-mississippi-solution.ps1'
 }
 else
 {
-    if (-not (Test-Path -Path $MutationScriptPath -PathType Leaf))
-    {
-        throw "Mutation script path '$MutationScriptPath' was not found."
+    if (-not $SkipMutationRun) {
+        $resolvedMutationScriptPath = (Resolve-Path -LiteralPath $MutationScriptPath -ErrorAction Stop).Path
+        $mutationScriptRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $resolvedMutationScriptPath)
+        $rootComparison = if ($IsWindows) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
+        if (-not [string]::Equals([System.IO.Path]::GetFullPath($mutationScriptRoot), [System.IO.Path]::GetFullPath($repoRoot), $rootComparison)) {
+            throw "Mutation script path '$MutationScriptPath' is outside the leased repository root '$repoRoot'."
+        }
+        $relativeMutationScriptPath = [System.IO.Path]::GetRelativePath($mutationScriptRoot, $resolvedMutationScriptPath)
+        if ([System.IO.Path]::IsPathRooted($relativeMutationScriptPath) -or $relativeMutationScriptPath -match '^\.\.([\\/]|$)') {
+            throw "Mutation script path '$MutationScriptPath' is outside the leased repository."
+        }
+        $MutationScriptPath = Join-Path $repoRoot $relativeMutationScriptPath
     }
 }
+if (-not $SkipMutationRun -and -not (Test-Path -LiteralPath $MutationScriptPath -PathType Leaf))
+{
+    throw "Mutation script path '$MutationScriptPath' was not found in the leased repository."
+}
 
+$mutationOutputDirectory = Join-Path $repoRoot '.scratchpad/mutation-test-results'
+if (-not (Test-Path -LiteralPath $mutationOutputDirectory)) { New-Item -ItemType Directory -Path $mutationOutputDirectory | Out-Null }
+$previousRuns = @(Get-ChildItem -LiteralPath $mutationOutputDirectory -Directory | Select-Object -ExpandProperty FullName)
+$mutationExitCode = 0
 if (-not $SkipMutationRun)
 {
+    if ($RunPath) { throw '-RunPath requires -SkipMutationRun.' }
     Write-Host "Running mutation tests via '$MutationScriptPath'..." -ForegroundColor Cyan
-    & pwsh -NoLogo -NoProfile -File $MutationScriptPath
-    if ($LASTEXITCODE -ne 0)
+    $mutationArguments = @('-Configuration', $Configuration)
+    $mutationArguments += '-SkipLease'
+    if (-not [string]::IsNullOrWhiteSpace($LeaseDirectory)) { $mutationArguments += @('-LeaseDirectory', $LeaseDirectory) }
+    & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoLogo -NoProfile -File $MutationScriptPath @mutationArguments
+    $mutationExitCode = $LASTEXITCODE
+    if ($mutationExitCode -ne 0)
     {
-        throw "Mutation test script exited with code $LASTEXITCODE."
+        Write-Warning "Mutation test script exited with code $mutationExitCode; checking this run's evidence before propagating failure."
     }
-    Write-Host "Mutation tests completed." -ForegroundColor Green
+    else { Write-Host "Mutation tests completed." -ForegroundColor Green }
 }
 else
 {
     Write-Host "SkipMutationRun specified; using existing Stryker output." -ForegroundColor Yellow
 }
 
-$mutationOutputDirectory = Join-Path $repoRoot '.scratchpad/mutation-test-results'
-if (-not (Test-Path -LiteralPath $mutationOutputDirectory)) { New-Item -ItemType Directory -Path $mutationOutputDirectory | Out-Null }
-$latestSurvivorsPath = Join-Path $mutationOutputDirectory 'latest-survivors.json'
-if (-not (Test-Path -Path $latestSurvivorsPath -PathType Leaf))
-{
-    Write-Warning "No latest-survivors.json file found at '$latestSurvivorsPath'. Writing empty summaries."
-    $survivorItems = @()
+# Reports from the latest run are authoritative; cached survivors may be stale.
+$selectedRun = Get-MutationRun -MutationOutputPath $mutationOutputDirectory -SelectedRun $RunPath
+if (-not $SkipMutationRun -and $selectedRun.Path -in $previousRuns) {
+    throw 'Mutation execution did not create a new solution run; refusing to summarize historical evidence.'
 }
-else
-{
-    $rawContent = Get-Content -Path $latestSurvivorsPath -Raw
-    if ([string]::IsNullOrWhiteSpace($rawContent))
-    {
-        $survivorItems = @()
-    }
-    else
-    {
-        $parsed = $rawContent | ConvertFrom-Json
-        if ($null -eq $parsed)
-        {
-            $survivorItems = @()
-        }
-        elseif ($parsed -is [System.Array])
-        {
-            $survivorItems = $parsed
-        }
-        else
-        {
-            $survivorItems = @($parsed)
-        }
-    }
+if ($selectedRun.Manifest.Scope -eq 'Project') {
+    if ($GenerateTasks -or $EmitTestSkeletons) { throw 'Focused summaries cannot replace repository tasks or generate test skeletons.' }
+    $mutationOutputDirectory = $selectedRun.Path
 }
-
-$mutationReportPath = Get-LatestMutationReportPath -MutationOutputPath $mutationOutputDirectory
+$mutationReportPaths = @(Get-MutationRunReportPaths -Run $selectedRun)
+if ($mutationReportPaths.Count -eq 0) {
+    throw "No mutation-report.json files were found in the latest run under '$mutationOutputDirectory'."
+}
 $reportSurvivors = @()
-if ($mutationReportPath)
+foreach ($mutationReportPath in $mutationReportPaths)
 {
-    try
-    {
-        $reportSurvivors = Get-MutationReportSurvivors -ReportPath $mutationReportPath -RepoRoot $repoRoot
-        Write-Host "Loaded mutation report survivors from '$mutationReportPath'." -ForegroundColor Cyan
-    }
-    catch
-    {
-        Write-Warning "Failed to parse mutation-report.json at '$mutationReportPath': $($_.Exception.Message)"
-        $reportSurvivors = @()
-    }
-}
-else
-{
-    Write-Host 'No mutation-report.json found; skipping detailed survivor extraction.' -ForegroundColor Yellow
+    $reportSurvivors += @(Get-MutationReportSurvivors -ReportPath $mutationReportPath -RepoRoot $repoRoot)
+    Write-Host "Loaded mutation report survivors from '$mutationReportPath'." -ForegroundColor Cyan
 }
 
 $reportSurvivors = @($reportSurvivors | Where-Object { $_ })
 
-$reportMap = @{}
-foreach ($reportEntry in $reportSurvivors)
-{
-    $key = New-SurvivorKey -File $reportEntry.File -Mutator $reportEntry.Mutator -StartLine $reportEntry.StartLine -EndLine $reportEntry.EndLine -Replacement $reportEntry.Replacement -StartColumn $reportEntry.StartColumn -EndColumn $reportEntry.EndColumn
-    $reportMap[$key] = $reportEntry
-}
-
 $normalizedList = New-Object System.Collections.Generic.List[object]
 $existingKeys = New-Object System.Collections.Generic.HashSet[string]
-
-foreach ($item in $survivorItems)
-{
-    $filePath = $item.File
-    $className = if ([string]::IsNullOrWhiteSpace($filePath)) { '' } else { [System.IO.Path]::GetFileNameWithoutExtension($filePath) }
-    $startColumn = if ($item.PSObject.Properties.Name -contains 'StartColumn') { [int]$item.StartColumn } else { 0 }
-    $endColumn = if ($item.PSObject.Properties.Name -contains 'EndColumn') { [int]$item.EndColumn } else { 0 }
-    $key = New-SurvivorKey -File $filePath -Mutator $item.Mutator -StartLine $item.StartLine -EndLine $item.EndLine -Replacement $item.Replacement -StartColumn $startColumn -EndColumn $endColumn
-    [void]$existingKeys.Add($key)
-    $reportData = if ($reportMap.ContainsKey($key)) { $reportMap[$key] } else { $null }
-
-    $normalizedList.Add([pscustomobject]@{
-            File         = $filePath
-        RelativeFile = if ([string]::IsNullOrWhiteSpace($filePath)) { '' } else { Get-RelativePath -BasePath $repoRoot -TargetPath $filePath }
-            ClassName    = $className
-            Mutator      = $item.Mutator
-            Description  = $item.Description
-            Replacement  = $item.Replacement
-            StartLine    = $item.StartLine
-            EndLine      = $item.EndLine
-            StartColumn  = $startColumn
-            EndColumn    = $endColumn
-            Symbol       = $item.Symbol
-            Tests        = $item.Tests
-            Status       = if ($item.PSObject.Properties.Name -contains 'Status') { $item.Status } elseif ($reportData) { $reportData.Status } else { 'Unknown' }
-            StatusReason = if ($item.PSObject.Properties.Name -contains 'StatusReason') { $item.StatusReason } elseif ($reportData) { $reportData.StatusReason } else { $null }
-            CoveredBy    = if ($reportData) { $reportData.CoveredBy } else { $null }
-            KilledBy     = if ($reportData) { $reportData.KilledBy } else { $null }
-            ReportId     = if ($reportData) { $reportData.ReportId } else { $null }
-        }) | Out-Null
-}
 
 if ($reportSurvivors.Count -gt 0)
 {
     foreach ($reportEntry in $reportSurvivors)
     {
         $key = New-SurvivorKey -File $reportEntry.File -Mutator $reportEntry.Mutator -StartLine $reportEntry.StartLine -EndLine $reportEntry.EndLine -Replacement $reportEntry.Replacement -StartColumn $reportEntry.StartColumn -EndColumn $reportEntry.EndColumn
-        if (-not $existingKeys.Contains($key))
+        if ($existingKeys.Add($key))
         {
             $className = if ([string]::IsNullOrWhiteSpace($reportEntry.File)) { '' } else { [System.IO.Path]::GetFileNameWithoutExtension($reportEntry.File) }
             $normalizedList.Add([pscustomobject]@{
@@ -455,11 +449,6 @@ if ($reportSurvivors.Count -gt 0)
                 }) | Out-Null
         }
     }
-}
-
-if (($normalizedList.Count -eq 0) -and ($reportSurvivors.Count -gt 0))
-{
-    Write-Warning 'latest-survivors.json was empty, but mutation-report.json contained survivors; using report data only.'
 }
 
 $normalized = $normalizedList.ToArray()
@@ -544,7 +533,7 @@ $enriched = [pscustomobject]@{
     }
     focusOrder    = $focusSelection
     survivors     = $normalized
-    report        = if ($mutationReportPath -and ($reportSurvivors.Count -gt 0)) { [pscustomobject]@{ path = $mutationReportPath; survivors = $reportSurvivors } } else { $null }
+    report        = [pscustomobject]@{ paths = $mutationReportPaths; survivors = $reportSurvivors }
 }
 
 $enrichedJsonPath = Join-Path $mutationOutputDirectory 'mutation-survivors-enriched.json'
@@ -552,12 +541,13 @@ $enriched | ConvertTo-Json -Depth 6 | Set-Content -Path $enrichedJsonPath -Encod
 
 $summaryJsonPath = Join-Path $mutationOutputDirectory 'mutation-survivors-summary.json'
 $summaryMarkdownPath = Join-Path $repoRoot '.scratchpad/testing/mutation-survivors-summary.md'
+if ($selectedRun.Manifest.Scope -eq 'Project') { $summaryMarkdownPath = Join-Path $mutationOutputDirectory 'mutation-survivors-summary.md' }
 
 $null = New-Item -Path (Split-Path -Parent $summaryJsonPath) -ItemType Directory -Force
 $null = New-Item -Path (Split-Path -Parent $summaryMarkdownPath) -ItemType Directory -Force
 
 # Maintain backward compatibility: original summary file still emits basic array
-$normalized | ConvertTo-Json -Depth 4 | Set-Content -Path $summaryJsonPath -Encoding UTF8
+ConvertTo-Json -InputObject @($normalized) -Depth 4 | Set-Content -Path $summaryJsonPath -Encoding UTF8
 
 $reportJsonPath = Join-Path $mutationOutputDirectory 'mutation-survivors-report.json'
 if ($reportSurvivors.Count -gt 0)
@@ -734,7 +724,7 @@ if ($GenerateTasks) {
 
 $focusSelection = @($focusSelection | Where-Object { $_ })
 
-if ($focusSelection.Count -gt 0) {
+if ($selectedRun.Manifest.Scope -eq 'Solution' -and $focusSelection.Count -gt 0) {
     $taskItems = @()
     foreach ($survivor in $focusSelection) {
         $taskItems += ConvertTo-MutationTaskItem -Survivor $survivor
@@ -837,6 +827,11 @@ if ($reportSurvivors.Count -gt 0)
 Write-Host "- Markdown: $summaryMarkdownPath" -ForegroundColor Gray
 Write-Host "Total survivors: $totalCount" -ForegroundColor Cyan
 
-return 0
+}
+finally {
+    if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
+}
+
+exit $mutationExitCode
 
 

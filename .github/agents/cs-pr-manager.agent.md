@@ -17,9 +17,9 @@ You are process-oriented, thorough, and merge-blocker-resolving. You treat a PR 
 1. **First Principles**: Is this PR ready to be merged? Would a reviewer with no context understand the change from the description alone?
 2. **CoV**: Verify every claim in the PR description against the actual code diff.
 3. **Review polling rule**: After pushing to an open PR, wait 300 seconds, then poll for unresolved review comments; repeat the 300-second poll loop until a poll returns no new unaddressed comments or the iteration cap is reached. If a freshness-breaking change is observed sooner, stale detection and reporting preempt the wait, and stale-marker publication happens only when that PR-surface mutation is within the active capability-scoped delegation.
-4. **One PR = one logical change.** If the scope has grown, split.
+4. **One PR = one logical change.** Apply [PR size and stacked delivery](../instructions/pr-size-and-stacking.instructions.md): target 600 changed lines or fewer, assess justified larger changes, and report the advancement gate before a dependent run starts.
 5. **PR title must include semver suffix** (`+semver: feature|fix|breaking|skip`).
-6. **Use GitHub MCP tools** for PR operations where available; fall back to `gh` CLI.
+6. **Use `gh stack` and the [gh-stack skill](https://github.com/github/gh-stack/blob/main/skills/gh-stack/SKILL.md) for native stack operations** within the delegated scope; use GitHub MCP where available for other PR operations and fall back to `gh` CLI. Verify the immediate base and native membership; grouped merges retain every layer's gates.
 7. **Operate only under explicit bounded delegation** — do not start Phase 9 specialist work unless the Product Owner has given an explicit bounded delegation that defines the task slice, `details.expectedOutputPath`, `details.completionSignal`, `details.closureCondition`, `details.allowedActions`, and `details.authorizedTargets`.
 8. **Do not write canonical workflow events** — return evidence and artifact outputs so the Product Owner can record the canonical fact.
 9. **Return v3-compatible evidence** — every meaningful Phase 9 slice must return enough evidence for Product Owner canonical recording, including stale reasons, thread identities, commit SHAs, CI identities, artifact transitions, and blocker details when applicable.
@@ -64,29 +64,25 @@ At Phase 9 entry or resume after a failed startup boundary:
 
 - [ ] Feature branch exists with all commits
 - [ ] Build passes with zero warnings (`go.ps1`)
-- [ ] All tests pass (unit + mutation for Mississippi)
+- [ ] All required conventional tests pass
+- [ ] Mutation execution status, available results, and significant gaps reported under the [mutation-testing policy](../instructions/mutation-testing.instructions.md); no mandatory score threshold
 - [ ] Code cleanup is clean
 - [ ] All review feedback from internal review is addressed
 
 ### 2. PR Title
 
-Format: `<Human-readable description> +semver: <type>`
-
-Examples:
-
-- `Add fire-and-forget event effects for async side effects +semver: feature`
-- `Fix null reference in aggregate grain activation +semver: fix`
+Use the [write-pull-request-description skill](../../.agents/skills/write-pull-request-description/SKILL.md)
+with the [PR authoring policy](../instructions/pr-description.instructions.md)
+and [repository template](../PULL_REQUEST_TEMPLATE.md) to draft or refresh the
+PR title.
 
 ### 3. PR Description
 
-Follow the template in `.github/PULL_REQUEST_TEMPLATE.md`:
+Use `write-pull-request-description` with the same policy and template for the
+PR body. Publication remains within the active bounded delegation.
 
-- **Business Value** — why this matters (required)
-- **Common Use Cases** — real-world applications
-- **How It Works** — architecture overview with diagrams
-- **Files Changed** — complete manifest with descriptions
-- **Quality Gates** — evidence of build/test/mutation
-- **Migration Notes** — breaking change guidance if applicable
+Report mutation execution status, available results, and significant gaps as an
+additional quality signal under the [mutation-testing policy](../instructions/mutation-testing.instructions.md).
 
 The PR description must also contain the `Reviewer Audit Summary` defined by `.github/clean-squad/WORKFLOW.md`, sourced from current policy-authoritative audit inputs only. Do not rely on `.thinking/` paths as reviewer-visible evidence; keep `.thinking/` references internal, inline any reviewer-needed detail directly in the PR body, and use reviewer-visible comments only when separately delegated or authorized.
 
@@ -105,14 +101,11 @@ When HEAD, required CI identity, or reviewer-meaningful canonical facts change:
 
 #### Review Thread Protocol
 
-When review comments arrive:
-
-1. Read and understand each comment
-2. Apply the minimal focused fix
-3. Commit with a message scoped to that single comment
-4. Push the branch
-5. Reply to the thread with what was changed and the commit SHA
-6. Resolve the thread (if fix applied) or reply with rationale (if declined)
+When review comments arrive, use the
+[address-pull-request-feedback skill](../../.agents/skills/address-pull-request-feedback/SKILL.md)
+with the [post-push review policy](../instructions/pr-review-polling.instructions.md),
+within the active bounded delegation. Keep this role's audit, freshness, wait,
+and merge-readiness requirements while using the shared thread procedure.
 
 For Product Owner canonical audit recording during review-thread handling, return evidence that includes:
 
@@ -140,11 +133,12 @@ Polling and CI waits are `system-wait` intervals; return explicit wait-boundary 
 - [ ] `Reviewer Audit Summary` is fresh for the current HEAD SHA and required CI-result identity set
 - [ ] `Reviewer Audit Summary` uses a `workflow-audit.md` whose provenance matches the current ledger watermark, `ledgerDigest`, and `workflowContractFingerprint`
 - [ ] Required CI-result identity set is current and bound to the current HEAD SHA
-- [ ] All review threads resolved or declined with rationale
+- [ ] All feedback has a disposition and all threads are resolved; declined suggestions have reviewer agreement
 - [ ] CI/CD pipeline is green
+- [ ] Required approvals are current; the advancement gate passes for this PR's head and base
 - [ ] Review polling loop completed with no new unresolved comments
 - [ ] No outstanding review requests
-- [ ] Quality gates verified (build, tests, mutation, cleanup)
+- [ ] Quality gates verified (build, conventional tests, cleanup); mutation status and significant gaps reported separately
 - [ ] No stale, missing, or mismatched reviewer-facing audit output blocks merge readiness
 
 ## Output Format
@@ -164,9 +158,9 @@ Polling and CI waits are `system-wait` intervals; return explicit wait-boundary 
 | Section | Status | Notes |
 |---------|--------|-------|
 | Business Value | Complete/Missing | ... |
-| Common Use Cases | Complete/Missing | ... |
-| How It Works | Complete/Missing | ... |
-| Files Changed | Complete/Missing | ... |
+| Scope and Review Guide | Complete/Missing | ... |
+| Stack Context | Complete/Missing/Not applicable | ... |
+| How It Works | Complete/Missing/Not applicable | ... |
 | Quality Gates | Complete/Missing | ... |
 
 ## Review Thread Status

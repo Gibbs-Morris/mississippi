@@ -249,11 +249,11 @@ public sealed class HeartbeatManagerTests
         Func<int> connectionCountProvider = () => 5;
 
         // Act - Start multiple times
-        await manager.StartAsync(connectionCountProvider);
-        await manager.StartAsync(connectionCountProvider);
+        await manager.StartAsync(connectionCountProvider, TestContext.Current.CancellationToken);
+        await manager.StartAsync(connectionCountProvider, TestContext.Current.CancellationToken);
 
         // Assert - RegisterServerAsync should only be called once
-        await directoryGrain.Received(1).RegisterServerAsync(manager.ServerId);
+        await directoryGrain.Received(1).RegisterServerAsync(manager.ServerId, Arg.Any<CancellationToken>());
     }
 
     /// <summary>
@@ -279,7 +279,7 @@ public sealed class HeartbeatManagerTests
         await cancellation.CancelAsync();
         try
         {
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => startup.WaitAsync(TimeSpan.FromSeconds(5)));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => startup.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
         }
         finally
         {
@@ -346,12 +346,12 @@ public sealed class HeartbeatManagerTests
         {
             Task startup = manager.StartAsync(() => 5, cancellation.Token);
             await cancellation.CancelAsync();
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => startup.WaitAsync(TimeSpan.FromSeconds(5)));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => startup.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
             Assert.False(registration.Task.IsCompleted);
             Assert.False(failureLogged.Task.IsCompleted);
             InvalidOperationException expected = new("Registration failed after cancellation");
             registration.SetException(expected);
-            Exception? loggedException = await failureLogged.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Exception? loggedException = await failureLogged.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
             AggregateException aggregate = Assert.IsType<AggregateException>(loggedException);
             Assert.Same(expected, Assert.Single(aggregate.InnerExceptions));
             await directory.DidNotReceiveWithAnyArgs().HeartbeatAsync(default!, default);
@@ -380,10 +380,10 @@ public sealed class HeartbeatManagerTests
         Func<int> connectionCountProvider = () => 5;
 
         // Act
-        await manager.StartAsync(connectionCountProvider);
+        await manager.StartAsync(connectionCountProvider, TestContext.Current.CancellationToken);
 
         // Assert
-        await directoryGrain.Received(1).RegisterServerAsync(serverId);
+        await directoryGrain.Received(1).RegisterServerAsync(serverId, Arg.Any<CancellationToken>());
     }
 
     /// <summary>
@@ -400,7 +400,9 @@ public sealed class HeartbeatManagerTests
         using HeartbeatManager manager = new(CreateServerIdProvider(), grainFactory, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => manager.StartAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => manager.StartAsync(
+            null!,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -418,10 +420,10 @@ public sealed class HeartbeatManagerTests
         ILogger<HeartbeatManager> logger = Substitute.For<ILogger<HeartbeatManager>>();
         using HeartbeatManager manager = new(CreateServerIdProvider(), grainFactory, options, logger);
         string serverId = manager.ServerId;
-        await manager.StartAsync(() => 5);
+        await manager.StartAsync(() => 5, TestContext.Current.CancellationToken);
 
         // Act
-        await manager.StopAsync();
+        await manager.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await directoryGrain.Received(1).UnregisterServerAsync(serverId);

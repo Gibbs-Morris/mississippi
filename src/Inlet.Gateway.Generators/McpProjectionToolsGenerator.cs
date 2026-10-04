@@ -436,29 +436,24 @@ public sealed class McpProjectionToolsGenerator : IIncrementalGenerator
     {
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<List<McpProjectionInfo>> projectionsProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
-        {
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.RootNamespaceProperty,
-                out string? rootNamespace);
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.AssemblyNameProperty,
-                out string? assemblyName);
-            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                rootNamespace,
-                assemblyName,
-                source.Compilation);
-            return GetProjectionsFromCompilation(source.Compilation, targetRootNamespace);
-        });
+        IncrementalValueProvider<List<McpProjectionInfo>> projectionsProvider =
+            compilationAndOptions.Select((source, _) =>
+            {
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.RootNamespaceProperty,
+                    out string? rootNamespace);
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.AssemblyNameProperty,
+                    out string? assemblyName);
+                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                    rootNamespace,
+                    assemblyName,
+                    source.Compilation);
+                return GetProjectionsFromCompilation(source.Compilation, targetRootNamespace);
+            });
         context.RegisterSourceOutput(
             projectionsProvider,
-            static (
-                spc,
-                projections
-            ) =>
+            static (spc, projections) =>
             {
                 foreach (McpProjectionInfo projection in projections)
                 {

@@ -171,17 +171,14 @@ public sealed class SnapshotCosmosRepositoryTests
         ops.Setup(o => o.QuerySnapshotIdsAsync(StreamKey.ToString(), It.IsAny<CancellationToken>()))
             .Returns(
                 ToAsyncEnumerableAsync(
-                [
-                    new("snap-1", 1),
-                    new("snap-2", 2),
-                    new("snap-3", 3),
-                ]));
+                    [
+                        new("snap-1", 1),
+                        new("snap-2", 2),
+                        new("snap-3", 3),
+                    ],
+                    TestContext.Current.CancellationToken));
         ops.Setup(o => o.DeleteDocumentAsync(StreamKey.ToString(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback<string, string, CancellationToken>((
-                _,
-                id,
-                _
-            ) => deletedIds.Add(id))
+            .Callback<string, string, CancellationToken>((_, id, _) => deletedIds.Add(id))
             .ReturnsAsync(true);
         SnapshotCosmosRepository repository = CreateRepository(ops);
         await repository.DeleteAllAsync(StreamKey, CancellationToken.None);
@@ -197,7 +194,7 @@ public sealed class SnapshotCosmosRepositoryTests
     {
         Mock<ISnapshotContainerOperations> ops = new();
         ops.Setup(o => o.QuerySnapshotIdsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(ToAsyncEnumerableAsync([]));
+            .Returns(ToAsyncEnumerableAsync([], TestContext.Current.CancellationToken));
         SnapshotCosmosRepository repository = CreateRepository(ops);
         await repository.DeleteAllAsync(StreamKey, CancellationToken.None);
         ops.Verify(
@@ -232,16 +229,13 @@ public sealed class SnapshotCosmosRepositoryTests
         ops.Setup(o => o.QuerySnapshotIdsAsync(StreamKey.ToString(), It.IsAny<CancellationToken>()))
             .Returns(
                 ToAsyncEnumerableAsync(
-                [
-                    new("snap-3", 3),
-                    new("snap-5", 5),
-                ]));
+                    [
+                        new("snap-3", 3),
+                        new("snap-5", 5),
+                    ],
+                    TestContext.Current.CancellationToken));
         ops.Setup(o => o.DeleteDocumentAsync(StreamKey.ToString(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback<string, string, CancellationToken>((
-                _,
-                id,
-                _
-            ) => deletedIds.Add(id))
+            .Callback<string, string, CancellationToken>((_, id, _) => deletedIds.Add(id))
             .ReturnsAsync(true);
         SnapshotCosmosRepository repository = CreateRepository(ops);
 
@@ -264,19 +258,16 @@ public sealed class SnapshotCosmosRepositoryTests
         ops.Setup(o => o.QuerySnapshotIdsAsync(StreamKey.ToString(), It.IsAny<CancellationToken>()))
             .Returns(
                 ToAsyncEnumerableAsync(
-                [
-                    new("snap-1", 1),
-                    new("snap-2", 2),
-                    new("snap-3", 3),
-                    new("snap-4", 4),
-                    new("snap-5", 5),
-                ]));
+                    [
+                        new("snap-1", 1),
+                        new("snap-2", 2),
+                        new("snap-3", 3),
+                        new("snap-4", 4),
+                        new("snap-5", 5),
+                    ],
+                    TestContext.Current.CancellationToken));
         ops.Setup(o => o.DeleteDocumentAsync(StreamKey.ToString(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback<string, string, CancellationToken>((
-                _,
-                id,
-                _
-            ) => deletedIds.Add(id))
+            .Callback<string, string, CancellationToken>((_, id, _) => deletedIds.Add(id))
             .ReturnsAsync(true);
         SnapshotCosmosRepository repository = CreateRepository(ops);
 
@@ -296,7 +287,7 @@ public sealed class SnapshotCosmosRepositoryTests
     {
         Mock<ISnapshotContainerOperations> ops = new();
         ops.Setup(o => o.QuerySnapshotIdsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(ToAsyncEnumerableAsync([]));
+            .Returns(ToAsyncEnumerableAsync([], TestContext.Current.CancellationToken));
         SnapshotCosmosRepository repository = CreateRepository(ops);
         await repository.PruneAsync(StreamKey, [1], CancellationToken.None);
         ops.Verify(

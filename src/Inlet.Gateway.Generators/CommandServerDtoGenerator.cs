@@ -74,7 +74,7 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
         string registrationsSource = GenerateMapperRegistrations(aggregateGroup);
         string aggregateName = GetAggregateNameFromNamespace(aggregateGroup.Key);
         context.AddSource(
-            $"{aggregateName}AggregateMapperRegistrations.g.cs",
+            $"{aggregateGroup.First().OutputNamespace}.Mappers.{aggregateName}AggregateMapperRegistrations.g.cs",
             SourceText.From(registrationsSource, Encoding.UTF8));
     }
 
@@ -88,11 +88,15 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
     {
         // Generate DTO
         string dtoSource = GenerateDto(command);
-        context.AddSource($"{command.Model.DtoTypeName}.g.cs", SourceText.From(dtoSource, Encoding.UTF8));
+        context.AddSource(
+            $"{command.OutputNamespace}.{command.Model.DtoTypeName}.g.cs",
+            SourceText.From(dtoSource, Encoding.UTF8));
 
         // Generate Mapper
         string mapperSource = GenerateMapper(command);
-        context.AddSource($"{GetMapperTypeName(command)}.g.cs", SourceText.From(mapperSource, Encoding.UTF8));
+        context.AddSource(
+            $"{command.OutputNamespace}.Mappers.{GetMapperTypeName(command)}.g.cs",
+            SourceText.From(mapperSource, Encoding.UTF8));
     }
 
     /// <summary>
@@ -386,10 +390,7 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
         // Use the compilation provider to scan referenced assemblies
-        IncrementalValueProvider<List<CommandInfo>> commandsProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
+        IncrementalValueProvider<List<CommandInfo>> commandsProvider = compilationAndOptions.Select((source, _) =>
         {
             source.Options.GlobalOptions.TryGetValue(
                 TargetNamespaceResolver.RootNamespaceProperty,
@@ -407,10 +408,7 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
         // Register source output for individual commands (DTOs and mappers)
         context.RegisterSourceOutput(
             commandsProvider,
-            static (
-                spc,
-                commands
-            ) =>
+            static (spc, commands) =>
             {
                 foreach (CommandInfo command in commands)
                 {

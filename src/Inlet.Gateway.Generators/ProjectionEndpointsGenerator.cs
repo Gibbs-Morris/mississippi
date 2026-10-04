@@ -403,7 +403,12 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             if (prop.RequiresEnumerableMapper)
             {
                 // Collection with custom element type - use appropriate collection conversion
-                string toCollection = prop.IsImmutableArray ? ".ToImmutableArray()" : ".ToList()";
+                string toCollection = prop.SourceTypeSymbol switch
+                {
+                    IArrayTypeSymbol => ".ToArray()",
+                    var _ when prop.IsImmutableArray => ".ToImmutableArray()",
+                    var _ => ".ToList()",
+                };
                 sb.AppendLine($"{prop.Name} = {prop.Name}Mapper.Map(source.{prop.Name}){toCollection}{comma}");
             }
             else if (prop.RequiresMapper)
@@ -903,10 +908,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     {
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<List<ProjectionInfo>> projectionsProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
+        IncrementalValueProvider<List<ProjectionInfo>> projectionsProvider = compilationAndOptions.Select((source, _) =>
         {
             source.Options.GlobalOptions.TryGetValue(
                 TargetNamespaceResolver.RootNamespaceProperty,
@@ -924,10 +926,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         // Register source output
         context.RegisterSourceOutput(
             projectionsProvider,
-            static (
-                spc,
-                projections
-            ) =>
+            static (spc, projections) =>
             {
                 HashSet<string> generatedNestedTypes = new();
                 foreach (ProjectionInfo projection in projections)

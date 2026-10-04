@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -71,6 +72,8 @@ public class ProjectionEndpointsGeneratorTests
             MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Runtime.dll")),
             MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Collections.dll")),
             MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Collections.Immutable.dll")),
+            MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Linq.dll")),
+            MetadataReference.CreateFromFile(typeof(JsonRequiredAttribute).Assembly.Location),
         ];
 
         // Add netstandard if available (for compatibility)
@@ -122,7 +125,7 @@ public class ProjectionEndpointsGeneratorTests
         string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(controllerSource);
         Assert.Contains(": base(uxProjectionGrainFactory, mapper, logger)", controllerSource, StringComparison.Ordinal);
@@ -153,7 +156,7 @@ public class ProjectionEndpointsGeneratorTests
         string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(controllerSource);
         Assert.Contains(
@@ -192,7 +195,7 @@ public class ProjectionEndpointsGeneratorTests
         string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(controllerSource);
         Assert.Contains(
@@ -226,7 +229,7 @@ public class ProjectionEndpointsGeneratorTests
         string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(controllerSource);
         Assert.Contains(
@@ -260,7 +263,7 @@ public class ProjectionEndpointsGeneratorTests
         string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(controllerSource);
         Assert.Contains("/// <summary>", controllerSource, StringComparison.Ordinal);
@@ -292,7 +295,7 @@ public class ProjectionEndpointsGeneratorTests
         string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(controllerSource);
         Assert.Contains(
@@ -326,13 +329,89 @@ public class ProjectionEndpointsGeneratorTests
         string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(controllerSource);
         Assert.Contains(
             "public sealed partial class AccountBalanceController",
             controllerSource,
             StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated projection array DTOs and their mappers compile using the declared mapping contracts.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoAndMapperCompileForCustomAndEnumArrays()
+    {
+        const string mappingContracts = """
+                                        using System.Collections.Generic;
+
+                                        namespace Mississippi.Common.Abstractions.Mapping;
+
+                                        public interface IMapper<in TFrom, out TTo>
+                                        {
+                                            TTo Map(TFrom input);
+                                        }
+
+                                        public interface IEnumerableMapper<in TFrom, out TTo>
+                                            : IMapper<IEnumerable<TFrom>, IEnumerable<TTo>> { }
+                                        """;
+        const string source = """
+                              using Mississippi.Inlet.Generators.Abstractions;
+                              using Mississippi.Inlet.Abstractions;
+
+                              namespace TestApp.Domain.Projections.Array;
+
+                              public sealed record Entry
+                              {
+                                  public decimal Amount { get; init; }
+                              }
+
+                              public enum EntryStatus { New, Complete }
+
+                              [GenerateProjectionEndpoints]
+                              [ProjectionPath("array")]
+                              public sealed record ArrayProjection
+                              {
+                                  public Entry[] Entries { get; init; } = [];
+                                  public EntryStatus[] Statuses { get; init; } = [];
+                                  public int[] Values { get; init; } = [];
+                              }
+                              """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, mappingContracts, source);
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Assert.Empty(
+            input.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        Assert.Empty(diagnostics);
+        Assert.All(result.Results, generatorResult => Assert.Null(generatorResult.Exception));
+        SyntaxTree[] dtoAndMapperTrees = result.GeneratedTrees.Where(tree =>
+                !tree.FilePath.Contains("Controller", StringComparison.Ordinal) &&
+                !tree.FilePath.Contains("Registrations", StringComparison.Ordinal))
+            .ToArray();
+        Assert.NotEmpty(dtoAndMapperTrees);
+        foreach (SyntaxTree tree in dtoAndMapperTrees)
+        {
+            TestContext.Current.TestOutputHelper?.WriteLine(
+                $"{tree.FilePath}\n{tree.GetText(TestContext.Current.CancellationToken)}");
+        }
+
+        Compilation dtoAndMapperCompilation = input.AddSyntaxTrees(dtoAndMapperTrees);
+        Assert.Empty(
+            dtoAndMapperCompilation.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        string mapper = Assert.Single(
+                dtoAndMapperTrees,
+                tree => tree.FilePath.EndsWith("ArrayProjectionMapper.g.cs", StringComparison.Ordinal))
+            .GetText(TestContext.Current.CancellationToken)
+            .ToString();
+        Assert.Contains("IEnumerableMapper<Entry, EntryDto>", mapper, StringComparison.Ordinal);
+        Assert.Contains("IEnumerableMapper<EntryStatus, EntryStatusDto>", mapper, StringComparison.Ordinal);
+        Assert.Contains("EntriesMapper.Map(source.Entries).ToArray()", mapper, StringComparison.Ordinal);
+        Assert.Contains("StatusesMapper.Map(source.Statuses).ToArray()", mapper, StringComparison.Ordinal);
+        Assert.Contains("Values = source.Values", mapper, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -368,14 +447,14 @@ public class ProjectionEndpointsGeneratorTests
         SyntaxTree nestedDtoTree = Assert.Single(
             runResult.GeneratedTrees,
             tree => tree.FilePath.EndsWith("TransactionRecordDto.g.cs", StringComparison.Ordinal));
-        string nestedDtoSource = nestedDtoTree.GetText().ToString();
+        string nestedDtoSource = nestedDtoTree.GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("public sealed record TransactionRecordDto", nestedDtoSource, StringComparison.Ordinal);
         Assert.Contains("public required decimal Amount { get; init; }", nestedDtoSource, StringComparison.Ordinal);
         Assert.Contains("public required string Description { get; init; }", nestedDtoSource, StringComparison.Ordinal);
         SyntaxTree nestedMapperTree = Assert.Single(
             runResult.GeneratedTrees,
             tree => tree.FilePath.EndsWith("TransactionRecordDtoMapper.g.cs", StringComparison.Ordinal));
-        string nestedMapperSource = nestedMapperTree.GetText().ToString();
+        string nestedMapperSource = nestedMapperTree.GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains(
             "IMapper<TransactionRecord, TransactionRecordDto>",
             nestedMapperSource,
@@ -409,7 +488,7 @@ public class ProjectionEndpointsGeneratorTests
             RunGenerator(AttributeStubs, projectionSource);
         string? dtoSource = runResult.GeneratedTrees
             .FirstOrDefault(t => t.FilePath.Contains("TimestampDto", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(dtoSource);
         Assert.Contains("CreatedAt", dtoSource, StringComparison.Ordinal);
@@ -440,7 +519,7 @@ public class ProjectionEndpointsGeneratorTests
             RunGenerator(AttributeStubs, projectionSource);
         string? dtoSource = runResult.GeneratedTrees
             .FirstOrDefault(t => t.FilePath.Contains("IdentifierDto", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(dtoSource);
         Assert.Contains("Id", dtoSource, StringComparison.Ordinal);
@@ -471,7 +550,7 @@ public class ProjectionEndpointsGeneratorTests
             RunGenerator(AttributeStubs, projectionSource);
         string? dtoSource = runResult.GeneratedTrees
             .FirstOrDefault(t => t.FilePath.Contains("AccountBalanceDto", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(dtoSource);
         Assert.Contains("OptionalBalance", dtoSource, StringComparison.Ordinal);
@@ -502,7 +581,7 @@ public class ProjectionEndpointsGeneratorTests
             RunGenerator(AttributeStubs, projectionSource);
         string? dtoSource = runResult.GeneratedTrees
             .FirstOrDefault(t => t.FilePath.Contains("AccountBalanceDto", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(dtoSource);
         Assert.Contains("[JsonRequired]", dtoSource, StringComparison.Ordinal);
@@ -533,7 +612,7 @@ public class ProjectionEndpointsGeneratorTests
             RunGenerator(AttributeStubs, projectionSource);
         string? dtoSource = runResult.GeneratedTrees
             .FirstOrDefault(t => t.FilePath.Contains("AccountBalanceDto", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(dtoSource);
         Assert.Contains("Balance", dtoSource, StringComparison.Ordinal);
@@ -566,7 +645,7 @@ public class ProjectionEndpointsGeneratorTests
             RunGenerator(AttributeStubs, projectionSource);
         string? dtoSource = runResult.GeneratedTrees
             .FirstOrDefault(t => t.FilePath.Contains("MultiPropertyDto", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(dtoSource);
         Assert.Contains("public sealed record MultiPropertyDto", dtoSource, StringComparison.Ordinal);
@@ -599,7 +678,7 @@ public class ProjectionEndpointsGeneratorTests
             RunGenerator(AttributeStubs, projectionSource);
         string? dtoSource = runResult.GeneratedTrees
             .FirstOrDefault(t => t.FilePath.Contains("AccountBalanceDto", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(dtoSource);
         Assert.Contains("public sealed record AccountBalanceDto", dtoSource, StringComparison.Ordinal);
@@ -629,7 +708,7 @@ public class ProjectionEndpointsGeneratorTests
             RunGenerator(AttributeStubs, projectionSource);
         string? dtoSource = runResult.GeneratedTrees
             .FirstOrDefault(t => t.FilePath.Contains("AccountBalanceDto", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(dtoSource);
         Assert.Contains("public required decimal Balance", dtoSource, StringComparison.Ordinal);
@@ -659,7 +738,7 @@ public class ProjectionEndpointsGeneratorTests
             RunGenerator(AttributeStubs, projectionSource);
         foreach (SyntaxTree tree in runResult.GeneratedTrees)
         {
-            string generatedCode = tree.GetText().ToString();
+            string generatedCode = tree.GetText(TestContext.Current.CancellationToken).ToString();
             Assert.Contains("// <auto-generated", generatedCode, StringComparison.Ordinal);
         }
     }
@@ -689,7 +768,7 @@ public class ProjectionEndpointsGeneratorTests
         string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(controllerSource);
 
@@ -721,7 +800,7 @@ public class ProjectionEndpointsGeneratorTests
             RunGenerator(AttributeStubs, projectionSource);
         foreach (SyntaxTree tree in runResult.GeneratedTrees)
         {
-            string generatedCode = tree.GetText().ToString();
+            string generatedCode = tree.GetText(TestContext.Current.CancellationToken).ToString();
             Assert.Contains("[global::System.CodeDom.Compiler.GeneratedCode(", generatedCode, StringComparison.Ordinal);
         }
     }
@@ -780,7 +859,7 @@ public class ProjectionEndpointsGeneratorTests
         string? mapperSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("AccountBalanceProjectionMapper", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Registration", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(mapperSource);
         Assert.Contains("ArgumentNullException.ThrowIfNull(source);", mapperSource, StringComparison.Ordinal);
@@ -811,7 +890,7 @@ public class ProjectionEndpointsGeneratorTests
         string? mapperSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("AccountBalanceProjectionMapper", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Registration", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(mapperSource);
         Assert.Contains("IMapper<AccountBalanceProjection, AccountBalanceDto>", mapperSource, StringComparison.Ordinal);
@@ -842,7 +921,7 @@ public class ProjectionEndpointsGeneratorTests
         string? mapperSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("AccountBalanceProjectionMapper", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Registration", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(mapperSource);
         Assert.Contains("internal sealed class AccountBalanceProjectionMapper", mapperSource, StringComparison.Ordinal);
@@ -874,7 +953,7 @@ public class ProjectionEndpointsGeneratorTests
         string? mapperSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("AccountBalanceProjectionMapper", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Registration", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(mapperSource);
         Assert.Contains("Balance = source.Balance", mapperSource, StringComparison.Ordinal);
@@ -905,7 +984,7 @@ public class ProjectionEndpointsGeneratorTests
             RunGenerator(AttributeStubs, projectionSource);
         string? registrationsSource = runResult.GeneratedTrees
             .FirstOrDefault(t => t.FilePath.Contains("Registration", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(registrationsSource);
         Assert.Contains("AddAccountBalanceProjectionMappers", registrationsSource, StringComparison.Ordinal);
@@ -936,7 +1015,7 @@ public class ProjectionEndpointsGeneratorTests
             RunGenerator(AttributeStubs, projectionSource);
         string? registrationsSource = runResult.GeneratedTrees
             .FirstOrDefault(t => t.FilePath.Contains("Registration", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(registrationsSource);
         Assert.Contains(
@@ -1001,7 +1080,7 @@ public class ProjectionEndpointsGeneratorTests
         string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(controllerSource);
         Assert.Contains("[AllowAnonymous]", controllerSource, StringComparison.Ordinal);
@@ -1035,7 +1114,7 @@ public class ProjectionEndpointsGeneratorTests
         string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(controllerSource);
         Assert.Contains("[AllowAnonymous]", controllerSource, StringComparison.Ordinal);
@@ -1067,7 +1146,7 @@ public class ProjectionEndpointsGeneratorTests
         string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(controllerSource);
         Assert.Contains(
@@ -1101,7 +1180,7 @@ public class ProjectionEndpointsGeneratorTests
         string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(controllerSource);
         Assert.DoesNotContain("[Authorize", controllerSource, StringComparison.Ordinal);
@@ -1136,21 +1215,21 @@ public class ProjectionEndpointsGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-        string? enumDtoSource = runResult.GeneratedTrees.FirstOrDefault(t =>
-                t.FilePath.Contains("SagaPhaseDto", StringComparison.Ordinal))
-            ?.GetText()
+        string? enumDtoSource = runResult.GeneratedTrees
+            .FirstOrDefault(t => t.FilePath.Contains("SagaPhaseDto", StringComparison.Ordinal))
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(enumDtoSource);
         Assert.Contains("public enum SagaPhaseDto", enumDtoSource, StringComparison.Ordinal);
-        string? enumMapperSource = runResult.GeneratedTrees.FirstOrDefault(t =>
-                t.FilePath.Contains("SagaPhaseDtoMapper", StringComparison.Ordinal))
-            ?.GetText()
+        string? enumMapperSource = runResult.GeneratedTrees
+            .FirstOrDefault(t => t.FilePath.Contains("SagaPhaseDtoMapper", StringComparison.Ordinal))
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(enumMapperSource);
         Assert.Contains("IMapper<SagaPhase, SagaPhaseDto>", enumMapperSource, StringComparison.Ordinal);
         string? registrationsSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("ProjectionMapperRegistrations", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(registrationsSource);
         Assert.Contains(
@@ -1183,7 +1262,7 @@ public class ProjectionEndpointsGeneratorTests
             RunGenerator(AttributeStubs, projectionSource);
         string? registrationsSource = runResult.GeneratedTrees
             .FirstOrDefault(t => t.FilePath.Contains("Registration", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(registrationsSource);
         Assert.Contains(
@@ -1216,7 +1295,7 @@ public class ProjectionEndpointsGeneratorTests
             RunGenerator(AttributeStubs, projectionSource);
         string? registrationsSource = runResult.GeneratedTrees
             .FirstOrDefault(t => t.FilePath.Contains("Registration", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(registrationsSource);
         Assert.Contains("return services;", registrationsSource, StringComparison.Ordinal);
@@ -1271,7 +1350,7 @@ public class ProjectionEndpointsGeneratorTests
             RunGenerator(AttributeStubs, projectionSource);
         string? dtoSource = runResult.GeneratedTrees
             .FirstOrDefault(t => t.FilePath.Contains("WithStaticDto", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(dtoSource);
         Assert.Contains("Balance", dtoSource, StringComparison.Ordinal);
@@ -1373,7 +1452,7 @@ public class ProjectionEndpointsGeneratorTests
         string? mapperSource = runResult.GeneratedTrees.FirstOrDefault(t =>
                 t.FilePath.Contains("AccountBalanceProjectionMapper", StringComparison.Ordinal) &&
                 !t.FilePath.Contains("Registration", StringComparison.Ordinal))
-            ?.GetText()
+            ?.GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.NotNull(mapperSource);
         Assert.Contains(

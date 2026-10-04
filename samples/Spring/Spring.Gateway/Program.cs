@@ -16,7 +16,9 @@ using Mississippi.Inlet.Runtime;
 
 using MississippiSamples.Spring.Domain.Projections.BankAccountBalance;
 using MississippiSamples.Spring.Gateway;
-using MississippiSamples.Spring.Gateway.Controllers.Aggregates.Mappers;
+using MississippiSamples.Spring.Gateway.Controllers.Aggregates.Commands.AuthProof.Mappers;
+using MississippiSamples.Spring.Gateway.Controllers.Aggregates.Commands.BankAccount.Mappers;
+using MississippiSamples.Spring.Gateway.Controllers.Aggregates.Commands.MoneyTransferSaga.Mappers;
 using MississippiSamples.Spring.Gateway.Controllers.Projections.Mappers;
 using MississippiSamples.Spring.Gateway.McpTools;
 
@@ -73,11 +75,7 @@ builder.Services.AddControllers();
 // Add OpenAPI documentation
 builder.Services.AddOpenApi(options =>
 {
-    options.AddDocumentTransformer((
-        document,
-        _,
-        _
-    ) =>
+    options.AddDocumentTransformer((document, _, _) =>
     {
         document.Info.Title = "Spring Bank API";
         document.Info.Version = "v1";

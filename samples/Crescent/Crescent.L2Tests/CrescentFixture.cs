@@ -5,7 +5,10 @@ using Mississippi.Brooks.Runtime;
 using Mississippi.Brooks.Runtime.Storage.Cosmos;
 using Mississippi.Brooks.Serialization.Json;
 using Mississippi.DomainModeling.Abstractions;
+using Mississippi.Hosting.Runtime;
+using Mississippi.Tributary.Abstractions;
 using Mississippi.Tributary.Runtime;
+using Mississippi.Tributary.Runtime.Storage.Abstractions;
 using Mississippi.Tributary.Runtime.Storage.Cosmos;
 
 using Orleans;
@@ -90,6 +93,34 @@ public sealed class CrescentFixture
         orleansHost?.Services.GetRequiredService<IUxProjectionGrainFactory>() ??
         throw new InvalidOperationException("Orleans host not initialized.");
 
+    /// <summary>
+    ///     Gets the root reducer used to compute the counter aggregate's reducer hash.
+    /// </summary>
+    internal IRootReducer<CounterAggregate> CounterRootReducer =>
+        orleansHost?.Services.GetRequiredService<IRootReducer<CounterAggregate>>() ??
+        throw new InvalidOperationException("Orleans host not initialized.");
+
+    /// <summary>
+    ///     Gets the converter used to deserialize counter aggregate snapshots.
+    /// </summary>
+    internal ISnapshotStateConverter<CounterAggregate> CounterSnapshotStateConverter =>
+        orleansHost?.Services.GetRequiredService<ISnapshotStateConverter<CounterAggregate>>() ??
+        throw new InvalidOperationException("Orleans host not initialized.");
+
+    /// <summary>
+    ///     Gets the storage reader for the configured Cosmos snapshot provider.
+    /// </summary>
+    internal ISnapshotStorageReader SnapshotStorageReader =>
+        orleansHost?.Services.GetRequiredService<ISnapshotStorageReader>() ??
+        throw new InvalidOperationException("Orleans host not initialized.");
+
+    /// <summary>
+    ///     Gets the storage writer for the configured Cosmos snapshot provider.
+    /// </summary>
+    internal ISnapshotStorageWriter SnapshotStorageWriter =>
+        orleansHost?.Services.GetRequiredService<ISnapshotStorageWriter>() ??
+        throw new InvalidOperationException("Orleans host not initialized.");
+
     private static IHost BuildOrleansHost(
         string cosmosConnectionString,
         string blobConnectionString
@@ -108,9 +139,6 @@ public sealed class CrescentFixture
         builder.Logging.AddFilter("Orleans", LogLevel.Warning);
         builder.Logging.AddFilter("Mississippi", LogLevel.Debug);
 
-        // Add Mississippi event sourcing services
-        builder.Services.AddEventSourcingByService();
-
         // Add JSON serialization for event sourcing
         builder.Services.AddJsonSerialization();
 
@@ -123,10 +151,7 @@ public sealed class CrescentFixture
         // Brooks expects it as a keyed service with key BrookCosmosDefaults.CosmosClientServiceKey
         builder.Services.AddKeyedSingleton(
             BrookCosmosDefaults.CosmosClientServiceKey,
-            (
-                _,
-                _
-            ) => new CosmosClient(
+            (_, _) => new CosmosClient(
                 cosmosConnectionString,
                 new()
                 {
@@ -137,10 +162,7 @@ public sealed class CrescentFixture
         // Snapshots also need a keyed CosmosClient
         builder.Services.AddKeyedSingleton(
             SnapshotCosmosDefaults.CosmosClientServiceKey,
-            (
-                _,
-                _
-            ) => new CosmosClient(
+            (_, _) => new CosmosClient(
                 cosmosConnectionString,
                 new()
                 {
@@ -152,29 +174,7 @@ public sealed class CrescentFixture
         // BlobDistributedLockManager uses [FromKeyedServices(BrookCosmosDefaults.BlobLockingServiceKey)]
         builder.Services.AddKeyedSingleton(
             BrookCosmosDefaults.BlobLockingServiceKey,
-            (
-                _,
-                _
-            ) => new BlobServiceClient(blobConnectionString));
-
-        // Configure Cosmos DB storage for brooks (event streams)
-        // Use the overload without connection strings since we pre-registered the clients
-        builder.Services.AddCosmosBrookStorageProvider(o =>
-        {
-            o.CosmosClientServiceKey = BrookCosmosDefaults.CosmosClientServiceKey;
-            o.DatabaseId = "aspire-l2tests";
-            o.QueryBatchSize = 50;
-            o.MaxEventsPerBatch = 50;
-        });
-
-        // Configure Cosmos DB storage for snapshots
-        builder.Services.AddCosmosSnapshotStorageProvider(options =>
-        {
-            options.CosmosClientServiceKey = SnapshotCosmosDefaults.CosmosClientServiceKey;
-            options.DatabaseId = "aspire-l2tests";
-            options.ContainerId = "snapshots";
-            options.QueryBatchSize = 100;
-        });
+            (_, _) => new BlobServiceClient(blobConnectionString));
 
         // Register Counter aggregate domain (events, handlers, reducers, projections)
         builder.Services.AddCounterAggregate();
@@ -194,8 +194,28 @@ public sealed class CrescentFixture
             silo.AddMemoryStreams(BrookStreamingDefaults.OrleansStreamProviderName);
             silo.AddMemoryGrainStorage("PubSubStore");
 
-            // Tell Brooks which stream provider to use
-            silo.AddEventSourcing();
+            // Tell Brooks which stream provider to use and configure its Cosmos event storage.
+            silo.UseMississippi(runtime =>
+            {
+                // The keyed Cosmos and Blob clients were pre-registered above; this is host-owned mode.
+                runtime.AddCosmosBrookStorageProvider(cosmos =>
+                {
+                    cosmos.CosmosClientServiceKey = BrookCosmosDefaults.CosmosClientServiceKey;
+                    cosmos.DatabaseId = "aspire-l2tests";
+                    cosmos.QueryBatchSize = 50;
+                    cosmos.MaxEventsPerBatch = 50;
+                });
+
+                // Configure Cosmos DB storage for snapshots
+                runtime.AddCosmosSnapshotStorageProvider(snapshot =>
+                {
+                    snapshot.CosmosClientServiceKey = SnapshotCosmosDefaults.CosmosClientServiceKey;
+                    snapshot.DatabaseId = "aspire-l2tests";
+                    snapshot.ContainerId = "snapshots";
+                    snapshot.QueryBatchSize = 100;
+                });
+                runtime.AddEventSourcing();
+            });
         });
         IHost host = builder.Build();
 
@@ -378,7 +398,7 @@ public sealed class CrescentFixture
     }
 
     /// <inheritdoc />
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (orleansHost is not null)
         {
@@ -395,7 +415,7 @@ public sealed class CrescentFixture
 
     /// <inheritdoc />
 #pragma warning disable IDISP001 // Dispose created - appHost implements builder pattern; BuildAsync returns app that we dispose
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         try
         {
@@ -474,6 +494,38 @@ public sealed class CrescentFixture
             IsInitialized = false;
 
             // Re-throw to fail the test fixture, but keep the error captured for diagnostics
+            throw;
+        }
+    }
+
+    /// <summary>
+    ///     Restarts the Orleans host while leaving the Aspire-owned Cosmos and Azure Storage resources running.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation token to cancel the restart.</param>
+    /// <returns>A task representing the asynchronous restart operation.</returns>
+    internal async Task RestartOrleansHostAsync(
+        CancellationToken cancellationToken
+    )
+    {
+        EnsureInitialized();
+        IHost currentHost = orleansHost ?? throw new InvalidOperationException("Orleans host not initialized.");
+        orleansHost = null;
+        IsInitialized = false;
+        using (currentHost)
+        {
+            await currentHost.StopAsync(cancellationToken);
+        }
+
+        IHost restartedHost = BuildOrleansHost(CosmosConnectionString, BlobConnectionString);
+        try
+        {
+            await restartedHost.StartAsync(cancellationToken);
+            orleansHost = restartedHost;
+            IsInitialized = true;
+        }
+        catch
+        {
+            restartedHost.Dispose();
             throw;
         }
     }

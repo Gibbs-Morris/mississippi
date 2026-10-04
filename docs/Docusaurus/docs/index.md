@@ -24,7 +24,8 @@ Use this landing page to decide where to start: why Mississippi if you need the 
 | Understand the business value of Mississippi | [Why Mississippi](./why-mississippi/index.md) |
 | Understand what Mississippi is for and how the pieces fit together | [Concepts](./concepts/index.md) |
 | Evaluate or adopt a specific subsystem | The product-area sections below |
-| Find package names for independently adoptable areas | [Package Entry Points](#package-entry-points) |
+| Find the capability and packages for your task | [Capability and Package Map](./reference/capability-map.md) |
+| Build a feature with an AI assistant | [Build with AI](./how-to/build-with-ai.md) |
 | See a complete working application | [Samples](./samples/index.md) |
 
 ## Why Mississippi Exists

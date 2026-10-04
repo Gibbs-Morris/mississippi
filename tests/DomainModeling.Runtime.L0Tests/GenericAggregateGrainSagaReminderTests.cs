@@ -380,13 +380,8 @@ public sealed class GenericAggregateGrainSagaReminderTests
                 It.IsAny<string>(),
                 It.IsAny<long>(),
                 It.IsAny<CancellationToken>()))
-            .Returns<object, TestSagaState, string, long, CancellationToken>((
-                eventData,
-                _,
-                _,
-                _,
-                _
-            ) => ReferenceEquals(eventData, started) ? YieldEventsAsync(completed) : AsyncEnumerable.Empty<object>());
+            .Returns<object, TestSagaState, string, long, CancellationToken>((eventData, _, _, _, _) =>
+                ReferenceEquals(eventData, started) ? YieldEventsAsync(completed) : AsyncEnumerable.Empty<object>());
         GenericAggregateGrain<TestSagaState> grain = await CreateActivatedSagaGrainAsync(
             [started],
             writerMock: writerMock,
@@ -464,10 +459,7 @@ public sealed class GenericAggregateGrainSagaReminderTests
         Mock<IBrookEventConverter> converterMock = new();
         converterMock.Setup(c => c.ToDomainEvent(It.IsAny<BrookEvent>())).Returns(failed);
         converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
-            .Callback<BrookKey, IReadOnlyList<object>>((
-                _,
-                events
-            ) => convertedWrites.Add(events))
+            .Callback<BrookKey, IReadOnlyList<object>>((_, events) => convertedWrites.Add(events))
             .Returns(
                 ImmutableArray.Create(
                     new BrookEvent
@@ -482,9 +474,7 @@ public sealed class GenericAggregateGrainSagaReminderTests
         };
         Mock<ISnapshotCacheGrain<TestSagaState>> snapshotCacheMock = new();
         snapshotCacheMock.Setup(s => s.GetStateAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync((
-                CancellationToken _
-            ) => compensatingState);
+            .ReturnsAsync((CancellationToken _) => compensatingState);
         Mock<ISnapshotGrainFactory> snapshotFactoryMock = new();
         snapshotFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestSagaState>(It.IsAny<SnapshotKey>()))
             .Returns(snapshotCacheMock.Object);
@@ -542,10 +532,7 @@ public sealed class GenericAggregateGrainSagaReminderTests
         Mock<IBrookEventConverter> converterMock = new();
         converterMock.Setup(c => c.ToDomainEvent(It.IsAny<BrookEvent>())).Returns(unsupportedTail);
         converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
-            .Callback<BrookKey, IReadOnlyList<object>>((
-                _,
-                events
-            ) => convertedWrites.Add(events))
+            .Callback<BrookKey, IReadOnlyList<object>>((_, events) => convertedWrites.Add(events))
             .Returns(
                 ImmutableArray.Create(
                     new BrookEvent
@@ -612,10 +599,7 @@ public sealed class GenericAggregateGrainSagaReminderTests
         List<IReadOnlyList<object>> convertedWrites = [];
         Mock<IBrookEventConverter> converterMock = new();
         converterMock.Setup(c => c.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
-            .Callback<BrookKey, IReadOnlyList<object>>((
-                _,
-                events
-            ) => convertedWrites.Add(events))
+            .Callback<BrookKey, IReadOnlyList<object>>((_, events) => convertedWrites.Add(events))
             .Returns(
                 ImmutableArray.Create(
                     new BrookEvent

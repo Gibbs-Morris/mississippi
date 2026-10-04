@@ -189,6 +189,6 @@ internal sealed class BrookReaderGrain
         BrookMetrics.RecordRead(brookId, allEvents.Count, sw.Elapsed.TotalMilliseconds, "batch");
         BrookMetrics.RecordSliceFanOut(brookId, baseIndexes.Count);
         Logger.EventsBatchRead(brookId, allEvents.Count, baseIndexes.Count, sw.ElapsedMilliseconds);
-        return [..allEvents];
+        return [.. allEvents];
     }
 }
