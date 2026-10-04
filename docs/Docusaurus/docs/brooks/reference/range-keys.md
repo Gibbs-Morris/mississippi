@@ -58,9 +58,11 @@ Numeric fields are parsed before the length check, so their surrounding whitespa
 
 The separator is a delimiter; the key type does not provide an escaping scheme for names containing it.
 
+`default(BrookRangeKey)` and parameterless `new BrookRangeKey()` bypass the validating four-argument constructor. Their name and entity ID are null, and start and count are zero. Use the constructor or parsing methods when you need the validated representation described above.
+
 ## Failure Behavior
 
-- A null name, entity ID, or input string throws `ArgumentNullException`.
+- Passing a null name or entity ID to the four-argument constructor, or a null input string to `FromString()`, throws `ArgumentNullException`.
 - Passing a name containing `|` directly to the constructor throws `ArgumentException`. The constructor also throws `ArgumentException` when the normalized key length exceeds the limit.
 - A negative start or count throws `ArgumentOutOfRangeException`, including after successful numeric parsing.
 - Accessing `End` throws `ArgumentOutOfRangeException` if arithmetic overflow produces a position below `-1`.
