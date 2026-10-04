@@ -492,7 +492,9 @@ Describe 'CleanupCode invocation' {
         Set-Content -LiteralPath $solutionPath -Value '<Project />' -Encoding utf8
         Set-Content -LiteralPath $settingsPath -Value '<ApplicationSettings />' -Encoding utf8
 
-        Mock -CommandName Invoke-RepositoryProcess -ModuleName RepositoryAutomation -MockWith { }
+        Mock -CommandName Invoke-RepositoryProcess -ModuleName RepositoryAutomation -MockWith {
+            if ($Arguments.Count -eq 1 -and $Arguments[0] -eq '--version') { return '10.0.401' }
+        }
 
         Invoke-ReSharperCleanup `
             -SolutionPath $solutionPath `

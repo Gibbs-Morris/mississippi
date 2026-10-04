@@ -63,7 +63,9 @@ param(
 
     [Parameter(ParameterSetName = 'ExplicitFiles')]
     [Parameter(ParameterSetName = 'FileList')]
-    [switch]$PlanOnly
+    [switch]$PlanOnly,
+
+    [string]$LeaseDirectory
 )
 
 Set-StrictMode -Version Latest
@@ -71,7 +73,7 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $modulePath = Join-Path $repoRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1'
-Import-Module -Name $modulePath -Force
+Import-Module -Name $modulePath -Force -ErrorAction Stop
 
 function Get-SelectedCleanupPaths {
     [CmdletBinding()]
@@ -88,7 +90,12 @@ function Get-SelectedCleanupPaths {
     return @(Read-CleanupPathList -Path $SelectionFilePath)
 }
 
+$executionLease = $null
 try {
+    if (-not $PlanOnly) {
+        $executionLease = Enter-RepositoryExecutionLease -RepoRoot $repoRoot -OperationId ('cleanup-wrapper-' + [guid]::NewGuid().ToString('N')) -LeaseDirectory $LeaseDirectory
+        $repoRoot = $executionLease.RepositoryRoot
+    }
     if ($SkipSamples -and $SkipMississippi) {
         throw 'Both -SkipSamples and -SkipMississippi were provided. At least one solution must be enabled.'
     }
@@ -111,6 +118,7 @@ try {
             -SkipToolRestore:$SkipToolRestore `
             -SkipRestore:$SkipRestore `
             -SkipBuild:$SkipBuild
+        Write-Host 'ALL CLEANUP OPERATIONS COMPLETED SUCCESSFULLY' -ForegroundColor Green
         exit 0
     }
 
@@ -147,4 +155,8 @@ try {
 catch {
     Write-Error "Cleanup failed: $($_.Exception.Message)"
     exit 1
+}
+
+finally {
+    if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
 }

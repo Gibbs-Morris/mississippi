@@ -682,29 +682,24 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
     {
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<List<McpAggregateInfo>> aggregatesProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
-        {
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.RootNamespaceProperty,
-                out string? rootNamespace);
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.AssemblyNameProperty,
-                out string? assemblyName);
-            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                rootNamespace,
-                assemblyName,
-                source.Compilation);
-            return GetAggregatesFromCompilation(source.Compilation, targetRootNamespace);
-        });
+        IncrementalValueProvider<List<McpAggregateInfo>> aggregatesProvider =
+            compilationAndOptions.Select((source, _) =>
+            {
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.RootNamespaceProperty,
+                    out string? rootNamespace);
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.AssemblyNameProperty,
+                    out string? assemblyName);
+                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                    rootNamespace,
+                    assemblyName,
+                    source.Compilation);
+                return GetAggregatesFromCompilation(source.Compilation, targetRootNamespace);
+            });
         context.RegisterSourceOutput(
             aggregatesProvider,
-            static (
-                spc,
-                aggregates
-            ) =>
+            static (spc, aggregates) =>
             {
                 foreach (McpAggregateInfo aggregate in aggregates)
                 {

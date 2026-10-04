@@ -2,14 +2,28 @@
 
 <#
 .SYNOPSIS
-    Performs a fast, strict build of both solutions by invoking eng\\src\\agent-scripts\\final-build-solutions.ps1.
+    Performs a fast, strict build of both solutions through the final-build script.
+.PARAMETER LeaseDirectory
+    Shared coordination directory used for cross-account worktree execution leases.
 #>
+
+[CmdletBinding()]
+param(
+    [string]$Configuration = 'Release',
+    [string]$LeaseDirectory
+)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
 
 # Determine the script directory (repo root)
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 # Build the path to the final-build script
-$finalBuildScript = Join-Path $scriptDir 'eng\\src\\agent-scripts\\final-build-solutions.ps1'
+$finalBuildScript = Join-Path $scriptDir 'eng' 'src' 'agent-scripts' 'final-build-solutions.ps1'
+$leaseArguments = @()
+if (-not [string]::IsNullOrWhiteSpace($LeaseDirectory)) { $leaseArguments = @('-LeaseDirectory', $LeaseDirectory) }
 
 Write-Host "=== QUICK BUILD MODE ===" -ForegroundColor Yellow
 Write-Host "Fast build with warnings as errors (bypasses tests and cleanup)"
@@ -18,7 +32,7 @@ Write-Host ""
 
 try {
     # Execute the final-build script and wait for completion
-    & $finalBuildScript @args
+    & $powerShellPath -NoProfile -File $finalBuildScript -Configuration $Configuration @leaseArguments
     if ($LASTEXITCODE -ne 0) {
         throw "final-build-solutions.ps1 failed with exit code $LASTEXITCODE"
     }
@@ -29,3 +43,4 @@ try {
     exit 1
 }
 
+exit 0

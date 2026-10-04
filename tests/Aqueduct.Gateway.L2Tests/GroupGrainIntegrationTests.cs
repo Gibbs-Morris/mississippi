@@ -43,7 +43,7 @@ public sealed class GroupGrainIntegrationTests
         Func<Task> act = () => groupGrain.AddConnectionAsync(connectionId);
 
         // Assert
-        await act.Should().NotThrowAsync();
+        Assert.Null(await Record.ExceptionAsync(act));
     }
 
     /// <summary>
@@ -68,8 +68,8 @@ public sealed class GroupGrainIntegrationTests
         ImmutableHashSet<string> connections = await groupGrain.GetConnectionsAsync();
 
         // Assert - should only have one entry
-        connections.Should().HaveCount(1);
-        connections.Should().Contain(connectionId);
+        Assert.Single(connections);
+        Assert.Contains(connectionId, connections);
     }
 
     /// <summary>
@@ -88,7 +88,7 @@ public sealed class GroupGrainIntegrationTests
         ImmutableHashSet<string> connections = await groupGrain.GetConnectionsAsync();
 
         // Assert
-        connections.Should().BeEmpty();
+        Assert.Empty(connections);
     }
 
     /// <summary>
@@ -111,9 +111,9 @@ public sealed class GroupGrainIntegrationTests
         ImmutableHashSet<string> connections = await groupGrain.GetConnectionsAsync();
 
         // Assert
-        connections.Should().Contain(connectionId1);
-        connections.Should().Contain(connectionId2);
-        connections.Should().HaveCount(2);
+        Assert.Contains(connectionId1, connections);
+        Assert.Contains(connectionId2, connections);
+        Assert.Equal(2, connections.Count);
     }
 
     /// <summary>
@@ -137,9 +137,9 @@ public sealed class GroupGrainIntegrationTests
         ImmutableHashSet<string> connections = await groupGrain.GetConnectionsAsync();
 
         // Assert
-        connections.Should().NotContain(connectionId1);
-        connections.Should().Contain(connectionId2);
-        connections.Should().HaveCount(1);
+        Assert.DoesNotContain(connectionId1, connections);
+        Assert.Contains(connectionId2, connections);
+        Assert.Single(connections);
     }
 
     /// <summary>
@@ -159,7 +159,7 @@ public sealed class GroupGrainIntegrationTests
         Func<Task> act = () => groupGrain.RemoveConnectionAsync(connectionId);
 
         // Assert
-        await act.Should().NotThrowAsync();
+        Assert.Null(await Record.ExceptionAsync(act));
     }
 
     /// <summary>
@@ -178,6 +178,6 @@ public sealed class GroupGrainIntegrationTests
         Func<Task> act = () => groupGrain.SendMessageAsync("Method", []);
 
         // Assert
-        await act.Should().NotThrowAsync();
+        Assert.Null(await Record.ExceptionAsync(act));
     }
 }

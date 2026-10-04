@@ -270,8 +270,8 @@ public class CommandModelTests
         IPropertySymbol withoutGetter = CreatePropertySymbol("WithoutGetter", hasGetter: false);
         INamedTypeSymbol typeSymbol = CreateCommandTypeSymbolWithMembers("CreateOrder", withGetter, withoutGetter);
         CommandModel model = new(typeSymbol, "create", "POST");
-        Assert.Single(model.Properties);
-        Assert.Equal("WithGetter", model.Properties[0].Name);
+        PropertyModel item = Assert.Single(model.Properties);
+        Assert.Equal("WithGetter", item.Name);
     }
 
     /// <summary>
@@ -284,8 +284,8 @@ public class CommandModelTests
         IPropertySymbol staticProp = CreatePropertySymbol("Static", true);
         INamedTypeSymbol typeSymbol = CreateCommandTypeSymbolWithMembers("CreateOrder", instanceProp, staticProp);
         CommandModel model = new(typeSymbol, "create", "POST");
-        Assert.Single(model.Properties);
-        Assert.Equal("Instance", model.Properties[0].Name);
+        PropertyModel item = Assert.Single(model.Properties);
+        Assert.Equal("Instance", item.Name);
     }
 
     /// <summary>

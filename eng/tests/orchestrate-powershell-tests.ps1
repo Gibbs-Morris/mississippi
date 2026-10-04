@@ -18,10 +18,17 @@ $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 $testsRoot = Join-Path $repoRoot 'eng/tests/agent-scripts'
 
 $testRunners = @(
+    @{ Name = 'run-repository-automation-tests.ps1'; Type = 'Pester' },
+    @{ Name = 'run-spring-validation-tests.ps1'; Type = 'Pester' },
     @{ Name = 'run-cleanup-tests.ps1';          Type = 'Pester' },
     @{ Name = 'run-scratchpad-task-tests.ps1';   Type = 'Pester' },
     @{ Name = 'run-summarize-coverage-gaps-tests.ps1'; Type = 'Pester' },
+    @{ Name = 'run-pr-issue-reference-tests.ps1'; Type = 'Pester' },
     @{ Name = 'run-task-automation-tests.ps1';   Type = 'Pester' },
+    @{ Name = 'run-validation-plan-tests.ps1';   Type = 'Pester' },
+    @{ Name = 'run-issue-spec-tests.ps1';        Type = 'Pester' },
+    @{ Name = 'run-agent-doctor-tests.ps1';      Type = 'Pester' },
+    @{ Name = 'run-agent-context-tests.ps1';    Type = 'Pester' },
     @{ Name = 'verify-scratchpad-task-scripts.ps1';    Type = 'Script' }
 )
 
@@ -51,41 +58,36 @@ $failureCount = 0
 
 foreach ($runner in $testRunners) {
     $path = Join-Path $testsRoot $runner.Name
-    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-        Write-Host "Skipping missing test runner: $($runner.Name)" -ForegroundColor DarkGray
-        continue
-    }
-
     Write-Host "Executing: $($runner.Name)" -ForegroundColor Cyan
     try {
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            throw "Test runner not found: $($runner.Name)"
+        }
+
         if ($runner.Type -eq 'Pester') {
             $result = & $path -PassThru
-
-            # Determine failures across Pester versions
-            $failedCount = 0
-            if ($null -ne $result) {
-                if ($result.PSObject.Properties.Name -contains 'FailedCount') {
-                    $failedCount = [int]$result.FailedCount
-                }
-                elseif ($result.PSObject.Properties.Name -contains 'Failed') {
-                    $failedCount = [int]$result.Failed
-                }
-                elseif ($result.PSObject.Properties.Name -contains 'TestResult') {
-                    $failedCount = @($result.TestResult | Where-Object { $_.Result -eq 'Failed' -or $_.Outcome -eq 'Failed' }).Count
-                }
+            if ($null -eq $result -or $result.TotalCount -lt 1) {
+                throw "Pester runner returned no tests: $($runner.Name)"
             }
 
-            $status = if ($failedCount -gt 0) { 'Failed' } else { 'Passed' }
-            if ($failedCount -gt 0) { $failureCount++ }
+            # Result also covers discovery and container failures with no failed tests.
+            $status = if ($result.Result -eq 'Passed' -and $result.FailedCount -eq 0) { 'Passed' } else { 'Failed' }
+            $failedCount = if ($status -eq 'Failed') { [Math]::Max(1, $result.FailedCount) } else { 0 }
+            if ($status -eq 'Failed') { $failureCount++ }
             $results += [pscustomobject]@{ Name = $runner.Name; Type = 'Pester'; Status = $status; Failed = $failedCount }
         }
         else {
-            & $path
+            $powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
+            & $powerShellPath -NoProfile -File $path | Out-Host
+            if ($LASTEXITCODE -ne 0) {
+                throw "Test runner exited with code ${LASTEXITCODE}: $($runner.Name)"
+            }
             $results += [pscustomobject]@{ Name = $runner.Name; Type = 'Script'; Status = 'Passed'; Failed = 0 }
         }
     }
     catch {
         $failureCount++
+        Write-Host "FAILED: $($runner.Name): $($_.Exception.Message)" -ForegroundColor Red
         $results += [pscustomobject]@{ Name = $runner.Name; Type = $runner.Type; Status = 'Failed'; Failed = 1; Error = $_.Exception.Message }
     }
 }

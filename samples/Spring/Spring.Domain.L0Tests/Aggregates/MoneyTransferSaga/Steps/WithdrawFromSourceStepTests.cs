@@ -41,8 +41,8 @@ public sealed class WithdrawFromSourceStepTests
             },
         };
         CompensationResult result = await step.CompensateAsync(state, CancellationToken.None);
-        result.Success.Should().BeFalse();
-        result.ErrorCode.Should().Be("ERR");
+        Assert.False(result.Success);
+        Assert.Equal("ERR", result.ErrorCode);
         grain.Verify(g => g.ExecuteAsync(It.IsAny<DepositFunds>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -57,7 +57,7 @@ public sealed class WithdrawFromSourceStepTests
         WithdrawFromSourceStep step = new(factory.Object);
         MoneyTransferSagaState state = new();
         CompensationResult result = await step.CompensateAsync(state, CancellationToken.None);
-        result.Skipped.Should().BeTrue();
+        Assert.True(result.Skipped);
     }
 
     /// <summary>
@@ -79,8 +79,8 @@ public sealed class WithdrawFromSourceStepTests
             },
         };
         StepResult result = await step.ExecuteAsync(state, CancellationToken.None);
-        result.Success.Should().BeFalse();
-        result.ErrorCode.Should().Be(AggregateErrorCodes.InvalidCommand);
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidCommand, result.ErrorCode);
     }
 
     /// <summary>
@@ -106,7 +106,7 @@ public sealed class WithdrawFromSourceStepTests
             },
         };
         StepResult result = await step.ExecuteAsync(state, CancellationToken.None);
-        result.Success.Should().BeTrue();
+        Assert.True(result.Success);
         grain.Verify(g => g.ExecuteAsync(It.IsAny<WithdrawFunds>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -121,7 +121,7 @@ public sealed class WithdrawFromSourceStepTests
         WithdrawFromSourceStep step = new(factory.Object);
         MoneyTransferSagaState state = new();
         StepResult result = await step.ExecuteAsync(state, CancellationToken.None);
-        result.Success.Should().BeFalse();
-        result.ErrorCode.Should().Be(AggregateErrorCodes.InvalidState);
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
     }
 }

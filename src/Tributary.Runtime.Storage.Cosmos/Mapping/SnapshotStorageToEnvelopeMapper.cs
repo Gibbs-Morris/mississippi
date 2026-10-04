@@ -21,5 +21,6 @@ internal sealed class SnapshotStorageToEnvelopeMapper : IMapper<SnapshotStorageM
             Data = input.Data.ToImmutableArray(),
             DataSizeBytes = input.DataSizeBytes,
             DataContentType = input.DataContentType,
+            ReducerHash = input.StreamKey.ReducersHash,
         };
 }

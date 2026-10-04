@@ -4,8 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using FluentAssertions;
-
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
@@ -97,7 +95,7 @@ public sealed class StoreTestHarnessTests
         using StoreScenario<TestState> scenario = harness.CreateScenario();
 
         // Assert
-        scenario.State.Value.Should().Be("initial");
+        Assert.Equal("initial", scenario.State.Value);
     }
 
     /// <summary>
@@ -120,7 +118,7 @@ public sealed class StoreTestHarnessTests
         }
 
         // Assert
-        emitted.Should().ContainSingle().Which.Should().BeEquivalentTo(new ValueSetNotification("value:dep"));
+        Assert.Equivalent(new ValueSetNotification("value:dep"), Assert.Single(emitted), true);
     }
 
     /// <summary>
@@ -131,17 +129,11 @@ public sealed class StoreTestHarnessTests
     {
         // Arrange
         StoreTestHarness<TestState> harness = StoreTestHarnessFactory.ForFeature<TestState>()
-            .WithReducer<SetValueAction>((
-                state,
-                action
-            ) => state with
+            .WithReducer<SetValueAction>((state, action) => state with
             {
                 Value = action.Value,
             })
-            .WithReducer<IncrementAction>((
-                state,
-                _
-            ) => state with
+            .WithReducer<IncrementAction>((state, _) => state with
             {
                 Counter = state.Counter + 1,
             });
@@ -152,8 +144,8 @@ public sealed class StoreTestHarnessTests
             .When(new IncrementAction())
             .ThenState(s =>
             {
-                s.Value.Should().Be("initial");
-                s.Counter.Should().Be(1);
+                Assert.Equal("initial", s.Value);
+                Assert.Equal(1, s.Counter);
             })
             .ThenEmitsNothing();
     }
@@ -166,10 +158,7 @@ public sealed class StoreTestHarnessTests
     {
         // Arrange
         StoreTestHarness<TestState> harness = StoreTestHarnessFactory.ForFeature<TestState>()
-            .WithReducer<SetValueAction>((
-                state,
-                action
-            ) => state with
+            .WithReducer<SetValueAction>((state, action) => state with
             {
                 Value = action.Value,
             });
@@ -179,7 +168,7 @@ public sealed class StoreTestHarnessTests
         scenario.Given(new SetValueAction("first"), new SetValueAction("second"));
 
         // Assert
-        scenario.State.Value.Should().Be("second");
+        Assert.Equal("second", scenario.State.Value);
     }
 
     /// <summary>
@@ -200,7 +189,7 @@ public sealed class StoreTestHarnessTests
             });
 
         // Assert
-        scenario.State.Value.Should().Be("direct");
+        Assert.Equal("direct", scenario.State.Value);
     }
 
     /// <summary>
@@ -211,10 +200,7 @@ public sealed class StoreTestHarnessTests
     {
         // Arrange
         StoreTestHarness<TestState> harness = StoreTestHarnessFactory.ForFeature<TestState>()
-            .WithReducer<SetValueAction>((
-                state,
-                action
-            ) => state with
+            .WithReducer<SetValueAction>((state, action) => state with
             {
                 Value = action.Value,
             });
@@ -224,7 +210,7 @@ public sealed class StoreTestHarnessTests
         scenario.When(new SetValueAction("test")).ThenEmitsNothing();
 
         // Assert
-        scenario.EmittedActions.Should().BeEmpty();
+        Assert.Empty(scenario.EmittedActions);
     }
 
     /// <summary>
@@ -243,7 +229,9 @@ public sealed class StoreTestHarnessTests
 
         // Assert
         Action act = () => scenario.ThenEmitsNothing();
-        act.Should().Throw<InvalidOperationException>().WithMessage("*Expected no actions*ValueSetNotification*");
+        Assert.Matches(
+            "(?is)^.*Expected no actions.*ValueSetNotification.*$",
+            Assert.ThrowsAny<InvalidOperationException>(act).Message);
     }
 
     /// <summary>
@@ -258,7 +246,7 @@ public sealed class StoreTestHarnessTests
 
         // Act & Assert - should not throw
         using StoreScenario<TestState> scenario = harness.CreateScenario();
-        scenario.When(new SetValueAction("test")).ThenEmits<ValueSetNotification>(n => n.Value.Should().Be("test"));
+        scenario.When(new SetValueAction("test")).ThenEmits<ValueSetNotification>(n => Assert.Equal("test", n.Value));
     }
 
     /// <summary>
@@ -276,7 +264,9 @@ public sealed class StoreTestHarnessTests
 
         // Assert
         Action act = () => scenario.ThenEmits<ValueSetNotification>();
-        act.Should().Throw<InvalidOperationException>().WithMessage("*Expected action*ValueSetNotification*");
+        Assert.Matches(
+            "(?is)^.*Expected action.*ValueSetNotification.*$",
+            Assert.ThrowsAny<InvalidOperationException>(act).Message);
     }
 
     /// <summary>
@@ -287,17 +277,14 @@ public sealed class StoreTestHarnessTests
     {
         // Arrange
         StoreTestHarness<TestState> harness = StoreTestHarnessFactory.ForFeature<TestState>()
-            .WithReducer<SetValueAction>((
-                state,
-                action
-            ) => state with
+            .WithReducer<SetValueAction>((state, action) => state with
             {
                 Value = action.Value,
             });
 
         // Act & Assert - should not throw
         using StoreScenario<TestState> scenario = harness.CreateScenario();
-        scenario.When(new SetValueAction("expected")).ThenState(s => s.Value.Should().Be("expected"));
+        scenario.When(new SetValueAction("expected")).ThenState(s => Assert.Equal("expected", s.Value));
     }
 
     /// <summary>
@@ -308,10 +295,7 @@ public sealed class StoreTestHarnessTests
     {
         // Arrange
         StoreTestHarness<TestState> harness = StoreTestHarnessFactory.ForFeature<TestState>()
-            .WithReducer<SetValueAction>((
-                state,
-                action
-            ) => state with
+            .WithReducer<SetValueAction>((state, action) => state with
             {
                 Value = action.Value,
             })
@@ -322,8 +306,8 @@ public sealed class StoreTestHarnessTests
         scenario.When(new SetValueAction("test"));
 
         // Assert
-        scenario.State.Value.Should().Be("test");
-        scenario.EmittedActions.Should().ContainSingle().Which.Should().BeOfType<ValueSetNotification>();
+        Assert.Equal("test", scenario.State.Value);
+        Assert.IsType<ValueSetNotification>(Assert.Single(scenario.EmittedActions));
     }
 
     /// <summary>
@@ -339,6 +323,7 @@ public sealed class StoreTestHarnessTests
 
         // Act & Assert
         using StoreScenario<TestState> scenario = harness.CreateScenario();
-        scenario.When(new SetValueAction("test")).ThenEmits<ValueSetNotification>(n => n.Value.Should().Be("test:dep"));
+        scenario.When(new SetValueAction("test"))
+            .ThenEmits<ValueSetNotification>(n => Assert.Equal("test:dep", n.Value));
     }
 }

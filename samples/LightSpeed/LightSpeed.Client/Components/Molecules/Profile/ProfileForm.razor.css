@@ -1,0 +1,10 @@
+.profile-form { display: grid; gap: 1.75rem; }
+.form-heading { display: flex; gap: 1rem; align-items: flex-start; }
+.step { color: var(--rf-color-text-accent); font: 1rem var(--rf-raw-font-mono); padding-top: .3rem; }
+h2 { margin: 0 0 .5rem; font-size: 1.35rem; }
+p { margin: 0; color: var(--rf-color-text-secondary); line-height: 1.5; }
+.actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+button { padding: .8rem 1rem; border: 1px solid var(--rf-color-text-muted); background: transparent; color: var(--rf-color-text-primary); font: inherit; cursor: pointer; }
+button.primary { border-color: var(--rf-color-action-primary); color: var(--rf-color-text-accent); background: var(--rf-color-surface-glass); }
+button:focus-visible { outline: 2px solid var(--rf-color-focus-ring); outline-offset: 3px; }
+.status { min-height: 1.5rem; font-size: .85rem; }

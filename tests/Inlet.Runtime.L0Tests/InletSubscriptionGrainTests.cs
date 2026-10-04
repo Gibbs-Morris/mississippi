@@ -94,8 +94,8 @@ public sealed class InletSubscriptionGrainTests
         ImmutableList<InletSubscription> subscriptions = await grain.GetSubscriptionsAsync();
 
         // Assert
-        Assert.Single(subscriptions);
-        Assert.Equal(subscriptionId, subscriptions[0].SubscriptionId);
+        InletSubscription item = Assert.Single(subscriptions);
+        Assert.Equal(subscriptionId, item.SubscriptionId);
         Assert.Equal(TestProjections.TestProjection2, subscriptions[0].Path);
         Assert.Equal("entity-1", subscriptions[0].EntityId);
     }

@@ -34,7 +34,7 @@ public sealed class FundsDepositedBalanceReducerTests
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Balance.Should().Be(750.00m);
+        Assert.Equal(750.00m, result.Balance);
     }
 
     /// <summary>
@@ -59,8 +59,8 @@ public sealed class FundsDepositedBalanceReducerTests
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.HolderName.Should().Be("Jane Doe");
-        result.IsOpen.Should().BeTrue();
+        Assert.Equal("Jane Doe", result.HolderName);
+        Assert.True(result.IsOpen);
     }
 
     /// <summary>
@@ -84,7 +84,7 @@ public sealed class FundsDepositedBalanceReducerTests
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Balance.Should().Be(1_000_999_999.99m);
+        Assert.Equal(1_000_999_999.99m, result.Balance);
     }
 
     /// <summary>
@@ -122,7 +122,7 @@ public sealed class FundsDepositedBalanceReducerTests
             });
 
         // Assert
-        state.Balance.Should().Be(350.00m);
+        Assert.Equal(350.00m, state.Balance);
     }
 
     /// <summary>
@@ -168,6 +168,6 @@ public sealed class FundsDepositedBalanceReducerTests
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Balance.Should().Be(100.00m);
+        Assert.Equal(100.00m, result.Balance);
     }
 }

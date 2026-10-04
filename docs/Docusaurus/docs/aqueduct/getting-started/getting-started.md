@@ -1,58 +1,119 @@
 ---
 id: aqueduct-getting-started
-title: Aqueduct Getting Started
+title: Aqueduct Runtime Getting Started
 sidebar_label: Getting Started
 sidebar_position: 1
-description: Start with Aqueduct by choosing the correct package boundary and neighboring Mississippi areas.
+description: Build and run a local Orleans host with Aqueduct through the Mississippi runtime composition API.
 ---
 
-# Aqueduct Getting Started
+# Aqueduct Runtime Getting Started
 
 ## Overview
 
-Use this page to identify whether Aqueduct is the right subsystem for your problem and which package boundary to inspect first.
+Build and run a local Orleans silo with Aqueduct's in-memory SignalR backplane through one verified source-checkout
+path.
 
-## What You Will Achieve
+## What you will achieve
 
-By the end of this page, you should know whether your question is about the Aqueduct backplane itself, a higher-level Inlet scenario, or a different Mississippi layer entirely.
+You will create a small host that starts Orleans with localhost clustering, registers Aqueduct through
+`UseMississippi(...)`, and stops cleanly when you press Ctrl+C.
 
-## Before You Begin
+## Prerequisites
 
-- Read the [Aqueduct overview](../index.md).
-- If your question is about projection delivery rather than backplane infrastructure, also read [Inlet](../../inlet/index.md).
+- A Mississippi checkout with the `Mississippi.Sdk.Runtime` project used by this documentation.
+- The .NET SDK selected by that checkout's `global.json`. The verification for this page used SDK `10.0.400`.
+- PowerShell 7 or later.
 
-## First Verified Success
+The temporary project below references the checkout's `Mississippi.Sdk.Runtime` project directly so its APIs match this
+documentation.
 
-1. Read the [Aqueduct overview](../index.md) and confirm the problem is about Orleans-backed push delivery into SignalR rather than domain behavior or client state.
-2. Open [Aqueduct Reference](../reference/reference.md) and identify which of the three package boundaries matches the question you are trying to answer.
-3. If the question is actually about full-stack projection delivery, switch immediately to [Inlet](../../inlet/index.md) instead of continuing here.
+## Install
 
-## Choose Your Starting Point
+Run these commands from the root of the checkout. The repository's `global.json` selects the SDK used by
+the commands; inspect `dotnet --version` before continuing.
 
-- Start with `Mississippi.Aqueduct.Abstractions` when you need contracts and options without runtime hosting concerns.
-- Start with `Mississippi.Aqueduct.Gateway` when your question is about gateway-side hub lifetime management or notifier registration.
-- Start with `Mississippi.Aqueduct.Runtime` when your question is about runtime-side backplane registration.
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+dotnet --version
+New-Item -ItemType Directory -Force .scratchpad/aqueduct-getting-started | Out-Null
+dotnet new console --framework net10.0 --output .scratchpad/aqueduct-getting-started --name AqueductGettingStarted
+dotnet add .scratchpad/aqueduct-getting-started/AqueductGettingStarted.csproj reference src/Sdk.Runtime/Sdk.Runtime.csproj
+```
 
-## Verify You Are In The Right Section
+The `dotnet add reference` command adds the checkout's `Mississippi.Sdk.Runtime` project to the temporary app, keeping
+the APIs used by the program aligned with this documentation.
 
-- Stay in Aqueduct when the concern is SignalR backplane behavior across hosts.
-- Move to [Inlet](../../inlet/index.md) when the concern is full-stack projection delivery.
-- Move to [Domain Modeling](../../domain-modeling/index.md) when the concern is domain behavior rather than transport.
+## Create the project
 
-## Verify The Result
+Replace `Program.cs` in the temporary project with this complete host:
 
-- You should be able to name the correct package boundary or decide that the question belongs in Inlet instead.
+```csharp
+using System;
 
-## Current Scope
+using Microsoft.Extensions.Hosting;
 
-This page covers package selection and subsystem orientation. For runnable end-to-end examples, see the [Spring sample](../../samples/spring-sample/index.md).
+using Mississippi.Aqueduct.Runtime;
+using Mississippi.Hosting.Runtime;
+
+using Orleans.Hosting;
+
+
+HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+builder.UseOrleans(siloBuilder =>
+{
+    siloBuilder.UseLocalhostClustering();
+    siloBuilder.UseMississippi(runtime =>
+    {
+        runtime.AddAqueduct(aqueduct => aqueduct.UseMemoryStreams());
+        runtime.ApplyToSilo(siloBuilder);
+    });
+});
+
+using IHost host = builder.Build();
+await host.RunAsync();
+```
+
+## Verify it works
+
+Restore and compile the temporary project, then run it from the checkout root:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+dotnet --version
+dotnet restore .scratchpad/aqueduct-getting-started/AqueductGettingStarted.csproj --use-lock-file
+dotnet build .scratchpad/aqueduct-getting-started/AqueductGettingStarted.csproj -c Release --no-incremental --no-restore -warnaserror
+dotnet run --project .scratchpad/aqueduct-getting-started/AqueductGettingStarted.csproj -c Release --no-build --no-restore
+```
+
+The build must report `Build succeeded`, `0 Warning(s)`, and `0 Error(s)`. After startup, press Ctrl+C once. The
+normal Orleans and Generic Host logs should include these lines:
+
+```text
+Orleans Silo started.
+Application started. Press Ctrl+C to shut down.
+Application is shutting down...
+Orleans Silo stopped.
+```
+
+The verification run for this page reached all four lines and returned after the silo stopped through the normal host
+shutdown path. Ctrl+C performs the normal Orleans shutdown, including stopping the silo and its stream agents.
+
+## What happened
+
+`UseLocalhostClustering()` configured a local Orleans silo. The `UseMississippi(...)` callback staged the runtime
+composition, and `runtime.AddAqueduct(...)` enabled memory streams with the default provider name
+`mississippi-streaming`.
+`runtime.ApplyToSilo(siloBuilder)` is the recommended explicit native-configuration hook. The nested builder also
+registered the Orleans `PubSubStore` convention required by the memory stream setup.
 
 ## Summary
 
-Aqueduct is the right starting point when the problem is Orleans-backed SignalR backplane infrastructure, not domain behavior or higher-level generated delivery surfaces.
+The source-checkout path above provides one executable local Aqueduct runtime setup. It starts and stops a real Orleans
+silo using the canonical nested composition path and the SDK project reference from the checkout.
 
 ## Next Steps
 
-- Read [Aqueduct Concepts](../concepts/concepts.md).
-- Use [Aqueduct Reference](../reference/reference.md) for the currently verified package surface.
-- Use [Aqueduct Operations](../operations/operations.md) if your next question is operational.
+- Use [How To Configure Aqueduct Runtime Composition](../how-to/how-to.md) for host-owned providers and configuration
+  overloads.
+- Read [Aqueduct Reference](../reference/reference.md) for the complete runtime contract and diagnostics.
+- Read [Aqueduct Concepts](../concepts/concepts.md) for the composition lifecycle.

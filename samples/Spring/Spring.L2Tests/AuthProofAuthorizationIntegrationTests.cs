@@ -10,21 +10,21 @@ namespace MississippiSamples.Spring.L2Tests;
 /// <summary>
 ///     Integration tests proving generated endpoint authorization behavior for the Spring auth-proof slice.
 /// </summary>
-[Collection(SpringTestCollection.Name)]
+[Collection(SpringApiCollectionDefinition.Name)]
 public sealed class AuthProofAuthorizationIntegrationTests
 {
     private static readonly TimeSpan EventualConsistencyTimeout = TimeSpan.FromSeconds(30);
 
     private static readonly TimeSpan PollingInterval = TimeSpan.FromMilliseconds(500);
 
-    private readonly SpringFixture fixture;
+    private readonly SpringApplicationFixture fixture;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="AuthProofAuthorizationIntegrationTests" /> class.
     /// </summary>
     /// <param name="fixture">The shared Spring fixture.</param>
     public AuthProofAuthorizationIntegrationTests(
-        SpringFixture fixture
+        SpringApplicationFixture fixture
     ) =>
         this.fixture = fixture;
 
@@ -182,8 +182,8 @@ public sealed class AuthProofAuthorizationIntegrationTests
     [Fact]
     public async Task AuthenticatedEndpointShouldReturn401ForAnonymousRequest()
     {
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
+        HttpClient client = fixture.GatewayClient;
         string aggregateId = $"auth-proof-{Guid.NewGuid():N}";
         using HttpResponseMessage response = await PostAuthProofCommandAsync(
             client,
@@ -193,7 +193,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
             {
                 ["X-Spring-Anonymous"] = "true",
             });
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     /// <summary>
@@ -203,8 +203,8 @@ public sealed class AuthProofAuthorizationIntegrationTests
     [Fact]
     public async Task PolicyProtectedEndpointShouldReturn200WhenClaimPresent()
     {
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
+        HttpClient client = fixture.GatewayClient;
         string aggregateId = $"auth-proof-{Guid.NewGuid():N}";
         using HttpResponseMessage response = await PostAuthProofCommandAsync(
             client,
@@ -216,7 +216,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
                 ["X-Spring-Roles"] = "none",
                 ["X-Spring-Claims"] = "spring.permission=auth-proof",
             });
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     /// <summary>
@@ -226,8 +226,8 @@ public sealed class AuthProofAuthorizationIntegrationTests
     [Fact]
     public async Task PolicyProtectedEndpointShouldReturn403WhenClaimMissing()
     {
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
+        HttpClient client = fixture.GatewayClient;
         string aggregateId = $"auth-proof-{Guid.NewGuid():N}";
         using HttpResponseMessage response = await PostAuthProofCommandAsync(
             client,
@@ -238,7 +238,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
                 ["X-Spring-User"] = "auth-proof-insufficient",
                 ["X-Spring-Roles"] = "none",
             });
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     /// <summary>
@@ -248,8 +248,8 @@ public sealed class AuthProofAuthorizationIntegrationTests
     [Fact]
     public async Task ProjectionEndpointShouldReturn200WhenClaimPresent()
     {
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
+        HttpClient client = fixture.GatewayClient;
         string aggregateId = $"auth-proof-{Guid.NewGuid():N}";
         Dictionary<string, string> authorizedHeaders = new()
         {
@@ -263,15 +263,16 @@ public sealed class AuthProofAuthorizationIntegrationTests
                    "authenticated",
                    authorizedHeaders))
         {
-            commandResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, commandResponse.StatusCode);
         }
 
         HttpStatusCode projectionStatusCode = await WaitForProjectionStatusCodeAsync(
             client,
             aggregateId,
             authorizedHeaders,
-            HttpStatusCode.OK);
-        projectionStatusCode.Should().Be(HttpStatusCode.OK);
+            HttpStatusCode.OK,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, projectionStatusCode);
     }
 
     /// <summary>
@@ -281,8 +282,8 @@ public sealed class AuthProofAuthorizationIntegrationTests
     [Fact]
     public async Task ProjectionEndpointShouldReturn401ForAnonymousRequest()
     {
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
+        HttpClient client = fixture.GatewayClient;
         string aggregateId = $"auth-proof-{Guid.NewGuid():N}";
         using HttpResponseMessage response = await GetAuthProofProjectionAsync(
             client,
@@ -290,8 +291,9 @@ public sealed class AuthProofAuthorizationIntegrationTests
             new Dictionary<string, string>
             {
                 ["X-Spring-Anonymous"] = "true",
-            });
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            },
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     /// <summary>
@@ -301,8 +303,8 @@ public sealed class AuthProofAuthorizationIntegrationTests
     [Fact]
     public async Task ProjectionEndpointShouldReturn403WhenClaimMissing()
     {
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
+        HttpClient client = fixture.GatewayClient;
         string aggregateId = $"auth-proof-{Guid.NewGuid():N}";
         using HttpResponseMessage response = await GetAuthProofProjectionAsync(
             client,
@@ -311,8 +313,9 @@ public sealed class AuthProofAuthorizationIntegrationTests
             {
                 ["X-Spring-User"] = "auth-proof-insufficient",
                 ["X-Spring-Roles"] = "none",
-            });
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+            },
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     /// <summary>
@@ -322,8 +325,8 @@ public sealed class AuthProofAuthorizationIntegrationTests
     [Fact]
     public async Task RoleProtectedEndpointShouldReturn200WhenRolePresent()
     {
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
+        HttpClient client = fixture.GatewayClient;
         string aggregateId = $"auth-proof-{Guid.NewGuid():N}";
         using HttpResponseMessage response = await PostAuthProofCommandAsync(
             client,
@@ -334,7 +337,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
                 ["X-Spring-User"] = "auth-proof-operator",
                 ["X-Spring-Roles"] = "auth-proof-operator",
             });
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     /// <summary>
@@ -344,8 +347,8 @@ public sealed class AuthProofAuthorizationIntegrationTests
     [Fact]
     public async Task RoleProtectedEndpointShouldReturn403WhenRoleMissing()
     {
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
+        HttpClient client = fixture.GatewayClient;
         string aggregateId = $"auth-proof-{Guid.NewGuid():N}";
         using HttpResponseMessage response = await PostAuthProofCommandAsync(
             client,
@@ -356,7 +359,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
                 ["X-Spring-User"] = "auth-proof-insufficient",
                 ["X-Spring-Roles"] = "none",
             });
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     /// <summary>
@@ -366,8 +369,8 @@ public sealed class AuthProofAuthorizationIntegrationTests
     [Fact]
     public async Task SagaEndpointShouldReturn200WhenRolePresent()
     {
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
+        HttpClient client = fixture.GatewayClient;
         Guid sagaId = Guid.NewGuid();
         using HttpResponseMessage response = await PostAuthProofSagaStartAsync(
             client,
@@ -377,7 +380,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
                 ["X-Spring-User"] = "auth-proof-operator",
                 ["X-Spring-Roles"] = "auth-proof-operator",
             });
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     /// <summary>
@@ -387,8 +390,8 @@ public sealed class AuthProofAuthorizationIntegrationTests
     [Fact]
     public async Task SagaEndpointShouldReturn401ForAnonymousRequest()
     {
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
+        HttpClient client = fixture.GatewayClient;
         Guid sagaId = Guid.NewGuid();
         using HttpResponseMessage response = await GetAuthProofSagaStatusAsync(
             client,
@@ -397,7 +400,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
             {
                 ["X-Spring-Anonymous"] = "true",
             });
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     /// <summary>
@@ -407,8 +410,8 @@ public sealed class AuthProofAuthorizationIntegrationTests
     [Fact]
     public async Task SagaEndpointShouldReturn403WhenRoleMissing()
     {
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
+        HttpClient client = fixture.GatewayClient;
         Guid sagaId = Guid.NewGuid();
         using HttpResponseMessage response = await GetAuthProofSagaStatusAsync(
             client,
@@ -418,6 +421,6 @@ public sealed class AuthProofAuthorizationIntegrationTests
                 ["X-Spring-User"] = "auth-proof-insufficient",
                 ["X-Spring-Roles"] = "none",
             });
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 }

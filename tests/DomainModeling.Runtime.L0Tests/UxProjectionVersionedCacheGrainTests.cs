@@ -166,7 +166,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
-        TestProjection? result = await grain.GetAsync();
+        TestProjection? result = await grain.GetAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -194,7 +194,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
-        TestProjection? result = await grain.GetAsync();
+        TestProjection? result = await grain.GetAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -221,8 +221,8 @@ public sealed class UxProjectionVersionedCacheGrainTests
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act - call GetAsync twice
-        TestProjection? result1 = await grain.GetAsync();
-        TestProjection? result2 = await grain.GetAsync();
+        TestProjection? result1 = await grain.GetAsync(TestContext.Current.CancellationToken);
+        TestProjection? result2 = await grain.GetAsync(TestContext.Current.CancellationToken);
 
         // Assert - should return same cached result, only loaded once during activation
         Assert.Same(result1, result2);
@@ -294,9 +294,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
         TestProjection testProjection = new(0);
         Mock<ISnapshotCacheGrain<TestProjection>> snapshotCacheGrainMock = new();
         snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>()))
-            .Returns((
-                CancellationToken ct
-            ) =>
+            .Returns((CancellationToken ct) =>
             {
                 capturedToken = ct;
                 return new(testProjection);
