@@ -101,6 +101,67 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Projection arrays generate their custom and enum element DTOs and compile alongside primitive arrays.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoCompilesForCustomAndEnumArrays()
+    {
+        const string source = """
+                              using Mississippi.Inlet.Generators.Abstractions;
+                              using Mississippi.Inlet.Abstractions;
+
+                              namespace TestApp.Domain.Projections.Array;
+
+                              public sealed record Entry
+                              {
+                                  public decimal Amount { get; init; }
+                              }
+
+                              public enum EntryStatus { New, Complete }
+
+                              [GenerateProjectionEndpoints]
+                              [ProjectionPath("array")]
+                              public sealed record ArrayProjection
+                              {
+                                  public Entry[] Entries { get; init; } = [];
+                                  public EntryStatus[] Statuses { get; init; } = [];
+                                  public int[] Values { get; init; } = [];
+                              }
+                              """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Assert.Empty(
+            input.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        Assert.Empty(diagnostics);
+        Assert.All(result.Results, generatorResult => Assert.Null(generatorResult.Exception));
+        foreach (SyntaxTree tree in result.GeneratedTrees)
+        {
+            TestContext.Current.TestOutputHelper?.WriteLine(
+                $"{tree.FilePath}\n{tree.GetText(TestContext.Current.CancellationToken)}");
+        }
+
+        Assert.Empty(
+            output.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        Assert.Contains(
+            result.GeneratedTrees,
+            tree => tree.FilePath.EndsWith("EntryDto.g.cs", StringComparison.Ordinal));
+        Assert.Contains(
+            result.GeneratedTrees,
+            tree => tree.FilePath.EndsWith("EntryStatusDto.g.cs", StringComparison.Ordinal));
+        string projectionDto = Assert.Single(
+                result.GeneratedTrees,
+                tree => tree.FilePath.EndsWith("ArrayProjectionDto.g.cs", StringComparison.Ordinal))
+            .GetText(TestContext.Current.CancellationToken)
+            .ToString();
+        Assert.Contains("EntryDto[] Entries", projectionDto, StringComparison.Ordinal);
+        Assert.Contains("EntryStatusDto[] Statuses", projectionDto, StringComparison.Ordinal);
+        Assert.Contains("int[] Values", projectionDto, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generated DTO file should have correct naming convention.
     /// </summary>
     [Fact]

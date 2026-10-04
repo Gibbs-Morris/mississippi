@@ -75,6 +75,8 @@ public class ProjectionEndpointsGeneratorTests
             MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Runtime.dll")),
             MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Collections.dll")),
             MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Collections.Immutable.dll")),
+            MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Linq.dll")),
+            MetadataReference.CreateFromFile(typeof(JsonRequiredAttribute).Assembly.Location),
         ];
 
         // Add netstandard if available (for compatibility)
@@ -337,6 +339,82 @@ public class ProjectionEndpointsGeneratorTests
             "public sealed partial class AccountBalanceController",
             controllerSource,
             StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated projection array DTOs and their mappers compile using the declared mapping contracts.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoAndMapperCompileForCustomAndEnumArrays()
+    {
+        const string mappingContracts = """
+                                        using System.Collections.Generic;
+
+                                        namespace Mississippi.Common.Abstractions.Mapping;
+
+                                        public interface IMapper<in TFrom, out TTo>
+                                        {
+                                            TTo Map(TFrom input);
+                                        }
+
+                                        public interface IEnumerableMapper<in TFrom, out TTo>
+                                            : IMapper<IEnumerable<TFrom>, IEnumerable<TTo>> { }
+                                        """;
+        const string source = """
+                              using Mississippi.Inlet.Generators.Abstractions;
+                              using Mississippi.Inlet.Abstractions;
+
+                              namespace TestApp.Domain.Projections.Array;
+
+                              public sealed record Entry
+                              {
+                                  public decimal Amount { get; init; }
+                              }
+
+                              public enum EntryStatus { New, Complete }
+
+                              [GenerateProjectionEndpoints]
+                              [ProjectionPath("array")]
+                              public sealed record ArrayProjection
+                              {
+                                  public Entry[] Entries { get; init; } = [];
+                                  public EntryStatus[] Statuses { get; init; } = [];
+                                  public int[] Values { get; init; } = [];
+                              }
+                              """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, mappingContracts, source);
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Assert.Empty(
+            input.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        Assert.Empty(diagnostics);
+        Assert.All(result.Results, generatorResult => Assert.Null(generatorResult.Exception));
+        SyntaxTree[] dtoAndMapperTrees = result.GeneratedTrees.Where(tree =>
+                !tree.FilePath.Contains("Controller", StringComparison.Ordinal) &&
+                !tree.FilePath.Contains("Registrations", StringComparison.Ordinal))
+            .ToArray();
+        Assert.NotEmpty(dtoAndMapperTrees);
+        foreach (SyntaxTree tree in dtoAndMapperTrees)
+        {
+            TestContext.Current.TestOutputHelper?.WriteLine(
+                $"{tree.FilePath}\n{tree.GetText(TestContext.Current.CancellationToken)}");
+        }
+
+        Compilation dtoAndMapperCompilation = input.AddSyntaxTrees(dtoAndMapperTrees);
+        Assert.Empty(
+            dtoAndMapperCompilation.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        string mapper = Assert.Single(
+                dtoAndMapperTrees,
+                tree => tree.FilePath.EndsWith("ArrayProjectionMapper.g.cs", StringComparison.Ordinal))
+            .GetText(TestContext.Current.CancellationToken)
+            .ToString();
+        Assert.Contains("IEnumerableMapper<Entry, EntryDto>", mapper, StringComparison.Ordinal);
+        Assert.Contains("IEnumerableMapper<EntryStatus, EntryStatusDto>", mapper, StringComparison.Ordinal);
+        Assert.Contains("EntriesMapper.Map(source.Entries).ToArray()", mapper, StringComparison.Ordinal);
+        Assert.Contains("StatusesMapper.Map(source.Statuses).ToArray()", mapper, StringComparison.Ordinal);
+        Assert.Contains("Values = source.Values", mapper, StringComparison.Ordinal);
     }
 
     /// <summary>
