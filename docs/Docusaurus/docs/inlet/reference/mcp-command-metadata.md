@@ -43,6 +43,8 @@ Keep description and title strings on one line. The generator escapes backslashe
 
 The entity ID parameter has the fixed description `The entity identifier`. A property or constructor parameter description does not replace it.
 
+A selected parameterized record constructor is invoked with every public readable property in property enumeration order. The generator does not validate constructor count, order, or compatible argument types. The constructor must accept that complete sequence: mismatches can fail compilation, while reordered same-type arguments can supply the wrong values. Name matching for descriptions alone does not establish constructor compatibility.
+
 ## Runtime Boundary
 
 The generated method constructs the command, resolves its aggregate grain by entity ID, and calls `ExecuteAsync` with the cancellation token. Changing a hint does not change that path, prevent writes, deduplicate repeated calls, or add authorization checks.
