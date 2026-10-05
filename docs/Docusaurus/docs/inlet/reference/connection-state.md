@@ -24,7 +24,7 @@ The [record](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Cli
 
 The separate `InletConnectionState` uses key `inlet-connection` and has no lifecycle fields. It supplies the action effect's feature compartment; use `SignalRConnectionState` for the status data described here.
 
-[`AddSignalRConnectionFeature`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/SignalRConnection/SignalRConnectionRegistrations.cs) registers this state and its lifecycle reducers. `AddInletBlazorSignalR` also adds that feature during build.
+[`AddSignalRConnectionFeature`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/SignalRConnection/SignalRConnectionRegistrations.cs) registers this state and its lifecycle reducers. `AddInletBlazorSignalR` also adds that feature during build. Its `TryAddScoped` provider registration preserves an earlier custom `IHubConnectionProvider`. Feature registration supplies reducers, not lifecycle observations for that custom transport; the custom provider must dispatch the lifecycle actions if callers rely on this state.
 
 ## State Transitions
 
