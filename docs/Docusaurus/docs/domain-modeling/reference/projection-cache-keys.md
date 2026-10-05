@@ -21,7 +21,7 @@ sidebar_label: Projection Cache Keys
 
 The [readonly record struct](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/UxProjectionVersionedCacheKey.cs) stores read-only `BrookName`, `EntityId`, and `Version` properties. `Version` is a `BrookPosition`.
 
-`ToString()` and the implicit conversion to `string` produce `brookName|entityId|version`. `FromBrookKey` and `FromCursorKey` construct that identity from the supplied key components and a version. `ToBrookKey` and `ToCursorKey` retain the name and entity ID while dropping the version.
+`ToString()` and the implicit conversion to `string` produce `brookName|entityId|version`. `FromBrookKey` and `FromCursorKey` construct that identity from the supplied components and version, rerunning the destination checks below. A valid `BrookKey` with empty or whitespace-only components is rejected with `ArgumentException`; adding the separator/version can also exceed the destination length limit. `ToBrookKey` and `ToCursorKey` drop the version and rerun their destination constructors. On a default cache key, its null components make those conversions throw `ArgumentNullException`.
 
 The similarly named [`UxProjectionVersionedKey`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/UxProjectionVersionedKey.cs) is a separate entity/version value type. Its two-part encoding is not the input key accepted by the built-in versioned-cache factory overload.
 
