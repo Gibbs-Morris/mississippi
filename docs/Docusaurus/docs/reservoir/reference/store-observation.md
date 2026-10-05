@@ -42,7 +42,7 @@ On normal store disposal, the subject calls `OnCompleted` on its captured observ
 
 For calls beginning after disposal completes, a new event-stream subscription receives `OnCompleted` immediately and a no-op disposable. Ordinary state subscription, `Dispatch`, and `GetState` reject a disposed store with `ObjectDisposedException`.
 
-Those guards run before acquiring subscription locks. A concurrent subscribe/dispose race can add a subscriber after the list was cleared without completing it; the post-disposal behavior above is not a guarantee for overlapping lifecycle calls. Coordinate subscription and disposal ownership.
+Those guards run before acquiring subscription locks. A concurrent subscribe/dispose race can add a subscriber after the list was cleared without completing it; the post-disposal behavior above is not a guarantee for overlapping lifecycle calls. A publication or listener notification that already captured its list can also resume after disposal: an observer may receive `OnNext` after `OnCompleted`, or a state listener may run after store disposal. Completion does not ensure callback quiescence for overlapping calls. Coordinate subscription, disposal, and in-flight dispatch ownership.
 
 `GetStateSnapshot` has no disposed-store guard; after normal disposal it returns a dictionary copied from the cleared feature dictionary. Retained earlier snapshots still hold their original feature-object references.
 
