@@ -35,6 +35,8 @@ The [reducer helpers](https://github.com/Gibbs-Morris/mississippi/blob/main/src/
 - Failed removes the ID and changes the first history entry with that ID to failed. The state reducer assigns the action's errors and sets `LastCommandSucceeded` to false.
 - Succeeded removes the ID and changes the first matching history entry to succeeded. The state reducer clears top-level errors and sets `LastCommandSucceeded` to true.
 
+These transitions describe individual reductions. The built-in store does not serialize concurrent `Dispatch` calls: overlapping effect completions can reduce the same prior state, and the later assignment can lose another completion's history update or ID removal. Reliable lifecycle tracking requires serialization of all dispatches to the shared store, including effect-result dispatches.
+
 Completion does not create a missing history entry. Starting the same ID more than once adds multiple history entries but only one set member; completion updates only the first matching entry.
 
 The latest outcome flag follows the last reduced lifecycle action. It is independent of `IsExecuting`, so another command can remain in flight after a completion sets the flag to true or false.
