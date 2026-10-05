@@ -25,8 +25,8 @@ The [options](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Ga
 - `Mode`: `Disabled` by default. The convention changes application models only for `RequireAuthorizationForAllGeneratedEndpoints`.
 - `AllowAnonymousOptOut`: `true`; generated anonymous metadata is preserved in force mode.
 - `DefaultPolicy`: null; optional policy name assigned to an added default authorization filter.
-- `DefaultRoles`: null; optional roles string assigned to that filter.
-- `DefaultAuthenticationSchemes`: null; optional authentication-schemes string assigned to that filter.
+- `DefaultRoles`: null; optional comma-separated roles string assigned to that filter, such as `Admin,Operator`. ASP.NET Core accepts any listed role for this role requirement.
+- `DefaultAuthenticationSchemes`: null; optional comma-separated handler names assigned to that filter, such as `Cookies,Bearer`. Semicolons do not separate roles or schemes. See [role lists](https://learn.microsoft.com/en-us/aspnet/core/security/authorization/roles?view=aspnetcore-10.0) and [scheme lists](https://learn.microsoft.com/en-us/aspnet/core/security/authorization/authorize-with-a-specific-scheme?view=aspnetcore-10.0).
 
 The convention ignores whitespace-only default strings and copies other values without trimming or parsing them itself. Assigning these options does not register the named policy or authentication schemes; the host owns that setup. The named policy must be available from the host's policy provider and each scheme must have a configured handler. ASP.NET Core throws `InvalidOperationException` when combining an unavailable named policy or authenticating through a missing handler; these configuration failures are not ordinary authorization-denied outcomes.
 
