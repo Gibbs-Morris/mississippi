@@ -23,28 +23,35 @@ using Moq;
 namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Brooks;
 
 /// <summary>
-///     Verifies that a cursor commit failure cannot delete the events it may already cover.
+///     Verifies single-batch commit diagnostics without discarding uncertain storage evidence.
 /// </summary>
-public sealed class EventBrookWriterCommitBoundaryTests
+public sealed class EventBrookWriterSingleBatchCommitTests
 {
     /// <summary>
-    ///     Does not compensate for a failed commit, including when the commit already removed pending metadata.
+    ///     Reports a failed commit while preserving the original exception and all remaining evidence.
     /// </summary>
-    /// <param name="isCursorCommitted">Whether the simulated cursor write completed before its acknowledgement failed.</param>
-    /// <param name="isPendingDeleted">Whether the commit removed pending metadata before reporting failure.</param>
+    /// <param name="isCursorCommitted">Whether the cursor advanced before the acknowledgement failed.</param>
+    /// <param name="isPendingDeleted">Whether the commit removed the pending attempt.</param>
+    /// <param name="isCanceled">Whether the commit reports cancellation.</param>
+    /// <param name="isLoggingEnabled">Whether the error diagnostic is enabled.</param>
     /// <returns>A task representing the test.</returns>
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(true, true)]
-    public async Task CommitFailureDoesNotTriggerCompensatingDeletes(
+    [InlineData(false, false, false, true)]
+    [InlineData(true, false, false, true)]
+    [InlineData(true, true, false, true)]
+    [InlineData(false, false, true, true)]
+    [InlineData(true, true, true, true)]
+    [InlineData(true, true, false, false)]
+    public async Task CommitFailurePreservesEvidenceAndReportsAttemptAsync(
         bool isCursorCommitted,
-        bool isPendingDeleted
+        bool isPendingDeleted,
+        bool isCanceled,
+        bool isLoggingEnabled
     )
     {
-        const long finalPosition = 2;
+        BrookKey key = new("test", "single-batch-commit");
         BrookPosition originalPosition = new(0);
-        BrookKey key = new("test", "commit-boundary");
+        const long finalPosition = 2;
         Mock<ICosmosRepository> repository = new();
         Mock<IDistributedLockManager> locks = new();
         Mock<IDistributedLock> lease = new();
@@ -56,34 +63,33 @@ public sealed class EventBrookWriterCommitBoundaryTests
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new();
         mapper.Setup(m => m.Map(It.IsAny<BrookEvent>())).Returns(new EventStorageModel());
         Mock<IBrookRecoveryService> recovery = new();
-        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(
-                key,
-                It.IsAny<IDistributedLock>(),
-                It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, lease.Object, It.IsAny<CancellationToken>()))
             .ReturnsAsync(originalPosition);
         List<long> retainedPositions = [originalPosition.Value];
         bool hasPendingEvidence = false;
         long cursor = originalPosition.Value;
         repository.Setup(r => r.CreatePendingCursorAsync(
                 key,
-                It.Is<BrookPosition>(p => p == originalPosition),
+                originalPosition,
                 finalPosition,
                 It.IsAny<CancellationToken>()))
             .Callback(() => hasPendingEvidence = true)
-            .ReturnsAsync("attempt-etag");
+            .ReturnsAsync("single-attempt");
         repository.Setup(r => r.AppendEventBatchAsync(
                 key,
                 It.IsAny<IReadOnlyList<EventStorageModel>>(),
-                It.IsAny<long>(),
+                1,
                 It.IsAny<CancellationToken>()))
-            .Callback<BrookKey, IReadOnlyList<EventStorageModel>, long, CancellationToken>((_, _, position, _) =>
-                retainedPositions.Add(position))
+            .Callback<BrookKey, IReadOnlyList<EventStorageModel>, long, CancellationToken>((_, events, start, _) =>
+                retainedPositions.AddRange(Enumerable.Range(0, events.Count).Select(offset => start + offset)))
             .Returns(Task.CompletedTask);
-        InvalidOperationException failure = new("Cursor commit acknowledgement or pending cleanup failed.");
+        Exception failure = isCanceled
+            ? new OperationCanceledException("Cursor commit acknowledgement was canceled.")
+            : new InvalidOperationException("Cursor commit acknowledgement failed.");
         repository.Setup(r => r.CommitCursorPositionAsync(
                 key,
                 finalPosition,
-                "attempt-etag",
+                "single-attempt",
                 It.IsAny<CancellationToken>()))
             .Callback(() =>
             {
@@ -94,23 +100,17 @@ public sealed class EventBrookWriterCommitBoundaryTests
         repository.Setup(r => r.DeleteEventAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()))
             .Callback<BrookKey, long, CancellationToken>((_, position, _) => retainedPositions.Remove(position))
             .Returns(Task.CompletedTask);
-        repository.Setup(r => r.DeletePendingCursorAsync(key, "attempt-etag", It.IsAny<CancellationToken>()))
+        repository.Setup(r => r.DeletePendingCursorAsync(key, "single-attempt", It.IsAny<CancellationToken>()))
             .Callback(() => hasPendingEvidence = false)
             .Returns(Task.CompletedTask);
-        repository.Setup(r => r.EventExistsAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((BrookKey _, long position, CancellationToken _) => retainedPositions.Contains(position));
         Mock<ILogger<EventBrookWriter>> logger = new();
-        logger.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
+        logger.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(isLoggingEnabled);
         EventBrookWriter writer = new(
             repository.Object,
             locks.Object,
             new BatchSizeEstimator(),
             retry.Object,
-            Options.Create(
-                new BrookStorageOptions
-                {
-                    MaxEventsPerBatch = 1,
-                }),
+            Options.Create(new BrookStorageOptions()),
             mapper.Object,
             recovery.Object,
             logger.Object,
@@ -126,29 +126,44 @@ public sealed class EventBrookWriterCommitBoundaryTests
                 Id = "second",
             },
         ];
-        InvalidOperationException thrown = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            writer.AppendEventsAsync(key, events, originalPosition, TestContext.Current.CancellationToken));
+        Exception? thrown = await Record.ExceptionAsync(() => writer.AppendEventsAsync(
+            key,
+            events,
+            originalPosition,
+            TestContext.Current.CancellationToken));
         Assert.Same(failure, thrown);
-        logger.Verify(
-            l => l.Log(
-                LogLevel.Error,
-                It.Is<EventId>(id => id.Id == 1013),
-                It.Is<It.IsAnyType>((state, _) =>
-                    ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(new("BrookId", key)) &&
-                    ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(
-                        new("FinalPosition", finalPosition))),
-                failure,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-        Assert.Equal(new long[] { 0, 1, 2 }, retainedPositions.Order());
+        Assert.Equal(new long[] { 0, 1, 2 }, retainedPositions);
         Assert.Equal(!isPendingDeleted, hasPendingEvidence);
         Assert.Equal(isCursorCommitted ? finalPosition : originalPosition.Value, cursor);
         repository.Verify(
-            r => r.CommitCursorPositionAsync(key, finalPosition, "attempt-etag", It.IsAny<CancellationToken>()),
+            r => r.AppendEventBatchAsync(
+                key,
+                It.Is<IReadOnlyList<EventStorageModel>>(batch => batch.Count == 2),
+                1,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        repository.Verify(
+            r => r.CommitCursorPositionAsync(key, finalPosition, "single-attempt", It.IsAny<CancellationToken>()),
             Times.Once);
         repository.Verify(r => r.DeleteEventAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
         repository.Verify(
-            r => r.DeletePendingCursorAsync(key, "attempt-etag", It.IsAny<CancellationToken>()),
+            r => r.DeletePendingCursorAsync(key, "single-attempt", It.IsAny<CancellationToken>()),
             Times.Never);
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Error,
+                It.Is<EventId>(id =>
+                    (id.Id == 1013) && (id.Name == nameof(EventBrookWriterLoggerExtensions.CursorCommitFailed))),
+                It.Is<It.IsAnyType>((state, _) =>
+                    ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(new("BrookId", key)) &&
+                    ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(
+                        new("FinalPosition", finalPosition)) &&
+                    ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(
+                        new(
+                            "{OriginalFormat}",
+                            "Cursor commit failed for brook '{BrookId}' at position {FinalPosition}; appended events were retained"))),
+                failure,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Exactly(isLoggingEnabled ? 1 : 0));
     }
 }

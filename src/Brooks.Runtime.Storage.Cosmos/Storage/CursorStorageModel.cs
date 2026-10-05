@@ -9,6 +9,11 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Storage;
 internal sealed class CursorStorageModel
 {
     /// <summary>
+    ///     Gets or sets the Cosmos entity tag used to identify a pending append attempt.
+    /// </summary>
+    public string? ETag { get; set; }
+
+    /// <summary>
     ///     Gets or sets the original position of the brook cursor before any updates.
     /// </summary>
     public BrookPosition? OriginalPosition { get; set; }

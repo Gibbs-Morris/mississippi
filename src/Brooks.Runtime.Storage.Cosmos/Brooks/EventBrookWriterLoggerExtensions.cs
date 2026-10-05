@@ -30,4 +30,23 @@ internal static partial class EventBrookWriterLoggerExtensions
         BrookKey brookId,
         long finalPosition
     );
+
+    /// <summary>
+    ///     Logs an append with an unknown storage outcome while retaining its recovery evidence.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="exception">The original append failure.</param>
+    /// <param name="brookId">The brook being appended to.</param>
+    /// <param name="finalPosition">The attempted cursor position.</param>
+    [LoggerMessage(
+        EventId = 1014,
+        Level = LogLevel.Error,
+        Message =
+            "Event append failed for brook '{BrookId}' at position {FinalPosition}; events and pending evidence were retained")]
+    public static partial void EventAppendFailed(
+        this ILogger logger,
+        Exception exception,
+        BrookKey brookId,
+        long finalPosition
+    );
 }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -52,18 +51,6 @@ internal sealed class EventBrookWriter : IEventBrookWriter
             LogLevel.Information,
             new(1004, nameof(AppendLargeBatchAsync)),
             "CosmosAppender: LargeBatch cursor={Cursor} final={Final} maxPerBatch={MaxEv} maxReq={MaxReq}");
-
-    private static readonly Action<ILogger, BrookKey, long, long, string, Exception?> LogRollbackFailed =
-        LoggerMessage.Define<BrookKey, long, long, string>(
-            LogLevel.Error,
-            new(1008, nameof(RollbackLargeBatchAsync)),
-            "CosmosAppender: Rollback failed brook={Brook} originalCursor={Cursor} failedFinal={Final} remainingEvents={Remaining}");
-
-    private static readonly Action<ILogger, BrookKey, long, Exception?> LogRollbackSucceeded =
-        LoggerMessage.Define<BrookKey, long>(
-            LogLevel.Warning,
-            new(1009, nameof(RollbackLargeBatchAsync)),
-            "CosmosAppender: Rollback succeeded brook={Brook} restoredCursor={Cursor}");
 
     private static readonly Action<ILogger, BrookKey, long, int, double, Exception?> LogSingleBatchCommitted =
         LoggerMessage.Define<BrookKey, long, int, double>(
@@ -174,7 +161,10 @@ internal sealed class EventBrookWriter : IEventBrookWriter
     )
     {
         // Get current cursor position while holding the lock to ensure consistency
-        BrookPosition currentCursor = await RecoveryService.GetOrRecoverCursorPositionAsync(brookId, cancellationToken);
+        BrookPosition currentCursor = await RecoveryService.GetOrRecoverCursorPositionAsync(
+            brookId,
+            distributedLock,
+            cancellationToken);
 
         // Perform optimistic concurrency check inside the lock
         if (expectedVersion.HasValue && (expectedVersion.Value != currentCursor))
@@ -228,7 +218,11 @@ internal sealed class EventBrookWriter : IEventBrookWriter
                 Options.MaxEventsPerBatch,
                 Options.MaxRequestSizeBytes)
             .ToList();
-        await Repository.CreatePendingCursorAsync(brookId, currentCursor, finalPosition, cancellationToken);
+        string pendingETag = await Repository.CreatePendingCursorAsync(
+            brookId,
+            currentCursor,
+            finalPosition,
+            cancellationToken);
         int processedEvents = 0;
         try
         {
@@ -273,22 +267,18 @@ internal sealed class EventBrookWriter : IEventBrookWriter
                 processedEvents += batchEvents.Count;
             }
         }
-        catch
+        catch (Exception exception)
         {
-            // Rollback only what we actually appended
-            // processedEvents reflects successfully created items
-            await RollbackLargeBatchAsync(
-                brookId,
-                new(currentCursor.Value),
-                currentCursor.Value + processedEvents,
-                cancellationToken);
+            // A failed acknowledgement does not prove that the event create failed.
+            // Keep the complete attempted range for recovery, including any late writes.
+            Logger.EventAppendFailed(exception, brookId, finalPosition);
             throw;
         }
 
         // A commit exception may occur after the cursor advanced; rollback would then delete committed history.
         try
         {
-            await Repository.CommitCursorPositionAsync(brookId, finalPosition, cancellationToken);
+            await Repository.CommitCursorPositionAsync(brookId, finalPosition, pendingETag, cancellationToken);
         }
         catch (Exception exception)
         {
@@ -315,112 +305,42 @@ internal sealed class EventBrookWriter : IEventBrookWriter
         List<EventStorageModel> storageEvents = events.Select(EventMapper.Map).ToList();
 
         // Fallback to non-transactional flow (pending cursor -> append -> commit) to ensure reliability with emulator
-        await Repository.CreatePendingCursorAsync(brookId, currentCursor, finalPosition, cancellationToken);
-        await RetryPolicy.ExecuteAsync(
-            async () =>
-            {
-                await Repository.AppendEventBatchAsync(
-                    brookId,
-                    storageEvents,
-                    currentCursor.Value + 1,
-                    cancellationToken);
-                return true;
-            },
+        string pendingETag = await Repository.CreatePendingCursorAsync(
+            brookId,
+            currentCursor,
+            finalPosition,
             cancellationToken);
-        await Repository.CommitCursorPositionAsync(brookId, finalPosition, cancellationToken);
+        try
+        {
+            await RetryPolicy.ExecuteAsync(
+                async () =>
+                {
+                    await Repository.AppendEventBatchAsync(
+                        brookId,
+                        storageEvents,
+                        currentCursor.Value + 1,
+                        cancellationToken);
+                    return true;
+                },
+                cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            Logger.EventAppendFailed(exception, brookId, finalPosition);
+            throw;
+        }
+
+        try
+        {
+            await Repository.CommitCursorPositionAsync(brookId, finalPosition, pendingETag, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            Logger.CursorCommitFailed(exception, brookId, finalPosition);
+            throw;
+        }
+
         LogSingleBatchCommitted(Logger, brookId, finalPosition, 200, 0, null);
         return new(finalPosition);
-    }
-
-    private async Task RollbackLargeBatchAsync(
-        BrookKey brookId,
-        BrookPosition originalCursor,
-        long failedFinalPosition,
-        CancellationToken cancellationToken
-    )
-    {
-        List<Exception> rollbackErrors = new();
-        List<long> remainingEvents = new();
-
-        // Helper: attempt action with retry policy and record a friendly error on failure
-        async Task TryWithRetryAsync(
-            Func<Task> action,
-            string errorMessage
-        )
-        {
-            try
-            {
-                await RetryPolicy.ExecuteAsync(
-                    async () =>
-                    {
-                        await action();
-                        return true;
-                    },
-                    cancellationToken);
-            }
-            catch (Exception ex) when (ex is InvalidOperationException ||
-                                       ex is TimeoutException ||
-                                       ex is HttpRequestException)
-            {
-                rollbackErrors.Add(new InvalidOperationException(errorMessage, ex));
-            }
-        }
-
-        // First pass: attempt to delete all appended events
-        for (long pos = originalCursor.Value + 1; pos <= failedFinalPosition; pos++)
-        {
-            long capturedPos = pos; // avoid modified closure
-            await TryWithRetryAsync(
-                () => Repository.DeleteEventAsync(brookId, capturedPos, cancellationToken),
-                $"Failed to delete event at position {capturedPos}");
-        }
-
-        // Delete pending cursor state
-        await TryWithRetryAsync(
-            () => Repository.DeletePendingCursorAsync(brookId, cancellationToken),
-            "Failed to delete pending cursor");
-
-        // Second pass: verify all events are actually deleted
-        for (long pos = originalCursor.Value + 1; pos <= failedFinalPosition; pos++)
-        {
-            try
-            {
-                bool eventExists = await Repository.EventExistsAsync(brookId, pos, cancellationToken);
-                if (eventExists)
-                {
-                    remainingEvents.Add(pos);
-                }
-            }
-            catch (Exception ex) when (ex is InvalidOperationException ||
-                                       ex is TimeoutException ||
-                                       ex is HttpRequestException)
-            {
-                rollbackErrors.Add(
-                    new InvalidOperationException($"Failed to verify deletion of event at position {pos}", ex));
-            }
-        }
-
-        // If there are any issues, throw an aggregate exception
-        if ((rollbackErrors.Count > 0) || (remainingEvents.Count > 0))
-        {
-            List<Exception> allErrors = new(rollbackErrors);
-            if (remainingEvents.Count > 0)
-            {
-                allErrors.Add(
-                    new InvalidOperationException(
-                        $"Rollback incomplete: {remainingEvents.Count} events still exist at positions: {string.Join(", ", remainingEvents)}"));
-            }
-
-            LogRollbackFailed(
-                Logger,
-                brookId,
-                originalCursor.Value,
-                failedFinalPosition,
-                string.Join(", ", remainingEvents),
-                new AggregateException(allErrors));
-            throw new AggregateException("Rollback failed - brook may be in an inconsistent state", allErrors);
-        }
-
-        LogRollbackSucceeded(Logger, brookId, originalCursor.Value, null);
     }
 }
