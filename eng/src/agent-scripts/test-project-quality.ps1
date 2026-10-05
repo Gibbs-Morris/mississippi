@@ -54,6 +54,12 @@ function Resolve-SourceProjectPathFromTest {
 
     [xml]$proj = Get-Content -LiteralPath $TestProjectPath
     $dir = Split-Path -Parent $TestProjectPath
+    # An explicit project-relative target also works when no direct references exist.
+    $configuredSource = $proj.SelectSingleNode('//Project/PropertyGroup/MutationSourceProject')
+    if ($configuredSource -and -not [string]::IsNullOrWhiteSpace($configuredSource.InnerText)) {
+        return (Resolve-Path -LiteralPath (Join-Path $dir $configuredSource.InnerText.Trim()) -ErrorAction Stop).Path
+    }
+
     $projectRefs = @()
     # Use XPath to robustly locate all <ProjectReference> elements regardless of ItemGroup layout
     $nodes = $proj.SelectNodes('//Project/ItemGroup/ProjectReference')
@@ -392,5 +398,3 @@ catch {
 finally {
     if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
 }
-
-

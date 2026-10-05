@@ -19,8 +19,9 @@
     else
     {
         <div class="operations-panels">
-            <div class="operations-panel">
+            <div id="account-a-operations-panel" class="operations-panel" role="region" aria-labelledby="account-a-panel-heading">
                 <AccountOperationsSection PanelLabel="Account A"
+                                          InputIdPrefix="account-a"
                                           SelectedEntityId="@AccountAIdDisplay"
                                           IsExecutingOrLoading="@IsExecutingOrLoadingFor(AccountAId)"
                                           IsAccountOpen="@IsAccountOpenFor(AccountAId)"
@@ -55,8 +56,9 @@
                                           LedgerProjection="@LedgerProjectionA"
                                           OnSwitchAccount="@ClearAccountA"/>
             </div>
-            <div class="operations-panel">
+            <div id="account-b-operations-panel" class="operations-panel" role="region" aria-labelledby="account-b-panel-heading">
                 <AccountOperationsSection PanelLabel="Account B"
+                                          InputIdPrefix="account-b"
                                           SelectedEntityId="@AccountBIdDisplay"
                                           IsExecutingOrLoading="@IsExecutingOrLoadingFor(AccountBId)"
                                           IsAccountOpen="@IsAccountOpenFor(AccountBId)"

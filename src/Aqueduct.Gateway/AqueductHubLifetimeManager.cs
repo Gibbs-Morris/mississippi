@@ -57,6 +57,8 @@ public sealed class AqueductHubLifetimeManager<THub>
 {
     private readonly string hubName;
 
+    private volatile bool backplaneInitialized;
+
     private bool disposed;
 
     private IDisposable? lifecycleSubscription;
@@ -348,7 +350,7 @@ public sealed class AqueductHubLifetimeManager<THub>
         CancellationToken cancellationToken = default
     )
     {
-        if (StreamSubscriptionManager.IsInitialized)
+        if (backplaneInitialized && StreamSubscriptionManager.IsInitialized)
         {
             return;
         }
@@ -365,6 +367,7 @@ public sealed class AqueductHubLifetimeManager<THub>
 
         // Start heartbeat manager
         await HeartbeatManager.StartAsync(() => ConnectionRegistry.Count, cancellationToken).ConfigureAwait(false);
+        backplaneInitialized = true;
         Logger.BackplaneInitialized(hubName, ServerId);
     }
 

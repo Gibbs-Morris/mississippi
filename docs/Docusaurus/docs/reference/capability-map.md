@@ -27,7 +27,7 @@ This map describes the current development source, and its GitHub source links f
 | React to accepted events | Event effects and worker-grain effects | [Domain Modeling](../domain-modeling/index.md) |
 | Generate HTTP endpoints, DTOs, and client actions | Inlet source generators | [Inlet](../inlet/index.md) |
 | Refresh subscribed UI state after server changes | Inlet projection subscriptions and Reservoir state | [Read models and client sync](../concepts/read-models-and-client-sync.md) |
-| Make client state changes explicit and inspectable | Reservoir actions, reducers, selectors, and effects | [Reservoir](../reservoir/index.md) |
+| Make client state changes explicit and inspectable | Reservoir actions, reducers, selectors, and effects | [Add a Reservoir feature](../reservoir/how-to/create-feature.md) |
 | Deliver SignalR messages across gateway instances | Aqueduct backplane | [Aqueduct](../aqueduct/index.md) |
 | Compose Blazor screens from state and events | Refraction components and scenes | [Refraction](../refraction/index.md) |
 | Expose domain operations to an AI tool client | Generated MCP tools and metadata | [Spring MCP setup](../samples/spring-sample/how-to/mcp-server-vscode-testing.md) |
@@ -74,7 +74,7 @@ See [Spring host applications](../samples/spring-sample/concepts/host-applicatio
 | [Mississippi.DomainModeling.Gateway](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Gateway/DomainModeling.Gateway.csproj) | Base classes for aggregate services/controllers and projection controllers |
 | [Mississippi.DomainModeling.TestHarness](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.TestHarness/DomainModeling.TestHarness.csproj) | Tests handlers, reducers, aggregate scenarios, and effects without hosting the distributed application |
 
-Start with [building an aggregate](../samples/spring-sample/tutorials/building-an-aggregate.md). The same explicit command and event types give developers and AI assistants a small, named unit of behavior to implement and review.
+Start with [adding an aggregate command](../samples/spring-sample/tutorials/building-an-aggregate.md). The same explicit command and event types give developers and AI assistants a small, named unit of behavior to implement and review.
 
 ## Event History, State, and Storage
 
@@ -144,5 +144,5 @@ Packages define installation and extension boundaries. Commands, events, reducer
 ## Next Steps
 
 - [Build a feature with AI](../how-to/build-with-ai.md) for a repeatable development workflow.
-- [Build an aggregate](../samples/spring-sample/tutorials/building-an-aggregate.md) for a concrete domain example.
+- [Add an aggregate command](../samples/spring-sample/tutorials/building-an-aggregate.md) for a concrete domain example.
 - [Reservoir getting started](../reservoir/getting-started/getting-started.md) for client state management.

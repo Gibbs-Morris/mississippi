@@ -1,3 +1,5 @@
+using System.IO;
+
 using MississippiSamples.Spring.L3Tests.Pages;
 
 
@@ -26,6 +28,157 @@ public sealed class BankAccountE2ETests
         SpringBrowserFixture fixture
     ) =>
         this.fixture = fixture;
+
+    private static async Task SaveAccountSetupScreenshotsAsync(
+        IPage page
+    )
+    {
+        string? artifactsDirectory = Environment.GetEnvironmentVariable("SPRING_TEST_ARTIFACTS");
+        if (string.IsNullOrWhiteSpace(artifactsDirectory))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(artifactsDirectory);
+        await page.SetViewportSizeAsync(1440, 900);
+        await page.ScreenshotAsync(
+            new()
+            {
+                Path = Path.Join(artifactsDirectory, "account-setup-dark-desktop.png"),
+                FullPage = true,
+            });
+        await page.SetViewportSizeAsync(390, 844);
+        await page.ScreenshotAsync(
+            new()
+            {
+                Path = Path.Join(artifactsDirectory, "account-setup-dark-mobile.png"),
+                FullPage = true,
+            });
+        await page.SetViewportSizeAsync(1440, 900);
+    }
+
+    private static async Task SaveScreenshotIfRequestedAsync(
+        IPage page,
+        string? artifactsDirectory,
+        string fileName
+    )
+    {
+        if (!string.IsNullOrWhiteSpace(artifactsDirectory))
+        {
+            await page.ScreenshotAsync(
+                new()
+                {
+                    Path = Path.Join(artifactsDirectory, fileName),
+                    FullPage = true,
+                });
+        }
+    }
+
+    private static async Task SaveTransferStatusScreenshotsAsync(
+        IPage page,
+        OperationsPage operationsPage
+    )
+    {
+        string? artifactsDirectory = Environment.GetEnvironmentVariable("SPRING_TEST_ARTIFACTS");
+        if (!string.IsNullOrWhiteSpace(artifactsDirectory))
+        {
+            Directory.CreateDirectory(artifactsDirectory);
+        }
+
+        await page.SetViewportSizeAsync(1440, 900);
+        await SaveScreenshotIfRequestedAsync(page, artifactsDirectory, "transfer-completed-dark-desktop.png");
+        await operationsPage.SetThemeAsync("Light", "light");
+        await operationsPage.WaitForTransferPhaseAsync("Completed", ProjectionTimeout);
+        await SaveScreenshotIfRequestedAsync(page, artifactsDirectory, "transfer-completed-light-desktop.png");
+        await operationsPage.SetThemeAsync("High contrast", "high-contrast");
+        await operationsPage.WaitForTransferPhaseAsync("Completed", ProjectionTimeout);
+        await page.SetViewportSizeAsync(390, 844);
+        await SaveScreenshotIfRequestedAsync(page, artifactsDirectory, "transfer-completed-high-contrast-mobile.png");
+    }
+
+    /// <summary>
+    ///     Verifies setup links to distinct, accessible account panels and amount drafts stay isolated.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task AccountSetupShouldShareIndependentAccessibleOperationsPanels()
+    {
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
+        IPage page = await fixture.CreatePageAsync();
+        try
+        {
+            AccountsPage accountsPage = new(page);
+            await accountsPage.NavigateAsync(fixture.GatewayBaseUri);
+            await accountsPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
+            await accountsPage.ClickInitializeDemoAccountsAsync();
+            await accountsPage.WaitForDemoAccountsInitializedAsync(ProjectionTimeout);
+            string accountAId = (await page.Locator("#demo-account-a-id").TextContentAsync())?.Trim() ?? string.Empty;
+            string accountBId = (await page.Locator("#demo-account-b-id").TextContentAsync())?.Trim() ?? string.Empty;
+            string operationsHref = await page.GetByRole(
+                                            AriaRole.Link,
+                                            new()
+                                            {
+                                                Name = "Go to Operations",
+                                                Exact = true,
+                                            })
+                                        .GetAttributeAsync("href") ??
+                                    string.Empty;
+            Assert.False(string.IsNullOrWhiteSpace(accountAId));
+            Assert.False(string.IsNullOrWhiteSpace(accountBId));
+            Assert.NotEqual(accountAId, accountBId);
+            Assert.Contains($"a={Uri.EscapeDataString(accountAId)}", operationsHref, StringComparison.Ordinal);
+            Assert.Contains($"b={Uri.EscapeDataString(accountBId)}", operationsHref, StringComparison.Ordinal);
+            await SaveAccountSetupScreenshotsAsync(page);
+            string encodedAccountAId = Uri.EscapeDataString(accountAId);
+            string encodedAccountBId = Uri.EscapeDataString(accountBId);
+            string paddedOperationsHref = operationsHref
+                .Replace($"a={encodedAccountAId}", $"a=%20{encodedAccountAId}%20", StringComparison.Ordinal)
+                .Replace($"b={encodedAccountBId}", $"b=%20{encodedAccountBId}%20", StringComparison.Ordinal);
+            Assert.Contains($"a=%20{encodedAccountAId}%20", paddedOperationsHref, StringComparison.Ordinal);
+            Assert.Contains($"b=%20{encodedAccountBId}%20", paddedOperationsHref, StringComparison.Ordinal);
+            await page.GotoAsync(new Uri(fixture.GatewayBaseUri, paddedOperationsHref).ToString());
+            OperationsPage operationsPage = new(page);
+            await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
+            await operationsPage.WaitForBalanceAsync(ProjectionTimeout, "B");
+            Assert.Contains(accountAId, await operationsPage.GetAccountHeaderAsync(), StringComparison.Ordinal);
+            string? accountBHeader = await page.Locator("#account-b-panel-heading").TextContentAsync();
+            Assert.Contains(accountBId, accountBHeader, StringComparison.Ordinal);
+            ILocator accountADeposit = page.GetByLabel(
+                "Account A deposit amount (£)",
+                new()
+                {
+                    Exact = true,
+                });
+            ILocator accountBDeposit = page.GetByLabel(
+                "Account B deposit amount (£)",
+                new()
+                {
+                    Exact = true,
+                });
+            Assert.Equal("account-a-deposit-amount-input", await accountADeposit.GetAttributeAsync("id"));
+            Assert.Equal("account-b-deposit-amount-input", await accountBDeposit.GetAttributeAsync("id"));
+            await operationsPage.EnterDepositAmountAsync(12.34m);
+            await operationsPage.ClickDepositAsync();
+            await operationsPage.WaitForBalanceValueAsync("512.34", ProjectionTimeout);
+            await operationsPage.WaitForBalanceValueAsync("500.00", ProjectionTimeout, "B");
+            await accountBDeposit.FillAsync("12.");
+            Assert.Equal("true", await accountBDeposit.GetAttributeAsync("aria-invalid"));
+            ILocator accountBDepositButton = page.Locator("#account-b-operations-panel")
+                .GetByRole(
+                    AriaRole.Button,
+                    new()
+                    {
+                        Name = "Deposit £",
+                        Exact = true,
+                    });
+            Assert.False(await accountBDepositButton.IsEnabledAsync());
+            Assert.Equal("12.34", await accountADeposit.InputValueAsync());
+        }
+        finally
+        {
+            await page.CloseAsync();
+        }
+    }
 
     /// <summary>
     ///     Verifies the accounts page loads and displays the correct title.
@@ -153,6 +306,55 @@ public sealed class BankAccountE2ETests
             string? accountHeader = await operationsPage.GetAccountHeaderAsync();
             Assert.False(string.IsNullOrEmpty(accountHeader), "account header should be displayed");
             Assert.Contains("Account A", accountHeader, StringComparison.Ordinal);
+        }
+        finally
+        {
+            await page.CloseAsync();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies a real transfer is reported through its live saga projection and both balances.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task TransferShouldShowLiveSagaStatusAndUpdateBothAccountBalances()
+    {
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
+        IPage page = await fixture.CreatePageAsync();
+        try
+        {
+            OperationsPage operationsPage = await BankAccountScenario.PrepareAsync(fixture, page, ProjectionTimeout);
+            await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
+            await operationsPage.WaitForBalanceAsync(ProjectionTimeout, "B");
+            string? accountAHeader = await operationsPage.GetAccountHeaderAsync();
+            string? accountBHeader = await operationsPage.GetAccountHeaderAsync("B");
+            Assert.NotNull(accountAHeader);
+            Assert.NotNull(accountBHeader);
+            Assert.StartsWith("Account A: ", accountAHeader, StringComparison.Ordinal);
+            Assert.StartsWith("Account B: ", accountBHeader, StringComparison.Ordinal);
+            string accountAId = accountAHeader["Account A: ".Length..];
+            string accountBId = accountBHeader["Account B: ".Length..];
+            Assert.Equal(accountBId, await operationsPage.GetTransferDestinationValueAsync());
+            Assert.Equal(accountAId, await operationsPage.GetTransferDestinationValueAsync("B"));
+            await operationsPage.EnterTransferAmountAsync(25.00m);
+            await operationsPage.ClickStartTransferAsync();
+            await operationsPage.WaitForTransferPhaseAsync("Completed", ProjectionTimeout);
+            await operationsPage.WaitForBalanceValueAsync("475.00", ProjectionTimeout);
+            await operationsPage.WaitForBalanceValueAsync("525.00", ProjectionTimeout, "B");
+            ILocator status = operationsPage.GetTransferStatus();
+            string statusText = await status.TextContentAsync() ?? string.Empty;
+            Assert.Contains("Transfer saga ID:", statusText, StringComparison.Ordinal);
+            Assert.Contains("Last completed step:", statusText, StringComparison.Ordinal);
+            Assert.Contains("Finished:", statusText, StringComparison.Ordinal);
+            Assert.Equal("complete", await status.GetAttributeAsync("data-state"));
+            await SaveTransferStatusScreenshotsAsync(page, operationsPage);
+            await operationsPage.WaitForBalanceValueAsync("475.00", ProjectionTimeout);
+            await operationsPage.WaitForBalanceValueAsync("525.00", ProjectionTimeout, "B");
+            await operationsPage.WaitForTransferPhaseAsync("Completed", ProjectionTimeout);
+            Assert.True(
+                await page.EvaluateAsync<bool>("document.documentElement.scrollWidth <= window.innerWidth"),
+                "the transfer status must fit the mobile viewport without page-level horizontal overflow");
         }
         finally
         {

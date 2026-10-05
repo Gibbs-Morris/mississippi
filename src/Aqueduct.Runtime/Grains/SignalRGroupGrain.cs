@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -162,16 +164,30 @@ internal sealed class SignalRGroupGrain
         ImmutableHashSet<string> connections = state.ConnectionIds;
         int connectionCount = connections.Count;
         Logger.SendingToGroup(groupKey, method, connectionCount);
-
-        // Fan out to each connection
-        foreach (string connectionId in connections)
-        {
-            ISignalRClientGrain clientGrain = GrainFactory.GetGrain<ISignalRClientGrain>($"{hubName}:{connectionId}");
-            await clientGrain.SendMessageAsync(method, args)
-                .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
-        }
-
+        IEnumerable<Task> sends = connections.Select(connectionId =>
+            SendMessageToConnectionAsync(hubName, connectionId, method, args));
+        await Task.WhenAll(sends).ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
         AqueductMetrics.RecordGroupMessageSent(hubName, method, connectionCount);
         Logger.SentToGroup(groupKey, method, connectionCount);
+    }
+
+    /// <summary>
+    ///     Isolates client lookup and invocation failures in the recipient's asynchronous send task.
+    /// </summary>
+    /// <param name="hubName">The hub owning the group.</param>
+    /// <param name="connectionId">The snapshot member receiving the message.</param>
+    /// <param name="method">The SignalR method name.</param>
+    /// <param name="args">The message arguments.</param>
+    /// <returns>The recipient's send operation.</returns>
+    private async Task SendMessageToConnectionAsync(
+        string hubName,
+        string connectionId,
+        string method,
+        ImmutableArray<object?> args
+    )
+    {
+        ISignalRClientGrain clientGrain = GrainFactory.GetGrain<ISignalRClientGrain>($"{hubName}:{connectionId}");
+        await clientGrain.SendMessageAsync(method, args)
+            .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
     }
 }
