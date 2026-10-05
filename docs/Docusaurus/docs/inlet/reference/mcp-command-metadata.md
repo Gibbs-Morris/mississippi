@@ -78,5 +78,5 @@ Use command metadata to describe the tool accurately, and parameter descriptions
 
 ## Next Steps
 
-- Read [Generated Application Contracts](./generated-contracts.md) for generator inputs and registration boundaries.
+- Read [Spring's Local MCP Setup](../../samples/spring-sample/how-to/mcp-server-vscode-testing.md) for `WithGeneratedMcpTools()` registration and the sample's Development endpoint.
 - Read [Inlet Reference](./reference.md) for the wider subsystem surface.
