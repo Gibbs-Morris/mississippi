@@ -800,3 +800,27 @@ applyTo: '.github/agents/cs-*.agent.md'
         ($json | ConvertFrom-Json).Complete | Should -BeTrue
     }
 }
+
+Describe 'Public documentation policy contracts' {
+    BeforeAll {
+        $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+        $policy = Get-Content -LiteralPath (Join-Path $root 'docs/Docusaurus/docs/AGENTS.md') -Raw
+        $guide = Get-Content -LiteralPath (Join-Path $root 'docs/Docusaurus/docs/contributing/documentation-guide.md') -Raw
+        $taxonomy = [regex]::Match($guide, '(?s)## Choose The Page Type First(.*?)## Decide').Groups[1].Value
+        $types = @([regex]::Matches($taxonomy, '\| `([^`]+)` \|') | ForEach-Object { $_.Groups[1].Value })
+        function Assert-PageTypes([string]$Text) {
+            $rule = [regex]::Match($Text, '(?m)^- DOC2[^:]*: .*\*\*MUST\*\*.*exactly one of.*$').Value
+            $declared = @([regex]::Matches($rule, '`([^`]+)`') | ForEach-Object { $_.Groups[1].Value })
+            if ($types.Count -ne 9 -or $rule -notmatch 'before writing' -or ($declared -join ',') -ne ($types -join ',')) { throw 'Missing exhaustive page-type contract' }
+        }
+    }
+
+    It 'restricts classification before writing to the public guide taxonomy' {
+        { Assert-PageTypes $policy } | Should -Not -Throw
+    }
+
+    It 'rejects a table-only taxonomy with an unrestricted classification rule' {
+        $regressed = $policy -replace '(?m)^- DOC2[^:]*: .*exactly one of.*$', '- DOC2: Each page **MUST** use exactly one type.'
+        { Assert-PageTypes $regressed } | Should -Throw '*page-type contract*'
+    }
+}

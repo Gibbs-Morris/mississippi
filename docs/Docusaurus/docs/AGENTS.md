@@ -19,7 +19,8 @@ Scope: docs/Docusaurus/docs/**/*.{md,mdx} and public-documentation authoring/rev
 - DOC1.3: Claims **MUST** have code/tests/verified samples/design/ADR/runtime evidence.
 - DOC1.4: Unverifiable claims **MUST NOT** appear as fact.
 - DOC1.5: Guaranteed/default/typical/implementation/unsupported/future behavior **MUST** be distinguished.
-- DOC2: Each product page **MUST** answer one question and use exactly one type.
+- DOC2: Each product page **MUST** answer one question.
+- DOC2.1: Before writing, authors **MUST** classify each product page as exactly one of `getting-started`, `tutorials`, `how-to`, `concepts`, `reference`, `operations`, `troubleshooting`, `migration`, or `release-notes`. Why: Page type determines its structure and evidence requirements.
 - DOC2.2: Before drafting/validating, authors/reviewers **MUST** read/follow selected author-technical-documentation skill contract and corresponding local guide from the table below.
 - DOC3: Pages **MUST** state answer/scope in their opening and honor page-type contract over hybrid folder history.
 - DOC3.2: Multiple intents **MUST** become cross-linked separate pages.

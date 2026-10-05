@@ -24,7 +24,7 @@ This slice rebuilds the Docs portion of [original PR #809](https://github.com/Gi
 | Docs author R2 | No invented contracts or runtime behavior | DOC1.2 |
 | Docs author R3 | Evidence required; unverified claims not fact | DOC1.3, DOC1.4 |
 | Docs author R4 | Distinguish guarantee, default, typical, detail, unsupported, future | DOC1.5 |
-| Docs author R5 | One question and exactly one page type | DOC2 |
+| Docs author R5 | One question and exactly one page type | DOC2, DOC2.1 |
 | Docs author R6 | Selected skill contract and matching local guide before drafting/validation | DOC2.2, DOC10, selected page contracts table |
 | Docs author R7 | Required and optional frontmatter fields | DOC4, DOC4.2 |
 | Docs author R8 | `.md` unless MDX components needed | DOC4.3 |
@@ -37,8 +37,8 @@ This slice rebuilds the Docs portion of [original PR #809](https://github.com/Gi
 | Docs author R15 | Prerequisites, plain language, no hype, next steps | DOC7.2, DOC7.3, DOC7.4 |
 | Docs author R16 | Runtime topics apply distributed-systems checklist | DOC8; existing public guide checklist |
 | Docs author R17 | Complete metadata, links, build, examples, terminology, adjacency | DOC9 |
-| Page focus R1 | Classify into the same nine types before writing | DOC2, selected page contracts table |
-| Page focus R2 | No blended types | DOC2, DOC11.2 |
+| Page focus R1 | Classify into the same nine types before writing | DOC2.1, selected page contracts table |
+| Page focus R2 | No blended types | DOC2.1, DOC11.2 |
 | Page focus R3 | One question and direct opening answer or scope | DOC2, DOC3 |
 | Page focus R4 | Page contract over hybrid physical folder | DOC3 |
 | Page focus R5 | Split and cross-link multiple intents | DOC3.2 |
