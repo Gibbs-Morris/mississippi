@@ -44,7 +44,7 @@ public sealed class SpringGatewayOrleansClientConnectionRetryFilterTests
             NullLogger<SpringGatewayOrleansClientConnectionRetryFilter>.Instance);
         Exception failure = new ConnectionFailedException("No gateway is available.");
         Assert.False(await filter.ShouldRetryConnectionAttempt(failure, new(true)));
-        for (int retryNumber = 0; retryNumber < 60; retryNumber++)
+        for (int retryNumber = 0; retryNumber < 180; retryNumber++)
         {
             Task<bool> retry = filter.ShouldRetryConnectionAttempt(failure, CancellationToken.None);
             timeProvider.Advance(TimeSpan.FromSeconds(1));
@@ -173,13 +173,15 @@ public sealed class SpringGatewayOrleansClientConnectionRetryFilterTests
         logger.Setup(value => value.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         SpringGatewayOrleansClientConnectionRetryFilter filter = new(timeProvider, logger.Object);
         Exception failure = new ConnectionFailedException("No gateway is available.");
-        for (int retryNumber = 0; retryNumber < 60; retryNumber++)
+        long startedTimestamp = timeProvider.GetTimestamp();
+        for (int retryNumber = 0; retryNumber < 180; retryNumber++)
         {
             Task<bool> retry = filter.ShouldRetryConnectionAttempt(failure, CancellationToken.None);
             timeProvider.Advance(TimeSpan.FromSeconds(1));
             Assert.True(await retry);
         }
 
+        Assert.Equal(TimeSpan.FromMinutes(3), timeProvider.GetElapsedTime(startedTimestamp));
         Task<bool> firstRejected = filter.ShouldRetryConnectionAttempt(failure, CancellationToken.None);
         Assert.True(firstRejected.IsCompletedSuccessfully);
         Assert.False(await firstRejected);
@@ -191,7 +193,7 @@ public sealed class SpringGatewayOrleansClientConnectionRetryFilterTests
                 LogLevel.Warning,
                 It.Is<EventId>(id => (id.Id == 3) && (id.Name == "ConnectionRetriesExhausted")),
                 It.Is<It.IsAnyType>((state, _) =>
-                    HasLogProperty(state, "MaxRetries", 60) &&
+                    HasLogProperty(state, "MaxRetries", 180) &&
                     HasLogProperty(
                         state,
                         "{OriginalFormat}",

@@ -16,7 +16,7 @@ namespace MississippiSamples.Spring.Gateway;
 /// </summary>
 internal sealed class SpringGatewayOrleansClientConnectionRetryFilter : IClientConnectionRetryFilter
 {
-    private const int MaxConnectionRetries = 60;
+    private const int MaxConnectionRetries = 180;
 
     private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(1);
 
