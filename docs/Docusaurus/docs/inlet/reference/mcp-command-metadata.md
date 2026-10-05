@@ -52,6 +52,7 @@ For property-based commands, generated construction uses `new() { ... }`. The co
 | Input | Emission boundary |
 | --- | --- |
 | Indexers | Selected by the readable-property scan, but emitted as ordinary parameters/initializer members without index arguments; generated C# is invalid. |
+| Converted names | Must be unique after first-character conversion. `URL` and `uRL` both produce `uRL`, causing duplicate generated parameters. |
 
 ## Runtime Boundary
 
