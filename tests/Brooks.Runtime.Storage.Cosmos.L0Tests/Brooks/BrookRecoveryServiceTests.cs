@@ -471,6 +471,50 @@ public sealed class BrookRecoveryServiceTests
     }
 
     /// <summary>
+    ///     Returns the cursor committed by an expired writer before its pending document disappears.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task RecoveryReturnsCursorCommittedBeforePendingReadAsync()
+    {
+        BrookKey key = new("test", "commit-between-recovery-reads");
+        long committedPosition = 0;
+        Mock<ICosmosRepository> repository = new(MockBehavior.Strict);
+        repository.Setup(r => r.GetCursorDocumentAsync(key, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => new()
+            {
+                Position = new(committedPosition),
+            });
+        repository.Setup(r => r.GetPendingCursorDocumentAsync(key, It.IsAny<CancellationToken>()))
+            .Returns(() =>
+            {
+                // The expired writer's atomic commit advances the cursor and removes pending metadata.
+                committedPosition = 5;
+                return Task.FromResult<CursorStorageModel?>(null);
+            });
+        Mock<IDistributedLock> writerLock = new(MockBehavior.Strict);
+        writerLock.Setup(l => l.RenewAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        Mock<IDistributedLockManager> lockManager = new(MockBehavior.Strict);
+        BrookRecoveryService service = new(
+            repository.Object,
+            new TestRetryPolicy(),
+            lockManager.Object,
+            Options.Create(new BrookStorageOptions()),
+            NullLogger<BrookRecoveryService>.Instance);
+        BrookPosition position = await service.GetOrRecoverCursorPositionAsync(
+            key,
+            writerLock.Object,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(5, position.Value);
+        repository.Verify(r => r.GetPendingCursorDocumentAsync(key, It.IsAny<CancellationToken>()), Times.Once);
+        repository.Verify(r => r.GetCursorDocumentAsync(key, It.IsAny<CancellationToken>()), Times.Once);
+        repository.VerifyNoOtherCalls();
+        lockManager.VerifyNoOtherCalls();
+        writerLock.Verify(l => l.RenewAsync(It.IsAny<CancellationToken>()), Times.Once);
+        writerLock.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
     ///     Logs a recovery failure once when the caller already owns the writer lease.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -480,6 +524,8 @@ public sealed class BrookRecoveryServiceTests
         BrookKey key = new("test", "writer-failure");
         InvalidOperationException failure = new("cursor unavailable");
         Mock<ICosmosRepository> repository = new(MockBehavior.Strict);
+        repository.Setup(r => r.GetPendingCursorDocumentAsync(key, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CursorStorageModel?)null);
         repository.Setup(r => r.GetCursorDocumentAsync(key, It.IsAny<CancellationToken>())).ThrowsAsync(failure);
         Mock<IDistributedLock> writerLock = new(MockBehavior.Strict);
         writerLock.Setup(l => l.RenewAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);

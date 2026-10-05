@@ -150,11 +150,11 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
     )
     {
         await writerLock.RenewAsync(cancellationToken);
-        CursorStorageModel? cursorDocument = await RetryPolicy.ExecuteAsync(
-            async () => await Repository.GetCursorDocumentAsync(brookId, cancellationToken),
-            cancellationToken);
         CursorStorageModel? pendingCursor = await RetryPolicy.ExecuteAsync(
             async () => await Repository.GetPendingCursorDocumentAsync(brookId, cancellationToken),
+            cancellationToken);
+        CursorStorageModel? cursorDocument = await RetryPolicy.ExecuteAsync(
+            async () => await Repository.GetCursorDocumentAsync(brookId, cancellationToken),
             cancellationToken);
         BrookPosition position = cursorDocument?.Position ?? new BrookPosition(-1);
         if (pendingCursor != null)
