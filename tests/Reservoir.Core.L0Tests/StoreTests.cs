@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -34,44 +33,6 @@ public sealed class StoreTests : IDisposable
     public void Dispose()
     {
         sut.Dispose();
-    }
-
-    private sealed record CapturedLog(
-        LogLevel Level,
-        EventId EventId,
-        string Message,
-        Exception? Exception,
-        KeyValuePair<string, object?>[] State
-    );
-
-    private sealed class CapturingLogger(bool enabled = true) : ILogger<Store>
-    {
-        public List<CapturedLog> Entries { get; } = [];
-
-        public IDisposable? BeginScope<TState>(
-            TState state
-        )
-            where TState : notnull =>
-            null;
-
-        public bool IsEnabled(
-            LogLevel logLevel
-        ) =>
-            enabled;
-
-        public void Log<TState>(
-            LogLevel logLevel,
-            EventId eventId,
-            TState state,
-            Exception? exception,
-            Func<TState, Exception?, string> formatter
-        )
-        {
-            KeyValuePair<string, object?>[] fields = state is IEnumerable<KeyValuePair<string, object?>> values
-                ? values.ToArray()
-                : [];
-            Entries.Add(new(logLevel, eventId, formatter(state, exception), exception, fields));
-        }
     }
 
     /// <summary>
@@ -367,7 +328,7 @@ public sealed class StoreTests : IDisposable
     [Fact]
     public void DisabledLoggingStillAllowsLaterListeners()
     {
-        CapturingLogger logger = new(false);
+        StoreCapturingLogger logger = new(false);
         ServiceCollection services = [];
         services.AddSingleton<ILogger<Store>>(logger);
         services.AddReservoir();
@@ -877,7 +838,7 @@ public sealed class StoreTests : IDisposable
     [Fact]
     public async Task ThrowingListenerDoesNotBlockLaterListenersOrEffects()
     {
-        CapturingLogger logger = new();
+        StoreCapturingLogger logger = new();
         InvalidOperationException failure = new("Listener failed.");
         TaskCompletionSource effectRan = new(TaskCreationOptions.RunContinuationsAsynchronously);
         ServiceCollection services = [];
@@ -894,7 +855,7 @@ public sealed class StoreTests : IDisposable
         store.Dispatch(new IncrementAction());
         await effectRan.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.Equal(1, laterCalls);
-        CapturedLog entry = Assert.Single(logger.Entries);
+        StoreCapturedLog entry = Assert.Single(logger.Entries);
         Assert.Equal(LogLevel.Error, entry.Level);
         Assert.Equal(new(1, "ListenerFailed"), entry.EventId);
         Assert.Equal("Store listener failed; continuing notification.", entry.Message);
