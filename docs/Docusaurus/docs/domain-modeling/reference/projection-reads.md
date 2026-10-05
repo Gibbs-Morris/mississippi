@@ -32,6 +32,8 @@ The [implementation](https://github.com/Gibbs-Morris/mississippi/blob/main/src/D
 
 The [versioned cache](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionVersionedCacheGrain.cs) also needs `[SnapshotStorageName]`; a missing storage-name attribute throws `InvalidOperationException` during activation. Routed keys require nonblank, pipe-free entity IDs and a combined encoded length of at most 4192 UTF-16 code units.
 
+Register the per-projection `IRootReducer<TProjection>` and `ISnapshotStateConverter<TProjection>` services used during activation. The built-in [`AddReducer`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Runtime/ReducerRegistrations.cs) overloads add the root reducer; [`AddSnapshotStateConverter<TProjection>()`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Runtime/SnapshotRegistrations.cs) adds the converter. [`AddUxProjections()`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionRegistrations.cs) adds only the projection grain factory, so it does not satisfy these services alone. Missing services can prevent cache activation. Use [Runtime Composition](../../reference/runtime-composition.md) for the host-owned providers and runtime infrastructure.
+
 ## Latest And Explicit Versions
 
 `GetLatestVersionAsync` resolves the cursor by brook name and entity ID, then calls `GetPositionAsync`. An already-active cursor returns its in-memory position without a fresh storage query; first activation reads storage before subscribing. The method's cancellation token is currently reserved and unused.
