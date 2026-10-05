@@ -310,7 +310,6 @@ internal sealed class InletSignalRActionEffect
         {
             // The owner released this request while the hub reply was pending.
             await UnsubscribeFromHubAsync(subscriptionId, path, entityId, CancellationToken.None);
-
             yield break;
         }
 
