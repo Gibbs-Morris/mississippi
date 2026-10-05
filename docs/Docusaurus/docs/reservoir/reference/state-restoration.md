@@ -28,7 +28,7 @@ Reset and restore actions entering through `Store.Dispatch` replace local store 
 
 The [store](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs) applies both actions through the same replacement logic:
 
-- A key must already exist in the current feature dictionary.
+- A key must already exist in the current feature dictionary with exactly matching casing. Preserve the registered `IFeatureState.FeatureKey`; differently cased keys are unknown and are ignored.
 - Its supplied value must be non-null.
 - The current feature object's runtime type must accept the supplied value through `IsInstanceOfType`.
 - Accepted entries replace their current values; unknown, null, incompatible, or omitted entries leave current values unchanged.
