@@ -846,6 +846,37 @@ Describe 'Committed cleanup entry points' {
     }
 }
 
+Describe 'Committed targeted cleanup preflight' {
+    It 'plans an explicit ignored file in process' {
+        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+        $json = @(& (Join-Path $repoRoot 'clean-up-targeted.ps1') -Files README.md -SkipSamples -PlanOnly)
+        $LASTEXITCODE | Should -Be 0
+        $plan = ($json -join "`n") | ConvertFrom-Json
+        $plan.Mode | Should -Be 'NoOp'
+        @($plan.InputPaths) | Should -Be @('README.md')
+    }
+
+    It 'plans a NUL-delimited file list in process' {
+        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+        $fileListPath = Join-Path $TestDrive 'committed-targeted-files.txt'
+        [System.IO.File]::WriteAllText($fileListPath, ('README.md' + [char]0), [System.Text.UTF8Encoding]::new($false))
+        $json = @(& (Join-Path $repoRoot 'clean-up-targeted.ps1') -FileListPath $fileListPath -PlanOnly)
+        $LASTEXITCODE | Should -Be 0
+        $plan = ($json -join "`n") | ConvertFrom-Json
+        $plan.Mode | Should -Be 'NoOp'
+        @($plan.InputPaths) | Should -Be @('README.md')
+    }
+
+    It 'plans identical base and head revisions in process' {
+        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+        $json = @(& (Join-Path $repoRoot 'clean-up-targeted.ps1') -BaseRef HEAD -HeadRef HEAD -PlanOnly)
+        $LASTEXITCODE | Should -Be 0
+        $plan = ($json -join "`n") | ConvertFrom-Json
+        $plan.Mode | Should -Be 'NoOp'
+        @($plan.InputPaths).Count | Should -Be 0
+    }
+}
+
 Describe 'Cleanup module exports' {
     It 'exports the standalone solution cleanup functions used by wrapper scripts' {
         Get-Command -Name Invoke-MississippiSolutionCleanup -Module RepositoryAutomation | Should -Not -BeNullOrEmpty
