@@ -42,7 +42,7 @@ A custom `IHubConnectionProvider` owns its own connection construction; these ad
 
 When `GeneratedApiAuthorization.Mode` is `RequireAuthorizationForAllGeneratedEndpoints` and `AllowAnonymousOptOut` is false, `MapInletHub` also requires authorization with the configured default policy, roles, and authentication schemes. If those defaults are blank, it uses the host's default authorization policy. Other combinations do not add this hub endpoint requirement through this mapper; subscription authorization is evaluated separately.
 
-`WithRoutePrefix` is a separate setting for the [automatic projection fetcher's](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/ActionEffects/AutoProjectionFetcher.cs) HTTP URLs. That fetcher defaults to `/api/projections`. Changing its prefix does not change `HubPath`.
+`WithRoutePrefix` is a separate setting for the [automatic projection fetcher's](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/ActionEffects/AutoProjectionFetcher.cs) HTTP URLs. That fetcher defaults to `/api/projections`. Changing its prefix does not change `HubPath`. The prefix is stored unchanged and joined directly with `/{path}/{entityId}`; a trailing slash creates a double slash. For an origin-rooted route use a leading slash and no trailing slash. A prefix without a leading slash resolves relative to `HttpClient.BaseAddress` and must match the host's intended routing.
 
 The [builder tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Client.L0Tests/Registrations/InletBlazorSignalRBuilderTests.cs) cover path guards, chaining, registration lifetime, and configuration closure. They do not prove that a configured deployment endpoint is reachable.
 
