@@ -40,6 +40,8 @@ The [cache implementation](https://github.com/Gibbs-Morris/mississippi/blob/main
 
 For target version zero, reconstruction creates a new state and reduces the first event at position `0`; it does not return the untouched new instance. For later targets, replay reads events after the base checkpoint through the requested version. Each event is converted to a domain event and passed to the root reducer in enumeration order. The built-in `BrookEventConverter` needs each stored event name in `IEventTypeRegistry`; register closed events with `AddEventType<TEvent>()` or scan supported attributed events. An absent name throws `InvalidOperationException` before reduction. The activation token is forwarded to the base-state request and event reader. For reference-type state, a successful matching reducer must return a fresh instance. The built-in root reducer throws `InvalidOperationException` when it receives the same non-null input reference back, so in-place mutation can fail reconstruction.
 
+The built-in `RootReducer.GetReducerHash()` hashes the sorted full names of registered reducer types. Editing their code or changing registration order leaves the hash unchanged, so a matching stored envelope still skips replay. Treat it as a fingerprint of registered type names, rather than reducer behavior; deployments changing reduction semantics need an appropriate snapshot invalidation or identity migration.
+
 ## Failure And Persistence Boundaries
 
 Storage reads, matching-envelope conversion, event conversion, and reducer failures propagate from activation. A matching envelope whose payload cannot be decoded does not automatically fall back to replay.
