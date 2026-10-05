@@ -61,9 +61,9 @@ public readonly record struct OperationResult
     private bool IsDefault => !Succeeded && ErrorCode is null && ErrorMessage is null;
 
     /// <summary>
-    ///     Gets the explicitly recorded success state.
+    ///     Gets a value indicating whether success was explicitly recorded.
     /// </summary>
-    [Id(0)]
+    [field: Id(0)]
     private bool Succeeded { get; }
 
     /// <summary>
