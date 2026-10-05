@@ -28,6 +28,8 @@ The [client DTO generator](https://github.com/Gibbs-Morris/mississippi/blob/main
 
 For a command using object-initializer mapping rather than constructor mapping, the generated server mapper must be able to construct it and assign every selected property. Each property needs an accessible setter or init accessor; a public getter-only property is still selected but its generated assignment fails compilation.
 
+For constructor-mapped records, the server mapper passes every selected property in enumeration order to the selected parameterized constructor. Its count, order, and types must accept that sequence. An extra selected computed property can add an argument absent from the constructor and fail compilation; compatible same-type parameters in a different order can receive unintended values. The generator does not validate that compatibility.
+
 ## Server Required-Field Inference
 
 [`PropertyModel`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Core/Analysis/PropertyModel.cs) marks a property required when it is non-nullable and has no detected declared default. This includes non-nullable value types: an `int` without a detected default is required too.
