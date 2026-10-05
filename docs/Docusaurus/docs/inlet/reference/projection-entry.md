@@ -40,6 +40,8 @@ Those null inputs throw `ArgumentNullException`. Every `Reduce...` method also r
 
 ## Action Transitions
 
+`ProjectionLoadingAction<T>`, `ProjectionErrorAction<T>`, `ProjectionLoadedAction<T>`, `ProjectionUpdatedAction<T>`, and `ProjectionConnectionChangedAction<T>` constructors reject a null entity ID with `ArgumentNullException`; empty IDs are accepted. The error-action constructor also rejects a null error. These constructor guards apply before the reducer transitions below.
+
 The [reducers](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/Reducers/ProjectionsReducer.cs) preserve every field except those listed below:
 
 - Loading sets `IsLoading` to true and clears the error. Existing data, version, and connection state remain available.
