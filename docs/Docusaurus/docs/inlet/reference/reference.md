@@ -106,6 +106,7 @@ Use this page as the current active reference for Inlet's builder-based client r
 
 - Read [SignalR Connection Startup](./connection-startup.md) for connection requests and readiness boundaries.
 - Read [Generated HTTP Authorization Options](./generated-http-authorization.md) for MVC defaults and metadata precedence.
+- Read [SignalR Endpoint Configuration](./signalr-endpoint.md) for client addresses and gateway mapping.
 - Read [Inlet Concepts](../concepts/concepts.md).
 - Read [How To Compose Inlet In Mississippi Client Apps](../how-to/how-to.md) for startup composition guidance.
 - Use the [Spring Sample](../../samples/spring-sample/index.md) to see Inlet composition patterns in practice.
