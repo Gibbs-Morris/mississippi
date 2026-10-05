@@ -44,6 +44,8 @@ SignalR fires `Reconnecting` once before its [automatic retry sequence](https://
 
 A failed or canceled `StartAsync` after the connecting action emits neither connected nor disconnected from that startup method. State can remain `Connecting` with `LastError` cleared after the attempt ends. See [Connection Startup](./connection-startup.md) for direct-call and action-flow failure handling.
 
+Built-in provider disposal removes its lifecycle callbacks before disposing the transport and dispatches no disconnected action. A previously recorded `Connected` status and connection ID can therefore remain after disposal; `SignalRConnectionSelectors.IsConnected` still reads that recorded status, not the disposed transport.
+
 ## Selector Meanings
 
 The [selectors](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/SignalRConnection/SignalRConnectionSelectors.cs) all reject null state with `ArgumentNullException`:
