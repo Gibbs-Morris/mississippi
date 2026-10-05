@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
@@ -20,12 +23,145 @@ namespace Mississippi.Reservoir.Core.L0Tests;
 /// </summary>
 public sealed class StoreTests : IDisposable
 {
+    private sealed record CapturedLog(LogLevel Level, EventId EventId, string Message, Exception? Exception, KeyValuePair<string, object?>[] State);
+
+    private sealed class CapturingLogger(bool enabled = true) : ILogger<Store>
+    {
+        public List<CapturedLog> Entries { get; } = [];
+
+        public IDisposable? BeginScope<TState>(
+            TState state
+        )
+            where TState : notnull =>
+            null;
+
+        public bool IsEnabled(
+            LogLevel logLevel
+        ) =>
+            enabled;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter
+        )
+        {
+            KeyValuePair<string, object?>[] fields = state is IEnumerable<KeyValuePair<string, object?>> values ? values.ToArray() : [];
+            Entries.Add(new CapturedLog(logLevel, eventId, formatter(state, exception), exception, fields));
+        }
+    }
+
     private readonly Store sut;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="StoreTests" /> class.
     /// </summary>
     public StoreTests() => sut = new();
+
+    /// <summary>
+    ///     A subscriber failure does not block later listeners or the action-effect pipeline, and is logged.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task ThrowingListenerDoesNotBlockLaterListenersOrEffects()
+    {
+        CapturingLogger logger = new();
+        InvalidOperationException failure = new("Listener failed.");
+        TaskCompletionSource effectRan = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        ServiceCollection services = [];
+        services.AddSingleton<ILogger<Store>>(logger);
+        services.AddTransient<IActionEffect<TestFeatureState>>(_ => new TestActionEffect(() => effectRan.SetResult()));
+        services.AddTransient<IRootActionEffect<TestFeatureState>, RootActionEffect<TestFeatureState>>();
+        services.AddReservoir().AddFeatureState<TestFeatureState>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        using IServiceScope scope = provider.CreateScope();
+        IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
+        int laterCalls = 0;
+        using IDisposable failed = store.Subscribe(() => throw failure);
+        using IDisposable later = store.Subscribe(() => laterCalls++);
+        store.Dispatch(new IncrementAction());
+        await effectRan.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal(1, laterCalls);
+        CapturedLog entry = Assert.Single(logger.Entries);
+        Assert.Equal(LogLevel.Error, entry.Level);
+        Assert.Equal(new EventId(1, "ListenerFailed"), entry.EventId);
+        Assert.Equal("Store listener failed; continuing notification.", entry.Message);
+        Assert.Same(failure, entry.Exception);
+        KeyValuePair<string, object?> field = Assert.Single(entry.State);
+        Assert.Equal("{OriginalFormat}", field.Key);
+        Assert.Equal(entry.Message, field.Value);
+    }
+
+    /// <summary>
+    ///     Disabled error logging does not change listener isolation or submit an event.
+    /// </summary>
+    [Fact]
+    public void DisabledLoggingStillAllowsLaterListeners()
+    {
+        CapturingLogger logger = new(false);
+        ServiceCollection services = [];
+        services.AddSingleton<ILogger<Store>>(logger);
+        services.AddReservoir();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        using IServiceScope scope = provider.CreateScope();
+        IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
+        int laterCalls = 0;
+        using IDisposable failed = store.Subscribe(() => throw new InvalidOperationException("Listener failed."));
+        using IDisposable later = store.Subscribe(() => laterCalls++);
+        store.Dispatch(new IncrementAction());
+        Assert.Equal(1, laterCalls);
+        Assert.Empty(logger.Entries);
+    }
+
+    /// <summary>
+    ///     State reset keeps notifying later subscribers after an ordinary subscriber failure.
+    /// </summary>
+    [Fact]
+    public void ResetContinuesPastThrowingListener()
+    {
+        int laterCalls = 0;
+        using IDisposable failed = sut.Subscribe(() => throw new InvalidOperationException("Listener failed."));
+        using IDisposable later = sut.Subscribe(() => laterCalls++);
+        sut.Dispatch(new ResetToInitialStateAction());
+        Assert.Equal(1, laterCalls);
+    }
+
+    /// <summary>
+    ///     State restoration keeps notifying later subscribers after an ordinary subscriber failure.
+    /// </summary>
+    [Fact]
+    public void RestoreContinuesPastThrowingListener()
+    {
+        int laterCalls = 0;
+        using IDisposable failed = sut.Subscribe(() => throw new InvalidOperationException("Listener failed."));
+        using IDisposable later = sut.Subscribe(() => laterCalls++);
+        sut.Dispatch(new RestoreStateAction(new Dictionary<string, object>()));
+        Assert.Equal(1, laterCalls);
+    }
+
+    /// <summary>
+    ///     Fatal runtime failures are propagated as the original instance instead of being isolated.
+    /// </summary>
+    /// <param name="exceptionType">The fatal runtime exception type.</param>
+    [Theory]
+    [InlineData(typeof(OutOfMemoryException))]
+    [InlineData(typeof(StackOverflowException))]
+    [InlineData(typeof(AccessViolationException))]
+    public void FatalListenerFailurePropagates(
+        Type exceptionType
+    )
+    {
+        Exception failure = Assert.IsAssignableFrom<Exception>(Activator.CreateInstance(exceptionType));
+        ExceptionDispatchInfo captured = ExceptionDispatchInfo.Capture(failure);
+        int laterCalls = 0;
+        using IDisposable failed = sut.Subscribe(captured.Throw);
+        using IDisposable later = sut.Subscribe(() => laterCalls++);
+        Exception actual = Assert.Throws(exceptionType, () => sut.Dispatch(new IncrementAction()));
+        Assert.Same(failure, actual);
+        Assert.Equal(0, laterCalls);
+    }
 
     /// <inheritdoc />
     public void Dispose()

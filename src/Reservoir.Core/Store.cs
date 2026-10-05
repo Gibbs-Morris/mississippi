@@ -6,6 +6,9 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.Events;
@@ -59,9 +62,24 @@ public class Store : IStore
     public Store(
         TimeProvider timeProvider
     )
+        : this(timeProvider, NullLogger<Store>.Instance)
+    {
+    }
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="Store" /> class with listener failure logging.
+    /// </summary>
+    /// <param name="timeProvider">The time provider for event timestamps.</param>
+    /// <param name="logger">The logger for isolated listener failures.</param>
+    public Store(
+        TimeProvider timeProvider,
+        ILogger<Store> logger
+    )
     {
         ArgumentNullException.ThrowIfNull(timeProvider);
+        ArgumentNullException.ThrowIfNull(logger);
         TimeProvider = timeProvider;
+        Logger = logger;
     }
 
     /// <summary>
@@ -79,11 +97,30 @@ public class Store : IStore
         IEnumerable<IMiddleware> middlewaresCollection,
         TimeProvider timeProvider
     )
+        : this(featureRegistrations, middlewaresCollection, timeProvider, NullLogger<Store>.Instance)
+    {
+    }
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="Store" /> class with DI-resolved components and logging.
+    /// </summary>
+    /// <param name="featureRegistrations">The feature state registrations to initialize.</param>
+    /// <param name="middlewaresCollection">The middlewares to register in the dispatch pipeline.</param>
+    /// <param name="timeProvider">The time provider for event timestamps.</param>
+    /// <param name="logger">The logger for isolated listener failures.</param>
+    public Store(
+        IEnumerable<IFeatureStateRegistration> featureRegistrations,
+        IEnumerable<IMiddleware> middlewaresCollection,
+        TimeProvider timeProvider,
+        ILogger<Store> logger
+    )
     {
         ArgumentNullException.ThrowIfNull(featureRegistrations);
         ArgumentNullException.ThrowIfNull(middlewaresCollection);
         ArgumentNullException.ThrowIfNull(timeProvider);
+        ArgumentNullException.ThrowIfNull(logger);
         TimeProvider = timeProvider;
+        Logger = logger;
 
         // Initialize feature states from registrations
         foreach (IFeatureStateRegistration registration in featureRegistrations)
@@ -113,6 +150,8 @@ public class Store : IStore
 
     /// <inheritdoc />
     public IObservable<StoreEventBase> StoreEvents => storeEventSubject;
+
+    private ILogger<Store> Logger { get; }
 
     private TimeProvider TimeProvider { get; }
 
@@ -345,7 +384,14 @@ public class Store : IStore
 
         foreach (Action listener in snapshot)
         {
-            listener();
+            try
+            {
+                listener();
+            }
+            catch (Exception exception) when (exception is not OutOfMemoryException and not StackOverflowException and not AccessViolationException)
+            {
+                Logger.ListenerFailed(exception);
+            }
         }
     }
 
