@@ -25,6 +25,8 @@ The [lifetime manager](https://github.com/Gibbs-Morris/mississippi/blob/main/src
 - A present connection is sent to through `ILocalMessageSender`.
 - Otherwise, the manager resolves the hub's client grain for that ID and calls `SendMessageAsync`. This remote route constructs a [client routing key](./routing-keys.md): the connection ID cannot contain `:`, and the combined key is limited to 4192 UTF-16 code units. Those key violations throw `ArgumentException`; the local branch does not construct that key.
 
+The [client grain](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Runtime/Grains/SignalRClientGrain.cs) returns successfully without publication when its stored server ID is empty, including an ID that was never connected or has disconnected. Completion of the remote send therefore does not establish that a message was published.
+
 Null argument arrays become empty arguments. The method's cancellation token is not passed to the local sender or client-grain send, whose called APIs have no token parameter.
 
 `SendAllAsync` and `SendAllExceptAsync` first ensure the shared backplane is initialized, then publish an `AllMessage`. The token controls initialization semaphore waits, but is not forwarded to stream subscriptions or directory registration. When initialization is already complete, the setup path returns without checking it. `PublishToAllAsync` has no token parameter, so a canceled token does not itself stop an initialized broadcast publication. Except sends include the supplied exclusion list in the message.
