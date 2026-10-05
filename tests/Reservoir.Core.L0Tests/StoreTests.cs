@@ -832,6 +832,59 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
+    ///     Fatal logger failures propagate as the original instance instead of being isolated.
+    /// </summary>
+    /// <param name="exceptionType">The fatal logging exception type.</param>
+    /// <param name="throwFromIsEnabled">Whether the logger fails during its enabled check.</param>
+    [Theory]
+    [InlineData(typeof(OutOfMemoryException), false)]
+    [InlineData(typeof(OutOfMemoryException), true)]
+    [InlineData(typeof(StackOverflowException), false)]
+    [InlineData(typeof(StackOverflowException), true)]
+    [InlineData(typeof(AccessViolationException), false)]
+    [InlineData(typeof(AccessViolationException), true)]
+    public void FatalLoggerFailurePropagates(Type exceptionType, bool throwFromIsEnabled)
+    {
+        Exception failure = Assert.IsType<Exception>(Activator.CreateInstance(exceptionType), false);
+        StoreThrowingLogger logger = new(failure, throwFromIsEnabled);
+        using Store store = new(TimeProvider.System, logger);
+        int laterCalls = 0;
+        using IDisposable failed = store.Subscribe(() => throw new InvalidOperationException("Listener failed."));
+        using IDisposable later = store.Subscribe(() => laterCalls++);
+        Exception actual = Assert.Throws(exceptionType, () => store.Dispatch(new IncrementAction()));
+        Assert.Same(failure, actual);
+        Assert.Equal(0, laterCalls);
+    }
+
+    /// <summary>
+    ///     Ordinary failures in either logger entry point cannot stop later listeners or effects.
+    /// </summary>
+    /// <param name="throwFromIsEnabled">Whether the logger fails during its enabled check.</param>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OrdinaryLoggerFailureStillAllowsLaterListenersAndEffects(bool throwFromIsEnabled)
+    {
+        StoreThrowingLogger logger = new(new InvalidOperationException("Logger failed."), throwFromIsEnabled);
+        TaskCompletionSource effectRan = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        ServiceCollection services = [];
+        services.AddSingleton<ILogger<Store>>(logger);
+        services.AddTransient<IActionEffect<TestFeatureState>>(_ => new TestActionEffect(() => effectRan.SetResult()));
+        services.AddTransient<IRootActionEffect<TestFeatureState>, RootActionEffect<TestFeatureState>>();
+        services.AddReservoir().AddFeatureState<TestFeatureState>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        using IServiceScope scope = provider.CreateScope();
+        IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
+        int laterCalls = 0;
+        using IDisposable failed = store.Subscribe(() => throw new InvalidOperationException("Listener failed."));
+        using IDisposable later = store.Subscribe(() => laterCalls++);
+        store.Dispatch(new IncrementAction());
+        await effectRan.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal(1, laterCalls);
+    }
+
+    /// <summary>
     ///     A subscriber failure does not block later listeners or the action-effect pipeline, and is logged.
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>

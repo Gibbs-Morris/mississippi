@@ -374,6 +374,14 @@ public class Store : IStore
         }
     }
 
+    /// <summary>
+    ///     Determines whether a failure must escape listener notification.
+    /// </summary>
+    /// <param name="exception">The listener or logging failure.</param>
+    /// <returns>Whether the exception must propagate.</returns>
+    private static bool IsCriticalException(Exception exception) =>
+        exception is OutOfMemoryException or StackOverflowException or AccessViolationException;
+
     private void NotifyListeners()
     {
         List<Action> snapshot;
@@ -388,10 +396,16 @@ public class Store : IStore
             {
                 listener();
             }
-            catch (Exception exception) when (exception is not OutOfMemoryException and not StackOverflowException
-                                                  and not AccessViolationException)
+            catch (Exception exception) when (!IsCriticalException(exception))
             {
-                Logger.ListenerFailed(exception);
+                try
+                {
+                    Logger.ListenerFailed(exception);
+                }
+                catch (Exception loggingException) when (!IsCriticalException(loggingException))
+                {
+                    // The configured logger has already failed; retrying it would defeat listener isolation.
+                }
             }
         }
     }
