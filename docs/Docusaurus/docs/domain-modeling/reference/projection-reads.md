@@ -55,7 +55,7 @@ The returned value contains state without a paired version. Separate calls for s
 
 Passing a canceled token does not itself add a cancellation check to the built-in cache read, cursor lookup, or early null-return paths.
 
-Reading can trigger snapshot reconstruction and a retention-dependent background write. The host needs the corresponding read and write permissions and bears that I/O cost; successful retrieval does not await completion of a newly requested snapshot write. See the [snapshot cache implementation](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Runtime/SnapshotCacheGrain.cs).
+Reading can trigger snapshot reconstruction and retention-dependent background persistence. An exact snapshot hit requests no new write, and reconstructed versions are persisted only when selected by retention. Read permissions cover retrieval; write permissions are needed when requested background persistence is expected to succeed. Successful retrieval does not await that new write's storage result. See the [snapshot cache implementation](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Runtime/SnapshotCacheGrain.cs).
 
 The [existing tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.Runtime.L0Tests/UxProjectionGrainTests.cs) cover direct version routing, latest-position delegation, a changed cursor position on a later read, and skipping cache resolution for `NotSet`.
 
