@@ -22,7 +22,7 @@ The command DTO generators select source properties through a shared `CommandMod
 
 [`CommandModel`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Core/Analysis/CommandModel.cs) selects declared public instance properties with a getter. It does not walk base types to collect inherited properties. Static, nonpublic, and getterless properties are excluded by this selection.
 
-The [server DTO generator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway.Generators/CommandServerDtoGenerator.cs) emits a sealed record with the source property's C# name and source type name. Each property receives `JsonPropertyName` using the camelCase form of that name.
+The [server DTO generator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway.Generators/CommandServerDtoGenerator.cs) emits a sealed record with the source property's C# name and source type name. Each property receives `JsonPropertyName` using the camelCase form of that name. The source type text is minimally qualified, and DTO files do not import each property type's source namespace. Custom type names must resolve in the generated namespaces, for example through suitable global usings; unresolved names make generated source fail compilation.
 
 The [client DTO generator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Generators/CommandClientDtoGenerator.cs) emits an internal sealed positional record. Every selected property becomes a constructor parameter with its source type and name. It does not copy optional defaults into those parameters.
 
