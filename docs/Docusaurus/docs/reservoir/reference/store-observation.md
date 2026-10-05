@@ -24,7 +24,7 @@ The [store](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.
 
 Ordinary core dispatch invokes listeners after its `ActionDispatchedEvent`, even when reduction retains every state reference. Reset and restore entering directly through `Store.Dispatch` invoke them only when their action's notification flag is true. A middleware replacement passed to `nextAction` reaches ordinary `CoreDispatch` after the system-action check, so that path does not honor the restoration notification flag.
 
-For each notification, the store copies the current listener list, then calls it in order. Removing a listener during a callback does not remove it from that already-captured list; adding one affects later notifications.
+For each notification, the store copies the current listener list, then calls it in order. Removing a listener during a callback does not remove it from that already-captured list; adding one affects later notifications. This ordering applies within one notification only. Concurrent dispatches can capture separate lists and invoke the same listener concurrently outside the lock; notification sequences can interleave.
 
 ## Store Event Observers
 
