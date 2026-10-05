@@ -114,6 +114,7 @@ Use this page as the current active reference for Inlet's builder-based client r
 - Read [Client Command HTTP Outcomes](./command-http-outcomes.md) for request results and failure codes.
 - Read [Generated Command DTO Properties](./command-dto-properties.md) for property selection and required fields.
 - Read [Generated MCP Command Metadata](./mcp-command-metadata.md) for tool hints and parameter descriptions.
+- Read [Projection Update Notifications](./projection-notifications.md) for the dispatch bridge and payload validation.
 - Read [Inlet Concepts](../concepts/concepts.md).
 - Read [How To Compose Inlet In Mississippi Client Apps](../how-to/how-to.md) for startup composition guidance.
 - Use the [Spring Sample](../../samples/spring-sample/index.md) to see Inlet composition patterns in practice.
