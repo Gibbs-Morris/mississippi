@@ -45,7 +45,7 @@ After ordinary dispatch guards, `Store.Dispatch` recognizes `ISystemAction` befo
 
 Middleware calling `nextAction` with a replacement reset/restore action does not re-enter this check. The pipeline ends at ordinary `CoreDispatch`, so that replacement runs the ordinary reduction/listener/effect path without restoring state. Dedicated restoration requires entry through `Store.Dispatch`.
 
-It then calls state listeners only when `NotifyListeners` is true. Setting the flag false suppresses those listener calls, rather than the restoration events. No ordinary `ActionDispatchedEvent` is emitted, and user reducers/effects are not invoked by this path.
+It then calls state listeners only when `NotifyListeners` is true. Setting the flag false suppresses those listener calls, rather than the restoration events. No ordinary `ActionDispatchedEvent` is emitted, and user reducers/effects are not invoked by this path. Already-running effects are not canceled or awaited by reset/restore. Ordinary dispatch starts them without awaiting completion and supplies `CancellationToken.None`; their later result actions are dispatched normally and can change restored state. Coordinate in-flight effects when restoration must remain stable.
 
 An unrecognized `ISystemAction` emits only the dispatching event and returns without restoration or listener notification. Callback exceptions propagate without rollback. A dispatching-event observer can fail before any replacement; a restoration-event observer can fail after replacement but before listeners; a listener can fail after replacement and prevent later listeners from running. A failed call therefore does not by itself show whether restoration occurred.
 
