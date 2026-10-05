@@ -570,13 +570,14 @@ public sealed class StoreTests : IDisposable
     [Fact]
     public void InterruptedListenerThreadPropagates()
     {
+        using ManualResetEventSlim callbackBlocked = new();
         using ManualResetEventSlim callbackStarted = new();
         Exception? dispatchFailure = null;
         int laterCalls = 0;
         using IDisposable failed = sut.Subscribe(() =>
         {
             callbackStarted.Set();
-            Thread.Sleep(Timeout.Infinite);
+            callbackBlocked.Wait();
         });
         using IDisposable later = sut.Subscribe(() => Interlocked.Increment(ref laterCalls));
         Thread dispatcher = new(() =>
@@ -585,7 +586,7 @@ public sealed class StoreTests : IDisposable
             {
                 sut.Dispatch(new IncrementAction());
             }
-            catch (Exception exception)
+            catch (ThreadInterruptedException exception)
             {
                 dispatchFailure = exception;
             }
