@@ -30,7 +30,7 @@ Generated types are excluded by `CompilerGeneratedAttribute` and known name/name
 
 `GetExpectedAlias(type)` uses `Type.FullName`, falling back to `Name`. CLR generic arity and nested-type separators are retained. Alias comparison is ordinal and case-sensitive.
 
-Mismatch records contain assembly name, type name, actual and expected aliases, and category metadata. Categories are inferred from names/namespaces such as commands, events, projections, aggregates, and grain types; they do not establish the type's domain role.
+Mismatch records contain assembly name, type name, actual and expected aliases, and category metadata. `TypeCategory` is inferred from names/namespaces such as commands, events, projections, aggregates, and grain types; it does not establish the type's domain role. `MismatchCategory` is separately fixed to `AliasDoesNotMatchCurrentTypeName` by this helper.
 
 ## Exception Rules And Results
 
