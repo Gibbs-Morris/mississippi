@@ -46,6 +46,8 @@ The server emitter then applies these rules:
 
 A detected source default therefore changes required-field inference, but this server emitter does not reproduce that default value in the DTO. The source `required` modifier is not a separate input to this inference.
 
+For a reference property, [`JsonRequired`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonrequiredattribute?view=net-10.0) checks member presence and permits a present JSON null. The C# `required` modifier alone is not a runtime non-null check either. A deserializer can therefore produce a null reference unless separate JSON options or host validation reject it; these generated markers do not provide that rejection or protect command mapping by themselves.
+
 ## Validation Boundary
 
 Generated required markers describe the generated DTO contract. They do not implement business rules such as positive quantities, valid account identifiers, or an allowed command at the current aggregate state; those rules belong in command handling.
