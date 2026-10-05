@@ -11,19 +11,6 @@ namespace Mississippi.Reservoir.Core.L0Tests;
 public sealed class StoreLoggingConstructorTests
 {
     /// <summary>
-    ///     An explicit logger cannot be null.
-    /// </summary>
-    [Fact]
-    public void ConstructorRejectsNullLogger()
-    {
-        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() =>
-        {
-            using Store store = new(TimeProvider.System, null!);
-        });
-        Assert.Equal("logger", exception.ParamName);
-    }
-
-    /// <summary>
     ///     DI-resolved components cannot use a null logger.
     /// </summary>
     [Fact]
@@ -32,6 +19,19 @@ public sealed class StoreLoggingConstructorTests
         ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() =>
         {
             using Store store = new([], [], TimeProvider.System, null!);
+        });
+        Assert.Equal("logger", exception.ParamName);
+    }
+
+    /// <summary>
+    ///     An explicit logger cannot be null.
+    /// </summary>
+    [Fact]
+    public void ConstructorRejectsNullLogger()
+    {
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() =>
+        {
+            using Store store = new(TimeProvider.System, null!);
         });
         Assert.Equal("logger", exception.ParamName);
     }

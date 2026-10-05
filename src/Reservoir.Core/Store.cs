@@ -388,7 +388,8 @@ public class Store : IStore
             {
                 listener();
             }
-            catch (Exception exception) when (exception is not OutOfMemoryException and not StackOverflowException and not AccessViolationException)
+            catch (Exception exception) when (exception is not OutOfMemoryException and not StackOverflowException
+                                                  and not AccessViolationException)
             {
                 Logger.ListenerFailed(exception);
             }
