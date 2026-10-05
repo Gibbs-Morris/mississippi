@@ -38,7 +38,7 @@ For sequential registrations, the first type registered for a name stays associa
 
 Registering a second distinct name for an already registered type adds another name-to-type entry, but the type-to-name lookup retains its first name. For example, registering name `A` for a type and then name `B` for that same type allows both names to resolve to the type; resolving the type's name still returns `A`.
 
-The two directions therefore need not be a one-to-one mapping. They are updated through separate dictionary additions, rather than one atomic paired update. A duplicate name is not reported as a registration exception. Persisted event storage names need to be globally unique across event types used by the application. First-wins collision behavior is a failure mode rather than a registration strategy: an existing name can resolve stored bytes to the wrong CLR event type and break hydration.
+The two directions therefore need not be a one-to-one mapping. They are updated through separate dictionary additions, rather than one atomic paired update. A duplicate name is not reported as a registration exception. Keep persisted event names unique across the application's event types, and snapshot names unique across its snapshot types. Both registries silently preserve the first type for a duplicate name and omit the rejected type's reverse mapping. This is a failure mode rather than a registration strategy: stored bytes can resolve to an unintended CLR type and break hydration.
 
 Manual `Register` uses the supplied name. It does not derive or cross-check that name against the type's event or snapshot storage-name attribute; attribute-name extraction belongs to scanning and the higher-level registration helpers.
 
