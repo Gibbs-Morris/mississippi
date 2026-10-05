@@ -47,7 +47,7 @@ Missing matching reducers throw `InvalidOperationException`. The runtime-type ro
 - The predicate overload of `ThenShouldSatisfy` requires true and uses the supplied reason in its xUnit assertion.
 - `ThenEquals` and its `ThenShouldBe` alias compare expected public members structurally, allowing additional actual members.
 
-Structural assertions require matching collection counts and duplicate occurrences. The expected value selects comparison: expected byte arrays are ordered, ordinary expected sequences are unordered, and expected dictionaries match keys and counts. Use explicit callback assertions when sequence order or exact CLR type is part of the outcome.
+Structural assertions require matching collection counts and duplicate occurrences. The expected value selects comparison: expected byte arrays are ordered, ordinary expected sequences are unordered, and expected dictionaries match keys and counts. That dictionary path requires both expected and actual values to implement nongeneric `System.Collections.IDictionary`. An actual value exposing only `IDictionary<TKey, TValue>` fails that assignability check even if its entries match. Use explicit callback assertions when sequence order or exact CLR type is part of the outcome.
 
 The [contract tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.TestHarness.L0Tests/AssertionContractTests.cs) demonstrate expected-member subsets, unordered projection collections, and rejection of incomplete collections. The [source README](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.TestHarness/README.md) links executable Spring fixtures.
 
