@@ -50,7 +50,7 @@ The [registration tests](https://github.com/Gibbs-Morris/mississippi/blob/main/t
 
 ## Worker Resolution And Failures
 
-The [stateless worker](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/FireAndForgetEffectWorkerGrain.cs) resolves registered `IFireAndForgetEventEffect<TEvent, TAggregate>` implementations and selects the first whose CLR `FullName` exactly matches `EffectTypeName`.
+The [stateless worker](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/FireAndForgetEffectWorkerGrain.cs) resolves registered `IFireAndForgetEventEffect<TEvent, TAggregate>` implementations and selects the first whose CLR `FullName` exactly matches `EffectTypeName`. With the default Microsoft DI container, resolving this enumerable constructs the registered implementations before that selection. A constructor or dependency failure in another registered effect can prevent an otherwise healthy requested effect from running; the worker catches ordinary resolution failures and logs/records them under the requested effect name.
 
 Renaming an effect or moving it to another namespace changes this identity. During a rolling upgrade, an envelope with an old name can reach a worker that logs a missing effect and returns. Orleans serialization aliases do not translate this application-level string.
 
