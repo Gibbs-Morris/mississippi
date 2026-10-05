@@ -51,7 +51,7 @@ Both overloads call `AddRootReducer<TProjection>`, which uses `TryAddTransient` 
 
 The current root computes `GetReducerHash()` once from reducer CLR type names: sort them using ordinal order, join them with `|`, hash the UTF-8 bytes with SHA-256, and return uppercase hexadecimal.
 
-The input preserves duplicate type names but excludes method bodies, delegate contents, and registration priority. Reordering the same reducer types can therefore change first-match behavior without changing this hash. Treat it as the current type-based identity, not proof that reduction behavior is unchanged.
+The input preserves duplicate CLR `FullName` values (falling back to `Name`) but excludes assembly identity, method bodies, delegate contents, and registration priority. A replacement reducer from another assembly with the same full name produces the same hash, and reordering the same types can change first-match behavior without changing it. This is a full-name hash, not proof that reduction behavior is unchanged.
 
 The [root tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Tributary.Runtime.L0Tests/RootReducerTests.cs) cover indexed dispatch before a fallback registered later, first-match behavior, unmatched identity, reference-reuse rejection, and order-independent hashing. They do not establish priority over a fallback registered earlier; that broader ordering rule above is verified from the implementation. The [registration tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Tributary.Runtime.L0Tests/ReducerRegistrationsTests.cs) cover transient services and root registration.
 
