@@ -16,7 +16,7 @@ sidebar_label: Projection Reads
 
 - `Mississippi.DomainModeling.Abstractions.IUxProjectionGrain<TProjection>`
 - The built-in `UxProjectionGrain<TProjection>` implementation
-- The built-in projection grains and constrained factory overloads require `TProjection : class`; the public grain interfaces themselves have no generic constraint. Their built-in snapshot-cache route additionally needs a nonabstract projection type with a public parameterless constructor (`new()`).
+- The built-in projection grains and constrained factory overloads require `TProjection : class`; the public grain interfaces themselves have no generic constraint. Their built-in snapshot-cache route additionally needs a nonabstract projection type with a public parameterless constructor (`new()`). Projection state and its object graph also need compatible Orleans serialization for grain copying and cross-silo calls. Follow the repository state contract with `[GenerateSerializer]`, a stable `[Alias]`, and stable numbered `[Id]` members; registration alone does not provide codecs for arbitrary payload types.
 
 ## Read Methods
 
