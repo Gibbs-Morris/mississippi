@@ -38,6 +38,8 @@ The [JSON provider](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Br
 
 Asynchronous writing therefore still buffers the complete encoded payload. The method does not provide incremental encoding or a fixed memory limit. It does not call `Flush` or `FlushAsync`; the caller owns flushing and disposal of the stream. Neither asynchronous method disposes it.
 
+Both methods use the stream's current position without seeking. Writing does not truncate existing content: replacing a longer payload can leave trailing bytes, while writing at the end appends another JSON value. Callers own positioning and, when replacing content in a seekable stream, truncation.
+
 These serializer calls supply no `JsonSerializerOptions`. They use the platform defaults and applicable type attributes; this provider exposes no custom naming, converter, or other options callback.
 
 Null source or destination streams throw `ArgumentNullException`. Malformed JSON can throw `JsonException`, and serializer or stream I/O failures propagate without provider retry. A null decoded value instead uses the `InvalidOperationException` described above.
