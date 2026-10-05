@@ -44,7 +44,7 @@ The [summary](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainMo
 - `ConfigurationErrors`: invalid or stale exception-rule diagnostics.
 - `ActiveExceptions`: rules matching at least one scanned candidate.
 
-Configuration errors do not themselves prevent a matching rule from suppressing a mismatch. A consumer deciding whether a test passes should inspect both mismatches and configuration errors. `FormatReport` formats the ordered results, including active exceptions, subject to the scan's ordering ties above.
+Configuration errors do not themselves prevent a matching rule from suppressing a mismatch. A consumer deciding whether a test passes should inspect both mismatches and configuration errors. `FormatReport` formats the ordered results, subject to the scan's ordering ties above. `ActiveExceptions` sort only by normalized `TypeFullName` and `ExpectedAlias`. Rules with equal identifiers but different classifications tie on both keys and retain their preceding sequence, so their report order can also depend on exception-rule input order.
 
 ## Optional Report Output
 
