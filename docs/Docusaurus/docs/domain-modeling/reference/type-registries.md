@@ -46,7 +46,7 @@ Snapshot registration does inspect `[SnapshotRetention]` before adding either ma
 
 ## Assembly Scanning
 
-The event registry looks for `[EventStorageName]`; the snapshot registry looks for `[SnapshotStorageName]`. Each calls `assembly.GetTypes()` and reads the attribute with inheritance disabled. Unattributed types are skipped.
+The event registry looks for `[EventStorageName]`; the snapshot registry looks for `[SnapshotStorageName]`. Each calls `assembly.GetTypes()` and reads the attribute with inheritance disabled. Unattributed types are skipped. For an open generic event type, this scan registers the raw attribute name and open CLR type. It does not enumerate constructed generic types or derive their hashed storage names. Register every required closed event through `AddEventType<TEvent>()`; that helper uses the closed type's storage-name calculation, unlike scan-only registration.
 
 The returned count increments for each attributed type processed after `Register` returns. It is not a count of newly added dictionary entries. Scanning an already registered assembly can therefore return a nonzero count without adding mappings.
 
