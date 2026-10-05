@@ -24,7 +24,7 @@ The [cursor key](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Domai
 
 Successful constructor and `Parse` results have non-null, nonempty, non-whitespace, pipe-free components. The combined name, separator, and entity ID may contain at most 4192 UTF-16 code units. `Parse` requires exactly two parts and reuses constructor validation; `TryParse` returns false with a default output for invalid input. The default struct bypasses validation and has null components. `FromBrookKey` and `ToBrookKey` preserve components only when the destination constructor accepts them. `BrookKey` permits empty and whitespace-only components, but `FromBrookKey` rejects those with `ArgumentException` through cursor validation. `ToBrookKey` on a default cursor throws `ArgumentNullException` because its components are null.
 
-The [factory](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionGrainFactory.cs) derives the brook name from `TProjection` for its typed convenience overload, then resolves the non-generic cursor grain by that key. Projection types consuming the same brook for the same entity therefore share this cursor identity.
+The [factory](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionGrainFactory.cs) derives the brook name from `TProjection` for its typed convenience overload, then resolves the non-generic cursor grain by that key. That overload requires `[BrookName]`; a missing attribute throws `InvalidOperationException` before grain resolution. Projection types consuming the same brook for the same entity therefore share this cursor identity.
 
 ## Activation And Reads
 
