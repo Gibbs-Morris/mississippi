@@ -28,7 +28,7 @@ The [options](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Ga
 - `DefaultRoles`: null; optional roles string assigned to that filter.
 - `DefaultAuthenticationSchemes`: null; optional authentication-schemes string assigned to that filter.
 
-The convention ignores whitespace-only default strings and copies other values without trimming or parsing them itself. Assigning these options does not register the named policy or authentication schemes; the host owns that setup.
+The convention ignores whitespace-only default strings and copies other values without trimming or parsing them itself. Assigning these options does not register the named policy or authentication schemes; the host owns that setup. The named policy must be available from the host's policy provider and each scheme must have a configured handler. ASP.NET Core throws `InvalidOperationException` when combining an unavailable named policy or authenticating through a missing handler; these configuration failures are not ordinary authorization-denied outcomes.
 
 When force mode adds a filter and all three default strings are null or blank, its empty `AuthorizeAttribute` uses the host's configured ASP.NET Core default authorization policy. The platform default requires an authenticated user; null option values do not remove authorization.
 
