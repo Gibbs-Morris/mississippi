@@ -23,7 +23,7 @@ sidebar_label: Aqueduct Message Delivery
 The [lifetime manager](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Gateway/AqueductHubLifetimeManager.cs) derives its hub name from `typeof(THub).Name`. `SendConnectionAsync` requires non-null, nonempty connection ID and method name, then checks the local registry:
 
 - A present connection is sent to through `ILocalMessageSender`.
-- Otherwise, the manager resolves the hub's client grain for that ID and calls `SendMessageAsync`.
+- Otherwise, the manager resolves the hub's client grain for that ID and calls `SendMessageAsync`. This remote route constructs a [client routing key](./routing-keys.md): the connection ID cannot contain `:`, and the combined key is limited to 4192 UTF-16 code units. Those key violations throw `ArgumentException`; the local branch does not construct that key.
 
 Null argument arrays become empty arguments. The method's cancellation token is not passed to the local sender or client-grain send, whose called APIs have no token parameter.
 
