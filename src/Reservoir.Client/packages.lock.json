@@ -222,6 +222,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.12, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[10.0.12, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },

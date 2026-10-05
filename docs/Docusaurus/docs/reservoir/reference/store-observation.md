@@ -36,7 +36,13 @@ Ordinary dispatch enters pre/post-reduction observation only when middleware rea
 
 ## Callback And Disposal Boundaries
 
-An observer or listener exception propagates at its callback site, interrupts later callbacks in that captured list, and can interrupt the surrounding dispatch. The store does not translate reducer or callback failures into an automatic `OnError` event. A throwing `OnNext` observer or state listener also remains registered. Later dispatches can fail at that callback again until its subscription is disposed or the callback is corrected with coordinated dispatch ownership. Keep callbacks short and observational. A listener or event observer can call `Dispatch` synchronously. That nested dispatch runs before the outer callback returns and can nest notification lists and pre/post event pairs on the same thread; concurrent callers are not required for interleaving.
+The default store isolates ordinary state-listener failures, attempts to log the original exception as the `ListenerFailed` error event, and continues later listeners and ordinary dispatch effects. Ordinary failures from the logger's enabled check or log method are also isolated. A disabled or failing logger can leave that event unrecorded. A throwing listener remains registered and is called again during later notifications.
+
+`OutOfMemoryException`, `StackOverflowException`, `AccessViolationException`, and `ThreadInterruptedException` from a listener or logging call propagate. They interrupt later listeners in that captured list and can stop effect triggering for the surrounding dispatch.
+
+An event-observer exception still propagates at its callback site, interrupts later observers in that publication snapshot, and can interrupt dispatch. A throwing `OnNext` observer remains registered, so later dispatches can fail there again until its subscription is disposed or the callback is corrected with coordinated dispatch ownership. The store does not translate reducer or callback failures into an automatic `OnError` event.
+
+Keep callbacks short and observational. A listener or event observer can call `Dispatch` synchronously. That nested dispatch runs before the outer callback returns and can nest notification lists and pre/post event pairs on the same thread; concurrent callers are not required for interleaving.
 
 On normal store disposal, the subject calls `OnCompleted` on its captured observers, then the store clears listeners and stored state. If a completion callback throws, later observers are not completed and store clearing is skipped. Both disposed flags were already set, so another `Dispose` returns early and does not finish that partial cleanup.
 
@@ -50,7 +56,7 @@ The [store tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Re
 
 ## Summary
 
-Choose state listeners for notification callbacks and event observers for dispatch boundaries. Neither subscription replays past state changes, and synchronous callback failures can affect dispatch or disposal.
+Choose state listeners for notification callbacks and event observers for dispatch boundaries. Neither subscription replays past state changes. Ordinary listener and logger failures are isolated; critical failures and event-observer failures can interrupt dispatch. Completion-observer failures can interrupt disposal.
 
 ## Next Steps
 
