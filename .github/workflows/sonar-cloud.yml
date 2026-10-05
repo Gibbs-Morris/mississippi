@@ -120,6 +120,8 @@ jobs:
           $configuration.CodeCoverage.Enabled = $true
           $configuration.CodeCoverage.Path = @(
             './run-docs.ps1',
+            './clean-up.ps1',
+            './clean-up-targeted.ps1',
             './eng/src/agent-scripts/AgentDoctor.psm1',
             './eng/src/agent-scripts/PesterCoverage.psm1',
             './eng/src/agent-scripts/RepositoryAutomation.psm1'

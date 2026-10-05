@@ -816,6 +816,67 @@ Describe 'Canonical cleanup entry point' {
 
 }
 
+Describe 'Committed cleanup entry points' {
+    It 'executes canonical file-list preflight in process without invoking cleanup tooling' {
+        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+        $fileListPath = Join-Path $TestDrive 'committed-cleanup-files.txt'
+        [System.IO.File]::WriteAllText($fileListPath, ('README.md' + [char]0), [System.Text.UTF8Encoding]::new($false))
+
+        $json = @(& (Join-Path $repoRoot 'clean-up.ps1') -FileListPath $fileListPath -PlanOnly)
+
+        $LASTEXITCODE | Should -Be 0
+        $plan = ($json -join "`n") | ConvertFrom-Json
+        $plan.Mode | Should -Be 'NoOp'
+        @($plan.InputPaths) | Should -Be @('README.md')
+    }
+
+    It 'executes the committed targeted compatibility script for an ignored file' {
+        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+        $leaseDirectory = Join-Path $TestDrive 'committed-targeted-noop-lease'
+        try {
+            & (Join-Path $repoRoot 'clean-up-targeted.ps1') -Files README.md -SkipSamples -LeaseDirectory $leaseDirectory
+            $LASTEXITCODE | Should -Be 0
+        }
+        finally {
+            if (-not $IsWindows -and (Test-Path -LiteralPath $leaseDirectory -PathType Container)) {
+                & chmod u+w -- $leaseDirectory
+                if ($LASTEXITCODE -ne 0) { throw 'Unable to restore owner write permission for the committed entrypoint fixture.' }
+            }
+        }
+    }
+}
+
+Describe 'Committed targeted cleanup preflight' {
+    It 'plans an explicit ignored file in process' {
+        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+        $json = @(& (Join-Path $repoRoot 'clean-up-targeted.ps1') -Files README.md -SkipSamples -PlanOnly)
+        $LASTEXITCODE | Should -Be 0
+        $plan = ($json -join "`n") | ConvertFrom-Json
+        $plan.Mode | Should -Be 'NoOp'
+        @($plan.InputPaths) | Should -Be @('README.md')
+    }
+
+    It 'plans a NUL-delimited file list in process' {
+        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+        $fileListPath = Join-Path $TestDrive 'committed-targeted-files.txt'
+        [System.IO.File]::WriteAllText($fileListPath, ('README.md' + [char]0), [System.Text.UTF8Encoding]::new($false))
+        $json = @(& (Join-Path $repoRoot 'clean-up-targeted.ps1') -FileListPath $fileListPath -PlanOnly)
+        $LASTEXITCODE | Should -Be 0
+        $plan = ($json -join "`n") | ConvertFrom-Json
+        $plan.Mode | Should -Be 'NoOp'
+        @($plan.InputPaths) | Should -Be @('README.md')
+    }
+
+    It 'plans identical base and head revisions in process' {
+        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+        $json = @(& (Join-Path $repoRoot 'clean-up-targeted.ps1') -BaseRef HEAD -HeadRef HEAD -PlanOnly)
+        $LASTEXITCODE | Should -Be 0
+        $plan = ($json -join "`n") | ConvertFrom-Json
+        $plan.Mode | Should -Be 'NoOp'
+        @($plan.InputPaths).Count | Should -Be 0
+    }
+}
+
 Describe 'Cleanup module exports' {
     It 'exports the standalone solution cleanup functions used by wrapper scripts' {
         Get-Command -Name Invoke-MississippiSolutionCleanup -Module RepositoryAutomation | Should -Not -BeNullOrEmpty
