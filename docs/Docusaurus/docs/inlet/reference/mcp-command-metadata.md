@@ -74,6 +74,8 @@ For property-based commands, generated construction uses `new() { ... }`. The co
 
 The generated method constructs the command, resolves its aggregate grain by entity ID, and calls `ExecuteAsync` with the cancellation token. Changing a hint does not change that path, prevent writes, deduplicate repeated calls, or add authorization checks. An unsuccessful `OperationResult` becomes an ordinary returned string in the form `Failed to execute ... [code] message`, rather than a thrown exception or structured MCP error from this generator. A completed tool call can therefore report command failure; callers need to read the returned outcome. A successful result returns the ordinary string `<Command> executed successfully on <entityId>.`, without a command payload or structured MCP result from this generator. Execution exceptions and cancellation propagate.
 
+Commands and their object graphs need compatible Orleans serialization for `ExecuteAsync(object, ...)`, normally the repository's `[GenerateSerializer]`, stable `[Alias]`, and numbered `[Id]` contract. Missing copying or serialization support can fail before the handler runs and propagate rather than returning an unsuccessful `OperationResult` string.
+
 Descriptions can explain constraints, but this metadata does not enforce them. Choose text and hints that agree with the actual command handler and host authorization behavior.
 
 The [generator tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Gateway.Generators.L0Tests/McpAggregateToolsGeneratorTests.cs) cover default hints, metadata overrides, generated descriptions, and property/positional-parameter descriptions. These are generated-source assertions rather than proof of runtime permissions or idempotency.
