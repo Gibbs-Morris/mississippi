@@ -20,7 +20,7 @@ sidebar_label: Snapshot Conversion
 
 ## Methods And Envelope Fields
 
-The [interface](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/ISnapshotStateConverter.cs) exposes `ToEnvelope(state, reducerHash)` and `FromEnvelope(envelope)`. These methods have no cancellation token and do not read or write snapshot storage.
+The [interface](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/ISnapshotStateConverter.cs) exposes `ToEnvelope(state, reducerHash)` and `FromEnvelope(envelope)`. These methods have no cancellation-token parameter. The built-in `SnapshotStateConverter<TSnapshot>` performs conversion without snapshot-storage I/O; the interface signature does not prevent a custom implementation from doing I/O.
 
 [`ToEnvelope`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Runtime/SnapshotStateConverter.cs) calls the provider's `Serialize` method and creates these fields:
 
