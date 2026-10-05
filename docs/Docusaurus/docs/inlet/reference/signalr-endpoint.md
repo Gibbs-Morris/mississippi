@@ -38,7 +38,7 @@ The built-in connection uses `WithUrl(uri)` without an `AccessTokenProvider`; pr
 
 ## Gateway Mapping And Projection HTTP Routes
 
-[`MapInletHub(pattern)`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/InletServerRegistrations.cs) maps the gateway's `InletHub` with default pattern `/hubs/inlet`. Coordinate that mapped endpoint with the client address and any host routing configuration; the client builder does not change gateway routes.
+[`MapInletHub(pattern)`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/InletServerRegistrations.cs) maps the gateway's `InletHub` with default pattern `/hubs/inlet`. Coordinate that mapped endpoint with the client address and any host routing configuration; the client builder does not change gateway routes. Mapping does not register its dependencies: call `AddInletServer` for Inlet/SignalR services, configure an Orleans client, and register `AddAqueduct<InletHub>` with the matching backplane provider. The [Spring gateway composition](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs) shows these registrations. Missing SignalR services can fail mapping; missing runtime/backplane dependencies can fail hub activation.
 
 When `GeneratedApiAuthorization.Mode` is `RequireAuthorizationForAllGeneratedEndpoints` and `AllowAnonymousOptOut` is false, `MapInletHub` also requires authorization with the configured default policy, roles, and authentication schemes. If those defaults are blank, it uses the host's default authorization policy. Other combinations do not add this hub endpoint requirement through this mapper; subscription authorization is evaluated separately.
 
