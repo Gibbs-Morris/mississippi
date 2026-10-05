@@ -110,6 +110,7 @@ Use this page as the current active reference for Inlet's builder-based client r
 - Read [SignalR Connection State](./connection-state.md) for lifecycle fields and selector meanings.
 - Read [Client Projection Entries](./projection-entry.md) for lookup defaults and action transitions.
 - Read [Projection Fetch Outcomes](./projection-fetches.md) for missing data, versions, and HTTP failures.
+- Read [Client Command History](./command-history.md) for lifecycle fields and retention rules.
 - Read [Inlet Concepts](../concepts/concepts.md).
 - Read [How To Compose Inlet In Mississippi Client Apps](../how-to/how-to.md) for startup composition guidance.
 - Use the [Spring Sample](../../samples/spring-sample/index.md) to see Inlet composition patterns in practice.
