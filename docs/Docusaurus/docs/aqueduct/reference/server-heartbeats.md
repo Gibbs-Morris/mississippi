@@ -36,7 +36,7 @@ The start cancellation token controls waiting for the semaphore. Directory regis
 
 ## Directory Observations
 
-The [directory implementation](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Runtime/Grains/SignalRServerDirectoryGrain.cs) maintains registrations in memory:
+The [directory implementation](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Runtime/Grains/SignalRServerDirectoryGrain.cs) maintains registrations in memory. The no-argument directory factory uses `SignalRServerDirectoryKey.Default`, whose value is `default`. A different key resolves a separate directory with its own registrations; query the same key used by the heartbeat manager. Its entry transitions are:
 
 - Registration adds or replaces a server entry with the current time and connection count zero.
 - A heartbeat for a registered server replaces its timestamp and count.
