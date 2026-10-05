@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 using Orleans;
+using Orleans.Runtime;
+using Orleans.Runtime.Messaging;
 
 
 namespace MississippiSamples.Spring.Gateway;
@@ -45,7 +47,8 @@ internal sealed class SpringGatewayOrleansClientConnectionRetryFilter : IClientC
     )
     {
         Logger.ConnectionRetryStarted(exception);
-        if (exception is null || cancellationToken.IsCancellationRequested)
+        if (cancellationToken.IsCancellationRequested ||
+            exception is not (OrleansMessageRejectionException or ConnectionFailedException))
         {
             Logger.ConnectionRetryCompleted(false);
             return false;

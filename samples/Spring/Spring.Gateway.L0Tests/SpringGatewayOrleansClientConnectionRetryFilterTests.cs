@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,6 +11,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 
 using Moq;
+
+using Orleans.Runtime;
+using Orleans.Runtime.Messaging;
 
 
 namespace MississippiSamples.Spring.Gateway.L0Tests;
@@ -37,7 +42,7 @@ public sealed class SpringGatewayOrleansClientConnectionRetryFilterTests
         SpringGatewayOrleansClientConnectionRetryFilter filter = new(
             timeProvider,
             NullLogger<SpringGatewayOrleansClientConnectionRetryFilter>.Instance);
-        Exception failure = new InvalidOperationException("No gateway is available.");
+        Exception failure = new ConnectionFailedException("No gateway is available.");
         Assert.False(await filter.ShouldRetryConnectionAttempt(failure, new(true)));
         for (int retryNumber = 0; retryNumber < 60; retryNumber++)
         {
@@ -64,7 +69,7 @@ public sealed class SpringGatewayOrleansClientConnectionRetryFilterTests
         logger.Setup(value => value.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         SpringGatewayOrleansClientConnectionRetryFilter filter = new(timeProvider, logger.Object);
         Task<bool> retry = filter.ShouldRetryConnectionAttempt(
-            new InvalidOperationException("No gateway is available."),
+            new ConnectionFailedException("No gateway is available."),
             cancellation.Token);
         Assert.False(retry.IsCompleted);
         await cancellation.CancelAsync();
@@ -106,7 +111,7 @@ public sealed class SpringGatewayOrleansClientConnectionRetryFilterTests
         Mock<ILogger<SpringGatewayOrleansClientConnectionRetryFilter>> logger = new();
         SpringGatewayOrleansClientConnectionRetryFilter filter = new(timeProvider, logger.Object);
         Task<bool> retry = filter.ShouldRetryConnectionAttempt(
-            new InvalidOperationException("No gateway is available."),
+            new ConnectionFailedException("No gateway is available."),
             CancellationToken.None);
         timeProvider.Advance(TimeSpan.FromSeconds(1));
         Assert.True(await retry);
@@ -131,7 +136,7 @@ public sealed class SpringGatewayOrleansClientConnectionRetryFilterTests
         Mock<ILogger<SpringGatewayOrleansClientConnectionRetryFilter>> logger = new();
         logger.Setup(value => value.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         SpringGatewayOrleansClientConnectionRetryFilter filter = new(timeProvider, logger.Object);
-        Exception failure = new InvalidOperationException("No gateway is available.");
+        Exception failure = new ConnectionFailedException("No gateway is available.");
         Task<bool> retry = filter.ShouldRetryConnectionAttempt(failure, CancellationToken.None);
         timeProvider.Advance(TimeSpan.FromSeconds(1));
         Assert.True(await retry);
@@ -167,7 +172,7 @@ public sealed class SpringGatewayOrleansClientConnectionRetryFilterTests
         Mock<ILogger<SpringGatewayOrleansClientConnectionRetryFilter>> logger = new();
         logger.Setup(value => value.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         SpringGatewayOrleansClientConnectionRetryFilter filter = new(timeProvider, logger.Object);
-        Exception failure = new InvalidOperationException("No gateway is available.");
+        Exception failure = new ConnectionFailedException("No gateway is available.");
         for (int retryNumber = 0; retryNumber < 60; retryNumber++)
         {
             Task<bool> retry = filter.ShouldRetryConnectionAttempt(failure, CancellationToken.None);
@@ -212,6 +217,29 @@ public sealed class SpringGatewayOrleansClientConnectionRetryFilterTests
     }
 
     /// <summary>
+    ///     Verifies that permanent configuration and credential failures stop without a delay.
+    /// </summary>
+    /// <param name="authenticationFailure">Whether to use a credential failure.</param>
+    /// <returns>A task representing the test.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PermanentFailureShouldStopWithoutDelayAsync(
+        bool authenticationFailure
+    )
+    {
+        SpringGatewayOrleansClientConnectionRetryFilter filter = new(
+            new FakeTimeProvider(),
+            NullLogger<SpringGatewayOrleansClientConnectionRetryFilter>.Instance);
+        Exception failure = authenticationFailure
+            ? new AuthenticationException("Clustering credentials are invalid.")
+            : new InvalidOperationException("Clustering configuration is invalid.");
+        Task<bool> retry = filter.ShouldRetryConnectionAttempt(failure, CancellationToken.None);
+        Assert.True(retry.IsCompletedSuccessfully);
+        Assert.False(await retry);
+    }
+
+    /// <summary>
     ///     Verifies the one-second delay before retrying any startup failure.
     /// </summary>
     /// <returns>A task representing the test.</returns>
@@ -223,12 +251,41 @@ public sealed class SpringGatewayOrleansClientConnectionRetryFilterTests
             timeProvider,
             NullLogger<SpringGatewayOrleansClientConnectionRetryFilter>.Instance);
         Task<bool> retry = filter.ShouldRetryConnectionAttempt(
-            new InvalidOperationException("No gateway is available."),
+            new ConnectionFailedException("No gateway is available."),
             CancellationToken.None);
         Assert.False(retry.IsCompleted);
         timeProvider.Advance(TimeSpan.FromMilliseconds(999));
         Assert.False(retry.IsCompleted);
         timeProvider.Advance(TimeSpan.FromMilliseconds(1));
+        Assert.True(await retry);
+    }
+
+    /// <summary>
+    ///     Verifies the retry delay for both eligible Orleans failure types.
+    /// </summary>
+    /// <param name="messageRejected">Whether to use a message rejection.</param>
+    /// <returns>A task representing the test.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TransientFailureShouldRetryAfterDelayAsync(
+        bool messageRejected
+    )
+    {
+        FakeTimeProvider timeProvider = new();
+        SpringGatewayOrleansClientConnectionRetryFilter filter = new(
+            timeProvider,
+            NullLogger<SpringGatewayOrleansClientConnectionRetryFilter>.Instance);
+        Exception failure = messageRejected
+            ? (OrleansMessageRejectionException)typeof(OrleansMessageRejectionException).GetConstructor(
+                BindingFlags.NonPublic | BindingFlags.Instance,
+                null,
+                [typeof(string)],
+                null)!.Invoke(["The gateway is not ready."])
+            : new ConnectionFailedException("No gateway is available.");
+        Task<bool> retry = filter.ShouldRetryConnectionAttempt(failure, CancellationToken.None);
+        Assert.False(retry.IsCompleted);
+        timeProvider.Advance(TimeSpan.FromSeconds(1));
         Assert.True(await retry);
     }
 }
