@@ -46,7 +46,7 @@ The [structural comparer](https://github.com/Gibbs-Morris/mississippi/blob/main/
 - Its error-code overload also requires the exact expected code.
 - `ShouldFailWithMessage` requires failure and an ordinal, case-sensitive message substring; another overload also checks the exact code.
 
-Success assertions check the success flag before inspecting failed result data. Their assertion messages include the returned error code and message. Null expected events, event arrays, codes, or message strings are rejected by the corresponding helpers.
+Success assertions check the success flag before inspecting failed result data. Their assertion messages include the returned error code and message. `ShouldEmit` rejects its null expected event; `ShouldEmitEvents` rejects a null expected array, but permits null entries and can match them to emitted null entries. Expected codes and message strings are rejected when null by their corresponding helpers.
 
 The [contract tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.TestHarness.L0Tests/AssertionContractTests.cs) cover failed-result assertions, expected-member subsets, dictionary contents, sequence order, duplicates, and cyclic-data failures.
 
