@@ -18,6 +18,12 @@ sidebar_label: Generated MCP Command Metadata
 - Commands marked with `GenerateCommandAttribute` in the aggregate namespace's immediate `Commands` subnamespace
 - `GenerateMcpToolMetadataAttribute` and `GenerateMcpParameterDescriptionAttribute`
 
+### Discovery Constraints
+
+| Input | Current discovery/emission boundary |
+| --- | --- |
+| Command types | Nongeneric: emission uses the simple command type name without type arguments, so an attributed generic command fails generated compilation. |
+
 ## Command Tool Hints
 
 Apply [`GenerateMcpToolMetadata`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateMcpToolMetadataAttribute.cs) to the command type to supply a title, description, or behavioral hints. The [generator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway.Generators/McpAggregateToolsGenerator.cs) uses these defaults when no override is supplied:
