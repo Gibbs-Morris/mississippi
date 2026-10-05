@@ -48,5 +48,6 @@ Use this page as the current active reference for what Domain Modeling owns and 
 - Read [Event Effect Dispatch](./event-effect-dispatch.md) for matching, ordering, and handler failure isolation.
 - Read [Aggregate Effect Iterations](./effect-iterations.md) for cascade limits and already-persisted follow-up events.
 - Read [Worker Event Effects](./worker-effects.md) for envelopes, state inputs, routing, and failure observation.
+- Read [Persisted Type Registries](./type-registries.md) for lookup, collisions, and assembly-scan counts.
 - Read [Domain Modeling Concepts](../concepts/concepts.md).
 - Use the [Spring Sample](../../samples/spring-sample/index.md) to see domain modeling patterns in practice.
