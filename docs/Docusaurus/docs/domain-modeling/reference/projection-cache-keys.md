@@ -58,6 +58,8 @@ The [cache-key tests](https://github.com/Gibbs-Morris/mississippi/blob/main/test
 
 When an exact snapshot cannot be used, successful reconstruction can request a background write. `SnapshotCacheGrain` serializes and sends one-way `PersistAsync` only for retention-selected versions or when `ShouldPersistAllSnapshots` is enabled. A versioned read can therefore need snapshot writer permissions; its success does not confirm that the background write completed.
 
+The cache's `GetAsync` ignores its caller cancellation token. Hydration runs in `OnActivateAsync` with Orleans' activation token; canceling the read argument, even before the call, does not cancel that snapshot load or replay.
+
 ## Summary
 
 The active versioned cache key combines brook, entity, and version under a typed projection grain. Parsing reuses constructor validation, while a valid identity alone does not establish available projection state.
