@@ -23,6 +23,7 @@ sidebar_label: Generated MCP Command Metadata
 | Input | Current discovery/emission boundary |
 | --- | --- |
 | Command types | Nongeneric: emission uses the simple command type name without type arguments, so an attributed generic command fails generated compilation. |
+| Aggregate namespaces | All marked commands in the immediate `Commands` child are assigned to every marked aggregate in that containing namespace. Use separate namespaces unless that shared command set is intended for every aggregate. |
 
 ## Command Tool Hints
 
