@@ -151,6 +151,7 @@ diagnostics when validation rejects the composition.
 
 ## Next Steps
 
+- Read [Aqueduct Routing Keys](./routing-keys.md) for identity formats and parsing constraints.
 - Read [Aqueduct Concepts](../concepts/concepts.md).
 - Follow [How To Configure Aqueduct Runtime Composition](../how-to/how-to.md) for the runtime setup task sequence.
 - Follow [Aqueduct Runtime Composition (Next)](../migration/migration.md) for the runtime API cutover.
