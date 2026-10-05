@@ -43,5 +43,6 @@ Use this page as the current active reference for what Tributary owns and which 
 ## Next Steps
 
 - Read [Snapshot Conversion](./snapshot-conversion.md) for payload encoding and envelope metadata.
+- Read [Snapshot Cache Reads](./snapshot-cache.md) for activation, cached reads, and reconstruction failures.
 - Read [Tributary Concepts](../concepts/concepts.md).
 - Use [Tributary Operations](../operations/operations.md) for the current operational scope.
