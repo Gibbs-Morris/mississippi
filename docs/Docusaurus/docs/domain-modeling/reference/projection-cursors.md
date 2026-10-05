@@ -40,10 +40,10 @@ The [projection reader](https://github.com/Gibbs-Morris/mississippi/blob/main/sr
 
 - A null notification throws `ArgumentNullException`.
 - After a sequence token has been recorded, tokenless or older-token deliveries are ignored.
-- For an accepted delivery, the position advances only when `NewPosition` is strictly greater than the current value.
+- For an accepted delivery within an activation, the position advances only when `NewPosition` is strictly greater than the current value.
 - The handler does not cross-check the payload's `BrookKey` against its own cursor key.
 
-Accepted sequence tokens can update the watermark even when the position does not advance. Equal or older positions cannot move the tracked position backward.
+Accepted sequence tokens can update the watermark even when the position does not advance. Within one activation, equal or older positions cannot move the tracked position backward. A new activation reloads storage and starts with a fresh sequence watermark; this can move the reported position backward when a previously accepted notification was ahead of storage. For example, a cursor that accepted position `100` can return `5` after reactivation if storage is still at `5`.
 
 The [cursor unit tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.Runtime.L0Tests/UxProjectionCursorGrainUnitTests.cs) cover monotonic positions and retaining a sequence watermark across a tokenless delivery. The [key tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.Abstractions.L0Tests/UxProjectionCursorKeyTests.cs) cover encoding, parsing, conversions, and invalid components.
 
