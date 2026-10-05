@@ -10,7 +10,7 @@ sidebar_label: Cursor Notifications
 
 ## Overview
 
-`BrookCursorMovedEvent` reports a published brook position to stream observers. Publication can repeat the same position and does not itself verify persisted progress. The payload carries a stream identity and position, without event payload bytes.
+`BrookCursorMovedEvent` reports a published brook position to stream observers. Publication can repeat the same position and does not itself verify persisted progress. The payload carries a brook key and position, without event payload bytes.
 
 ## Applies To
 
@@ -26,7 +26,7 @@ The [sealed positional record](https://github.com/Gibbs-Morris/mississippi/blob/
 | `BrookKey` | A `string` identifying the brook |
 | `NewPosition` | The published `BrookPosition` |
 
-The [built-in writer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Runtime/Writer/BrookWriterGrain.cs) supplies the complete stream key, in `brookName|entityId` form, and the position being published. Its [existing publication tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Brooks.Runtime.L0Tests/Writer/BrookWriterGrainUnitTests.cs) verify these values.
+The [built-in writer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Runtime/Writer/BrookWriterGrain.cs) supplies the brook key, in `brookName|entityId` form, and the position being published. It separately selects the configured `OrleansStreamProviderName` and the `BrookCursorUpdates` stream namespace; the payload key alone does not identify that complete route. Its [existing publication tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Brooks.Runtime.L0Tests/Writer/BrookWriterGrainUnitTests.cs) verify these values.
 
 The record stores its supplied properties without parsing the key or checking that the position represents persisted progress. For append commitment and safe publication retry, use [Brook Append Outcomes](../../reference/brook-append-outcomes.md).
 
