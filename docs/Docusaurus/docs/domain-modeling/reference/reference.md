@@ -45,5 +45,6 @@ Use this page as the current active reference for what Domain Modeling owns and 
 ## Next Steps
 
 - Read [Aggregate Keys](./aggregate-keys.md) for entity-only identity and validation boundaries.
+- Read [Event Effect Dispatch](./event-effect-dispatch.md) for matching, ordering, and handler failure isolation.
 - Read [Domain Modeling Concepts](../concepts/concepts.md).
 - Use the [Spring Sample](../../samples/spring-sample/index.md) to see domain modeling patterns in practice.
