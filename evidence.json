@@ -1,0 +1,95 @@
+{
+  "pullRequest": "https://github.com/Gibbs-Morris/mississippi/pull/819",
+  "sourceCommit": "8ad9bafc26503d2406868a8ee5c5862717337435",
+  "sourceTree": "f5846c341a8cd3ae070194c6365a800cf388f66d",
+  "ciMergeCommit": "ccc7491c5b12adc258d4372d3fe41aa26e8a8c8a",
+  "ciBuildRun": "https://github.com/Gibbs-Morris/mississippi/actions/runs/37232739293",
+  "ciBuildArtifactId": 11316797593,
+  "browser": "Chromium",
+  "playwrightVersion": "1.58.2",
+  "siteChecksPassed": 13,
+  "siteChecksFailed": 0,
+  "siteChecksSkipped": 0,
+  "targetedMobileRecapturePassed": 1,
+  "captureCommand": "npx playwright test --config ../../.scratchpad/pr819/docs-playwright-ci.config.cjs",
+  "captures": [
+    {
+      "file": "key-concepts-desktop.png",
+      "route": "/mississippi/docs/next/samples/spring-sample/concepts/spring-key-concepts",
+      "caption": "Key Concepts event attribute",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "state": "First matching storage code block",
+      "capturedUtc": "2026-10-05T02:36:08.1856992Z",
+      "sha256": "909dd9557b769ee39b8328dbcac657e5a8559e1297c368fcaefb4e37c21b92d4",
+      "visuallyInspected": true
+    },
+    {
+      "file": "building-a-saga-desktop.png",
+      "route": "/mississippi/docs/next/samples/spring-sample/tutorials/spring-building-a-saga",
+      "caption": "Building a Saga snapshot attribute",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "state": "First matching storage code block",
+      "capturedUtc": "2026-10-05T02:36:09.6734469Z",
+      "sha256": "83340cb6d8cb1d91c3c8d7cfec31b4cc32007b28d88fcdbb27ac77f7e5ffd310",
+      "visuallyInspected": true
+    },
+    {
+      "file": "building-projections-desktop.png",
+      "route": "/mississippi/docs/next/samples/spring-sample/tutorials/spring-building-projections",
+      "caption": "Building Projections balance snapshot attribute",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "state": "First matching storage code block",
+      "capturedUtc": "2026-10-05T02:36:11.2862940Z",
+      "sha256": "284fe24da0826dd2c4d95fb3c5e1a5d19dce60a7a4b037f1e313edcb1a953a93",
+      "visuallyInspected": true
+    },
+    {
+      "file": "key-concepts-mobile.png",
+      "route": "/mississippi/docs/next/samples/spring-sample/concepts/spring-key-concepts",
+      "caption": "Key Concepts event attribute",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": "First matching storage code block, horizontally scrolled to its end",
+      "capturedUtc": "2026-10-05T02:38:40.8776284Z",
+      "sha256": "f527e35d351c0d31d8a372ebfad06c951dd1471aa47af3440e9316037330a7b8",
+      "visuallyInspected": true
+    },
+    {
+      "file": "building-a-saga-mobile.png",
+      "route": "/mississippi/docs/next/samples/spring-sample/tutorials/spring-building-a-saga",
+      "caption": "Building a Saga snapshot attribute",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": "First matching storage code block, horizontally scrolled to its end",
+      "capturedUtc": "2026-10-05T02:36:13.8246418Z",
+      "sha256": "57317b9d9d0e54538b1203d415eaafa4e24328e10865917ebcb39153b214206d",
+      "visuallyInspected": true
+    },
+    {
+      "file": "building-projections-mobile.png",
+      "route": "/mississippi/docs/next/samples/spring-sample/tutorials/spring-building-projections",
+      "caption": "Building Projections balance snapshot attribute",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": "First matching storage code block, horizontally scrolled to its end",
+      "capturedUtc": "2026-10-05T02:36:15.1711769Z",
+      "sha256": "1b738c3e6024cd242fbfcf2e07d7ca5972461ff1c78b1f22bd07bd247e127e2d",
+      "visuallyInspected": true
+    }
+  ]
+}
