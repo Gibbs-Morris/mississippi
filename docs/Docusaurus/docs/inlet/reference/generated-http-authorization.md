@@ -30,7 +30,7 @@ The [options](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Ga
 
 The convention ignores whitespace-only default strings and copies other values without trimming or parsing them itself. Assigning these options does not register the named policy or authentication schemes; the host owns that setup. The named policy must be available from the host's policy provider and each scheme must have a configured handler. ASP.NET Core throws `InvalidOperationException` when combining an unavailable named policy or authenticating through a missing handler; these configuration failures are not ordinary authorization-denied outcomes.
 
-When force mode adds a filter and all three default strings are null or blank, its empty `AuthorizeAttribute` uses the host's configured ASP.NET Core default authorization policy. The platform default requires an authenticated user; null option values do not remove authorization.
+When force mode adds a filter without a named policy or roles, ASP.NET Core combines the host's configured default authorization policy. This includes both an empty `AuthorizeAttribute` and a scheme-only filter: selecting authentication schemes does not supply an authorization requirement. The platform default requires an authenticated user; null option values do not remove authorization.
 
 When both `DefaultPolicy` and `DefaultRoles` are nonblank, MVC combines them: the request must satisfy the named policy and have any one of the listed roles. These defaults do not express policy-or-role access.
 
