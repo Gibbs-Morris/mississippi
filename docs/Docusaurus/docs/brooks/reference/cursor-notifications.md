@@ -48,7 +48,7 @@ For a newer position, the implementation sends a projection path, entity ID, and
 
 ## Delivery Boundary
 
-These filters govern local observer state. Inlet records the newer position before attempting client notifications, so repeating that position does not by itself retry a failed client send. Successful publication does not prove that every projection or client has processed the update.
+These filters govern local observer state. Inlet records the newer position before attempting client notifications, so repeating that position does not by itself retry a failed client send. `OrleansException` and `InvalidOperationException` from a send are logged and fan-out continues to later subscriptions. Other exceptions escape the callback and stop the remaining sends. Because the position was already recorded, repeating it skips those remaining subscriptions too. Successful publication does not prove that every projection or client has processed the update.
 
 On a stream error, both cursor implementations request idle deactivation, allowing a later activation to subscribe again. Brooks cursor completion uses the default observer no-op and neither deactivates nor resubscribes. UX cursor completion only logs; Inlet error and completion callbacks also only log and do not themselves resubscribe.
 
