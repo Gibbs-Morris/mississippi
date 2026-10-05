@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using System.Threading;
 using System.Threading.Tasks;
 
 using Mississippi.Aqueduct.Abstractions.Grains;

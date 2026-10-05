@@ -216,7 +216,11 @@ public sealed class StreamSubscriptionManagerTests
         await cancellationSource.CancelAsync();
         await Assert.ThrowsAsync<TaskCanceledException>(() => initializationTask.WaitAsync(CancellationToken.None));
         firstSubscriptionCompletion.SetResult(firstServerSubscription);
-        await manager.EnsureInitializedAsync("TestHub", _ => Task.CompletedTask, _ => Task.CompletedTask, TestContext.Current.CancellationToken);
+        await manager.EnsureInitializedAsync(
+            "TestHub",
+            _ => Task.CompletedTask,
+            _ => Task.CompletedTask,
+            TestContext.Current.CancellationToken);
 
         // Assert
         await firstServerSubscription.Received(1).UnsubscribeAsync();
@@ -378,7 +382,9 @@ public sealed class StreamSubscriptionManagerTests
             initialization.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
         Task retry = fixture.InitializeAsync(second.Token);
         await second.CancelAsync();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => retry.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => retry.WaitAsync(
+            TimeSpan.FromSeconds(5),
+            TestContext.Current.CancellationToken));
         subscription.SetResult(fixture.ServerHandle);
         await fixture.InitializeAsync(TestContext.Current.CancellationToken);
         await fixture.ServerHandle.Received(1).UnsubscribeAsync();
@@ -419,7 +425,8 @@ public sealed class StreamSubscriptionManagerTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
             initialization.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
         subscription.SetResult(fixture.AllHandle);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.InitializeAsync(TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            fixture.InitializeAsync(TestContext.Current.CancellationToken));
         Assert.False(fixture.Manager.IsInitialized);
         _ = fixture.ServerStream.Received(1).SubscribeAsync(Arg.Any<IAsyncObserver<ServerMessage>>());
         _ = fixture.AllStream.Received(1).SubscribeAsync(Arg.Any<IAsyncObserver<AllMessage>>());
@@ -473,7 +480,8 @@ public sealed class StreamSubscriptionManagerTests
                 Task.FromException<StreamSubscriptionHandle<AllMessage>>(
                     new InvalidOperationException("Broadcast failed")),
                 Task.FromResult(fixture.AllHandle));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.InitializeAsync(TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            fixture.InitializeAsync(TestContext.Current.CancellationToken));
         await fixture.InitializeAsync(TestContext.Current.CancellationToken);
         await fixture.ServerHandle.Received(1).UnsubscribeAsync();
         Assert.True(fixture.Manager.IsInitialized);

@@ -232,10 +232,7 @@ public sealed class AqueductHubLifetimeManagerTests
             .Returns(failDuringHeartbeat ? setup.Task : Task.CompletedTask, Task.CompletedTask);
         TaskCompletionSource<Exception?> failureLogged = new(TaskCreationOptions.RunContinuationsAsynchronously);
         int failureCount = 0;
-        CallbackLogger<AqueductHubLifetimeManager<TestAqueductHub>> logger = new((
-            eventId,
-            exception
-        ) =>
+        CallbackLogger<AqueductHubLifetimeManager<TestAqueductHub>> logger = new((eventId, exception) =>
         {
             if (eventId.Id == 12)
             {
@@ -254,18 +251,24 @@ public sealed class AqueductHubLifetimeManagerTests
             Task secondSend = manager.SendAllExceptAsync("Canceled", [], ["excluded"], secondCaller.Token);
             await firstCaller.CancelAsync();
             await secondCaller.CancelAsync();
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => firstSend.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => firstSend.WaitAsync(
+                TimeSpan.FromSeconds(5),
+                TestContext.Current.CancellationToken));
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
                 secondSend.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
             Assert.False(stopping.IsCancellationRequested);
             InvalidOperationException expected = new("Shared initialization failed");
             setup.SetException(expected);
-            Exception? loggedException = await failureLogged.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            Exception? loggedException = await failureLogged.Task.WaitAsync(
+                TimeSpan.FromSeconds(5),
+                TestContext.Current.CancellationToken);
             AggregateException aggregate = Assert.IsType<AggregateException>(loggedException);
             Assert.Same(expected, Assert.Single(aggregate.InnerExceptions));
             Assert.Equal(1, failureCount);
-            await manager.SendAllAsync("Retry", [], TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-            await manager.SendAllExceptAsync("Ready", [], ["excluded"], TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            await manager.SendAllAsync("Retry", [], TestContext.Current.CancellationToken)
+                .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            await manager.SendAllExceptAsync("Ready", [], ["excluded"], TestContext.Current.CancellationToken)
+                .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
             await streams.Received(2)
                 .EnsureInitializedAsync(
                     Arg.Any<string>(),
@@ -303,7 +306,8 @@ public sealed class AqueductHubLifetimeManagerTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => excludeConnections
             ? manager.SendAllExceptAsync("Message", [], ["excluded"], canceledToken)
             : manager.SendAllAsync("Message", [], canceledToken));
-        await streams.DidNotReceiveWithAnyArgs().EnsureInitializedAsync(default!, default!, default!, Arg.Any<CancellationToken>());
+        await streams.DidNotReceiveWithAnyArgs()
+            .EnsureInitializedAsync(default!, default!, default!, Arg.Any<CancellationToken>());
         await streams.DidNotReceiveWithAnyArgs().PublishToAllAsync(default!);
     }
 
@@ -646,7 +650,11 @@ public sealed class AqueductHubLifetimeManagerTests
         OperationCanceledException actual = await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
             delivery switch
             {
-                "direct" => manager.SendConnectionAsync("connection", "Message", [], TestContext.Current.CancellationToken),
+                "direct" => manager.SendConnectionAsync(
+                    "connection",
+                    "Message",
+                    [],
+                    TestContext.Current.CancellationToken),
                 "broadcast" => broadcast(
                     new()
                     {
@@ -1438,7 +1446,10 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
             streamSubscriptionManager: streams,
             heartbeatManager: heartbeat);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => manager.SendAllAsync("Canceled", [], TestContext.Current.CancellationToken));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => manager.SendAllAsync(
+            "Canceled",
+            [],
+            TestContext.Current.CancellationToken));
         await manager.SendAllAsync("Retry", [], TestContext.Current.CancellationToken);
         await manager.SendAllAsync("Ready", [], TestContext.Current.CancellationToken);
         await streams.Received(2)
@@ -1478,7 +1489,10 @@ public sealed class AqueductHubLifetimeManagerTests
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
             streamSubscriptionManager: streams,
             heartbeatManager: heartbeat);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => manager.SendAllAsync("First", [], TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => manager.SendAllAsync(
+            "First",
+            [],
+            TestContext.Current.CancellationToken));
         await manager.SendAllAsync("Retry", [], TestContext.Current.CancellationToken);
         await manager.SendAllAsync("Ready", [], TestContext.Current.CancellationToken);
         await heartbeat.Received(2).StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>());

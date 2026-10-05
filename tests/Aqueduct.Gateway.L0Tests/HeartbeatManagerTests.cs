@@ -279,7 +279,9 @@ public sealed class HeartbeatManagerTests
         await cancellation.CancelAsync();
         try
         {
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => startup.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => startup.WaitAsync(
+                TimeSpan.FromSeconds(5),
+                TestContext.Current.CancellationToken));
         }
         finally
         {
@@ -327,10 +329,7 @@ public sealed class HeartbeatManagerTests
         TaskCompletionSource registration = new(TaskCreationOptions.RunContinuationsAsynchronously);
         directory.RegisterServerAsync(Arg.Any<string>(), cancellation.Token).Returns(registration.Task);
         TaskCompletionSource<Exception?> failureLogged = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        CallbackLogger<HeartbeatManager> logger = new((
-            eventId,
-            exception
-        ) =>
+        CallbackLogger<HeartbeatManager> logger = new((eventId, exception) =>
         {
             if (eventId.Id == 4)
             {
@@ -346,12 +345,16 @@ public sealed class HeartbeatManagerTests
         {
             Task startup = manager.StartAsync(() => 5, cancellation.Token);
             await cancellation.CancelAsync();
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => startup.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => startup.WaitAsync(
+                TimeSpan.FromSeconds(5),
+                TestContext.Current.CancellationToken));
             Assert.False(registration.Task.IsCompleted);
             Assert.False(failureLogged.Task.IsCompleted);
             InvalidOperationException expected = new("Registration failed after cancellation");
             registration.SetException(expected);
-            Exception? loggedException = await failureLogged.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            Exception? loggedException = await failureLogged.Task.WaitAsync(
+                TimeSpan.FromSeconds(5),
+                TestContext.Current.CancellationToken);
             AggregateException aggregate = Assert.IsType<AggregateException>(loggedException);
             Assert.Same(expected, Assert.Single(aggregate.InnerExceptions));
             await directory.DidNotReceiveWithAnyArgs().HeartbeatAsync(default!, default);

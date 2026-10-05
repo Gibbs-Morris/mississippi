@@ -142,20 +142,16 @@ internal sealed class StreamSubscriptionManager
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                serverSubscriptionTask = serverStream.SubscribeAsync(async (
-                    message,
-                    token
-                ) => await onServerMessage(message).ConfigureAwait(false));
+                serverSubscriptionTask = serverStream.SubscribeAsync(async (message, token) =>
+                    await onServerMessage(message).ConfigureAwait(false));
                 await serverSubscriptionTask.WaitAsync(cancellationToken).ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
 
                 // Subscribe to hub broadcast stream
                 StreamId allStreamId = StreamId.Create(Options.Value.AllClientsStreamNamespace, hubName);
                 IAsyncStream<AllMessage> broadcastStream = streamProvider.GetStream<AllMessage>(allStreamId);
-                allSubscriptionTask = broadcastStream.SubscribeAsync(async (
-                    message,
-                    token
-                ) => await onAllMessage(message).ConfigureAwait(false));
+                allSubscriptionTask = broadcastStream.SubscribeAsync(async (message, token) =>
+                    await onAllMessage(message).ConfigureAwait(false));
                 await allSubscriptionTask.WaitAsync(cancellationToken).ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
                 allStream = broadcastStream;

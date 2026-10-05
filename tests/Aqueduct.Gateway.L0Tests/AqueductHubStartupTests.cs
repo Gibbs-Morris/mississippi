@@ -78,7 +78,8 @@ public sealed class AqueductHubStartupTests
             Substitute.For<IHostApplicationLifetime>(),
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance);
         TaskCompletionSource registration = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        fixture.Directory.RegisterServerAsync(heartbeat.ServerId, Arg.Any<CancellationToken>()).Returns(registration.Task);
+        fixture.Directory.RegisterServerAsync(heartbeat.ServerId, Arg.Any<CancellationToken>())
+            .Returns(registration.Task);
         Task first = manager.SendAllAsync("update", ["first"], TestContext.Current.CancellationToken);
         Assert.True(fixture.Streams.IsInitialized);
         Task second = manager.SendAllAsync("update", ["second"], TestContext.Current.CancellationToken);
