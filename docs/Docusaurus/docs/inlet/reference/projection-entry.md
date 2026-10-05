@@ -10,7 +10,7 @@ sidebar_label: Client Projection Entries
 
 ## Overview
 
-`ProjectionsFeatureState` stores a separate `ProjectionEntry<T>` for each projection type and entity ID. Read the entry's data, loading flag, connection flag, and error together: those fields change independently.
+`ProjectionsFeatureState` stores a separate `ProjectionEntry<T>` for each projection type and entity ID. Read the entry's data, loading flag, connection flag, and error together. Loading, error, loaded, and updated actions couple data/loading/error transitions; the connection-change action updates its flag separately.
 
 ## Applies To
 
@@ -55,7 +55,7 @@ The [state tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/In
 
 ## Summary
 
-Projection entries keep the latest assigned data alongside independent loading, connection, and error observations. Use the individual fields to decide what to render; null data or a connection flag alone does not describe the whole entry.
+Projection entries keep the latest assigned data alongside coupled loading/error transitions and a separate connection flag. Use the individual fields to decide what to render; null data or a connection flag alone does not describe the whole entry.
 
 ## Next Steps
 
