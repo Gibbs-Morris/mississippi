@@ -34,7 +34,7 @@ The record stores its supplied properties without parsing the key or checking th
 
 The [Brooks cursor grain](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Runtime/Cursor/BrookCursorGrain.cs) initializes its tracked position from storage on activation. For notifications:
 
-- Once a stream sequence token has been recorded, a tokenless delivery or an older-token delivery is ignored.
+- Once a stream sequence token has been recorded, a tokenless delivery or an older-token delivery is ignored. An equal token passes this filter; the position must still increase to advance the cursor.
 - Among accepted deliveries, the tracked position advances only when `NewPosition` is strictly greater than its current value.
 - The grain uses its own key and subscribed stream to identify the brook; it does not cross-check the payload's `BrookKey` against its grain key.
 
