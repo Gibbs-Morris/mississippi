@@ -30,7 +30,7 @@ Build uses `TryAddSingleton` for the options and `TryAddScoped` for `IHubConnect
 
 ## URI Resolution
 
-The [built-in provider](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/ActionEffects/HubConnectionProvider.cs) passes `NavigationManager.ToAbsoluteUri(HubPath)` to SignalR's `WithUrl` during construction.
+The [built-in provider](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/ActionEffects/HubConnectionProvider.cs) passes `NavigationManager.ToAbsoluteUri(HubPath)` to SignalR's `WithUrl` during construction. Absolute URLs keep their own origin; `/hubs/inlet` resolves at the origin root, while `hubs/inlet` resolves beneath the navigation base URI. With a base of `https://example.test/app/`, those relative forms target `/hubs/inlet` and `/app/hubs/inlet` respectively. See [`ToAbsoluteUri`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.components.navigationmanager.toabsoluteuri?view=aspnetcore-10.0).
 
 `HttpClient.BaseAddress` is not the hub-address source in that implementation. A client that fetches projections from one HTTP origin does not automatically connect its hub to that origin. URI resolution failures occur when the provider constructs the connection, rather than through an endpoint-existence check in `WithHubPath`.
 
