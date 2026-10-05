@@ -449,7 +449,7 @@ public sealed class StoreTests : IDisposable
         Type exceptionType
     )
     {
-        Exception failure = Assert.IsType<Exception>(Activator.CreateInstance(exceptionType), exactMatch: false);
+        Exception failure = Assert.IsType<Exception>(Activator.CreateInstance(exceptionType), false);
         ExceptionDispatchInfo captured = ExceptionDispatchInfo.Capture(failure);
         int laterCalls = 0;
         using IDisposable failed = sut.Subscribe(captured.Throw);
