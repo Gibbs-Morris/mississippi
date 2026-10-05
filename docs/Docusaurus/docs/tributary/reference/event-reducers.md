@@ -10,7 +10,7 @@ sidebar_label: Event Reducer Composition
 
 ## Overview
 
-`RootReducer<TProjection>` chooses one reducer for each event. Replaying several events applies that choice repeatedly to the state returned by the previous event.
+`RootReducer<TProjection>` applies at most one successful reducer for each event and keeps the original state when none handles it. Replaying several events applies that choice repeatedly to the state returned by the previous event.
 
 ## Applies To
 
