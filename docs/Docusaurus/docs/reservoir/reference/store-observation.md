@@ -40,7 +40,7 @@ An observer or listener exception propagates at its callback site, interrupts la
 
 On normal store disposal, the subject calls `OnCompleted` on its captured observers, then the store clears listeners and stored state. If a completion callback throws, later observers are not completed and store clearing is skipped. Both disposed flags were already set, so another `Dispose` returns early and does not finish that partial cleanup.
 
-For calls beginning after disposal completes, a new event-stream subscription receives `OnCompleted` immediately and a no-op disposable. Ordinary state subscription, `Dispatch`, and `GetState` reject a disposed store with `ObjectDisposedException`.
+For calls beginning after disposal completes, a new event-stream subscription invokes `OnCompleted` immediately and returns a no-op disposable only if that callback completes normally. A throwing callback propagates its exception without returning a handle. Ordinary state subscription, `Dispatch`, and `GetState` reject a disposed store with `ObjectDisposedException`.
 
 Those guards run before acquiring subscription locks. A concurrent subscribe/dispose race can add a subscriber after the list was cleared without completing it; the post-disposal behavior above is not a guarantee for overlapping lifecycle calls. A publication or listener notification that already captured its list can also resume after disposal: an observer may receive `OnNext` after `OnCompleted`, or a state listener may run after store disposal. Completion does not ensure callback quiescence for overlapping calls. Coordinate subscription, disposal, and in-flight dispatch ownership.
 
