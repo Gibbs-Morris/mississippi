@@ -26,7 +26,7 @@ The [interface](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Domain
 | --- | --- |
 | `GetAsync` | `ValueTask<TProjection?>`; selects the cursor's known position, then reads that version. |
 | `GetAtVersionAsync` | `ValueTask<TProjection?>`; reads the supplied `BrookPosition` directly. |
-| `GetLatestVersionAsync` | `ValueTask<BrookPosition>`; returns known brook progress without fetching projection state. |
+| `GetLatestVersionAsync` | `ValueTask<BrookPosition>`; returns the cached storage or accepted-notification position without fetching projection state or verifying current storage. |
 
 The [implementation](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionGrain.cs) obtains the brook name from `TProjection`'s `BrookNameAttribute`. Activation validates that attribute and reads the entity ID from the grain's string key. A missing attribute throws `InvalidOperationException`.
 
@@ -38,7 +38,7 @@ Register the per-projection `IRootReducer<TProjection>` and `ISnapshotStateConve
 
 `GetLatestVersionAsync` resolves the cursor by brook name and entity ID, then calls `GetPositionAsync`. An already-active cursor returns its in-memory position without a fresh storage query; first activation reads storage before subscribing. The method's cancellation token is currently reserved and unused.
 
-Activation has no atomic read-and-subscribe handoff or second storage read. If a provider does not replay an update published between the initial read and subscription, the cursor can retain the older position until a later accepted notification or reactivation reloads storage. Latest reads therefore report known progress, rather than a gap-free storage watermark.
+Activation has no atomic read-and-subscribe handoff or second storage read. If a provider does not replay an update published between the initial read and subscription, the cursor can retain the older position until a later accepted notification or reactivation reloads storage. Latest reads report a cached position, which can be behind or ahead of persisted progress: cursor publications are not checked against storage.
 
 `GetAtVersionAsync` constructs a versioned cache key from brook name, entity ID, and the requested position. It resolves the cache for `TProjection`, forwards the token to its `GetAsync`, and returns the resulting state. This event position does not pin reducer code. Each cache activation resolves its deployed root reducer and hash; differing reducer deployments can produce different state at the same event position.
 
@@ -65,7 +65,7 @@ The [existing tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests
 
 ## Summary
 
-Use `GetAsync` for the cursor's currently known version and `GetAtVersionAsync` when a particular version is required. A latest-version read reports brook progress separately from retrieving projection state.
+Use `GetAsync` for the cursor's currently known version and `GetAtVersionAsync` when a particular version is required. A latest-version read returns that cached position separately from retrieving projection state.
 
 ## Next Steps
 
