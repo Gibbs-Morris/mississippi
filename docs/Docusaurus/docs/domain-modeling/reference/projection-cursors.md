@@ -51,6 +51,8 @@ The [cursor unit tests](https://github.com/Gibbs-Morris/mississippi/blob/main/te
 
 `DeactivateAsync` requests idle deactivation. A stream error logs the error and makes the same request. Stream completion is logged and returns without deactivation, resubscription, or a storage refresh. A cursor kept active by reads can therefore continue returning its last cached position after completion. Request deactivation to obtain a fresh storage read on activation, and arrange completed-stream/subscription recovery appropriate to the provider; completion does not trigger that recovery here. A later activation reads its starting position from brook storage again.
 
+Each activation calls `SubscribeAsync(this)` without retaining, resuming, or removing its previous handle. Orleans [explicit subscriptions outlive activations](https://learn.microsoft.com/en-us/dotnet/orleans/streaming/streams-programming-apis); subscribing again can accumulate durable subscriptions and duplicate callbacks. Monotonic position filtering does not remove those subscriptions. Deactivation/reload is therefore not a guarantee of restoring one subscription; account for existing handles and duplicate delivery in the host/provider lifecycle.
+
 ## Summary
 
 The shared cursor caches a storage or accepted-notification position and filters stream deliveries by token and position. Notifications are not verified against storage, so that position does not establish persisted brook progress. Fetching its position is separate from reconstructing projection state or confirming client delivery.
