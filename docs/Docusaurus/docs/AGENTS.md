@@ -42,7 +42,11 @@ Scope: docs/Docusaurus/docs/**/*.{md,mdx} and public-documentation authoring/rev
 - DOC7.4: Authors **MUST** end pages with relevant next steps/links.
 - DOC8: Runtime/lifecycle/persistence/messaging/deployment/failure pages **MUST** apply relevant distributed-systems checklist topics at contributing/documentation-guide.md#distributed-systems-checklist.
 - DOC9: Completion **MUST** require complete frontmatter, resolving links, Docusaurus build, verified examples, repository terminology, and adjacent-content links.
-- DOC10: Authors and reviewers **MUST** use the existing shared author-technical-documentation skill; if automatic discovery fails, they **MUST** read its selected contract and local guide directly. All policy remains mandatory without skill selection. ADRs use their dedicated policy/template, keeping shared evidence/metadata/validation.
+- DOC10: Authors and reviewers **MUST** use the existing shared author-technical-documentation skill. Why: Page types need consistent authoring and review contracts.
+- DOC10.2: If automatic discovery fails, authors and reviewers **MUST** read the selected skill contract and corresponding local guide directly. Why: Discovery failure cannot bypass guidance.
+- DOC10.3: Applicable public documentation policy **MUST** remain mandatory without skill selection. Why: Skill activation does not determine policy applicability.
+- DOC10.4: ADR authors and reviewers **MUST** use their dedicated policy and template. Why: Decision records follow the MADR lifecycle rather than product-page layouts.
+- DOC10.5: ADRs **MUST** retain shared evidence, metadata, and validation requirements. Why: The specialized lifecycle keeps shared quality obligations.
 - DOC11: Feature folders **MUST** honor page type.
 - DOC11.2: Feature folders **MUST NOT** be catch-all pages.
 - DOC11.3: Multi-type topics **MUST** split/cross-link.

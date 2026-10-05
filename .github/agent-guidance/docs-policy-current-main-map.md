@@ -25,7 +25,7 @@ This slice rebuilds the Docs portion of [original PR #809](https://github.com/Gi
 | Docs author R3 | Evidence required; unverified claims not fact | DOC1.3, DOC1.4 |
 | Docs author R4 | Distinguish guarantee, default, typical, detail, unsupported, future | DOC1.5 |
 | Docs author R5 | One question and exactly one page type | DOC2, DOC2.1 |
-| Docs author R6 | Selected skill contract and matching local guide before drafting/validation | DOC2.2, DOC10, selected page contracts table |
+| Docs author R6 | Selected skill contract and matching local guide before drafting/validation | DOC2.2, DOC10, DOC10.2, selected page contracts table |
 | Docs author R7 | Required and optional frontmatter fields | DOC4, DOC4.2 |
 | Docs author R8 | `.md` unless MDX components needed | DOC4.3 |
 | Docs author R9 | Relative internal links | DOC5 |
