@@ -18,6 +18,8 @@ sidebar_label: Snapshot Cache Reads
 - The built-in `SnapshotCacheGrain<TSnapshot>` implementation
 - Snapshot state types satisfying `new()`: value types, or nonabstract reference types with a public parameterless constructor
 
+`TSnapshot` and its object graph also need compatible [Orleans serialization](https://learn.microsoft.com/en-us/dotnet/orleans/host/configuration-guide/serialization) when state crosses a grain boundary. For consumer state types, follow the repository contract with `[GenerateSerializer]`, a stable `[Alias]`, and stable numbered `[Id]` members, or equivalent supported codecs. Satisfying `new()` alone does not supply serialization.
+
 ## Identity And Cached Reads
 
 The [factory](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Runtime/SnapshotGrainFactory.cs) resolves a cache using `SnapshotKey`. Its encoded identity includes brook name, entity ID, version, snapshot storage name, and reducer hash. Requesting a different version selects a different cache identity.
