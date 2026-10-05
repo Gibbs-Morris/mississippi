@@ -49,7 +49,7 @@ The [cursor unit tests](https://github.com/Gibbs-Morris/mississippi/blob/main/te
 
 ## Lifecycle
 
-`DeactivateAsync` requests idle deactivation. A stream error logs the error and makes the same request. Stream completion is logged and returns without requesting deactivation. A later activation reads its starting position from brook storage again.
+`DeactivateAsync` requests idle deactivation. A stream error logs the error and makes the same request. Stream completion is logged and returns without deactivation, resubscription, or a storage refresh. A cursor kept active by reads can therefore continue returning its last cached position after completion. Request deactivation to obtain a fresh storage read on activation, and arrange completed-stream/subscription recovery appropriate to the provider; completion does not trigger that recovery here. A later activation reads its starting position from brook storage again.
 
 ## Summary
 
