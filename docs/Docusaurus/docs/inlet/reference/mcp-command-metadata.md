@@ -31,7 +31,7 @@ Apply [`GenerateMcpToolMetadata`](https://github.com/Gibbs-Morris/mississippi/bl
 
 Every generated command method receives these four values on its `McpServerTool` attribute. A nonempty title is included there too. The tool name is generated from the aggregate's tool prefix and command type name by lowercasing uppercase letters and inserting underscores before them; the title does not rename it. This conversion preserves other characters and performs no prefix validation. Use letters, digits, and underscores for predictable snake_case names; a prefix containing spaces or punctuation is not sanitized into that form and must meet the host/client's tool-name requirements.
 
-A null description falls back to a sentence naming the command and aggregate. An explicitly empty description is retained. The method receives a `Description` attribute with the selected text.
+A null description falls back to a sentence naming the command and aggregate. An explicitly empty description is retained. The method receives a `Description` attribute with the selected text. `GenerateMcpToolsAttribute.Description` is a separate aggregate-level property. The generator currently reads and stores it but does not emit it; the tools class receives a fixed summary. It does not replace command descriptions on the generated methods.
 
 ## Parameter Descriptions
 
