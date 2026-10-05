@@ -57,22 +57,6 @@ public class EventTypeRegistryTests
     }
 
     /// <summary>
-    ///     Scans count newly inserted mappings and become idempotent after registration.
-    /// </summary>
-    [Fact]
-    public void ScanAssemblyCountsOnlyNewMappings()
-    {
-        EventTypeRegistry registry = new();
-        Mock<Assembly> assembly = new();
-        assembly.Setup(instance => instance.GetTypes()).Returns([typeof(TestEvent), typeof(AnotherEvent), typeof(string)]);
-        registry.Register("TEST.REGISTRY.FIRSTEVENT.V1", typeof(TestEvent));
-        Assert.Equal(1, registry.ScanAssembly(assembly.Object));
-        Assert.Equal(0, registry.ScanAssembly(assembly.Object));
-        Assert.Equal(2, registry.RegisteredTypes.Count);
-        Assert.Equal("TEST.REGISTRY.ANOTHEREVENT.V1", registry.ResolveName(typeof(AnotherEvent)));
-    }
-
-    /// <summary>
     ///     Register should not overwrite existing registration with same name.
     /// </summary>
     [Fact]
@@ -248,6 +232,23 @@ public class EventTypeRegistryTests
     {
         EventTypeRegistry registry = new();
         Assert.Throws<ArgumentNullException>(() => registry.ResolveType(null!));
+    }
+
+    /// <summary>
+    ///     Scans count newly inserted mappings and become idempotent after registration.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyCountsOnlyNewMappings()
+    {
+        EventTypeRegistry registry = new();
+        Mock<Assembly> assembly = new();
+        assembly.Setup(instance => instance.GetTypes())
+            .Returns([typeof(TestEvent), typeof(AnotherEvent), typeof(string)]);
+        registry.Register("TEST.REGISTRY.FIRSTEVENT.V1", typeof(TestEvent));
+        Assert.Equal(1, registry.ScanAssembly(assembly.Object));
+        Assert.Equal(0, registry.ScanAssembly(assembly.Object));
+        Assert.Equal(2, registry.RegisteredTypes.Count);
+        Assert.Equal("TEST.REGISTRY.ANOTHEREVENT.V1", registry.ResolveName(typeof(AnotherEvent)));
     }
 
     /// <summary>

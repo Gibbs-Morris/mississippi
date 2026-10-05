@@ -3,7 +3,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 
 using Mississippi.Brooks.Abstractions.Attributes;
-
 using Mississippi.Tributary.Abstractions.Attributes;
 
 using Moq;
@@ -64,22 +63,6 @@ public class SnapshotTypeRegistryTests
         Assert.Equal("Second", registry.ResolveName(typeof(AnotherState)));
         Assert.Equal(typeof(AnotherState), registry.ResolveType("Second"));
         Assert.Equal(2, registry.RegisteredTypes.Count);
-    }
-
-    /// <summary>
-    ///     Scans count newly inserted mappings and become idempotent after registration.
-    /// </summary>
-    [Fact]
-    public void ScanAssemblyCountsOnlyNewMappings()
-    {
-        SnapshotTypeRegistry registry = new();
-        Mock<Assembly> assembly = new();
-        assembly.Setup(instance => instance.GetTypes()).Returns([typeof(TestState), typeof(AnotherState), typeof(string)]);
-        registry.Register("TEST.REGISTRY.FIRSTSNAPSHOT.V1", typeof(TestState));
-        Assert.Equal(1, registry.ScanAssembly(assembly.Object));
-        Assert.Equal(0, registry.ScanAssembly(assembly.Object));
-        Assert.Equal(2, registry.RegisteredTypes.Count);
-        Assert.Equal("TEST.REGISTRY.ANOTHERSNAPSHOT.V1", registry.ResolveName(typeof(AnotherState)));
     }
 
     /// <summary>
@@ -270,6 +253,23 @@ public class SnapshotTypeRegistryTests
     {
         SnapshotTypeRegistry registry = new();
         Assert.Throws<ArgumentNullException>(() => registry.ResolveType(null!));
+    }
+
+    /// <summary>
+    ///     Scans count newly inserted mappings and become idempotent after registration.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyCountsOnlyNewMappings()
+    {
+        SnapshotTypeRegistry registry = new();
+        Mock<Assembly> assembly = new();
+        assembly.Setup(instance => instance.GetTypes())
+            .Returns([typeof(TestState), typeof(AnotherState), typeof(string)]);
+        registry.Register("TEST.REGISTRY.FIRSTSNAPSHOT.V1", typeof(TestState));
+        Assert.Equal(1, registry.ScanAssembly(assembly.Object));
+        Assert.Equal(0, registry.ScanAssembly(assembly.Object));
+        Assert.Equal(2, registry.RegisteredTypes.Count);
+        Assert.Equal("TEST.REGISTRY.ANOTHERSNAPSHOT.V1", registry.ResolveName(typeof(AnotherState)));
     }
 
     /// <summary>
