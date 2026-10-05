@@ -2299,6 +2299,23 @@ function Get-CleanupSelectedPaths {
     }
 }
 
+function Move-CleanupUnmappedAssetToIgnored {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RelativePath,
+        [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$EligiblePaths,
+        [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$IgnoredPaths
+    )
+
+    $projectAssetExtensions = @('.css', '.html', '.js', '.json', '.jsx', '.ts', '.tsx')
+    $extension = [System.IO.Path]::GetExtension($RelativePath).ToLowerInvariant()
+    if ($projectAssetExtensions -notcontains $extension) { return $false }
+
+    $null = $EligiblePaths.Remove($RelativePath)
+    if (-not $IgnoredPaths.Contains($RelativePath)) { $IgnoredPaths.Add($RelativePath) }
+    return $true
+}
+
 function Resolve-CleanupPlanProjects {
     [CmdletBinding()]
     param(
@@ -2316,7 +2333,6 @@ function Resolve-CleanupPlanProjects {
     }
     $resolvedProjects = @{}
     $unmappedPaths = New-Object System.Collections.Generic.List[string]
-    $projectAssetExtensions = @('.css', '.html', '.js', '.json', '.jsx', '.ts', '.tsx')
     foreach ($relativePath in @($eligiblePaths)) {
         if (@(Get-CleanupGlobalFallbackReasons -Paths @($relativePath)).Count -gt 0) {
             continue
@@ -2324,14 +2340,7 @@ function Resolve-CleanupPlanProjects {
 
         $project = Resolve-CleanupProject -RelativePath $relativePath -RepoRoot $rootFullPath -ProjectCatalog $projectCatalog
         if ($null -eq $project -or $project.SolutionPaths.Count -eq 0) {
-            $extension = [System.IO.Path]::GetExtension($relativePath).ToLowerInvariant()
-            if ($projectAssetExtensions -contains $extension) {
-                $null = $eligiblePaths.Remove($relativePath)
-                if (-not $ignoredPaths.Contains($relativePath)) {
-                    $ignoredPaths.Add($relativePath)
-                }
-                continue
-            }
+            if (Move-CleanupUnmappedAssetToIgnored -RelativePath $relativePath -EligiblePaths $eligiblePaths -IgnoredPaths $ignoredPaths) { continue }
 
             $unmappedPaths.Add($relativePath)
             continue
