@@ -126,6 +126,7 @@ public readonly record struct OperationResult
 ///     This is a discriminated union type that carries either a success value
 ///     or an error code with message. Use the static <c>Ok</c> and <c>Fail</c>
 ///     factory methods to create instances.
+///     A default-initialized result represents an uninitialized failure, with no success value.
 /// </remarks>
 [GenerateSerializer]
 [Alias("Mississippi.DomainModeling.Abstractions.OperationResult`1")]
@@ -155,13 +156,13 @@ public readonly record struct OperationResult<T>
     ///     Gets the error code when the operation failed.
     /// </summary>
     [Id(2)]
-    public string? ErrorCode { get; }
+    public string? ErrorCode { get => field ?? (Success ? null : "UNINITIALIZED_RESULT"); }
 
     /// <summary>
     ///     Gets the error message when the operation failed.
     /// </summary>
     [Id(3)]
-    public string? ErrorMessage { get; }
+    public string? ErrorMessage { get => field ?? (Success ? null : "The operation result has not been initialized."); }
 
     /// <summary>
     ///     Gets a value indicating whether the operation succeeded.
@@ -171,6 +172,7 @@ public readonly record struct OperationResult<T>
     [MemberNotNullWhen(false, nameof(ErrorMessage))]
     [MemberNotNullWhen(true, nameof(Value))]
     public bool Success { get; }
+
 
     /// <summary>
     ///     Gets the success value when the operation succeeded.

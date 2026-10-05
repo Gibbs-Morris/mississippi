@@ -1,5 +1,9 @@
 using System;
 
+using Microsoft.Extensions.DependencyInjection;
+
+using Orleans.Serialization;
+
 
 namespace Mississippi.DomainModeling.Abstractions.L0Tests;
 
@@ -21,6 +25,38 @@ public class OperationResultTests
         Assert.True(new OperationResult().Success);
         Assert.True((new OperationResult[1])[0].Success);
     }
+
+    /// <summary>
+    ///     Orleans transport preserves success and failure details, including zero-initialized results.
+    /// </summary>
+    [Fact]
+    public void SerializationPreservesResultContracts()
+    {
+        ServiceCollection services = new();
+        services.AddSerializer(builder => builder.AddAssembly(typeof(OperationResult).Assembly));
+        using ServiceProvider serviceProvider = services.BuildServiceProvider();
+        Serializer serializer = serviceProvider.GetRequiredService<Serializer>();
+        OperationResult[] results = [default, OperationResult.Ok(), OperationResult.Fail("CODE", "message")];
+        foreach (OperationResult original in results)
+        {
+            OperationResult restored = serializer.Deserialize<OperationResult>(serializer.SerializeToArray(original));
+            Assert.Equal(original.Success, restored.Success);
+            Assert.Equal(original.ErrorCode, restored.ErrorCode);
+            Assert.Equal(original.ErrorMessage, restored.ErrorMessage);
+        }
+
+        OperationResult<string>[] valueResults = [default, OperationResult.Ok("value"), OperationResult.Fail<string>("CODE", "message")];
+        foreach (OperationResult<string> original in valueResults)
+        {
+            OperationResult<string> restored = serializer.Deserialize<OperationResult<string>>(serializer.SerializeToArray(original));
+            Assert.Equal(original.Success, restored.Success);
+            Assert.Equal(original.Value, restored.Value);
+            Assert.Equal(original.ErrorCode, restored.ErrorCode);
+            Assert.Equal(original.ErrorMessage, restored.ErrorMessage);
+            Assert.Equal(original.Success, restored.ToResult().Success);
+        }
+    }
+
 
     /// <summary>
     ///     Fail should create a failed result with the specified error details.
