@@ -155,6 +155,17 @@ public class Store : IStore
 
     private TimeProvider TimeProvider { get; }
 
+    /// <summary>
+    ///     Determines whether a failure must escape listener notification.
+    /// </summary>
+    /// <param name="exception">The listener or logging failure.</param>
+    /// <returns>Whether the exception must propagate.</returns>
+    private static bool IsCriticalException(
+        Exception exception
+    ) =>
+        exception is OutOfMemoryException or StackOverflowException or AccessViolationException
+            or ThreadInterruptedException;
+
     /// <inheritdoc />
     public void Dispatch(
         IAction action
@@ -373,14 +384,6 @@ public class Store : IStore
             NotifyListeners();
         }
     }
-
-    /// <summary>
-    ///     Determines whether a failure must escape listener notification.
-    /// </summary>
-    /// <param name="exception">The listener or logging failure.</param>
-    /// <returns>Whether the exception must propagate.</returns>
-    private static bool IsCriticalException(Exception exception) =>
-        exception is OutOfMemoryException or StackOverflowException or AccessViolationException or ThreadInterruptedException;
 
     private void NotifyListeners()
     {

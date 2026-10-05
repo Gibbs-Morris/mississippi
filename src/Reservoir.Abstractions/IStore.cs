@@ -24,7 +24,8 @@ namespace Mississippi.Reservoir.Abstractions;
 ///     </para>
 ///     <para>
 ///         Ordinary state-listener failures are isolated so later listeners and effects can run.
-///         Configured store logging attempts to record these failures. Fatal runtime failures and thread interruption propagate.
+///         Configured store logging attempts to record these failures. Fatal runtime failures and thread interruption
+///         propagate.
 ///     </para>
 ///     <para>
 ///         External integrations can observe store activity via <see cref="StoreEvents" /> without
