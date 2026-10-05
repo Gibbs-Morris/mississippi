@@ -22,7 +22,7 @@ sidebar_label: Generated MCP Command Metadata
 
 | Input | Current discovery/emission boundary |
 | --- | --- |
-| Aggregate and command types | Nongeneric: emission uses their simple type names without type arguments. Generic commands or aggregates can be discovered but fail generated compilation. |
+| Aggregate and command types | Aggregates must also be non-static: a discovered static class fails as the generated grain's generic type argument with CS0718. Nongeneric: emission uses their simple type names without type arguments. Generic commands or aggregates can be discovered but fail generated compilation. |
 | Command construction | Command classes and records must be concrete. Both construction paths instantiate them; discovered abstract commands fail with CS0144. |
 | Aggregate namespaces/assemblies | All marked commands in the immediate `Commands` child of the aggregate's own assembly are assigned to every marked aggregate in that containing namespace. Matching namespaces in another assembly are not merged. Use separate namespaces unless that shared command set is intended for every aggregate. |
 | Accessibility | Aggregate and command types discovered in referenced assemblies must be accessible from the consuming gateway compilation; discovery does not filter inaccessible types before emitting references. |
