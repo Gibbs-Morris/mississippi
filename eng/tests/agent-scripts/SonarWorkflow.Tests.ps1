@@ -10,9 +10,9 @@ BeforeAll {
 
     function Get-SonarStep {
         param([Parameter(Mandatory)][string]$Name)
-        $matches = @($steps | Where-Object { $_.Groups['name'].Value -eq $Name })
-        if ($matches.Count -ne 1) { throw "Expected one workflow step named '$Name'." }
-        return $matches[0].Groups['body'].Value
+        $matchingSteps = @($steps | Where-Object { $_.Groups['name'].Value -eq $Name })
+        if ($matchingSteps.Count -ne 1) { throw "Expected one workflow step named '$Name'." }
+        return $matchingSteps[0].Groups['body'].Value
     }
 }
 
