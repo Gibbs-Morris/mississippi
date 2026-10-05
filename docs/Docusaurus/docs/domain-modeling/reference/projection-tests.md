@@ -20,7 +20,7 @@ sidebar_label: Projection Test Scenarios
 
 ## Setup And State Ownership
 
-The [harness](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.TestHarness/Projections/ReducerTestHarness.cs) starts with a new projection instance. `WithInitialState` replaces it with the supplied non-null value. `WithReducer<TReducer>` requires `new()` and constructs a reducer using its public parameterless constructor; the instance overload accepts a supplied non-null reducer.
+The [harness](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.TestHarness/Projections/ReducerTestHarness.cs) starts with a new projection instance. `WithInitialState` replaces it with the supplied non-null value. `WithReducer<TReducer>` requires `new()` and constructs a reducer using its public parameterless constructor; the instance overload accepts a supplied non-null reducer. Although that overload accepts `IEventReducer<TProjection>`, all replay paths select typed `IEventReducer<TEvent, TProjection>` interfaces. A reducer implementing only the untyped interface can register but never match an event; the harness does not fall back to its `TryReduce` method.
 
 `CreateScenario` captures the initial state value/reference at creation, without cloning it, and shares the harness's reducer list. Later `WithInitialState` replacement does not change an existing scenario's starting state; later reducer registration is visible to it. Finish configuration before creating scenarios and preserve immutable state.
 
