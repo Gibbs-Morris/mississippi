@@ -34,7 +34,7 @@ The record itself does not validate those values. The [registration](https://git
 
 ## Aggregate Handoff
 
-The [aggregate runtime](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/GenericAggregateGrain.cs) dispatches registrations whose `EventType` equals the original event's exact runtime type. It supplies each event's brook position from the original persisted batch.
+The [aggregate runtime](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/GenericAggregateGrain.cs) dispatches registrations whose `EventType` equals the original event's exact runtime type. It supplies each event's brook position from the original persisted batch. Follow-up events yielded and persisted by awaited effects are processed by that awaited-effect loop, but are not added to worker dispatch; a worker registration for their event type is not invoked by this path.
 
 It loads the aggregate snapshot at the last known position after awaited effects have run, then uses that state for all original events in the batch. The envelope therefore does not necessarily contain the historical state immediately after its individual event.
 
