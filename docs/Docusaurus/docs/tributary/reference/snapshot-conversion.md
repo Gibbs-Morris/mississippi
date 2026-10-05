@@ -37,7 +37,7 @@ The converter does not compute the hash. It also does not enforce MIME syntax fo
 
 `FromEnvelope` passes `Data.AsMemory()` to the configured provider's `Deserialize<TSnapshot>` method. It does not choose a provider from `DataContentType`, compare `ReducerHash`, or verify `DataSizeBytes` against the payload length.
 
-The [snapshot cache caller](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Runtime/SnapshotCacheGrain.cs) checks that a stored envelope's hash is nonempty and equals the current root reducer hash before using the converter. That compatibility check belongs to the cache's load path.
+The [snapshot cache caller](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Runtime/SnapshotCacheGrain.cs) checks that a stored envelope's hash is nonempty and equals the current root reducer hash before using the converter. That compatibility check belongs to the cache's load path. It covers reducer identity, not serializer format. Changing the provider while retaining old snapshots requires compatible decoding or a planned snapshot migration/invalidation. With a matching reducer hash, decoding failures propagate during activation instead of automatically rebuilding from events; `DataContentType` does not select a compatible decoder.
 
 The [envelope record](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/SnapshotEnvelope.cs) defaults to empty data, empty format and hash strings, and size zero. Its properties can be initialized independently; constructing the record does not validate consistency between those fields.
 
