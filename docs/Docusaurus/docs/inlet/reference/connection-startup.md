@@ -20,7 +20,7 @@ Inlet's client action effect starts its SignalR connection when work requires it
 
 ## Request And Registration
 
-[`AddInletBlazorSignalR`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletBlazorSignalRBuilder.cs) registers the provider as scoped and attaches the action effect to `InletConnectionState`. It also registers the separate `SignalRConnectionState` lifecycle feature.
+[`AddInletBlazorSignalR`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletBlazorSignalRBuilder.cs) uses `TryAddScoped` for its default provider, preserving any earlier `IHubConnectionProvider` registration and its lifetime, and attaches the action effect to `InletConnectionState`. It also registers the separate `SignalRConnectionState` lifecycle feature.
 
 Configure a projection fetcher through `AddProjectionFetcher<TFetcher>` or `ScanProjectionDtos` on that builder. The action effect's constructor requires `IProjectionFetcher`; bare SignalR registration does not provide it, so resolving the store/effect can fail before startup. `ScanProjectionDtos` supplies the automatic fetcher, whose registration also resolves a host-provided `HttpClient`. Configure that client before resolving the store/effects; DTO scanning does not add it, and a missing client can fail resolution before startup.
 
