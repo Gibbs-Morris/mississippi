@@ -31,7 +31,7 @@ public readonly record struct OperationResult
         string? errorMessage
     )
     {
-        Succeeded = success;
+        Success = success;
         this.ErrorCode = errorCode;
         this.ErrorMessage = errorMessage;
     }
@@ -51,20 +51,10 @@ public readonly record struct OperationResult
     /// <summary>
     ///     Gets a value indicating whether the operation succeeded.
     /// </summary>
+    [Id(0)]
     [MemberNotNullWhen(false, nameof(ErrorCode))]
     [MemberNotNullWhen(false, nameof(ErrorMessage))]
-    public bool Success => Succeeded || IsDefault;
-
-    /// <summary>
-    ///     Gets a value indicating whether this instance was default-initialized.
-    /// </summary>
-    private bool IsDefault => !Succeeded && ErrorCode is null && ErrorMessage is null;
-
-    /// <summary>
-    ///     Gets a value indicating whether success was explicitly recorded.
-    /// </summary>
-    [field: Id(0)]
-    private bool Succeeded { get; }
+    public bool Success => field || ((ErrorCode is null) && (ErrorMessage is null));
 
     /// <summary>
     ///     Creates a failed operation result with the specified error details.
@@ -166,6 +156,7 @@ public readonly record struct OperationResult<T>
     /// <summary>
     ///     Gets a value indicating whether the operation succeeded.
     /// </summary>
+    [Id(0)]
     [Id(0)]
     [MemberNotNullWhen(false, nameof(ErrorCode))]
     [MemberNotNullWhen(false, nameof(ErrorMessage))]
