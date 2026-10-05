@@ -22,7 +22,7 @@ sidebar_label: Generated MCP Command Metadata
 
 | Input | Current discovery/emission boundary |
 | --- | --- |
-| Command types | Nongeneric: emission uses the simple command type name without type arguments, so an attributed generic command fails generated compilation. |
+| Aggregate and command types | Nongeneric: emission uses their simple type names without type arguments. Generic commands or aggregates can be discovered but fail generated compilation. |
 | Aggregate namespaces | All marked commands in the immediate `Commands` child are assigned to every marked aggregate in that containing namespace. Use separate namespaces unless that shared command set is intended for every aggregate. |
 | Accessibility | Aggregate and command types discovered in referenced assemblies must be accessible from the consuming gateway compilation; discovery does not filter inaccessible types before emitting references. |
 | Nesting | Aggregates and commands must be top-level namespace members. Scans recurse through namespaces, not containing types, so attributed nested types are omitted. |
