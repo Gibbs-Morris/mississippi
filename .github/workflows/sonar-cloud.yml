@@ -118,8 +118,7 @@ jobs:
             './run-docs.ps1',
             './eng/src/agent-scripts/AgentDoctor.psm1',
             './eng/src/agent-scripts/PesterCoverage.psm1',
-            './eng/src/agent-scripts/RepositoryAutomation.psm1',
-            './eng/src/agent-scripts/MonthlyCleanupAutomation.psm1'
+            './eng/src/agent-scripts/RepositoryAutomation.psm1'
           )
           $configuration.CodeCoverage.OutputPath = Join-Path $PWD.Path 'pester-coverage.xml'
           $configuration.CodeCoverage.OutputFormat = 'JaCoCo'
