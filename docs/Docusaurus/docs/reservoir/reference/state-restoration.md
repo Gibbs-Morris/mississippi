@@ -41,7 +41,7 @@ Replacement writes feature entries individually, without a transaction or a shar
 
 ## Events And Notifications
 
-After ordinary dispatch guards, `Store.Dispatch` recognizes `ISystemAction` before building its middleware pipeline. For reset or restore it emits `ActionDispatchingEvent`, applies the values, and emits [`StateRestoredEvent`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Events/StateRestoredEvent.cs) with previous/new snapshots and the causing action.
+After ordinary dispatch guards, `Store.Dispatch` recognizes `ISystemAction` before building its middleware pipeline. For reset or restore it emits `ActionDispatchingEvent`, applies the values, and emits [`StateRestoredEvent`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Events/StateRestoredEvent.cs) with previous/new snapshots and the causing action. The previous snapshot is captured after `ActionDispatchingEvent` observers return. A synchronous nested dispatch from such an observer can change it, so it need not represent the state at entry to the outer `Dispatch` call.
 
 Middleware calling `nextAction` with a replacement reset/restore action does not re-enter this check. The pipeline ends at ordinary `CoreDispatch`, so that replacement runs the ordinary reduction/listener/effect path without restoring state. Dedicated restoration requires entry through `Store.Dispatch`.
 
