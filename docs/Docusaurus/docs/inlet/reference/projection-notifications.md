@@ -36,7 +36,7 @@ The constructor rejects a null store. Every notification method rejects a null e
 
 The notifier does not reject empty or whitespace entity IDs. It forwards the supplied ID, flag, exception, and data without normalization or copying.
 
-`NotifyProjectionUpdated` accepts null data and forwards the supplied `long` version without a range or ordering check. It does not compare that version with the current store entry or discard an older update itself. The notification source must supply the data and version appropriate to its protocol.
+`NotifyProjectionUpdated` accepts null data and forwards the supplied `long` version without a range or ordering check. It does not compare that version with the current store entry or discard an older update itself. The notification source must supply the data and version appropriate to its protocol. Serialize notifier calls for each shared store, including calls for different entities. The built-in store has no dispatch-wide lock around feature-state read, reduction, and replacement; overlapping updates can reduce the same earlier state and overwrite one another. Version ordering alone does not prevent that lost update.
 
 Dispatch exceptions propagate to the caller. The notifier does not catch them, retry, or turn an update failure into a second error action automatically.
 
