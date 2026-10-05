@@ -32,7 +32,7 @@ The cancellation token is forwarded to the POST and response reads. The base eff
 
 ## Response And Failure Actions
 
-An unsuccessful HTTP status is read as text and produces failure code `HttpError`, with a message containing the numeric status and response body. Successful HTTP statuses are parsed as [`OperationResultDto`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Abstractions/Commands/OperationResultDto.cs):
+When the request and body read complete, an unsuccessful HTTP status produces failure code `HttpError`, with a message containing the numeric status and response body. Cancellation or a network failure during response buffering or reading instead follows the caught-exception outcomes below. Successful HTTP statuses are parsed as [`OperationResultDto`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Abstractions/Commands/OperationResultDto.cs):
 
 - A null parsed result produces code `NoResponse` and message `No response from server.`
 - A result with `Success` false produces the result's error code/message, substituting `Unknown` and `Unknown error` only for null values.
