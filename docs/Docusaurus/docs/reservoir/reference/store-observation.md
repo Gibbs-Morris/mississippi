@@ -28,7 +28,7 @@ For each notification, the store copies the current listener list, then calls it
 
 ## Store Event Observers
 
-[`StoreEvents`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs) accepts observer subscriptions through the [subject](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/StoreEventSubject.cs). It rejects a null observer and returns a disposable that removes that observer.
+[`StoreEvents`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs) accepts observer subscriptions through the [subject](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/StoreEventSubject.cs). It rejects a null observer and returns a disposable that removes that observer from future publication snapshots. A publication that already captured it can still invoke `OnNext` after subscription disposal; removal does not wait for in-flight callbacks.
 
 The subject copies its subscriber list under a lock for each publication, then calls `OnNext` synchronously in list order outside that lock. It does not serialize concurrent publications: callbacks from concurrent dispatches can overlap and their event pairs can interleave. It does not retain or replay earlier events. The DI store constructor publishes `StoreInitializedEvent` before construction returns, so an observer subscribing afterward does not receive that earlier initialization event.
 
