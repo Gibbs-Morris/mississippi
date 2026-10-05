@@ -63,7 +63,7 @@ The [generic helper](https://github.com/Gibbs-Morris/mississippi/blob/main/src/B
 
 ## Summary
 
-Use the stream methods through the service contract actually registered by the host. The supplied JSON writer performs asynchronous I/O after buffering the entire payload, with cancellation forwarded to that I/O.
+Use the stream methods through the service contract actually registered by the host. The supplied JSON writer invokes and awaits the stream's asynchronous write API after buffering the entire payload, forwarding cancellation to that write. A completed `ValueTask` can make the await return without suspension; using this API does not guarantee yielding or offloading work to another thread. See [C# await behavior](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/await).
 
 ## Next Steps
 
