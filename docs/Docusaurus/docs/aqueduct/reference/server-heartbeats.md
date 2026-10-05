@@ -49,7 +49,7 @@ Directory reactivation or a silo restart loses its in-memory registrations. Hear
 
 ## Timeout Queries And Shutdown
 
-`GetDeadServersAsync(timeout)` computes current time minus the caller's timeout and returns IDs whose heartbeat timestamp is strictly earlier than that cutoff. The query does not remove the entries.
+`GetDeadServersAsync(timeout)` computes current time minus the caller's timeout and returns IDs whose heartbeat timestamp is strictly earlier than that cutoff. The query does not remove the entries or sort the returned IDs. Enumeration follows the directory dictionary, so list position does not establish age, registration order, or a stable cleanup priority.
 
 The timeout is not validated. Zero selects entries older than the query instant; a negative value moves the cutoff into the future and can classify fresh servers as dead. Extreme values can make the date subtraction throw `ArgumentOutOfRangeException`.
 
