@@ -28,7 +28,7 @@ sidebar_label: Generated MCP Command Metadata
 | Accessibility | Aggregate and command types discovered in referenced assemblies must be accessible from the consuming gateway compilation; discovery does not filter inaccessible types before emitting references. |
 | Nesting | Aggregates and commands must be top-level namespace members. Scans recurse through namespaces, not containing types, so attributed nested types are omitted. |
 | Namespace | The aggregate must belong to a nonempty named namespace. Global aggregates produce invalid using directives, including `using ;` and `using .Commands;`. |
-| Type identifiers | Aggregate and command simple names must be valid without C# keyword escaping. Discovered names such as `@class` or `@event` lose that escape in generated type references and fail compilation. |
+| Type identifiers | Aggregate and command simple names must be valid without C# keyword escaping. Discovered names such as `@class` or `@event` lose that escape in generated type references and fail compilation. Names must also resolve unambiguously alongside the generated imports; an aggregate and command sharing a simple name can cause CS0104. |
 
 If discovery finds no marked commands directly in that immediate `Commands` namespace, the aggregate is omitted: no empty tools class or aggregate registration entry is emitted. Commands only in a deeper namespace such as `Commands.Admin` do not make it eligible.
 
