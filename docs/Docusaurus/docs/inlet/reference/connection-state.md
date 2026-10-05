@@ -31,7 +31,7 @@ The separate `InletConnectionState` uses key `inlet-connection` and has no lifec
 The [reducers](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/SignalRConnection/SignalRConnectionReducers.cs) copy state and replace the fields selected by each action:
 
 - Connecting sets status to `Connecting` and clears `LastError`, preserving the previous ID, timestamps, and count.
-- Connected or reconnected sets status to `Connected`, replaces the ID and `LastConnectedAt`, resets the count to zero, and clears the error.
+- Connected or reconnected sets status to `Connected`, replaces the ID and `LastConnectedAt`, resets the count to zero, and clears the error. The action permits a null ID, so `Connected` does not guarantee a non-null `ConnectionId`; use status for the recorded connection check.
 - Reconnecting sets status to `Reconnecting`, assigns the action's attempt number and error, and preserves the ID and timestamps.
 - Disconnected sets status to `Disconnected`, replaces `LastDisconnectedAt` and the error, and clears the ID. It does not reset the state's reconnect count.
 - Message received replaces only `LastMessageReceivedAt`. The built-in [projection-update callback](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/ActionEffects/InletSignalRActionEffect.cs) emits this action before DTO/subscription checks. SignalR keep-alives and other hub traffic do not emit it in this path, so the timestamp is not a general transport-health signal.
