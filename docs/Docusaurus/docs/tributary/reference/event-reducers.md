@@ -53,7 +53,7 @@ The current root computes `GetReducerHash()` once from reducer CLR type names: s
 
 The input preserves duplicate type names but excludes method bodies, delegate contents, and registration priority. Reordering the same reducer types can therefore change first-match behavior without changing this hash. Treat it as the current type-based identity, not proof that reduction behavior is unchanged.
 
-The [root tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Tributary.Runtime.L0Tests/RootReducerTests.cs) cover indexed dispatch, fallback priority, first-match behavior, unmatched identity, reference-reuse rejection, and order-independent hashing. The [registration tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Tributary.Runtime.L0Tests/ReducerRegistrationsTests.cs) cover transient services and root registration.
+The [root tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Tributary.Runtime.L0Tests/RootReducerTests.cs) cover indexed dispatch before a fallback registered later, first-match behavior, unmatched identity, reference-reuse rejection, and order-independent hashing. They do not establish priority over a fallback registered earlier; that broader ordering rule above is verified from the implementation. The [registration tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Tributary.Runtime.L0Tests/ReducerRegistrationsTests.cs) cover transient services and root registration.
 
 ## Summary
 
