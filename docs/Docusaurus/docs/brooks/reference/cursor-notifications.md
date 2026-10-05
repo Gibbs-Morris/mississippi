@@ -52,6 +52,8 @@ These filters govern local observer state. Inlet records the newer position befo
 
 On a stream error, both cursor implementations request idle deactivation, allowing a later activation to subscribe again. The UX cursor does not resume existing handles or unsubscribe its prior explicit subscription. [Explicit Orleans subscriptions](https://learn.microsoft.com/en-us/dotnet/orleans/streaming/streams-programming-apis#writing-subscription-logic) survive activation loss; each successful activation subscribes again and can accumulate additional subscriptions. Brooks cursor completion uses the default observer no-op and neither deactivates nor resubscribes. UX cursor completion only logs; Inlet error and completion callbacks also only log and do not themselves resubscribe. Ordinary Inlet reactivation also loses its activation-local subscription entries, brook mappings, positions, and handles. It has no activation hook to resume retained explicit subscriptions or restore client fan-out. Re-subscribing rebuilds routing in the new activation but can add another durable subscription alongside those retained from earlier activations.
 
+When the last Inlet subscription to a brook is removed, or `ClearAllAsync` runs, an `OrleansException` or `InvalidOperationException` from `UnsubscribeAsync` is logged before the handle and local routing state are discarded. The durable subscription can survive that failed cleanup without a retained handle for retry; subscribing again can create an additional subscription.
+
 ## Summary
 
 A cursor notification identifies a brook and published position. The built-in observers apply their own position and token filters; receiving the payload does not establish completed projection or client delivery.
