@@ -34,6 +34,8 @@ The similarly named [`UxProjectionVersionedKey`](https://github.com/Gibbs-Morris
 
 [`BrookPosition`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Abstractions/BrookPosition.cs) itself rejects values below `-1`. A key's valid version identifies a requested position; construction does not verify that storage has that position.
 
+Versioned-cache activation derives a [`SnapshotStreamKey`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/SnapshotStreamKey.cs) with a separate limit: `brookName.Length + snapshotStorageName.Length + entityId.Length + reducersHash.Length + 3 <= 4192`. The built-in root reducer hash has 64 characters. Even a constructible cache key can therefore fail activation with `ArgumentException` when that downstream identity is too long.
+
 ## Parsing
 
 `Parse` requires exactly three pipe-separated parts. A null input throws `ArgumentNullException`; a wrong part count or invalid `long` version throws `FormatException`. Numeric parsing uses `NumberStyles.Integer` with invariant culture, allowing a sign and surrounding numeric whitespace.
