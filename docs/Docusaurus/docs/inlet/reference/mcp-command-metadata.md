@@ -49,7 +49,7 @@ For property-based commands, generated construction uses `new() { ... }`. The co
 
 ## Runtime Boundary
 
-The generated method constructs the command, resolves its aggregate grain by entity ID, and calls `ExecuteAsync` with the cancellation token. Changing a hint does not change that path, prevent writes, deduplicate repeated calls, or add authorization checks.
+The generated method constructs the command, resolves its aggregate grain by entity ID, and calls `ExecuteAsync` with the cancellation token. Changing a hint does not change that path, prevent writes, deduplicate repeated calls, or add authorization checks. An unsuccessful `OperationResult` becomes an ordinary returned string in the form `Failed to execute ... [code] message`, rather than a thrown exception or structured MCP error from this generator. A completed tool call can therefore report command failure; callers need to read the returned outcome. Execution exceptions and cancellation propagate.
 
 Descriptions can explain constraints, but this metadata does not enforce them. Choose text and hints that agree with the actual command handler and host authorization behavior.
 
