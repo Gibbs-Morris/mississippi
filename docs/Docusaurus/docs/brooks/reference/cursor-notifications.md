@@ -26,6 +26,8 @@ The [sealed positional record](https://github.com/Gibbs-Morris/mississippi/blob/
 | `BrookKey` | A `string` identifying the brook |
 | `NewPosition` | The published `BrookPosition` |
 
+The Orleans serialization alias is `Mississippi.Brooks.Abstractions.Streaming.BrookCursorMovedEvent`. Its field IDs are `0` for `BrookKey` and `1` for `NewPosition`; property order alone does not define that wire contract.
+
 The [built-in writer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Runtime/Writer/BrookWriterGrain.cs) supplies the brook key, in `brookName|entityId` form, and the position being published. It separately selects the configured `OrleansStreamProviderName` and the `BrookCursorUpdates` stream namespace; the payload key alone does not identify that complete route. Its [existing publication tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Brooks.Runtime.L0Tests/Writer/BrookWriterGrainUnitTests.cs) verify these values.
 
 The record stores its supplied properties without parsing the key or checking that the position represents persisted progress. For append commitment and safe publication retry, use [Brook Append Outcomes](../../reference/brook-append-outcomes.md).
