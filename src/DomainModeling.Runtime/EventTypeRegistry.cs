@@ -28,6 +28,8 @@ internal sealed class EventTypeRegistry : IEventTypeRegistry
 {
     private readonly ConcurrentDictionary<string, Type> nameToType = new(StringComparer.Ordinal);
 
+    private readonly object registrationLock = new();
+
     private readonly ConcurrentDictionary<Type, string> typeToName = new();
 
     /// <inheritdoc />
@@ -37,17 +39,8 @@ internal sealed class EventTypeRegistry : IEventTypeRegistry
     public void Register(
         string eventName,
         Type eventType
-    )
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
-        ArgumentNullException.ThrowIfNull(eventType);
-
-        // Use TryAdd to avoid overwriting - first registration wins
-        if (nameToType.TryAdd(eventName, eventType))
-        {
-            typeToName.TryAdd(eventType, eventName);
-        }
-    }
+    ) =>
+        TryRegister(eventName, eventType);
 
     /// <inheritdoc />
     public string? ResolveName(
@@ -82,10 +75,32 @@ internal sealed class EventTypeRegistry : IEventTypeRegistry
                 continue;
             }
 
-            Register(attribute.StorageName, type);
-            registeredCount++;
+            if (TryRegister(attribute.StorageName, type))
+            {
+                registeredCount++;
+            }
         }
 
         return registeredCount;
+    }
+
+    private bool TryRegister(
+        string eventName,
+        Type eventType
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+        ArgumentNullException.ThrowIfNull(eventType);
+        lock (registrationLock)
+        {
+            if (nameToType.ContainsKey(eventName) || typeToName.ContainsKey(eventType))
+            {
+                return false;
+            }
+
+            nameToType[eventName] = eventType;
+            typeToName[eventType] = eventName;
+            return true;
+        }
     }
 }

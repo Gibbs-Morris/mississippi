@@ -1,6 +1,12 @@
 using System;
+using System.Reflection;
+using System.Threading.Tasks;
+
+using Mississippi.Brooks.Abstractions.Attributes;
 
 using Mississippi.Tributary.Abstractions.Attributes;
+
+using Moq;
 
 
 namespace Mississippi.DomainModeling.Runtime.L0Tests;
@@ -14,6 +20,7 @@ public class SnapshotTypeRegistryTests
     ///     Another test state record for multiple registration tests.
     /// </summary>
     /// <param name="Value">A dummy value for testing.</param>
+    [SnapshotStorageName("TEST.REGISTRY.ANOTHER.SNAPSHOT")]
     private sealed record AnotherState(int Value = 0);
 
     /// <summary>
@@ -26,7 +33,54 @@ public class SnapshotTypeRegistryTests
     ///     Test state record for registration tests.
     /// </summary>
     /// <param name="Value">A dummy value for testing.</param>
+    [SnapshotStorageName("TEST.REGISTRY.FIRST.SNAPSHOT")]
     private sealed record TestState(int Value = 0);
+
+    /// <summary>
+    ///     Concurrent aliases for one CLR type leave exactly one matching name/type pair.
+    /// </summary>
+    [Fact]
+    public void ConcurrentAliasesKeepOneBidirectionalMapping()
+    {
+        SnapshotTypeRegistry registry = new();
+        Parallel.For(0, 32, index => registry.Register($"Snapshot{index}", typeof(TestState)));
+        string registeredName = Assert.Single(registry.RegisteredTypes).Key;
+        Assert.Equal(registeredName, registry.ResolveName(typeof(TestState)));
+        Assert.Equal(typeof(TestState), registry.ResolveType(registeredName));
+    }
+
+    /// <summary>
+    ///     Ignoring a duplicate CLR type leaves its rejected alias available for another type.
+    /// </summary>
+    [Fact]
+    public void DuplicateTypeDoesNotReserveAnotherName()
+    {
+        SnapshotTypeRegistry registry = new();
+        registry.Register("First", typeof(TestState));
+        registry.Register("Second", typeof(TestState));
+        Assert.Null(registry.ResolveType("Second"));
+        registry.Register("Second", typeof(AnotherState));
+        Assert.Equal("First", registry.ResolveName(typeof(TestState)));
+        Assert.Equal("Second", registry.ResolveName(typeof(AnotherState)));
+        Assert.Equal(typeof(AnotherState), registry.ResolveType("Second"));
+        Assert.Equal(2, registry.RegisteredTypes.Count);
+    }
+
+    /// <summary>
+    ///     Scans count newly inserted mappings and become idempotent after registration.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyCountsOnlyNewMappings()
+    {
+        SnapshotTypeRegistry registry = new();
+        Mock<Assembly> assembly = new();
+        assembly.Setup(instance => instance.GetTypes()).Returns([typeof(TestState), typeof(AnotherState), typeof(string)]);
+        registry.Register("TEST.REGISTRY.FIRST.SNAPSHOT", typeof(TestState));
+        Assert.Equal(1, registry.ScanAssembly(assembly.Object));
+        Assert.Equal(0, registry.ScanAssembly(assembly.Object));
+        Assert.Equal(2, registry.RegisteredTypes.Count);
+        Assert.Equal("TEST.REGISTRY.ANOTHER.SNAPSHOT", registry.ResolveName(typeof(AnotherState)));
+    }
 
     /// <summary>
     ///     Register should not overwrite existing registration with same name.
