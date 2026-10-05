@@ -10,7 +10,7 @@ sidebar_label: Isolated Reducer Test Assertions
 
 ## Overview
 
-`ReducerTestExtensions` invokes one typed event reducer directly. Use these helpers when the test concerns that reducer's output or exception rather than a configured multi-reducer replay.
+`ReducerTestExtensions.Apply`, `ShouldProduce`, and `ShouldThrow` invoke one typed event reducer directly. Use these helpers when the test concerns that reducer's output or exception rather than a configured multi-reducer replay.
 
 ## Applies To
 
@@ -50,7 +50,7 @@ The [contract tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests
 
 ## Summary
 
-Use `Apply` for custom checks, `ShouldProduce` for expected structure, and `ShouldThrow` for assignable exceptions and optional wildcard message checks. Each call tests a direct reducer invocation.
+Use `Apply` for custom checks, `ShouldProduce` for expected structure, and `ShouldThrow` for assignable exceptions and optional wildcard message checks. Each of those three methods tests a direct reducer invocation. `ForProjection<TProjection>()` instead constructs a `ReducerTestHarness<TProjection>` without invoking a reducer; see [Projection Test Harness](./projection-tests.md).
 
 ## Next Steps
 
