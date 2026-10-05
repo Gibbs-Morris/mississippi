@@ -25,18 +25,6 @@ public sealed class SignalRGroupKeyTests
     }
 
     /// <summary>
-    ///     Default key should have non-null components.
-    /// </summary>
-    [Fact(DisplayName = "Default Key Has NonNull Components")]
-    public void DefaultKeyHasNonNullComponents()
-    {
-        SignalRGroupKey key = default;
-        Assert.Equal(string.Empty, key.HubName);
-        Assert.Equal(string.Empty, key.GroupName);
-        Assert.Equal(":", key.ToString());
-    }
-
-    /// <summary>
     ///     Verifies that group name containing separator throws ArgumentException.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When GroupName Contains Separator")]
@@ -81,6 +69,18 @@ public sealed class SignalRGroupKeyTests
         string longHub = new('a', 3000);
         string longGroup = new('b', 2000);
         Assert.Throws<ArgumentException>(() => new SignalRGroupKey(longHub, longGroup));
+    }
+
+    /// <summary>
+    ///     Default key should have non-null components.
+    /// </summary>
+    [Fact(DisplayName = "Default Key Has NonNull Components")]
+    public void DefaultKeyHasNonNullComponents()
+    {
+        SignalRGroupKey key = default;
+        Assert.Equal(string.Empty, key.HubName);
+        Assert.Equal(string.Empty, key.GroupName);
+        Assert.Equal(":", key.ToString());
     }
 
     /// <summary>

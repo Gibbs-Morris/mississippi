@@ -9,22 +9,6 @@ namespace Mississippi.DomainModeling.Abstractions.L0Tests;
 public class OperationResultOfTTests
 {
     /// <summary>
-    ///     Zero-initialized value results remain failures when their value is discarded.
-    /// </summary>
-    [Fact]
-    public void DefaultValueResultPreservesFailureOnConversion()
-    {
-        OperationResult<int> result = default;
-        Assert.False(result.Success);
-        Assert.Equal("UNINITIALIZED_RESULT", result.ErrorCode);
-        Assert.Equal("The operation result has not been initialized.", result.ErrorMessage);
-        OperationResult converted = result.ToResult();
-        Assert.False(converted.Success);
-        Assert.Equal(result.ErrorCode, converted.ErrorCode);
-        Assert.Equal(result.ErrorMessage, converted.ErrorMessage);
-    }
-
-    /// <summary>
     ///     Zero-initialized reference results never claim to contain a success value.
     /// </summary>
     [Fact]
@@ -35,6 +19,22 @@ public class OperationResultOfTTests
         Assert.Null(result.Value);
         Assert.False(string.IsNullOrWhiteSpace(result.ErrorCode));
         Assert.False(string.IsNullOrWhiteSpace(result.ErrorMessage));
+        OperationResult converted = result.ToResult();
+        Assert.False(converted.Success);
+        Assert.Equal(result.ErrorCode, converted.ErrorCode);
+        Assert.Equal(result.ErrorMessage, converted.ErrorMessage);
+    }
+
+    /// <summary>
+    ///     Zero-initialized value results remain failures when their value is discarded.
+    /// </summary>
+    [Fact]
+    public void DefaultValueResultPreservesFailureOnConversion()
+    {
+        OperationResult<int> result = default;
+        Assert.False(result.Success);
+        Assert.Equal("UNINITIALIZED_RESULT", result.ErrorCode);
+        Assert.Equal("The operation result has not been initialized.", result.ErrorMessage);
         OperationResult converted = result.ToResult();
         Assert.False(converted.Success);
         Assert.Equal(result.ErrorCode, converted.ErrorCode);

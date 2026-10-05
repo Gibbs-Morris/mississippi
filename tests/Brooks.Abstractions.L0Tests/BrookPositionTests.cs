@@ -9,20 +9,6 @@ namespace Mississippi.Brooks.Abstractions.L0Tests;
 public sealed class BrookPositionTests
 {
     /// <summary>
-    ///     Zero-initialized positions identify position zero, while construction creates the NotSet sentinel.
-    /// </summary>
-    [Fact]
-    public void ZeroInitializedPositionIsSetAtZero()
-    {
-        BrookPosition zero = default;
-        Assert.Equal(0, zero.Value);
-        Assert.False(zero.NotSet);
-        Assert.Equal(new BrookPosition(0), zero);
-        Assert.Equal(0, (new BrookPosition[1])[0].Value);
-        Assert.True(zero.IsNewerThan(new BrookPosition()));
-    }
-
-    /// <summary>
     ///     Construction with a value less than -1 should throw.
     /// </summary>
     [Fact]
@@ -84,5 +70,19 @@ public sealed class BrookPositionTests
         BrookPosition right = new(42);
         Assert.False(left.IsNewerThan(right));
         Assert.False(right.IsNewerThan(left));
+    }
+
+    /// <summary>
+    ///     Zero-initialized positions identify position zero, while construction creates the NotSet sentinel.
+    /// </summary>
+    [Fact]
+    public void ZeroInitializedPositionIsSetAtZero()
+    {
+        BrookPosition zero = default;
+        Assert.Equal(0, zero.Value);
+        Assert.False(zero.NotSet);
+        Assert.Equal(new(0), zero);
+        Assert.Equal(0, (new BrookPosition[1])[0].Value);
+        Assert.True(zero.IsNewerThan(new()));
     }
 }

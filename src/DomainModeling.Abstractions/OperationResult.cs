@@ -19,15 +19,6 @@ namespace Mississippi.DomainModeling.Abstractions;
 [Alias("Mississippi.DomainModeling.Abstractions.OperationResult")]
 public readonly record struct OperationResult
 {
-    [Id(0)]
-    private readonly bool success;
-
-    [Id(1)]
-    private readonly string? errorCode;
-
-    [Id(2)]
-    private readonly string? errorMessage;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="OperationResult" /> struct.
     /// </summary>
@@ -40,32 +31,40 @@ public readonly record struct OperationResult
         string? errorMessage
     )
     {
-        this.success = success;
-        this.errorCode = errorCode;
-        this.errorMessage = errorMessage;
+        Succeeded = success;
+        this.ErrorCode = errorCode;
+        this.ErrorMessage = errorMessage;
     }
-
-    /// <summary>
-    ///     Gets a value indicating whether this instance was default-initialized.
-    /// </summary>
-    private bool IsDefault => !success && (errorCode is null) && (errorMessage is null);
 
     /// <summary>
     ///     Gets the error code when the operation failed.
     /// </summary>
-    public string? ErrorCode => errorCode;
+    [field: Id(1)]
+    public string? ErrorCode { get; }
 
     /// <summary>
     ///     Gets the error message when the operation failed.
     /// </summary>
-    public string? ErrorMessage => errorMessage;
+    [field: Id(2)]
+    public string? ErrorMessage { get; }
 
     /// <summary>
     ///     Gets a value indicating whether the operation succeeded.
     /// </summary>
     [MemberNotNullWhen(false, nameof(ErrorCode))]
     [MemberNotNullWhen(false, nameof(ErrorMessage))]
-    public bool Success => success || IsDefault;
+    public bool Success => Succeeded || IsDefault;
+
+    /// <summary>
+    ///     Gets a value indicating whether this instance was default-initialized.
+    /// </summary>
+    private bool IsDefault => !Succeeded && ErrorCode is null && ErrorMessage is null;
+
+    /// <summary>
+    ///     Gets the explicitly recorded success state.
+    /// </summary>
+    [Id(0)]
+    private bool Succeeded { get; }
 
     /// <summary>
     ///     Creates a failed operation result with the specified error details.
@@ -156,13 +155,13 @@ public readonly record struct OperationResult<T>
     ///     Gets the error code when the operation failed.
     /// </summary>
     [Id(2)]
-    public string? ErrorCode { get => field ?? (Success ? null : "UNINITIALIZED_RESULT"); }
+    public string? ErrorCode => field ?? (Success ? null : "UNINITIALIZED_RESULT");
 
     /// <summary>
     ///     Gets the error message when the operation failed.
     /// </summary>
     [Id(3)]
-    public string? ErrorMessage { get => field ?? (Success ? null : "The operation result has not been initialized."); }
+    public string? ErrorMessage => field ?? (Success ? null : "The operation result has not been initialized.");
 
     /// <summary>
     ///     Gets a value indicating whether the operation succeeded.
@@ -172,7 +171,6 @@ public readonly record struct OperationResult<T>
     [MemberNotNullWhen(false, nameof(ErrorMessage))]
     [MemberNotNullWhen(true, nameof(Value))]
     public bool Success { get; }
-
 
     /// <summary>
     ///     Gets the success value when the operation succeeded.

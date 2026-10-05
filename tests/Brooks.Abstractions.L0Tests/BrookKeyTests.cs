@@ -50,38 +50,6 @@ public sealed class BrookKeyTests
     }
 
     /// <summary>
-    ///     Default key should have non-null components.
-    /// </summary>
-    [Fact]
-    public void DefaultKeyHasNonNullComponents()
-    {
-        BrookKey key = default;
-        Assert.Equal(string.Empty, key.BrookName);
-        Assert.Equal(string.Empty, key.EntityId);
-        Assert.Equal("|", key.ToString());
-    }
-
-    /// <summary>
-    ///     Orleans transport preserves constructed and zero-initialized key components.
-    /// </summary>
-    [Fact]
-    public void SerializationPreservesKeyComponents()
-    {
-        ServiceCollection services = new();
-        services.AddSerializer(builder => builder.AddAssembly(typeof(BrookKey).Assembly));
-        using ServiceProvider serviceProvider = services.BuildServiceProvider();
-        Serializer serializer = serviceProvider.GetRequiredService<Serializer>();
-        BrookKey[] keys = [default, new("brook", "entity")];
-        foreach (BrookKey original in keys)
-        {
-            BrookKey restored = serializer.Deserialize<BrookKey>(serializer.SerializeToArray(original));
-            Assert.Equal(original.BrookName, restored.BrookName);
-            Assert.Equal(original.EntityId, restored.EntityId);
-            Assert.Equal(original.ToString(), restored.ToString());
-        }
-    }
-
-    /// <summary>
     ///     Passing null components should throw ArgumentNullException.
     /// </summary>
     /// <param name="type">The type component to pass to the constructor (may be null for the test).</param>
@@ -119,6 +87,18 @@ public sealed class BrookKeyTests
         // Combined key exceeds 4192: 4192 (type) + 1 (separator) + 0 (id) = 4193
         string longType = new('x', 4192);
         Assert.Throws<ArgumentException>(() => new BrookKey(longType, string.Empty));
+    }
+
+    /// <summary>
+    ///     Default key should have non-null components.
+    /// </summary>
+    [Fact]
+    public void DefaultKeyHasNonNullComponents()
+    {
+        BrookKey key = default;
+        Assert.Equal(string.Empty, key.BrookName);
+        Assert.Equal(string.Empty, key.EntityId);
+        Assert.Equal("|", key.ToString());
     }
 
     /// <summary>
@@ -173,6 +153,26 @@ public sealed class BrookKeyTests
         BrookKey parsed = BrookKey.FromString("t|i");
         Assert.Equal("t", parsed.BrookName);
         Assert.Equal("i", parsed.EntityId);
+    }
+
+    /// <summary>
+    ///     Orleans transport preserves constructed and zero-initialized key components.
+    /// </summary>
+    [Fact]
+    public void SerializationPreservesKeyComponents()
+    {
+        ServiceCollection services = new();
+        services.AddSerializer(builder => builder.AddAssembly(typeof(BrookKey).Assembly));
+        using ServiceProvider serviceProvider = services.BuildServiceProvider();
+        Serializer serializer = serviceProvider.GetRequiredService<Serializer>();
+        BrookKey[] keys = [default, new("brook", "entity")];
+        foreach (BrookKey original in keys)
+        {
+            BrookKey restored = serializer.Deserialize<BrookKey>(serializer.SerializeToArray(original));
+            Assert.Equal(original.BrookName, restored.BrookName);
+            Assert.Equal(original.EntityId, restored.EntityId);
+            Assert.Equal(original.ToString(), restored.ToString());
+        }
     }
 
     /// <summary>
