@@ -27,6 +27,7 @@ sidebar_label: Generated MCP Command Metadata
 | Aggregate namespaces/assemblies | All marked commands in the immediate `Commands` child of the aggregate's own assembly are assigned to every marked aggregate in that containing namespace. Matching namespaces in another assembly are not merged. Use separate namespaces unless that shared command set is intended for every aggregate. |
 | Accessibility | Aggregate and command types discovered in referenced assemblies must be accessible from the consuming gateway compilation; discovery does not filter inaccessible types before emitting references. |
 | Nesting | Aggregates and commands must be top-level namespace members. Scans recurse through namespaces, not containing types, so attributed nested types are omitted. |
+| Namespace | The aggregate must belong to a nonempty named namespace. Global aggregates produce invalid using directives, including `using ;` and `using .Commands;`. |
 
 ## Command Tool Hints
 
