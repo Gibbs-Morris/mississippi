@@ -64,7 +64,7 @@ The built-in handoff does not provide a durable retry queue or application-level
 
 ## Summary
 
-Worker effects receive an event, supplied state, and routing metadata after persistence. Their execution is outside the aggregate's awaited completion path. Aggregate-side handoff failures are log-only; received worker failures use the worker's logs and metrics.
+Worker effects receive an event, supplied state, and routing metadata after persistence. Their execution is outside the aggregate's awaited completion path. Noncritical exceptions inside registration dispatch are log-only; post-append cursor publication or snapshot-load failures can still propagate before that dispatch catch. Received worker failures use the worker's logs and metrics.
 
 ## Next Steps
 
