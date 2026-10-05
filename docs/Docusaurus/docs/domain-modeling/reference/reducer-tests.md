@@ -26,7 +26,7 @@ A supplied state is passed through without cloning. The helper does not select a
 
 `ShouldProduce` uses the same invocation and compares the result with a non-null expected projection. The [structural comparison](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.TestHarness/StructuralAssertions.cs) checks expected public members recursively and allows additional actual members. It does not require identical CLR types for member-based comparison.
 
-The expected value selects collection comparison. Ordinary expected sequences are unordered, with exact counts and duplicate occurrences; an expected `byte[]` is ordered, and expected dictionaries match keys and counts. An actual byte array compared with an ordinary expected sequence can therefore be treated as unordered. Use direct `Apply` followed by explicit assertions when exact type or collection order is part of the test.
+The expected value selects collection comparison. Ordinary expected sequences are unordered, with exact counts and duplicate occurrences; an expected `byte[]` is ordered. An expected non-generic `System.Collections.IDictionary` selects key/count matching and requires the actual value to implement that interface. Generic-only dictionaries instead follow unordered `IEnumerable` comparison and do not require actual dictionary-key lookup. An actual byte array compared with an ordinary expected sequence can therefore be treated as unordered. Use direct `Apply` followed by explicit assertions when exact type or collection order is part of the test.
 
 ## ShouldThrow
 
