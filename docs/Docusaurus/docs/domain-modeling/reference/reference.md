@@ -52,5 +52,6 @@ Use this page as the current active reference for what Domain Modeling owns and 
 - Read [Domain Operation Results](./operation-results.md) for factories, typed values, and conversion.
 - Read [Projection Cache Keys](./projection-cache-keys.md) for versioned cache identity and parsing.
 - Read [Projection Cursors](./projection-cursors.md) for shared identity and cached storage or accepted-notification positions.
+- Read [Projection Reads](./projection-reads.md) for latest and explicitly versioned reads.
 - Read [Domain Modeling Concepts](../concepts/concepts.md).
 - Use the [Spring Sample](../../samples/spring-sample/index.md) to see domain modeling patterns in practice.
