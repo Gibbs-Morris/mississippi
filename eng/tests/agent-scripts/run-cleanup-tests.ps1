@@ -20,7 +20,13 @@ if (-not (Test-Path -LiteralPath $testPath -PathType Leaf)) {
     throw "Test file not found: $testPath"
 }
 
-$result = Invoke-Pester -Path $testPath -PassThru
+$testPaths = @($testPath)
+$monthlyTestPath = Join-Path $PSScriptRoot 'MonthlyCleanup.Tests.ps1'
+if (Test-Path -LiteralPath $monthlyTestPath -PathType Leaf) {
+    $testPaths += $monthlyTestPath
+}
+
+$result = Invoke-Pester -Path $testPaths -PassThru
 if ($PassThru) {
     return $result
 }
