@@ -51,6 +51,8 @@ Disposal removes the provider's lifecycle callbacks, including `Closed`, before 
 
 The [builder tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Client.L0Tests/Registrations/InletBlazorSignalRBuilderTests.cs) cover scoped provider and lazy store registrations. They inspect service descriptors rather than establishing transport readiness or concurrent startup guarantees.
 
+After automatic reconnect exhausts its attempts and fires `Closed`, a later successful startup does not run the effect's `Reconnected` subscription-restoration loop. Its old subscription keys remain, so repeated subscribe actions for them exit early. The transport can report `Connected` without restored projection updates. Recreating the client store/effect and connection scope, then issuing fresh subscription actions, avoids those stale entries; eager startup alone does not restore them.
+
 ## Summary
 
 Request startup through the action flow and distinguish a completed transport start from a call that returned during another connection state. Startup exceptions and reconnect lifecycle events have separate observation paths.
