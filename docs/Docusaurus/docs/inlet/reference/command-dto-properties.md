@@ -34,7 +34,7 @@ For a command using object-initializer mapping rather than constructor mapping, 
 
 [`PropertyModel`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Core/Analysis/PropertyModel.cs) marks a property required when it is non-nullable and has no detected declared default. This includes non-nullable value types: an `int` without a detected default is required too.
 
-Nullability includes annotated nullable reference types and `Nullable<T>` value types. Defaults are detected from available property initializer or parameter syntax, or from a same-named constructor parameter with an explicit default. Constructor parameter matching uses ordinal, case-sensitive names. Source initializers require syntax to be available to this analysis.
+Nullability includes annotated nullable reference types and `Nullable<T>` value types. Defaults are detected from available property initializer or parameter syntax, or from a same-named constructor parameter with an explicit default. Constructor parameter matching uses ordinal, case-sensitive names. Source initializers require syntax to be available to this analysis. Properties imported from a referenced assembly have no declaring syntax for those initializers, so a compiled property initializer is not a detected default. A same-named constructor parameter's explicit default can still be read from metadata. Required-field inference can therefore differ from analysis of the command's source in the current compilation.
 
 The server emitter then applies these rules:
 
