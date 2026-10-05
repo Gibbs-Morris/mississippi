@@ -36,7 +36,7 @@ sidebar_label: Client Projection Entries
 
 `WithEntryTransform<T>` rejects a null entity ID or transform and supplies `Empty` when no typed entry exists. Updating the immutable dictionary creates a new state, but it does not clone the projection object stored in `Data`.
 
-Those null inputs throw `ArgumentNullException`. Every `Reduce...` method also rejects null state or action with `ArgumentNullException` before applying a transition.
+Those null inputs throw `ArgumentNullException`. Direct `WithEntry<T>` and lookup helpers have no equivalent entity-ID guard: interpolating a null ID produces the same key as an empty ID, so null and empty target the same entry. The transform helper's guard does not apply to those direct calls. Every `Reduce...` method also rejects null state or action with `ArgumentNullException` before applying a transition.
 
 ## Action Transitions
 
