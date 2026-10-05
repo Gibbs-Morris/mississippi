@@ -50,7 +50,7 @@ The [factory](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainMo
 
 The [projection runtime](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionGrain.cs) uses this three-part identity for versioned reads. Latest projection grains use the entity ID as their primary key. Versioned caches are typed by `TProjection`, so the same encoded string does not erase the projection type's grain identity.
 
-Activation of the [versioned cache](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionVersionedCacheGrain.cs) also derives snapshot storage identity from `TProjection`'s `[SnapshotStorageName]` attribute. A missing attribute throws `InvalidOperationException`; `[BrookName]` alone does not make this cache path usable.
+Activation of the [versioned cache](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionVersionedCacheGrain.cs) also derives snapshot storage identity from `TProjection`'s `[SnapshotStorageName]` attribute. A missing attribute throws `InvalidOperationException`; `[BrookName]` alone does not make this cache path usable. The built-in snapshot-cache route also needs a nonabstract projection class with a public parameterless constructor (`new()`); the factory constraints do not enforce that activation requirement.
 
 The [cache-key tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.Abstractions.L0Tests/UxProjectionVersionedCacheKeyTests.cs) cover validation, parsing, conversions, zero versions, and string encoding. The [factory tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.Runtime.L0Tests/UxProjectionGrainFactoryTests.cs) verify routing.
 
