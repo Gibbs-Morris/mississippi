@@ -28,7 +28,7 @@ It then resolves the endpoint, maps the action to a request DTO, and calls `Post
 
 Generated command clients always POST. The [gateway generator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway.Generators/AggregateControllerGenerator.cs) supports other verbs through `GenerateCommand.HttpMethod`, but the client base does not select that verb. A generated non-POST endpoint normally rejects this client request with HTTP 405; use compatible POST routes or an appropriate custom effect.
 
-The cancellation token is forwarded to the POST and response reads. The base effect does not add a retry loop.
+The cancellation token is forwarded to the POST and response reads. That token is available when calling/enumerating the effect directly. Normal Reservoir `Store.Dispatch` has no token parameter, and the built-in store invokes effects with `CancellationToken.None`; dispatching a generated command action does not supply caller cancellation to this request. The base effect does not add a retry loop.
 
 ## Response And Failure Actions
 
