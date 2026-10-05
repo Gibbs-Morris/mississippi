@@ -15,7 +15,7 @@ sidebar_label: Client Command HTTP Outcomes
 ## Applies To
 
 - `Mississippi.Inlet.Client.Abstractions.ActionEffects.CommandActionEffectBase`
-- `OperationResultDto` and command executing/succeeded/failed action factories
+- `OperationResultDto` and factories for command lifecycle actions
 - Generated client command and saga-start effects that inherit this base
 
 ## Request Lifecycle
