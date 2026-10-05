@@ -38,7 +38,7 @@ Each assertion helper executes the handler for that call. Chaining separate help
 
 The [structural comparer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.TestHarness/StructuralAssertions.cs) compares expected public data members recursively and permits additional actual members. Properties can match fields with the same name; member-based comparison does not require identical CLR types. Add an explicit type assertion when the event's type is part of the test's intent.
 
-`ShouldEmit` uses unordered matching for ordinary expected nested sequences, preserving collection counts and duplicate occurrences. Expected byte arrays remain ordered. `ShouldEmitEvents` enables ordering throughout its structural comparison. Expected dictionaries select key/count matching rather than insertion order.
+`ShouldEmit` uses unordered matching for ordinary expected nested sequences, preserving collection counts and duplicate occurrences. Expected byte arrays remain ordered. `ShouldEmitEvents` enables ordering throughout its structural comparison. Expected values implementing non-generic `System.Collections.IDictionary` select key/count matching rather than insertion order. A generic-only or read-only dictionary that does not implement that interface follows the `IEnumerable` branch; under `ShouldEmitEvents`, its enumeration order is compared.
 
 ## Failed Results
 
