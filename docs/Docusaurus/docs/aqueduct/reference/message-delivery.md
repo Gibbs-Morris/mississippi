@@ -27,7 +27,7 @@ The [lifetime manager](https://github.com/Gibbs-Morris/mississippi/blob/main/src
 
 Null argument arrays become empty arguments. The method's cancellation token is not passed to the local sender or client-grain send, whose called APIs have no token parameter.
 
-`SendAllAsync` and `SendAllExceptAsync` first ensure the shared backplane is initialized, then publish an `AllMessage`. The token is passed to initialization; `PublishToAllAsync` has no token parameter. Except sends include the supplied exclusion list in the message.
+`SendAllAsync` and `SendAllExceptAsync` first ensure the shared backplane is initialized, then publish an `AllMessage`. The token controls initialization semaphore waits, but is not forwarded to stream subscriptions or directory registration. When initialization is already complete, the setup path returns without checking it. `PublishToAllAsync` has no token parameter, so a canceled token does not itself stop an initialized broadcast publication. Except sends include the supplied exclusion list in the message.
 
 Short CLR hub names must be unique across gateways sharing the provider and stream namespaces. Different namespaces do not distinguish two hub classes with the same `Name` in stream or client-grain routing.
 
