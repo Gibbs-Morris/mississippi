@@ -42,7 +42,7 @@ The [summary](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainMo
 
 - `Mismatches`: alias differences not suppressed by matching rules.
 - `ConfigurationErrors`: invalid or stale exception-rule diagnostics.
-- `ActiveExceptions`: rules matching at least one scanned candidate.
+- `ActiveExceptions`: rules matching at least one scanned candidate. These are new normalized records: identifiers are trimmed or null, `Reason` is trimmed, `Owner` is trimmed or null, and classification is retained. Normalized record equality is used by `Distinct()`, so whitespace differences alone do not necessarily preserve separate returned rules.
 
 Configuration errors do not themselves prevent a matching rule from suppressing a mismatch. A consumer deciding whether a test passes should inspect both mismatches and configuration errors. `FormatReport` formats the ordered results, subject to the scan's ordering ties above. `ActiveExceptions` sort only by normalized `TypeFullName` and `ExpectedAlias`. Rules with equal identifiers but different classifications tie on both keys and retain their preceding sequence, so their report order can also depend on exception-rule input order.
 
