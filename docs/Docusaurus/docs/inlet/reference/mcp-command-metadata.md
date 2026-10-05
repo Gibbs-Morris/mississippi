@@ -60,6 +60,7 @@ For property-based commands, generated construction uses `new() { ... }`. The co
 | --- | --- |
 | Indexers | Selected by the readable-property scan, but emitted as ordinary parameters/initializer members without index arguments; generated C# is invalid. |
 | Converted names | Must be unique after first-character conversion. `URL` and `uRL` both produce `uRL`, causing duplicate generated parameters. |
+| Property types | Source type text is minimally qualified. The generated file imports aggregate/command namespaces, not each source-file using; types from elsewhere need another resolving import, such as a global using. |
 
 ## Runtime Boundary
 
