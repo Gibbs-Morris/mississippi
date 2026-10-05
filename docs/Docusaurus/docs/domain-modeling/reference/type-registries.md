@@ -42,6 +42,8 @@ The two directions therefore need not be a one-to-one mapping. They are updated 
 
 Manual `Register` uses the supplied name. It does not derive or cross-check that name against the type's event or snapshot storage-name attribute; attribute-name extraction belongs to scanning and the higher-level registration helpers.
 
+Once events or snapshots have been written to a real store, keep their existing storage-name attribute values unchanged, including before version 1.0. Renaming those identities can make persisted data unreachable. Introduce a distinct versioned type/identity for schema evolution while retaining the old names, type mappings, and compatibility needed to read existing data; changing the attribute on the existing type is not a migration. See the repository's [storage compatibility rule](https://github.com/Gibbs-Morris/mississippi/blob/main/.github/instructions/backwards-compatibility.instructions.md).
+
 Snapshot registration does inspect `[SnapshotRetention]` before adding either mapping. Constructing that attribute with a nonpositive modulus throws `ArgumentOutOfRangeException`, so an invalid attributed type fails manual registration and assembly scanning before its mappings are added. The [snapshot registry tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.Runtime.L0Tests/SnapshotTypeRegistryTests.cs) cover this retention failure.
 
 ## Assembly Scanning
