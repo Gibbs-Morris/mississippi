@@ -42,5 +42,6 @@ Use this page as the current active reference for what Brooks owns and which pac
 
 ## Next Steps
 
+- Use [Brooks Reader Options](./reader-options.md) for read-slice sizing and validation.
 - Read [Brooks Concepts](../concepts/concepts.md).
 - Use [Brooks Operations](../operations/operations.md) for the current operational scope.
