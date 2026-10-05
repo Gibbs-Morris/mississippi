@@ -48,5 +48,6 @@ Use this page as the current active reference for what Brooks owns and which pac
 - Use [Brooks Streaming Reader Keys](./async-reader-keys.md) for per-resolution reader identity and GUID suffixes.
 - Read [Brooks Event Envelope](./event-envelope.md) for persisted fields, payload bytes, and metadata defaults.
 - Read [Brooks Cursor Notifications](./cursor-notifications.md) for payload fields and observer filtering.
+- Read [Brooks Stream Provider Identity](./stream-provider-identity.md) for provider selection and compatible cursor stream IDs.
 - Read [Brooks Concepts](../concepts/concepts.md).
 - Use [Brooks Operations](../operations/operations.md) for the current operational scope.
