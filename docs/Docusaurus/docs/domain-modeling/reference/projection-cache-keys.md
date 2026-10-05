@@ -32,7 +32,7 @@ The similarly named [`UxProjectionVersionedKey`](https://github.com/Gibbs-Morris
 - `BrookPosition.NotSet`, with value `-1`, throws `ArgumentOutOfRangeException`. Version zero is valid.
 - The combined name, entity ID, two separators, and invariant numeric version representation may contain at most 4192 UTF-16 code units; a longer constructed key throws `ArgumentException`.
 
-[`BrookPosition`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Abstractions/BrookPosition.cs) itself rejects values below `-1`. A key's valid version identifies a requested position; construction does not verify that storage has that position.
+[`BrookPosition`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Abstractions/BrookPosition.cs) itself rejects values below `-1`. A key's valid version identifies a requested position; construction does not verify that storage has that position. If no usable exact snapshot exists, the built-in replay route reads through the requested position. Its [bounded slice reader](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Runtime/Reader/BrookSliceReaderGrain.cs) throws `InvalidOperationException` when storage ends earlier, failing cache activation rather than substituting the latest state or a nullable missing result.
 
 Versioned-cache activation derives a [`SnapshotStreamKey`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/SnapshotStreamKey.cs) with a separate limit: `brookName.Length + snapshotStorageName.Length + entityId.Length + reducersHash.Length + 3 <= 4192`. The built-in root reducer hash has 64 characters. Even a constructible cache key can therefore fail activation with `ArgumentException` when that downstream identity is too long.
 
