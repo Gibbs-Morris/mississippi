@@ -1,6 +1,3 @@
-using Xunit;
-
-
 namespace Mississippi.Testing.Utilities.Orleans;
 
 /// <summary>
@@ -9,15 +6,8 @@ namespace Mississippi.Testing.Utilities.Orleans;
 /// <remarks>
 ///     <para>
 ///         Test projects should create their own collection definition class that inherits from
-///         <see cref="ICollectionFixture{TFixture}" /> with their specific cluster fixture type:
+///         <c>ICollectionFixture&lt;TFixture&gt;</c> with their specific cluster fixture type:
 ///     </para>
-///     <code>
-///     [CollectionDefinition(Name)]
-///     public sealed class MyClusterTestSuite : ICollectionFixture&lt;MyClusterFixture&gt;
-///     {
-///         public const string Name = nameof(MyClusterTestSuite);
-///     }
-///     </code>
 ///     <para>
 ///         Test classes can then use the <c>[Collection(MyClusterTestSuite.Name)]</c> attribute
 ///         to participate in the shared cluster collection.

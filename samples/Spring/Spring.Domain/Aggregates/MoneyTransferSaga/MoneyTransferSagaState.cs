@@ -1,15 +1,15 @@
 using System;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
-using Mississippi.EventSourcing.Sagas.Abstractions;
+using Mississippi.Brooks.Abstractions.Attributes;
+using Mississippi.DomainModeling.Abstractions;
 using Mississippi.Inlet.Generators.Abstractions;
+
+using MississippiSamples.Spring.Domain.Aggregates.MoneyTransferSaga.Commands;
 
 using Orleans;
 
-using Spring.Domain.Aggregates.MoneyTransferSaga.Commands;
 
-
-namespace Spring.Domain.Aggregates.MoneyTransferSaga;
+namespace MississippiSamples.Spring.Domain.Aggregates.MoneyTransferSaga;
 
 /// <summary>
 ///     Saga state for orchestrating money transfers between bank accounts.
@@ -20,8 +20,12 @@ namespace Spring.Domain.Aggregates.MoneyTransferSaga;
     InputType = typeof(StartMoneyTransferCommand),
     RoutePrefix = "money-transfer",
     FeatureKey = "moneyTransfer")]
+[GenerateMcpSagaTools(
+    Title = "Transfer Funds",
+    Description = "Transfers funds between two Spring Bank accounts using the saga orchestrator.",
+    ToolPrefix = "transfer_funds")]
 [GenerateSerializer]
-[Alias("Spring.Domain.Aggregates.MoneyTransferSaga.MoneyTransferSagaState")]
+[Alias("MississippiSamples.Spring.Domain.Aggregates.MoneyTransferSaga.MoneyTransferSagaState")]
 public sealed record MoneyTransferSagaState : ISagaState
 {
     /// <summary>

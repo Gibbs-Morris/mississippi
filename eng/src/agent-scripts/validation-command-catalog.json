@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "1.0",
+  "checks": [
+    {
+      "id": "core-iteration",
+      "mode": "iteration",
+      "executable": "pwsh",
+      "arguments": ["./go.ps1", "-SkipCleanup"],
+      "scriptPaths": ["go.ps1"],
+      "purpose": "Fast provisional build and unit-test feedback for .NET or unknown changes.",
+      "prerequisites": [".NET SDK selected by global.json"],
+      "expectedArtifacts": ["pipeline console summary"]
+    },
+    {
+      "id": "core-final",
+      "mode": "final",
+      "executable": "pwsh",
+      "arguments": ["./go.ps1"],
+      "scriptPaths": ["go.ps1"],
+      "purpose": "Authoritative local build, tests, coverage summary, cleanup, and final build.",
+      "prerequisites": [".NET SDK and local tools"],
+      "expectedArtifacts": ["coverage summaries", "final build output"]
+    },
+    {
+      "id": "full-cleanup",
+      "mode": "final",
+      "executable": "pwsh",
+      "arguments": ["./clean-up.ps1"],
+      "scriptPaths": ["clean-up.ps1"],
+      "purpose": "Apply the repository cleanup contract before final handoff.",
+      "prerequisites": ["local ReSharper tool restore"],
+      "expectedArtifacts": ["clean working tree or reviewed cleanup diff"]
+    },
+    {
+      "id": "powershell-tests",
+      "mode": "final",
+      "executable": "pwsh",
+      "arguments": ["./eng/tests/orchestrate-powershell-tests.ps1"],
+      "scriptPaths": ["eng/tests/orchestrate-powershell-tests.ps1"],
+      "purpose": "Run the engineering-script Pester and script integration suites.",
+      "prerequisites": ["PowerShell 7", "Pester 5"],
+      "expectedArtifacts": ["Pester summary"]
+    },
+    {
+      "id": "markdown-lint",
+      "mode": "final",
+      "executable": "npx",
+      "arguments": ["--yes", "markdownlint-cli2@0.17.2", "{{CHANGED_MARKDOWN_PATHS}}"],
+      "scriptPaths": [],
+      "purpose": "Lint changed Markdown and MDX content.",
+      "prerequisites": ["Node.js", "npm registry or cached markdownlint-cli2"],
+      "expectedArtifacts": ["markdownlint summary"]
+    },
+    {
+      "id": "docusaurus-final",
+      "mode": "final",
+      "executable": "pwsh",
+      "arguments": ["./docs/Docusaurus/test-docusaurus.ps1"],
+      "scriptPaths": ["docs/Docusaurus/test-docusaurus.ps1"],
+      "purpose": "Build and browser-test the Docusaurus site for documentation changes.",
+      "prerequisites": ["PowerShell 7", "Node.js 20+", "Playwright Chromium"],
+      "expectedArtifacts": ["Docusaurus build output", "Playwright test report"]
+    },
+    {
+      "id": "spring-doctor",
+      "mode": "prerequisite",
+      "executable": "pwsh",
+      "arguments": ["./test-spring.ps1", "-Doctor"],
+      "scriptPaths": ["test-spring.ps1"],
+      "purpose": "Check Spring SDK and Docker Linux prerequisites.",
+      "prerequisites": ["PowerShell 7", "Linux Docker daemon"],
+      "expectedArtifacts": ["READY doctor result"]
+    },
+    {
+      "id": "spring-smoke",
+      "mode": "final",
+      "executable": "pwsh",
+      "arguments": ["./test-spring.ps1"],
+      "scriptPaths": ["test-spring.ps1"],
+      "purpose": "Run the Spring L3 browser smoke journey when browser behavior is affected.",
+      "prerequisites": ["Linux Docker daemon", "Playwright Chromium"],
+      "expectedArtifacts": ["PASS summary", "spring.trx", "banking.png"]
+    },
+    {
+      "id": "spring-l2-full",
+      "mode": "final",
+      "executable": "pwsh",
+      "arguments": ["./test-spring.ps1", "-TestLevel", "L2", "-Suite", "Full"],
+      "scriptPaths": ["test-spring.ps1"],
+      "purpose": "Run the full Spring L2 API and authorization contract suite.",
+      "prerequisites": ["Linux Docker daemon", "Spring test dependencies"],
+      "expectedArtifacts": ["PASS summary", "L2 test result"]
+    },
+    {
+      "id": "spring-l3-full",
+      "mode": "final",
+      "executable": "pwsh",
+      "arguments": ["./test-spring.ps1", "-TestLevel", "L3", "-Suite", "Full"],
+      "scriptPaths": ["test-spring.ps1"],
+      "purpose": "Run all Spring L3 browser journeys beyond the smoke subset.",
+      "prerequisites": ["Linux Docker daemon", "Playwright Chromium"],
+      "expectedArtifacts": ["PASS summary", "L3 test result", "browser evidence"]
+    }
+  ]
+}

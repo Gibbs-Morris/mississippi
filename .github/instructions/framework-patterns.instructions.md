@@ -6,7 +6,7 @@ applyTo: 'src/**'
 
 Governing thought: Framework code prioritizes developer experience and minimizes cognitive overload by exposing consistent primitives—aggregates, projections, commands, events, actions, reducers, effects—throughout. Internal flexibility serves external consistency.
 
-> Drift check: Review existing framework implementations in `src/Reservoir/`, `src/EventSourcing.Aggregates/`, and `src/Inlet.*/` before adding new patterns.
+> Drift check: Review existing framework implementations in `src/Reservoir.*/`, `src/DomainModeling.Runtime/`, and `src/Inlet.*/` before adding new patterns.
 
 ## Rules (RFC 2119)
 

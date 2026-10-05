@@ -1,9 +1,9 @@
-using Spring.Domain.Aggregates.BankAccount.Events;
-using Spring.Domain.Projections.BankAccountBalance;
-using Spring.Domain.Projections.BankAccountBalance.Reducers;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
+using MississippiSamples.Spring.Domain.Projections.BankAccountBalance;
+using MississippiSamples.Spring.Domain.Projections.BankAccountBalance.Reducers;
 
 
-namespace Spring.Domain.L0Tests.Projections.BankAccountBalance;
+namespace MississippiSamples.Spring.Domain.L0Tests.Projections.BankAccountBalance;
 
 /// <summary>
 ///     Tests for <see cref="FundsWithdrawnBalanceReducer" />.
@@ -34,7 +34,7 @@ public sealed class FundsWithdrawnBalanceReducerTests
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Balance.Should().Be(350.00m);
+        Assert.Equal(350.00m, result.Balance);
     }
 
     /// <summary>
@@ -59,8 +59,8 @@ public sealed class FundsWithdrawnBalanceReducerTests
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.HolderName.Should().Be("Jane Doe");
-        result.IsOpen.Should().BeTrue();
+        Assert.Equal("Jane Doe", result.HolderName);
+        Assert.True(result.IsOpen);
     }
 
     /// <summary>
@@ -98,7 +98,7 @@ public sealed class FundsWithdrawnBalanceReducerTests
             });
 
         // Assert
-        state.Balance.Should().Be(650.00m);
+        Assert.Equal(650.00m, state.Balance);
     }
 
     /// <summary>
@@ -145,7 +145,7 @@ public sealed class FundsWithdrawnBalanceReducerTests
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
 
         // Assert - Reducer simply applies the math; aggregate enforces business rules
-        result.Balance.Should().Be(-50.00m);
+        Assert.Equal(-50.00m, result.Balance);
     }
 
     /// <summary>
@@ -170,6 +170,6 @@ public sealed class FundsWithdrawnBalanceReducerTests
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Balance.Should().Be(100.00m);
+        Assert.Equal(100.00m, result.Balance);
     }
 }

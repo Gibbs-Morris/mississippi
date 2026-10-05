@@ -1,13 +1,13 @@
 using System.Collections.Immutable;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Attributes;
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Generators.Abstractions;
 
 using Orleans;
 
 
-namespace Spring.Domain.Projections.FlaggedTransactions;
+namespace MississippiSamples.Spring.Domain.Projections.FlaggedTransactions;
 
 /// <summary>
 ///     Read-optimized projection for the last 30 flagged transactions requiring investigation.
@@ -28,8 +28,11 @@ namespace Spring.Domain.Projections.FlaggedTransactions;
 [BrookName("SPRING", "COMPLIANCE", "INVESTIGATION")]
 [SnapshotStorageName("SPRING", "COMPLIANCE", "FLAGGEDTXPROJECTION")]
 [GenerateProjectionEndpoints]
+[GenerateMcpReadTool(
+    Title = "Get Flagged Transactions",
+    Description = "Retrieves the most recent flagged high-value transactions requiring investigation.")]
 [GenerateSerializer]
-[Alias("Spring.Domain.Projections.FlaggedTransactions.FlaggedTransactionsProjection")]
+[Alias("MississippiSamples.Spring.Domain.Projections.FlaggedTransactions.FlaggedTransactionsProjection")]
 public sealed record FlaggedTransactionsProjection
 {
     /// <summary>

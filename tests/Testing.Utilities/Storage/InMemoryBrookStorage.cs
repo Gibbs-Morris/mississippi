@@ -4,8 +4,8 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Runtime.Storage.Abstractions;
 
 
 namespace Mississippi.Testing.Utilities.Storage;

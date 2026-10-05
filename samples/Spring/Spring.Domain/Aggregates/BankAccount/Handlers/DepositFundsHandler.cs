@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
-using Spring.Domain.Aggregates.BankAccount.Commands;
-using Spring.Domain.Aggregates.BankAccount.Events;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Commands;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
 
 
-namespace Spring.Domain.Aggregates.BankAccount.Handlers;
+namespace MississippiSamples.Spring.Domain.Aggregates.BankAccount.Handlers;
 
 /// <summary>
 ///     Command handler for depositing funds into a bank account.

@@ -1,0 +1,8 @@
+label: How-To
+position: 4
+collapsed: false
+collapsible: true
+link:
+  type: generated-index
+  title: Spring How-To Guides
+  description: Task-oriented guides for validating and using the Spring sample locally.

@@ -252,8 +252,8 @@ public class ProjectionModelTests
         INamedTypeSymbol typeSymbol =
             CreateProjectionTypeSymbolWithMembers("CustomerProjection", customProp1, customProp2);
         ProjectionModel model = new(typeSymbol, "/customers");
-        Assert.Single(model.NestedCustomTypes);
-        Assert.Equal("Address", model.NestedCustomTypes[0]);
+        string item = Assert.Single(model.NestedCustomTypes);
+        Assert.Equal("Address", item);
     }
 
     /// <summary>

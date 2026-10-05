@@ -2,15 +2,14 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Sagas.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
-using Spring.Domain.Aggregates.BankAccount;
-using Spring.Domain.Aggregates.BankAccount.Commands;
-using Spring.Domain.Aggregates.MoneyTransferSaga.Commands;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Commands;
+using MississippiSamples.Spring.Domain.Aggregates.MoneyTransferSaga.Commands;
 
 
-namespace Spring.Domain.Aggregates.MoneyTransferSaga.Steps;
+namespace MississippiSamples.Spring.Domain.Aggregates.MoneyTransferSaga.Steps;
 
 /// <summary>
 ///     Saga step that withdraws funds from the source account.
