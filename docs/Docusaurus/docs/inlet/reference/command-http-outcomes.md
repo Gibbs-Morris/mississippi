@@ -48,7 +48,7 @@ That ID belongs to local lifecycle actions; the base effect does not add it to t
 
 ## Exception Boundary
 
-The request block converts `HttpRequestException` to `HttpError` with a network-error message. It also converts `TaskCanceledException` to `HttpError` with a request-cancelled message.
+The request block converts `HttpRequestException` to `HttpError` with a network-error message. It also converts `TaskCanceledException` to `HttpError` with a request-cancelled message. An `HttpClient.Timeout` expiration can throw that same exception type, including when the store supplies `CancellationToken.None`; it receives the same failure code and request-cancelled message prefix. That outcome therefore does not distinguish timeout from caller cancellation. See the [.NET 10 timeout handling](https://github.com/dotnet/runtime/blob/v10.0.0/src/libraries/System.Net.Http/src/System/Net/Http/HttpClient.cs).
 
 When directly enumerating this base effect, other exceptions, including JSON parsing failures and mapper failures outside those caught types, propagate after the executing action. An `OperationCanceledException` that is not a `TaskCanceledException` also propagates there. In normal Reservoir dispatch, [`RootActionEffect`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/RootActionEffect.cs) stops enumeration on noncritical failures and the [store](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs) catches effect exceptions. Those ordinary failures do not reach the application dispatch caller and can leave the executing entry without a terminal action.
 
