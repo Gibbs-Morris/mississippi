@@ -38,7 +38,7 @@ The [cache implementation](https://github.com/Gibbs-Morris/mississippi/blob/main
 - A missing envelope, empty hash, or mismatched hash starts reconstruction from the event stream.
 - Reconstruction uses the base checkpoint selected by the existing [retention policy](./snapshot-retention.md), or a new state instance for target version zero.
 
-Replay reads events after the base checkpoint through the requested version. Each event is converted to a domain event and passed to the root reducer in enumeration order. The activation token is forwarded to the base-state request and event reader.
+For target version zero, reconstruction creates a new state and reduces the first event at position `0`; it does not return the untouched new instance. For later targets, replay reads events after the base checkpoint through the requested version. Each event is converted to a domain event and passed to the root reducer in enumeration order. The activation token is forwarded to the base-state request and event reader.
 
 ## Failure And Persistence Boundaries
 
