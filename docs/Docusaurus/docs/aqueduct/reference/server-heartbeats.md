@@ -22,6 +22,8 @@ The gateway heartbeat manager reports a server ID and current connection count t
 
 [`StartAsync`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Gateway/HeartbeatManager.cs) requires a non-null connection-count provider and serializes startup through a semaphore. It registers the server before creating the timer. Repeated successful starts return without registering again or replacing the provider.
 
+In a client-only gateway such as [Spring](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs), the default Aqueduct registration adds no hosted-service startup adapter. The [hub lifetime manager](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Gateway/AqueductHubLifetimeManager.cs) starts it through backplane setup on `OnConnectedAsync`, `SendAllAsync`, or `SendAllExceptAsync`; its separate `ISiloLifecycle` hook applies in a participating silo. An idle client gateway can therefore remain unregistered after host startup until one of those operations triggers setup.
+
 The timer schedules its first callback immediately and uses [`AqueductOptions.HeartbeatIntervalMinutes`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Abstractions/AqueductOptions.cs) for its period, defaulting to one minute. Each callback queues a task that samples the connection-count provider and calls the directory's `HeartbeatAsync`.
 
 The interval is read when the timer is created. Changing the option does not reschedule an already-created timer.
