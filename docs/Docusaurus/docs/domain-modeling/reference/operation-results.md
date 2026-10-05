@@ -25,8 +25,8 @@ The [readonly record structs](https://github.com/Gibbs-Morris/mississippi/blob/m
 |---------|--------|
 | `Ok()` | `Success` is true; both error fields are null |
 | `Ok<T>(value)` | `Success` is true; `Value` is supplied; both error fields are null |
-| `Fail(code, message)` | `Success` is false; both supplied error fields are retained |
-| `Fail<T>(code, message)` | The same failure details, with `Value` set to `default(T)` |
+| `Fail(errorCode, errorMessage)` | `Success` is false; both supplied error fields are retained |
+| `Fail<T>(errorCode, errorMessage)` | The same failure details, with `Value` set to `default(T)` |
 
 Both failure factories reject a null code or message with `ArgumentNullException`, and an empty or whitespace-only value with `ArgumentException`. Nonempty supplied text is retained without trimming.
 
