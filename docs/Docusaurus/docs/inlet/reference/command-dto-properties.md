@@ -18,6 +18,8 @@ The command DTO generators select source properties through a shared `CommandMod
 - `CommandServerDtoGenerator` and `CommandClientDtoGenerator`
 - Shared `CommandModel` and `PropertyModel` analysis
 
+Use nongeneric command types for this generation path. The analysis can select an attributed generic command, but generated DTO/action declarations do not reproduce its type parameters, and names derived from `TypeName` omit them. A command such as `Batch<T>` can therefore emit unresolved `T` or an invalid bare `Batch` reference and fail compilation; generic-command support is not provided.
+
 ## Property Selection And Names
 
 [`CommandModel`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Core/Analysis/CommandModel.cs) selects declared public instance properties with a getter. It does not walk base types to collect inherited properties. Static, nonpublic, and getterless properties are excluded by this selection. Escaped keyword names are not re-escaped during emission: a source property named `@event` becomes `event` in generated declarations/mappings and fails compilation. Avoid keyword property names for this generation path. Public instance indexers with getters are also selected; the analysis does not exclude `IsIndexer`. The emitters treat them as ordinary named properties/arguments without index parameters, producing invalid source. Indexers are unsupported on generated command types.
