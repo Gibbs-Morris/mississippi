@@ -44,6 +44,8 @@ For target version zero, reconstruction creates a new state and reduces the firs
 
 Storage reads, matching-envelope conversion, event conversion, and reducer failures propagate from activation. A matching envelope whose payload cannot be decoded does not automatically fall back to replay.
 
+Supply a known committed brook position when requesting reconstructed state. The built-in [bounded brook reader](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Runtime/Reader/BrookSliceReaderGrain.cs) throws `InvalidOperationException` if storage cannot cover the requested endpoint; activation fails before background persistence. The cache itself does not independently verify the reader's event count, so an alternative reader must preserve that range-coverage contract.
+
 After reconstruction, eligible state is serialized before a one-way call to the snapshot persister. Envelope conversion or persister resolution can therefore fail activation before background work is dispatched.
 
 The cache discards the persister call's task and does not forward its activation token to `PersistAsync`. Successful cache activation does not confirm completion of that newly requested storage write. Retention-skipped versions remain available in memory without serializing a persistence envelope.
