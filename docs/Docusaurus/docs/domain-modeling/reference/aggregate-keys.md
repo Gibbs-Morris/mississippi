@@ -35,7 +35,7 @@ On [aggregate activation](https://github.com/Gibbs-Morris/mississippi/blob/main/
 
 That [brook key](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Abstractions/BrookKey.cs) has separate constraints: it rejects pipe characters in either component and limits the combined name, separator, and ID to 4192 code units. An entity string accepted by `AggregateKey` can therefore still fail brook-key construction during activation. A missing `[BrookName]` also fails activation.
 
-Activation also constructs a [`SnapshotStreamKey`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/SnapshotStreamKey.cs). Its separate limit is `brookName.Length + snapshotStorageName.Length + entityId.Length + reducersHash.Length + 3 <= 4192`. The built-in root reducer emits a 64-character hash. A valid aggregate/brook key can therefore still fail with `ArgumentException` when the derived snapshot key exceeds that budget.
+Activation also constructs a [`SnapshotStreamKey`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/SnapshotStreamKey.cs). It first resolves the aggregate type's `[SnapshotStorageName]` through [`SnapshotStorageNameHelper`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Abstractions/Attributes/SnapshotStorageNameHelper.cs); a missing attribute throws `InvalidOperationException` before that snapshot key is constructed. Its separate limit is `brookName.Length + snapshotStorageName.Length + entityId.Length + reducersHash.Length + 3 <= 4192`. The built-in root reducer emits a 64-character hash. A valid aggregate/brook key can therefore still fail with `ArgumentException` when the derived snapshot key exceeds that budget.
 
 ## Default Struct State
 
