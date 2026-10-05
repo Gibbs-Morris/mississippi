@@ -1,7 +1,7 @@
 ---
 id: event-reducers
 title: Event Reducer Composition
-description: Reference event reducer matching, first-match dispatch, immutable results, registration, and hash identity.
+description: Reference event reducer matching, first-match dispatch, reference-reuse validation, registration, and hash identity.
 sidebar_position: 6
 sidebar_label: Event Reducer Composition
 ---
