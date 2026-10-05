@@ -36,6 +36,8 @@ The [versioned cache](https://github.com/Gibbs-Morris/mississippi/blob/main/src/
 
 `GetLatestVersionAsync` resolves the cursor by brook name and entity ID, then calls `GetPositionAsync`. An already-active cursor returns its in-memory position without a fresh storage query; first activation reads storage before subscribing. The method's cancellation token is currently reserved and unused.
 
+Activation has no atomic read-and-subscribe handoff or second storage read. If a provider does not replay an update published between the initial read and subscription, the cursor can retain the older position until a later accepted notification or reactivation reloads storage. Latest reads therefore report known progress, rather than a gap-free storage watermark.
+
 `GetAtVersionAsync` constructs a versioned cache key from brook name, entity ID, and the requested position. It resolves the cache for `TProjection`, forwards the token to its `GetAsync`, and returns the resulting state.
 
 The built-in cache's `GetAsync` ignores that caller token. Its state load occurs during activation using a separate activation token, so forwarding the method argument does not cancel that load.
