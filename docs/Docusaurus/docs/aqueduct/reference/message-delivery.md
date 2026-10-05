@@ -43,7 +43,7 @@ The [default registrations](https://github.com/Gibbs-Morris/mississippi/blob/mai
 
 The receiving callback awaits broadcast writes sequentially, but [the registry](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Gateway/ConnectionRegistry.cs) enumerates `ConcurrentDictionary.Values` in unspecified order. The receiver does not catch a send failure and continue: which recipients were written before a failure cannot be predicted from insertion order. Neither receiver returns a client acknowledgment or a count of clients that executed the invocation. Each stream delivery repeats recipient selection and sends; the messages carry no deduplication ID and the receivers do not suppress repeats. Provider retry/replay can therefore repeat a client invocation. Application handlers need their own idempotency if repeated delivery matters.
 
-The message records default to empty method names and arguments; `ServerMessage` also defaults to an empty connection ID, while broadcast exclusions default to null. These records do not validate their independently initialized fields.
+The message records default to empty method names and arguments; `ServerMessage` also defaults to an empty connection ID, while broadcast exclusions default to null. These records do not validate their independently initialized fields. Receiving a default `ServerMessage` faults with `ArgumentException` at the registry's empty-connection-ID guard, before the missing-connection no-op. A default `AllMessage` reaches the local sender's empty-method-name guard and faults with `ArgumentException` on the first eligible connection; with no eligible connection it completes without a write. These receiver exceptions propagate through their callbacks.
 
 ## Local Write Boundary
 
