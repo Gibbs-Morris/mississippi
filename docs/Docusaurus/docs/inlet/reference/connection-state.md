@@ -40,7 +40,7 @@ Fields not listed for a transition retain their prior values. Timestamps come fr
 
 The [built-in provider](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/ActionEffects/HubConnectionProvider.cs) maintains its own reconnect counter for emitted actions. Resetting that private counter on closure does not reset the stored state's count through the disconnected reducer.
 
-SignalR fires `Reconnecting` once before its [automatic retry sequence](https://learn.microsoft.com/en-us/aspnet/core/signalr/dotnet-client#automatically-reconnect). The built-in provider therefore emits count `1` for that sequence, not one increment for each retry. It remains `1` in state after `Closed` until a later action changes it; connected/reconnected actions reset it to zero.
+SignalR fires `Reconnecting` once before its [automatic retry sequence](https://learn.microsoft.com/en-us/aspnet/core/signalr/dotnet-client#automatically-reconnect). The built-in provider therefore emits count `1` for that sequence, not one increment for each retry. It remains `1` in state after `Closed` until a later action changes it; connected/reconnected actions reset it to zero. `LastDisconnectedAt` records the built-in provider's `Closed` observation time after unsuccessful automatic retries, rather than the initial interruption when `Reconnecting` fired. It can therefore start an apparent outage duration later than the actual loss.
 
 A failed or canceled `StartAsync` after the connecting action emits neither connected nor disconnected from that startup method. State can remain `Connecting` with `LastError` cleared after the attempt ends. See [Connection Startup](./connection-startup.md) for direct-call and action-flow failure handling.
 
