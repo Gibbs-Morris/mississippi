@@ -26,7 +26,7 @@ The [harness](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainMo
 
 Direct harness runs start from the configured initial state each time:
 
-- `ApplyEvent<TEvent>` uses `OfType<IEventReducer<TEvent, TProjection>>` and takes the first assignable reducer. Event-type contravariance can select an earlier base-event reducer for a derived `TEvent`, ahead of a later exact-type reducer.
+- `ApplyEvent<TEvent>` requires `TEvent : class`; value-type events cannot use this single-event API. It uses `OfType<IEventReducer<TEvent, TProjection>>` and takes the first assignable reducer. Event-type contravariance can select an earlier base-event reducer for a derived `TEvent`, ahead of a later exact-type reducer.
 - `ApplyEvents` applies its events in order to a local state variable, selecting the first registered reducer with an interface for each event's exact runtime type.
 
 These calls return their result without replacing the harness's configured initial state. They reuse that state reference: a reducer that mutates it in place can affect later runs. Independent replay requires nonmutating reducers or a fresh initial state/harness.
