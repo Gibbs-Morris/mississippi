@@ -46,7 +46,7 @@ The default struct bypasses component validation: its name and entity ID are nul
 
 ## Factory Routing
 
-The [factory](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionGrainFactory.cs) accepts either this key or an entity ID plus version. The latter overload derives the brook name from `TProjection`'s `[BrookName]` attribute before constructing the key.
+The [factory](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionGrainFactory.cs) accepts either this key or an entity ID plus version. The entity/version overload derives the brook name from `TProjection`'s `[BrookName]` attribute before constructing the key; a missing attribute throws `InvalidOperationException` before grain resolution. The key overload does not read that attribute or compare it with `key.BrookName`. Activation uses the supplied key name for snapshot stream identity, so callers constructing keys must select the intended brook.
 
 The [projection runtime](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionGrain.cs) uses this three-part identity for versioned reads. Latest projection grains use the entity ID as their primary key. Versioned caches are typed by `TProjection`, so the same encoded string does not erase the projection type's grain identity.
 
