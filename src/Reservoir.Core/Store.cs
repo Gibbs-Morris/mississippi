@@ -380,7 +380,7 @@ public class Store : IStore
     /// <param name="exception">The listener or logging failure.</param>
     /// <returns>Whether the exception must propagate.</returns>
     private static bool IsCriticalException(Exception exception) =>
-        exception is OutOfMemoryException or StackOverflowException or AccessViolationException;
+        exception is OutOfMemoryException or StackOverflowException or AccessViolationException or ThreadInterruptedException;
 
     private void NotifyListeners()
     {

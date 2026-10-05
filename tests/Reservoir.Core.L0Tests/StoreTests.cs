@@ -399,14 +399,15 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     Fatal runtime failures are propagated as the original instance instead of being isolated.
+    ///     Critical listener failures are propagated as the original instance instead of being isolated.
     /// </summary>
-    /// <param name="exceptionType">The fatal runtime exception type.</param>
+    /// <param name="exceptionType">The critical listener exception type.</param>
     [Theory]
     [InlineData(typeof(OutOfMemoryException))]
     [InlineData(typeof(StackOverflowException))]
     [InlineData(typeof(AccessViolationException))]
-    public void FatalListenerFailurePropagates(
+    [InlineData(typeof(ThreadInterruptedException))]
+    public void CriticalListenerFailurePropagates(
         Type exceptionType
     )
     {
@@ -832,9 +833,9 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
-    ///     Fatal logger failures propagate as the original instance instead of being isolated.
+    ///     Critical logger failures propagate as the original instance instead of being isolated.
     /// </summary>
-    /// <param name="exceptionType">The fatal logging exception type.</param>
+    /// <param name="exceptionType">The critical logging exception type.</param>
     /// <param name="throwFromIsEnabled">Whether the logger fails during its enabled check.</param>
     [Theory]
     [InlineData(typeof(OutOfMemoryException), false)]
@@ -843,7 +844,9 @@ public sealed class StoreTests : IDisposable
     [InlineData(typeof(StackOverflowException), true)]
     [InlineData(typeof(AccessViolationException), false)]
     [InlineData(typeof(AccessViolationException), true)]
-    public void FatalLoggerFailurePropagates(Type exceptionType, bool throwFromIsEnabled)
+    [InlineData(typeof(ThreadInterruptedException), false)]
+    [InlineData(typeof(ThreadInterruptedException), true)]
+    public void CriticalLoggerFailurePropagates(Type exceptionType, bool throwFromIsEnabled)
     {
         Exception failure = Assert.IsType<Exception>(Activator.CreateInstance(exceptionType), false);
         StoreThrowingLogger logger = new(failure, throwFromIsEnabled);
@@ -882,6 +885,54 @@ public sealed class StoreTests : IDisposable
         store.Dispatch(new IncrementAction());
         await effectRan.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.Equal(1, laterCalls);
+    }
+
+    /// <summary>
+    ///     An interruption of a blocked callback propagates and stops later notification.
+    /// </summary>
+    [Fact]
+    public void InterruptedListenerThreadPropagates()
+    {
+        using ManualResetEventSlim callbackStarted = new();
+        Exception? dispatchFailure = null;
+        int laterCalls = 0;
+        using IDisposable failed = sut.Subscribe(() =>
+        {
+            callbackStarted.Set();
+            Thread.Sleep(Timeout.Infinite);
+        });
+        using IDisposable later = sut.Subscribe(() => Interlocked.Increment(ref laterCalls));
+        Thread dispatcher = new(() =>
+        {
+            try
+            {
+                sut.Dispatch(new IncrementAction());
+            }
+            catch (Exception exception)
+            {
+                dispatchFailure = exception;
+            }
+        })
+        {
+            IsBackground = true,
+        };
+        dispatcher.Start();
+        try
+        {
+            Assert.True(callbackStarted.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+        }
+        finally
+        {
+            if (dispatcher.IsAlive)
+            {
+                dispatcher.Interrupt();
+            }
+
+            Assert.True(dispatcher.Join(TimeSpan.FromSeconds(5)), "Interrupted dispatch thread should exit.");
+        }
+
+        Assert.IsType<ThreadInterruptedException>(dispatchFailure);
+        Assert.Equal(0, laterCalls);
     }
 
     /// <summary>
