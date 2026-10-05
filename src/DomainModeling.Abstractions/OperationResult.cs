@@ -157,7 +157,6 @@ public readonly record struct OperationResult<T>
     ///     Gets a value indicating whether the operation succeeded.
     /// </summary>
     [Id(0)]
-    [Id(0)]
     [MemberNotNullWhen(false, nameof(ErrorCode))]
     [MemberNotNullWhen(false, nameof(ErrorMessage))]
     [MemberNotNullWhen(true, nameof(Value))]
