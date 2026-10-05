@@ -34,7 +34,7 @@ The [built-in provider](https://github.com/Gibbs-Morris/mississippi/blob/main/sr
 
 `HttpClient.BaseAddress` is not the hub-address source in that implementation. A client that fetches projections from one HTTP origin does not automatically connect its hub to that origin. URI resolution failures occur when the provider constructs the connection, rather than through an endpoint-existence check in `WithHubPath`.
 
-A custom `IHubConnectionProvider` owns its own connection construction; these address rules describe the built-in provider.
+The built-in connection uses `WithUrl(uri)` without an `AccessTokenProvider`; projection `HttpClient` authentication does not configure this separate connection. For a bearer-protected hub, register a custom `IHubConnectionProvider` before the builder supplies its default and configure [SignalR bearer authentication](https://learn.microsoft.com/en-us/aspnet/core/signalr/configuration#configure-bearer-authentication) in the `WithUrl` options delegate. A compatible ambient-cookie setup is a separate host choice. A custom provider owns its own connection construction; the address rules above describe the built-in provider.
 
 ## Gateway Mapping And Projection HTTP Routes
 
