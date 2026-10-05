@@ -45,5 +45,6 @@ Use this page as the current active reference for what Tributary owns and which 
 - Read [Snapshot Conversion](./snapshot-conversion.md) for payload encoding and envelope metadata.
 - Read [Snapshot Cache Reads](./snapshot-cache.md) for activation, cached reads, and reconstruction failures.
 - Read [Snapshot Persistence](./snapshot-persistence.md) for the one-way write boundary and failure observation.
+- Read [Event Reducer Composition](./event-reducers.md) for matching, reference-reuse validation, and hash identity.
 - Read [Tributary Concepts](../concepts/concepts.md).
 - Use [Tributary Operations](../operations/operations.md) for the current operational scope.
