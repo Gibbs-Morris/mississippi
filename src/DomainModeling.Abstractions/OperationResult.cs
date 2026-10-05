@@ -32,8 +32,8 @@ public readonly record struct OperationResult
     )
     {
         Success = success;
-        this.ErrorCode = errorCode;
-        this.ErrorMessage = errorMessage;
+        ErrorCode = errorCode;
+        ErrorMessage = errorMessage;
     }
 
     /// <summary>
@@ -54,7 +54,7 @@ public readonly record struct OperationResult
     [Id(0)]
     [MemberNotNullWhen(false, nameof(ErrorCode))]
     [MemberNotNullWhen(false, nameof(ErrorMessage))]
-    public bool Success => field || ((ErrorCode is null) && (ErrorMessage is null));
+    public bool Success => field || (ErrorCode is null && ErrorMessage is null);
 
     /// <summary>
     ///     Creates a failed operation result with the specified error details.
