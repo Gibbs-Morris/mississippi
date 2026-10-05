@@ -45,6 +45,8 @@ The entity ID parameter has the fixed description `The entity identifier`. A pro
 
 A selected parameterized record constructor is invoked with every declared public readable property in property enumeration order. The generator does not validate constructor count, order, or compatible argument types. The constructor must accept that complete sequence: mismatches can fail compilation, while reordered same-type arguments can supply the wrong values. Name matching for descriptions alone does not establish constructor compatibility.
 
+For property-based commands, generated construction uses `new() { ... }`. The command needs an accessible parameterless constructor and every selected property needs an accessible setter or init accessor. A readable getter alone does not satisfy construction; missing constructors or writable accessors make the generated method fail compilation.
+
 ## Runtime Boundary
 
 The generated method constructs the command, resolves its aggregate grain by entity ID, and calls `ExecuteAsync` with the cancellation token. Changing a hint does not change that path, prevent writes, deduplicate repeated calls, or add authorization checks.
