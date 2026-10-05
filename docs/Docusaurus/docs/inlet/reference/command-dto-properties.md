@@ -46,7 +46,7 @@ A detected source default therefore changes required-field inference, but this s
 
 Generated required markers describe the generated DTO contract. They do not implement business rules such as positive quantities, valid account identifiers, or an allowed command at the current aggregate state; those rules belong in command handling.
 
-The [property-model tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Generators.Core.L0Tests/Analysis/PropertyModelTests.cs) cover nullable reference/value types and required inference without defaults. The [server tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Gateway.Generators.L0Tests/CommandServerDtoGeneratorTests.cs) cover generated property names and camelCase JSON names; the [client tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Client.Generators.L0Tests/CommandClientDtoGeneratorTests.cs) cover positional record emission and source property types.
+The [property-model tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Generators.Core.L0Tests/Analysis/PropertyModelTests.cs) cover nullable reference/value types and required inference without defaults. The [server tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Gateway.Generators.L0Tests/CommandServerDtoGeneratorTests.cs) cover generated property names and camelCase JSON names; the [client tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Client.Generators.L0Tests/CommandClientDtoGeneratorTests.cs) assert the internal sealed record declaration and source property type text. They do not assert positional parameter-list syntax; that emission shape above is verified from the generator.
 
 ## Summary
 
