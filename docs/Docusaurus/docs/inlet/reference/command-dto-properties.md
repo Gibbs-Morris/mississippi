@@ -18,7 +18,7 @@ The command DTO generators select source properties through a shared `CommandMod
 - `CommandServerDtoGenerator` and `CommandClientDtoGenerator`
 - Shared `CommandModel` and `PropertyModel` analysis
 
-Use nongeneric command types for this generation path. The analysis can select an attributed generic command, but generated DTO/action declarations do not reproduce its type parameters, and names derived from `TypeName` omit them. A command such as `Batch<T>` can therefore emit unresolved `T` or an invalid bare `Batch` reference and fail compilation; generic-command support is not provided.
+Use nongeneric command types for this generation path. The analysis can select an attributed generic command, but generated DTO/action declarations do not reproduce its type parameters, and names derived from `TypeName` omit them. A command such as `Batch<T>` can therefore emit unresolved `T` or an invalid bare `Batch` reference and fail compilation; generic-command support is not provided. Commands referenced from a domain assembly must be accessible to the generated gateway compilation. When a generated public aggregate controller exposes `IMapper<Dto, Command>` in its constructor, the command type must also be public; an inaccessible/internal command can fail generated compilation through accessibility or inconsistent-accessibility errors.
 
 ## Property Selection And Names
 
