@@ -36,7 +36,7 @@ The envelope crosses an Orleans grain boundary. Its `[GenerateSerializer]` attri
 
 ## Aggregate Handoff
 
-The [aggregate runtime](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/GenericAggregateGrain.cs) dispatches registrations whose `EventType` equals the original event's exact runtime type. It supplies each event's brook position from the original persisted batch. Follow-up events yielded and persisted by awaited effects are processed by that awaited-effect loop, but are not added to worker dispatch; a worker registration for their event type is not invoked by this path.
+The [aggregate runtime](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/GenericAggregateGrain.cs) dispatches registrations whose `EventType` equals the original event's exact runtime type. It supplies each event's brook position from the original persisted batch. Follow-up events yielded and persisted by awaited effects are processed by that awaited-effect loop, but are not added to worker dispatch; a worker registration for their event type is not invoked by this path. Each [`AddFireAndForgetEventEffect<TEvent, TAggregate, TEffect>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/AggregateRegistrations.cs) call adds registrations without deduplication. Repeating the same registration creates another matching dispatch for every original event, so register each intended effect once to avoid duplicate handoffs.
 
 It loads the aggregate snapshot at the last known position after awaited effects have run, then uses that state for all original events in the batch. The envelope therefore does not necessarily contain the historical state immediately after its individual event.
 
