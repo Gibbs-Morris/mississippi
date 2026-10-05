@@ -20,7 +20,7 @@ sidebar_label: Isolated Reducer Test Assertions
 
 ## Apply And ShouldProduce
 
-[`Apply(initialState, eventData)`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.TestHarness/Projections/ReducerTestExtensions.cs) rejects a null reducer or event. It constructs a projection when the supplied initial state is null, then calls the reducer's typed `Reduce` method and returns its result.
+[`Apply(initialState, eventData)`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.TestHarness/Projections/ReducerTestExtensions.cs) rejects a null reducer or event. For reference-type projections, a null initial state constructs `new TProjection()`; the helper then calls typed `Reduce` and returns its result. With the `new()` constraint, `TProjection?` does not make a value-type projection nullable: struct callers supply a state value, and `default(TProjection)` can differ from an explicit parameterless constructor.
 
 A supplied state is passed through without cloning. The helper does not select among reducers, persist events, or invoke a grain. Exceptions from the reducer propagate.
 
@@ -30,7 +30,7 @@ The expected value selects collection comparison. Ordinary expected sequences ar
 
 ## ShouldThrow
 
-`ShouldThrow<TException, TEvent, TProjection>` also constructs state when needed, then calls typed `Reduce`. It permits a null event to reach the reducer so its argument validation can be tested. A null reducer is rejected before invocation.
+`ShouldThrow<TException, TEvent, TProjection>` uses the same reference-type null-state construction and supplied value-type state, then calls typed `Reduce`. It permits a null event to reach the reducer so its argument validation can be tested. A null reducer is rejected before invocation.
 
 The assertion requires an exception assignable to `TException`, so derived exception types can satisfy it. When the thrown exception is an `AggregateException` that is not itself assignable to `TException`, the helper flattens it and selects matching inner exceptions. At least one matching inner exception is required.
 
