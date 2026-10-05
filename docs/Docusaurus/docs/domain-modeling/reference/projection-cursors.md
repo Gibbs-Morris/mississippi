@@ -30,7 +30,7 @@ The [factory](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainMo
 
 The [implementation](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionCursorGrain.cs) starts with a tracked position of `-1`. On activation, it parses its key and reads the brook cursor from storage before subscribing to cursor notifications. The activation token is forwarded to that storage read. There is no atomic read/subscription handoff or second read. If the provider does not replay an update published between those operations, this activation can retain the earlier position until a later accepted notification or reactivation reloads storage.
 
-It obtains the subscription stream ID from `IStreamIdFactory` and selects the Orleans provider through `BrookProviderOptions.OrleansStreamProviderName`.
+It obtains the subscription stream ID from `IStreamIdFactory` and selects the Orleans provider through `BrookProviderOptions.OrleansStreamProviderName`. The [built-in writer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Runtime/Writer/BrookWriterGrain.cs) constructs `StreamId.Create(BrookCursorUpdates, fullBrookKey)` directly. A custom factory must reproduce that namespace/key when consuming this writer's updates; changing subscriber identity does not redirect publication.
 
 [`GetPositionAsync()`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/IUxProjectionCursorGrain.cs) returns the current in-memory position without a fresh storage query. It has no cancellation-token parameter and does not persist a separate last-processed projection position.
 
