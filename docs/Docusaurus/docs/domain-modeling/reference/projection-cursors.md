@@ -1,7 +1,7 @@
 ---
 id: projection-cursors
 title: Projection Cursors
-description: Reference shared brook/entity cursor identity, cached progress, and notification filtering.
+description: Reference shared brook/entity cursor identity, cached positions, and notification filtering.
 sidebar_position: 9
 sidebar_label: Projection Cursors
 ---
@@ -53,7 +53,7 @@ The [cursor unit tests](https://github.com/Gibbs-Morris/mississippi/blob/main/te
 
 ## Summary
 
-The shared cursor caches known brook progress and filters stream deliveries by token and position. Fetching its position is separate from reconstructing projection state or confirming client delivery.
+The shared cursor caches a storage or accepted-notification position and filters stream deliveries by token and position. Notifications are not verified against storage, so that position does not establish persisted brook progress. Fetching its position is separate from reconstructing projection state or confirming client delivery.
 
 ## Next Steps
 
