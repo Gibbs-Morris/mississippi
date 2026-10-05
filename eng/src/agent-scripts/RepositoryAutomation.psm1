@@ -1980,6 +1980,79 @@ function Invoke-CleanupGitPathList {
     }
 }
 
+function Resolve-CleanupGitCommit {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string[]]$Candidates,
+        [Parameter(Mandatory)][string]$Description
+    )
+
+    foreach ($candidate in $Candidates) {
+        $commitOutput = @(git rev-parse --verify --quiet --end-of-options "$candidate^{commit}")
+        if ($LASTEXITCODE -eq 0) {
+            $commit = [string]($commitOutput | Select-Object -First 1)
+            if (-not [string]::IsNullOrWhiteSpace($commit)) {
+                return $commit
+            }
+        }
+    }
+
+    throw "Unable to resolve $Description from: $($Candidates -join ', ')."
+}
+
+function Get-CleanupBaseCommit {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$BaseRef)
+
+    $candidates = if ($BaseRef -eq 'main') {
+        @('refs/remotes/origin/main', 'refs/heads/main')
+    }
+    else {
+        @($BaseRef)
+    }
+
+    try {
+        return Resolve-CleanupGitCommit -Candidates $candidates -Description "base ref '$BaseRef'"
+    }
+    catch {
+        if ($BaseRef -ne 'main') { throw }
+        $fetchArguments = @('fetch', '--no-tags')
+        if (([string](git rev-parse --is-shallow-repository)).Trim() -eq 'true') { $fetchArguments += '--unshallow' }
+        git @fetchArguments origin 'refs/heads/main:refs/remotes/origin/main'
+        if ($LASTEXITCODE -ne 0) { throw "Unable to fetch the default base ref '$BaseRef' from origin." }
+        return Resolve-CleanupGitCommit -Candidates $candidates -Description "base ref '$BaseRef'"
+    }
+}
+
+function Get-CleanupMergeBase {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$HeadCommit,
+        [Parameter(Mandatory)][string]$BaseCommit,
+        [Parameter(Mandatory)][string]$HeadRef,
+        [Parameter(Mandatory)][string]$BaseRef
+    )
+
+    $output = @(git merge-base $HeadCommit $BaseCommit)
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0 -and ([string](git rev-parse --is-shallow-repository)).Trim() -eq 'true') {
+        git fetch --no-tags --unshallow origin
+        if ($LASTEXITCODE -ne 0) { throw "Unable to deepen the shallow repository while resolving '$BaseRef'." }
+        $output = @(git merge-base $HeadCommit $BaseCommit)
+        $exitCode = $LASTEXITCODE
+    }
+    if ($exitCode -ne 0) {
+        throw "Unable to find the merge base for '$HeadRef' and '$BaseRef' (git exit code $exitCode)."
+    }
+
+    $mergeBase = [string]($output | Select-Object -First 1)
+    if ([string]::IsNullOrWhiteSpace($mergeBase)) {
+        throw "Git returned no merge base for '$HeadRef' and '$BaseRef'."
+    }
+
+    return $mergeBase
+}
+
 function Get-CleanupChangedPaths {
     [CmdletBinding()]
     param(
@@ -2004,72 +2077,15 @@ function Get-CleanupChangedPaths {
     try {
         $gitPathArguments = @('-c', 'core.quotePath=false')
         $unmergedPaths = @(
-            Invoke-CleanupGitPathList `
-                -RepoRoot $rootFullPath `
-                -Arguments @($gitPathArguments + @(
-                    'diff', '--name-only', '-z', '--diff-filter=U', '--')) `
-                -ErrorMessage 'Unable to inspect unresolved merge conflicts'
+            Invoke-CleanupGitPathList -RepoRoot $rootFullPath -Arguments @($gitPathArguments + @('diff', '--name-only', '-z', '--diff-filter=U', '--')) -ErrorMessage 'Unable to inspect unresolved merge conflicts'
         )
         if ($unmergedPaths.Count -gt 0) {
             throw "Targeted cleanup cannot run with unresolved merge conflicts: $($unmergedPaths -join ', ')."
         }
 
-        $resolveCommit = {
-            param(
-                [Parameter(Mandatory)][string[]]$Candidates,
-                [Parameter(Mandatory)][string]$Description
-            )
-
-            foreach ($candidate in $Candidates) {
-                $commitOutput = @(git rev-parse --verify --quiet --end-of-options "$candidate^{commit}")
-                if ($LASTEXITCODE -eq 0) {
-                    $commit = [string]($commitOutput | Select-Object -First 1)
-                    if (-not [string]::IsNullOrWhiteSpace($commit)) {
-                        return $commit
-                    }
-                }
-            }
-
-            throw "Unable to resolve $Description from: $($Candidates -join ', ')."
-        }
-
-        $baseCandidates = if ($BaseRef -eq 'main') {
-            @('refs/remotes/origin/main', 'refs/heads/main')
-        }
-        else {
-            @($BaseRef)
-        }
-
-        try {
-            $baseCommit = & $resolveCommit -Candidates $baseCandidates -Description "base ref '$BaseRef'"
-        }
-        catch {
-            if ($BaseRef -ne 'main') { throw }
-            $fetchArguments = @('fetch', '--no-tags')
-            if (([string](git rev-parse --is-shallow-repository)).Trim() -eq 'true') { $fetchArguments += '--unshallow' }
-            git @fetchArguments origin 'refs/heads/main:refs/remotes/origin/main'
-            if ($LASTEXITCODE -ne 0) { throw "Unable to fetch the default base ref '$BaseRef' from origin." }
-            $baseCommit = & $resolveCommit -Candidates $baseCandidates -Description "base ref '$BaseRef'"
-        }
-        $headCommit = & $resolveCommit -Candidates @($HeadRef) -Description "head ref '$HeadRef'"
-
-        $mergeBaseOutput = @(git merge-base $headCommit $baseCommit)
-        $mergeBaseExitCode = $LASTEXITCODE
-        if ($mergeBaseExitCode -ne 0 -and ([string](git rev-parse --is-shallow-repository)).Trim() -eq 'true') {
-            git fetch --no-tags --unshallow origin
-            if ($LASTEXITCODE -ne 0) { throw "Unable to deepen the shallow repository while resolving '$BaseRef'." }
-
-            $mergeBaseOutput = @(git merge-base $headCommit $baseCommit)
-            $mergeBaseExitCode = $LASTEXITCODE
-        }
-        if ($mergeBaseExitCode -ne 0) {
-            throw "Unable to find the merge base for '$HeadRef' and '$BaseRef' (git exit code $mergeBaseExitCode)."
-        }
-
-        $mergeBase = [string]($mergeBaseOutput | Select-Object -First 1)
-        if ([string]::IsNullOrWhiteSpace($mergeBase)) {
-            throw "Git returned no merge base for '$HeadRef' and '$BaseRef'."
-        }
+        $baseCommit = Get-CleanupBaseCommit -BaseRef $BaseRef
+        $headCommit = Resolve-CleanupGitCommit -Candidates @($HeadRef) -Description "head ref '$HeadRef'"
+        $mergeBase = Get-CleanupMergeBase -HeadCommit $headCommit -BaseCommit $baseCommit -HeadRef $HeadRef -BaseRef $BaseRef
 
         $branchPaths = @(
             Invoke-CleanupGitPathList `
@@ -2210,13 +2226,11 @@ function Resolve-CleanupProject {
     return $bestMatches[0]
 }
 
-function Get-CleanupPlan {
+function Get-CleanupNormalizedPaths {
     [CmdletBinding()]
     param(
         [AllowEmptyCollection()][string[]]$Paths,
-        [Parameter(Mandatory)][string]$RepoRoot,
-        [switch]$SkipSamples,
-        [switch]$SkipMississippi
+        [Parameter(Mandatory)][string]$RepoRoot
     )
 
     $rootFullPath = [System.IO.Path]::GetFullPath($RepoRoot)
@@ -2232,7 +2246,18 @@ function Get-CleanupPlan {
         }
     }
 
-    $globalReasons = @(Get-CleanupGlobalFallbackReasons -Paths @($normalizedPaths))
+    return ,$normalizedPaths
+}
+
+function Get-CleanupSelectedPaths {
+    [CmdletBinding()]
+    param(
+        [AllowEmptyCollection()][string[]]$Paths,
+        [Parameter(Mandatory)][string]$RepoRoot
+    )
+
+    $rootFullPath = [System.IO.Path]::GetFullPath($RepoRoot)
+    $normalizedPaths = @($Paths)
     $cleanupExtensions = @(
         '.axaml',
         '.cs',
@@ -2268,6 +2293,21 @@ function Get-CleanupPlan {
         $eligiblePaths.Add($relativePath)
     }
 
+    return [pscustomobject]@{
+        EligiblePaths = $eligiblePaths
+        IgnoredPaths = $ignoredPaths
+    }
+}
+
+function Resolve-CleanupPlanProjects {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$EligiblePaths,
+        [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$IgnoredPaths,
+        [Parameter(Mandatory)][string]$RepoRoot
+    )
+
+    $rootFullPath = [System.IO.Path]::GetFullPath($RepoRoot)
     $projectCatalog = if ($eligiblePaths.Count -gt 0) {
         @(Get-CleanupProjectCatalog -RepoRoot $rootFullPath)
     }
@@ -2306,6 +2346,79 @@ function Get-CleanupPlan {
             "Unmapped paths: $($unmappedPaths -join ', ')"
         ) -join ' '
     }
+
+    return $resolvedProjects
+}
+
+function Get-CleanupPlanGroups {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$EligiblePaths,
+        [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$IgnoredPaths,
+        [Parameter(Mandatory)][AllowEmptyCollection()][hashtable]$ResolvedProjects,
+        [switch]$SkipSamples,
+        [switch]$SkipMississippi
+    )
+
+    $projectGroups = @{}
+    $projectEntries = @{}
+
+    foreach ($relativePath in @($eligiblePaths)) {
+        $project = $resolvedProjects[$relativePath]
+
+        $selectedSolutions = @(
+            $project.SolutionPaths | Where-Object {
+                (-not $SkipSamples -or $_ -ne 'samples.slnx') -and
+                (-not $SkipMississippi -or $_ -ne 'mississippi.slnx')
+            }
+        )
+        if ($selectedSolutions.Count -eq 0) {
+            $ignoredPaths.Add($relativePath)
+            continue
+        }
+
+        if (-not $projectGroups.ContainsKey($project.ProjectPath)) {
+            $projectGroups[$project.ProjectPath] = New-Object System.Collections.Generic.List[string]
+            $projectEntries[$project.ProjectPath] = $project
+        }
+        if (-not $projectGroups[$project.ProjectPath].Contains($relativePath)) {
+            $projectGroups[$project.ProjectPath].Add($relativePath)
+        }
+    }
+
+    $groups = @(
+        foreach ($projectPath in ($projectGroups.Keys | Sort-Object)) {
+            $project = $projectEntries[$projectPath]
+            [pscustomobject]@{
+                ProjectPath   = $project.ProjectPath
+                RelativePath  = $project.RelativePath
+                SolutionPaths = @($project.SolutionPaths)
+                IncludePaths  = @($projectGroups[$projectPath] | Sort-Object)
+            }
+        }
+    )
+
+    return $groups
+}
+
+function Get-CleanupPlan {
+    [CmdletBinding()]
+    param(
+        [AllowEmptyCollection()][string[]]$Paths,
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [switch]$SkipSamples,
+        [switch]$SkipMississippi
+    )
+
+    $rootFullPath = [System.IO.Path]::GetFullPath($RepoRoot)
+    $normalizedPaths = Get-CleanupNormalizedPaths -Paths @($Paths) -RepoRoot $rootFullPath
+
+    $globalReasons = @(Get-CleanupGlobalFallbackReasons -Paths @($normalizedPaths))
+    $selection = Get-CleanupSelectedPaths -Paths @($normalizedPaths) -RepoRoot $rootFullPath
+    $eligiblePaths = $selection.EligiblePaths
+    $ignoredPaths = $selection.IgnoredPaths
+
+    $resolvedProjects = Resolve-CleanupPlanProjects -EligiblePaths $eligiblePaths -IgnoredPaths $ignoredPaths -RepoRoot $rootFullPath
 
     if ($globalReasons.Count -gt 0) {
         $requiresRepositoryValidation = @(
@@ -2349,43 +2462,7 @@ function Get-CleanupPlan {
         }
     }
 
-    $projectGroups = @{}
-    $projectEntries = @{}
-
-    foreach ($relativePath in @($eligiblePaths)) {
-        $project = $resolvedProjects[$relativePath]
-
-        $selectedSolutions = @(
-            $project.SolutionPaths | Where-Object {
-                (-not $SkipSamples -or $_ -ne 'samples.slnx') -and
-                (-not $SkipMississippi -or $_ -ne 'mississippi.slnx')
-            }
-        )
-        if ($selectedSolutions.Count -eq 0) {
-            $ignoredPaths.Add($relativePath)
-            continue
-        }
-
-        if (-not $projectGroups.ContainsKey($project.ProjectPath)) {
-            $projectGroups[$project.ProjectPath] = New-Object System.Collections.Generic.List[string]
-            $projectEntries[$project.ProjectPath] = $project
-        }
-        if (-not $projectGroups[$project.ProjectPath].Contains($relativePath)) {
-            $projectGroups[$project.ProjectPath].Add($relativePath)
-        }
-    }
-
-    $groups = @(
-        foreach ($projectPath in ($projectGroups.Keys | Sort-Object)) {
-            $project = $projectEntries[$projectPath]
-            [pscustomobject]@{
-                ProjectPath   = $project.ProjectPath
-                RelativePath  = $project.RelativePath
-                SolutionPaths = @($project.SolutionPaths)
-                IncludePaths  = @($projectGroups[$projectPath] | Sort-Object)
-            }
-        }
-    )
+    $groups = @(Get-CleanupPlanGroups -EligiblePaths $eligiblePaths -IgnoredPaths $ignoredPaths -ResolvedProjects $resolvedProjects -SkipSamples:$SkipSamples -SkipMississippi:$SkipMississippi)
 
     if ($groups.Count -eq 0) {
         return [pscustomobject]@{
@@ -3293,6 +3370,101 @@ function Invoke-SampleSolutionCleanup {
     Write-Host 'All code files have been formatted according to project standards'
 }
 
+function Invoke-CleanupToolRestore {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][ValidateSet('Full', 'Targeted')][string]$Mode,
+        [switch]$SkipToolRestore
+    )
+
+    $modeDescription = $Mode.ToLowerInvariant()
+    if (-not $SkipToolRestore) {
+        Write-Host "Restoring dotnet tools once for $modeDescription cleanup..." -ForegroundColor ([ConsoleColor]::Cyan)
+        Invoke-DotnetToolRestore -RepoRoot $RepoRoot
+    }
+    else {
+        Write-Host "Using the already restored dotnet tools for $modeDescription cleanup." -ForegroundColor ([ConsoleColor]::Cyan)
+    }
+}
+
+function Invoke-CleanupProjectPreparation {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ProjectPath,
+        [Parameter(Mandatory)][string]$Description,
+        [string]$Configuration = 'Release',
+        [switch]$SkipRestore,
+        [switch]$SkipBuild
+    )
+
+    if (-not $SkipRestore) {
+        Invoke-SolutionRestore -SolutionPath $ProjectPath -Description $Description -Quiet
+    }
+    if (-not $SkipBuild) {
+        Invoke-SolutionBuild -SolutionPath $ProjectPath -Configuration $Configuration -NoRestore -NoIncremental -AdditionalArguments @('-p:RunAnalyzers=false') -Quiet
+    }
+}
+
+function Invoke-TargetedRepositoryCleanup {
+    [CmdletBinding()]
+    param(
+        [string]$RepoRoot = (Get-RepositoryRoot),
+        [string[]]$Paths,
+        [string]$Configuration = 'Release',
+        [string]$SettingsPath,
+        [string]$Profile = 'Built-in: Full Cleanup',
+        [string]$CachesHome,
+        [switch]$NoUpdates,
+        [switch]$SkipSamples,
+        [switch]$SkipMississippi,
+        [switch]$SkipToolRestore,
+        [switch]$SkipRestore,
+        [switch]$SkipBuild
+    )
+
+    $rootFullPath = [System.IO.Path]::GetFullPath($RepoRoot)
+    $settingsPathToUse = if ($SettingsPath) { $SettingsPath } else { Join-Path $rootFullPath 'Directory.DotSettings' }
+
+    $plan = Get-CleanupPlan -Paths @($Paths) -RepoRoot $rootFullPath -SkipSamples:$SkipSamples -SkipMississippi:$SkipMississippi
+    Write-Host "Cleanup mode: $($plan.Mode)"
+    Write-Host "Changed input files: $($plan.InputPaths.Count)"
+    Write-Host "Cleanup-eligible files: $($plan.EligiblePaths.Count)"
+    if ($plan.IgnoredPaths.Count -gt 0) {
+        Write-Host "Ignored files: $($plan.IgnoredPaths -join ', ')" -ForegroundColor ([ConsoleColor]::DarkGray)
+    }
+
+    if ($plan.Mode -eq 'NoOp') {
+        Write-Host $plan.Reason -ForegroundColor ([ConsoleColor]::Yellow)
+        return $plan
+    }
+
+    if ($plan.Mode -in @('FullFallback', 'FullValidation')) {
+        Write-Host "Targeted cleanup is falling back to full cleanup: $($plan.Reason)" -ForegroundColor ([ConsoleColor]::Yellow)
+        $null = Invoke-RepositoryCleanup -Mode Full -RepoRoot $rootFullPath -Configuration $Configuration -SettingsPath $settingsPathToUse -Profile $Profile -CachesHome $CachesHome -NoUpdates:$NoUpdates -SkipSamples:$SkipSamples -SkipMississippi:$SkipMississippi -SkipToolRestore:$SkipToolRestore -SkipRestore:$SkipRestore -SkipBuild:$SkipBuild
+        return $plan
+    }
+
+    Invoke-CleanupToolRestore -RepoRoot $rootFullPath -Mode Targeted -SkipToolRestore:$SkipToolRestore
+
+    foreach ($group in @($plan.Groups)) {
+        Write-Host "Preparing project $($group.RelativePath) for $($group.IncludePaths.Count) changed file(s)." -ForegroundColor ([ConsoleColor]::Cyan)
+        Invoke-CleanupProjectPreparation -ProjectPath $group.ProjectPath -Description $group.RelativePath -Configuration $Configuration -SkipRestore:$SkipRestore -SkipBuild:$SkipBuild
+
+        Write-Host "Running CleanupCode for $($group.RelativePath) using a temporary project solution" -ForegroundColor ([ConsoleColor]::Cyan)
+        Invoke-TargetedProjectCleanup `
+            -ProjectGroup $group `
+            -RepoRoot $rootFullPath `
+            -SettingsPath $settingsPathToUse `
+            -Profile $Profile `
+            -CachesHome $CachesHome `
+            -NoUpdates:$NoUpdates
+    }
+
+    Write-Host "Targeted cleanup completed for $($plan.Groups.Count) affected project(s)." -ForegroundColor ([ConsoleColor]::Green)
+    return $plan
+}
+
 function Invoke-RepositoryCleanup {
     [CmdletBinding()]
     param(
@@ -3319,63 +3491,24 @@ function Invoke-RepositoryCleanup {
     $settingsPathToUse = if ($SettingsPath) { $SettingsPath } else { Join-Path $rootFullPath 'Directory.DotSettings' }
 
     if ($Mode -eq 'Targeted') {
-        $plan = Get-CleanupPlan -Paths @($Paths) -RepoRoot $rootFullPath -SkipSamples:$SkipSamples -SkipMississippi:$SkipMississippi
-        Write-Host "Cleanup mode: $($plan.Mode)"
-        Write-Host "Changed input files: $($plan.InputPaths.Count)"
-        Write-Host "Cleanup-eligible files: $($plan.EligiblePaths.Count)"
-        if ($plan.IgnoredPaths.Count -gt 0) {
-            Write-Host "Ignored files: $($plan.IgnoredPaths -join ', ')" -ForegroundColor ([ConsoleColor]::DarkGray)
+        $parameters = @{
+            RepoRoot = $rootFullPath
+            Paths = @($Paths)
+            Configuration = $Configuration
+            SettingsPath = $settingsPathToUse
+            Profile = $Profile
+            CachesHome = $CachesHome
+            NoUpdates = [bool]$NoUpdates
+            SkipSamples = [bool]$SkipSamples
+            SkipMississippi = [bool]$SkipMississippi
+            SkipToolRestore = [bool]$SkipToolRestore
+            SkipRestore = [bool]$SkipRestore
+            SkipBuild = [bool]$SkipBuild
         }
-
-        if ($plan.Mode -eq 'NoOp') {
-            Write-Host $plan.Reason -ForegroundColor ([ConsoleColor]::Yellow)
-            return $plan
-        }
-
-        if ($plan.Mode -in @('FullFallback', 'FullValidation')) {
-            Write-Host "Targeted cleanup is falling back to full cleanup: $($plan.Reason)" -ForegroundColor ([ConsoleColor]::Yellow)
-            $null = Invoke-RepositoryCleanup -Mode Full -RepoRoot $rootFullPath -Configuration $Configuration -SettingsPath $settingsPathToUse -Profile $Profile -CachesHome $CachesHome -NoUpdates:$NoUpdates -SkipSamples:$SkipSamples -SkipMississippi:$SkipMississippi -SkipToolRestore:$SkipToolRestore -SkipRestore:$SkipRestore -SkipBuild:$SkipBuild
-            return $plan
-        }
-
-        if (-not $SkipToolRestore) {
-            Write-Host 'Restoring dotnet tools once for targeted cleanup...' -ForegroundColor ([ConsoleColor]::Cyan)
-            Invoke-DotnetToolRestore -RepoRoot $rootFullPath
-        }
-        else {
-            Write-Host 'Using the already restored dotnet tools for targeted cleanup.' -ForegroundColor ([ConsoleColor]::Cyan)
-        }
-
-        foreach ($group in @($plan.Groups)) {
-            Write-Host "Preparing project $($group.RelativePath) for $($group.IncludePaths.Count) changed file(s)." -ForegroundColor ([ConsoleColor]::Cyan)
-            if (-not $SkipRestore) {
-                Invoke-SolutionRestore -SolutionPath $group.ProjectPath -Description $group.RelativePath -Quiet
-            }
-            if (-not $SkipBuild) {
-                Invoke-SolutionBuild -SolutionPath $group.ProjectPath -Configuration $Configuration -NoRestore -NoIncremental -AdditionalArguments @('-p:RunAnalyzers=false') -Quiet
-            }
-
-            Write-Host "Running CleanupCode for $($group.RelativePath) using a temporary project solution" -ForegroundColor ([ConsoleColor]::Cyan)
-            Invoke-TargetedProjectCleanup `
-                -ProjectGroup $group `
-                -RepoRoot $rootFullPath `
-                -SettingsPath $settingsPathToUse `
-                -Profile $Profile `
-                -CachesHome $CachesHome `
-                -NoUpdates:$NoUpdates
-        }
-
-        Write-Host "Targeted cleanup completed for $($plan.Groups.Count) affected project(s)." -ForegroundColor ([ConsoleColor]::Green)
-        return $plan
+        return Invoke-TargetedRepositoryCleanup @parameters
     }
 
-    if (-not $SkipToolRestore) {
-        Write-Host 'Restoring dotnet tools once for full cleanup...' -ForegroundColor ([ConsoleColor]::Cyan)
-        Invoke-DotnetToolRestore -RepoRoot $rootFullPath
-    }
-    else {
-        Write-Host 'Using the already restored dotnet tools for full cleanup.' -ForegroundColor ([ConsoleColor]::Cyan)
-    }
+    Invoke-CleanupToolRestore -RepoRoot $rootFullPath -Mode Full -SkipToolRestore:$SkipToolRestore
 
     $solutions = @()
     if (-not $SkipMississippi) {
@@ -3386,12 +3519,7 @@ function Invoke-RepositoryCleanup {
     }
 
     foreach ($solution in $solutions) {
-        if (-not $SkipRestore) {
-            Invoke-SolutionRestore -SolutionPath $solution.Path -Description $solution.Name -Quiet
-        }
-        if (-not $SkipBuild) {
-            Invoke-SolutionBuild -SolutionPath $solution.Path -Configuration $Configuration -NoRestore -NoIncremental -AdditionalArguments @('-p:RunAnalyzers=false') -Quiet
-        }
+        Invoke-CleanupProjectPreparation -ProjectPath $solution.Path -Description $solution.Name -Configuration $Configuration -SkipRestore:$SkipRestore -SkipBuild:$SkipBuild
 
         if ($solution.Name -eq 'Mississippi') {
             Invoke-MississippiSolutionCleanup -RepoRoot $rootFullPath -SettingsPath $settingsPathToUse -Profile $Profile -CachesHome $CachesHome -NoUpdates:$NoUpdates -SkipToolRestore
