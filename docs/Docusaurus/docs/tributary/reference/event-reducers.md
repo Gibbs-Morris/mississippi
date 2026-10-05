@@ -45,7 +45,7 @@ The guard does not deeply compare members, roll back mutations, or require every
 
 [`AddReducer<TEvent, TProjection, TReducer>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Runtime/ReducerRegistrations.cs) adds transient registrations for both reducer interfaces. The delegate overload registers its adapter and both interfaces as transient services. Resolving those interfaces separately does not promise one shared reducer instance.
 
-Both overloads call `AddRootReducer<TProjection>`, which uses `TryAddTransient` for `IRootReducer<TProjection>`. An existing root registration is preserved. Repeated reducer registrations can add more candidates; they are not deduplicated by these helpers.
+Both overloads call `AddRootReducer<TProjection>`, which uses `TryAddTransient` for `IRootReducer<TProjection>`. An existing root registration is preserved. Repeated reducer registrations can add more candidates; they are not deduplicated by these helpers. For repeated delegate-overload calls with the same closed `TEvent, TProjection`, each interface factory resolves the last registered `DelegateEventReducer<TEvent, TProjection>` under the default Microsoft DI container. The root receives repeated adapters wrapping that last delegate, rather than one candidate for each supplied delegate. The implementation-type overload retains separately registered implementations; its first-candidate priority does not imply per-delegate priority for this collision.
 
 ## Reducer Hash
 
