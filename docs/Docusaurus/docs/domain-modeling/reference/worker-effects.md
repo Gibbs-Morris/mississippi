@@ -32,6 +32,8 @@ The [sealed record](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Do
 
 The record itself does not validate those values. The [registration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/FireAndForgetEffectRegistration.cs) supplies event, state, key, and position from its arguments without making a local deep copy. It derives `EffectTypeName` from `typeof(TEffect).FullName`, falling back to the simple name; callers do not supply that string to `Dispatch`.
 
+The envelope crosses an Orleans grain boundary. Its `[GenerateSerializer]` attribute does not generate codecs for arbitrary event or aggregate payload types; each concrete payload and its object graph need compatible [Orleans serialization support](https://learn.microsoft.com/en-us/dotnet/orleans/host/configuration-guide/serialization). Missing support can fail copying or serialization before worker execution.
+
 ## Aggregate Handoff
 
 The [aggregate runtime](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/GenericAggregateGrain.cs) dispatches registrations whose `EventType` equals the original event's exact runtime type. It supplies each event's brook position from the original persisted batch. Follow-up events yielded and persisted by awaited effects are processed by that awaited-effect loop, but are not added to worker dispatch; a worker registration for their event type is not invoked by this path.
