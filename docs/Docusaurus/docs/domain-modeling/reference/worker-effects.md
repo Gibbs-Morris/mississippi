@@ -56,11 +56,13 @@ A missing implementation, null event, or null aggregate state is logged and reco
 
 The [existing worker tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/DomainModeling.Runtime.L0Tests/FireAndForgetEffectWorkerGrainTests.cs) cover valid execution, a missing event, and an ordinary effect exception.
 
+A noncritical synchronous exception from registration dispatch, including worker resolution or call setup, is caught by the aggregate and logged. It records neither a successful dispatch metric nor a worker failure metric, and does not by itself fail the command or trigger retry/replay. Worker logs and metrics apply after the worker receives the call.
+
 The built-in handoff does not provide a durable retry queue or application-level idempotency mechanism. Aggregate command completion does not establish that the worker's external side effect completed.
 
 ## Summary
 
-Worker effects receive an event, supplied state, and routing metadata after persistence. Their execution is outside the aggregate's awaited completion path, with ordinary failures observed through worker logs and metrics.
+Worker effects receive an event, supplied state, and routing metadata after persistence. Their execution is outside the aggregate's awaited completion path. Aggregate-side handoff failures are log-only; received worker failures use the worker's logs and metrics.
 
 ## Next Steps
 
