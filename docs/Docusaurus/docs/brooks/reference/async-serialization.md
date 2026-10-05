@@ -42,7 +42,7 @@ Both methods use the stream's current position without seeking. Writing does not
 
 These serializer calls supply no `JsonSerializerOptions`. They use the platform defaults and applicable type attributes; this provider exposes no custom naming, converter, or other options callback.
 
-Null source or destination streams throw `ArgumentNullException`. Malformed JSON can throw `JsonException`, and serializer or stream I/O failures propagate without provider retry. A null decoded value instead uses the `InvalidOperationException` described above.
+Null source or destination streams throw `ArgumentNullException`. Malformed JSON can throw `JsonException`, and serializer or stream I/O failures propagate without provider retry. A failed or canceled write can leave partial JSON in the destination: the provider does not roll back bytes, reset the position, or truncate it. Before retrying, callers must discard the destination or restore its position and length as appropriate for that stream. A null decoded value instead uses the `InvalidOperationException` described above.
 
 The [existing provider tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Brooks.Serialization.Json.L0Tests/JsonSerializationProviderTests.cs) cover successful stream reads and writes, null deserialization results, format identity, and canceled operations.
 
