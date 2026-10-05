@@ -47,7 +47,8 @@ It does not select a different serializer from `DataContentType` or validate `Da
 ## Failure Boundary
 
 - A null event list or null storage event throws `ArgumentNullException`.
-- During writing, `ResolveName` receives the object's runtime `Type`; an unregistered type throws `InvalidOperationException`. During reading, an unresolved stored event name throws the same exception type.
+- During writing, `ResolveName` receives the object's runtime `Type`; the converter throws `InvalidOperationException` when that type is unregistered. During reading, an unknown nonblank stored event name produces the same converter exception.
+- The [default registry](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/EventTypeRegistry.cs) rejects a null stored name with `ArgumentNullException`, and an empty or whitespace-only name with `ArgumentException`, before unknown-name handling.
 - A null element inside a non-null list reaches `GetType()` and throws `NullReferenceException`; there is no per-element null guard.
 - Registry, serializer, and time-provider exceptions propagate from the call.
 
