@@ -47,7 +47,7 @@ Default struct values bypass the constructor and have null components. They stri
 
 [`SignalRServerDirectoryKey`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Abstractions/Keys/SignalRServerDirectoryKey.cs) stores one `Value`. Its constructor and parser reject null and values longer than 4,192 UTF-16 code units. They do not split on a separator; colons, empty text, and whitespace are permitted.
 
-Its named `Default` field contains the value `default`. Use that field when selecting the conventional directory identity. A C# default struct value does not run the constructor or initialize that named default: its `Value` and implicit string conversion are null.
+Its named `Default` field contains the value `default`. Use that field when selecting the conventional directory identity. A C# default struct value does not run the constructor or initialize that named default: its `Value`, implicit string conversion, and `ToString()` result are null.
 
 The [group](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Aqueduct.Abstractions.L0Tests/Keys/SignalRGroupKeyTests.cs), [client](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Aqueduct.Abstractions.L0Tests/Keys/SignalRClientKeyTests.cs), and [directory tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Aqueduct.Abstractions.L0Tests/Keys/SignalRServerDirectoryKeyTests.cs) cover valid identities, null/length guards, conversions, equality, and parse round trips. Group/client tests also cover separator rejection and missing-separator parsing.
 
