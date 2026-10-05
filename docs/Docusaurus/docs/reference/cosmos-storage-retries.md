@@ -53,7 +53,7 @@ Cancellation detected before entering an attempt, or during the retry delay, esc
 
 For ordinary retry exhaustion, the final-attempt Cosmos branch produces the status-bearing wrapper. The separate `Operation failed after ... attempts` fallback is not that normal outcome. A negative retry count skips the loop and reaches that fallback without calling the operation.
 
-The [existing tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Common.Runtime.Storage.Cosmos.L0Tests/CosmosRetryPolicyTests.cs) cover transient success, exhaustion, not-found pass-through, oversized requests, and cancellation wrapping.
+The [existing tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Common.Runtime.Storage.Cosmos.L0Tests/CosmosRetryPolicyTests.cs) assert two calls before transient success and exception outcomes for exhausted retries, not-found, oversized requests, and cancellation. The exhaustion and not-found tests do not assert attempt counts or preservation of the original exception instance; those details above come from the implementation.
 
 ## Summary
 
