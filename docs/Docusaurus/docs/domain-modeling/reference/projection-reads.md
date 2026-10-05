@@ -40,7 +40,7 @@ Register the per-projection `IRootReducer<TProjection>` and `ISnapshotStateConve
 
 Activation has no atomic read-and-subscribe handoff or second storage read. If a provider does not replay an update published between the initial read and subscription, the cursor can retain the older position until a later accepted notification or reactivation reloads storage. Latest reads therefore report known progress, rather than a gap-free storage watermark.
 
-`GetAtVersionAsync` constructs a versioned cache key from brook name, entity ID, and the requested position. It resolves the cache for `TProjection`, forwards the token to its `GetAsync`, and returns the resulting state.
+`GetAtVersionAsync` constructs a versioned cache key from brook name, entity ID, and the requested position. It resolves the cache for `TProjection`, forwards the token to its `GetAsync`, and returns the resulting state. This event position does not pin reducer code. Each cache activation resolves its deployed root reducer and hash; differing reducer deployments can produce different state at the same event position.
 
 The built-in cache's `GetAsync` ignores that caller token. Its state load occurs during activation using a separate activation token, so forwarding the method argument does not cancel that load.
 
