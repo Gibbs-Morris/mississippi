@@ -44,7 +44,7 @@ For calls beginning after disposal completes, a new event-stream subscription in
 
 Those guards run before acquiring subscription locks. A concurrent subscribe/dispose race can add a subscriber after the list was cleared without completing it; the post-disposal behavior above is not a guarantee for overlapping lifecycle calls. A publication or listener notification that already captured its list can also resume after disposal: an observer may receive `OnNext` after `OnCompleted`, or a state listener may run after store disposal. Completion does not ensure callback quiescence for overlapping calls. Coordinate subscription, disposal, and in-flight dispatch ownership.
 
-`GetStateSnapshot` has no disposed-store guard; after normal disposal it returns a dictionary copied from the cleared feature dictionary. Retained earlier snapshots still hold their original feature-object references.
+`GetStateSnapshot` has no disposed-store guard. After normal disposal with no overlapping dispatch, it returns a copy of the cleared feature dictionary. A dispatch that already captured a feature state can finish reduction and assign its result after disposal clears that dictionary, repopulating a later snapshot. Disposal is therefore not a barrier guaranteeing empty snapshots when dispatch overlaps. Retained earlier snapshots still hold their original feature-object references.
 
 The [store tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.Core.L0Tests/StoreTests.cs) cover state-listener notification, unsubscribe, repeated subscription disposal, and null/disposed guards. Event replay and observer delivery rules above are verified from the subject implementation.
 
