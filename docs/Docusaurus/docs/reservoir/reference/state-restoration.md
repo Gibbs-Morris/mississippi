@@ -33,7 +33,7 @@ The [store](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.
 - The current feature object's runtime type must accept the supplied value through `IsInstanceOfType`.
 - Accepted entries replace their current values; unknown, null, incompatible, or omitted entries leave current values unchanged.
 
-Restoration can therefore be partial. The check uses the current object's runtime type, rather than only the feature's declared interface. Reset values are subject to that compatibility check too.
+Restoration can therefore be partial. The check uses the current object's runtime type, rather than only the feature's declared interface. Reset values are subject to that compatibility check too. Restoring a derived instance changes the runtime type used for later checks: an earlier base-class snapshot or retained base-class reset value can then be ignored as incompatible. A reset can still emit its event and notify listeners without replacing that feature. Keep a feature's runtime type consistent when relying on its original reset baseline.
 
 Replacement writes feature entries individually, without a transaction or a shared lock with other dispatches or snapshot creation. Multi-feature restoration is not atomic: concurrent readers/dispatches can observe mixed values. Serialize restoration with other store activity when a consistent transition is required; `StateRestoredEvent` does not prove intermediate states were unobservable.
 
