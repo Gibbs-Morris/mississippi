@@ -50,7 +50,7 @@ That ID belongs to local lifecycle actions; the base effect does not add it to t
 
 The request block converts `HttpRequestException` to `HttpError` with a network-error message. It also converts `TaskCanceledException` to `HttpError` with a request-cancelled message.
 
-Other exceptions, including JSON parsing failures and mapper failures outside those caught types, propagate after the executing action. An `OperationCanceledException` that is not a `TaskCanceledException` also propagates. Consumers cannot assume that every executing action from this iterator is followed by a failed or succeeded action.
+When directly enumerating this base effect, other exceptions, including JSON parsing failures and mapper failures outside those caught types, propagate after the executing action. An `OperationCanceledException` that is not a `TaskCanceledException` also propagates there. In normal Reservoir dispatch, [`RootActionEffect`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/RootActionEffect.cs) stops enumeration on noncritical failures and the [store](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs) catches effect exceptions. Those ordinary failures do not reach the application dispatch caller and can leave the executing entry without a terminal action.
 
 The [command effects generator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Generators/CommandClientActionEffectsGenerator.cs) and [saga effects generator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Generators/SagaClientActionEffectsGenerator.cs) supply the derived effect's action/DTO types and routes. The HTTP outcome rules above come from the shared base implementation.
 
