@@ -17,13 +17,13 @@ public class EventTypeRegistryTests
     /// <summary>
     ///     Another test event record for multiple registration tests.
     /// </summary>
-    [EventStorageName("TEST.REGISTRY.ANOTHER.EVENT")]
+    [EventStorageName("TEST", "REGISTRY", "ANOTHEREVENT")]
     private sealed record AnotherEvent;
 
     /// <summary>
     ///     Test event record for registration tests.
     /// </summary>
-    [EventStorageName("TEST.REGISTRY.FIRST.EVENT")]
+    [EventStorageName("TEST", "REGISTRY", "FIRSTEVENT")]
     private sealed record TestEvent;
 
     /// <summary>
@@ -65,11 +65,11 @@ public class EventTypeRegistryTests
         EventTypeRegistry registry = new();
         Mock<Assembly> assembly = new();
         assembly.Setup(instance => instance.GetTypes()).Returns([typeof(TestEvent), typeof(AnotherEvent), typeof(string)]);
-        registry.Register("TEST.REGISTRY.FIRST.EVENT", typeof(TestEvent));
+        registry.Register("TEST.REGISTRY.FIRSTEVENT.V1", typeof(TestEvent));
         Assert.Equal(1, registry.ScanAssembly(assembly.Object));
         Assert.Equal(0, registry.ScanAssembly(assembly.Object));
         Assert.Equal(2, registry.RegisteredTypes.Count);
-        Assert.Equal("TEST.REGISTRY.ANOTHER.EVENT", registry.ResolveName(typeof(AnotherEvent)));
+        Assert.Equal("TEST.REGISTRY.ANOTHEREVENT.V1", registry.ResolveName(typeof(AnotherEvent)));
     }
 
     /// <summary>

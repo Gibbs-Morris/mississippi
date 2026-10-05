@@ -20,7 +20,7 @@ public class SnapshotTypeRegistryTests
     ///     Another test state record for multiple registration tests.
     /// </summary>
     /// <param name="Value">A dummy value for testing.</param>
-    [SnapshotStorageName("TEST.REGISTRY.ANOTHER.SNAPSHOT")]
+    [SnapshotStorageName("TEST", "REGISTRY", "ANOTHERSNAPSHOT")]
     private sealed record AnotherState(int Value = 0);
 
     /// <summary>
@@ -33,7 +33,7 @@ public class SnapshotTypeRegistryTests
     ///     Test state record for registration tests.
     /// </summary>
     /// <param name="Value">A dummy value for testing.</param>
-    [SnapshotStorageName("TEST.REGISTRY.FIRST.SNAPSHOT")]
+    [SnapshotStorageName("TEST", "REGISTRY", "FIRSTSNAPSHOT")]
     private sealed record TestState(int Value = 0);
 
     /// <summary>
@@ -75,11 +75,11 @@ public class SnapshotTypeRegistryTests
         SnapshotTypeRegistry registry = new();
         Mock<Assembly> assembly = new();
         assembly.Setup(instance => instance.GetTypes()).Returns([typeof(TestState), typeof(AnotherState), typeof(string)]);
-        registry.Register("TEST.REGISTRY.FIRST.SNAPSHOT", typeof(TestState));
+        registry.Register("TEST.REGISTRY.FIRSTSNAPSHOT.V1", typeof(TestState));
         Assert.Equal(1, registry.ScanAssembly(assembly.Object));
         Assert.Equal(0, registry.ScanAssembly(assembly.Object));
         Assert.Equal(2, registry.RegisteredTypes.Count);
-        Assert.Equal("TEST.REGISTRY.ANOTHER.SNAPSHOT", registry.ResolveName(typeof(AnotherState)));
+        Assert.Equal("TEST.REGISTRY.ANOTHERSNAPSHOT.V1", registry.ResolveName(typeof(AnotherState)));
     }
 
     /// <summary>
