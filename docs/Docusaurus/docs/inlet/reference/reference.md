@@ -112,6 +112,7 @@ Use this page as the current active reference for Inlet's builder-based client r
 - Read [Projection Fetch Outcomes](./projection-fetches.md) for missing data, versions, and HTTP failures.
 - Read [Client Command History](./command-history.md) for lifecycle fields and retention rules.
 - Read [Client Command HTTP Outcomes](./command-http-outcomes.md) for request results and failure codes.
+- Read [Generated Command DTO Properties](./command-dto-properties.md) for property selection and required fields.
 - Read [Inlet Concepts](../concepts/concepts.md).
 - Read [How To Compose Inlet In Mississippi Client Apps](../how-to/how-to.md) for startup composition guidance.
 - Use the [Spring Sample](../../samples/spring-sample/index.md) to see Inlet composition patterns in practice.
