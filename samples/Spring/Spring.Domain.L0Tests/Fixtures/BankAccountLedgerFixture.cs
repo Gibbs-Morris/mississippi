@@ -1,11 +1,11 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-using Spring.Domain.Projections.BankAccountLedger;
-using Spring.Domain.Projections.BankAccountLedger.Reducers;
+using MississippiSamples.Spring.Domain.Projections.BankAccountLedger;
+using MississippiSamples.Spring.Domain.Projections.BankAccountLedger.Reducers;
 
 
-namespace Spring.Domain.L0Tests.Fixtures;
+namespace MississippiSamples.Spring.Domain.L0Tests.Fixtures;
 
 /// <summary>
 ///     Pre-wired test fixture for BankAccountLedger projection testing.

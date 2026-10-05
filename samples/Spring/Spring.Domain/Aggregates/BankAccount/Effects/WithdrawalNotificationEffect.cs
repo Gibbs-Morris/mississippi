@@ -4,14 +4,14 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
-using Spring.Domain.Aggregates.BankAccount.Events;
-using Spring.Domain.Services;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
+using MississippiSamples.Spring.Domain.Services;
 
 
-namespace Spring.Domain.Aggregates.BankAccount.Effects;
+namespace MississippiSamples.Spring.Domain.Aggregates.BankAccount.Effects;
 
 /// <summary>
 ///     Fire-and-forget effect that sends withdrawal notifications to account holders.

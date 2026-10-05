@@ -1,9 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
-        <LangVersion>14.0</LangVersion>
-        <Description>Lightweight abstractions containing attributes and marker types for Mississippi source generators. Reference this package to annotate types for code generation without taking dependencies on generator implementations.</Description>
-    </PropertyGroup>
-
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <Description>Public contracts and abstractions for Inlet.Generators.</Description>
+  </PropertyGroup>
 </Project>

@@ -45,6 +45,18 @@ public static class NamingConventions
 
     private const string FeaturesSegment = "Features";
 
+    private const string SagaStateSuffix = "SagaState";
+
+    private const string StateSegment = "State";
+
+    private static readonly char[] NamespaceDelimiters =
+    [
+        '.',
+        '-',
+        '_',
+        ' ',
+    ];
+
     /// <summary>
     ///     Extracts the aggregate name from a domain command namespace.
     /// </summary>
@@ -370,7 +382,7 @@ public static class NamingConventions
     public static string GetClientStateNamespace(
         string domainNamespace
     ) =>
-        GetClientFeatureNamespace(domainNamespace, "State");
+        GetClientFeatureNamespace(domainNamespace, StateSegment);
 
     /// <summary>
     ///     Converts a source namespace to a client State namespace using the target project's root namespace.
@@ -382,7 +394,7 @@ public static class NamingConventions
         string sourceNamespace,
         string targetRootNamespace
     ) =>
-        GetClientFeatureNamespace(sourceNamespace, targetRootNamespace, "State");
+        GetClientFeatureNamespace(sourceNamespace, targetRootNamespace, StateSegment);
 
     /// <summary>
     ///     Gets the command DTO name from a command type name.
@@ -403,6 +415,54 @@ public static class NamingConventions
         string commandName
     ) =>
         commandName + "RequestDto";
+
+    /// <summary>
+    ///     Builds a domain registration method name from a source namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">The source namespace.</param>
+    /// <returns>The method name (for example, "AddSpringDomain").</returns>
+    public static string GetDomainRegistrationMethodName(
+        string sourceNamespace
+    )
+    {
+        string domainRoot = GetDomainRootNamespace(sourceNamespace);
+        string suffix = ToPascalIdentifier(domainRoot);
+        return string.IsNullOrEmpty(suffix) ? "AddDomain" : "Add" + suffix;
+    }
+
+    /// <summary>
+    ///     Derives a domain root namespace from a source namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">The source namespace.</param>
+    /// <returns>
+    ///     The domain root namespace (for example, "Spring.Domain" from
+    ///     "Spring.Domain.Aggregates.BankAccount.Commands").
+    /// </returns>
+    public static string GetDomainRootNamespace(
+        string sourceNamespace
+    )
+    {
+        if (string.IsNullOrWhiteSpace(sourceNamespace))
+        {
+            return sourceNamespace;
+        }
+
+        int aggregatesIndex = sourceNamespace.IndexOf(AggregatesSegment, StringComparison.Ordinal);
+        if (aggregatesIndex > 0)
+        {
+            return sourceNamespace.Substring(0, aggregatesIndex);
+        }
+
+        int projectionsIndex = sourceNamespace.IndexOf(".Projections.", StringComparison.Ordinal);
+        if (projectionsIndex > 0)
+        {
+            return sourceNamespace.Substring(0, projectionsIndex);
+        }
+
+        // Intentional fallback for non-conventional namespaces:
+        // preserve full namespace so generated domain names remain stable and deterministic.
+        return sourceNamespace;
+    }
 
     /// <summary>
     ///     Gets the DTO name from a projection type name.
@@ -445,15 +505,42 @@ public static class NamingConventions
     }
 
     /// <summary>
+    ///     Gets a saga name from a saga state type name.
+    /// </summary>
+    /// <param name="typeName">The saga state type name.</param>
+    /// <returns>The saga name with trailing "SagaState" or "State" removed when present.</returns>
+    public static string GetSagaName(
+        string typeName
+    )
+    {
+        if (typeName is null)
+        {
+            throw new ArgumentNullException(nameof(typeName));
+        }
+
+        if (typeName.EndsWith(SagaStateSuffix, StringComparison.Ordinal))
+        {
+            return typeName.Substring(0, typeName.Length - SagaStateSuffix.Length);
+        }
+
+        if (typeName.EndsWith(StateSegment, StringComparison.Ordinal))
+        {
+            return typeName.Substring(0, typeName.Length - StateSegment.Length);
+        }
+
+        return typeName;
+    }
+
+    /// <summary>
     ///     Converts a domain command namespace to a server DTO namespace.
     /// </summary>
     /// <param name="domainNamespace">
     ///     The domain namespace (e.g., "Contoso.Domain.Aggregates.BankAccount.Commands").
     /// </param>
-    /// <returns>The server namespace (e.g., "Contoso.Server.Controllers.Aggregates").</returns>
+    /// <returns>The server namespace (e.g., "Contoso.Server.Controllers.Aggregates.Commands.BankAccount").</returns>
     /// <remarks>
     ///     <para>
-    ///         Replaces ".Domain.Aggregates.{Aggregate}.Commands" with ".Server.Controllers.Aggregates".
+    ///         Replaces ".Domain.Aggregates.{Aggregate}.Commands" with ".Server.Controllers.Aggregates.Commands.{Aggregate}".
     ///         Falls back to simple ".Domain" → ".Server" replacement if pattern doesn't match.
     ///     </para>
     /// </remarks>
@@ -466,7 +553,7 @@ public static class NamingConventions
             return domainNamespace;
         }
 
-        // Pattern: Contoso.Domain.Aggregates.BankAccount.Commands → Contoso.Server.Controllers.Aggregates
+        // Pattern: Contoso.Domain.Aggregates.BankAccount.Commands → Contoso.Server.Controllers.Aggregates.Commands.BankAccount
         if (domainNamespace.Contains(DomainAggregatesSegment) &&
             domainNamespace.EndsWith(CommandsSuffix, StringComparison.Ordinal))
         {
@@ -475,7 +562,9 @@ public static class NamingConventions
             if (domainIndex > 0)
             {
                 string product = domainNamespace.Substring(0, domainIndex);
-                return product + ".Server.Controllers.Aggregates";
+                return product +
+                       ".Server.Controllers.Aggregates.Commands." +
+                       GetAggregateNameFromNamespace(domainNamespace);
             }
         }
 
@@ -499,7 +588,7 @@ public static class NamingConventions
     /// </summary>
     /// <param name="sourceNamespace">The source namespace containing the command.</param>
     /// <param name="targetRootNamespace">The target project's root namespace (e.g., "MyApp.AspServer").</param>
-    /// <returns>The server namespace (e.g., "MyApp.AspServer.Controllers.Aggregates").</returns>
+    /// <returns>The server namespace (e.g., "MyApp.AspServer.Controllers.Aggregates.Commands.BankAccount").</returns>
     public static string GetServerCommandDtoNamespace(
         string sourceNamespace,
         string targetRootNamespace
@@ -510,8 +599,10 @@ public static class NamingConventions
             return GetServerCommandDtoNamespace(sourceNamespace);
         }
 
-        // For server, we always use Controllers.Aggregates
-        return $"{targetRootNamespace}.Controllers.Aggregates";
+        string? aggregateName = TargetNamespaceResolver.ExtractAggregateName(sourceNamespace);
+        return string.IsNullOrEmpty(aggregateName)
+            ? $"{targetRootNamespace}.Controllers.Aggregates"
+            : $"{targetRootNamespace}.Controllers.Aggregates.Commands.{aggregateName}";
     }
 
     /// <summary>
@@ -746,5 +837,33 @@ public static class NamingConventions
 
         // Fallback to legacy behavior
         return GetClientFeatureNamespace(sourceNamespace, subNamespace);
+    }
+
+    private static string ToPascalIdentifier(
+        string value
+    )
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        string[] parts = value.Split(NamespaceDelimiters, StringSplitOptions.RemoveEmptyEntries);
+        StringBuilder sb = new();
+        foreach (string part in parts)
+        {
+            if (part.Length == 0)
+            {
+                continue;
+            }
+
+            sb.Append(char.ToUpperInvariant(part[0]));
+            if (part.Length > 1)
+            {
+                sb.Append(part.Substring(1));
+            }
+        }
+
+        return sb.ToString();
     }
 }

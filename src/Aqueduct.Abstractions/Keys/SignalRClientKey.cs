@@ -14,7 +14,7 @@ namespace Mississippi.Aqueduct.Abstractions.Keys;
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.Aqueduct.SignalRClientKey")]
+[Alias("Mississippi.Aqueduct.Abstractions.Keys.SignalRClientKey")]
 public readonly record struct SignalRClientKey
 {
     private const int MaxLength = 4192;
@@ -51,13 +51,13 @@ public readonly record struct SignalRClientKey
     ///     Gets the SignalR connection identifier.
     /// </summary>
     [Id(1)]
-    public string ConnectionId { get => field ?? string.Empty; init; }
+    public string ConnectionId { get => field ?? string.Empty; }
 
     /// <summary>
     ///     Gets the name of the SignalR hub.
     /// </summary>
     [Id(0)]
-    public string HubName { get => field ?? string.Empty; init; }
+    public string HubName { get => field ?? string.Empty; }
 
     /// <summary>
     ///     Parses a string into a <see cref="SignalRClientKey" />.

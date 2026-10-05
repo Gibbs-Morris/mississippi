@@ -14,7 +14,7 @@ namespace Mississippi.Aqueduct.Abstractions.Keys;
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.Aqueduct.SignalRGroupKey")]
+[Alias("Mississippi.Aqueduct.Abstractions.Keys.SignalRGroupKey")]
 public readonly record struct SignalRGroupKey
 {
     private const int MaxLength = 4192;
@@ -51,13 +51,13 @@ public readonly record struct SignalRGroupKey
     ///     Gets the name of the SignalR group.
     /// </summary>
     [Id(1)]
-    public string GroupName { get => field ?? string.Empty; init; }
+    public string GroupName { get => field ?? string.Empty; }
 
     /// <summary>
     ///     Gets the name of the SignalR hub.
     /// </summary>
     [Id(0)]
-    public string HubName { get => field ?? string.Empty; init; }
+    public string HubName { get => field ?? string.Empty; }
 
     /// <summary>
     ///     Parses a string into a <see cref="SignalRGroupKey" />.

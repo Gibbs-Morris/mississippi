@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Sdk Name="Aspire.AppHost.Sdk" Version="13.1.0" />
+  <Sdk Name="Aspire.AppHost.Sdk" Version="13.5.3" />
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <AspireUseCliBundle>true</AspireUseCliBundle>
   </PropertyGroup>
 
   <ItemGroup>
@@ -10,6 +11,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LightSpeed.Server\LightSpeed.Server.csproj" />
+    <ProjectReference Include="..\LightSpeed.Gateway\LightSpeed.Gateway.csproj" />
   </ItemGroup>
 </Project>

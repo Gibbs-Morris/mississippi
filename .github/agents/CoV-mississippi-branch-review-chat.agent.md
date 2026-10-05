@@ -84,7 +84,7 @@ At minimum, check:
 - Reliability (timeouts, cancellation, retries, idempotency)
 - Concurrency (async misuse, races, shared state)
 - Performance (complexity, allocations, unnecessary IO)
-- API/Compatibility (breaking changes, contracts, serialization)
+- API/Compatibility (breaking changes, contracts, serialization—but note pre-1.0 policy: `.github/instructions/backwards-compatibility.instructions.md`)
 - Testing (missing coverage on changed behavior)
 - Observability (structured logs, actionable errors)
 - Craftsmanship (naming, consistency, duplication, complexity)
@@ -119,7 +119,7 @@ Generate questions that would expose errors, including:
 - For each “bug” claim, did we validate with at least two signals (e.g., caller + callee, code + test, code + config)?
 - Did we miss cross-file contract changes (DTOs/options/interfaces)?
 - Are there missing tests for changed behavior?
-- Are there compatibility/serialization risks?
+- Are there compatibility/serialization risks? (Pre-1.0: only flag if storage names change or persisted data is affected; API breaks are acceptable per backwards-compatibility policy.)
 
 ### 3) Independent answers (evidence-based)
 

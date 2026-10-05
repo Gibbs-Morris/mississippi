@@ -6,7 +6,7 @@ applyTo: 'samples/**'
 
 Governing thought: Sample applications follow strict architectural patterns—Redux on client, aggregates/projections on server, schema-first generation throughout. Deviations are refused.
 
-> Drift check: Review `samples/Spring/` for reference patterns; `src/Reservoir/` for client state; `src/EventSourcing.Aggregates/` for server patterns.
+> Drift check: Review `samples/Spring/` for reference patterns; `src/Reservoir/` for client state; `src/DomainModeling.Runtime/` for server patterns.
 
 ## Rules (RFC 2119)
 
@@ -30,7 +30,7 @@ Governing thought: Sample applications follow strict architectural patterns—Re
   - Event effects handle server-side side-effects
 - Extensions requiring new behavior **MUST** use event effects or event-based patterns. Why: Maintains event-driven architecture.
 - Sagas and workflows **MUST** be aggregates with additional orchestration; they **MUST NOT** bypass the aggregate model. Why: Aggregates with effects can coordinate cross-aggregate behavior.
-- Logic outside `Domain/` **MUST NOT** contain business rules; Silo/Server projects contain only DI and configuration. Why: Thin hosts, rich domain.
+- Logic outside `Domain/` **MUST NOT** contain business rules; Runtime/Gateway host projects contain only DI and configuration. Why: Thin hosts, rich domain.
 
 ### Schema-First Development
 

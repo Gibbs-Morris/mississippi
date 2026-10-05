@@ -1,4 +1,9 @@
+#!/usr/bin/env pwsh
+
 #requires -Version 7.0
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
 
 <#
 .SYNOPSIS
@@ -150,8 +155,9 @@ function Sync-AutoTasks {
         }
 
         Get-ChildItem -Path $statusPath -Filter '*.json' -File -ErrorAction SilentlyContinue | ForEach-Object {
+            $taskFilePath = $_.FullName
             try {
-                $payload = Get-Content -Path $_.FullName -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                $payload = Get-Content -Path $taskFilePath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
                 foreach ($name in $keyNames) {
                     if ($payload.PSObject.Properties.Name -contains $name) {
                         $value = $payload.$name
@@ -162,7 +168,7 @@ function Sync-AutoTasks {
                 }
             }
             catch {
-                Write-Warning "Failed to parse scratchpad task '$($_.FullName)': $($_.Exception.Message)"
+                Write-Warning "Failed to parse scratchpad task '$taskFilePath': $($_.Exception.Message)"
             }
         }
     }

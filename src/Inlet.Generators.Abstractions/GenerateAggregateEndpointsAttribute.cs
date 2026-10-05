@@ -14,14 +14,14 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///     </para>
 ///     <list type="bullet">
 ///         <item>
-///             <term>Sdk.Silo.Generators</term>
+///             <term>Sdk.Runtime.Generators</term>
 ///             <description>
 ///                 Generates <c>Add{Aggregate}()</c> extension method that registers
 ///                 event types, command handlers, reducers, and snapshot converters.
 ///             </description>
 ///         </item>
 ///         <item>
-///             <term>Sdk.Server.Generators</term>
+///             <term>Sdk.Gateway.Generators</term>
 ///             <description>
 ///                 Generates an aggregate controller with endpoints for each command
 ///                 marked with <see cref="GenerateCommandAttribute" />.

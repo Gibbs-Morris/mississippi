@@ -2,15 +2,15 @@ using System.Collections.Generic;
 
 using Microsoft.Extensions.Time.Testing;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
-using Spring.Domain.Aggregates.TransactionInvestigationQueue;
-using Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
-using Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
-using Spring.Domain.Aggregates.TransactionInvestigationQueue.Handlers;
+using MississippiSamples.Spring.Domain.Aggregates.TransactionInvestigationQueue;
+using MississippiSamples.Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
+using MississippiSamples.Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
+using MississippiSamples.Spring.Domain.Aggregates.TransactionInvestigationQueue.Handlers;
 
 
-namespace Spring.Domain.L0Tests.Aggregates.TransactionInvestigationQueue.Handlers;
+namespace MississippiSamples.Spring.Domain.L0Tests.Aggregates.TransactionInvestigationQueue.Handlers;
 
 /// <summary>
 ///     Tests for <see cref="FlagTransactionHandler" />.
@@ -49,9 +49,9 @@ public sealed class FlagTransactionHandlerTests
         IReadOnlyList<object> events = handler.ShouldSucceed(null, command);
 
         // Assert
-        TransactionFlagged flagged = events[0].Should().BeOfType<TransactionFlagged>().Subject;
-        flagged.OriginalTimestamp.Should().Be(originalTime);
-        flagged.FlaggedTimestamp.Should().NotBe(originalTime);
+        TransactionFlagged flagged = Assert.IsType<TransactionFlagged>(events[0]);
+        Assert.Equal(originalTime, flagged.OriginalTimestamp);
+        Assert.NotEqual(originalTime, flagged.FlaggedTimestamp);
     }
 
     /// <summary>
@@ -76,10 +76,10 @@ public sealed class FlagTransactionHandlerTests
         IReadOnlyList<object> events = handler.ShouldSucceed(existingState, command);
 
         // Assert
-        events.Should().ContainSingle();
-        TransactionFlagged flagged = events[0].Should().BeOfType<TransactionFlagged>().Subject;
-        flagged.AccountId.Should().Be("acc-456");
-        flagged.Amount.Should().Be(25_000m);
+        object item = Assert.Single(events);
+        TransactionFlagged flagged = Assert.IsType<TransactionFlagged>(item);
+        Assert.Equal("acc-456", flagged.AccountId);
+        Assert.Equal(25_000m, flagged.Amount);
     }
 
     /// <summary>
@@ -100,12 +100,12 @@ public sealed class FlagTransactionHandlerTests
         IReadOnlyList<object> events = handler.ShouldSucceed(null, command);
 
         // Assert
-        events.Should().ContainSingle();
-        TransactionFlagged flagged = events[0].Should().BeOfType<TransactionFlagged>().Subject;
-        flagged.AccountId.Should().Be("acc-123");
-        flagged.Amount.Should().Be(15_000m);
-        flagged.OriginalTimestamp.Should().Be(TestTimestamp);
-        flagged.FlaggedTimestamp.Should().Be(FlaggedTimestamp);
+        object item = Assert.Single(events);
+        TransactionFlagged flagged = Assert.IsType<TransactionFlagged>(item);
+        Assert.Equal("acc-123", flagged.AccountId);
+        Assert.Equal(15_000m, flagged.Amount);
+        Assert.Equal(TestTimestamp, flagged.OriginalTimestamp);
+        Assert.Equal(FlaggedTimestamp, flagged.FlaggedTimestamp);
     }
 
     /// <summary>
@@ -162,9 +162,9 @@ public sealed class FlagTransactionHandlerTests
         IReadOnlyList<object> events = handler.ShouldSucceed(null, command);
 
         // Assert
-        events.Should().ContainSingle();
-        TransactionFlagged flagged = events[0].Should().BeOfType<TransactionFlagged>().Subject;
-        flagged.Amount.Should().Be(10_000_000m);
+        object item = Assert.Single(events);
+        TransactionFlagged flagged = Assert.IsType<TransactionFlagged>(item);
+        Assert.Equal(10_000_000m, flagged.Amount);
     }
 
     /// <summary>

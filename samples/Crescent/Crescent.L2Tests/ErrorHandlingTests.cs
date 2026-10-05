@@ -1,11 +1,7 @@
-// <copyright file="ErrorHandlingTests.cs" company="Gibbs-Morris LLC">
-// Licensed under the Gibbs-Morris commercial license.
-// </copyright>
-
 using Azure;
 
 
-namespace Crescent.Crescent.L2Tests;
+namespace MississippiSamples.Crescent.L2Tests;
 
 /// <summary>
 ///     Tests that verify proper error handling when operations fail or resources are unavailable.
@@ -44,7 +40,7 @@ public sealed class ErrorHandlingTests
         AzureResponseBool response = await container.ExistsAsync(cts.Token);
 
         // Assert
-        response.Should().NotBeNull();
+        Assert.NotNull(response);
     }
 
     /// <summary>
@@ -66,8 +62,8 @@ public sealed class ErrorHandlingTests
             cancellationToken: cts.Token);
 
         // Assert
-        response.Should().NotBeNull();
-        response.Database.Should().NotBeNull();
+        Assert.NotNull(response);
+        Assert.NotNull(response.Database);
 
         // Cleanup
         await response.Database.DeleteAsync(cancellationToken: CancellationToken.None);
@@ -83,7 +79,7 @@ public sealed class ErrorHandlingTests
         BlobServiceClient client = fixture.CreateBlobServiceClient();
 
         // Assert
-        client.Should().NotBeNull("the fixture should provide a valid client when initialized");
+        Assert.True(client is not null, "the fixture should provide a valid client when initialized");
     }
 
     /// <summary>
@@ -96,7 +92,7 @@ public sealed class ErrorHandlingTests
         using CosmosClient client = fixture.CreateCosmosClient();
 
         // Assert
-        client.Should().NotBeNull("the fixture should provide a valid client when initialized");
+        Assert.True(client is not null, "the fixture should provide a valid client when initialized");
     }
 
     /// <summary>
@@ -106,7 +102,7 @@ public sealed class ErrorHandlingTests
     public void FixtureShouldHaveNoInitializationError()
     {
         // Assert
-        fixture.InitializationError.Should().BeNull("a successful fixture should have no initialization error");
+        Assert.Null(fixture.InitializationError);
     }
 
     /// <summary>
@@ -129,7 +125,15 @@ public sealed class ErrorHandlingTests
         };
 
         // Assert - Should throw a meaningful exception, not hang indefinitely
-        await act.Should().ThrowAsync<RequestFailedException>("invalid connection should fail with a clear error");
+        Exception exception = await Assert.ThrowsAnyAsync<Exception>(act);
+        if (exception is AggregateException aggregateException)
+        {
+            Assert.Contains(aggregateException.Flatten().InnerExceptions, inner => inner is RequestFailedException);
+        }
+        else
+        {
+            Assert.IsType<RequestFailedException>(exception, false);
+        }
     }
 
     /// <summary>
@@ -158,6 +162,6 @@ public sealed class ErrorHandlingTests
         };
 
         // Assert - Should throw a meaningful exception, not hang indefinitely
-        await act.Should().ThrowAsync<Exception>("invalid connection should fail with a clear error");
+        await Assert.ThrowsAnyAsync<Exception>(act);
     }
 }

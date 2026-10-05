@@ -20,27 +20,29 @@ Governing thought: Build applications using the Mississippi framework with sourc
 - Source generation **SHOULD** be used for all supported concerns (DTOs, actions, action effects, endpoints, mappers) when a generator exists; manual implementations **MAY** be used only when no generator supports the scenario. Why: Reduces boilerplate and ensures consistency while preserving escape hatches.
 - Generators consume Domain project types (aggregates, commands, events, projections) and emit Client artifacts (actions, action effects, feature registrations, DTOs); see the Generator Inputs table below and Inlet and Client-Server Integration. Why: Centralizes the source of truth in Domain while producing artifacts for all targets.
 - Types marked with `[PendingSourceGenerator]` (defined in `src/Inlet.Generators.Abstractions/`) **MUST** be treated as reference implementations for generator validation only; they exist to enable test comparisons between generated and expected code and **MUST NOT** be used as patterns for new development. Why: Scoped to generator testing infrastructure.
-- Contributors **SHOULD** review `src/Inlet.Client.Generators/` and `src/Inlet.Server.Generators/` for generator implementations, `src/Inlet.Generators.Abstractions/` for attribute definitions, and `src/Reservoir/` for state management. Why: Understanding the framework internals aids correct usage; abstractions define the attribute surface while generator projects contain the logic.
+- Contributors **SHOULD** review `src/Inlet.Client.Generators/` and `src/Inlet.Gateway.Generators/` for generator implementations, `src/Inlet.Generators.Abstractions/` for attribute definitions, and `src/Reservoir/` for state management. Why: Understanding the framework internals aids correct usage; abstractions define the attribute surface while generator projects contain the logic.
 
 #### Generator Inputs by Project
 
 | Input Project | Generator Input | Output Artifacts |
 |---------------|-----------------|------------------|
-| Domain | Aggregates with `[GenerateAggregateEndpoints]` | Silo registration, Server controller, Client feature/state/reducers, feature registration (`Add{Aggregate}Feature()`) |
+| Domain | Aggregates with `[GenerateAggregateEndpoints]` | Runtime registration, Gateway controller, Client feature/state/reducers, feature registration (`Add{Aggregate}Feature()`) |
 | Domain | Commands with `[GenerateCommand]` | DTOs, mappers, HTTP endpoints, client actions, action effects, command state |
-| Domain | Projections with `[GenerateProjectionEndpoints]` | Server controller, Client subscription, DTOs |
-| Domain | Event effects extending `EventEffectBase` or `SimpleEventEffectBase` | Silo registration (`AddEventEffect<TEffect, TAggregate>()`) |
+| Domain | Projections with `[GenerateProjectionEndpoints]` | Gateway controller, Client subscription, DTOs |
+| Domain | Event effects extending `EventEffectBase` or `SimpleEventEffectBase` | Runtime registration (`AddEventEffect<TEffect, TAggregate>()`) |
 
 ### Solution Structure
 
-- New sample applications in this repository **MUST** follow the four-project structure: Orleans Silo, ASP.NET Server, Blazor WebAssembly Client, and Domain (see Scope and Audience). Why: Separates concerns and enables source generation.
+- Orleans runtime hosts **MUST** compose Brooks through `silo.UseMississippi(runtime => runtime.AddEventSourcing(...))` using `RuntimeBuilder` from `Mississippi.Hosting.Runtime`. Why: The runtime builder unites Brooks service and option registration and validates terminal attachment.
+- New sample applications in this repository **MUST** follow the four-project structure: Runtime host (running in an Orleans silo), ASP.NET Gateway, Blazor WebAssembly Client, and Domain (see Scope and Audience). Why: Separates concerns and enables source generation.
 - An Aspire AppHost project **SHOULD** be included for local development orchestration. Why: Simplifies emulator setup for Cosmos, Azure Storage, and Orleans.
-- Orleans Silo and ASP.NET Server projects **MUST** contain only configuration, options, dependency wiring, and framework registration—not domain logic. Why: Keeps host projects thin.
+- Runtime and Gateway host projects **MUST** contain only configuration, options, dependency wiring, and framework registration—not domain logic. Why: Keeps host projects thin.
 - The Domain project **MUST** contain all server-side domain state (aggregates, projections, commands, events, handlers, reducers). Why: Centralizes domain logic for source generation.
 - The WebAssembly Client project **MUST** contain all front-end code including UX, UI, and local state management. Why: Separates client concerns from server domain.
 
 ### State Management (Reservoir)
 
+- Full Mississippi WebAssembly clients **MUST** compose features inside one `builder.UseMississippi(client => ...)` callback using `ClientBuilder` from `Mississippi.Hosting.Client`. Why: Terminal attachment validates the composition before committing its registrations; the client and nested builders cannot be configured after attachment.
 - All client-side domain and business state **MUST** be managed via the Reservoir store using actions and reducers; ephemeral UI state (e.g., hover, focus, temporary form input) **MAY** remain component-local. Why: Enforces predictable Redux/Flux-style state management for state that matters while allowing practical UI patterns. See `.github/instructions/blazor-ux-guidelines.instructions.md`.
 - Contributors **SHOULD** review how Reservoir is implemented in `src/Reservoir/` before building features. Why: Understanding the store pattern ensures correct usage.
 - Dispatching actions and obtaining feature state **MUST** go through the store; ad-hoc or component-local state management **MUST NOT** be used for domain state. Why: Prevents scattered state that cannot be inspected or replayed.
@@ -53,6 +55,14 @@ Governing thought: Build applications using the Mississippi framework with sourc
 - State flows down the component tree via parameters (including cascading parameters for shared context); domain events flow up via `EventCallback`. Why: Creates predictable unidirectional data flow for domain interactions. See `.github/instructions/blazor-ux-guidelines.instructions.md`.
 - Presentational components (Atoms, Molecules) **MUST NOT** call APIs or dispatch actions directly; they **MUST** emit events that container components (Organisms, Pages) handle. Container components dispatch actions to the store; action effects respond to those dispatched actions (see Action Effects and Reservoir State Management). Why: Keeps presentational components pure and testable while allowing containers to coordinate.
 - See `.github/instructions/blazor-ux-guidelines.instructions.md` for detailed component patterns. Why: UX guidelines contain comprehensive rules.
+- `NotificationPulse` **MAY** receive nullable `IsExpanded` and `DetailsId` values with `OnExpand` for a parent-controlled disclosure. A `null` `IsExpanded` omits `aria-expanded`, a `null` `DetailsId` omits `aria-controls`, and callback intent remains one-way regardless of metadata. A one-way action without controlled-disclosure metadata **MAY** leave both values null. Why: Optional disclosure metadata extends the native action contract without adding an internal toggle or service.
+- For controlled disclosure, the parent **MUST** own the expanded state. Why: The parent owns the state transition while `NotificationPulse` emits one-way intent.
+- For controlled disclosure, the parent **MUST** own actual `OnExpand` callback availability. Why: The component renders the expansion action only when that callback is supplied.
+- For controlled disclosure, the parent **MUST** provide a stable, unique, nonblank per-instance `DetailsId` that identifies the controlled region. Why: The parent owns the rendered target; `NotificationPulse` rejects a supplied blank `DetailsId` when `OnExpand` is present, but does not check DOM existence or uniqueness.
+- A parent-controlled disclosure region **MUST** remain mounted. Why: The referenced target must exist across the disclosure state transition.
+- A parent-controlled disclosure region **MUST** be hidden while collapsed. Why: Visibility must follow the parent-owned expanded state.
+- For controlled disclosure, the parent **MUST** own focus after the accepted render. Why: The parent and sample own focus once the rendered target state is accepted; `NotificationPulse` does not manage focus. Its action text validation remains in the component.
+- Review `src/Refraction.Client/Components/Molecules/Notifications/NotificationPulse.razor.cs`, `docs/Docusaurus/docs/refraction/reference/notification-pulse.md`, and `samples/LightSpeed/LightSpeed.Client/Components/Organisms/Notifications/NotificationDemo.razor` with `NotificationDemo.razor.cs`. Why: These files are the source-backed contract and verified disclosure example.
 
 ### Inlet and Client-Server Integration
 
@@ -73,7 +83,7 @@ Governing thought: Build applications using the Mississippi framework with sourc
   **Failure path:** Command validation failures return an error code; no events are produced and projections are unchanged.
 
   See Consistency Model Separation for the async/eventual nature of projection updates.
-- Client features **MUST** be registered via generated `Add{Aggregate}Feature()` extension methods; silo and server projects use `Add{Aggregate}()` (following `.github/instructions/service-registration.instructions.md` conventions). Why: Enables clean, scalable feature registration consistent with repo patterns while distinguishing client from server registrations.
+- Client features **MUST** be registered via generated `Add{Aggregate}Feature()` extension methods; runtime and gateway projects use `Add{Aggregate}()` (following `.github/instructions/service-registration.instructions.md` conventions). Why: Enables clean, scalable feature registration consistent with repo patterns while distinguishing client from host registrations.
 
 ### Projection Subscriptions
 
@@ -85,15 +95,14 @@ Governing thought: Build applications using the Mississippi framework with sourc
 ### Domain Modeling (Aggregates)
 
 - Contributors **SHOULD** review `samples/Spring/Spring.Domain/` to understand the domain modeling approach in detail. Why: Spring serves as the reference implementation.
-- Aggregates, commands, and events **MUST** be `internal sealed record` types with `[GenerateSerializer]` and `[Id(n)]` on each property; see `.github/instructions/domain-modeling.instructions.md` and Framework Attributes Reference for Orleans serialization requirements. Why: Ensures correct Orleans serialization and visibility.
+- Aggregates, commands, and events **MUST** be `sealed record` types with `[GenerateSerializer]` and `[Id(n)]` on each serialized property. Events **MUST** remain internal. Aggregate and command visibility **MUST** follow the [domain record visibility rule](domain-modeling.instructions.md#domain-record-visibility): internal by default, public where generated public signatures or exported-type discovery require it. See Framework Attributes Reference for serialization requirements. Why: Keeps sample guidance consistent with the actual generated API and discovery boundaries.
 - Aggregates **MUST** define commands, and command handlers **MUST** validate business logic before raising events. Why: Enforces invariants.
 - Aggregates **MUST** use `[BrookName]`, `[SnapshotStorageName]`, `[GenerateSerializer]`, and `[Alias]` attributes. Aggregates exposed via API **MUST** also use `[GenerateAggregateEndpoints]` (see Framework Attributes Reference). Why: Enables event sourcing and stable serialization; endpoint generation is conditional on API exposure.
 - Commands exposed to the UX **MUST** be annotated with `[GenerateCommand(Route = "...")]`. Why: Triggers endpoint and action generation.
 - Command handlers **MUST** return `OperationResult<IReadOnlyList<object>>` containing events on success or an error code on failure. Use `AggregateErrorCodes.InvalidCommand` for command validation failures and `AggregateErrorCodes.InvalidState` for state-based rejections. Why: Enables consistent, typed error handling.
 - Command handlers **MUST** validate the command against current state and return events; the framework handles persistence and snapshotting (see Inlet and Client-Server Integration for the full pipeline). Why: Separates business logic from infrastructure concerns.
-- Events **MUST NOT** be modified once written; property names/types **MUST NOT** change on existing events. Why: Events are immutable facts forming an append-only log.
-- Backwards compatibility is critical; adding additional properties to existing events **MAY** be done but is not always advisable. Why: Can introduce subtle compatibility issues.
-- When schema changes are required, a new event type (e.g., `{Event}V2`) **SHOULD** be introduced alongside the existing event rather than modifying the original. Why: Maintains backwards compatibility and enables gradual migration.
+- **Pre-1.0 event evolution**: While the repository is pre-1.0 (see `.github/instructions/backwards-compatibility.instructions.md`), event shapes **MAY** be changed freely; V2 event types and compatibility shims **MUST NOT** be introduced for patterns that only exist on the current branch. Why: Pre-release iteration speed outweighs ceremony; only contracts on `main` define the compatibility baseline.
+- **Post-1.0 event immutability**: Once the repository reaches 1.0+ or events are persisted in a real (non-test) store, events **MUST NOT** be modified once written; property names/types **MUST NOT** change on existing events—events are immutable facts forming an append-only log. Adding properties to existing events **MAY** be done but is not always advisable; a new event type (e.g., `{Event}V2`) **SHOULD** be introduced alongside the original for significant schema changes. Why: Post-release, backwards compatibility supports rolling updates and gradual migration.
 
 ### Domain Modeling (Projections)
 
@@ -150,18 +159,19 @@ Governing thought: Build applications using the Mississippi framework with sourc
 - Custom storage providers **MAY** be implemented when Cosmos is not suitable; the framework's storage abstractions allow pluggable backends. Why: Preserves flexibility for different deployment scenarios.
 - New projects **SHOULD** use Aspire to set up local development with emulators. Why: Enables consistent local development experience.
 - The Spring sample demonstrates this setup using Cosmos for event sourcing and Azure Storage for Orleans clustering/grain state. Why: Provides reference implementation for storage configuration.
-- Storage client registrations **MUST** use keyed services following the patterns in `Spring.Silo/Program.cs`. Why: Enables multiple storage accounts for different purposes.
+- Storage client registrations **MUST** use keyed services following the patterns in `Spring.Runtime/Program.cs`. Why: Enables multiple storage accounts for different purposes.
 
 ### Framework Attributes Reference
 
-Contributors **SHOULD** review all custom attributes under `src/` (particularly in `Inlet.Generators.Abstractions/` and `EventSourcing.Brooks.Abstractions/Attributes/`) to understand their behavior.
+Contributors **SHOULD** review all custom attributes under `src/` (particularly in `Inlet.Generators.Abstractions/` and `Brooks.Abstractions/Attributes/`) to understand their behavior.
 
 | Attribute | Purpose | When to Use | Relates To |
 |-----------|---------|-------------|------------|
 | `[BrookName]` | Identifies the event stream via hierarchical name `(APP, MODULE, NAME)` | Required on all aggregates and projections that share an event stream | Event stream alignment; projections and aggregates with matching brook names share events; names are immutable once deployed—use uppercase alphanumeric segments (see `.github/instructions/storage-type-naming.instructions.md`) |
 | `[SnapshotStorageName]` | Stable snapshot storage identity with versioning `(APP, MODULE, NAME, version)` | Required on aggregates and projections to persist state | Snapshot naming and storage; version enables schema evolution; names are immutable once deployed |
+| `[SnapshotRetention]` | Sets the checkpoint retention modulus for a state type | Optional on snapshot-enabled aggregates and projections; omit it to use a configured override or fallback | Stable storage-name and CLR type-name overrides take precedence, then this attribute, then the global default (50 unless configured); the modulus must be positive |
 | `[EventStorageName]` | Stable event storage identity with versioning `(APP, MODULE, NAME, version)` | Required on all event types | Event versioning; enables safe refactoring without breaking stored events; names are immutable once deployed |
-| `[GenerateAggregateEndpoints]` | Generates silo registration, server controller, and client feature code | Required on aggregate records exposed via API | Endpoint generation; creates `Add{Aggregate}()` extension methods |
+| `[GenerateAggregateEndpoints]` | Generates runtime registration, gateway controller, and client feature code | Required on aggregate records exposed via API | Endpoint generation; creates `Add{Aggregate}()` extension methods |
 | `[GenerateProjectionEndpoints]` | Generates read-only GET endpoint and SignalR subscription code | Required on projections exposed to clients | Endpoint generation; creates projection controller and client subscription |
 | `[GenerateCommand]` | Exposes command as HTTP POST endpoint with generated client action | Required on commands that should be callable from UX | Command exposure; `Route` property controls endpoint path |
 | `[ProjectionPath]` | Defines subscription and API path for projections | Required on server projections and matching client DTOs | Subscription routing; path must match between server and client |
@@ -176,14 +186,14 @@ Applies to all contributors building sample applications or new features using t
 
 ### Project Structure
 
-Contributors write domain logic (aggregates, commands, events, projections) **in the Domain project** and UI components, custom actions, and action effects **in the Client project**. Source generators produce client artifacts (actions, DTOs, feature registrations) from Domain types; silo registrations and server endpoints are also generated.
+Contributors write domain logic (aggregates, commands, events, projections) **in the Domain project** and UI components, custom actions, and action effects **in the Client project**. Source generators produce client artifacts (actions, DTOs, feature registrations) from Domain types; runtime registrations and gateway endpoints are also generated.
 
 ```text
 {Sample}/
 ├── {Sample}.AppHost/           # Aspire orchestration (local dev)
-├── {Sample}.Silo/              # Orleans silo (thin host)
+├── {Sample}.Runtime/           # Runtime host (runs in Orleans silo)
 │   └── Program.cs              # Configuration and framework registration
-├── {Sample}.Server/            # ASP.NET API (thin host)
+├── {Sample}.Gateway/           # ASP.NET API host (thin)
 │   └── Program.cs              # Configuration and framework registration
 ├── {Sample}.Client/            # Blazor WebAssembly
 │   └── Program.cs              # Feature registration and Inlet setup
@@ -213,13 +223,13 @@ Contributors only write code in the **Domain project**; client-side actions, eff
 5. Implement aggregate reducers extending `EventReducerBase`
 6. Define projections with `[ProjectionPath]` and `[GenerateProjectionEndpoints]` (if exposed to clients)
 7. Implement projection reducers
-8. **Build** — source generators create silo registrations, server controllers, and client features
+8. **Build** — source generators create runtime registrations, gateway controllers, and client features
 9. Client subscribes via Inlet; dispatches generated actions to trigger commands
 
 ## Core Principles
 
 - **Source generation first**: Rely on generators for boilerplate; manual code for advanced cases only.
-- **Thin hosts, rich domain**: Silo/Server contain config; Domain contains behavior.
+- **Thin hosts, rich domain**: Runtime/Gateway contain config; Domain contains behavior.
 - **Redux-style state**: All client state flows through Reservoir with actions/reducers.
 - **Small projections**: Many focused projections over one monolithic view.
 - **Event immutability**: Events are facts; never modify, only version.
@@ -296,7 +306,7 @@ The framework uses keyed DI services for storage, enabling enterprise deployment
 - Brooks events can write to one Cosmos account
 - Snapshots can persist to another
 - Locking can use a dedicated blob storage account
-- Each service uses only the resources it's configured for via `MississippiDefaults.ServiceKeys`
+- Each service uses only the resources it's configured for via module-owned keyed service defaults
 
 This enables wide enterprise solutions where different teams or tenants can have isolated storage while sharing the same application infrastructure. See `.github/instructions/keyed-services.instructions.md` for registration patterns and naming conventions.
 

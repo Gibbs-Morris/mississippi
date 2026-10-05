@@ -5,10 +5,10 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client.Abstractions.State;
-using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.Events;
+using Mississippi.Reservoir.Core;
 
 
 namespace Mississippi.Inlet.Client.L0Tests;
@@ -29,8 +29,8 @@ public sealed class CompositeInletStoreTests : IDisposable
     {
         // Set up DI container with Store and ProjectionsFeatureState
         ServiceCollection services = new();
-        services.AddReservoir();
-        services.AddFeatureState<ProjectionsFeatureState>();
+        IReservoirBuilder builder = services.AddReservoir();
+        builder.AddFeatureState<ProjectionsFeatureState>();
         serviceProvider = services.BuildServiceProvider();
         store = (Store)serviceProvider.GetRequiredService<IStore>();
     }
@@ -155,9 +155,10 @@ public sealed class CompositeInletStoreTests : IDisposable
     public void DisposeCanBeCalledMultipleTimes()
     {
         // Arrange - create a new isolated store for this test
-        using ServiceProvider localServiceProvider = new ServiceCollection().AddReservoir()
-            .AddFeatureState<ProjectionsFeatureState>()
-            .BuildServiceProvider();
+        ServiceCollection services = new();
+        IReservoirBuilder builder = services.AddReservoir();
+        builder.AddFeatureState<ProjectionsFeatureState>();
+        using ServiceProvider localServiceProvider = services.BuildServiceProvider();
         Store localStore = (Store)localServiceProvider.GetRequiredService<IStore>();
         CompositeInletStore sut = new(localStore);
 

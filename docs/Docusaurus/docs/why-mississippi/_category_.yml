@@ -1,0 +1,7 @@
+label: Why Mississippi
+position: 2
+collapsed: true
+collapsible: true
+link:
+  type: doc
+  id: why-mississippi-overview
