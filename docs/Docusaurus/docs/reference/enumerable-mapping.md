@@ -22,7 +22,7 @@ Collection mappers adapt an element-level `IMapper<TFrom, TTo>` to synchronous o
 
 [`EnumerableMapper.Map`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Common.Abstractions/Mapping/EnumerableMapper.cs) rejects a null input sequence immediately, then returns a lazy `Select` sequence. Calling `Map` alone does not map its elements or materialize a collection.
 
-Enumeration invokes the element mapper in input order. Enumerating the returned sequence again runs mapping again against the input sequence; the adapter does not cache earlier results. Element-mapper failures occur when the corresponding element is enumerated.
+Enumeration invokes the element mapper in input order. Enumerating the returned sequence again re-enumerates the input and maps whatever that enumeration yields; the adapter does not cache earlier results. A repeatable source maps its items again, while a single-use or stateful source can yield no items or different items on another enumeration. Element-mapper failures occur when the corresponding element is enumerated.
 
 An empty sequence produces no elements. A null element passes to the element mapper, so that mapper determines its handling; the adapter does not remove null elements.
 
