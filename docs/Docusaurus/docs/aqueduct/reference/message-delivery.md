@@ -55,7 +55,7 @@ The current [client-grain L2 suite](https://github.com/Gibbs-Morris/mississippi/
 
 ## Summary
 
-Delivery selects connections available on the receiving gateway and awaits their writes. Treat that completion separately from durable delivery or client execution, and account for missing connections and broadcast write failures.
+The receiving callback selects local connections and awaits its writes. Broadcast senders directly await the stream provider's publication task, whose completion guarantees depend on the configured provider; there is no separate Aqueduct acknowledgment of every gateway's writes. Neither boundary establishes durable delivery or client execution.
 
 ## Next Steps
 
