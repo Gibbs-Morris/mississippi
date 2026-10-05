@@ -22,7 +22,7 @@ sidebar_label: Snapshot Persistence
 
 The [factory](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Runtime/SnapshotGrainFactory.cs) resolves a persister by `SnapshotKey`, matching the cache's version identity. On activation, the [implementation](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Runtime/SnapshotPersisterGrain.cs) parses that key from the grain's string identity.
 
-`PersistAsync(SnapshotEnvelope, CancellationToken = default)` forwards the stored key, supplied envelope, and token to one `ISnapshotStorageWriter.WriteAsync` call. It awaits that call inside the implementation.
+`PersistAsync(SnapshotEnvelope, CancellationToken = default)` forwards the stored key, supplied envelope, and token to one `ISnapshotStorageWriter.WriteAsync` call. It awaits that call inside the implementation. The normal cache caller invokes `PersistAsync(envelope)` without its activation token, so that background request receives the default `CancellationToken.None`. Cancellation of cache activation does not cancel the already-dispatched write through this argument.
 
 The persister does not rebuild state, serialize it, compare the envelope's reducer hash with the key, or validate the envelope's format and byte-size metadata. Those fields are passed to the selected storage writer.
 
