@@ -47,7 +47,7 @@ An exception from a direct `EnsureConnectedAsync` call propagates. In the action
 
 Connection construction enables SignalR's parameterless `WithAutomaticReconnect`. Its [default reconnect policy](https://learn.microsoft.com/en-us/aspnet/core/signalr/dotnet-client#automatically-reconnect) waits 0, 2, 10, and 30 seconds before four attempts, then stops and fires `Closed` if all fail. Initial startup failures are not automatically retried. Lifecycle callbacks dispatch reconnecting, reconnected, and disconnected actions; the declared `InletOptions` reconnect properties are not read by this provider.
 
-Disposal removes the provider's own lifecycle callbacks and disposes the underlying connection. It does not alter the action effect's feature-state type into the lifecycle status record.
+Disposal removes the provider's lifecycle callbacks, including `Closed`, before disposing the underlying connection. It emits no `SignalRDisconnectedAction`, so `SignalRConnectionState` can retain its previous `Connected` value after disposal. Lifecycle state alone therefore does not confirm the transport's existence after this boundary.
 
 The [builder tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Client.L0Tests/Registrations/InletBlazorSignalRBuilderTests.cs) cover scoped provider and lazy store registrations. They inspect service descriptors rather than establishing transport readiness or concurrent startup guarantees.
 
