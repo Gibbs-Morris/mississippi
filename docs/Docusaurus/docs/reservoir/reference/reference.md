@@ -122,6 +122,7 @@ Use this page as the current active reference for Reservoir's builder entry poin
 - [State flow](../concepts/state-flow.md) for reducer, notification, and effect timing.
 - [Selector reference](./selectors.md) for store selection and memoization.
 - [State restoration](./state-restoration.md) for reset/restore inputs, compatibility, and notifications.
+- [Action reducers](./action-reducers.md) for exact-type indexing and chained results.
 - Read [Reservoir Concepts](../concepts/concepts.md).
 - Read [Inlet Reference](../../inlet/reference/reference.md) for the client-sync extensions that compose on top of Reservoir.
 - Use [Archived Reservoir Docs](../../archived/client-state-management/reservoir.md) for preserved deep material.
