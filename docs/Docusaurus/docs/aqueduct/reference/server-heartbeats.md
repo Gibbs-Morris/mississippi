@@ -43,7 +43,7 @@ The [directory implementation](https://github.com/Gibbs-Morris/mississippi/blob/
 - A heartbeat for an unknown server is logged and ignored; it does not register the server.
 - Unregistration removes the entry if present and otherwise completes without adding one.
 
-Directory timestamps use its `TimeProvider`, which defaults to `TimeProvider.System`. They reflect receipt of a directory call, rather than a timestamp supplied by the gateway.
+Directory timestamps use its `TimeProvider`, which defaults to `TimeProvider.System`. They reflect receipt of a directory call, rather than a timestamp supplied by the gateway. `RegisterServerAsync`, `HeartbeatAsync`, and `UnregisterServerAsync` reject a null server ID with `ArgumentNullException` and an empty ID with `ArgumentException`; whitespace-only IDs are accepted. `HeartbeatAsync` does not validate the supplied connection count, so negative counts can be stored.
 
 Directory reactivation or a silo restart loses its in-memory registrations. Heartbeats from an already-started manager are then unknown and ignored; repeated `StartAsync` does not register again while its started flag remains true. Registration recovery needs an explicit stop/start or manager restart.
 
