@@ -34,7 +34,7 @@ The [reducers](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.C
 - Connected or reconnected sets status to `Connected`, replaces the ID and `LastConnectedAt`, resets the count to zero, and clears the error.
 - Reconnecting sets status to `Reconnecting`, assigns the action's attempt number and error, and preserves the ID and timestamps.
 - Disconnected sets status to `Disconnected`, replaces `LastDisconnectedAt` and the error, and clears the ID. It does not reset the state's reconnect count.
-- Message received replaces only `LastMessageReceivedAt`.
+- Message received replaces only `LastMessageReceivedAt`. The built-in [projection-update callback](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/ActionEffects/InletSignalRActionEffect.cs) emits this action before DTO/subscription checks. SignalR keep-alives and other hub traffic do not emit it in this path, so the timestamp is not a general transport-health signal.
 
 Fields not listed for a transition retain their prior values. Timestamps come from action payloads; the record does not maintain a timer or expire them.
 
