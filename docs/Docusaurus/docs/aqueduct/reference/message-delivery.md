@@ -47,6 +47,8 @@ The receiving callback awaits broadcast writes sequentially, but [the registry](
 
 The message records default to empty method names and arguments; `ServerMessage` also defaults to an empty connection ID, while broadcast exclusions default to null. These records do not validate their independently initialized fields. Receiving a default `ServerMessage` faults with `ArgumentException` at the registry's empty-connection-ID guard, before the missing-connection no-op. A default `AllMessage` reaches the local sender's empty-method-name guard and faults with `ArgumentException` on the first eligible connection; with no eligible connection it completes without a write. These receiver exceptions propagate through their callbacks.
 
+The receiving stream callbacks do not authenticate publishers or authorize the supplied method name. Access to the Orleans cluster and configured stream provider is therefore a trust boundary: an admitted publisher can send an `AllMessage` to the broadcast namespace/hub route and invoke that nonempty method on eligible connections. Restrict cluster/provider access to trusted publishers; endpoint authorization alone does not guard this backplane path.
+
 ## Local Write Boundary
 
 The [local sender](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Gateway/LocalMessageSender.cs) rejects a null connection and null or empty method name. Whitespace-only method names are not rejected by that guard.
