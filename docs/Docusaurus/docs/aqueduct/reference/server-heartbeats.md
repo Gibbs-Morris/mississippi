@@ -45,7 +45,7 @@ The [directory implementation](https://github.com/Gibbs-Morris/mississippi/blob/
 
 Directory timestamps use its `TimeProvider`, which defaults to `TimeProvider.System`. They reflect receipt of a directory call, rather than a timestamp supplied by the gateway. `RegisterServerAsync`, `HeartbeatAsync`, and `UnregisterServerAsync` reject a null server ID with `ArgumentNullException` and an empty ID with `ArgumentException`; whitespace-only IDs are accepted. `HeartbeatAsync` does not validate the supplied connection count, so negative counts can be stored.
 
-Directory reactivation or a silo restart loses its in-memory registrations. Heartbeats from an already-started manager are then unknown and ignored; repeated `StartAsync` does not register again while its started flag remains true. Registration recovery needs an explicit stop/start or manager restart.
+Directory reactivation or a silo restart loses its in-memory registrations. Heartbeats from an already-started manager are then unknown and ignored; repeated `StartAsync` does not register again while its started flag remains true. Registration recovery needs an explicit stop/start or manager restart. The default singleton [`ServerIdProvider`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Gateway/ServerIdProvider.cs) creates `Guid.NewGuid().ToString("N")`, a 32-character ID for that instance. A process restart creates a new ID; its heartbeats do not refresh the old registration. The old entry remains until explicit removal or directory activation loss.
 
 ## Timeout Queries And Shutdown
 
