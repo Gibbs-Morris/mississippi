@@ -50,6 +50,8 @@ The returned value contains state without a paired version. Separate calls for s
 
 ## Empty Results And Failures
 
+These null outcomes describe the built-in class-constrained implementation. The unconstrained public interface exposes `TProjection?`; that is not a promise of null for every value-type implementation. A custom implementation owns its empty-result behavior.
+
 - A latest position of `-1` (`BrookPosition.NotSet`) makes `GetAsync` return null without resolving a versioned cache.
 - An explicitly requested `NotSet` position makes `GetAtVersionAsync` return null before constructing a cache key.
 - Position `0` is a valid version and follows the normal cache route. A requested position beyond available events, including zero for an empty brook, can fail with `InvalidOperationException` from a slice read instead of returning null.
