@@ -39,6 +39,8 @@ A null description falls back to a sentence naming the command and aggregate. An
 
 Null or empty description text is ignored; whitespace text is retained. At emission, a selected property's name is used to look up its description. Without a matching custom description, the generator derives human-readable text from that name. The generated method parameter name is the camelCase form of the property name.
 
+Keep description and title strings on one line. The generator escapes backslashes and quotes for ordinary C# string literals, but retains carriage returns and line feeds; those characters can make the emitted source invalid.
+
 The entity ID parameter has the fixed description `The entity identifier`. A property or constructor parameter description does not replace it.
 
 ## Runtime Boundary
