@@ -35,7 +35,7 @@ A null description falls back to a sentence naming the command and aggregate. An
 
 ## Parameter Descriptions
 
-[`GenerateMcpParameterDescription`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateMcpParameterDescriptionAttribute.cs) accepts description text on a command property or constructor parameter. The generator first collects descriptions from public instance properties with getters. For a record, it then selects the first non-static constructor with parameters and fills descriptions not already supplied by properties. This includes an explicit parameterized record constructor, rather than only positional-record syntax; parameter names must match the selected property names for emission.
+[`GenerateMcpParameterDescription`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateMcpParameterDescriptionAttribute.cs) accepts description text on a command property or constructor parameter. The generator first collects descriptions from public instance properties declared on the command type with getters. Inherited properties are excluded from both descriptions and generated MCP parameters. For a record, it then selects the first non-static constructor with parameters and fills descriptions not already supplied by properties. This includes an explicit parameterized record constructor, rather than only positional-record syntax; parameter names must match the selected property names for emission.
 
 Null or empty description text is ignored; whitespace text is retained. At emission, a selected property's name is used to look up its description. Without a matching custom description, the generator derives human-readable text from that name. The generated method parameter name is the camelCase form of the property name.
 
@@ -43,7 +43,7 @@ Keep description and title strings on one line. The generator escapes backslashe
 
 The entity ID parameter has the fixed description `The entity identifier`. A property or constructor parameter description does not replace it. Command property names whose camelCase form is `entityId` or `cancellationToken` collide with fixed generated parameters. In particular, a public `EntityId` property emits a duplicate parameter and makes the generated method fail compilation; reserve those names for the generated parameters.
 
-A selected parameterized record constructor is invoked with every public readable property in property enumeration order. The generator does not validate constructor count, order, or compatible argument types. The constructor must accept that complete sequence: mismatches can fail compilation, while reordered same-type arguments can supply the wrong values. Name matching for descriptions alone does not establish constructor compatibility.
+A selected parameterized record constructor is invoked with every declared public readable property in property enumeration order. The generator does not validate constructor count, order, or compatible argument types. The constructor must accept that complete sequence: mismatches can fail compilation, while reordered same-type arguments can supply the wrong values. Name matching for descriptions alone does not establish constructor compatibility.
 
 ## Runtime Boundary
 
