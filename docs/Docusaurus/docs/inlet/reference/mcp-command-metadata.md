@@ -30,6 +30,8 @@ sidebar_label: Generated MCP Command Metadata
 | Namespace | The aggregate must belong to a nonempty named namespace. Global aggregates produce invalid using directives, including `using ;` and `using .Commands;`. |
 | Type identifiers | Aggregate and command simple names must be valid without C# keyword escaping. Discovered names such as `@class` or `@event` lose that escape in generated type references and fail compilation. |
 
+If discovery finds no marked commands directly in that immediate `Commands` namespace, the aggregate is omitted: no empty tools class or aggregate registration entry is emitted. Commands only in a deeper namespace such as `Commands.Admin` do not make it eligible.
+
 ## Command Tool Hints
 
 Apply [`GenerateMcpToolMetadata`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateMcpToolMetadataAttribute.cs) to the command type to supply a title, description, or behavioral hints. The [generator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway.Generators/McpAggregateToolsGenerator.cs) uses these defaults when no override is supplied:
