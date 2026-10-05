@@ -55,7 +55,7 @@ The timeout is not validated. Zero selects entries older than the query instant;
 
 `DeadServerTimeoutMultiplier` defaults to three in `AqueductOptions`, but the current production implementation does not read it. The directory does not schedule automatic timeout queries or eviction. Configuring that multiplier therefore does not establish an automatic expiry or cleanup window.
 
-`StopAsync` disposes the timer and awaits directory unregistration. Its cancellation-token parameter is not used by this implementation. Synchronous `Dispose` disposes local resources and discards the unregistration task, so disposal alone does not await its remote completion.
+`StopAsync` disposes the timer and awaits directory unregistration. Its cancellation-token parameter is not used by this implementation. If unregistration fails, the timer has already been disposed and removed, but the started flag remains true. A following `StartAsync` can then return without recreating the timer. Complete a successful stop retry before starting again, or recreate the manager, to recover from that partial shutdown. Synchronous `Dispose` disposes local resources and discards the unregistration task, so disposal alone does not await its remote completion.
 
 The startup semaphore does not serialize `StopAsync` against startup. Do not overlap start/stop/dispose calls: a racing stop can unregister before startup installs its timer, leaving subsequent heartbeats unknown. `StopAsync` also does not wait for detached heartbeat tasks already queued.
 
