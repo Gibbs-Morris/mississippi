@@ -813,6 +813,10 @@ Describe 'Public documentation policy contracts' {
             $declared = @([regex]::Matches($rule, '`([^`]+)`') | ForEach-Object { $_.Groups[1].Value })
             if ($types.Count -ne 9 -or $rule -notmatch 'before writing' -or ($declared -join ',') -ne ($types -join ',')) { throw 'Missing exhaustive page-type contract' }
         }
+        function Assert-Diagram([string]$Text) {
+            $rule = [regex]::Match($Text, '(?m)^- DOC6\.2: .+$').Value
+            if ($rule -notmatch '\*\*MUST\*\*.*introductory sentence and a clear main point') { throw 'Missing both diagram explanations' }
+        }
     }
 
     It 'restricts classification before writing to the public guide taxonomy' {
@@ -822,5 +826,12 @@ Describe 'Public documentation policy contracts' {
     It 'rejects a table-only taxonomy with an unrestricted classification rule' {
         $regressed = $policy -replace '(?m)^- DOC2[^:]*: .*exactly one of.*$', '- DOC2: Each page **MUST** use exactly one type.'
         { Assert-PageTypes $regressed } | Should -Throw '*page-type contract*'
+    }
+
+    It 'requires an introductory sentence and a clear main point for every diagram' {
+        { Assert-Diagram $policy } | Should -Not -Throw
+    }
+    It 'rejects a diagram introduction without the main point' {
+        { Assert-Diagram ($policy.Replace(' and a clear main point','')) } | Should -Throw '*diagram explanations*'
     }
 }

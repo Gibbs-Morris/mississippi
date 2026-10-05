@@ -33,7 +33,7 @@ Scope: docs/Docusaurus/docs/**/*.{md,mdx} and public-documentation authoring/rev
 - DOC5.2: Tabs **MUST** represent real parallel OS/language/hosting variants.
 - DOC5.3: Admonitions **MUST** materially change behavior and retain internal blank lines.
 - DOC6: Mermaid **SHOULD** replace screenshot diagrams.
-- DOC6.2: Every diagram **MUST** have an introduction/main point.
+- DOC6.2: Every diagram **MUST** include an introductory sentence and a clear main point. Why: Readers need context and the intended takeaway.
 - DOC6.3: Flowcharts over 4 nodes **MUST** use flowchart TB.
 - DOC6.4: Flowchart LR **MAY** occur only at 4 or fewer nodes to avoid narrow-site overflow.
 - DOC7: Runnable examples **MUST** derive from verified/newly verified samples or executable test/build evidence.
