@@ -26,6 +26,8 @@ The default Aqueduct registration adds neither a hosted-service startup adapter 
 
 The timer schedules its first callback immediately and uses [`AqueductOptions.HeartbeatIntervalMinutes`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Abstractions/AqueductOptions.cs) for its period, defaulting to one minute. Each callback queues a task that samples the connection-count provider and calls the directory's `HeartbeatAsync`.
 
+Gateway option callbacks configure the same unnamed `AqueductOptions` across hub types, and `IHeartbeatManager` is a shared non-generic singleton. Callbacks compose in registration order; a later interval assignment affects the host-wide heartbeat manager rather than only its `THub`.
+
 The interval is read when the timer is created. Changing the option does not reschedule an already-created timer.
 
 Configure gateway options through [`IServiceCollection.AddAqueduct<THub>(Action<AqueductOptions>)`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Gateway/AqueductRegistrations.cs). The runtime builder's separate `AddAqueduct` surface selects provider/namespace settings, not the gateway heartbeat interval. No gateway validator enforces a positive interval: zero produces the immediate one-shot callback without repetition, while a negative minute value fails timer construction after the server was registered. Positive periods are also limited by [.NET 10 timer construction](https://github.com/dotnet/runtime/blob/v10.0.0/src/libraries/System.Private.CoreLib/src/System/Threading/Timer.cs) to 4,294,967,294 milliseconds. The largest accepted integer minute value is 71,582; 71,583 or more throws `ArgumentOutOfRangeException` after registration, before the started flag is set.
