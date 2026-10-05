@@ -42,7 +42,7 @@ Dispatch exceptions propagate to the caller. The notifier does not catch them, r
 
 ## Registration And Ownership
 
-[`AddInletClient`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletClientRegistrations.cs) uses `TryAddScoped<IProjectionUpdateNotifier>` to create a `ProjectionNotifier` from the registered `IStore`. An earlier notifier registration is preserved by that registration call.
+[`AddInletClient`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletClientRegistrations.cs) uses `TryAddScoped<IProjectionUpdateNotifier>` to create a `ProjectionNotifier` from the registered `IStore`. An earlier notifier registration is preserved by that registration call. `AddInletClient` also adds `ProjectionsFeatureState` but does not register its typed reducers. Call the generated [`AddProjectionsFeature`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Generators/ProjectionClientRegistrationGenerator.cs), or register equivalent `ProjectionUpdatedAction<T>`, `ProjectionErrorAction<T>`, and `ProjectionConnectionChangedAction<T>` reducers, for every notified projection type. Otherwise dispatch can succeed without updating the intended projection state.
 
 Resolving this service supplies the dispatch bridge. Connection establishment, subscriptions, projection retrieval, and recovery remain responsibilities of the configured integration. Calling a notifier method does not prove a transport is connected or that projection data was fetched successfully.
 
