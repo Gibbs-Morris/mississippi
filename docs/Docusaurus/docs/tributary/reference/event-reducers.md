@@ -39,7 +39,7 @@ The root does not combine every matching reducer's output for one event. Reducer
 
 For reference-type projections with non-null input state, the root rejects a successful reducer returning that same reference with `InvalidOperationException`. [`EventReducerBase`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/EventReducerBase.cs) and the [delegate adapter](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Runtime/DelegateEventReducer.cs) also apply this guard.
 
-The guard does not deeply compare members, roll back mutations, or require every result to be non-null. Value-type projections and null input state bypass the reference-reuse check. When every reducer returns false, the root returns the original state reference. A custom `TryReduce` can mutate that object before returning false; the root does not restore its contents, and later candidates observe that mutation.
+The guard does not deeply compare members, roll back mutations, or require every result to be non-null. Value-type projections and null input state bypass the reference-reuse check. When no tried candidate succeeds, the root returns the original state reference. A custom `TryReduce` can mutate that object before returning false; the root does not restore its contents, and later candidates observe that mutation.
 
 ## Registration
 
