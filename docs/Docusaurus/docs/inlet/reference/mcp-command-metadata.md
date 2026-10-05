@@ -47,6 +47,12 @@ When the record analysis finds a parameterized constructor, the emitter uses `ne
 
 For property-based commands, generated construction uses `new() { ... }`. The command needs an accessible parameterless constructor and every selected property needs an accessible setter or init accessor. A readable getter alone does not satisfy construction; missing constructors or writable accessors make the generated method fail compilation.
 
+### Property Emission Constraints
+
+| Input | Emission boundary |
+| --- | --- |
+| Indexers | Selected by the readable-property scan, but emitted as ordinary parameters/initializer members without index arguments; generated C# is invalid. |
+
 ## Runtime Boundary
 
 The generated method constructs the command, resolves its aggregate grain by entity ID, and calls `ExecuteAsync` with the cancellation token. Changing a hint does not change that path, prevent writes, deduplicate repeated calls, or add authorization checks. An unsuccessful `OperationResult` becomes an ordinary returned string in the form `Failed to execute ... [code] message`, rather than a thrown exception or structured MCP error from this generator. A completed tool call can therefore report command failure; callers need to read the returned outcome. Execution exceptions and cancellation propagate.
