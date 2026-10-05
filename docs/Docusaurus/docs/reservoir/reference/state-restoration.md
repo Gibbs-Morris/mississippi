@@ -20,7 +20,7 @@ Reset and restore actions entering through `Store.Dispatch` replace local store 
 
 ## Action Inputs
 
-[`ResetToInitialStateAction`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Actions/ResetToInitialStateAction.cs) supplies `NotifyListeners`, defaulting to true. Reset offers the initial feature objects retained by the store at registration to its state-replacement logic; it does not construct new feature objects.
+[`ResetToInitialStateAction`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Actions/ResetToInitialStateAction.cs) supplies `NotifyListeners`, defaulting to true. Reset offers the retained reset-baseline objects to its state-replacement logic; it does not construct new feature objects per reset. The store constructor evaluates each registration's `InitialState` twice, retaining the first result as live startup state and the second as its reset baseline. The [default registration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/State/FeatureStateRegistration.cs) returns `new TState()` on each read. Nondeterministic constructors can therefore produce baseline values different from those initially exposed; repeated resets reuse that retained second result.
 
 [`RestoreStateAction`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Actions/RestoreStateAction.cs) supplies a feature-keyed `Snapshot` and the same notification flag, also defaulting to true. Supply a non-null snapshot: the record does not validate it before the store enumerates it.
 
