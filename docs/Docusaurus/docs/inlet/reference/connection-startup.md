@@ -30,7 +30,7 @@ The effect also calls `EnsureConnectedAsync` before processing supported subscri
 
 ## EnsureConnectedAsync
 
-The [built-in provider](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/ActionEffects/HubConnectionProvider.cs) checks the underlying `HubConnection.State`:
+During construction, the [built-in provider](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/ActionEffects/HubConnectionProvider.cs) resolves `HubPath`, defaulting to `/hubs/inlet`, through `NavigationManager.ToAbsoluteUri` and passes that URI to `WithUrl`. Configure the client path to match the gateway mapping; `HttpClient.BaseAddress` does not determine this hub URI. For startup it checks the underlying `HubConnection.State`:
 
 - When it is `Disconnected`, dispatch `SignalRConnectingAction`, await `StartAsync` with the supplied token, then dispatch `SignalRConnectedAction` with the connection ID and current provider time.
 - In other states, return without starting another connection or waiting for an in-progress start/reconnect to become connected.
