@@ -39,7 +39,7 @@ The [default registrations](https://github.com/Gibbs-Morris/mississippi/blob/mai
 
 [`AllMessage`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Abstractions/Messages/AllMessage.cs) contains a method name, arguments, and optional excluded connection IDs. Its receiver enumerates local connections and skips those with an aborted connection token or an ID in the exclusion list.
 
-Broadcast writes are awaited sequentially. The receiver does not catch a send failure and continue to later recipients. Neither receiver returns a client acknowledgment or a count of clients that executed the invocation.
+The receiving callback awaits broadcast writes sequentially, but [the registry](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Aqueduct.Gateway/ConnectionRegistry.cs) enumerates `ConcurrentDictionary.Values` in unspecified order. The receiver does not catch a send failure and continue: which recipients were written before a failure cannot be predicted from insertion order. Neither receiver returns a client acknowledgment or a count of clients that executed the invocation.
 
 The message records default to empty method names and arguments; `ServerMessage` also defaults to an empty connection ID, while broadcast exclusions default to null. These records do not validate their independently initialized fields.
 
