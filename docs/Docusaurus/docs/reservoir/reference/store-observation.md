@@ -32,7 +32,7 @@ For each notification, the store copies the current listener list, then calls it
 
 The subject copies its subscriber list under a lock for each publication, then calls `OnNext` synchronously in list order outside that lock. It does not serialize concurrent publications: callbacks from concurrent dispatches can overlap and their event pairs can interleave. It does not retain or replay earlier events. The DI store constructor publishes `StoreInitializedEvent` before construction returns, so an observer subscribing afterward does not receive that earlier initialization event.
 
-Ordinary dispatch exposes pre- and post-reduction events only when middleware reaches `CoreDispatch`; middleware that returns without calling `nextAction` produces neither event. Recognized restoration actions entering through `Store.Dispatch` expose pre-dispatch and restoration events. Use their payloads for the relevant boundary and read the current store separately when needed.
+Ordinary dispatch enters pre/post-reduction observation only when middleware reaches `CoreDispatch`; middleware that returns without calling `nextAction` produces neither event. The post-event is emitted only after pre-event callbacks and reduction finish successfully. A pre-event callback or reducer exception can therefore leave a dispatching event without its dispatched counterpart. Recognized restoration actions entering through `Store.Dispatch` expose pre-dispatch and restoration events. Use their payloads for the relevant boundary and read the current store separately when needed.
 
 ## Callback And Disposal Boundaries
 
