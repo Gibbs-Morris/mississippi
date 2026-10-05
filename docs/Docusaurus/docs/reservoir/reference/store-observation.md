@@ -22,7 +22,7 @@ sidebar_label: Reservoir Store Observation
 
 The [store](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs) rejects a null state listener and returns a disposable subscription. Subscribing does not immediately invoke the callback. Disposing that subscription removes the listener from future notification lists and can be repeated.
 
-Ordinary core dispatch invokes listeners after its `ActionDispatchedEvent`, even when reduction retains every state reference. Reset and restore invoke them only when their action's notification flag is true.
+Ordinary core dispatch invokes listeners after its `ActionDispatchedEvent`, even when reduction retains every state reference. Reset and restore entering directly through `Store.Dispatch` invoke them only when their action's notification flag is true. A middleware replacement passed to `nextAction` reaches ordinary `CoreDispatch` after the system-action check, so that path does not honor the restoration notification flag.
 
 For each notification, the store copies the current listener list, then calls it in order. Removing a listener during a callback does not remove it from that already-captured list; adding one affects later notifications.
 
