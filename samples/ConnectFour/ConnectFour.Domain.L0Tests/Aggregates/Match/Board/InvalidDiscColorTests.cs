@@ -55,6 +55,40 @@ public sealed class InvalidDiscColorTests
     }
 
     /// <summary>
+    ///     A full board must contain only valid player colors.
+    /// </summary>
+    /// <param name="value">The undefined serialized color value.</param>
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(3)]
+    public void IsFullRejectsUndefinedCellOccupants(
+        int value
+    )
+    {
+        DiscColor[] cells = new DiscColor[ConnectFourBoard.CellCount];
+        Array.Fill(cells, DiscColor.Red);
+        cells[ConnectFourBoard.CellCount - 1] = (DiscColor)value;
+        Assert.False(ConnectFourBoard.IsFull(ImmutableArray.Create(cells)));
+    }
+
+    /// <summary>
+    ///     Either valid player color can fill every cell.
+    /// </summary>
+    /// <param name="value">The valid player color value.</param>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void IsFullStillAcceptsPlayerColors(
+        int value
+    )
+    {
+        DiscColor color = (DiscColor)value;
+        DiscColor[] cells = new DiscColor[ConnectFourBoard.CellCount];
+        Array.Fill(cells, color);
+        Assert.True(ConnectFourBoard.IsFull(ImmutableArray.Create(cells)));
+    }
+
+    /// <summary>
     ///     Either player color can still create a horizontal winning line.
     /// </summary>
     /// <param name="value">The valid player color value.</param>

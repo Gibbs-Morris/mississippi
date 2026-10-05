@@ -108,14 +108,14 @@ internal static class ConnectFourBoard
     }
 
     /// <summary>
-    ///     Determines whether every board cell is occupied.
+    ///     Determines whether every board cell contains a valid player disc.
     /// </summary>
     /// <param name="board">The board to inspect.</param>
-    /// <returns><c>true</c> when no empty cells remain; otherwise, <c>false</c>.</returns>
+    /// <returns><c>true</c> when every cell contains a red or yellow disc; otherwise, <c>false</c>.</returns>
     public static bool IsFull(
         ImmutableArray<DiscColor> board
     ) =>
-        Normalize(board).All(cell => cell is not DiscColor.Empty);
+        Normalize(board).All(cell => cell is DiscColor.Red or DiscColor.Yellow);
 
     /// <summary>
     ///     Converts a zero-based board coordinate to its stable row-major index.
