@@ -26,7 +26,7 @@ That method rejects null, empty, or whitespace-only values. Other values are sto
 
 Configure the builder inside `AddInletBlazorSignalR`'s callback, while configuration remains open. `Build()` closes it after its initial guard and before registering services. The enclosing `finally` also closes it when the callback/build path exits, including failure. Subsequent configuration and configuration with a read-only parent service collection throw `InvalidOperationException`.
 
-Build uses `TryAddSingleton` for the options and `TryAddScoped` for `IHubConnectionProvider`. Existing registrations are preserved; registering options earlier can therefore determine the object resolved by the provider.
+Build uses `TryAddSingleton` for the options and `TryAddScoped` for `IHubConnectionProvider`. Existing registrations are preserved; registering options earlier can therefore determine the object resolved by the provider. The action effect also requires `IProjectionFetcher`. Configure `ScanProjectionDtos(...)` for the automatic fetcher and populated `IProjectionDtoRegistry`, or supply a custom fetcher and equivalent DTO-path registrations. `WithHubPath` alone does not supply that dependency; a missing fetcher can fail effect resolution before connection startup.
 
 ## URI Resolution
 
