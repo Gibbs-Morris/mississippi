@@ -71,3 +71,5 @@ Use `GetAsync` for the cursor's currently known version and `GetAtVersionAsync` 
 
 - Read [Read Models and Client Sync](../../concepts/read-models-and-client-sync.md) for the wider read flow.
 - Read [Tributary Concepts](../../tributary/concepts/concepts.md) for the reconstruction layer.
+- Read [Projection Cursors](./projection-cursors.md) for shared identity and known-position filtering.
+- Read [Projection Cache Keys](./projection-cache-keys.md) for versioned identity and activation prerequisites.
