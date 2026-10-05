@@ -793,8 +793,19 @@ Describe 'Canonical cleanup entry point' {
         ($json -join "`n" | ConvertFrom-Json).Mode | Should -Be 'NoOp'
 
         $leaseDirectory = Join-Path $TestDrive 'targeted-compatibility-leases'
-        & pwsh -NoProfile -File $scriptPath -Files README.md -SkipSamples -LeaseDirectory $leaseDirectory
-        $LASTEXITCODE | Should -Be 0
+        try {
+            & pwsh -NoProfile -File $scriptPath -Files README.md -SkipSamples -LeaseDirectory $leaseDirectory
+            $LASTEXITCODE | Should -Be 0
+            if (-not $IsWindows) {
+                ([int][System.IO.File]::GetUnixFileMode($leaseDirectory) -band 146) | Should -Be 0
+            }
+        }
+        finally {
+            if (-not $IsWindows -and (Test-Path -LiteralPath $leaseDirectory -PathType Container)) {
+                & chmod u+w -- $leaseDirectory
+                if ($LASTEXITCODE -ne 0) { throw 'Unable to restore owner write permission for the compatibility lease fixture.' }
+            }
+        }
     }
 
     It 'returns a failure when the targeted base cannot be resolved' {
