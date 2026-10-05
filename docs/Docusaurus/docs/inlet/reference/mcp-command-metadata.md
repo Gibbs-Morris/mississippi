@@ -76,6 +76,8 @@ The generated method constructs the command, resolves its aggregate grain by ent
 
 Commands and their object graphs need compatible Orleans serialization for `ExecuteAsync(object, ...)`, normally the repository's `[GenerateSerializer]`, stable `[Alias]`, and numbered `[Id]` contract. Missing copying or serialization support can fail before the handler runs and propagate rather than returning an unsuccessful `OperationResult` string.
 
+The aggregate runtime separately requires `[BrookName]` and `[SnapshotStorageName]`. Missing either can make first-call grain activation throw `InvalidOperationException` even when MCP generation and registration succeeded; `[GenerateMcpTools]` alone does not make the tool invokable.
+
 Descriptions can explain constraints, but this metadata does not enforce them. Choose text and hints that agree with the actual command handler and host authorization behavior.
 
 The [generator tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Gateway.Generators.L0Tests/McpAggregateToolsGeneratorTests.cs) cover default hints, metadata overrides, generated descriptions, and property/positional-parameter descriptions. These are generated-source assertions rather than proof of runtime permissions or idempotency.
