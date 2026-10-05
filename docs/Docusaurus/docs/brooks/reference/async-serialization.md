@@ -32,7 +32,7 @@ Both methods have an optional token defaulting to `default`. Their [reader](http
 
 The [JSON provider](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Serialization.Json/JsonSerializationProvider.cs) reports `System.Text.Json` as its format.
 
-`DeserializeAsync<T>` calls `JsonSerializer.DeserializeAsync<T>` with the source stream and token. If deserialization produces null, it throws `InvalidOperationException`, matching the provider's synchronous null-result behavior.
+`DeserializeAsync<T>` calls `JsonSerializer.DeserializeAsync<T>` with the source stream and token. If deserialization produces null, it throws `InvalidOperationException`, matching the provider's synchronous null-result behavior. The platform method [reads the stream to completion](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.jsonserializer.deserializeasync?view=net-10.0). Supply a stream bounded to one JSON document and signal EOF: an open socket can keep the operation waiting after the closing delimiter until EOF or cancellation. Concatenated values or trailing non-whitespace produce `JsonException` rather than remaining for another read.
 
 `SerializeAsync<T>` checks that the destination is non-null, serializes the complete value to a UTF-8 byte array, and then awaits `destination.WriteAsync` with the token. The token is passed to the write; it does not cancel the preceding synchronous serialization step.
 
