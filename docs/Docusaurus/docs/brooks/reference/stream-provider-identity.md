@@ -36,7 +36,7 @@ The entity ID alone is not the default stream key. Brooks with different names r
 
 `IRuntimeBuilder.AddEventSourcing` accepts an optional `Action<BrookProviderOptions>` callback. Set `OrleansStreamProviderName` there to select the host's provider. The host supplies Orleans streams and storage; this registration does not create the selected provider.
 
-Registration does not validate that the named provider exists. An incorrect name fails later when a publisher or activating subscriber calls Orleans `GetStreamProvider`. Register the matching provider in the host before using this path.
+Registration does not validate that the named provider exists. An incorrect name fails when Orleans `GetStreamProvider` is called: Brooks and UX cursors resolve it during activation, while Inlet resolves it on the first subscription to each brook. Writer lookup occurs on its publication path. Register the matching provider in the host before using this path.
 
 The [registration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Brooks.Runtime/BrooksRuntimeRegistrations.cs) adds the default factory with `TryAddSingleton<IStreamIdFactory, StreamIdFactory>`, preserving an existing unkeyed registration. Its [tests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Brooks.Runtime.L0Tests/BrooksRuntimeRegistrationsTests.cs) verify preservation and singleton lifetime. Use [Runtime Composition](../../reference/runtime-composition.md) for the complete host registration flow.
 
