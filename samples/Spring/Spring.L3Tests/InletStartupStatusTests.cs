@@ -137,7 +137,7 @@ public sealed class InletStartupStatusTests
         }
         finally
         {
-            await SpringBrowserFixture.SaveBrowserArtifactsAsync(page);
+            await SpringBrowserFixture.SaveBrowserArtifactsAsync(page, "inlet-startup");
         }
     }
 }
