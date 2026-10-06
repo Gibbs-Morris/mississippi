@@ -30,7 +30,7 @@ Use this table as a translation guide from plain-language architecture terms to 
 | Saga compensation | `WithdrawFromSourceStep.CompensateAsync` | `ICompensatable<TSaga>` | Optional rollback behavior invoked when a later step fails. |
 | Projection (domain model) | `BankAccountBalanceProjection` | `[GenerateProjectionEndpoints]`, `[ProjectionPath]`, `[BrookName]` | Read-optimized domain projection record built from events. |
 | UX projection runtime | Generated projection query/subscription runtime | `IUxProjectionGrain<TProjection>` / `UxProjectionGrain<TProjection>` | Orleans runtime abstraction that serves projection queries and versioned projection reads. |
-| Brook | `SPRING/BANKING/ACCOUNT` | `[BrookName]`, `BrookKey` | Canonical event stream identity (name + entity key). |
+| Brook | `SPRING.BANKING.ACCOUNT` | `[BrookName]`, `BrookKey` | Canonical event stream identity (name + entity key). |
 
 Notes:
 
@@ -305,7 +305,7 @@ Projections have their own `EventReducer`s. A single event stream can feed multi
 
 ## Brook
 
-A brook is a named event stream. The `[BrookName("SPRING", "BANKING", "ACCOUNT")]` attribute defines a three-part hierarchical name. Multiple aggregates and projections can share the same brook name when they consume the same event stream. The `BrookKey` type combines the brook name with a specific entity ID at runtime.
+A brook is a named event stream. The `[BrookName("SPRING", "BANKING", "ACCOUNT")]` attribute defines the dotted name `SPRING.BANKING.ACCOUNT`, as [BankAccountAggregate](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/BankAccountAggregate.cs) declares. Multiple aggregates and projections can share the same brook name when they consume the same event stream. The `BrookKey` type combines that name with a specific entity ID, for example `SPRING.BANKING.ACCOUNT|acc-123`. See [Brooks Stream Keys](../../../brooks/reference/stream-keys.md) for the encoding and validation rules.
 
 ## How Concepts Connect
 
