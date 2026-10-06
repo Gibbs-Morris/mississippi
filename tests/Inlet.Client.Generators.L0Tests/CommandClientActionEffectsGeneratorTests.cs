@@ -274,6 +274,31 @@ public class CommandClientActionEffectsGeneratorTests
     }
 
     /// <summary>
+    ///     Commands outside aggregate namespaces do not produce an action effect.
+    /// </summary>
+    [Fact]
+    public void GeneratorSkipsCommandOutsideAggregateNamespaces()
+    {
+        const string commandSource = """
+                                     using Mississippi.Inlet.Generators.Abstractions;
+
+                                     namespace TestApp.Commands
+                                     {
+                                         [GenerateCommand]
+                                         public sealed record PlaceOrder;
+                                     }
+                                     """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+        Assert.Empty(diagnostics);
+        Assert.Empty(
+            output.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        Assert.All(runResult.Results, result => Assert.Null(result.Exception));
+        Assert.Empty(runResult.GeneratedTrees);
+    }
+
+    /// <summary>
     ///     Multiple commands should generate separate action effects.
     /// </summary>
     [Fact]
