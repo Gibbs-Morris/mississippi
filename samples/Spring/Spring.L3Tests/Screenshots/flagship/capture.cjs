@@ -34,12 +34,12 @@ const assert = require('node:assert/strict');
   page.setDefaultTimeout(60000);
   const connected = () => page.getByRole('button', { name: 'Connection status: Connected', exact: true }).filter({ hasText: /^\s*Connected\s*$/ }).waitFor();
   const balance = (p, account, amount) => expect(p.getByLabel('Account ' + account + ' live balance', { exact: true })).toHaveText(amount, { timeout: 120000 });
-  const waitForGate = async (promise, phase) => {
+  const waitForGate = async (promise, phase, timeout = 60000) => {
     manifest.phase = phase;
     let timer;
     try {
       return await Promise.race([promise, new Promise((_, reject) => {
-        timer = setTimeout(() => reject(new Error('Timed out waiting for ' + phase)), 60000);
+        timer = setTimeout(() => reject(new Error('Timed out waiting for ' + phase)), timeout);
       })]);
     } finally {
       clearTimeout(timer);
@@ -53,6 +53,10 @@ const assert = require('node:assert/strict');
       const body = await waitForGate(response.json(), 'protected-read-body');
       await expect(outcome.getByRole('alert')).toHaveCount(0);
       await expect(count).toHaveText(String(body.authenticatedAccessCount));
+    } else if (status === 404) {
+      await expect(outcome.getByRole('alert')).toHaveCount(0);
+      await expect(count).toHaveCount(0);
+      await expect(outcome).toContainText('No projection data received yet.');
     } else {
       // ResponseHeadersRead denies and disposes the response without consuming its body.
       await expect(outcome.getByRole('alert')).toContainText('HTTP ' + status);
@@ -92,6 +96,27 @@ const assert = require('node:assert/strict');
       : 'banking-operator,transfer-operator';
     const claims = ['AuthProof Claim', 'Full Access'].includes(persona) ? 'spring.permission=auth-proof' : undefined;
     return !anonymous && headers['x-spring-roles'] === roles && headers['x-spring-claims'] === claims;
+  };
+  const refreshUntilCount = async (endpoint, persona, expectedCount) => {
+    const deadline = Date.now() + 120000;
+    for (;;) {
+      const remaining = deadline - Date.now();
+      assert.ok(remaining > 0, 'Projection did not reach authenticated count ' + expectedCount);
+      const refresh = page.getByRole('button', { name: 'Refresh protected read', exact: true });
+      await expect(refresh).toBeEnabled({ timeout: remaining });
+      const read = page.waitForRequest(r => r.method() === 'GET' && r.url().endsWith(endpoint) && hasHttpPersona(r, persona), { timeout: Math.max(1, deadline - Date.now()) });
+      await refresh.tap({ timeout: Math.max(1, deadline - Date.now()) });
+      const request = await read;
+      const response = await waitForGate(request.response(), 'protected-refresh-response', Math.max(1, deadline - Date.now()));
+      assert.ok(response, 'Protected refresh received no HTTP response');
+      assert.ok([200, 404].includes(response.status()), 'Unexpected protected-read status ' + response.status());
+      await waitForGate(verifyProtectedRead(response, response.status()), 'protected-read-catch-up', Math.max(1, deadline - Date.now()));
+      if (response.status() === 200) {
+        const body = await waitForGate(response.json(), 'protected-count-body', Math.max(1, deadline - Date.now()));
+        assert.ok(Number.isInteger(body.authenticatedAccessCount) && body.authenticatedAccessCount >= 0 && body.authenticatedAccessCount <= expectedCount);
+        if (body.authenticatedAccessCount === expectedCount) return;
+      }
+    }
   };
   const captureAuthOff = async () => {
     await page.goto(base + '/auth-proof', { waitUntil: 'domcontentloaded' });
@@ -278,7 +303,13 @@ const assert = require('node:assert/strict');
         const personaRead = page.waitForResponse(r => r.request().method() === 'GET' && r.url().endsWith(readPath) && hasHttpPersona(r.request(), persona));
         await page.getByRole('button', { name: persona, exact: true }).tap();
         const selectedRead = await personaRead;
-        await verifyProtectedRead(selectedRead, expectedRead);
+        if (expectedRead === 200) {
+          assert.ok([200, 404].includes(selectedRead.status()), 'Unexpected persona read status ' + selectedRead.status());
+          await verifyProtectedRead(selectedRead, selectedRead.status());
+          await refreshUntilCount(readPath, persona, authenticatedCount);
+        } else {
+          await verifyProtectedRead(selectedRead, expectedRead);
+        }
         const repeatedPersonaRead = page.waitForResponse(r => r.request().method() === 'GET' && r.url().endsWith(readPath) && hasHttpPersona(r.request(), persona));
         await page.getByRole('button', { name: persona, exact: true }).tap();
         const repeatedRead = await repeatedPersonaRead;
@@ -291,13 +322,13 @@ const assert = require('node:assert/strict');
         if (persona !== 'Unauthenticated') authenticatedCount++;
         const response = page.getByRole('region', { name: 'Auth Proof command responses', exact: true }).getByRole('status');
         await expect(response).toContainText(persona === 'Unauthenticated' ? 'Latest request: failed.' : 'Latest response: accepted.');
-        const manualRead = page.waitForResponse(r => r.request().method() === 'GET' && r.url().endsWith(readPath) && hasHttpPersona(r.request(), persona));
-        await page.getByRole('button', { name: 'Refresh protected read', exact: true }).tap();
-        const refreshedRead = await manualRead;
-        await verifyProtectedRead(refreshedRead, expectedRead);
         if (expectedRead === 200) {
+          await refreshUntilCount(readPath, persona, authenticatedCount);
           await expect(page.getByLabel('Authenticated access events observed', { exact: true })).toHaveText(String(authenticatedCount));
         } else {
+          const manualRead = page.waitForResponse(r => r.request().method() === 'GET' && r.url().endsWith(readPath) && hasHttpPersona(r.request(), persona));
+          await page.getByRole('button', { name: 'Refresh protected read', exact: true }).tap();
+          await verifyProtectedRead(await manualRead, expectedRead);
           await expect(page.locator('.spring-auth-outcome').getByRole('alert')).toContainText('HTTP ' + expectedRead);
           await expect(page.getByLabel('Authenticated access events observed', { exact: true })).toHaveCount(0);
         }

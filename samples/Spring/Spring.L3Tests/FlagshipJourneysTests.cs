@@ -53,6 +53,12 @@ public sealed class FlagshipJourneysTests
                 .ToHaveTextAsync(
                     body.GetProperty("authenticatedAccessCount").GetInt32().ToString(CultureInfo.InvariantCulture));
         }
+        else if (status == 404)
+        {
+            await Expect(outcome.GetByRole(AriaRole.Alert)).ToHaveCountAsync(0);
+            await Expect(count).ToHaveCountAsync(0);
+            await Expect(outcome).ToContainTextAsync("No projection data received yet.");
+        }
         else
         {
             // Denied ResponseHeadersRead results are disposed before reading the body.
@@ -95,6 +101,53 @@ public sealed class FlagshipJourneysTests
         return !anonymous &&
                string.Equals(roles, expectedRoles, StringComparison.Ordinal) &&
                string.Equals(claims, expectedClaims, StringComparison.Ordinal);
+    }
+
+    private static async Task WaitForAuthProofCountAsync(
+        IPage page,
+        string endpoint,
+        string persona,
+        int expectedCount
+    )
+    {
+        using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken);
+        deadline.CancelAfter(TimeSpan.FromMilliseconds(ProjectionTimeout));
+        while (true)
+        {
+            deadline.Token.ThrowIfCancellationRequested();
+            ILocator refresh = page.GetByRole(
+                AriaRole.Button,
+                new()
+                {
+                    Name = "Refresh protected read",
+                    Exact = true,
+                });
+            await Expect(refresh).ToBeEnabledAsync().WaitAsync(deadline.Token);
+            Task<IRequest> requestTask = page.WaitForRequestAsync(request =>
+                (request.Method == "GET") &&
+                request.Url.EndsWith(endpoint, StringComparison.Ordinal) &&
+                HasHttpPersona(request, persona));
+            await refresh.ClickAsync().WaitAsync(deadline.Token);
+            IRequest request = await requestTask.WaitAsync(deadline.Token);
+            IResponse response = Assert.IsType<IResponse>(
+                await request.ResponseAsync().WaitAsync(deadline.Token),
+                false);
+            Assert.True(
+                response.Status is 200 or 404,
+                $"Unexpected protected read: HTTP {response.Status.ToString(CultureInfo.InvariantCulture)}.");
+            await ExpectAuthProofReadAsync(page, response, response.Status).WaitAsync(deadline.Token);
+            if (response.Status == 200)
+            {
+                JsonElement body = Assert.IsType<JsonElement>(await response.JsonAsync().WaitAsync(deadline.Token));
+                int observedCount = body.GetProperty("authenticatedAccessCount").GetInt32();
+                Assert.InRange(observedCount, 0, expectedCount);
+                if (observedCount == expectedCount)
+                {
+                    return;
+                }
+            }
+        }
     }
 
     /// <summary>Task navigation keeps both account anchors and the shared link bound to the current pair.</summary>
@@ -488,14 +541,7 @@ public sealed class FlagshipJourneysTests
                             })
                         .GetByRole(AriaRole.Status))
                 .ToContainTextAsync("Latest response: accepted.");
-            await page.GetByRole(
-                    AriaRole.Button,
-                    new()
-                    {
-                        Name = "Refresh protected read",
-                        Exact = true,
-                    })
-                .ClickAsync();
+            await WaitForAuthProofCountAsync(page, endpoint, "Full Access", 1);
             await Expect(
                     page.GetByLabel(
                         "Authenticated access events observed",
@@ -560,6 +606,10 @@ public sealed class FlagshipJourneysTests
             Assert.Null(
                 await allowed.FinishedAsync()
                     .WaitAsync(TimeSpan.FromMilliseconds(ProjectionTimeout), TestContext.Current.CancellationToken));
+            JsonElement obsoleteBody = Assert.IsType<JsonElement>(
+                await allowed.JsonAsync()
+                    .WaitAsync(TimeSpan.FromMilliseconds(ProjectionTimeout), TestContext.Current.CancellationToken));
+            Assert.Equal(1, obsoleteBody.GetProperty("authenticatedAccessCount").GetInt32());
             await page.Locator("summary")
                 .Filter(
                     new()
@@ -946,6 +996,7 @@ public sealed class FlagshipJourneysTests
                     Name = "Auth Proof command responses",
                     Exact = true,
                 });
+            int authenticatedCount = 0;
             foreach ((string persona, int authenticated, int policy, int role, int read) in personas)
             {
                 Task<IResponse> projectionResponse = page.WaitForResponseAsync(response =>
@@ -961,7 +1012,23 @@ public sealed class FlagshipJourneysTests
                         })
                     .ClickAsync();
                 IResponse initialRead = await projectionResponse;
-                await ExpectAuthProofReadAsync(page, initialRead, read);
+                if (read == 200)
+                {
+                    Assert.True(
+                        initialRead.Status is 200 or 404,
+                        $"Unexpected protected read: HTTP {initialRead.Status.ToString(CultureInfo.InvariantCulture)}.");
+                    await ExpectAuthProofReadAsync(page, initialRead, initialRead.Status);
+                    await WaitForAuthProofCountAsync(
+                        page,
+                        $"/api/projections/auth-proof/{entityId}",
+                        persona,
+                        authenticatedCount);
+                }
+                else
+                {
+                    await ExpectAuthProofReadAsync(page, initialRead, read);
+                }
+
                 Task<IResponse> repeatedPersonaRead = page.WaitForResponseAsync(response =>
                     (response.Request.Method == "GET") &&
                     response.Url.EndsWith($"/api/projections/auth-proof/{entityId}", StringComparison.Ordinal) &&
@@ -1005,6 +1072,11 @@ public sealed class FlagshipJourneysTests
                             })
                         .ClickAsync();
                     Assert.Equal(status, (await responseTask).Status);
+                    if ((route == "authenticated") && (status == 200))
+                    {
+                        authenticatedCount++;
+                    }
+
                     await Expect(commandResponses.GetByRole(AriaRole.Status))
                         .ToContainTextAsync(status == 200 ? "Latest response: accepted." : "Latest request: failed.");
                     if (status != 200)
@@ -1028,14 +1100,8 @@ public sealed class FlagshipJourneysTests
                 Assert.Equal(role, (await sagaResponse).Status);
             }
 
-            await page.GetByRole(
-                    AriaRole.Button,
-                    new()
-                    {
-                        Name = "Refresh protected read",
-                        Exact = true,
-                    })
-                .ClickAsync();
+            Assert.Equal(4, authenticatedCount);
+            await WaitForAuthProofCountAsync(page, $"/api/projections/auth-proof/{entityId}", "Full Access", 4);
             await Expect(
                     page.GetByLabel(
                         "Authenticated access events observed",
