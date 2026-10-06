@@ -78,6 +78,7 @@ public sealed class BankAccountSmokeTests
             $"the mobile operations page should not overflow horizontally: {mobileOverflowEvidence}");
         await page.SetViewportSizeAsync(1440, 900);
         await Expect(page.Locator("html")).ToHaveAttributeAsync("data-rf-theme", "dark");
+        await page.Locator("details.spring-appearance > summary").ClickAsync();
         ILocator lightThemeButton = page.GetByRole(
             AriaRole.Button,
             new()

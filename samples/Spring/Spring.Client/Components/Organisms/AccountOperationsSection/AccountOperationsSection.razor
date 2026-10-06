@@ -1,230 +1,225 @@
 @using Mississippi.Refraction.Client.Components.Molecules
 @namespace MississippiSamples.Spring.Client.Components.Organisms
 
-<header>
-    <h2 id="@PanelHeadingId">@PanelLabel: @SelectedEntityId</h2>
-    <button type="button" @onclick="OnSwitchAccount" aria-label="@($"Switch {PanelLabel} account")">Switch</button>
-</header>
-
-<Pane Title="Open Account">
-    <fieldset disabled="@(IsExecutingOrLoading || IsAccountOpen)">
-        <legend>Open Account</legend>
-        @if (IsAccountOpen)
+<div class="spring-account">
+    <header class="spring-account-heading">
+        <h2 id="@PanelHeadingId">
+            <span>@($"{PanelLabel}: ")</span><code>@SelectedEntityId</code>
+        </h2>
+        <button type="button" @onclick="OnSwitchAccount" aria-label="@($"Switch {PanelLabel} account")">Switch</button>
+    </header>
+    <section class="spring-balance" aria-label="@($"{PanelLabel} live account")">
+        @if (BalanceProjection is not null)
         {
-            <p>
-                <em>Account is already open.</em>
+            <p class="spring-holder" data-spring-holder="@InputIdPrefix">@BalanceProjection.HolderName</p>
+            <p class="spring-balance-label">Live balance</p>
+            <output class="spring-balance-value" data-spring-balance="@InputIdPrefix"
+                    aria-label="@($"{PanelLabel} live balance")" aria-live="polite" aria-atomic="true">
+                @FormatAmount(BalanceProjection.Balance)
+            </output>
+            <p data-spring-account-status="@InputIdPrefix">@(BalanceProjection.IsOpen ? "Open" : "Closed")</p>
+            <p class="spring-projection-meta">
+                Balance projection version @BalanceVersion ·
+                @(IsLiveConnectionConnected ? "SignalR connected" : "SignalR not connected")
             </p>
         }
         else
         {
-            <div>
-                <label for="@HolderNameInputId">@PanelLabel holder name</label>
-                <InputText id="@HolderNameInputId"
-                           type="text"
-                           Value="HolderName"
-                           ValueChanged="HolderNameChanged"
-                           ValueExpression="() => HolderName"
-                           placeholder="Account holder name"/>
-            </div>
-            <div>
-                @RenderAmountInput(InitialDepositInputId, $"{PanelLabel} initial deposit (£)", InitialDeposit, InitialDepositChanged, SetInitialDepositValidity, IsExecutingOrLoading)
-            </div>
-            <button type="button" @onclick="OnOpenAccount" disabled="@(IsExecutingOrLoading || !isInitialDepositValid)">
-                Open Account
-            </button>
+            <h3>@(IsBalanceLoading ? "Loading the live account" : "No account data received")</h3>
+            <p>
+                Opening a new account? Send the command below, then wait for its balance.
+                If this ID already exists, check the connection and any read error.
+            </p>
         }
-    </fieldset>
-</Pane>
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <p class="spring-read-error" role="alert">
+                <strong>Balance read:</strong> @ErrorMessage
+            </p>
+        }
+    </section>
+    @if (!IsAccountOpen)
+    {
+        <Pane Title="Open Account">
+            <fieldset class="spring-action-form" disabled="@IsExecutingOrLoading">
+                <legend>Open @PanelLabel</legend>
+                <InputField Id="@HolderNameInputId" Label="@($"{PanelLabel} holder name")" Value="@HolderName"
+                            ValueChanged="@HolderNameChanged" IsDisabled="@IsExecutingOrLoading" HelperText="A name is required."/>
+                @RenderAmountInput(InitialDepositInputId, $"{PanelLabel} initial deposit (£)", InitialDeposit, InitialDepositChanged, SetInitialDepositValidity, IsExecutingOrLoading)
+                <button type="button" class="spring-primary" @onclick="OnOpenAccount" disabled="@(IsExecutingOrLoading || !isInitialDepositValid)">Open Account</button>
+                <p>Use a non-negative initial deposit. The domain validates the request.</p>
+            </fieldset>
+        </Pane>
+    }
 
-<Pane Title="Deposit (£)">
-    <fieldset disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
-        <legend>Deposit Funds (GBP)</legend>
-        <div>
+    <Pane Title="Deposit">
+        <fieldset class="spring-action-form" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
+            <legend>Add money to @PanelLabel</legend>
             @RenderAmountInput(DepositAmountInputId, $"{PanelLabel} deposit amount (£)", DepositAmount, DepositAmountChanged, SetDepositAmountValidity, IsExecutingOrLoading || !IsAccountOpen)
-        </div>
-        <button type="button" @onclick="OnDeposit" disabled="@(IsExecutingOrLoading || !IsAccountOpen || !isDepositAmountValid)">
-            Deposit £
-        </button>
-        <div>
-            <span>Quick:</span>
-            <button type="button" @onclick="OnDepositSingle100" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">+£100</button>
-            <button type="button" @onclick="OnDepositBurst20" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">20×£5</button>
-            <button type="button" @onclick="OnDepositBurst200" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">200×£10</button>
-        </div>
-    </fieldset>
-</Pane>
-
-<Pane Title="Withdraw">
-    <fieldset disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
-        <legend>Withdraw Funds</legend>
-        <div>
-            @RenderAmountInput(WithdrawAmountInputId, $"{PanelLabel} withdrawal amount (£)", WithdrawAmount, WithdrawAmountChanged, SetWithdrawAmountValidity, IsExecutingOrLoading || !IsAccountOpen)
-        </div>
-        <button type="button" @onclick="OnWithdraw" disabled="@(IsExecutingOrLoading || !IsAccountOpen || !isWithdrawAmountValid)">Withdraw</button>
-        <div>
-            <span>Quick:</span>
-            <button type="button" @onclick="OnWithdrawSingle100" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">-£100</button>
-            <button type="button" @onclick="OnWithdrawBurst20" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">20×£5</button>
-            <button type="button" @onclick="OnWithdrawBurst200" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">200×£10</button>
-        </div>
-    </fieldset>
-</Pane>
-
-<Pane Title="Transfer" id="@TransferPanelId">
-    <div class="spring-transfer__content">
-        <fieldset class="spring-transfer__form" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
-            <legend>Transfer Between Accounts</legend>
-            <div class="spring-transfer__field">
-                <label for="@TransferDestinationInputId">@PanelLabel transfer destination account</label>
-                <InputText id="@TransferDestinationInputId"
-                           type="text"
-                           disabled="@IsTransferDestinationReadOnly"
-                           readonly="@IsTransferDestinationReadOnly"
-                           Value="@TransferDestinationAccountId"
-                           ValueChanged="TransferDestinationAccountIdChanged"
-                           ValueExpression="() => TransferDestinationAccountId"
-                           placeholder="Destination account ID"/>
-            </div>
-            <div class="spring-transfer__field">
-                <label for="@TransferAmountInputId">@PanelLabel transfer amount (£)</label>
-                <InputNumber id="@TransferAmountInputId"
-                             Value="TransferAmount"
-                             ValueChanged="TransferAmountChanged"
-                             ValueExpression="() => TransferAmount"
-                             placeholder="0.00"
-                             step="0.01"
-                             min="0"/>
-            </div>
-            <button type="button"
-                    @onclick="OnStartTransfer"
-                    disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
-                Start Transfer
-            </button>
+            <button type="button" class="spring-primary" @onclick="OnDeposit" disabled="@(IsExecutingOrLoading || !IsAccountOpen || !isDepositAmountValid)">Deposit £</button>
+            <p>A positive amount creates a deposit event.</p>
         </fieldset>
+    </Pane>
+    <details class="spring-task-disclosure" id="@($"{InputIdPrefix}-withdraw-task")">
+        <summary>Withdraw money</summary>
+        <Pane Title="Withdraw">
+            <fieldset class="spring-action-form" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
+                <legend>Take money from @PanelLabel</legend>
+                @RenderAmountInput(WithdrawAmountInputId, $"{PanelLabel} withdrawal amount (£)", WithdrawAmount, WithdrawAmountChanged, SetWithdrawAmountValidity, IsExecutingOrLoading || !IsAccountOpen)
+                <button type="button" @onclick="OnWithdraw" disabled="@(IsExecutingOrLoading || !IsAccountOpen || !isWithdrawAmountValid)">Withdraw</button>
+                <p>The domain rejects insufficient funds.</p>
+            </fieldset>
+        </Pane>
+    </details>
+    @if (!IsAccountOpen)
+    {
+        <p class="spring-prerequisite">Open this account before depositing, withdrawing or transferring.</p>
+    }
+    <details class="spring-task-disclosure" id="@($"{InputIdPrefix}-transfer-task")" open="@(!string.IsNullOrWhiteSpace(TransferSagaId))">
+        <summary>Transfer to the other account</summary>
+        <Pane Title="Transfer" id="@TransferPanelId">
+            <div class="spring-transfer-content">
+                <fieldset class="spring-action-form" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
+                    <legend>Move money to the other account</legend>
+                    <InputField Id="@TransferDestinationInputId" Label="@($"{PanelLabel} transfer destination account")"
+                                Value="@TransferDestinationAccountId" ValueChanged="@TransferDestinationAccountIdChanged"
+                                IsReadOnly="@IsTransferDestinationReadOnly" IsDisabled="@(IsTransferDestinationReadOnly || IsExecutingOrLoading || !IsAccountOpen)"
+                                HelperText="Destination follows the other selected account."/>
+                    @RenderAmountInput(TransferAmountInputId, $"{PanelLabel} transfer amount (£)", TransferAmount, TransferAmountChanged, SetTransferAmountValidity, IsExecutingOrLoading || !IsAccountOpen)
+                    <button type="button" @onclick="OnStartTransfer" disabled="@(IsExecutingOrLoading || !IsAccountOpen || !isTransferAmountValid)">Start Transfer</button>
+                    <p>
+                        A saga withdraws from this account, then deposits into the other account.
+                        Acceptance of its start request is separate from completion.
+                    </p>
+                </fieldset>
+                <TelemetryStrip State="@TransferStatusState" id="@TransferStatusId" data-spring-transfer-status="true"
+                                aria-label="@($"{PanelLabel} transfer status")">
+                    <div class="spring-transfer-status">
+                        @if (!string.IsNullOrWhiteSpace(TransferSagaId))
+                        {
+                            <span>
+                                <strong>Transfer saga ID:</strong> @TransferSagaId
+                            </span>
+                        }
+                        @if (TransferStatusProjection is null)
+                        {
+                            <span>@(string.IsNullOrWhiteSpace(TransferSagaId) ? "Start a transfer to see saga status." : "Waiting for transfer status.")</span>
+                            @if (!string.IsNullOrWhiteSpace(TransferSagaId))
+                            {
+                                <p>An ID is assigned before acceptance. Check the transfer-start response if no status arrives.</p>
+                            }
+                        }
+                        else
+                        {
+                            <span>
+                                <strong>Phase:</strong> @TransferStatusProjection.Phase
+                            </span>
+                            <p>@TransferOutcomeText</p>
+                            <span>
+                                <strong>Last completed step:</strong> @LastCompletedStepText
+                            </span>
+                            <span class="spring-step-key">Steps: 0 = source withdrawal · 1 = destination deposit</span>
+                            @if (TransferStatusProjection.StartedAt is not null)
+                            {
+                                <span>
+                                    <strong>Started:</strong> @FormatTransferTimestamp(TransferStatusProjection.StartedAt)
+                                </span>
+                            }
 
-        <TelemetryStrip State="@TransferStatusState"
-                        id="@TransferStatusId"
-                        data-spring-transfer-status="true"
-                        aria-label="@($"{PanelLabel} transfer status")">
-            <div class="spring-transfer__status-details">
-                @if (!string.IsNullOrWhiteSpace(TransferSagaId))
+                            @if (TransferStatusProjection.CompletedAt is not null)
+                            {
+                                <span>
+                                    <strong>Finished:</strong> @FormatTransferTimestamp(TransferStatusProjection.CompletedAt)
+                                </span>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(TransferStatusProjection.ErrorCode))
+                            {
+                                <span>
+                                    <strong>Error code:</strong> @TransferStatusProjection.ErrorCode
+                                </span>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(TransferStatusProjection.ErrorMessage))
+                            {
+                                <span>
+                                    <strong>Error:</strong> @TransferStatusProjection.ErrorMessage
+                                </span>
+                            }
+                        }
+                    </div>
+                </TelemetryStrip>
+                @if (!string.IsNullOrEmpty(TransferReadError))
                 {
-                    <span>
-                        <strong>Transfer saga ID:</strong> @TransferSagaId
-                    </span>
-                }
-
-                @if (TransferStatusProjection is null)
-                {
-                    <span>@(string.IsNullOrWhiteSpace(TransferSagaId) ? "Start a transfer to see saga status." : "Waiting for transfer status.")</span>
-                }
-                else
-                {
-                    <span>
-                        <strong>Phase:</strong> @TransferStatusProjection.Phase
-                    </span>
-                    <span>
-                        <strong>Last completed step:</strong> @LastCompletedStepText
-                    </span>
-                    @if (TransferStatusProjection.StartedAt is not null)
-                    {
-                        <span>
-                            <strong>Started:</strong> @FormatTransferTimestamp(TransferStatusProjection.StartedAt)
-                        </span>
-                    }
-
-                    @if (TransferStatusProjection.CompletedAt is not null)
-                    {
-                        <span>
-                            <strong>Finished:</strong> @FormatTransferTimestamp(TransferStatusProjection.CompletedAt)
-                        </span>
-                    }
-
-                    @if (!string.IsNullOrWhiteSpace(TransferStatusProjection.ErrorCode))
-                    {
-                        <span>
-                            <strong>Error code:</strong> @TransferStatusProjection.ErrorCode
-                        </span>
-                    }
-
-                    @if (!string.IsNullOrWhiteSpace(TransferStatusProjection.ErrorMessage))
-                    {
-                        <span>
-                            <strong>Error:</strong> @TransferStatusProjection.ErrorMessage
-                        </span>
-                    }
+                    <p class="spring-read-error" role="alert">
+                        <strong>Transfer status read:</strong> @TransferReadError
+                    </p>
                 }
             </div>
-        </TelemetryStrip>
-    </div>
-</Pane>
-
-<section>
-    <h2>Account Status</h2>
-    @if (BalanceProjection is not null)
-    {
-        <div>
-            <div>
-                <span>Balance:</span>
-                <span>@BalanceProjection.Balance.ToString("C")</span>
-            </div>
-            <div>
-                <span>Holder:</span>
-                <span>@BalanceProjection.HolderName</span>
-            </div>
-            <div>
-                <span>Status:</span>
-                <span>@(BalanceProjection.IsOpen ? "Open" : "Closed")</span>
-            </div>
+        </Pane>
+    </details>
+    <section class="spring-ledger" aria-label="@($"{PanelLabel} transaction ledger")">
+        <div class="spring-ledger-heading">
+            <h3>Transaction ledger</h3><span>Latest 20</span>
         </div>
-    }
-    else
-    {
-        <div>
-            <h3>Awaiting Data</h3>
-            <p>Open an account to begin viewing real-time projection data.</p>
-        </div>
-    }
-
-    @if (!string.IsNullOrEmpty(ErrorMessage))
-    {
-        <div role="alert">
-            <strong>Error:</strong> @ErrorMessage
-        </div>
-    }
-
-    @if (LastCommandSucceeded is true)
-    {
-        <div role="status">
-            Command executed successfully.
-        </div>
-    }
-</section>
-
-<section>
-    <h2>Transaction Ledger</h2>
-    @if (LedgerProjection?.Entries.Length > 0)
-    {
-        <table>
-            <thead>
-            <tr>
-                <th>Type</th>
-                <th>Amount (£)</th>
-            </tr>
-            </thead>
-            <tbody>
-            @foreach (LedgerEntryDto entry in LedgerProjection.Entries)
-            {
+        <p>Deposits and withdrawals appear here. The opening deposit is included in the balance above.</p>
+        @if (!string.IsNullOrEmpty(LedgerError))
+        {
+            <p class="spring-read-error" role="alert">
+                <strong>Ledger read:</strong> @LedgerError
+            </p>
+        }
+        @if (LedgerProjection is null)
+        {
+            <p role="status">@(IsLedgerLoading ? "Loading the ledger…" : "No ledger data received yet.")</p>
+        }
+        else if (LedgerProjection.Entries.Length == 0)
+        {
+            <p>No transactions yet. Make a deposit to create the first ledger entry.</p>
+        }
+        else
+        {
+            <table>
+                <caption>@PanelLabel · most recent entries first · projection version @LedgerVersion</caption>
+                <thead>
                 <tr>
-                    <td>@entry.EntryType</td>
-                    <td>@entry.Amount</td>
+                    <th scope="col">Sequence</th><th scope="col">Type</th><th scope="col">Amount (GBP)</th>
                 </tr>
-            }
-            </tbody>
-        </table>
-    }
-    else
-    {
-        <p>No transactions yet.</p>
-    }
-</section>
+                </thead>
+                <tbody>
+                @foreach (LedgerEntryDto entry in LedgerProjection.Entries)
+                {
+                    <tr>
+                        <td>@entry.Sequence</td><td>@entry.EntryType</td><td>@FormatAmount(entry.Amount)</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    </section>
+    <details class="spring-bursts">
+        <summary>Quick actions &amp; command bursts</summary>
+        <p>
+            Send one command or many independent commands with no retry.
+            Compare their responses with the live balance and the retained ledger entries.
+        </p>
+        <fieldset disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
+            <legend>Deposit into @PanelLabel</legend>
+            <div class="spring-burst-buttons">
+                <button type="button" @onclick="OnDepositSingle100">+£100</button>
+                <button type="button" @onclick="OnDepositBurst20">20×£5</button><button type="button" @onclick="OnDepositBurst200">200×£10</button>
+            </div>
+        </fieldset>
+        <fieldset disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
+            <legend>Withdraw from @PanelLabel</legend>
+            <div class="spring-burst-buttons">
+                <button type="button" @onclick="OnWithdrawSingle100">-£100</button>
+                <button type="button" @onclick="OnWithdrawBurst20">20×£5</button><button type="button" @onclick="OnWithdrawBurst200">200×£10</button>
+            </div>
+        </fieldset>
+        <p>
+            Totals: £100, £100 and £2,000 respectively. Withdrawals can be rejected individually if funds run out.
+            Withdrawal notifications are simulated in server logs.
+        </p>
+    </details>
+</div>

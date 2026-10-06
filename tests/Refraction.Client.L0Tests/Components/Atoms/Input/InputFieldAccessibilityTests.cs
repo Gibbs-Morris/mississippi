@@ -85,11 +85,11 @@ public sealed class InputFieldAccessibilityTests : BunitContext
         foreach (string name in new[] { "name", "autocomplete", "inputmode", "aria-label", "aria-describedby" })
         {
             Assert.Equal(attributes[name], cut.Find("input").GetAttribute(name));
-            Assert.False(cut.Find(".rf-input-field").HasAttribute(name));
+            Assert.False(cut.Find(".rf-c-input-field").HasAttribute(name));
         }
 
         Assert.True(cut.Find("input").HasAttribute("required"));
-        Assert.Equal("email-wrapper", cut.Find(".rf-input-field").GetAttribute("data-testid"));
+        Assert.Equal("email-wrapper", cut.Find(".rf-c-input-field").GetAttribute("data-testid"));
         Assert.False(cut.Find("input").HasAttribute("data-testid"));
     }
 

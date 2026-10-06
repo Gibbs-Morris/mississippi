@@ -1,4 +1,5 @@
-using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
+using Mississippi.Inlet.Client.Abstractions.State;
+using Mississippi.Inlet.Client.SignalRConnection;
 
 using MississippiSamples.Spring.Client.Features.FlaggedTransactions.Dtos;
 
@@ -33,6 +34,18 @@ public sealed partial class Investigations
     /// </summary>
     private FlaggedTransactionsProjectionDto? FlaggedProjection =>
         GetProjection<FlaggedTransactionsProjectionDto>(GlobalEntityId);
+
+    private bool IsQueueConnected =>
+        Select<SignalRConnectionState, SignalRConnectionStatus>(SignalRConnectionSelectors.GetStatus) ==
+        SignalRConnectionStatus.Connected;
+
+    private bool IsQueueLoading => IsProjectionLoading<FlaggedTransactionsProjectionDto>(GlobalEntityId);
+
+    private string? QueueReadError => GetProjectionError<FlaggedTransactionsProjectionDto>(GlobalEntityId)?.Message;
+
+    private long QueueVersion =>
+        Select<ProjectionsFeatureState, long>(state =>
+            state.GetProjectionVersion<FlaggedTransactionsProjectionDto>(GlobalEntityId));
 
     /// <inheritdoc />
     protected override void Dispose(
@@ -69,6 +82,4 @@ public sealed partial class Investigations
             subscribedEntityId = GlobalEntityId;
         }
     }
-
-    private void NavigateToIndex() => Dispatch(new NavigateAction("/"));
 }

@@ -1,0 +1,39 @@
+@namespace MississippiSamples.Spring.Client.Components.Organisms
+
+@if (IsOpen)
+{
+    <section id="spring-connection-details" class="spring-connection-details" aria-label="Live connection details">
+        <header>
+            <h2>SignalR connection details</h2><button type="button" @onclick="OnClose">Close</button>
+        </header>
+        <dl>
+            <div>
+                <dt>Status</dt><dd>@ConnectionStatusText</dd>
+            </div>
+            <div>
+                <dt>Connection ID</dt>
+                <dd>
+                    <code>@ConnectionIdText</code>
+                </dd>
+            </div>
+            <div>
+                <dt>Reconnect attempts</dt><dd>@ReconnectAttemptCount</dd>
+            </div>
+            <div>
+                <dt>Last connected</dt><dd>@LastConnectedAtText</dd>
+            </div>
+            <div>
+                <dt>Last disconnected</dt><dd>@LastDisconnectedAtText</dd>
+            </div>
+            <div>
+                <dt>Last message</dt><dd>@LastMessageReceivedAtText</dd>
+            </div>
+        </dl>
+        @if (!string.IsNullOrEmpty(LastError))
+        {
+            <p>
+                <strong>Last error:</strong> @LastError
+            </p>
+        }
+    </section>
+}

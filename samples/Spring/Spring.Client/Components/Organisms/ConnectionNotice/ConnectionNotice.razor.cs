@@ -4,15 +4,15 @@ using Microsoft.AspNetCore.Components;
 namespace MississippiSamples.Spring.Client.Components.Organisms;
 
 /// <summary>
-///     Connection lost modal.
+///     Inline notice for an unavailable live projection connection.
 /// </summary>
-public sealed partial class ConnectionLostModal
+public sealed partial class ConnectionNotice
 {
     /// <summary>Gets or sets the connection status text.</summary>
     [Parameter]
     public string ConnectionStatusText { get; set; } = string.Empty;
 
-    /// <summary>Gets or sets a value indicating whether the modal is open.</summary>
+    /// <summary>Gets or sets a value indicating whether the connection information is visible.</summary>
     [Parameter]
     public bool IsOpen { get; set; }
 

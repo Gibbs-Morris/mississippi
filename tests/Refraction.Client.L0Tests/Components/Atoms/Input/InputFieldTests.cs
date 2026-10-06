@@ -27,8 +27,8 @@ public sealed class InputFieldTests : BunitContext
             .Add(c => c.Id, "username-field"));
 
         // Assert
-        Assert.Equal("username-field", cut.Find(".rf-input-field__label").GetAttribute("for"));
-        Assert.Equal("username-field", cut.Find(".rf-input-field__input").GetAttribute("id"));
+        Assert.Equal("username-field", cut.Find(".rf-c-input-field__label").GetAttribute("for"));
+        Assert.Equal("username-field", cut.Find(".rf-c-input-field__input").GetAttribute("id"));
     }
 
     /// <summary>
@@ -41,7 +41,7 @@ public sealed class InputFieldTests : BunitContext
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Label, string.Empty));
 
         // Assert
-        Assert.Empty(cut.FindAll(".rf-input-field__label"));
+        Assert.Empty(cut.FindAll(".rf-c-input-field__label"));
     }
 
     /// <summary>
@@ -251,7 +251,7 @@ public sealed class InputFieldTests : BunitContext
             _ => { wasBlurred = true; }));
 
         // Act
-        cut.Find(".rf-input-field__input").Blur();
+        cut.Find(".rf-c-input-field__input").Blur();
 
         // Assert
         Assert.True(wasBlurred);
@@ -270,7 +270,7 @@ public sealed class InputFieldTests : BunitContext
             _ => { wasFocused = true; }));
 
         // Act
-        cut.Find(".rf-input-field__input").Focus();
+        cut.Find(".rf-c-input-field__input").Focus();
 
         // Assert
         Assert.True(wasFocused);
@@ -289,7 +289,7 @@ public sealed class InputFieldTests : BunitContext
             value => { receivedValue = value; }));
 
         // Act
-        cut.Find(".rf-input-field__input").Input("new value");
+        cut.Find(".rf-c-input-field__input").Input("new value");
 
         // Assert
         Assert.Equal("new value", receivedValue);
@@ -305,7 +305,7 @@ public sealed class InputFieldTests : BunitContext
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.AddUnmatched("data-testid", "input-1"));
 
         // Assert
-        Assert.Equal("input-1", cut.Find(".rf-input-field").GetAttribute("data-testid"));
+        Assert.Equal("input-1", cut.Find(".rf-c-input-field").GetAttribute("data-testid"));
     }
 
     /// <summary>
@@ -320,7 +320,7 @@ public sealed class InputFieldTests : BunitContext
             RefractionStates.Active));
 
         // Assert
-        string? dataState = cut.Find(".rf-input-field").GetAttribute("data-state");
+        string? dataState = cut.Find(".rf-c-input-field").GetAttribute("data-state");
         Assert.Equal("active", dataState);
     }
 
@@ -334,7 +334,7 @@ public sealed class InputFieldTests : BunitContext
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.IsDisabled, true));
 
         // Assert
-        Assert.True(cut.Find(".rf-input-field__input").HasAttribute("disabled"));
+        Assert.True(cut.Find(".rf-c-input-field__input").HasAttribute("disabled"));
     }
 
     /// <summary>
@@ -347,7 +347,7 @@ public sealed class InputFieldTests : BunitContext
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Type, "password"));
 
         // Assert
-        Assert.Equal("password", cut.Find(".rf-input-field__input").GetAttribute("type"));
+        Assert.Equal("password", cut.Find(".rf-c-input-field__input").GetAttribute("type"));
     }
 
     /// <summary>
@@ -362,7 +362,7 @@ public sealed class InputFieldTests : BunitContext
             .Add(c => c.Id, "test-id"));
 
         // Assert
-        string textContent = cut.Find(".rf-input-field__label").TextContent;
+        string textContent = cut.Find(".rf-c-input-field__label").TextContent;
         Assert.Contains("Test Label", textContent, StringComparison.Ordinal);
     }
 
@@ -376,7 +376,7 @@ public sealed class InputFieldTests : BunitContext
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Placeholder, "Enter value"));
 
         // Assert
-        Assert.Equal("Enter value", cut.Find(".rf-input-field__input").GetAttribute("placeholder"));
+        Assert.Equal("Enter value", cut.Find(".rf-c-input-field__input").GetAttribute("placeholder"));
     }
 
     /// <summary>
@@ -389,7 +389,7 @@ public sealed class InputFieldTests : BunitContext
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.IsReadOnly, true));
 
         // Assert
-        Assert.True(cut.Find(".rf-input-field__input").HasAttribute("readonly"));
+        Assert.True(cut.Find(".rf-c-input-field__input").HasAttribute("readonly"));
     }
 
     /// <summary>
@@ -402,7 +402,7 @@ public sealed class InputFieldTests : BunitContext
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Value, "Initial value"));
 
         // Assert
-        Assert.Equal("Initial value", cut.Find(".rf-input-field__input").GetAttribute("value"));
+        Assert.Equal("Initial value", cut.Find(".rf-c-input-field__input").GetAttribute("value"));
     }
 
     /// <summary>
@@ -415,7 +415,7 @@ public sealed class InputFieldTests : BunitContext
         using IRenderedComponent<InputField> cut = Render<InputField>();
 
         // Assert
-        string? dataState = cut.Find(".rf-input-field").GetAttribute("data-state");
+        string? dataState = cut.Find(".rf-c-input-field").GetAttribute("data-state");
         Assert.Equal("idle", dataState);
     }
 

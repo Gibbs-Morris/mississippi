@@ -3,50 +3,94 @@
 @using MississippiSamples.Spring.Client.Features.FlaggedTransactions.Dtos
 @inherits InletComponent
 
-<main>
-    <nav>
-        <button type="button" @onclick="NavigateToIndex">Back to Bank Account</button>
-    </nav>
-
-    <header>
+<PageTitle>Investigate a deposit · Spring</PageTitle>
+<main class="spring-investigations">
+    <header class="spring-investigations-header">
+        <p class="spring-kicker">SPRING / EVENT-DRIVEN EFFECTS</p>
         <h1>Transaction Investigations</h1>
-        <p>High-value transactions flagged for AML review</p>
+        <p>Follow a high-value deposit from a banking event to a separate investigation queue.</p>
     </header>
-
-    <section>
-        <h2>Flagged Transactions</h2>
-        <p>
-            Transactions exceeding £10,000 are automatically flagged for manual investigation.
-            The list below shows the most recent 30 flagged transactions.
-        </p>
-
-        @if (FlaggedProjection?.Entries.Length > 0)
-        {
-            <table>
-                <thead>
-                <tr>
-                    <th>Account</th>
-                    <th>Amount (£)</th>
-                    <th>Deposited</th>
-                    <th>Flagged</th>
-                </tr>
-                </thead>
-                <tbody>
-                @foreach (FlaggedTransactionDto entry in FlaggedProjection.Entries)
+    <Pane Title="Try the journey">
+        <div class="spring-investigation-guide">
+            <ol>
+                <li>Open an account on Move money.</li><li>Deposit <strong>£10,001</strong>. The threshold is strictly above £10,000.</li>
+                <li>Verify the deposit in its balance and ledger, then return here for the flagged entry.</li>
+            </ol>
+            <a class="spring-button" href="/operations">Go to Move money <span aria-hidden="true">↗</span></a>
+            <p>
+                The effect flags the deposit after it is committed. The queue can appear later than the account balance.
+                This demo displays flagged transactions; it does not implement case review or resolution.
+            </p>
+        </div>
+    </Pane>
+    <Pane Title="Flagged deposits" aria-label="Investigation queue">
+        <div class="spring-queue">
+            <p>
+                Most recent 30 flags across all accounts. @(IsQueueConnected ? "SignalR connected." : "SignalR not connected.")
+                @if (FlaggedProjection is not null)
                 {
-                    <tr>
-                        <td>@entry.AccountId</td>
-                        <td>@entry.Amount.ToString("N2")</td>
-                        <td>@entry.OriginalTimestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                        <td>@entry.FlaggedTimestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                    </tr>
+                    <span>Projection version @QueueVersion.</span>
                 }
-                </tbody>
-            </table>
-        }
-        else
-        {
-            <p>No transactions have been flagged yet.</p>
-        }
+            </p>
+            @if (!string.IsNullOrEmpty(QueueReadError))
+            {
+                <div class="spring-queue-error" role="alert">
+                    <h3>The queue could not be read</h3>
+                    <p>@QueueReadError</p>
+                    <p>Check the live connection and your persona. A new server may have no queue data until a high-value deposit is flagged.</p>
+                </div>
+            }
+            @if (IsQueueLoading)
+            {
+                <p role="status">Loading the investigation queue…</p>
+            }
+            else if (FlaggedProjection is null)
+            {
+                <p>No queue data received yet. Complete the journey above and wait for a live update.</p>
+            }
+            else if (FlaggedProjection.Entries.Length == 0)
+            {
+                <section class="spring-queue-empty">
+                    <h3>No flagged deposits</h3>
+                    <p>
+                        The loaded queue is empty.
+                        Deposits of £10,000 or less do not cross the threshold.
+                    </p>
+                </section>
+            }
+            else
+            {
+                <div class="spring-queue-scroll" tabindex="0" role="region" aria-label="Flagged deposit entries">
+                    <table>
+                        <caption>Latest flags first. Times are shown in UTC.</caption>
+                        <thead>
+                        <tr>
+                            <th scope="col">Account ID</th><th scope="col">Amount (GBP)</th><th scope="col">Deposited</th><th scope="col">Flagged</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (FlaggedTransactionDto entry in FlaggedProjection.Entries)
+                        {
+                            <tr>
+                                <td>
+                                    <code>@entry.AccountId</code>
+                                </td><td>£@entry.Amount.ToString("N2")</td>
+                                <td>@entry.OriginalTimestamp.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td>@entry.FlaggedTimestamp.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </Pane>
+    <section class="spring-investigation-context">
+        <h2>What Mississippi enables here</h2>
+        <p>
+            A domain effect reacts to a high-value deposit and sends a flag command to a separate aggregate.
+            The global projection combines those flags, and Inlet updates the subscribed browser.
+            No page-to-page copy or fabricated queue entry is involved.
+        </p><a href="/operations">Return to your live accounts ↗</a>
     </section>
 </main>

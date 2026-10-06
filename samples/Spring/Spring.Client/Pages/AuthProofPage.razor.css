@@ -1,0 +1,19 @@
+.spring-auth { display: grid; gap: 1.5rem; }
+.spring-auth-header { display: grid; gap: 0.9rem; }
+.spring-auth-header > p:last-child { color: var(--rf-color-text-secondary); font-size: 1.05rem; max-width: 65ch; }
+.spring-kicker { color: var(--rf-color-text-accent); font-size: 0.75rem; letter-spacing: 0.1em; font-weight: 650; }
+.spring-auth-prerequisite, .spring-persona-content, .spring-auth-outcome, .spring-auth-saga, .spring-auth-context { display: grid; gap: 1rem; min-width: 0; }
+.spring-auth-prerequisite p, .spring-proof-grid p, .spring-auth-outcome p, .spring-auth-saga p, .spring-auth-context p, .spring-auth-snapshots > p { color: var(--rf-color-text-secondary); font-size: 0.9rem; max-width: 85ch; }
+.spring-personas { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.spring-personas button[aria-pressed="true"] { border-color: var(--rf-color-text-accent); color: var(--rf-color-text-accent); background: var(--rf-color-surface-glass); }
+.spring-persona-expectation { display: grid; gap: 0.5rem; border-inline-start: 3px solid var(--rf-color-text-accent); padding-inline-start: 1rem; }
+.spring-persona-expectation p { color: var(--rf-color-text-secondary); font-size: 0.85rem; }
+.spring-proof-grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.spring-proof-grid > div { display: grid; gap: 0.75rem; align-content: start; min-width: 0; }
+.spring-proof-grid h2 { font-size: 1.1rem; }
+.spring-auth-outcome output { font-size: 2.5rem; font-weight: 650; line-height: 1.2; }
+.spring-auth-outcome .spring-auth-error { color: var(--rf-color-text-primary); border-inline-start: 3px solid var(--rf-color-status-error); padding-inline-start: 1rem; overflow-wrap: anywhere; }
+.spring-auth-saga { justify-items: start; overflow-wrap: anywhere; }
+.spring-auth-snapshots { padding: 0.5rem 1.25rem; border: 1px solid var(--rf-color-text-muted); border-radius: 0.4rem; }
+@media (max-width: 800px) { .spring-proof-grid { grid-template-columns: minmax(0, 1fr); } }
+.spring-auth-outcome button { justify-self: start; }

@@ -30,3 +30,17 @@ L3 shares its browser fixture within the test collection. Use separate worktrees
 The root command records the selected level, suite, project, result, and artifact directory in `summary.json`.
 
 See [Spring validation prerequisites and diagnostics](../../README.md#validate-spring-after-a-change) and the [repository test-level definitions](../../.github/instructions/testing.instructions.md).
+
+## Flagship journey coverage
+
+The full L3 suite preserves the banking, transfer, API-reference, accessible panel and theme journeys.
+FlagshipJourneysTests adds first-run completion at 390×844, updates in a second browser, rejected withdrawals with unchanged projections, all six burst controls and ledger retention, high-value investigation flags, defined transfer compensation, and the five-persona command/read/saga authorization matrix.
+The L0 component tests distinguish accepted requests from loading projections, prioritize in-flight requests, retain mixed response history, escape snapshot content and prevent an invalid transfer draft from submitting an earlier valid amount.
+
+Use the [capability map](JOURNEYS.md) to connect a demo task to its sources and assertions.
+The [capture manifest](Spring.L3Tests/Screenshots/flagship/README.md) records phone/desktop, keyboard, touch, theme and state evidence for this redesign.
+Screenshots support browser assertions; they do not replace passing L2/L3 results.
+
+Before final validation, stop the interactive app and run the canonical cleanup and Release pipeline in addition to full L2 and L3.
+go.ps1 excludes deployed L2/L3 tests. Doctor's READY result is prerequisite evidence only.
+Samples do not require mutation testing under the current policy; report any chosen or skipped mutation run explicitly.

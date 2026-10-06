@@ -1,139 +1,27 @@
-.spring-shell {
-    min-height: 100vh;
-    min-height: 100dvh;
-    padding: 0 clamp(1rem, 4vw, 3rem);
-    background: var(--rf-color-surface-void);
-    color: var(--rf-color-text-primary);
-    font-family: var(--rf-raw-font-sans);
-}
-
-.topbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1.25rem;
-    max-width: 1320px;
-    margin: 0 auto;
-    padding: 1.25rem 0;
-    border-bottom: 1px solid var(--rf-color-text-muted);
-}
-
-.wordmark {
-    color: var(--rf-color-text-primary);
-    text-decoration: none;
-}
-
-.wordmark-primary {
-    display: block;
-    font-weight: 750;
-    letter-spacing: 0.14em;
-}
-
-.wordmark-secondary {
-    display: block;
-    margin-top: 0.2rem;
-    color: var(--rf-color-text-secondary);
-    font-size: 0.75rem;
-}
-
-.navigation {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-left: auto;
-}
-
-.navigation ::deep a {
-    padding: 0.45rem 0;
-    color: var(--rf-color-text-secondary);
-    text-decoration: none;
-}
-
-.navigation ::deep a.active {
-    border-bottom: 2px solid currentColor;
-    color: var(--rf-color-text-accent);
-}
-
-.theme-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-}
-
-.theme-options button {
-    padding: 0.5rem 0.7rem;
-    border: 1px solid var(--rf-color-text-muted);
-    background: transparent;
-    color: var(--rf-color-text-primary);
-    font: inherit;
-    font-size: 0.8rem;
-    cursor: pointer;
-}
-
-.theme-options button[aria-pressed="true"] {
-    border-color: var(--rf-color-action-primary);
-    background: var(--rf-color-surface-elevated);
-    color: var(--rf-color-text-accent);
-}
-
-.spring-shell ::deep #main-content {
-    max-width: 1320px;
-    margin: 0 auto;
-    padding: clamp(2rem, 5vw, 4.5rem) 0;
-}
-
-.spring-shell ::deep h1:focus,
-.spring-shell ::deep #main-content:focus {
-    outline: 2px solid var(--rf-color-focus-ring);
-    outline-offset: 4px;
-}
-
-.spring-shell ::deep button:focus-visible,
-.spring-shell ::deep a:focus-visible,
-.spring-shell ::deep select:focus-visible,
-.spring-shell ::deep input:focus-visible,
-.spring-shell ::deep textarea:focus-visible {
-    outline: 2px solid var(--rf-color-focus-ring);
-    outline-offset: 3px;
-}
-
-.spring-shell footer {
-    max-width: 1320px;
-    margin: 0 auto;
-    padding: 1.5rem 0 2rem;
-    border-top: 1px solid var(--rf-color-text-muted);
-    color: var(--rf-color-text-secondary);
-    font-size: 0.8rem;
-}
-
-.skip-link {
-    position: absolute;
-    top: 0.5rem;
-    left: 0.5rem;
-    z-index: 10;
-    padding: 0.75rem;
-    transform: translateY(-180%);
-    background: var(--rf-color-surface-elevated);
-    color: var(--rf-color-text-primary);
-}
-
-.skip-link:focus {
-    transform: translateY(0);
-}
-
-@media (max-width: 800px) {
-    .navigation {
-        flex-basis: 100%;
-        margin-left: 0;
-    }
-}
-
-@media (max-width: 390px) {
-    .spring-shell {
-        padding: 0 1rem;
-    }
-
-    .navigation {
-        gap: 0.65rem;
-    }
-}
+.spring-shell { min-height: 100dvh; padding-inline: clamp(1rem, 4vw, 3rem); background: var(--rf-color-surface-void); color: var(--rf-color-text-primary); }
+.spring-topbar { display: flex; align-items: center; flex-wrap: wrap; gap: 1.25rem; max-width: 1280px; margin-inline: auto; padding-block: 1.25rem; border-bottom: 1px solid var(--rf-color-text-muted); }
+.spring-wordmark { display: flex; align-items: center; gap: 0.7rem; color: inherit; text-decoration: none; }
+.spring-wordmark strong { display: block; font-size: 1.4rem; line-height: 1.1; letter-spacing: -0.05em; }
+.spring-wordmark small { display: block; font-size: 0.75rem; color: var(--rf-color-text-secondary); }
+.spring-mark { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid var(--rf-color-text-accent); border-radius: 0.4rem; color: var(--rf-color-text-accent); font-size: 1.5rem; font-weight: 700; }
+.spring-mark span { font-size: 0.8rem; align-self: flex-start; }
+.spring-navigation { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-inline-start: auto; }
+/* NavLink renders its public anchor across the Blazor isolation boundary.
+ * Only this shell navigation is targeted. Review if NavLink gains a styling API.
+ */
+.spring-navigation ::deep a { display: flex; align-items: center; min-height: 44px; padding: 0.55rem 0.7rem; border-bottom: 2px solid transparent; color: var(--rf-color-text-secondary); font-size: 0.9rem; font-weight: 550; text-decoration: none; white-space: nowrap; }
+.spring-navigation ::deep a.active { color: var(--rf-color-text-accent); border-bottom-color: currentColor; }
+.spring-appearance { min-width: 0; }
+.spring-appearance summary { font-size: 0.85rem; }
+.spring-theme-options { display: flex; flex-wrap: wrap; gap: 0.4rem; padding-block: 0.5rem; }
+.spring-theme-options button { font-size: 0.8rem; padding-inline: 0.7rem; }
+.spring-theme-options button[aria-pressed="true"] { border-color: var(--rf-color-text-accent); color: var(--rf-color-text-accent); }
+#main-content { max-width: 1280px; margin-inline: auto; padding-block: clamp(2rem, 4vw, 3.5rem); }
+.spring-footer { display: grid; gap: 1rem; max-width: 1280px; margin-inline: auto; padding-block: 2rem; border-top: 1px solid var(--rf-color-text-muted); color: var(--rf-color-text-secondary); font-size: 0.9rem; }
+.spring-footer-note { font-size: 0.8rem; }
+.spring-tools nav { display: flex; flex-wrap: wrap; gap: 1rem; padding-block: 0.5rem 1rem; }
+.spring-tools p { max-width: 70ch; margin-block: 0.6rem; }
+.skip-link { position: absolute; top: 0.5rem; left: 0.5rem; z-index: 10; padding: 0.75rem; transform: translateY(-200%); background: var(--rf-color-surface-elevated); color: var(--rf-color-text-primary); }
+.skip-link:focus { transform: translateY(0); }
+@media (max-width: 1050px) { .spring-navigation { order: 3; flex-basis: 100%; margin: 0; } .spring-appearance { margin-inline-start: auto; } }
+@media (max-width: 600px) { .spring-topbar { gap: 0.75rem; padding-block: 1rem; } .spring-navigation { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding-bottom: 0.25rem; } .spring-navigation ::deep a { justify-content: center; font-size: 0.8rem; white-space: normal; text-align: center; } }

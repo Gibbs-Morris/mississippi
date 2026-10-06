@@ -2,42 +2,59 @@
 @namespace MississippiSamples.Spring.Client.Pages
 @inherits InletComponent
 
-<main>
-    <BankAccountPageHeader ConnectionStatusText="@ConnectionStatus.ToString()"
-                           IsConnectionModalOpen="@isConnectionModalOpen"
+<PageTitle>Prepare accounts · Spring</PageTitle>
+<main class="spring-accounts">
+    <BankAccountPageHeader Title="Prepare two accounts"
+                           Subtitle="Start with a demo pair, then watch what happens when money moves."
+                           TipText="Use Full Access when local authentication is enabled. Test other personas in Test access."
+                           ConnectionStatusText="@ConnectionStatus.ToString()"
+                           IsConnectionDetailsOpen="@isConnectionDetailsOpen"
                            OnNavigateInvestigations="@NavigateToInvestigations"
-                           OnToggleConnectionModal="@ToggleConnectionModal"/>
-
-    <DemoAccountsSection IsExecutingOrLoading="@IsExecutingOrLoading"
-                         IsInitialized="@IsDemoAccountsInitialized"
-                         AccountAId="@DemoAccountAId"
-                         AccountAName="@DemoAccountAName"
-                         AccountBId="@DemoAccountBId"
-                         AccountBName="@DemoAccountBName"
-                         OnInitialize="@InitializeDemoAccounts"/>
-
+                           OnToggleConnectionDetails="@ToggleConnectionDetails"/>
+    <ConnectionDetails IsOpen="@isConnectionDetailsOpen" ConnectionStatusText="@ConnectionStatus.ToString()"
+                       ConnectionIdText="@ConnectionIdDisplay" ReconnectAttemptCount="@ReconnectAttemptCount"
+                       LastConnectedAtText="@LastConnectedAtDisplay" LastDisconnectedAtText="@LastDisconnectedAtDisplay"
+                       LastMessageReceivedAtText="@LastMessageReceivedAtDisplay" LastError="@LastError" OnClose="@CloseConnectionDetails"/>
+    <ConnectionNotice IsOpen="@IsDisconnected" ConnectionStatusText="@ConnectionStatus.ToString()"
+                      ReconnectAttemptCount="@ReconnectAttemptCount" LastError="@LastError" OnReconnect="@RequestReconnect"/>
+    <ol class="spring-journey-steps" aria-label="Banking journey">
+        <li aria-current="step"><span>01</span> Prepare accounts</li><li><span>02</span> Make a change</li><li><span>03</span> Verify the outcome</li>
+    </ol>
+    <DemoAccountsSection IsExecutingOrLoading="@IsExecutingOrLoading" IsInitialized="@IsDemoAccountsInitialized"
+                         AccountAId="@DemoAccountAId" AccountAName="@DemoAccountAName"
+                         AccountBId="@DemoAccountBId" AccountBName="@DemoAccountBName" OnInitialize="@InitializeDemoAccounts" OperationsUri="@DemoOperationsUri"/>
+    <CommandActivity State="@CommandState" Label="Banking responses · this browser"
+                     Explanation="This shared history can include earlier banking tasks. IDs are selected when the opening commands are sent. An accepted response does not confirm that the live balances have appeared."/>
     @if (IsDemoAccountsInitialized)
     {
-        <section>
-            <h2>Continue</h2>
-            <p>Demo accounts are ready. Open Operations to view both accounts side by side.</p>
-            <NavLink href="@OperationsUrl">Go to Operations</NavLink>
-        </section>
+        <details class="spring-share">
+            <summary>Share or reopen the demo pair</summary>
+            <p>
+                This link contains account IDs, not account data or access rights.
+                Open it in another browser connected to the same running Spring instance to watch the same live views.
+            </p>
+            <a href="@DemoOperationsUri">@DemoOperationsUri</a>
+        </details>
     }
-
-    <ConnectionStatusModal IsOpen="@isConnectionModalOpen"
-                           ConnectionStatusText="@ConnectionStatus.ToString()"
-                           ConnectionIdText="@ConnectionIdDisplay"
-                           ReconnectAttemptCount="@ReconnectAttemptCount"
-                           LastConnectedAtText="@LastConnectedAtDisplay"
-                           LastDisconnectedAtText="@LastDisconnectedAtDisplay"
-                           LastMessageReceivedAtText="@LastMessageReceivedAtDisplay"
-                           LastError="@LastError"
-                           OnClose="@CloseConnectionModal"/>
-
-    <ConnectionLostModal IsOpen="@IsDisconnected"
-                         ConnectionStatusText="@ConnectionStatus.ToString()"
-                         ReconnectAttemptCount="@ReconnectAttemptCount"
-                         LastError="@LastError"
-                         OnReconnect="@RequestReconnect"/>
+    <details id="custom-accounts" class="spring-custom-accounts" tabindex="-1" open="@(!string.IsNullOrEmpty(accountAIdInput) || !string.IsNullOrEmpty(accountBIdInput))">
+        <summary>Use your own account IDs</summary>
+        <p>
+            Enter existing IDs to inspect their live views, or choose two new IDs and open the accounts on Move money.
+            IDs are trimmed when selected. An ID is not permission to access an account.
+        </p>
+        <div class="spring-custom-fields">
+            <InputField Id="custom-account-a" Label="Account A ID" Value="@accountAIdInput"
+                        ValueChanged="@(value => accountAIdInput = value)" HelperText="Existing or new ID"/>
+            <InputField Id="custom-account-b" Label="Account B ID" Value="@accountBIdInput"
+                        ValueChanged="@(value => accountBIdInput = value)" HelperText="Existing or new ID"/>
+        </div>
+        <button type="button" @onclick="UseCustomAccounts" disabled="@(string.IsNullOrWhiteSpace(accountAIdInput) || string.IsNullOrWhiteSpace(accountBIdInput))">Use these accounts</button>
+    </details>
+    <section class="spring-explainer">
+        <h2>What Mississippi enables here</h2>
+        <p>
+            The generated opening actions go through Reservoir and Inlet to the bank account domain.
+            Its events feed separate balance and ledger projections. The next page subscribes to those live views.
+        </p>
+    </section>
 </main>

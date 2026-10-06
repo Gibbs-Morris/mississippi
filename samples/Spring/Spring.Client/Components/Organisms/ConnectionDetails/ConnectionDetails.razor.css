@@ -1,0 +1,5 @@
+.spring-connection-details { padding: 1.25rem; border: 1px solid var(--rf-color-text-muted); border-radius: 0.5rem; background: var(--rf-color-surface-elevated); overflow-wrap: anywhere; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 1rem; }
+dt { font-size: 0.8rem; color: var(--rf-color-text-secondary); }
+dd { margin: 0.25rem 0 0; }

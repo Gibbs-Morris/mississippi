@@ -205,7 +205,7 @@ public sealed class BankAccountE2ETests
             string? title = await page.Locator("h1").TextContentAsync();
 
             // Assert
-            Assert.Equal("Bank Account Operations", title);
+            Assert.Equal("Prepare two accounts", title);
         }
         finally
         {

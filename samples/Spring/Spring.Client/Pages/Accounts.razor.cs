@@ -20,7 +20,11 @@ namespace MississippiSamples.Spring.Client.Pages;
 /// </summary>
 public sealed partial class Accounts
 {
-    private bool isConnectionModalOpen;
+    private string accountAIdInput = string.Empty;
+
+    private string accountBIdInput = string.Empty;
+
+    private bool isConnectionDetailsOpen;
 
     /// <summary>
     ///     Gets account A identifier from selection state.
@@ -31,6 +35,9 @@ public sealed partial class Accounts
     ///     Gets account B identifier from selection state.
     /// </summary>
     private string? AccountBId => Select<DualEntitySelectionState, string?>(DualEntitySelectionSelectors.GetAccountBId);
+
+    private BankAccountAggregateState CommandState =>
+        Select<BankAccountAggregateState, BankAccountAggregateState>(state => state);
 
     /// <summary>
     ///     Gets the current connection identifier.
@@ -67,6 +74,8 @@ public sealed partial class Accounts
     ///     Gets the demo account B display name.
     /// </summary>
     private string? DemoAccountBName => Select<DemoAccountsState, string?>(DemoAccountsSelectors.GetAccountBName);
+
+    private Uri DemoOperationsUri => new(BuildOperationsUrl(DemoAccountAId, DemoAccountBId), UriKind.Relative);
 
     /// <summary>
     ///     Gets a value indicating whether demo accounts have been initialized.
@@ -123,8 +132,6 @@ public sealed partial class Accounts
     /// </summary>
     private string LastMessageReceivedAtDisplay => FormatTimestamp(LastMessageReceivedAt);
 
-    private string OperationsUrl => BuildOperationsUrl(AccountAId ?? DemoAccountAId, AccountBId ?? DemoAccountBId);
-
     /// <summary>
     ///     Gets the current reconnection attempt count.
     /// </summary>
@@ -168,7 +175,15 @@ public sealed partial class Accounts
     ) =>
         string.IsNullOrWhiteSpace(accountId) ? null : accountId.Trim();
 
-    private void CloseConnectionModal() => isConnectionModalOpen = false;
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        accountAIdInput = AccountAId ?? string.Empty;
+        accountBIdInput = AccountBId ?? string.Empty;
+    }
+
+    private void CloseConnectionDetails() => isConnectionDetailsOpen = false;
 
     private void InitializeDemoAccounts()
     {
@@ -187,5 +202,19 @@ public sealed partial class Accounts
 
     private void RequestReconnect() => Dispatch(new RequestSignalRConnectionAction());
 
-    private void ToggleConnectionModal() => isConnectionModalOpen = !isConnectionModalOpen;
+    private void ToggleConnectionDetails() => isConnectionDetailsOpen = !isConnectionDetailsOpen;
+
+    private void UseCustomAccounts()
+    {
+        string? accountAId = NormalizeAccountId(accountAIdInput);
+        string? accountBId = NormalizeAccountId(accountBIdInput);
+        if (accountAId is null || accountBId is null)
+        {
+            return;
+        }
+
+        Dispatch(new SetEntityAIdAction(accountAId));
+        Dispatch(new SetEntityBIdAction(accountBId));
+        Dispatch(new NavigateAction(BuildOperationsUrl(accountAId, accountBId)));
+    }
 }

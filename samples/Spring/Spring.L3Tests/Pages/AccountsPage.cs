@@ -80,7 +80,7 @@ public sealed class AccountsPage
             .Filter(
                 new()
                 {
-                    HasTextRegex = new($"^{Regex.Escape(expectedStatus)}$"),
+                    HasTextRegex = new($"^\\s*{Regex.Escape(expectedStatus)}\\s*$"),
                 })
             .WaitForAsync(
                 new()

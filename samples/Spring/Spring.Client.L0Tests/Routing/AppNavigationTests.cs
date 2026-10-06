@@ -38,7 +38,7 @@ public sealed class AppNavigationTests : BunitContext
             _ => true);
         NavigationManager navigation = Services.GetRequiredService<NavigationManager>();
         using IRenderedComponent<App> cut = Render<App>();
-        Assert.Equal("Bank Account Demo", cut.Find("h1").TextContent);
+        Assert.Equal("Move money. See the system come to life.", cut.Find("h1").TextContent);
         Assert.Equal("h1", JSInterop.VerifyFocusOnNavigateInvoke().Arguments[0]);
         await cut.InvokeAsync(() => navigation.NavigateTo("/investigations"));
         Assert.Equal("Transaction Investigations", cut.Find("h1").TextContent);

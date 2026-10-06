@@ -1,0 +1,7 @@
+.spring-snapshot { display: grid; gap: 0.75rem; padding-block: 1.25rem; }
+.spring-snapshot h2 { font-size: 1.1rem; }
+.spring-snapshot p { color: var(--rf-color-text-secondary); font-size: 0.9rem; }
+.spring-snapshot-scroll { overflow: auto; max-height: 28rem; }
+table { table-layout: fixed; min-width: 420px; font-size: 0.85rem; }
+th { width: 45%; }
+caption { color: var(--rf-color-text-secondary); text-align: left; padding-bottom: 0.5rem; }

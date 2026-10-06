@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 
-using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
+using Mississippi.Inlet.Client.Abstractions.State;
 
 using MississippiSamples.Spring.Client.Features.AuthProof.Dtos;
 using MississippiSamples.Spring.Client.Features.AuthProofAggregate.Actions;
@@ -31,6 +31,8 @@ public sealed partial class AuthProofPage
 
     private string? subscribedEntityId;
 
+    private string? subscribedPersonaName;
+
     private string ActivePersonaDescription =>
         Select<AuthSimulationState, string>(AuthSimulationSelectors.GetDescription);
 
@@ -41,6 +43,12 @@ public sealed partial class AuthProofPage
     private AuthProofAggregateState AggregateStateSnapshot =>
         Select<AuthProofAggregateState, AuthProofAggregateState>(state => state);
 
+    private bool IsAuthProjectionLoading =>
+        ProjectionStateSnapshot.IsProjectionLoading<AuthProofProjectionDto>(ProjectionEntityIdDisplay);
+
+    private bool IsPersonaReadCurrent =>
+        string.Equals(subscribedPersonaName, ActivePersonaName, StringComparison.Ordinal);
+
     private string LastCorrelationIdDisplay => lastCorrelationId ?? "—";
 
     private string LastSagaIdDisplay => lastSagaId?.ToString() ?? "—";
@@ -48,10 +56,19 @@ public sealed partial class AuthProofPage
     private string ProjectionEntityIdDisplay =>
         string.IsNullOrWhiteSpace(entityIdInput) ? DefaultEntityId : entityIdInput.Trim();
 
+    private string? ProjectionReadError =>
+        ProjectionStateSnapshot.GetProjectionError<AuthProofProjectionDto>(ProjectionEntityIdDisplay)?.Message;
+
     private AuthProofProjectionDto? ProjectionSnapshot =>
-        GetProjection<AuthProofProjectionDto>(ProjectionEntityIdDisplay);
+        ProjectionStateSnapshot.GetProjection<AuthProofProjectionDto>(ProjectionEntityIdDisplay);
 
     private List<(string Name, string Value)> ProjectionSnapshotRows => BuildSnapshotRows(ProjectionSnapshot);
+
+    private ProjectionsFeatureState ProjectionStateSnapshot =>
+        Select<ProjectionsFeatureState, ProjectionsFeatureState>(state => state);
+
+    private long ProjectionVersion =>
+        ProjectionStateSnapshot.GetProjectionVersion<AuthProofProjectionDto>(ProjectionEntityIdDisplay);
 
     private List<(string Name, string Value)> SagaStateRows => BuildSnapshotRows(SagaStateSnapshot);
 
@@ -134,6 +151,12 @@ public sealed partial class AuthProofPage
         string targetEntityId = ProjectionEntityIdDisplay;
         if (string.Equals(subscribedEntityId, targetEntityId, StringComparison.Ordinal))
         {
+            if (!string.Equals(subscribedPersonaName, ActivePersonaName, StringComparison.Ordinal))
+            {
+                subscribedPersonaName = ActivePersonaName;
+                RefreshProjection<AuthProofProjectionDto>(targetEntityId);
+            }
+
             return;
         }
 
@@ -144,9 +167,8 @@ public sealed partial class AuthProofPage
 
         SubscribeToProjection<AuthProofProjectionDto>(targetEntityId);
         subscribedEntityId = targetEntityId;
+        subscribedPersonaName = ActivePersonaName;
     }
-
-    private void NavigateToIndex() => Dispatch(new NavigateAction("/"));
 
     private void RecordAuthenticatedAccess() =>
         Dispatch(new RecordAuthenticatedAccessAction(ProjectionEntityIdDisplay));
@@ -154,6 +176,8 @@ public sealed partial class AuthProofPage
     private void RecordPolicyAccess() => Dispatch(new RecordPolicyAccessAction(ProjectionEntityIdDisplay));
 
     private void RecordRoleAccess() => Dispatch(new RecordRoleAccessAction(ProjectionEntityIdDisplay));
+
+    private void RefreshProtectedRead() => RefreshProjection<AuthProofProjectionDto>(ProjectionEntityIdDisplay);
 
     private void StartAuthProofSaga()
     {
