@@ -23,6 +23,11 @@ namespace Mississippi.Reservoir.Abstractions;
 ///         feature states. Subscribe to changes via <see cref="Subscribe" />.
 ///     </para>
 ///     <para>
+///         Ordinary state-listener failures are isolated so later listeners and effects can run.
+///         Configured store logging attempts to record these failures. Fatal runtime failures and thread interruption
+///         propagate.
+///     </para>
+///     <para>
 ///         External integrations can observe store activity via <see cref="StoreEvents" /> without
 ///         requiring inheritance. System actions (<see cref="ISystemAction" />) allow external
 ///         components to command the store through the standard dispatch mechanism.

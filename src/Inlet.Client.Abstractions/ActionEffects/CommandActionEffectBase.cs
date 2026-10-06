@@ -81,7 +81,7 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
     }
 
     /// <summary>
-    ///     Gets the aggregate route prefix (e.g., "/api/aggregates/bank-account").
+    ///     Gets the aggregate route prefix (e.g., "api/aggregates/bank-account").
     /// </summary>
     /// <remarks>
     ///     This should return the base path to the aggregate's command endpoints,

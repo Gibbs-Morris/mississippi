@@ -292,7 +292,6 @@ builder.UseMississippi(client =>
         // Real-time projection updates via SignalR
         reservoir.AddInletClient();
         reservoir.AddInletBlazorSignalR(signalR => signalR
-            .WithHubPath("/hubs/inlet")
             .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
     });
 });

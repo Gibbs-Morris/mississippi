@@ -225,5 +225,6 @@ composition, and preserve the configured Cosmos resource and snapshot identity c
 
 - [Storage provider concepts](index.md)
 - [Runtime composition](../../reference/runtime-composition.md)
+- [Cosmos storage retries](../../reference/cosmos-storage-retries.md)
 - [Tributary operations](../operations/operations.md)
 - [Tributary troubleshooting](../troubleshooting/troubleshooting.md)

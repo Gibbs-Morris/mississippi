@@ -104,6 +104,17 @@ Use this page as the current active reference for Inlet's builder-based client r
 
 ## Next Steps
 
+- Read [SignalR Connection Startup](./connection-startup.md) for connection requests and readiness boundaries.
+- Read [Generated HTTP Authorization Options](./generated-http-authorization.md) for MVC defaults and metadata precedence.
+- Read [SignalR Endpoint Configuration](./signalr-endpoint.md) for client addresses and gateway mapping.
+- Read [SignalR Connection State](./connection-state.md) for lifecycle fields and selector meanings.
+- Read [Client Projection Entries](./projection-entry.md) for lookup defaults and action transitions.
+- Read [Projection Fetch Outcomes](./projection-fetches.md) for missing data, versions, and HTTP failures.
+- Read [Client Command History](./command-history.md) for lifecycle fields and retention rules.
+- Read [Client Command HTTP Outcomes](./command-http-outcomes.md) for request results and failure codes.
+- Read [Generated Command DTO Properties](./command-dto-properties.md) for property selection and required fields.
+- Read [Generated MCP Command Metadata](./mcp-command-metadata.md) for tool hints and parameter descriptions.
+- Read [Projection Update Notifications](./projection-notifications.md) for the dispatch bridge and payload validation.
 - Read [Inlet Concepts](../concepts/concepts.md).
 - Read [How To Compose Inlet In Mississippi Client Apps](../how-to/how-to.md) for startup composition guidance.
 - Use the [Spring Sample](../../samples/spring-sample/index.md) to see Inlet composition patterns in practice.

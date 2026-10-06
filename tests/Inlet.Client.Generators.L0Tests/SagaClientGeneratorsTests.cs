@@ -3,9 +3,17 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+using Moq;
+using Moq.Protected;
 
 
 namespace Mississippi.Inlet.Client.Generators.L0Tests;
@@ -132,7 +140,7 @@ public sealed class SagaClientGeneratorsTests
             runResult.GeneratedTrees,
             tree => tree.FilePath.Contains("StartTransferSagaActionEffect.g.cs", StringComparison.Ordinal));
         string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
-        Assert.Contains("/api/sagas/transfer", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("AggregateRoutePrefix => \"api/sagas/transfer\"", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -163,7 +171,7 @@ public sealed class SagaClientGeneratorsTests
             AttributeStubs,
             sagaSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
-        Assert.Contains("/api/sagas/custom-route", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("AggregateRoutePrefix => \"api/sagas/custom-route\"", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -200,6 +208,71 @@ public sealed class SagaClientGeneratorsTests
         Assert.Contains(
             runResult.GeneratedTrees,
             tree => tree.FilePath.Contains("StartTransferSagaExecutingAction.g.cs", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    ///     Default generated saga requests preserve the configured HTTP base path.
+    /// </summary>
+    /// <param name="baseAddress">The HTTP base address.</param>
+    /// <param name="expectedAddress">The expected saga request URI.</param>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Theory]
+    [InlineData(
+        "https://example.test/",
+        "https://example.test/api/sagas/transfer/11111111-1111-1111-1111-111111111111")]
+    [InlineData(
+        "https://example.test/bank/",
+        "https://example.test/bank/api/sagas/transfer/11111111-1111-1111-1111-111111111111")]
+    public async Task DefaultGeneratedSagaRoutePreservesHttpBasePathAsync(
+        string baseAddress,
+        string expectedAddress
+    )
+    {
+        const string sagaSource = """
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput(string AccountId);
+
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) = RunGenerator(
+            new SagaClientActionEffectsGenerator(),
+            AttributeStubs,
+            sagaSource);
+        SyntaxNode generatedRoot = await runResult.GeneratedTrees.Single()
+            .GetRootAsync(TestContext.Current.CancellationToken);
+        PropertyDeclarationSyntax prefixProperty = generatedRoot.DescendantNodes()
+            .OfType<PropertyDeclarationSyntax>()
+            .Single(property => property.Identifier.ValueText == "AggregateRoutePrefix");
+        string prefix = Assert.IsType<LiteralExpressionSyntax>(prefixProperty.ExpressionBody!.Expression)
+            .Token.ValueText;
+        Uri? requestUri = null;
+        Mock<HttpMessageHandler> handler = new();
+        handler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Callback<HttpRequestMessage, CancellationToken>((request, _) => requestUri = request.RequestUri)
+            .ReturnsAsync(() => new(HttpStatusCode.OK));
+        using HttpClient http = new(handler.Object)
+        {
+            BaseAddress = new(baseAddress),
+        };
+        using StringContent content = new("{}");
+        using HttpResponseMessage response = await http.PostAsync(
+            new Uri($"{prefix}/11111111-1111-1111-1111-111111111111", UriKind.Relative),
+            content,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(new(expectedAddress), requestUri);
+        Assert.Equal("api/sagas/transfer", prefix.TrimStart('/'));
     }
 
     /// <summary>
@@ -268,7 +341,10 @@ public sealed class SagaClientGeneratorsTests
             sagaSource);
         string actionEffectCode =
             actionResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
-        Assert.Contains("/api/sagas/money-transfer", actionEffectCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "AggregateRoutePrefix => \"api/sagas/money-transfer\"",
+            actionEffectCode,
+            StringComparison.Ordinal);
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult stateResult) = RunGenerator(
             new SagaClientStateGenerator(),
             AttributeStubs,
