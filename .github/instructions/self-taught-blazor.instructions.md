@@ -20,6 +20,8 @@ Governing thought: Preserve caller attribute inputs while protecting component-o
 
 - Agents **SHOULD** verify denied streaming HTTP reads through the actual status and settled current UI, and bound any extra body or completion waits. Why: Spring's `ResponseHeadersRead` projection GET displayed HTTP 401 while an unbounded Playwright `FinishedAsync` stalled L3; status, denial, absent-count and enabled-refresh checks completed, while successful reads were checked against real response JSON.
 
+- Agents **SHOULD** verify keyboard focus separately from fragment scrolling in Blazor, and explicitly focus same-page jump targets when navigation only scrolls. Why: Spring's account jumps preserved both IDs and scrolled correctly while focus stayed on an offscreen link; panel `FocusAsync` fixed the failing browser assertions while real hrefs and modified-click navigation remained intact.
+
 ## References
 
 - Self-improvement governance: [Self-Improvement Learning System](self-improvement.instructions.md).

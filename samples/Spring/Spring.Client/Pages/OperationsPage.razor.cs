@@ -1,7 +1,9 @@
 using System;
 using System.Globalization;
+using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.SignalRConnection;
@@ -32,6 +34,10 @@ public sealed partial class OperationsPage
     private readonly AccountPanelState panelA = new();
 
     private readonly AccountPanelState panelB = new();
+
+    private ElementReference accountAPanelElement;
+
+    private ElementReference accountBPanelElement;
 
     private bool isConnectionDetailsOpen;
 
@@ -227,6 +233,19 @@ public sealed partial class OperationsPage
         }
 
         return url;
+    }
+
+    private static Task FocusAccountPanelAsync(
+        ElementReference panel,
+        MouseEventArgs eventArgs
+    )
+    {
+        if ((eventArgs.Button != 0) || eventArgs.CtrlKey || eventArgs.MetaKey || eventArgs.ShiftKey || eventArgs.AltKey)
+        {
+            return Task.CompletedTask;
+        }
+
+        return panel.FocusAsync().AsTask();
     }
 
     private static string FormatTimestamp(

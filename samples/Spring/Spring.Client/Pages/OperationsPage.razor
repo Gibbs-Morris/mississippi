@@ -38,7 +38,10 @@
     else
     {
         <nav class="spring-account-jumps" aria-label="Account panels">
-            <a href="@($"{ShareUrl}#account-a-operations-panel")">Account A ↓</a><a href="@($"{ShareUrl}#account-b-operations-panel")">Account B ↓</a>
+            <a href="@($"{ShareUrl}#account-a-operations-panel")"
+               @onclick="@(args => FocusAccountPanelAsync(accountAPanelElement, args))">Account A ↓</a>
+            <a href="@($"{ShareUrl}#account-b-operations-panel")"
+               @onclick="@(args => FocusAccountPanelAsync(accountBPanelElement, args))">Account B ↓</a>
         </nav>
         <CommandActivity State="@CommandState" Label="Banking responses · this browser"
                          Explanation="Shared history for this browser, including earlier account selections. Verify the live balances and ledgers below."/>
@@ -49,7 +52,7 @@
         }
 
         <div class="operations-panels">
-            <div id="account-a-operations-panel" class="operations-panel" tabindex="-1" role="region" aria-labelledby="account-a-panel-heading">
+            <div @ref="accountAPanelElement" id="account-a-operations-panel" class="operations-panel" tabindex="-1" role="region" aria-labelledby="account-a-panel-heading">
                 <AccountOperationsSection PanelLabel="Account A"
                                           InputIdPrefix="account-a"
                                           SelectedEntityId="@AccountAIdDisplay"
@@ -92,7 +95,7 @@
                                           LedgerProjection="@LedgerProjectionA"
                                           OnSwitchAccount="@ClearAccountA"/>
             </div>
-            <div id="account-b-operations-panel" class="operations-panel" tabindex="-1" role="region" aria-labelledby="account-b-panel-heading">
+            <div @ref="accountBPanelElement" id="account-b-operations-panel" class="operations-panel" tabindex="-1" role="region" aria-labelledby="account-b-panel-heading">
                 <AccountOperationsSection PanelLabel="Account B"
                                           InputIdPrefix="account-b"
                                           SelectedEntityId="@AccountBIdDisplay"

@@ -204,26 +204,29 @@ public sealed class FlagshipJourneysTests
                     })
                 .ClickAsync();
             await Expect(
-                    page.GetByLabel(
-                        "Account A ID",
+                    page.GetByRole(
+                        AriaRole.Textbox,
                         new()
                         {
+                            Name = "Account A ID",
                             Exact = true,
                         }))
                 .ToHaveValueAsync(string.Empty);
             await Expect(
-                    page.GetByLabel(
-                        "Account B ID",
+                    page.GetByRole(
+                        AriaRole.Textbox,
                         new()
                         {
+                            Name = "Account B ID",
                             Exact = true,
                         }))
                 .ToHaveValueAsync(demoB);
             string replacement = $"replacement-{Guid.NewGuid():N}";
-            await page.GetByLabel(
-                    "Account A ID",
+            await page.GetByRole(
+                    AriaRole.Textbox,
                     new()
                     {
+                        Name = "Account A ID",
                         Exact = true,
                     })
                 .FillAsync(replacement);
@@ -256,18 +259,20 @@ public sealed class FlagshipJourneysTests
                     })
                 .ClickAsync();
             await Expect(
-                    page.GetByLabel(
-                        "Account A ID",
+                    page.GetByRole(
+                        AriaRole.Textbox,
                         new()
                         {
+                            Name = "Account A ID",
                             Exact = true,
                         }))
                 .ToHaveValueAsync(replacement);
             await Expect(
-                    page.GetByLabel(
-                        "Account B ID",
+                    page.GetByRole(
+                        AriaRole.Textbox,
                         new()
                         {
+                            Name = "Account B ID",
                             Exact = true,
                         }))
                 .ToHaveValueAsync(demoB);
