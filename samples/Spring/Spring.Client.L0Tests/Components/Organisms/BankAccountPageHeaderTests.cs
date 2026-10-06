@@ -38,8 +38,11 @@ public sealed class BankAccountPageHeaderTests : BunitContext
         cut.Find("nav button").Click();
         Assert.True(toggled);
         Assert.True(navigated);
+        Assert.Equal("Connection status: Connected", cut.Find("header button").GetAttribute("aria-label"));
         Assert.Equal("true", cut.Find("header button").GetAttribute("aria-expanded"));
         Assert.Equal("spring-connection-details", cut.Find("header button").GetAttribute("aria-controls"));
         Assert.Equal("Account actions", cut.Find("nav").GetAttribute("aria-label"));
+        cut.Render(p => p.Add(c => c.ConnectionStatusText, "Reconnecting"));
+        Assert.Equal("Connection status: Reconnecting", cut.Find("header button").GetAttribute("aria-label"));
     }
 }

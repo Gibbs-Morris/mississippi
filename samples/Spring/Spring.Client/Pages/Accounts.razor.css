@@ -1,11 +1,11 @@
-.spring-accounts { display: grid; gap: 1.5rem; }
-.spring-journey-steps { display: flex; flex-wrap: wrap; gap: 1rem 2rem; list-style: none; padding: 1rem 0; margin: 0; border-block: 1px solid var(--rf-color-text-muted); color: var(--rf-color-text-secondary); font-size: 0.85rem; }
+.spring-accounts { display: grid; gap: var(--spring-space-inset); }
+.spring-journey-steps { display: flex; flex-wrap: wrap; gap: var(--spring-space-stack) var(--spring-space-section); list-style: none; padding: var(--spring-space-stack) 0; margin: 0; border-block: var(--spring-border-width) solid var(--rf-color-text-muted); color: var(--rf-color-text-secondary); font-size: var(--spring-type-detail); }
 .spring-journey-steps li[aria-current] { color: var(--rf-color-text-accent); font-weight: 650; }
-.spring-journey-steps span { font-family: ui-monospace, monospace; margin-right: 0.5rem; }
-.spring-custom-accounts, .spring-share { padding: 0.5rem 1.25rem; border: 1px solid var(--rf-color-text-muted); border-radius: 0.4rem; }
-.spring-custom-accounts p, .spring-share p { color: var(--rf-color-text-secondary); padding-block: 0.5rem 1rem; max-width: 75ch; }
-.spring-custom-fields { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.spring-custom-accounts button { margin-block: 1rem; }
-.spring-share a { display: block; overflow-wrap: anywhere; padding-bottom: 1rem; }
-.spring-explainer { display: grid; gap: 0.75rem; max-width: 80ch; padding-block: 1rem; }
+.spring-journey-steps span { font-family: ui-monospace, monospace; margin-right: var(--spring-space-inline); }
+.spring-custom-accounts, .spring-share { padding: var(--spring-space-inline) var(--spring-space-panel); border: var(--spring-border-width) solid var(--rf-color-text-muted); border-radius: var(--spring-radius-control); }
+.spring-custom-accounts p, .spring-share p { color: var(--rf-color-text-secondary); padding-block: var(--spring-space-inline) var(--spring-space-stack); max-width: 75ch; }
+.spring-custom-fields { display: grid; gap: var(--spring-space-stack); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.spring-custom-accounts button { margin-block: var(--spring-space-stack); }
+.spring-share a { display: block; overflow-wrap: anywhere; padding-bottom: var(--spring-space-stack); }
+.spring-explainer { display: grid; gap: var(--spring-space-control); max-width: 80ch; padding-block: var(--spring-space-stack); }
 @media (max-width: 650px) { .spring-custom-fields { grid-template-columns: minmax(0, 1fr); } }

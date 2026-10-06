@@ -76,7 +76,13 @@ public sealed class AccountsPage
         string expectedStatus,
         float? timeout = null
     ) =>
-        await page.Locator("button[aria-label='Connection status']")
+        await page.GetByRole(
+                AriaRole.Button,
+                new()
+                {
+                    Name = $"Connection status: {expectedStatus}",
+                    Exact = true,
+                })
             .Filter(
                 new()
                 {

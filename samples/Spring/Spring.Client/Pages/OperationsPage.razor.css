@@ -1,11 +1,11 @@
-.spring-operations { display: grid; gap: 1.5rem; }
-.spring-empty { display: grid; justify-items: start; gap: 1rem; padding: 2rem; border: 1px solid var(--rf-color-text-muted); border-radius: 0.5rem; background: var(--rf-color-surface-glass); }
+.spring-operations { display: grid; gap: var(--spring-space-inset); }
+.spring-empty { display: grid; justify-items: start; gap: var(--spring-space-stack); padding: var(--spring-space-section); border: var(--spring-border-width) solid var(--rf-color-text-muted); border-radius: var(--spring-radius-panel); background: var(--rf-color-surface-glass); }
 .spring-empty p { max-width: 65ch; color: var(--rf-color-text-secondary); }
-.spring-share-pair { padding: 0.25rem 1.25rem; border: 1px solid var(--rf-color-text-muted); border-radius: 0.4rem; }
-.spring-share-pair p { color: var(--rf-color-text-secondary); font-size: 0.9rem; max-width: 75ch; padding-bottom: 0.75rem; }
-.spring-share-pair > a { display: block; overflow-wrap: anywhere; padding-bottom: 1rem; }
-.operations-panels { display: grid; gap: 1.5rem; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
-.operations-panel { min-width: 0; padding: 1.5rem; border: 1px solid var(--rf-color-text-muted); border-radius: 0.6rem; scroll-margin-top: 1rem; }
+.spring-share-pair { padding: var(--spring-space-tight) var(--spring-space-panel); border: var(--spring-border-width) solid var(--rf-color-text-muted); border-radius: var(--spring-radius-control); }
+.spring-share-pair p { color: var(--rf-color-text-secondary); font-size: var(--spring-type-support); max-width: 75ch; padding-bottom: var(--spring-space-control); }
+.spring-share-pair > a { display: block; overflow-wrap: anywhere; padding-bottom: var(--spring-space-stack); }
+.operations-panels { display: grid; gap: var(--spring-space-inset); grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.operations-panel { min-width: 0; padding: var(--spring-space-inset); border: var(--spring-border-width) solid var(--rf-color-text-muted); border-radius: var(--spring-radius-card); scroll-margin-top: var(--spring-space-stack); }
 @media (max-width: 800px) { .operations-panels { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 450px) { .operations-panel { padding: 1rem; } }
-.spring-account-jumps { display: flex; flex-wrap: wrap; gap: 1.5rem; } .spring-account-jumps a { display: flex; align-items: center; min-height: 44px; }
+@media (max-width: 450px) { .operations-panel { padding: var(--spring-space-stack); } }
+.spring-account-jumps { display: flex; flex-wrap: wrap; gap: var(--spring-space-inset); } .spring-account-jumps a { display: flex; align-items: center; min-height: var(--spring-control-size); }

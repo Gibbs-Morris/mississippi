@@ -71,17 +71,17 @@
                 Reading the projection itself requires the claim policy.
             </p>
             <button type="button" @onclick="RefreshProtectedRead" disabled="@IsAuthProjectionLoading">Refresh protected read</button>
-            <p>Refresh after an accepted command to verify the event count. A live subscription can be denied separately from a protected HTTP read.</p>
-            @if (!string.IsNullOrEmpty(ProjectionReadError))
+            <p>Protected HTTP read for <strong>@ActivePersonaName</strong> and entity <code>@ProjectionEntityIdDisplay</code>. Refresh after an accepted command to verify the event count. A live subscription can be denied separately.</p>
+            @if (!IsPersonaReadCurrent || IsAuthProjectionLoading)
+            {
+                <p role="status">Refreshing the projection for this persona…</p>
+            }
+            else if (!string.IsNullOrEmpty(ProjectionReadError))
             {
                 <p class="spring-auth-error" role="alert">
                     <strong>Projection access failed:</strong> @ProjectionReadError
                 </p>
                 <p>A denied read does not prove that a command failed. Compare the separate command response above.</p>
-            }
-            else if (IsAuthProjectionLoading || !IsPersonaReadCurrent)
-            {
-                <p role="status">Refreshing the projection for this persona…</p>
             }
             else if (ProjectionSnapshot is null)
             {
@@ -110,8 +110,9 @@
     <details class="spring-auth-snapshots">
         <summary>Inspect raw projection and client state snapshots</summary>
         <p>
-            These are Reservoir snapshots. Cached projection data can remain after a failed read;
-            use the live-read status above to assess the current persona.
+            These are Reservoir snapshots. The projection snapshot belongs to the live subscription,
+            whose gateway connection identity is separate from the HTTP persona. Cached data can remain after a failed read.
+            Use the protected HTTP result above to assess the current persona.
         </p>
         <SnapshotTable Title="Projection Snapshot" Rows="@ProjectionSnapshotRows"/>
         <SnapshotTable Title="Aggregate State Snapshot" Rows="@AggregateStateRows"/>

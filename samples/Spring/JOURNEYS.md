@@ -41,13 +41,13 @@ Projection reads require the claim policy; the saga start requires the Auth Proo
 | Full Access | 200 | 200 | 200 |
 
 - Select a persona, send one of the three protected commands and compare its actual response with the expected access. 200 means allowed; 401 means unauthenticated; 403 means authenticated but unauthorized.
-- The read projection counts authenticated-access events only. Role and claim commands do not increment that count. Changing persona refreshes the HTTP read; choose Refresh protected read after accepted commands to verify the count. Live subscription access is checked separately and can be denied even when a persona permits HTTP reads. A rejected read is separate from command execution.
+- The read projection counts authenticated-access events only. Role and claim commands do not increment that count. Changing persona refreshes the HTTP read; choose Refresh protected read after accepted commands to verify the count. Reservoir correlates each HTTP result with its entity, persona and request ID so an older response cannot replace the current selection's result. Live subscription access is checked separately and can be denied even when a persona permits HTTP reads. A rejected read is separate from command execution.
 - Start AuthProof Saga exercises role authorization on a saga with one no-op step. Its client response reports start acceptance, not the final workflow phase.
 - Choose an entity ID to isolate the experiment; blank uses `auth-proof`. Command histories retain earlier personas and entities.
 - Expand Inspect raw projection and client state snapshots for the existing Reservoir diagnostics. Cached projection data can remain after a denied read; assess current access from the live-read result.
 - Personas also affect banking requests. Restore Full Access before returning to banking. All four authenticated profiles retain the banking and transfer operator roles.
 
-Sources: [persona profiles](Spring.Client/Features/AuthSimulation/AuthSimulationProfiles.cs), [HTTP header adapter](Spring.Client/AuthSimulation/AuthSimulationHeadersHandler.cs), [registered projection reducers](Spring.Client/Features/ProjectionsFeatureRegistration.cs), [registration regression](Spring.Client.L0Tests/Features/ProjectionsFeatureRegistrationTests.cs), [gateway configuration](Spring.Gateway/Program.cs), [Auth Proof domain](Spring.Domain/Aggregates/AuthProof), [authorization L2 matrix](Spring.L2Tests/AuthProofAuthorizationIntegrationTests.cs) and [all five personas L3](Spring.L3Tests/FlagshipJourneysTests.cs).
+Sources: [persona profiles](Spring.Client/Features/AuthSimulation/AuthSimulationProfiles.cs), [HTTP header adapter](Spring.Client/AuthSimulation/AuthSimulationHeadersHandler.cs), [registered projection reducers](Spring.Client/Features/ProjectionsFeatureRegistration.cs), [correlated protected HTTP read](Spring.Client/Features/AuthProofRead), [read-ordering regression](Spring.Client.L0Tests/Features/AuthProofRead/AuthProofReadTests.cs), [registration regression](Spring.Client.L0Tests/Features/ProjectionsFeatureRegistrationTests.cs), [gateway configuration](Spring.Gateway/Program.cs), [Auth Proof domain](Spring.Domain/Aggregates/AuthProof), [authorization L2 matrix](Spring.L2Tests/AuthProofAuthorizationIntegrationTests.cs) and [all five personas L3](Spring.L3Tests/FlagshipJourneysTests.cs).
 
 ## Connection, themes and developer tools
 
@@ -72,3 +72,7 @@ Refraction Pane, InputField, TelemetryStrip, themes and semantic tokens remain t
 Domain handlers, storage, runtime orchestration, generated routes and authorization rules remain unchanged.
 
 See the [first-run guide](README.md), [test commands and evidence](TESTING.md) and [phone/desktop captures](Spring.L3Tests/Screenshots/flagship/README.md).
+
+Spring's shared layout, type, radius and control-size values use application-owned `--spring-*` primitives in `spring.css`.
+Refraction's existing semantic colors and focus tokens remain the theme contract.
+The temporary hand-authored scope is recorded in [#405's migration ledger](https://github.com/Gibbs-Morris/mississippi/issues/405) as `spring-flagship-token-migration` until emitted semantic spacing/type/size properties are available.

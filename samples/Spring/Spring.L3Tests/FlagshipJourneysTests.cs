@@ -28,6 +28,87 @@ public sealed class FlagshipJourneysTests
     ) =>
         page.Locator("#account-a-operations-panel");
 
+    /// <summary>Task navigation keeps both account anchors and the shared link bound to the current pair.</summary>
+    /// <returns>The asynchronous keyboard, narrow-layout and independent-browser navigation regression.</returns>
+    [Fact]
+    public async Task AccountAnchorsAndSharedLinkRetainPairAfterTaskNavigationAsync()
+    {
+        Assert.True(Fixture.IsInitialized, "fixture must be initialized");
+        IPage page = await Fixture.CreatePageAsync();
+        IPage observer = await Fixture.CreatePageAsync();
+        try
+        {
+            OperationsPage operations = await BankAccountScenario.PrepareAsync(Fixture, page, ProjectionTimeout);
+            await operations.WaitForBalanceValueAsync("500.00", ProjectionTimeout);
+            await operations.WaitForBalanceValueAsync("500.00", ProjectionTimeout, "B");
+            string accountA = await AccountA(page).Locator("h2 code").InnerTextAsync();
+            string accountB = await page.Locator("#account-b-operations-panel h2 code").InnerTextAsync();
+            await page.GetByRole(
+                    AriaRole.Button,
+                    new()
+                    {
+                        Name = "View Investigations",
+                        Exact = true,
+                    })
+                .ClickAsync();
+            await page.GetByRole(
+                    AriaRole.Link,
+                    new()
+                    {
+                        Name = "Move money",
+                        Exact = true,
+                    })
+                .ClickAsync();
+            await Expect(AccountA(page).Locator("h2 code")).ToHaveTextAsync(accountA);
+            await page.Locator(".spring-share-pair summary").PressAsync("Enter");
+            string? share = await page.Locator(".spring-share-pair > a").GetAttributeAsync("href");
+            Assert.Equal(
+                new Uri(
+                    Fixture.GatewayBaseUri,
+                    $"/operations?a={Uri.EscapeDataString(accountA)}&b={Uri.EscapeDataString(accountB)}").ToString(),
+                share);
+            Assert.NotNull(share);
+            await observer.GotoAsync(share);
+            OperationsPage observed = new(observer);
+            await observed.WaitForBalanceValueAsync("500.00", ProjectionTimeout);
+            await observed.WaitForBalanceValueAsync("500.00", ProjectionTimeout, "B");
+            await Expect(observer.Locator("#account-a-panel-heading code")).ToHaveTextAsync(accountA);
+            await Expect(observer.Locator("#account-b-panel-heading code")).ToHaveTextAsync(accountB);
+            ILocator accountBJump = page.GetByRole(
+                AriaRole.Link,
+                new()
+                {
+                    Name = "Account B ↓",
+                    Exact = true,
+                });
+            await accountBJump.FocusAsync();
+            await accountBJump.PressAsync("Enter");
+            await Expect(page.Locator("#account-b-operations-panel")).ToBeFocusedAsync();
+            Assert.Equal("/operations", new Uri(page.Url).AbsolutePath);
+            await Expect(AccountA(page).Locator("h2 code")).ToHaveTextAsync(accountA);
+            await Expect(page.Locator("#account-b-panel-heading code")).ToHaveTextAsync(accountB);
+            await page.SetViewportSizeAsync(320, 740);
+            await page.GetByRole(
+                    AriaRole.Link,
+                    new()
+                    {
+                        Name = "Account A ↓",
+                        Exact = true,
+                    })
+                .ClickAsync();
+            await Expect(page.Locator("#account-a-operations-panel")).ToBeFocusedAsync();
+            Assert.Equal("/operations", new Uri(page.Url).AbsolutePath);
+            Assert.True(
+                await page.EvaluateAsync<bool>(
+                    "document.documentElement.scrollWidth <= document.documentElement.clientWidth"));
+        }
+        finally
+        {
+            await observer.CloseAsync();
+            await page.CloseAsync();
+        }
+    }
+
     /// <summary>Switching one account retains the other ID and keeps the demo shortcut bound to its displayed pair.</summary>
     /// <returns>The asynchronous account-selection journey.</returns>
     [Fact]
@@ -290,6 +371,161 @@ public sealed class FlagshipJourneysTests
         }
         finally
         {
+            await page.CloseAsync();
+        }
+    }
+
+    /// <summary>A delayed allowed HTTP read cannot replace a newer persona's real denial.</summary>
+    /// <returns>The asynchronous persona-ordering regression.</returns>
+    [Fact]
+    public async Task DelayedAllowedReadDoesNotReplaceNewPersonaDenialAsync()
+    {
+        Assert.True(Fixture.IsInitialized, "fixture must be initialized");
+        IPage page = await Fixture.CreatePageAsync();
+        using SemaphoreSlim release = new(0, 1);
+        using SemaphoreSlim intercepted = new(0, 1);
+        try
+        {
+            await page.GotoAsync(new Uri(Fixture.GatewayBaseUri, "/auth-proof").ToString());
+            string entity = $"persona-race-{Guid.NewGuid():N}";
+            string endpoint = $"/api/projections/auth-proof/{entity}";
+            await page.GetByLabel(
+                    "Auth Proof entity ID",
+                    new()
+                    {
+                        Exact = true,
+                    })
+                .FillAsync(entity);
+            await page.GetByRole(
+                    AriaRole.Button,
+                    new()
+                    {
+                        Name = "Record Authenticated Access",
+                        Exact = true,
+                    })
+                .ClickAsync();
+            await Expect(
+                    page.GetByRole(
+                            AriaRole.Region,
+                            new()
+                            {
+                                Name = "Auth Proof command responses",
+                                Exact = true,
+                            })
+                        .GetByRole(AriaRole.Status))
+                .ToContainTextAsync("Latest response: accepted.");
+            await page.GetByRole(
+                    AriaRole.Button,
+                    new()
+                    {
+                        Name = "Refresh protected read",
+                        Exact = true,
+                    })
+                .ClickAsync();
+            await Expect(
+                    page.GetByLabel(
+                        "Authenticated access events observed",
+                        new()
+                        {
+                            Exact = true,
+                        }))
+                .ToHaveTextAsync(
+                    "1",
+                    new()
+                    {
+                        Timeout = ProjectionTimeout,
+                    });
+            int requests = 0;
+            await page.RouteAsync(
+                $"**{endpoint}",
+                async route =>
+                {
+                    if (Interlocked.Increment(ref requests) == 1)
+                    {
+                        intercepted.Release();
+                        await release.WaitAsync(TestContext.Current.CancellationToken);
+                    }
+
+                    await route.ContinueAsync();
+                });
+            Task<IResponse> obsoleteResponse = page.WaitForResponseAsync(response =>
+                response.Url.EndsWith(endpoint, StringComparison.Ordinal) && (response.Status == 200));
+            await page.GetByRole(
+                    AriaRole.Button,
+                    new()
+                    {
+                        Name = "Refresh protected read",
+                        Exact = true,
+                    })
+                .ClickAsync();
+            Assert.True(await intercepted.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken));
+            Task<IResponse> deniedResponse = page.WaitForResponseAsync(response =>
+                response.Url.EndsWith(endpoint, StringComparison.Ordinal) && (response.Status == 401));
+            await page.GetByRole(
+                    AriaRole.Button,
+                    new()
+                    {
+                        Name = "Unauthenticated",
+                        Exact = true,
+                    })
+                .ClickAsync();
+            Assert.Equal(401, (await deniedResponse).Status);
+            ILocator readError = page.Locator(".spring-auth-outcome").GetByRole(AriaRole.Alert);
+            await Expect(readError).ToContainTextAsync("401");
+            await Expect(
+                    page.GetByLabel(
+                        "Authenticated access events observed",
+                        new()
+                        {
+                            Exact = true,
+                        }))
+                .ToHaveCountAsync(0);
+            release.Release();
+            IResponse allowed = await obsoleteResponse;
+            Assert.Equal(200, allowed.Status);
+            Assert.Null(await allowed.FinishedAsync());
+            await page.Locator("summary")
+                .Filter(
+                    new()
+                    {
+                        HasText = "Inspect raw projection and client state snapshots",
+                    })
+                .ClickAsync();
+            await Expect(
+                    page.GetByRole(
+                        AriaRole.Heading,
+                        new()
+                        {
+                            Name = "Projection Snapshot",
+                            Exact = true,
+                        }))
+                .ToBeVisibleAsync();
+            await Expect(readError).ToContainTextAsync("401");
+            await Expect(
+                    page.GetByRole(
+                        AriaRole.Button,
+                        new()
+                        {
+                            Name = "Unauthenticated",
+                            Exact = true,
+                        }))
+                .ToHaveAttributeAsync("aria-pressed", "true");
+            await Expect(
+                    page.GetByLabel(
+                        "Authenticated access events observed",
+                        new()
+                        {
+                            Exact = true,
+                        }))
+                .ToHaveCountAsync(0);
+        }
+        finally
+        {
+            if (release.CurrentCount == 0)
+            {
+                release.Release();
+            }
+
             await page.CloseAsync();
         }
     }
@@ -567,7 +803,23 @@ public sealed class FlagshipJourneysTests
                             Exact = true,
                         })
                     .ClickAsync();
-                Assert.Equal(read, (await projectionResponse).Status);
+                IResponse initialRead = await projectionResponse;
+                Assert.Equal(read, initialRead.Status);
+                Assert.Null(await initialRead.FinishedAsync());
+                Task<IResponse> repeatedPersonaRead = page.WaitForResponseAsync(response =>
+                    (response.Request.Method == "GET") &&
+                    response.Url.EndsWith($"/api/projections/auth-proof/{entityId}", StringComparison.Ordinal));
+                await page.GetByRole(
+                        AriaRole.Button,
+                        new()
+                        {
+                            Name = persona,
+                            Exact = true,
+                        })
+                    .ClickAsync();
+                IResponse refreshedRead = await repeatedPersonaRead;
+                Assert.Equal(read, refreshedRead.Status);
+                Assert.Null(await refreshedRead.FinishedAsync());
                 await Expect(
                         page.GetByRole(
                             AriaRole.Button,

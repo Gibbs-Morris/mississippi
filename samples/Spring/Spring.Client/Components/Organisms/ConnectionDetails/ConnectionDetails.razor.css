@@ -1,5 +1,7 @@
-.spring-connection-details { padding: 1.25rem; border: 1px solid var(--rf-color-text-muted); border-radius: 0.5rem; background: var(--rf-color-surface-elevated); overflow-wrap: anywhere; }
-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 1rem; }
-dt { font-size: 0.8rem; color: var(--rf-color-text-secondary); }
-dd { margin: 0.25rem 0 0; }
+.spring-connection-details { padding: var(--spring-space-panel); border: var(--spring-border-width) solid var(--rf-color-text-muted); border-radius: var(--spring-radius-panel); background: var(--rf-color-surface-elevated); overflow-wrap: anywhere; }
+header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: var(--spring-space-stack); }
+dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: var(--spring-space-stack); }
+dt { font-size: var(--spring-type-control); color: var(--rf-color-text-secondary); }
+dd { margin: var(--spring-space-tight) 0 0; }
+
+header button { white-space: nowrap; }

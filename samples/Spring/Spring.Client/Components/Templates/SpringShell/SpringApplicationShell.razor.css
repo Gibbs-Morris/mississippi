@@ -1,27 +1,27 @@
-.spring-shell { min-height: 100dvh; padding-inline: clamp(1rem, 4vw, 3rem); background: var(--rf-color-surface-void); color: var(--rf-color-text-primary); }
-.spring-topbar { display: flex; align-items: center; flex-wrap: wrap; gap: 1.25rem; max-width: 1280px; margin-inline: auto; padding-block: 1.25rem; border-bottom: 1px solid var(--rf-color-text-muted); }
+.spring-shell { min-height: 100dvh; padding-inline: clamp(var(--spring-space-stack), 4vw, 3rem); background: var(--rf-color-surface-void); color: var(--rf-color-text-primary); }
+.spring-topbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--spring-space-panel); max-width: 1280px; margin-inline: auto; padding-block: var(--spring-space-panel); border-bottom: var(--spring-border-width) solid var(--rf-color-text-muted); }
 .spring-wordmark { display: flex; align-items: center; gap: 0.7rem; color: inherit; text-decoration: none; }
 .spring-wordmark strong { display: block; font-size: 1.4rem; line-height: 1.1; letter-spacing: -0.05em; }
-.spring-wordmark small { display: block; font-size: 0.75rem; color: var(--rf-color-text-secondary); }
-.spring-mark { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid var(--rf-color-text-accent); border-radius: 0.4rem; color: var(--rf-color-text-accent); font-size: 1.5rem; font-weight: 700; }
-.spring-mark span { font-size: 0.8rem; align-self: flex-start; }
-.spring-navigation { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-inline-start: auto; }
+.spring-wordmark small { display: block; font-size: var(--spring-type-caption); color: var(--rf-color-text-secondary); }
+.spring-mark { display: flex; align-items: center; justify-content: center; width: var(--spring-control-size); height: var(--spring-control-size); border: var(--spring-border-width) solid var(--rf-color-text-accent); border-radius: var(--spring-radius-control); color: var(--rf-color-text-accent); font-size: 1.5rem; font-weight: 700; }
+.spring-mark span { font-size: var(--spring-type-control); align-self: flex-start; }
+.spring-navigation { display: flex; flex-wrap: wrap; gap: var(--spring-space-tight); margin-inline-start: auto; }
 /* NavLink renders its public anchor across the Blazor isolation boundary.
  * Only this shell navigation is targeted. Review if NavLink gains a styling API.
  */
-.spring-navigation ::deep a { display: flex; align-items: center; min-height: 44px; padding: 0.55rem 0.7rem; border-bottom: 2px solid transparent; color: var(--rf-color-text-secondary); font-size: 0.9rem; font-weight: 550; text-decoration: none; white-space: nowrap; }
+.spring-navigation ::deep a { display: flex; align-items: center; min-height: var(--spring-control-size); padding: 0.55rem 0.7rem; border-bottom: 2px solid transparent; color: var(--rf-color-text-secondary); font-size: var(--spring-type-support); font-weight: 550; text-decoration: none; white-space: nowrap; }
 .spring-navigation ::deep a.active { color: var(--rf-color-text-accent); border-bottom-color: currentColor; }
 .spring-appearance { min-width: 0; }
-.spring-appearance summary { font-size: 0.85rem; }
-.spring-theme-options { display: flex; flex-wrap: wrap; gap: 0.4rem; padding-block: 0.5rem; }
-.spring-theme-options button { font-size: 0.8rem; padding-inline: 0.7rem; }
+.spring-appearance summary { font-size: var(--spring-type-detail); }
+.spring-theme-options { display: flex; flex-wrap: wrap; gap: 0.4rem; padding-block: var(--spring-space-inline); }
+.spring-theme-options button { font-size: var(--spring-type-control); padding-inline: 0.7rem; }
 .spring-theme-options button[aria-pressed="true"] { border-color: var(--rf-color-text-accent); color: var(--rf-color-text-accent); }
-#main-content { max-width: 1280px; margin-inline: auto; padding-block: clamp(2rem, 4vw, 3.5rem); }
-.spring-footer { display: grid; gap: 1rem; max-width: 1280px; margin-inline: auto; padding-block: 2rem; border-top: 1px solid var(--rf-color-text-muted); color: var(--rf-color-text-secondary); font-size: 0.9rem; }
-.spring-footer-note { font-size: 0.8rem; }
-.spring-tools nav { display: flex; flex-wrap: wrap; gap: 1rem; padding-block: 0.5rem 1rem; }
+.spring-main-content { max-width: 1280px; margin-inline: auto; padding-block: clamp(var(--spring-space-section), 4vw, 3.5rem); }
+.spring-footer { display: grid; gap: var(--spring-space-stack); max-width: 1280px; margin-inline: auto; padding-block: var(--spring-space-section); border-top: var(--spring-border-width) solid var(--rf-color-text-muted); color: var(--rf-color-text-secondary); font-size: var(--spring-type-support); }
+.spring-footer-note { font-size: var(--spring-type-control); }
+.spring-tools nav { display: flex; flex-wrap: wrap; gap: var(--spring-space-stack); padding-block: var(--spring-space-inline) var(--spring-space-stack); }
 .spring-tools p { max-width: 70ch; margin-block: 0.6rem; }
-.skip-link { position: absolute; top: 0.5rem; left: 0.5rem; z-index: 10; padding: 0.75rem; transform: translateY(-200%); background: var(--rf-color-surface-elevated); color: var(--rf-color-text-primary); }
+.skip-link { position: absolute; top: var(--spring-space-inline); left: var(--spring-space-inline); z-index: 10; padding: var(--spring-space-control); transform: translateY(-200%); background: var(--rf-color-surface-elevated); color: var(--rf-color-text-primary); }
 .skip-link:focus { transform: translateY(0); }
 @media (max-width: 1050px) { .spring-navigation { order: 3; flex-basis: 100%; margin: 0; } .spring-appearance { margin-inline-start: auto; } }
-@media (max-width: 600px) { .spring-topbar { gap: 0.75rem; padding-block: 1rem; } .spring-navigation { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding-bottom: 0.25rem; } .spring-navigation ::deep a { justify-content: center; font-size: 0.8rem; white-space: normal; text-align: center; } }
+@media (max-width: 600px) { .spring-topbar { gap: var(--spring-space-control); padding-block: var(--spring-space-stack); } .spring-navigation { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding-bottom: var(--spring-space-tight); } .spring-navigation ::deep a { justify-content: center; font-size: var(--spring-type-control); white-space: normal; text-align: center; } }

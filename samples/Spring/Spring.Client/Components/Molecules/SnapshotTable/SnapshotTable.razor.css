@@ -1,7 +1,7 @@
-.spring-snapshot { display: grid; gap: 0.75rem; padding-block: 1.25rem; }
+.spring-snapshot { display: grid; gap: var(--spring-space-control); padding-block: var(--spring-space-panel); }
 .spring-snapshot h2 { font-size: 1.1rem; }
-.spring-snapshot p { color: var(--rf-color-text-secondary); font-size: 0.9rem; }
+.spring-snapshot p { color: var(--rf-color-text-secondary); font-size: var(--spring-type-support); }
 .spring-snapshot-scroll { overflow: auto; max-height: 28rem; }
-table { table-layout: fixed; min-width: 420px; font-size: 0.85rem; }
+table { table-layout: fixed; min-width: 420px; font-size: var(--spring-type-detail); }
 th { width: 45%; }
-caption { color: var(--rf-color-text-secondary); text-align: left; padding-bottom: 0.5rem; }
+caption { color: var(--rf-color-text-secondary); text-align: left; padding-bottom: var(--spring-space-inline); }

@@ -185,6 +185,8 @@ public sealed partial class OperationsPage
     private int ReconnectAttemptCount =>
         Select<SignalRConnectionState, int>(SignalRConnectionSelectors.GetReconnectAttemptCount);
 
+    private string ShareUrl => NavigationManager.ToAbsoluteUri(BuildOperationsUrl(AccountAId, AccountBId)).ToString();
+
     private MoneyTransferSagaState TransferCommandState =>
         Select<MoneyTransferSagaState, MoneyTransferSagaState>(state => state);
 

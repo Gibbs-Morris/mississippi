@@ -29,7 +29,7 @@
                 Most recent 30 flags across all accounts. @(IsQueueConnected ? "SignalR connected." : "SignalR not connected.")
                 @if (FlaggedProjection is not null)
                 {
-                    <span>Projection version @QueueVersion.</span>
+                    <span>@(" Projection version ")@QueueVersion.</span>
                 }
             </p>
             @if (!string.IsNullOrEmpty(QueueReadError))

@@ -1,32 +1,32 @@
 .spring-home { display: grid; gap: clamp(3rem, 6vw, 5rem); }
-.spring-hero { display: grid; grid-template-columns: 1.2fr 1fr; align-items: center; gap: clamp(2rem, 6vw, 5rem); }
-.spring-hero-copy { display: grid; justify-items: start; gap: 1.5rem; }
-.spring-kicker { color: var(--rf-color-text-accent); font-size: 0.75rem; letter-spacing: 0.12em; font-weight: 650; }
+.spring-hero { display: grid; grid-template-columns: 1.2fr 1fr; align-items: center; gap: clamp(var(--spring-space-section), 6vw, 5rem); }
+.spring-hero-copy { display: grid; justify-items: start; gap: var(--spring-space-inset); }
+.spring-kicker { color: var(--rf-color-text-accent); font-size: var(--spring-type-caption); letter-spacing: 0.12em; font-weight: 650; }
 .spring-hero h1 { font-size: clamp(2.8rem, 5vw, 4.75rem); }
 .spring-hero h1 span { color: var(--rf-color-text-accent); }
 .spring-intro { max-width: 46ch; color: var(--rf-color-text-secondary); font-size: 1.1rem; }
-.spring-first-run { color: var(--rf-color-text-secondary); font-size: 0.85rem; }
-.spring-flow { padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--rf-color-text-muted); border-radius: 0.8rem; background: var(--rf-color-surface-glass); }
-.spring-flow-heading { display: flex; justify-content: space-between; color: var(--rf-color-text-accent); font-size: 0.75rem; font-weight: 650; letter-spacing: 0.08em; }
-.spring-flow ol { display: grid; gap: 2rem; padding: 2rem 0; margin: 0; list-style: none; }
-.spring-flow li { display: flex; gap: 1rem; align-items: start; }
-.spring-step { color: var(--rf-color-text-accent); font-family: ui-monospace, monospace; font-size: 0.85rem; padding-top: 0.25rem; }
-.spring-flow h2 { font-size: 1.05rem; }
-.spring-flow p { color: var(--rf-color-text-secondary); font-size: 0.9rem; margin-top: 0.4rem; }
-.spring-flow-note { padding-top: 1.25rem; border-top: 1px solid var(--rf-color-text-muted); }
-.spring-task-section, .spring-section-heading { display: grid; gap: 1.5rem; }
-.spring-section-heading { gap: 0.5rem; }
+.spring-first-run { color: var(--rf-color-text-secondary); font-size: var(--spring-type-detail); }
+.spring-flow { padding: clamp(var(--spring-space-panel), 3vw, var(--spring-space-section)); border: var(--spring-border-width) solid var(--rf-color-text-muted); border-radius: 0.8rem; background: var(--rf-color-surface-glass); }
+.spring-flow-heading { display: flex; justify-content: space-between; color: var(--rf-color-text-accent); font-size: var(--spring-type-caption); font-weight: 650; letter-spacing: 0.08em; }
+.spring-flow ol { display: grid; gap: var(--spring-space-section); padding: var(--spring-space-section) 0; margin: 0; list-style: none; }
+.spring-flow li { display: flex; gap: var(--spring-space-stack); align-items: start; }
+.spring-step { color: var(--rf-color-text-accent); font-family: ui-monospace, monospace; font-size: var(--spring-type-detail); padding-top: var(--spring-space-tight); }
+.spring-flow h2 { font-size: var(--spring-type-intro); }
+.spring-flow p { color: var(--rf-color-text-secondary); font-size: var(--spring-type-support); margin-top: 0.4rem; }
+.spring-flow-note { padding-top: var(--spring-space-panel); border-top: var(--spring-border-width) solid var(--rf-color-text-muted); }
+.spring-task-section, .spring-section-heading { display: grid; gap: var(--spring-space-inset); }
+.spring-section-heading { gap: var(--spring-space-inline); }
 .spring-section-heading h2 { font-size: 1.6rem; }
 .spring-section-heading p { color: var(--rf-color-text-secondary); }
-.spring-task-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
-.spring-task { display: flex; flex-direction: column; gap: 1rem; padding: 1.5rem; border: 1px solid var(--rf-color-text-muted); border-radius: 0.6rem; text-decoration: none; color: var(--rf-color-text-primary); }
+.spring-task-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--spring-space-stack); }
+.spring-task { display: flex; flex-direction: column; gap: var(--spring-space-stack); padding: var(--spring-space-inset); border: var(--spring-border-width) solid var(--rf-color-text-muted); border-radius: var(--spring-radius-card); text-decoration: none; color: var(--rf-color-text-primary); }
 .spring-task:hover { border-color: var(--rf-color-text-accent); background: var(--rf-color-surface-glass); }
 .spring-task-number { color: var(--rf-color-text-accent); font-size: 0.7rem; font-weight: 650; letter-spacing: 0.07em; }
 .spring-task h3 { font-size: 1.2rem; }
 .spring-task p { color: var(--rf-color-text-secondary); font-size: 0.95rem; }
-.spring-task-next { display: flex; justify-content: space-between; gap: 0.5rem; margin-top: auto; color: var(--rf-color-text-accent); font-size: 0.8rem; }
-.spring-context { display: grid; grid-template-columns: 1fr 1.4fr; gap: 1.5rem; padding-top: 2rem; border-top: 1px solid var(--rf-color-text-muted); }
-.spring-context h2 { margin-top: 0.5rem; }
+.spring-task-next { display: flex; justify-content: space-between; gap: var(--spring-space-inline); margin-top: auto; color: var(--rf-color-text-accent); font-size: var(--spring-type-control); }
+.spring-context { display: grid; grid-template-columns: 1fr 1.4fr; gap: var(--spring-space-inset); padding-top: var(--spring-space-section); border-top: var(--spring-border-width) solid var(--rf-color-text-muted); }
+.spring-context h2 { margin-top: var(--spring-space-inline); }
 .spring-context p:not(.spring-kicker) { color: var(--rf-color-text-secondary); }
 .spring-context a { grid-column: 2; }
 @media (max-width: 1000px) { .spring-task-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
