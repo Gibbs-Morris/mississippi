@@ -45,6 +45,22 @@ const assert = require('node:assert/strict');
       clearTimeout(timer);
     }
   };
+  const verifyProtectedRead = async (response, status) => {
+    assert.equal(response.status(), status);
+    const outcome = page.locator('.spring-auth-outcome');
+    const count = page.getByLabel('Authenticated access events observed', { exact: true });
+    if (status === 200) {
+      const body = await waitForGate(response.json(), 'protected-read-body');
+      await expect(outcome.getByRole('alert')).toHaveCount(0);
+      await expect(count).toHaveText(String(body.authenticatedAccessCount));
+    } else {
+      // ResponseHeadersRead denies and disposes the response without consuming its body.
+      await expect(outcome.getByRole('alert')).toContainText('HTTP ' + status);
+      await expect(count).toHaveCount(0);
+    }
+    await expect(outcome.locator('p[role="status"]')).toHaveCount(0);
+    await expect(outcome.getByRole('button', { name: 'Refresh protected read', exact: true })).toBeEnabled();
+  };
   const capture = async (name, width = 390, height = 844, audit = true) => {
     manifest.phase = 'capture:' + name;
     await page.setViewportSize({ width, height });
@@ -86,8 +102,7 @@ const assert = require('node:assert/strict');
       const read = page.waitForResponse(r => r.request().method() === 'GET' && r.url().endsWith(endpoint) && hasHttpPersona(r.request(), persona));
       await page.getByRole('button', { name: persona, exact: true }).tap();
       const observed = await read;
-      assert.equal(observed.status(), 401);
-      assert.equal(await observed.finished(), null);
+      await verifyProtectedRead(observed, 401);
       await expect(page.locator('.spring-auth-outcome').getByRole('alert')).toContainText('HTTP 401');
       await expect(page.getByLabel('Authenticated access events observed', { exact: true })).toHaveCount(0);
       for (const [route, button] of [['authenticated', 'Record Authenticated Access'], ['policy', 'Record Policy Access'], ['role', 'Record Role Access']]) {
@@ -263,26 +278,23 @@ const assert = require('node:assert/strict');
         const personaRead = page.waitForResponse(r => r.request().method() === 'GET' && r.url().endsWith(readPath) && hasHttpPersona(r.request(), persona));
         await page.getByRole('button', { name: persona, exact: true }).tap();
         const selectedRead = await personaRead;
-        assert.equal(selectedRead.status(), expectedRead);
-        assert.equal(await selectedRead.finished(), null);
+        await verifyProtectedRead(selectedRead, expectedRead);
         const repeatedPersonaRead = page.waitForResponse(r => r.request().method() === 'GET' && r.url().endsWith(readPath) && hasHttpPersona(r.request(), persona));
         await page.getByRole('button', { name: persona, exact: true }).tap();
         const repeatedRead = await repeatedPersonaRead;
-        assert.equal(repeatedRead.status(), expectedRead);
-        assert.equal(await repeatedRead.finished(), null);
+        await verifyProtectedRead(repeatedRead, expectedRead);
         const commandRequest = page.waitForResponse(r => r.request().method() === 'POST' && r.url().endsWith('/' + entity + '/authenticated'));
         await page.getByRole('button', { name: 'Record Authenticated Access', exact: true }).tap();
         const commandResponse = await commandRequest;
         assert.equal(commandResponse.status(), persona === 'Unauthenticated' ? 401 : 200);
-        assert.equal(await commandResponse.finished(), null);
+        assert.equal(await waitForGate(commandResponse.finished(), 'authenticated-command-complete'), null);
         if (persona !== 'Unauthenticated') authenticatedCount++;
         const response = page.getByRole('region', { name: 'Auth Proof command responses', exact: true }).getByRole('status');
         await expect(response).toContainText(persona === 'Unauthenticated' ? 'Latest request: failed.' : 'Latest response: accepted.');
         const manualRead = page.waitForResponse(r => r.request().method() === 'GET' && r.url().endsWith(readPath) && hasHttpPersona(r.request(), persona));
         await page.getByRole('button', { name: 'Refresh protected read', exact: true }).tap();
         const refreshedRead = await manualRead;
-        assert.equal(refreshedRead.status(), expectedRead);
-        assert.equal(await refreshedRead.finished(), null);
+        await verifyProtectedRead(refreshedRead, expectedRead);
         if (expectedRead === 200) {
           await expect(page.getByLabel('Authenticated access events observed', { exact: true })).toHaveText(String(authenticatedCount));
         } else {
@@ -312,7 +324,7 @@ const assert = require('node:assert/strict');
       releaseOldRead();
       const completedObsolete = await obsoleteResponse;
       assert.equal(completedObsolete.status(), 200);
-      assert.equal(await completedObsolete.finished(), null);
+      assert.equal(await waitForGate(completedObsolete.finished(), 'obsolete-protected-read-complete'), null);
       assert.equal((await completedObsolete.json()).authenticatedAccessCount, 4);
       await page.locator('details.spring-auth-snapshots summary').press('Enter');
       await expect(page.getByRole('heading', { name: 'Aggregate State Snapshot', exact: true })).toBeVisible();

@@ -29,6 +29,53 @@ public sealed class FlagshipJourneysTests
     ) =>
         page.Locator("#account-a-operations-panel");
 
+    private static async Task ExpectAuthProofReadAsync(
+        IPage page,
+        IResponse response,
+        int status
+    )
+    {
+        Assert.Equal(status, response.Status);
+        ILocator outcome = page.Locator(".spring-auth-outcome");
+        ILocator count = page.GetByLabel(
+            "Authenticated access events observed",
+            new()
+            {
+                Exact = true,
+            });
+        if (status == 200)
+        {
+            JsonElement body = Assert.IsType<JsonElement>(
+                await response.JsonAsync()
+                    .WaitAsync(
+                        TimeSpan.FromMilliseconds(ProjectionTimeout),
+                        TestContext.Current.CancellationToken));
+            await Expect(outcome.GetByRole(AriaRole.Alert)).ToHaveCountAsync(0);
+            await Expect(count)
+                .ToHaveTextAsync(
+                    body.GetProperty("authenticatedAccessCount").GetInt32().ToString(CultureInfo.InvariantCulture));
+        }
+        else
+        {
+            // Denied ResponseHeadersRead results are disposed before reading the body.
+            // Verify the actual HTTP denial and completed client outcome, not network-finished.
+            await Expect(outcome.GetByRole(AriaRole.Alert))
+                .ToContainTextAsync($"HTTP {status.ToString(CultureInfo.InvariantCulture)}");
+            await Expect(count).ToHaveCountAsync(0);
+        }
+
+        await Expect(outcome.Locator("p[role='status']")).ToHaveCountAsync(0);
+        await Expect(
+                outcome.GetByRole(
+                    AriaRole.Button,
+                    new()
+                    {
+                        Name = "Refresh protected read",
+                        Exact = true,
+                    }))
+            .ToBeEnabledAsync();
+    }
+
     private static bool HasHttpPersona(
         IRequest request,
         string persona
@@ -507,7 +554,11 @@ public sealed class FlagshipJourneysTests
             release.Release();
             IResponse allowed = await obsoleteResponse;
             Assert.Equal(200, allowed.Status);
-            Assert.Null(await allowed.FinishedAsync());
+            Assert.Null(
+                    await allowed.FinishedAsync()
+                        .WaitAsync(
+                            TimeSpan.FromMilliseconds(ProjectionTimeout),
+                            TestContext.Current.CancellationToken));
             await page.Locator("summary")
                 .Filter(
                     new()
@@ -909,8 +960,7 @@ public sealed class FlagshipJourneysTests
                         })
                     .ClickAsync();
                 IResponse initialRead = await projectionResponse;
-                Assert.Equal(read, initialRead.Status);
-                Assert.Null(await initialRead.FinishedAsync());
+                await ExpectAuthProofReadAsync(page, initialRead, read);
                 Task<IResponse> repeatedPersonaRead = page.WaitForResponseAsync(response =>
                     (response.Request.Method == "GET") &&
                     response.Url.EndsWith($"/api/projections/auth-proof/{entityId}", StringComparison.Ordinal) &&
@@ -924,8 +974,7 @@ public sealed class FlagshipJourneysTests
                         })
                     .ClickAsync();
                 IResponse refreshedRead = await repeatedPersonaRead;
-                Assert.Equal(read, refreshedRead.Status);
-                Assert.Null(await refreshedRead.FinishedAsync());
+                await ExpectAuthProofReadAsync(page, refreshedRead, read);
                 await Expect(
                         page.GetByRole(
                             AriaRole.Button,

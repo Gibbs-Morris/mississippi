@@ -18,6 +18,8 @@ Governing thought: Preserve caller attribute inputs while protecting component-o
 
 - Agents **MUST** correlate protected HTTP read outcomes with the originating request, entity and persona when presenting current authorization. Why: Spring displayed an earlier allowed HTTP 200 and event count after a newer persona received HTTP 401 in the flagship review; obsolete outcomes must not replace current proof.
 
+- Agents **SHOULD** verify denied streaming HTTP reads through the actual status and settled current UI, and bound any extra body or completion waits. Why: Spring's `ResponseHeadersRead` projection GET displayed HTTP 401 while an unbounded Playwright `FinishedAsync` stalled L3; status, denial, absent-count and enabled-refresh checks completed, while successful reads were checked against real response JSON.
+
 ## References
 
 - Self-improvement governance: [Self-Improvement Learning System](self-improvement.instructions.md).
