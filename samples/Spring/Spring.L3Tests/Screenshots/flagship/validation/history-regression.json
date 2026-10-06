@@ -1,0 +1,67 @@
+{
+  "sourceCommit": "31ceb637f0ebd8998f201be19f4cb541ffcbb3bb",
+  "precedingCommit": "a1c23e0e7f335bd4dd43d84c93b64242aa80771d",
+  "testFile": "samples/Spring/Spring.L3Tests/FlagshipJourneysTests.cs",
+  "physicalTestSha256": "CAA6C10D5CBAD6BB4F1CD11B92358167CBFC2B282DD573486C094F11D053293C",
+  "testBytesUnchangedBetweenRunsAndCurrentSource": true,
+  "sourceDuringCausalRuns": "New regression tests, then the CSS fix, were uncommitted changes on the preceding commit; both are now in sourceCommit.",
+  "beforeCssBlob": "6aa5bae441314b07aa43b21d43ec2c075556c166",
+  "finalCssBlob": "7baae7d54ff30fabf3482660aed312e07094f184",
+  "methodFilter": "*LostDepositReplyShowsClientFailureAndActualCommittedOutcomeAsync",
+  "viewportWidths": [
+    320,
+    390
+  ],
+  "trigger": "Expand real command history after one deposit commits on the server and delivery of its response is aborted.",
+  "independentBeforeBrowser": {
+    "implicitGridAndScrollerWidth": 600,
+    "width": 390,
+    "activityWidth": 644,
+    "documentScrollWidth": 660
+  },
+  "correction": "Constrain the activity grid with grid-template-columns:minmax(0,1fr) and min-width:0; retain the 600px table and labelled keyboard-scrollable region.",
+  "assertions": "Visible client failure, actual increased balance and one ledger entry precede containment. The final explicit server200/success/one-request assertions occur after the failing before assertion and are verified by both passing after cases and final Full L3.",
+  "runs": [
+    {
+      "stage": "before",
+      "executed": 2,
+      "passed": 0,
+      "failed": 2,
+      "skipped": 0,
+      "expectedFailure": true,
+      "exitCode": 2,
+      "timedOut": false,
+      "captureIncomplete": false,
+      "terminationFailed": false,
+      "outputTruncated": true,
+      "startedUtc": "2026-10-06T19:24:03.5068978Z",
+      "endedUtc": "2026-10-06T19:25:02.883714Z",
+      "originalRawTrxSha256": "77D7D95AF38ED6D38D155413A1A237C1DE8110AB2C5BDD8C068691D56503C8A0",
+      "portableTrx": "history-before.trx",
+      "explicitFinalServerAssertionsReached": false
+    },
+    {
+      "stage": "after",
+      "executed": 2,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailure": false,
+      "exitCode": 0,
+      "timedOut": false,
+      "captureIncomplete": false,
+      "terminationFailed": false,
+      "outputTruncated": true,
+      "startedUtc": "2026-10-06T19:26:43.4572663Z",
+      "endedUtc": "2026-10-06T19:27:47.1129892Z",
+      "originalRawTrxSha256": "EBE408F8706319371D8526E9EF95B445BAEC3BF1D4C1F9281D70A79120DB80E5",
+      "portableTrx": "history-after.trx",
+      "explicitFinalServerAssertionsReached": true
+    }
+  ],
+  "finalFullSuite": "l3-full.trx independently verifies both viewport cases on committed sourceCommit.",
+  "limitations": [
+    "Focused stdout is bounded/truncated and is not a complete transcript.",
+    "Original raw TRX hashes describe executed bytes; the asset inventory uses the portable UTF-8/LF representation."
+  ]
+}

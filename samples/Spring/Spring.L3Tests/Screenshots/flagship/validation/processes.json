@@ -1,0 +1,42 @@
+{
+  "go": {
+    "exitCode": 0,
+    "success": true,
+    "timedOut": false,
+    "captureIncomplete": false,
+    "terminationFailed": false,
+    "outputTruncated": true,
+    "startedUtc": "2026-10-06T19:47:20.7441755Z",
+    "endedUtc": "2026-10-06T20:12:12.2796528Z"
+  },
+  "doctor": {
+    "exitCode": 0,
+    "success": true,
+    "timedOut": false,
+    "captureIncomplete": false,
+    "terminationFailed": false,
+    "outputTruncated": false,
+    "startedUtc": "2026-10-06T20:12:12.7329131Z",
+    "endedUtc": "2026-10-06T20:12:19.6133726Z"
+  },
+  "l2": {
+    "exitCode": 0,
+    "success": true,
+    "timedOut": false,
+    "captureIncomplete": false,
+    "terminationFailed": false,
+    "outputTruncated": false,
+    "startedUtc": "2026-10-06T20:12:20.0303414Z",
+    "endedUtc": "2026-10-06T20:13:56.0605239Z"
+  },
+  "l3": {
+    "exitCode": 0,
+    "success": true,
+    "timedOut": false,
+    "captureIncomplete": false,
+    "terminationFailed": false,
+    "outputTruncated": false,
+    "startedUtc": "2026-10-06T20:13:56.4695994Z",
+    "endedUtc": "2026-10-06T20:18:16.1908993Z"
+  }
+}

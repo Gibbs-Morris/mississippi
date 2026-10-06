@@ -1,0 +1,1269 @@
+{
+  "browser": "151.0.7922.34",
+  "playwright": "1.62.1",
+  "axe": "4.13.0",
+  "source": {
+    "commit": "31ceb637f0ebd8998f201be19f4cb541ffcbb3bb",
+    "clientTree": "fa5eb13866948f72d008776e1e25b2328ae8974e",
+    "refractionTree": "8465aae40c12f0ada4edeae9809d2c10e4cccf9b"
+  },
+  "base": "http://localhost:5101",
+  "localAuth": "On",
+  "capturedAt": "2026-10-06T20:21:11.941Z",
+  "captures": [
+    {
+      "name": "home-desktop",
+      "preview": "home-desktop-viewport.png",
+      "capturedAt": "2026-10-06T20:21:14.544Z",
+      "route": "/",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "home-phone",
+      "preview": "home-phone-viewport.png",
+      "capturedAt": "2026-10-06T20:21:15.092Z",
+      "route": "/",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "operations-desktop",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:17.485Z",
+      "route": "/operations",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "operations-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:17.902Z",
+      "route": "/operations",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "accounts-desktop",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:20.469Z",
+      "route": "/accounts",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "accounts-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:20.953Z",
+      "route": "/accounts",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "investigations-desktop",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:22.643Z",
+      "route": "/investigations",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "investigations-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:23.070Z",
+      "route": "/investigations",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "auth-proof-desktop",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:24.914Z",
+      "route": "/auth-proof",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "auth-proof-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:25.523Z",
+      "route": "/auth-proof",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "accounts-loading-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:31.345Z",
+      "route": "/operations?a=130d0a96-1942-4f1f-b3c7-f7cbe142c0c3&b=454d5cd0-ff5a-4a37-87e7-b2853b1fc63f",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "accounts-ready-desktop",
+      "preview": "accounts-ready-desktop-viewport.png",
+      "capturedAt": "2026-10-06T20:21:32.143Z",
+      "route": "/operations?a=130d0a96-1942-4f1f-b3c7-f7cbe142c0c3&b=454d5cd0-ff5a-4a37-87e7-b2853b1fc63f",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "accounts-ready-phone",
+      "preview": "accounts-ready-phone-viewport.png",
+      "capturedAt": "2026-10-06T20:21:32.790Z",
+      "route": "/operations?a=130d0a96-1942-4f1f-b3c7-f7cbe142c0c3&b=454d5cd0-ff5a-4a37-87e7-b2853b1fc63f",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "connection-details-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:33.451Z",
+      "route": "/operations?a=130d0a96-1942-4f1f-b3c7-f7cbe142c0c3&b=454d5cd0-ff5a-4a37-87e7-b2853b1fc63f",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "connection-details-narrow-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:34.095Z",
+      "route": "/operations?a=130d0a96-1942-4f1f-b3c7-f7cbe142c0c3&b=454d5cd0-ff5a-4a37-87e7-b2853b1fc63f",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "shared-pair-after-navigation-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:35.054Z",
+      "route": "/operations",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "command-pending-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:38.149Z",
+      "route": "/operations",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "invalid-transfer-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:39.167Z",
+      "route": "/operations",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "transfer-completed-desktop",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:41.389Z",
+      "route": "/operations",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "transfer-completed-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:42.140Z",
+      "route": "/operations",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "withdrawal-rejected-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:43.115Z",
+      "route": "/operations",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "money-light-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:43.961Z",
+      "route": "/operations",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "money-high-contrast-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:44.786Z",
+      "route": "/operations",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "high-contrast",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "money-dark-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:45.619Z",
+      "route": "/operations",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "money-forced-colors-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:46.393Z",
+      "route": "/operations",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": true,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "investigation-populated-desktop",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:47.469Z",
+      "route": "/investigations",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "investigation-populated-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:47.924Z",
+      "route": "/investigations",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                "th:nth-child(3)"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "target": [
+                "th:nth-child(4)"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "target": [
+                "td:nth-child(2)"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "target": [
+                "td:nth-child(3)"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "target": [
+                "td:nth-child(4)"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "transfer-compensated-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:51.954Z",
+      "route": "/operations?a=130d0a96-1942-4f1f-b3c7-f7cbe142c0c3&b=unopened-capture-1791318107931",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "auth-unauthenticated-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:54.228Z",
+      "route": "/auth-proof",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "auth-operator-roles-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:55.319Z",
+      "route": "/auth-proof",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "auth-authproof-role-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:56.337Z",
+      "route": "/auth-proof",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "auth-authproof-claim-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:57.586Z",
+      "route": "/auth-proof",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "auth-full-access-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:58.749Z",
+      "route": "/auth-proof",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "auth-obsolete-read-ignored-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:21:59.599Z",
+      "route": "/auth-proof",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "auth-snapshots-desktop",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:22:00.389Z",
+      "route": "/auth-proof",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "money-narrow-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:22:02.813Z",
+      "route": "/operations?a=130d0a96-1942-4f1f-b3c7-f7cbe142c0c3&b=454d5cd0-ff5a-4a37-87e7-b2853b1fc63f",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "connection-offline-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:22:38.227Z",
+      "route": "/operations?a=130d0a96-1942-4f1f-b3c7-f7cbe142c0c3&b=454d5cd0-ff5a-4a37-87e7-b2853b1fc63f",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": false,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "long-account-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:22:43.669Z",
+      "route": "/operations?a=long-account-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1791318162200&b=long-other-1791318162234",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "developer-tools-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:22:44.383Z",
+      "route": "/operations?a=long-account-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1791318162200&b=long-other-1791318162234",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "lost-reply-committed-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:22:46.153Z",
+      "route": "/operations?a=long-account-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1791318162200&b=long-other-1791318162234",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".spring-history-scroll > table > caption"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "target": [
+                ".spring-history-scroll > table > thead > tr > th:nth-child(1)"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "target": [
+                "th:nth-child(4)"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "target": [
+                ".spring-history-scroll > table > tbody > tr:nth-child(1) > td:nth-child(1)"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "target": [
+                "tr:nth-child(1) > td:nth-child(4)"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "target": [
+                "tr:nth-child(2) > td:nth-child(1)"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lost-reply-history-narrow-phone",
+      "preview": null,
+      "capturedAt": "2026-10-06T20:22:46.902Z",
+      "route": "/operations?a=long-account-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1791318162200&b=long-other-1791318162234",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "theme": "dark",
+      "audited": true,
+      "forcedColors": false,
+      "overflow": false,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".spring-history-scroll > table > caption"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "target": [
+                ".spring-history-scroll > table > thead > tr > th:nth-child(1)"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "target": [
+                "th:nth-child(4)"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "target": [
+                ".spring-history-scroll > table > tbody > tr:nth-child(1) > td:nth-child(1)"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "target": [
+                "tr:nth-child(1) > td:nth-child(3) > code"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "target": [
+                "tr:nth-child(1) > td:nth-child(4)"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "target": [
+                "tr:nth-child(2) > td:nth-child(1)"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "target": [
+                "tr:nth-child(2) > td:nth-child(3) > code"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "checks": [
+    "Heading navigation focus and skip link focus",
+    "Real touch first-run path: both projected opening balances £500",
+    "Real initial projection requests held for loading capture, then continued to the real backend",
+    "Connection disclosure keyboard open/close and restored focus",
+    "Keyboard/touch account anchors retain operations/pair/focus; rendered shared link retains both IDs after task navigation",
+    "Real deposit response delayed for pending capture; both browsers then show £525 and actual ledger entry",
+    "Invalid draft prevented submission; completed saga changed both balances; rejected withdrawal preserved balance",
+    "All three themes selected by keyboard, with invalid draft, actual provider attributes and contrast/semantic audit",
+    "Forced colors captured with invalid input and focus/error semantics; native primary control screenshot retained for manual label/backplate inspection",
+    "Real high-value deposit appears in separate live investigation queue",
+    "Defined compensation after unopened destination reverses source withdrawal",
+    "Selecting and reselecting every persona initiates a real correlated read with its expected HTTP authorization result",
+    "Real older allowed GET200 released after new persona GET401; current denied outcome retained independently of subscription snapshots",
+    "All five personas exercised; actual authenticated event count 4 through protected read; correlated read and raw snapshots remain discoverable",
+    "Real browser offline/reconnect preserves stale-view warning and resumes the connection",
+    "Real custom account, long ID/name/balance and unopened opposite account fit phone layout; developer tools remain discoverable",
+    "Visible/native inputs have accessible labels",
+    "One real deposit committed with HTTP200/success before its browser reply was aborted; client failure remains visible alongside the actual balance and one ledger entry; no retry; expanded request history stays within 320/390px layouts and its labelled region scrolls by keyboard"
+  ],
+  "errors": [
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/flagged-transactions/global"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/flagged-transactions/global",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/auth-proof/auth-proof"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/auth-proof/auth-proof",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/bank-account-balance/130d0a96-1942-4f1f-b3c7-f7cbe142c0c3"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/bank-account-ledger/130d0a96-1942-4f1f-b3c7-f7cbe142c0c3"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/bank-account-ledger/130d0a96-1942-4f1f-b3c7-f7cbe142c0c3",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/bank-account-balance/454d5cd0-ff5a-4a37-87e7-b2853b1fc63f"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/bank-account-ledger/454d5cd0-ff5a-4a37-87e7-b2853b1fc63f"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/bank-account-balance/130d0a96-1942-4f1f-b3c7-f7cbe142c0c3",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/bank-account-ledger/454d5cd0-ff5a-4a37-87e7-b2853b1fc63f",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/bank-account-balance/454d5cd0-ff5a-4a37-87e7-b2853b1fc63f",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/money-transfer-status/ccf9b347-4193-42ba-9bee-b0d3847a4170"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/money-transfer-status/ccf9b347-4193-42ba-9bee-b0d3847a4170",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 400,
+      "url": "http://localhost:5101/api/aggregates/bank-account/130d0a96-1942-4f1f-b3c7-f7cbe142c0c3/withdraw"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/bank-account-balance/unopened-capture-1791318107931"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/bank-account-ledger/unopened-capture-1791318107931"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/bank-account-ledger/unopened-capture-1791318107931",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/bank-account-balance/unopened-capture-1791318107931",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/money-transfer-status/8fb292af-23ba-4eeb-b265-4d8a0b523f54"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/money-transfer-status/8fb292af-23ba-4eeb-b265-4d8a0b523f54",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/auth-proof/auth-proof"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/auth-proof/auth-proof",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 401,
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 401,
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 401,
+      "url": "http://localhost:5101/api/aggregates/auth-proof/capture-auth-1791318111984/authenticated"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "kind": "http",
+      "status": 401,
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 403,
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 403,
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 403,
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 403,
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 403,
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 403,
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 401,
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/auth-proof/capture-auth-1791318111984",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/hubs/inlet/negotiate?negotiateVersion=1",
+      "error": "net::ERR_INTERNET_DISCONNECTED"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: net::ERR_INTERNET_DISCONNECTED"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/bank-account-ledger/long-account-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1791318162200"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/bank-account-balance/long-account-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1791318162200"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/bank-account-balance/long-account-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1791318162200",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/bank-account-ledger/long-account-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1791318162200"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/bank-account-balance/long-account-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1791318162200"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/bank-account-ledger/long-account-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1791318162200",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/bank-account-balance/long-other-1791318162234"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "http",
+      "status": 404,
+      "url": "http://localhost:5101/api/projections/bank-account-ledger/long-other-1791318162234"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/bank-account-balance/long-account-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1791318162200",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/bank-account-ledger/long-account-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1791318162200",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/bank-account-ledger/long-other-1791318162234",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/projections/bank-account-balance/long-other-1791318162234",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "kind": "network",
+      "url": "http://localhost:5101/api/aggregates/bank-account/long-account-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1791318162200/deposit",
+      "error": "net::ERR_FAILED"
+    },
+    {
+      "kind": "console",
+      "message": "Failed to load resource: net::ERR_FAILED"
+    }
+  ],
+  "status": "PASS",
+  "completed": true,
+  "phase": "complete",
+  "lostReply": {
+    "requests": 1,
+    "serverStatus": 200,
+    "serverAccepted": true,
+    "observedBalance": "£1,000,000,000.99",
+    "ledgerEntries": 1
+  }
+}

@@ -1,0 +1,690 @@
+{
+  "review": "Independent architecture/state/test review — final committed source reconciliation",
+  "reviewedAt": "2026-10-06T19:53:00.531Z",
+  "repository": "D:/Codex/worktrees/spring-task-demo/mississippi",
+  "head": "31ceb637f0ebd8998f201be19f4cb541ffcbb3bb",
+  "base": "957ea8d8f631eac556d56da5d831702115bec49c",
+  "clientTree": "fa5eb13866948f72d008776e1e25b2328ae8974e",
+  "refractionTree": "8465aae40c12f0ada4edeae9809d2c10e4cccf9b",
+  "workingTreeCleanAtReview": true,
+  "coverageCounts": {
+    "logicalPaths": 76,
+    "present": 73,
+    "deleted": 3
+  },
+  "reviewedCoverage": [
+    {
+      "path": ".github/instructions/self-taught-blazor.instructions.md",
+      "exists": true,
+      "sha256": "91CFC27D57EADE8BFD9ABF16437B577884EBB1F9C821395D767FF385EBA18A8A",
+      "committedBlob": "adf788dbacd7a0ebfc38e97051e827d562faaa5a",
+      "reviewStatus": "Full current file and exact a1c-to-head diff read; assertions/semantics independently reviewed"
+    },
+    {
+      "path": ".github/instructions/self-taught-build.instructions.md",
+      "exists": true,
+      "sha256": "5C19FD5428720A751662DA1CD81FECC2EE9823B6EF0F43328A0E7FF6A8C7AAC1",
+      "committedBlob": "c0bd4cebd41764d8b884cf3a07936dbebe20f534",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "README.md",
+      "exists": true,
+      "sha256": "B687B2869C6F036A84B893385D30D7D3E23EAD60EA31DA24343C0BB0595E6034",
+      "committedBlob": "7017dbe4cb5215a78d95bf4ac5fe3dd003af85fa",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/JOURNEYS.md",
+      "exists": true,
+      "sha256": "3477E662EFDF6F64D9A1675BBF4EFA5D80F093957C0F01FC2158858C0760D0BF",
+      "committedBlob": "805719b7e395df148672a3fc15dfe72437cd02af",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/README.md",
+      "exists": true,
+      "sha256": "E946FB83024818FA429D96D083A898531D77EEDD5BFA6D88DDCF9BED5AD8D149",
+      "committedBlob": "4e69e3c65d0033175aafdaba7dc497d00005d914",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client.L0Tests/Components/Molecules/SnapshotTableTests.cs",
+      "exists": true,
+      "sha256": "267F433F327E8185D15A607E3E0D9CEABDFD2C662BFA677519693A836D69FCD1",
+      "committedBlob": "85229f4a7bbca7fd68356ce7ea745b13dd014a69",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client.L0Tests/Components/Organisms/AccountOperationsSectionTests.cs",
+      "exists": true,
+      "sha256": "DB0C5EF26A3AEFA4989B777F11DB627DF445A8CB49D5A90D628D5825EFD51FC4",
+      "committedBlob": "632fd74020d6fee5a9b85b5bac126a02f352b6de",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client.L0Tests/Components/Organisms/BankAccountPageHeaderTests.cs",
+      "exists": true,
+      "sha256": "83798710552939966C153D4C36F7B0211E87E91BBEB5524402BD9717399D90E8",
+      "committedBlob": "69ebb8126ddfe7ba5739cded3606801b1f6dfab0",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client.L0Tests/Components/Organisms/CommandActivityTests.cs",
+      "exists": true,
+      "sha256": "DCDCA2976706F8DF8EC350DC16E63AF15A5CE7F5A49EF10F7C6AFAABDD66F5CF",
+      "committedBlob": "14c2434b69035c60ec5611c157462e9cfd39c3e1",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client.L0Tests/Components/Organisms/ConnectionDetailsTests.cs",
+      "exists": true,
+      "sha256": "EC0B9B68F7ED92F8B637FB5DA412491F06B77B08E77C8720F551104404C2BC6C",
+      "committedBlob": "b41842370b3b40d527792452761630ad7f781e20",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client.L0Tests/Components/Organisms/ConnectionLostModalTests.cs",
+      "exists": false,
+      "sha256": null,
+      "committedBlob": null,
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client.L0Tests/Components/Organisms/ConnectionNoticeTests.cs",
+      "exists": true,
+      "sha256": "EDEF40DCE9A1359717F92BB9B7F901E4C315210968F443694EB24B31FE6C1E48",
+      "committedBlob": "fff4f229417607c799ec0c091a74ad3386d2cbb9",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client.L0Tests/Features/AuthProofRead/AuthProofReadTests.cs",
+      "exists": true,
+      "sha256": "67C47D86D0FB85BFB3F1D00096197C7EA31E6E464852A07D46D69E94E820E227",
+      "committedBlob": "195c1b7ec60fe049f42350a02c59e767d3628593",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client.L0Tests/Features/ProjectionsFeatureRegistrationTests.cs",
+      "exists": true,
+      "sha256": "856325326CDD8E6642C80CF2A5D4C5CC462B67C906D130FB9F56E6BC73F301B4",
+      "committedBlob": "aff0b2cdd40cd50b3125599639e46194c33e1721",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client.L0Tests/Routing/AppNavigationTests.cs",
+      "exists": true,
+      "sha256": "0E1090D83B8E697E41B63141C9F3221C8AA75C73C12DE7854ABC25FBA55146C4",
+      "committedBlob": "59096aa5bd73d19f7d0ac41e8ce3cbde1f129a9d",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Molecules/SnapshotTable/SnapshotTable.razor",
+      "exists": true,
+      "sha256": "6EDA0FCEA2B61FF9C250D9C0D3570AB59276FBE9A1A2AA09DE6B774FE43B28AE",
+      "committedBlob": "203c7fa5d0dcca5f1cc07d179f7b303da3b60e78",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Molecules/SnapshotTable/SnapshotTable.razor.cs",
+      "exists": true,
+      "sha256": "4819002AC642E1BD23B3FB390838EB7529117E3FAED867488181E445DFB8B8FD",
+      "committedBlob": "18c05e671d2c22a6bcced7602d051f9df82977c8",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Molecules/SnapshotTable/SnapshotTable.razor.css",
+      "exists": true,
+      "sha256": "29B1C1B46F941E5DE2F23B03157CAAACCBCEB39F39D5B92749B43C70E4E68D6A",
+      "committedBlob": "06976318d98724f0ffc29f64f8d0320655b4ca00",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/AccountOperationsSection/AccountOperationsSection.razor",
+      "exists": true,
+      "sha256": "4F3F1926398B4A311E9285DEF2CA2B0D8A4B727FC20935B805D2E69141956DEA",
+      "committedBlob": "f11111d1b0f9f6acca42427b46c41733a91ea103",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/AccountOperationsSection/AccountOperationsSection.razor.cs",
+      "exists": true,
+      "sha256": "5C7F8B38FA2A1318DC2FCC31AC6007ED4CE7470BD5D2770826F4EEEE82E4F2E9",
+      "committedBlob": "cabb3ee75f60321981d2865306695beafe6040f9",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/AccountOperationsSection/AccountOperationsSection.razor.css",
+      "exists": true,
+      "sha256": "C237A8077C57D7F58856AC62982F31B499DFBF2424CDA379DA44C0A30FFF3A41",
+      "committedBlob": "c0726046ea0a484490c00a6a8f3d2d2a4abeb408",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/BankAccountPageHeader/BankAccountPageHeader.razor",
+      "exists": true,
+      "sha256": "0ABBAF0CA03539681ADC732C5EC21531DE26486C803C5D00CA07122CFD112780",
+      "committedBlob": "6ba7729bcad2c14d5aad96c94e33c4ac6c7e7851",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/BankAccountPageHeader/BankAccountPageHeader.razor.cs",
+      "exists": true,
+      "sha256": "D48FA01032DA6D84F3D6000CE3D2E25E4B955CF76A85072DC9C4AA6AF5707CC8",
+      "committedBlob": "dbdd9aa6b9ef3dbd5833ca974b1e55bb3c5b958f",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/BankAccountPageHeader/BankAccountPageHeader.razor.css",
+      "exists": true,
+      "sha256": "7D1E9C1E9D1E8B70BB0714180225F30ED352BEF10F19B42618D93347ABB86E04",
+      "committedBlob": "2400d2dd1d2d7b3c101cc561145d1117b45974dc",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/CommandActivity/CommandActivity.razor",
+      "exists": true,
+      "sha256": "100A1639D83218DC437A0175DBA1F828DDD644872C217D470DA28FF017E73A98",
+      "committedBlob": "6b6e3d06e4795e10dfc70032b1bb9493c07e1c5e",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/CommandActivity/CommandActivity.razor.cs",
+      "exists": true,
+      "sha256": "6EDE74C12C5E5E65DEF44A58457AA4F7942B9B55D23CCF541962CA772543335F",
+      "committedBlob": "c6f37b2dbb0b6c96e0df9699e2fa6ad6a5a823b9",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/CommandActivity/CommandActivity.razor.css",
+      "exists": true,
+      "sha256": "6BF5861C0B19CA47B7CC7808C3757E00F10281A109EF58738C0535A3ADB91B0E",
+      "committedBlob": "7baae7d54ff30fabf3482660aed312e07094f184",
+      "reviewStatus": "Full current file and exact a1c-to-head diff read; assertions/semantics independently reviewed"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/ConnectionDetails/ConnectionDetails.razor",
+      "exists": true,
+      "sha256": "5C8A38013F70B71C1E170952701AA46B659451EA72A2FF4B5F048B32CC83DEA8",
+      "committedBlob": "4cb5fc127db88545a703ce3e4a1605e3d5971202",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/ConnectionDetails/ConnectionDetails.razor.cs",
+      "exists": true,
+      "sha256": "4104FA43061752158D021D4EEAAD9A452E4E86503FE77452B813FE324BFAEFE8",
+      "committedBlob": "be57e051c49ca4145b0676b4c41f236fc484b2c6",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/ConnectionDetails/ConnectionDetails.razor.css",
+      "exists": true,
+      "sha256": "A091DBD82C69D483EC4BB0008F7C6C05E787F1D5555824AC0879E0989AF3ACC1",
+      "committedBlob": "7216ad4eeb097dd3444b808bc2c8b1295905e75f",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/ConnectionLostModal/ConnectionLostModal.razor",
+      "exists": false,
+      "sha256": null,
+      "committedBlob": null,
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/ConnectionNotice/ConnectionNotice.razor",
+      "exists": true,
+      "sha256": "CE7A469F437C7E84E4DA858AFE5BFCBCB8EA0108F284D0B76B0445B54A93A032",
+      "committedBlob": "f8d9d7c71b1f350e5a20cdab03898bd938c2fa29",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/ConnectionNotice/ConnectionNotice.razor.cs",
+      "exists": true,
+      "sha256": "438BFC55B0CD06F20FBFA6D280111ADE382764971AC6973B15B4C5C407F0CF2F",
+      "committedBlob": "ba924bed352047f814a0034c846139739d5b2b5f",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/ConnectionNotice/ConnectionNotice.razor.css",
+      "exists": true,
+      "sha256": "177FA1BE53C379E06680548E15C166E834ABA37941C606D8321B83A69D36596A",
+      "committedBlob": "35636977481ac36f4b8461f35c4e1e7ce0e74cf2",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/ConnectionStatusModal/ConnectionStatusModal.razor",
+      "exists": false,
+      "sha256": null,
+      "committedBlob": null,
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/DemoAccountsSection/DemoAccountsSection.razor",
+      "exists": true,
+      "sha256": "0EAB202723319FCB2AE432C67FD33BDA36A558AEBFBC35F5C2A5FA17542E5F2A",
+      "committedBlob": "8d67788e6130cd6764add6fe1f14ab83df325d1d",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/DemoAccountsSection/DemoAccountsSection.razor.cs",
+      "exists": true,
+      "sha256": "FE762F59B700A4809C88BA33FC1FB7A620D8AA2397A13A3AA8C3264291C7580B",
+      "committedBlob": "2855872f6a0fa23e98678d568118b7138de0b816",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Organisms/DemoAccountsSection/DemoAccountsSection.razor.css",
+      "exists": true,
+      "sha256": "69C3402BCEEDE2B334CE2F3EC24BE2D33ECB3A546487685FBF972104D3247977",
+      "committedBlob": "e7f0d5bba2cca29d077a26ab73e070ce85a97a24",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Templates/SpringShell/SpringApplicationShell.razor",
+      "exists": true,
+      "sha256": "A1230EE2DC521BD7CA6D4360A51DAC012FB5821CDDE32AC074EB3B6473A99E05",
+      "committedBlob": "4115d6bbdf338eae58b8773696fdf4f15f56d1f4",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Components/Templates/SpringShell/SpringApplicationShell.razor.css",
+      "exists": true,
+      "sha256": "096333FD6BAC06AB0AA4414682C4B6630EC4FA1DD2C918E0ED2EEDEC97D6AEB3",
+      "committedBlob": "6206af5f43c1a286a4a82a1e85bb811d162b0ac7",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Features/AuthProofRead/AuthProofProjectionReadCompletedAction.cs",
+      "exists": true,
+      "sha256": "24D78FD74776398990A4B28135CAA67055BCDE8E2B216A7A0F73FD4113135B7B",
+      "committedBlob": "8a5a7491125afbb92345273bf53c0dd27a5a6381",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Features/AuthProofRead/AuthProofReadEffect.cs",
+      "exists": true,
+      "sha256": "F08FE1E1CFBB53DED702E78769798965B50720F1987F6792B5123E6F7B1E09FE",
+      "committedBlob": "c9caa12b2324eeebdc615bbb1bc60cb4e2860f9c",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Features/AuthProofRead/AuthProofReadFeatureRegistration.cs",
+      "exists": true,
+      "sha256": "E128726383442D8D2FDC07798AA085AFECDCF44ACD2D4A09D169F6ECA68F8F49",
+      "committedBlob": "dea46e46de3083167fea43ed9776102d629a7e2c",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Features/AuthProofRead/AuthProofReadReducers.cs",
+      "exists": true,
+      "sha256": "77A5D760695EA5596123FA8BAD12CF5F6D84D204C47FA430F57D0E85FA7A7153",
+      "committedBlob": "96a6196243bc0e1c949b2217081b27c84a91509a",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Features/AuthProofRead/AuthProofReadState.cs",
+      "exists": true,
+      "sha256": "00A1D7300C3A4DC63E01B4E5F3B4E3B4F4322538C11969215534056F3FF096A7",
+      "committedBlob": "86d0cc265028e7fba8b6b16cfe4dd265e6bd32a4",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Features/AuthProofRead/ReadAuthProofProjectionAction.cs",
+      "exists": true,
+      "sha256": "B67E7A24791973124175965952AF4EBF3F877A1E47B8FD330E690A980D35F4A0",
+      "committedBlob": "11f527dfd41dedae14f155d7c8ad308c823bd422",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Features/ProjectionsFeatureRegistration.cs",
+      "exists": true,
+      "sha256": "BC177FE122B3470552BB1DE880C9E60D0AEB0884CF9C59CD60293885D36A1D4F",
+      "committedBlob": "c12392470b1eb0c92addb569cfac467e7b5e5b40",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Pages/Accounts.razor",
+      "exists": true,
+      "sha256": "BDEBF69D26B93ED7BD33EE1A9F22D3C45C414954640CFAE714D074BF0A29CD1B",
+      "committedBlob": "2b0cc7a6fb2f13a6f2ab8850c247711769ddd3c1",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Pages/Accounts.razor.cs",
+      "exists": true,
+      "sha256": "BEEEA21B77743A62D20E87AFA5EC6C90845B87374181BD00001D0F08A763AA12",
+      "committedBlob": "d0b351615c5ac41c4ef4b4a88c7f427cf1cc8d68",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Pages/Accounts.razor.css",
+      "exists": true,
+      "sha256": "89F0583BBE17201A2C98D4AB4071634DF58995583C9F2126E2A6E486B38E056A",
+      "committedBlob": "d897fc73a7c1a4bb5a5388efd5f583a212c4025d",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Pages/AuthProofPage.razor",
+      "exists": true,
+      "sha256": "54393B10CC02D3418CDCFC6EA18F6EBC5CAF055D3C5117CC691EC57F3264C9D3",
+      "committedBlob": "97b182b0973464bc7a974b4bda4dd6802a981617",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Pages/AuthProofPage.razor.cs",
+      "exists": true,
+      "sha256": "926614B3C8840E5D383A8162D55B73471A10B8921880D2D40192CA7808D00DAB",
+      "committedBlob": "f99915822e126579a0afcc838a602071ca03e4a6",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Pages/AuthProofPage.razor.css",
+      "exists": true,
+      "sha256": "2D22DCE05B6E086E1D6B7CA6CDDEDD15113861DAA873AC6BC49C11263EE3828C",
+      "committedBlob": "235e76c9bdef9ffc8dec955972c80f6932713354",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Pages/Index.razor",
+      "exists": true,
+      "sha256": "B5E150A344A16F68F366B5F1983A89712B2346F87B20A96154B37CA5E31AD38E",
+      "committedBlob": "a3dce49f7954ddf8543e43de71f83741f5b520a5",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Pages/Index.razor.css",
+      "exists": true,
+      "sha256": "B698DD75AEBEDDAC1B54EB3F1087CA569DA1CD90381F41A9134EA6789D7F6940",
+      "committedBlob": "ce587959ec90bd0b6d1ad808b9994917581ebf07",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Pages/Investigations.razor",
+      "exists": true,
+      "sha256": "130C3125C0D33B5C6570246AB184B267D1AEE7D971166229EA09BCFF510A690E",
+      "committedBlob": "c449bbfec601939213b40932da79c8d546bf6720",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Pages/Investigations.razor.cs",
+      "exists": true,
+      "sha256": "F67D32D8885CCF1E1435CBB6B0151EF782CAE455080FA2B4CC5EA1A61C61D24D",
+      "committedBlob": "f482fe3b292d5e52f630468f4420ba1c8dabb50e",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Pages/Investigations.razor.css",
+      "exists": true,
+      "sha256": "465EFBAADA3FCBA4CEF1F880B5B537E3C702B99EECE2EC5D887C8137BABF94E7",
+      "committedBlob": "0c7fd8c70a51e6eb5afcb78925ec2fa091b17afd",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Pages/OperationsPage.razor",
+      "exists": true,
+      "sha256": "CCB7436395D01310E25DE95FEA027A733B433D7DB279BF978BC504CF508C6695",
+      "committedBlob": "154fe056c1660643d2ab06a20e4e1fbdd30fae7b",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Pages/OperationsPage.razor.cs",
+      "exists": true,
+      "sha256": "588D169845D8A074FEC3EBAC1507ACD748A8AF8C9314E2B15C6A284F85C4A173",
+      "committedBlob": "d679e506710c4d87d5721a38d0d5ea4501e3c625",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Pages/OperationsPage.razor.css",
+      "exists": true,
+      "sha256": "8FF7750F95166118A938E4215CDA28CA9776598DEDA5F8C7E377D6F152D26B13",
+      "committedBlob": "ec74d4f240f62db0383c705e7ef481f82d69cfc1",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/Program.cs",
+      "exists": true,
+      "sha256": "B231A60B10FC9567BB64540C85D885BBB373C8324160949DE0733B71280B7BFD",
+      "committedBlob": "4b688dd2b962f3f1c9ffbe4f2461010dd8bc5ff9",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/wwwroot/index.html",
+      "exists": true,
+      "sha256": "426E5CEE045D732E0FF48FB420AD8B79320E2726F4E5C67346C9BB5BEC75A3BD",
+      "committedBlob": "f4ac354da036e6efc97ad0985df2506139a7b316",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.Client/wwwroot/spring.css",
+      "exists": true,
+      "sha256": "8559742069D3889D2D4467AE0A4FADC2327DB19678C1B803506F25351345A9B4",
+      "committedBlob": "9c73717f1b5afd3ab7dc24e1c04a759bd5f040cd",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.L3Tests/BankAccountE2ETests.cs",
+      "exists": true,
+      "sha256": "546DCDC9BE4CACA01AB001526700C39F92972EC27E21D9DFF1E2E3BDEBB63E75",
+      "committedBlob": "be7a1427ee3a239ba27a37cfe3bff8222140e005",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.L3Tests/FlagshipJourneysTests.cs",
+      "exists": true,
+      "sha256": "CAA6C10D5CBAD6BB4F1CD11B92358167CBFC2B282DD573486C094F11D053293C",
+      "committedBlob": "314d259b3562f25f965974821bee1d8bf1edf6b4",
+      "reviewStatus": "Full current file and exact a1c-to-head diff read; assertions/semantics independently reviewed"
+    },
+    {
+      "path": "samples/Spring/Spring.L3Tests/Pages/AccountsPage.cs",
+      "exists": true,
+      "sha256": "7385258E827B347C037249CAC9ED91A2DB9C86D6220C9C2642C1028EBC1F63A4",
+      "committedBlob": "32a1879a3c9ce5805f2bf6ad352af3ae907e3846",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.L3Tests/Pages/OperationsPage.cs",
+      "exists": true,
+      "sha256": "52ED39819984C93051135C9FE6F220AC33F89731AC04BDE44E01F062113EB013",
+      "committedBlob": "64cc185aac880a0496aec6748c4e0679a6b375f3",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/Spring.L3Tests/Screenshots/flagship/capture.cjs",
+      "exists": true,
+      "sha256": "0A3B07F0C6AE41B69CF5E7F76AF747935CC49C2D9A767E7A5EA35E3A27E9A4D7",
+      "committedBlob": "e0d946e28914680ed429535a5ba8bfc2ed03cc58",
+      "reviewStatus": "Full current file and exact a1c-to-head diff read; assertions/semantics independently reviewed"
+    },
+    {
+      "path": "samples/Spring/Spring.L3Tests/Smoke/BankAccountSmokeTests.cs",
+      "exists": true,
+      "sha256": "56312344B0A20D88921F3A4AC4022E4CB52DAAA722484E2F803659C1E980C655",
+      "committedBlob": "79f4486f0a217c12d3a253d876c5a2a226297688",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "samples/Spring/TESTING.md",
+      "exists": true,
+      "sha256": "2E6D86D4F021F381ADF10EBEBA5E4A52310874BDC3B34782F6C84A5DF608C121",
+      "committedBlob": "c9ec59acdef43201b3a3cf8899ae03524ebc8f6e",
+      "reviewStatus": "Full current file and exact a1c-to-head diff read; assertions/semantics independently reviewed"
+    },
+    {
+      "path": "src/Refraction.Client/Components/Atoms/Input/InputField.razor",
+      "exists": true,
+      "sha256": "8C5A7E10D41B8B8A16F95A9665DE962F54CED368E325D8237851F2BA67913088",
+      "committedBlob": "4f873fec1d222d80c19774875d6276df3f8a8819",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "src/Refraction.Client/Components/Atoms/Input/InputField.razor.css",
+      "exists": true,
+      "sha256": "938F5733037B2C052E86ED14AB27721EC147282B7827C1CE0CFA4B7EB1ED3BF0",
+      "committedBlob": "ab82da0536115649a26e5486de5a68a888c6fc72",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "tests/Refraction.Client.L0Tests/Components/Atoms/Input/InputFieldAccessibilityTests.cs",
+      "exists": true,
+      "sha256": "5F3FF998789704E496B6A9B210BD094A928C0552A38960DA2E4DE29349981727",
+      "committedBlob": "3727545e2fe3b8b5198de9d0b1f9405d966989fc",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "tests/Refraction.Client.L0Tests/Components/Atoms/Input/InputFieldFeedbackTests.cs",
+      "exists": true,
+      "sha256": "A27802FAAF8B239BA9B5E39072DEB2D15C27EE374988BC434C6D744278FDE9A2",
+      "committedBlob": "3e2dc5e8fff182c0176cdad6c7aff99b6c513a29",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    },
+    {
+      "path": "tests/Refraction.Client.L0Tests/Components/Atoms/Input/InputFieldTests.cs",
+      "exists": true,
+      "sha256": "E7408041223E3A7E7EBBDCD36D3A3168D31F34BB5367B046EFF65A1F572F6B82",
+      "committedBlob": "af3cfa8467dd99ca70a5e26cac5d946b71f9bf3f",
+      "reviewStatus": "All prior full-file/diff review retained; raw SHA and committed blob verified unchanged from a1c ledger"
+    }
+  ],
+  "changedSincePrecedingLedger": [
+    ".github/instructions/self-taught-blazor.instructions.md",
+    "samples/Spring/Spring.Client/Components/Organisms/CommandActivity/CommandActivity.razor.css",
+    "samples/Spring/Spring.L3Tests/FlagshipJourneysTests.cs",
+    "samples/Spring/Spring.L3Tests/Screenshots/flagship/capture.cjs",
+    "samples/Spring/TESTING.md"
+  ],
+  "sourceAudit": {
+    "priorHead": "a1c23e0e7f335bd4dd43d84c93b64242aa80771d",
+    "fullReads": {
+      ".github/instructions/self-taught-blazor.instructions.md": 30,
+      "samples/Spring/Spring.Client/Components/Organisms/CommandActivity/CommandActivity.razor.css": 8,
+      "samples/Spring/Spring.L3Tests/FlagshipJourneysTests.cs": 1252,
+      "samples/Spring/Spring.L3Tests/Screenshots/flagship/capture.cjs": 472,
+      "samples/Spring/TESTING.md": 46
+    },
+    "cleanup": "Parent-reported standalone cleanup completed both solutions with no extra source formatting. Current raw hashes match independently reviewed CSS/tests/docs; capture differs only by corrected explicit320x740 call, and the validated lesson is added. No cleanup script was run by this reviewer.",
+    "layoutFix": "The sample command-activity grid sets minmax(0,1fr) and min-width:0. Table minimum600px, labelled tabindex0 scroller and overflow:auto are preserved.",
+    "captureCorrection": "Line443 invokes capture('lost-reply-history-narrow-phone',320,740), rather than resetting the previously selected narrow viewport through default arguments. Every capture asserts document containment.",
+    "assertions": "Lost-reply serverHTTP200/actualJSONsuccess/exactly-one-request, actual balance/one ledger/Failed+HttpError history remain. The theory adds320/390 document containment, labelled internal overflow, actual Tab focus and ArrowRight movement. All persona status/header/count/reselection and obsolete200 body1/401 retention assertions remain; bounded real GET catch-up never replays a POST.",
+    "lesson": "Line25 accurately records the measured600px history/grid overflow and its scoped containment correction as a SHOULD under **/*.razor*.",
+    "architecture": "No changes since a1c to AuthProofRead feature, persona handler, generated flows, Reservoir/Inlet/domain/gateway/auth implementations or Refraction. Whole-branch Refraction changes remain the two previously reviewed InputField presentation files plus corresponding tests."
+  },
+  "inheritedPriorDispositions": {
+    "obsoleteAllowedReadOverwrite": "Fixed in the reviewed sample-owned correlated read feature",
+    "sharedPairHref": "Fixed; absolute selected-pair href and independent-browser assertions retained",
+    "failureMislabeledRejected": "Fixed; client failure remains distinct from unknown server outcome",
+    "deniedFinishedAsyncStall": "Fixed in test assertions and bounded successful completion wait",
+    "fragmentFocusAndAmbiguousIdSelector": "Fixed; meaningful focus/value assertions retained",
+    "projectionCatchupPrerequisite": "Fixed in bounded real-read prerequisites and source-backed guidance"
+  },
+  "causalValidation": {
+    "status": "Scoped correction supported by causal2fail-to2pass focused regression; current committed-tree final gates and independent rebuilt runtime pending",
+    "coverage": [
+      {
+        "path": "samples/Spring/Spring.Client/Components/Organisms/CommandActivity/CommandActivity.razor.css",
+        "lines": 8,
+        "sha256": "6BF5861C0B19CA47B7CC7808C3757E00F10281A109EF58738C0535A3ADB91B0E",
+        "review": "Complete file plus exact diff"
+      },
+      {
+        "path": "samples/Spring/Spring.L3Tests/FlagshipJourneysTests.cs",
+        "lines": 1252,
+        "sha256": "CAA6C10D5CBAD6BB4F1CD11B92358167CBFC2B282DD573486C094F11D053293C",
+        "review": "Exact diff and complete changed test, unchanged since preceding regression review"
+      },
+      {
+        "path": "samples/Spring/Spring.L3Tests/Screenshots/flagship/capture.cjs",
+        "lines": 473,
+        "sha256": "65A34934BE8D4A2A6F28E2D7AF690E7ACF3ECAFF41320EBAAFE631D27B940039",
+        "review": "Exact diff and complete changed block, unchanged since preceding regression review"
+      },
+      {
+        "path": "samples/Spring/TESTING.md",
+        "lines": 46,
+        "sha256": "2E6D86D4F021F381ADF10EBEBA5E4A52310874BDC3B34782F6C84A5DF608C121",
+        "review": "Complete file plus exact diff"
+      }
+    ],
+    "productionChange": "Only two containment declarations on the sample activity root: grid-template-columns:minmax(0,1fr) and min-width:0. All table, overflow:auto scroller, labels, tabindex, color/focus tokens and command/authorization state logic remain unchanged.",
+    "causalBefore": {
+      "trx": "artifacts/spring-redesign/l3-focused-20261006T192403Z/spring.trx",
+      "independentlyRead": true,
+      "total": 2,
+      "executed": 2,
+      "failed": 2,
+      "passed": 0,
+      "skipped": 0,
+      "bothFailureLine": 954,
+      "widths": [
+        320,
+        390
+      ],
+      "qualifiedEvidence": "Both cases reached the expanded-history document-containment assertion after the client-failure, projected balance, one real ledger entry and failed request-history assertions. The final HTTP200/success/exactly-one-interception assertions remain after the new layout block, so the failed run did not execute those final assertions; independent earlier browser evidence separately verified all three."
+    },
+    "testAssertionsPreserved": true,
+    "newActionableFindings": [],
+    "remaining": "Read the actual after-fix focused results, verify fresh phone internal-scroller dimensions and keyboard operation, and reconcile current-tree final canonical/browser evidence before closing the finding.",
+    "afterFocused": {
+      "trx": "artifacts/spring-redesign/l3-focused-20261006T192643Z/spring.trx",
+      "independentlyRead": true,
+      "total": 2,
+      "executed": 2,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "widths": [
+        320,
+        390
+      ],
+      "evidence": "Both cases executed through the unchanged final server200/success/exactly-one-interception assertions as well as document containment, labelled internal overflow, Tab focus and ArrowRight scrolling."
+    },
+    "additionalLessonReview": {
+      "path": ".github/instructions/self-taught-blazor.instructions.md",
+      "line": 25,
+      "review": "Complete current instruction plus diff read. Scoped SHOULD guidance matches observed600px-grid/390px-page660px overflow and measured correction; no unsupported framework or recovery claim."
+    },
+    "preparedFinalPortableReplay": {
+      "path": "artifacts/spring-redesign/architecture-review/runtime-review-expanded-history.cjs",
+      "syntaxChecked": true,
+      "browserStarted": false,
+      "checks": "The five independent real outcomes plus320/390 document containment, internal labelled scroller dimensions, actual Tab focus and positive ArrowRight movement. Fresh source hashes must be passed from the committed rebuilt app."
+    }
+  },
+  "historicalRuntimeEvidence": {
+    "source": "a1c23e0e7f335bd4dd43d84c93b64242aa80771d",
+    "report": "artifacts/spring-redesign/architecture-review/final-runtime-a1c23e0-second/runtime-review.json",
+    "outcomes": "Five independent real outcomes passed: heldoldallowed200 afternewanonymous401, ordinary keyboard/touchfocus, nativeCtrl/middlelinks, fresh sharedpair, oneactualdepositPOST committed before browserreplyabort.",
+    "layout": "That historical runtime report remains FAIL due expanded-history phone overflow; its screenshot/DOM evidence is not relabelled as current-source success."
+  },
+  "newVerifiedActionableFindings": [],
+  "limits": [
+    "Independent runtime covers the selected seven checks in Chromium151/Playwright1.62.1 with synthetic390/320/touch viewports, not a physical phone or every browser engine.",
+    "No axe audit is performed by this independent replay; parent comprehensive capture owns automated accessibility coverage.",
+    "Parent reports fresh canonicalgo3461core+280sample executed passes, DoctorREADY0,L2Full15/15,L3Full20/20 with nofail/skip/drift; raw packaged gate evidence will be independently reviewed when supplied.",
+    "Eight console error entries are retained. This evidence supports actual outcome correctness, not a claim that the browser emitted no errors.",
+    "Historicala1c runtime remains labelledFAIL for the subsequently corrected layout and is not relabelled as current-source evidence."
+  ],
+  "precedingLedger": "artifacts/spring-redesign/architecture-review/cleanup-rebase-a1c23e0-review.json",
+  "nextPortableReplay": "artifacts/spring-redesign/architecture-review/runtime-review-expanded-history.cjs",
+  "correctedSourceRuntime": {
+    "status": "PASS",
+    "report": "artifacts/spring-redesign/architecture-review/final-runtime-31ceb637/review-findings.json",
+    "rawEvidence": "artifacts/spring-redesign/architecture-review/final-runtime-31ceb637/runtime-review.json",
+    "checks": 7,
+    "captures": 12,
+    "pngFiles": 16,
+    "started": "2026-10-06T20:22:09.172Z",
+    "finished": "2026-10-06T20:22:24.866Z"
+  },
+  "parentReportedFinalGates": {
+    "source": "31ceb637f0ebd8998f201be19f4cb541ffcbb3bb",
+    "corePassed": 3461,
+    "samplePassed": 280,
+    "doctor": "READY0",
+    "l2Passed": 15,
+    "l3Passed": 20,
+    "failed": 0,
+    "skipped": 0,
+    "rawEvidenceReviewedByThisAgent": false
+  }
+}

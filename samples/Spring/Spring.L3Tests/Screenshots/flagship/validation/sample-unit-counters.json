@@ -1,0 +1,59 @@
+{
+  "scope": "sample unit tests",
+  "sourceCommit": "31ceb637f0ebd8998f201be19f4cb541ffcbb3bb",
+  "base": "957ea8d8f631eac556d56da5d831702115bec49c",
+  "runDirectory": ".scratchpad/coverage-test-results/20261006T201004Z-118b534707d84aba891376d91496577a",
+  "reportCount": 4,
+  "total": 280.0,
+  "executed": 280.0,
+  "passed": 280.0,
+  "failed": 0.0,
+  "notExecuted": 0.0,
+  "zeroTestReports": [],
+  "reports": [
+    {
+      "path": ".scratchpad/coverage-test-results/20261006T201004Z-118b534707d84aba891376d91496577a/Crescent.L0Tests/test_results_Crescent.L0Tests.trx",
+      "sha256": "9A52B100B206A8F1D9AC004769F5F2AD8138B9B4F54D0C4D4AFC79AC424C516E",
+      "outcome": "Completed",
+      "total": 2,
+      "executed": 2,
+      "passed": 2,
+      "failed": 0,
+      "notExecuted": 0,
+      "actualResultElements": 2
+    },
+    {
+      "path": ".scratchpad/coverage-test-results/20261006T201004Z-118b534707d84aba891376d91496577a/LightSpeed.Client.L0Tests/test_results_LightSpeed.Client.L0Tests.trx",
+      "sha256": "6CA44916A78278200F7539414DB59806E926D0618DB0EACEE47113D6A621798C",
+      "outcome": "Completed",
+      "total": 53,
+      "executed": 53,
+      "passed": 53,
+      "failed": 0,
+      "notExecuted": 0,
+      "actualResultElements": 53
+    },
+    {
+      "path": ".scratchpad/coverage-test-results/20261006T201004Z-118b534707d84aba891376d91496577a/Spring.Client.L0Tests/test_results_Spring.Client.L0Tests.trx",
+      "sha256": "2FDE1386D83A9CA1FD77FFACF0CFFC7DB417EBF5FABAA7559F2719201740B507",
+      "outcome": "Completed",
+      "total": 65,
+      "executed": 65,
+      "passed": 65,
+      "failed": 0,
+      "notExecuted": 0,
+      "actualResultElements": 65
+    },
+    {
+      "path": ".scratchpad/coverage-test-results/20261006T201004Z-118b534707d84aba891376d91496577a/Spring.Domain.L0Tests/test_results_Spring.Domain.L0Tests.trx",
+      "sha256": "705276C11ED87E5DB38A4CFC1F3E634B0DCE93DFD97D06098AC831D7AB2B1FAF",
+      "outcome": "Completed",
+      "total": 160,
+      "executed": 160,
+      "passed": 160,
+      "failed": 0,
+      "notExecuted": 0,
+      "actualResultElements": 160
+    }
+  ]
+}

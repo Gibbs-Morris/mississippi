@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "commit": "31ceb637f0ebd8998f201be19f4cb541ffcbb3bb",
+    "clientTree": "fa5eb13866948f72d008776e1e25b2328ae8974e",
+    "refractionTree": "8465aae40c12f0ada4edeae9809d2c10e4cccf9b",
+    "base": "957ea8d8f631eac556d56da5d831702115bec49c",
+    "targetBase": "957ea8d8f631eac556d56da5d831702115bec49c"
+  },
+  "sourceBoundary": "Canonical gates and browser manifests bind the committed application/test source. Later packaging adds only separately checked documentation and evidence; original source paths and client/Refraction trees must remain identical.",
+  "commands": [
+    {
+      "command": "pwsh ./clean-up.ps1",
+      "actualInvocation": "pwsh -NoProfile -File ./clean-up.ps1",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "artifacts/spring-redesign-cleanup-history-final.log",
+      "observedCompletedUtc": "2026-10-06T19:46:15Z",
+      "source": "Five reviewed correction paths; no additional cleanup drift; committed as source.commit.",
+      "result": "Both mississippi.slnx and samples.slnx cleaned successfully."
+    },
+    {
+      "command": "pwsh ./go.ps1 -Configuration Release",
+      "actualInvocation": "pwsh -NoProfile -File ./go.ps1 -Configuration Release",
+      "status": "PASS",
+      "exitCode": 0,
+      "coreExecuted": 3461.0,
+      "corePassed": 3461.0,
+      "sampleExecuted": 280.0,
+      "samplePassed": 280.0,
+      "failed": 0,
+      "skipped": 0,
+      "coreRawReports": 38,
+      "sampleRawReports": 4,
+      "zeroTestAggregatorReports": 3,
+      "outputTruncated": true,
+      "startedUtc": "2026-10-06T19:47:20.7441755Z",
+      "endedUtc": "2026-10-06T20:12:12.2796528Z",
+      "builds": "Both final warnings-as-errors solution builds passed with zero warnings/errors; canonical cleanup completed for both solutions."
+    },
+    {
+      "command": "pwsh ./test-spring.ps1 -Doctor",
+      "actualInvocation": "pwsh -NoProfile -File ./test-spring.ps1 -Doctor",
+      "status": "READY",
+      "exitCode": 0,
+      "executed": 0,
+      "passed": 0,
+      "sdk": "10.0.401",
+      "aspireVersion": "13.6.0",
+      "startedUtc": "2026-10-06T20:12:12.7329131Z",
+      "endedUtc": "2026-10-06T20:12:19.6133726Z",
+      "summaryPath": "artifacts/spring/L3-Smoke-1bc6108c85564a92b7fe4ce91cc05c69-20261006T201214Z-cca3b6ac89ee40c2a11159c83ce68bb5/summary.json",
+      "meaning": "Prerequisite checks only; not a test pass."
+    },
+    {
+      "command": "pwsh ./test-spring.ps1 -TestLevel L2 -Suite Full",
+      "actualInvocation": "pwsh -NoProfile -File ./test-spring.ps1 -TestLevel L2 -Suite Full",
+      "status": "PASS",
+      "exitCode": 0,
+      "executed": 15,
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0,
+      "resultElements": 15,
+      "durationSeconds": 90.64,
+      "startedUtc": "2026-10-06T20:12:20.0303414Z",
+      "endedUtc": "2026-10-06T20:13:56.0605239Z",
+      "summaryPath": "artifacts/spring/L2-Full-b366c3af64df4cf9b12c8deb67ebccba-20261006T201221Z-5b9d27eee7b947dab642681ca603be12/summary.json",
+      "rawTrxSha256": "C661253735AC699B3F34E25571F4CBB831DD453771ABE919C9EEF066CCD37236",
+      "portableTrx": "l2-full.trx",
+      "build": "Warnings-as-errors build completed with zero warnings/errors."
+    },
+    {
+      "command": "pwsh ./test-spring.ps1 -TestLevel L3 -Suite Full",
+      "actualInvocation": "pwsh -NoProfile -File ./test-spring.ps1 -TestLevel L3 -Suite Full",
+      "status": "PASS",
+      "exitCode": 0,
+      "executed": 20,
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0,
+      "resultElements": 20,
+      "durationSeconds": 253.76,
+      "startedUtc": "2026-10-06T20:13:56.4695994Z",
+      "endedUtc": "2026-10-06T20:18:16.1908993Z",
+      "summaryPath": "artifacts/spring/L3-Full-e802b3c9275a430fb352dd5c4810064f-20261006T201358Z-417f283a93874882b0673786d63415d8/summary.json",
+      "rawTrxSha256": "1727ABB5D44CB3CADDB7BC0B8D383F1D69F0891EE9CE19A9DA7626A8BA6E1D36",
+      "portableTrx": "l3-full.trx",
+      "build": "Warnings-as-errors build completed with zero warnings/errors."
+    }
+  ],
+  "baseline": {
+    "l2Full": {
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    "sourceProvenance": "Pre-edit discovery/launch checkpoint, not instrumented by the baseline capture helper.",
+    "sourceCommit": "ddc892cd4c117362fab71e0f564b71774feb6f20",
+    "doctor": {
+      "executed": 0,
+      "status": "READY"
+    },
+    "l3Full": {
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    "captureMetadataLimits": "Browser/tool versions, exact command and capture timestamps are unknown. Desktop populated proof asserted A500; phone proof asserted both500."
+  },
+  "mutation": {
+    "policy": "Current optional mutation policy; no ordinary completion threshold. Samples are outside required scope.",
+    "status": "NOT_RUN",
+    "score": null,
+    "executed": false,
+    "significantGap": "No mutation score was measured for the changed client/Refraction paths. Existing component tests, added causal L0/L3 regressions and real browser/contrast checks provide separate correctness evidence."
+  },
+  "limitations": [
+    "Release stdout is bounded and marked OutputTruncated; it is not a complete transcript. Fresh raw-report counts exclude historical artifacts accumulated by the pipeline.",
+    "Three zero-test SDK aggregator reports are explicitly excluded from executed totals.",
+    "Phone captures use Chromium touch viewports; physical devices, screen readers and other engines are outside this run.",
+    "MCP registration and Reservoir DevTools integration are source-verified; external MCP clients and browser extensions are not exercised.",
+    "Hosted CI and human review are separate checks after publication. No merge is authorized."
+  ]
+}

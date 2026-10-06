@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "phase": "complete",
+  "testLevel": "L3",
+  "suite": "Full",
+  "project": "D:\\Codex\\worktrees\\spring-task-demo\\mississippi\\samples\\Spring\\Spring.L3Tests\\Spring.L3Tests.csproj",
+  "passed": 20,
+  "artifacts": "D:\\Codex\\worktrees\\spring-task-demo\\mississippi\\artifacts\\spring\\L3-Full-e802b3c9275a430fb352dd5c4810064f-20261006T201358Z-417f283a93874882b0673786d63415d8",
+  "error": null,
+  "sdk": "10.0.401",
+  "aspireVersion": "13.6.0",
+  "durationSeconds": 253.76
+}

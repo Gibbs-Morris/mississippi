@@ -1,0 +1,22 @@
+[
+  {
+    "type": "http",
+    "status": 404,
+    "url": "http://localhost:5101/api/projections/bank-account-balance/3ddf9d3b-b0d2-42c5-ba1a-cacaaeb7efe8"
+  },
+  {
+    "type": "http",
+    "status": 404,
+    "url": "http://localhost:5101/api/projections/bank-account-ledger/c61674c4-3b1e-4181-ba21-cdb2f293b3ef"
+  },
+  {
+    "type": "http",
+    "status": 404,
+    "url": "http://localhost:5101/api/projections/bank-account-balance/c61674c4-3b1e-4181-ba21-cdb2f293b3ef"
+  },
+  {
+    "type": "http",
+    "status": 404,
+    "url": "http://localhost:5101/api/projections/bank-account-ledger/3ddf9d3b-b0d2-42c5-ba1a-cacaaeb7efe8"
+  }
+]
