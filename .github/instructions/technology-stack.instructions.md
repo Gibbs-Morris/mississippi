@@ -30,7 +30,7 @@ languages in new areas or new application, testing, or automation stacks.
 | Area or format | Permitted purpose |
 | --- | --- |
 | CSS and HTML | Existing Blazor styling, client host markup, and documentation-site styling; existing CSS/token guidance still applies. |
-| Markdown and text | Documentation, instructions, licensing, and analyzer release records. |
+| Markdown, text, and Mermaid | Documentation, instructions, licensing, analyzer release records, and Mermaid documentation diagrams; this does not authorize arbitrary embedded executable code. |
 | JSON/JSONC, YAML, XML/MSBuild (`.csproj`, `.props`, `.slnx`), TOML, and repository settings | Configuration, manifests, lockfiles, test data, and existing tool settings; these formats do not authorize embedded code in another language. |
 | PNG, JPG, SVG, and ICO | Images and icons; an asset format does not authorize embedded executable code. |
 | TypeScript/TSX and React in `docs/Docusaurus/` | Maintenance of the existing documentation site, its configuration, and its Playwright tests; no general Node helpers or application logic. |
