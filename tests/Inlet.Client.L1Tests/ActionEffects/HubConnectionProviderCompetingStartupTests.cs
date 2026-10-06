@@ -21,7 +21,7 @@ namespace MississippiTests.Inlet.Client.L1Tests.ActionEffects;
 public sealed class HubConnectionProviderCompetingStartupTests
 {
     /// <summary>
-    ///     A canceled or rejected caller leaves an active or connected competing transport's status unchanged.
+    ///     A canceled caller preserves Connecting and a rejected caller reports a connected competing transport.
     /// </summary>
     /// <param name="cancelWhileConnecting">Whether to cancel while the competing start is pending.</param>
     /// <returns>A task representing the test.</returns>
@@ -76,6 +76,16 @@ public sealed class HubConnectionProviderCompetingStartupTests
 
         Assert.Equal(HubConnectionState.Connected, provider.Connection.State);
         Assert.True(provider.IsConnected);
-        Assert.IsType<SignalRConnectingAction>(Assert.Single(actions));
+        if (cancelWhileConnecting)
+        {
+            Assert.IsType<SignalRConnectingAction>(Assert.Single(actions));
+        }
+        else
+        {
+            Assert.Collection(
+                actions.ToArray(),
+                action => Assert.IsType<SignalRConnectingAction>(action),
+                action => Assert.IsType<SignalRConnectedAction>(action));
+        }
     }
 }

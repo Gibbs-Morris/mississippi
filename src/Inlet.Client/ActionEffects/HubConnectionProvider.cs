@@ -197,18 +197,22 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
                 : LogLevel.Error,
             exception,
             Stopwatch.GetElapsedTime(started).TotalMilliseconds);
-        if (Connection.State == HubConnectionState.Disconnected)
+        try
         {
-            try
+            if (Connection.State == HubConnectionState.Disconnected)
             {
                 Store.Dispatch(new SignalRDisconnectedAction(exception.Message, TimeProvider.GetUtcNow()));
             }
-            catch (Exception publicationException) when (!ReferenceEquals(publicationException, exception))
+            else if (Connection.State == HubConnectionState.Connected)
             {
-                Logger.ConnectionStatusPublicationFailed(
-                    publicationException,
-                    Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+                Store.Dispatch(new SignalRConnectedAction(Connection.ConnectionId, TimeProvider.GetUtcNow()));
             }
+        }
+        catch (Exception publicationException) when (!ReferenceEquals(publicationException, exception))
+        {
+            Logger.ConnectionStatusPublicationFailed(
+                publicationException,
+                Stopwatch.GetElapsedTime(started).TotalMilliseconds);
         }
     }
 
