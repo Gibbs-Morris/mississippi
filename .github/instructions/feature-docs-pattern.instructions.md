@@ -8,42 +8,11 @@ Governing thought: Mississippi features that support both source-generated and m
 
 > Drift check: Keep this file aligned with `docs/Docusaurus/docs/contributing/documentation-guide.md` and the page-type-specific authoring pages.
 
-## When This Pattern Applies
-
-Use this pattern only when the page already has a valid primary page type and the topic includes both source-generated and manual registration paths.
-
-Common examples include:
-
-- sagas
-- aggregates
-- UX projections
-- other Inlet-generated features with a real manual alternative
-
-This pattern does not replace page-type rules. It refines them.
-
 ## Rules (RFC 2119)
 
-- Pages using this pattern **MUST** still choose one primary page type before applying the branching structure. Why: The source-generation pattern is subordinate guidance.
-- Shared setup **MUST** appear before the source-generated versus manual branching point. Why: Readers should learn common mechanics once.
-- The source-generated path **MUST** appear first and **MUST** be marked as recommended when it is the preferred repo path. Why: Readers should see the least error-prone path first.
-- Manual registration **MUST** explain why a reader would choose it and what it makes explicit. Why: Manual branches are for understanding or customization, not noise.
-- Both branches **MUST** describe equivalent runtime intent and **MUST NOT** imply different guarantees unless the evidence shows real behavioral differences. Why: Readers need accurate trade-offs.
-- A branching callout such as `:::tip Registration Options` **SHOULD** introduce the divergence. Why: Readers need a clear signal when the document splits.
-- This pattern **MUST NOT** be used to stuff concept, tutorial, and reference content into one giant feature page. Why: It is a local refinement, not a license to mix page types.
+- Covered contributors **MUST** read the complete policy files for [registration alternatives](../../docs/Docusaurus/docs/AGENTS.md#registration-alternatives) and apply their clauses within this instruction's original path, content, and audience scope. Why: Relocation and optional skill selection do not narrow these obligations.
+- For product-documentation drafting or validation, authors and reviewers **MUST** read the [shared skill](../../.agents/skills/author-technical-documentation/SKILL.md), its selected page-type contract, and the corresponding local guide in the [page-contract table](../../docs/Docusaurus/docs/AGENTS.md#selected-page-contracts). Why: Classification and required contracts are explicit; ADRs retain their dedicated layout.
 
 ## Scope and Audience
 
 Authors documenting Mississippi features that expose both source-generated and manual registration paths.
-
-## Core Principles
-
-- **Subordinate Pattern**: Page type remains the top-level contract.
-- **Shared Before Split**: Avoid duplicated setup.
-- **Trade-Off Honesty**: Explain both paths without inventing differences.
-
-## References
-
-- Documentation guide: `docs/Docusaurus/docs/contributing/documentation-guide.md`
-- Documentation authoring: `.github/instructions/documentation-authoring.instructions.md`
-- Documentation page focus: `.github/instructions/documentation-page-focus.instructions.md`
-- Page-contract selection: [Author technical documentation](../../.agents/skills/author-technical-documentation/SKILL.md#select-the-page-contract).
