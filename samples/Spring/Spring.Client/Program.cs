@@ -62,7 +62,6 @@ builder.UseMississippi(client =>
         // ScanProjectionDtos automatically discovers [ProjectionPath] types and wires up fetching
         reservoir.AddInletClient();
         reservoir.AddInletBlazorSignalR(signalR => signalR
-            .WithHubPath("/hubs/inlet")
             .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
     });
 });

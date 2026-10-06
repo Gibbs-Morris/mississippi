@@ -55,7 +55,6 @@ builder.UseMississippi(client =>
     {
         reservoir.AddInletClient();
         reservoir.AddInletBlazorSignalR(signalR => signalR
-            .WithHubPath("/hubs/inlet")
             .ScanProjectionDtos(typeof(MyProjectionDto).Assembly));
     });
 });
