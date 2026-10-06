@@ -61,8 +61,8 @@ builder.UseMississippi(client =>
         // Configure Inlet with SignalR effect for real-time projection updates
         // ScanProjectionDtos automatically discovers [ProjectionPath] types and wires up fetching
         reservoir.AddInletClient();
-        reservoir.AddInletBlazorSignalR(signalR => signalR
-            .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
+        reservoir.AddInletBlazorSignalR(signalR =>
+            signalR.ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
     });
 });
 await builder.Build().RunAsync();
