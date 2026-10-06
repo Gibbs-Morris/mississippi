@@ -38,7 +38,7 @@ languages in new areas or new application, testing, or automation stacks.
 | `src/Reservoir.Client/wwwroot/mississippi.reservoir.devtools.js` | Maintenance of the existing browser DevTools interop; no standalone scripts or unrelated JavaScript features. |
 | Existing Bash and JavaScript snippets in `.github/workflows/` | Maintenance of established Actions integration roles; new scripting steps use PowerShell. Generated workflow files retain their generator ownership. |
 | Existing shell command examples in documentation and skills | Maintenance of established command examples for existing tools and integrations; new automation and standalone helpers use PowerShell or C#. |
-| `.agents/skills/address-pull-request-feedback/scripts/list-review-threads.graphql` | Maintenance of the existing GitHub review-thread query; no new query-language tooling or application layer. |
+| `.agents/skills/address-pull-request-feedback/scripts/list-review-threads.graphql` | Maintenance and execution of the existing GitHub review-thread query, including trusted temporary copies required by the feedback workflow; its independent trust checks still apply. No new query-language tooling or application layer. |
 
 ## At-a-Glance Quick-Start
 
