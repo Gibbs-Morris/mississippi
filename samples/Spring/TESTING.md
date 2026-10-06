@@ -38,9 +38,34 @@ FlagshipJourneysTests adds first-run completion at 390×844, updates in a second
 The L0 component tests distinguish accepted requests from loading projections, prioritize in-flight requests, retain mixed response history, escape snapshot content and prevent an invalid transfer draft from submitting an earlier valid amount.
 
 Use the [capability map](JOURNEYS.md) to connect a demo task to its sources and assertions.
-The [capture manifest](Spring.L3Tests/Screenshots/flagship/README.md) records phone/desktop, keyboard, touch, theme and state evidence for this redesign.
-Screenshots support browser assertions; they do not replace passing L2/L3 results.
+See [browser review evidence](#browser-review-evidence) for the artifact workflow and its limits.
+The C# Full suite also saves named flagship PNGs and per-image route, viewport, theme and browser metadata under its runner-owned artifact directory.
+Three touch cases cover all task routes at 1440×900, 390×844 and 320×740, including active navigation, heading focus and containment.
+Existing journey assertions remain in place; screenshots support them and do not replace passing L2/L3 results.
 
 Before final validation, stop the interactive app and run the canonical cleanup and Release pipeline in addition to full L2 and L3.
 go.ps1 excludes deployed L2/L3 tests. Doctor's READY result is prerequisite evidence only.
 Samples do not require mutation testing under the current policy; report any chosen or skipped mutation run explicitly.
+
+## Browser review evidence
+
+Stop the interactive app, then run pwsh ./test-spring.ps1 -TestLevel L3 -Suite Full.
+Read the emitted SUMMARY JSON and spring.trx; PASS requires executed, passing tests.
+The runner creates a unique directory under artifacts/spring, containing its test results, resource logs, banking screenshot and trace.
+Its flagship subdirectory contains named PNGs and per-image route, viewport, theme, browser and file-timestamp metadata from the C# Playwright tests.
+
+FlagshipRouteEvidenceTests taps all five task links at 1440×900, 390×844 and 320×740, checking the active task, heading focus and page containment.
+FlagshipJourneysTests retains the existing outcome assertions and captures first-run, shared-pair, account switching, bursts, stale-read denial, investigation, persona, compensation and lost-reply states.
+The existing banking tests retain their additional setup, transfer and theme screenshots.
+These images are observed browser states, not pixel-comparison baselines or replacements for assertions.
+The C# capture helper does not run axe or certify accessibility; semantic, touch, focus and keyboard checks remain explicit test assertions.
+
+Generated screenshots, manifests, traces and raw results belong in the ignored artifacts directory and review attachments, not in the application source tree.
+The existing L3 Tests workflow uploads `artifacts/spring` as `spring-l3-<suite>-<runner OS>` and retains it for seven days.
+For the complete gallery in CI, dispatch that workflow on the reviewed branch with suite=Full; the normal PR run selects Smoke.
+Link the exact run and artifact in the PR, identify the captured routes and sizes, and attach selected phone and desktop previews to the PR description or a top-level comment.
+Archive needed evidence before that retention period expires.
+
+For interactive auth comparison, use run-spring.ps1 with -LocalAuth On, stop it, then relaunch with -LocalAuth Off.
+The local header personas are a development demonstration; with auth off, all five receive 401 on protected Auth Proof endpoints.
+Do not leave the interactive app running while test scripts use the same worktree.

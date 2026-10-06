@@ -72,15 +72,18 @@ public sealed class SpringBrowserFixture : IAsyncLifetime
     }
 
     /// <summary>Creates an isolated browser page for a test.</summary>
+    /// <param name="options">Optional viewport and input settings for the isolated context.</param>
     /// <returns>The new page, whose context is owned by the caller.</returns>
-    public async Task<IPage> CreatePageAsync()
+    public async Task<IPage> CreatePageAsync(
+        BrowserNewPageOptions? options = null
+    )
     {
         if (browser is null)
         {
             throw new InvalidOperationException("Browser not initialized.");
         }
 
-        IPage page = await browser.NewPageAsync();
+        IPage page = await browser.NewPageAsync(options);
         page.SetDefaultTimeout(60_000);
         return page;
     }

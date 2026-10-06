@@ -223,6 +223,7 @@ public sealed class FlagshipJourneysTests
             Assert.True(
                 await page.EvaluateAsync<bool>(
                     "document.documentElement.scrollWidth <= document.documentElement.clientWidth"));
+            await SpringScreenshotEvidence.SaveAsync(page, "shared-pair-and-anchors-320");
         }
         finally
         {
@@ -342,6 +343,7 @@ public sealed class FlagshipJourneysTests
             await Expect(AccountA(page).Locator("h2 code")).ToHaveTextAsync(demoA);
             await operations.WaitForBalanceValueAsync("500.00", ProjectionTimeout);
             await operations.WaitForBalanceValueAsync("500.00", ProjectionTimeout, "B");
+            await SpringScreenshotEvidence.SaveAsync(page, "account-switch-preserved-pair");
         }
         finally
         {
@@ -495,6 +497,7 @@ public sealed class FlagshipJourneysTests
                         }))
                 .ToBeVisibleAsync();
             Assert.Equal(444, acceptedBankingRequests);
+            await SpringScreenshotEvidence.SaveAsync(page, "all-bursts-retained-ledger");
         }
         finally
         {
@@ -644,6 +647,7 @@ public sealed class FlagshipJourneysTests
                             Exact = true,
                         }))
                 .ToHaveCountAsync(0);
+            await SpringScreenshotEvidence.SaveAsync(page, "obsolete-read-ignored");
         }
         finally
         {
@@ -669,6 +673,7 @@ public sealed class FlagshipJourneysTests
             await page.SetViewportSizeAsync(390, 844);
             await page.GotoAsync(Fixture.GatewayBaseUri.ToString());
             await Expect(page.Locator("h1")).ToBeFocusedAsync();
+            await SpringScreenshotEvidence.SaveAsync(page, "first-run-home-390");
             await page.GetByRole(
                     AriaRole.Link,
                     new()
@@ -791,6 +796,7 @@ public sealed class FlagshipJourneysTests
             Assert.True(
                 await page.EvaluateAsync<bool>(
                     "document.documentElement.scrollWidth <= document.documentElement.clientWidth"));
+            await SpringScreenshotEvidence.SaveAsync(page, "first-run-outcomes-390");
         }
         finally
         {
@@ -868,6 +874,7 @@ public sealed class FlagshipJourneysTests
             Assert.True(
                 await page.EvaluateAsync<bool>(
                     "document.documentElement.scrollWidth <= document.documentElement.clientWidth"));
+            await SpringScreenshotEvidence.SaveAsync(page, "investigation-populated-390");
         }
         finally
         {
@@ -976,6 +983,9 @@ public sealed class FlagshipJourneysTests
             Assert.Equal(200, serverStatus);
             Assert.True(serverAccepted);
             Assert.Equal(1, intercepted);
+            await SpringScreenshotEvidence.SaveAsync(
+                page,
+                "lost-reply-history-" + viewportWidth.ToString(CultureInfo.InvariantCulture));
         }
         finally
         {
@@ -1147,6 +1157,7 @@ public sealed class FlagshipJourneysTests
             Assert.True(
                 await page.EvaluateAsync<bool>(
                     "document.documentElement.scrollWidth <= document.documentElement.clientWidth"));
+            await SpringScreenshotEvidence.SaveAsync(page, "persona-outcomes-390");
         }
         finally
         {
@@ -1243,6 +1254,7 @@ public sealed class FlagshipJourneysTests
                             Exact = true,
                         }))
                 .ToHaveCountAsync(0);
+            await SpringScreenshotEvidence.SaveAsync(page, "transfer-compensated");
         }
         finally
         {
