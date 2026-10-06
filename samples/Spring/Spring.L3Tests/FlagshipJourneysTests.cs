@@ -875,15 +875,21 @@ public sealed class FlagshipJourneysTests
         }
     }
 
-    /// <summary>A lost response reports client failure while exposing the one actual committed deposit.</summary>
+    /// <summary>A lost response reports client failure while exposing the actual deposit and contained phone history.</summary>
+    /// <param name="viewportWidth">The phone width used to verify the expanded command history.</param>
     /// <returns>The asynchronous real-server lost-reply regression.</returns>
-    [Fact]
-    public async Task LostDepositReplyShowsClientFailureAndActualCommittedOutcomeAsync()
+    [Theory]
+    [InlineData(320)]
+    [InlineData(390)]
+    public async Task LostDepositReplyShowsClientFailureAndActualCommittedOutcomeAsync(
+        int viewportWidth
+    )
     {
         Assert.True(Fixture.IsInitialized, "fixture must be initialized");
         IPage page = await Fixture.CreatePageAsync();
         try
         {
+            await page.SetViewportSizeAsync(viewportWidth, 844);
             OperationsPage operations = await BankAccountScenario.PrepareAsync(Fixture, page, ProjectionTimeout);
             await operations.WaitForBalanceValueAsync("500.00", ProjectionTimeout);
             string account = await AccountA(page).Locator("h2 code").InnerTextAsync();
@@ -945,6 +951,28 @@ public sealed class FlagshipJourneysTests
             await Expect(request).ToHaveCountAsync(1);
             await Expect(request).ToContainTextAsync("Failed");
             await Expect(request).ToContainTextAsync("HttpError");
+            Assert.True(
+                await page.EvaluateAsync<bool>(
+                    "document.documentElement.scrollWidth <= document.documentElement.clientWidth"));
+            ILocator history = responses.GetByRole(
+                AriaRole.Region,
+                new()
+                {
+                    Name = "Banking responses · this browser command history",
+                    Exact = true,
+                });
+            await Expect(history).ToBeVisibleAsync();
+            Assert.True(await history.EvaluateAsync<bool>("element => element.scrollWidth > element.clientWidth"));
+            await responses.Locator("summary").PressAsync("Tab");
+            Assert.True(await history.EvaluateAsync<bool>("element => element === document.activeElement"));
+            await history.PressAsync("ArrowRight");
+            await page.WaitForFunctionAsync(
+                "() => document.activeElement.scrollLeft > 0",
+                null,
+                new()
+                {
+                    Timeout = ProjectionTimeout,
+                });
             Assert.Equal(200, serverStatus);
             Assert.True(serverAccepted);
             Assert.Equal(1, intercepted);

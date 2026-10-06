@@ -22,6 +22,8 @@ Governing thought: Preserve caller attribute inputs while protecting component-o
 
 - Agents **SHOULD** verify keyboard focus separately from fragment scrolling in Blazor, and explicitly focus same-page jump targets when navigation only scrolls. Why: Spring's account jumps preserved both IDs and scrolled correctly while focus stayed on an offscreen link; panel `FocusAsync` fixed the failing browser assertions while real hrefs and modified-click navigation remained intact.
 
+- Agents **SHOULD** constrain grid tracks and item minimum widths around wide scrollers. Why: Spring's expanded 600px history widened a 390px page to 660px despite `overflow: auto`; `minmax(0, 1fr)` and `min-width: 0` restored its keyboard-scrollable containment.
+
 ## References
 
 - Self-improvement governance: [Self-Improvement Learning System](self-improvement.instructions.md).
