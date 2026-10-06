@@ -95,8 +95,9 @@ public sealed class InletBlazorSignalRBuilder
     /// <summary>
     ///     Sets the SignalR hub path.
     /// </summary>
-    /// <param name="hubPath">The hub path (e.g., "/hubs/inlet").</param>
+    /// <param name="hubPath">The hub path (e.g., "hubs/inlet"). Relative paths follow the navigation base.</param>
     /// <returns>The builder for chaining.</returns>
+    /// <remarks>A leading slash selects the origin root; an absolute URL selects its own host.</remarks>
     public InletBlazorSignalRBuilder WithHubPath(
         string hubPath
     )
@@ -113,8 +114,9 @@ public sealed class InletBlazorSignalRBuilder
     /// <summary>
     ///     Sets the route prefix for projection endpoints.
     /// </summary>
-    /// <param name="prefix">The route prefix (e.g., "/api/projections").</param>
+    /// <param name="prefix">The route prefix (e.g., "api/projections"). Relative prefixes follow the HTTP client base address.</param>
     /// <returns>The builder for chaining.</returns>
+    /// <remarks>A leading slash selects the origin root; an absolute URL selects its own host.</remarks>
     public InletBlazorSignalRBuilder WithRoutePrefix(
         string prefix
     )
