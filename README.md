@@ -31,7 +31,7 @@ Mississippi is a sophisticated .NET framework designed to streamline distributed
 
 ## Design Principles
 
-- **Established technology stack** — Agents use C#/.NET, Blazor/Razor, PowerShell, and GitHub Actions for repository contributions and required project tooling. The [technology-stack policy](.github/instructions/technology-stack.instructions.md) defines supporting formats, scoped maintenance of existing integrations, and approval for departures; API requests and disposable local helpers do not expand the project stack.
+- **Established technology stack** — Agents use C#/.NET, Blazor/Razor, PowerShell, and GitHub Actions for repository contributions and required project tooling. The [technology-stack policy](.github/instructions/technology-stack.instructions.md) defines supporting formats, scoped maintenance of existing integrations, and explicit user approval for departures. Its exceptions cover authorized task-local requests to existing APIs and disposable local helpers that are not delivered, add no repository dependency, and are not part of required project workflows.
 - **API familiarity first**
   - New/refactored APIs align with primary .NET behaviors and patterns.
   - When design is ambiguous, follow widely used .NET conventions.
