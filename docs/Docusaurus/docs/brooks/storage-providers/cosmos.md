@@ -234,5 +234,6 @@ deployment.
 
 - [Storage provider concepts](index.md)
 - [Runtime composition](../../reference/runtime-composition.md)
+- [Cosmos storage retries](../../reference/cosmos-storage-retries.md)
 - [Brooks operations](../operations/operations.md)
 - [Brooks troubleshooting](../troubleshooting/troubleshooting.md)
