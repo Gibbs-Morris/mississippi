@@ -1,0 +1,46 @@
+{
+  "pr": 938,
+  "issue": 914,
+  "candidateHead": "3ae5bddb6718b674ab5be7d09d9651d8c851990c",
+  "base": "957ea8d8f631eac556d56da5d831702115bec49c",
+  "nativeRun": "final-spring-l3-full-001",
+  "nativeHead": "5fbefec92c119557b3fabd61a6f581431b5727ab",
+  "sourceEquivalence": "All validated source hashes unchanged and Git-filtered blobs match candidate head",
+  "command": "pwsh ./test-spring.ps1 -TestLevel L3 -Suite Full",
+  "executed": 11,
+  "passed": 11,
+  "skipped": 0,
+  "route": "/accounts",
+  "browser": "Chromium",
+  "browserVersion": "153.0.8010.12",
+  "desktop": {
+    "width": 1440,
+    "height": 900
+  },
+  "mobile": {
+    "width": 390,
+    "height": 844
+  },
+  "states": [
+    "Disconnected with HTTP 503 and original startup error",
+    "Connected after manual Reconnect, dialog dismissed"
+  ],
+  "images": [
+    {
+      "name": "inlet-startup-disconnected-desktop.png",
+      "sha256": "4E3B45A57026826621DD54667E88F34B1280C9508D938F7B6568C6A148255A7E"
+    },
+    {
+      "name": "inlet-startup-disconnected-mobile.png",
+      "sha256": "BEB49F06ED6753907D6D0B3B971D829D6792FA4F7D75D0CFC20C478FAA5CAEE2"
+    },
+    {
+      "name": "inlet-startup-connected-desktop.png",
+      "sha256": "64C568C32761A6497C341944955F91EC42463CB44AC4FC5AB67E8C9B21E39211"
+    },
+    {
+      "name": "inlet-startup-connected-mobile.png",
+      "sha256": "E2FFCE34BA3A79253E06862C925D6F6610FE16B7712E2CE02A66846E3CF2B072"
+    }
+  ]
+}
