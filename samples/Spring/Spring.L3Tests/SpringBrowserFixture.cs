@@ -30,12 +30,14 @@ public sealed class SpringBrowserFixture : IAsyncLifetime
     private SpringApplicationFixture Application { get; } = new();
 
     /// <summary>
-    ///     Saves the banking smoke trace and screenshot when an artifact directory is configured.
+    ///     Saves the named journey trace and screenshot when an artifact directory is configured.
     /// </summary>
     /// <param name="page">The page with an active Playwright trace.</param>
+    /// <param name="artifactPrefix">The artifact filename prefix, or banking for the smoke journey.</param>
     /// <returns>A task representing artifact capture and browser context cleanup.</returns>
     public static async Task SaveBrowserArtifactsAsync(
-        IPage page
+        IPage page,
+        string artifactPrefix = "banking"
     )
     {
         ArgumentNullException.ThrowIfNull(page);
@@ -50,7 +52,7 @@ public sealed class SpringBrowserFixture : IAsyncLifetime
                     await page.ScreenshotAsync(
                         new()
                         {
-                            Path = Path.Join(directory, "banking.png"),
+                            Path = Path.Join(directory, $"{artifactPrefix}.png"),
                             FullPage = true,
                             Timeout = 10_000,
                         });
@@ -60,7 +62,7 @@ public sealed class SpringBrowserFixture : IAsyncLifetime
                     await page.Context.Tracing.StopAsync(
                         new()
                         {
-                            Path = Path.Join(directory, "banking.zip"),
+                            Path = Path.Join(directory, $"{artifactPrefix}.zip"),
                         });
                 }
             }

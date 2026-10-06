@@ -29,7 +29,7 @@ namespace Mississippi.Inlet.Client.ActionEffects;
 /// </remarks>
 public sealed class AutoProjectionFetcher : IProjectionFetcher
 {
-    private const string DefaultRoutePrefix = "/api/projections";
+    private const string DefaultRoutePrefix = "api/projections";
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="AutoProjectionFetcher" /> class.
@@ -37,7 +37,7 @@ public sealed class AutoProjectionFetcher : IProjectionFetcher
     /// <param name="httpClient">The HTTP client for fetching projections.</param>
     /// <param name="registry">The projection DTO registry.</param>
     /// <param name="routePrefix">
-    ///     Optional route prefix. Defaults to <c>/api/projections</c>.
+    ///     Optional route prefix. Defaults to <c>api/projections</c>, relative to the HTTP client base address.
     /// </param>
     public AutoProjectionFetcher(
         HttpClient httpClient,

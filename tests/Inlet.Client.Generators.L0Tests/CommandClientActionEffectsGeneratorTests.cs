@@ -3,9 +3,17 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+using Moq;
+using Moq.Protected;
 
 
 namespace Mississippi.Inlet.Client.Generators.L0Tests;
@@ -71,6 +79,60 @@ public class CommandClientActionEffectsGeneratorTests
     }
 
     /// <summary>
+    ///     Default generated command routes preserve the configured HTTP base path.
+    /// </summary>
+    /// <param name="baseAddress">The HTTP base address.</param>
+    /// <param name="expectedAddress">The expected command request URI.</param>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Theory]
+    [InlineData("https://example.test/", "https://example.test/api/aggregates/order/account/place")]
+    [InlineData("https://example.test/bank/", "https://example.test/bank/api/aggregates/order/account/place")]
+    public async Task DefaultGeneratedCommandRoutePreservesHttpBasePathAsync(
+        string baseAddress,
+        string expectedAddress
+    )
+    {
+        const string commandSource = """
+                                     using Mississippi.Inlet.Generators.Abstractions;
+
+                                     namespace TestApp.Domain.Aggregates.Order.Commands
+                                     {
+                                         [GenerateCommand(Route = "place")]
+                                         public sealed record PlaceOrder;
+                                     }
+                                     """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, commandSource);
+        SyntaxNode generatedRoot = await runResult.GeneratedTrees.Single()
+            .GetRootAsync(TestContext.Current.CancellationToken);
+        PropertyDeclarationSyntax prefixProperty = generatedRoot.DescendantNodes()
+            .OfType<PropertyDeclarationSyntax>()
+            .Single(property => property.Identifier.ValueText == "AggregateRoutePrefix");
+        string prefix = Assert.IsType<LiteralExpressionSyntax>(prefixProperty.ExpressionBody!.Expression)
+            .Token.ValueText;
+        Uri? requestUri = null;
+        Mock<HttpMessageHandler> handler = new();
+        handler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Callback<HttpRequestMessage, CancellationToken>((request, _) => requestUri = request.RequestUri)
+            .ReturnsAsync(() => new(HttpStatusCode.OK));
+        using HttpClient http = new(handler.Object)
+        {
+            BaseAddress = new(baseAddress),
+        };
+        using StringContent content = new("{}");
+        using HttpResponseMessage response = await http.PostAsync(
+            new Uri($"{prefix}/account/place", UriKind.Relative),
+            content,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(new(expectedAddress), requestUri);
+        Assert.Equal("api/aggregates/order", prefix.TrimStart('/'));
+    }
+
+    /// <summary>
     ///     Generated action effect file should have correct naming convention.
     /// </summary>
     [Fact]
@@ -115,7 +177,7 @@ public class CommandClientActionEffectsGeneratorTests
             RunGenerator(AttributeStubs, commandSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("AggregateRoutePrefix =>", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("/api/aggregates/order", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("api/aggregates/order", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
