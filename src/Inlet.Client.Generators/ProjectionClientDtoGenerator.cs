@@ -35,6 +35,14 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
 
     private const string ProjectionPathAttributeFullName = "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
 
+    private static readonly DiagnosticDescriptor ConflictingEnumDto = new(
+        "INLETCLIENT001",
+        "Conflicting projection enum DTO",
+        "Source enums '{0}' and '{1}' map to the same generated enum DTO '{2}'. Rename a source enum or use separate client namespaces.",
+        "Inlet.Client.Generators",
+        DiagnosticSeverity.Error,
+        true);
+
     /// <summary>
     ///     Recursively finds projections in a namespace.
     /// </summary>
@@ -70,7 +78,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         ProjectionInfo projection,
         string targetRootNamespace,
         HashSet<string> generatedNestedTypes,
-        HashSet<string> generatedEnumTypes
+        Dictionary<string, INamedTypeSymbol> generatedEnumTypes
     )
     {
         // Use client namespace convention
@@ -152,15 +160,27 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         INamedTypeSymbol sourceType,
         string dtoName,
         string targetNamespace,
-        HashSet<string> generatedEnumTypes
+        Dictionary<string, INamedTypeSymbol> generatedEnumTypes
     )
     {
         string enumIdentity = $"{targetNamespace}.{dtoName}";
-        if (!generatedEnumTypes.Add(enumIdentity))
+        if (generatedEnumTypes.TryGetValue(enumIdentity, out INamedTypeSymbol? existingEnum))
         {
+            if (!SymbolEqualityComparer.Default.Equals(existingEnum, sourceType))
+            {
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        ConflictingEnumDto,
+                        sourceType.Locations.FirstOrDefault() ?? Location.None,
+                        existingEnum.ToDisplayString(),
+                        sourceType.ToDisplayString(),
+                        enumIdentity));
+            }
+
             return;
         }
 
+        generatedEnumTypes.Add(enumIdentity, sourceType);
         StringBuilder sb = new();
 
         // File header
@@ -205,7 +225,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         INamedTypeSymbol sourceType,
         string dtoName,
         string targetNamespace,
-        HashSet<string> generatedEnumTypes
+        Dictionary<string, INamedTypeSymbol> generatedEnumTypes
     )
     {
         // If the source is an enum, generate an enum DTO
@@ -444,7 +464,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
             static (spc, data) =>
             {
                 HashSet<string> generatedNestedTypes = new();
-                HashSet<string> generatedEnumTypes = new(StringComparer.Ordinal);
+                Dictionary<string, INamedTypeSymbol> generatedEnumTypes = new(StringComparer.Ordinal);
                 foreach (ProjectionInfo projection in data.Projections)
                 {
                     GenerateClientDto(

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -964,6 +965,110 @@ public class ProjectionClientDtoGeneratorTests
         Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.Second.Dtos.SecondProjectionDto"));
         Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.First.Dtos.FirstEntryDto"));
         Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.Second.Dtos.SecondEntryDto"));
+    }
+
+    /// <summary>
+    ///     Distinct source enums cannot silently share one generated enum identity.
+    /// </summary>
+    /// <param name="shape">The direct, nested, mixed, collection, or cross-projection emission path.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void NestedEnumOutputReportsConflictingSourceEnums(
+        int shape
+    )
+    {
+        string properties = shape switch
+        {
+            0 => "public CommonA.Status First { get; init; } public CommonB.Status Second { get; init; }",
+            1 =>
+                "public ImmutableArray<FirstEntry> First { get; init; } = []; public ImmutableArray<SecondEntry> Second { get; init; } = [];",
+            2 =>
+                "public CommonA.Status First { get; init; } public ImmutableArray<SecondEntry> Second { get; init; } = [];",
+            3 =>
+                "public ImmutableArray<CommonA.Status> First { get; init; } = []; public ImmutableArray<CommonB.Status> Second { get; init; } = [];",
+            var _ => "public ImmutableArray<FirstEntry> First { get; init; } = [];",
+        };
+        string secondProjection = shape == 4
+            ? """
+              [GenerateProjectionEndpoints]
+              [ProjectionPath("second")]
+              public sealed record SecondProjection
+              {
+                  public ImmutableArray<SecondEntry> Second { get; init; } = [];
+              }
+              """
+            : string.Empty;
+        string source = $$"""
+                          using System.Collections.Immutable;
+                          using Mississippi.Inlet.Generators.Abstractions;
+                          using Mississippi.Inlet.Abstractions;
+
+                          namespace CommonA
+                          {
+                              public enum Status { Pending = 3, Complete = 7 }
+                          }
+
+                          namespace CommonB
+                          {
+                              public enum Status { Started = 11, Finished = 19 }
+                          }
+
+                          namespace TestApp.Domain.Projections.Shared
+                          {
+                              public sealed record FirstEntry
+                              {
+                                  public CommonA.Status Status { get; init; }
+                              }
+
+                              public sealed record SecondEntry
+                              {
+                                  public CommonB.Status? Status { get; init; }
+                              }
+
+                              [GenerateProjectionEndpoints]
+                              [ProjectionPath("first")]
+                              public sealed record FirstProjection
+                              {
+                                  {{properties}}
+                              }
+
+                              {{secondProjection}}
+                          }
+                          """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Diagnostic[] inputErrors = input.GetDiagnostics(TestContext.Current.CancellationToken)
+            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+        TestContext.Current.TestOutputHelper?.WriteLine($"Input errors: {inputErrors.Length}");
+        Assert.Empty(inputErrors);
+        Assert.All(result.Results, generatorResult => Assert.Null(generatorResult.Exception));
+        Assert.Empty(
+            output.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        Diagnostic conflict = Assert.Single(diagnostics);
+        Assert.Equal("INLETCLIENT001", conflict.Id);
+        Assert.Equal(DiagnosticSeverity.Error, conflict.Severity);
+        string message = conflict.GetMessage(CultureInfo.InvariantCulture);
+        Assert.Contains("TestApp.Client.Features.Shared.Dtos.StatusDto", message, StringComparison.Ordinal);
+        Assert.Contains("CommonA.Status", message, StringComparison.Ordinal);
+        Assert.Contains("CommonB.Status", message, StringComparison.Ordinal);
+        Assert.Equal(
+            "CommonB.Status",
+            input.GetSemanticModel(conflict.Location.SourceTree!)
+                .GetDeclaredSymbol(
+                    conflict.Location.SourceTree!.GetRoot(TestContext.Current.CancellationToken)
+                        .FindNode(conflict.Location.SourceSpan),
+                    TestContext.Current.CancellationToken)!.ToDisplayString());
+        GeneratorRunResult generated = Assert.Single(result.Results);
+        Assert.Equal(
+            generated.GeneratedSources.Length,
+            generated.GeneratedSources.Select(item => item.HintName).Distinct(StringComparer.Ordinal).Count());
     }
 
     /// <summary>
