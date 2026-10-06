@@ -4,27 +4,35 @@ applyTo: '**'
 
 # Repository Technology Stack
 
-Governing thought: Use the established stack and obtain explicit user approval before introducing another language or scripting runtime.
+Governing thought: Use the established stack for repository contributions and required project tooling; API requests and disposable local helpers do not expand that stack.
 
 > Drift check: Inspect tracked files, manifests, workflows, and the maintenance boundaries below; a file extension alone does not establish an approved use.
 
 ## Rules (RFC 2119)
 
-- Agents **MUST** use C#/.NET, Blazor/Razor, PowerShell, and GitHub Actions YAML for new application code, tests, and automation, subject to the scoped maintenance boundaries below. Why: These are the repository's default technologies.
+- Agents **MUST** use C#/.NET, Blazor/Razor, PowerShell, and GitHub Actions YAML for new repository application code, tests, and automation, subject to the scoped maintenance boundaries below. Why: These are the repository's default technologies.
 - Agents **MAY** maintain the supporting formats and existing non-default roles listed below within their established purposes. Why: The repository also needs documentation, styling, assets, configuration, and existing integrations.
-- Agents **MUST** obtain explicit user approval before writing, modifying, or executing custom code in another language or scripting runtime outside those boundaries. Why: A general task request, an installed tool, or an existing file elsewhere is not approval to expand the stack.
+- Agents **MUST** obtain explicit user approval before using another language or scripting runtime in repository contributions or required project tooling outside those boundaries. Why: A general task request, an installed tool, or an existing file elsewhere is not approval to expand the stack.
 - Agents **MUST** record approved departures, including the language/runtime, purpose, and affected paths, in the tracking issue and PR when those records exist, or in the conversation or report for read-only work. Why: Approval is scoped to the authorized work rather than a permanent exception, and this rule does not require a PR for an investigation.
-- Agents **MUST** apply these boundaries to source, tests, tooling, examples, ignored files, scratchpads, temporary files inside or outside the checkout, extensionless files, inline commands, and workflow or configuration snippets. Why: Uncommitted helpers and embedded code still introduce another language.
-- Agents **MUST NOT** add Python or standalone JavaScript/Node helpers such as `.cjs` or `.mjs` files without explicit user approval. Why: One-off convenience scripts belong in PowerShell or C# by default.
-- Agents **MAY** run established build, test, lint, browser, and GitHub tools whose internal implementation uses another language. Why: Invoking an existing tool does not authorize authoring custom code in its implementation language.
-- Agents **MAY** use host-required tool-call syntax and shell transport to orchestrate established tools and permitted commands, including passing arguments and reading results; this allowance does not authorize custom helpers or other code in an unapproved language. Why: Required tool invocation syntax must not prevent repository inspection or work within the established stack.
+- Agents **MUST** apply these boundaries to delivered source, tests, reusable scripts, executable examples, and required project tooling, including embedded code and tracked, staged, untracked, or ignored files. Why: Commit status, location, and file extension do not exempt a project dependency or contribution.
+- Agents **MUST NOT** add Python or standalone JavaScript/Node helpers such as `.cjs` or `.mjs` files to repository contributions or required project tooling without explicit user approval. Why: Project helpers use PowerShell or C# by default.
+- Agents **MAY** author and execute API request payloads, including GraphQL queries and mutations, without separate language approval when used only to operate existing APIs for the authorized task. Why: A task-local request does not introduce a repository language or runtime.
+- Agents **MAY** write, modify, and execute disposable local investigation or validation helpers in other languages, including Python and JavaScript, when they are not delivered and introduce no repository dependency or required project workflow. Why: Temporary agent tooling does not change the project's technology choices.
+- Agents **MUST** preserve action-specific authorization, security policies, and independent trust checks when using API payloads or local helpers. Why: A language allowance does not authorize the action itself or bypass a tool's safeguards.
+- Agents **MAY** run established build, test, lint, browser, and GitHub tools whose internal implementation uses another language. Why: Running an established tool does not make its implementation language part of the project stack.
+- Agents **MAY** use host-required tool-call syntax and shell transport to orchestrate established tools and permitted commands, including passing arguments and reading results. Why: Tool invocation syntax does not introduce a project language or runtime.
 - Agents **MUST** request the missing approval and continue independent work within the established stack when a departure is needed. Why: The approval boundary preserves useful progress without silently changing the technology choice.
 
 ## Scope and Audience
 
-All agents working on this repository, including local investigation and validation.
+All agents working on this repository. The approval boundary covers repository
+contributions and tooling that project build, test, CI, deployment, or maintenance
+workflows require, even if that tooling is uncommitted or stored outside the
+checkout. Disposable local helpers and task-local API payloads are allowed only
+while they remain outside those contributions and required workflows.
+
 The maintenance boundaries permit the listed purposes, not general use of their
-languages in new areas or new application, testing, or automation stacks.
+languages in new repository areas or new application, testing, or automation stacks.
 
 ## Maintenance Boundaries
 
@@ -42,9 +50,10 @@ languages in new areas or new application, testing, or automation stacks.
 
 ## At-a-Glance Quick-Start
 
-Use PowerShell or C# for a new helper. Check both its language and purpose before
-writing it, even if it will be temporary or ignored. If the work needs another
-language or runtime, explain the need and obtain explicit approval first.
+Use PowerShell or C# for new project helpers. API requests and disposable local
+helpers need no separate language approval; their actions still need the usual
+authorization. Before delivering a helper or making it a required project tool,
+check its language and purpose and obtain approval for any departure.
 
 ## References
 
