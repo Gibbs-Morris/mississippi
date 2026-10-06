@@ -47,9 +47,7 @@ public sealed class FlagshipJourneysTests
         {
             JsonElement body = Assert.IsType<JsonElement>(
                 await response.JsonAsync()
-                    .WaitAsync(
-                        TimeSpan.FromMilliseconds(ProjectionTimeout),
-                        TestContext.Current.CancellationToken));
+                    .WaitAsync(TimeSpan.FromMilliseconds(ProjectionTimeout), TestContext.Current.CancellationToken));
             await Expect(outcome.GetByRole(AriaRole.Alert)).ToHaveCountAsync(0);
             await Expect(count)
                 .ToHaveTextAsync(
@@ -560,10 +558,8 @@ public sealed class FlagshipJourneysTests
             IResponse allowed = await obsoleteResponse;
             Assert.Equal(200, allowed.Status);
             Assert.Null(
-                    await allowed.FinishedAsync()
-                        .WaitAsync(
-                            TimeSpan.FromMilliseconds(ProjectionTimeout),
-                            TestContext.Current.CancellationToken));
+                await allowed.FinishedAsync()
+                    .WaitAsync(TimeSpan.FromMilliseconds(ProjectionTimeout), TestContext.Current.CancellationToken));
             await page.Locator("summary")
                 .Filter(
                     new()

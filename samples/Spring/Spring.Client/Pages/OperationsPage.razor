@@ -39,9 +39,13 @@
     {
         <nav class="spring-account-jumps" aria-label="Account panels">
             <a href="@($"{ShareUrl}#account-a-operations-panel")"
-               @onclick="@(args => FocusAccountPanelAsync(accountAPanelElement, args))">Account A ↓</a>
+               @onclick="@(args => FocusAccountPanelAsync(accountAPanelElement, args))">
+                Account A ↓
+            </a>
             <a href="@($"{ShareUrl}#account-b-operations-panel")"
-               @onclick="@(args => FocusAccountPanelAsync(accountBPanelElement, args))">Account B ↓</a>
+               @onclick="@(args => FocusAccountPanelAsync(accountBPanelElement, args))">
+                Account B ↓
+            </a>
         </nav>
         <CommandActivity State="@CommandState" Label="Banking responses · this browser"
                          Explanation="Shared history for this browser, including earlier account selections. Verify the live balances and ledgers below."/>
