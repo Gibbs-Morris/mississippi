@@ -132,26 +132,7 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
             {
                 await RunStateTransitionAsync(() =>
                 {
-                    if (Connection.State == HubConnectionState.Disconnected)
-                    {
-                        Logger.ConnectionStartFailed(
-                            exception is OperationCanceledException && cancellationToken.IsCancellationRequested
-                                ? LogLevel.Information
-                                : LogLevel.Error,
-                            exception,
-                            Stopwatch.GetElapsedTime(started).TotalMilliseconds);
-                        try
-                        {
-                            Store.Dispatch(new SignalRDisconnectedAction(exception.Message, TimeProvider.GetUtcNow()));
-                        }
-                        catch (Exception publicationException) when (!ReferenceEquals(publicationException, exception))
-                        {
-                            Logger.ConnectionStatusPublicationFailed(
-                                publicationException,
-                                Stopwatch.GetElapsedTime(started).TotalMilliseconds);
-                        }
-                    }
-
+                    HandleStartupFailure(exception, started, cancellationToken);
                     return true;
                 });
                 throw;
@@ -203,6 +184,33 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
         CancellationToken cancellationToken
     ) =>
         await ConnectionStarter(cancellationToken);
+
+    private void HandleStartupFailure(
+        Exception exception,
+        long started,
+        CancellationToken cancellationToken
+    )
+    {
+        Logger.ConnectionStartFailed(
+            exception is OperationCanceledException && cancellationToken.IsCancellationRequested
+                ? LogLevel.Information
+                : LogLevel.Error,
+            exception,
+            Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+        if (Connection.State == HubConnectionState.Disconnected)
+        {
+            try
+            {
+                Store.Dispatch(new SignalRDisconnectedAction(exception.Message, TimeProvider.GetUtcNow()));
+            }
+            catch (Exception publicationException) when (!ReferenceEquals(publicationException, exception))
+            {
+                Logger.ConnectionStatusPublicationFailed(
+                    publicationException,
+                    Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+            }
+        }
+    }
 
     private Task OnClosedAsync(
         Exception? exception
