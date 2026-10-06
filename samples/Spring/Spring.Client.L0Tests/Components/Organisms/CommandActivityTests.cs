@@ -37,6 +37,41 @@ public sealed class CommandActivityTests : BunitContext
         Assert.DoesNotContain("Command executed successfully", cut.Markup, StringComparison.Ordinal);
     }
 
+    /// <summary>Transport failures cannot establish that the server rejected or did not commit a command.</summary>
+    /// <param name="code">The real generated failure category.</param>
+    /// <param name="message">The real generated failure detail.</param>
+    [Theory]
+    [InlineData("HttpError", "Network error: response lost.")]
+    [InlineData("HttpError", "Request cancelled: response unavailable.")]
+    [InlineData("HttpError", "Server error (500): response failed.")]
+    [InlineData("NoResponse", "No response from server.")]
+    public void FailedClientStatusDoesNotClaimServerRejection(
+        string code,
+        string message
+    )
+    {
+        DateTimeOffset timestamp = new(2026, 10, 6, 12, 0, 0, TimeSpan.Zero);
+        CommandHistoryEntry failed = CommandHistoryEntry
+            .CreateExecuting("lost-response", "DepositFundsAction", timestamp)
+            .ToFailed(timestamp, code, message);
+        using IRenderedComponent<CommandActivity> cut = Render<CommandActivity>(parameters => parameters.Add(
+            component => component.State,
+            new BankAccountAggregateState
+            {
+                LastCommandSucceeded = false,
+                ErrorCode = code,
+                ErrorMessage = message,
+                CommandHistory = ImmutableList.Create(failed),
+            }));
+        Assert.Contains("Latest request: failed.", cut.Find("[role='status']").TextContent, StringComparison.Ordinal);
+        Assert.Contains("1 failed", cut.Markup, StringComparison.Ordinal);
+        Assert.Contains("Failed", cut.Find("tbody tr").TextContent, StringComparison.Ordinal);
+        Assert.Contains("does not establish the server outcome", cut.Markup, StringComparison.Ordinal);
+        Assert.Contains(code, cut.Find("[role='alert']").TextContent, StringComparison.Ordinal);
+        Assert.Contains(message, cut.Find("[role='alert']").TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("rejected", cut.Markup, StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>Concurrent commands keep the awaiting response state visible.</summary>
     [Fact]
     public void InFlightResponsesTakePrecedenceOverEarlierAcceptance()
@@ -74,9 +109,9 @@ public sealed class CommandActivityTests : BunitContext
                 LastCommandSucceeded = true,
             }));
         Assert.Contains("1 accepted", cut.Markup, StringComparison.Ordinal);
-        Assert.Contains("1 rejected", cut.Markup, StringComparison.Ordinal);
+        Assert.Contains("1 failed", cut.Markup, StringComparison.Ordinal);
         Assert.Contains("withdraw-rejected", cut.Find("tbody tr:last-child").TextContent, StringComparison.Ordinal);
-        Assert.Contains("Rejected", cut.Find("tbody tr:last-child").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Failed", cut.Find("tbody tr:last-child").TextContent, StringComparison.Ordinal);
         Assert.Contains("insufficient-funds", cut.Find("tbody tr:last-child").TextContent, StringComparison.Ordinal);
         Assert.Contains("deposit-accepted", cut.Find("tbody tr:first-child").TextContent, StringComparison.Ordinal);
     }
@@ -93,10 +128,7 @@ public sealed class CommandActivityTests : BunitContext
                 ErrorCode = "forbidden",
                 ErrorMessage = "Server error (403): access denied.",
             }));
-        Assert.Contains(
-            "Latest response: rejected.",
-            cut.Find("[role='status']").TextContent,
-            StringComparison.Ordinal);
+        Assert.Contains("Latest request: failed.", cut.Find("[role='status']").TextContent, StringComparison.Ordinal);
         Assert.Contains("403", cut.Find("[role='alert']").TextContent, StringComparison.Ordinal);
         Assert.Contains("forbidden", cut.Find("[role='alert']").TextContent, StringComparison.Ordinal);
     }

@@ -34,7 +34,7 @@ See [Spring validation prerequisites and diagnostics](../../README.md#validate-s
 ## Flagship journey coverage
 
 The full L3 suite preserves the banking, transfer, API-reference, accessible panel and theme journeys.
-FlagshipJourneysTests adds first-run completion at 390×844, updates in a second browser, rejected withdrawals with unchanged projections, all six burst controls and ledger retention, high-value investigation flags, defined transfer compensation, the five-persona command/read/saga authorization matrix including reselecting the active persona, delayed allowed reads after a newer denial, and account anchors/shared links after task navigation.
+FlagshipJourneysTests adds first-run completion at 390×844, updates in a second browser, rejected withdrawals with unchanged projections, a real committed deposit whose reply is lost, all six burst controls and ledger retention, high-value investigation flags, defined transfer compensation, the five-persona command/read/saga authorization matrix including reselecting the active persona, delayed allowed reads after a newer denial, and account anchors/shared links after task navigation.
 The L0 component tests distinguish accepted requests from loading projections, prioritize in-flight requests, retain mixed response history, escape snapshot content and prevent an invalid transfer draft from submitting an earlier valid amount.
 
 Use the [capability map](JOURNEYS.md) to connect a demo task to its sources and assertions.

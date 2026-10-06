@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using System.Threading;
 
 using MississippiSamples.Spring.L3Tests.Pages;
@@ -27,6 +28,29 @@ public sealed class FlagshipJourneysTests
         IPage page
     ) =>
         page.Locator("#account-a-operations-panel");
+
+    private static bool HasHttpPersona(
+        IRequest request,
+        string persona
+    )
+    {
+        bool anonymous = request.Headers.TryGetValue("x-spring-anonymous", out string? anonymousValue) &&
+                         string.Equals(anonymousValue, "true", StringComparison.Ordinal);
+        if (persona == "Unauthenticated")
+        {
+            return anonymous;
+        }
+
+        request.Headers.TryGetValue("x-spring-roles", out string? roles);
+        request.Headers.TryGetValue("x-spring-claims", out string? claims);
+        string expectedRoles = persona is "AuthProof Role" or "Full Access"
+            ? "banking-operator,transfer-operator,auth-proof-operator"
+            : "banking-operator,transfer-operator";
+        string? expectedClaims = persona is "AuthProof Claim" or "Full Access" ? "spring.permission=auth-proof" : null;
+        return !anonymous &&
+               string.Equals(roles, expectedRoles, StringComparison.Ordinal) &&
+               string.Equals(claims, expectedClaims, StringComparison.Ordinal);
+    }
 
     /// <summary>Task navigation keeps both account anchors and the shared link bound to the current pair.</summary>
     /// <returns>The asynchronous keyboard, narrow-layout and independent-browser navigation regression.</returns>
@@ -361,7 +385,7 @@ public sealed class FlagshipJourneysTests
                     });
             await Expect(
                     responses.GetByText(
-                        "0 rejected.",
+                        "0 failed.",
                         new()
                         {
                             Exact = false,
@@ -643,7 +667,7 @@ public sealed class FlagshipJourneysTests
                     Name = "Banking responses · this browser",
                     Exact = true,
                 });
-            await Expect(responses.GetByRole(AriaRole.Status)).ToContainTextAsync("Latest response: rejected.");
+            await Expect(responses.GetByRole(AriaRole.Status)).ToContainTextAsync("Latest request: failed.");
             await Expect(responses.GetByRole(AriaRole.Alert))
                 .ToContainTextAsync(
                     "Insufficient",
@@ -749,6 +773,86 @@ public sealed class FlagshipJourneysTests
         }
     }
 
+    /// <summary>A lost response reports client failure while exposing the one actual committed deposit.</summary>
+    /// <returns>The asynchronous real-server lost-reply regression.</returns>
+    [Fact]
+    public async Task LostDepositReplyShowsClientFailureAndActualCommittedOutcomeAsync()
+    {
+        Assert.True(Fixture.IsInitialized, "fixture must be initialized");
+        IPage page = await Fixture.CreatePageAsync();
+        try
+        {
+            OperationsPage operations = await BankAccountScenario.PrepareAsync(Fixture, page, ProjectionTimeout);
+            await operations.WaitForBalanceValueAsync("500.00", ProjectionTimeout);
+            string account = await AccountA(page).Locator("h2 code").InnerTextAsync();
+            int intercepted = 0;
+            int? serverStatus = null;
+            bool serverAccepted = false;
+            await page.RouteAsync(
+                $"**/api/aggregates/bank-account/{Uri.EscapeDataString(account)}/deposit",
+                async route =>
+                {
+                    Interlocked.Increment(ref intercepted);
+                    IAPIResponse response = await route.FetchAsync(
+                        new()
+                        {
+                            MaxRetries = 0,
+                        });
+                    try
+                    {
+                        serverStatus = response.Status;
+                        JsonElement body = Assert.IsType<JsonElement>(await response.JsonAsync());
+                        serverAccepted = body.GetProperty("success").GetBoolean();
+                        await route.AbortAsync("failed");
+                    }
+                    finally
+                    {
+                        await response.DisposeAsync();
+                    }
+                });
+            await operations.EnterDepositAmountAsync(25m);
+            await operations.ClickDepositAsync();
+            ILocator responses = page.GetByRole(
+                AriaRole.Region,
+                new()
+                {
+                    Name = "Banking responses · this browser",
+                    Exact = true,
+                });
+            await Expect(responses.GetByRole(AriaRole.Status)).ToContainTextAsync("Latest request: failed.");
+            await Expect(responses.GetByRole(AriaRole.Alert)).ToContainTextAsync("Network error:");
+            await Expect(responses).ToContainTextAsync("does not establish the server outcome");
+            await operations.WaitForBalanceValueAsync("525.00", ProjectionTimeout);
+            ILocator ledger = AccountA(page).Locator("tbody tr");
+            await Expect(ledger)
+                .ToHaveCountAsync(
+                    1,
+                    new()
+                    {
+                        Timeout = ProjectionTimeout,
+                    });
+            await Expect(ledger.First).ToContainTextAsync("Deposit");
+            await Expect(ledger.First).ToContainTextAsync("£25.00");
+            await responses.Locator("summary").PressAsync("Enter");
+            ILocator request = responses.Locator("tbody tr")
+                .Filter(
+                    new()
+                    {
+                        HasText = "DepositFundsAction",
+                    });
+            await Expect(request).ToHaveCountAsync(1);
+            await Expect(request).ToContainTextAsync("Failed");
+            await Expect(request).ToContainTextAsync("HttpError");
+            Assert.Equal(200, serverStatus);
+            Assert.True(serverAccepted);
+            Assert.Equal(1, intercepted);
+        }
+        finally
+        {
+            await page.CloseAsync();
+        }
+    }
+
     /// <summary>All five personas produce their actual HTTP authorization outcomes through the UI.</summary>
     /// <returns>The asynchronous authorization journey.</returns>
     [Fact]
@@ -794,7 +898,8 @@ public sealed class FlagshipJourneysTests
             {
                 Task<IResponse> projectionResponse = page.WaitForResponseAsync(response =>
                     (response.Request.Method == "GET") &&
-                    response.Url.EndsWith($"/api/projections/auth-proof/{entityId}", StringComparison.Ordinal));
+                    response.Url.EndsWith($"/api/projections/auth-proof/{entityId}", StringComparison.Ordinal) &&
+                    HasHttpPersona(response.Request, persona));
                 await page.GetByRole(
                         AriaRole.Button,
                         new()
@@ -808,7 +913,8 @@ public sealed class FlagshipJourneysTests
                 Assert.Null(await initialRead.FinishedAsync());
                 Task<IResponse> repeatedPersonaRead = page.WaitForResponseAsync(response =>
                     (response.Request.Method == "GET") &&
-                    response.Url.EndsWith($"/api/projections/auth-proof/{entityId}", StringComparison.Ordinal));
+                    response.Url.EndsWith($"/api/projections/auth-proof/{entityId}", StringComparison.Ordinal) &&
+                    HasHttpPersona(response.Request, persona));
                 await page.GetByRole(
                         AriaRole.Button,
                         new()
@@ -850,8 +956,7 @@ public sealed class FlagshipJourneysTests
                         .ClickAsync();
                     Assert.Equal(status, (await responseTask).Status);
                     await Expect(commandResponses.GetByRole(AriaRole.Status))
-                        .ToContainTextAsync(
-                            status == 200 ? "Latest response: accepted." : "Latest response: rejected.");
+                        .ToContainTextAsync(status == 200 ? "Latest response: accepted." : "Latest request: failed.");
                     if (status != 200)
                     {
                         await Expect(commandResponses.GetByRole(AriaRole.Alert))

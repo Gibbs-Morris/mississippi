@@ -41,7 +41,7 @@ It is a development demo, not production identity.
 6. Expand **Open this pair in another browser**. Open that link in a second browser connected to this running server.
 7. Deposit another **25** in the first browser. Verify **£550.00** and the new ledger entry in both browsers.
 
-If a request is rejected, read **Banking responses**. If a live read fails or the connection drops, read its separate error and connection details.
+If a request fails, read **Banking responses**. A lost reply can follow a server commit; check the live balance and ledger before sending the request again. If a live read fails or the connection drops, read its separate error and connection details.
 The displayed balance can remain stale while disconnected; do not treat command acceptance as projection catch-up.
 
 ## What happened

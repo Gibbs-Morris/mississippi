@@ -67,13 +67,23 @@ const assert = require('node:assert/strict');
     const d = page.locator('#account-' + account + '-' + name + '-task');
     if (await d.getAttribute('open') === null) await d.locator('summary').press('Enter');
   };
+  const hasHttpPersona = (request, persona) => {
+    const headers = request.headers();
+    const anonymous = headers['x-spring-anonymous'] === 'true';
+    if (persona === 'Unauthenticated') return anonymous;
+    const roles = ['AuthProof Role', 'Full Access'].includes(persona)
+      ? 'banking-operator,transfer-operator,auth-proof-operator'
+      : 'banking-operator,transfer-operator';
+    const claims = ['AuthProof Claim', 'Full Access'].includes(persona) ? 'spring.permission=auth-proof' : undefined;
+    return !anonymous && headers['x-spring-roles'] === roles && headers['x-spring-claims'] === claims;
+  };
   const captureAuthOff = async () => {
     await page.goto(base + '/auth-proof', { waitUntil: 'domcontentloaded' });
     const entity = 'capture-auth-off-' + Date.now();
     const endpoint = '/api/projections/auth-proof/' + entity;
     await page.getByLabel('Auth Proof entity ID', { exact: true }).fill(entity);
     for (const persona of ['Unauthenticated', 'Operator Roles', 'AuthProof Role', 'AuthProof Claim', 'Full Access']) {
-      const read = page.waitForResponse(r => r.request().method() === 'GET' && r.url().endsWith(endpoint));
+      const read = page.waitForResponse(r => r.request().method() === 'GET' && r.url().endsWith(endpoint) && hasHttpPersona(r.request(), persona));
       await page.getByRole('button', { name: persona, exact: true }).tap();
       const observed = await read;
       assert.equal(observed.status(), 401);
@@ -250,12 +260,12 @@ const assert = require('node:assert/strict');
       let authenticatedCount = 0;
       for (const persona of ['Unauthenticated', 'Operator Roles', 'AuthProof Role', 'AuthProof Claim', 'Full Access']) {
         const expectedRead = persona === 'Unauthenticated' ? 401 : ['AuthProof Claim', 'Full Access'].includes(persona) ? 200 : 403;
-        const personaRead = page.waitForResponse(r => r.request().method() === 'GET' && r.url().endsWith(readPath));
+        const personaRead = page.waitForResponse(r => r.request().method() === 'GET' && r.url().endsWith(readPath) && hasHttpPersona(r.request(), persona));
         await page.getByRole('button', { name: persona, exact: true }).tap();
         const selectedRead = await personaRead;
         assert.equal(selectedRead.status(), expectedRead);
         assert.equal(await selectedRead.finished(), null);
-        const repeatedPersonaRead = page.waitForResponse(r => r.request().method() === 'GET' && r.url().endsWith(readPath));
+        const repeatedPersonaRead = page.waitForResponse(r => r.request().method() === 'GET' && r.url().endsWith(readPath) && hasHttpPersona(r.request(), persona));
         await page.getByRole('button', { name: persona, exact: true }).tap();
         const repeatedRead = await repeatedPersonaRead;
         assert.equal(repeatedRead.status(), expectedRead);
@@ -267,8 +277,8 @@ const assert = require('node:assert/strict');
         assert.equal(await commandResponse.finished(), null);
         if (persona !== 'Unauthenticated') authenticatedCount++;
         const response = page.getByRole('region', { name: 'Auth Proof command responses', exact: true }).getByRole('status');
-        await expect(response).toContainText(persona === 'Unauthenticated' ? 'Latest response: rejected.' : 'Latest response: accepted.');
-        const manualRead = page.waitForResponse(r => r.request().method() === 'GET' && r.url().endsWith(readPath));
+        await expect(response).toContainText(persona === 'Unauthenticated' ? 'Latest request: failed.' : 'Latest response: accepted.');
+        const manualRead = page.waitForResponse(r => r.request().method() === 'GET' && r.url().endsWith(readPath) && hasHttpPersona(r.request(), persona));
         await page.getByRole('button', { name: 'Refresh protected read', exact: true }).tap();
         const refreshedRead = await manualRead;
         assert.equal(refreshedRead.status(), expectedRead);
@@ -347,6 +357,39 @@ const assert = require('node:assert/strict');
       const allInputsLabeled = await page.locator('input:not([type=hidden])').evaluateAll(inputs => inputs.every(input => input.labels?.length || input.getAttribute('aria-label')));
       assert.equal(allInputsLabeled, true);
       manifest.checks.push('Visible/native inputs have accessible labels');
+      const lostReplyPath = '**/api/aggregates/bank-account/' + encodeURIComponent(longId) + '/deposit';
+      let committedRequests = 0;
+      let committedStatus;
+      let committedBody;
+      await page.route(lostReplyPath, async route => {
+        committedRequests++;
+        const response = await route.fetch({ maxRetries: 0, maxRedirects: 0 });
+        try {
+          committedStatus = response.status();
+          committedBody = await response.json();
+          await route.abort('failed');
+        } finally {
+          await response.dispose();
+        }
+      });
+      await page.getByLabel('Account A deposit amount (£)', { exact: true }).fill('1');
+      await page.locator('#account-a-operations-panel').getByRole('button', { name: 'Deposit £', exact: true }).tap();
+      const failedResponse = page.getByRole('region', { name: 'Banking responses · this browser', exact: true });
+      await expect(failedResponse.getByRole('status')).toContainText('Latest request: failed.');
+      await expect(failedResponse.getByRole('alert')).toContainText('Network error:');
+      await expect(failedResponse).toContainText('does not establish the server outcome');
+      await balance(page, 'A', '£1,000,000,000.99');
+      const committedLedger = page.locator('#account-a-operations-panel tbody tr');
+      await expect(committedLedger).toHaveCount(1);
+      await expect(committedLedger.first()).toContainText('Deposit');
+      await expect(committedLedger.first()).toContainText('£1.00');
+      assert.equal(committedRequests, 1);
+      assert.equal(committedStatus, 200);
+      assert.equal(committedBody.success, true);
+      manifest.lostReply = { requests: committedRequests, serverStatus: committedStatus, serverAccepted: committedBody.success, observedBalance: '£1,000,000,000.99', ledgerEntries: 1 };
+      await capture('lost-reply-committed-phone');
+      await page.unroute(lostReplyPath);
+      manifest.checks.push('One real deposit committed with HTTP200/success before its browser reply was aborted; client failure remains visible alongside the actual balance and one ledger entry; no retry');
       await second.close();
     }
     manifest.phase = 'terminal-assertions';

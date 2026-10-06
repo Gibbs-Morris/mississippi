@@ -31,7 +31,7 @@ public sealed partial class CommandActivity
         status switch
         {
             CommandStatus.Succeeded => "Accepted",
-            CommandStatus.Failed => "Rejected",
+            CommandStatus.Failed => "Failed",
             var _ => "Awaiting response",
         };
 }
