@@ -34,6 +34,7 @@ See [Spring validation prerequisites and diagnostics](../../README.md#validate-s
 ## Flagship journey coverage
 
 The full L3 suite preserves the banking, transfer, API-reference, accessible panel and theme journeys.
+InletStartupStatusTests retains the controlled HTTP 503 startup failure, real disconnected/error status, manual reconnect and connected outcome, using the named nonmodal connection notice.
 FlagshipJourneysTests adds first-run completion at 390×844, updates in a second browser, rejected withdrawals with unchanged projections, a real committed deposit whose reply is lost with expanded keyboard-scrollable history at 320/390px, all six burst controls and ledger retention, high-value investigation flags, defined transfer compensation, the five-persona command/read/saga authorization matrix including reselecting the active persona, delayed allowed reads after a newer denial, and account anchors/shared links after task navigation.
 The L0 component tests distinguish accepted requests from loading projections, prioritize in-flight requests, retain mixed response history, escape snapshot content and prevent an invalid transfer draft from submitting an earlier valid amount.
 
@@ -56,7 +57,7 @@ Its flagship subdirectory contains named PNGs and per-image route, viewport, the
 
 FlagshipRouteEvidenceTests taps all five task links at 1440×900, 390×844 and 320×740, checking the active task, heading focus and page containment.
 FlagshipJourneysTests retains the existing outcome assertions and captures first-run, shared-pair, account switching, bursts, stale-read denial, investigation, persona, compensation and lost-reply states.
-The existing banking tests retain their additional setup, transfer and theme screenshots.
+The existing banking tests retain their additional setup, transfer and theme screenshots. The startup-failure journey also captures disconnected and connected states at phone and desktop sizes.
 These images are observed browser states, not pixel-comparison baselines or replacements for assertions.
 The C# capture helper does not run axe or certify accessibility; semantic, touch, focus and keyboard checks remain explicit test assertions.
 
