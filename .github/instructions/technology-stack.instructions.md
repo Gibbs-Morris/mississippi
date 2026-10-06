@@ -17,6 +17,7 @@ Governing thought: Use the established stack and obtain explicit user approval b
 - Agents **MUST** apply these boundaries to source, tests, tooling, examples, ignored files, scratchpads, temporary files inside or outside the checkout, extensionless files, inline commands, and workflow or configuration snippets. Why: Uncommitted helpers and embedded code still introduce another language.
 - Agents **MUST NOT** add Python or standalone JavaScript/Node helpers such as `.cjs` or `.mjs` files without explicit user approval. Why: One-off convenience scripts belong in PowerShell or C# by default.
 - Agents **MAY** run established build, test, lint, browser, and GitHub tools whose internal implementation uses another language. Why: Invoking an existing tool does not authorize authoring custom code in its implementation language.
+- Agents **MAY** use host-required tool-call syntax and shell transport to orchestrate established tools and permitted commands, including passing arguments and reading results; this allowance does not authorize custom helpers or other code in an unapproved language. Why: Required tool invocation syntax must not prevent repository inspection or work within the established stack.
 - Agents **MUST** request the missing approval and continue independent work within the established stack when a departure is needed. Why: The approval boundary preserves useful progress without silently changing the technology choice.
 
 ## Scope and Audience
