@@ -1,0 +1,68 @@
+name: Trusted Sonar Analysis
+
+on:
+  workflow_dispatch:
+    inputs:
+      source-run-id:
+        description: Completed SonarCloud source run to rebuild and analyze
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+  pull-requests: read
+
+concurrency:
+  group: trusted-sonar-${{ inputs.source-run-id }}
+  cancel-in-progress: false
+
+jobs:
+  intake:
+    if: github.repository == 'Gibbs-Morris/mississippi' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      source-run-id: ${{ steps.intake.outputs.source-run-id }}
+    steps:
+      - name: Check out immutable controller definition
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - name: Validate credential origin and source identity
+        id: intake
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.source-run-id }}
+          REPOSITORY: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GLOBAL_SONAR_TOKEN_PRESENT: ${{ secrets.SONAR_TOKEN != '' }}
+          GLOBAL_ANALYSIS_TOKEN_PRESENT: ${{ secrets.SONAR_ANALYSIS_TOKEN != '' }}
+        run: |
+          ./eng/src/agent-scripts/invoke-trusted-sonar-analysis.ps1 -SourceRunId $env:SOURCE_RUN_ID -Repository $env:REPOSITORY -DefaultBranch $env:DEFAULT_BRANCH -IntakeOnly
+          if ($LASTEXITCODE -ne 0) { throw 'Trusted Sonar intake failed.' }
+  analysis:
+    needs: intake
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: sonar-analysis
+    steps:
+      - name: Check out immutable controller definition
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - name: Rebuild candidate without credentials and upload validated reports
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SONAR_ANALYSIS_TOKEN: ${{ secrets.SONAR_ANALYSIS_TOKEN }}
+          SOURCE_RUN_ID: ${{ needs.intake.outputs.source-run-id }}
+          REPOSITORY: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          ./eng/src/agent-scripts/invoke-trusted-sonar-analysis.ps1 -SourceRunId $env:SOURCE_RUN_ID -Repository $env:REPOSITORY -DefaultBranch $env:DEFAULT_BRANCH
+          if ($LASTEXITCODE -ne 0) { throw 'Trusted Sonar analysis failed.' }

@@ -176,4 +176,4 @@ function Assert-MergeGroupIssueMembersUnchanged {
     }
 }
 
-Export-ModuleMember -Function Resolve-MergeGroupIssueMembers, Assert-MergeGroupIssueMembersUnchanged
+Export-ModuleMember -Function Resolve-MergeGroupIssueMembers, Assert-MergeGroupIssueMembersUnchanged, Get-MergeQueueSnapshot
