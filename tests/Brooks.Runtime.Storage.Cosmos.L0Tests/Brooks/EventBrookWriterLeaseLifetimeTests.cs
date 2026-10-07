@@ -422,6 +422,24 @@ public sealed class EventBrookWriterLeaseLifetimeTests
                     return Task.FromResult(CreateItemResponse(cursor));
                 }
             });
+        container.Setup(c => c.ReadItemAsync<CursorDocument>(
+                "cursor-pending",
+                It.IsAny<PartitionKey>(),
+                It.IsAny<ItemRequestOptions>(),
+                It.IsAny<CancellationToken>()))
+            .Returns((string _, PartitionKey _, ItemRequestOptions? _, CancellationToken token) =>
+            {
+                token.ThrowIfCancellationRequested();
+                lock (documents)
+                {
+                    if (pending is null)
+                    {
+                        throw new CosmosException("No pending cursor", HttpStatusCode.NotFound, 0, "pending-read", 0);
+                    }
+
+                    return Task.FromResult(CreateItemResponse(pending));
+                }
+            });
         container.Setup(c => c.CreateItemAsync(
                 It.IsAny<CursorDocument>(),
                 It.IsAny<PartitionKey?>(),

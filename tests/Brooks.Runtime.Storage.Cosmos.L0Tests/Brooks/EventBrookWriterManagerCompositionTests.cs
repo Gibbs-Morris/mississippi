@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -84,6 +85,12 @@ public sealed class EventBrookWriterManagerCompositionTests
                 null,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(cursorResponse.Object);
+        container.Setup(c => c.ReadItemAsync<CursorDocument>(
+                "cursor-pending",
+                It.IsAny<PartitionKey>(),
+                null,
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new CosmosException("No pending cursor", HttpStatusCode.NotFound, 0, "pending-read", 0));
         container.Setup(c => c.CreateItemAsync(
                 It.IsAny<CursorDocument>(),
                 It.IsAny<PartitionKey>(),
