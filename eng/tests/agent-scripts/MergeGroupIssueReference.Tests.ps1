@@ -184,11 +184,69 @@ Describe 'Exact merge-group issue membership' {
         $LASTEXITCODE | Should -Not -Be 0
         $output | Should -Match 'failed for #101'
     }
-    It 'does not infer PR membership from synthetic commit associations' {
+    It 'uses exact queue membership after the trusted resolver is available' {
         $workflow = Get-Content (Join-Path $repoRoot '.github/workflows/pr-issue-reference.yml') -Raw
-        $workflow | Should -Not -Match 'commits/\$env:GITHUB_SHA/pulls'
+        $workflow | Should -Match '\$useQueueResolver = Test-TrustedMergeResolver'
+        $workflow | Should -Match 'if \(\$useQueueResolver\) \{\s+Save-TrustedScript'
+        $workflow | Should -Match 'else \{\s+Write-Output [^\r\n]+\s+\$pullRequestsOutput = gh api'
         $workflow | Should -Match "Save-TrustedScript -Path 'eng/src/agent-scripts/MergeGroupIssueReference.psm1'"
         ([regex]::Matches($workflow, 'Resolve-MergeGroupIssueMembers -MergeGroup')).Count | Should -Be 2
         $workflow | Should -Match 'Assert-MergeGroupIssueMembersUnchanged -Before \$before -After \$after'
+    }
+}
+
+Describe 'Trusted queue resolver rollout' {
+    BeforeAll {
+        $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+        $workflow = Get-Content (Join-Path $repoRoot '.github/workflows/pr-issue-reference.yml') -Raw
+        $inlineScript = (($workflow -split '        run: \|\r?\n', 2)[1] -split '\r?\n' | ForEach-Object { $_ -replace '^          ', '' }) -join "`n"
+        $tokens = $null
+        $parseErrors = $null
+        $ast = [Management.Automation.Language.Parser]::ParseInput($inlineScript, [ref]$tokens, [ref]$parseErrors)
+        if ($parseErrors.Count -gt 0) { throw 'Workflow PowerShell did not parse.' }
+        $functionAst = $ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Test-TrustedMergeResolver' }, $false)
+        if ($null -eq $functionAst) { throw 'Trusted availability helper missing from workflow.' }
+        . ([scriptblock]::Create($functionAst.Extent.Text))
+        function gh {
+            param([Parameter(ValueFromRemainingArguments)][string[]]$Arguments)
+            throw 'Unexpected live GitHub request in a workflow fixture.'
+        }
+        $repository = 'Gibbs-Morris/mississippi'
+        $trustedRef = 'a' * 40
+        $previousExitCode = Get-Variable -Name LASTEXITCODE -Scope Global -ErrorAction SilentlyContinue
+    }
+    BeforeEach {
+        $script:apiExit = 0
+        $script:directoryJson = '[{"path":"eng/src/agent-scripts/validate-pr-issue-reference.ps1","type":"file"}]'
+        Mock gh { $global:LASTEXITCODE = $script:apiExit; $script:directoryJson }
+    }
+    AfterAll {
+        if ($null -ne $previousExitCode) { Set-Variable -Name LASTEXITCODE -Scope Global -Value $previousExitCode.Value }
+        else { Remove-Variable -Name LASTEXITCODE -Scope Global -ErrorAction SilentlyContinue }
+    }
+    It 'keeps the existing route when the new helper has not landed on the trusted revision' {
+        Test-TrustedMergeResolver | Should -BeFalse
+        Should -Invoke gh -Times 1 -Exactly -ParameterFilter { $Arguments -contains "repos/$repository/contents/eng/src/agent-scripts" -and $Arguments -contains "ref=$trustedRef" -and $Arguments -contains 'GET' }
+    }
+    It 'enables exact queue validation when the trusted helper is present' {
+        $script:directoryJson = '[{"path":"eng/src/agent-scripts/MergeGroupIssueReference.psm1","type":"file"}]'
+        Test-TrustedMergeResolver | Should -BeTrue
+    }
+    It 'fails rather than falling back when the trusted directory request fails' {
+        $script:apiExit = 1
+        $script:directoryJson = 'API request failed'
+        { Test-TrustedMergeResolver } | Should -Throw '*Unable to inspect trusted queue resolver availability*'
+    }
+    It 'rejects a non-array directory response' {
+        $script:directoryJson = '{"message":"invalid response"}'
+        { Test-TrustedMergeResolver } | Should -Throw '*directory was not an array*'
+    }
+    It 'rejects a symlink instead of treating it as trusted executable code' {
+        $script:directoryJson = '[{"path":"eng/src/agent-scripts/MergeGroupIssueReference.psm1","type":"symlink"}]'
+        { Test-TrustedMergeResolver } | Should -Throw '*unique regular file*'
+    }
+    It 'rejects ambiguous trusted helper metadata' {
+        $script:directoryJson = '[{"path":"eng/src/agent-scripts/MergeGroupIssueReference.psm1","type":"file"},{"path":"eng/src/agent-scripts/MergeGroupIssueReference.psm1","type":"file"}]'
+        { Test-TrustedMergeResolver } | Should -Throw '*unique regular file*'
     }
 }
