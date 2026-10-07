@@ -56,6 +56,25 @@ Describe 'Trusted Sonar source identity' {
         $arguments | Should -Contain '/d:sonar.pullrequest.base=codex/parent'
         ($arguments -join ' ') | Should -Not -Match 'sonar.branch.name'
     }
+    It 'accepts a source-qualified workflow path <Suffix>' -TestCases @(
+        @{Suffix='codex/test'},@{Suffix='refs/heads/codex/test'},@{Suffix=('a'*40)},@{Suffix='refs/pull/5/merge'}
+    ) {
+        param($Suffix)
+        $script:sourceRun.path=".github/workflows/sonar-cloud.yml@$Suffix"
+        (Invoke-Source).HeadSha | Should -Be $head
+    }
+    It 'accepts the documented main-qualified workflow path' {
+        $script:sourceRun.event='push';$script:sourceRun.head_branch='main';$script:sourceRun.path='.github/workflows/sonar-cloud.yml@main'
+        (Invoke-Source).HeadRef | Should -Be main
+    }
+    It 'rejects an unrelated or malformed workflow qualifier <Suffix>' -TestCases @(
+        @{Suffix='other'},@{Suffix='refs/pull/6/merge'},@{Suffix=''},@{Suffix='codex/test@main'}
+    ) {
+        param($Suffix)
+        $script:sourceRun.path=".github/workflows/sonar-cloud.yml@$Suffix"
+        { Invoke-Source } | Should -Throw '*approved repository workflow*'
+    }
+
     It 'explicitly identifies a manually selected non-main branch' {
         $script:sourceRun.event = 'workflow_dispatch'
         $source = Invoke-Source

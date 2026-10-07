@@ -37,11 +37,23 @@ function Assert-TrustedSonarControllerOrigin {
     }
 }
 
+function Get-SonarSourceRunPaths {
+    param([object]$Run)
+    $workflow = '.github/workflows/sonar-cloud.yml'
+    $qualifiers = @([string]$Run.head_branch,"refs/heads/$($Run.head_branch)",[string]$Run.head_sha)
+    if ($Run.event -ceq 'pull_request') {
+        foreach ($pr in @($Run.pull_requests | Where-Object { $_.head.sha -ceq $Run.head_sha -and $_.head.ref -ceq $Run.head_branch })) {
+            if (($pr.number -is [int] -or $pr.number -is [long]) -and $pr.number -gt 0) { $qualifiers += "refs/pull/$($pr.number)/merge" }
+        }
+    }
+    return @($workflow) + @($qualifiers | ForEach-Object { "$workflow@$_" })
+}
+
 function Assert-SonarSourceRun {
     param([object]$Run, [string]$Repository, [long]$RunId)
 
     if ($Run.id -ne $RunId) { throw 'Source run ID does not match the requested run.' }
-    if ($Run.workflow_id -ne 141036039 -or $Run.path -cne '.github/workflows/sonar-cloud.yml' -or $Run.repository.full_name -ine $Repository -or $Run.head_repository.full_name -ine $Repository) {
+    if ($Run.workflow_id -ne 141036039 -or $Run.path -cnotin @(Get-SonarSourceRunPaths -Run $Run) -or $Run.repository.full_name -ine $Repository -or $Run.head_repository.full_name -ine $Repository) {
         throw 'Source run does not identify the approved repository workflow.'
     }
     if ($Run.status -cne 'completed' -or $Run.head_sha -cnotmatch '^[0-9a-f]{40}$' -or -not $Run.head_branch) { throw 'Source run identity is incomplete.' }
