@@ -137,6 +137,64 @@ Describe 'Exact merge-group issue membership' {
         @((Invoke-Resolver).PullRequests.number) | Should -Be @(101, 102)
         Should -Invoke Read-MergeQueuePage -ModuleName MergeGroupIssueReference -Times 1 -Exactly -ParameterFilter { $After -eq 'next-page' -and $Branch -eq 'refs/heads/codex/merge-queue/pilot-20261007' -and $Owner -eq 'Gibbs-Morris' -and $Name -eq 'mississippi' }
     }
+    It 'restarts a snapshot when a <Change> races with pagination' -TestCases @(@{Change='follower'}, @{Change='predecessor'}) {
+        param($Change)
+        $script:responses = [Collections.Generic.Queue[object]]::new()
+        $page1 = $script:repositoryData | ConvertTo-Json -Depth 15 | ConvertFrom-Json
+        $page1.mergeQueue.entries.nodes = @($page1.mergeQueue.entries.nodes[0])
+        $page1.mergeQueue.entries.pageInfo.hasNextPage = $true
+        $page1.mergeQueue.entries.pageInfo.endCursor = 'old-next-page'
+        $page2 = $script:repositoryData | ConvertTo-Json -Depth 15 | ConvertFrom-Json
+        $page2.mergeQueue.entries.nodes = @($page2.mergeQueue.entries.nodes[1])
+        $stable = $script:repositoryData | ConvertTo-Json -Depth 15 | ConvertFrom-Json
+        if ($Change -eq 'follower') {
+            $page2.mergeQueue.entries.totalCount = 3
+            $later = New-Entry 3 103 $candidate ('e' * 40)
+            $later.headCommit = $null
+            $stable.mergeQueue.entries.nodes += $later
+            $stable.mergeQueue.entries.totalCount = 3
+        }
+        else {
+            $page2.ref.target.oid = $first
+            $stable.ref.target.oid = $first
+            $stable.mergeQueue.entries.nodes = @(New-Entry 1 102 $first $candidate)
+            $stable.mergeQueue.entries.totalCount = 1
+        }
+        $script:responses.Enqueue($page1)
+        $script:responses.Enqueue($page2)
+        $script:responses.Enqueue($stable)
+        Mock Read-MergeQueuePage -ModuleName MergeGroupIssueReference { $script:responses.Dequeue() }
+        $result = Invoke-Resolver
+        $expected = if ($Change -eq 'follower') { @(101,102) } else { @(102) }
+        @($result.PullRequests.number) | Should -Be $expected
+        Should -Invoke Read-MergeQueuePage -ModuleName MergeGroupIssueReference -Times 2 -Exactly -ParameterFilter { $After -eq '' }
+        Should -Invoke Read-MergeQueuePage -ModuleName MergeGroupIssueReference -Times 1 -Exactly -ParameterFilter { $After -eq 'old-next-page' }
+        $script:responses.Count | Should -Be 0
+    }
+    It 'fails without another retry when a restarted snapshot has <Failure>' -TestCases @(
+        @{Failure='an API error'; Message='forced API failure'}, @{Failure='a missing candidate'; Message='exactly one live'}
+    ) {
+        param($Failure,$Message)
+        $script:responses = [Collections.Generic.Queue[object]]::new()
+        $page1 = $script:repositoryData | ConvertTo-Json -Depth 15 | ConvertFrom-Json
+        $page1.mergeQueue.entries.nodes = @($page1.mergeQueue.entries.nodes[0])
+        $page1.mergeQueue.entries.pageInfo.hasNextPage = $true
+        $page1.mergeQueue.entries.pageInfo.endCursor = 'old-next-page'
+        $page2 = $script:repositoryData | ConvertTo-Json -Depth 15 | ConvertFrom-Json
+        $page2.mergeQueue.entries.totalCount = 3
+        $stable = $script:repositoryData | ConvertTo-Json -Depth 15 | ConvertFrom-Json
+        $stable.mergeQueue.entries.nodes[1].headCommit.oid = 'e' * 40
+        $script:responses.Enqueue($page1)
+        $script:responses.Enqueue($page2)
+        $script:responses.Enqueue($stable)
+        $script:apiFailure = $Failure -eq 'an API error'
+        Mock Read-MergeQueuePage -ModuleName MergeGroupIssueReference {
+            if ($script:apiFailure -and $script:responses.Count -eq 1) { throw 'forced API failure' }
+            $script:responses.Dequeue()
+        }
+        { Invoke-Resolver } | Should -Throw "*$Message*"
+        Should -Invoke Read-MergeQueuePage -ModuleName MergeGroupIssueReference -Times 3 -Exactly
+    }
     It 'rejects <Change> during pagination' -TestCases @(@{Change='target';Message='changed during pagination'}, @{Change='queue';Message='changed during pagination'}, @{Change='count';Message='changed during pagination'}, @{Change='cursor';Message='Incomplete or repeating'}) {
         param($Change, $Message)
         $script:responses = [Collections.Generic.Queue[object]]::new()
@@ -152,10 +210,15 @@ Describe 'Exact merge-group issue membership' {
             'count' { $page2.mergeQueue.entries.totalCount = 3 }
             'cursor' { $page2.mergeQueue.entries.pageInfo.hasNextPage = $true; $page2.mergeQueue.entries.pageInfo.endCursor = 'next-page' }
         }
-        $script:responses.Enqueue($page1)
-        $script:responses.Enqueue($page2)
+        $attempts = if ($Change -eq 'cursor') { 1 } else { 3 }
+        for ($attempt = 0; $attempt -lt $attempts; $attempt++) {
+            $script:responses.Enqueue($page1)
+            $script:responses.Enqueue($page2)
+        }
         Mock Read-MergeQueuePage -ModuleName MergeGroupIssueReference { $script:responses.Dequeue() }
         { Invoke-Resolver } | Should -Throw "*$Message*"
+        Should -Invoke Read-MergeQueuePage -ModuleName MergeGroupIssueReference -Times (2 * $attempts) -Exactly
+        $script:responses.Count | Should -Be 0
     }
 
     It 'accepts an identical recheck' {

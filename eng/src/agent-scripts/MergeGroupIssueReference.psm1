@@ -35,7 +35,7 @@ function Add-MergeQueuePageEntries {
     }
 }
 
-function Get-MergeQueueSnapshot {
+function Read-MergeQueueSnapshotAttempt {
     param([string]$Repository, [string]$Branch)
 
     $owner, $name = $Repository.Split('/')
@@ -47,7 +47,7 @@ function Get-MergeQueueSnapshot {
         $repositoryData = Read-MergeQueuePage -Owner $owner -Name $name -Branch $Branch -After $cursor
         $current = Get-MergeQueueIdentity -RepositoryData $repositoryData -Repository $Repository
         if ($null -eq $identity) { $identity = $current }
-        elseif (($identity | ConvertTo-Json -Compress) -cne ($current | ConvertTo-Json -Compress)) { throw 'Merge queue changed during pagination.' }
+        elseif (($identity | ConvertTo-Json -Compress) -cne ($current | ConvertTo-Json -Compress)) { return $null }
         $connection = $repositoryData.mergeQueue.entries
         Add-MergeQueuePageEntries -Entries $entries -PageEntries $connection.nodes
         if ($connection.pageInfo.hasNextPage -isnot [bool]) { throw 'Missing merge-queue pagination state.' }
@@ -56,6 +56,15 @@ function Get-MergeQueueSnapshot {
     } while ($connection.pageInfo.hasNextPage)
     if ($entries.Count -ne $identity.TotalCount) { throw 'Merge-queue pagination did not return every entry.' }
     return [pscustomobject]@{ QueueId = $identity.QueueId; TargetSha = $identity.TargetSha; Entries = @($entries.ToArray()) }
+}
+function Get-MergeQueueSnapshot {
+    param([string]$Repository, [string]$Branch)
+
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        $snapshot = Read-MergeQueueSnapshotAttempt -Repository $Repository -Branch $Branch
+        if ($null -ne $snapshot) { return $snapshot }
+    }
+    throw 'Merge queue changed during pagination after three snapshot attempts.'
 }
 function Assert-MergeQueuePositions {
     param([object[]]$Entries)
