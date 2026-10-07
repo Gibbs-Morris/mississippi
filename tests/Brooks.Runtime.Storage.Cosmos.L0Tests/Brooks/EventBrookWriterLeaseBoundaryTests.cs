@@ -232,13 +232,15 @@ public sealed class EventBrookWriterLeaseBoundaryTests
             l => l.Log(
                 LogLevel.Warning,
                 It.Is<EventId>(id => (id.Id == 1014) && (id.Name == "AppendCleanupFailed")),
-                It.Is<It.IsAnyType>((state, _) =>
-                    ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(new("BrookId", context.Key)) &&
-                    ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(new("FinalPosition", 2L)) &&
-                    ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(
-                        new(
-                            "{OriginalFormat}",
-                            "Append cleanup failed for brook '{BrookId}' after committing position {FinalPosition}; the committed result was returned"))),
+                It.Is<It.IsAnyType>((state, _) => (state != null) &&
+                                                  ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(
+                                                      new("BrookId", context.Key)) &&
+                                                  ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(
+                                                      new("FinalPosition", 2L)) &&
+                                                  ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(
+                                                      new(
+                                                          "{OriginalFormat}",
+                                                          "Append cleanup failed for brook '{BrookId}' after committing position {FinalPosition}; the committed result was returned"))),
                 context.RenewalFailure,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
