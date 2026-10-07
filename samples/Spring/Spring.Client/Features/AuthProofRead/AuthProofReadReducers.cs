@@ -38,7 +38,7 @@ internal static class AuthProofReadReducers
         return new();
     }
 
-    /// <summary>Start a protected read and clears the previous entity/persona observation.</summary>
+    /// <summary>Start a protected read and clear the previous entity/persona observation.</summary>
     /// <param name="state">Current read state.</param>
     /// <param name="action">The requested entity and immutable persona.</param>
     /// <returns>The pending read state.</returns>

@@ -295,7 +295,7 @@ public sealed partial class OperationsPage
                         "Account slot must be A or B."),
                 });
 
-    /// <summary>Select a theme using the shell's accessible theme controls and waits for the theme to apply.</summary>
+    /// <summary>Select a theme using the shell's accessible theme controls and wait for the theme to apply.</summary>
     /// <param name="label">The accessible theme button label.</param>
     /// <param name="themeAttribute">The expected document theme attribute value.</param>
     /// <returns>A task representing the async operation.</returns>
@@ -332,7 +332,7 @@ public sealed partial class OperationsPage
                 });
     }
 
-    /// <summary>Wait for the balance projection to appear in the first account panel.</summary>
+    /// <summary>Wait for the balance projection to appear in the selected account panel.</summary>
     /// <param name="timeout">Optional timeout in milliseconds.</param>
     /// <param name="account">The account slot, A or B.</param>
     /// <returns>A task representing the wait operation.</returns>
@@ -354,7 +354,7 @@ public sealed partial class OperationsPage
                     Timeout = timeout,
                 });
 
-    /// <summary>Wait for the balance projection to show a specific value in the first account panel.</summary>
+    /// <summary>Wait for the balance projection to show a specific value in the selected account panel.</summary>
     /// <param name="expectedBalance">
     ///     The expected balance value (e.g., "100.00"). The Spring UI displays the GBP currency used by the domain.
     /// </param>
@@ -385,7 +385,7 @@ public sealed partial class OperationsPage
                     Timeout = timeout,
                 });
 
-    /// <summary>Wait for the command success message to appear.</summary>
+    /// <summary>Wait for the command acceptance response to appear.</summary>
     /// <param name="timeout">Optional timeout in milliseconds.</param>
     /// <returns>A task representing the wait operation.</returns>
     public async Task WaitForCommandSuccessAsync(
