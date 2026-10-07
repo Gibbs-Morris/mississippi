@@ -2,7 +2,7 @@ name: PR Labeler
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -12,8 +12,6 @@ jobs:
   # Label based on changed files using PR branch config for pre-merge validation.
   label-by-files:
     runs-on: ubuntu-latest
-    # Skip on 'edited' since file labels don't change when title changes
-    if: github.event.action != 'edited'
     permissions:
       contents: read
       pull-requests: write
