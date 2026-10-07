@@ -16,6 +16,25 @@ function Read-MergeQueuePage {
     return $page.data.repository
 }
 
+function Get-MergeQueueIdentity {
+    param([object]$RepositoryData, [string]$Repository)
+
+    if ($null -eq $RepositoryData.mergeQueue -or $null -eq $RepositoryData.ref) { throw 'Merge queue or target ref was not found.' }
+    if ($RepositoryData.nameWithOwner -ine $Repository) { throw 'Merge queue repository does not match the event repository.' }
+    $current = [ordered]@{ QueueId = [string]$RepositoryData.mergeQueue.id; TargetSha = [string]$RepositoryData.ref.target.oid; TotalCount = $RepositoryData.mergeQueue.entries.totalCount }
+    if (-not $current.QueueId -or $current.TargetSha -cnotmatch '^[0-9a-f]{40}$' -or ($current.TotalCount -isnot [long] -and $current.TotalCount -isnot [int]) -or $current.TotalCount -lt 0) { throw 'Invalid merge-queue snapshot identity.' }
+    return $current
+}
+
+function Add-MergeQueuePageEntries {
+    param([Collections.Generic.List[object]]$Entries, [object[]]$PageEntries)
+
+    foreach ($entry in $PageEntries) {
+        if ($null -eq $entry) { throw 'Merge queue contained an empty entry.' }
+        $Entries.Add($entry)
+    }
+}
+
 function Get-MergeQueueSnapshot {
     param([string]$Repository, [string]$Branch)
 
@@ -26,18 +45,11 @@ function Get-MergeQueueSnapshot {
     $identity = $null
     do {
         $repositoryData = Read-MergeQueuePage -Owner $owner -Name $name -Branch $Branch -After $cursor
-        if ($null -eq $repositoryData.mergeQueue -or $null -eq $repositoryData.ref) { throw 'Merge queue or target ref was not found.' }
-        if ($repositoryData.nameWithOwner -ine $Repository) { throw 'Merge queue repository does not match the event repository.' }
-        $queue = $repositoryData.mergeQueue
-        $connection = $queue.entries
-        $current = [ordered]@{ QueueId = [string]$queue.id; TargetSha = [string]$repositoryData.ref.target.oid; TotalCount = $connection.totalCount }
-        if (-not $current.QueueId -or $current.TargetSha -cnotmatch '^[0-9a-f]{40}$' -or ($current.TotalCount -isnot [long] -and $current.TotalCount -isnot [int]) -or $current.TotalCount -lt 0) { throw 'Invalid merge-queue snapshot identity.' }
+        $current = Get-MergeQueueIdentity -RepositoryData $repositoryData -Repository $Repository
         if ($null -eq $identity) { $identity = $current }
         elseif (($identity | ConvertTo-Json -Compress) -cne ($current | ConvertTo-Json -Compress)) { throw 'Merge queue changed during pagination.' }
-        foreach ($entry in $connection.nodes) {
-            if ($null -eq $entry) { throw 'Merge queue contained an empty entry.' }
-            $entries.Add($entry)
-        }
+        $connection = $repositoryData.mergeQueue.entries
+        Add-MergeQueuePageEntries -Entries $entries -PageEntries $connection.nodes
         if ($connection.pageInfo.hasNextPage -isnot [bool]) { throw 'Missing merge-queue pagination state.' }
         $cursor = [string]$connection.pageInfo.endCursor
         if ($connection.pageInfo.hasNextPage -and (-not $cursor -or -not $cursors.Add($cursor))) { throw 'Incomplete or repeating merge-queue pagination.' }
@@ -45,7 +57,6 @@ function Get-MergeQueueSnapshot {
     if ($entries.Count -ne $identity.TotalCount) { throw 'Merge-queue pagination did not return every entry.' }
     return [pscustomobject]@{ QueueId = $identity.QueueId; TargetSha = $identity.TargetSha; Entries = @($entries.ToArray()) }
 }
-
 function Assert-MergeQueuePositions {
     param([object[]]$Entries)
 
@@ -55,6 +66,47 @@ function Assert-MergeQueuePositions {
         if (-not $entry.id -or -not $ids.Add([string]$entry.id)) { throw 'Merge queue has missing or duplicate entry IDs.' }
         if (($entry.position -isnot [long] -and $entry.position -isnot [int]) -or $entry.position -lt 0 -or -not $positions.Add([long]$entry.position)) { throw 'Merge queue has invalid or duplicate positions.' }
     }
+}
+
+function ConvertTo-MergeQueueIssueMember {
+    param([object]$Entry, [string]$ExpectedBase, [string]$Repository, [Collections.Generic.HashSet[long]]$Numbers)
+
+    if ($null -eq $Entry.baseCommit -or $Entry.baseCommit.oid -cne $ExpectedBase -or $null -eq $Entry.headCommit -or $Entry.headCommit.oid -cnotmatch '^[0-9a-f]{40}$') { throw 'Merge-queue predecessor chain does not prove candidate membership.' }
+    $pr = $Entry.pullRequest
+    if ($null -eq $pr -or $pr.state -cne 'OPEN' -or $pr.repository.nameWithOwner -ine $Repository -or $pr.headRefOid -cnotmatch '^[0-9a-f]{40}$') { throw 'Merge-queue pull request identity is incomplete.' }
+    if (($pr.number -isnot [long] -and $pr.number -isnot [int]) -or $pr.number -le 0 -or -not $Numbers.Add([long]$pr.number)) { throw 'Merge queue has invalid or duplicate PR numbers.' }
+    return [pscustomobject][ordered]@{
+        number = $pr.number
+        body = $pr.body
+        head_sha = $pr.headRefOid
+        entry_id = $Entry.id
+        position = $Entry.position
+        base_sha = $Entry.baseCommit.oid
+        candidate_sha = $Entry.headCommit.oid
+    }
+}
+
+function Get-MergeQueueIssueMembers {
+    param([object]$Snapshot, [object]$MergeGroup, [string]$CandidateSha, [string]$Repository)
+
+    $ordered = @($Snapshot.Entries | Sort-Object position)
+    $candidateEntries = @($ordered | Where-Object { $null -ne $_.headCommit -and $_.headCommit.oid -ceq $CandidateSha })
+    if ($candidateEntries.Count -ne 1) { throw 'Candidate does not identify exactly one live merge-queue entry.' }
+    $members = @($ordered | Where-Object position -LE $candidateEntries[0].position)
+    if ($members[0].position -notin @(0, 1)) { throw 'Merge-queue prefix is incomplete.' }
+    $previous = $Snapshot.TargetSha
+    $nextPosition = $members[0].position
+    $numbers = [Collections.Generic.HashSet[long]]::new()
+    $result = [Collections.Generic.List[object]]::new()
+    foreach ($entry in $members) {
+        if ($entry.position -ne $nextPosition) { throw 'Merge-queue prefix has a position gap.' }
+        $nextPosition++
+        $member = ConvertTo-MergeQueueIssueMember -Entry $entry -ExpectedBase $previous -Repository $Repository -Numbers $numbers
+        $result.Add($member)
+        $previous = $member.candidate_sha
+    }
+    if ($candidateEntries[0].baseCommit.oid -cne $MergeGroup.base_sha) { throw 'Candidate entry base does not match the merge-group event.' }
+    return $result.ToArray()
 }
 
 function Resolve-MergeGroupIssueMembers {
@@ -70,37 +122,9 @@ function Resolve-MergeGroupIssueMembers {
     if (-not $branch.StartsWith('refs/heads/', [StringComparison]::Ordinal) -or $branch.Length -le 11) { throw 'Merge-group base must be a branch ref.' }
     $snapshot = Get-MergeQueueSnapshot -Repository $Repository -Branch $branch
     Assert-MergeQueuePositions -Entries $snapshot.Entries
-    $ordered = @($snapshot.Entries | Sort-Object position)
-    $candidateEntries = @($ordered | Where-Object { $null -ne $_.headCommit -and $_.headCommit.oid -ceq $CandidateSha })
-    if ($candidateEntries.Count -ne 1) { throw 'Candidate does not identify exactly one live merge-queue entry.' }
-    $members = @($ordered | Where-Object position -LE $candidateEntries[0].position)
-    if ($members[0].position -notin @(0, 1)) { throw 'Merge-queue prefix is incomplete.' }
-    $previous = $snapshot.TargetSha
-    $nextPosition = $members[0].position
-    $numbers = [Collections.Generic.HashSet[long]]::new()
-    $result = [Collections.Generic.List[object]]::new()
-    foreach ($entry in $members) {
-        if ($entry.position -ne $nextPosition) { throw 'Merge-queue prefix has a position gap.' }
-        $nextPosition++
-        if ($null -eq $entry.baseCommit -or $entry.baseCommit.oid -cne $previous -or $null -eq $entry.headCommit -or $entry.headCommit.oid -cnotmatch '^[0-9a-f]{40}$') { throw 'Merge-queue predecessor chain does not prove candidate membership.' }
-        $pr = $entry.pullRequest
-        if ($null -eq $pr -or $pr.state -cne 'OPEN' -or $pr.repository.nameWithOwner -ine $Repository -or $pr.headRefOid -cnotmatch '^[0-9a-f]{40}$') { throw 'Merge-queue pull request identity is incomplete.' }
-        if (($pr.number -isnot [long] -and $pr.number -isnot [int]) -or $pr.number -le 0 -or -not $numbers.Add([long]$pr.number)) { throw 'Merge queue has invalid or duplicate PR numbers.' }
-        $result.Add([pscustomobject][ordered]@{
-            number = $pr.number
-            body = $pr.body
-            head_sha = $pr.headRefOid
-            entry_id = $entry.id
-            position = $entry.position
-            base_sha = $entry.baseCommit.oid
-            candidate_sha = $entry.headCommit.oid
-        })
-        $previous = $entry.headCommit.oid
-    }
-    if ($candidateEntries[0].baseCommit.oid -cne $MergeGroup.base_sha) { throw 'Candidate entry base does not match the merge-group event.' }
-    return [pscustomobject][ordered]@{ QueueId = $snapshot.QueueId; TargetSha = $snapshot.TargetSha; CandidateSha = $CandidateSha; PullRequests = @($result.ToArray()) }
+    $pullRequests = @(Get-MergeQueueIssueMembers -Snapshot $snapshot -MergeGroup $MergeGroup -CandidateSha $CandidateSha -Repository $Repository)
+    return [pscustomobject][ordered]@{ QueueId = $snapshot.QueueId; TargetSha = $snapshot.TargetSha; CandidateSha = $CandidateSha; PullRequests = $pullRequests }
 }
-
 function Assert-MergeGroupIssueMembersUnchanged {
     param([Parameter(Mandatory)][object]$Before, [Parameter(Mandatory)][object]$After)
 
