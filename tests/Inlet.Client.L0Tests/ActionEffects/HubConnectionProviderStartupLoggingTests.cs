@@ -161,7 +161,9 @@ public sealed class HubConnectionProviderStartupLoggingTests
         Assert.Equal(HubConnectionState.Connected, fields["ConnectionState"]);
         Assert.Equal(12.5, fields["ElapsedMilliseconds"]);
         Assert.Equal(CompletionFieldNames, fields.Keys);
-        Assert.Equal("SignalR connection check completed in Connected after 12.5 ms", log.Arguments[2].ToString());
+        object? state = log.Arguments[2];
+        Assert.NotNull(state);
+        Assert.Equal("SignalR connection check completed in Connected after 12.5 ms", state.ToString());
     }
 
     /// <summary>
@@ -195,6 +197,8 @@ public sealed class HubConnectionProviderStartupLoggingTests
             exception);
         Assert.Equal(12.5, fields["ElapsedMilliseconds"]);
         Assert.Equal(FailureFieldNames, fields.Keys);
-        Assert.Equal("Initial SignalR connection failed after 12.5 ms", log.Arguments[2].ToString());
+        object? state = log.Arguments[2];
+        Assert.NotNull(state);
+        Assert.Equal("Initial SignalR connection failed after 12.5 ms", state.ToString());
     }
 }

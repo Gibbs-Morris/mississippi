@@ -30,7 +30,7 @@ namespace Mississippi.Brooks.Runtime.L0Tests.Writer;
 public sealed class BrookWriterGrainUnitTests
 {
     private static bool HasElapsedTime(
-        object state
+        object? state
     ) =>
         state is IEnumerable<KeyValuePair<string, object?>> values &&
         values.Any(value => (value.Key == "ElapsedMs") && value.Value is long elapsed && (elapsed >= 0));
