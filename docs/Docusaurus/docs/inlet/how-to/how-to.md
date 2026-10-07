@@ -81,7 +81,6 @@ This example uses the automatic fetcher path verified in `InletBlazorSignalRBuil
 client.Reservoir(reservoir =>
 {
     reservoir.AddInletBlazorSignalR(signalR => signalR
-        .WithHubPath("/hubs/inlet")
         .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
 });
 ```
@@ -120,7 +119,6 @@ builder.UseMississippi(client =>
 
         reservoir.AddInletClient();
         reservoir.AddInletBlazorSignalR(signalR => signalR
-            .WithHubPath("/hubs/inlet")
             .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
     });
 });

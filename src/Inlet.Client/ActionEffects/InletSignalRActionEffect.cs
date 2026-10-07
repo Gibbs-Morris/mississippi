@@ -42,6 +42,11 @@ internal sealed class InletSignalRActionEffect
 
     private readonly IDisposable hubCallbackRegistration;
 
+    private readonly Dictionary<(Type ProjectionType, string EntityId), HashSet<object>> pendingSubscriptionRequests =
+        new();
+
+    private readonly object subscriptionGate = new();
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="InletSignalRActionEffect" /> class.
     /// </summary>
@@ -126,7 +131,12 @@ internal sealed class InletSignalRActionEffect
     /// <inheritdoc />
     public ValueTask DisposeAsync()
     {
-        activeSubscriptions.Clear();
+        lock (subscriptionGate)
+        {
+            pendingSubscriptionRequests.Clear();
+            activeSubscriptions.Clear();
+        }
+
         hubCallbackRegistration.Dispose();
         return ValueTask.CompletedTask;
     }
@@ -241,10 +251,9 @@ internal sealed class InletSignalRActionEffect
     )
     {
         (Type, string) key = (projectionType, entityId);
-
-        // Already subscribed?
         if (activeSubscriptions.ContainsKey(key))
         {
+            // Already subscribed
             yield break;
         }
 
@@ -259,28 +268,49 @@ internal sealed class InletSignalRActionEffect
             yield break;
         }
 
-        // Yield loading action
-        yield return ProjectionActionFactory.CreateLoading(projectionType, entityId);
+        object request = new();
+        if (!TryRegisterPendingSubscription(key, request))
+        {
+            yield break;
+        }
 
-        // Subscribe via SignalR hub
         string? subscriptionId = null;
         Exception? subscribeError = null;
         bool cancelled = false;
+        bool isCurrentRequest = false;
         try
         {
-            subscriptionId = await HubConnection.InvokeAsync<string>(
-                InletHubConstants.SubscribeMethod,
-                path,
-                entityId,
-                cancellationToken);
+            yield return ProjectionActionFactory.CreateLoading(projectionType, entityId);
+            try
+            {
+                subscriptionId = await HubConnection.InvokeAsync<string>(
+                    InletHubConstants.SubscribeMethod,
+                    path,
+                    entityId,
+                    cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                cancelled = true;
+            }
+            catch (Exception ex)
+            {
+                subscribeError = ex;
+            }
+
+            isCurrentRequest = TryCompletePendingSubscription(key, request, subscriptionId);
         }
-        catch (OperationCanceledException)
+        finally
         {
-            cancelled = true;
+            // Iterator disposal and failed invocations also release the pending request.
+            _ = TryCompletePendingSubscription(key, request, null);
         }
-        catch (Exception ex)
+
+        if (!isCurrentRequest)
         {
-            subscribeError = ex;
+            // The owner released this request while the hub reply was pending.
+            await UnsubscribeFromHubAsync(subscriptionId, path, entityId, CancellationToken.None);
+            yield break;
         }
 
         if (cancelled)
@@ -293,8 +323,6 @@ internal sealed class InletSignalRActionEffect
             yield return ProjectionActionFactory.CreateError(projectionType, entityId, subscribeError);
             yield break;
         }
-
-        activeSubscriptions[key] = subscriptionId!;
 
         // Fetch initial data
         ProjectionFetchResult? result = null;
@@ -349,7 +377,15 @@ internal sealed class InletSignalRActionEffect
     )
     {
         (Type, string) key = (projectionType, entityId);
-        if (!activeSubscriptions.TryRemove(key, out string? subscriptionId))
+        string? subscriptionId;
+        bool isActiveSubscriptionRemoved;
+        lock (subscriptionGate)
+        {
+            pendingSubscriptionRequests.Remove(key);
+            isActiveSubscriptionRemoved = activeSubscriptions.TryRemove(key, out subscriptionId);
+        }
+
+        if (!isActiveSubscriptionRemoved)
         {
             return;
         }
@@ -362,23 +398,7 @@ internal sealed class InletSignalRActionEffect
             return;
         }
 
-        try
-        {
-            await HubConnection.InvokeAsync(
-                InletHubConstants.UnsubscribeMethod,
-                subscriptionId,
-                path,
-                entityId,
-                cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            // Expected during shutdown
-        }
-        catch (Exception)
-        {
-            // Unsubscribe failures are non-fatal - server will clean up on disconnect
-        }
+        await UnsubscribeFromHubAsync(subscriptionId!, path, entityId, cancellationToken);
     }
 
     private async Task OnProjectionUpdatedAsync(
@@ -477,5 +497,88 @@ internal sealed class InletSignalRActionEffect
             }
         }
     }
+
+    private bool TryCompletePendingSubscription(
+        (Type ProjectionType, string EntityId) key,
+        object request,
+        string? subscriptionId
+    )
+    {
+        lock (subscriptionGate)
+        {
+            if (!pendingSubscriptionRequests.TryGetValue(key, out HashSet<object>? requests) ||
+                !requests.Remove(request))
+            {
+                return false;
+            }
+
+            if (requests.Count == 0)
+            {
+                pendingSubscriptionRequests.Remove(key);
+            }
+
+            if (subscriptionId is not null)
+            {
+                activeSubscriptions[key] = subscriptionId;
+            }
+
+            return true;
+        }
+    }
+
+    private bool TryRegisterPendingSubscription(
+        (Type ProjectionType, string EntityId) key,
+        object request
+    )
+    {
+        lock (subscriptionGate)
+        {
+            if (activeSubscriptions.ContainsKey(key))
+            {
+                return false;
+            }
+
+            if (!pendingSubscriptionRequests.TryGetValue(key, out HashSet<object>? requests))
+            {
+                requests = [];
+                pendingSubscriptionRequests.Add(key, requests);
+            }
+
+            requests.Add(request);
+            return true;
+        }
+    }
+
+    private async Task UnsubscribeFromHubAsync(
+        string? subscriptionId,
+        string path,
+        string entityId,
+        CancellationToken cancellationToken
+    )
+    {
+        if (subscriptionId is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await HubConnection.InvokeAsync(
+                InletHubConstants.UnsubscribeMethod,
+                subscriptionId,
+                path,
+                entityId,
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected during shutdown
+        }
+        catch (Exception)
+        {
+            // Unsubscribe failures are non-fatal - server will clean up on disconnect
+        }
+    }
+
 #pragma warning restore CA1031
 }

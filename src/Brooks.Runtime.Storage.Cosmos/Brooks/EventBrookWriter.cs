@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -89,6 +90,7 @@ internal sealed class EventBrookWriter : IEventBrookWriter
     /// <param name="recoveryService">The brook recovery service for cursor position management.</param>
     /// <param name="logger">The logger used to record operational diagnostics.</param>
     /// <param name="timeProvider">Time provider for timestamps. If null, uses <see cref="TimeProvider.System" />.</param>
+    /// <param name="deadlineScheduler">The internal deadline scheduler, or the default thread-pool scheduler.</param>
     public EventBrookWriter(
         ICosmosRepository repository,
         IDistributedLockManager lockManager,
@@ -98,7 +100,8 @@ internal sealed class EventBrookWriter : IEventBrookWriter
         IMapper<BrookEvent, EventStorageModel> eventMapper,
         IBrookRecoveryService recoveryService,
         ILogger<EventBrookWriter> logger,
-        TimeProvider? timeProvider = null
+        TimeProvider? timeProvider = null,
+        TaskScheduler? deadlineScheduler = null
     )
     {
         Repository = repository;
@@ -110,7 +113,10 @@ internal sealed class EventBrookWriter : IEventBrookWriter
         RecoveryService = recoveryService;
         Logger = logger;
         TimeProvider = timeProvider ?? TimeProvider.System;
+        DeadlineScheduler = deadlineScheduler ?? TaskScheduler.Default;
     }
+
+    private TaskScheduler DeadlineScheduler { get; }
 
     private IMapper<BrookEvent, EventStorageModel> EventMapper { get; }
 
@@ -129,6 +135,44 @@ internal sealed class EventBrookWriter : IEventBrookWriter
     private IBatchSizeEstimator SizeEstimator { get; }
 
     private TimeProvider TimeProvider { get; }
+
+    /// <summary>
+    ///     Preserves the ownership or caller-cancellation cause instead of its linked-token wrapper.
+    /// </summary>
+    /// <param name="exception">The failure reported by append work.</param>
+    /// <param name="lifetime">The append ownership supervisor.</param>
+    /// <param name="cancellationToken">The original caller token.</param>
+    /// <returns>The primary failure to retain through shutdown.</returns>
+    private static Exception SelectAppendFailure(
+        Exception exception,
+        AppendLeaseLifetime lifetime,
+        CancellationToken cancellationToken
+    )
+    {
+        if (exception is not OperationCanceledException)
+        {
+            return exception;
+        }
+
+        if (lifetime.Failure is Exception leaseFailure)
+        {
+            return leaseFailure;
+        }
+
+        return cancellationToken.IsCancellationRequested
+            ? new OperationCanceledException(cancellationToken)
+            : exception;
+    }
+
+    /// <summary>
+    ///     Identifies failures collected in the rollback aggregate while ownership remains healthy.
+    /// </summary>
+    /// <param name="exception">The rollback request or verification failure.</param>
+    /// <returns>Whether the existing rollback failure categories include this exception.</returns>
+    private static bool ShouldRecordRollbackFailure(
+        Exception exception
+    ) =>
+        exception is InvalidOperationException or TimeoutException or HttpRequestException;
 
     /// <summary>
     ///     Appends a collection of events to the specified brook.
@@ -158,23 +202,78 @@ internal sealed class EventBrookWriter : IEventBrookWriter
                 nameof(events));
         }
 
-        await using IDistributedLock distributedLock = await LockManager.AcquireLockAsync(
-            brookId.ToString(),
-            TimeSpan.FromSeconds(Options.LeaseDurationSeconds),
-            cancellationToken);
-        return await AppendEventsWithLockAsync(brookId, events, expectedVersion, distributedLock, cancellationToken);
+        AppendLeaseLifetime.ValidateOptions(Options);
+        Exception? primaryFailure = null;
+        BrookPosition? committed = null;
+        try
+        {
+            await using IDistributedLock distributedLock = await LockManager.AcquireLockAsync(
+                brookId.ToString(),
+                TimeSpan.FromSeconds(Options.LeaseDurationSeconds),
+                cancellationToken);
+            try
+            {
+                await using AppendLeaseLifetime lifetime = new(
+                    distributedLock,
+                    new OptionsWrapper<BrookStorageOptions>(Options),
+                    TimeProvider,
+                    cancellationToken,
+                    DeadlineScheduler);
+                try
+                {
+                    await lifetime.StartAsync();
+                    committed = await AppendEventsWithLockAsync(
+                        brookId,
+                        events,
+                        expectedVersion,
+                        lifetime,
+                        lifetime.CancellationToken);
+                    return committed.Value;
+                }
+                catch (Exception exception)
+                {
+                    primaryFailure = SelectAppendFailure(exception, lifetime, cancellationToken);
+                    throw;
+                }
+            }
+            catch (Exception exception)
+            {
+                primaryFailure ??= exception;
+                throw;
+            }
+        }
+        catch (Exception exception)
+        {
+            if (committed is BrookPosition position)
+            {
+                Logger.AppendCleanupFailed(primaryFailure ?? exception, brookId, position.Value);
+                return position;
+            }
+
+            if (primaryFailure is not null && !ReferenceEquals(primaryFailure, exception))
+            {
+                ExceptionDispatchInfo.Capture(primaryFailure).Throw();
+            }
+
+            throw;
+        }
     }
 
     private async Task<BrookPosition> AppendEventsWithLockAsync(
         BrookKey brookId,
         IReadOnlyList<BrookEvent> events,
         BrookPosition? expectedVersion,
-        IDistributedLock distributedLock,
+        AppendLeaseLifetime lifetime,
         CancellationToken cancellationToken
     )
     {
         // Get current cursor position while holding the lock to ensure consistency
-        BrookPosition currentCursor = await RecoveryService.GetOrRecoverCursorPositionAsync(brookId, cancellationToken);
+        lifetime.ThrowIfFailed();
+        BrookPosition currentCursor = await RecoveryService.GetOrRecoverCursorPositionAsync(
+            brookId,
+            lifetime.ThrowIfFailed,
+            cancellationToken);
+        lifetime.ThrowIfFailed();
 
         // Perform optimistic concurrency check inside the lock
         if (expectedVersion.HasValue && (expectedVersion.Value != currentCursor))
@@ -200,17 +299,11 @@ internal sealed class EventBrookWriter : IEventBrookWriter
                 events,
                 currentCursor,
                 finalPosition,
-                distributedLock,
+                lifetime,
                 cancellationToken);
         }
 
-        return await AppendSingleBatchAsync(
-            brookId,
-            events,
-            currentCursor,
-            finalPosition,
-            distributedLock,
-            cancellationToken);
+        return await AppendSingleBatchAsync(brookId, events, currentCursor, finalPosition, lifetime, cancellationToken);
     }
 
     private async Task<BrookPosition> AppendLargeBatchAsync(
@@ -218,7 +311,7 @@ internal sealed class EventBrookWriter : IEventBrookWriter
         IReadOnlyList<BrookEvent> events,
         BrookPosition currentCursor,
         long finalPosition,
-        IDistributedLock distributedLock,
+        AppendLeaseLifetime lifetime,
         CancellationToken cancellationToken
     )
     {
@@ -228,7 +321,13 @@ internal sealed class EventBrookWriter : IEventBrookWriter
                 Options.MaxEventsPerBatch,
                 Options.MaxRequestSizeBytes)
             .ToList();
-        await Repository.CreatePendingCursorAsync(brookId, currentCursor, finalPosition, cancellationToken);
+        lifetime.ThrowIfFailed();
+        await Repository.CreatePendingCursorAsync(
+            brookId,
+            currentCursor,
+            finalPosition,
+            lifetime.ThrowIfFailed,
+            cancellationToken);
         int processedEvents = 0;
         try
         {
@@ -240,18 +339,9 @@ internal sealed class EventBrookWriter : IEventBrookWriter
                 Options.MaxEventsPerBatch,
                 Options.MaxRequestSizeBytes,
                 null);
-            DateTimeOffset lastRenewal = TimeProvider.GetUtcNow();
             for (int batchIndex = 0; batchIndex < batches.Count; batchIndex++)
             {
-                // Renew the lease periodically based on threshold or every 5 batches
-                if ((batchIndex > 0) &&
-                    (((batchIndex % 5) == 0) ||
-                     ((TimeProvider.GetUtcNow() - lastRenewal).TotalSeconds >= Options.LeaseRenewalThresholdSeconds)))
-                {
-                    await distributedLock.RenewAsync(cancellationToken);
-                    lastRenewal = TimeProvider.GetUtcNow();
-                }
-
+                lifetime.ThrowIfFailed();
                 IReadOnlyList<BrookEvent> batchEvents = batches[batchIndex];
                 long batchStartPosition = currentCursor.Value + processedEvents + 1;
                 long estBatchSize = SizeEstimator.EstimateBatchSize(batchEvents);
@@ -269,26 +359,44 @@ internal sealed class EventBrookWriter : IEventBrookWriter
                     brookId,
                     storageBatchEvents,
                     batchStartPosition,
+                    lifetime.ThrowIfFailed,
                     cancellationToken);
                 processedEvents += batchEvents.Count;
+                lifetime.ThrowIfFailed();
             }
         }
-        catch
+        catch (Exception appendFailure) when (lifetime.CanRollback)
         {
             // Rollback only what we actually appended
             // processedEvents reflects successfully created items
-            await RollbackLargeBatchAsync(
-                brookId,
-                new(currentCursor.Value),
-                currentCursor.Value + processedEvents,
-                cancellationToken);
+            try
+            {
+                await RollbackLargeBatchAsync(
+                    brookId,
+                    new(currentCursor.Value),
+                    currentCursor.Value + processedEvents,
+                    lifetime,
+                    cancellationToken);
+            }
+            catch (Exception) when (!lifetime.CanRollback)
+            {
+                // Loss or caller cancellation during rollback must not replace the original append failure.
+                ExceptionDispatchInfo.Capture(appendFailure).Throw();
+                throw;
+            }
+
             throw;
         }
 
         // A commit exception may occur after the cursor advanced; rollback would then delete committed history.
         try
         {
-            await Repository.CommitCursorPositionAsync(brookId, finalPosition, cancellationToken);
+            lifetime.ThrowIfFailed();
+            await Repository.CommitCursorPositionAsync(
+                brookId,
+                finalPosition,
+                lifetime.ThrowIfFailed,
+                cancellationToken);
         }
         catch (Exception exception)
         {
@@ -305,37 +413,56 @@ internal sealed class EventBrookWriter : IEventBrookWriter
         IReadOnlyList<BrookEvent> events,
         BrookPosition currentCursor,
         long finalPosition,
-        IDistributedLock distributedLock,
+        AppendLeaseLifetime lifetime,
         CancellationToken cancellationToken
     )
     {
-        await distributedLock.RenewAsync(cancellationToken);
+        lifetime.ThrowIfFailed();
         long estBatchSize = SizeEstimator.EstimateBatchSize(events);
         LogSingleBatchStart(Logger, brookId, events.Count, estBatchSize, currentCursor.Value + 1, finalPosition, null);
         List<EventStorageModel> storageEvents = events.Select(EventMapper.Map).ToList();
 
         // Fallback to non-transactional flow (pending cursor -> append -> commit) to ensure reliability with emulator
-        await Repository.CreatePendingCursorAsync(brookId, currentCursor, finalPosition, cancellationToken);
+        await Repository.CreatePendingCursorAsync(
+            brookId,
+            currentCursor,
+            finalPosition,
+            lifetime.ThrowIfFailed,
+            cancellationToken);
+        lifetime.ThrowIfFailed();
         await RetryPolicy.ExecuteAsync(
             async () =>
             {
+                lifetime.ThrowIfFailed();
                 await Repository.AppendEventBatchAsync(
                     brookId,
                     storageEvents,
                     currentCursor.Value + 1,
+                    lifetime.ThrowIfFailed,
                     cancellationToken);
                 return true;
             },
             cancellationToken);
-        await Repository.CommitCursorPositionAsync(brookId, finalPosition, cancellationToken);
+        lifetime.ThrowIfFailed();
+        await Repository.CommitCursorPositionAsync(brookId, finalPosition, lifetime.ThrowIfFailed, cancellationToken);
         LogSingleBatchCommitted(Logger, brookId, finalPosition, 200, 0, null);
         return new(finalPosition);
     }
 
+    /// <summary>
+    ///     Removes the appended events and pending cursor while ownership remains healthy.
+    /// </summary>
+    /// <param name="brookId">The brook whose partial append is being rolled back.</param>
+    /// <param name="originalCursor">The position before the append began.</param>
+    /// <param name="failedFinalPosition">The final successfully appended position to remove.</param>
+    /// <param name="lifetime">The append's lease owner and storage dispatch guard.</param>
+    /// <param name="cancellationToken">Cancellation shared by the append's storage operations.</param>
+    /// <returns>A task representing rollback and verification of the deleted events.</returns>
     private async Task RollbackLargeBatchAsync(
         BrookKey brookId,
         BrookPosition originalCursor,
         long failedFinalPosition,
+        AppendLeaseLifetime lifetime,
         CancellationToken cancellationToken
     )
     {
@@ -353,14 +480,13 @@ internal sealed class EventBrookWriter : IEventBrookWriter
                 await RetryPolicy.ExecuteAsync(
                     async () =>
                     {
+                        lifetime.ThrowIfFailed();
                         await action();
                         return true;
                     },
                     cancellationToken);
             }
-            catch (Exception ex) when (ex is InvalidOperationException ||
-                                       ex is TimeoutException ||
-                                       ex is HttpRequestException)
+            catch (Exception ex) when (lifetime.CanRollback && ShouldRecordRollbackFailure(ex))
             {
                 rollbackErrors.Add(new InvalidOperationException(errorMessage, ex));
             }
@@ -371,13 +497,13 @@ internal sealed class EventBrookWriter : IEventBrookWriter
         {
             long capturedPos = pos; // avoid modified closure
             await TryWithRetryAsync(
-                () => Repository.DeleteEventAsync(brookId, capturedPos, cancellationToken),
+                () => Repository.DeleteEventAsync(brookId, capturedPos, lifetime.ThrowIfFailed, cancellationToken),
                 $"Failed to delete event at position {capturedPos}");
         }
 
         // Delete pending cursor state
         await TryWithRetryAsync(
-            () => Repository.DeletePendingCursorAsync(brookId, cancellationToken),
+            () => Repository.DeletePendingCursorAsync(brookId, lifetime.ThrowIfFailed, cancellationToken),
             "Failed to delete pending cursor");
 
         // Second pass: verify all events are actually deleted
@@ -385,15 +511,14 @@ internal sealed class EventBrookWriter : IEventBrookWriter
         {
             try
             {
+                lifetime.ThrowIfFailed();
                 bool eventExists = await Repository.EventExistsAsync(brookId, pos, cancellationToken);
                 if (eventExists)
                 {
                     remainingEvents.Add(pos);
                 }
             }
-            catch (Exception ex) when (ex is InvalidOperationException ||
-                                       ex is TimeoutException ||
-                                       ex is HttpRequestException)
+            catch (Exception ex) when (lifetime.CanRollback && ShouldRecordRollbackFailure(ex))
             {
                 rollbackErrors.Add(
                     new InvalidOperationException($"Failed to verify deletion of event at position {pos}", ex));

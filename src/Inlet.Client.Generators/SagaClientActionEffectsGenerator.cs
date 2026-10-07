@@ -42,7 +42,7 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendLine("/// <remarks>");
         sb.AppendLine("///     <para>");
         sb.AppendLine(
-            $"///         This action effect posts to the {saga.SagaName} saga endpoint at <c>/api/sagas/{saga.RoutePrefix}/{{sagaId}}</c>.");
+            $"///         This action effect posts to the {saga.SagaName} saga endpoint at <c>api/sagas/{saga.RoutePrefix}/{{sagaId}}</c>.");
         sb.AppendLine("///     </para>");
         sb.AppendLine("/// </remarks>");
         sb.AppendGeneratedCodeAttribute("SagaClientActionEffectsGenerator");
@@ -73,7 +73,7 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.CloseBrace();
         sb.AppendLine();
         sb.AppendLine("/// <inheritdoc />");
-        sb.AppendLine($"protected override string AggregateRoutePrefix => \"/api/sagas/{saga.RoutePrefix}\";");
+        sb.AppendLine($"protected override string AggregateRoutePrefix => \"api/sagas/{saga.RoutePrefix}\";");
         sb.AppendLine();
         sb.AppendLine("/// <inheritdoc />");
         sb.AppendLine("protected override string Route => string.Empty;");

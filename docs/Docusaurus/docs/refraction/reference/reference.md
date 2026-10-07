@@ -47,5 +47,8 @@ Use this page as the current reference boundary for what Refraction owns and whi
 - Read [ProgressArc](./progress-arc.md) for completion, unknown duration, and motion behavior.
 - Read [SmokeConfirm](./smoke-confirm.md) for the confirmation action contract.
 - Read [NotificationPulse](./notification-pulse.md) for status and action contracts.
+- Read [CalloutLine](./callout-line.md) for visual label anchors and application-owned placement.
+- Read [Reticle](./reticle.md) for mode/state markers and application-owned focus behavior.
+- Read [Pane](./pane.md) for title, content, footer, and presentation markers.
 - Read [Refraction Concepts](../concepts/concepts.md).
 - Use [Refraction Troubleshooting](../troubleshooting/troubleshooting.md) if you are still deciding whether the problem belongs here.

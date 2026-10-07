@@ -136,8 +136,13 @@ public sealed class BankAccountE2ETests
                 .Replace($"b={encodedAccountBId}", $"b=%20{encodedAccountBId}%20", StringComparison.Ordinal);
             Assert.Contains($"a=%20{encodedAccountAId}%20", paddedOperationsHref, StringComparison.Ordinal);
             Assert.Contains($"b=%20{encodedAccountBId}%20", paddedOperationsHref, StringComparison.Ordinal);
-            await page.GotoAsync(new Uri(fixture.GatewayBaseUri, paddedOperationsHref).ToString());
+            await accountsPage.ClickGoToOperationsAsync();
             OperationsPage operationsPage = new(page);
+            await operationsPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
+            await operationsPage.WaitForBalanceValueAsync("500.00", ProjectionTimeout);
+            await operationsPage.WaitForBalanceValueAsync("500.00", ProjectionTimeout, "B");
+            await page.GotoAsync(new Uri(fixture.GatewayBaseUri, paddedOperationsHref).ToString());
+            await operationsPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
             await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
             await operationsPage.WaitForBalanceAsync(ProjectionTimeout, "B");
             Assert.Contains(accountAId, await operationsPage.GetAccountHeaderAsync(), StringComparison.Ordinal);

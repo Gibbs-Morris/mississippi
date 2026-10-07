@@ -44,5 +44,19 @@ Use this page as the current active reference for what Domain Modeling owns and 
 
 ## Next Steps
 
+- Read [Aggregate Keys](./aggregate-keys.md) for entity-only identity and validation boundaries.
+- Read [Event Effect Dispatch](./event-effect-dispatch.md) for matching, ordering, and handler failure isolation.
+- Read [Aggregate Effect Iterations](./effect-iterations.md) for cascade limits and already-persisted follow-up events.
+- Read [Worker Event Effects](./worker-effects.md) for envelopes, state inputs, routing, and failure observation.
+- Read [Persisted Type Registries](./type-registries.md) for lookup, collisions, and assembly-scan counts.
+- Read [Domain Operation Results](./operation-results.md) for factories, typed values, and conversion.
+- Read [Projection Cache Keys](./projection-cache-keys.md) for versioned cache identity and parsing.
+- Read [Projection Cursors](./projection-cursors.md) for shared identity and cached storage or accepted-notification positions.
+- Read [Projection Reads](./projection-reads.md) for latest and explicitly versioned reads.
+- Read [Command Handler Test Assertions](./command-handler-tests.md) for isolated event and failure-result checks.
+- Read [Projection Test Scenarios](./projection-tests.md) for in-memory replay and scenario assertions.
+- Read [Isolated Reducer Test Assertions](./reducer-tests.md) for output and exception checks.
+- Read [Effect Test Capture](./effect-tests.md) for captured commands and dispatch assertions.
+- Read [Alias Validation Helper](./alias-validation.md) for type-level scanning and diagnostics.
 - Read [Domain Modeling Concepts](../concepts/concepts.md).
 - Use the [Spring Sample](../../samples/spring-sample/index.md) to see domain modeling patterns in practice.

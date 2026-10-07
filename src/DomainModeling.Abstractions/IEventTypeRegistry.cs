@@ -31,6 +31,7 @@ public interface IEventTypeRegistry
     /// <summary>
     ///     Registers an event type with its corresponding event name.
     /// </summary>
+    /// <remarks>The first registration wins when either the name or the CLR type is already registered.</remarks>
     /// <param name="eventName">The event name as defined by <see cref="EventStorageNameAttribute" />.</param>
     /// <param name="eventType">The CLR type of the event.</param>
     void Register(
@@ -60,7 +61,7 @@ public interface IEventTypeRegistry
     ///     Scans an assembly for types decorated with <see cref="EventStorageNameAttribute" /> and registers them.
     /// </summary>
     /// <param name="assembly">The assembly to scan.</param>
-    /// <returns>The number of event types registered from the assembly.</returns>
+    /// <returns>The number of newly registered event types; existing mappings are not counted.</returns>
     int ScanAssembly(
         Assembly assembly
     );

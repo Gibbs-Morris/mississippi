@@ -1,0 +1,5 @@
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|--------------------
+INLETCLIENT001 | Inlet.Client.Generators | Error | Distinct source enums share a projection enum DTO identity

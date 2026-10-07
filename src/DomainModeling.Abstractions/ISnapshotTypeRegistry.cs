@@ -31,6 +31,7 @@ public interface ISnapshotTypeRegistry
     /// <summary>
     ///     Registers a snapshot type with its corresponding snapshot name.
     /// </summary>
+    /// <remarks>The first registration wins when either the name or the CLR type is already registered.</remarks>
     /// <param name="snapshotName">The snapshot name as defined by <see cref="SnapshotStorageNameAttribute" />.</param>
     /// <param name="snapshotType">The CLR type of the snapshot.</param>
     void Register(
@@ -60,7 +61,7 @@ public interface ISnapshotTypeRegistry
     ///     Scans an assembly for types decorated with <see cref="SnapshotStorageNameAttribute" /> and registers them.
     /// </summary>
     /// <param name="assembly">The assembly to scan.</param>
-    /// <returns>The number of snapshot types registered from the assembly.</returns>
+    /// <returns>The number of newly registered snapshot types; existing mappings are not counted.</returns>
     int ScanAssembly(
         Assembly assembly
     );

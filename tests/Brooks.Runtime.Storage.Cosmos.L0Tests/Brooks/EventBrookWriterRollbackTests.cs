@@ -58,7 +58,7 @@ public sealed class EventBrookWriterRollbackTests
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new();
         mapper.Setup(m => m.Map(It.IsAny<BrookEvent>())).Returns(new EventStorageModel());
         Mock<IBrookRecoveryService> recovery = new();
-        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(0));
         Mock<ILogger<EventBrookWriter>> logger = new();
         EventBrookWriter sut = new(
@@ -75,7 +75,7 @@ public sealed class EventBrookWriterRollbackTests
             new(),
             new(),
         };
-        repo.Setup(r => r.CreatePendingCursorAsync(key, new(0), 2, It.IsAny<CancellationToken>()))
+        repo.Setup(r => r.CreatePendingCursorAsync(key, new(0), 2, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // Throw on first append to force rollback with processedEvents == 0
@@ -83,9 +83,11 @@ public sealed class EventBrookWriterRollbackTests
                 key,
                 It.IsAny<IReadOnlyList<EventStorageModel>>(),
                 It.IsAny<long>(),
+                It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("fail early"));
-        repo.Setup(r => r.DeletePendingCursorAsync(key, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        repo.Setup(r => r.DeletePendingCursorAsync(key, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
         repo.Setup(r => r.EventExistsAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         // Act
@@ -96,7 +98,9 @@ public sealed class EventBrookWriterRollbackTests
             TestContext.Current.CancellationToken));
 
         // Assert: no specific verifications, just that rollback completed without AggregateException
-        repo.Verify(r => r.DeletePendingCursorAsync(key, It.IsAny<CancellationToken>()), Times.Once);
+        repo.Verify(
+            r => r.DeletePendingCursorAsync(key, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     /// <summary>
@@ -114,7 +118,7 @@ public sealed class EventBrookWriterRollbackTests
         {
             MaxEventsPerBatch = 1, // force large-batch path
             MaxRequestSizeBytes = 1_000_000,
-            LeaseDurationSeconds = 5,
+            LeaseDurationSeconds = 15,
             LeaseRenewalThresholdSeconds = 1,
         };
         Mock<ICosmosRepository> repo = new();
@@ -138,7 +142,7 @@ public sealed class EventBrookWriterRollbackTests
                 Time = e.Time ?? MapperFallbackTime,
             });
         Mock<IBrookRecoveryService> recovery = new();
-        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(0));
         Mock<ILogger<EventBrookWriter>> logger = new();
         EventBrookWriter sut = new(
@@ -175,17 +179,16 @@ public sealed class EventBrookWriterRollbackTests
         };
 
         // CreatePendingCursor succeeds
-        repo.Setup(r => r.CreatePendingCursorAsync(key, new(0), 3, It.IsAny<CancellationToken>()))
+        repo.Setup(r => r.CreatePendingCursorAsync(key, new(0), 3, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         int appendCalls = 0;
         repo.Setup(r => r.AppendEventBatchAsync(
                 key,
                 It.IsAny<IReadOnlyList<EventStorageModel>>(),
                 It.IsAny<long>(),
+                It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
-            .Returns((
-                BrookKey keyArg, IReadOnlyList<EventStorageModel> batch, long startingPosition, CancellationToken ct
-            ) =>
+            .Returns(() =>
             {
                 appendCalls++;
                 if (appendCalls == 2)
@@ -197,12 +200,13 @@ public sealed class EventBrookWriterRollbackTests
             });
 
         // CommitCursor shouldn't be reached, but safe default
-        repo.Setup(r => r.CommitCursorPositionAsync(key, 3, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        repo.Setup(r => r.CommitCursorPositionAsync(key, 3, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         // Rollback: simulate mixed failures and leftovers
-        repo.Setup(r => r.DeleteEventAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()))
+        repo.Setup(r => r.DeleteEventAsync(key, It.IsAny<long>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("delete failed"));
-        repo.Setup(r => r.DeletePendingCursorAsync(key, It.IsAny<CancellationToken>()))
+        repo.Setup(r => r.DeletePendingCursorAsync(key, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("delete pending failed"));
         repo.Setup(r => r.EventExistsAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 

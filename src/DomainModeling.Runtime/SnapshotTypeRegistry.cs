@@ -29,6 +29,8 @@ internal sealed class SnapshotTypeRegistry : ISnapshotTypeRegistry
 {
     private readonly ConcurrentDictionary<string, Type> nameToType = new(StringComparer.Ordinal);
 
+    private readonly object registrationLock = new();
+
     private readonly ConcurrentDictionary<Type, string> typeToName = new();
 
     /// <inheritdoc />
@@ -38,18 +40,8 @@ internal sealed class SnapshotTypeRegistry : ISnapshotTypeRegistry
     public void Register(
         string snapshotName,
         Type snapshotType
-    )
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(snapshotName);
-        ArgumentNullException.ThrowIfNull(snapshotType);
-        _ = snapshotType.GetCustomAttribute<SnapshotRetentionAttribute>(false);
-
-        // Use TryAdd to avoid overwriting - first registration wins
-        if (nameToType.TryAdd(snapshotName, snapshotType))
-        {
-            typeToName.TryAdd(snapshotType, snapshotName);
-        }
-    }
+    ) =>
+        TryRegister(snapshotName, snapshotType);
 
     /// <inheritdoc />
     public string? ResolveName(
@@ -84,10 +76,33 @@ internal sealed class SnapshotTypeRegistry : ISnapshotTypeRegistry
                 continue;
             }
 
-            Register(attribute.StorageName, type);
-            registeredCount++;
+            if (TryRegister(attribute.StorageName, type))
+            {
+                registeredCount++;
+            }
         }
 
         return registeredCount;
+    }
+
+    private bool TryRegister(
+        string snapshotName,
+        Type snapshotType
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(snapshotName);
+        ArgumentNullException.ThrowIfNull(snapshotType);
+        _ = snapshotType.GetCustomAttribute<SnapshotRetentionAttribute>(false);
+        lock (registrationLock)
+        {
+            if (nameToType.ContainsKey(snapshotName) || typeToName.ContainsKey(snapshotType))
+            {
+                return false;
+            }
+
+            nameToType[snapshotName] = snapshotType;
+            typeToName[snapshotType] = snapshotName;
+            return true;
+        }
     }
 }
