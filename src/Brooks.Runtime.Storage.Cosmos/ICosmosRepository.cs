@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,6 +32,23 @@ internal interface ICosmosRepository
     );
 
     /// <summary>
+    ///     Appends a batch of events to the brook starting at the specified position.
+    /// </summary>
+    /// <param name="brookId">The brook identifier specifying the target brook.</param>
+    /// <param name="events">The collection of events to append.</param>
+    /// <param name="startPosition">The starting position for the first event in the batch.</param>
+    /// <param name="beforeDispatch">The append ownership check, or null for an ordinary standalone call.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task AppendEventBatchAsync(
+        BrookKey brookId,
+        IReadOnlyList<EventStorageModel> events,
+        long startPosition,
+        Action? beforeDispatch,
+        CancellationToken cancellationToken
+    );
+
+    /// <summary>
     ///     Commits the cursor position by updating the main cursor document and removing the pending cursor state.
     /// </summary>
     /// <param name="brookId">The brook identifier specifying the target brook.</param>
@@ -41,6 +59,21 @@ internal interface ICosmosRepository
         BrookKey brookId,
         long finalPosition,
         CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    ///     Commits the cursor position by updating the main cursor document and removing the pending cursor state.
+    /// </summary>
+    /// <param name="brookId">The brook identifier specifying the target brook.</param>
+    /// <param name="finalPosition">The final position to commit.</param>
+    /// <param name="beforeDispatch">The append ownership check, or null for an ordinary standalone call.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task CommitCursorPositionAsync(
+        BrookKey brookId,
+        long finalPosition,
+        Action? beforeDispatch,
+        CancellationToken cancellationToken
     );
 
     /// <summary>
@@ -59,6 +92,23 @@ internal interface ICosmosRepository
     );
 
     /// <summary>
+    ///     Creates a pending cursor document for optimistic concurrency control during batch operations.
+    /// </summary>
+    /// <param name="brookId">The brook identifier specifying the target brook.</param>
+    /// <param name="currentCursor">The current cursor position before the operation.</param>
+    /// <param name="finalPosition">The expected final position after the operation.</param>
+    /// <param name="beforeDispatch">The append ownership check, or null for an ordinary standalone call.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task CreatePendingCursorAsync(
+        BrookKey brookId,
+        BrookPosition currentCursor,
+        long finalPosition,
+        Action? beforeDispatch,
+        CancellationToken cancellationToken
+    );
+
+    /// <summary>
     ///     Deletes an event at the specified position from the brook.
     /// </summary>
     /// <param name="brookId">The brook identifier specifying the target brook.</param>
@@ -72,6 +122,21 @@ internal interface ICosmosRepository
     );
 
     /// <summary>
+    ///     Deletes an event at the specified position from the brook.
+    /// </summary>
+    /// <param name="brookId">The brook identifier specifying the target brook.</param>
+    /// <param name="position">The position of the event to delete.</param>
+    /// <param name="beforeDispatch">The append ownership check, or null for an ordinary standalone call.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task DeleteEventAsync(
+        BrookKey brookId,
+        long position,
+        Action? beforeDispatch,
+        CancellationToken cancellationToken
+    );
+
+    /// <summary>
     ///     Deletes the pending cursor document for the specified brook.
     /// </summary>
     /// <param name="brookId">The brook identifier specifying the target brook.</param>
@@ -80,6 +145,19 @@ internal interface ICosmosRepository
     Task DeletePendingCursorAsync(
         BrookKey brookId,
         CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    ///     Deletes the pending cursor document for the specified brook.
+    /// </summary>
+    /// <param name="brookId">The brook identifier specifying the target brook.</param>
+    /// <param name="beforeDispatch">The append ownership check, or null for an ordinary standalone call.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task DeletePendingCursorAsync(
+        BrookKey brookId,
+        Action? beforeDispatch,
+        CancellationToken cancellationToken
     );
 
     /// <summary>

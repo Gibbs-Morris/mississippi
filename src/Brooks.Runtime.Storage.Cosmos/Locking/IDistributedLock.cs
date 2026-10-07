@@ -23,4 +23,15 @@ internal interface IDistributedLock : IAsyncDisposable
     Task RenewAsync(
         CancellationToken cancellationToken = default
     );
+
+    /// <summary>
+    ///     Renews the lock, optionally requiring an actual service request before the normal threshold.
+    /// </summary>
+    /// <param name="forceRenewal">Whether to bypass the young-lease renewal skip.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>A task representing the asynchronous renewal operation.</returns>
+    Task RenewAsync(
+        bool forceRenewal,
+        CancellationToken cancellationToken = default
+    );
 }
