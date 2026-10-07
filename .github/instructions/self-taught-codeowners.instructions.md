@@ -10,7 +10,7 @@ Governing thought: Validate owner access with GitHub before relying on CODEOWNER
 
 ## Rules (RFC 2119)
 
-- Agents **SHOULD** check GitHub's CODEOWNERS errors at the proposed commit before relying on an owner entry. Why: GitHub rejected the workflow team as `Unknown owner` despite its valid syntax; the existing repository owner passed the same check.
+- Agents **SHOULD** check GitHub's CODEOWNERS errors at the proposed commit before relying on an owner entry. Why: GitHub rejected the workflow team as `Unknown owner` despite its valid syntax; the organization team passed after it was created with repository Write access.
 
 ## Scope and Audience
 

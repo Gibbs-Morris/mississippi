@@ -1,5 +1,5 @@
 # CODEOWNERS
 
-* @BenjaminLGibbs
+* @Gibbs-Morris/owners
 
-.github/workflows/** @BenjaminLGibbs
+.github/workflows/** @Gibbs-Morris/owners
