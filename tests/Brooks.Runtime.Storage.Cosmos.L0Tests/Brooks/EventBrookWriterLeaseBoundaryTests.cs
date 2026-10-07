@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 
 using Mississippi.Brooks.Abstractions;
 using Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Locking;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Storage;
 
 using Moq;
 
@@ -239,6 +240,58 @@ public sealed class EventBrookWriterLeaseBoundaryTests
                             "{OriginalFormat}",
                             "Append cleanup failed for brook '{BrookId}' after committing position {FinalPosition}; the committed result was returned"))),
                 context.RenewalFailure,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+        Assert.Equal(0, context.Clock.ActiveTimers);
+    }
+
+    /// <summary>
+    ///     Lease release alone cannot turn an acknowledged append into a reported failure.
+    /// </summary>
+    /// <param name="large">Whether to force multiple batches.</param>
+    /// <returns>The asynchronous test.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CommittedAppendSurvivesLeaseReleaseFailureAsync(
+        bool large
+    )
+    {
+        using CancellationTokenSource watchdog = CreateWatchdog();
+        EventWriterLeaseTestContext context = CreateContext(large);
+        context.HeldBoundary = 3;
+        context.ReleaseFailure = new InvalidOperationException("Release failed after healthy commit");
+        context.Logger.Setup(l => l.IsEnabled(LogLevel.Warning)).Returns(true);
+        Task<BrookPosition> append = context.Writer.AppendEventsAsync(
+            context.Key,
+            context.Events,
+            null,
+            watchdog.Token);
+        try
+        {
+            await context.StorageEntered.Task.WaitAsync(watchdog.Token);
+            context.FinishStorage.TrySetResult();
+            Assert.Equal(2, (await append.WaitAsync(watchdog.Token)).Value);
+        }
+        finally
+        {
+            context.FinishStorage.TrySetResult();
+            await Record.ExceptionAsync(() => append.WaitAsync(CancellationToken.None));
+        }
+
+        context.Repository.Verify(
+            r => r.CommitCursorPositionAsync(context.Key, 2, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        context.Repository.Verify(
+            r => r.DeleteEventAsync(context.Key, It.IsAny<long>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        context.Lease.Verify(l => l.DisposeAsync(), Times.Once);
+        context.Logger.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.Is<EventId>(id => (id.Id == 1014) && (id.Name == "AppendCleanupFailed")),
+                It.IsAny<It.IsAnyType>(),
+                context.ReleaseFailure,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
         Assert.Equal(0, context.Clock.ActiveTimers);
@@ -514,6 +567,120 @@ public sealed class EventBrookWriterLeaseBoundaryTests
         AssertNoCommitOrDeletes(context);
         context.Lease.Verify(l => l.DisposeAsync(), Times.Once);
         Assert.Equal(0, scheduler.PendingTasks);
+        Assert.Equal(0, context.Clock.ActiveTimers);
+    }
+
+    /// <summary>
+    ///     Cancellation during compensating deletion preserves the earlier storage failure.
+    /// </summary>
+    /// <returns>The asynchronous test.</returns>
+    [Fact]
+    public async Task RollbackCancellationRetainsOriginalStorageFailureAsync()
+    {
+        using CancellationTokenSource caller = CreateWatchdog();
+        EventWriterLeaseTestContext context = CreateContext(true);
+        context.HeldBoundary = 2;
+        InvalidOperationException primary = new("The first storage request failed");
+        context.StorageFailure = primary;
+        context.Repository
+            .Setup(r => r.DeletePendingCursorAsync(context.Key, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
+            .Returns(async (BrookKey _, Action guard, CancellationToken _) =>
+            {
+                await caller.CancelAsync();
+                guard();
+            });
+        Task<BrookPosition> append = context.Writer.AppendEventsAsync(context.Key, context.Events, null, caller.Token);
+        try
+        {
+            await context.StorageEntered.Task.WaitAsync(caller.Token);
+            context.FinishStorage.TrySetResult();
+            InvalidOperationException actual =
+                await Assert.ThrowsAsync<InvalidOperationException>(() => append.WaitAsync(CancellationToken.None));
+            Assert.Same(primary, actual);
+        }
+        finally
+        {
+            context.FinishStorage.TrySetResult();
+            await Record.ExceptionAsync(() => append.WaitAsync(CancellationToken.None));
+        }
+
+        Assert.True(caller.IsCancellationRequested);
+        context.Repository.Verify(
+            r => r.DeletePendingCursorAsync(context.Key, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        context.Repository.Verify(
+            r => r.CommitCursorPositionAsync(
+                context.Key,
+                It.IsAny<long>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+        context.Repository.Verify(
+            r => r.DeleteEventAsync(context.Key, It.IsAny<long>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        context.Lease.Verify(l => l.DisposeAsync(), Times.Once);
+        Assert.Equal(0, context.Clock.ActiveTimers);
+    }
+
+    /// <summary>
+    ///     A storage SDK cancellation wrapper retains the ownership failure that canceled its token.
+    /// </summary>
+    /// <param name="large">Whether to force multiple batches.</param>
+    /// <returns>The asynchronous test.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task StorageCancellationRetainsLeaseFailureAsync(
+        bool large
+    )
+    {
+        using CancellationTokenSource watchdog = CreateWatchdog();
+        EventWriterLeaseTestContext context = CreateContext(large);
+        context.HeldBoundary = 2;
+        TimeoutException primary = new("Renewal outcome is unknown");
+        context.RenewalFailure = primary;
+        context.Repository.Setup(r => r.AppendEventBatchAsync(
+                context.Key,
+                It.IsAny<IReadOnlyList<EventStorageModel>>(),
+                It.IsAny<long>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(async (
+                BrookKey _, IReadOnlyList<EventStorageModel> _, long _, Action guard, CancellationToken token
+            ) =>
+            {
+                guard();
+                context.StorageEntered.TrySetResult();
+                await context.FinishStorage.Task.WaitAsync(CancellationToken.None);
+                throw new OperationCanceledException(token);
+            });
+        Task<BrookPosition> append = context.Writer.AppendEventsAsync(
+            context.Key,
+            context.Events,
+            null,
+            watchdog.Token);
+        try
+        {
+            await context.StorageEntered.Task.WaitAsync(watchdog.Token);
+            TaskCompletionSource canceled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            using CancellationTokenRegistration
+                registration = context.WorkToken.Register(() => canceled.TrySetResult());
+            context.Clock.Advance(TimeSpan.FromSeconds(20));
+            await canceled.Task.WaitAsync(watchdog.Token);
+            Assert.False(watchdog.IsCancellationRequested);
+            context.FinishStorage.TrySetResult();
+            TimeoutException actual =
+                await Assert.ThrowsAsync<TimeoutException>(() => append.WaitAsync(watchdog.Token));
+            Assert.Same(primary, actual);
+        }
+        finally
+        {
+            context.FinishStorage.TrySetResult();
+            await Record.ExceptionAsync(() => append.WaitAsync(CancellationToken.None));
+        }
+
+        AssertNoCommitOrDeletes(context);
+        context.Lease.Verify(l => l.DisposeAsync(), Times.Once);
         Assert.Equal(0, context.Clock.ActiveTimers);
     }
 }
