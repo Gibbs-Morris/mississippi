@@ -28,6 +28,10 @@ Governing thought: Preserve caller attribute inputs while protecting component-o
 
 - Agents **SHOULD** keep entity ID drafts separate from selections that start reads or subscriptions. Why: Typing `p` in Spring PR #1029 replaced the `auth-proof` subscription and read an unfinished ID.
 
+- Agents **SHOULD** share page-owned projection subscriptions when multiple views select the same exact entity ID, releasing them only when no view retains that ID. Why: Spring PR #1029 emitted duplicate subscribe actions for equal panel IDs and unsubscribed a still-selected account when one panel changed.
+
+- When testing Blazor cleanup with bUnit, agents **SHOULD** await renderer disposal before asserting released resources. Why: Spring PR #1029's rendered-wrapper disposal produced no component unsubscribe actions; awaited `DisposeComponentsAsync` exercised the real disposal path.
+
 ## References
 
 - Self-improvement governance: [Self-Improvement Learning System](self-improvement.instructions.md).
