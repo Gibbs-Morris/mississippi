@@ -56,6 +56,25 @@ Describe 'Sonar report handoff' {
         Write-FixtureFile 'eng/src/agent-scripts/Example.psm1' 'Get-Date'
         Copy-Item (Join-Path $build 'eng') $upload -Recurse
     }
+    It 'rejects Unix named pipes before opening candidate paths: <Relative>' -Skip:(-not $IsLinux) -TestCases @(
+        @{Relative='.sonarqube/out/0/Issues.json'},@{Relative='coverage.xml'},
+        @{Relative='.sonarqube/conf/0/FilesToAnalyze.txt'},@{Relative='obj/Release/net10.0/apphost'}
+    ) {
+        param($Relative)
+        $pipe=Join-Path $build $Relative
+        Remove-Item -LiteralPath $pipe
+        & /usr/bin/mkfifo -- $pipe
+        if($LASTEXITCODE -ne 0){throw 'FIFO fixture creation failed.'}
+        {InModuleScope SonarReportHandoff -Parameters @{Path=$pipe;Root=$build} {param($Path,$Root) Assert-SonarRegularPath -Path $Path -Root $Root}} | Should -Throw '*regular file*'
+    }
+    It 'rejects Unix sockets as candidate files' -Skip:(-not $IsLinux) {
+        $path=Join-Path $TestDrive 'report.socket'
+        $socket=[Net.Sockets.Socket]::new([Net.Sockets.AddressFamily]::Unix,[Net.Sockets.SocketType]::Stream,[Net.Sockets.ProtocolType]::Unspecified)
+        try{
+            $socket.Bind([Net.Sockets.UnixDomainSocketEndPoint]::new($path))
+            {InModuleScope SonarReportHandoff -Parameters @{Path=$path;Root=$TestDrive} {param($Path,$Root) Assert-SonarRegularPath -Path $Path -Root $Root}} | Should -Throw '*regular file*'
+        }finally{$socket.Dispose()}
+    }
     It 'accepts real scanner shapes, JSON-lines telemetry, generated inputs and source already present' {
         $manifest = @(Invoke-Handoff)
         $manifest.Path | Should -Contain 'obj/Release/net10.0/apphost'
