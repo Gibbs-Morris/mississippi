@@ -38,12 +38,13 @@ Describe 'Cleanup workflow candidate scope' {
                 [string]$Base = $baseSha,
                 [string]$Head = $candidateSha,
                 [string]$EventSha = $candidateSha,
+                [string]$BaseRef = 'refs/heads/main',
                 [int]$ToolExitCode = 0
             )
             $payload = if ($Event -eq 'pull_request') {
                 @{ pull_request = @{ base = @{ sha = $Base }; head = @{ sha = $Head } } }
             } else {
-                @{ merge_group = @{ base_sha = $Base; head_sha = $Head; base_ref = 'refs/heads/main' } }
+                @{ merge_group = @{ base_sha = $Base; head_sha = $Head; base_ref = $BaseRef } }
             }
             $eventPath = Join-Path $fixtureRoot 'event.json'
             $payload | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $eventPath -Encoding utf8
@@ -84,6 +85,7 @@ function dotnet {
         $null = Invoke-FixtureGit -Arguments @('config', 'user.email', 'cleanup@example.invalid')
         $null = Invoke-FixtureGit -Arguments @('config', 'commit.gpgsign', 'false')
         $baseSha = Add-FixtureCommit -Path 'base.txt'
+        $null = Invoke-FixtureGit -Arguments @('update-ref', 'refs/remotes/origin/main', $baseSha)
         $predecessorSha = Add-FixtureCommit -Path 'src/predecessor.cs'
         $candidateSha = Add-FixtureCommit -Path 'docs/follower.md'
     }
@@ -95,14 +97,14 @@ function dotnet {
     }
 
     It 'checks predecessor code when the last queue entry changes only documentation' {
-        $result = Invoke-CleanupFixture
+        $result = Invoke-CleanupFixture -Base $predecessorSha
         $result.ExitCode | Should -Be 0
         $result.Arguments | Should -Contain '--include=src/predecessor.cs'
     }
 
     It 'includes every existing changed code path across multiple queue entries' {
         $candidateSha = Add-FixtureCommit -Path 'src/with space café.cs'
-        $result = Invoke-CleanupFixture
+        $result = Invoke-CleanupFixture -Base $predecessorSha
         $result.ExitCode | Should -Be 0
         $include = @($result.Arguments | Where-Object { $_ -like '--include=*' })
         $include.Count | Should -Be 1
@@ -163,8 +165,63 @@ function dotnet {
     }
 
     It 'allows a proven documentation-only candidate without running CleanupCode' {
+        $null = Invoke-FixtureGit -Arguments @('update-ref', 'refs/remotes/origin/main', $predecessorSha)
         $result = Invoke-CleanupFixture -Base $predecessorSha
         $result.ExitCode | Should -Be 0
+        $result.Arguments.Count | Should -Be 0
+    }
+
+    It 'keeps predecessor scope when the target branch advances on a different line' {
+        $null = Invoke-FixtureGit -Arguments @('checkout', '--quiet', '-b', 'target-advanced', $baseSha)
+        $advancedTarget = Add-FixtureCommit -Path 'src/main-only.cs'
+        $null = Invoke-FixtureGit -Arguments @('update-ref', 'refs/remotes/origin/main', $advancedTarget)
+        $null = Invoke-FixtureGit -Arguments @('checkout', '--quiet', 'main')
+        $result = Invoke-CleanupFixture -Base $predecessorSha
+        $result.ExitCode | Should -Be 0
+        $result.Arguments | Should -Contain '--include=src/predecessor.cs'
+        $result.Arguments | Should -Not -Contain '--include=src/main-only.cs'
+    }
+
+    It 'rejects an unavailable target branch instead of assuming its scope' {
+        $null = Invoke-FixtureGit -Arguments @('update-ref', '-d', 'refs/remotes/origin/main')
+        $result = Invoke-CleanupFixture
+        $result.ExitCode | Should -Not -Be 0
+        $result.Arguments.Count | Should -Be 0
+    }
+
+    It 'rejects an invalid target branch ref' {
+        $result = Invoke-CleanupFixture -BaseRef 'refs/heads/main~1'
+        $result.ExitCode | Should -Not -Be 0
+        $result.Arguments.Count | Should -Be 0
+    }
+
+    It 'rejects a target outside the branch namespace' {
+        $result = Invoke-CleanupFixture -BaseRef 'refs/tags/main'
+        $result.ExitCode | Should -Not -Be 0
+        $result.Arguments.Count | Should -Be 0
+    }
+
+    It 'rejects an unrelated target branch history' {
+        $tree = (Invoke-FixtureGit -Arguments @('rev-parse', 'HEAD^{tree}')).Trim()
+        $unrelatedTarget = (Invoke-FixtureGit -Arguments @('commit-tree', $tree, '-m', 'Unrelated target')).Trim()
+        $null = Invoke-FixtureGit -Arguments @('update-ref', 'refs/remotes/origin/main', $unrelatedTarget)
+        $result = Invoke-CleanupFixture
+        $result.ExitCode | Should -Not -Be 0
+        $result.Arguments.Count | Should -Be 0
+    }
+
+    It 'rejects ambiguous common ancestors instead of choosing a partial scope' {
+        $tree = (Invoke-FixtureGit -Arguments @('rev-parse', 'HEAD^{tree}')).Trim()
+        $left = (Invoke-FixtureGit -Arguments @('commit-tree', $tree, '-p', $baseSha, '-m', 'Left')).Trim()
+        $right = (Invoke-FixtureGit -Arguments @('commit-tree', $tree, '-p', $baseSha, '-m', 'Right')).Trim()
+        $parent = (Invoke-FixtureGit -Arguments @('commit-tree', $tree, '-p', $left, '-p', $right, '-m', 'Queue parent')).Trim()
+        $target = (Invoke-FixtureGit -Arguments @('commit-tree', $tree, '-p', $right, '-p', $left, '-m', 'Target')).Trim()
+        $candidateSha = (Invoke-FixtureGit -Arguments @('commit-tree', $tree, '-p', $parent, '-m', 'Candidate')).Trim()
+        $null = Invoke-FixtureGit -Arguments @('checkout', '--quiet', '-B', 'main', $candidateSha)
+        $null = Invoke-FixtureGit -Arguments @('update-ref', 'refs/remotes/origin/main', $target)
+        @(Invoke-FixtureGit -Arguments @('merge-base', '--all', $target, $parent)).Count | Should -Be 2
+        $result = Invoke-CleanupFixture -Base $parent
+        $result.ExitCode | Should -Not -Be 0
         $result.Arguments.Count | Should -Be 0
     }
 
