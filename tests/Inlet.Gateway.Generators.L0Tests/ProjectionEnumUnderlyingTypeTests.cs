@@ -136,7 +136,7 @@ public sealed class ProjectionEnumUnderlyingTypeTests
                           """;
         MetadataReference[] references = FrameworkAssemblyNames
             .Select(name => MetadataReference.CreateFromFile(
-                Path.Combine(Path.GetDirectoryName(typeof(object).Assembly.Location)!, name)))
+                Path.Join(Path.GetDirectoryName(typeof(object).Assembly.Location)!, name)))
             .Append(MetadataReference.CreateFromFile(typeof(object).Assembly.Location))
             .ToArray();
         CSharpCompilation input = CSharpCompilation.Create(
