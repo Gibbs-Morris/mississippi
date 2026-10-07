@@ -125,8 +125,9 @@ public class Store : IStore
         // Initialize feature states from registrations
         foreach (IFeatureStateRegistration registration in featureRegistrations)
         {
-            featureStates[registration.FeatureKey] = registration.InitialState;
-            initialFeatureStates[registration.FeatureKey] = registration.InitialState;
+            object initialState = registration.InitialState;
+            featureStates[registration.FeatureKey] = initialState;
+            initialFeatureStates[registration.FeatureKey] = initialState;
             if (registration.RootReducer is not null)
             {
                 rootReducers[registration.FeatureKey] = registration.RootReducer;
