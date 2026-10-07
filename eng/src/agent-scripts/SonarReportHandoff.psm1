@@ -97,7 +97,8 @@ function Assert-SonarProjectReport {
         if ($setting.Attributes.Count -ne 1 -or $setting.LocalName -cne 'Property') { throw 'Unexpected Sonar setting schema.' }
         if ($name -cnotin $approved -or -not $settingsSeen.Add($name)) { throw 'Sonar project report contains unapproved analysis settings.' }
         $value = [string]$setting.InnerText
-        foreach ($location in $value.Split(',')) {
+        $locations = if ($name -ceq 'sonar.cs.roslyn.reportFilePaths') { $value.Split('|') } else { @($value) }
+        foreach ($location in $locations) {
             if ($location -cne $prefix -and -not $location.StartsWith("$prefix/",[StringComparison]::Ordinal)) { throw 'Sonar analysis setting refers outside its project output.' }
             $relative = ConvertTo-SonarWorkspaceRelativePath -ContainerPath $location
             if ($name -cne 'sonar.cs.analyzer.projectOutPaths') {
