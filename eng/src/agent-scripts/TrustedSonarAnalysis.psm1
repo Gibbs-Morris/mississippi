@@ -3,6 +3,23 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+function Assert-SonarPublishedBranch {
+    param([object]$Source)
+    $branches = Read-SonarServiceMetadata 'project_branches/list?project=Gibbs-Morris_mississippi&organization=gibbs-morris'
+    $branch = @($branches.branches | Where-Object { $_.name -ceq $Source.HeadRef })
+    if ($branch.Count -ne 1 -or $branch[0].commit.sha -cne $Source.HeadSha -or $branch[0].status.qualityGateStatus -cne 'OK') { throw 'Published Sonar branch does not identify the successful source revision.' }
+    if ($Source.Mode -ceq 'Queue' -and ($branch[0].type -cne 'SHORT' -or $branch[0].isMain -ne $false)) { throw 'Published queue analysis has the wrong branch classification.' }
+}
+
+function Assert-SonarQueuePolicyBaseline {
+    param([object]$Source,[string]$Pattern,[object[]]$Branches)
+    if ($Pattern -cne '(branch|release)-.*') { throw 'Queue branch classification no longer matches the reviewed policy.' }
+    $main = @($Branches | Where-Object { $_.name -ceq $Source.TargetRef -and $_.isMain -eq $true -and $_.type -ceq 'LONG' })
+    if ($main.Count -ne 1 -or $main[0].commit.sha -cne $Source.TargetSha) { throw 'Queue analysis requires the exact current target baseline in Sonar.' }
+    $candidate = @($Branches | Where-Object { $_.name -ceq $Source.HeadRef })
+    if ($candidate.Count -gt 1 -or ($candidate.Count -eq 1 -and ($candidate[0].type -cne 'SHORT' -or $candidate[0].isMain -ne $false))) { throw 'Queue candidate must be a distinct short-lived Sonar branch.' }
+}
+
 function Read-SonarGitHubMetadata {
     param([string]$Path)
 
@@ -162,13 +179,7 @@ function Get-SonarQualityPolicySnapshot {
     if ($patterns.Count -ne 1) { throw 'Sonar branch-classification policy is unavailable.' }
     $pattern = [string]$patterns[0].value
     $branches = Read-SonarServiceMetadata "project_branches/list?$project"
-    if ($Source.Mode -ceq 'Queue') {
-        if ($pattern -cne '(branch|release)-.*') { throw 'Queue branch classification no longer matches the reviewed policy.' }
-        $main = @($branches.branches | Where-Object { $_.name -ceq $Source.TargetRef -and $_.isMain -eq $true -and $_.type -ceq 'LONG' })
-        if ($main.Count -ne 1 -or $main[0].commit.sha -cne $Source.TargetSha) { throw 'Queue analysis requires the exact current target baseline in Sonar.' }
-        $candidate = @($branches.branches | Where-Object { $_.name -ceq $Source.HeadRef })
-        if ($candidate.Count -gt 1 -or ($candidate.Count -eq 1 -and ($candidate[0].type -cne 'SHORT' -or $candidate[0].isMain -ne $false))) { throw 'Queue candidate must be a distinct short-lived Sonar branch.' }
-    }
+    if ($Source.Mode -ceq 'Queue') { Assert-SonarQueuePolicyBaseline -Source $Source -Pattern $pattern -Branches @($branches.branches) }
     return [pscustomobject]@{
         GateId=$assignment.qualityGate.id; LongLivedPattern=$pattern
         Conditions=($definition.conditions | Sort-Object metric | Select-Object metric,op,error | ConvertTo-Json -Compress)
@@ -182,12 +193,7 @@ function Assert-SonarQualityPolicyUnchanged {
 
 function Assert-SonarPublishedAnalysis {
     param([object]$Source,[string]$Repository,[datetimeoffset]$StartedAt)
-    if ($Source.Mode -cne 'PullRequest') {
-        $branches = Read-SonarServiceMetadata 'project_branches/list?project=Gibbs-Morris_mississippi&organization=gibbs-morris'
-        $branch = @($branches.branches | Where-Object { $_.name -ceq $Source.HeadRef })
-        if ($branch.Count -ne 1 -or $branch[0].commit.sha -cne $Source.HeadSha -or $branch[0].status.qualityGateStatus -cne 'OK') { throw 'Published Sonar branch does not identify the successful source revision.' }
-        if ($Source.Mode -ceq 'Queue' -and ($branch[0].type -cne 'SHORT' -or $branch[0].isMain -ne $false)) { throw 'Published queue analysis has the wrong branch classification.' }
-    }
+    if ($Source.Mode -cne 'PullRequest') { Assert-SonarPublishedBranch -Source $Source }
     for ($attempt=0; $attempt -lt 12; $attempt++) {
         $response = Read-SonarGitHubMetadata "repos/$Repository/commits/$($Source.HeadSha)/check-runs?filter=latest&per_page=100"
         if ($response.total_count -gt 100 -or $response.total_count -ne @($response.check_runs).Count) { throw 'Sonar provider check response is incomplete.' }
