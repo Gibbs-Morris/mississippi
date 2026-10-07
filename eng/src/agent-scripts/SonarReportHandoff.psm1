@@ -85,10 +85,12 @@ function Assert-SonarProjectReport {
     if ($projectPath -cnotmatch '\.csproj$') { throw 'Sonar project path must identify a C# project.' }
     Assert-SonarRegularPath -Path (Join-Path $Root $projectPath) -Root $Root | Out-Null
     $guid = [Guid]::Parse([string]$project.ProjectGuid)
-    $identity = "$guid|$projectPath|$($project.TargetFramework)|$($project.Configuration)|$($project.Platform)"
-    if (-not $ProjectIdentities.Add($identity)) { throw 'Duplicate Sonar project identity.' }
     $index = [IO.DirectoryInfo]::new([IO.Path]::GetDirectoryName($Path)).Name
-    if ($index -cnotmatch '^[0-9]+(?:_[0-9]+)?$') { throw 'Invalid Sonar project output directory.' }
+    if ($index -cnotmatch '^(?<CoreIndex>[0-9]+(?:_[0-9]+)?)(?<Razor>\.Razor)?$') { throw 'Invalid Sonar project output directory.' }
+    $coreIndex = $Matches['CoreIndex']
+    $compilation = if ($Matches['Razor']) { 'Razor' } else { 'Core' }
+    $identity = "$guid|$projectPath|$($project.TargetFramework)|$($project.Configuration)|$($project.Platform)|$compilation"
+    if (-not $ProjectIdentities.Add($identity)) { throw 'Duplicate Sonar project identity.' }
     $prefix = "/work/.sonarqube/out/$index"
     $settingsSeen = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     $approved = @('sonar.cs.roslyn.reportFilePaths','sonar.cs.analyzer.projectOutPaths','sonar.cs.scanner.telemetry')
@@ -108,7 +110,7 @@ function Assert-SonarProjectReport {
         }
     }
     foreach ($result in @($project.AnalysisResultFiles.AnalysisResultFile)) {
-        if ($result.Attributes.Count -ne 2 -or $result.GetAttribute('Id') -cne 'FilesToAnalyze' -or $result.GetAttribute('Location') -cne "/work/.sonarqube/conf/$index/FilesToAnalyze.txt") { throw 'Unexpected Sonar analysis result path.' }
+        if ($result.Attributes.Count -ne 2 -or $result.GetAttribute('Id') -cne 'FilesToAnalyze' -or $result.GetAttribute('Location') -cne "/work/.sonarqube/conf/$coreIndex/FilesToAnalyze.txt") { throw 'Unexpected Sonar analysis result path.' }
         $relative = ConvertTo-SonarWorkspaceRelativePath -ContainerPath ($result.GetAttribute('Location'))
         $file = Assert-SonarRegularPath -Path (Join-Path $Root $relative) -Root $Root -MaximumBytes 8388608
         $Files.Add($relative) | Out-Null

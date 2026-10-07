@@ -15,6 +15,23 @@ Describe 'Sonar report handoff' {
             [IO.File]::WriteAllText($path,$Content)
         }
         function Invoke-Handoff { Copy-ValidatedSonarHandoff -BuildRoot $build -UploadRoot $upload }
+        function Add-RazorProjectPair([string]$CoreIndex='0') {
+            $reportPath = Join-Path $build '.sonarqube/out/0/ProjectInfo.xml'
+            $core = [IO.File]::ReadAllText($reportPath)
+            if ($CoreIndex -cne '0') {
+                $core = $core.Replace('/work/.sonarqube/out/0',"/work/.sonarqube/out/$CoreIndex").Replace('/work/.sonarqube/conf/0/',"/work/.sonarqube/conf/$CoreIndex/")
+                Write-FixtureFile ".sonarqube/out/$CoreIndex/ProjectInfo.xml" $core
+                foreach ($name in @('Issues.json','Telemetry.json')) {
+                    Write-FixtureFile ".sonarqube/out/$CoreIndex/$name" ([IO.File]::ReadAllText((Join-Path $build ".sonarqube/out/0/$name")))
+                }
+                Write-FixtureFile ".sonarqube/conf/$CoreIndex/FilesToAnalyze.txt" ([IO.File]::ReadAllText((Join-Path $build '.sonarqube/conf/0/FilesToAnalyze.txt')))
+                Remove-Item -LiteralPath $reportPath
+            }
+            $razor = $core.Replace("/work/.sonarqube/out/$CoreIndex","/work/.sonarqube/out/$CoreIndex.Razor")
+            $razor = $razor.Replace("<Property Name=`"sonar.cs.scanner.telemetry`">/work/.sonarqube/out/$CoreIndex.Razor/Telemetry.json</Property>",'')
+            Write-FixtureFile ".sonarqube/out/$CoreIndex.Razor/ProjectInfo.xml" $razor
+            Write-FixtureFile ".sonarqube/out/$CoreIndex.Razor/Issues.json" ([IO.File]::ReadAllText((Join-Path $build '.sonarqube/out/0/Issues.json')))
+        }
         function Change-Project([string]$Old,[string]$New) {
             $path = Join-Path $build '.sonarqube/out/0/ProjectInfo.xml'
             [IO.File]::WriteAllText($path,[IO.File]::ReadAllText($path).Replace($Old,$New))
@@ -75,6 +92,34 @@ Describe 'Sonar report handoff' {
         Change-Project '<Property Name="sonar.cs.roslyn.reportFilePaths">/work/.sonarqube/out/0/Issues.json</Property>' ''
         Change-Project '<Property Name="sonar.cs.analyzer.projectOutPaths">/work/.sonarqube/out/0</Property>' ''
         { Invoke-Handoff } | Should -Not -Throw
+    }
+    It 'accepts core and Razor companions with shared project identity and source list: <CoreIndex>' -TestCases @(
+        @{CoreIndex='0'},@{CoreIndex='0_1'}
+    ) {
+        param($CoreIndex)
+        Add-RazorProjectPair -CoreIndex $CoreIndex
+        $manifest = @(Invoke-Handoff)
+        $manifest.Path | Should -Contain ".sonarqube/out/$CoreIndex/ProjectInfo.xml"
+        $manifest.Path | Should -Contain ".sonarqube/out/$CoreIndex.Razor/ProjectInfo.xml"
+        $manifest.Path | Should -Contain ".sonarqube/conf/$CoreIndex/FilesToAnalyze.txt"
+        $manifest.Path | Should -Not -Contain ".sonarqube/conf/$CoreIndex.Razor/FilesToAnalyze.txt"
+    }
+    It 'rejects unsupported project-output suffixes: <Index>' -TestCases @(
+        @{Index='0.tmp'},@{Index='0.razor'},@{Index='0.Razor.tmp'},@{Index='0.Razor_1'}
+    ) {
+        param($Index)
+        Write-FixtureFile ".sonarqube/out/$Index/ProjectInfo.xml" ([IO.File]::ReadAllText((Join-Path $build '.sonarqube/out/0/ProjectInfo.xml')))
+        Remove-Item -LiteralPath (Join-Path $build '.sonarqube/out/0/ProjectInfo.xml')
+        { Invoke-Handoff } | Should -Throw '*output directory*'
+    }
+    It 'rejects duplicate reports of the same compilation kind: <Kind>' -TestCases @(
+        @{Kind='core';Index='0';Duplicate='1'},@{Kind='Razor';Index='0.Razor';Duplicate='1.Razor'}
+    ) {
+        param($Kind,$Index,$Duplicate)
+        if ($Kind -ceq 'Razor') { Add-RazorProjectPair }
+        $report = [IO.File]::ReadAllText((Join-Path $build ".sonarqube/out/$Index/ProjectInfo.xml"))
+        Write-FixtureFile ".sonarqube/out/$Duplicate/ProjectInfo.xml" $report
+        { Invoke-Handoff } | Should -Throw '*Duplicate Sonar project identity*'
     }
     It 'rejects malicious or malformed reports: <Case>' -TestCases @(
         @{Case='setting name'},@{Case='setting outside project'},@{Case='duplicate setting'},@{Case='project outside workspace'},@{Case='project traversal'},
