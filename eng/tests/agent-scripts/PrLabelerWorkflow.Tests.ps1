@@ -48,6 +48,30 @@ Describe 'PR file-labeling event admission' {
         $jobConcurrency = $job -match '(?m)^    concurrency:'
         $cancelsRunning = $workflow -match '(?m)^\s+cancel-in-progress: true\s*$'
 
+        $groupSource = if ($jobConcurrency) { $job } else { $workflow }
+        $groupMatch = [regex]::Match($groupSource, '(?m)^\s+group: (.+)')
+        if (-not $groupMatch.Success) { throw 'Unable to read the labeling concurrency group.' }
+        $groupTemplate = $groupMatch.Groups[1].Value.Trim()
+
+        function Get-LabelingGroup {
+            param([int]$PullRequestNumber, [int]$RunId, [string]$Ref, [string]$WorkflowName = 'PR Labeler')
+
+            [regex]::Replace($groupTemplate, '\$\{\{\s*(.*?)\s*\}\}', {
+                param($match)
+                foreach ($operand in ($match.Groups[1].Value -split '\|\|')) {
+                    $value = switch ($operand.Trim()) {
+                        'github.workflow' { $WorkflowName }
+                        'github.event.pull_request.number' { $PullRequestNumber }
+                        'github.ref' { $Ref }
+                        'github.run_id' { $RunId }
+                        default { throw 'Unsupported concurrency expression syntax.' }
+                    }
+                    if ($value) { return [string]$value }
+                }
+                return ''
+            })
+        }
+
         function Get-LabelingOutcome {
             param([string]$Action, [hashtable]$Changes)
 
@@ -62,6 +86,22 @@ Describe 'PR file-labeling event admission' {
                 CancelsRunningLabeling = $joinsGroup -and $cancelsRunning
             }
         }
+    }
+
+    It 'shares a group across different runs and refs for the same PR' {
+        $first = Get-LabelingGroup -PullRequestNumber 15 -RunId 100 -Ref 'refs/pull/15/merge'
+        $next = Get-LabelingGroup -PullRequestNumber 15 -RunId 101 -Ref 'refs/pull/15/head'
+
+        $first | Should -Be $next
+    }
+
+    It 'keeps other PRs and workflows in separate groups' {
+        $first = Get-LabelingGroup -PullRequestNumber 15 -RunId 100 -Ref 'refs/pull/15/merge'
+        $otherPr = Get-LabelingGroup -PullRequestNumber 16 -RunId 100 -Ref 'refs/pull/15/merge'
+        $otherWorkflow = Get-LabelingGroup -PullRequestNumber 15 -RunId 100 -Ref 'refs/pull/15/merge' -WorkflowName 'Another workflow'
+
+        $first | Should -Not -Be $otherPr
+        $first | Should -Not -Be $otherWorkflow
     }
 
     It '<Name>' -TestCases @(
