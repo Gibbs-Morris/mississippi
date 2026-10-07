@@ -22,6 +22,37 @@ public sealed class BankAccountPageHeaderTests : BunitContext
     }
 
     /// <summary>
+    ///     Closing details returns focus to its trigger once; opening and stable renders do not steal focus.
+    /// </summary>
+    /// <param name="initiallyOpen">Whether details are already open at the initial render.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ClosingDetailsRestoresTriggerFocusWithoutStealingItOnOtherRenders(
+        bool initiallyOpen
+    )
+    {
+        using IRenderedComponent<BankAccountPageHeader> cut = Render<BankAccountPageHeader>(parameters =>
+            parameters.Add(component => component.IsConnectionDetailsOpen, initiallyOpen));
+        Assert.Empty(JSInterop.Invocations);
+        string? triggerReference = cut.Find("header button").GetAttribute("blazor:elementReference");
+        Assert.False(string.IsNullOrWhiteSpace(triggerReference), cut.Find("header button").OuterHtml);
+        cut.Render(parameters => parameters.Add(component => component.IsConnectionDetailsOpen, true));
+        Assert.Empty(JSInterop.Invocations);
+        cut.Render(parameters => parameters.Add(component => component.IsConnectionDetailsOpen, false));
+        ElementReference focused = Assert.IsType<ElementReference>(JSInterop.VerifyFocusAsyncInvoke().Arguments[0]);
+        Assert.Equal(triggerReference, focused.Id);
+        Assert.Equal("false", cut.Find("header button").GetAttribute("aria-expanded"));
+        Assert.False(cut.Find("header button").HasAttribute("aria-controls"));
+        cut.Render(parameters => parameters.Add(component => component.IsConnectionDetailsOpen, false));
+        cut.Render(parameters => parameters.Add(component => component.ConnectionStatusText, "Connected"));
+        cut.Render(parameters => parameters.Add(component => component.IsConnectionDetailsOpen, true));
+        Assert.Equal(
+            triggerReference,
+            Assert.IsType<ElementReference>(JSInterop.VerifyFocusAsyncInvoke().Arguments[0]).Id);
+    }
+
+    /// <summary>
     ///     Header renders the connection status text and invokes callbacks.
     /// </summary>
     [Fact]
