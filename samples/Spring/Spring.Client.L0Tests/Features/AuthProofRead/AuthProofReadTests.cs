@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -57,6 +58,33 @@ public sealed class AuthProofReadTests
             EntityId = entityId;
             return Fetch(cancellationToken);
         }
+    }
+
+    /// <summary>Caller cancellation after a read starts emits no timeout completion.</summary>
+    /// <returns>The asynchronous caller-cancellation check.</returns>
+    [Fact]
+    public async Task CallerCancellationDoesNotEmitTimeoutCompletionAsync()
+    {
+        using AuthSimulationHeadersHandler headers = new();
+        using CancellationTokenSource cancellation =
+            CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        ControlledProjectionFetcher fetcher = new()
+        {
+            Fetch = async token =>
+            {
+                await cancellation.CancelAsync();
+                return await Task.FromCanceled<ProjectionFetchResult?>(token);
+            },
+        };
+        AuthProofReadEffect effect = new(fetcher, headers);
+        ReadAuthProofProjectionAction request = new(Guid.NewGuid(), "cancelled-entity", new());
+        await using IAsyncEnumerator<IAction> results = effect.HandleAsync(request, new(), cancellation.Token)
+            .GetAsyncEnumerator(cancellation.Token);
+        Assert.False(await results.MoveNextAsync());
+        Assert.True(cancellation.IsCancellationRequested);
+        Assert.Equal(1, fetcher.Calls);
+        Assert.Equal(typeof(AuthProofProjectionDto), fetcher.ProjectionType);
+        Assert.Equal(request.EntityId, fetcher.EntityId);
     }
 
     /// <summary>A profile mismatch is reported without sending a read under the wrong identity.</summary>
@@ -180,6 +208,37 @@ public sealed class AuthProofReadTests
         Assert.Null(completed.ErrorMessage);
     }
 
+    /// <summary>A malformed projection response completes as a correlated read failure without data.</summary>
+    /// <returns>The asynchronous malformed-response check.</returns>
+    [Fact]
+    public async Task MalformedProjectionResponseReportsReadFailureAsync()
+    {
+        using AuthSimulationHeadersHandler headers = new();
+        ControlledProjectionFetcher fetcher = new()
+        {
+            Fetch = _ => throw new JsonException("invalid projection JSON"),
+        };
+        AuthProofReadEffect effect = new(fetcher, headers);
+        ReadAuthProofProjectionAction request = new(Guid.NewGuid(), "malformed-entity", new());
+        AuthProofProjectionReadCompletedAction result = await CompleteAsync(effect, request);
+        Assert.Equal(1, fetcher.Calls);
+        Assert.Equal(typeof(AuthProofProjectionDto), fetcher.ProjectionType);
+        Assert.Equal(request.EntityId, fetcher.EntityId);
+        Assert.Equal(request.RequestId, result.RequestId);
+        Assert.Null(result.Data);
+        Assert.Equal(-1, result.Version);
+        Assert.Equal("The projection response could not be read: invalid projection JSON", result.ErrorMessage);
+        AuthProofReadState state = AuthProofReadReducers.Complete(
+            AuthProofReadReducers.Request(new(), request),
+            result);
+        Assert.False(state.IsLoading);
+        Assert.Null(state.Data);
+        Assert.Equal(-1, state.Version);
+        Assert.Equal(result.ErrorMessage, state.ErrorMessage);
+        Assert.Equal(request.EntityId, state.EntityId);
+        Assert.Equal("Full Access", state.PersonaName);
+    }
+
     /// <summary>A real not-found sentinel is an allowed empty read, not a permission error.</summary>
     /// <returns>The asynchronous empty-read check.</returns>
     [Fact]
@@ -202,6 +261,39 @@ public sealed class AuthProofReadTests
         Assert.Equal("Full Access", state.PersonaName);
     }
 
+    /// <summary>Unavailable HTTP and transport failures settle as correlated read errors.</summary>
+    /// <param name="statusCode">The HTTP status, or null for a transport failure.</param>
+    /// <returns>The asynchronous general-read-failure check.</returns>
+    [Theory]
+    [InlineData(HttpStatusCode.ServiceUnavailable)]
+    [InlineData(null)]
+    public async Task OtherHttpFailuresReportReadFailureAsync(
+        HttpStatusCode? statusCode
+    )
+    {
+        using AuthSimulationHeadersHandler headers = new();
+        ControlledProjectionFetcher fetcher = new()
+        {
+            Fetch = _ => throw new HttpRequestException("projection unavailable", null, statusCode),
+        };
+        AuthProofReadEffect effect = new(fetcher, headers);
+        ReadAuthProofProjectionAction request = new(Guid.NewGuid(), "unavailable-entity", new());
+        AuthProofProjectionReadCompletedAction result = await CompleteAsync(effect, request);
+        Assert.Equal(1, fetcher.Calls);
+        Assert.Equal(request.RequestId, result.RequestId);
+        Assert.Null(result.Data);
+        Assert.Equal(-1, result.Version);
+        Assert.Equal("Protected read failed: projection unavailable", result.ErrorMessage);
+        AuthProofReadState state = AuthProofReadReducers.Complete(
+            AuthProofReadReducers.Request(new(), request),
+            result);
+        Assert.False(state.IsLoading);
+        Assert.Null(state.Data);
+        Assert.Equal(-1, state.Version);
+        Assert.Equal(result.ErrorMessage, state.ErrorMessage);
+        Assert.Equal(request.EntityId, state.EntityId);
+    }
+
     /// <summary>Changing persona invalidates displayed data and outstanding outcomes immediately.</summary>
     [Fact]
     public void PersonaChangeInvalidatesOutstandingRead()
@@ -216,6 +308,36 @@ public sealed class AuthProofReadTests
         Assert.Null(invalidated.PersonaName);
         Assert.False(invalidated.IsLoading);
         Assert.Same(invalidated, AuthProofReadReducers.Complete(invalidated, new(request.RequestId, new(8), 4, null)));
+    }
+
+    /// <summary>A transport timeout with an active caller token completes with refresh guidance.</summary>
+    /// <returns>The asynchronous timeout check.</returns>
+    [Fact]
+    public async Task TransportTimeoutCompletesWithRefreshGuidanceAsync()
+    {
+        Assert.False(TestContext.Current.CancellationToken.IsCancellationRequested);
+        using AuthSimulationHeadersHandler headers = new();
+        ControlledProjectionFetcher fetcher = new()
+        {
+            Fetch = async _ =>
+                await Task.FromException<ProjectionFetchResult?>(new TaskCanceledException("transport timeout")),
+        };
+        AuthProofReadEffect effect = new(fetcher, headers);
+        ReadAuthProofProjectionAction request = new(Guid.NewGuid(), "timed-out-entity", new());
+        AuthProofProjectionReadCompletedAction result = await CompleteAsync(effect, request);
+        Assert.False(TestContext.Current.CancellationToken.IsCancellationRequested);
+        Assert.Equal(1, fetcher.Calls);
+        Assert.Equal(request.RequestId, result.RequestId);
+        Assert.Null(result.Data);
+        Assert.Equal(-1, result.Version);
+        Assert.Equal("The protected read timed out. Refresh to try again.", result.ErrorMessage);
+        AuthProofReadState state = AuthProofReadReducers.Complete(
+            AuthProofReadReducers.Request(new(), request),
+            result);
+        Assert.False(state.IsLoading);
+        Assert.Null(state.Data);
+        Assert.Equal(-1, state.Version);
+        Assert.Equal(result.ErrorMessage, state.ErrorMessage);
     }
 
     /// <summary>Missing DTO registration cannot masquerade as an allowed empty projection.</summary>
