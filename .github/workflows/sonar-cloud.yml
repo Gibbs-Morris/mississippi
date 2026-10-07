@@ -5,12 +5,14 @@ on:
     types: [checks_requested]
     branches:
       - main
+      - codex/merge-queue/pilot-20261007
   push:
     branches:
       - main
   pull_request:
     branches:
       - main
+      - codex/merge-queue/pilot-20261007
       - feature/**
       - topic/**
 

@@ -91,7 +91,7 @@ function dotnet {
     }
 
     It 'requests both required cleanup checks for main merge groups without cancelling candidates' {
-        $workflow | Should -Match '(?ms)^  merge_group:\r?\n    types: \[checks_requested\]\r?\n    branches: \[main\]'
+        $workflow | Should -Match '(?ms)^  merge_group:\r?\n    types: \[checks_requested\]\r?\n    branches: \[main, ''codex/merge-queue/pilot-20261007''\]'
         $workflow | Should -Match "cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}"
         $workflow | Should -Match 'solution: \[ mississippi.slnx, samples.slnx \]'
     }

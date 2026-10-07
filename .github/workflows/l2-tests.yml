@@ -3,10 +3,11 @@ on:
   workflow_dispatch:
   merge_group:
     types: [checks_requested]
-    branches: [main]
+    branches: [main, 'codex/merge-queue/pilot-20261007']
   pull_request:
     branches:
       - main
+      - codex/merge-queue/pilot-20261007
       - feature/**
       - topic/**
 

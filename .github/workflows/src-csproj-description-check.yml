@@ -3,7 +3,7 @@ name: Src Csproj Description Check
 on:
   merge_group:
     types: [checks_requested]
-    branches: [main]
+    branches: [main, 'codex/merge-queue/pilot-20261007']
   pull_request:
     paths:
       - src/**/*.csproj

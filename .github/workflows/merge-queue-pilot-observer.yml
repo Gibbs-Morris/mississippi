@@ -1,0 +1,65 @@
+name: Merge Queue Pilot Observer
+
+on:
+  merge_group:
+    types: [checks_requested]
+    branches: [codex/merge-queue/pilot-20261007]
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Record candidate identity
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          $payload = Get-Content -LiteralPath $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
+          $group = $payload.merge_group
+          New-Item -ItemType Directory -Path 'pilot-evidence' -Force | Out-Null
+          $group | ConvertTo-Json -Depth 15 | Set-Content -LiteralPath 'pilot-evidence/merge-group.json' -Encoding utf8
+          if ($group.base_ref -ne 'refs/heads/codex/merge-queue/pilot-20261007') { throw 'Unexpected pilot target.' }
+          foreach ($sha in @($group.base_sha, $group.head_sha, $env:GITHUB_SHA)) {
+            if ($sha -notmatch '^[0-9a-f]{40}$') { throw 'Malformed candidate identity.' }
+          }
+          $checkout = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0 -or $checkout -ne $group.head_sha -or $checkout -ne $env:GITHUB_SHA) { throw 'Candidate checkout mismatch.' }
+          $target = git rev-parse 'refs/remotes/origin/codex/merge-queue/pilot-20261007^{commit}'
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to resolve pilot target snapshot.' }
+          $ancestors = @(git merge-base --all $target $group.base_sha)
+          if ($LASTEXITCODE -ne 0 -or $ancestors.Count -ne 1) { throw 'Pilot history has no unique comparison ancestor.' }
+          $parents = git show -s --format=%P HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to read candidate parents.' }
+          $record = [ordered]@{
+            capturedAt = [DateTime]::UtcNow.ToString('o')
+            runId = $env:GITHUB_RUN_ID
+            event = $env:GITHUB_EVENT_NAME
+            baseRef = $group.base_ref
+            baseSha = $group.base_sha
+            headRef = $group.head_ref
+            headSha = $group.head_sha
+            eventSha = $env:GITHUB_SHA
+            checkoutSha = $checkout
+            targetSnapshot = $target
+            comparisonAncestor = $ancestors[0]
+            parents = @($parents.Split(' ', [StringSplitOptions]::RemoveEmptyEntries))
+          }
+          $record | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath 'pilot-evidence/identity.json' -Encoding utf8
+          Get-Content -LiteralPath 'pilot-evidence/identity.json'
+      - name: Preserve pilot evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: merge-queue-pilot-${{ github.sha }}
+          path: pilot-evidence/
+          if-no-files-found: error
+          retention-days: 7

@@ -10,7 +10,7 @@ on:
         default: Smoke
   merge_group:
   pull_request:
-    branches: [main, 'feature/**', 'topic/**']
+    branches: [main, 'feature/**', 'topic/**', 'codex/merge-queue/pilot-20261007']
 
 permissions:
   contents: read
