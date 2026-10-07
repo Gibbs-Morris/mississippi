@@ -17,6 +17,9 @@ const config: Config = {
   // Enable Mermaid diagram support
   markdown: {
     mermaid: true,
+    mdx1Compat: {
+      comments: true, // Preserve existing HTML comments when opting into v4 defaults.
+    },
   },
   themes: ['@docusaurus/theme-mermaid'],
 
