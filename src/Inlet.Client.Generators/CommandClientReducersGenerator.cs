@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -182,7 +183,9 @@ public sealed class CommandClientReducersGenerator : IIncrementalGenerator
         Dictionary<string, AggregateInfo> aggregates = new();
         foreach (CommandModel command in commands)
         {
-            string? aggregateName = TargetNamespaceResolver.ExtractAggregateName(command.Namespace);
+            string? aggregateName = command.Namespace.EndsWith(".Commands", StringComparison.Ordinal)
+                ? TargetNamespaceResolver.ExtractAggregateName(command.Namespace)
+                : null;
             if (aggregateName is null)
             {
                 continue;
