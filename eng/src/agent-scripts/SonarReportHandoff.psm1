@@ -68,49 +68,69 @@ function Get-SonarHandoffFiles {
     return $files.ToArray()
 }
 
-function Assert-SonarProjectReport {
-    param([string]$Path,[string]$Root,[Collections.Generic.HashSet[string]]$ProjectIdentities,[Collections.Generic.HashSet[string]]$Files)
+function Assert-SonarProjectChild {
+    param([Xml.XmlNode]$Child,[string]$Namespace,[string[]]$Allowed,[Collections.Generic.HashSet[string]]$Seen)
+    if ($Child -isnot [Xml.XmlElement]) { return }
+    if ($Child.LocalName -notin $Allowed -or $Child.NamespaceURI -cne $Namespace -or -not $Seen.Add($Child.LocalName)) { throw 'Unexpected Sonar project report element.' }
+    if ($Child.LocalName -notin @('AnalysisResultFiles','AnalysisSettings') -and ($Child.InnerText -match '[\x00-\x1f]' -or @($Child.ChildNodes | Where-Object { $_ -is [Xml.XmlElement] }).Count -gt 0)) { throw 'Sonar project metadata must contain scalar values without control characters.' }
+}
 
+function Get-SonarProjectMetadata {
+    param([string]$Path,[string]$Root)
     $document = Read-SonarHandoffXml -Path $Path -Root $Root
     $project = $document.DocumentElement
     if ($project.LocalName -cne 'ProjectInfo' -or $project.NamespaceURI -cne 'http://www.sonarsource.com/msbuild/integration/2015/1') { throw 'Invalid Sonar project report schema.' }
     $allowed = @('ProjectName','ProjectLanguage','ProjectType','ProjectGuid','FullPath','IsExcluded','AnalysisResultFiles','AnalysisSettings','Configuration','Platform','TargetFramework','Encoding')
-    $childrenSeen = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
-    foreach ($child in $project.ChildNodes) {
-        if ($child -is [Xml.XmlElement] -and ($child.LocalName -notin $allowed -or $child.NamespaceURI -cne $project.NamespaceURI -or -not $childrenSeen.Add($child.LocalName))) { throw 'Unexpected Sonar project report element.' }
-        if ($child -is [Xml.XmlElement] -and $child.LocalName -notin @('AnalysisResultFiles','AnalysisSettings') -and ($child.InnerText -match '[\x00-\x1f]' -or @($child.ChildNodes | Where-Object { $_ -is [Xml.XmlElement] }).Count -gt 0)) { throw 'Sonar project metadata must contain scalar values without control characters.' }
-    }
+    $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($child in $project.ChildNodes) { Assert-SonarProjectChild -Child $child -Namespace $project.NamespaceURI -Allowed $allowed -Seen $seen }
     if ($project.ProjectLanguage -cne 'C#' -or $project.ProjectType -notin @('Product','Test') -or $project.IsExcluded -notin @('true','false')) { throw 'Invalid Sonar project classification.' }
-    $projectPath = ConvertTo-SonarWorkspaceRelativePath -ContainerPath ([string]$project.FullPath)
+    return $project
+}
+
+function Get-SonarProjectOutputContext {
+    param([Xml.XmlElement]$Project,[string]$Path,[string]$Root,[Collections.Generic.HashSet[string]]$ProjectIdentities)
+    $projectPath = ConvertTo-SonarWorkspaceRelativePath -ContainerPath ([string]$Project.FullPath)
     if ($projectPath -cnotmatch '\.csproj$') { throw 'Sonar project path must identify a C# project.' }
     Assert-SonarRegularPath -Path (Join-Path $Root $projectPath) -Root $Root | Out-Null
-    $guid = [Guid]::Parse([string]$project.ProjectGuid)
+    $guid = [Guid]::Parse([string]$Project.ProjectGuid)
     $index = [IO.DirectoryInfo]::new([IO.Path]::GetDirectoryName($Path)).Name
     if ($index -cnotmatch '^(?<CoreIndex>[0-9]+(?:_[0-9]+)?)(?<Razor>\.Razor)?$') { throw 'Invalid Sonar project output directory.' }
     $coreIndex = $Matches['CoreIndex']
     $compilation = if ($Matches['Razor']) { 'Razor' } else { 'Core' }
-    $identity = "$guid|$projectPath|$($project.TargetFramework)|$($project.Configuration)|$($project.Platform)|$compilation"
+    $identity = "$guid|$projectPath|$($Project.TargetFramework)|$($Project.Configuration)|$($Project.Platform)|$compilation"
     if (-not $ProjectIdentities.Add($identity)) { throw 'Duplicate Sonar project identity.' }
-    $prefix = "/work/.sonarqube/out/$index"
-    $settingsSeen = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
-    $approved = @('sonar.cs.roslyn.reportFilePaths','sonar.cs.analyzer.projectOutPaths','sonar.cs.scanner.telemetry')
-    foreach ($setting in @($project.AnalysisSettings.Property)) {
-        $name = $setting.GetAttribute('Name')
-        if ($setting.Attributes.Count -ne 1 -or $setting.LocalName -cne 'Property') { throw 'Unexpected Sonar setting schema.' }
-        if ($name -cnotin $approved -or -not $settingsSeen.Add($name)) { throw 'Sonar project report contains unapproved analysis settings.' }
-        $value = [string]$setting.InnerText
-        $locations = if ($name -ceq 'sonar.cs.roslyn.reportFilePaths') { $value.Split('|') } else { @($value) }
-        foreach ($location in $locations) {
-            if ($location -cne $prefix -and -not $location.StartsWith("$prefix/",[StringComparison]::Ordinal)) { throw 'Sonar analysis setting refers outside its project output.' }
-            $relative = ConvertTo-SonarWorkspaceRelativePath -ContainerPath $location
-            if ($name -cne 'sonar.cs.analyzer.projectOutPaths') {
-                Assert-SonarRegularPath -Path (Join-Path $Root $relative) -Root $Root | Out-Null
-                $Files.Add($relative) | Out-Null
-            }
+    return [pscustomobject]@{Prefix="/work/.sonarqube/out/$index";CoreIndex=$coreIndex}
+}
+
+function Add-SonarProjectSettingFiles {
+    param([string]$Name,[string]$Value,[string]$Prefix,[string]$Root,[Collections.Generic.HashSet[string]]$Files)
+    $locations = if ($Name -ceq 'sonar.cs.roslyn.reportFilePaths') { $Value.Split('|') } else { @($Value) }
+    foreach ($location in $locations) {
+        if ($location -cne $Prefix -and -not $location.StartsWith("$Prefix/",[StringComparison]::Ordinal)) { throw 'Sonar analysis setting refers outside its project output.' }
+        $relative = ConvertTo-SonarWorkspaceRelativePath -ContainerPath $location
+        if ($Name -cne 'sonar.cs.analyzer.projectOutPaths') {
+            Assert-SonarRegularPath -Path (Join-Path $Root $relative) -Root $Root | Out-Null
+            $Files.Add($relative) | Out-Null
         }
     }
-    foreach ($result in @($project.AnalysisResultFiles.AnalysisResultFile)) {
-        if ($result.Attributes.Count -ne 2 -or $result.GetAttribute('Id') -cne 'FilesToAnalyze' -or $result.GetAttribute('Location') -cne "/work/.sonarqube/conf/$coreIndex/FilesToAnalyze.txt") { throw 'Unexpected Sonar analysis result path.' }
+}
+
+function Add-SonarProjectSettings {
+    param([Xml.XmlElement]$Project,[string]$Prefix,[string]$Root,[Collections.Generic.HashSet[string]]$Files)
+    $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $approved = @('sonar.cs.roslyn.reportFilePaths','sonar.cs.analyzer.projectOutPaths','sonar.cs.scanner.telemetry')
+    foreach ($setting in @($Project.AnalysisSettings.Property)) {
+        $name = $setting.GetAttribute('Name')
+        if ($setting.Attributes.Count -ne 1 -or $setting.LocalName -cne 'Property') { throw 'Unexpected Sonar setting schema.' }
+        if ($name -cnotin $approved -or -not $seen.Add($name)) { throw 'Sonar project report contains unapproved analysis settings.' }
+        Add-SonarProjectSettingFiles -Name $name -Value ([string]$setting.InnerText) -Prefix $Prefix -Root $Root -Files $Files
+    }
+}
+
+function Add-SonarAnalysisSourceFiles {
+    param([Xml.XmlElement]$Project,[string]$CoreIndex,[string]$Root,[Collections.Generic.HashSet[string]]$Files)
+    foreach ($result in @($Project.AnalysisResultFiles.AnalysisResultFile)) {
+        if ($result.Attributes.Count -ne 2 -or $result.GetAttribute('Id') -cne 'FilesToAnalyze' -or $result.GetAttribute('Location') -cne "/work/.sonarqube/conf/$CoreIndex/FilesToAnalyze.txt") { throw 'Unexpected Sonar analysis result path.' }
         $relative = ConvertTo-SonarWorkspaceRelativePath -ContainerPath ($result.GetAttribute('Location'))
         $file = Assert-SonarRegularPath -Path (Join-Path $Root $relative) -Root $Root -MaximumBytes 8388608
         $Files.Add($relative) | Out-Null
@@ -122,6 +142,14 @@ function Assert-SonarProjectReport {
             if ($Files.Count -gt 20000) { throw 'Sonar source handoff has too many entries.' }
         }
     }
+}
+
+function Assert-SonarProjectReport {
+    param([string]$Path,[string]$Root,[Collections.Generic.HashSet[string]]$ProjectIdentities,[Collections.Generic.HashSet[string]]$Files)
+    $project = Get-SonarProjectMetadata -Path $Path -Root $Root
+    $context = Get-SonarProjectOutputContext -Project $project -Path $Path -Root $Root -ProjectIdentities $ProjectIdentities
+    Add-SonarProjectSettings -Project $project -Prefix $context.Prefix -Root $Root -Files $Files
+    Add-SonarAnalysisSourceFiles -Project $project -CoreIndex $context.CoreIndex -Root $Root -Files $Files
     $Files.Add([IO.Path]::GetRelativePath($Root,$Path).Replace('\','/')) | Out-Null
 }
 
@@ -135,56 +163,71 @@ function Assert-SonarSarifLocation {
     if ($relative -match '^\.sonarqube(?:/|$)') { throw 'SARIF cannot refer to scanner configuration.' }
 }
 
+function Assert-SonarTelemetryReport {
+    param([string]$Path)
+    foreach ($line in [IO.File]::ReadAllLines($Path)) {
+        $record = $line | ConvertFrom-Json -Depth 8
+        if ($null -eq $record -or @($record.PSObject.Properties).Count -ne 1) { throw 'Invalid Sonar telemetry record.' }
+        foreach ($property in $record.PSObject.Properties) {
+            if ($property.Name -cnotmatch '^dotnetenterprise\.s4net\.build\.[a-z_]+(?:\.cnt)?$' -or $property.Value -isnot [string]) { throw 'Unapproved Sonar telemetry property.' }
+        }
+    }
+}
+
+function Assert-SonarSarifReport {
+    param([object]$Report)
+    foreach ($run in @($Report.runs | Where-Object { $_.PSObject.Properties['results'] })) {
+        foreach ($result in @($run.results | Where-Object { $_.PSObject.Properties['locations'] })) {
+            foreach ($location in @($result.locations)) { Assert-SonarSarifLocation -Location $location }
+        }
+    }
+}
+
 function Assert-SonarJsonReport {
     param([string]$Path,[string]$Root)
     $file = Assert-SonarRegularPath -Path $Path -Root $Root
     if ([IO.Path]::GetFileName($Path) -cmatch '^Telemetry(?:\.Targets\.S4NET)?\.json$') {
-        foreach ($line in [IO.File]::ReadAllLines($file)) {
-            $record = $line | ConvertFrom-Json -Depth 8
-            if ($null -eq $record -or @($record.PSObject.Properties).Count -ne 1) { throw 'Invalid Sonar telemetry record.' }
-            foreach ($property in $record.PSObject.Properties) {
-                if ($property.Name -cnotmatch '^dotnetenterprise\.s4net\.build\.[a-z_]+(?:\.cnt)?$' -or $property.Value -isnot [string]) { throw 'Unapproved Sonar telemetry property.' }
-            }
-        }
+        Assert-SonarTelemetryReport -Path $file
         return
     }
     $report = [IO.File]::ReadAllText($file) | ConvertFrom-Json -Depth 100
     if ($null -eq $report) { throw 'Sonar JSON report is empty.' }
     # Rule help links are data; only diagnostic source locations identify workspace files.
     if (-not $report.PSObject.Properties['runs']) { return }
-    foreach ($run in @($report.runs)) {
-        if (-not $run.PSObject.Properties['results']) { continue }
-        foreach ($result in @($run.results)) {
-            if (-not $result.PSObject.Properties['locations']) { continue }
-            foreach ($location in @($result.locations)) { Assert-SonarSarifLocation -Location $location }
-        }
+    Assert-SonarSarifReport -Report $report
+}
+
+function Assert-SonarDotNetCoverage {
+    param([Xml.XmlDocument]$Document)
+    if ($Document.DocumentElement.LocalName -cne 'results') { throw 'Invalid .NET coverage report.' }
+    foreach ($source in @($Document.SelectNodes("//*[local-name()='source_file']"))) {
+        $relative = ConvertTo-SonarWorkspaceRelativePath -ContainerPath ($source.GetAttribute('path'))
+        if ($relative -match '^\.sonarqube(?:/|$)') { throw 'Coverage cannot refer to scanner configuration.' }
+    }
+}
+
+function Assert-SonarPowerShellCoverageFile {
+    param([Xml.XmlElement]$File,[string]$Root)
+    $relative = $File.GetAttribute('path')
+    if ($relative -cnotmatch '^eng/src/agent-scripts/[A-Za-z0-9_/.-]+\.psm1$') { throw 'PowerShell coverage must identify automation modules.' }
+    ConvertTo-SonarWorkspaceRelativePath -ContainerPath "/work/$relative" | Out-Null
+    $source = Assert-SonarRegularPath -Path (Join-Path $Root $relative) -Root $Root
+    $length = [IO.File]::ReadAllLines($source).Length
+    foreach ($line in $File.ChildNodes) {
+        $number = 0
+        if ($line.LocalName -cne 'lineToCover' -or -not [int]::TryParse($line.GetAttribute('lineNumber'),[ref]$number) -or $number -lt 1 -or $number -gt $length -or $line.GetAttribute('covered') -cnotin @('true','false')) { throw 'Invalid PowerShell coverage line.' }
     }
 }
 
 function Assert-SonarCoverageReport {
     param([string]$Path,[string]$Root,[bool]$PowerShell)
     $document = Read-SonarHandoffXml -Path $Path -Root $Root
-    if (-not $PowerShell) {
-        if ($document.DocumentElement.LocalName -cne 'results') { throw 'Invalid .NET coverage report.' }
-        foreach ($file in $document.SelectNodes('//source_file[@path]')) {
-            $relative = ConvertTo-SonarWorkspaceRelativePath -ContainerPath $file.GetAttribute('path')
-            if ($relative -match '^\.sonarqube(?:/|$)') { throw 'Coverage cannot refer to scanner configuration.' }
-        }
-        return
-    }
+    if (-not $PowerShell) { Assert-SonarDotNetCoverage -Document $document; return }
     $coverage = $document.DocumentElement
     if ($coverage.LocalName -cne 'coverage' -or $coverage.GetAttribute('version') -cne '1') { throw 'Invalid PowerShell coverage report.' }
     foreach ($file in $coverage.ChildNodes) {
         if ($file.LocalName -cne 'file') { throw 'Invalid PowerShell coverage file.' }
-        $relative = $file.GetAttribute('path')
-        if ($relative -cnotmatch '^eng/src/agent-scripts/[A-Za-z0-9_/.-]+\.psm1$') { throw 'PowerShell coverage must identify automation modules.' }
-        ConvertTo-SonarWorkspaceRelativePath -ContainerPath "/work/$relative" | Out-Null
-        $source = Assert-SonarRegularPath -Path (Join-Path $Root $relative) -Root $Root
-        $length = [IO.File]::ReadAllLines($source).Length
-        foreach ($line in $file.ChildNodes) {
-            $number = 0
-            if ($line.LocalName -cne 'lineToCover' -or -not [int]::TryParse($line.GetAttribute('lineNumber'),[ref]$number) -or $number -lt 1 -or $number -gt $length -or $line.GetAttribute('covered') -cnotin @('true','false')) { throw 'Invalid PowerShell coverage line.' }
-        }
+        Assert-SonarPowerShellCoverageFile -File $file -Root $Root
     }
 }
 
@@ -201,10 +244,35 @@ function Assert-SonarDestinationAncestors {
         if (-not $cursor) { break }
     }
 }
+
+function Assert-SonarOutputFile {
+    param([string]$Path,[string]$Root)
+    switch -CaseSensitive ([IO.Path]::GetExtension($Path)) {
+        '.json' { Assert-SonarJsonReport -Path $Path -Root $Root }
+        '.pb' { }
+        '.xml' { if ([IO.Path]::GetFileName($Path) -cne 'ProjectInfo.xml') { throw 'Unexpected XML in Sonar output.' } }
+        default { throw 'Unexpected file type in Sonar output.' }
+    }
+}
+
+function Copy-SonarHandoffFile {
+    param([string]$Source,[string]$Relative,[string]$UploadRoot)
+    $destination = [IO.Path]::GetFullPath((Join-Path $UploadRoot $Relative))
+    Assert-SonarDestinationAncestors -Path $destination -Root $UploadRoot
+    if (Test-Path -LiteralPath $destination) {
+        $existing = Assert-SonarRegularPath -Path $destination -Root $UploadRoot
+        if ((Get-FileHash -LiteralPath $Source).Hash -cne (Get-FileHash -LiteralPath $existing).Hash) { throw 'Sonar handoff would replace trusted source or configuration.' }
+    }
+    else {
+        [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($destination)) | Out-Null
+        Copy-Item -LiteralPath $Source -Destination $destination
+    }
+    return [pscustomobject]@{Path=$Relative;Bytes=[IO.FileInfo]::new($Source).Length;Sha256=(Get-FileHash -LiteralPath $Source).Hash}
+}
+
 function Copy-ValidatedSonarHandoff {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$BuildRoot,[Parameter(Mandatory)][string]$UploadRoot)
-
     $build = [IO.Path]::GetFullPath($BuildRoot)
     $upload = [IO.Path]::GetFullPath($UploadRoot)
     if ($build -ceq $upload) { throw 'Sonar upload requires a separate clean workspace.' }
@@ -216,12 +284,7 @@ function Copy-ValidatedSonarHandoff {
     if ($projects.Count -lt 1) { throw 'Sonar handoff contains no project reports.' }
     foreach ($project in $projects) { Assert-SonarProjectReport -Path $project -Root $build -ProjectIdentities $identities -Files $files }
     foreach ($file in $outputs) {
-        switch -CaseSensitive ([IO.Path]::GetExtension($file)) {
-            '.json' { Assert-SonarJsonReport -Path $file -Root $build }
-            '.pb' { }
-            '.xml' { if ([IO.Path]::GetFileName($file) -cne 'ProjectInfo.xml') { throw 'Unexpected XML in Sonar output.' } }
-            default { throw 'Unexpected file type in Sonar output.' }
-        }
+        Assert-SonarOutputFile -Path $file -Root $build
         $files.Add([IO.Path]::GetRelativePath($build,$file).Replace('\','/')) | Out-Null
     }
     foreach ($report in @('coverage.xml','powershell-coverage.xml')) {
@@ -235,17 +298,7 @@ function Copy-ValidatedSonarHandoff {
         $source = Assert-SonarRegularPath -Path (Join-Path $build $relative) -Root $build
         $total += [IO.FileInfo]::new($source).Length
         if ($total -gt 2147483648) { throw 'Sonar handoff exceeds its total size bound.' }
-        $destination = [IO.Path]::GetFullPath((Join-Path $upload $relative))
-        Assert-SonarDestinationAncestors -Path $destination -Root $upload
-        if (Test-Path -LiteralPath $destination) {
-            $existing = Assert-SonarRegularPath -Path $destination -Root $upload
-            if ((Get-FileHash -LiteralPath $source).Hash -cne (Get-FileHash -LiteralPath $existing).Hash) { throw 'Sonar handoff would replace trusted source or configuration.' }
-        }
-        else {
-            [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($destination)) | Out-Null
-            Copy-Item -LiteralPath $source -Destination $destination
-        }
-        $manifest.Add([pscustomobject]@{Path=$relative;Bytes=[IO.FileInfo]::new($source).Length;Sha256=(Get-FileHash -LiteralPath $source).Hash})
+        $manifest.Add((Copy-SonarHandoffFile -Source $source -Relative $relative -UploadRoot $upload))
     }
     return $manifest.ToArray()
 }
