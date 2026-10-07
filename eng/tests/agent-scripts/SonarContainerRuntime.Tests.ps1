@@ -133,14 +133,38 @@ Describe 'Sonar environment admission' {
     }
     BeforeEach {
         $script:environment = [pscustomobject]@{deployment_branch_policy=[pscustomobject]@{protected_branches=$false;custom_branch_policies=$true}}
-        $script:policy = [pscustomobject]@{total_count=1;branch_policies=@([pscustomobject]@{name='main';type='branch'})}
+        $script:policy = [pscustomobject]@{total_count=1;branch_policies=@([pscustomobject]@{id=43382702;name='main';type='branch'})}
+        $script:policyDetail = [pscustomobject]@{id=43382702;name='main';type='branch'}
         Mock Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis {
+            if ($Path -like '*/deployment-branch-policies/43382702') { return $script:policyDetail }
             if ($Path -like '*deployment-branch-policies*') { return $script:policy }
             return $script:environment
         }
     }
     It 'accepts exactly one branch policy for main' {
         { Assert-SonarCredentialDeployment -Repository Gibbs-Morris/mississippi -DefaultBranch main } | Should -Not -Throw
+    }
+    It 'reads the exact policy detail when the list omits its type: <Shape>' -TestCases @(@{Shape='absent'},@{Shape='null'}) {
+        param($Shape)
+        if($Shape -eq 'absent'){$script:policy.branch_policies[0].PSObject.Properties.Remove('type')}else{$script:policy.branch_policies[0].type=$null}
+        { Assert-SonarCredentialDeployment -Repository Gibbs-Morris/mississippi -DefaultBranch main } | Should -Not -Throw
+        Should -Invoke Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis -Times 1 -Exactly -ParameterFilter {$Path -like '*/deployment-branch-policies/43382702'}
+    }
+    It 'rejects missing or inconsistent branch-type evidence: <Case>' -TestCases @(
+        @{Case='missing ID'},@{Case='invalid ID'},@{Case='tag detail'},@{Case='wrong detail ID'},@{Case='wrong detail name'},@{Case='missing detail type'},@{Case='unavailable detail'}
+    ) {
+        param($Case)
+        $script:policy.branch_policies[0].PSObject.Properties.Remove('type')
+        switch($Case){
+            'missing ID' {$script:policy.branch_policies[0].PSObject.Properties.Remove('id')}
+            'invalid ID' {$script:policy.branch_policies[0].id='../other'}
+            'tag detail' {$script:policyDetail.type='tag'}
+            'wrong detail ID' {$script:policyDetail.id=99}
+            'wrong detail name' {$script:policyDetail.name='other'}
+            'missing detail type' {$script:policyDetail.PSObject.Properties.Remove('type')}
+            'unavailable detail' {Mock Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis {throw 'Policy detail unavailable.'} -ParameterFilter {$Path -like '*/deployment-branch-policies/43382702'}}
+        }
+        { Assert-SonarCredentialDeployment -Repository Gibbs-Morris/mississippi -DefaultBranch main } | Should -Throw
     }
     It 'rejects unsafe environment configuration: <Case>' -TestCases @(@{Case='unprotected'},@{Case='all protected branches'},@{Case='wildcard'},@{Case='tag'},@{Case='extra policy'},@{Case='incomplete pagination'}) {
         param($Case)
