@@ -24,11 +24,11 @@ public sealed class HubConnectionProviderFailurePublicationRaceTests
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
 
     /// <summary>
-    ///     A competing ensure call still returns while an existing transport startup is pending.
+    ///     A competing ensure call waits until the existing transport startup is usable.
     /// </summary>
     /// <returns>A task representing the test.</returns>
     [Fact]
-    public async Task ActiveStartupDoesNotChangeExistingReadinessContract()
+    public async Task ActiveStartupWaitsForReadiness()
     {
         await using StartupStatusServer server = new();
         await server.StartAsync(TestContext.Current.CancellationToken);
@@ -38,12 +38,13 @@ public sealed class HubConnectionProviderFailurePublicationRaceTests
             new(() => store.Object));
         Task starting = provider.EnsureConnectedAsync(TestContext.Current.CancellationToken);
         await server.FirstNegotiation.WaitAsync(Timeout, TestContext.Current.CancellationToken);
-        await provider.EnsureConnectedAsync(TestContext.Current.CancellationToken)
-            .WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        Task joined = provider.EnsureConnectedAsync(TestContext.Current.CancellationToken);
+        Assert.False(joined.IsCompleted);
         Assert.False(starting.IsCompleted);
         Assert.Equal(HubConnectionState.Connecting, provider.Connection.State);
         server.CompleteFirstNegotiation(200);
         await starting.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        await joined.WaitAsync(Timeout, TestContext.Current.CancellationToken);
         Assert.Equal(HubConnectionState.Connected, provider.Connection.State);
     }
 
