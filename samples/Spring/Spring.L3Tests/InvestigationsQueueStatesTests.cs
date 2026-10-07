@@ -140,7 +140,9 @@ public sealed class InvestigationsQueueStatesTests
                 {
                     Interlocked.Increment(ref intercepted);
                     requestStarted.TrySetResult();
-                    await releaseRequest.Task.WaitAsync(TimeSpan.FromMilliseconds(ProjectionTimeout), cancellationToken);
+                    await releaseRequest.Task.WaitAsync(
+                        TimeSpan.FromMilliseconds(ProjectionTimeout),
+                        cancellationToken);
                     await route.FulfillAsync(
                         new()
                         {
