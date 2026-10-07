@@ -23,6 +23,8 @@ Version/build/test execution uses a non-root container matching the runner's UID
 
 Begin and end execute in separate fresh containers. Begin uses a clean checkout and the protected token. Before exposing scanner assets to a build, the controller checks that they do not contain the actual credential. End receives the original private scanner configuration/cache, another clean checkout and only validated, bounded reports/generated analysis inputs. XML DTDs, external paths, links, unknown project settings and changes to existing source/configuration are rejected. Native errors stop the upload.
 
+Before reading candidate reports on Linux, the handoff checks the file type using `/usr/bin/stat`. FIFOs, sockets and other nonregular files are rejected; missing or invalid type metadata fails.
+
 Report validation protects this credential boundary. It does not establish that malicious build inputs cannot fabricate their own test or analysis data. Repository review remains necessary.
 
 ## Quality gate and evidence

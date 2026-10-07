@@ -3,6 +3,13 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+function Assert-SonarLinuxRegularFile {
+    param([string]$Path)
+    $mode = (& /usr/bin/stat --format=%f -- $Path 2>&1 | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or $mode -cnotmatch '^[0-9a-f]{1,8}$') { throw 'Cannot establish a regular file type for the Sonar report.' }
+    if (([Convert]::ToUInt32($mode,16) -band 0xF000) -ne 0x8000) { throw 'Sonar report must be an actual regular file on Linux.' }
+}
+
 function Assert-SonarRegularPath {
     param([string]$Path,[string]$Root,[long]$MaximumBytes=67108864)
 
@@ -17,6 +24,7 @@ function Assert-SonarRegularPath {
         if (($cursor.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'Sonar handoff cannot contain symbolic links.' }
         $cursor = if ($cursor -is [IO.FileInfo]) { $cursor.Directory } else { $cursor.Parent }
     }
+    if ($IsLinux) { Assert-SonarLinuxRegularFile -Path $full }
     return $full
 }
 
