@@ -4,9 +4,9 @@
     "net10.0": {
       "Aspire.Azure.Data.Tables": {
         "type": "Direct",
-        "requested": "[13.6.0, )",
-        "resolved": "13.6.0",
-        "contentHash": "CyGcaVVCDiiH/3O0mZ0Gmp09OqXp7cJunMwU1gXebtLsue0RJedR3p2tMmpROBgQTRRzMNSQvMvr8S/5EL7uCQ==",
+        "requested": "[13.6.1, )",
+        "resolved": "13.6.1",
+        "contentHash": "huz5/MpiBKtpyGnYi74dKt8OvSZnsssjk/uGa2KFNoqj4ZUR2GGO/8LgZp4DUMltfMKx304rrLEcOITlXgGRYw==",
         "dependencies": {
           "AspNetCore.HealthChecks.Azure.Data.Tables": "9.0.0",
           "Azure.Core": "1.62.0",
