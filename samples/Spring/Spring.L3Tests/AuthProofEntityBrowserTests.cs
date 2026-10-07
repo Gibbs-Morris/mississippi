@@ -52,7 +52,7 @@ public sealed class AuthProofEntityBrowserTests
         if (segments.Length == 3)
         {
             Assert.Equal("at", segments[1]);
-            Assert.True(long.TryParse(segments[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out var _));
+            Assert.True(long.TryParse(segments[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out long _));
         }
 
         return Uri.UnescapeDataString(segments[0]);

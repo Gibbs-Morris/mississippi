@@ -232,7 +232,10 @@ public sealed class FlagshipJourneysTests
         }
     }
 
-    /// <summary>Verify that switching one account retains the other ID and keeps the demo shortcut bound to its displayed pair.</summary>
+    /// <summary>
+    ///     Verify that switching one account retains the other ID and keeps the demo shortcut bound to its displayed
+    ///     pair.
+    /// </summary>
     /// <returns>The asynchronous account-selection journey.</returns>
     [Fact]
     public async Task AccountSwitchRetainsOtherAccountAndDemoShortcutAsync()
@@ -911,7 +914,10 @@ public sealed class FlagshipJourneysTests
         }
     }
 
-    /// <summary>Verify that a lost response reports client failure while exposing the actual deposit and contained phone history.</summary>
+    /// <summary>
+    ///     Verify that a lost response reports client failure while exposing the actual deposit and contained phone
+    ///     history.
+    /// </summary>
     /// <param name="viewportWidth">The phone width used to verify the expanded command history.</param>
     /// <returns>The asynchronous real-server lost-reply regression.</returns>
     [Theory]

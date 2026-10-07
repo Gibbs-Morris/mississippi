@@ -44,7 +44,10 @@ public sealed class ConnectionNoticeTests : BunitContext
         Assert.True(cut.Find("button").HasAttribute("disabled"));
     }
 
-    /// <summary>Verify that a disconnected notice exposes actual attempts and escaped failure text with an enabled reconnect action.</summary>
+    /// <summary>
+    ///     Verify that a disconnected notice exposes actual attempts and escaped failure text with an enabled reconnect
+    ///     action.
+    /// </summary>
     [Fact]
     public void DisconnectedNoticeShowsAttemptsAndErrorAndAllowsReconnect()
     {

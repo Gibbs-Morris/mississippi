@@ -138,7 +138,10 @@ public sealed class InvestigationsTests : BunitContext
         Assert.Empty(cut.FindAll("[role='alert'], [role='status'], table"));
     }
 
-    /// <summary>Verify that a successful populated read retains its accessible region, actual rows, version and UTC timestamps.</summary>
+    /// <summary>
+    ///     Verify that a successful populated read retains its accessible region, actual rows, version and UTC
+    ///     timestamps.
+    /// </summary>
     [Fact]
     public void LoadedQueueShowsAccessibleRowsAndUtcTimes()
     {

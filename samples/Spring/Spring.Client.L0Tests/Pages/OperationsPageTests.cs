@@ -75,7 +75,10 @@ public sealed class OperationsPageTests : BunitContext
         return store.Object;
     }
 
-    /// <summary>Verify that only primary unmodified jump activation moves focus; native modified links retain their pair and selection.</summary>
+    /// <summary>
+    ///     Verify that only primary unmodified jump activation moves focus; native modified links retain their pair and
+    ///     selection.
+    /// </summary>
     /// <param name="accountA">Whether the Account A jump is activated.</param>
     /// <param name="activation">The primary, non-primary or keyboard-modified activation.</param>
     [Theory]
