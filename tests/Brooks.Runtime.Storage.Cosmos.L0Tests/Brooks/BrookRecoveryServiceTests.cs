@@ -389,14 +389,13 @@ public sealed class BrookRecoveryServiceTests
     }
 
     /// <summary>
-    ///     Keeps pending targets beyond the committed cursor, and leaves an absent pending document alone.
+    ///     Leaves an absent pending document alone while returning the committed cursor.
     /// </summary>
-    /// <param name="pendingPosition">The pending target, or minus one for no pending document.</param>
+    /// <param name="pendingPosition">Minus one represents an absent pending document.</param>
     /// <returns>The asynchronous test.</returns>
     [Theory]
     [InlineData(-1)]
-    [InlineData(3)]
-    public async Task GuardedRecoveryPreservesUncommittedPendingAsync(
+    public async Task GuardedRecoveryLeavesAbsentPendingAsync(
         long pendingPosition
     )
     {
