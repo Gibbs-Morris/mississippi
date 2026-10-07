@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
 
+using AngleSharp.Dom;
+
 using Bunit;
 
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client.Abstractions;
@@ -67,8 +71,90 @@ public sealed class OperationsPageTests : BunitContext
             });
         store.Setup(current => current.Dispose());
         Services.AddSingleton<IStore>(store.Object);
-        Services.AddSingleton<IInletStore>(store.Object);
+        Services.AddSingleton(store.Object);
         return store.Object;
+    }
+
+    /// <summary>
+    ///     Only primary unmodified jump activation moves focus; native modified links retain their pair and selection.
+    /// </summary>
+    /// <param name="accountA">Whether the Account A jump is activated.</param>
+    /// <param name="activation">The primary, non-primary or keyboard-modified activation.</param>
+    [Theory]
+    [InlineData(true, "primary")]
+    [InlineData(false, "primary")]
+    [InlineData(true, "middle")]
+    [InlineData(false, "middle")]
+    [InlineData(true, "secondary")]
+    [InlineData(false, "secondary")]
+    [InlineData(true, "control")]
+    [InlineData(false, "control")]
+    [InlineData(true, "meta")]
+    [InlineData(false, "meta")]
+    [InlineData(true, "shift")]
+    [InlineData(false, "shift")]
+    [InlineData(true, "alt")]
+    [InlineData(false, "alt")]
+    public void AccountJumpPreservesNativeModifiedActivation(
+        bool accountA,
+        string activation
+    )
+    {
+        List<IAction> actions = [];
+        IInletStore store = RegisterStore(actions);
+        using IRenderedComponent<OperationsPage> cut = Render<OperationsPage>();
+        actions.Clear();
+        Assert.Empty(JSInterop.Invocations);
+        string panelId = accountA ? "account-a-operations-panel" : "account-b-operations-panel";
+        string expectedUri = "http://localhost/operations?a=selected-a&b=selected-b#" + panelId;
+        IElement jump = cut.Find($".spring-account-jumps a[href$='#{panelId}']");
+        Assert.Equal(expectedUri, jump.GetAttribute("href"));
+        string? panelReference = cut.Find("#" + panelId).GetAttribute("blazor:elementReference");
+        Assert.False(string.IsNullOrWhiteSpace(panelReference), cut.Find("#" + panelId).OuterHtml);
+        MouseEventArgs eventArgs = activation switch
+        {
+            "primary" => new(),
+            "middle" => new()
+            {
+                Button = 1,
+            },
+            "secondary" => new()
+            {
+                Button = 2,
+            },
+            "control" => new()
+            {
+                CtrlKey = true,
+            },
+            "meta" => new()
+            {
+                MetaKey = true,
+            },
+            "shift" => new()
+            {
+                ShiftKey = true,
+            },
+            "alt" => new()
+            {
+                AltKey = true,
+            },
+            var _ => throw new ArgumentOutOfRangeException(nameof(activation)),
+        };
+        jump.TriggerEvent("onclick", eventArgs);
+        if (activation == "primary")
+        {
+            ElementReference focused = Assert.IsType<ElementReference>(JSInterop.VerifyFocusAsyncInvoke().Arguments[0]);
+            Assert.Equal(panelReference, focused.Id);
+        }
+        else
+        {
+            Assert.Empty(JSInterop.Invocations);
+        }
+
+        Assert.Empty(actions);
+        Assert.Equal("selected-a", store.GetState<DualEntitySelectionState>().AccountAId);
+        Assert.Equal("selected-b", store.GetState<DualEntitySelectionState>().AccountBId);
+        Assert.Equal(expectedUri, jump.GetAttribute("href"));
     }
 
     /// <summary>
