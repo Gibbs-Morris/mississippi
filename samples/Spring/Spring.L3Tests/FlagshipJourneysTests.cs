@@ -370,6 +370,13 @@ public sealed class FlagshipJourneysTests
         };
         try
         {
+            await page.Context.Tracing.StartAsync(
+                new()
+                {
+                    Screenshots = true,
+                    Snapshots = true,
+                    Sources = true,
+                });
             OperationsPage operations = await BankAccountScenario.PrepareAsync(Fixture, page, ProjectionTimeout);
             await operations.WaitForBalanceValueAsync("500.00", ProjectionTimeout);
             await operations.WaitForBalanceValueAsync("500.00", ProjectionTimeout, "B");
@@ -499,10 +506,24 @@ public sealed class FlagshipJourneysTests
             Assert.Equal(444, acceptedBankingRequests);
             await SpringScreenshotEvidence.SaveAsync(page, "all-bursts-retained-ledger");
         }
-        finally
+        catch (Exception testException)
         {
-            await page.CloseAsync();
+            try
+            {
+                await SpringBrowserFixture.SaveBrowserArtifactsAsync(page, "all-bursts");
+            }
+            catch (Exception artifactException)
+            {
+                throw new AggregateException(
+                    "Command burst journey and artifact capture both failed.",
+                    testException,
+                    artifactException);
+            }
+
+            throw;
         }
+
+        await SpringBrowserFixture.SaveBrowserArtifactsAsync(page, "all-bursts");
     }
 
     /// <summary>A delayed allowed HTTP read cannot replace a newer persona's real denial.</summary>

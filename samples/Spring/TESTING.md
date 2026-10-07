@@ -58,6 +58,7 @@ Its flagship subdirectory contains named PNGs and per-image route, viewport, the
 FlagshipRouteEvidenceTests taps all five task links at 1440×900, 390×844 and 320×740, checking the active task, heading focus and page containment.
 FlagshipJourneysTests retains the existing outcome assertions and captures first-run, shared-pair, account switching, bursts, stale-read denial, investigation, persona, compensation and lost-reply states.
 The existing banking tests retain their additional setup, transfer and theme screenshots. The startup-failure journey also captures disconnected and connected states at phone and desktop sizes.
+The full command-burst journey also saves all-bursts.png and all-bursts.zip on success or failure, including account setup, network responses and console records. Its balance, request-count and retained-ledger assertions are unchanged; capture errors preserve the original test failure.
 These images are observed browser states, not pixel-comparison baselines or replacements for assertions.
 The C# capture helper does not run axe or certify accessibility; semantic, touch, focus and keyboard checks remain explicit test assertions.
 
