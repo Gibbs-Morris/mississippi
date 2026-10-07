@@ -157,13 +157,27 @@ function Get-TrustedSonarAnalysisArguments {
 
 Export-ModuleMember -Function Assert-TrustedSonarControllerOrigin, Get-TrustedSonarSource, Assert-TrustedSonarSourceUnchanged, Get-TrustedSonarAnalysisArguments
 
+function Assert-SonarDeploymentBranchType {
+    param($Branch,[string]$Repository,[string]$DefaultBranch)
+    $type=$Branch.PSObject.Properties['type']
+    if($null -eq $type -or $null -eq $type.Value){
+        $id=$Branch.PSObject.Properties['id']
+        if($null -eq $id -or ($id.Value -isnot [int] -and $id.Value -isnot [long]) -or $id.Value -le 0){throw 'Sonar environment policy lacks a valid policy ID.'}
+        $detail=Read-SonarGitHubMetadata -Path "repos/$Repository/environments/sonar-analysis/deployment-branch-policies/$($id.Value)"
+        if($detail.id -ne $id.Value -or $detail.name -cne $DefaultBranch){throw 'Sonar environment policy detail does not match its list entry.'}
+        $type=$detail.PSObject.Properties['type']
+    }
+    if($null -eq $type -or $type.Value -cne 'branch'){throw 'Sonar environment policy must prove the exact default branch, not a tag.'}
+}
+
 function Assert-SonarCredentialDeployment {
     param([string]$Repository,[string]$DefaultBranch)
     $environment = Read-SonarGitHubMetadata -Path "repos/$Repository/environments/sonar-analysis"
     $policy = $environment.deployment_branch_policy
     if ($null -eq $policy -or $policy.protected_branches -ne $false -or $policy.custom_branch_policies -ne $true) { throw 'Sonar credentials require an exact default-branch environment policy.' }
     $branches = Read-SonarGitHubMetadata -Path "repos/$Repository/environments/sonar-analysis/deployment-branch-policies?per_page=100"
-    if ($branches.total_count -ne 1 -or @($branches.branch_policies).Count -ne 1 -or $branches.branch_policies[0].name -cne $DefaultBranch -or $branches.branch_policies[0].type -cne 'branch') { throw 'Sonar environment must permit only the exact default branch.' }
+    if ($branches.total_count -ne 1 -or @($branches.branch_policies).Count -ne 1 -or $branches.branch_policies[0].name -cne $DefaultBranch) { throw 'Sonar environment must permit only the exact default branch.' }
+    Assert-SonarDeploymentBranchType -Branch $branches.branch_policies[0] -Repository $Repository -DefaultBranch $DefaultBranch
 }
 
 Export-ModuleMember -Function Assert-SonarCredentialDeployment

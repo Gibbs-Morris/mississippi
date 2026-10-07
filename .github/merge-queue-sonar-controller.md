@@ -15,7 +15,7 @@ Fork source runs are rejected; this layer does not grant fork workflows credenti
 
 ## Credential boundary
 
-`intake` has no environment. It rejects any globally visible `SONAR_TOKEN` or `SONAR_ANALYSIS_TOKEN`. The analysis job requests only `SONAR_ANALYSIS_TOKEN` from `sonar-analysis`, and validates exactly one deployment policy: branch `main` (the actual default branch), with no tags or wildcard policies. A reviewer-only environment is insufficient because candidate workflow code must never receive this credential.
+`intake` has no environment. It rejects any globally visible `SONAR_TOKEN` or `SONAR_ANALYSIS_TOKEN`. The analysis job requests only `SONAR_ANALYSIS_TOKEN` from `sonar-analysis`, and validates exactly one deployment policy: branch `main` (the actual default branch), with no tags or wildcard policies. A reviewer-only environment is insufficient because candidate workflow code must never receive this credential. If the policy list omits its branch/tag type, intake queries that exact policy ID and requires matching name/ID plus explicit branch type. Missing or inconsistent detail fails closed.
 
 Pinned tools and the controller driver come from trusted inputs. Prepare installs scanner 11.3.0, coverage 18.11.0, GitVersion 6.5.1 and Pester 5.7.1 into separate tooling. The SDK image is pinned by digest.
 
