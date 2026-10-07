@@ -128,8 +128,25 @@ function Resolve-MergeGroupIssueMembers {
 function Assert-MergeGroupIssueMembersUnchanged {
     param([Parameter(Mandatory)][object]$Before, [Parameter(Mandatory)][object]$After)
 
-    if (($Before | ConvertTo-Json -Depth 15 -Compress) -cne ($After | ConvertTo-Json -Depth 15 -Compress)) {
-        throw 'Merge-group membership or PR metadata changed during validation.'
+    $beforeMembers = @($Before.PullRequests)
+    $afterMembers = @($After.PullRequests)
+    $removed = $beforeMembers.Count - $afterMembers.Count
+    $failure = 'Merge-group membership or PR metadata changed during validation.'
+    if ($Before.QueueId -cne $After.QueueId -or $Before.CandidateSha -cne $After.CandidateSha -or $afterMembers.Count -eq 0 -or $removed -lt 0) { throw $failure }
+
+    $expectedTarget = $Before.TargetSha
+    if ($removed -gt 0) { $expectedTarget = $beforeMembers[$removed - 1].candidate_sha }
+    if ($expectedTarget -cne $After.TargetSha) { throw $failure }
+
+    # Only an already-validated contiguous prefix may land while this candidate remains live.
+    $fields = @('number', 'body', 'head_sha', 'entry_id', 'base_sha', 'candidate_sha')
+    for ($index = 0; $index -lt $afterMembers.Count; $index++) {
+        $expected = $beforeMembers[$index + $removed]
+        $actual = $afterMembers[$index]
+        if ($actual.position -ne ($expected.position - $removed)) { throw $failure }
+        $expectedMetadata = $expected | Select-Object -Property $fields | ConvertTo-Json -Compress
+        $actualMetadata = $actual | Select-Object -Property $fields | ConvertTo-Json -Compress
+        if ($expectedMetadata -cne $actualMetadata) { throw $failure }
     }
 }
 

@@ -162,13 +162,66 @@ Describe 'Exact merge-group issue membership' {
         $before = Invoke-Resolver
         Assert-MergeGroupIssueMembersUnchanged -Before $before -After (Invoke-Resolver)
     }
+    It 'accepts a landed predecessor without revalidating changed candidate contents' {
+        $before = Invoke-Resolver
+        $script:repositoryData.ref.target.oid = $first
+        $script:repositoryData.mergeQueue.entries.nodes = @(New-Entry 1 102 $first $candidate)
+        $script:repositoryData.mergeQueue.entries.totalCount = 1
+        Assert-MergeGroupIssueMembersUnchanged -Before $before -After (Invoke-Resolver)
+    }
+    It 'accepts multiple landed predecessors as one contiguous prefix' {
+        $second = 'e' * 40
+        $script:repositoryData.mergeQueue.entries.nodes = @((New-Entry 1 101 $target $first), (New-Entry 2 102 $first $second), (New-Entry 3 103 $second $candidate))
+        $script:repositoryData.mergeQueue.entries.totalCount = 3
+        $group.base_sha = $second
+        $before = Invoke-Resolver
+        $script:repositoryData.ref.target.oid = $second
+        $script:repositoryData.mergeQueue.entries.nodes = @(New-Entry 1 103 $second $candidate)
+        $script:repositoryData.mergeQueue.entries.totalCount = 1
+        Assert-MergeGroupIssueMembersUnchanged -Before $before -After (Invoke-Resolver)
+    }
+    It 'accepts landed predecessors with zero-based positions' {
+        $script:repositoryData.mergeQueue.entries.nodes[0].position = 0
+        $script:repositoryData.mergeQueue.entries.nodes[1].position = 1
+        $before = Invoke-Resolver
+        $script:repositoryData.ref.target.oid = $first
+        $script:repositoryData.mergeQueue.entries.nodes = @(New-Entry 0 102 $first $candidate)
+        $script:repositoryData.mergeQueue.entries.totalCount = 1
+        Assert-MergeGroupIssueMembersUnchanged -Before $before -After (Invoke-Resolver)
+    }
+    It 'rejects changed <Field> alongside legitimate target advancement' -TestCases @(
+        @{Field='body'}, @{Field='source head'}, @{Field='target'}, @{Field='queue'}, @{Field='candidate'},
+        @{Field='entry'}, @{Field='number'}, @{Field='base'}, @{Field='member candidate'}, @{Field='position'}, @{Field='empty'}, @{Field='addition'}
+    ) {
+        param($Field)
+        $before = Invoke-Resolver
+        $script:repositoryData.ref.target.oid = $first
+        $script:repositoryData.mergeQueue.entries.nodes = @(New-Entry 1 102 $first $candidate)
+        $script:repositoryData.mergeQueue.entries.totalCount = 1
+        $after = Invoke-Resolver
+        switch ($Field) {
+            'body' { $after.PullRequests[0].body = 'No reference.' }
+            'source head' { $after.PullRequests[0].head_sha = 'e' * 40 }
+            'target' { $after.TargetSha = 'f' * 40 }
+            'queue' { $after.QueueId = 'queue-2' }
+            'candidate' { $after.CandidateSha = 'f' * 40 }
+            'entry' { $after.PullRequests[0].entry_id = 'replacement-entry' }
+            'number' { $after.PullRequests[0].number = 999 }
+            'base' { $after.PullRequests[0].base_sha = 'f' * 40 }
+            'member candidate' { $after.PullRequests[0].candidate_sha = 'f' * 40 }
+            'position' { $after.PullRequests[0].position = 2 }
+            'empty' { $after.PullRequests = @() }
+            'addition' { $after.PullRequests = @($before.PullRequests) + @($after.PullRequests) }
+        }
+        { Assert-MergeGroupIssueMembersUnchanged -Before $before -After $after } | Should -Throw '*changed during validation*'
+    }
     It 'rejects changed <Field> after body validation' -TestCases @(@{Field='body'}, @{Field='source head'}, @{Field='target'}, @{Field='queue'}) {
         param($Field)
         $before = Invoke-Resolver
         switch ($Field) {
             'body' { $script:repositoryData.mergeQueue.entries.nodes[0].pullRequest.body = 'No reference.' }
             'source head' { $script:repositoryData.mergeQueue.entries.nodes[0].pullRequest.headRefOid = 'e' * 40 }
-            'target' { $script:repositoryData.ref.target.oid = $first; $script:repositoryData.mergeQueue.entries.nodes = @(New-Entry 1 102 $first $candidate); $script:repositoryData.mergeQueue.entries.totalCount = 1 }
+            'target' { $script:repositoryData.ref.target.oid = 'f' * 40; $script:repositoryData.mergeQueue.entries.nodes[0].baseCommit.oid = 'f' * 40 }
             'queue' { $script:repositoryData.mergeQueue.id = 'queue-2' }
         }
         { Assert-MergeGroupIssueMembersUnchanged -Before $before -After (Invoke-Resolver) } | Should -Throw '*changed during validation*'
