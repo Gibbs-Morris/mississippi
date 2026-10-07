@@ -2,6 +2,9 @@ name: ReSharper Cleanup Check
 
 on:
   workflow_dispatch:
+  merge_group:
+    types: [checks_requested]
+    branches: [main]
   pull_request:
     branches:
       - main
@@ -29,6 +32,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          ref: ${{ github.sha }}
+          persist-credentials: false
 
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -134,23 +139,47 @@ jobs:
             '--LogLevel=TRACE'
           )
 
-          # Gate only PR-changed files, even when formatting settings change, to avoid
-          # unrelated cleanup churn. Manual runs provide full-solution cleanup checks.
-          if ($env:GITHUB_EVENT_NAME -eq 'pull_request') {
+          # PRs keep their head-only scope; queue candidates include every queued change.
+          # Manual runs provide full-solution cleanup checks.
+          $targetedCleanup = $env:GITHUB_EVENT_NAME -in @('pull_request', 'merge_group')
+          if ($targetedCleanup) {
             $eventPayload = Get-Content -LiteralPath $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
-            $baseSha = $eventPayload.pull_request.base.sha
-            $headSha = $eventPayload.pull_request.head.sha
-            if ([string]::IsNullOrWhiteSpace($baseSha) -or [string]::IsNullOrWhiteSpace($headSha)) {
-              throw 'Pull request base and head SHAs are required for targeted cleanup.'
+            if ($env:GITHUB_EVENT_NAME -eq 'merge_group') {
+              $baseSha = $eventPayload.merge_group.base_sha
+              $headSha = $eventPayload.merge_group.head_sha
+              if ($baseSha -notmatch '^[0-9a-fA-F]{40}$' -or $headSha -notmatch '^[0-9a-fA-F]{40}$') {
+                throw 'Merge-group base and head commit SHAs are required for targeted cleanup.'
+              }
+
+              $checkoutSha = git rev-parse --verify HEAD
+              if ($LASTEXITCODE -ne 0 -or $checkoutSha -ne $headSha -or $env:GITHUB_SHA -ne $headSha) {
+                throw 'Cleanup checkout and GitHub event SHA must match the merge-group candidate.'
+              }
+
+              git merge-base --is-ancestor $baseSha $headSha
+              if ($LASTEXITCODE -ne 0) {
+                throw 'Merge-group base must be an available ancestor of the candidate.'
+              }
+
+              $diffRange = "${baseSha}..${headSha}"
+            }
+            else {
+              $baseSha = $eventPayload.pull_request.base.sha
+              $headSha = $eventPayload.pull_request.head.sha
+              if ([string]::IsNullOrWhiteSpace($baseSha) -or [string]::IsNullOrWhiteSpace($headSha)) {
+                throw 'Pull request base and head SHAs are required for targeted cleanup.'
+              }
+
+              # Compare the PR head, not the synthetic merge commit checked out by Actions.
+              $diffRange = "${baseSha}...${headSha}"
             }
 
-            # Compare the PR head, not the synthetic merge commit checked out by Actions.
             $gitStartInfo = [System.Diagnostics.ProcessStartInfo]::new('git')
             $gitStartInfo.WorkingDirectory = $env:GITHUB_WORKSPACE
             $gitStartInfo.UseShellExecute = $false
             $gitStartInfo.RedirectStandardOutput = $true
             $gitStartInfo.StandardOutputEncoding = [System.Text.Encoding]::UTF8
-            foreach ($argument in @('diff', '--name-only', '--diff-filter=ACMRT', '--find-renames', '-z', "${baseSha}...${headSha}", '--')) {
+            foreach ($argument in @('diff', '--name-only', '--diff-filter=ACMRT', '--find-renames', '-z', $diffRange, '--')) {
               $gitStartInfo.ArgumentList.Add($argument)
             }
 
@@ -159,7 +188,7 @@ jobs:
               $changedPathsOutput = $gitProcess.StandardOutput.ReadToEnd()
               $gitProcess.WaitForExit()
               if ($gitProcess.ExitCode -ne 0) {
-                throw "Failed to determine pull request files (git exit code $($gitProcess.ExitCode))."
+                throw "Failed to determine changed files (git exit code $($gitProcess.ExitCode))."
               }
             }
             finally {
@@ -170,7 +199,7 @@ jobs:
             $includePaths = @(
               foreach ($path in $changedPathsOutput.Split([char]0, [System.StringSplitOptions]::RemoveEmptyEntries)) {
                 if ($path -match '[*?;\\]') {
-                  throw "Pull request path cannot be represented as an exact CleanupCode include: $path"
+                  throw "Changed path cannot be represented as an exact CleanupCode include: $path"
                 }
 
                 if (([System.IO.Path]::GetExtension($path).ToLowerInvariant() -in $cleanupExtensions) -and
@@ -181,17 +210,18 @@ jobs:
             )
 
             if ($includePaths.Count -eq 0) {
-              Write-Host 'No existing changed files in this pull request. Skipping ReSharper cleanup.'
+              Write-Host 'No existing changed files applicable to cleanup. Skipping ReSharper cleanup.'
               exit 0
             }
 
             $cleanupArguments += "--include=$($includePaths -join ';')"
-            Write-Host "Restricting cleanup to $($includePaths.Count) changed pull request file(s)."
+            Write-Host "Restricting cleanup to $($includePaths.Count) changed file(s) for $env:GITHUB_EVENT_NAME."
           }
 
           Write-Host "Running ReSharper Cleanup Code on $slnPath ..."
           $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
           dotnet @cleanupArguments
+          $cleanupExitCode = $LASTEXITCODE
           $stopwatch.Stop()
           $elapsed = $stopwatch.Elapsed
           Write-Host ""
@@ -203,10 +233,14 @@ jobs:
           Write-Host "Minutes:  $([math]::Round($elapsed.TotalMinutes, 2))"
           Write-Host "========================================" -ForegroundColor Cyan
           Write-Host ""
-          # CleanupCode returns 3 when no files match, including documentation-only PRs.
-          if ($env:GITHUB_EVENT_NAME -eq 'pull_request' -and $LASTEXITCODE -eq 3) {
+          # CleanupCode returns 3 when no included files match the selected solution.
+          if ($targetedCleanup -and $cleanupExitCode -eq 3) {
             Write-Host 'No changed files matched this solution for cleanup.'
             exit 0
+          }
+
+          if ($cleanupExitCode -ne 0) {
+            exit $cleanupExitCode
           }
 
           Write-Host "Cleanup completed."
