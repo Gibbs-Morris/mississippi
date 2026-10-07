@@ -31,6 +31,8 @@ namespace MississippiSamples.Spring.Client.Pages;
 /// </summary>
 public sealed partial class OperationsPage
 {
+    private readonly string connectionDetailsId = $"spring-connection-details-{Guid.NewGuid():N}";
+
     private readonly AccountPanelState panelA = new();
 
     private readonly AccountPanelState panelB = new();

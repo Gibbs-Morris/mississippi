@@ -8,10 +8,11 @@
                            Subtitle="Start with a demo pair, then watch what happens when money moves."
                            TipText="Use Full Access when local authentication is enabled. Test other personas in Test access."
                            ConnectionStatusText="@ConnectionStatus.ToString()"
+                           ConnectionDetailsId="@connectionDetailsId"
                            IsConnectionDetailsOpen="@isConnectionDetailsOpen"
                            OnNavigateInvestigations="@NavigateToInvestigations"
                            OnToggleConnectionDetails="@ToggleConnectionDetails"/>
-    <ConnectionDetails IsOpen="@isConnectionDetailsOpen" ConnectionStatusText="@ConnectionStatus.ToString()"
+    <ConnectionDetails Id="@connectionDetailsId" IsOpen="@isConnectionDetailsOpen" ConnectionStatusText="@ConnectionStatus.ToString()"
                        ConnectionIdText="@ConnectionIdDisplay" ReconnectAttemptCount="@ReconnectAttemptCount"
                        LastConnectedAtText="@LastConnectedAtDisplay" LastDisconnectedAtText="@LastDisconnectedAtDisplay"
                        LastMessageReceivedAtText="@LastMessageReceivedAtDisplay" LastError="@LastError" OnClose="@CloseConnectionDetails"/>

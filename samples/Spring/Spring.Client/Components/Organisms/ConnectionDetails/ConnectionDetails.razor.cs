@@ -1,3 +1,5 @@
+using System;
+
 using Microsoft.AspNetCore.Components;
 
 
@@ -15,6 +17,10 @@ public sealed partial class ConnectionDetails
     /// <summary>Gets or sets the connection status display text.</summary>
     [Parameter]
     public string ConnectionStatusText { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the disclosure DOM ID. Its default is unique to this component instance.</summary>
+    [Parameter]
+    public string Id { get; set; } = $"spring-connection-details-{Guid.NewGuid():N}";
 
     /// <summary>Gets or sets a value indicating whether the connection information is visible.</summary>
     [Parameter]

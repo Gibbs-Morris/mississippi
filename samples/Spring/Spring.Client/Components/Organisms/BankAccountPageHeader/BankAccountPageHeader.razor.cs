@@ -19,6 +19,10 @@ public sealed partial class BankAccountPageHeader
     [Parameter]
     public Uri ApiDocsUrl { get; set; } = new("/scalar/v1", UriKind.Relative);
 
+    /// <summary>Gets or sets the DOM ID of the paired connection disclosure.</summary>
+    [Parameter]
+    public string? ConnectionDetailsId { get; set; }
+
     /// <summary>Gets or sets the connection status text.</summary>
     [Parameter]
     public string ConnectionStatusText { get; set; } = string.Empty;

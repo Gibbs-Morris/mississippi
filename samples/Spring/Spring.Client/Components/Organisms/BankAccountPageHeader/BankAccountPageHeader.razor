@@ -6,7 +6,7 @@
         <h1>@Title</h1>
     </div>
     <button type="button" aria-label="@($"Connection status: {ConnectionStatusText}")" aria-expanded="@(IsConnectionDetailsOpen ? "true" : "false")"
-            aria-controls="@(IsConnectionDetailsOpen ? "spring-connection-details" : null)" @ref="connectionButton" @onclick="OnToggleConnectionDetails">
+            aria-controls="@(IsConnectionDetailsOpen ? ConnectionDetailsId : null)" @ref="connectionButton" @onclick="OnToggleConnectionDetails">
         <span class="spring-connection-dot" data-connected="@(ConnectionStatusText == "Connected" ? "true" : "false")" aria-hidden="true"></span>
         @ConnectionStatusText
     </button>

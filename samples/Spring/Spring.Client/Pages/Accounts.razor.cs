@@ -20,6 +20,8 @@ namespace MississippiSamples.Spring.Client.Pages;
 /// </summary>
 public sealed partial class Accounts
 {
+    private readonly string connectionDetailsId = $"spring-connection-details-{Guid.NewGuid():N}";
+
     private string accountAIdInput = string.Empty;
 
     private string accountBIdInput = string.Empty;

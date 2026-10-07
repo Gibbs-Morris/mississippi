@@ -9,10 +9,11 @@
                            Subtitle="Start with a £25 deposit. Verify the increase in the live balance and the new ledger entry."
                            TipText=""
                            ConnectionStatusText="@ConnectionStatus.ToString()"
+                           ConnectionDetailsId="@connectionDetailsId"
                            IsConnectionDetailsOpen="@isConnectionDetailsOpen"
                            OnNavigateInvestigations="@NavigateToInvestigations"
                            OnToggleConnectionDetails="@ToggleConnectionDetails"/>
-    <ConnectionDetails IsOpen="@isConnectionDetailsOpen"
+    <ConnectionDetails Id="@connectionDetailsId" IsOpen="@isConnectionDetailsOpen"
                        ConnectionStatusText="@ConnectionStatus.ToString()"
                        ConnectionIdText="@ConnectionIdDisplay"
                        ReconnectAttemptCount="@ReconnectAttemptCount"

@@ -46,6 +46,27 @@ public sealed class ConnectionDetailsTests : BunitContext
         Assert.DoesNotContain("A retained failure.", cut.Markup, StringComparison.Ordinal);
     }
 
+    /// <summary>Verify that default disclosure IDs remain unique and stable across closing and reopening.</summary>
+    [Fact]
+    public void DefaultIdsAreUniqueAndStableAcrossDisclosureRenders()
+    {
+        using IRenderedComponent<ConnectionDetails> first = Render<ConnectionDetails>(parameters =>
+            parameters.Add(component => component.IsOpen, true));
+        using IRenderedComponent<ConnectionDetails> second = Render<ConnectionDetails>(parameters =>
+            parameters.Add(component => component.IsOpen, true));
+        string? firstId = first.Find("section").GetAttribute("id");
+        string? secondId = second.Find("section").GetAttribute("id");
+        Assert.False(string.IsNullOrWhiteSpace(firstId));
+        Assert.False(string.IsNullOrWhiteSpace(secondId));
+        Assert.NotEqual(firstId, secondId);
+        first.Render(parameters => parameters.Add(component => component.IsOpen, false));
+        Assert.Empty(first.FindAll("section"));
+        first.Render(parameters => parameters.Add(component => component.IsOpen, true));
+        Assert.Equal(firstId, first.Find("section").GetAttribute("id"));
+        second.Render(parameters => parameters.Add(component => component.ConnectionStatusText, "Reconnecting"));
+        Assert.Equal(secondId, second.Find("section").GetAttribute("id"));
+    }
+
     /// <summary>
     ///     Expanded details retain each supplied diagnostic and encode the raw error.
     /// </summary>
