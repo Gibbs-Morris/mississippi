@@ -17,9 +17,7 @@ namespace MississippiSamples.Spring.Client.Features;
 /// </summary>
 internal static class ProjectionsFeatureRegistration
 {
-    /// <summary>
-    ///     Adds projection reducers for all known projection DTOs.
-    /// </summary>
+    /// <summary>Add projection reducers for all known projection DTOs.</summary>
     /// <param name="builder">The Reservoir builder.</param>
     /// <returns>The builder for chaining.</returns>
     public static IReservoirBuilder AddProjectionsFeature(

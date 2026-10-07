@@ -28,9 +28,7 @@ public sealed class InvestigationsQueueStatesTests
 
     private SpringBrowserFixture Fixture { get; }
 
-    /// <summary>
-    ///     A controlled HTTP failure cannot appear as an empty queue or a successful cached read.
-    /// </summary>
+    /// <summary>Verify that a controlled HTTP failure cannot appear as an empty queue or a successful cached read.</summary>
     /// <param name="viewportWidth">The phone or desktop width.</param>
     /// <param name="loadCachedData">Whether to observe a real high-value deposit before failing the next read.</param>
     /// <returns>The asynchronous real-browser state regression.</returns>

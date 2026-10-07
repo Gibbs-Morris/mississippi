@@ -12,7 +12,7 @@ namespace MississippiSamples.Spring.Client.L0Tests.Components.Organisms;
 /// </summary>
 public sealed class BankAccountPageHeaderTests : BunitContext
 {
-    /// <summary>Closed details do not expose a dangling ARIA reference.</summary>
+    /// <summary>Verify that closed details do not expose a dangling ARIA reference.</summary>
     [Fact]
     public void ClosedConnectionDetailsHaveNoControlsReference()
     {
@@ -22,9 +22,7 @@ public sealed class BankAccountPageHeaderTests : BunitContext
         Assert.False(cut.Find("header button").HasAttribute("aria-controls"));
     }
 
-    /// <summary>
-    ///     Closing details returns focus to its trigger once; opening and stable renders do not steal focus.
-    /// </summary>
+    /// <summary>Verify that closing details returns focus to its trigger once; opening and stable renders do not steal focus.</summary>
     /// <param name="initiallyOpen">Whether details are already open at the initial render.</param>
     [Theory]
     [InlineData(false)]
@@ -54,9 +52,7 @@ public sealed class BankAccountPageHeaderTests : BunitContext
             Assert.IsType<ElementReference>(JSInterop.VerifyFocusAsyncInvoke().Arguments[0]).Id);
     }
 
-    /// <summary>
-    ///     Header renders the connection status text and invokes callbacks.
-    /// </summary>
+    /// <summary>Verify that header renders the connection status text and invokes callbacks.</summary>
     [Fact]
     public void HeaderRendersStatusAndInvokesCallbacks()
     {

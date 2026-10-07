@@ -98,9 +98,7 @@ public sealed class AccountProjectionReadStatesTests : BunitContext
                 component => component.LedgerError,
                 state.GetProjectionError<BankAccountLedgerProjectionDto>(EntityId)?.Message));
 
-    /// <summary>
-    ///     A failed cold or cached balance read cannot display a waiting state or an unqualified live value.
-    /// </summary>
+    /// <summary>Verify that a failed cold or cached balance read cannot display a waiting state or an unqualified live value.</summary>
     /// <param name="cached">Whether a prior successful balance is retained.</param>
     [Theory]
     [InlineData(false)]
@@ -132,9 +130,7 @@ public sealed class AccountProjectionReadStatesTests : BunitContext
         AssertRetained<BankAccountBalanceProjectionDto>(prior, failed, error);
     }
 
-    /// <summary>
-    ///     A ledger error cannot also claim loading, missing, empty or successfully read transactions.
-    /// </summary>
+    /// <summary>Verify that a ledger error cannot also claim loading, missing, empty or successfully read transactions.</summary>
     /// <param name="cachedEntries">Minus one for missing data, zero for empty, or one for a prior transaction.</param>
     [Theory]
     [InlineData(-1)]
@@ -165,9 +161,7 @@ public sealed class AccountProjectionReadStatesTests : BunitContext
         AssertRetained<BankAccountLedgerProjectionDto>(prior, failed, error);
     }
 
-    /// <summary>
-    ///     A status-read failure does not establish a pending or final saga outcome, even with retained data.
-    /// </summary>
+    /// <summary>Verify that a status-read failure does not establish a pending or final saga outcome, even with retained data.</summary>
     /// <param name="cachedPhase">The prior observed phase, or null before any status has arrived.</param>
     [Theory]
     [InlineData(null)]
@@ -216,9 +210,7 @@ public sealed class AccountProjectionReadStatesTests : BunitContext
         AssertRetained<MoneyTransferStatusProjectionDto>(prior, failed, error, SagaId);
     }
 
-    /// <summary>
-    ///     Healthy balances retain the holder, value, account status and real projection version.
-    /// </summary>
+    /// <summary>Verify that healthy balances retain the holder, value, account status and real projection version.</summary>
     [Fact]
     public void LoadedBalanceShowsObservedValueAndVersion()
     {
@@ -232,9 +224,7 @@ public sealed class AccountProjectionReadStatesTests : BunitContext
         Assert.Empty(balance.QuerySelectorAll("[role='alert']"));
     }
 
-    /// <summary>
-    ///     A successful empty ledger has no transaction rows and is distinct from an unavailable read.
-    /// </summary>
+    /// <summary>Verify that a successful empty ledger has no transaction rows and is distinct from an unavailable read.</summary>
     [Fact]
     public void LoadedEmptyLedgerShowsNoTransactions()
     {
@@ -244,9 +234,7 @@ public sealed class AccountProjectionReadStatesTests : BunitContext
         Assert.Empty(ledger.QuerySelectorAll("[role='alert'], [role='status'], table"));
     }
 
-    /// <summary>
-    ///     Successful ledger reads retain real sequence, amount, entry type and accessible column headers.
-    /// </summary>
+    /// <summary>Verify that successful ledger reads retain real sequence, amount, entry type and accessible column headers.</summary>
     [Fact]
     public void LoadedLedgerShowsObservedRowsAndVersion()
     {
@@ -261,9 +249,7 @@ public sealed class AccountProjectionReadStatesTests : BunitContext
         Assert.Empty(ledger.QuerySelectorAll("[role='alert'], [role='status']"));
     }
 
-    /// <summary>
-    ///     Loading is explicit even when the prior balance is retained in state.
-    /// </summary>
+    /// <summary>Verify that loading is explicit even when the prior balance is retained in state.</summary>
     /// <param name="cached">Whether a prior successful balance is retained.</param>
     [Theory]
     [InlineData(false)]
@@ -284,9 +270,7 @@ public sealed class AccountProjectionReadStatesTests : BunitContext
         Assert.Same(projection, state.GetProjection<BankAccountBalanceProjectionDto>(EntityId));
     }
 
-    /// <summary>
-    ///     A loading ledger is distinct from missing, empty and cached transaction rows.
-    /// </summary>
+    /// <summary>Verify that a loading ledger is distinct from missing, empty and cached transaction rows.</summary>
     /// <param name="cachedEntries">Minus one for missing data, zero for empty, or one for retained rows.</param>
     [Theory]
     [InlineData(-1)]
@@ -309,9 +293,7 @@ public sealed class AccountProjectionReadStatesTests : BunitContext
         Assert.Same(projection, state.GetProjection<BankAccountLedgerProjectionDto>(EntityId));
     }
 
-    /// <summary>
-    ///     Missing ledger data remains unavailable rather than empty or failed.
-    /// </summary>
+    /// <summary>Verify that missing ledger data remains unavailable rather than empty or failed.</summary>
     [Fact]
     public void MissingLedgerShowsNoData()
     {

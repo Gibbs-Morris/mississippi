@@ -66,9 +66,7 @@ public sealed class DemoAccountsSectionTests : BunitContext
             StringComparison.Ordinal);
     }
 
-    /// <summary>
-    ///     The initialized shortcut retains the supplied encoded pair and is unavailable before initialization.
-    /// </summary>
+    /// <summary>Verify that the initialized shortcut retains the supplied encoded pair and is unavailable before initialization.</summary>
     [Fact]
     public void InitializedShortcutPreservesBothEncodedAccountIds()
     {

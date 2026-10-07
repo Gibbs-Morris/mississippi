@@ -14,9 +14,7 @@ namespace MississippiSamples.Spring.Client.L0Tests.Components.Organisms;
 /// </summary>
 public sealed class ConnectionDetailsTests : BunitContext
 {
-    /// <summary>
-    ///     Close button invokes callback.
-    /// </summary>
+    /// <summary>Verify that close button invokes callback.</summary>
     [Fact]
     public void CloseButtonInvokesCallback()
     {
@@ -29,9 +27,7 @@ public sealed class ConnectionDetailsTests : BunitContext
         Assert.True(closed);
     }
 
-    /// <summary>
-    ///     Closing the disclosure removes its retained diagnostics and close control.
-    /// </summary>
+    /// <summary>Verify that closing the disclosure removes its retained diagnostics and close control.</summary>
     [Fact]
     public void ClosedDetailsHideRetainedDiagnostics()
     {
@@ -67,9 +63,7 @@ public sealed class ConnectionDetailsTests : BunitContext
         Assert.Equal(secondId, second.Find("section").GetAttribute("id"));
     }
 
-    /// <summary>
-    ///     Expanded details retain each supplied diagnostic and encode the raw error.
-    /// </summary>
+    /// <summary>Verify that expanded details retain each supplied diagnostic and encode the raw error.</summary>
     [Fact]
     public void OpenDetailsRenderActualDiagnosticsAndEscapedError()
     {
@@ -96,9 +90,7 @@ public sealed class ConnectionDetailsTests : BunitContext
         Assert.Empty(cut.FindAll("unsafe, dialog"));
     }
 
-    /// <summary>
-    ///     Missing diagnostic values use existing placeholders and do not display an invented error.
-    /// </summary>
+    /// <summary>Verify that missing diagnostic values use existing placeholders and do not display an invented error.</summary>
     [Fact]
     public void OpenDetailsWithoutErrorRetainDefaultPlaceholders()
     {

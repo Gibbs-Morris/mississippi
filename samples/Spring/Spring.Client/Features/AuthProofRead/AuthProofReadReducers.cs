@@ -6,7 +6,7 @@ namespace MississippiSamples.Spring.Client.Features.AuthProofRead;
 /// <summary>Accepts only the current protected read and invalidates observations when the persona changes.</summary>
 internal static class AuthProofReadReducers
 {
-    /// <summary>Completes only the current in-flight read, including denied and empty outcomes.</summary>
+    /// <summary>Complete only the current in-flight read, including denied and empty outcomes.</summary>
     /// <param name="state">Current read state.</param>
     /// <param name="action">The correlated outcome.</param>
     /// <returns>The current state, or its completed observation.</returns>
@@ -24,7 +24,7 @@ internal static class AuthProofReadReducers
             }
             : state;
 
-    /// <summary>Invalidates a protected observation when a new persona is chosen.</summary>
+    /// <summary>Invalidate a protected observation when a new persona is chosen.</summary>
     /// <param name="state">Current read state.</param>
     /// <param name="action">The selected profile.</param>
     /// <returns>An empty state with no prior request eligible to complete.</returns>
@@ -38,7 +38,7 @@ internal static class AuthProofReadReducers
         return new();
     }
 
-    /// <summary>Starts a protected read and clears the previous entity/persona observation.</summary>
+    /// <summary>Start a protected read and clears the previous entity/persona observation.</summary>
     /// <param name="state">Current read state.</param>
     /// <param name="action">The requested entity and immutable persona.</param>
     /// <returns>The pending read state.</returns>

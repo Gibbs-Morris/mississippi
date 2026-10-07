@@ -16,7 +16,7 @@ namespace MississippiSamples.Spring.Client.L0Tests.Components.Organisms;
 /// </summary>
 public sealed class CommandActivityTests : BunitContext
 {
-    /// <summary>Acceptance never claims that a projection has refreshed.</summary>
+    /// <summary>Verify that acceptance never claims that a projection has refreshed.</summary>
     [Fact]
     public void AcceptedResponseExplainsSeparateProjectionOutcome()
     {
@@ -37,7 +37,7 @@ public sealed class CommandActivityTests : BunitContext
         Assert.DoesNotContain("Command executed successfully", cut.Markup, StringComparison.Ordinal);
     }
 
-    /// <summary>Transport failures cannot establish that the server rejected or did not commit a command.</summary>
+    /// <summary>Verify that transport failures cannot establish that the server rejected or did not commit a command.</summary>
     /// <param name="code">The real generated failure category.</param>
     /// <param name="message">The real generated failure detail.</param>
     [Theory]
@@ -72,7 +72,7 @@ public sealed class CommandActivityTests : BunitContext
         Assert.DoesNotContain("rejected", cut.Markup, StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>Concurrent commands keep the awaiting response state visible.</summary>
+    /// <summary>Verify that concurrent commands keep the awaiting response state visible.</summary>
     [Fact]
     public void InFlightResponsesTakePrecedenceOverEarlierAcceptance()
     {
@@ -90,7 +90,7 @@ public sealed class CommandActivityTests : BunitContext
         Assert.DoesNotContain("Latest response: accepted.", cut.Markup, StringComparison.Ordinal);
     }
 
-    /// <summary>A later accepted response does not erase earlier rejections from the visible history.</summary>
+    /// <summary>Verify that a later accepted response does not erase earlier rejections from the visible history.</summary>
     [Fact]
     public void MixedHistoryRetainsRejectionsAndTheirRequestIds()
     {
@@ -116,7 +116,7 @@ public sealed class CommandActivityTests : BunitContext
         Assert.Contains("deposit-accepted", cut.Find("tbody tr:first-child").TextContent, StringComparison.Ordinal);
     }
 
-    /// <summary>Actual server rejections are exposed as actionable alerts.</summary>
+    /// <summary>Verify that actual server rejections are exposed as actionable alerts.</summary>
     [Fact]
     public void RejectedResponseExposesServerReason()
     {

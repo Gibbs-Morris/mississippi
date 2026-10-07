@@ -16,7 +16,7 @@ namespace MississippiSamples.Spring.Client.L0Tests.Features;
 /// <summary>Protects Spring's hand-written projection registration against omitted generated DTOs.</summary>
 public sealed class ProjectionsFeatureRegistrationTests
 {
-    /// <summary>Real Auth Proof actions expose loading, denied reads, observed data and its server version.</summary>
+    /// <summary>Verify that real Auth Proof actions expose loading, denied reads, observed data and its server version.</summary>
     [Fact]
     public void AuthProofProjectionActionsUpdateRegisteredStore()
     {

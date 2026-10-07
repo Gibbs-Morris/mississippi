@@ -60,7 +60,7 @@ public sealed class AuthProofReadTests
         }
     }
 
-    /// <summary>Caller cancellation after a read starts emits no timeout completion.</summary>
+    /// <summary>Verify that caller cancellation after a read starts emits no timeout completion.</summary>
     /// <returns>The asynchronous caller-cancellation check.</returns>
     [Fact]
     public async Task CallerCancellationDoesNotEmitTimeoutCompletionAsync()
@@ -87,7 +87,7 @@ public sealed class AuthProofReadTests
         Assert.Equal(request.EntityId, fetcher.EntityId);
     }
 
-    /// <summary>A profile mismatch is reported without sending a read under the wrong identity.</summary>
+    /// <summary>Verify that a profile mismatch is reported without sending a read under the wrong identity.</summary>
     /// <returns>The asynchronous persona-header check.</returns>
     [Fact]
     public async Task ChangedHttpPersonaDoesNotSendObsoleteReadAsync()
@@ -104,7 +104,7 @@ public sealed class AuthProofReadTests
         Assert.Null(result.Data);
     }
 
-    /// <summary>An actual effect's delayed allowed result cannot replace a newer persona denial.</summary>
+    /// <summary>Verify that an actual effect's delayed allowed result cannot replace a newer persona denial.</summary>
     /// <returns>The asynchronous out-of-order regression.</returns>
     [Fact]
     public async Task DelayedAllowedReadCannotReplaceNewPersonaDenialAsync()
@@ -158,7 +158,7 @@ public sealed class AuthProofReadTests
         Assert.Contains("HTTP 401", state.ErrorMessage, StringComparison.Ordinal);
     }
 
-    /// <summary>Forbidden reads remain explicit claim-policy failures.</summary>
+    /// <summary>Verify that forbidden reads remain explicit claim-policy failures.</summary>
     /// <returns>The asynchronous forbidden-read check.</returns>
     [Fact]
     public async Task ForbiddenReadReportsClaimPolicyAsync()
@@ -177,7 +177,7 @@ public sealed class AuthProofReadTests
         Assert.Null(result.Data);
     }
 
-    /// <summary>Earlier data, empty results and errors cannot replace a different entity's observation.</summary>
+    /// <summary>Verify that earlier data, empty results and errors cannot replace a different entity's observation.</summary>
     /// <param name="outcome">The obsolete outcome kind.</param>
     [Theory]
     [InlineData("data")]
@@ -208,7 +208,7 @@ public sealed class AuthProofReadTests
         Assert.Null(completed.ErrorMessage);
     }
 
-    /// <summary>A malformed projection response completes as a correlated read failure without data.</summary>
+    /// <summary>Verify that a malformed projection response completes as a correlated read failure without data.</summary>
     /// <returns>The asynchronous malformed-response check.</returns>
     [Fact]
     public async Task MalformedProjectionResponseReportsReadFailureAsync()
@@ -239,7 +239,7 @@ public sealed class AuthProofReadTests
         Assert.Equal("Full Access", state.PersonaName);
     }
 
-    /// <summary>A real not-found sentinel is an allowed empty read, not a permission error.</summary>
+    /// <summary>Verify that a real not-found sentinel is an allowed empty read, not a permission error.</summary>
     /// <returns>The asynchronous empty-read check.</returns>
     [Fact]
     public async Task NotFoundIsAnEmptyAllowedObservationAsync()
@@ -261,7 +261,7 @@ public sealed class AuthProofReadTests
         Assert.Equal("Full Access", state.PersonaName);
     }
 
-    /// <summary>Unavailable HTTP and transport failures settle as correlated read errors.</summary>
+    /// <summary>Verify that unavailable HTTP and transport failures settle as correlated read errors.</summary>
     /// <param name="statusCode">The HTTP status, or null for a transport failure.</param>
     /// <returns>The asynchronous general-read-failure check.</returns>
     [Theory]
@@ -294,7 +294,7 @@ public sealed class AuthProofReadTests
         Assert.Equal(request.EntityId, state.EntityId);
     }
 
-    /// <summary>Changing persona invalidates displayed data and outstanding outcomes immediately.</summary>
+    /// <summary>Verify that changing persona invalidates displayed data and outstanding outcomes immediately.</summary>
     [Fact]
     public void PersonaChangeInvalidatesOutstandingRead()
     {
@@ -310,7 +310,7 @@ public sealed class AuthProofReadTests
         Assert.Same(invalidated, AuthProofReadReducers.Complete(invalidated, new(request.RequestId, new(8), 4, null)));
     }
 
-    /// <summary>A transport timeout with an active caller token completes with refresh guidance.</summary>
+    /// <summary>Verify that a transport timeout with an active caller token completes with refresh guidance.</summary>
     /// <returns>The asynchronous timeout check.</returns>
     [Fact]
     public async Task TransportTimeoutCompletesWithRefreshGuidanceAsync()
@@ -340,7 +340,7 @@ public sealed class AuthProofReadTests
         Assert.Equal(result.ErrorMessage, state.ErrorMessage);
     }
 
-    /// <summary>Missing DTO registration cannot masquerade as an allowed empty projection.</summary>
+    /// <summary>Verify that missing DTO registration cannot masquerade as an allowed empty projection.</summary>
     /// <returns>The asynchronous missing-fetcher check.</returns>
     [Fact]
     public async Task UnsupportedProjectionReportsFailureAsync()

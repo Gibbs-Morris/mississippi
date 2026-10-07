@@ -25,9 +25,7 @@ public sealed class AccountOperationsSectionTests : BunitContext
         cut.FindAll("button")
             .Single(button => string.Equals(button.TextContent.Trim(), text, StringComparison.Ordinal));
 
-    /// <summary>
-    ///     A command acceptance flag cannot be repeated as an account projection outcome.
-    /// </summary>
+    /// <summary>Verify that a command acceptance flag cannot be repeated as an account projection outcome.</summary>
     [Fact]
     public void AccountPanelDoesNotClaimCommandSuccessWhileWaitingForBalance()
     {
@@ -98,7 +96,7 @@ public sealed class AccountOperationsSectionTests : BunitContext
         Assert.Equal("12.", accountB.Find("#account-b-deposit-amount-input").GetAttribute("value"));
     }
 
-    /// <summary>Compensation copy reflects whether any forward step completed.</summary>
+    /// <summary>Verify that compensation copy reflects whether any forward step completed.</summary>
     /// <param name="completedStep">The last completed forward step.</param>
     /// <param name="outcome">The expected explanation.</param>
     [Theory]
@@ -149,9 +147,7 @@ public sealed class AccountOperationsSectionTests : BunitContext
         Assert.True(FindButton(openAccount, "Withdraw").HasAttribute("disabled"));
     }
 
-    /// <summary>
-    ///     Invalid transfer text disables submission instead of sending the last valid decimal.
-    /// </summary>
+    /// <summary>Verify that invalid transfer text disables submission instead of sending the last valid decimal.</summary>
     [Fact]
     public void InvalidTransferDraftCannotSubmitAnEarlierAmount()
     {

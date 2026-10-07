@@ -84,9 +84,7 @@ public sealed class InvestigationsTests : BunitContext
         return store.Object;
     }
 
-    /// <summary>
-    ///     A failed read shows only the error outcome, even when earlier queue data remains cached.
-    /// </summary>
+    /// <summary>Verify that a failed read shows only the error outcome, even when earlier queue data remains cached.</summary>
     /// <param name="cachedEntries">The number of cached entries, or minus one for no prior data.</param>
     [Theory]
     [InlineData(-1)]
@@ -124,9 +122,7 @@ public sealed class InvestigationsTests : BunitContext
         Assert.Same(error, retained.GetProjectionError<FlaggedTransactionsProjectionDto>(GlobalEntityId));
     }
 
-    /// <summary>
-    ///     A successfully loaded empty queue is distinct from a missing or failed read.
-    /// </summary>
+    /// <summary>Verify that a successfully loaded empty queue is distinct from a missing or failed read.</summary>
     [Fact]
     public void LoadedEmptyQueueShowsNoFlaggedDeposits()
     {
@@ -142,9 +138,7 @@ public sealed class InvestigationsTests : BunitContext
         Assert.Empty(cut.FindAll("[role='alert'], [role='status'], table"));
     }
 
-    /// <summary>
-    ///     A successful populated read retains its accessible region, actual rows, version and UTC timestamps.
-    /// </summary>
+    /// <summary>Verify that a successful populated read retains its accessible region, actual rows, version and UTC timestamps.</summary>
     [Fact]
     public void LoadedQueueShowsAccessibleRowsAndUtcTimes()
     {
@@ -162,9 +156,7 @@ public sealed class InvestigationsTests : BunitContext
         Assert.Empty(cut.FindAll("[role='alert'], [role='status'], .spring-queue-empty"));
     }
 
-    /// <summary>
-    ///     Loading suppresses empty and populated outcomes without deleting cached data.
-    /// </summary>
+    /// <summary>Verify that loading suppresses empty and populated outcomes without deleting cached data.</summary>
     /// <param name="cachedEntries">The number of cached entries, or minus one for no prior data.</param>
     [Theory]
     [InlineData(-1)]
@@ -183,9 +175,7 @@ public sealed class InvestigationsTests : BunitContext
         Assert.DoesNotContain("No queue data received yet", cut.Markup, StringComparison.Ordinal);
     }
 
-    /// <summary>
-    ///     Missing queue data retains its distinct prerequisite and live-update guidance.
-    /// </summary>
+    /// <summary>Verify that missing queue data retains its distinct prerequisite and live-update guidance.</summary>
     [Fact]
     public void MissingDataShowsJourneyGuidance()
     {

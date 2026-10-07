@@ -150,7 +150,7 @@ public sealed class FlagshipJourneysTests
         }
     }
 
-    /// <summary>Task navigation keeps both account anchors and the shared link bound to the current pair.</summary>
+    /// <summary>Verify that task navigation keeps both account anchors and the shared link bound to the current pair.</summary>
     /// <returns>The asynchronous keyboard, narrow-layout and independent-browser navigation regression.</returns>
     [Fact]
     public async Task AccountAnchorsAndSharedLinkRetainPairAfterTaskNavigationAsync()
@@ -232,7 +232,7 @@ public sealed class FlagshipJourneysTests
         }
     }
 
-    /// <summary>Switching one account retains the other ID and keeps the demo shortcut bound to its displayed pair.</summary>
+    /// <summary>Verify that switching one account retains the other ID and keeps the demo shortcut bound to its displayed pair.</summary>
     /// <returns>The asynchronous account-selection journey.</returns>
     [Fact]
     public async Task AccountSwitchRetainsOtherAccountAndDemoShortcutAsync()
@@ -351,7 +351,7 @@ public sealed class FlagshipJourneysTests
         }
     }
 
-    /// <summary>Every preserved quick and burst control sends its original number and amount of commands.</summary>
+    /// <summary>Verify that every preserved quick and burst control sends its original number and amount of commands.</summary>
     /// <returns>The asynchronous burst journey.</returns>
     [Fact]
     public async Task AllQuickAndBurstActionsPreserveTotalsAndRetainedLedgerAsync()
@@ -526,7 +526,7 @@ public sealed class FlagshipJourneysTests
         await SpringBrowserFixture.SaveBrowserArtifactsAsync(page, "all-bursts");
     }
 
-    /// <summary>A delayed allowed HTTP read cannot replace a newer persona's real denial.</summary>
+    /// <summary>Verify that a delayed allowed HTTP read cannot replace a newer persona's real denial.</summary>
     /// <returns>The asynchronous persona-ordering regression.</returns>
     [Fact]
     public async Task DelayedAllowedReadDoesNotReplaceNewPersonaDenialAsync()
@@ -689,7 +689,7 @@ public sealed class FlagshipJourneysTests
         }
     }
 
-    /// <summary>A phone user can start with the recommended task and verify a change in two independent browsers.</summary>
+    /// <summary>Verify that a phone user can start with the recommended task and verify a change in two independent browsers.</summary>
     /// <returns>The asynchronous browser journey.</returns>
     [Fact]
     public async Task FirstRunOnPhoneVerifiesLiveBalancesLedgerAndSharedViewAsync()
@@ -834,7 +834,7 @@ public sealed class FlagshipJourneysTests
         }
     }
 
-    /// <summary>A committed high-value deposit produces a real flag in the separate live queue.</summary>
+    /// <summary>Verify that a committed high-value deposit produces a real flag in the separate live queue.</summary>
     /// <returns>The asynchronous investigation journey.</returns>
     [Fact]
     public async Task HighValueDepositAppearsInBalanceLedgerAndInvestigationQueueAsync()
@@ -911,7 +911,7 @@ public sealed class FlagshipJourneysTests
         }
     }
 
-    /// <summary>A lost response reports client failure while exposing the actual deposit and contained phone history.</summary>
+    /// <summary>Verify that a lost response reports client failure while exposing the actual deposit and contained phone history.</summary>
     /// <param name="viewportWidth">The phone width used to verify the expanded command history.</param>
     /// <returns>The asynchronous real-server lost-reply regression.</returns>
     [Theory]
@@ -1022,7 +1022,7 @@ public sealed class FlagshipJourneysTests
         }
     }
 
-    /// <summary>All five personas produce their actual HTTP authorization outcomes through the UI.</summary>
+    /// <summary>Verify that all five personas produce their actual HTTP authorization outcomes through the UI.</summary>
     /// <returns>The asynchronous authorization journey.</returns>
     [Fact]
     public async Task PersonasExposeActualCommandSagaAndProjectionAuthorizationAsync()
@@ -1202,7 +1202,7 @@ public sealed class FlagshipJourneysTests
         }
     }
 
-    /// <summary>A failed destination deposit reports compensation and reverses the completed source withdrawal.</summary>
+    /// <summary>Verify that a failed destination deposit reports compensation and reverses the completed source withdrawal.</summary>
     /// <returns>The asynchronous compensation journey.</returns>
     [Fact]
     public async Task TransferToUnopenedAccountReportsCompensationAndRestoresSourceAsync()

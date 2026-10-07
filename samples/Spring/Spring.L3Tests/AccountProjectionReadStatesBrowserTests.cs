@@ -134,7 +134,7 @@ public sealed class AccountProjectionReadStatesBrowserTests
         await SpringBrowserFixture.SaveBrowserArtifactsAsync(page, name);
     }
 
-    /// <summary>A cold or cached failed account read cannot claim a healthy value, empty ledger or pending read.</summary>
+    /// <summary>Verify that a cold or cached failed account read cannot claim a healthy value, empty ledger or pending read.</summary>
     /// <param name="viewportWidth">The phone or desktop width.</param>
     /// <param name="loadCachedData">Whether to observe a real balance and transaction before the failed reads.</param>
     /// <returns>The asynchronous browser regression.</returns>
@@ -309,7 +309,7 @@ public sealed class AccountProjectionReadStatesBrowserTests
             });
     }
 
-    /// <summary>A failed saga read remains unknown even after an accepted start and real account updates.</summary>
+    /// <summary>Verify that a failed saga read remains unknown even after an accepted start and real account updates.</summary>
     /// <param name="viewportWidth">The phone or desktop width.</param>
     /// <returns>The asynchronous browser regression.</returns>
     [Theory]

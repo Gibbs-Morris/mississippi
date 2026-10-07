@@ -185,9 +185,7 @@ public sealed class BankAccountE2ETests
         }
     }
 
-    /// <summary>
-    ///     Verifies the accounts page loads and displays the correct title.
-    /// </summary>
+    /// <summary>Verify that the accounts page loads and displays the correct title.</summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
     [Fact]
     public async Task AccountsPageShouldDisplayTitle()

@@ -21,9 +21,7 @@ namespace MississippiSamples.Spring.Client.L0Tests.Routing;
 /// </summary>
 public sealed class AppNavigationTests : BunitContext
 {
-    /// <summary>
-    ///     Route changes focus the destination page heading through Blazor's focus interop.
-    /// </summary>
+    /// <summary>Verify that route changes focus the destination page heading through Blazor's focus interop.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Fact]
     public async Task RouteChangesFocusDestinationHeadingAsync()

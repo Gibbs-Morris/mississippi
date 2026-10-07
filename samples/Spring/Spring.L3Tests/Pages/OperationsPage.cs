@@ -146,9 +146,7 @@ public sealed partial class OperationsPage
                 })
             .FillAsync(amount.ToString(CultureInfo.InvariantCulture));
 
-    /// <summary>
-    ///     Enters the transfer amount in the selected account panel.
-    /// </summary>
+    /// <summary>Enter the transfer amount in the selected account panel.</summary>
     /// <param name="amount">The transfer amount.</param>
     /// <param name="account">The account slot, A or B.</param>
     /// <returns>A task representing the async operation.</returns>
@@ -168,9 +166,7 @@ public sealed partial class OperationsPage
             .FillAsync(amount.ToString(CultureInfo.InvariantCulture));
     }
 
-    /// <summary>
-    ///     Enters the withdraw amount in the first account panel.
-    /// </summary>
+    /// <summary>Enter the withdraw amount in the first account panel.</summary>
     /// <param name="amount">The amount to withdraw.</param>
     /// <returns>A task representing the async operation.</returns>
     public async Task EnterWithdrawAmountAsync(
@@ -206,9 +202,7 @@ public sealed partial class OperationsPage
         return await accountHeader.TextContentAsync();
     }
 
-    /// <summary>
-    ///     Gets the displayed balance from the first account panel's projection.
-    /// </summary>
+    /// <summary>Get the displayed balance from the first account panel's projection.</summary>
     /// <returns>The balance text (e.g., "£100.00"), or null if not present.</returns>
     public async Task<string?> GetBalanceTextAsync()
     {
@@ -228,9 +222,7 @@ public sealed partial class OperationsPage
         return null;
     }
 
-    /// <summary>
-    ///     Gets the displayed holder name from the first account panel's projection.
-    /// </summary>
+    /// <summary>Get the displayed holder name from the first account panel's projection.</summary>
     /// <returns>The holder name text, or null if not present.</returns>
     public async Task<string?> GetHolderNameTextAsync()
     {
@@ -245,9 +237,7 @@ public sealed partial class OperationsPage
         return null;
     }
 
-    /// <summary>
-    ///     Gets the displayed status from the first account panel's projection.
-    /// </summary>
+    /// <summary>Get the displayed status from the first account panel's projection.</summary>
     /// <returns>The status text (e.g., "Open"), or null if not present.</returns>
     public async Task<string?> GetStatusTextAsync()
     {
@@ -305,9 +295,7 @@ public sealed partial class OperationsPage
                         "Account slot must be A or B."),
                 });
 
-    /// <summary>
-    ///     Selects a theme using the shell's accessible theme controls and waits for the theme to apply.
-    /// </summary>
+    /// <summary>Select a theme using the shell's accessible theme controls and waits for the theme to apply.</summary>
     /// <param name="label">The accessible theme button label.</param>
     /// <param name="themeAttribute">The expected document theme attribute value.</param>
     /// <returns>A task representing the async operation.</returns>
@@ -344,9 +332,7 @@ public sealed partial class OperationsPage
                 });
     }
 
-    /// <summary>
-    ///     Waits for the balance projection to appear in the first account panel.
-    /// </summary>
+    /// <summary>Wait for the balance projection to appear in the first account panel.</summary>
     /// <param name="timeout">Optional timeout in milliseconds.</param>
     /// <param name="account">The account slot, A or B.</param>
     /// <returns>A task representing the wait operation.</returns>
@@ -368,9 +354,7 @@ public sealed partial class OperationsPage
                     Timeout = timeout,
                 });
 
-    /// <summary>
-    ///     Waits for the balance projection to show a specific value in the first account panel.
-    /// </summary>
+    /// <summary>Wait for the balance projection to show a specific value in the first account panel.</summary>
     /// <param name="expectedBalance">
     ///     The expected balance value (e.g., "100.00"). The Spring UI displays the GBP currency used by the domain.
     /// </param>
@@ -401,9 +385,7 @@ public sealed partial class OperationsPage
                     Timeout = timeout,
                 });
 
-    /// <summary>
-    ///     Waits for the command success message to appear.
-    /// </summary>
+    /// <summary>Wait for the command success message to appear.</summary>
     /// <param name="timeout">Optional timeout in milliseconds.</param>
     /// <returns>A task representing the wait operation.</returns>
     public async Task WaitForCommandSuccessAsync(
@@ -429,9 +411,7 @@ public sealed partial class OperationsPage
                     Timeout = timeout,
                 });
 
-    /// <summary>
-    ///     Waits for the SignalR connection status to reach the expected value.
-    /// </summary>
+    /// <summary>Wait for the SignalR connection status to reach the expected value.</summary>
     /// <param name="expectedStatus">The expected connection status text (e.g., "Connected").</param>
     /// <param name="timeout">Optional timeout in milliseconds.</param>
     /// <returns>A task representing the wait operation.</returns>

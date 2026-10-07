@@ -10,7 +10,7 @@ namespace MississippiSamples.Spring.Client.L0Tests.Components.Molecules;
 /// <summary>Protects safe rendering of arbitrary snapshot values.</summary>
 public sealed class SnapshotTableTests : BunitContext
 {
-    /// <summary>Unavailable snapshots cannot look like a loaded empty table.</summary>
+    /// <summary>Verify that unavailable snapshots cannot look like a loaded empty table.</summary>
     [Fact]
     public void MissingSnapshotShowsExplicitUnavailableState()
     {
@@ -19,7 +19,7 @@ public sealed class SnapshotTableTests : BunitContext
         Assert.Contains("No snapshot data available.", cut.Markup, StringComparison.Ordinal);
     }
 
-    /// <summary>Snapshot values are text, not executable markup.</summary>
+    /// <summary>Verify that snapshot values are text, not executable markup.</summary>
     [Fact]
     public void SnapshotValuesAreEscapedAndRegionIsKeyboardAccessible()
     {

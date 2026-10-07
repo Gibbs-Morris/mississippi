@@ -138,7 +138,7 @@ public sealed class InputFieldFeedbackTests : BunitContext
         Assert.Equal(cut.Find("[role=alert]").Id, cut.Find("input").GetAttribute("aria-describedby"));
     }
 
-    /// <summary>Clearing invalid state removes error references while preserving guidance.</summary>
+    /// <summary>Verify that clearing invalid state removes error references while preserving guidance.</summary>
     [Fact]
     public void ReturningToValidStateRemovesErrorFeedback()
     {

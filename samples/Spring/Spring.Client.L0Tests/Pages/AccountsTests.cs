@@ -79,9 +79,7 @@ public sealed class AccountsTests : BunitContext
         Services.AddSingleton<IInletStore>(store.Object);
     }
 
-    /// <summary>
-    ///     Custom IDs are trimmed, selected in order, and escaped into the navigation URI.
-    /// </summary>
+    /// <summary>Verify that custom IDs are trimmed, selected in order, and escaped into the navigation URI.</summary>
     /// <param name="inputA">The entered account A ID.</param>
     /// <param name="inputB">The entered account B ID.</param>
     /// <param name="expectedA">The selected account A ID.</param>
@@ -117,9 +115,7 @@ public sealed class AccountsTests : BunitContext
             });
     }
 
-    /// <summary>
-    ///     An incomplete pair cannot select accounts or navigate.
-    /// </summary>
+    /// <summary>Verify that an incomplete pair cannot select accounts or navigate.</summary>
     /// <param name="inputA">The entered account A ID.</param>
     /// <param name="inputB">The entered account B ID.</param>
     [Theory]
@@ -147,9 +143,7 @@ public sealed class AccountsTests : BunitContext
         Assert.Empty(actions);
     }
 
-    /// <summary>
-    ///     Existing selection state prepopulates both fields without dispatching new work.
-    /// </summary>
+    /// <summary>Verify that existing selection state prepopulates both fields without dispatching new work.</summary>
     [Fact]
     public void SelectedPairPrepopulatesInputs()
     {

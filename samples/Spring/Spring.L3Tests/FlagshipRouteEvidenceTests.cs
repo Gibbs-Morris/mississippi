@@ -19,7 +19,7 @@ public sealed class FlagshipRouteEvidenceTests
 
     private SpringBrowserFixture Fixture { get; }
 
-    /// <summary>Each task can be reached by touch, identifies the active route and focuses its heading.</summary>
+    /// <summary>Verify that each task can be reached by touch, identifies the active route and focuses its heading.</summary>
     /// <param name="width">The desktop or phone viewport width.</param>
     /// <param name="height">The corresponding viewport height.</param>
     /// <returns>The asynchronous real-app navigation and screenshot journey.</returns>

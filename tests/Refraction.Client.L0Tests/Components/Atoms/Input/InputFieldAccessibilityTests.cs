@@ -66,7 +66,7 @@ public sealed class InputFieldAccessibilityTests : BunitContext
         Assert.Equal(generatedId, cut.Find("label").GetAttribute("for"));
     }
 
-    /// <summary>Native attributes reach the input without changing the wrapper contract.</summary>
+    /// <summary>Verify that native attributes reach the input without changing the wrapper contract.</summary>
     [Fact]
     public void NativeAndWrapperAttributesHaveSeparateTargets()
     {

@@ -152,9 +152,7 @@ public sealed class AuthProofPageTests : BunitContext
         Assert.Equal("unapplied-entity", cut.Find("#auth-proof-entity").GetAttribute("value"));
     }
 
-    /// <summary>
-    ///     A completed empty or denied read waits for an explicit refresh rather than retrying automatically.
-    /// </summary>
+    /// <summary>Verify that a completed empty or denied read waits for an explicit refresh rather than retrying automatically.</summary>
     /// <param name="error">The completed read's error, or null for an empty success.</param>
     [Theory]
     [InlineData(null)]
@@ -253,9 +251,7 @@ public sealed class AuthProofPageTests : BunitContext
             action => AssertRead(action, expectedId, AuthSimulationProfiles.FullAccess, previousRequestId));
     }
 
-    /// <summary>
-    ///     The initial render subscribes and reads the default entity with the selected persona.
-    /// </summary>
+    /// <summary>Verify that the initial render subscribes and reads the default entity with the selected persona.</summary>
     [Fact]
     public void InitialRenderStartsProtectedRead()
     {
@@ -270,9 +266,7 @@ public sealed class AuthProofPageTests : BunitContext
             action => AssertRead(action, "auth-proof", AuthSimulationProfiles.FullAccess));
     }
 
-    /// <summary>
-    ///     Every persona selection, including reselecting the active profile, starts a fresh protected read.
-    /// </summary>
+    /// <summary>Verify that every persona selection, including reselecting the active profile, starts a fresh protected read.</summary>
     /// <param name="name">The selected persona label.</param>
     /// <param name="alreadySelected">Whether the persona was already active.</param>
     [Theory]
@@ -363,9 +357,7 @@ public sealed class AuthProofPageTests : BunitContext
         Assert.Equal("auth-proof", cut.Find("#auth-proof-entity").GetAttribute("value"));
     }
 
-    /// <summary>
-    ///     Rendering an unchanged pending request does not create another read.
-    /// </summary>
+    /// <summary>Verify that rendering an unchanged pending request does not create another read.</summary>
     [Fact]
     public void UnchangedRenderDoesNotRepeatProtectedRead()
     {

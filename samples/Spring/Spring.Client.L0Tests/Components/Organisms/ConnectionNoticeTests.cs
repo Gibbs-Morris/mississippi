@@ -14,9 +14,7 @@ namespace MississippiSamples.Spring.Client.L0Tests.Components.Organisms;
 /// </summary>
 public sealed class ConnectionNoticeTests : BunitContext
 {
-    /// <summary>
-    ///     Closed notices expose neither their diagnostics nor the action.
-    /// </summary>
+    /// <summary>Verify that closed notices expose neither their diagnostics nor the action.</summary>
     [Fact]
     public void ClosedNoticeHidesDiagnosticsAndReconnectAction()
     {
@@ -29,7 +27,7 @@ public sealed class ConnectionNoticeTests : BunitContext
         Assert.DoesNotContain("A retained failure.", cut.Markup, StringComparison.Ordinal);
     }
 
-    /// <summary>Startup and reconnection are reported without a false connection-lost dialog.</summary>
+    /// <summary>Verify that startup and reconnection are reported without a false connection-lost dialog.</summary>
     /// <param name="status">The live connection state.</param>
     [Theory]
     [InlineData("Connecting")]
@@ -46,9 +44,7 @@ public sealed class ConnectionNoticeTests : BunitContext
         Assert.True(cut.Find("button").HasAttribute("disabled"));
     }
 
-    /// <summary>
-    ///     A disconnected notice exposes actual attempts and escaped failure text with an enabled reconnect action.
-    /// </summary>
+    /// <summary>Verify that a disconnected notice exposes actual attempts and escaped failure text with an enabled reconnect action.</summary>
     [Fact]
     public void DisconnectedNoticeShowsAttemptsAndErrorAndAllowsReconnect()
     {
@@ -70,9 +66,7 @@ public sealed class ConnectionNoticeTests : BunitContext
         Assert.Equal(1, reconnects);
     }
 
-    /// <summary>
-    ///     Zero attempts and no error do not manufacture diagnostics.
-    /// </summary>
+    /// <summary>Verify that zero attempts and no error do not manufacture diagnostics.</summary>
     [Fact]
     public void DisconnectedNoticeWithoutErrorOrAttemptsShowsOnlyCurrentStatus()
     {
@@ -84,9 +78,7 @@ public sealed class ConnectionNoticeTests : BunitContext
         Assert.False(cut.Find("button").HasAttribute("disabled"));
     }
 
-    /// <summary>
-    ///     Reconnect button invokes callback.
-    /// </summary>
+    /// <summary>Verify that reconnect button invokes callback.</summary>
     [Fact]
     public void ReconnectButtonInvokesCallback()
     {

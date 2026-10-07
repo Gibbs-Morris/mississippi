@@ -76,9 +76,7 @@ public sealed class InletStartupStatusTests
         await page.SetViewportSizeAsync(1440, 900);
     }
 
-    /// <summary>
-    ///     A 503 startup failure shows Disconnected and the real error before a manual retry connects.
-    /// </summary>
+    /// <summary>Verify that a 503 startup failure shows Disconnected and the real error before a manual retry connects.</summary>
     /// <returns>A task representing the browser journey.</returns>
     [Fact]
     public async Task FailedInitialNegotiationShowsDisconnectedAndAllowsRetry()

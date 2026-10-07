@@ -26,6 +26,8 @@ Governing thought: Preserve caller attribute inputs while protecting component-o
 
 - Agents **SHOULD** make failed projection read outcomes exclusive from loading, empty or healthy cached outcomes. Why: Spring PR #1029 reproduced contradictory balance, ledger and transfer status displays in 15 rendered tests.
 
+- Agents **SHOULD** keep entity ID drafts separate from selections that start reads or subscriptions. Why: Typing `p` in Spring PR #1029 replaced the `auth-proof` subscription and read an unfinished ID.
+
 ## References
 
 - Self-improvement governance: [Self-Improvement Learning System](self-improvement.instructions.md).
