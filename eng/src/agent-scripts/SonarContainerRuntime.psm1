@@ -3,6 +3,44 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+function Copy-SonarAnalyzerAssembly {
+    param([string]$ContainerPath,[string]$PrivateCache,[string]$Projection)
+    if ($ContainerPath -cnotmatch '^/cache/[A-Za-z0-9_/.-]+\.dll$' -or $ContainerPath.Split('/') -contains '..') { throw 'Unexpected analyzer assembly path.' }
+    $relative = $ContainerPath.Substring(7)
+    $source = Join-Path $PrivateCache $relative
+    $file = Get-Item -LiteralPath $source -Force
+    if ($file.PSIsContainer -or $file.Length -gt 67108864) { throw 'Analyzer assembly must be a bounded regular file.' }
+    $cursor = $file
+    while ($cursor -and $cursor.FullName.Length -ge $PrivateCache.Length) {
+        if (($cursor.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'Analyzer assemblies cannot contain symbolic links.' }
+        $cursor = if($cursor -is [IO.FileInfo]){$cursor.Directory}else{$cursor.Parent}
+    }
+    $destination = Join-Path $Projection $relative
+    [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($destination)) | Out-Null
+    Copy-Item -LiteralPath $source -Destination $destination
+    return [pscustomobject]@{Source=$destination;Target=$ContainerPath}
+}
+
+function Get-SonarBuildContainerMounts {
+    param([string]$BuildPackages,[string]$ScannerAssets,[object[]]$AnalyzerMounts)
+    if (-not $BuildPackages) { throw 'Sonar build requires a separate tokenless package directory.' }
+    if (-not $ScannerAssets) { throw 'Sonar build requires immutable scanner assets.' }
+    if (@($AnalyzerMounts | Where-Object Target -CEQ '/work/.sonarqube/conf/SonarQubeAnalysisConfig.xml').Count -ne 1) { throw 'Invalid analyzer mounts: exact trusted root configuration required.' }
+    $arguments = @('--env=NUGET_PACKAGES=/packages','--mount',"type=bind,source=$BuildPackages,target=/packages",'--mount',"type=bind,source=$ScannerAssets/bin,target=/work/.sonarqube/bin,readonly")
+    foreach ($mount in $AnalyzerMounts) {
+        if (-not [IO.Path]::IsPathFullyQualified($mount.Source) -or $mount.Source.Contains(',') -or $mount.Source.Contains("`n") -or $mount.Target -cnotmatch '^/(?:work/\.sonarqube/conf|cache)/[A-Za-z0-9_/.-]+$' -or $mount.Target.Split('/') -contains '..') { throw 'Invalid read-only Sonar analyzer mount.' }
+        $arguments += @('--mount',"type=bind,source=$($mount.Source),target=$($mount.Target),readonly")
+    }
+    return $arguments
+}
+
+function Assert-SonarContainerMountPaths {
+    param([string[]]$Paths)
+    foreach ($path in ($Paths | Where-Object { $_ })) {
+        if ($path.Contains(',') -or $path.Contains("`n") -or -not [IO.Path]::IsPathFullyQualified($path)) { throw 'Sonar container mount paths must be explicit and safe.' }
+    }
+}
+
 function Invoke-SonarNative {
     param([string]$Executable,[string[]]$Arguments)
     & $Executable @Arguments | Out-Host
@@ -13,25 +51,13 @@ function Get-SonarContainerArguments {
     param([string]$Tools,[string]$Driver,[string]$Workspace,[string]$Cache,[ValidateSet('Prepare','Version','Begin','Build','End')][string]$Phase,[string]$Version,[string]$ScannerAssets,[string]$BuildPackages,[object[]]$AnalyzerMounts=@(),[ValidateRange(1,65535)][int]$UserId=1000,[ValidateRange(1,65535)][int]$GroupId=1000)
     $image = 'mcr.microsoft.com/dotnet/sdk@sha256:e70cdb7f80b0348f5cb85f19a8f670fca061f033d57eed12fa003d58b0e06317'
     $arguments = @('run','--rm','--read-only','--cap-drop=ALL','--security-opt=no-new-privileges',"--user=${UserId}:$GroupId",'--pids-limit=512','--tmpfs=/tmp:rw,nosuid,nodev,size=4g','--env=HOME=/tmp/home','--env=XDG_CACHE_HOME=/tmp/home/.cache','--env=DOTNET_CLI_HOME=/tmp/home','--env=DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1','--env=DOTNET_NOLOGO=1','--env=DOTNET_CLI_TELEMETRY_OPTOUT=1','--env=SONAR_USER_HOME=/cache')
-    foreach ($path in @($Tools,$Driver,$Workspace,$Cache,$ScannerAssets,$BuildPackages) | Where-Object { $_ }) {
-        if ($path.Contains(',') -or $path.Contains("`n") -or -not [IO.Path]::IsPathFullyQualified($path)) { throw 'Sonar container mount paths must be explicit and safe.' }
-    }
+    Assert-SonarContainerMountPaths -Paths @($Tools,$Driver,$Workspace,$Cache,$ScannerAssets,$BuildPackages)
     $toolMode = if ($Phase -ceq 'Prepare') { '' } else { ',readonly' }
     $arguments += @('--mount',"type=bind,source=$Tools,target=/tools$toolMode",'--mount',"type=bind,source=$Driver,target=/driver,readonly")
     if ($Workspace) { $arguments += @('--mount',"type=bind,source=$Workspace,target=/work",'--workdir=/work') }
     if ($Cache -and $Phase -in @('Begin','End')) { $arguments += @('--mount',"type=bind,source=$Cache,target=/cache") }
     if ($Phase -in @('Begin','End')) { $arguments += @('--env=SONAR_ANALYSIS_TOKEN','--env=TMPDIR=/cache/tmp') }
-    if ($Phase -ceq 'Build') {
-        if (-not $BuildPackages) { throw 'Sonar build requires a separate tokenless package directory.' }
-        $arguments += @('--env=NUGET_PACKAGES=/packages','--mount',"type=bind,source=$BuildPackages,target=/packages")
-        if (-not $ScannerAssets) { throw 'Sonar build requires immutable scanner assets.' }
-        $arguments += @('--mount',"type=bind,source=$ScannerAssets/bin,target=/work/.sonarqube/bin,readonly")
-        if (@($AnalyzerMounts | Where-Object Target -CEQ '/work/.sonarqube/conf/SonarQubeAnalysisConfig.xml').Count -ne 1) { throw 'Invalid analyzer mounts: exact trusted root configuration required.' }
-        foreach ($mount in $AnalyzerMounts) {
-            if (-not [IO.Path]::IsPathFullyQualified($mount.Source) -or $mount.Source.Contains(',') -or $mount.Source.Contains("`n") -or $mount.Target -cnotmatch '^/(?:work/\.sonarqube/conf|cache)/[A-Za-z0-9_/.-]+$' -or $mount.Target.Split('/') -contains '..') { throw 'Invalid read-only Sonar analyzer mount.' }
-            $arguments += @('--mount',"type=bind,source=$($mount.Source),target=$($mount.Target),readonly")
-        }
-    }
+    if ($Phase -ceq 'Build') { $arguments += @(Get-SonarBuildContainerMounts -BuildPackages $BuildPackages -ScannerAssets $ScannerAssets -AnalyzerMounts $AnalyzerMounts) }
     $arguments += @($image,'pwsh','-NoLogo','-NoProfile','-File','/driver/invoke-sonar-container-stage.ps1','-Phase',$Phase)
     if ($Version) { $arguments += @('-Version',$Version) }
     return $arguments
@@ -95,20 +121,7 @@ function Copy-SonarAnalyzerProjection {
             if (-not @($mounts | Where-Object Target -CEQ $path).Count) { throw 'Required analyzer configuration is missing.' }
             continue
         }
-        if ($path -cnotmatch '^/cache/[A-Za-z0-9_/.-]+\.dll$' -or $path.Split('/') -contains '..') { throw 'Unexpected analyzer assembly path.' }
-        $relative = $path.Substring(7)
-        $source = Join-Path $PrivateCache $relative
-        $file = Get-Item -LiteralPath $source -Force
-        if ($file.PSIsContainer -or $file.Length -gt 67108864) { throw 'Analyzer assembly must be a bounded regular file.' }
-        $cursor = $file
-        while ($cursor -and $cursor.FullName.Length -ge $PrivateCache.Length) {
-            if (($cursor.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'Analyzer assemblies cannot contain symbolic links.' }
-            $cursor = if($cursor -is [IO.FileInfo]){$cursor.Directory}else{$cursor.Parent}
-        }
-        $destination = Join-Path $Projection $relative
-        [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($destination)) | Out-Null
-        Copy-Item -LiteralPath $source -Destination $destination
-        $mounts.Add([pscustomobject]@{Source=$destination;Target=$path})
+        $mounts.Add((Copy-SonarAnalyzerAssembly -ContainerPath $path -PrivateCache $PrivateCache -Projection $Projection))
     }
     Assert-SonarAssetCredentialAbsent -Directory $Projection -Token $Token
     return $mounts.ToArray()
