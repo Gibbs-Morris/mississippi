@@ -159,23 +159,34 @@ public sealed class InvestigationsTests : BunitContext
         Assert.Empty(cut.FindAll("[role='alert'], [role='status'], .spring-queue-empty"));
     }
 
-    /// <summary>Verify that loading suppresses empty and populated outcomes without deleting cached data.</summary>
+    /// <summary>Verify that loading hides healthy outcomes and their version while retaining cached data.</summary>
     /// <param name="cachedEntries">The number of cached entries, or minus one for no prior data.</param>
     [Theory]
     [InlineData(-1)]
+    [InlineData(0)]
     [InlineData(1)]
     public void LoadingShowsOnlyPendingQueueOutcome(
         int cachedEntries
     )
     {
+        ProjectionsFeatureState prior = CreateQueueState(cachedEntries);
         ProjectionsFeatureState state = ProjectionsReducer.ReduceLoading(
-            CreateQueueState(cachedEntries),
+            prior,
             new ProjectionLoadingAction<FlaggedTransactionsProjectionDto>(GlobalEntityId));
-        RegisterStore(state);
+        IInletStore store = RegisterStore(state);
         using IRenderedComponent<Investigations> cut = Render<Investigations>();
         Assert.Equal("Loading the investigation queue…", Assert.Single(cut.FindAll("[role='status']")).TextContent);
         Assert.Empty(cut.FindAll("[role='alert'], .spring-queue-empty, table"));
         Assert.DoesNotContain("No queue data received yet", cut.Markup, StringComparison.Ordinal);
+        Assert.DoesNotContain("Projection version", cut.Markup, StringComparison.Ordinal);
+        ProjectionsFeatureState retained = store.GetState<ProjectionsFeatureState>();
+        Assert.Same(
+            prior.GetProjection<FlaggedTransactionsProjectionDto>(GlobalEntityId),
+            retained.GetProjection<FlaggedTransactionsProjectionDto>(GlobalEntityId));
+        Assert.Equal(
+            prior.GetProjectionVersion<FlaggedTransactionsProjectionDto>(GlobalEntityId),
+            retained.GetProjectionVersion<FlaggedTransactionsProjectionDto>(GlobalEntityId));
+        Assert.True(retained.IsProjectionLoading<FlaggedTransactionsProjectionDto>(GlobalEntityId));
     }
 
     /// <summary>Verify that missing queue data retains its distinct prerequisite and live-update guidance.</summary>

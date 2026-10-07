@@ -28,7 +28,7 @@
         <div class="spring-queue">
             <p>
                 Most recent 30 flags across all accounts. @(IsQueueConnected ? "SignalR connected." : "SignalR not connected.")
-                @if (FlaggedProjection is not null && string.IsNullOrEmpty(QueueReadError))
+                @if (FlaggedProjection is not null && !IsQueueLoading && string.IsNullOrEmpty(QueueReadError))
                 {
                     <span>@(" Projection version ")@QueueVersion.</span>
                 }

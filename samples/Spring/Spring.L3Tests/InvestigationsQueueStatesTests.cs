@@ -28,7 +28,7 @@ public sealed class InvestigationsQueueStatesTests
 
     private SpringBrowserFixture Fixture { get; }
 
-    /// <summary>Verify that a controlled HTTP failure cannot appear as an empty queue or a successful cached read.</summary>
+    /// <summary>Verify that a pending or failed read hides healthy queue outcomes and their cached version.</summary>
     /// <param name="viewportWidth">The phone or desktop width.</param>
     /// <param name="loadCachedData">Whether to observe a real high-value deposit before failing the next read.</param>
     /// <returns>The asynchronous real-browser state regression.</returns>
@@ -45,6 +45,7 @@ public sealed class InvestigationsQueueStatesTests
     )
     {
         Assert.True(Fixture.IsInitialized, "fixture must be initialized");
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         bool phone = viewportWidth < 768;
         IPage page = await Fixture.CreatePageAsync(
             new()
@@ -61,6 +62,8 @@ public sealed class InvestigationsQueueStatesTests
                       (loadCachedData ? "cached-" : "cold-") +
                       viewportWidth.ToString(CultureInfo.InvariantCulture);
         double? observedDocumentOrigin = null;
+        TaskCompletionSource requestStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseRequest = new(TaskCreationOptions.RunContinuationsAsynchronously);
         List<string> pageErrors = [];
         page.PageError += (_, error) => pageErrors.Add(error);
         try
@@ -130,12 +133,14 @@ public sealed class InvestigationsQueueStatesTests
 
             int intercepted = 0;
 
-            // Fail the real projection fetch. No fabricated projection data is supplied.
+            // Hold the real fetch before failing it; cached data came from the server.
             await page.RouteAsync(
                 "**/api/projections/flagged-transactions/global**",
                 async route =>
                 {
                     Interlocked.Increment(ref intercepted);
+                    requestStarted.TrySetResult();
+                    await releaseRequest.Task.WaitAsync(TimeSpan.FromMilliseconds(ProjectionTimeout), cancellationToken);
                     await route.FulfillAsync(
                         new()
                         {
@@ -168,7 +173,24 @@ public sealed class InvestigationsQueueStatesTests
                 await page.GotoAsync(new Uri(Fixture.GatewayBaseUri, "/investigations").ToString());
             }
 
+            await requestStarted.Task.WaitAsync(TimeSpan.FromMilliseconds(ProjectionTimeout), cancellationToken);
             ILocator failedQueue = page.Locator(".spring-queue");
+            await Expect(failedQueue.GetByRole(AriaRole.Status)).ToHaveTextAsync("Loading the investigation queue…");
+            await Expect(
+                    failedQueue.GetByText(
+                        "Projection version",
+                        new()
+                        {
+                            Exact = false,
+                        }))
+                .ToHaveCountAsync(0);
+            await Expect(failedQueue.Locator("table, .spring-queue-empty, .spring-queue-scroll, [role='alert']"))
+                .ToHaveCountAsync(0);
+            string loadingName = "investigations-loading-" +
+                                 (loadCachedData ? "cached-" : "cold-") +
+                                 viewportWidth.ToString(CultureInfo.InvariantCulture);
+            await SpringScreenshotEvidence.SaveAsync(page, loadingName);
+            releaseRequest.TrySetResult();
             await Expect(failedQueue.GetByRole(AriaRole.Alert)).ToContainTextAsync("The queue could not be read");
             await Expect(failedQueue.GetByRole(AriaRole.Alert)).ToContainTextAsync("503");
             await Expect(failedQueue)
@@ -240,6 +262,7 @@ public sealed class InvestigationsQueueStatesTests
         }
         catch (Exception failure)
         {
+            releaseRequest.TrySetResult();
             try
             {
                 await SpringBrowserFixture.SaveBrowserArtifactsAsync(page, name);
@@ -253,6 +276,10 @@ public sealed class InvestigationsQueueStatesTests
             }
 
             throw;
+        }
+        finally
+        {
+            releaseRequest.TrySetResult();
         }
 
         await SpringBrowserFixture.SaveBrowserArtifactsAsync(page, name);
