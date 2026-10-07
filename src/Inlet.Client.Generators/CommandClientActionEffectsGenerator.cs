@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -74,7 +75,9 @@ public sealed class CommandClientActionEffectsGenerator : IIncrementalGenerator
         string stateNamespace = NamingConventions.GetClientStateNamespace(command.Namespace, targetRootNamespace);
 
         // Derive aggregate route prefix from namespace
-        string? aggregateName = NamingConventions.GetAggregateNameFromNamespace(command.Namespace);
+        string? aggregateName = command.Namespace.EndsWith(".Commands", StringComparison.Ordinal)
+            ? TargetNamespaceResolver.ExtractAggregateName(command.Namespace)
+            : null;
         if (aggregateName is null)
         {
             return;
