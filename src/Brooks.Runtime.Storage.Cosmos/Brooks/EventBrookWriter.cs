@@ -165,6 +165,16 @@ internal sealed class EventBrookWriter : IEventBrookWriter
     }
 
     /// <summary>
+    ///     Identifies failures collected in the rollback aggregate while ownership remains healthy.
+    /// </summary>
+    /// <param name="exception">The rollback request or verification failure.</param>
+    /// <returns>Whether the existing rollback failure categories include this exception.</returns>
+    private static bool ShouldRecordRollbackFailure(
+        Exception exception
+    ) =>
+        exception is InvalidOperationException or TimeoutException or HttpRequestException;
+
+    /// <summary>
     ///     Appends a collection of events to the specified brook.
     /// </summary>
     /// <param name="brookId">The brook identifier specifying the target brook.</param>
@@ -476,10 +486,7 @@ internal sealed class EventBrookWriter : IEventBrookWriter
                     },
                     cancellationToken);
             }
-            catch (Exception ex) when (lifetime.CanRollback &&
-                                       (ex is InvalidOperationException ||
-                                        ex is TimeoutException ||
-                                        ex is HttpRequestException))
+            catch (Exception ex) when (lifetime.CanRollback && ShouldRecordRollbackFailure(ex))
             {
                 rollbackErrors.Add(new InvalidOperationException(errorMessage, ex));
             }
@@ -511,10 +518,7 @@ internal sealed class EventBrookWriter : IEventBrookWriter
                     remainingEvents.Add(pos);
                 }
             }
-            catch (Exception ex) when (lifetime.CanRollback &&
-                                       (ex is InvalidOperationException ||
-                                        ex is TimeoutException ||
-                                        ex is HttpRequestException))
+            catch (Exception ex) when (lifetime.CanRollback && ShouldRecordRollbackFailure(ex))
             {
                 rollbackErrors.Add(
                     new InvalidOperationException($"Failed to verify deletion of event at position {pos}", ex));
