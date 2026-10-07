@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
-///     Provides saga step metadata for orchestration.
+///     Provides ordered saga step metadata for orchestration.
 /// </summary>
 /// <typeparam name="TSaga">The saga state type.</typeparam>
 public interface ISagaStepInfoProvider<TSaga>
