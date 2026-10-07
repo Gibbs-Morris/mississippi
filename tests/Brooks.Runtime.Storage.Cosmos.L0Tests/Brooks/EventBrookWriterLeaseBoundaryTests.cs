@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Azure;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Brooks.Abstractions;
@@ -107,6 +110,137 @@ public sealed class EventBrookWriterLeaseBoundaryTests
 
         AssertNoCommitOrDeletes(context);
         context.Lease.Verify(l => l.DisposeAsync(), Times.Once);
+        Assert.Equal(0, context.Clock.ActiveTimers);
+    }
+
+    /// <summary>
+    ///     Expiration observed after an acknowledged commit preserves its result with logging disabled.
+    /// </summary>
+    /// <param name="large">Whether to force multiple batches.</param>
+    /// <returns>The asynchronous test.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CommittedAppendSurvivesDeadlineAtAcknowledgementAsync(
+        bool large
+    )
+    {
+        using CancellationTokenSource watchdog = CreateWatchdog();
+        EventWriterLeaseTestContext context = CreateContext(large);
+        context.HeldBoundary = 3;
+        context.HoldRenewal = true;
+        context.CommitCompleted = () => context.Clock.Advance(TimeSpan.FromSeconds(39));
+        Task<BrookPosition> append = context.Writer.AppendEventsAsync(
+            context.Key,
+            context.Events,
+            null,
+            watchdog.Token);
+        try
+        {
+            await context.StorageEntered.Task.WaitAsync(watchdog.Token);
+            context.Clock.Advance(TimeSpan.FromSeconds(20));
+            await context.RenewalEntered.Task.WaitAsync(watchdog.Token);
+            context.FinishStorage.TrySetResult();
+            await context.RenewalStopObserved.Task.WaitAsync(watchdog.Token);
+            Assert.False(append.IsCompleted);
+            context.Lease.Verify(l => l.DisposeAsync(), Times.Never);
+            context.FinishRenewal.TrySetResult();
+            Assert.Equal(2, (await append.WaitAsync(watchdog.Token)).Value);
+        }
+        finally
+        {
+            context.FinishStorage.TrySetResult();
+            context.FinishRenewal.TrySetResult();
+            await Record.ExceptionAsync(() => append.WaitAsync(CancellationToken.None));
+        }
+
+        context.Repository.Verify(
+            r => r.CommitCursorPositionAsync(context.Key, 2, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        context.Lease.Verify(l => l.DisposeAsync(), Times.Once);
+        context.Logger.Verify(
+            l => l.Log(
+                It.IsAny<LogLevel>(),
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
+        Assert.Equal(0, context.Clock.ActiveTimers);
+    }
+
+    /// <summary>
+    ///     A renewal failure during shutdown cannot replace an acknowledged cursor commit.
+    /// </summary>
+    /// <param name="large">Whether to force multiple batches.</param>
+    /// <param name="releaseFails">Whether lease release also fails after renewal is joined.</param>
+    /// <returns>The asynchronous test.</returns>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task CommittedAppendSurvivesJoinedCleanupFailuresAsync(
+        bool large,
+        bool releaseFails
+    )
+    {
+        using CancellationTokenSource watchdog = CreateWatchdog();
+        EventWriterLeaseTestContext context = CreateContext(large);
+        context.HeldBoundary = 3;
+        context.HoldRenewal = true;
+        context.RenewalFailure = new TimeoutException("Renewal failed after acknowledged commit");
+        context.Logger.Setup(l => l.IsEnabled(LogLevel.Warning)).Returns(true);
+        if (releaseFails)
+        {
+            context.ReleaseFailure = new InvalidOperationException("Release failed after acknowledged commit");
+        }
+
+        Task<BrookPosition> append = context.Writer.AppendEventsAsync(
+            context.Key,
+            context.Events,
+            null,
+            watchdog.Token);
+        try
+        {
+            await context.StorageEntered.Task.WaitAsync(watchdog.Token);
+            context.Clock.Advance(TimeSpan.FromSeconds(20));
+            await context.RenewalEntered.Task.WaitAsync(watchdog.Token);
+            context.FinishStorage.TrySetResult();
+            await context.RenewalStopObserved.Task.WaitAsync(watchdog.Token);
+            Assert.False(append.IsCompleted);
+            context.Lease.Verify(l => l.DisposeAsync(), Times.Never);
+            context.FinishRenewal.TrySetResult();
+            Assert.Equal(2, (await append.WaitAsync(watchdog.Token)).Value);
+        }
+        finally
+        {
+            context.FinishStorage.TrySetResult();
+            context.FinishRenewal.TrySetResult();
+            await Record.ExceptionAsync(() => append.WaitAsync(CancellationToken.None));
+        }
+
+        context.Repository.Verify(
+            r => r.CommitCursorPositionAsync(context.Key, 2, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        context.Repository.Verify(
+            r => r.DeleteEventAsync(context.Key, It.IsAny<long>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        context.Lease.Verify(l => l.DisposeAsync(), Times.Once);
+        context.Logger.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.Is<EventId>(id => (id.Id == 1014) && (id.Name == "AppendCleanupFailed")),
+                It.Is<It.IsAnyType>((state, _) =>
+                    ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(new("BrookId", context.Key)) &&
+                    ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(new("FinalPosition", 2L)) &&
+                    ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(
+                        new(
+                            "{OriginalFormat}",
+                            "Append cleanup failed for brook '{BrookId}' after committing position {FinalPosition}; the committed result was returned"))),
+                context.RenewalFailure,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
         Assert.Equal(0, context.Clock.ActiveTimers);
     }
 

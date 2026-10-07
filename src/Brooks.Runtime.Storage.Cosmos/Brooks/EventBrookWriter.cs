@@ -137,6 +137,34 @@ internal sealed class EventBrookWriter : IEventBrookWriter
     private TimeProvider TimeProvider { get; }
 
     /// <summary>
+    ///     Preserves the ownership or caller-cancellation cause instead of its linked-token wrapper.
+    /// </summary>
+    /// <param name="exception">The failure reported by append work.</param>
+    /// <param name="lifetime">The append ownership supervisor.</param>
+    /// <param name="cancellationToken">The original caller token.</param>
+    /// <returns>The primary failure to retain through shutdown.</returns>
+    private static Exception SelectAppendFailure(
+        Exception exception,
+        AppendLeaseLifetime lifetime,
+        CancellationToken cancellationToken
+    )
+    {
+        if (exception is not OperationCanceledException)
+        {
+            return exception;
+        }
+
+        if (lifetime.Failure is Exception leaseFailure)
+        {
+            return leaseFailure;
+        }
+
+        return cancellationToken.IsCancellationRequested
+            ? new OperationCanceledException(cancellationToken)
+            : exception;
+    }
+
+    /// <summary>
     ///     Appends a collection of events to the specified brook.
     /// </summary>
     /// <param name="brookId">The brook identifier specifying the target brook.</param>
@@ -166,6 +194,7 @@ internal sealed class EventBrookWriter : IEventBrookWriter
 
         AppendLeaseLifetime.ValidateOptions(Options);
         Exception? primaryFailure = null;
+        BrookPosition? committed = null;
         try
         {
             await using IDistributedLock distributedLock = await LockManager.AcquireLockAsync(
@@ -183,37 +212,17 @@ internal sealed class EventBrookWriter : IEventBrookWriter
                 try
                 {
                     await lifetime.StartAsync();
-                    BrookPosition result = await AppendEventsWithLockAsync(
+                    committed = await AppendEventsWithLockAsync(
                         brookId,
                         events,
                         expectedVersion,
                         lifetime,
                         lifetime.CancellationToken);
-                    lifetime.ThrowIfFailed();
-                    return result;
+                    return committed.Value;
                 }
                 catch (Exception exception)
                 {
-                    primaryFailure = exception;
-                    if (exception is OperationCanceledException)
-                    {
-                        if (lifetime.Failure is Exception leaseFailure)
-                        {
-                            primaryFailure = leaseFailure;
-                            ExceptionDispatchInfo.Capture(leaseFailure).Throw();
-                        }
-
-                        try
-                        {
-                            cancellationToken.ThrowIfCancellationRequested();
-                        }
-                        catch (OperationCanceledException callerFailure)
-                        {
-                            primaryFailure = callerFailure;
-                            throw;
-                        }
-                    }
-
+                    primaryFailure = SelectAppendFailure(exception, lifetime, cancellationToken);
                     throw;
                 }
             }
@@ -225,6 +234,12 @@ internal sealed class EventBrookWriter : IEventBrookWriter
         }
         catch (Exception exception)
         {
+            if (committed is BrookPosition position)
+            {
+                Logger.AppendCleanupFailed(primaryFailure ?? exception, brookId, position.Value);
+                return position;
+            }
+
             if (primaryFailure is not null && !ReferenceEquals(primaryFailure, exception))
             {
                 ExceptionDispatchInfo.Capture(primaryFailure).Throw();
@@ -372,7 +387,6 @@ internal sealed class EventBrookWriter : IEventBrookWriter
                 finalPosition,
                 lifetime.ThrowIfFailed,
                 cancellationToken);
-            lifetime.ThrowIfFailed();
         }
         catch (Exception exception)
         {
@@ -421,7 +435,6 @@ internal sealed class EventBrookWriter : IEventBrookWriter
             cancellationToken);
         lifetime.ThrowIfFailed();
         await Repository.CommitCursorPositionAsync(brookId, finalPosition, lifetime.ThrowIfFailed, cancellationToken);
-        lifetime.ThrowIfFailed();
         LogSingleBatchCommitted(Logger, brookId, finalPosition, 200, 0, null);
         return new(finalPosition);
     }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Brooks.Abstractions;
@@ -109,6 +109,7 @@ internal sealed class EventWriterLeaseTestContext
             {
                 guard();
                 await HoldAsync(3);
+                CommitCompleted?.Invoke();
             });
         Repository.Setup(r => r.DeleteEventAsync(
                 Key,
@@ -128,7 +129,7 @@ internal sealed class EventWriterLeaseTestContext
             options,
             mapper.Object,
             recovery.Object,
-            NullLogger<EventBrookWriter>.Instance,
+            Logger.Object,
             clock,
             deadlineScheduler);
     }
@@ -142,6 +143,11 @@ internal sealed class EventWriterLeaseTestContext
     ///     Gets the controlled clock.
     /// </summary>
     public LeaseTestTimeProvider Clock { get; }
+
+    /// <summary>
+    ///     Gets or sets the action delivered after the successful commit request completes.
+    /// </summary>
+    public Action? CommitCompleted { get; set; }
 
     /// <summary>
     ///     Gets the two stable events used in either batch path.
@@ -187,6 +193,11 @@ internal sealed class EventWriterLeaseTestContext
     ///     Gets the append lease double, whose disposal is owned by the writer.
     /// </summary>
     public Mock<IDistributedLock> Lease { get; } = new(MockBehavior.Strict);
+
+    /// <summary>
+    ///     Gets the writer's capturing logger, disabled by default.
+    /// </summary>
+    public Mock<ILogger<EventBrookWriter>> Logger { get; } = new();
 
     /// <summary>
     ///     Gets or sets a secondary lease release failure.
