@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Globalization;
 
 using Bunit;
 
@@ -196,5 +197,33 @@ public sealed class InvestigationsTests : BunitContext
             StringComparison.Ordinal);
         Assert.Empty(cut.FindAll("[role='alert'], [role='status'], .spring-queue-empty, table"));
         Assert.DoesNotContain("Projection version", cut.Markup, StringComparison.Ordinal);
+    }
+
+    /// <summary>Verify fixed GBP formatting and Gregorian UTC timestamps under different cultures.</summary>
+    /// <param name="cultureName">A culture with different number separators, time separators or calendar.</param>
+    [Theory]
+    [InlineData("de-DE")]
+    [InlineData("fi-FI")]
+    [InlineData("th-TH")]
+    public void QueueFormattingUsesInvariantGbpAndUtc(
+        string cultureName
+    )
+    {
+        CultureInfo previousCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(cultureName);
+            RegisterStore(CreateQueueState(1));
+            using IRenderedComponent<Investigations> cut = Render<Investigations>();
+            string row = Assert.Single(cut.FindAll("tbody tr")).TextContent;
+            Assert.Contains("£10,001.00", row, StringComparison.Ordinal);
+            Assert.Contains("2026-01-02 10:45:00", row, StringComparison.Ordinal);
+            Assert.Contains("2026-01-02 10:46:00", row, StringComparison.Ordinal);
+            Assert.Contains("Times are shown in UTC.", cut.Find("caption").TextContent, StringComparison.Ordinal);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previousCulture;
+        }
     }
 }

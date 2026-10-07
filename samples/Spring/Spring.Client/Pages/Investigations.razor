@@ -1,5 +1,6 @@
 @page "/investigations"
 @namespace MississippiSamples.Spring.Client.Pages
+@using System.Globalization
 @using MississippiSamples.Spring.Client.Features.FlaggedTransactions.Dtos
 @inherits InletComponent
 
@@ -77,9 +78,9 @@
                             <tr>
                                 <td>
                                     <code>@entry.AccountId</code>
-                                </td><td>£@entry.Amount.ToString("N2")</td>
-                                <td>@entry.OriginalTimestamp.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
-                                <td>@entry.FlaggedTimestamp.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                </td><td>£@entry.Amount.ToString("N2", CultureInfo.InvariantCulture)</td>
+                                <td>@entry.OriginalTimestamp.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)</td>
+                                <td>@entry.FlaggedTimestamp.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)</td>
                             </tr>
                         }
                         </tbody>
