@@ -47,6 +47,29 @@ Describe 'Sonar report handoff' {
         $manifest | Where-Object { $_.Sha256 -notmatch '^[0-9A-F]{64}$' } | Should -BeNullOrEmpty
         (Get-Content (Join-Path $upload 'obj/Release/net10.0/apphost') -Raw).Trim() | Should -Be 'generated binary'
     }
+    It 'accepts scanner Roslyn report paths: <Case>' -TestCases @(
+        @{Case='pipe-delimited reports';Names=@('Issues.json','Issues2.json')},
+        @{Case='literal comma in report filename';Names=@('Issues,generated.json')}
+    ) {
+        param($Names)
+        $report = Get-Content (Join-Path $build '.sonarqube/out/0/Issues.json') -Raw
+        foreach ($name in $Names) { Write-FixtureFile ".sonarqube/out/0/$name" $report }
+        $locations = @($Names | ForEach-Object { "/work/.sonarqube/out/0/$_" }) -join '|'
+        Change-Project '/work/.sonarqube/out/0/Issues.json' $locations
+        $manifest = @(Invoke-Handoff)
+        foreach ($name in $Names) { $manifest.Path | Should -Contain ".sonarqube/out/0/$name" }
+    }
+    It 'rejects unsafe report-list members and lists in single-path settings: <Case>' -TestCases @(
+        @{Case='outside workspace';Old='/work/.sonarqube/out/0/Issues.json';Value='/work/.sonarqube/out/0/Issues.json|/etc/private.json'},
+        @{Case='different project';Old='/work/.sonarqube/out/0/Issues.json';Value='/work/.sonarqube/out/0/Issues.json|/work/.sonarqube/out/1/Issues.json'},
+        @{Case='empty list member';Old='/work/.sonarqube/out/0/Issues.json';Value='/work/.sonarqube/out/0/Issues.json|'},
+        @{Case='telemetry list';Old='/work/.sonarqube/out/0/Telemetry.json';Value='/work/.sonarqube/out/0/Telemetry.json|/work/.sonarqube/out/0/Issues.json'},
+        @{Case='analyzer-output list';Old='/work/.sonarqube/out/0';Value='/work/.sonarqube/out/0|/work/.sonarqube/out/1'}
+    ) {
+        param($Old,$Value)
+        Change-Project ">${Old}</Property>" ">${Value}</Property>"
+        { Invoke-Handoff } | Should -Throw
+    }
     It 'accepts excluded projects with the scanner telemetry setting only' {
         Change-Project '<IsExcluded>false</IsExcluded>' '<IsExcluded>true</IsExcluded>'
         Change-Project '<Property Name="sonar.cs.roslyn.reportFilePaths">/work/.sonarqube/out/0/Issues.json</Property>' ''
