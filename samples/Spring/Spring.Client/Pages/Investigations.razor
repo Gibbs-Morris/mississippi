@@ -27,7 +27,7 @@
         <div class="spring-queue">
             <p>
                 Most recent 30 flags across all accounts. @(IsQueueConnected ? "SignalR connected." : "SignalR not connected.")
-                @if (FlaggedProjection is not null)
+                @if (FlaggedProjection is not null && string.IsNullOrEmpty(QueueReadError))
                 {
                     <span>@(" Projection version ")@QueueVersion.</span>
                 }
@@ -36,11 +36,14 @@
             {
                 <div class="spring-queue-error" role="alert">
                     <h3>The queue could not be read</h3>
-                    <p>@QueueReadError</p>
-                    <p>Check the live connection and your persona. A new server may have no queue data until a high-value deposit is flagged.</p>
+                    <p>Check the live connection and your persona. This failed read does not tell you whether deposits have been flagged.</p>
+                    <details>
+                        <summary>Read error details</summary>
+                        <p>@QueueReadError</p>
+                    </details>
                 </div>
             }
-            @if (IsQueueLoading)
+            else if (IsQueueLoading)
             {
                 <p role="status">Loading the investigation queue…</p>
             }
