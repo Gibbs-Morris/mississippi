@@ -377,4 +377,37 @@ public sealed class InletHubAuthenticationReviewTests
                 Arg.Is<AuthorizationPolicy>(policy => policy.AuthenticationSchemes.Contains(BearerScheme)),
                 Arg.Any<HttpContext>());
     }
+
+    /// <summary>
+    ///     A custom evaluator should handle virtual schemes without default authentication registration.
+    /// </summary>
+    /// <param name="registerAuthentication">Whether the host registers standard authentication services.</param>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SubscribeUsesCustomEvaluatorForVirtualScheme(
+        bool registerAuthentication
+    )
+    {
+        const string virtualScheme = "Virtual";
+        IPolicyEvaluator evaluator = Substitute.For<IPolicyEvaluator>();
+        ClaimsPrincipal principal = CreatePrincipal("virtual-user");
+        evaluator.AuthenticateAsync(Arg.Any<AuthorizationPolicy>(), Arg.Any<HttpContext>())
+            .Returns(AuthenticateResult.Success(new(principal, virtualScheme)));
+        await using ServiceProvider services = CreateServices(
+            policyEvaluator: evaluator,
+            registerAuthentication: registerAuthentication);
+        using InletHub hub = CreateHub(
+            services,
+            virtualScheme,
+            out IInletSubscriptionGrain grain,
+            out ILogger<InletHub> _);
+        Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+        await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        await evaluator.Received(1)
+            .AuthenticateAsync(
+                Arg.Is<AuthorizationPolicy>(policy => policy.AuthenticationSchemes.Contains(virtualScheme)),
+                Arg.Any<HttpContext>());
+    }
 }

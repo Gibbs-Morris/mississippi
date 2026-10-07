@@ -171,26 +171,31 @@ public sealed class InletHub : Hub<IInletHubClient>
             return null;
         }
 
-        IAuthenticationSchemeProvider? schemeProvider =
-            httpContext.RequestServices.GetService<IAuthenticationSchemeProvider>();
-        if (schemeProvider is null)
-        {
-            return null;
-        }
-
-        foreach (string scheme in policy.AuthenticationSchemes)
-        {
-            AuthenticationScheme? registeredScheme = await schemeProvider.GetSchemeAsync(scheme);
-            if (registeredScheme is null)
-            {
-                return null;
-            }
-        }
-
         IPolicyEvaluator? policyEvaluator = httpContext.RequestServices.GetService<IPolicyEvaluator>();
         if (policyEvaluator is null)
         {
             return null;
+        }
+
+        // Only the built-in evaluator requires schemes registered with the default provider.
+        // Custom evaluators can implement virtual schemes and their own authentication services.
+        if (policyEvaluator.GetType() == typeof(PolicyEvaluator))
+        {
+            IAuthenticationSchemeProvider? schemeProvider =
+                httpContext.RequestServices.GetService<IAuthenticationSchemeProvider>();
+            if (schemeProvider is null)
+            {
+                return null;
+            }
+
+            foreach (string scheme in policy.AuthenticationSchemes)
+            {
+                AuthenticationScheme? registeredScheme = await schemeProvider.GetSchemeAsync(scheme);
+                if (registeredScheme is null)
+                {
+                    return null;
+                }
+            }
         }
 
         AuthenticateResult authenticationResult = await policyEvaluator.AuthenticateAsync(policy, httpContext);
