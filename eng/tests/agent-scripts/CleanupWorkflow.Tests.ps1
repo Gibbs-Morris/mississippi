@@ -71,7 +71,7 @@ function dotnet {
             Set-Content -LiteralPath $wrapperPath -Value $wrapper -Encoding utf8
             $output = & $powerShellPath -NoProfile -File $wrapperPath -Workspace $fixtureRoot -EventName $Event -EventSha $EventSha -ToolExitCode $ToolExitCode 2>&1 | Out-String
             $exitCode = $LASTEXITCODE
-            $arguments = if (Test-Path -LiteralPath $logPath) { @(Get-Content -LiteralPath $logPath -Raw | ConvertFrom-Json) } else { @() }
+            $arguments = @(if (Test-Path -LiteralPath $logPath) { Get-Content -LiteralPath $logPath -Raw | ConvertFrom-Json })
             [pscustomobject]@{ ExitCode = $exitCode; Output = $output; Arguments = $arguments }
         }
     }
