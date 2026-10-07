@@ -187,7 +187,12 @@ public sealed class InletHub : Hub<IInletHubClient>
             }
         }
 
-        IPolicyEvaluator policyEvaluator = httpContext.RequestServices.GetRequiredService<IPolicyEvaluator>();
+        IPolicyEvaluator? policyEvaluator = httpContext.RequestServices.GetService<IPolicyEvaluator>();
+        if (policyEvaluator is null)
+        {
+            return null;
+        }
+
         AuthenticateResult authenticationResult = await policyEvaluator.AuthenticateAsync(policy, httpContext);
         return authenticationResult.Succeeded ? authenticationResult.Principal : null;
     }

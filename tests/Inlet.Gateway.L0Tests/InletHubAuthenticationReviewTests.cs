@@ -90,7 +90,8 @@ public sealed class InletHubAuthenticationReviewTests
         IAuthenticationService? authenticationService = null,
         AuthorizationPolicy? defaultPolicy = null,
         IPolicyEvaluator? policyEvaluator = null,
-        bool registerAuthentication = true
+        bool registerAuthentication = true,
+        bool registerPolicyEvaluator = true
     )
     {
         ServiceCollection services = new();
@@ -105,16 +106,46 @@ public sealed class InletHubAuthenticationReviewTests
             services.AddSingleton(authenticationService);
         }
 
-        services.AddAuthorizationBuilder()
-            .SetDefaultPolicy(
-                defaultPolicy ??
-                new AuthorizationPolicyBuilder().RequireAuthenticatedUser().RequireClaim("permission", "read").Build());
+        AuthorizationPolicy authorizationPolicy = defaultPolicy ??
+                                                  new AuthorizationPolicyBuilder().RequireAuthenticatedUser()
+                                                      .RequireClaim("permission", "read")
+                                                      .Build();
+        if (registerPolicyEvaluator)
+        {
+            services.AddAuthorizationBuilder().SetDefaultPolicy(authorizationPolicy);
+        }
+        else
+        {
+            services.AddAuthorizationCore(options => options.DefaultPolicy = authorizationPolicy);
+        }
+
         if (policyEvaluator is not null)
         {
             services.AddSingleton(policyEvaluator);
         }
 
         return services.BuildServiceProvider();
+    }
+
+    /// <summary>
+    ///     Core authorization without a policy evaluator should use the generic subscription denial.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Fact]
+    public async Task SubscribeDeniesUnavailablePolicyEvaluator()
+    {
+        await using ServiceProvider services = CreateServices(registerPolicyEvaluator: false);
+        Assert.NotNull(services.GetService<IAuthenticationSchemeProvider>());
+        Assert.Null(services.GetService<IPolicyEvaluator>());
+        using InletHub hub = CreateHub(
+            services,
+            BearerScheme,
+            out IInletSubscriptionGrain grain,
+            out ILogger<InletHub> _);
+        HubException exception =
+            await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+        Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+        await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
     }
 
     /// <summary>
