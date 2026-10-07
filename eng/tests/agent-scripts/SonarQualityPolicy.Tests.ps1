@@ -48,6 +48,16 @@ Describe 'Sonar baseline and authentic provider verification' {
         $script:classification.settings[0].value='.*'
         { Invoke-Policy } | Should -Throw '*classification*'
     }
+    It 'requires default-branch uploads to remain LONG Sonar main: <Main>/<Type>' -TestCases @(
+        @{Main=$true;Type='LONG';Accepted=$true},@{Main=$false;Type='LONG';Accepted=$false},
+        @{Main=$true;Type='SHORT';Accepted=$false},@{Main=$false;Type='SHORT';Accepted=$false}
+    ) {
+        param($Main,$Type,$Accepted)
+        $source.Mode='Branch';$source.HeadRef='main';$source.HeadSha='b'*40
+        $script:checks.check_runs[0].head_sha='b'*40
+        $script:branches.branches[0].isMain=$Main;$script:branches.branches[0].type=$Type
+        if($Accepted){{Invoke-Published} | Should -Not -Throw}else{{Invoke-Published} | Should -Throw '*LONG Sonar main*'}
+    }
     It 'rejects an unsafe queue baseline or policy: <Case>' -TestCases @(@{Case='stale target'},@{Case='missing target'},@{Case='long candidate'},@{Case='candidate is main'},@{Case='weak security'},@{Case='weak hotspot review'},@{Case='missing condition'},@{Case='duplicate condition'},@{Case='unknown classification'}) {
         param($Case)
         switch ($Case) {

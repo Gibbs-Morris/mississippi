@@ -8,6 +8,7 @@ function Assert-SonarPublishedBranch {
     $branches = Read-SonarServiceMetadata 'project_branches/list?project=Gibbs-Morris_mississippi&organization=gibbs-morris'
     $branch = @($branches.branches | Where-Object { $_.name -ceq $Source.HeadRef })
     if ($branch.Count -ne 1 -or $branch[0].commit.sha -cne $Source.HeadSha -or $branch[0].status.qualityGateStatus -cne 'OK') { throw 'Published Sonar branch does not identify the successful source revision.' }
+    if ($Source.HeadRef -ceq $Source.TargetRef -and ($branch[0].isMain -ne $true -or $branch[0].type -cne 'LONG')) { throw 'Published default branch must remain the LONG Sonar main branch.' }
     if ($Source.Mode -ceq 'Queue' -and ($branch[0].type -cne 'SHORT' -or $branch[0].isMain -ne $false)) { throw 'Published queue analysis has the wrong branch classification.' }
 }
 
