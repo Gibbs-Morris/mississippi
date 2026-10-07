@@ -296,26 +296,16 @@ internal sealed class InletSignalRActionEffect
                 subscribeError = ex;
             }
 
-            if (isFailedSubscriptionRetry)
-            {
-                isCurrentRequest = TryCompleteFailedSubscriptionRetry(key, request, subscriptionId);
-            }
-            else
-            {
-                isCurrentRequest = TryCompletePendingSubscription(key, request, subscriptionId);
-            }
+            isCurrentRequest = isFailedSubscriptionRetry
+                ? TryCompleteFailedSubscriptionRetry(key, request, subscriptionId)
+                : TryCompletePendingSubscription(key, request, subscriptionId);
         }
         finally
         {
             // Iterator disposal and failed invocations also release the pending request or retry claim.
-            if (isFailedSubscriptionRetry)
-            {
-                _ = TryCompleteFailedSubscriptionRetry(key, request, null);
-            }
-            else
-            {
-                _ = TryCompletePendingSubscription(key, request, null);
-            }
+            _ = isFailedSubscriptionRetry
+                ? TryCompleteFailedSubscriptionRetry(key, request, null)
+                : TryCompletePendingSubscription(key, request, null);
         }
 
         if (!isCurrentRequest)
