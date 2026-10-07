@@ -38,9 +38,16 @@
                 <p>@ActivePersonaDescription</p>
                 <p>200 means allowed; 401 means no authenticated identity; 403 means the identity lacks the required access.</p>
             </div>
-            <InputField Id="auth-proof-entity" Label="Auth Proof entity ID" Value="@entityIdInput"
-                        ValueChanged="@(value => entityIdInput = value)" HelperText="Use a new ID to isolate your experiment. Blank uses auth-proof."/>
-            <p>Current entity: <code>@ProjectionEntityIdDisplay</code>. Responses and history retain earlier personas and entities. Send a new command to test this selection.</p>
+            <form class="spring-auth-entity-form" aria-label="Choose Auth Proof entity" @onsubmit="UseEntity" @onsubmit:preventDefault>
+                <InputField Id="auth-proof-entity" Label="Auth Proof entity ID" Value="@entityIdInput"
+                            ValueChanged="@(value => entityIdInput = value)" HelperText="Enter an ID, then choose Use this entity. Blank uses auth-proof."/>
+                <button type="submit">Use this entity</button>
+            </form>
+            <p class="spring-auth-selected-entity" role="status" aria-atomic="true">Current entity: <code>@ProjectionEntityIdDisplay</code>. Responses and history retain earlier personas and entities. Send a new command to test this selection.</p>
+            @if (HasUnappliedEntityDraft)
+            {
+                <p class="spring-auth-entity-draft" role="status">Entity draft has not been applied. Choose Use this entity to change the experiment.</p>
+            }
         </div>
     </Pane>
     <Pane Title="2 · Send a protected command">

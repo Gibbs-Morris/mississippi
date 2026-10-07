@@ -46,6 +46,9 @@ public sealed partial class AuthProofPage
     private AuthProofAggregateState AggregateStateSnapshot =>
         Select<AuthProofAggregateState, AuthProofAggregateState>(state => state);
 
+    private bool HasUnappliedEntityDraft =>
+        !string.Equals(NormalizedEntityDraft, ProjectionEntityIdDisplay, StringComparison.Ordinal);
+
     private bool IsAuthProjectionLoading => ProtectedReadState.IsLoading;
 
     private bool IsPersonaReadCurrent =>
@@ -56,8 +59,10 @@ public sealed partial class AuthProofPage
 
     private string LastSagaIdDisplay => lastSagaId?.ToString() ?? "—";
 
-    private string ProjectionEntityIdDisplay =>
+    private string NormalizedEntityDraft =>
         string.IsNullOrWhiteSpace(entityIdInput) ? DefaultEntityId : entityIdInput.Trim();
+
+    private string ProjectionEntityIdDisplay { get; set; } = DefaultEntityId;
 
     private string? ProjectionReadError => ProtectedReadState.ErrorMessage;
 
@@ -197,6 +202,12 @@ public sealed partial class AuthProofPage
     private void UseAuthProofClaimPersona() => Dispatch(AuthSimulationProfiles.AuthProofClaim);
 
     private void UseAuthProofRolePersona() => Dispatch(AuthSimulationProfiles.AuthProofRole);
+
+    private void UseEntity()
+    {
+        ProjectionEntityIdDisplay = NormalizedEntityDraft;
+        entityIdInput = ProjectionEntityIdDisplay;
+    }
 
     private void UseFullAccessPersona() => Dispatch(AuthSimulationProfiles.FullAccess);
 

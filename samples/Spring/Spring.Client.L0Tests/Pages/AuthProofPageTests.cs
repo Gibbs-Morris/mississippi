@@ -13,8 +13,10 @@ using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 using MississippiSamples.Spring.Client.Features.AuthProof.Dtos;
+using MississippiSamples.Spring.Client.Features.AuthProofAggregate.Actions;
 using MississippiSamples.Spring.Client.Features.AuthProofAggregate.State;
 using MississippiSamples.Spring.Client.Features.AuthProofRead;
+using MississippiSamples.Spring.Client.Features.AuthProofSaga.Actions;
 using MississippiSamples.Spring.Client.Features.AuthProofSaga.State;
 using MississippiSamples.Spring.Client.Features.AuthSimulation;
 using MississippiSamples.Spring.Client.L0Tests.Components.Templates;
@@ -119,6 +121,37 @@ public sealed class AuthProofPageTests : BunitContext
         return store.Object;
     }
 
+    /// <summary>Verify that protected commands target the selected entity while a different draft remains unapplied.</summary>
+    /// <param name="label">The protected command's visible button label.</param>
+    [Theory]
+    [InlineData("Record Authenticated Access")]
+    [InlineData("Record Policy Access")]
+    [InlineData("Record Role Access")]
+    public void CommandsRetainSelectedEntityDuringDraftEditing(
+        string label
+    )
+    {
+        List<IAction> actions = [];
+        RegisterStore(actions);
+        using IRenderedComponent<AuthProofPage> cut = Render<AuthProofPage>();
+        cut.Find("#auth-proof-entity").Input("selected-entity");
+        cut.Find(".spring-auth-entity-form").Submit();
+        actions.Clear();
+        cut.Find("#auth-proof-entity").Input("unapplied-entity");
+        Assert.Empty(actions);
+        cut.FindAll("button").Single(button => button.TextContent == label).Click();
+        IAction command = Assert.Single(actions);
+        string entityId = label switch
+        {
+            "Record Authenticated Access" => Assert.IsType<RecordAuthenticatedAccessAction>(command).EntityId,
+            "Record Policy Access" => Assert.IsType<RecordPolicyAccessAction>(command).EntityId,
+            "Record Role Access" => Assert.IsType<RecordRoleAccessAction>(command).EntityId,
+            var _ => throw new ArgumentOutOfRangeException(nameof(label)),
+        };
+        Assert.Equal("selected-entity", entityId);
+        Assert.Equal("unapplied-entity", cut.Find("#auth-proof-entity").GetAttribute("value"));
+    }
+
     /// <summary>
     ///     A completed empty or denied read waits for an explicit refresh rather than retrying automatically.
     /// </summary>
@@ -143,8 +176,50 @@ public sealed class AuthProofPageTests : BunitContext
         AssertRead(Assert.Single(actions), "auth-proof", AuthSimulationProfiles.FullAccess, previousRequestId);
     }
 
+    /// <summary>Verify that editing and blurring a draft cannot replace an active pending or completed read.</summary>
+    /// <param name="completeRead">Whether the original read completed with no data.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DraftEntityEditingDoesNotReplaceActiveRead(
+        bool completeRead
+    )
+    {
+        List<IAction> actions = [];
+        IInletStore store = RegisterStore(actions);
+        using IRenderedComponent<AuthProofPage> cut = Render<AuthProofPage>();
+        Guid requestId = Assert.IsType<ReadAuthProofProjectionAction>(actions[1]).RequestId;
+        if (completeRead)
+        {
+            store.Dispatch(new AuthProofProjectionReadCompletedAction(requestId, null, 0, null));
+            cut.Render();
+        }
+
+        AuthProofReadState retained = store.GetState<AuthProofReadState>();
+        Assert.Equal(completeRead ? 0 : -1, retained.Version);
+        Assert.Null(retained.Data);
+        Assert.Null(retained.ErrorMessage);
+        actions.Clear();
+        foreach (string draft in new[] { "p", "pr", "proof-draft" })
+        {
+            cut.Find("#auth-proof-entity").Input(draft);
+            Assert.Empty(actions);
+            Assert.Equal(requestId, store.GetState<AuthProofReadState>().RequestId);
+            Assert.Equal("auth-proof", store.GetState<AuthProofReadState>().EntityId);
+            Assert.Same(retained, store.GetState<AuthProofReadState>());
+            Assert.Equal("auth-proof", cut.Find(".spring-persona-content p > code").TextContent);
+        }
+
+        cut.Find("#auth-proof-entity").Blur();
+        cut.Render();
+        Assert.Empty(actions);
+        Assert.Equal(requestId, store.GetState<AuthProofReadState>().RequestId);
+        Assert.Equal(!completeRead, store.GetState<AuthProofReadState>().IsLoading);
+        Assert.Same(retained, store.GetState<AuthProofReadState>());
+    }
+
     /// <summary>
-    ///     Editing the entity replaces its subscription and starts a read of the trimmed or default ID.
+    ///     Verify that submitting the entity replaces its subscription and starts a read of the trimmed or default ID.
     /// </summary>
     /// <param name="input">The next entity draft.</param>
     /// <param name="expectedId">The entity that should be read.</param>
@@ -161,9 +236,12 @@ public sealed class AuthProofPageTests : BunitContext
         IInletStore store = RegisterStore(actions);
         using IRenderedComponent<AuthProofPage> cut = Render<AuthProofPage>();
         cut.Find("#auth-proof-entity").Input("previous-entity");
+        cut.Find(".spring-auth-entity-form").Submit();
         Guid? previousRequestId = store.GetState<AuthProofReadState>().RequestId;
         actions.Clear();
         cut.Find("#auth-proof-entity").Input(input);
+        Assert.Empty(actions);
+        cut.Find(".spring-auth-entity-form").Submit();
         Assert.Collection(
             actions,
             action => Assert.Equal(
@@ -222,8 +300,11 @@ public sealed class AuthProofPageTests : BunitContext
         IInletStore store = RegisterStore(actions, initialProfile);
         using IRenderedComponent<AuthProofPage> cut = Render<AuthProofPage>();
         cut.Find("#auth-proof-entity").Input("persona-entity");
+        cut.Find(".spring-auth-entity-form").Submit();
         Guid? previousRequestId = store.GetState<AuthProofReadState>().RequestId;
         actions.Clear();
+        cut.Find("#auth-proof-entity").Input("unapplied-persona-draft");
+        Assert.Empty(actions);
         cut.FindAll(".spring-personas button").Single(button => button.TextContent == name).Click();
         Assert.Collection(
             actions,
@@ -234,6 +315,52 @@ public sealed class AuthProofPageTests : BunitContext
             cut.FindAll(".spring-personas button")
                 .Single(button => button.TextContent == name)
                 .GetAttribute("aria-pressed"));
+    }
+
+    /// <summary>Verify that a saga start carries the selected marker while a different entity draft remains unapplied.</summary>
+    [Fact]
+    public void SagaStartRetainsSelectedMarkerDuringDraftEditing()
+    {
+        List<IAction> actions = [];
+        RegisterStore(actions);
+        using IRenderedComponent<AuthProofPage> cut = Render<AuthProofPage>();
+        cut.Find("#auth-proof-entity").Input("selected-entity");
+        cut.Find(".spring-auth-entity-form").Submit();
+        actions.Clear();
+        cut.Find("#auth-proof-entity").Input("unapplied-entity");
+        Assert.Empty(actions);
+        cut.FindAll("button").Single(button => button.TextContent == "Start AuthProof Saga").Click();
+        StartAuthProofSagaAction action = Assert.IsType<StartAuthProofSagaAction>(Assert.Single(actions));
+        Assert.Equal("selected-entity", action.Marker);
+        Assert.NotEqual(Guid.Empty, action.SagaId);
+        Assert.Equal(action.SagaId.ToString(), action.EntityId);
+        Assert.NotNull(action.CorrelationId);
+        Assert.Matches("^[0-9a-f]{32}$", action.CorrelationId);
+        Assert.Equal("unapplied-entity", cut.Find("#auth-proof-entity").GetAttribute("value"));
+    }
+
+    /// <summary>Verify that submitting the current normalized entity does not replace its read or subscription.</summary>
+    /// <param name="draft">The unchanged entity or its trimmed/default equivalent.</param>
+    [Theory]
+    [InlineData("auth-proof")]
+    [InlineData("  auth-proof  ")]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void SameNormalizedEntitySubmissionDoesNotRepeatRead(
+        string draft
+    )
+    {
+        List<IAction> actions = [];
+        IInletStore store = RegisterStore(actions);
+        using IRenderedComponent<AuthProofPage> cut = Render<AuthProofPage>();
+        Guid? requestId = store.GetState<AuthProofReadState>().RequestId;
+        actions.Clear();
+        cut.Find("#auth-proof-entity").Input(draft);
+        Assert.Empty(actions);
+        cut.Find(".spring-auth-entity-form").Submit();
+        Assert.Empty(actions);
+        Assert.Equal(requestId, store.GetState<AuthProofReadState>().RequestId);
+        Assert.Equal("auth-proof", cut.Find("#auth-proof-entity").GetAttribute("value"));
     }
 
     /// <summary>

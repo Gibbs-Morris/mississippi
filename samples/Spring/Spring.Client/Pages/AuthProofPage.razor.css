@@ -17,3 +17,7 @@
 .spring-auth-snapshots { padding: var(--spring-space-inline) var(--spring-space-panel); border: var(--spring-border-width) solid var(--rf-color-text-muted); border-radius: var(--spring-radius-control); }
 @media (max-width: 800px) { .spring-proof-grid { grid-template-columns: minmax(0, 1fr); } }
 .spring-auth-outcome button { justify-self: start; }
+.spring-auth-entity-form { display: grid; gap: var(--spring-space-stack); min-width: 0; }
+.spring-auth-entity-form button { justify-self: start; }
+.spring-auth-selected-entity { overflow-wrap: anywhere; }
+.spring-auth-entity-draft { color: var(--rf-color-text-secondary); font-size: var(--spring-type-support); }

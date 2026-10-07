@@ -551,6 +551,14 @@ public sealed class FlagshipJourneysTests
                     AriaRole.Button,
                     new()
                     {
+                        Name = "Use this entity",
+                        Exact = true,
+                    })
+                .ClickAsync();
+            await page.GetByRole(
+                    AriaRole.Button,
+                    new()
+                    {
                         Name = "Record Authenticated Access",
                         Exact = true,
                     })
@@ -1032,6 +1040,14 @@ public sealed class FlagshipJourneysTests
                         Exact = true,
                     })
                 .FillAsync(entityId);
+            await page.GetByRole(
+                    AriaRole.Button,
+                    new()
+                    {
+                        Name = "Use this entity",
+                        Exact = true,
+                    })
+                .ClickAsync();
             await Expect(
                     page.GetByText(
                         $"Current entity: {entityId}",
