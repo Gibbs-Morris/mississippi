@@ -193,9 +193,10 @@ public sealed class BlobDistributedLockCreationTests
         loserBlob.VerifyNoOtherCalls();
         IInvocation raceLog = Assert.Single(
             logger.Invocations,
-            invocation => (invocation.Method.Name == "Log") && (((EventId)invocation.Arguments[1]).Id == 6));
+            invocation => (invocation.Method.Name == "Log") &&
+                          (Assert.IsType<EventId>(invocation.Arguments[1]).Id == 6));
         Assert.Equal(LogLevel.Debug, raceLog.Arguments[0]);
-        Assert.Equal("LockBlobAlreadyExists", ((EventId)raceLog.Arguments[1]).Name);
+        Assert.Equal("LockBlobAlreadyExists", Assert.IsType<EventId>(raceLog.Arguments[1]).Name);
         Assert.Same(creationConflict, raceLog.Arguments[3]);
         IReadOnlyList<KeyValuePair<string, object?>> state =
             Assert.IsType<IReadOnlyList<KeyValuePair<string, object?>>>(raceLog.Arguments[2], false);
