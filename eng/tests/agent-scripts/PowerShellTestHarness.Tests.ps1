@@ -124,6 +124,40 @@ Describe 'PowerShell test orchestration' {
     }
 }
 
+Describe 'Trusted Sonar suite aggregation' {
+    BeforeAll {
+        $fixture = Join-Path $TestDrive 'sonar-runner'
+        New-Item -ItemType Directory -Path $fixture | Out-Null
+        Copy-Item (Join-Path $PSScriptRoot 'run-trusted-sonar-tests.ps1') $fixture
+        $runner = Join-Path $fixture 'run-trusted-sonar-tests.ps1'
+        $stub = Join-Path $fixture 'run-pester-suite.ps1'
+        $passing = '[pscustomobject]@{Result="Passed";TotalCount=2;PassedCount=2;FailedCount=0}'
+    }
+
+    It 'includes one passing non-empty result from all four files' {
+        Set-Content $stub ('param([string]$TestPath,[switch]$PassThru); ' + $passing)
+        $result = & $runner -PassThru
+        $result.Result | Should -Be 'Passed'
+        $result.TotalCount | Should -Be 8
+        $result.PassedCount | Should -Be 8
+        $result.FailedCount | Should -Be 0
+    }
+
+    It 'fails when one file returns <Case>' -ForEach @(
+        @{Case='nothing';Body=''},
+        @{Case='no discovered tests';Body='[pscustomobject]@{Result="Passed";TotalCount=0;PassedCount=0;FailedCount=0}'},
+        @{Case='multiple passing results';Body='1..2 | ForEach-Object { [pscustomobject]@{Result="Passed";TotalCount=2;PassedCount=2;FailedCount=0} }'},
+        @{Case='failed tests';Body='[pscustomobject]@{Result="Failed";TotalCount=2;PassedCount=1;FailedCount=1}'}
+    ) {
+        $body = 'param([string]$TestPath,[switch]$PassThru); if ([IO.Path]::GetFileName($TestPath) -eq "SonarReportHandoff.Tests.ps1") { ' + $Body + '; return }; ' + $passing
+        Set-Content $stub $body
+        $result = & $runner -PassThru
+        $result.Result | Should -Be 'Failed'
+        $result.FailedCount | Should -BeGreaterThan 0
+        & $powerShellPath -NoProfile -File $runner | Out-Null
+        $LASTEXITCODE | Should -Be 1
+    }
+}
 Describe 'Standalone Pester runners' {
     It 'returns <ExitCode> for <Case> through <Runner>' -ForEach @(
         foreach ($suite in @(
