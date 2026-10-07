@@ -24,6 +24,8 @@ Governing thought: Preserve caller attribute inputs while protecting component-o
 
 - Agents **SHOULD** constrain grid tracks and item minimum widths around wide scrollers. Why: Spring's expanded 600px history widened a 390px page to 660px despite `overflow: auto`; `minmax(0, 1fr)` and `min-width: 0` restored its keyboard-scrollable containment.
 
+- Agents **SHOULD** make failed projection read outcomes exclusive from loading, empty or healthy cached outcomes. Why: Spring PR #1029 reproduced contradictory balance, ledger and transfer status displays in 15 rendered tests.
+
 ## References
 
 - Self-improvement governance: [Self-Improvement Learning System](self-improvement.instructions.md).

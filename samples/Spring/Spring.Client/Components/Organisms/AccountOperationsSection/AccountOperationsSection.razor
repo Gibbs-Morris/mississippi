@@ -9,7 +9,23 @@
         <button type="button" @onclick="OnSwitchAccount" aria-label="@($"Switch {PanelLabel} account")">Switch</button>
     </header>
     <section class="spring-balance" aria-label="@($"{PanelLabel} live account")">
-        @if (BalanceProjection is not null)
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <div class="spring-read-error" role="alert">
+                <h3>The account could not be read</h3>
+                <p>This failed read does not establish the current balance or whether the account is open. Check the connection and read error before sending another command.</p>
+                <details>
+                    <summary>Read error details</summary>
+                    <p>@ErrorMessage</p>
+                </details>
+            </div>
+        }
+        else if (IsBalanceLoading)
+        {
+            <h3 role="status">Loading the live account</h3>
+            <p>Wait for the account read before assessing its balance or status.</p>
+        }
+        else if (BalanceProjection is not null)
         {
             <p class="spring-holder" data-spring-holder="@InputIdPrefix">@BalanceProjection.HolderName</p>
             <p class="spring-balance-label">Live balance</p>
@@ -25,16 +41,10 @@
         }
         else
         {
-            <h3>@(IsBalanceLoading ? "Loading the live account" : "No account data received")</h3>
+            <h3>No account data received</h3>
             <p>
                 Opening a new account? Send the command below, then wait for its balance.
                 If this ID already exists, check the connection and any read error.
-            </p>
-        }
-        @if (!string.IsNullOrEmpty(ErrorMessage))
-        {
-            <p class="spring-read-error" role="alert">
-                <strong>Balance read:</strong> @ErrorMessage
             </p>
         }
     </section>
@@ -73,7 +83,16 @@
     </details>
     @if (!IsAccountOpen)
     {
-        <p class="spring-prerequisite">Open this account before depositing, withdrawing or transferring.</p>
+        <p class="spring-prerequisite">
+            @if (IsBalanceLoading || !string.IsNullOrEmpty(ErrorMessage))
+            {
+                <span>An open account is required for deposits, withdrawals and transfers. Its current status is unavailable.</span>
+            }
+            else
+            {
+                <span>Open this account before depositing, withdrawing or transferring.</span>
+            }
+        </p>
     }
     <details class="spring-task-disclosure" id="@($"{InputIdPrefix}-transfer-task")" open="@(!string.IsNullOrWhiteSpace(TransferSagaId))">
         <summary>Transfer to the other account</summary>
@@ -101,7 +120,18 @@
                                 <strong>Transfer saga ID:</strong> @TransferSagaId
                             </span>
                         }
-                        @if (TransferStatusProjection is null)
+                        @if (!string.IsNullOrEmpty(TransferReadError))
+                        {
+                            <div class="spring-read-error" role="alert">
+                                <strong>Transfer status could not be read</strong>
+                                <p>This failed read does not establish the saga outcome. Check the transfer-start response and both account projections before starting another transfer.</p>
+                                <details>
+                                    <summary>Read error details</summary>
+                                    <p>@TransferReadError</p>
+                                </details>
+                            </div>
+                        }
+                        else if (TransferStatusProjection is null)
                         {
                             <span>@(string.IsNullOrWhiteSpace(TransferSagaId) ? "Start a transfer to see saga status." : "Waiting for transfer status.")</span>
                             @if (!string.IsNullOrWhiteSpace(TransferSagaId))
@@ -149,12 +179,6 @@
                         }
                     </div>
                 </TelemetryStrip>
-                @if (!string.IsNullOrEmpty(TransferReadError))
-                {
-                    <p class="spring-read-error" role="alert">
-                        <strong>Transfer status read:</strong> @TransferReadError
-                    </p>
-                }
             </div>
         </Pane>
     </details>
@@ -165,13 +189,22 @@
         <p>Deposits and withdrawals appear here. The opening deposit is included in the balance above.</p>
         @if (!string.IsNullOrEmpty(LedgerError))
         {
-            <p class="spring-read-error" role="alert">
-                <strong>Ledger read:</strong> @LedgerError
-            </p>
+            <div class="spring-read-error" role="alert">
+                <strong>The ledger could not be read</strong>
+                <p>This failed read does not establish which transactions have committed. Check the command response and the account balance before sending another command.</p>
+                <details>
+                    <summary>Read error details</summary>
+                    <p>@LedgerError</p>
+                </details>
+            </div>
         }
-        @if (LedgerProjection is null)
+        else if (IsLedgerLoading)
         {
-            <p role="status">@(IsLedgerLoading ? "Loading the ledger…" : "No ledger data received yet.")</p>
+            <p role="status">Loading the ledger…</p>
+        }
+        else if (LedgerProjection is null)
+        {
+            <p role="status">No ledger data received yet.</p>
         }
         else if (LedgerProjection.Entries.Length == 0)
         {

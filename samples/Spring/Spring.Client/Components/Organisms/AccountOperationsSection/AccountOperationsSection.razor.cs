@@ -227,14 +227,16 @@ public sealed partial class AccountOperationsSection
     private string TransferStatusId => GetInputId("transfer-status");
 
     private string TransferStatusState =>
-        TransferStatusProjection?.Phase switch
-        {
-            SagaPhaseDto.Completed => RefractionStates.Complete,
-            SagaPhaseDto.Compensated => RefractionStates.Alert,
-            SagaPhaseDto.Compensating or SagaPhaseDto.Running => RefractionStates.Busy,
-            SagaPhaseDto.Failed => RefractionStates.Error,
-            var _ => RefractionStates.Quiet,
-        };
+        !string.IsNullOrEmpty(TransferReadError)
+            ? RefractionStates.Error
+            : TransferStatusProjection?.Phase switch
+            {
+                SagaPhaseDto.Completed => RefractionStates.Complete,
+                SagaPhaseDto.Compensated => RefractionStates.Alert,
+                SagaPhaseDto.Compensating or SagaPhaseDto.Running => RefractionStates.Busy,
+                SagaPhaseDto.Failed => RefractionStates.Error,
+                var _ => RefractionStates.Quiet,
+            };
 
     private string WithdrawAmountInputId => GetInputId("withdraw-amount-input");
 
