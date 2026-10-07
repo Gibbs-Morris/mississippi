@@ -217,3 +217,17 @@ function Assert-SonarPublishedAnalysis {
 }
 
 Export-ModuleMember -Function Get-SonarQualityPolicySnapshot,Assert-SonarQualityPolicyUnchanged,Assert-SonarPublishedAnalysis
+function Assert-TrustedSonarUploadCompletion {
+    param([object]$Source,[object]$Policy,[string]$Repository,[string]$DefaultBranch,[datetimeoffset]$StartedAt)
+    $published = Get-TrustedSonarSource -Repository $Repository -RunId $Source.RunId -DefaultBranch $DefaultBranch
+    Assert-TrustedSonarSourceUnchanged -Before $Source -After $published
+    Assert-SonarPublishedAnalysis -Source $published -Repository $Repository -StartedAt $StartedAt
+    $currentPolicy = Get-SonarQualityPolicySnapshot -Source $published
+    Assert-SonarQualityPolicyUnchanged -Before $Policy -After $currentPolicy
+    $final = Get-TrustedSonarSource -Repository $Repository -RunId $Source.RunId -DefaultBranch $DefaultBranch
+    Assert-TrustedSonarSourceUnchanged -Before $published -After $final
+    if ($published.TargetSha -cne $final.TargetSha) { throw 'Sonar source target changed after the completed policy check.' }
+    return $final
+}
+
+Export-ModuleMember -Function Assert-TrustedSonarUploadCompletion

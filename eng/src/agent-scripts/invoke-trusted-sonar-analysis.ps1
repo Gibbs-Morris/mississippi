@@ -69,9 +69,7 @@ try {
     $currentPolicy = Get-SonarQualityPolicySnapshot -Source $latest
     Assert-SonarQualityPolicyUnchanged -Before $policy -After $currentPolicy
     Invoke-SonarContainer @container -Workspace $upload -Phase End
-    Assert-SonarPublishedAnalysis -Source $latest -Repository $Repository -StartedAt $startedAt
-    $publishedPolicy = Get-SonarQualityPolicySnapshot -Source $latest
-    Assert-SonarQualityPolicyUnchanged -Before $policy -After $publishedPolicy
+    $latest = Assert-TrustedSonarUploadCompletion -Source $source -Policy $policy -Repository $Repository -DefaultBranch $DefaultBranch -StartedAt $startedAt
     Write-Host "Sonar analysis completed for $($source.Mode) revision $($source.HeadSha)."
     exit 0
 }

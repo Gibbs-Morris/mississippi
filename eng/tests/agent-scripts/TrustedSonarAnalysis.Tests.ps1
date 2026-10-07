@@ -166,3 +166,72 @@ Describe 'Trusted Sonar source identity' {
         { Assert-TrustedSonarSourceUnchanged -Before $before -After (Invoke-Source) } | Should -Throw '*changed during validation*'
     }
 }
+
+Describe 'Trusted Sonar post-upload completion' {
+    BeforeAll {
+        $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+        Import-Module (Join-Path $repoRoot 'eng/src/agent-scripts/MergeGroupIssueReference.psm1') -Force
+        Import-Module (Join-Path $repoRoot 'eng/src/agent-scripts/TrustedSonarAnalysis.psm1') -Force
+        $tokens=$null;$errors=$null
+        $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $repoRoot 'eng/src/agent-scripts/invoke-trusted-sonar-analysis.ps1'),[ref]$tokens,[ref]$errors)
+        if($errors.Count){throw 'Controller syntax failed.'}
+        $body=@(($ast.EndBlock.Statements | Where-Object {$_ -is [Management.Automation.Language.TryStatementAst]}).Body.Statements)
+        $end=-1;$finish=-1
+        for($i=0;$i -lt $body.Count;$i++){
+            if($body[$i].Extent.Text -match '^Invoke-SonarContainer .* -Phase End$'){$end=$i}
+            if($body[$i].Extent.Text -match '^Write-Host "Sonar analysis completed'){$finish=$i}
+        }
+        if($end -lt 0 -or $finish -le $end){throw 'Cannot locate the actual post-upload acceptance block.'}
+        $script:completionBlock=[scriptblock]::Create(($body[($end+1)..($finish-1)] | ForEach-Object {$_.Extent.Text}) -join [Environment]::NewLine)
+        function Invoke-Completion {
+            InModuleScope TrustedSonarAnalysis -Parameters @{Completion=$script:completionBlock;Original=$script:originalSource;OriginalPolicy=$script:completionPolicy} {
+                param($Completion,$Original,$OriginalPolicy)
+                $source=$Original;$latest=$Original;$policy=$OriginalPolicy
+                $Repository='Gibbs-Morris/mississippi';$SourceRunId=42;$DefaultBranch='main'
+                $startedAt=[datetimeoffset]'2026-10-07T12:00:00Z'
+                & $Completion
+            }
+        }
+    }
+    BeforeEach {
+        $script:originalSource=[pscustomobject]@{RunId=42;Mode='Branch';HeadSha=('a'*40);BuildSha=('a'*40);HeadRef='main';TargetRef='main';TargetSha=$null;PullRequest=$null;Queue=$null}
+        $script:currentSource=$script:originalSource | ConvertTo-Json | ConvertFrom-Json
+        $script:completionPolicy=[pscustomobject]@{GateId=1;Conditions='reviewed';LongLivedPattern='(branch|release)-.*'}
+        Mock Get-TrustedSonarSource -ModuleName TrustedSonarAnalysis {return ($script:currentSource | ConvertTo-Json -Depth 8 | ConvertFrom-Json)}
+        Mock Assert-SonarPublishedAnalysis -ModuleName TrustedSonarAnalysis {}
+        Mock Get-SonarQualityPolicySnapshot -ModuleName TrustedSonarAnalysis {return $script:completionPolicy}
+    }
+    It 'accepts an unchanged source after a successful upload' {
+        {Invoke-Completion} | Should -Not -Throw
+    }
+    It 'rejects a source changed during upload: <Mode>' -TestCases @(@{Mode='Branch'},@{Mode='Manual'},@{Mode='PullRequest'},@{Mode='Queue'}) {
+        param($Mode)
+        $resolvedMode=if($Mode -eq 'Manual'){'Branch'}else{$Mode}
+        $script:originalSource.Mode=$resolvedMode;$script:currentSource.Mode=$resolvedMode
+        if($Mode -ne 'Branch'){$branch=if($Mode -eq 'Queue'){'gh-readonly-queue/main/pr-5'}else{'codex/test'};$script:originalSource.HeadRef=$branch;$script:currentSource.HeadRef=$branch}
+        $script:currentSource.HeadSha='d'*40
+        {Invoke-Completion} | Should -Throw '*changed during analysis*'
+    }
+    It 'rejects a source changed while waiting for its provider check' {
+        Mock Assert-SonarPublishedAnalysis -ModuleName TrustedSonarAnalysis {$script:currentSource.HeadSha='d'*40}
+        {Invoke-Completion} | Should -Throw '*changed during analysis*'
+    }
+    It 'rejects a source changed while rechecking Sonar policy' {
+        Mock Get-SonarQualityPolicySnapshot -ModuleName TrustedSonarAnalysis {$script:currentSource.HeadSha='d'*40;return $script:completionPolicy}
+        {Invoke-Completion} | Should -Throw '*changed during analysis*'
+    }
+    It 'propagates a post-upload verification failure: <Stage>' -TestCases @(@{Stage='provider'},@{Stage='policy'}) {
+        param($Stage)
+        if($Stage -eq 'provider'){
+            Mock Assert-SonarPublishedAnalysis -ModuleName TrustedSonarAnalysis {throw 'Provider verification failed.'}
+            {Invoke-Completion} | Should -Throw '*Provider verification failed*'
+        }else{
+            Mock Get-SonarQualityPolicySnapshot -ModuleName TrustedSonarAnalysis {return [pscustomobject]@{GateId=2;Conditions='reviewed';LongLivedPattern='(branch|release)-.*'}}
+            {Invoke-Completion} | Should -Throw '*policy changed*'
+        }
+    }
+    It 'rejects unavailable post-upload source metadata' {
+        Mock Get-TrustedSonarSource -ModuleName TrustedSonarAnalysis {throw 'Post-upload metadata unavailable.'}
+        {Invoke-Completion} | Should -Throw '*metadata unavailable*'
+    }
+}
