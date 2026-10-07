@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 using AngleSharp.Dom;
 
@@ -36,20 +38,71 @@ namespace MississippiSamples.Spring.Client.L0Tests.Pages;
 /// </summary>
 public sealed class OperationsPageTests : BunitContext
 {
+    /// <summary>Checks exact projection action types and IDs, including duplicate or unexpected actions.</summary>
+    /// <param name="actions">The actions emitted by the page.</param>
+    /// <param name="operation">The expected subscribe or unsubscribe operation.</param>
+    /// <param name="first">The first expected unique account ID.</param>
+    /// <param name="second">The second expected unique account ID.</param>
+    private static void AssertAccountSubscriptionActions(
+        List<IAction> actions,
+        string operation,
+        string? first,
+        string? second
+    )
+    {
+        List<string> expected = [];
+        if (first is not null)
+        {
+            expected.Add(operation + "-balance:" + first);
+            expected.Add(operation + "-ledger:" + first);
+        }
+
+        if (second is not null)
+        {
+            expected.Add(operation + "-balance:" + second);
+            expected.Add(operation + "-ledger:" + second);
+        }
+
+        Assert.Equal(expected.OrderBy(value => value, StringComparer.Ordinal), DescribeSubscriptionActions(actions));
+    }
+
+    /// <summary>Describes every outgoing action without discarding unexpected types or repeated IDs.</summary>
+    /// <param name="actions">The observed actions.</param>
+    /// <returns>The ordered projection action descriptions.</returns>
+    private static IEnumerable<string> DescribeSubscriptionActions(
+        IEnumerable<IAction> actions
+    ) =>
+        actions.Select(action => action switch
+            {
+                SubscribeToProjectionAction<BankAccountBalanceProjectionDto> balance => "subscribe-balance:" +
+                    balance.EntityId,
+                SubscribeToProjectionAction<BankAccountLedgerProjectionDto> ledger => "subscribe-ledger:" +
+                    ledger.EntityId,
+                UnsubscribeFromProjectionAction<BankAccountBalanceProjectionDto> balance => "unsubscribe-balance:" +
+                    balance.EntityId,
+                UnsubscribeFromProjectionAction<BankAccountLedgerProjectionDto> ledger => "unsubscribe-ledger:" +
+                    ledger.EntityId,
+                var _ => throw new InvalidOperationException("Unexpected action: " + action.GetType().Name),
+            })
+            .OrderBy(value => value, StringComparer.Ordinal);
+
     /// <summary>
     ///     Applies selection reducers and records outgoing actions without running effects.
     /// </summary>
     /// <param name="actions">The dispatched actions.</param>
+    /// <param name="initialSelection">The initial selected pair, or the default distinct pair.</param>
     /// <returns>The store supplying the current selection.</returns>
     private IInletStore RegisterStore(
-        List<IAction> actions
+        List<IAction> actions,
+        DualEntitySelectionState? initialSelection = null
     )
     {
-        DualEntitySelectionState selection = new()
-        {
-            AccountAId = "selected-a",
-            AccountBId = "selected-b",
-        };
+        DualEntitySelectionState selection = initialSelection ??
+                                             new()
+                                             {
+                                                 AccountAId = "selected-a",
+                                                 AccountBId = "selected-b",
+                                             };
         Mock<IInletStore> store = new(MockBehavior.Strict);
         store.Setup(current => current.GetState<DualEntitySelectionState>()).Returns(() => selection);
         store.Setup(current => current.GetState<DemoAccountsState>()).Returns(new DemoAccountsState());
@@ -156,6 +209,139 @@ public sealed class OperationsPageTests : BunitContext
         Assert.Equal("selected-a", store.GetState<DualEntitySelectionState>().AccountAId);
         Assert.Equal("selected-b", store.GetState<DualEntitySelectionState>().AccountBId);
         Assert.Equal(expectedUri, jump.GetAttribute("href"));
+    }
+
+    /// <summary>Verify that direct shared/query pairs normalize equal IDs and subscribe once to each projection.</summary>
+    /// <param name="queryA">The query-string account A ID.</param>
+    /// <param name="queryB">The query-string account B ID.</param>
+    [Theory]
+    [InlineData("shared", "shared")]
+    [InlineData(" shared ", " shared ")]
+    public void EqualQueryPairSelectsOneSharedProjectionSubscription(
+        string queryA,
+        string queryB
+    )
+    {
+        List<IAction> actions = [];
+        IInletStore store = RegisterStore(actions);
+        NavigationManager navigation = Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo("/operations?a=" + Uri.EscapeDataString(queryA) + "&b=" + Uri.EscapeDataString(queryB));
+        using IRenderedComponent<OperationsPage> cut = Render<OperationsPage>();
+        Assert.Collection(
+            actions,
+            action => Assert.Equal("shared", Assert.IsType<SetEntityAIdAction>(action).EntityId),
+            action => Assert.Equal("shared", Assert.IsType<SetEntityBIdAction>(action).EntityId),
+            action => Assert.Equal(
+                "shared",
+                Assert.IsType<SubscribeToProjectionAction<BankAccountBalanceProjectionDto>>(action).EntityId),
+            action => Assert.Equal(
+                "shared",
+                Assert.IsType<SubscribeToProjectionAction<BankAccountLedgerProjectionDto>>(action).EntityId));
+        Assert.Equal("shared", store.GetState<DualEntitySelectionState>().AccountAId);
+        Assert.Equal("shared", store.GetState<DualEntitySelectionState>().AccountBId);
+        Assert.Equal("shared", cut.Find("#account-a-operations-panel h2 code").TextContent);
+        Assert.Equal("shared", cut.Find("#account-b-operations-panel h2 code").TextContent);
+    }
+
+    /// <summary>Verify that panel changes release only removed IDs and subscribe only newly selected IDs.</summary>
+    /// <param name="initialA">The initial account A ID.</param>
+    /// <param name="initialB">The initial account B ID.</param>
+    /// <param name="nextA">The next account A ID.</param>
+    /// <param name="nextB">The next account B ID.</param>
+    /// <param name="removed">The expected removed unique account ID, if any.</param>
+    /// <param name="added">The expected added unique account ID, if any.</param>
+    [Theory]
+    [InlineData("shared", "shared", "shared", "new", null, "new")]
+    [InlineData("shared", "shared", "new", "shared", null, "new")]
+    [InlineData("first", "second", "first", "first", "second", null)]
+    [InlineData("first", "second", "second", "second", "first", null)]
+    [InlineData("first", "second", "second", "first", null, null)]
+    [InlineData("shared", "shared", "shared", null, null, null)]
+    [InlineData("shared", "shared", null, "shared", null, null)]
+    [InlineData("shared", "shared", null, null, "shared", null)]
+    [InlineData("first", "second", "third", "second", "first", "third")]
+    public void PairTransitionRetainsSharedProjectionSubscriptions(
+        string initialA,
+        string initialB,
+        string? nextA,
+        string? nextB,
+        string? removed,
+        string? added
+    )
+    {
+        List<IAction> actions = [];
+        IInletStore store = RegisterStore(
+            actions,
+            new()
+            {
+                AccountAId = initialA,
+                AccountBId = initialB,
+            });
+        using IRenderedComponent<OperationsPage> cut = Render<OperationsPage>();
+        store.Dispatch(new SetEntityAIdAction(nextA ?? string.Empty));
+        store.Dispatch(new SetEntityBIdAction(nextB ?? string.Empty));
+        actions.Clear();
+        cut.Render();
+        List<string> expected = [];
+        if (removed is not null)
+        {
+            expected.Add("unsubscribe-balance:" + removed);
+            expected.Add("unsubscribe-ledger:" + removed);
+        }
+
+        if (added is not null)
+        {
+            expected.Add("subscribe-balance:" + added);
+            expected.Add("subscribe-ledger:" + added);
+        }
+
+        Assert.Equal(expected.OrderBy(value => value, StringComparer.Ordinal), DescribeSubscriptionActions(actions));
+        Assert.Equal(nextA, store.GetState<DualEntitySelectionState>().AccountAId);
+        Assert.Equal(nextB, store.GetState<DualEntitySelectionState>().AccountBId);
+        actions.Clear();
+        cut.Render();
+        Assert.Empty(actions);
+    }
+
+    /// <summary>Verify exact unique account subscriptions, stable rerenders and one release per projection.</summary>
+    /// <param name="accountA">The initially selected account A ID.</param>
+    /// <param name="accountB">The initially selected account B ID.</param>
+    /// <param name="expectedFirst">The first expected unique account ID, if any.</param>
+    /// <param name="expectedSecond">The second expected unique account ID, if any.</param>
+    /// <returns>The asynchronous component-disposal check.</returns>
+    [Theory]
+    [InlineData("shared", "shared", "shared", null)]
+    [InlineData("first", "second", "first", "second")]
+    [InlineData("Shared", "shared", "Shared", "shared")]
+    [InlineData("only", null, "only", null)]
+    [InlineData(null, "only", "only", null)]
+    [InlineData(null, null, null, null)]
+    [InlineData("  ", "", null, null)]
+    public async Task SelectedPairOwnsUniqueSubscriptionsThroughDisposal(
+        string? accountA,
+        string? accountB,
+        string? expectedFirst,
+        string? expectedSecond
+    )
+    {
+        List<IAction> actions = [];
+        RegisterStore(
+            actions,
+            new()
+            {
+                AccountAId = accountA,
+                AccountBId = accountB,
+            });
+        using (IRenderedComponent<OperationsPage> cut = Render<OperationsPage>())
+        {
+            AssertAccountSubscriptionActions(actions, "subscribe", expectedFirst, expectedSecond);
+            actions.Clear();
+            cut.Render();
+            Assert.Empty(actions);
+        }
+
+        await DisposeComponentsAsync();
+        AssertAccountSubscriptionActions(actions, "unsubscribe", expectedFirst, expectedSecond);
     }
 
     /// <summary>Verify that each Switch control clears only its own selection before navigating to custom accounts.</summary>

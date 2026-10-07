@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
@@ -37,6 +39,8 @@ public sealed partial class OperationsPage
 
     private readonly AccountPanelState panelB = new();
 
+    private readonly HashSet<string> subscribedAccountIds = new(StringComparer.Ordinal);
+
     private ElementReference accountAPanelElement;
 
     private ElementReference accountBPanelElement;
@@ -54,10 +58,6 @@ public sealed partial class OperationsPage
     private string? lastQueryAccountAId;
 
     private string? lastQueryAccountBId;
-
-    private string? subscribedEntityIdA;
-
-    private string? subscribedEntityIdB;
 
     private string? subscribedTransferSagaIdA;
 
@@ -267,8 +267,11 @@ public sealed partial class OperationsPage
     {
         if (disposing)
         {
-            UnsubscribeFromAccountProjections(subscribedEntityIdA);
-            UnsubscribeFromAccountProjections(subscribedEntityIdB);
+            foreach (string entityId in subscribedAccountIds)
+            {
+                UnsubscribeFromAccountProjections(entityId);
+            }
+
             UnsubscribeFromTransferSaga(subscribedTransferSagaIdA);
             UnsubscribeFromTransferSaga(subscribedTransferSagaIdB);
         }
@@ -440,8 +443,30 @@ public sealed partial class OperationsPage
 
     private void ManageProjectionSubscriptions()
     {
-        SyncProjectionSubscription(AccountAId, ref subscribedEntityIdA);
-        SyncProjectionSubscription(AccountBId, ref subscribedEntityIdB);
+        HashSet<string> selectedAccountIds = new(StringComparer.Ordinal);
+        if (!string.IsNullOrWhiteSpace(AccountAId))
+        {
+            selectedAccountIds.Add(AccountAId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(AccountBId))
+        {
+            selectedAccountIds.Add(AccountBId);
+        }
+
+        foreach (string entityId in subscribedAccountIds.Where(entityId => !selectedAccountIds.Contains(entityId)))
+        {
+            UnsubscribeFromAccountProjections(entityId);
+        }
+
+        foreach (string entityId in selectedAccountIds.Where(entityId => !subscribedAccountIds.Contains(entityId)))
+        {
+            SubscribeToProjection<BankAccountBalanceProjectionDto>(entityId);
+            SubscribeToProjection<BankAccountLedgerProjectionDto>(entityId);
+        }
+
+        subscribedAccountIds.Clear();
+        subscribedAccountIds.UnionWith(selectedAccountIds);
     }
 
     private void ManageTransferStatusSubscriptions()
@@ -535,26 +560,6 @@ public sealed partial class OperationsPage
                 SetAccountPair(queryA, queryB, false);
             }
         }
-    }
-
-    private void SyncProjectionSubscription(
-        string? currentEntityId,
-        ref string? subscribedEntityId
-    )
-    {
-        if (string.Equals(currentEntityId, subscribedEntityId, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        UnsubscribeFromAccountProjections(subscribedEntityId);
-        if (!string.IsNullOrWhiteSpace(currentEntityId))
-        {
-            SubscribeToProjection<BankAccountBalanceProjectionDto>(currentEntityId);
-            SubscribeToProjection<BankAccountLedgerProjectionDto>(currentEntityId);
-        }
-
-        subscribedEntityId = currentEntityId;
     }
 
     private void SyncTransferDestinations()
