@@ -286,6 +286,13 @@ public sealed class InletHub : Hub<IInletHubClient>
                 // SignalR retains this principal for the connection, even when its HTTP features are reduced.
                 return (Context.User, true);
             }
+
+            if (GetFrameworkHandlerProvider(authenticationService) is not null &&
+                ConnectionAuthenticationSnapshot.HasDifferentPrincipal(httpContext, Context.User))
+            {
+                // A reduced connection context still holds the first request's credentials.
+                return (null, false);
+            }
         }
 
         return await AuthenticateWithEvaluatorAsync(policyEvaluator, policy, httpContext);

@@ -7,9 +7,11 @@ using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Connections.Features;
 using Microsoft.AspNetCore.Http.Features;
@@ -67,6 +69,28 @@ public sealed class InletHubConnectionAuthenticationTests
                 Headers = original.Request.Headers,
             });
         return clone;
+    }
+
+    private static DefaultHttpContext CreateBearerContext(
+        IServiceProvider services,
+        string permission
+    )
+    {
+        const string scheme = "Bearer";
+        AuthenticationTicket ticket = new(
+            CreatePrincipal(permission),
+            new()
+            {
+                ExpiresUtc = new DateTimeOffset(2030, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            },
+            scheme + ":AccessToken");
+        BearerTokenOptions options = services.GetRequiredService<IOptionsMonitor<BearerTokenOptions>>().Get(scheme);
+        DefaultHttpContext context = new()
+        {
+            RequestServices = services,
+        };
+        context.Request.Headers.Authorization = "Bearer " + options.BearerTokenProtector.Protect(ticket);
+        return context;
     }
 
     private static WebApplication CreateHost(
@@ -609,6 +633,69 @@ public sealed class InletHubConnectionAuthenticationTests
                         (context.Request.Path == clone.Request.Path) &&
                         ReferenceEquals(context.GetEndpoint(), clone.GetEndpoint())));
         }
+    }
+
+    /// <summary>
+    ///     A retained request must not authenticate old credentials for a new uncached caller principal.
+    /// </summary>
+    /// <param name="cachedOriginalCaller">Whether SignalR cached the first principal before the repoll.</param>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SubscribeDoesNotGrantOldBearerCredentialsToRepollCaller(
+        bool cachedOriginalCaller
+    )
+    {
+        const string scheme = "Bearer";
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.Services.AddSignalR();
+        builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
+        builder.Services.AddAuthentication(scheme).AddBearerToken(scheme);
+        builder.Services.AddAuthorizationBuilder().SetDefaultPolicy(CreatePolicy(scheme));
+        await using WebApplication app = builder.Build();
+        await using AsyncServiceScope firstScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext first = CreateBearerContext(firstScope.ServiceProvider, "read");
+        AuthenticationMiddleware middleware = new(
+            _ => Task.CompletedTask,
+            app.Services.GetRequiredService<IAuthenticationSchemeProvider>());
+        await middleware.Invoke(first);
+        ClaimsPrincipal original = first.User;
+        Assert.True(original.Identity?.IsAuthenticated);
+        AuthorizationPolicy connectionPolicy =
+            new AuthorizationPolicyBuilder(scheme).RequireAuthenticatedUser().Build();
+        await DispatchHubEndpointAsync(app, first, connectionPolicy);
+        await using AsyncServiceScope pollScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext poll = CreateBearerContext(pollScope.ServiceProvider, "write");
+        await middleware.Invoke(poll);
+        Assert.True(
+            (await app.Services.GetRequiredService<IAuthorizationService>()
+                .AuthorizeAsync(poll.User, null, connectionPolicy.Requirements)).Succeeded);
+        Assert.False(
+            (await app.Services.GetRequiredService<IAuthorizationService>()
+                .AuthorizeAsync(poll.User, null, CreatePolicy(scheme).Requirements)).Succeeded);
+        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext retained = CloneConnectionContext(first, connectionScope.ServiceProvider);
+        retained.User = poll.User;
+        Assert.Equal(first.Request.Headers.Authorization, retained.Request.Headers.Authorization);
+        Assert.NotEqual(poll.Request.Headers.Authorization, retained.Request.Headers.Authorization);
+        ClaimsPrincipal caller = cachedOriginalCaller ? original : poll.User;
+        using InletHub hub = CreateHub(retained, caller, scheme, out IInletSubscriptionGrain grain);
+        if (cachedOriginalCaller)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        Assert.Same(poll.User, retained.User);
+        Assert.Same(caller, hub.Context.User);
     }
 
     /// <summary>
