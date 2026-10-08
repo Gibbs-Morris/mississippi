@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Inlet.Gateway.Abstractions;
+using Mississippi.Inlet.Gateway.Authentication;
 using Mississippi.Inlet.Runtime.Abstractions;
 using Mississippi.Inlet.Runtime.Grains;
 
@@ -195,6 +196,12 @@ public sealed class InletHub : Hub<IInletHubClient>
                 {
                     return null;
                 }
+            }
+
+            if (ConnectionAuthenticationSnapshot.IsAuthenticatedForPolicy(httpContext, policy))
+            {
+                // SignalR retains this principal for the connection, even when its HTTP features are reduced.
+                return Context.User;
             }
         }
 
