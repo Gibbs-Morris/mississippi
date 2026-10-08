@@ -2956,7 +2956,8 @@ function Get-PrReadinessActionsCheckMetadata {
     catch { throw 'Duplicate Actions check workflow metadata is incomplete.' }
     if (-not $identityMatches -or $workflowId -le 0 -or $runAttempt -le 0 -or [string]::IsNullOrWhiteSpace($eventName)) { throw 'Duplicate Actions check workflow identity is invalid.' }
     $jobAttempt = if ($runAttempt -gt 1) { Get-PrReadinessActionsJobAttempt -CheckId $CheckId -Run $run -Repository $Repository -WorkflowRuns $WorkflowRuns -MetadataReader $MetadataReader } else { 1L }
-    return [pscustomobject]@{ Run = $run; RunId = $runId; RunNumber = $runNumber; RunAttempt = $runAttempt; JobAttempt = $jobAttempt; WorkflowId = $workflowId; EventName = $eventName }
+    $workflowPath = if ($null -ne $run.PSObject.Properties['path']) { [string]$run.path } else { '' }
+    return [pscustomobject]@{ Run = $run; RunId = $runId; RunNumber = $runNumber; RunAttempt = $runAttempt; JobAttempt = $jobAttempt; WorkflowId = $workflowId; WorkflowPath = $workflowPath; EventName = $eventName }
 }
 
 function Get-PrReadinessActionsCheckOrderTimestamp {
@@ -2988,8 +2989,9 @@ function Get-PrReadinessActionsAttemptCheck {
         throw 'Actions workflow attempt state is incomplete.'
     }
     $current = $CheckRun.PSObject.Copy()
-    $fingerprint = ConvertTo-Json -InputObject @($Metadata.RunId, $Metadata.RunAttempt, $Metadata.JobAttempt, $Metadata.WorkflowId, $Metadata.EventName, $Metadata.RunNumber, $OrderTimestamp, [string]$run.status, [string]$run.conclusion) -Compress
+    $fingerprint = ConvertTo-Json -InputObject @($Metadata.RunId, $Metadata.RunAttempt, $Metadata.JobAttempt, $Metadata.WorkflowId, $Metadata.WorkflowPath, $Metadata.EventName, $Metadata.RunNumber, $OrderTimestamp, [string]$run.status, [string]$run.conclusion) -Compress
     $current | Add-Member -NotePropertyName ReadinessWorkflowAttempt -NotePropertyValue $fingerprint
+    $current | Add-Member -NotePropertyName ReadinessWorkflowProducer -NotePropertyValue ([pscustomobject]@{WorkflowId=$Metadata.WorkflowId;Path=$Metadata.WorkflowPath;Event=$Metadata.EventName})
     if ($Metadata.RunAttempt -gt 1) {
         # A rerun may be admitted before any replacement check is visible.
         if ([string]$run.status -ne 'completed') {
@@ -3113,6 +3115,15 @@ function Get-PrReadinessCheckFingerprint {
     return ConvertTo-Json -InputObject @([string]$CheckRun.name, $checkId, $appId, (Get-PrReadinessCheckState -CheckRun $CheckRun), $attemptIdentity) -Compress
 }
 
+function Test-PrReadinessSiteCheckProducer {
+    param([Parameter(Mandatory)][object]$CheckRun)
+
+    $app = $CheckRun.PSObject.Properties['app']
+    $producer = $CheckRun.PSObject.Properties['ReadinessWorkflowProducer']
+    if ($null -eq $app -or $null -eq $app.Value -or $null -eq $producer) { return $false }
+    return [long]$app.Value.id -eq 15368 -and [long]$producer.Value.WorkflowId -gt 0 -and
+        [string]$producer.Value.Path -ceq '.github/workflows/docusaurus.yml' -and [string]$producer.Value.Event -ceq 'pull_request'
+}
 function Get-PrReadinessCommitStatusState {
     param([Parameter(Mandatory)][object]$Status)
 
@@ -3226,6 +3237,7 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
             State = Get-PrReadinessCheckState -CheckRun $checkRun
             Required = -not (Test-PrReadinessAdvisoryCheckName -Name ([string]$checkRun.name))
             ExpectedIdentity = $false
+            SiteProducerVerified = Test-PrReadinessSiteCheckProducer -CheckRun $checkRun
         })
     }
     foreach ($status in $statuses) {
@@ -3234,15 +3246,17 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
             State = Get-PrReadinessCommitStatusState -Status $status
             Required = $false
             ExpectedIdentity = $false
+            SiteProducerVerified = $false
         })
     }
     $expectedPatterns = @(Get-PrReadinessExpectedCheckPatterns -ChangedPaths $changedPaths -BaseRef $workflowBaseAtStart.Ref)
     foreach ($pattern in $expectedPatterns) {
-        if (@($checks | Where-Object { $_.Name -match $pattern }).Count -eq 0) {
+        $matchingChecks = @($checks | Where-Object { $_.Name -match $pattern -and ($pattern -ne '^Build Docusaurus Site$' -or $_.SiteProducerVerified) })
+        if ($matchingChecks.Count -eq 0) {
             $checks.Add([pscustomobject]@{ Name = "required:$pattern"; State = 'missing'; Required = $true; ExpectedIdentity = $true })
         }
         else {
-            foreach ($check in @($checks | Where-Object { $_.Name -match $pattern })) { $check.Required = $true; $check.ExpectedIdentity = $true }
+            foreach ($check in $matchingChecks) { $check.Required = $true; $check.ExpectedIdentity = $true }
         }
     }
 

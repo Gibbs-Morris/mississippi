@@ -170,6 +170,7 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
             [pscustomobject]@{
                 id = $Id
                 workflow_id = $WorkflowId
+                path = '.github/workflows/docusaurus.yml'
                 event = 'pull_request'
                 head_sha = 'head'
                 created_at = $CreatedAt
@@ -197,11 +198,14 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
             $pullResponses.Enqueue($finalPull)
             $checkNames = @(Get-PrReadinessExpectedCheckPatterns -BaseRef $workflowBase -ChangedPaths @('README.md') |
                 Where-Object { $_ -ne '^Build Docusaurus Site$' } | ForEach-Object { [regex]::Unescape($_.Trim('^', '$')) })
-            if ($IncludeSiteCheck -and -not $PSBoundParameters.ContainsKey('SiteChecks')) { $checkNames += 'Build Docusaurus Site' }
+            if ($IncludeSiteCheck -and -not $PSBoundParameters.ContainsKey('SiteChecks')) {
+                $SiteChecks = @((New-SiteCheckRun -Id 1 -RunId 501))
+                $SiteChecks[0].pull_requests[0].base.ref = $BaseRef
+            }
             $checkPage = [pscustomobject]@{ check_runs = @($checkNames | ForEach-Object {
                 [pscustomobject]@{ name = $_; status = 'completed'; conclusion = 'success'; pull_requests = @([pscustomobject]@{ number = 744; base = [pscustomobject]@{ ref = $BaseRef } }) }
             }) }
-            if ($PSBoundParameters.ContainsKey('SiteChecks')) { $checkPage.check_runs += @($SiteChecks) }
+            if ($IncludeSiteCheck -or $PSBoundParameters.ContainsKey('SiteChecks')) { $checkPage.check_runs += @($SiteChecks) }
             $finalCheckPage = [pscustomobject]@{check_runs=@($checkPage.check_runs)}
             if ($PSBoundParameters.ContainsKey('FinalSiteChecks')) {
                 $finalCheckPage.check_runs = @($checkPage.check_runs | Where-Object name -NE 'Build Docusaurus Site') + @($FinalSiteChecks)
@@ -270,6 +274,25 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         @($snapshot.Checks | Where-Object { $_.Name -eq 'Build Docusaurus Site' -and $_.ExpectedIdentity -and $_.Required }).Count | Should -Be 1
     }
 
+    It 'blocks a same-named site result from <ForeignIdentity> when the required producer is missing' -TestCases @(
+        @{ ForeignIdentity = 'another App' }
+        @{ ForeignIdentity = 'another workflow' }
+        @{ ForeignIdentity = 'a manual event' }
+        @{ ForeignIdentity = 'missing workflow path' }
+    ) {
+        param($ForeignIdentity)
+        $site = New-SiteCheckRun -Id 1 -RunId 501
+        $run = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
+        switch ($ForeignIdentity) {
+            'another App' { $site.app.id = 999 }
+            'another workflow' { $run.path = '.github/workflows/another.yml' }
+            'a manual event' { $run.event = 'workflow_dispatch' }
+            'missing workflow path' { $run.PSObject.Properties.Remove('path') }
+        }
+        $snapshot = New-SiteReadinessSnapshot -SiteChecks @($site) -WorkflowRuns @{'501'=$run}
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'INCOMPLETE'
+        @($snapshot.Checks | Where-Object { $_.Name -eq 'required:^Build Docusaurus Site$' -and $_.State -eq 'missing' }).Count | Should -Be 1
+    }
     It 'preserves an unrelated non-native target without a site workflow' {
         $snapshot = New-SiteReadinessSnapshot -BaseRef 'release/example'
         (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'READY'
@@ -476,8 +499,9 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         $newer = New-SiteCheckRun -Id 2 -RunId 502 -AppId 999
         $older.started_at = '2026-10-08T00:00:00Z'
         $newer.started_at = '2026-10-08T00:01:00Z'
-        $snapshot = New-SiteReadinessSnapshot -SiteChecks @($older, $newer)
+        $snapshot = New-SiteReadinessSnapshot -SiteChecks @($older, $newer, (New-SiteCheckRun -Id 3 -RunId 501))
         (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'READY'
+        @($snapshot.Checks | Where-Object { $_.Name -eq 'Build Docusaurus Site' -and -not $_.SiteProducerVerified }).Count | Should -Be 1
     }
 
     It 'rejects indeterminate external-provider check order' {
