@@ -29,10 +29,16 @@ public interface IHubConnectionProvider : IAsyncDisposable
     bool IsConnected { get; }
 
     /// <summary>
-    ///     Ensures the hub connection is started.
+    ///     Ensures the hub connection is connected and ready for hub invocations.
     /// </summary>
-    /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <param name="cancellationToken">
+    ///     The startup caller's token controls shared connection startup. Other callers' tokens cancel only their waits.
+    /// </param>
+    /// <returns>A task that completes when the connection is ready, or observes startup failure or cancellation.</returns>
+    /// <remarks>
+    ///     Overlapping callers share startup and observe its outcome. Canceling the startup caller can therefore cancel
+    ///     joined callers. During automatic reconnection, cancellation ends only the caller's readiness wait.
+    /// </remarks>
     Task EnsureConnectedAsync(
         CancellationToken cancellationToken = default
     );

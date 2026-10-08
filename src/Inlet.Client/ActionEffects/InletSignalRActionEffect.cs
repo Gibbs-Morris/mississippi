@@ -42,8 +42,10 @@ internal sealed class InletSignalRActionEffect
 
     private readonly IDisposable hubCallbackRegistration;
 
-    private readonly ConcurrentDictionary<(Type ProjectionType, string EntityId), TaskCompletionSource<bool>>
+    private readonly Dictionary<(Type ProjectionType, string EntityId), TaskCompletionSource<bool>>
         pendingSubscriptions = new();
+
+    private readonly object subscriptionGate = new();
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="InletSignalRActionEffect" /> class.
@@ -129,7 +131,17 @@ internal sealed class InletSignalRActionEffect
     /// <inheritdoc />
     public ValueTask DisposeAsync()
     {
-        activeSubscriptions.Clear();
+        lock (subscriptionGate)
+        {
+            foreach (TaskCompletionSource<bool> pending in pendingSubscriptions.Values)
+            {
+                pending.TrySetResult(true);
+            }
+
+            pendingSubscriptions.Clear();
+            activeSubscriptions.Clear();
+        }
+
         hubCallbackRegistration.Dispose();
         return ValueTask.CompletedTask;
     }
@@ -237,13 +249,6 @@ internal sealed class InletSignalRActionEffect
             result.Version);
     }
 
-    /// <summary>
-    ///     Establishes one server subscription per projection and entity pair, then fetches initial data.
-    /// </summary>
-    /// <param name="projectionType">The registered projection DTO type.</param>
-    /// <param name="entityId">The entity identifier to subscribe to.</param>
-    /// <param name="cancellationToken">The token used to cancel subscription establishment.</param>
-    /// <returns>The loading, loaded, or error actions produced by the subscription.</returns>
     private async IAsyncEnumerable<IAction> HandleSubscribeAsync(
         Type projectionType,
         string entityId,
@@ -251,62 +256,66 @@ internal sealed class InletSignalRActionEffect
     )
     {
         (Type, string) key = (projectionType, entityId);
+        if (activeSubscriptions.ContainsKey(key))
+        {
+            // Already subscribed
+            yield break;
+        }
+
+        // Look up the projection path from the DTO registry
+        string? path = ProjectionDtoRegistry.GetPath(projectionType);
+        if (path is null)
+        {
+            yield return ProjectionActionFactory.CreateError(
+                projectionType,
+                entityId,
+                new InvalidOperationException($"No projection path registered for DTO type {projectionType.Name}"));
+            yield break;
+        }
+
         TaskCompletionSource<bool> reservation = new(TaskCreationOptions.RunContinuationsAsynchronously);
         if (!await TryReserveSubscriptionAsync(key, reservation, cancellationToken))
         {
             yield break;
         }
 
+        string? subscriptionId = null;
         Exception? subscribeError = null;
         bool cancelled = false;
-        bool established = false;
+        bool isCurrentRequest = false;
         try
         {
-            // Reserve the pair across the hub await so repeated intents cannot lose an ID.
-            if (activeSubscriptions.ContainsKey(key))
+            yield return ProjectionActionFactory.CreateLoading(projectionType, entityId);
+            try
             {
-                established = true;
-                yield break;
+                subscriptionId = await HubConnection.InvokeAsync<string>(
+                    InletHubConstants.SubscribeMethod,
+                    path,
+                    entityId,
+                    cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                cancelled = true;
+            }
+            catch (Exception ex)
+            {
+                subscribeError = ex;
             }
 
-            string? path = ProjectionDtoRegistry.GetPath(projectionType);
-            if (path is null)
-            {
-                subscribeError = new InvalidOperationException(
-                    $"No projection path registered for DTO type {projectionType.Name}");
-            }
-            else
-            {
-                yield return ProjectionActionFactory.CreateLoading(projectionType, entityId);
-                string? subscriptionId = null;
-                try
-                {
-                    subscriptionId = await HubConnection.InvokeAsync<string>(
-                        InletHubConstants.SubscribeMethod,
-                        path,
-                        entityId,
-                        cancellationToken);
-                }
-                catch (OperationCanceledException)
-                {
-                    cancelled = true;
-                }
-                catch (Exception ex)
-                {
-                    subscribeError = ex;
-                }
-
-                if (!cancelled && subscribeError is null)
-                {
-                    activeSubscriptions[key] = subscriptionId!;
-                    established = true;
-                }
-            }
+            isCurrentRequest = TryCompletePendingSubscription(key, reservation, subscriptionId);
         }
         finally
         {
-            pendingSubscriptions.TryRemove(key, out TaskCompletionSource<bool>? _);
-            reservation.TrySetResult(established);
+            // Iterator disposal and failed invocations also release the pending request.
+            _ = TryCompletePendingSubscription(key, reservation, null);
+        }
+
+        if (!isCurrentRequest)
+        {
+            // The owner released this request while the hub reply was pending.
+            await UnsubscribeFromHubAsync(subscriptionId, path, entityId, CancellationToken.None);
+            yield break;
         }
 
         if (cancelled)
@@ -384,41 +393,6 @@ internal sealed class InletSignalRActionEffect
             result.Version);
     }
 
-    /// <summary>
-    ///     Reserves a pair after failed attempts while coalescing an established subscription.
-    /// </summary>
-    /// <param name="key">The projection and entity pair to reserve.</param>
-    /// <param name="reservation">The completion source owned by this attempt.</param>
-    /// <param name="cancellationToken">The token used to cancel waiting for an earlier attempt.</param>
-    /// <returns>Whether this caller owns the reservation and should attempt subscription.</returns>
-    private async Task<bool> TryReserveSubscriptionAsync(
-        (Type ProjectionType, string EntityId) key,
-        TaskCompletionSource<bool> reservation,
-        CancellationToken cancellationToken
-    )
-    {
-        while (true)
-        {
-            TaskCompletionSource<bool> pending = pendingSubscriptions.GetOrAdd(key, reservation);
-            if (ReferenceEquals(pending, reservation))
-            {
-                return true;
-            }
-
-            try
-            {
-                if (await pending.Task.WaitAsync(cancellationToken))
-                {
-                    return false;
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                return false;
-            }
-        }
-    }
-
     private async Task HandleUnsubscribeAsync(
         Type projectionType,
         string entityId,
@@ -426,7 +400,20 @@ internal sealed class InletSignalRActionEffect
     )
     {
         (Type, string) key = (projectionType, entityId);
-        if (!activeSubscriptions.TryRemove(key, out string? subscriptionId))
+        string? subscriptionId;
+        bool isActiveSubscriptionRemoved;
+        lock (subscriptionGate)
+        {
+            if (pendingSubscriptions.Remove(key, out TaskCompletionSource<bool>? pending))
+            {
+                // Released interest also retires callers waiting on the same attempt.
+                pending.TrySetResult(true);
+            }
+
+            isActiveSubscriptionRemoved = activeSubscriptions.TryRemove(key, out subscriptionId);
+        }
+
+        if (!isActiveSubscriptionRemoved)
         {
             return;
         }
@@ -439,23 +426,7 @@ internal sealed class InletSignalRActionEffect
             return;
         }
 
-        try
-        {
-            await HubConnection.InvokeAsync(
-                InletHubConstants.UnsubscribeMethod,
-                subscriptionId,
-                path,
-                entityId,
-                cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            // Expected during shutdown
-        }
-        catch (Exception)
-        {
-            // Unsubscribe failures are non-fatal - server will clean up on disconnect
-        }
+        await UnsubscribeFromHubAsync(subscriptionId!, path, entityId, cancellationToken);
     }
 
     private async Task OnProjectionUpdatedAsync(
@@ -554,5 +525,113 @@ internal sealed class InletSignalRActionEffect
             }
         }
     }
+
+    /// <summary>
+    ///     Completes only the current attempt and records its owned server ID before waking waiters.
+    /// </summary>
+    /// <param name="key">The projection and entity pair.</param>
+    /// <param name="reservation">The completion source identifying this attempt.</param>
+    /// <param name="subscriptionId">The server ID, or null when no subscription was established.</param>
+    /// <returns>Whether this attempt still represents the application's interest.</returns>
+    private bool TryCompletePendingSubscription(
+        (Type ProjectionType, string EntityId) key,
+        TaskCompletionSource<bool> reservation,
+        string? subscriptionId
+    )
+    {
+        lock (subscriptionGate)
+        {
+            if (!pendingSubscriptions.TryGetValue(key, out TaskCompletionSource<bool>? pending) ||
+                !ReferenceEquals(pending, reservation))
+            {
+                return false;
+            }
+
+            pendingSubscriptions.Remove(key);
+            if (subscriptionId is not null)
+            {
+                activeSubscriptions[key] = subscriptionId;
+            }
+
+            reservation.TrySetResult(subscriptionId is not null);
+            return true;
+        }
+    }
+
+    /// <summary>
+    ///     Reserves a pair after failed attempts while coalescing established or released interest.
+    /// </summary>
+    /// <param name="key">The projection and entity pair to reserve.</param>
+    /// <param name="reservation">The completion source owned by this attempt.</param>
+    /// <param name="cancellationToken">The token used to cancel waiting for an earlier attempt.</param>
+    /// <returns>Whether this caller owns the reservation and should attempt subscription.</returns>
+    private async Task<bool> TryReserveSubscriptionAsync(
+        (Type ProjectionType, string EntityId) key,
+        TaskCompletionSource<bool> reservation,
+        CancellationToken cancellationToken
+    )
+    {
+        while (true)
+        {
+            TaskCompletionSource<bool> pending;
+            lock (subscriptionGate)
+            {
+                if (activeSubscriptions.ContainsKey(key))
+                {
+                    return false;
+                }
+
+                if (!pendingSubscriptions.TryGetValue(key, out pending!))
+                {
+                    pendingSubscriptions.Add(key, reservation);
+                    return true;
+                }
+            }
+
+            try
+            {
+                if (await pending.Task.WaitAsync(cancellationToken))
+                {
+                    return false;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+        }
+    }
+
+    private async Task UnsubscribeFromHubAsync(
+        string? subscriptionId,
+        string path,
+        string entityId,
+        CancellationToken cancellationToken
+    )
+    {
+        if (subscriptionId is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await HubConnection.InvokeAsync(
+                InletHubConstants.UnsubscribeMethod,
+                subscriptionId,
+                path,
+                entityId,
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected during shutdown
+        }
+        catch (Exception)
+        {
+            // Unsubscribe failures are non-fatal - server will clean up on disconnect
+        }
+    }
+
 #pragma warning restore CA1031
 }

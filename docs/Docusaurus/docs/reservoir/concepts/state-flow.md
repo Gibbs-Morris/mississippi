@@ -66,7 +66,7 @@ The store invokes started effects with `CancellationToken.None`. Give cancelable
 
 System restore/reset actions use the store's dedicated restoration path. Their behavior belongs with development tooling and state restoration rather than the ordinary action pipeline shown above.
 
-Keep store subscription callbacks non-throwing. If an `IStore.Subscribe` callback throws, `Dispatch` propagates that exception after reduction and `ActionDispatchedEvent`; it interrupts the remaining listeners and prevents effect triggering for that dispatch.
+Keep store subscription callbacks short and observational. The default store isolates ordinary `IStore.Subscribe` callback failures after reduction and `ActionDispatchedEvent`, attempts to log them, and continues remaining listeners and effect triggering. Critical runtime failures and thread interruption still propagate and stop that dispatch. See [store observation](../reference/store-observation.md) for the exact callback and logging boundaries.
 
 Keep reducers total for their supported inputs and represent expected outcomes as state. A reducer exception interrupts dispatch during reduction: earlier feature updates can already be stored, while the post-dispatch event, listener notification, and effect triggering have not run. Treat this as interrupted processing when diagnosing a failed dispatch.
 

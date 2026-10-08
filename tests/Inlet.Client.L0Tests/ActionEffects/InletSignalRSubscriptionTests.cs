@@ -378,6 +378,50 @@ public sealed class InletSignalRSubscriptionTests : IAsyncDisposable
     }
 
     /// <summary>
+    ///     Releasing pending interest also retires a waiting duplicate without restarting it.
+    /// </summary>
+    /// <param name="disposeEffect">Whether disposal releases interest instead of unsubscribe.</param>
+    /// <returns>A task representing the test.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ReleasedPendingDuplicateDoesNotRestart(
+        bool disposeEffect
+    )
+    {
+        await using InletSignalRActionEffect effect = new(
+            new(() => store),
+            serviceProvider.GetRequiredService<IHubConnectionProvider>(),
+            serviceProvider.GetRequiredService<IProjectionFetcher>(),
+            serviceProvider.GetRequiredService<IProjectionDtoRegistry>());
+        SubscribeToProjectionAction<TestProjection> action = new("entity-1");
+        Task<IAction[]> first = CollectAsync(effect.HandleAsync(action, new(), CancellationToken.None));
+        Task<IAction[]> duplicate = CollectAsync(effect.HandleAsync(action, new(), CancellationToken.None));
+        TaskCompletionSource<object?> response = await ReadSubscriptionRequestAsync();
+        if (disposeEffect)
+        {
+            await effect.DisposeAsync();
+        }
+        else
+        {
+            await CollectAsync(
+                effect.HandleAsync(
+                    new UnsubscribeFromProjectionAction<TestProjection>("entity-1"),
+                    new(),
+                    CancellationToken.None));
+        }
+
+        Assert.Empty(await duplicate.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        Assert.False(first.IsCompleted);
+        Assert.True(liveSubscriptions.TryAdd("released-subscription", 0));
+        response.SetResult("released-subscription");
+        Assert.IsType<ProjectionLoadingAction<TestProjection>>(Assert.Single(await first));
+        Assert.Single(subscriptions);
+        Assert.Equal("released-subscription", Assert.Single(unsubscribedIds));
+        Assert.Empty(liveSubscriptions);
+    }
+
+    /// <summary>
     ///     A duplicate coalesced with success cannot establish a new ID after unsubscribe.
     /// </summary>
     /// <returns>A task representing the test.</returns>

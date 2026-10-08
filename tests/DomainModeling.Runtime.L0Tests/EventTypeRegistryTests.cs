@@ -1,4 +1,10 @@
 using System;
+using System.Reflection;
+using System.Threading.Tasks;
+
+using Mississippi.Brooks.Abstractions.Attributes;
+
+using Moq;
 
 
 namespace Mississippi.DomainModeling.Runtime.L0Tests;
@@ -11,12 +17,44 @@ public class EventTypeRegistryTests
     /// <summary>
     ///     Another test event record for multiple registration tests.
     /// </summary>
+    [EventStorageName("TEST", "REGISTRY", "ANOTHEREVENT")]
     private sealed record AnotherEvent;
 
     /// <summary>
     ///     Test event record for registration tests.
     /// </summary>
+    [EventStorageName("TEST", "REGISTRY", "FIRSTEVENT")]
     private sealed record TestEvent;
+
+    /// <summary>
+    ///     Concurrent aliases for one CLR type leave exactly one matching name/type pair.
+    /// </summary>
+    [Fact]
+    public void ConcurrentAliasesKeepOneBidirectionalMapping()
+    {
+        EventTypeRegistry registry = new();
+        Parallel.For(0, 32, index => registry.Register($"Event{index}", typeof(TestEvent)));
+        string registeredName = Assert.Single(registry.RegisteredTypes).Key;
+        Assert.Equal(registeredName, registry.ResolveName(typeof(TestEvent)));
+        Assert.Equal(typeof(TestEvent), registry.ResolveType(registeredName));
+    }
+
+    /// <summary>
+    ///     Ignoring a duplicate CLR type leaves its rejected alias available for another type.
+    /// </summary>
+    [Fact]
+    public void DuplicateTypeDoesNotReserveAnotherName()
+    {
+        EventTypeRegistry registry = new();
+        registry.Register("First", typeof(TestEvent));
+        registry.Register("Second", typeof(TestEvent));
+        Assert.Null(registry.ResolveType("Second"));
+        registry.Register("Second", typeof(AnotherEvent));
+        Assert.Equal("First", registry.ResolveName(typeof(TestEvent)));
+        Assert.Equal("Second", registry.ResolveName(typeof(AnotherEvent)));
+        Assert.Equal(typeof(AnotherEvent), registry.ResolveType("Second"));
+        Assert.Equal(2, registry.RegisteredTypes.Count);
+    }
 
     /// <summary>
     ///     Register should not overwrite existing registration with same name.
@@ -194,6 +232,23 @@ public class EventTypeRegistryTests
     {
         EventTypeRegistry registry = new();
         Assert.Throws<ArgumentNullException>(() => registry.ResolveType(null!));
+    }
+
+    /// <summary>
+    ///     Scans count newly inserted mappings and become idempotent after registration.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyCountsOnlyNewMappings()
+    {
+        EventTypeRegistry registry = new();
+        Mock<Assembly> assembly = new();
+        assembly.Setup(instance => instance.GetTypes())
+            .Returns([typeof(TestEvent), typeof(AnotherEvent), typeof(string)]);
+        registry.Register("TEST.REGISTRY.FIRSTEVENT.V1", typeof(TestEvent));
+        Assert.Equal(1, registry.ScanAssembly(assembly.Object));
+        Assert.Equal(0, registry.ScanAssembly(assembly.Object));
+        Assert.Equal(2, registry.RegisteredTypes.Count);
+        Assert.Equal("TEST.REGISTRY.ANOTHEREVENT.V1", registry.ResolveName(typeof(AnotherEvent)));
     }
 
     /// <summary>

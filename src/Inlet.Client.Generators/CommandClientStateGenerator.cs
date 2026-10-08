@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -103,7 +104,9 @@ public sealed class CommandClientStateGenerator : IIncrementalGenerator
         return commands.Select(c => new
             {
                 Command = c,
-                AggregateName = NamingConventions.GetAggregateNameFromNamespace(c.Namespace),
+                AggregateName = c.Namespace.EndsWith(".Commands", StringComparison.Ordinal)
+                    ? TargetNamespaceResolver.ExtractAggregateName(c.Namespace)
+                    : null,
             })
             .Where(x => x.AggregateName is not null)
             .GroupBy(x => x.AggregateName!)

@@ -143,6 +143,7 @@ Packages define installation and extension boundaries. Commands, events, reducer
 
 ## Next Steps
 
+- [Enumerable Mapping](./enumerable-mapping.md) for lazy collection mapping and service registration.
 - [Build a feature with AI](../how-to/build-with-ai.md) for a repeatable development workflow.
 - [Add an aggregate command](../samples/spring-sample/tutorials/building-an-aggregate.md) for a concrete domain example.
 - [Reservoir getting started](../reservoir/getting-started/getting-started.md) for client state management.
