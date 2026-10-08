@@ -119,6 +119,16 @@ public sealed class InletHub : Hub<IInletHubClient>
         return (authenticationResult.Principal, true);
     }
 
+    private static AuthenticationHandlerProvider? GetFrameworkHandlerProvider(
+        IAuthenticationService? authenticationService
+    ) =>
+        authenticationService is AuthenticationService frameworkService &&
+        (authenticationService.GetType().Assembly == typeof(AuthenticationService).Assembly) &&
+        frameworkService.Handlers is AuthenticationHandlerProvider handlers &&
+        (handlers.GetType() == typeof(AuthenticationHandlerProvider))
+            ? handlers
+            : null;
+
     private static string? GetUserId(
         ClaimsPrincipal? user
     ) =>
@@ -137,10 +147,8 @@ public sealed class InletHub : Hub<IInletHubClient>
     {
         // Only the framework service and handler provider require scheme entries.
         // Custom services, handler providers and evaluators can authenticate virtual schemes.
-        if (authenticationService is AuthenticationService frameworkService &&
-            (authenticationService.GetType().Assembly == typeof(AuthenticationService).Assembly) &&
-            frameworkService.Handlers is AuthenticationHandlerProvider handlers &&
-            (handlers.GetType() == typeof(AuthenticationHandlerProvider)))
+        AuthenticationHandlerProvider? handlers = GetFrameworkHandlerProvider(authenticationService);
+        if (handlers is not null)
         {
             foreach (string scheme in policy.AuthenticationSchemes)
             {
@@ -231,7 +239,8 @@ public sealed class InletHub : Hub<IInletHubClient>
 
     private async Task<(ClaimsPrincipal? Principal, bool Permitted)> AuthenticateUserAsync(
         AuthorizationPolicy policy,
-        HttpContext? httpContext
+        HttpContext? httpContext,
+        IPolicyEvaluator? policyEvaluator
     )
     {
         if (policy.AuthenticationSchemes.Count == 0)
@@ -244,7 +253,6 @@ public sealed class InletHub : Hub<IInletHubClient>
             return (null, false);
         }
 
-        IPolicyEvaluator? policyEvaluator = httpContext.RequestServices.GetService<IPolicyEvaluator>();
         if (policyEvaluator is null)
         {
             return (null, false);
@@ -279,7 +287,8 @@ public sealed class InletHub : Hub<IInletHubClient>
         string path,
         string entityId,
         string? policyName,
-        HttpContext? httpContext
+        HttpContext? httpContext,
+        IPolicyEvaluator? policyEvaluator
     )
     {
         HttpContext? authenticationContext = policy.AuthenticationSchemes.Count > 0 ? httpContext : null;
@@ -291,7 +300,7 @@ public sealed class InletHub : Hub<IInletHubClient>
         AuthenticateResult? previousResult = previousResultFeature?.AuthenticateResult;
         try
         {
-            (ClaimsPrincipal? user, bool permitted) = await AuthenticateUserAsync(policy, httpContext);
+            (ClaimsPrincipal? user, bool permitted) = await AuthenticateUserAsync(policy, httpContext, policyEvaluator);
             if (user is null || !permitted)
             {
                 Logger.SubscriptionAuthorizationDenied(
@@ -387,7 +396,7 @@ public sealed class InletHub : Hub<IInletHubClient>
         HttpContext? httpContext = Context.GetHttpContext();
         if (httpContext is null)
         {
-            await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, null);
+            await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, null, null);
             return;
         }
 
@@ -395,10 +404,33 @@ public sealed class InletHub : Hub<IInletHubClient>
         await authenticationLock.WaitAsync(Context.ConnectionAborted);
         try
         {
-            HttpContext decisionContext = policy.AuthenticationSchemes.Count > 0
-                ? SubscriptionAuthenticationFeatures.CreateContext(httpContext)
-                : httpContext;
-            await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, decisionContext);
+            if (policy.AuthenticationSchemes.Count == 0)
+            {
+                await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, httpContext, null);
+                return;
+            }
+
+            IServiceProvider connectionServices = httpContext.RequestServices;
+            IPolicyEvaluator? policyEvaluator = connectionServices.GetService<IPolicyEvaluator>();
+            HttpContext decisionContext = SubscriptionAuthenticationFeatures.CreateContext(httpContext);
+            if (GetFrameworkHandlerProvider(connectionServices.GetService<IAuthenticationService>()) is null)
+            {
+                await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, decisionContext, policyEvaluator);
+                return;
+            }
+
+            IServiceScopeFactory? scopeFactory = connectionServices.GetService<IServiceScopeFactory>();
+            if (scopeFactory is null)
+            {
+                await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, null, policyEvaluator);
+                return;
+            }
+
+            // Framework handlers cache their first context and result for their service scope.
+            // A decision needs fresh handlers while the host's original evaluator keeps its scope.
+            await using AsyncServiceScope authenticationScope = scopeFactory.CreateAsyncScope();
+            decisionContext.RequestServices = authenticationScope.ServiceProvider;
+            await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, decisionContext, policyEvaluator);
         }
         finally
         {

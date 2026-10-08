@@ -166,6 +166,15 @@ public sealed class InletHubConnectionAuthenticationTests
         return context;
     }
 
+    private static PermissionHandler CreatePermissionHandler(
+        IServiceProvider services
+    ) =>
+        new(
+            services.GetRequiredService<IOptionsMonitor<AuthenticationSchemeOptions>>(),
+            services.GetRequiredService<ILoggerFactory>(),
+            services.GetRequiredService<UrlEncoder>(),
+            services.GetRequiredService<HandlerLifetime>());
+
     private static AuthorizationPolicy CreatePolicy(
         string authenticationSchemes
     ) =>
@@ -237,6 +246,62 @@ public sealed class InletHubConnectionAuthenticationTests
                                     PolicyAlias)),
                             Scheme.Name))
                     : AuthenticateResult.NoResult());
+    }
+
+    private sealed class HandlerLifetime
+    {
+        public int Disposals { get; set; }
+    }
+
+    private sealed class PermissionHandler
+        : AuthenticationHandler<AuthenticationSchemeOptions>,
+          IAsyncDisposable
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PermissionHandler" /> class.
+        /// </summary>
+        /// <param name="options">The scheme options.</param>
+        /// <param name="logger">The handler logger factory.</param>
+        /// <param name="encoder">The URL encoder.</param>
+        /// <param name="lifetime">Tracks disposal after the decision.</param>
+        public PermissionHandler(
+            IOptionsMonitor<AuthenticationSchemeOptions> options,
+            ILoggerFactory logger,
+            UrlEncoder encoder,
+            HandlerLifetime lifetime
+        )
+            : base(options, logger, encoder) =>
+            Lifetime = lifetime;
+
+        private HandlerLifetime Lifetime { get; }
+
+        /// <inheritdoc />
+        public ValueTask DisposeAsync()
+        {
+            Lifetime.Disposals++;
+            return ValueTask.CompletedTask;
+        }
+
+        /// <inheritdoc />
+        protected override Task<AuthenticateResult> HandleAuthenticateAsync() =>
+            Task.FromResult(
+                AuthenticateResult.Success(
+                    new(CreatePrincipal(Scheme.Name == TlsScheme ? "read" : "write"), Scheme.Name)));
+    }
+
+    private sealed class ServicesWithoutScopeFactory : IServiceProvider
+    {
+        public ServicesWithoutScopeFactory(
+            IServiceProvider services
+        ) =>
+            Services = services;
+
+        private IServiceProvider Services { get; }
+
+        public object? GetService(
+            Type serviceType
+        ) =>
+            serviceType == typeof(IServiceScopeFactory) ? null : Services.GetService(serviceType);
     }
 
     /// <summary>
@@ -455,18 +520,59 @@ public sealed class InletHubConnectionAuthenticationTests
     }
 
     /// <summary>
-    ///     A default forwarding scheme must retain its requested name across a reduced connection context.
+    ///     Missing framework scope support denies before accessing the subscription grain.
     /// </summary>
     /// <returns>A task that completes when the assertions have been verified.</returns>
     [Fact]
-    public async Task SubscribePreservesDefaultForwardingAlias()
+    public async Task SubscribeDeniesWhenFrameworkAuthenticationScopeIsUnavailable()
+    {
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.Services.AddSignalR();
+        builder.Services.AddSingleton<HandlerLifetime>();
+        builder.Services.AddTransient(CreatePermissionHandler);
+        builder.Services.AddAuthentication()
+            .AddScheme<AuthenticationSchemeOptions, PermissionHandler>(TlsScheme, _ => { });
+        builder.Services.AddAuthorizationBuilder().SetDefaultPolicy(CreatePolicy(TlsScheme));
+        await using WebApplication app = builder.Build();
+        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext retained =
+            CreateOriginalContext(new ServicesWithoutScopeFactory(connectionScope.ServiceProvider));
+        retained.User = CreatePrincipal("read");
+        using InletHub hub = CreateHub(retained, retained.User, TlsScheme, out IInletSubscriptionGrain grain);
+        HubException exception =
+            await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+        Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+        await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+    }
+
+    /// <summary>
+    ///     A default forwarding scheme must retain its requested name across a reduced connection context.
+    /// </summary>
+    /// <param name="usesFallbackPolicy">Whether the endpoint uses a scheme-selecting fallback policy.</param>
+    /// <param name="fallbackMatchesAlias">Whether that policy selects the default forwarding alias.</param>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    public async Task SubscribePreservesDefaultForwardingAlias(
+        bool usesFallbackPolicy,
+        bool fallbackMatchesAlias
+    )
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.Services.AddSignalR();
         builder.Services.AddAuthentication(PolicyAlias)
             .AddPolicyScheme(PolicyAlias, null, options => options.ForwardDefault = TlsScheme)
+            .AddPolicyScheme(OtherScheme, null, options => options.ForwardDefault = TlsScheme)
             .AddScheme<AuthenticationSchemeOptions, FeatureDependentHandler>(TlsScheme, _ => { });
         builder.Services.AddAuthorizationBuilder().SetDefaultPolicy(CreatePolicy(PolicyAlias));
+        if (usesFallbackPolicy)
+        {
+            builder.Services.AddAuthorizationBuilder()
+                .SetFallbackPolicy(CreatePolicy(fallbackMatchesAlias ? PolicyAlias : OtherScheme));
+        }
+
         await using WebApplication app = builder.Build();
         DefaultHttpContext original = CreateOriginalContext(app.Services);
         AuthenticationMiddleware middleware = new(
@@ -478,6 +584,21 @@ public sealed class InletHubConnectionAuthenticationTests
         Assert.True(established.Succeeded);
         Assert.Equal(TlsScheme, established.Ticket?.AuthenticationScheme);
         Assert.Equal(PolicyAlias, original.User.Identity?.AuthenticationType);
+        if (usesFallbackPolicy)
+        {
+            AuthorizationMiddleware authorization = new(
+                _ => Task.CompletedTask,
+                app.Services.GetRequiredService<IAuthorizationPolicyProvider>());
+            await authorization.Invoke(original);
+            AuthenticateResult fallbackAuthentication = Assert.IsType<AuthenticateResult>(
+                original.Features.Get<IAuthenticateResultFeature>()?.AuthenticateResult);
+            Assert.True(fallbackAuthentication.Succeeded);
+            Assert.Equal(
+                fallbackMatchesAlias ? PolicyAlias : OtherScheme,
+                fallbackAuthentication.Ticket?.AuthenticationScheme);
+            Assert.Same(fallbackAuthentication.Principal, original.User);
+        }
+
         AuthorizationPolicy policy = CreatePolicy(PolicyAlias);
         Assert.True(
             (await app.Services.GetRequiredService<IAuthorizationService>()
@@ -491,8 +612,18 @@ public sealed class InletHubConnectionAuthenticationTests
         Assert.False((await evaluator.AuthenticateAsync(policy, clone)).Succeeded);
         using InletHub hub = CreateHub(clone, original.User, PolicyAlias, out IInletSubscriptionGrain grain);
         await hub.OnConnectedAsync();
-        Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
-        await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        if (usesFallbackPolicy && !fallbackMatchesAlias)
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+        else
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
     }
 
     /// <summary>
@@ -529,5 +660,70 @@ public sealed class InletHubConnectionAuthenticationTests
         using InletHub hub = CreateHub(clone, original.User, schemes, out IInletSubscriptionGrain grain);
         Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
         await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+    }
+
+    /// <summary>
+    ///     A forwarding selector must see the retained transport principal for each decision.
+    /// </summary>
+    /// <param name="replacementAllowed">Whether the new poll selects an authorized handler.</param>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SubscribeReevaluatesForwardingSelectorAfterRepoll(
+        bool replacementAllowed
+    )
+    {
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.Services.AddSignalR();
+        HandlerLifetime lifetime = new();
+        builder.Services.AddSingleton(lifetime);
+        builder.Services.AddTransient(CreatePermissionHandler);
+        builder.Services.AddAuthentication()
+            .AddPolicyScheme(
+                PolicyAlias,
+                null,
+                options => options.ForwardDefaultSelector = context =>
+                    context.User.FindFirst("permission")?.Value == "read" ? TlsScheme : OtherScheme)
+            .AddScheme<AuthenticationSchemeOptions, PermissionHandler>(TlsScheme, _ => { })
+            .AddScheme<AuthenticationSchemeOptions, PermissionHandler>(OtherScheme, _ => { });
+        builder.Services.AddAuthorizationBuilder().SetDefaultPolicy(CreatePolicy(PolicyAlias));
+        await using WebApplication app = builder.Build();
+        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext retained = CreateOriginalContext(connectionScope.ServiceProvider);
+        ClaimsPrincipal original = CreatePrincipal(replacementAllowed ? "write" : "read");
+        retained.User = original;
+        using InletHub hub = CreateHub(retained, original, PolicyAlias, out IInletSubscriptionGrain grain);
+        if (replacementAllowed)
+        {
+            Assert.Equal(
+                InletHubConstants.SubscriptionDeniedMessage,
+                (await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId))).Message);
+        }
+        else
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+        }
+
+        grain.ClearReceivedCalls();
+        ClaimsPrincipal replacement = CreatePrincipal(replacementAllowed ? "read" : "write");
+        retained.User = replacement;
+        if (replacementAllowed)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            Assert.Equal(
+                InletHubConstants.SubscriptionDeniedMessage,
+                (await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId))).Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        Assert.Same(replacement, retained.User);
+        Assert.Same(original, hub.Context.User);
+        Assert.Same(connectionScope.ServiceProvider, retained.RequestServices);
+        Assert.Equal(2, lifetime.Disposals);
     }
 }
