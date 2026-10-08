@@ -6,7 +6,7 @@ param([switch]$PassThru)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$files = @('TrustedSonarAnalysis.Tests.ps1','SonarContainerStage.Tests.ps1','SonarReportHandoff.Tests.ps1','SonarContainerRuntime.Tests.ps1','SonarQualityPolicy.Tests.ps1')
+$files = @('TrustedSonarAnalysis.Tests.ps1','SonarContainerStage.Tests.ps1','SonarReportHandoff.Tests.ps1','SonarContainerRuntime.Tests.ps1','SonarQualityPolicy.Tests.ps1','SonarAutomaticAdmission.Tests.ps1')
 $results = @()
 foreach ($file in $files) {
     $suite = @(& (Join-Path $PSScriptRoot 'run-pester-suite.ps1') -TestPath (Join-Path $PSScriptRoot $file) -PassThru)

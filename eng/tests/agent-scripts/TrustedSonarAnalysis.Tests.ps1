@@ -461,9 +461,9 @@ Describe 'Trusted Sonar post-upload completion' {
         if($end -lt 0 -or $finish -le $end){throw 'Cannot locate the actual post-upload acceptance block.'}
         $script:completionBlock=[scriptblock]::Create(($body[($end+1)..($finish-1)] | ForEach-Object {$_.Extent.Text}) -join [Environment]::NewLine)
         function Invoke-Completion {
-            InModuleScope TrustedSonarAnalysis -Parameters @{Completion=$script:completionBlock;Original=$script:originalSource;OriginalPolicy=$script:completionPolicy} {
-                param($Completion,$Original,$OriginalPolicy)
-                $source=$Original;$latest=$Original;$policy=$OriginalPolicy
+            InModuleScope TrustedSonarAnalysis -Parameters @{Completion=$script:completionBlock;Original=$script:originalSource;OriginalPolicy=$script:completionPolicy;Automatic=$script:completionAdmission} {
+                param($Completion,$Original,$OriginalPolicy,$Automatic)
+                $source=$Original;$latest=$Original;$policy=$OriginalPolicy;$admission=$Automatic
                 $Repository='Gibbs-Morris/mississippi';$SourceRunId=42;$DefaultBranch='main'
                 $startedAt=[datetimeoffset]'2026-10-07T12:00:00Z'
                 & $Completion
@@ -477,6 +477,7 @@ Describe 'Trusted Sonar post-upload completion' {
             if($Path -like '*/environments/sonar-analysis'){return [pscustomobject]@{deployment_branch_policy=[pscustomobject]@{protected_branches=$false;custom_branch_policies=$true}}}
             throw 'Unexpected completion metadata path.'
         }
+        $script:completionAdmission=$null
         $script:originalSource=[pscustomobject]@{RunId=42;Mode='Branch';HeadSha=('a'*40);BuildSha=('a'*40);HeadRef='main';TargetRef='main';TargetSha=$null;PullRequest=$null;Queue=$null}
         $script:currentSource=$script:originalSource | ConvertTo-Json | ConvertFrom-Json
         $script:completionPolicy=[pscustomobject]@{GateId=1;Conditions='reviewed';LongLivedPattern='(branch|release)-.*'}
@@ -501,6 +502,21 @@ Describe 'Trusted Sonar post-upload completion' {
     }
     It 'accepts an unchanged source after a successful upload' {
         {Invoke-Completion} | Should -Not -Throw
+    }
+    It 'retains automatic attempt constraints through both actual post-upload source reads' {
+        $script:completionAdmission=[pscustomobject]@{RunId=42;RunAttempt=1;HeadSha=('a'*40);HeadRef='main';Event='push'}
+        {Invoke-Completion} | Should -Not -Throw
+        Should -Invoke Get-TrustedSonarSource -ModuleName TrustedSonarAnalysis -Times 2 -Exactly -ParameterFilter {$null -ne $AutomaticAdmission -and $AutomaticAdmission.RunAttempt -eq 1}
+    }
+    It 'rejects a rerun starting while the genuine provider is being verified' {
+        $script:completionAdmission=[pscustomobject]@{RunId=42;RunAttempt=1;HeadSha=('a'*40);HeadRef='main';Event='push'};$script:completionAttempt=1
+        Mock Assert-SonarPublishedAnalysis -ModuleName TrustedSonarAnalysis {$script:completionAttempt=2}
+        Mock Get-TrustedSonarSource -ModuleName TrustedSonarAnalysis {
+            if($null -eq $AutomaticAdmission){throw 'Automatic context missing.'}
+            if($AutomaticAdmission.RunAttempt -ne $script:completionAttempt){throw 'Source no longer matches triggering attempt.'}
+            return ($script:currentSource|ConvertTo-Json -Depth 8|ConvertFrom-Json)
+        }
+        {Invoke-Completion} | Should -Throw '*triggering attempt*'
     }
     It 'rejects a source changed during upload: <Mode>' -TestCases @(@{Mode='Branch'},@{Mode='Manual'},@{Mode='PullRequest'},@{Mode='Queue'}) {
         param($Mode)

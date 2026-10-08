@@ -134,12 +134,12 @@ Describe 'Trusted Sonar suite aggregation' {
         $passing = '[pscustomobject]@{Result="Passed";TotalCount=2;PassedCount=2;FailedCount=0}'
     }
 
-    It 'includes one passing non-empty result from all five files' {
+    It 'includes one passing non-empty result from all six files' {
         Set-Content $stub ('param([string]$TestPath,[switch]$PassThru); ' + $passing)
         $result = & $runner -PassThru
         $result.Result | Should -Be 'Passed'
-        $result.TotalCount | Should -Be 10
-        $result.PassedCount | Should -Be 10
+        $result.TotalCount | Should -Be 12
+        $result.PassedCount | Should -Be 12
         $result.FailedCount | Should -Be 0
     }
 

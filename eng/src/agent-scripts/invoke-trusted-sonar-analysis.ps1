@@ -18,17 +18,24 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Trusted controller checkout is missing.' }
     Assert-TrustedSonarControllerOrigin -Repository $Repository -DefaultBranch $DefaultBranch -WorkflowRef $env:GITHUB_WORKFLOW_REF -WorkflowSha $env:GITHUB_WORKFLOW_SHA -CheckoutSha $checkout
     Assert-SonarCredentialDeployment -Repository $Repository -DefaultBranch $DefaultBranch
-    $source = Get-TrustedSonarSource -Repository $Repository -RunId $SourceRunId -DefaultBranch $DefaultBranch
+    $payload=$null
+    if($env:GITHUB_EVENT_NAME -ceq 'workflow_run'){$payload=Get-Content -LiteralPath $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json}
+    $admission=Get-TrustedSonarAutomaticAdmission -EventName $env:GITHUB_EVENT_NAME -Payload $payload -RunId $SourceRunId -Repository $Repository -Enabled $env:AUTOMATIC_ADMISSION_ENABLED
+    $source = Get-TrustedSonarSource -Repository $Repository -RunId $SourceRunId -DefaultBranch $DefaultBranch -AutomaticAdmission $admission
     if ($IntakeOnly) {
         if ($env:GLOBAL_SONAR_TOKEN_PRESENT -cne 'false' -or $env:GLOBAL_ANALYSIS_TOKEN_PRESENT -cne 'false') { throw 'Move Sonar credentials out of repository and organization secret scope before activation.' }
         "source-run-id=$SourceRunId" | Add-Content -LiteralPath $env:GITHUB_OUTPUT
+        "analysis-key=$(Get-TrustedSonarAnalysisKey -Source $source)" | Add-Content -LiteralPath $env:GITHUB_OUTPUT
         exit 0
     }
     if (-not $IsLinux -or -not $env:SONAR_ANALYSIS_TOKEN) { throw 'Protected Sonar analysis requires Linux and its environment credential.' }
     Import-Module (Join-Path $PSScriptRoot 'SonarReportHandoff.psm1') -Force
     Import-Module (Join-Path $PSScriptRoot 'SonarContainerRuntime.psm1') -Force
     $startedAt = [datetimeoffset]::UtcNow
-    $policy = Get-SonarQualityPolicySnapshot -Source $source
+    if($null -ne $admission){
+        $ready=Wait-TrustedSonarBaseline -Source $source -Repository $Repository -DefaultBranch $DefaultBranch -AutomaticAdmission $admission
+        $source=$ready.Source;$policy=$ready.Policy
+    }else{$policy = Get-SonarQualityPolicySnapshot -Source $source}
     $root = Join-Path $env:RUNNER_TEMP "trusted-sonar-$([guid]::NewGuid().ToString('N'))"
     $tools = Join-Path $root 'tools'; $driver = Join-Path $root 'driver'; $cache = Join-Path $root 'cache'
     $projection = Join-Path $root 'analyzer-projection'
@@ -63,13 +70,18 @@ try {
     $manifest = @(Copy-ValidatedSonarHandoff -BuildRoot $build -UploadRoot $upload)
     $manifest | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $root 'validated-handoff.json')
     Assert-SonarSourceWorkspaceClean -Path $upload -Revision $source.BuildSha
-    $latest = Get-TrustedSonarSource -Repository $Repository -RunId $SourceRunId -DefaultBranch $DefaultBranch
+    if($null -ne $admission){
+        $ready=Wait-TrustedSonarBaseline -Source $source -Policy $policy -Repository $Repository -DefaultBranch $DefaultBranch -AutomaticAdmission $admission
+        $latest=$ready.Source;$currentPolicy=$ready.Policy
+    }else{
+        $latest = Get-TrustedSonarSource -Repository $Repository -RunId $SourceRunId -DefaultBranch $DefaultBranch
+        $currentPolicy = Get-SonarQualityPolicySnapshot -Source $latest
+    }
     Assert-TrustedSonarSourceUnchanged -Before $source -After $latest
     Assert-SonarCredentialDeployment -Repository $Repository -DefaultBranch $DefaultBranch
-    $currentPolicy = Get-SonarQualityPolicySnapshot -Source $latest
     Assert-SonarQualityPolicyUnchanged -Before $policy -After $currentPolicy
     Invoke-SonarContainer @container -Workspace $upload -Phase End
-    $latest = Assert-TrustedSonarUploadCompletion -Source $source -Policy $policy -Repository $Repository -DefaultBranch $DefaultBranch -StartedAt $startedAt
+    $latest = Assert-TrustedSonarUploadCompletion -Source $source -Policy $policy -Repository $Repository -DefaultBranch $DefaultBranch -StartedAt $startedAt -AutomaticAdmission $admission
     Write-Host "Sonar analysis completed for $($source.Mode) revision $($source.HeadSha)."
     exit 0
 }
