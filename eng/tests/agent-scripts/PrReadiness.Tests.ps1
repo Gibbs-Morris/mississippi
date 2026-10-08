@@ -183,6 +183,34 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
             }
         }
 
+        function Get-SiteReadinessJob {
+            param([object]$Fixture, [string]$JobId)
+            if ($null -ne $Fixture.JobOverrides -and $Fixture.JobOverrides.ContainsKey($JobId)) { return $Fixture.JobOverrides[$JobId] }
+            $page = if ($Fixture.CheckResponses.Count -eq 0) { $Fixture.FinalCheckPage } else { $Fixture.CheckPage }
+            $jobCheck = @($page.check_runs | Where-Object { $null -ne $_.PSObject.Properties['id'] -and [long]$_.id -eq [long]$JobId })
+            if ($jobCheck.Count -ne 1) { throw 'Expected exact fixture job identity.' }
+            $runId = [long]([regex]::Match($jobCheck[0].details_url, '/actions/runs/(\d+)/').Groups[1].Value)
+            return [pscustomobject]@{ id=$jobCheck[0].id;run_id=$runId;run_attempt=$jobCheck[0].FixtureJobAttempt;head_sha='head';check_run_url="https://api.github.com/repos/Gibbs-Morris/mississippi/check-runs/$($jobCheck[0].id)" }
+        }
+
+        function Get-SiteReadinessResponse {
+            param([object]$Fixture, [string[]]$Arguments, [scriptblock]$JobReader)
+            $query = $Arguments -join ' '
+            $jobMatch = [regex]::Match($query, 'actions/jobs/(\d+)$')
+            if ($jobMatch.Success) { return & $JobReader -Fixture $Fixture -JobId $jobMatch.Groups[1].Value }
+            $workflowMatch = [regex]::Match($query, 'actions/runs/(\d+)$')
+            if ($workflowMatch.Success) {
+                if ($null -ne $Fixture.FinalWorkflowRuns -and $Fixture.CheckResponses.Count -eq 0) { return $Fixture.FinalWorkflowRuns[$workflowMatch.Groups[1].Value] }
+                return $Fixture.WorkflowRuns[$workflowMatch.Groups[1].Value]
+            }
+            if ($query -match 'pulls/744$') { return $Fixture.PullResponses.Dequeue() }
+            if ($query -match 'check-runs') { return $Fixture.CheckResponses.Dequeue() }
+            if ($query -match 'statuses|issues/744/comments') { return @() }
+            if ($query -match 'reviews') { return $Fixture.ReviewPage }
+            if ($query -match 'pulls/744/files') { return @([pscustomobject]@{ filename = 'README.md' }) }
+            if ($query -match 'graphql') { return $Fixture.GraphPage }
+            throw "Unexpected readiness request: $query"
+        }
         function New-SiteReadinessSnapshot {
             param([string]$BaseRef = 'main', [object]$Stack, [object]$FinalStack, [switch]$IncludeSiteCheck, [object[]]$SiteChecks, [object[]]$FinalSiteChecks, [hashtable]$WorkflowRuns, [hashtable]$FinalWorkflowRuns, [hashtable]$JobOverrides)
             if ($null -eq $WorkflowRuns) { $WorkflowRuns = @{ '501' = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z' } }
@@ -217,30 +245,15 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
             $graphPage = [pscustomobject]@{ data = [pscustomobject]@{ repository = [pscustomobject]@{ pullRequest = [pscustomobject]@{
                 reviewDecision = 'APPROVED'; reviewThreads = [pscustomobject]@{ nodes = @(); pageInfo = [pscustomobject]@{ hasNextPage = $false; endCursor = $null } }
             } } } }
+            $fixture = [pscustomobject]@{
+                CheckPage=$checkPage;FinalCheckPage=$finalCheckPage;CheckResponses=$checkResponses;PullResponses=$pullResponses
+                WorkflowRuns=$WorkflowRuns;FinalWorkflowRuns=$FinalWorkflowRuns;JobOverrides=$JobOverrides;ReviewPage=$reviewPage;GraphPage=$graphPage
+            }
+            $responseReader = ${function:Get-SiteReadinessResponse}
+            $jobReader = ${function:Get-SiteReadinessJob}
             $provider = {
                 param([string[]]$Arguments)
-                $query = $Arguments -join ' '
-                $jobMatch = [regex]::Match($query, 'actions/jobs/(\d+)$')
-                if ($jobMatch.Success) {
-                    if ($null -ne $JobOverrides -and $JobOverrides.ContainsKey($jobMatch.Groups[1].Value)) { return $JobOverrides[$jobMatch.Groups[1].Value] }
-                    $jobCheck = @($checkPage.check_runs | Where-Object id -EQ ([long]$jobMatch.Groups[1].Value))
-                    if ($checkResponses.Count -eq 0) { $jobCheck = @($finalCheckPage.check_runs | Where-Object id -EQ ([long]$jobMatch.Groups[1].Value)) }
-                    if ($jobCheck.Count -ne 1) { throw 'Expected exact fixture job identity.' }
-                    $runId = [long]([regex]::Match($jobCheck[0].details_url, '/actions/runs/(\d+)/').Groups[1].Value)
-                    return [pscustomobject]@{ id=$jobCheck[0].id;run_id=$runId;run_attempt=$jobCheck[0].FixtureJobAttempt;head_sha='head';check_run_url="https://api.github.com/repos/Gibbs-Morris/mississippi/check-runs/$($jobCheck[0].id)" }
-                }
-                $workflowMatch = [regex]::Match($query, 'actions/runs/(\d+)$')
-                if ($workflowMatch.Success) {
-                    if ($null -ne $FinalWorkflowRuns -and $checkResponses.Count -eq 0) { return $FinalWorkflowRuns[$workflowMatch.Groups[1].Value] }
-                    return $WorkflowRuns[$workflowMatch.Groups[1].Value]
-                }
-                if ($query -match 'pulls/744$') { return $pullResponses.Dequeue() }
-                if ($query -match 'check-runs') { return $checkResponses.Dequeue() }
-                if ($query -match 'statuses|issues/744/comments') { return @() }
-                if ($query -match 'reviews') { return $reviewPage }
-                if ($query -match 'pulls/744/files') { return @([pscustomobject]@{ filename = 'README.md' }) }
-                if ($query -match 'graphql') { return $graphPage }
-                throw "Unexpected readiness request: $query"
+                & $responseReader -Fixture $fixture -Arguments $Arguments -JobReader $jobReader
             }.GetNewClosure()
             $snapshot = Get-PrReadinessSnapshot -RepositoryOwner Gibbs-Morris -RepositoryName mississippi -PullRequestNumber 744 -GhJsonProvider $provider -PollingSeconds 300
             $snapshot.IssueReferenceVerified = $true
