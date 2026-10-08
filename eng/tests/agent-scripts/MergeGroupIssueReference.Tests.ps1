@@ -365,7 +365,6 @@ Describe 'Exact merge-group issue membership' {
         $workflow = Get-Content (Join-Path $repoRoot '.github/workflows/pr-issue-reference.yml') -Raw
         $workflow | Should -Match '\$useQueueResolver = Test-TrustedMergeResolver'
         $workflow | Should -Match 'if \(\$useQueueResolver\) \{\s+Save-TrustedScript'
-        $workflow | Should -Match 'else \{\s+Write-Output [^\r\n]+\s+\$pullRequestsOutput = gh api'
         $workflow | Should -Match "Save-TrustedScript -Path 'eng/src/agent-scripts/MergeGroupIssueReference.psm1'"
         ([regex]::Matches($workflow, 'Resolve-MergeGroupIssueMembers -MergeGroup')).Count | Should -Be 2
         $workflow | Should -Match 'Assert-MergeGroupIssueMembersUnchanged -Before \$before -After \$after'
@@ -401,10 +400,64 @@ Describe 'Trusted queue resolver rollout' {
         if ($null -ne $previousExitCode) { Set-Variable -Name LASTEXITCODE -Scope Global -Value $previousExitCode.Value }
         else { Remove-Variable -Name LASTEXITCODE -Scope Global -ErrorAction SilentlyContinue }
     }
-    It 'keeps the existing route when the new helper has not landed on the trusted revision' {
+    It 'reports unavailable when the helper has not landed on the trusted revision' {
         Test-TrustedMergeResolver | Should -BeFalse
         Should -Invoke gh -Times 1 -Exactly -ParameterFilter { $Arguments -contains "repos/$repository/contents/eng/src/agent-scripts" -and $Arguments -contains "ref=$trustedRef" -and $Arguments -contains 'GET' }
     }
+    It 'executes the real workflow with an unavailable resolver for <Event>' -TestCases @(
+        @{ Event = 'merge_group' }, @{ Event = 'pull_request_target' }
+    ) {
+        param($Event)
+        $fixture = Join-Path $TestDrive $Event
+        New-Item -ItemType Directory -Path $fixture -Force | Out-Null
+        $marker = Join-Path $fixture 'validator-ran.txt'
+        $validatorScript = @(
+            'param([string]$Body,[string]$RepositoryOwner,[string]$RepositoryName,[switch]$Json,[string]$PullRequestsPath,[string]$ValidatorPath)',
+            ("[IO.File]::WriteAllText('" + $marker.Replace("'", "''") + "','executed')"),
+            'exit 0'
+        ) -join [Environment]::NewLine
+        $script:encodedValidator = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($validatorScript))
+        Mock gh {
+            $global:LASTEXITCODE = 0
+            if ($Arguments -contains 'repos/Gibbs-Morris/mississippi/commits/main') { return 'a' * 40 }
+            if ($Arguments -contains 'repos/Gibbs-Morris/mississippi/contents/eng/src/agent-scripts') { return $script:directoryJson }
+            if (($Arguments -join ' ') -match '/contents/eng/src/agent-scripts/validate-.*\.ps1') { return $script:encodedValidator }
+            if ($Arguments -contains 'repos/Gibbs-Morris/mississippi/pulls/101') { return 'c' * 40 }
+            if (($Arguments -join ' ') -match '/commits/[c]{40}/pulls') { return '[[{"number":101,"body":"Refs #741"}]]' }
+            if (($Arguments -join ' ') -match '/statuses/[c]{40}') { return '{}' }
+            throw 'Unexpected live GitHub request in full workflow fixture.'
+        }
+        $values = @{
+            GITHUB_REPOSITORY = 'Gibbs-Morris/mississippi'; GITHUB_SHA = ('c' * 40)
+            GITHUB_EVENT_NAME = $Event; GITHUB_SERVER_URL = 'https://github.com'; GITHUB_RUN_ID = '123'
+            DEFAULT_BRANCH = 'main'; RUNNER_TEMP = $fixture; PR_NUMBER = '101'; PR_HEAD_SHA = ('c' * 40)
+            PR_BODY = 'Refs #741'; REPOSITORY_OWNER = 'Gibbs-Morris'; REPOSITORY_NAME = 'mississippi'
+        }
+        $previous = @{}
+        foreach ($name in $values.Keys) {
+            $previous[$name] = [Environment]::GetEnvironmentVariable($name)
+            [Environment]::SetEnvironmentVariable($name, $values[$name])
+        }
+        try {
+            if ($Event -eq 'merge_group') {
+                { & ([scriptblock]::Create($inlineScript)) } | Should -Throw '*Trusted queue resolver is unavailable*'
+                Test-Path -LiteralPath $marker | Should -BeFalse
+                Should -Invoke gh -Times 1 -Exactly -ParameterFilter { $Arguments -contains 'state=failure' }
+                Should -Invoke gh -Times 0 -Exactly -ParameterFilter { ($Arguments -join ' ') -match '/commits/[c]{40}/pulls' }
+                Should -Invoke gh -Times 0 -Exactly -ParameterFilter { $Arguments -contains 'state=success' }
+            }
+            else {
+                & ([scriptblock]::Create($inlineScript))
+                Test-Path -LiteralPath $marker | Should -BeTrue
+                Should -Invoke gh -Times 1 -Exactly -ParameterFilter { $Arguments -contains 'state=success' }
+                Should -Invoke gh -Times 0 -Exactly -ParameterFilter { $Arguments -contains 'repos/Gibbs-Morris/mississippi/contents/eng/src/agent-scripts' }
+            }
+        }
+        finally {
+            foreach ($name in $values.Keys) { [Environment]::SetEnvironmentVariable($name, $previous[$name]) }
+        }
+    }
+
     It 'enables exact queue validation when the trusted helper is present' {
         $script:directoryJson = '[{"path":"eng/src/agent-scripts/MergeGroupIssueReference.psm1","type":"file"}]'
         Test-TrustedMergeResolver | Should -BeTrue
