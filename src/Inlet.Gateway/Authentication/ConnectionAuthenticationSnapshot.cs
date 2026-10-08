@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features.Authentication;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -64,7 +65,8 @@ internal static class ConnectionAuthenticationSnapshot
     )
     {
         context.Items.Remove(ItemKey);
-        AuthenticateResult? result = context.Features.Get<IAuthenticateResultFeature>()?.AuthenticateResult;
+        IAuthenticateResultFeature? feature = context.Features.Get<IAuthenticateResultFeature>();
+        AuthenticateResult? result = feature?.AuthenticateResult;
         if (result is not { Succeeded: true, Ticket: not null } || !ReferenceEquals(result.Principal, context.User))
         {
             return;
@@ -101,12 +103,14 @@ internal static class ConnectionAuthenticationSnapshot
             }
         }
 
-        if (ReferenceEquals(result.Principal, context.User))
+        string? defaultScheme = await GetDefaultAuthenticationSchemeAsync(context, feature!);
+        if (ReferenceEquals(result.Principal, context.User) && ReferenceEquals(result, feature!.AuthenticateResult))
         {
             // Items survive long-polling cloning; request features and their service scope do not.
             context.Items[ItemKey] = new Snapshot(
                 result.Principal,
                 Array.AsReadOnly(schemes),
+                defaultScheme,
                 OperatingSystem.IsWindows() && result.Principal.Identity is WindowsIdentity);
         }
     }
@@ -126,17 +130,58 @@ internal static class ConnectionAuthenticationSnapshot
         context.Items.TryGetValue(ItemKey, out object? value) &&
         value is Snapshot snapshot &&
         ReferenceEquals(snapshot.Principal, principal) &&
-        snapshot.Schemes.SequenceEqual(policy.AuthenticationSchemes, StringComparer.Ordinal);
+        (snapshot.Schemes.SequenceEqual(policy.AuthenticationSchemes, StringComparer.Ordinal) ||
+         ((policy.AuthenticationSchemes.Count == 1) &&
+          string.Equals(snapshot.DefaultScheme, policy.AuthenticationSchemes[0], StringComparison.Ordinal)));
+
+    /// <summary>
+    ///     Recovers the stable default scheme requested by authentication middleware.
+    /// </summary>
+    /// <param name="context">The original authenticated request.</param>
+    /// <param name="feature">The verified authentication result feature.</param>
+    /// <returns>The requested default scheme when no endpoint policy selected other schemes.</returns>
+    private static async Task<string?> GetDefaultAuthenticationSchemeAsync(
+        HttpContext context,
+        IAuthenticateResultFeature feature
+    )
+    {
+        // Middleware couples its result and HTTP user. Separate result features do not prove
+        // that the default scheme was requested, and custom providers may change their default.
+        if (!ReferenceEquals(feature, context.Features.Get<IHttpAuthenticationFeature>()) ||
+            context.RequestServices.GetService<IAuthenticationSchemeProvider>() is not AuthenticationSchemeProvider
+                schemes ||
+            (schemes.GetType() != typeof(AuthenticationSchemeProvider)))
+        {
+            return null;
+        }
+
+        IAuthorizationPolicyProvider? provider = context.RequestServices.GetService<IAuthorizationPolicyProvider>();
+        if (provider is null || !provider.AllowsCachingPolicies)
+        {
+            return null;
+        }
+
+        Endpoint? endpoint = context.GetEndpoint();
+        AuthorizationPolicy? policy = await AuthorizationPolicy.CombineAsync(
+            provider,
+            endpoint?.Metadata.GetOrderedMetadata<IAuthorizeData>() ?? [],
+            endpoint?.Metadata.GetOrderedMetadata<AuthorizationPolicy>() ?? []);
+        return policy is { AuthenticationSchemes.Count: > 0 }
+            ? null
+            : (await schemes.GetDefaultAuthenticateSchemeAsync())?.Name;
+    }
 
     /// <summary>
     ///     Associates verified schemes with the exact principal they authenticated.
     /// </summary>
     /// <param name="Principal">The authenticated principal.</param>
     /// <param name="Schemes">The original selected schemes.</param>
+    /// <param name="DefaultScheme">The stable default scheme originally requested by middleware.</param>
     /// <param name="RequiresWindowsBinding">Whether SignalR's initial Windows clone must be bound at startup.</param>
     private sealed record Snapshot(
         ClaimsPrincipal Principal,
         IReadOnlyList<string> Schemes,
+        string? DefaultScheme,
         bool RequiresWindowsBinding
     );
 }

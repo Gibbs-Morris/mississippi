@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Principal;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Authentication;
@@ -15,6 +16,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -37,6 +39,8 @@ public sealed class InletHubConnectionAuthenticationTests
     private const string EntityId = "entity-1";
 
     private const string OtherScheme = "Other";
+
+    private const string PolicyAlias = "Forwarded";
 
     private const string ProjectionPath = "/api/test-projection";
 
@@ -181,10 +185,16 @@ public sealed class InletHubConnectionAuthenticationTests
     private static async Task DispatchHubEndpointAsync(
         WebApplication app,
         HttpContext context,
-        AuthorizationPolicy policy
+        AuthorizationPolicy policy,
+        bool requiresAuthorization = true
     )
     {
-        app.MapInletHub().RequireAuthorization(policy);
+        HubEndpointConventionBuilder mapped = app.MapInletHub();
+        if (requiresAuthorization)
+        {
+            mapped.RequireAuthorization(policy);
+        }
+
         IEndpointRouteBuilder routeBuilder = app;
         RouteEndpoint endpoint = routeBuilder.DataSources.SelectMany(source => source.Endpoints)
             .OfType<RouteEndpoint>()
@@ -196,6 +206,37 @@ public sealed class InletHubConnectionAuthenticationTests
         Assert.NotNull(endpoint.RequestDelegate);
         await endpoint.RequestDelegate(context);
         Assert.Equal(StatusCodes.Status404NotFound, context.Response.StatusCode);
+    }
+
+    private sealed class FeatureDependentHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="FeatureDependentHandler" /> class.
+        /// </summary>
+        /// <param name="options">The scheme options.</param>
+        /// <param name="logger">The handler logger factory.</param>
+        /// <param name="encoder">The URL encoder.</param>
+        public FeatureDependentHandler(
+            IOptionsMonitor<AuthenticationSchemeOptions> options,
+            ILoggerFactory logger,
+            UrlEncoder encoder
+        )
+            : base(options, logger, encoder)
+        {
+        }
+
+        /// <inheritdoc />
+        protected override Task<AuthenticateResult> HandleAuthenticateAsync() =>
+            Task.FromResult(
+                Context.Features.Get<ITlsConnectionFeature>() is not null
+                    ? AuthenticateResult.Success(
+                        new(
+                            new(
+                                new ClaimsIdentity(
+                                    [new(ClaimTypes.NameIdentifier, "forwarded-user"), new("permission", "read")],
+                                    PolicyAlias)),
+                            Scheme.Name))
+                    : AuthenticateResult.NoResult());
     }
 
     /// <summary>
@@ -404,6 +445,47 @@ public sealed class InletHubConnectionAuthenticationTests
         {
             await customEvaluator.Received(1).AuthenticateAsync(Arg.Any<AuthorizationPolicy>(), clone);
         }
+    }
+
+    /// <summary>
+    ///     A default forwarding scheme must retain its requested name across a reduced connection context.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Fact]
+    public async Task SubscribePreservesDefaultForwardingAlias()
+    {
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.Services.AddSignalR();
+        builder.Services.AddAuthentication(PolicyAlias)
+            .AddPolicyScheme(PolicyAlias, null, options => options.ForwardDefault = TlsScheme)
+            .AddScheme<AuthenticationSchemeOptions, FeatureDependentHandler>(TlsScheme, _ => { });
+        builder.Services.AddAuthorizationBuilder().SetDefaultPolicy(CreatePolicy(PolicyAlias));
+        await using WebApplication app = builder.Build();
+        DefaultHttpContext original = CreateOriginalContext(app.Services);
+        AuthenticationMiddleware middleware = new(
+            _ => Task.CompletedTask,
+            app.Services.GetRequiredService<IAuthenticationSchemeProvider>());
+        await middleware.Invoke(original);
+        AuthenticateResult established = Assert.IsType<AuthenticateResult>(
+            original.Features.Get<IAuthenticateResultFeature>()?.AuthenticateResult);
+        Assert.True(established.Succeeded);
+        Assert.Equal(TlsScheme, established.Ticket?.AuthenticationScheme);
+        Assert.Equal(PolicyAlias, original.User.Identity?.AuthenticationType);
+        AuthorizationPolicy policy = CreatePolicy(PolicyAlias);
+        Assert.True(
+            (await app.Services.GetRequiredService<IAuthorizationService>()
+                .AuthorizeAsync(original.User, null, policy.Requirements)).Succeeded);
+        await DispatchHubEndpointAsync(app, original, policy, false);
+        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext clone = CloneConnectionContext(original, connectionScope.ServiceProvider);
+        Assert.Null(clone.Features.Get<ITlsConnectionFeature>());
+        Assert.Null(clone.Features.Get<IAuthenticateResultFeature>());
+        PolicyEvaluator evaluator = new(app.Services.GetRequiredService<IAuthorizationService>());
+        Assert.False((await evaluator.AuthenticateAsync(policy, clone)).Succeeded);
+        using InletHub hub = CreateHub(clone, original.User, PolicyAlias, out IInletSubscriptionGrain grain);
+        await hub.OnConnectedAsync();
+        Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+        await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
     }
 
     /// <summary>
