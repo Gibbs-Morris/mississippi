@@ -159,7 +159,7 @@ Describe 'Automatic Sonar exact-baseline coordination' {
         param($Mode)
         if($Mode -eq 'Branch'){$script:run.event='push';$script:run.head_branch='main'}else{
             $script:run.event='pull_request';$script:run.head_branch='codex/test';$script:run.pull_requests=@([pscustomobject]@{number=5;head=[pscustomobject]@{sha=('a'*40);ref='codex/test'}})
-            $script:pr=[pscustomobject]@{state='open';mergeable=$true;merge_commit_sha=('c'*40);head=[pscustomobject]@{sha=('a'*40);ref='codex/test';repo=[pscustomobject]@{full_name='Gibbs-Morris/mississippi'}};base=[pscustomobject]@{sha=('b'*40);ref='main';repo=[pscustomobject]@{full_name='Gibbs-Morris/mississippi'}}}
+            $script:pr=[pscustomobject]@{number=5;state='open';mergeable=$true;merge_commit_sha=('c'*40);head=[pscustomobject]@{sha=('a'*40);ref='codex/test';repo=[pscustomobject]@{full_name='Gibbs-Morris/mississippi'}};base=[pscustomobject]@{sha=('b'*40);ref='main';repo=[pscustomobject]@{full_name='Gibbs-Morris/mississippi'}}}
         }
         (Invoke-Ready).Source.Mode | Should -Be $Mode
         Should -Invoke Start-Sleep -ModuleName TrustedSonarAnalysis -Times 0 -Exactly
