@@ -73,6 +73,43 @@ Describe 'Sonar baseline and authentic provider verification' {
         }
         { Invoke-Policy } | Should -Throw
     }
+
+    It 'accepts targeted manual <Type> branches only with the exact LONG main baseline' -TestCases @(@{Type='SHORT'},@{Type='LONG'}) {
+        param($Type)
+        $source.Mode='Branch';$source.HeadRef='branch/manual'
+        $script:branches.branches[1].name=$source.HeadRef
+        $script:branches.branches[1].type=$Type
+        {Invoke-Policy} | Should -Not -Throw
+    }
+    It 'rejects an invalid targeted manual baseline: <Case>' -TestCases @(
+        @{Case='stale target'},@{Case='missing target'},@{Case='duplicate target'},
+        @{Case='SHORT target'},@{Case='target is not main'},@{Case='malformed backend revision'},@{Case='malformed source target'}
+    ) {
+        param($Case)
+        $source.Mode='Branch';$source.HeadRef='branch/manual'
+        switch($Case){
+            'stale target' {$script:branches.branches[0].commit.sha='c'*40}
+            'missing target' {$script:branches.branches=@($script:branches.branches[1])}
+            'duplicate target' {$script:branches.branches+=$script:branches.branches[0]}
+            'SHORT target' {$script:branches.branches[0].type='SHORT'}
+            'target is not main' {$script:branches.branches[0].isMain=$false}
+            'malformed backend revision' {$script:branches.branches[0].commit.sha='invalid'}
+            'malformed source target' {$source.TargetSha='invalid'}
+        }
+        {Invoke-Policy} | Should -Throw
+    }
+    It 'rejects baseline movement at the manual completion policy recheck' {
+        $source.Mode='Branch';$source.HeadRef='branch/manual'
+        $before=Invoke-Policy
+        $script:branches.branches[0].commit.sha='c'*40
+        {Assert-SonarQualityPolicyUnchanged -Before $before -After (Invoke-Policy)} | Should -Throw
+    }
+    It 'allows main refresh without requiring its prior Sonar baseline revision' {
+        $source.Mode='Branch';$source.HeadRef='main';$source.TargetSha=$null
+        $script:branches.branches[0].commit.sha='c'*40
+        {Invoke-Policy} | Should -Not -Throw
+    }
+
     It 'rejects gate reassignment or changed conditions during analysis' {
         $before = Invoke-Policy
         $script:assignment.qualityGate.id=99
