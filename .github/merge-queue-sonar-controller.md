@@ -69,7 +69,7 @@ Dispatch targets the trusted default-branch definition. It does not select candi
 
 `sonar-trusted-analysis.yml` also listens for completed `SonarCloud` workflow runs. Automatic intake is off unless `SONAR_TRUSTED_ANALYSIS_ENABLED` is true; manual source-run dispatch remains available. The workflow definition must be on the default branch. Source routing is a separate rollout layer; this variable alone does not protect or relocate credentials.
 
-Intake requires a successful approved repository run and correlates its ID, attempt, event, head SHA and ref with freshly fetched API metadata. Forks, recursion, failed/incomplete runs and changed attempts are rejected. Those constraints follow every later source read, including both post-upload checks.
+Intake requires a successful approved repository run and correlates its ID, attempt, event, head SHA and ref with freshly fetched API metadata. Forks, recursion, failed/incomplete runs and changed attempts are rejected. Those constraints follow every later source read, including both post-upload checks. Exported completion callers must explicitly pass the admission object for automatic runs or null for manual dispatch; omitting that parameter is a binding error.
 
 Protected analysis jobs serialize by validated Sonar identity: PR number or the hash of the exact branch name. This applies to manual and automatic requests. Distinct queue branches can run independently; separate main source runs cannot upload concurrently. GitHub concurrency retains only the latest pending job for a group. A request that becomes stale while waiting fails its fresh source check.
 

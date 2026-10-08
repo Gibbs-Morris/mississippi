@@ -274,7 +274,7 @@ function Assert-SonarPublishedAnalysis {
 
 Export-ModuleMember -Function Get-SonarQualityPolicySnapshot,Assert-SonarQualityPolicyUnchanged,Assert-SonarPublishedAnalysis
 function Assert-TrustedSonarUploadCompletion {
-    param([object]$Source,[object]$Policy,[string]$Repository,[string]$DefaultBranch,[datetimeoffset]$StartedAt,[object]$AutomaticAdmission)
+    param([object]$Source,[object]$Policy,[string]$Repository,[string]$DefaultBranch,[datetimeoffset]$StartedAt,[Parameter(Mandatory)][AllowNull()][object]$AutomaticAdmission)
     $published = Get-TrustedSonarSource -Repository $Repository -RunId $Source.RunId -DefaultBranch $DefaultBranch -AutomaticAdmission $AutomaticAdmission
     Assert-TrustedSonarSourceUnchanged -Before $Source -After $published
     Assert-SonarPublishedAnalysis -Source $published -Repository $Repository -StartedAt $StartedAt
