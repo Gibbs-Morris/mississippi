@@ -171,6 +171,67 @@ Describe 'Exact merge-group issue membership' {
         Should -Invoke Read-MergeQueuePage -ModuleName MergeGroupIssueReference -Times 1 -Exactly -ParameterFilter { $After -eq 'old-next-page' }
         $script:responses.Count | Should -Be 0
     }
+    It 'retries a same-count follower replacement with a cross-page <Race>' -TestCases @(
+        @{ Race = 'count mismatch' }, @{ Race = 'duplicate ID' }, @{ Race = 'duplicate position' }, @{ Race = 'position gap' }
+    ) {
+        param($Race)
+        $stable = $script:repositoryData | ConvertTo-Json -Depth 15 | ConvertFrom-Json
+        for ($position = 3; $position -le 103; $position++) {
+            $entry = New-Entry $position (1000 + $position) $candidate ('e' * 40)
+            $entry.headCommit = $null
+            $stable.mergeQueue.entries.nodes += $entry
+        }
+        $stable.mergeQueue.entries.totalCount = 103
+        $page1 = $stable | ConvertTo-Json -Depth 15 | ConvertFrom-Json
+        $page1.mergeQueue.entries.nodes = @($page1.mergeQueue.entries.nodes | Select-Object -First 100)
+        $page1.mergeQueue.entries.pageInfo.hasNextPage = $true
+        $page1.mergeQueue.entries.pageInfo.endCursor = 'follower-cursor'
+        $page2 = $stable | ConvertTo-Json -Depth 15 | ConvertFrom-Json
+        $page2.mergeQueue.entries.nodes = @($page2.mergeQueue.entries.nodes | Select-Object -Last 3)
+        switch ($Race) {
+            'count mismatch' { $page2.mergeQueue.entries.nodes = @($page2.mergeQueue.entries.nodes | Select-Object -First 2) }
+            'duplicate ID' { $page2.mergeQueue.entries.nodes[0].id = $page1.mergeQueue.entries.nodes[-1].id }
+            'duplicate position' { $page2.mergeQueue.entries.nodes[0].position = 100 }
+            'position gap' { foreach ($entry in $page2.mergeQueue.entries.nodes) { $entry.position++ } }
+        }
+        $script:responses = [Collections.Generic.Queue[object]]::new()
+        $script:responses.Enqueue($page1)
+        $script:responses.Enqueue($page2)
+        $script:responses.Enqueue($stable)
+        Mock Read-MergeQueuePage -ModuleName MergeGroupIssueReference { $script:responses.Dequeue() }
+        $result = Invoke-Resolver
+        @($result.PullRequests.number) | Should -Be @(101, 102)
+        Should -Invoke Read-MergeQueuePage -ModuleName MergeGroupIssueReference -Times 2 -Exactly -ParameterFilter { $After -eq '' }
+        Should -Invoke Read-MergeQueuePage -ModuleName MergeGroupIssueReference -Times 1 -Exactly -ParameterFilter { $After -eq 'follower-cursor' }
+        $script:responses.Count | Should -Be 0
+    }
+    It 'bounds retries for persistent cross-page <Race>' -TestCases @(
+        @{ Race = 'count mismatch' }, @{ Race = 'duplicate ID' }, @{ Race = 'duplicate position' }, @{ Race = 'position gap' }
+    ) {
+        param($Race)
+        $page1 = $script:repositoryData | ConvertTo-Json -Depth 15 | ConvertFrom-Json
+        $page1.mergeQueue.entries.nodes = @($page1.mergeQueue.entries.nodes[0])
+        $page1.mergeQueue.entries.pageInfo.hasNextPage = $true
+        $page1.mergeQueue.entries.pageInfo.endCursor = 'unstable-cursor'
+        $page2 = $script:repositoryData | ConvertTo-Json -Depth 15 | ConvertFrom-Json
+        $page2.mergeQueue.entries.nodes = @($page2.mergeQueue.entries.nodes[1])
+        switch ($Race) {
+            'count mismatch' { $page2.mergeQueue.entries.nodes = @() }
+            'duplicate ID' { $page2.mergeQueue.entries.nodes[0].id = $page1.mergeQueue.entries.nodes[0].id }
+            'duplicate position' { $page2.mergeQueue.entries.nodes[0].position = 1 }
+            'position gap' { $page2.mergeQueue.entries.nodes[0].position = 3 }
+        }
+        $script:responses = [Collections.Generic.Queue[object]]::new()
+        for ($attempt = 0; $attempt -lt 3; $attempt++) {
+            $script:responses.Enqueue($page1)
+            $script:responses.Enqueue($page2)
+        }
+        Mock Read-MergeQueuePage -ModuleName MergeGroupIssueReference { $script:responses.Dequeue() }
+        { Invoke-Resolver } | Should -Throw '*changed during pagination after three snapshot attempts*'
+        Should -Invoke Read-MergeQueuePage -ModuleName MergeGroupIssueReference -Times 6 -Exactly
+        $script:responses.Count | Should -Be 0
+    }
+
     It 'fails without another retry when a restarted snapshot has <Failure>' -TestCases @(
         @{Failure='an API error'; Message='forced API failure'}, @{Failure='a missing candidate'; Message='exactly one live'}
     ) {
