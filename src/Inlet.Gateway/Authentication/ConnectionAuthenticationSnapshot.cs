@@ -116,6 +116,20 @@ internal static class ConnectionAuthenticationSnapshot
     }
 
     /// <summary>
+    ///     Checks whether retained request credentials belong to a different caller principal.
+    /// </summary>
+    /// <param name="context">The connection context, including its copied items.</param>
+    /// <param name="principal">The principal retained by the hub.</param>
+    /// <returns>Whether a recorded result belongs to a different principal.</returns>
+    internal static bool HasDifferentPrincipal(
+        HttpContext context,
+        ClaimsPrincipal? principal
+    ) =>
+        context.Items.TryGetValue(ItemKey, out object? value) &&
+        value is Snapshot snapshot &&
+        !ReferenceEquals(snapshot.Principal, principal);
+
+    /// <summary>
     ///     Checks that the connection authenticated the subscription's exact selected schemes.
     /// </summary>
     /// <param name="context">The connection context, including its copied items.</param>
