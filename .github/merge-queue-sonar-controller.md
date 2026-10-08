@@ -38,6 +38,8 @@ Report validation protects this credential boundary. It does not establish that 
 
 ## Quality gate and evidence
 
+PR analysis requires exactly one existing Sonar analysis of its resolved target branch at the exact current target SHA. This applies to ordinary main, feature and topic targets and the verified native stack trunk. Missing, ambiguous, malformed or stale baselines fail before analysis, immediately before upload and again after genuine provider verification. Ordinary PR targets may be SHORT or LONG; the separate manual and queue requirements for a LONG main baseline remain in force.
+
 The controller preserves the reviewed repository gate: A security/reliability/maintainability ratings, 100% review of new hotspots, zero new code smells/violations, duplication threshold 6% and coverage threshold 60%. Gate reassignment or criteria changes during analysis fail. Queue classification must retain the reviewed `(branch|release)-.*` policy and candidate SHORT classification; the controller checks both before and after upload.
 
 Completion requires a fresh successful check from the genuine Sonar app (12526) on the exact source SHA. A check from GitHub Actions, an earlier analysis or a different revision cannot substitute. Native Sonar code-scanning protection remains applicable to ordinary PRs; [GitHub excludes merge groups from code-scanning merge protection](https://docs.github.com/en/code-security/concepts/code-scanning/merge-protection). Live held positive/negative candidate evidence is required before claiming the queue's genuine gate provides the reviewed security criteria.

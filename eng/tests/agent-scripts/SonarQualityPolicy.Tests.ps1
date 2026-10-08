@@ -8,6 +8,11 @@ Describe 'Sonar baseline and authentic provider verification' {
     BeforeAll {
         $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
         Import-Module (Join-Path $repoRoot 'eng/src/agent-scripts/TrustedSonarAnalysis.psm1') -Force
+        $tokens=$null;$errors=$null
+        $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $repoRoot 'eng/src/agent-scripts/invoke-trusted-sonar-analysis.ps1'),[ref]$tokens,[ref]$errors)
+        $commands=@($ast.FindAll({param($node) $node -is [Management.Automation.Language.CommandAst] -and $node.GetCommandName() -ceq 'Assert-TrustedSonarUploadCompletion'},$true))
+        if($errors.Count -ne 0 -or $commands.Count -ne 1){throw 'Cannot locate the actual trusted Sonar completion call.'}
+        $script:prCompletionCommand=[scriptblock]::Create($commands[0].Extent.Text)
         function Invoke-Policy { Get-SonarQualityPolicySnapshot -Source $source }
         function Invoke-Published { Assert-SonarPublishedAnalysis -Source $source -Repository Gibbs-Morris/mississippi -StartedAt ([datetimeoffset]'2026-10-07T12:00:00Z') }
     }
@@ -72,6 +77,66 @@ Describe 'Sonar baseline and authentic provider verification' {
             'unknown classification' { $script:classification.settings=@() }
         }
         { Invoke-Policy } | Should -Throw
+    }
+
+    It 'accepts an analyzed PR target <Target> classified as <Type>' -TestCases @(
+        @{Target='main';Type='LONG'},@{Target='feature/base';Type='SHORT'},@{Target='feature/base';Type='LONG'},
+        @{Target='topic/base';Type='SHORT'},@{Target='topic/base';Type='LONG'}
+    ) {
+        param($Target,$Type)
+        $source.Mode='PullRequest';$source.TargetRef=$Target
+        $script:branches.branches[0].name=$Target
+        $script:branches.branches[0].type=$Type
+        $script:branches.branches[0].isMain=$Target -ceq 'main'
+        {Invoke-Policy} | Should -Not -Throw
+    }
+    It 'rejects an invalid PR target baseline for <Target>: <Case>' -TestCases @(
+        foreach($target in @('main','feature/base','topic/base')){
+            foreach($case in @('stale target','missing target','duplicate target','malformed backend revision','malformed source target','missing backend revision','missing source target')){
+                @{Target=$target;Case=$case}
+            }
+        }
+    ) {
+        param($Target,$Case)
+        $source.Mode='PullRequest';$source.TargetRef=$Target
+        $script:branches.branches[0].name=$Target
+        switch($Case){
+            'stale target' {$script:branches.branches[0].commit.sha='c'*40}
+            'missing target' {$script:branches.branches=@($script:branches.branches[1])}
+            'duplicate target' {$script:branches.branches+=$script:branches.branches[0]}
+            'malformed backend revision' {$script:branches.branches[0].commit.sha='invalid'}
+            'malformed source target' {$source.TargetSha='invalid'}
+            'missing backend revision' {$script:branches.branches[0].commit.PSObject.Properties.Remove('sha')}
+            'missing source target' {$source.PSObject.Properties.Remove('TargetSha')}
+        }
+        {Invoke-Policy} | Should -Throw
+    }
+    It 'rechecks the PR target baseline after genuine provider verification: <Case>' -TestCases @(
+        @{Case='unchanged';Accepted=$true},@{Case='stale target';Accepted=$false},@{Case='missing target';Accepted=$false}
+    ) {
+        param($Case,$Accepted)
+        $source.Mode='PullRequest';$source.HeadRef='feature/source';$source.TargetRef='feature/base'
+        $source | Add-Member -NotePropertyMembers @{RunId=42;BuildSha=('d'*40);PullRequest=5;Queue=$null;NativeIdentity=$null}
+        $script:branches.branches[0].name=$source.TargetRef;$script:branches.branches[0].isMain=$false;$script:branches.branches[0].type='SHORT'
+        $policy=Invoke-Policy
+        $script:prCompletionSource=$source
+        $script:prCompletionCase=$Case
+        Mock Get-TrustedSonarSource -ModuleName TrustedSonarAnalysis {return $script:prCompletionSource}
+        Mock Assert-SonarCredentialDeployment -ModuleName TrustedSonarAnalysis {}
+        Mock Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis {
+            switch($script:prCompletionCase){
+                'stale target' {$script:branches.branches[0].commit.sha='c'*40}
+                'missing target' {$script:branches.branches=@($script:branches.branches[1])}
+            }
+            return $script:checks
+        }
+        $complete={
+            $Repository='Gibbs-Morris/mississippi';$DefaultBranch='main';$startedAt=[datetimeoffset]'2026-10-07T12:00:00Z';$admission=$null
+            & $script:prCompletionCommand
+        }
+        if($Accepted){$complete | Should -Not -Throw}else{$complete | Should -Throw}
+        Should -Invoke Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis -Times 1 -Exactly -ParameterFilter {$Path -like '*/check-runs?*'}
+        Should -Invoke Read-SonarServiceMetadata -ModuleName TrustedSonarAnalysis -Times 2 -Exactly -ParameterFilter {$Endpoint -like 'project_branches/*'}
     }
 
     It 'accepts targeted manual <Type> branches only with the exact LONG main baseline' -TestCases @(@{Type='SHORT'},@{Type='LONG'}) {
