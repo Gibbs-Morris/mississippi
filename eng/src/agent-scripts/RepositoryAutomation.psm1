@@ -3122,7 +3122,7 @@ function Test-PrReadinessSiteCheckProducer {
     $producer = $CheckRun.PSObject.Properties['ReadinessWorkflowProducer']
     if ($null -eq $app -or $null -eq $app.Value -or $null -eq $producer) { return $false }
     return [long]$app.Value.id -eq 15368 -and [long]$producer.Value.WorkflowId -gt 0 -and
-        [string]$producer.Value.Path -ceq '.github/workflows/docusaurus.yml' -and [string]$producer.Value.Event -ceq 'pull_request'
+        [string]$producer.Value.Path -cmatch '\A\.github/workflows/docusaurus\.yml(?:@[^\r\n]+)?\z' -and [string]$producer.Value.Event -ceq 'pull_request'
 }
 function Get-PrReadinessCommitStatusState {
     param([Parameter(Mandatory)][object]$Status)

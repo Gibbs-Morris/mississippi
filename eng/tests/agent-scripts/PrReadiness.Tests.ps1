@@ -170,7 +170,7 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
             [pscustomobject]@{
                 id = $Id
                 workflow_id = $WorkflowId
-                path = '.github/workflows/docusaurus.yml'
+                path = '.github/workflows/docusaurus.yml@refs/pull/744/merge'
                 event = 'pull_request'
                 head_sha = 'head'
                 created_at = $CreatedAt
@@ -287,6 +287,34 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         @($snapshot.Checks | Where-Object { $_.Name -eq 'Build Docusaurus Site' -and $_.ExpectedIdentity -and $_.Required }).Count | Should -Be 1
     }
 
+    It 'accepts an authenticated site workflow path with suffix <Suffix>' -TestCases @(
+        @{ Suffix = 'main' }
+        @{ Suffix = 'refs/pull/744/merge' }
+        @{ Suffix = 'refs/heads/topic/name@segment' }
+    ) {
+        param($Suffix)
+        $run = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
+        $run.path = '.github/workflows/docusaurus.yml@' + $Suffix
+        $snapshot = New-SiteReadinessSnapshot -SiteChecks @((New-SiteCheckRun -Id 1 -RunId 501)) -WorkflowRuns @{'501'=$run}
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'READY'
+    }
+    It 'rejects a misleading site workflow path <Path>' -TestCases @(
+        @{ Path = '.github/workflows/docusaurus.yml@' }
+        @{ Path = '.github/workflows/docusaurus.yml.extra@main' }
+        @{ Path = '.github/workflows/another.yml@refs/pull/744/merge' }
+    ) {
+        param($Path)
+        $run = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
+        $run.path = $Path
+        $snapshot = New-SiteReadinessSnapshot -SiteChecks @((New-SiteCheckRun -Id 1 -RunId 501)) -WorkflowRuns @{'501'=$run}
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'INCOMPLETE'
+    }
+    It 'accepts the unsuffixed path returned by existing workflow runs' {
+        $run = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
+        $run.path = '.github/workflows/docusaurus.yml'
+        $snapshot = New-SiteReadinessSnapshot -SiteChecks @((New-SiteCheckRun -Id 1 -RunId 501)) -WorkflowRuns @{'501'=$run}
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'READY'
+    }
     It 'blocks a same-named site result from <ForeignIdentity> when the required producer is missing' -TestCases @(
         @{ ForeignIdentity = 'another App' }
         @{ ForeignIdentity = 'another workflow' }
