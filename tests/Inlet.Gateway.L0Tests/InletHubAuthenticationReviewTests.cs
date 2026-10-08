@@ -91,7 +91,8 @@ public sealed class InletHubAuthenticationReviewTests
         AuthorizationPolicy? defaultPolicy = null,
         IPolicyEvaluator? policyEvaluator = null,
         bool registerAuthentication = true,
-        bool registerPolicyEvaluator = true
+        bool registerPolicyEvaluator = true,
+        IAuthenticationHandlerProvider? handlerProvider = null
     )
     {
         ServiceCollection services = new();
@@ -104,6 +105,11 @@ public sealed class InletHubAuthenticationReviewTests
         if (authenticationService is not null)
         {
             services.AddSingleton(authenticationService);
+        }
+
+        if (handlerProvider is not null)
+        {
+            services.AddSingleton(handlerProvider);
         }
 
         AuthorizationPolicy authorizationPolicy = defaultPolicy ??
@@ -379,6 +385,70 @@ public sealed class InletHubAuthenticationReviewTests
     }
 
     /// <summary>
+    ///     The default evaluator should delegate virtual schemes to the host's authentication service.
+    /// </summary>
+    /// <param name="registerAuthentication">Whether standard scheme registrations are available.</param>
+    /// <param name="authenticated">Whether the custom service accepts the caller.</param>
+    /// <param name="derivedService">Whether the host service derives from the framework's public base class.</param>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Theory]
+    [InlineData(true, true, false)]
+    [InlineData(false, true, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, false, false)]
+    [InlineData(true, true, true)]
+    [InlineData(false, true, true)]
+    public async Task SubscribeUsesCustomAuthenticationServiceForVirtualScheme(
+        bool registerAuthentication,
+        bool authenticated,
+        bool derivedService
+    )
+    {
+        const string virtualScheme = "Virtual";
+        IAuthenticationService authentication = derivedService
+            ? Substitute.For<AuthenticationService>(
+                Substitute.For<IAuthenticationSchemeProvider>(),
+                Substitute.For<IAuthenticationHandlerProvider>(),
+                Substitute.For<IClaimsTransformation>(),
+                Options.Create(new AuthenticationOptions()))
+            : Substitute.For<IAuthenticationService>();
+        authentication.AuthenticateAsync(Arg.Any<HttpContext>(), virtualScheme)
+            .Returns(
+                authenticated
+                    ? AuthenticateResult.Success(new(CreatePrincipal("virtual-service-user"), virtualScheme))
+                    : AuthenticateResult.NoResult());
+        await using ServiceProvider services = CreateServices(
+            authentication,
+            registerAuthentication: registerAuthentication);
+        Assert.IsType<PolicyEvaluator>(services.GetRequiredService<IPolicyEvaluator>());
+        IAuthenticationSchemeProvider? provider = services.GetService<IAuthenticationSchemeProvider>();
+        if (provider is not null)
+        {
+            Assert.Null(await provider.GetSchemeAsync(virtualScheme));
+        }
+
+        using InletHub hub = CreateHub(
+            services,
+            virtualScheme,
+            out IInletSubscriptionGrain grain,
+            out ILogger<InletHub> _);
+        if (authenticated)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        await authentication.Received(1).AuthenticateAsync(Arg.Any<HttpContext>(), virtualScheme);
+    }
+
+    /// <summary>
     ///     A custom evaluator should handle virtual schemes without default authentication registration.
     /// </summary>
     /// <param name="registerAuthentication">Whether the host registers standard authentication services.</param>
@@ -409,5 +479,52 @@ public sealed class InletHubAuthenticationReviewTests
             .AuthenticateAsync(
                 Arg.Is<AuthorizationPolicy>(policy => policy.AuthenticationSchemes.Contains(virtualScheme)),
                 Arg.Any<HttpContext>());
+    }
+
+    /// <summary>
+    ///     The default authentication service should honor virtual schemes from a custom handler provider.
+    /// </summary>
+    /// <param name="authenticated">Whether the host-provided handler authenticates the caller.</param>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SubscribeUsesCustomHandlerProviderForVirtualScheme(
+        bool authenticated
+    )
+    {
+        const string virtualScheme = "Virtual";
+        IAuthenticationHandler handler = Substitute.For<IAuthenticationHandler>();
+        handler.AuthenticateAsync()
+            .Returns(
+                authenticated
+                    ? AuthenticateResult.Success(new(CreatePrincipal("virtual-handler-user"), virtualScheme))
+                    : AuthenticateResult.NoResult());
+        IAuthenticationHandlerProvider handlers = Substitute.For<IAuthenticationHandlerProvider>();
+        handlers.GetHandlerAsync(Arg.Any<HttpContext>(), virtualScheme).Returns(handler);
+        await using ServiceProvider services = CreateServices(handlerProvider: handlers);
+        Assert.IsType<PolicyEvaluator>(services.GetRequiredService<IPolicyEvaluator>());
+        Assert.IsType<AuthenticationService>(services.GetRequiredService<IAuthenticationService>(), false);
+        Assert.Null(await services.GetRequiredService<IAuthenticationSchemeProvider>().GetSchemeAsync(virtualScheme));
+        using InletHub hub = CreateHub(
+            services,
+            virtualScheme,
+            out IInletSubscriptionGrain grain,
+            out ILogger<InletHub> _);
+        if (authenticated)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        await handlers.Received(1).GetHandlerAsync(Arg.Any<HttpContext>(), virtualScheme);
+        await handler.Received(1).AuthenticateAsync();
     }
 }

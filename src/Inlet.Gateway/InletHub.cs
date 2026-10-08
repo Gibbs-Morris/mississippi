@@ -178,23 +178,29 @@ public sealed class InletHub : Hub<IInletHubClient>
             return null;
         }
 
-        // Only the built-in evaluator requires schemes registered with the default provider.
-        // Custom evaluators can implement virtual schemes and their own authentication services.
         if (policyEvaluator.GetType() == typeof(PolicyEvaluator))
         {
-            IAuthenticationSchemeProvider? schemeProvider =
-                httpContext.RequestServices.GetService<IAuthenticationSchemeProvider>();
-            if (schemeProvider is null)
+            IAuthenticationService? authenticationService =
+                httpContext.RequestServices.GetService<IAuthenticationService>();
+            if (authenticationService is null)
             {
                 return null;
             }
 
-            foreach (string scheme in policy.AuthenticationSchemes)
+            // Only the framework service and handler provider require scheme entries.
+            // Custom services, handler providers and evaluators can authenticate virtual schemes.
+            if (authenticationService is AuthenticationService frameworkService &&
+                (authenticationService.GetType().Assembly == typeof(AuthenticationService).Assembly) &&
+                frameworkService.Handlers is AuthenticationHandlerProvider handlers &&
+                (handlers.GetType() == typeof(AuthenticationHandlerProvider)))
             {
-                AuthenticationScheme? registeredScheme = await schemeProvider.GetSchemeAsync(scheme);
-                if (registeredScheme is null)
+                foreach (string scheme in policy.AuthenticationSchemes)
                 {
-                    return null;
+                    AuthenticationScheme? registeredScheme = await handlers.Schemes.GetSchemeAsync(scheme);
+                    if (registeredScheme is null)
+                    {
+                        return null;
+                    }
                 }
             }
 
