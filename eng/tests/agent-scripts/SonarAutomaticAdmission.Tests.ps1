@@ -242,6 +242,7 @@ Describe 'Sonar tokenless source routing' {
         $sourceYaml=Get-Content -LiteralPath (Join-Path $repoRoot '.github/workflows/sonar-cloud.yml') -Raw
         $sourceJob=[regex]::Match($sourceYaml,'(?ms)^  source:\r?\n(?<Job>.*?)(?=^  Build:)').Groups['Job'].Value
         $legacyJob=[regex]::Match($sourceYaml,'(?ms)^  Build:\r?\n(?<Job>.*)\z').Groups['Job'].Value
+        $sourcePermissionsPattern = '(?m)^    permissions: \{\}\r?$'
         function Test-FixedSourceSteps {
             param([string]$Job)
             $steps = [regex]::Match($Job, '(?ms)^    steps:\r?\n(?<Steps>.*)\z').Groups['Steps'].Value
@@ -266,10 +267,20 @@ Describe 'Sonar tokenless source routing' {
     }
     It 'records source completion without checkout, action execution or credentials' {
         $sourceJob | Should -Not -BeNullOrEmpty
-        $sourceJob | Should -Match 'permissions: \{\}'
+        $sourceJob | Should -Match $sourcePermissionsPattern
         $sourceJob | Should -Match 'timeout-minutes: 2'
         $sourceJob | Should -Not -Match '(?m)(secrets\.|github\.token|^\s+(uses|env|environment|needs):|actions/checkout)'
     }
+    It 'rejects a misleading source permissions field: <Case>' -TestCases @(
+        @{ Case = 'comment before grant'; Replacement = '    # permissions: {}'+[Environment]::NewLine+'    permissions:'+ [Environment]::NewLine+'      contents: read' }
+        @{ Case = 'comment after grant'; Replacement = '    permissions:'+ [Environment]::NewLine+'      contents: read'+[Environment]::NewLine+'    # permissions: {}' }
+        @{ Case = 'nested field before grant'; Replacement = '      permissions: {}'+[Environment]::NewLine+'    permissions:'+ [Environment]::NewLine+'      contents: read' }
+    ) {
+        param($Case, $Replacement)
+        $changedJob = $sourceJob.Replace('    permissions: {}', $Replacement)
+        $changedJob | Should -Not -Match $sourcePermissionsPattern
+    }
+
     It 'runs only a fixed message without interpolating candidate metadata into code' {
         { Test-FixedSourceSteps -Job $sourceJob } | Should -Not -Throw
     }
