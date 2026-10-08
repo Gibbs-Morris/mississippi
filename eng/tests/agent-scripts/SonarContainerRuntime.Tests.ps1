@@ -103,11 +103,51 @@ Describe 'Sonar container credential boundary' {
         foreach($fetch in $fetches){
             $fetch.Arguments | Should -Contain "+refs/heads/${Target}:refs/remotes/origin/$Target"
             $fetch.Arguments | Should -Contain $source.BuildSha
-            $fetch.Arguments | Should -Contain '--no-tags'
+            $fetch.Arguments | Should -Contain '--tags'
             $fetch.Arguments | Should -Contain '+refs/heads/main:refs/remotes/origin/main'
             @($fetch.Arguments | Where-Object {$_ -like '+refs/heads/*'}).Count | Should -Be $(if($Target -ceq 'main'){1}else{2})
         }
         ($script:nativeCalls.Arguments -join ' ') | Should -Not -Match 'token|extraheader|credential'
+    }
+
+    It 'retains real release tags in both immutable source workspaces' {
+        $script:realSonarNative = & (Get-Module SonarContainerRuntime) { (Get-Command Invoke-SonarNative).ScriptBlock }
+        $script:versionRemote = Join-Path $TestDrive 'version-remote'
+        & $script:realSonarNative git @('init','--initial-branch=main',$script:versionRemote)
+        'release' | Set-Content (Join-Path $script:versionRemote 'file.txt')
+        & $script:realSonarNative git @('-C',$script:versionRemote,'add','file.txt')
+        & $script:realSonarNative git @('-C',$script:versionRemote,'-c','user.name=Fixture','-c','user.email=fixture@example.com','commit','-m','release')
+        $release = (& git -C $script:versionRemote rev-parse HEAD).Trim()
+        $LASTEXITCODE | Should -Be 0
+        & $script:realSonarNative git @('-C',$script:versionRemote,'tag','v1.2.3')
+        & $script:realSonarNative git @('-C',$script:versionRemote,'-c','user.name=Fixture','-c','user.email=fixture@example.com','tag','-a','v1.2.4','-m','annotated release')
+        'candidate' | Set-Content (Join-Path $script:versionRemote 'file.txt')
+        & $script:realSonarNative git @('-C',$script:versionRemote,'add','file.txt')
+        & $script:realSonarNative git @('-C',$script:versionRemote,'-c','user.name=Fixture','-c','user.email=fixture@example.com','commit','-m','candidate')
+        $revision = (& git -C $script:versionRemote rev-parse HEAD).Trim()
+        $LASTEXITCODE | Should -Be 0
+        Mock Invoke-SonarNative -ModuleName SonarContainerRuntime {
+            $Executable | Should -Be 'git'
+            $localArguments = @($Arguments | ForEach-Object {
+                if ($_ -ceq 'https://github.com/Gibbs-Morris/mississippi.git') { $script:versionRemote } else { $_ }
+            })
+            & $script:realSonarNative -Executable $Executable -Arguments $localArguments
+        }
+        foreach ($workspace in @('version-build','version-upload')) {
+            $path = Join-Path $TestDrive $workspace
+            Initialize-SonarSourceWorkspace -Path $path -Repository Gibbs-Morris/mississippi -Revision $revision -Branch pull/5/merge -DefaultBranch main -TargetRef main
+            (& git -C $path rev-parse HEAD).Trim() | Should -BeExactly $revision
+            $LASTEXITCODE | Should -Be 0
+            @(& git -C $path tag --list) | Should -Contain 'v1.2.3'
+            $LASTEXITCODE | Should -Be 0
+            @(& git -C $path tag --list) | Should -Contain 'v1.2.4'
+            $LASTEXITCODE | Should -Be 0
+            (& git -C $path rev-parse 'v1.2.3^{commit}').Trim() | Should -BeExactly $release
+            $LASTEXITCODE | Should -Be 0
+            (& git -C $path rev-parse 'v1.2.4^{commit}').Trim() | Should -BeExactly $release
+            $LASTEXITCODE | Should -Be 0
+            { Assert-SonarSourceWorkspaceClean -Path $path -Revision $revision } | Should -Not -Throw
+        }
     }
 
     It 'matches the runner ownership while requiring a non-root container identity' {

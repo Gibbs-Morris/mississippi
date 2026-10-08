@@ -78,7 +78,7 @@ function Initialize-SonarSourceWorkspace {
     Invoke-SonarNative git @('-C',$Path,'remote','add','origin',"https://github.com/$Repository.git")
     $refs=@("+refs/heads/${DefaultBranch}:refs/remotes/origin/$DefaultBranch")
     if($TargetRef -cne $DefaultBranch){$refs+="+refs/heads/${TargetRef}:refs/remotes/origin/$TargetRef"}
-    Invoke-SonarNative git (@('-C',$Path,'fetch','--no-tags','origin')+$refs+@($Revision))
+    Invoke-SonarNative git (@('-C',$Path,'fetch','--tags','origin')+$refs+@($Revision))
     Invoke-SonarNative git @('-C',$Path,'checkout','--no-guess','-b',$Branch,$Revision)
     if (Test-Path (Join-Path $Path '.sonarqube')) { throw 'Candidate source cannot supply scanner state.' }
 }
