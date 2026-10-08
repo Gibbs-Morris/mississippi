@@ -88,11 +88,7 @@ jobs:
                 ConvertTo-Json -InputObject @($before.PullRequests) -Depth 10 | Set-Content -LiteralPath $pullRequestsPath -Encoding utf8
               }
               else {
-                Write-Output 'The trusted queue resolver has not landed; using the existing issue-reference validation route.'
-                $pullRequestsOutput = gh api "repos/$repository/commits/$env:GITHUB_SHA/pulls" --paginate --slurp 2>&1 | Out-String
-                if ($LASTEXITCODE -ne 0) { throw "Unable to resolve associated pull requests: $($pullRequestsOutput.Trim())" }
-                $pages = $pullRequestsOutput | ConvertFrom-Json
-                ConvertTo-Json -InputObject @($pages | ForEach-Object { $_ }) -Depth 10 | Set-Content -LiteralPath $pullRequestsPath -Encoding utf8
+                throw 'Trusted queue resolver is unavailable; merge-group issue-reference validation cannot establish candidate membership.'
               }
               $output = & pwsh -NoProfile -File $mergeValidator -PullRequestsPath $pullRequestsPath -ValidatorPath $validator -RepositoryOwner $env:REPOSITORY_OWNER -RepositoryName $env:REPOSITORY_NAME 2>&1 | Out-String
               Write-Output $output
