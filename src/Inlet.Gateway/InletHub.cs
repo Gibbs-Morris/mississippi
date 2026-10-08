@@ -85,6 +85,37 @@ public sealed class InletHub : Hub<IInletHubClient>
     ) =>
         user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user?.Identity?.Name;
 
+    /// <summary>
+    ///     Checks registrations required by the framework authentication path.
+    /// </summary>
+    /// <param name="authenticationService">The host's authentication service.</param>
+    /// <param name="policy">The policy whose selected schemes will be authenticated.</param>
+    /// <returns>Whether the required scheme registrations exist.</returns>
+    private static async Task<bool> HasRequiredSchemeRegistrationsAsync(
+        IAuthenticationService authenticationService,
+        AuthorizationPolicy policy
+    )
+    {
+        // Only the framework service and handler provider require scheme entries.
+        // Custom services, handler providers and evaluators can authenticate virtual schemes.
+        if (authenticationService is AuthenticationService frameworkService &&
+            (authenticationService.GetType().Assembly == typeof(AuthenticationService).Assembly) &&
+            frameworkService.Handlers is AuthenticationHandlerProvider handlers &&
+            (handlers.GetType() == typeof(AuthenticationHandlerProvider)))
+        {
+            foreach (string scheme in policy.AuthenticationSchemes)
+            {
+                AuthenticationScheme? registeredScheme = await handlers.Schemes.GetSchemeAsync(scheme);
+                if (registeredScheme is null)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     /// <inheritdoc />
     public override Task OnConnectedAsync()
     {
@@ -187,21 +218,9 @@ public sealed class InletHub : Hub<IInletHubClient>
                 return null;
             }
 
-            // Only the framework service and handler provider require scheme entries.
-            // Custom services, handler providers and evaluators can authenticate virtual schemes.
-            if (authenticationService is AuthenticationService frameworkService &&
-                (authenticationService.GetType().Assembly == typeof(AuthenticationService).Assembly) &&
-                frameworkService.Handlers is AuthenticationHandlerProvider handlers &&
-                (handlers.GetType() == typeof(AuthenticationHandlerProvider)))
+            if (!await HasRequiredSchemeRegistrationsAsync(authenticationService, policy))
             {
-                foreach (string scheme in policy.AuthenticationSchemes)
-                {
-                    AuthenticationScheme? registeredScheme = await handlers.Schemes.GetSchemeAsync(scheme);
-                    if (registeredScheme is null)
-                    {
-                        return null;
-                    }
-                }
+                return null;
             }
 
             if (ConnectionAuthenticationSnapshot.IsAuthenticatedForPolicy(httpContext, policy))
