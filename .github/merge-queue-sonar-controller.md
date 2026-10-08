@@ -1,6 +1,6 @@
 # Trusted Sonar controller
 
-This controller rebuilds a completed `SonarCloud` source run using the immutable workflow definition on the repository's default branch. It supports manual dispatch and default-off automatic admission from successful completed source runs. `sonar-cloud.yml` continues providing the existing PR/main behavior until the subsequent source-routing layer and operator deployment are complete.
+This controller rebuilds a completed `SonarCloud` source run using the immutable workflow definition on the repository's default branch. It supports manual dispatch and default-off automatic admission from successful completed source runs. `sonar-cloud.yml` keeps its existing build/analysis path while routing is disabled. After operator deployment and activation, it records tokenless source completion and this default-branch controller performs analysis.
 
 The workflow and checkout revisions must also match the live default-branch tip at each controller-origin check. A rerun preserves its original workflow revision and is rejected after the default branch advances; unavailable or inconsistent ref metadata fails closed. This check does not revoke an already issued credential or make branch movement and environment admission atomic.
 
@@ -67,7 +67,7 @@ Dispatch targets the trusted default-branch definition. It does not select candi
 
 ## Automatic admission and ordering
 
-`sonar-trusted-analysis.yml` also listens for completed `SonarCloud` workflow runs. Automatic intake is off unless `SONAR_TRUSTED_ANALYSIS_ENABLED` is true; manual source-run dispatch remains available. The workflow definition must be on the default branch. Source routing is a separate rollout layer; this variable alone does not protect or relocate credentials.
+`sonar-trusted-analysis.yml` also listens for completed `SonarCloud` workflow runs. Automatic intake is off unless `SONAR_TRUSTED_ANALYSIS_ENABLED` is true; manual source-run dispatch remains available. The workflow definition must be on the default branch. Source routing uses the same variable; it alone does not protect or relocate credentials.
 
 Intake requires a successful approved repository run and correlates its ID, attempt, event, head SHA and ref with freshly fetched API metadata. Forks, recursion, failed/incomplete runs and changed attempts are rejected. Those constraints follow every later source read, including both post-upload checks. Exported completion callers must explicitly pass the admission object for automatic runs or null for manual dispatch; omitting that parameter is a binding error.
 
@@ -76,3 +76,11 @@ Protected analysis jobs serialize by validated Sonar identity: PR number or the 
 Automatic queue admission waits for ordinary main-baseline lag before execution and again before upload, because a predecessor may land during the candidate build. Each pass permits at most 31 attempts and 30 one-minute sleeps. API time is additional; the existing 120-minute analysis timeout still bounds the job. Held-pilot timing must establish the fit within the queue timeout before activation.
 
 Only a valid LONG/isMain default branch with a different revision is treated as pending. Missing/duplicate/malformed baseline data, classification changes, unreviewed criteria and API failures fail immediately. The controller compares gate assignment, criteria and classification across retries, refreshes the live candidate after policy reads, and accepts a landed prefix only through the existing verified membership proof. Manual baseline mismatch remains an immediate failure. Post-upload checks remain strict; source and provider updates are not atomic.
+
+## Source routing
+
+`sonar-cloud.yml` retains its workflow name, path, PR/main/manual/merge-group triggers and PR-only supersession cancellation. GitHub supplies the completed run ID, attempt, source event, ref and SHA through run metadata; candidate output is not an identity authority.
+
+When `SONAR_TRUSTED_ANALYSIS_ENABLED` is absent or false, the existing `Build` job performs analysis as before. When true, `Build` is skipped and a two-minute source job emits a fixed message with empty token permissions. It has no checkout, action dependency, environment selection, credential reference or candidate-script execution. Its success records a source run; it is not a substitute quality gate. The trusted controller must publish the genuine Sonar result on the exact source SHA.
+
+Enable routing only after both workflow definitions are on the default branch and the operator deployment above is complete. The legacy path needs its old credential; the trusted path refuses globally accessible copies. There is a coordinated transition, not a flag-only migration. Failed intake, denied environment access or unavailable provider analysis leaves the genuine required check missing or failing and blocks landing.

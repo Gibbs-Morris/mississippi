@@ -25,7 +25,19 @@ env:
   CONFIGURATION: Release
   SOLUTION_PATH: ${{ github.workspace }}/mississippi.slnx
 jobs:
+  source:
+    name: Record analysis source
+    if: vars.SONAR_TRUSTED_ANALYSIS_ENABLED == 'true'
+    permissions: {}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Record source completion
+        shell: pwsh
+        run: |
+          Write-Output 'Source run recorded for trusted Sonar analysis. See the controller run for analysis results.'
   Build:
+    if: vars.SONAR_TRUSTED_ANALYSIS_ENABLED != 'true'
     name: "Build"
     runs-on: ${{ matrix.os }}
     strategy:
