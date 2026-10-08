@@ -10,7 +10,7 @@ The controller reads source-run and current PR/queue metadata from GitHub. Candi
 
 - PR: require confirmed mergeability and a merge commit with exactly the current base and source head as its parents; build that immutable revision and report the PR's source head, number, source branch and immediate base branch.
 - Main: analyze the exact current default-branch revision with an explicit branch identity.
-- Manual branch: analyze the exact current selected branch with its own identity and the default branch as target.
+- Manual branch: analyze the exact current selected branch with its own identity; snapshot the current default-branch commit as target and reject target movement during source rechecks.
 - Queue: resolve the exact live candidate and complete validated constituent prefix. Analyze a distinct SHORT branch against an already analyzed, exact current target revision.
 
 Fork source runs are rejected; this layer does not grant fork workflows credentials. Stale runs, unavailable metadata, ambiguous candidates and changed source identities fail. Rechecks allow only the existing resolver's verified, landed contiguous predecessor prefix.

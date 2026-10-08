@@ -64,15 +64,25 @@ function Assert-SonarSourceRun {
     if ($Run.status -cne 'completed' -or $Run.head_sha -cnotmatch '^[0-9a-f]{40}$' -or -not $Run.head_branch) { throw 'Source run identity is incomplete.' }
 }
 
+function Get-SonarDefaultBranchTargetSha {
+    param([string]$Repository, [string]$DefaultBranch)
+
+    $ref = Read-SonarGitHubMetadata -Path "repos/$Repository/git/ref/heads/$([Uri]::EscapeDataString($DefaultBranch))"
+    if ($ref.ref -cne "refs/heads/$DefaultBranch" -or $ref.object.type -cne 'commit' -or $ref.object.sha -cnotmatch '^[0-9a-f]{40}$') { throw 'Manual analysis target does not identify the current default-branch commit.' }
+    return [string]$ref.object.sha
+}
+
 function Get-SonarBranchSource {
     param([object]$Run, [string]$Repository, [string]$DefaultBranch)
 
     $branch = [string]$Run.head_branch
     $ref = Read-SonarGitHubMetadata -Path "repos/$Repository/git/ref/heads/$([Uri]::EscapeDataString($branch))"
     if ($ref.object.sha -cne $Run.head_sha) { throw 'Source branch no longer identifies this run.' }
+    $targetSha = $null
+    if ($branch -cne $DefaultBranch) { $targetSha = Get-SonarDefaultBranchTargetSha -Repository $Repository -DefaultBranch $DefaultBranch }
     return [pscustomobject][ordered]@{
         RunId = $Run.id; Mode = 'Branch'; HeadSha = $Run.head_sha; BuildSha = $Run.head_sha
-        HeadRef = $branch; TargetRef = $DefaultBranch; TargetSha = $null; PullRequest = $null; Queue = $null
+        HeadRef = $branch; TargetRef = $DefaultBranch; TargetSha = $targetSha; PullRequest = $null; Queue = $null
     }
 }
 

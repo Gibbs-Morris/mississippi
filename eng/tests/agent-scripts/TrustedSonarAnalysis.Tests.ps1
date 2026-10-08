@@ -28,10 +28,12 @@ Describe 'Trusted Sonar source identity' {
         }
         $script:sourceMerge = [pscustomobject]@{sha=$merge;parents=@([pscustomobject]@{sha=$target},[pscustomobject]@{sha=$head})}
         $script:sourceRef = [pscustomobject]@{object=[pscustomobject]@{sha=$head}}
+        $script:defaultRef = [pscustomobject]@{ref='refs/heads/main';object=[pscustomobject]@{type='commit';sha=$target}}
         Mock Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis {
             if ($Path -like '*/actions/runs/*') { return $script:sourceRun }
             if ($Path -like '*/pulls/*') { return $script:sourcePr }
             if ($Path -like '*/git/commits/*') { return $script:sourceMerge }
+            if ($Path -like '*/git/ref/heads/main' -and $script:sourceRun.head_branch -cne 'main') { return $script:defaultRef }
             if ($Path -like '*/git/ref/heads/*') { return $script:sourceRef }
             throw 'Unexpected metadata path.'
         }
@@ -108,6 +110,34 @@ Describe 'Trusted Sonar source identity' {
         $arguments | Should -Contain '/d:sonar.branch.target=main'
         Should -Invoke Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis -Times 1 -Exactly -ParameterFilter { $Path -like '*/heads/codex%2Ftest' }
     }
+    It 'retains the current default-branch target for manual branch analysis' {
+        $script:sourceRun.event='workflow_dispatch'
+        (Invoke-Source).TargetSha | Should -Be $target
+    }
+    It 'rejects default-branch movement during manual branch analysis' {
+        $script:sourceRun.event='workflow_dispatch'
+        $before=Invoke-Source
+        $script:defaultRef.object.sha='d'*40
+        {Assert-TrustedSonarSourceUnchanged -Before $before -After (Invoke-Source)} | Should -Throw '*target changed during analysis*'
+    }
+    It 'rejects invalid manual target metadata <Change>' -TestCases @(
+        @{Change='tag ref'}, @{Change='non-commit object'}, @{Change='malformed SHA'}
+    ) {
+        param($Change)
+        $script:sourceRun.event='workflow_dispatch'
+        switch($Change){
+            'tag ref' {$script:defaultRef.ref='refs/tags/main'}
+            'non-commit object' {$script:defaultRef.object.type='tag'}
+            'malformed SHA' {$script:defaultRef.object.sha='bad'}
+        }
+        {Invoke-Source} | Should -Throw
+    }
+    It 'rejects manual analysis when default-branch metadata is unavailable' {
+        $script:sourceRun.event='workflow_dispatch'
+        Mock Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis {throw 'Default target lookup failed.'} -ParameterFilter {$Path -like '*/git/ref/heads/main'}
+        {Invoke-Source} | Should -Throw '*Default target lookup failed*'
+    }
+
     It 'analyzes main without configuring itself as its own reference branch' -TestCases @(@{Event='push'},@{Event='workflow_dispatch'}) {
         param($Event)
         $script:sourceRun.event = $Event; $script:sourceRun.head_branch = 'main'
