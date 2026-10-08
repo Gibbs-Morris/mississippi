@@ -31,7 +31,7 @@ $testRunners = @(
 )
 
 try {
-    Import-Module Pester -MinimumVersion 5.7.1 -Force -ErrorAction Stop | Out-Null
+    Import-Module Pester -MinimumVersion 5.7.1 -ErrorAction Stop | Out-Null
 }
 catch {
     Write-Host 'Pester 5.7.1 or later is required to run PowerShell tests.' -ForegroundColor Red
