@@ -395,7 +395,10 @@ public sealed class InletHub : Hub<IInletHubClient>
         await authenticationLock.WaitAsync(Context.ConnectionAborted);
         try
         {
-            await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, httpContext);
+            HttpContext decisionContext = policy.AuthenticationSchemes.Count > 0
+                ? SubscriptionAuthenticationFeatures.CreateContext(httpContext)
+                : httpContext;
+            await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, decisionContext);
         }
         finally
         {

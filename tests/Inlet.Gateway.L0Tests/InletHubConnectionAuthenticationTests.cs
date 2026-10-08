@@ -443,7 +443,14 @@ public sealed class InletHubConnectionAuthenticationTests
         await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
         if (customEvaluator is not null)
         {
-            await customEvaluator.Received(1).AuthenticateAsync(Arg.Any<AuthorizationPolicy>(), clone);
+            await customEvaluator.Received(1)
+                .AuthenticateAsync(
+                    Arg.Any<AuthorizationPolicy>(),
+                    Arg.Is<HttpContext>(context =>
+                        !ReferenceEquals(context, clone) &&
+                        ReferenceEquals(context.RequestServices, clone.RequestServices) &&
+                        (context.Request.Path == clone.Request.Path) &&
+                        ReferenceEquals(context.GetEndpoint(), clone.GetEndpoint())));
         }
     }
 
