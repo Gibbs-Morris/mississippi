@@ -37,8 +37,8 @@ jobs:
     steps:
       - name: Check out immutable controller definition
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        # Default checkout uses the event-attested repository/ref/SHA; the driver verifies workflow origin.
         with:
-          ref: ${{ github.workflow_sha }}
           persist-credentials: false
       - name: Validate credential origin and source identity
         id: intake
@@ -70,8 +70,8 @@ jobs:
     steps:
       - name: Check out immutable controller definition
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        # Default checkout uses the event-attested repository/ref/SHA; the driver verifies workflow origin.
         with:
-          ref: ${{ github.workflow_sha }}
           persist-credentials: false
       - name: Rebuild candidate without credentials and upload validated reports
         shell: pwsh
