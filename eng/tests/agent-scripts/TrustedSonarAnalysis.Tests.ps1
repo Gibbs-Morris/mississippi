@@ -194,12 +194,33 @@ Describe 'Trusted Sonar post-upload completion' {
         }
     }
     BeforeEach {
+        $script:completionBranches=[pscustomobject]@{total_count=1;branch_policies=@([pscustomobject]@{id=1;name='main';type='branch'})}
+        Mock Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis {
+            if($Path -like '*/deployment-branch-policies?*'){return $script:completionBranches}
+            if($Path -like '*/environments/sonar-analysis'){return [pscustomobject]@{deployment_branch_policy=[pscustomobject]@{protected_branches=$false;custom_branch_policies=$true}}}
+            throw 'Unexpected completion metadata path.'
+        }
         $script:originalSource=[pscustomobject]@{RunId=42;Mode='Branch';HeadSha=('a'*40);BuildSha=('a'*40);HeadRef='main';TargetRef='main';TargetSha=$null;PullRequest=$null;Queue=$null}
         $script:currentSource=$script:originalSource | ConvertTo-Json | ConvertFrom-Json
         $script:completionPolicy=[pscustomobject]@{GateId=1;Conditions='reviewed';LongLivedPattern='(branch|release)-.*'}
         Mock Get-TrustedSonarSource -ModuleName TrustedSonarAnalysis {return ($script:currentSource | ConvertTo-Json -Depth 8 | ConvertFrom-Json)}
         Mock Assert-SonarPublishedAnalysis -ModuleName TrustedSonarAnalysis {}
         Mock Get-SonarQualityPolicySnapshot -ModuleName TrustedSonarAnalysis {return $script:completionPolicy}
+    }
+    It 'rejects a credential policy widened <Stage>' -TestCases @(
+        @{Stage='during upload'},@{Stage='during provider wait'},@{Stage='during Sonar policy verification'}
+    ) {
+        param($Stage)
+        $widened=[pscustomobject]@{total_count=2;branch_policies=@(
+            [pscustomobject]@{id=1;name='main';type='branch'},
+            [pscustomobject]@{id=2;name='codex/*';type='branch'}
+        )}
+        switch($Stage){
+            'during upload' {$script:completionBranches=$widened}
+            'during provider wait' {Mock Assert-SonarPublishedAnalysis -ModuleName TrustedSonarAnalysis {$script:completionBranches=$widened}}
+            'during Sonar policy verification' {Mock Get-SonarQualityPolicySnapshot -ModuleName TrustedSonarAnalysis {$script:completionBranches=$widened;return $script:completionPolicy}}
+        }
+        {Invoke-Completion} | Should -Throw '*permit only the exact default branch*'
     }
     It 'accepts an unchanged source after a successful upload' {
         {Invoke-Completion} | Should -Not -Throw

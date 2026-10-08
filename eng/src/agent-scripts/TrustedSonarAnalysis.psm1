@@ -242,6 +242,7 @@ function Assert-TrustedSonarUploadCompletion {
     $final = Get-TrustedSonarSource -Repository $Repository -RunId $Source.RunId -DefaultBranch $DefaultBranch
     Assert-TrustedSonarSourceUnchanged -Before $published -After $final
     if ($published.TargetSha -cne $final.TargetSha) { throw 'Sonar source target changed after the completed policy check.' }
+    Assert-SonarCredentialDeployment -Repository $Repository -DefaultBranch $DefaultBranch
     return $final
 }
 
