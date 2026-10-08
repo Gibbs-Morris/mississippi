@@ -39,6 +39,20 @@ Describe 'Repository prerequisite doctor' {
         $report.PSObject.Properties.Name | Should -Not -Contain 'TestsPassed'
     }
 
+    It 'reports Pester <Version> as <State> without making it a Core requirement' -ForEach @(
+        @{Version='5.0.0';State='missing'},
+        @{Version='5.1.1';State='missing'},
+        @{Version='5.2.0';State='ready'}
+    ) {
+        Mock Get-Module -ModuleName AgentDoctor { [pscustomobject]@{Version=[version]$Version} } -ParameterFilter { $Name -eq 'Pester' -and $ListAvailable }
+        $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Core -ProbeOverrides $readyProbes
+        $check = $report.Checks | Where-Object Name -EQ 'pester'
+        $check.State | Should -Be $State
+        $check.Required | Should -BeFalse
+        $report.Status | Should -Be 'READY'
+        if ($State -eq 'missing') { $check.Remediation | Should -Match '5\.2' }
+    }
+
     It 'requires PowerShell 7 or later' {
         (InModuleScope AgentDoctor { Test-DoctorPowerShellVersion -Version ([version]'6.2') }) | Should -BeFalse
         (InModuleScope AgentDoctor { Test-DoctorPowerShellVersion -Version ([version]'7.0') }) | Should -BeTrue

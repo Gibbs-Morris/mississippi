@@ -66,7 +66,7 @@ These local commands cover the corresponding build and test steps. They do not r
 | [l3-tests.yml](../../../.github/workflows/l3-tests.yml) | `pwsh ./test-spring.ps1` | Spring browser smoke tests; use `-TestLevel L3 -Suite Full` for all browser journeys. |
 | [stryker.yml](../../../.github/workflows/stryker.yml) | `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1 -ReportOnly` | Weekly/manual Mississippi mutation report; the full serial analysis is not run on every push to `main`. |
 | [cleanup.yml](../../../.github/workflows/cleanup.yml) | `pwsh ./clean-up.ps1` | Applies cleanup to both solutions; CI additionally fails if cleanup changes tracked files. |
-| [powershell-tests.yml](../../../.github/workflows/powershell-tests.yml) | `pwsh ./eng/tests/orchestrate-powershell-tests.ps1` | Pester and script integration tests; requires Pester 5+. CI runs on Windows and Ubuntu. |
+| [powershell-tests.yml](../../../.github/workflows/powershell-tests.yml) | `pwsh ./eng/tests/orchestrate-powershell-tests.ps1` | Pester and script integration tests; requires Pester 5.2 or later. CI runs on Windows and Ubuntu. |
 | [docusaurus.yml](../../../.github/workflows/docusaurus.yml) | `pwsh ./docs/Docusaurus/test-docusaurus.ps1` | Installs locked npm dependencies, builds the site, installs Chromium, and runs Playwright tests; requires Node.js 20+. |
 
 For documentation development, `pwsh ./run-docs.ps1` starts the development server, `-Mode Build` builds the site, and `-Mode Serve` previews an existing build. These modes do not run the browser test suite. Other workflows cover Markdown, project metadata and references, locked Aspire restore, SonarCloud, and package publication independently of `go.ps1`.
