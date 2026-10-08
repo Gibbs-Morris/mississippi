@@ -562,6 +562,29 @@ internal sealed class InletSignalRActionEffect
     }
 
     /// <summary>
+    ///     Registers new interest while the caller holds the subscription gate.
+    /// </summary>
+    /// <param name="key">The projection and entity pair without a pending entry.</param>
+    /// <param name="reservation">The completion source owned by this attempt.</param>
+    /// <param name="interest">The caller's earlier interest, or null for a new caller.</param>
+    /// <returns>Whether new interest was registered instead of reviving released interest.</returns>
+    private bool TryReserveNewInterest(
+        (Type ProjectionType, string EntityId) key,
+        TaskCompletionSource<bool> reservation,
+        object? interest
+    )
+    {
+        if (interest is not null)
+        {
+            // This caller's interest was released while its retry was queued.
+            return false;
+        }
+
+        pendingSubscriptions.Add(key, (new(), reservation));
+        return true;
+    }
+
+    /// <summary>
     ///     Reserves a pair after failed attempts while coalescing established or released interest.
     /// </summary>
     /// <param name="key">The projection and entity pair to reserve.</param>
@@ -592,14 +615,7 @@ internal sealed class InletSignalRActionEffect
 
                 if (!pendingSubscriptions.TryGetValue(key, out pending))
                 {
-                    if (interest is not null)
-                    {
-                        // This caller's interest was released while its retry was queued.
-                        return false;
-                    }
-
-                    pendingSubscriptions.Add(key, (new(), reservation));
-                    return true;
+                    return TryReserveNewInterest(key, reservation, interest);
                 }
 
                 interest ??= pending.Interest;
