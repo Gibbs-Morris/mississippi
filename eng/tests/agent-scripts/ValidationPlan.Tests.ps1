@@ -34,6 +34,8 @@ Describe 'Deterministic validation plan' {
 
         $outcome.ExitCode | Should -Be 0
         $outcome.Result.SelectedChecks.Id | Should -Contain 'powershell-tests'
+        $powerShellCheck = @($outcome.Result.SelectedChecks | Where-Object Id -EQ 'powershell-tests')[0]
+        $powerShellCheck.Prerequisites | Should -Contain 'Pester 5.7.1 or later'
         $outcome.Result.SelectedChecks.Id | Should -Contain 'core-final'
     }
 
