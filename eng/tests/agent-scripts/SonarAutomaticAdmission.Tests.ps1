@@ -176,7 +176,8 @@ Describe 'Trusted Sonar automatic workflow contract' {
         $yaml | Should -Match 'permissions: \{\}'
         $yaml | Should -Match 'trusted-sonar-upload-.*needs.intake.outputs.analysis-key'
         ([regex]::Matches($yaml,'cancel-in-progress: false')).Count | Should -Be 2
-        ([regex]::Matches($yaml,'(?m)^\s+ref:')).Count | Should -Be 0
+        ([regex]::Matches($yaml,'(?m)^\s+ref:')).Count | Should -Be 2
+        ([regex]::Matches($yaml,'(?m)^\s+ref: \$\{\{ github.workflow_sha \}\}\r?$')).Count | Should -Be 2
         ([regex]::Matches($yaml,'(?m)^\s+repository:')).Count | Should -Be 0
         ([regex]::Matches($yaml,'uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1')).Count | Should -Be 2
         ([regex]::Matches($yaml,'persist-credentials: false')).Count | Should -Be 2
