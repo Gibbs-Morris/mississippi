@@ -98,6 +98,14 @@ The supporting Pester harness lives in `eng/tests/agent-scripts/`:
 
 ---
 
+## Merge-group issue references
+
+`validate-merge-group-pr-issue-reference.ps1` validates every constituent description with the existing single-PR Markdown parser. Each invocation resolves each distinct repository issue once, including closed issues, PR numbers and failed lookups, then supplies only that description's issue records to the ordinary validator. The cache is local to the invocation; a subsequent run reads issue state again. At least one open repository issue is still required for every PR, with other invalid references reported under the existing warning rules.
+
+The single-PR validator's `-ReferencesOnly` mode checks rendered references and the per-description twenty-reference limit without making API requests. Successful parsing proves syntax only; open-issue validation is still required. Cached records omit unused API bodies, and each child receives at most its own twenty records.
+
+Deduplication reduces repeated requests; it does not guarantee API quota for a prefix containing many distinct issues or concurrent runs. Issue state can change after its read, and the cache does not establish an atomic GitHub snapshot. The workflow's existing fresh candidate-membership recheck remains required.
+
 ## Example invocations
 
 Windows / PowerShell:

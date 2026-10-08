@@ -323,3 +323,169 @@ Refs #741
         $outcome.Output | Should -Match 'failed for #102'
     }
 }
+
+Describe 'Merge-group issue lookup reuse' -Tag 'IssueLookupCache' {
+    BeforeAll {
+        $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+        $mergeValidator=Join-Path $repoRoot 'eng/src/agent-scripts/validate-merge-group-pr-issue-reference.ps1'
+        $pwshPath=Join-Path $PSHOME $(if($IsWindows){'pwsh.exe'}else{'pwsh'})
+        function Invoke-LookupFixture {
+            param([Parameter(Mandatory)][string]$Fixture,[Parameter(Mandatory)][object[]]$PullRequests,[Parameter(Mandatory)][hashtable]$Issues,[string]$KnownIssuesJson)
+            $null=New-Item -ItemType Directory -Path $Fixture -Force
+            $ledger=Join-Path $Fixture 'requests.txt'
+            $records=Join-Path $Fixture 'issues.json'
+            $Issues | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $records -Encoding utf8NoBOM
+            $inputPath=Join-Path $Fixture 'pull-requests.json'
+            ConvertTo-Json -InputObject @($PullRequests) -Depth 8 | Set-Content -LiteralPath $inputPath -Encoding utf8NoBOM
+            $shim=@(
+                '#!/usr/bin/env pwsh',
+                'param([Parameter(ValueFromRemainingArguments)][string[]]$Arguments)',
+                'Set-StrictMode -Version Latest',
+                '$ErrorActionPreference=''Stop''',
+                ('$fixture='''+$Fixture.Replace("'","''")+''''),
+                'if($Arguments[0] -ne ''api'' -or $Arguments[1] -notmatch ''^repos/Gibbs-Morris/mississippi/issues/(?<Number>\d+)$''){throw ''Unexpected fixture GitHub request''}',
+                '$number=$Matches.Number',
+                'Add-Content -LiteralPath (Join-Path $fixture ''requests.txt'') -Value $number',
+                '$issues=Get-Content -LiteralPath (Join-Path $fixture ''issues.json'') -Raw | ConvertFrom-Json -AsHashtable',
+                'if(-not $issues.ContainsKey($number) -or $null -eq $issues[$number]){Write-Output ''Fixture issue unavailable (404)'';exit 1}',
+                '$issues[$number] | ConvertTo-Json -Depth 8 -Compress',
+                'exit 0'
+            ) -join [Environment]::NewLine
+            Set-Content -LiteralPath (Join-Path $Fixture 'gh.ps1') -Value $shim -Encoding utf8NoBOM
+            $previousPath=$env:PATH
+            $env:PATH=$Fixture+[IO.Path]::PathSeparator+$previousPath
+            try {
+                $arguments=@('-NoProfile','-File',$mergeValidator,'-PullRequestsPath',$inputPath,'-RepositoryOwner','Gibbs-Morris','-RepositoryName','mississippi')
+                if($KnownIssuesJson){$arguments+=@('-KnownIssuesJson',$KnownIssuesJson)}
+                $output=& $pwshPath @arguments 2>&1 | Out-String
+                $exitCode=$LASTEXITCODE
+                $requests=if(Test-Path -LiteralPath $ledger){@(Get-Content -LiteralPath $ledger)}else{@()}
+                [pscustomobject]@{ExitCode=$exitCode;Output=$output;Requests=@($requests)}
+            } finally {$env:PATH=$previousPath}
+        }
+    }
+    It 'queries twenty shared issues once for a complete three-PR prefix' {
+        $issues=@{}
+        $numbers=741..760
+        foreach($number in $numbers){$issues[[string]$number]=@{number=$number;state='open';title="Issue $number"}}
+        $body='Refs '+(($numbers | ForEach-Object {"#$_"}) -join ', ')
+        $pulls=@(101..103 | ForEach-Object {@{number=$_;body=$body}})
+        $r=Invoke-LookupFixture -Fixture (Join-Path $TestDrive 'shared') -PullRequests $pulls -Issues $issues
+        $r.ExitCode | Should -Be 0 -Because $r.Output
+        $r.Requests.Count | Should -Be 20
+        @($r.Requests | Sort-Object -Unique).Count | Should -Be 20
+    }
+    It 'reuses closed, PR and unavailable issue lookups while preserving warning semantics' {
+        $issues=@{
+            '741'=@{number=741;state='open';title='Active'}
+            '742'=@{number=742;state='closed';title='Closed'}
+            '743'=@{number=743;state='open';title='PR';pull_request=@{url='https://api.github.com/repos/Gibbs-Morris/mississippi/pulls/743'}}
+            '744'=$null
+        }
+        $pulls=@(101..103 | ForEach-Object {@{number=$_;body='Refs #741, #742, #743, #744'}})
+        $r=Invoke-LookupFixture -Fixture (Join-Path $TestDrive 'mixed') -PullRequests $pulls -Issues $issues
+        $r.ExitCode | Should -Be 0 -Because $r.Output
+        $r.Requests.Count | Should -Be 4
+        $r.Output | Should -Match 'not open'
+        $r.Output | Should -Match 'not an issue'
+        $r.Output | Should -Match 'unavailable'
+    }
+
+    It 'performs no API lookup when known issue records were supplied' {
+        $r = Invoke-LookupFixture -Fixture (Join-Path $TestDrive 'known') -PullRequests @(
+            @{ number = 101; body = 'Refs #741' }
+            @{ number = 102; body = 'Refs #741' }
+        ) -Issues @{} -KnownIssuesJson '[{"number":741,"title":"Known","state":"open"}]'
+        $r.ExitCode | Should -Be 0 -Because $r.Output
+        $r.Requests.Count | Should -Be 0
+    }
+
+    It 'fetches issue state again for a separate merge-group invocation' {
+        $fixture = Join-Path $TestDrive 'fresh'
+        $pulls = @(@{ number = 101; body = 'Refs #741' })
+        $first = Invoke-LookupFixture -Fixture $fixture -PullRequests $pulls -Issues @{
+            '741' = @{ number = 741; state = 'open'; title = 'Initially active' }
+        }
+        $first.ExitCode | Should -Be 0 -Because $first.Output
+        $second = Invoke-LookupFixture -Fixture $fixture -PullRequests $pulls -Issues @{
+            '741' = @{ number = 741; state = 'closed'; title = 'Now closed' }
+        }
+        $second.ExitCode | Should -Not -Be 0
+        $second.Output | Should -Match 'not open'
+        $second.Requests.Count | Should -Be 2
+    }
+
+    It 'rejects a constituent whose only reference is <Kind>' -TestCases @(
+        @{ Kind = 'closed'; Record = @{ number = 742; state = 'closed'; title = 'Closed' } }
+        @{ Kind = 'PR'; Record = @{ number = 742; state = 'open'; title = 'PR'; type = 'pull_request' } }
+        @{ Kind = 'unavailable'; Record = $null }
+        @{ Kind = 'wrong identity'; Record = @{ number = 999; state = 'open'; title = 'Wrong' } }
+    ) {
+        param($Kind, $Record)
+        $r = Invoke-LookupFixture -Fixture (Join-Path $TestDrive $Kind) -PullRequests @(
+            @{ number = 101; body = 'Refs #741' }
+            @{ number = 102; body = 'Refs #742' }
+        ) -Issues @{
+            '741' = @{ number = 741; state = 'open'; title = 'Active' }
+            '742' = $Record
+        }
+        $r.ExitCode | Should -Not -Be 0
+        $r.Output | Should -Match 'failed for #102'
+        $r.Requests.Count | Should -Be 2
+    }
+
+    It 'preserves per-description parsing and rejects <Kind> before issue resolution' -TestCases @(
+        @{ Kind = 'empty'; Body = '' }
+        @{ Kind = 'foreign'; Body = 'Refs other/repository#741' }
+        @{ Kind = 'hidden'; Body = '<!-- Refs #741 -->' }
+        @{ Kind = 'over limit'; Body = 'Refs '+((741..761 | ForEach-Object { '#'+$_ }) -join ', ') }
+    ) {
+        param($Kind, $Body)
+        $r = Invoke-LookupFixture -Fixture (Join-Path $TestDrive $Kind) -PullRequests @(
+            @{ number = 101; body = $Body }
+        ) -Issues @{}
+        $r.ExitCode | Should -Not -Be 0
+        $r.Requests.Count | Should -Be 0
+    }
+
+    It 'keeps each CLI payload bounded to its PR references and strips unused API bodies' {
+        $issues = @{}
+        $pulls = @()
+        foreach ($pr in 1..3) {
+            $numbers = (($pr * 20) + 741)..(($pr * 20) + 760)
+            foreach ($number in $numbers) {
+                $issues[[string]$number] = @{
+                    number = $number; state = 'open'; title = 'Active'; body = ('x' * 150000)
+                }
+            }
+            $pulls += @{ number = $pr; body = 'Refs '+(($numbers | ForEach-Object { '#'+$_ }) -join ', ') }
+        }
+        $r = Invoke-LookupFixture -Fixture (Join-Path $TestDrive 'bounded') -PullRequests $pulls -Issues $issues
+        $r.ExitCode | Should -Be 0 -Because $r.Output
+        $r.Requests.Count | Should -Be 60
+        @($r.Requests | Sort-Object -Unique).Count | Should -Be 60
+    }
+
+    It 'uses only references rendered by the existing Markdown parser' {
+        $body = 'Refs #741 <!-- #742 --> '+[char]96+'#743'+[char]96
+        $r = Invoke-LookupFixture -Fixture (Join-Path $TestDrive 'rendered') -PullRequests @(
+            @{ number = 101; body = $body }
+            @{ number = 102; body = $body }
+        ) -Issues @{ '741' = @{ number = 741; state = 'open'; title = 'Active' } }
+        $r.ExitCode | Should -Be 0 -Because $r.Output
+        $r.Requests.Count | Should -Be 1
+        $r.Requests[0] | Should -Be '741'
+    }
+
+    It 'keeps reference sets separate even if caller PR numbers are repeated' {
+        $r = Invoke-LookupFixture -Fixture (Join-Path $TestDrive 'indexed') -PullRequests @(
+            @{ number = 101; body = 'Refs #741' }
+            @{ number = 101; body = 'Refs #742' }
+        ) -Issues @{
+            '741' = @{ number = 741; state = 'open'; title = 'First' }
+            '742' = @{ number = 742; state = 'open'; title = 'Second' }
+        }
+        $r.ExitCode | Should -Be 0 -Because $r.Output
+        $r.Requests.Count | Should -Be 2
+    }
+}

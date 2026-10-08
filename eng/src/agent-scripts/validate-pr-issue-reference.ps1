@@ -6,6 +6,7 @@ param(
     [Parameter(Mandatory)][string]$RepositoryOwner,
     [Parameter(Mandatory)][string]$RepositoryName,
     [string]$KnownIssuesJson,
+    [switch]$ReferencesOnly,
     [switch]$Json
 )
 
@@ -282,7 +283,9 @@ function Get-PrIssueRecord {
 
     if (-not [string]::IsNullOrWhiteSpace($KnownIssuesJson)) {
         $known = @(ConvertFrom-Json -InputObject $KnownIssuesJson)
-        return @($known | Where-Object { [int]$_.number -eq $Number } | Select-Object -First 1)
+        $records = @($known | Where-Object { [int]$_.number -eq $Number } | Select-Object -First 1)
+        if ($records.Count -gt 0 -and $null -ne $records[0].PSObject.Properties['error']) { throw [string]$records[0].error }
+        return $records
     }
 
     $apiOutput = & gh api "repos/$Owner/$Name/issues/$Number" --header 'Accept: application/vnd.github+json' 2>&1 | Out-String
@@ -305,6 +308,18 @@ if ($references.Count -eq 0) {
 }
 elseif ($references.Count -gt $maximumReferences) {
     $errors.Add("Too many repository issue references were supplied ($($references.Count)); maximum supported is $maximumReferences.")
+}
+
+if ($ReferencesOnly) {
+    [pscustomobject][ordered]@{
+        SchemaVersion = '1.0'
+        Valid = $errors.Count -eq 0 -and $references.Count -gt 0
+        Repository = "$RepositoryOwner/$RepositoryName"
+        References = @($references)
+        Errors = @($errors | Sort-Object -Unique)
+    } | ConvertTo-Json -Depth 8 -Compress
+    if ($errors.Count -eq 0 -and $references.Count -gt 0) { exit 0 }
+    exit 1
 }
 
 foreach ($reference in @($references | Select-Object -First $maximumReferences)) {
