@@ -35,13 +35,21 @@ jobs:
       source-run-id: ${{ steps.intake.outputs.source-run-id }}
       analysis-key: ${{ steps.intake.outputs.analysis-key }}
     steps:
-      - name: Check out immutable controller definition
+      - name: Check out protected controller branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        # Load the driver from the attested workflow-file revision before it verifies origin.
         with:
           repository: Gibbs-Morris/mississippi
-          ref: ${{ github.workflow_sha }}
+          ref: main
           persist-credentials: false
+      - name: Verify attested controller revision
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          $revision = ([string](& git rev-parse --verify HEAD)).Trim()
+          if ($LASTEXITCODE -ne 0 -or $env:GITHUB_WORKFLOW_SHA -notmatch '^[0-9a-fA-F]{40}$' -or $revision -cne $env:GITHUB_WORKFLOW_SHA) {
+            throw 'Checkout does not match the attested controller revision.'
+          }
       - name: Validate credential origin and source identity
         id: intake
         shell: pwsh
@@ -70,13 +78,21 @@ jobs:
     timeout-minutes: 120
     environment: sonar-analysis
     steps:
-      - name: Check out immutable controller definition
+      - name: Check out protected controller branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        # Load the driver from the attested workflow-file revision before it verifies origin.
         with:
           repository: Gibbs-Morris/mississippi
-          ref: ${{ github.workflow_sha }}
+          ref: main
           persist-credentials: false
+      - name: Verify attested controller revision
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          $revision = ([string](& git rev-parse --verify HEAD)).Trim()
+          if ($LASTEXITCODE -ne 0 -or $env:GITHUB_WORKFLOW_SHA -notmatch '^[0-9a-fA-F]{40}$' -or $revision -cne $env:GITHUB_WORKFLOW_SHA) {
+            throw 'Checkout does not match the attested controller revision.'
+          }
       - name: Rebuild candidate without credentials and upload validated reports
         shell: pwsh
         env:
