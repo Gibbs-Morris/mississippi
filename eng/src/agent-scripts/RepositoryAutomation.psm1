@@ -2893,6 +2893,118 @@ function Get-PrReadinessEvidenceTimestamp {
     return $timestamp.UtcTicks
 }
 
+function Get-PrReadinessDuplicateCheckIdentity {
+    param([Parameter(Mandatory)][object]$CheckRun)
+
+    try { $appId = [long]$CheckRun.app.id; $checkId = [long]$CheckRun.id }
+    catch { throw 'Duplicate check identity is incomplete.' }
+    if ($appId -le 0 -or $checkId -le 0) { throw 'Duplicate check identity is invalid.' }
+    return [pscustomobject]@{ AppId = $appId; CheckId = $checkId }
+}
+
+function Get-PrReadinessActionsCheckMetadata {
+    param(
+        [Parameter(Mandatory)][object]$CheckRun,
+        [Parameter(Mandatory)][long]$CheckId,
+        [Parameter(Mandatory)][string]$Repository,
+        [Parameter(Mandatory)][hashtable]$WorkflowRuns,
+        [Parameter(Mandatory)][scriptblock]$MetadataReader
+    )
+
+    $urlPattern = '^https://github\.com/' + [regex]::Escape($Repository) + '/actions/runs/(\d+)/job/(\d+)$'
+    $match = [regex]::Match([string]$CheckRun.details_url, $urlPattern, [Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    if (-not $match.Success -or [long]$match.Groups[2].Value -ne $CheckId) { throw 'Duplicate Actions check URL is not bound to this repository and check.' }
+    $runId = [long]$match.Groups[1].Value
+    if (-not $WorkflowRuns.ContainsKey($runId)) {
+        $WorkflowRuns[$runId] = & $MetadataReader @('api', "repos/$Repository/actions/runs/$runId")
+    }
+    $run = $WorkflowRuns[$runId]
+    $runNumber = 0L
+    try {
+        $workflowId = [long]$run.workflow_id
+        $runAttempt = [long]$run.run_attempt
+        $numberProperty = $run.PSObject.Properties['run_number']
+        if ($null -ne $numberProperty) { $runNumber = [long]$numberProperty.Value }
+        $eventName = [string]$run.event
+        $identityMatches = [long]$run.id -eq $runId -and [string]$run.repository.full_name -eq $Repository -and
+            -not [string]::IsNullOrWhiteSpace([string]$run.head_sha) -and [string]$run.head_sha -eq [string]$CheckRun.head_sha
+    }
+    catch { throw 'Duplicate Actions check workflow metadata is incomplete.' }
+    if (-not $identityMatches -or $workflowId -le 0 -or $runAttempt -le 0 -or [string]::IsNullOrWhiteSpace($eventName)) { throw 'Duplicate Actions check workflow identity is invalid.' }
+    return [pscustomobject]@{ Run = $run; RunId = $runId; RunNumber = $runNumber; RunAttempt = $runAttempt; WorkflowId = $workflowId; EventName = $eventName }
+}
+
+function Get-PrReadinessActionsCheckOrderTimestamp {
+    param([Parameter(Mandatory)][object]$CheckRun, [Parameter(Mandatory)][object]$Metadata)
+
+    $run = $Metadata.Run
+    $orderTimestamp = Get-PrReadinessEvidenceTimestamp -Value $run.created_at
+    $started = $CheckRun.PSObject.Properties['started_at']
+    if ($null -ne $started -and -not [string]::IsNullOrWhiteSpace([string]$started.Value)) {
+        return [Math]::Max($orderTimestamp, (Get-PrReadinessEvidenceTimestamp -Value $started.Value))
+    }
+    if ([string]$CheckRun.status -ne 'completed' -or $Metadata.RunAttempt -gt 1) {
+        $attemptStarted = Get-PrReadinessEvidenceTimestamp -Value $run.run_started_at
+        if ([string]$run.status -in @('queued', 'requested', 'waiting', 'pending') -or [string]$CheckRun.status -eq 'completed') {
+            $attemptStarted = [Math]::Max($attemptStarted, (Get-PrReadinessEvidenceTimestamp -Value $run.updated_at))
+        }
+        $orderTimestamp = [Math]::Max($orderTimestamp, $attemptStarted)
+    }
+    return $orderTimestamp
+}
+
+function Get-PrReadinessCheckCandidate {
+    param(
+        [Parameter(Mandatory)][object]$CheckRun,
+        [Parameter(Mandatory)][string]$Repository,
+        [Parameter(Mandatory)][hashtable]$WorkflowRuns,
+        [Parameter(Mandatory)][scriptblock]$MetadataReader
+    )
+
+    $identity = Get-PrReadinessDuplicateCheckIdentity -CheckRun $CheckRun
+    $runId = 0L
+    $runNumber = 0L
+    $runAttempt = 0L
+    $workflowId = 0L
+    $eventName = ''
+    if ($identity.AppId -eq 15368) {
+        $metadata = Get-PrReadinessActionsCheckMetadata -CheckRun $CheckRun -CheckId $identity.CheckId -Repository $Repository -WorkflowRuns $WorkflowRuns -MetadataReader $MetadataReader
+        $runId = $metadata.RunId
+        $runNumber = $metadata.RunNumber
+        $runAttempt = $metadata.RunAttempt
+        $workflowId = $metadata.WorkflowId
+        $eventName = $metadata.EventName
+        $orderTimestamp = Get-PrReadinessActionsCheckOrderTimestamp -CheckRun $CheckRun -Metadata $metadata
+    }
+    else { $orderTimestamp = Get-PrReadinessEvidenceTimestamp -Value $CheckRun.started_at }
+    return [pscustomobject]@{
+        Check = $CheckRun
+        RunId = $runId
+        RunNumber = $runNumber
+        RunAttempt = $runAttempt
+        OrderTimestamp = $orderTimestamp
+        Scope = ConvertTo-Json -InputObject @($identity.AppId, [string]$CheckRun.name, $workflowId, $eventName) -Compress
+    }
+}
+
+function Select-PrReadinessCurrentCheck {
+    param([Parameter(Mandatory)][object[]]$Candidates)
+
+    $latest = @($Candidates | Sort-Object OrderTimestamp -Descending)
+    $tied = @($latest | Where-Object OrderTimestamp -EQ $latest[0].OrderTimestamp)
+    if ($tied.Count -eq 1) { return $latest[0].Check }
+    if ($tied[0].RunId -eq 0) { throw 'Current check ordering is ambiguous.' }
+    if (@($tied.RunId | Select-Object -Unique).Count -gt 1) {
+        if (@($tied | Where-Object RunAttempt -GT 1).Count -gt 0) { throw 'Current check ordering is ambiguous.' }
+        if (@($tied | Where-Object RunNumber -LE 0).Count -gt 0) { throw 'Current check ordering is ambiguous.' }
+        $byNumber = @($tied | Sort-Object RunNumber -Descending)
+        $tied = @($byNumber | Where-Object RunNumber -EQ $byNumber[0].RunNumber)
+        if (@($tied.RunId | Select-Object -Unique).Count -ne 1) { throw 'Current check ordering is ambiguous.' }
+    }
+    if ($tied.Count -ne 1) { throw 'Current check rerun ordering is ambiguous.' }
+    return $tied[0].Check
+}
+
 function Get-PrReadinessCurrentCheckRuns {
     param(
         [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$CheckRuns,
@@ -2902,6 +3014,7 @@ function Get-PrReadinessCurrentCheckRuns {
     )
 
     $workflowRuns = @{}
+    $repository = "$RepositoryOwner/$RepositoryName"
     $groups = @($CheckRuns | Group-Object -CaseSensitive -Property {
         $app = $_.PSObject.Properties['app']
         $appId = if ($null -ne $app -and $null -ne $app.Value) { [string]$app.Value.id } else { '' }
@@ -2910,74 +3023,10 @@ function Get-PrReadinessCurrentCheckRuns {
     foreach ($group in $groups) {
         if ($group.Count -eq 1) { $group.Group[0]; continue }
         $candidates = foreach ($check in $group.Group) {
-            try { $appId = [long]$check.app.id; $checkId = [long]$check.id }
-            catch { throw 'Duplicate check identity is incomplete.' }
-            if ($appId -le 0 -or $checkId -le 0) { throw 'Duplicate check identity is invalid.' }
-            $runId = 0L
-            $runNumber = 0L
-            $runAttempt = 0L
-            $workflowId = 0L
-            $eventName = ''
-            if ($appId -eq 15368) {
-                $repository = "$RepositoryOwner/$RepositoryName"
-                $urlPattern = '^https://github\.com/' + [regex]::Escape($repository) + '/actions/runs/(\d+)/job/(\d+)$'
-                $match = [regex]::Match([string]$check.details_url, $urlPattern, [Text.RegularExpressions.RegexOptions]::IgnoreCase)
-                if (-not $match.Success -or [long]$match.Groups[2].Value -ne $checkId) { throw 'Duplicate Actions check URL is not bound to this repository and check.' }
-                $runId = [long]$match.Groups[1].Value
-                if (-not $workflowRuns.ContainsKey($runId)) {
-                    $workflowRuns[$runId] = & $MetadataReader @('api', "repos/$repository/actions/runs/$runId")
-                }
-                $run = $workflowRuns[$runId]
-                try {
-                    $workflowId = [long]$run.workflow_id
-                    $runAttempt = [long]$run.run_attempt
-                    $numberProperty = $run.PSObject.Properties['run_number']
-                    if ($null -ne $numberProperty) { $runNumber = [long]$numberProperty.Value }
-                    $eventName = [string]$run.event
-                    $identityMatches = [long]$run.id -eq $runId -and [string]$run.repository.full_name -eq $repository -and
-                        -not [string]::IsNullOrWhiteSpace([string]$run.head_sha) -and [string]$run.head_sha -eq [string]$check.head_sha
-                }
-                catch { throw 'Duplicate Actions check workflow metadata is incomplete.' }
-                if (-not $identityMatches -or $workflowId -le 0 -or $runAttempt -le 0 -or [string]::IsNullOrWhiteSpace($eventName)) { throw 'Duplicate Actions check workflow identity is invalid.' }
-                $orderTimestamp = Get-PrReadinessEvidenceTimestamp -Value $run.created_at
-                $started = $check.PSObject.Properties['started_at']
-                if ($null -ne $started -and -not [string]::IsNullOrWhiteSpace([string]$started.Value)) {
-                    $orderTimestamp = [Math]::Max($orderTimestamp, (Get-PrReadinessEvidenceTimestamp -Value $started.Value))
-                }
-                elseif ([string]$check.status -ne 'completed' -or $runAttempt -gt 1) {
-                    $attemptStarted = Get-PrReadinessEvidenceTimestamp -Value $run.run_started_at
-                    if ([string]$run.status -in @('queued', 'requested', 'waiting', 'pending') -or [string]$check.status -eq 'completed') {
-                        $attemptStarted = [Math]::Max($attemptStarted, (Get-PrReadinessEvidenceTimestamp -Value $run.updated_at))
-                    }
-                    $orderTimestamp = [Math]::Max($orderTimestamp, $attemptStarted)
-                }
-            }
-            else { $orderTimestamp = Get-PrReadinessEvidenceTimestamp -Value $check.started_at }
-            [pscustomobject]@{
-                Check = $check
-                RunId = $runId
-                RunNumber = $runNumber
-                RunAttempt = $runAttempt
-                OrderTimestamp = $orderTimestamp
-                Scope = ConvertTo-Json -InputObject @($appId, [string]$check.name, $workflowId, $eventName) -Compress
-            }
+            Get-PrReadinessCheckCandidate -CheckRun $check -Repository $repository -WorkflowRuns $workflowRuns -MetadataReader $MetadataReader
         }
         foreach ($scope in @($candidates | Group-Object -CaseSensitive Scope)) {
-            $latest = @($scope.Group | Sort-Object OrderTimestamp -Descending)
-            $tied = @($latest | Where-Object OrderTimestamp -EQ $latest[0].OrderTimestamp)
-            if ($tied.Count -gt 1) {
-                if ($tied[0].RunId -eq 0) { throw 'Current check ordering is ambiguous.' }
-                if (@($tied.RunId | Select-Object -Unique).Count -gt 1) {
-                    if (@($tied | Where-Object RunAttempt -GT 1).Count -gt 0) { throw 'Current check ordering is ambiguous.' }
-                    if (@($tied | Where-Object RunNumber -LE 0).Count -gt 0) { throw 'Current check ordering is ambiguous.' }
-                    $byNumber = @($tied | Sort-Object RunNumber -Descending)
-                    $tied = @($byNumber | Where-Object RunNumber -EQ $byNumber[0].RunNumber)
-                    if (@($tied.RunId | Select-Object -Unique).Count -ne 1) { throw 'Current check ordering is ambiguous.' }
-                    if ($tied.Count -eq 1) { $tied[0].Check; continue }
-                }
-                throw 'Current check rerun ordering is ambiguous.'
-            }
-            else { $latest[0].Check }
+            Select-PrReadinessCurrentCheck -Candidates $scope.Group
         }
     }
 }
