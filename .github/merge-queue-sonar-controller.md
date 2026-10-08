@@ -8,6 +8,8 @@ The workflow and checkout revisions must also match the live default-branch tip 
 
 The controller reads source-run and current PR/queue metadata from GitHub. Candidate artifacts never supply identity or executable scripts to the host.
 
+Both pinned host checkouts use the action's default event repository, ref and immutable SHA, with no repository/ref override. The host requires the attested default-branch workflow origin and checkout SHA equal to `GITHUB_WORKFLOW_SHA` before accepting source metadata. The [pinned checkout implementation](https://github.com/actions/checkout/blob/3d3c42e5aac5ba805825da76410c181273ba90b1/src/input-helper.ts) binds the default checkout to GitHub's event commit.
+
 - Ordinary PR: require confirmed mergeability and exactly the current base and source head as merge parents. Build that immutable revision, fetch the immediate base into both workspaces while retaining the default ref for versioning, and report the source head, PR number and actual target.
 - Native stacked PR: authenticate documented stack number/position/size/trunk and complete ordered membership. Bind fresh full prefix PRs to their listed head/base identities and repository IDs. Verify each active two-parent merge against its current head and the preceding verified synthetic merge, anchored to the fresh trunk. Use that trunk for both workspace fetches and Sonar's baseline; raw branch heads cannot replace synthetic parents. No opaque PR stack ID or lightweight merge SHA is assumed.
 - Main: analyze the exact current default-branch revision with an explicit branch identity.
