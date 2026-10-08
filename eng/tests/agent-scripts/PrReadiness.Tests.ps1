@@ -459,4 +459,40 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         $snapshot.EvidenceStable | Should -BeFalse
         (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'INCOMPLETE'
     }
+
+    It 'orders same-second Actions runs by their workflow run number for <LatestState>' -TestCases @(
+        @{ LatestState = 'success'; Expected = 'READY' }
+        @{ LatestState = 'failure'; Expected = 'INCOMPLETE' }
+        @{ LatestState = 'queued'; Expected = 'INCOMPLETE' }
+    ) {
+        param($LatestState, $Expected)
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -Conclusion 'cancelled'
+        $newer = New-SiteCheckRun -Id 2 -RunId 502 -Conclusion $LatestState
+        if ($LatestState -eq 'queued') { $newer.status = 'queued'; $newer.conclusion = $null; $newer.started_at = $null }
+        $runs = @{
+            '501' = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
+            '502' = New-SiteWorkflowRun -Id 502 -CreatedAt '2026-10-08T00:00:00Z'
+        }
+        $runs['501'] | Add-Member run_number 10
+        $runs['502'] | Add-Member run_number 11
+        $snapshot = New-SiteReadinessSnapshot -SiteChecks @($newer, $older) -WorkflowRuns $runs
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be $Expected
+        @($snapshot.Checks | Where-Object name -EQ 'Build Docusaurus Site').Count | Should -Be 1
+    }
+
+    It 'keeps equal-time workflow ordering closed when run numbers are <Fault>' -TestCases @(
+        @{ Fault = 'missing from one run' }
+        @{ Fault = 'equal across runs' }
+    ) {
+        param($Fault)
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -Conclusion 'failure'
+        $newer = New-SiteCheckRun -Id 2 -RunId 502
+        $runs = @{
+            '501' = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
+            '502' = New-SiteWorkflowRun -Id 502 -CreatedAt '2026-10-08T00:00:00Z'
+        }
+        $runs['502'] | Add-Member run_number 11
+        if ($Fault -eq 'equal across runs') { $runs['501'] | Add-Member run_number 11 }
+        { New-SiteReadinessSnapshot -SiteChecks @($older, $newer) -WorkflowRuns $runs } | Should -Throw '*ordering is ambiguous*'
+    }
 }
