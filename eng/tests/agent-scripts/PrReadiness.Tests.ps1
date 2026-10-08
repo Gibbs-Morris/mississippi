@@ -149,8 +149,35 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
             return [pscustomobject]@{ number = 20; position = 2; size = 2; base = [pscustomobject]@{ ref = $Trunk; sha = ('a' * 40) } }
         }
 
+        function New-SiteCheckRun {
+            param([long]$Id, [long]$RunId, [string]$Conclusion = 'success', [string]$Status = 'completed', [long]$AppId = 15368)
+            [pscustomobject]@{
+                id = $Id
+                name = 'Build Docusaurus Site'
+                status = $Status
+                conclusion = $Conclusion
+                head_sha = 'head'
+                started_at = '2026-10-08T00:01:00Z'
+                app = [pscustomobject]@{ id = $AppId }
+                details_url="https://github.com/Gibbs-Morris/mississippi/actions/runs/$RunId/job/$Id"
+                pull_requests=@([pscustomobject]@{number=744;base=[pscustomobject]@{ref='main'}})
+            }
+        }
+
+        function New-SiteWorkflowRun {
+            param([long]$Id, [string]$CreatedAt, [long]$WorkflowId = 10)
+            [pscustomobject]@{
+                id = $Id
+                workflow_id = $WorkflowId
+                event = 'pull_request'
+                head_sha = 'head'
+                created_at = $CreatedAt
+                repository=[pscustomobject]@{full_name='Gibbs-Morris/mississippi'}
+            }
+        }
+
         function New-SiteReadinessSnapshot {
-            param([string]$BaseRef = 'main', [object]$Stack, [object]$FinalStack, [switch]$IncludeSiteCheck)
+            param([string]$BaseRef = 'main', [object]$Stack, [object]$FinalStack, [switch]$IncludeSiteCheck, [object[]]$SiteChecks, [object[]]$FinalSiteChecks, [hashtable]$WorkflowRuns)
             $workflowBase = if ($null -ne $Stack) { [string]$Stack.base.ref } else { $BaseRef }
             $pull = [pscustomobject]@{
                 number = 744; head = [pscustomobject]@{ sha = 'head' }; base = [pscustomobject]@{ sha = 'base'; ref = $BaseRef }
@@ -163,10 +190,18 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
             $pullResponses.Enqueue($finalPull)
             $checkNames = @(Get-PrReadinessExpectedCheckPatterns -BaseRef $workflowBase -ChangedPaths @('README.md') |
                 Where-Object { $_ -ne '^Build Docusaurus Site$' } | ForEach-Object { [regex]::Unescape($_.Trim('^', '$')) })
-            if ($IncludeSiteCheck) { $checkNames += 'Build Docusaurus Site' }
+            if ($IncludeSiteCheck -and -not $PSBoundParameters.ContainsKey('SiteChecks')) { $checkNames += 'Build Docusaurus Site' }
             $checkPage = [pscustomobject]@{ check_runs = @($checkNames | ForEach-Object {
                 [pscustomobject]@{ name = $_; status = 'completed'; conclusion = 'success'; pull_requests = @([pscustomobject]@{ number = 744; base = [pscustomobject]@{ ref = $BaseRef } }) }
             }) }
+            if ($PSBoundParameters.ContainsKey('SiteChecks')) { $checkPage.check_runs += @($SiteChecks) }
+            $finalCheckPage = [pscustomobject]@{check_runs=@($checkPage.check_runs)}
+            if ($PSBoundParameters.ContainsKey('FinalSiteChecks')) {
+                $finalCheckPage.check_runs = @($checkPage.check_runs | Where-Object name -NE 'Build Docusaurus Site') + @($FinalSiteChecks)
+            }
+            $checkResponses = [System.Collections.Generic.Queue[object]]::new()
+            $checkResponses.Enqueue($checkPage)
+            $checkResponses.Enqueue($finalCheckPage)
             $reviewPage = @([pscustomobject]@{ id = 1; user = [pscustomobject]@{ login = 'reviewer' }; state = 'APPROVED'; commit_id = 'head'; submitted_at = '2026-10-08T00:00:00Z'; body = '' })
             $graphPage = [pscustomobject]@{ data = [pscustomobject]@{ repository = [pscustomobject]@{ pullRequest = [pscustomobject]@{
                 reviewDecision = 'APPROVED'; reviewThreads = [pscustomobject]@{ nodes = @(); pageInfo = [pscustomobject]@{ hasNextPage = $false; endCursor = $null } }
@@ -174,8 +209,10 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
             $provider = {
                 param([string[]]$Arguments)
                 $query = $Arguments -join ' '
+                $workflowMatch = [regex]::Match($query, 'actions/runs/(\d+)$')
+                if ($workflowMatch.Success) { return $WorkflowRuns[$workflowMatch.Groups[1].Value] }
                 if ($query -match 'pulls/744$') { return $pullResponses.Dequeue() }
-                if ($query -match 'check-runs') { return $checkPage }
+                if ($query -match 'check-runs') { return $checkResponses.Dequeue() }
                 if ($query -match 'statuses|issues/744/comments') { return @() }
                 if ($query -match 'reviews') { return $reviewPage }
                 if ($query -match 'pulls/744/files') { return @([pscustomobject]@{ filename = 'README.md' }) }
@@ -259,5 +296,167 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         $snapshot = New-SiteReadinessSnapshot -BaseRef 'codex/parent' -Stack (New-ReadinessStack -Trunk 'main') -FinalStack $finalStack -IncludeSiteCheck
         (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'INCOMPLETE'
         $snapshot.EvidenceStable | Should -BeFalse
+    }
+
+    It 'uses the current site run when the earlier run is <OldState> and the replacement is <NewState>' -TestCases @(
+        @{OldState='cancelled';NewState='success';Expected='READY'}
+        @{OldState='failure';NewState='success';Expected='READY'}
+        @{OldState='success';NewState='queued';Expected='INCOMPLETE'}
+        @{OldState='success';NewState='failure';Expected='INCOMPLETE'}
+        @{OldState='success';NewState='cancelled';Expected='INCOMPLETE'}
+    ) {
+        param($OldState,$NewState,$Expected)
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -Conclusion $OldState
+        $newer = New-SiteCheckRun -Id 2 -RunId 502 -Conclusion $NewState
+        if ($NewState -eq 'queued') {
+            $newer.status = 'queued'
+            $newer.conclusion = $null
+            $newer.started_at = $null
+        }
+        $runs = @{
+            '501'=(New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z')
+            '502'=(New-SiteWorkflowRun -Id 502 -CreatedAt '2026-10-08T00:01:00Z')
+        }
+        $snapshot = New-SiteReadinessSnapshot -SiteChecks @($older,$newer) -WorkflowRuns $runs
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be $Expected
+        @($snapshot.Checks | Where-Object name -EQ 'Build Docusaurus Site').Count | Should -Be 1
+    }
+
+    It 'retains a failed same-name check from another <Identity>' -TestCases @(
+        @{Identity='workflow'}
+        @{Identity='provider'}
+        @{Identity='event'}
+    ) {
+        param($Identity)
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -Conclusion 'failure'
+        $newer = New-SiteCheckRun -Id 2 -RunId 502
+        $olderRun = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
+        switch ($Identity) {
+            'workflow' { $olderRun.workflow_id=11 }
+            'provider' { $older.app.id=999 }
+            'event' { $olderRun.event='push' }
+        }
+        $runs = @{'501'=$olderRun;'502'=(New-SiteWorkflowRun -Id 502 -CreatedAt '2026-10-08T00:01:00Z')}
+        $snapshot = New-SiteReadinessSnapshot -SiteChecks @($older,$newer) -WorkflowRuns $runs
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'INCOMPLETE'
+        @($snapshot.Checks | Where-Object name -EQ 'Build Docusaurus Site').Count | Should -Be 2
+    }
+
+    It 'blocks a replaced site check identity even when both snapshots are successful' {
+        $older = New-SiteCheckRun -Id 1 -RunId 501
+        $newer = New-SiteCheckRun -Id 2 -RunId 502
+        $replacement = New-SiteCheckRun -Id 3 -RunId 503
+        $runs = @{
+            '501'=(New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z')
+            '502'=(New-SiteWorkflowRun -Id 502 -CreatedAt '2026-10-08T00:01:00Z')
+            '503'=(New-SiteWorkflowRun -Id 503 -CreatedAt '2026-10-08T00:02:00Z')
+        }
+        $snapshot = New-SiteReadinessSnapshot -SiteChecks @($older,$newer) -FinalSiteChecks @($older,$replacement) -WorkflowRuns $runs
+        $snapshot.EvidenceStable | Should -BeFalse
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'INCOMPLETE'
+    }
+
+    It 'rejects duplicate Actions evidence with <Fault>' -TestCases @(
+        @{ Fault = 'foreign URL' }
+        @{ Fault = 'wrong check URL ID' }
+        @{ Fault = 'missing provider' }
+        @{ Fault = 'invalid check ID' }
+        @{ Fault = 'missing workflow metadata' }
+        @{ Fault = 'missing workflow identity' }
+        @{ Fault = 'wrong workflow run' }
+        @{ Fault = 'foreign workflow repository' }
+        @{ Fault = 'different workflow head' }
+        @{ Fault = 'empty workflow event' }
+        @{ Fault = 'invalid workflow timestamp' }
+        @{ Fault = 'timestamp without a timezone' }
+        @{ Fault = 'indeterminate workflow order' }
+    ) {
+        param($Fault)
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -Conclusion 'failure'
+        $newer = New-SiteCheckRun -Id 2 -RunId 502
+        $runs = @{
+            '501' = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
+            '502' = New-SiteWorkflowRun -Id 502 -CreatedAt '2026-10-08T00:01:00Z'
+        }
+        switch ($Fault) {
+            'foreign URL' { $newer.details_url = 'https://github.com/other/repo/actions/runs/502/job/2' }
+            'wrong check URL ID' { $newer.details_url = 'https://github.com/Gibbs-Morris/mississippi/actions/runs/502/job/3' }
+            'missing provider' { $older.PSObject.Properties.Remove('app'); $newer.PSObject.Properties.Remove('app') }
+            'invalid check ID' { $newer.id = 0 }
+            'missing workflow metadata' { $runs['502'] = $null }
+            'missing workflow identity' { $runs['502'].PSObject.Properties.Remove('workflow_id') }
+            'wrong workflow run' { $runs['502'].id = 503 }
+            'foreign workflow repository' { $runs['502'].repository.full_name = 'other/repo' }
+            'different workflow head' { $runs['502'].head_sha = 'another-head' }
+            'empty workflow event' { $runs['502'].event = '' }
+            'invalid workflow timestamp' { $runs['502'].created_at = 'invalid' }
+            'timestamp without a timezone' { $runs['502'].created_at = '2026-10-08T00:01:00' }
+            'indeterminate workflow order' { $runs['502'].created_at = $runs['501'].created_at }
+        }
+        { New-SiteReadinessSnapshot -SiteChecks @($older, $newer) -WorkflowRuns $runs } | Should -Throw
+    }
+
+    It 'orders timestamps after actual JSON deserialization and for <TimestampType>' -TestCases @(
+        @{ TimestampType = 'DateTime' }
+        @{ TimestampType = 'DateTimeOffset' }
+    ) {
+        param($TimestampType)
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -Conclusion 'failure'
+        $newer = New-SiteCheckRun -Id 2 -RunId 502
+        $olderRun = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z' | ConvertTo-Json | ConvertFrom-Json
+        $newerRun = New-SiteWorkflowRun -Id 502 -CreatedAt '2026-10-08T00:01:00Z' | ConvertTo-Json | ConvertFrom-Json
+        if ($TimestampType -eq 'DateTime') {
+            $olderRun.created_at = [DateTime]::Parse('2026-10-08T00:00:00Z').ToUniversalTime()
+            $newerRun.created_at = [DateTime]::Parse('2026-10-08T00:01:00Z').ToUniversalTime()
+        }
+        else {
+            $olderRun.created_at = [DateTimeOffset]::Parse('2026-10-08T01:00:00+01:00')
+            $newerRun.created_at = [DateTimeOffset]::Parse('2026-10-08T00:01:00Z')
+        }
+        $snapshot = New-SiteReadinessSnapshot -SiteChecks @($newer, $older) -WorkflowRuns @{'501' = $olderRun; '502' = $newerRun}
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'READY'
+    }
+
+    It 'keeps a failed rerun blocking within the same workflow run' {
+        $older = New-SiteCheckRun -Id 1 -RunId 501
+        $newer = New-SiteCheckRun -Id 2 -RunId 501 -Conclusion 'failure'
+        $older.started_at = '2026-10-08T00:01:00Z'
+        $newer.started_at = '2026-10-08T00:02:00Z'
+        $snapshot = New-SiteReadinessSnapshot -SiteChecks @($older, $newer) -WorkflowRuns @{
+            '501' = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
+        }
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'INCOMPLETE'
+        @($snapshot.Checks | Where-Object name -EQ 'Build Docusaurus Site').Count | Should -Be 1
+    }
+
+    It 'rejects indeterminate rerun order' {
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -Conclusion 'failure'
+        $newer = New-SiteCheckRun -Id 2 -RunId 501
+        { New-SiteReadinessSnapshot -SiteChecks @($older, $newer) -WorkflowRuns @{
+            '501' = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
+        } } | Should -Throw '*rerun ordering*'
+    }
+
+    It 'selects the current external-provider check using its start time' {
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -AppId 999 -Conclusion 'failure'
+        $newer = New-SiteCheckRun -Id 2 -RunId 502 -AppId 999
+        $older.started_at = '2026-10-08T00:00:00Z'
+        $newer.started_at = '2026-10-08T00:01:00Z'
+        $snapshot = New-SiteReadinessSnapshot -SiteChecks @($older, $newer)
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'READY'
+    }
+
+    It 'rejects indeterminate external-provider check order' {
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -AppId 999 -Conclusion 'failure'
+        $newer = New-SiteCheckRun -Id 2 -RunId 502 -AppId 999
+        { New-SiteReadinessSnapshot -SiteChecks @($older, $newer) } | Should -Throw '*ordering is ambiguous*'
+    }
+
+    It 'blocks a replaced check provider even when the check ID and state match' {
+        $initial = New-SiteCheckRun -Id 1 -RunId 501
+        $replacement = New-SiteCheckRun -Id 1 -RunId 501 -AppId 999
+        $snapshot = New-SiteReadinessSnapshot -SiteChecks @($initial) -FinalSiteChecks @($replacement)
+        $snapshot.EvidenceStable | Should -BeFalse
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'INCOMPLETE'
     }
 }

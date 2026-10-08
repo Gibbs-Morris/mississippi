@@ -2880,6 +2880,96 @@ function Test-PrReadinessCheckRunBelongsToPullRequest {
     }).Count -gt 0
 }
 
+function Get-PrReadinessEvidenceTimestamp {
+    param([Parameter(Mandatory)][AllowNull()][object]$Value)
+
+    if ($Value -is [DateTimeOffset]) { return $Value.UtcTicks }
+    if ($Value -is [DateTime] -and $Value.Kind -ne [DateTimeKind]::Unspecified) { return $Value.ToUniversalTime().Ticks }
+    $timestamp = [DateTimeOffset]::MinValue
+    if ([string]$Value -notmatch '(?:Z|[+-]\d{2}:\d{2})$' -or
+        -not [DateTimeOffset]::TryParse([string]$Value, [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref]$timestamp)) {
+        throw 'Current check ordering requires an unambiguous timestamp.'
+    }
+    return $timestamp.UtcTicks
+}
+
+function Get-PrReadinessCurrentCheckRuns {
+    param(
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$CheckRuns,
+        [Parameter(Mandatory)][string]$RepositoryOwner,
+        [Parameter(Mandatory)][string]$RepositoryName,
+        [Parameter(Mandatory)][scriptblock]$MetadataReader
+    )
+
+    $workflowRuns = @{}
+    $groups = @($CheckRuns | Group-Object -CaseSensitive -Property {
+        $app = $_.PSObject.Properties['app']
+        $appId = if ($null -ne $app -and $null -ne $app.Value) { [string]$app.Value.id } else { '' }
+        ConvertTo-Json -InputObject @([string]$_.name, $appId) -Compress
+    })
+    foreach ($group in $groups) {
+        if ($group.Count -eq 1) { $group.Group[0]; continue }
+        $candidates = foreach ($check in $group.Group) {
+            try { $appId = [long]$check.app.id; $checkId = [long]$check.id }
+            catch { throw 'Duplicate check identity is incomplete.' }
+            if ($appId -le 0 -or $checkId -le 0) { throw 'Duplicate check identity is invalid.' }
+            $runId = 0L
+            $workflowId = 0L
+            $eventName = ''
+            if ($appId -eq 15368) {
+                $repository = "$RepositoryOwner/$RepositoryName"
+                $urlPattern = '^https://github\.com/' + [regex]::Escape($repository) + '/actions/runs/(\d+)/job/(\d+)$'
+                $match = [regex]::Match([string]$check.details_url, $urlPattern, [Text.RegularExpressions.RegexOptions]::IgnoreCase)
+                if (-not $match.Success -or [long]$match.Groups[2].Value -ne $checkId) { throw 'Duplicate Actions check URL is not bound to this repository and check.' }
+                $runId = [long]$match.Groups[1].Value
+                if (-not $workflowRuns.ContainsKey($runId)) {
+                    $workflowRuns[$runId] = & $MetadataReader @('api', "repos/$repository/actions/runs/$runId")
+                }
+                $run = $workflowRuns[$runId]
+                try {
+                    $workflowId = [long]$run.workflow_id
+                    $eventName = [string]$run.event
+                    $identityMatches = [long]$run.id -eq $runId -and [string]$run.repository.full_name -eq $repository -and
+                        -not [string]::IsNullOrWhiteSpace([string]$run.head_sha) -and [string]$run.head_sha -eq [string]$check.head_sha
+                }
+                catch { throw 'Duplicate Actions check workflow metadata is incomplete.' }
+                if (-not $identityMatches -or $workflowId -le 0 -or [string]::IsNullOrWhiteSpace($eventName)) { throw 'Duplicate Actions check workflow identity is invalid.' }
+                $created = Get-PrReadinessEvidenceTimestamp -Value $run.created_at
+            }
+            else { $created = Get-PrReadinessEvidenceTimestamp -Value $check.started_at }
+            [pscustomobject]@{
+                Check = $check
+                RunId = $runId
+                Created = $created
+                Scope = ConvertTo-Json -InputObject @($appId, [string]$check.name, $workflowId, $eventName) -Compress
+            }
+        }
+        foreach ($scope in @($candidates | Group-Object -CaseSensitive Scope)) {
+            $latest = @($scope.Group | Sort-Object Created -Descending)
+            $tied = @($latest | Where-Object Created -EQ $latest[0].Created)
+            if ($tied.Count -gt 1) {
+                if (@($tied.RunId | Select-Object -Unique).Count -ne 1 -or $tied[0].RunId -eq 0) { throw 'Current check ordering is ambiguous.' }
+                $reruns = @($tied | ForEach-Object {
+                    [pscustomobject]@{ Check = $_.Check; Started = Get-PrReadinessEvidenceTimestamp -Value $_.Check.started_at }
+                } | Sort-Object Started -Descending)
+                if (@($reruns | Where-Object Started -EQ $reruns[0].Started).Count -ne 1) { throw 'Current check rerun ordering is ambiguous.' }
+                $reruns[0].Check
+            }
+            else { $latest[0].Check }
+        }
+    }
+}
+
+function Get-PrReadinessCheckFingerprint {
+    param([Parameter(Mandatory)][object]$CheckRun)
+
+    $id = $CheckRun.PSObject.Properties['id']
+    $app = $CheckRun.PSObject.Properties['app']
+    $checkId = if ($null -ne $id) { [string]$id.Value } else { '' }
+    $appId = if ($null -ne $app -and $null -ne $app.Value) { [string]$app.Value.id } else { '' }
+    return ConvertTo-Json -InputObject @([string]$CheckRun.name, $checkId, $appId, (Get-PrReadinessCheckState -CheckRun $CheckRun)) -Compress
+}
+
 function Get-PrReadinessCommitStatusState {
     param([Parameter(Mandatory)][object]$Status)
 
@@ -2983,6 +3073,7 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     } | Where-Object { $_ })
     $checkPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$headAtStart/check-runs", '--paginate', '--slurp'))
     $checkRuns = @($checkPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | ForEach-Object { @($_.check_runs) } | Where-Object { Test-PrReadinessCheckRunBelongsToPullRequest -CheckRun $_ -PullRequestNumber $PullRequestNumber -BaseRef $baseRefAtStart })
+    $checkRuns = @(Get-PrReadinessCurrentCheckRuns -CheckRuns $checkRuns -RepositoryOwner $RepositoryOwner -RepositoryName $RepositoryName -MetadataReader $getJson)
     $statusPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$headAtStart/statuses", '--paginate', '--slurp'))
     $statuses = @($statusPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | Group-Object context | ForEach-Object { $_.Group | Sort-Object created_at -Descending | Select-Object -First 1 })
     $checks = [System.Collections.Generic.List[object]]::new()
@@ -3061,12 +3152,13 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     $workflowBaseAtEnd = Get-PrReadinessWorkflowBase -PullRequest $pullAtEnd -BaseRef $baseRefAtEnd
     $finalCheckPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$finalHead/check-runs", '--paginate', '--slurp'))
     $finalCheckRuns = @($finalCheckPages | ForEach-Object { @($_.check_runs) } | Where-Object { Test-PrReadinessCheckRunBelongsToPullRequest -CheckRun $_ -PullRequestNumber $PullRequestNumber -BaseRef $baseRefAtEnd })
+    $finalCheckRuns = @(Get-PrReadinessCurrentCheckRuns -CheckRuns $finalCheckRuns -RepositoryOwner $RepositoryOwner -RepositoryName $RepositoryName -MetadataReader $getJson)
     $finalStatusPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$finalHead/statuses", '--paginate', '--slurp'))
     $finalStatuses = @($finalStatusPages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | Group-Object context | ForEach-Object { $_.Group | Sort-Object created_at -Descending | Select-Object -First 1 })
     $statusFingerprintStart = (@($statuses | ForEach-Object { "$($_.context)=$([string](Get-PrReadinessCommitStatusState -Status $_))" } | Sort-Object) -join '|')
     $statusFingerprintEnd = (@($finalStatuses | ForEach-Object { "$($_.context)=$([string](Get-PrReadinessCommitStatusState -Status $_))" } | Sort-Object) -join '|')
-    $checkFingerprintStart = (@($checkRuns | ForEach-Object { "$($_.name)=$([string](Get-PrReadinessCheckState -CheckRun $_))" } | Sort-Object) -join '|')
-    $checkFingerprintEnd = (@($finalCheckRuns | ForEach-Object { "$($_.name)=$([string](Get-PrReadinessCheckState -CheckRun $_))" } | Sort-Object) -join '|')
+    $checkFingerprintStart = (@($checkRuns | ForEach-Object { Get-PrReadinessCheckFingerprint -CheckRun $_ } | Sort-Object) -join '|')
+    $checkFingerprintEnd = (@($finalCheckRuns | ForEach-Object { Get-PrReadinessCheckFingerprint -CheckRun $_ } | Sort-Object) -join '|')
     $checkFingerprintStart = "$checkFingerprintStart|$statusFingerprintStart"
     $checkFingerprintEnd = "$checkFingerprintEnd|$statusFingerprintEnd"
 
