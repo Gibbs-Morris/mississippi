@@ -4,7 +4,7 @@ This runbook describes the fresh CI stack tracked in [#1030](https://github.com/
 
 ## What the queue validates
 
-A queue candidate has its own SHA. With target revision M and queued changes A then B, the first candidate contains M+A and the next contains M+A+B. A docs-only B can therefore contain A's code changes. Cleanup and issue-reference validation must consider the complete candidate prefix, not only the newest PR or the payload's predecessor base.
+A queue candidate has its own SHA. With target revision M and queued changes A then B, the first candidate contains M+A and the next contains M+A+B. A docs-only B can therefore contain A's code changes. Cleanup and issue-reference validation must consider the complete candidate prefix, not only the newest PR or the payload's predecessor base. If the trusted queue resolver is unavailable, the issue-reference check fails closed; associated-PR discovery cannot establish candidate validation.
 
 ```mermaid
 flowchart LR
