@@ -56,6 +56,13 @@ Describe 'PowerShell test orchestration' {
         Set-Content (Join-Path $fixtureRunners 'verify-scratchpad-task-scripts.ps1') 'exit 0'
     }
 
+    It 'preserves running test mocks after invoking the actual orchestrator' {
+        Mock Get-Date { [datetime]'2001-01-01' }
+        $null = & $orchestrator -PassThru 6>$null
+        (Get-Date).Year | Should -Be 2001
+        Should -Invoke Get-Date -Times 1 -Exactly
+    }
+
     It 'runs every required suite successfully' {
         $results = & $orchestrator -PassThru 6>$null
         $results.Count | Should -Be 12
