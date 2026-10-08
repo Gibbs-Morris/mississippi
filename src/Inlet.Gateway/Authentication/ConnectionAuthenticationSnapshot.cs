@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Principal;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 
 
@@ -18,6 +20,39 @@ namespace Mississippi.Inlet.Gateway.Authentication;
 internal static class ConnectionAuthenticationSnapshot
 {
     private static object ItemKey { get; } = new();
+
+    /// <summary>
+    ///     Binds SignalR's initial Windows identity clone before the connection accepts invocations.
+    /// </summary>
+    /// <param name="caller">The newly established hub connection.</param>
+    internal static void BindInitialWindowsClone(
+        HubCallerContext caller
+    )
+    {
+        HttpContext? context = caller.GetHttpContext();
+        if (context is null ||
+            !context.Items.TryGetValue(ItemKey, out object? value) ||
+            value is not Snapshot { RequiresWindowsBinding: true } snapshot)
+        {
+            return;
+        }
+
+        // Consume the startup binding once, even if a host has replaced the Windows principal.
+        // Other identities must keep SignalR's existing lazy principal caching behavior.
+        Snapshot bound = snapshot with
+        {
+            RequiresWindowsBinding = false,
+        };
+        if (OperatingSystem.IsWindows() && caller.User is { Identity: WindowsIdentity } principal)
+        {
+            bound = bound with
+            {
+                Principal = principal,
+            };
+        }
+
+        context.Items[ItemKey] = bound;
+    }
 
     /// <summary>
     ///     Captures the schemes that authenticated the principal handed to SignalR.
@@ -69,7 +104,10 @@ internal static class ConnectionAuthenticationSnapshot
         if (ReferenceEquals(result.Principal, context.User))
         {
             // Items survive long-polling cloning; request features and their service scope do not.
-            context.Items[ItemKey] = new Snapshot(result.Principal, Array.AsReadOnly(schemes));
+            context.Items[ItemKey] = new Snapshot(
+                result.Principal,
+                Array.AsReadOnly(schemes),
+                OperatingSystem.IsWindows() && result.Principal.Identity is WindowsIdentity);
         }
     }
 
@@ -95,5 +133,10 @@ internal static class ConnectionAuthenticationSnapshot
     /// </summary>
     /// <param name="Principal">The authenticated principal.</param>
     /// <param name="Schemes">The original selected schemes.</param>
-    private sealed record Snapshot(ClaimsPrincipal Principal, IReadOnlyList<string> Schemes);
+    /// <param name="RequiresWindowsBinding">Whether SignalR's initial Windows clone must be bound at startup.</param>
+    private sealed record Snapshot(
+        ClaimsPrincipal Principal,
+        IReadOnlyList<string> Schemes,
+        bool RequiresWindowsBinding
+    );
 }

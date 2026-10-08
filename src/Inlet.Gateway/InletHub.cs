@@ -152,6 +152,8 @@ public sealed class InletHub : Hub<IInletHubClient>
     /// <inheritdoc />
     public override Task OnConnectedAsync()
     {
+        ConnectionAuthenticationSnapshot.BindInitialWindowsClone(Context);
+
         // Note: Client grain registration is handled by AqueductHubLifetimeManager.
         // We just log the connection here.
         Logger.ClientConnected(Context.ConnectionId);

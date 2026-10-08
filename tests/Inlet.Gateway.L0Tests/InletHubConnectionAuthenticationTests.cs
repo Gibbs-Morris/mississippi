@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Principal;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Authentication;
@@ -68,7 +69,8 @@ public sealed class InletHubConnectionAuthenticationTests
         string permission = "read",
         IPolicyEvaluator? evaluator = null,
         bool hasAmbiguousScheme = false,
-        bool hasNonCacheablePolicyProvider = false
+        bool hasNonCacheablePolicyProvider = false,
+        ClaimsPrincipal? authenticatedPrincipal = null
     )
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
@@ -97,7 +99,7 @@ public sealed class InletHubConnectionAuthenticationTests
         IAuthenticationService authentication = Substitute.For<IAuthenticationService>();
         authentication.AuthenticateAsync(Arg.Any<HttpContext>(), TlsScheme)
             .Returns(call => call.Arg<HttpContext>().Features.Get<ITlsConnectionFeature>() is not null
-                ? AuthenticateResult.Success(new(CreatePrincipal(permission), TlsScheme))
+                ? AuthenticateResult.Success(new(authenticatedPrincipal ?? CreatePrincipal(permission), TlsScheme))
                 : AuthenticateResult.NoResult());
         authentication.AuthenticateAsync(Arg.Any<HttpContext>(), OtherScheme).Returns(AuthenticateResult.NoResult());
         authentication.AuthenticateAsync(Arg.Any<HttpContext>(), TlsScheme + ";" + OtherScheme)
@@ -194,6 +196,70 @@ public sealed class InletHubConnectionAuthenticationTests
         Assert.NotNull(endpoint.RequestDelegate);
         await endpoint.RequestDelegate(context);
         Assert.Equal(StatusCodes.Status404NotFound, context.Response.StatusCode);
+    }
+
+    /// <summary>
+    ///     SignalR's initial Windows clone can retain authentication without authorizing later replacements.
+    /// </summary>
+    /// <param name="replacesAfterConnection">Whether the retained principal changes after connection startup.</param>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SubscribeBindsInitialWindowsCloneOnly(
+        bool replacesAfterConnection
+    )
+    {
+        using WindowsIdentity? windowsIdentity = OperatingSystem.IsWindows() ? WindowsIdentity.GetCurrent() : null;
+        ClaimsIdentity identity = windowsIdentity ?? new ClaimsIdentity(TlsScheme);
+        identity.AddClaims([new(ClaimTypes.NameIdentifier, "windows-user"), new("permission", "read")]);
+        await using WebApplication app = CreateHost(authenticatedPrincipal: new(identity));
+        DefaultHttpContext original = CreateOriginalContext(app.Services);
+        PolicyEvaluator referenceEvaluator = new(app.Services.GetRequiredService<IAuthorizationService>());
+        AuthorizationPolicy policy = CreatePolicy(TlsScheme);
+        AuthenticateResult established = await referenceEvaluator.AuthenticateAsync(policy, original);
+        Assert.True(established.Succeeded);
+        Assert.True((await referenceEvaluator.AuthorizeAsync(policy, established, original, null)).Succeeded);
+        IAuthenticateResultFeature resultFeature = Substitute.For<IAuthenticateResultFeature>();
+        resultFeature.AuthenticateResult.Returns(established);
+        original.Features.Set(resultFeature);
+        await DispatchHubEndpointAsync(app, original, policy);
+        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext clone = CloneConnectionContext(original, connectionScope.ServiceProvider);
+        ClaimsIdentity connectionIdentity = original.User.Identities.Single().Clone();
+        using WindowsIdentity? clonedWindowsIdentity = connectionIdentity as WindowsIdentity;
+        ClaimsPrincipal connectionPrincipal = new(connectionIdentity);
+        Assert.NotSame(original.User, connectionPrincipal);
+        Assert.NotSame(original.User.Identity, connectionPrincipal.Identity);
+        clone.User = connectionPrincipal;
+        Assert.Null(clone.Features.Get<ITlsConnectionFeature>());
+        Assert.Null(clone.Features.Get<IAuthenticateResultFeature>());
+        Assert.False((await referenceEvaluator.AuthenticateAsync(policy, clone)).Succeeded);
+        using InletHub hub = CreateHub(clone, connectionPrincipal, TlsScheme, out IInletSubscriptionGrain grain);
+        await hub.OnConnectedAsync();
+        ClaimsIdentity replacementIdentity = connectionIdentity.Clone();
+        using WindowsIdentity? replacementWindowsIdentity = replacementIdentity as WindowsIdentity;
+        if (replacesAfterConnection)
+        {
+            ClaimsPrincipal replacement = new(replacementIdentity);
+            clone.User = replacement;
+            hub.Context.User.Returns(replacement);
+            await hub.OnConnectedAsync();
+        }
+
+        if (OperatingSystem.IsWindows() && !replacesAfterConnection)
+        {
+            Assert.IsType<WindowsIdentity>(connectionIdentity);
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
     }
 
     /// <summary>
