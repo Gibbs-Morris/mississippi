@@ -76,6 +76,17 @@ function Get-SonarBranchSource {
     }
 }
 
+function Assert-SonarPullRequestMergeRevision {
+    param([object]$PullRequest, [string]$Repository)
+
+    if ($PullRequest.mergeable -isnot [bool] -or -not $PullRequest.mergeable) { throw 'Source pull request merge revision is not confirmed mergeable.' }
+    $commit = Read-SonarGitHubMetadata -Path "repos/$Repository/git/commits/$($PullRequest.merge_commit_sha)"
+    $parents = @($commit.parents)
+    if ($commit.sha -cne $PullRequest.merge_commit_sha -or $parents.Count -ne 2 -or $parents[0].sha -cne $PullRequest.base.sha -or $parents[1].sha -cne $PullRequest.head.sha) {
+        throw 'Source pull request merge revision does not have the exact current base and head parents.'
+    }
+}
+
 function Get-SonarPullRequestSource {
     param([object]$Run, [string]$Repository)
 
@@ -88,6 +99,7 @@ function Get-SonarPullRequestSource {
         throw 'Source pull request no longer identifies this run.'
     }
     if ($pr.merge_commit_sha -cnotmatch '^[0-9a-f]{40}$' -or $pr.base.sha -cnotmatch '^[0-9a-f]{40}$') { throw 'Source pull request has no immutable merge revision.' }
+    Assert-SonarPullRequestMergeRevision -PullRequest $pr -Repository $Repository
     return [pscustomobject][ordered]@{
         RunId = $Run.id; Mode = 'PullRequest'; HeadSha = $pr.head.sha; BuildSha = $pr.merge_commit_sha
         HeadRef = $pr.head.ref; TargetRef = $pr.base.ref; TargetSha = $pr.base.sha; PullRequest = $number; Queue = $null
