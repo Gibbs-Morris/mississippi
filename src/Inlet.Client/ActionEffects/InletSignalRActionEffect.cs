@@ -580,6 +580,11 @@ internal sealed class InletSignalRActionEffect
             (object Interest, TaskCompletionSource<bool> Attempt) pending;
             lock (subscriptionGate)
             {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return false;
+                }
+
                 if (activeSubscriptions.ContainsKey(key))
                 {
                     return false;

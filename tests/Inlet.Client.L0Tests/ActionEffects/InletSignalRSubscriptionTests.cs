@@ -250,6 +250,33 @@ public sealed class InletSignalRSubscriptionTests : IAsyncDisposable
         Assert.Equal("owner-subscription", Assert.Single(unsubscribedIds));
     }
 
+    /// <summary>A cancelled waiter cannot reserve a retry after observing an already-failed owner.</summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task CancelledFailedHandoffDoesNotRetry()
+    {
+        await using InletSignalRActionEffect effect = new(
+            new(() => store),
+            serviceProvider.GetRequiredService<IHubConnectionProvider>(),
+            serviceProvider.GetRequiredService<IProjectionFetcher>(),
+            serviceProvider.GetRequiredService<IProjectionDtoRegistry>());
+        SubscribeToProjectionAction<TestProjection> action = new("entity-1");
+        Task<IAction[]> first = CollectAsync(effect.HandleAsync(action, new(), CancellationToken.None));
+        TaskCompletionSource<object?> response = await ReadSubscriptionRequestAsync();
+        using CancellationTokenSource cancellation = new();
+        HeldSubscriptionContinuationContext context = new();
+        Task<IAction[]> duplicate =
+            context.Run(() => CollectAsync(effect.HandleAsync(action, new(), cancellation.Token)));
+        response.SetException(new InvalidOperationException("Subscription failed"));
+        Assert.IsType<ProjectionErrorAction<TestProjection>>((await first)[1]);
+        await context.WaitForContinuationAsync(TestContext.Current.CancellationToken);
+        await cancellation.CancelAsync();
+        IAction[] actions = await FinishHeldDuplicateAsync(duplicate, context);
+        Assert.Empty(actions);
+        Assert.Single(subscriptions);
+        Assert.Empty(liveSubscriptions);
+    }
+
     /// <summary>
     ///     A cancelled hub request releases the pair so a later subscribe can succeed.
     /// </summary>
