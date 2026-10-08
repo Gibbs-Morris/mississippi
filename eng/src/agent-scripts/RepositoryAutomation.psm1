@@ -2915,6 +2915,7 @@ function Get-PrReadinessCurrentCheckRuns {
             if ($appId -le 0 -or $checkId -le 0) { throw 'Duplicate check identity is invalid.' }
             $runId = 0L
             $runNumber = 0L
+            $runAttempt = 0L
             $workflowId = 0L
             $eventName = ''
             if ($appId -eq 15368) {
@@ -2929,6 +2930,7 @@ function Get-PrReadinessCurrentCheckRuns {
                 $run = $workflowRuns[$runId]
                 try {
                     $workflowId = [long]$run.workflow_id
+                    $runAttempt = [long]$run.run_attempt
                     $numberProperty = $run.PSObject.Properties['run_number']
                     if ($null -ne $numberProperty) { $runNumber = [long]$numberProperty.Value }
                     $eventName = [string]$run.event
@@ -2936,35 +2938,44 @@ function Get-PrReadinessCurrentCheckRuns {
                         -not [string]::IsNullOrWhiteSpace([string]$run.head_sha) -and [string]$run.head_sha -eq [string]$check.head_sha
                 }
                 catch { throw 'Duplicate Actions check workflow metadata is incomplete.' }
-                if (-not $identityMatches -or $workflowId -le 0 -or [string]::IsNullOrWhiteSpace($eventName)) { throw 'Duplicate Actions check workflow identity is invalid.' }
-                $created = Get-PrReadinessEvidenceTimestamp -Value $run.created_at
+                if (-not $identityMatches -or $workflowId -le 0 -or $runAttempt -le 0 -or [string]::IsNullOrWhiteSpace($eventName)) { throw 'Duplicate Actions check workflow identity is invalid.' }
+                $orderTimestamp = Get-PrReadinessEvidenceTimestamp -Value $run.created_at
+                $started = $check.PSObject.Properties['started_at']
+                if ($null -ne $started -and -not [string]::IsNullOrWhiteSpace([string]$started.Value)) {
+                    $orderTimestamp = [Math]::Max($orderTimestamp, (Get-PrReadinessEvidenceTimestamp -Value $started.Value))
+                }
+                elseif ([string]$check.status -ne 'completed' -or $runAttempt -gt 1) {
+                    $attemptStarted = Get-PrReadinessEvidenceTimestamp -Value $run.run_started_at
+                    if ([string]$run.status -in @('queued', 'requested', 'waiting', 'pending') -or [string]$check.status -eq 'completed') {
+                        $attemptStarted = [Math]::Max($attemptStarted, (Get-PrReadinessEvidenceTimestamp -Value $run.updated_at))
+                    }
+                    $orderTimestamp = [Math]::Max($orderTimestamp, $attemptStarted)
+                }
             }
-            else { $created = Get-PrReadinessEvidenceTimestamp -Value $check.started_at }
+            else { $orderTimestamp = Get-PrReadinessEvidenceTimestamp -Value $check.started_at }
             [pscustomobject]@{
                 Check = $check
                 RunId = $runId
                 RunNumber = $runNumber
-                Created = $created
+                RunAttempt = $runAttempt
+                OrderTimestamp = $orderTimestamp
                 Scope = ConvertTo-Json -InputObject @($appId, [string]$check.name, $workflowId, $eventName) -Compress
             }
         }
         foreach ($scope in @($candidates | Group-Object -CaseSensitive Scope)) {
-            $latest = @($scope.Group | Sort-Object Created -Descending)
-            $tied = @($latest | Where-Object Created -EQ $latest[0].Created)
+            $latest = @($scope.Group | Sort-Object OrderTimestamp -Descending)
+            $tied = @($latest | Where-Object OrderTimestamp -EQ $latest[0].OrderTimestamp)
             if ($tied.Count -gt 1) {
                 if ($tied[0].RunId -eq 0) { throw 'Current check ordering is ambiguous.' }
                 if (@($tied.RunId | Select-Object -Unique).Count -gt 1) {
+                    if (@($tied | Where-Object RunAttempt -GT 1).Count -gt 0) { throw 'Current check ordering is ambiguous.' }
                     if (@($tied | Where-Object RunNumber -LE 0).Count -gt 0) { throw 'Current check ordering is ambiguous.' }
                     $byNumber = @($tied | Sort-Object RunNumber -Descending)
                     $tied = @($byNumber | Where-Object RunNumber -EQ $byNumber[0].RunNumber)
                     if (@($tied.RunId | Select-Object -Unique).Count -ne 1) { throw 'Current check ordering is ambiguous.' }
                     if ($tied.Count -eq 1) { $tied[0].Check; continue }
                 }
-                $reruns = @($tied | ForEach-Object {
-                    [pscustomobject]@{ Check = $_.Check; Started = Get-PrReadinessEvidenceTimestamp -Value $_.Check.started_at }
-                } | Sort-Object Started -Descending)
-                if (@($reruns | Where-Object Started -EQ $reruns[0].Started).Count -ne 1) { throw 'Current check rerun ordering is ambiguous.' }
-                $reruns[0].Check
+                throw 'Current check rerun ordering is ambiguous.'
             }
             else { $latest[0].Check }
         }

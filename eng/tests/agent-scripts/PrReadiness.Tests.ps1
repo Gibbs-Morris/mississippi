@@ -150,14 +150,14 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         }
 
         function New-SiteCheckRun {
-            param([long]$Id, [long]$RunId, [string]$Conclusion = 'success', [string]$Status = 'completed', [long]$AppId = 15368)
+            param([long]$Id, [long]$RunId, [string]$Conclusion = 'success', [string]$Status = 'completed', [long]$AppId = 15368, [string]$StartedAt = '2026-10-08T00:01:00Z')
             [pscustomobject]@{
                 id = $Id
                 name = 'Build Docusaurus Site'
                 status = $Status
                 conclusion = $Conclusion
                 head_sha = 'head'
-                started_at = '2026-10-08T00:01:00Z'
+                started_at = $StartedAt
                 app = [pscustomobject]@{ id = $AppId }
                 details_url="https://github.com/Gibbs-Morris/mississippi/actions/runs/$RunId/job/$Id"
                 pull_requests=@([pscustomobject]@{number=744;base=[pscustomobject]@{ref='main'}})
@@ -172,6 +172,10 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
                 event = 'pull_request'
                 head_sha = 'head'
                 created_at = $CreatedAt
+                run_attempt = 1
+                run_started_at = $CreatedAt
+                updated_at = $CreatedAt
+                status = 'completed'
                 repository=[pscustomobject]@{full_name='Gibbs-Morris/mississippi'}
             }
         }
@@ -306,7 +310,7 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         @{OldState='success';NewState='cancelled';Expected='INCOMPLETE'}
     ) {
         param($OldState,$NewState,$Expected)
-        $older = New-SiteCheckRun -Id 1 -RunId 501 -Conclusion $OldState
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:00:00Z' -Conclusion $OldState
         $newer = New-SiteCheckRun -Id 2 -RunId 502 -Conclusion $NewState
         if ($NewState -eq 'queued') {
             $newer.status = 'queued'
@@ -328,7 +332,7 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         @{Identity='event'}
     ) {
         param($Identity)
-        $older = New-SiteCheckRun -Id 1 -RunId 501 -Conclusion 'failure'
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:00:00Z' -Conclusion 'failure'
         $newer = New-SiteCheckRun -Id 2 -RunId 502
         $olderRun = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
         switch ($Identity) {
@@ -343,7 +347,7 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
     }
 
     It 'blocks a replaced site check identity even when both snapshots are successful' {
-        $older = New-SiteCheckRun -Id 1 -RunId 501
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:00:00Z'
         $newer = New-SiteCheckRun -Id 2 -RunId 502
         $replacement = New-SiteCheckRun -Id 3 -RunId 503
         $runs = @{
@@ -363,6 +367,7 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         @{ Fault = 'invalid check ID' }
         @{ Fault = 'missing workflow metadata' }
         @{ Fault = 'missing workflow identity' }
+        @{ Fault = 'missing workflow attempt' }
         @{ Fault = 'wrong workflow run' }
         @{ Fault = 'foreign workflow repository' }
         @{ Fault = 'different workflow head' }
@@ -372,7 +377,7 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         @{ Fault = 'indeterminate workflow order' }
     ) {
         param($Fault)
-        $older = New-SiteCheckRun -Id 1 -RunId 501 -Conclusion 'failure'
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:00:00Z' -Conclusion 'failure'
         $newer = New-SiteCheckRun -Id 2 -RunId 502
         $runs = @{
             '501' = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
@@ -385,13 +390,14 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
             'invalid check ID' { $newer.id = 0 }
             'missing workflow metadata' { $runs['502'] = $null }
             'missing workflow identity' { $runs['502'].PSObject.Properties.Remove('workflow_id') }
+            'missing workflow attempt' { $runs['502'].PSObject.Properties.Remove('run_attempt') }
             'wrong workflow run' { $runs['502'].id = 503 }
             'foreign workflow repository' { $runs['502'].repository.full_name = 'other/repo' }
             'different workflow head' { $runs['502'].head_sha = 'another-head' }
             'empty workflow event' { $runs['502'].event = '' }
             'invalid workflow timestamp' { $runs['502'].created_at = 'invalid' }
             'timestamp without a timezone' { $runs['502'].created_at = '2026-10-08T00:01:00' }
-            'indeterminate workflow order' { $runs['502'].created_at = $runs['501'].created_at }
+            'indeterminate workflow order' { $runs['502'].created_at = $runs['501'].created_at; $newer.started_at = $older.started_at }
         }
         { New-SiteReadinessSnapshot -SiteChecks @($older, $newer) -WorkflowRuns $runs } | Should -Throw
     }
@@ -401,7 +407,7 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         @{ TimestampType = 'DateTimeOffset' }
     ) {
         param($TimestampType)
-        $older = New-SiteCheckRun -Id 1 -RunId 501 -Conclusion 'failure'
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:00:00Z' -Conclusion 'failure'
         $newer = New-SiteCheckRun -Id 2 -RunId 502
         $olderRun = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z' | ConvertTo-Json | ConvertFrom-Json
         $newerRun = New-SiteWorkflowRun -Id 502 -CreatedAt '2026-10-08T00:01:00Z' | ConvertTo-Json | ConvertFrom-Json
@@ -418,8 +424,8 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
     }
 
     It 'keeps a failed rerun blocking within the same workflow run' {
-        $older = New-SiteCheckRun -Id 1 -RunId 501
-        $newer = New-SiteCheckRun -Id 2 -RunId 501 -Conclusion 'failure'
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:00:00Z'
+        $newer = New-SiteCheckRun -Id 2 -RunId 501 -StartedAt '2026-10-08T00:00:00Z' -Conclusion 'failure'
         $older.started_at = '2026-10-08T00:01:00Z'
         $newer.started_at = '2026-10-08T00:02:00Z'
         $snapshot = New-SiteReadinessSnapshot -SiteChecks @($older, $newer) -WorkflowRuns @{
@@ -430,15 +436,15 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
     }
 
     It 'rejects indeterminate rerun order' {
-        $older = New-SiteCheckRun -Id 1 -RunId 501 -Conclusion 'failure'
-        $newer = New-SiteCheckRun -Id 2 -RunId 501
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:00:00Z' -Conclusion 'failure'
+        $newer = New-SiteCheckRun -Id 2 -RunId 501 -StartedAt '2026-10-08T00:00:00Z'
         { New-SiteReadinessSnapshot -SiteChecks @($older, $newer) -WorkflowRuns @{
             '501' = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
         } } | Should -Throw '*rerun ordering*'
     }
 
     It 'selects the current external-provider check using its start time' {
-        $older = New-SiteCheckRun -Id 1 -RunId 501 -AppId 999 -Conclusion 'failure'
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:00:00Z' -AppId 999 -Conclusion 'failure'
         $newer = New-SiteCheckRun -Id 2 -RunId 502 -AppId 999
         $older.started_at = '2026-10-08T00:00:00Z'
         $newer.started_at = '2026-10-08T00:01:00Z'
@@ -447,14 +453,15 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
     }
 
     It 'rejects indeterminate external-provider check order' {
-        $older = New-SiteCheckRun -Id 1 -RunId 501 -AppId 999 -Conclusion 'failure'
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:00:00Z' -AppId 999 -Conclusion 'failure'
         $newer = New-SiteCheckRun -Id 2 -RunId 502 -AppId 999
+        $newer.started_at = $older.started_at
         { New-SiteReadinessSnapshot -SiteChecks @($older, $newer) } | Should -Throw '*ordering is ambiguous*'
     }
 
     It 'blocks a replaced check provider even when the check ID and state match' {
-        $initial = New-SiteCheckRun -Id 1 -RunId 501
-        $replacement = New-SiteCheckRun -Id 1 -RunId 501 -AppId 999
+        $initial = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:00:00Z'
+        $replacement = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:00:00Z' -AppId 999
         $snapshot = New-SiteReadinessSnapshot -SiteChecks @($initial) -FinalSiteChecks @($replacement)
         $snapshot.EvidenceStable | Should -BeFalse
         (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'INCOMPLETE'
@@ -466,13 +473,14 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         @{ LatestState = 'queued'; Expected = 'INCOMPLETE' }
     ) {
         param($LatestState, $Expected)
-        $older = New-SiteCheckRun -Id 1 -RunId 501 -Conclusion 'cancelled'
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:00:00Z' -Conclusion 'cancelled'
         $newer = New-SiteCheckRun -Id 2 -RunId 502 -Conclusion $LatestState
         if ($LatestState -eq 'queued') { $newer.status = 'queued'; $newer.conclusion = $null; $newer.started_at = $null }
         $runs = @{
             '501' = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
             '502' = New-SiteWorkflowRun -Id 502 -CreatedAt '2026-10-08T00:00:00Z'
         }
+        if ($null -ne $newer.started_at) { $newer.started_at = $older.started_at }
         $runs['501'] | Add-Member run_number 10
         $runs['502'] | Add-Member run_number 11
         $snapshot = New-SiteReadinessSnapshot -SiteChecks @($newer, $older) -WorkflowRuns $runs
@@ -480,19 +488,60 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         @($snapshot.Checks | Where-Object name -EQ 'Build Docusaurus Site').Count | Should -Be 1
     }
 
-    It 'keeps equal-time workflow ordering closed when run numbers are <Fault>' -TestCases @(
+    It 'keeps equal-time workflow ordering closed for <Fault>' -TestCases @(
         @{ Fault = 'missing from one run' }
         @{ Fault = 'equal across runs' }
+        @{ Fault = 'a same-second rerun' }
     ) {
         param($Fault)
-        $older = New-SiteCheckRun -Id 1 -RunId 501 -Conclusion 'failure'
+        $older = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:00:00Z' -Conclusion 'failure'
         $newer = New-SiteCheckRun -Id 2 -RunId 502
         $runs = @{
             '501' = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
             '502' = New-SiteWorkflowRun -Id 502 -CreatedAt '2026-10-08T00:00:00Z'
         }
+        $newer.started_at = $older.started_at
         $runs['502'] | Add-Member run_number 11
         if ($Fault -eq 'equal across runs') { $runs['501'] | Add-Member run_number 11 }
+        if ($Fault -eq 'a same-second rerun') {
+            $runs['501'] | Add-Member run_number 10
+            $runs['501'].run_attempt = 2
+        }
         { New-SiteReadinessSnapshot -SiteChecks @($older, $newer) -WorkflowRuns $runs } | Should -Throw '*ordering is ambiguous*'
+    }
+
+    It 'keeps a later attempt of an older workflow run current when it is <AttemptState>' -TestCases @(
+        @{ AttemptState = 'failure' }
+        @{ AttemptState = 'cancelled' }
+        @{ AttemptState = 'queued' }
+        @{ AttemptState = 'failure'; Unstarted = $true }
+        @{ AttemptState = 'cancelled'; Unstarted = $true }
+    ) {
+        param($AttemptState, $Unstarted)
+        $rerun = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:02:00Z' -Conclusion $AttemptState
+        $success = New-SiteCheckRun -Id 2 -RunId 502
+        $runs = @{
+            '501' = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
+            '502' = New-SiteWorkflowRun -Id 502 -CreatedAt '2026-10-08T00:01:00Z'
+        }
+        $runs['501'].run_attempt = 2
+        $runs['501'].run_started_at = '2026-10-08T00:02:00Z'
+        $runs['501'].updated_at = '2026-10-08T00:02:00Z'
+        $runs['501'].status = 'completed'
+        if ($Unstarted) {
+            $rerun.started_at = $null
+            $runs['501'].run_started_at = '2026-10-08T00:00:00Z'
+        }
+        if ($AttemptState -eq 'queued') {
+            $rerun.status = 'queued'
+            $rerun.conclusion = $null
+            $rerun.started_at = $null
+            $runs['501'].status = 'queued'
+            $runs['501'].run_started_at = '2026-10-08T00:00:00Z'
+        }
+        $snapshot = New-SiteReadinessSnapshot -SiteChecks @($rerun, $success) -WorkflowRuns $runs
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'INCOMPLETE'
+        @($snapshot.Checks | Where-Object name -EQ 'Build Docusaurus Site').Count | Should -Be 1
+        @($snapshot.Checks | Where-Object { $_.Name -eq 'Build Docusaurus Site' -and $_.State -ne 'pass' }).Count | Should -Be 1
     }
 }
