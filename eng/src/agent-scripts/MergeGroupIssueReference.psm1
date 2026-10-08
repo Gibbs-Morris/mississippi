@@ -35,6 +35,18 @@ function Add-MergeQueuePageEntries {
     }
 }
 
+function Test-MergeQueueEntriesCoherent {
+    param([object[]]$Entries)
+
+    try { Assert-MergeQueuePositions -Entries $Entries }
+    catch { return $false }
+    $ordered = @($Entries | Sort-Object position)
+    for ($index = 1; $index -lt $ordered.Count; $index++) {
+        if ($ordered[$index].position -ne ($ordered[$index - 1].position + 1)) { return $false }
+    }
+    return $true
+}
+
 function Read-MergeQueueSnapshotAttempt {
     param([string]$Repository, [string]$Branch)
 
@@ -59,14 +71,7 @@ function Read-MergeQueueSnapshotAttempt {
         if ($isPaginated) { return $null }
         throw 'Merge-queue pagination did not return every entry.'
     }
-    if ($isPaginated) {
-        try { Assert-MergeQueuePositions -Entries $entries.ToArray() }
-        catch { return $null }
-        $ordered = @($entries | Sort-Object position)
-        for ($index = 1; $index -lt $ordered.Count; $index++) {
-            if ($ordered[$index].position -ne ($ordered[$index - 1].position + 1)) { return $null }
-        }
-    }
+    if ($isPaginated -and -not (Test-MergeQueueEntriesCoherent -Entries $entries.ToArray())) { return $null }
     return [pscustomobject]@{ QueueId = $identity.QueueId; TargetSha = $identity.TargetSha; Entries = @($entries.ToArray()) }
 }
 function Get-MergeQueueSnapshot {
