@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Authentication;
@@ -68,7 +69,7 @@ internal static class ConnectionAuthenticationSnapshot
         if (ReferenceEquals(result.Principal, context.User))
         {
             // Items survive long-polling cloning; request features and their service scope do not.
-            context.Items[ItemKey] = Array.AsReadOnly(schemes);
+            context.Items[ItemKey] = new Snapshot(result.Principal, Array.AsReadOnly(schemes));
         }
     }
 
@@ -77,12 +78,22 @@ internal static class ConnectionAuthenticationSnapshot
     /// </summary>
     /// <param name="context">The connection context, including its copied items.</param>
     /// <param name="policy">The subscription policy.</param>
+    /// <param name="principal">The principal retained by the hub.</param>
     /// <returns>Whether the established authentication matches the selected schemes.</returns>
     internal static bool IsAuthenticatedForPolicy(
         HttpContext context,
-        AuthorizationPolicy policy
+        AuthorizationPolicy policy,
+        ClaimsPrincipal? principal
     ) =>
         context.Items.TryGetValue(ItemKey, out object? value) &&
-        value is IReadOnlyList<string> schemes &&
-        schemes.SequenceEqual(policy.AuthenticationSchemes, StringComparer.Ordinal);
+        value is Snapshot snapshot &&
+        ReferenceEquals(snapshot.Principal, principal) &&
+        snapshot.Schemes.SequenceEqual(policy.AuthenticationSchemes, StringComparer.Ordinal);
+
+    /// <summary>
+    ///     Associates verified schemes with the exact principal they authenticated.
+    /// </summary>
+    /// <param name="Principal">The authenticated principal.</param>
+    /// <param name="Schemes">The original selected schemes.</param>
+    private sealed record Snapshot(ClaimsPrincipal Principal, IReadOnlyList<string> Schemes);
 }

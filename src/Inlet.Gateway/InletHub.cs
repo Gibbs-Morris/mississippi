@@ -80,6 +80,39 @@ public sealed class InletHub : Hub<IInletHubClient>
 
     private IProjectionAuthorizationRegistry ProjectionAuthorizationRegistry { get; }
 
+    /// <summary>
+    ///     Authenticates selected schemes and preserves custom evaluator authorization vetoes.
+    /// </summary>
+    /// <param name="policyEvaluator">The host's policy evaluator.</param>
+    /// <param name="policy">The subscription policy.</param>
+    /// <param name="httpContext">The connection's HTTP context.</param>
+    /// <returns>The authenticated principal and whether the evaluator permits it.</returns>
+    private static async Task<(ClaimsPrincipal? Principal, bool Permitted)> AuthenticateWithEvaluatorAsync(
+        IPolicyEvaluator policyEvaluator,
+        AuthorizationPolicy policy,
+        HttpContext httpContext
+    )
+    {
+        AuthenticateResult authenticationResult = await policyEvaluator.AuthenticateAsync(policy, httpContext);
+        if (!authenticationResult.Succeeded)
+        {
+            return (null, false);
+        }
+
+        if (policyEvaluator.GetType() != typeof(PolicyEvaluator))
+        {
+            httpContext.User = authenticationResult.Principal;
+            PolicyAuthorizationResult authorizationResult =
+                await policyEvaluator.AuthorizeAsync(policy, authenticationResult, httpContext, null);
+            if (!authorizationResult.Succeeded)
+            {
+                return (authenticationResult.Principal, false);
+            }
+        }
+
+        return (authenticationResult.Principal, true);
+    }
+
     private static string? GetUserId(
         ClaimsPrincipal? user
     ) =>
@@ -188,25 +221,25 @@ public sealed class InletHub : Hub<IInletHubClient>
         Logger.UnsubscribedFromProjection(Context.ConnectionId, subscriptionId);
     }
 
-    private async Task<ClaimsPrincipal?> AuthenticateUserAsync(
+    private async Task<(ClaimsPrincipal? Principal, bool Permitted)> AuthenticateUserAsync(
         AuthorizationPolicy policy
     )
     {
         if (policy.AuthenticationSchemes.Count == 0)
         {
-            return Context.User ?? new ClaimsPrincipal(new ClaimsIdentity());
+            return (Context.User ?? new ClaimsPrincipal(new ClaimsIdentity()), true);
         }
 
         HttpContext? httpContext = Context.GetHttpContext();
         if (httpContext is null)
         {
-            return null;
+            return (null, false);
         }
 
         IPolicyEvaluator? policyEvaluator = httpContext.RequestServices.GetService<IPolicyEvaluator>();
         if (policyEvaluator is null)
         {
-            return null;
+            return (null, false);
         }
 
         if (policyEvaluator.GetType() == typeof(PolicyEvaluator))
@@ -215,23 +248,22 @@ public sealed class InletHub : Hub<IInletHubClient>
                 httpContext.RequestServices.GetService<IAuthenticationService>();
             if (authenticationService is null)
             {
-                return null;
+                return (null, false);
             }
 
             if (!await HasRequiredSchemeRegistrationsAsync(authenticationService, policy))
             {
-                return null;
+                return (null, false);
             }
 
-            if (ConnectionAuthenticationSnapshot.IsAuthenticatedForPolicy(httpContext, policy))
+            if (ConnectionAuthenticationSnapshot.IsAuthenticatedForPolicy(httpContext, policy, Context.User))
             {
                 // SignalR retains this principal for the connection, even when its HTTP features are reduced.
-                return Context.User;
+                return (Context.User, true);
             }
         }
 
-        AuthenticateResult authenticationResult = await policyEvaluator.AuthenticateAsync(policy, httpContext);
-        return authenticationResult.Succeeded ? authenticationResult.Principal : null;
+        return await AuthenticateWithEvaluatorAsync(policyEvaluator, policy, httpContext);
     }
 
     private async Task AuthorizeSubscriptionAsync(
@@ -280,8 +312,8 @@ public sealed class InletHub : Hub<IInletHubClient>
         string? policyName
     )
     {
-        ClaimsPrincipal? user = await AuthenticateUserAsync(policy);
-        if (user is null)
+        (ClaimsPrincipal? user, bool permitted) = await AuthenticateUserAsync(policy);
+        if (user is null || !permitted)
         {
             Logger.SubscriptionAuthorizationDenied(Context.ConnectionId, path, entityId, GetUserId(user), policyName);
             throw new HubException(InletHubConstants.SubscriptionDeniedMessage);

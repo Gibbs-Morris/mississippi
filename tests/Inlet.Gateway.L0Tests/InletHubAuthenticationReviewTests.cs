@@ -193,6 +193,83 @@ public sealed class InletHubAuthenticationReviewTests
     }
 
     /// <summary>
+    ///     Custom evaluator authorization decisions and ordinary requirements must both permit subscription.
+    /// </summary>
+    /// <param name="decision">The evaluator decision or missing requirement being verified.</param>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Theory]
+    [InlineData("success")]
+    [InlineData("forbid")]
+    [InlineData("challenge")]
+    [InlineData("missing-permission")]
+    public async Task SubscribeHonorsCustomEvaluatorAuthorization(
+        string decision
+    )
+    {
+        ArgumentNullException.ThrowIfNull(decision);
+        const string virtualScheme = "Virtual";
+        IPolicyEvaluator evaluator = Substitute.For<IPolicyEvaluator>();
+        ClaimsPrincipal principal = CreatePrincipal(
+            "virtual-user",
+            decision == "missing-permission" ? "write" : "read");
+        AuthenticateResult authentication = AuthenticateResult.Success(new(principal, virtualScheme));
+        evaluator.AuthenticateAsync(Arg.Any<AuthorizationPolicy>(), Arg.Any<HttpContext>()).Returns(authentication);
+        evaluator.AuthorizeAsync(
+                Arg.Any<AuthorizationPolicy>(),
+                Arg.Any<AuthenticateResult>(),
+                Arg.Any<HttpContext>(),
+                Arg.Any<object?>())
+            .Returns(
+                decision switch
+                {
+                    "forbid" => PolicyAuthorizationResult.Forbid(),
+                    "challenge" => PolicyAuthorizationResult.Challenge(),
+                    var _ => PolicyAuthorizationResult.Success(),
+                });
+        await using ServiceProvider services = CreateServices(
+            policyEvaluator: evaluator,
+            registerAuthentication: false);
+        using InletHub hub = CreateHub(
+            services,
+            virtualScheme,
+            out IInletSubscriptionGrain grain,
+            out ILogger<InletHub> logger);
+        if (decision == "success")
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        await evaluator.Received(1)
+            .AuthenticateAsync(
+                Arg.Is<AuthorizationPolicy>(policy => policy.AuthenticationSchemes.Contains(virtualScheme)),
+                Arg.Any<HttpContext>());
+        await evaluator.Received(1)
+            .AuthorizeAsync(
+                Arg.Is<AuthorizationPolicy>(policy => policy.AuthenticationSchemes.Contains(virtualScheme)),
+                authentication,
+                Arg.Is<HttpContext>(context => ReferenceEquals(context.User, principal)),
+                Arg.Is<object?>(resource => resource == null));
+        int eventId = decision == "success" ? 7 : 8;
+        object?[] arguments = Assert.Single(
+                logger.ReceivedCalls(),
+                call => (call.GetMethodInfo().Name == nameof(ILogger.Log)) &&
+                        call.GetArguments()[1] is EventId id &&
+                        (id.Id == eventId))
+            .GetArguments();
+        IEnumerable<KeyValuePair<string, object?>> state =
+            Assert.IsType<IEnumerable<KeyValuePair<string, object?>>>(arguments[2], false);
+        Assert.Equal("virtual-user", Assert.Single(state, field => field.Key == "UserId").Value);
+    }
+
+    /// <summary>
     ///     Authorization decisions should log the principal returned by the selected handler.
     /// </summary>
     /// <param name="allowed">Whether the selected principal has the required permission.</param>
@@ -339,6 +416,12 @@ public sealed class InletHubAuthenticationReviewTests
                     ? AuthenticateResult.Success(new(selectedPrincipal, BearerScheme))
                     : AuthenticateResult.NoResult();
             });
+        evaluator.AuthorizeAsync(
+                Arg.Any<AuthorizationPolicy>(),
+                Arg.Any<AuthenticateResult>(),
+                Arg.Any<HttpContext>(),
+                Arg.Any<object?>())
+            .Returns(PolicyAuthorizationResult.Success());
         await using ServiceProvider services = CreateServices(authenticationService, policyEvaluator: evaluator);
         Assert.Same(evaluator, services.GetRequiredService<IPolicyEvaluator>());
         if (!authenticated)
@@ -465,6 +548,12 @@ public sealed class InletHubAuthenticationReviewTests
         ClaimsPrincipal principal = CreatePrincipal("virtual-user");
         evaluator.AuthenticateAsync(Arg.Any<AuthorizationPolicy>(), Arg.Any<HttpContext>())
             .Returns(AuthenticateResult.Success(new(principal, virtualScheme)));
+        evaluator.AuthorizeAsync(
+                Arg.Any<AuthorizationPolicy>(),
+                Arg.Any<AuthenticateResult>(),
+                Arg.Any<HttpContext>(),
+                Arg.Any<object?>())
+            .Returns(PolicyAuthorizationResult.Success());
         await using ServiceProvider services = CreateServices(
             policyEvaluator: evaluator,
             registerAuthentication: registerAuthentication);
