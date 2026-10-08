@@ -36,6 +36,10 @@ function Assert-TrustedSonarControllerOrigin {
     if ($WorkflowRef -cne $expected -or $WorkflowSha -cnotmatch '^[0-9a-f]{40}$' -or $CheckoutSha -cne $WorkflowSha) {
         throw 'Sonar controller must execute its immutable default-branch definition.'
     }
+    $current = Read-SonarGitHubMetadata "repos/$Repository/git/ref/heads/$([Uri]::EscapeDataString($DefaultBranch))"
+    if ($current.ref -cne "refs/heads/$DefaultBranch" -or $current.object.type -cne 'commit' -or $current.object.sha -cne $WorkflowSha) {
+        throw 'Sonar controller revision must match the current default-branch tip.'
+    }
 }
 
 function Get-SonarSourceRunPaths {

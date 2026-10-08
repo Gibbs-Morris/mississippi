@@ -140,8 +140,28 @@ Describe 'Trusted Sonar source identity' {
         { Invoke-Source } | Should -Throw
     }
     It 'requires the immutable default-branch controller definition' {
+        Mock Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis { [pscustomobject]@{ref='refs/heads/main';object=[pscustomobject]@{type='commit';sha=$head}} }
         Assert-TrustedSonarControllerOrigin -Repository Gibbs-Morris/mississippi -DefaultBranch main -WorkflowRef 'Gibbs-Morris/mississippi/.github/workflows/sonar-trusted-analysis.yml@refs/heads/main' -WorkflowSha $head -CheckoutSha $head
     }
+    It 'rejects preserved controller identity when the live default ref has <Change>' -TestCases @(
+        @{Change='advanced SHA'}, @{Change='tag ref'}, @{Change='non-commit object'}, @{Change='malformed SHA'}
+    ) {
+        param($Change)
+        $script:controllerRef=[pscustomobject]@{ref='refs/heads/main';object=[pscustomobject]@{type='commit';sha=$head}}
+        switch ($Change) {
+            'advanced SHA' {$script:controllerRef.object.sha=$target}
+            'tag ref' {$script:controllerRef.ref='refs/tags/main'}
+            'non-commit object' {$script:controllerRef.object.type='tag'}
+            'malformed SHA' {$script:controllerRef.object.sha='invalid'}
+        }
+        Mock Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis {$script:controllerRef}
+        { Assert-TrustedSonarControllerOrigin -Repository Gibbs-Morris/mississippi -DefaultBranch main -WorkflowRef 'Gibbs-Morris/mississippi/.github/workflows/sonar-trusted-analysis.yml@refs/heads/main' -WorkflowSha $head -CheckoutSha $head } | Should -Throw '*current default-branch tip*'
+    }
+    It 'rejects controller intake when the current default ref cannot be read' {
+        Mock Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis {throw 'Current default-ref API unavailable'}
+        { Assert-TrustedSonarControllerOrigin -Repository Gibbs-Morris/mississippi -DefaultBranch main -WorkflowRef 'Gibbs-Morris/mississippi/.github/workflows/sonar-trusted-analysis.yml@refs/heads/main' -WorkflowSha $head -CheckoutSha $head } | Should -Throw '*Current default-ref API unavailable*'
+    }
+
     It 'rejects changed controller <Field>' -TestCases @(@{Field='ref'},@{Field='workflow SHA'},@{Field='checkout'}) {
         param($Field)
         $ref='Gibbs-Morris/mississippi/.github/workflows/sonar-trusted-analysis.yml@refs/heads/main';$workflow=$head;$checkout=$head
