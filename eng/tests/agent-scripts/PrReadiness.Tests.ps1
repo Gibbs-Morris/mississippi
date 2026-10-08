@@ -665,3 +665,39 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         @($snapshot.Checks | Where-Object { $_.Name -eq 'Build Docusaurus Site' -and $_.State -ne 'pass' }).Count | Should -Be 1
     }
 }
+
+Describe 'Docusaurus workflow reporting contract' {
+    BeforeAll {
+        $workflowRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+        $workflow = Get-Content -LiteralPath (Join-Path $workflowRoot '.github/workflows/docusaurus.yml') -Raw
+        $pullRequestTrigger = [regex]::Match(
+            $workflow,
+            '(?ms)^  pull_request:\r?\n(?<trigger>.*?)(?=^\S|\z)'
+        ).Groups['trigger'].Value
+    }
+
+    It 'reports for opened, synchronized, reopened, edited and native stacked PR activity' {
+        ([regex]::Matches($workflow, '(?m)^  pull_request:\r?$')).Count | Should -Be 1
+        $pullRequestTrigger | Should -Not -BeNullOrEmpty
+        $activityList = [regex]::Match(
+            $pullRequestTrigger,
+            '(?m)^    types: \[(?<types>[^\]]+)\]\r?$'
+        ).Groups['types'].Value
+        $activities = @($activityList.Split(',') | ForEach-Object { $_.Trim() })
+        ($activities | Sort-Object) -join ',' | Should -Be 'edited,opened,reopened,stacked,synchronize'
+    }
+
+    It 'preserves the applicable main, feature and topic targets' {
+        $branchList = [regex]::Match(
+            $pullRequestTrigger,
+            '(?m)^    branches:\r?\n(?<branches>(?:      - [^\r\n]+\r?\n)+)'
+        ).Groups['branches'].Value
+        $branches = @([regex]::Matches($branchList, '(?m)^      - (?<branch>.+?)\r?$') |
+            ForEach-Object { $_.Groups['branch'].Value })
+        ($branches | Sort-Object) -join ',' | Should -Be 'feature/**,main,topic/**'
+    }
+
+    It 'cannot omit the required PR check through paths or paths-ignore filtering' {
+        $pullRequestTrigger | Should -Not -Match '(?m)^    paths(?:-ignore)?:'
+    }
+}
