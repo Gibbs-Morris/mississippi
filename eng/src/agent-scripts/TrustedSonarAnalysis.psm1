@@ -20,6 +20,13 @@ function Assert-SonarTargetPolicyBaseline {
     if ($main[0].commit.sha -cne $Source.TargetSha) { throw 'Targeted analysis requires the exact current target baseline in Sonar.' }
 }
 
+function Assert-SonarPullRequestPolicyBaseline {
+    param([object]$Source,[object[]]$Branches)
+    $target = @($Branches | Where-Object { $_.name -ceq $Source.TargetRef })
+    if ($target.Count -ne 1 -or $target[0].commit.sha -cnotmatch '^[0-9a-f]{40}$' -or $Source.TargetSha -cnotmatch '^[0-9a-f]{40}$') { throw 'PR analysis requires a valid Sonar target baseline.' }
+    if ($target[0].commit.sha -cne $Source.TargetSha) { throw 'PR analysis requires the exact current target baseline in Sonar.' }
+}
+
 function Assert-SonarQueuePolicyBaseline {
     param([object]$Source,[string]$Pattern,[object[]]$Branches)
     if ($Pattern -cne '(branch|release)-.*') { throw 'Queue branch classification no longer matches the reviewed policy.' }
@@ -233,6 +240,7 @@ function Get-SonarQualityPolicySnapshot {
     $pattern = [string]$patterns[0].value
     $branches = Read-SonarServiceMetadata "project_branches/list?$project"
     if ($Source.Mode -ceq 'Queue') { Assert-SonarQueuePolicyBaseline -Source $Source -Pattern $pattern -Branches @($branches.branches) }
+    elseif ($Source.Mode -ceq 'PullRequest') { Assert-SonarPullRequestPolicyBaseline -Source $Source -Branches @($branches.branches) }
     elseif ($Source.Mode -ceq 'Branch' -and $Source.HeadRef -cne $Source.TargetRef) { Assert-SonarTargetPolicyBaseline -Source $Source -Branches @($branches.branches) }
     return [pscustomobject]@{
         GateId=$assignment.qualityGate.id; LongLivedPattern=$pattern
