@@ -2844,7 +2844,7 @@ function Get-PrReadinessExpectedCheckPatterns {
         foreach ($pattern in $standardWorkflowPatterns) { $null = $patterns.Remove($pattern) }
     }
 
-    $docsApplicable = $standardWorkflowBase -and @($ChangedPaths | Where-Object { $_ -match '^(?:docs/|\.github/workflows/docusaurus\.yml$)' }).Count -gt 0
+    $docsApplicable = $standardWorkflowBase
     if ($docsApplicable) { $patterns.Add('^Build Docusaurus Site$') }
     $csprojApplicable = @($ChangedPaths | Where-Object { $_ -match '^src/.+\.csproj$' }).Count -gt 0
     if ($csprojApplicable) { $patterns.Add('^Validate src csproj descriptions$') }
@@ -2933,6 +2933,27 @@ function Get-PrReadinessBodyFingerprint {
     return 'SHA256:' + (($hash | ForEach-Object { $_.ToString('x2') }) -join '')
 }
 
+function Get-PrReadinessWorkflowBase {
+    param([Parameter(Mandatory)][object]$PullRequest, [AllowEmptyString()][string]$BaseRef)
+
+    $stackProperty = $PullRequest.PSObject.Properties['stack']
+    if ($null -eq $stackProperty -or $null -eq $stackProperty.Value) {
+        return [pscustomobject]@{ Ref = $BaseRef; Identity = '' }
+    }
+    $stack = $stackProperty.Value
+    try {
+        $trunk = [string]$stack.base.ref
+        $trunkSha = [string]$stack.base.sha
+        $stackId = [long]$stack.id
+        $stackNumber = [int]$stack.number
+    }
+    catch { throw 'Native stack workflow applicability metadata is incomplete.' }
+    if ([string]::IsNullOrWhiteSpace($trunk) -or $trunkSha -notmatch '^[0-9a-fA-F]{40}$' -or $stackId -le 0 -or $stackNumber -le 0) {
+        throw 'Native stack workflow applicability metadata is invalid.'
+    }
+    return [pscustomobject]@{ Ref = $trunk; Identity = "$stackId/$stackNumber/$trunk/$trunkSha" }
+}
+
 function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally coordinates paginated GitHub checks, reviews, threads, and stability fingerprints.
     [CmdletBinding()]
     param(
@@ -2955,6 +2976,7 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     $headAtStart = [string]$pull.head.sha
     $baseAtStart = [string]$pull.base.sha
     $baseRefAtStart = if ($null -ne $pull.base.PSObject.Properties['ref']) { [string]$pull.base.ref } else { '' }
+    $workflowBaseAtStart = Get-PrReadinessWorkflowBase -PullRequest $pull -BaseRef $baseRefAtStart
     $filePages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/pulls/$PullRequestNumber/files", '--paginate', '--slurp'))
     $changedPaths = @($filePages | ForEach-Object { if ($_ -is [array]) { @($_) } else { @($_) } } | ForEach-Object {
         if ($null -ne $_.PSObject.Properties['filename']) { [string]$_.filename }
@@ -2981,7 +3003,7 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
             ExpectedIdentity = $false
         })
     }
-    $expectedPatterns = @(Get-PrReadinessExpectedCheckPatterns -ChangedPaths $changedPaths -BaseRef $baseRefAtStart)
+    $expectedPatterns = @(Get-PrReadinessExpectedCheckPatterns -ChangedPaths $changedPaths -BaseRef $workflowBaseAtStart.Ref)
     foreach ($pattern in $expectedPatterns) {
         if (@($checks | Where-Object { $_.Name -match $pattern }).Count -eq 0) {
             $checks.Add([pscustomobject]@{ Name = "required:$pattern"; State = 'missing'; Required = $true; ExpectedIdentity = $true })
@@ -3037,6 +3059,7 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     $pullAtEnd = & $getJson @('api', $pullPath)
     $finalHead = [string]$pullAtEnd.head.sha
     $baseRefAtEnd = if ($null -ne $pullAtEnd.base.PSObject.Properties['ref']) { [string]$pullAtEnd.base.ref } else { '' }
+    $workflowBaseAtEnd = Get-PrReadinessWorkflowBase -PullRequest $pullAtEnd -BaseRef $baseRefAtEnd
     $finalCheckPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$finalHead/check-runs", '--paginate', '--slurp'))
     $finalCheckRuns = @($finalCheckPages | ForEach-Object { @($_.check_runs) } | Where-Object { Test-PrReadinessCheckRunBelongsToPullRequest -CheckRun $_ -PullRequestNumber $PullRequestNumber -BaseRef $baseRefAtEnd })
     $finalStatusPages = @(& $getJson @('api', "repos/$RepositoryOwner/$RepositoryName/commits/$finalHead/statuses", '--paginate', '--slurp'))
@@ -3118,7 +3141,9 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
     $reviewDispositions = @($reviewDispositionList)
     $threadFingerprintStart = (@($threads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated):$(@($_.comments.nodes | ForEach-Object { $_.databaseId }) -join ',')" }) -join '|')
     $threadFingerprintEnd = (@($finalThreads | Sort-Object id | ForEach-Object { "$($_.id)=$($_.isResolved)/$($_.isOutdated):$(@($_.comments.nodes | ForEach-Object { $_.databaseId }) -join ',')" }) -join '|')
-    $mutableEvidenceStable = $checkFingerprintStart -eq $checkFingerprintEnd -and
+    $mutableEvidenceStable = $workflowBaseAtStart.Ref -ceq $workflowBaseAtEnd.Ref -and
+        $workflowBaseAtStart.Identity -ceq $workflowBaseAtEnd.Identity -and
+        $checkFingerprintStart -eq $checkFingerprintEnd -and
         $reviewFingerprintStart -eq $reviewFingerprintEnd -and
         $commentFingerprintStart -eq $commentFingerprintEnd -and
         $threadFingerprintStart -eq $threadFingerprintEnd
@@ -3140,6 +3165,8 @@ function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally 
         BaseAtEnd = [string]$pullAtEnd.base.sha
         BaseRefAtStart = $baseRefAtStart
         BaseRefAtEnd = $baseRefAtEnd
+        WorkflowBaseRefAtStart = $workflowBaseAtStart.Ref
+        WorkflowBaseRefAtEnd = $workflowBaseAtEnd.Ref
         PullRequestState = [string]$pullAtEnd.state
         IsDraft = [bool]$pullAtEnd.draft
         MergeableState = [string]$pullAtEnd.mergeable_state

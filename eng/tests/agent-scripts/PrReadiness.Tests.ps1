@@ -85,7 +85,7 @@ Describe 'PR readiness snapshot' {
         $patterns | Should -Contain '^Build \(ubuntu-latest, samples\.slnx\)$'
     }
 
-    It 'adds only path-applicable workflow checks' {
+    It 'includes site and changed-project workflow checks' {
         $docsPatterns = @(Get-PrReadinessExpectedCheckPatterns -ChangedPaths @('docs/Docusaurus/docs/guide.md'))
         $projectPatterns = @(Get-PrReadinessExpectedCheckPatterns -ChangedPaths @('src/Example/Example.csproj'))
 
@@ -135,5 +135,123 @@ Describe 'PR readiness snapshot' {
         $snapshot.Approvals | Should -Be 2
         $snapshot.ReviewFeedbackCount | Should -Be 0
         @($snapshot.ReviewThreads).Count | Should -Be 1
+    }
+}
+
+Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
+    BeforeAll {
+        $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+        Import-Module (Join-Path $repoRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1') -Force
+
+        function New-ReadinessStack {
+            param([string]$Trunk)
+            if (-not $Trunk) { return $null }
+            return [pscustomobject]@{ id = 10; number = 20; position = 2; size = 2; base = [pscustomobject]@{ ref = $Trunk; sha = ('a' * 40) } }
+        }
+
+        function New-SiteReadinessSnapshot {
+            param([string]$BaseRef = 'main', [object]$Stack, [object]$FinalStack, [switch]$IncludeSiteCheck)
+            $workflowBase = if ($null -ne $Stack) { [string]$Stack.base.ref } else { $BaseRef }
+            $pull = [pscustomobject]@{
+                number = 744; head = [pscustomobject]@{ sha = 'head' }; base = [pscustomobject]@{ sha = 'base'; ref = $BaseRef }
+                state = 'open'; draft = $false; mergeable_state = 'clean'; html_url = 'https://github.com/Gibbs-Morris/mississippi/pull/744'; stack = $Stack
+            }
+            $finalPull = $pull.PSObject.Copy()
+            if ($PSBoundParameters.ContainsKey('FinalStack')) { $finalPull.stack = $FinalStack }
+            $pullResponses = [System.Collections.Generic.Queue[object]]::new()
+            $pullResponses.Enqueue($pull)
+            $pullResponses.Enqueue($finalPull)
+            $checkNames = @(Get-PrReadinessExpectedCheckPatterns -BaseRef $workflowBase -ChangedPaths @('README.md') |
+                Where-Object { $_ -ne '^Build Docusaurus Site$' } | ForEach-Object { [regex]::Unescape($_.Trim('^', '$')) })
+            if ($IncludeSiteCheck) { $checkNames += 'Build Docusaurus Site' }
+            $checkPage = [pscustomobject]@{ check_runs = @($checkNames | ForEach-Object {
+                [pscustomobject]@{ name = $_; status = 'completed'; conclusion = 'success'; pull_requests = @([pscustomobject]@{ number = 744; base = [pscustomobject]@{ ref = $BaseRef } }) }
+            }) }
+            $reviewPage = @([pscustomobject]@{ id = 1; user = [pscustomobject]@{ login = 'reviewer' }; state = 'APPROVED'; commit_id = 'head'; submitted_at = '2026-10-08T00:00:00Z'; body = '' })
+            $graphPage = [pscustomobject]@{ data = [pscustomobject]@{ repository = [pscustomobject]@{ pullRequest = [pscustomobject]@{
+                reviewDecision = 'APPROVED'; reviewThreads = [pscustomobject]@{ nodes = @(); pageInfo = [pscustomobject]@{ hasNextPage = $false; endCursor = $null } }
+            } } } }
+            $provider = {
+                param([string[]]$Arguments)
+                $query = $Arguments -join ' '
+                if ($query -match 'pulls/744$') { return $pullResponses.Dequeue() }
+                if ($query -match 'check-runs') { return $checkPage }
+                if ($query -match 'statuses|issues/744/comments') { return @() }
+                if ($query -match 'reviews') { return $reviewPage }
+                if ($query -match 'pulls/744/files') { return @([pscustomobject]@{ filename = 'README.md' }) }
+                if ($query -match 'graphql') { return $graphPage }
+                throw "Unexpected readiness request: $query"
+            }.GetNewClosure()
+            $snapshot = Get-PrReadinessSnapshot -RepositoryOwner Gibbs-Morris -RepositoryName mississippi -PullRequestNumber 744 -GhJsonProvider $provider -PollingSeconds 300
+            $snapshot.IssueReferenceVerified = $true
+            $snapshot.DescriptionReviewed = $true
+            return $snapshot
+        }
+    }
+
+    BeforeEach { Mock Start-Sleep {} -ModuleName RepositoryAutomation }
+
+    It 'blocks an otherwise ready unrelated-file PR on <BaseRef> when its site check is missing' -TestCases @(
+        @{ BaseRef = 'main'; Trunk = '' }
+        @{ BaseRef = 'feature/example'; Trunk = '' }
+        @{ BaseRef = 'topic/example'; Trunk = '' }
+        @{ BaseRef = 'codex/parent'; Trunk = 'main' }
+    ) {
+        param($BaseRef, $Trunk)
+        $snapshot = New-SiteReadinessSnapshot -BaseRef $BaseRef -Stack (New-ReadinessStack -Trunk $Trunk)
+        $result = Get-PrReadinessReport -Snapshot $snapshot
+        $result.Status | Should -Be 'INCOMPLETE'
+        ($result.Blockers -join ' ') | Should -Match 'Build Docusaurus Site.*missing'
+    }
+
+    It 'accepts the current successful site check for <BaseRef>' -TestCases @(
+        @{ BaseRef = 'main'; Trunk = '' }
+        @{ BaseRef = 'codex/parent'; Trunk = 'main' }
+    ) {
+        param($BaseRef, $Trunk)
+        $snapshot = New-SiteReadinessSnapshot -BaseRef $BaseRef -Stack (New-ReadinessStack -Trunk $Trunk) -IncludeSiteCheck
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'READY'
+        @($snapshot.Checks | Where-Object { $_.Name -eq 'Build Docusaurus Site' -and $_.ExpectedIdentity -and $_.Required }).Count | Should -Be 1
+    }
+
+    It 'preserves an unrelated non-native target without a site workflow' {
+        $snapshot = New-SiteReadinessSnapshot -BaseRef 'release/example'
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'READY'
+    }
+
+    It 'rejects malformed native trunk metadata for <Case>' -TestCases @(
+        @{ Case = 'EmptyRef' }
+        @{ Case = 'InvalidSha' }
+        @{ Case = 'ZeroId' }
+        @{ Case = 'ZeroNumber' }
+        @{ Case = 'MissingId' }
+    ) {
+        param($Case)
+        $stack = New-ReadinessStack -Trunk 'main'
+        switch ($Case) {
+            'EmptyRef' { $stack.base.ref = '' }
+            'InvalidSha' { $stack.base.sha = 'invalid' }
+            'ZeroId' { $stack.id = 0 }
+            'ZeroNumber' { $stack.number = 0 }
+            'MissingId' { $stack.PSObject.Properties.Remove('id') }
+        }
+        { New-SiteReadinessSnapshot -BaseRef 'codex/parent' -Stack $stack } | Should -Throw '*native*'
+    }
+
+    It 'blocks a native applicability change during collection' -TestCases @(
+        @{ FinalTrunk = 'topic/other' }
+        @{ FinalTrunk = '' }
+    ) {
+        param($FinalTrunk)
+        $snapshot = New-SiteReadinessSnapshot -BaseRef 'codex/parent' -Stack (New-ReadinessStack -Trunk 'main') -FinalStack (New-ReadinessStack -Trunk $FinalTrunk) -IncludeSiteCheck
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'INCOMPLETE'
+        $snapshot.EvidenceStable | Should -BeFalse
+    }
+
+    It 'blocks a changed native trunk revision even when the branch name is unchanged' {
+        $finalStack = New-ReadinessStack -Trunk 'main'
+        $finalStack.base.sha = ('b' * 40)
+        $snapshot = New-SiteReadinessSnapshot -BaseRef 'codex/parent' -Stack (New-ReadinessStack -Trunk 'main') -FinalStack $finalStack -IncludeSiteCheck
+        $snapshot.EvidenceStable | Should -BeFalse
     }
 }
