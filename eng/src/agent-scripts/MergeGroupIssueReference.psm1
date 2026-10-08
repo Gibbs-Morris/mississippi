@@ -54,7 +54,19 @@ function Read-MergeQueueSnapshotAttempt {
         $cursor = [string]$connection.pageInfo.endCursor
         if ($connection.pageInfo.hasNextPage -and (-not $cursor -or -not $cursors.Add($cursor))) { throw 'Incomplete or repeating merge-queue pagination.' }
     } while ($connection.pageInfo.hasNextPage)
-    if ($entries.Count -ne $identity.TotalCount) { throw 'Merge-queue pagination did not return every entry.' }
+    $isPaginated = $cursors.Count -gt 0
+    if ($entries.Count -ne $identity.TotalCount) {
+        if ($isPaginated) { return $null }
+        throw 'Merge-queue pagination did not return every entry.'
+    }
+    if ($isPaginated) {
+        try { Assert-MergeQueuePositions -Entries $entries.ToArray() }
+        catch { return $null }
+        $ordered = @($entries | Sort-Object position)
+        for ($index = 1; $index -lt $ordered.Count; $index++) {
+            if ($ordered[$index].position -ne ($ordered[$index - 1].position + 1)) { return $null }
+        }
+    }
     return [pscustomobject]@{ QueueId = $identity.QueueId; TargetSha = $identity.TargetSha; Entries = @($entries.ToArray()) }
 }
 function Get-MergeQueueSnapshot {
