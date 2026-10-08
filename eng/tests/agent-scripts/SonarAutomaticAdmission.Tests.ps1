@@ -83,6 +83,7 @@ Describe 'Automatic Sonar exact-baseline coordination' {
             if($Path -like '*/actions/runs/*'){return ($script:run|ConvertTo-Json -Depth 8|ConvertFrom-Json)}
             if($Path -like '*/git/ref/*'){return [pscustomobject]@{object=[pscustomobject]@{sha=('a'*40)}}}
             if($Path -like '*/pulls/*'){return $script:pr}
+            if($Path -like '*/git/commits/*'){return [pscustomobject]@{sha=$script:pr.merge_commit_sha;parents=@([pscustomobject]@{sha=$script:pr.base.sha},[pscustomobject]@{sha=$script:pr.head.sha})}}
             throw 'Unexpected source API request.'
         }
         Mock Read-MergeQueuePage -ModuleName MergeGroupIssueReference {return ($script:queue|ConvertTo-Json -Depth 15|ConvertFrom-Json)}
@@ -158,7 +159,7 @@ Describe 'Automatic Sonar exact-baseline coordination' {
         param($Mode)
         if($Mode -eq 'Branch'){$script:run.event='push';$script:run.head_branch='main'}else{
             $script:run.event='pull_request';$script:run.head_branch='codex/test';$script:run.pull_requests=@([pscustomobject]@{number=5;head=[pscustomobject]@{sha=('a'*40);ref='codex/test'}})
-            $script:pr=[pscustomobject]@{state='open';merge_commit_sha=('c'*40);head=[pscustomobject]@{sha=('a'*40);ref='codex/test';repo=[pscustomobject]@{full_name='Gibbs-Morris/mississippi'}};base=[pscustomobject]@{sha=('b'*40);ref='main';repo=[pscustomobject]@{full_name='Gibbs-Morris/mississippi'}}}
+            $script:pr=[pscustomobject]@{state='open';mergeable=$true;merge_commit_sha=('c'*40);head=[pscustomobject]@{sha=('a'*40);ref='codex/test';repo=[pscustomobject]@{full_name='Gibbs-Morris/mississippi'}};base=[pscustomobject]@{sha=('b'*40);ref='main';repo=[pscustomobject]@{full_name='Gibbs-Morris/mississippi'}}}
         }
         (Invoke-Ready).Source.Mode | Should -Be $Mode
         Should -Invoke Start-Sleep -ModuleName TrustedSonarAnalysis -Times 0 -Exactly
