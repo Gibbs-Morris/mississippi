@@ -1,6 +1,6 @@
 # Trusted Sonar controller
 
-This controller rebuilds a completed `SonarCloud` source run using the immutable workflow definition on the repository's default branch. It is a manual, independently usable layer. `sonar-cloud.yml` continues providing the existing PR/main behavior until the subsequent source-routing layer and operator deployment are complete.
+This controller rebuilds a completed `SonarCloud` source run using the immutable workflow definition on the repository's default branch. It supports manual dispatch and default-off automatic admission from successful completed source runs. `sonar-cloud.yml` continues providing the existing PR/main behavior until the subsequent source-routing layer and operator deployment are complete.
 
 The workflow and checkout revisions must also match the live default-branch tip at each controller-origin check. A rerun preserves its original workflow revision and is rejected after the default branch advances; unavailable or inconsistent ref metadata fails closed. This check does not revoke an already issued credential or make branch movement and environment admission atomic.
 
@@ -62,3 +62,15 @@ gh workflow run sonar-trusted-analysis.yml --ref main -f source-run-id=<complete
 ```
 
 Dispatch targets the trusted default-branch definition. It does not select candidate workflow code. No environment, secret, production ruleset or queue setting is changed by this controller.
+
+## Automatic admission and ordering
+
+`sonar-trusted-analysis.yml` also listens for completed `SonarCloud` workflow runs. Automatic intake is off unless `SONAR_TRUSTED_ANALYSIS_ENABLED` is true; manual source-run dispatch remains available. The workflow definition must be on the default branch. Source routing is a separate rollout layer; this variable alone does not protect or relocate credentials.
+
+Intake requires a successful approved repository run and correlates its ID, attempt, event, head SHA and ref with freshly fetched API metadata. Forks, recursion, failed/incomplete runs and changed attempts are rejected. Those constraints follow every later source read, including both post-upload checks.
+
+Protected analysis jobs serialize by validated Sonar identity: PR number or the hash of the exact branch name. This applies to manual and automatic requests. Distinct queue branches can run independently; separate main source runs cannot upload concurrently. GitHub concurrency retains only the latest pending job for a group. A request that becomes stale while waiting fails its fresh source check.
+
+Automatic queue admission waits for ordinary main-baseline lag before execution and again before upload, because a predecessor may land during the candidate build. Each pass permits at most 31 attempts and 30 one-minute sleeps. API time is additional; the existing 120-minute analysis timeout still bounds the job. Held-pilot timing must establish the fit within the queue timeout before activation.
+
+Only a valid LONG/isMain default branch with a different revision is treated as pending. Missing/duplicate/malformed baseline data, classification changes, unreviewed criteria and API failures fail immediately. The controller compares gate assignment, criteria and classification across retries, refreshes the live candidate after policy reads, and accepts a landed prefix only through the existing verified membership proof. Manual baseline mismatch remains an immediate failure. Post-upload checks remain strict; source and provider updates are not atomic.

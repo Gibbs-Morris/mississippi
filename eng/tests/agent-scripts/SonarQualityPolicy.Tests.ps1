@@ -47,6 +47,30 @@ Describe 'Sonar baseline and authentic provider verification' {
         { Assert-SonarQualityPolicyUnchanged -Before $policy -After (Invoke-Policy) } | Should -Not -Throw
         { Invoke-Published } | Should -Not -Throw
     }
+    It 'reports ordinary lag only through explicit automatic baseline admission' {
+        $script:branches.branches[0].commit.sha='c'*40
+        {Invoke-Policy} | Should -Throw '*exact current target baseline*'
+        (Get-SonarQualityPolicySnapshot -Source $source -AllowPendingBaseline).BaselinePending | Should -BeTrue
+        $script:branches.branches[0].commit.sha='b'*40
+        (Get-SonarQualityPolicySnapshot -Source $source -AllowPendingBaseline).BaselinePending | Should -BeFalse
+    }
+    It 'does not defer malformed baselines or unreviewed policy: <Case>' -TestCases @(
+        @{Case='missing main'},@{Case='duplicate main'},@{Case='main classification'},@{Case='main SHA'},@{Case='source target SHA'},@{Case='candidate classification'},@{Case='gate condition'},@{Case='API failure'}
+    ) {
+        param($Case)
+        $script:branches.branches[0].commit.sha='c'*40
+        switch($Case){
+            'missing main' {$script:branches.branches=@($script:branches.branches[1])}
+            'duplicate main' {$script:branches.branches+=@($script:branches.branches[0])}
+            'main classification' {$script:branches.branches[0].type='SHORT'}
+            'main SHA' {$script:branches.branches[0].commit.sha='bad'}
+            'source target SHA' {$source.TargetSha='bad'}
+            'candidate classification' {$script:branches.branches[1].type='LONG'}
+            'gate condition' {$script:definition.conditions[0].error='2'}
+            'API failure' {Mock Read-SonarServiceMetadata -ModuleName TrustedSonarAnalysis {throw 'Sonar API unavailable.'}}
+        }
+        {Get-SonarQualityPolicySnapshot -Source $source -AllowPendingBaseline} | Should -Throw
+    }
     It 'checks classification before first candidate analysis' {
         $script:branches.branches=@($script:branches.branches[0])
         { Invoke-Policy } | Should -Not -Throw
@@ -173,6 +197,17 @@ Describe 'Sonar baseline and authentic provider verification' {
         $source.Mode='Branch';$source.HeadRef='main';$source.TargetSha=$null
         $script:branches.branches[0].commit.sha='c'*40
         {Invoke-Policy} | Should -Not -Throw
+    }
+
+
+    It 'does not apply queue pending permission to targeted manual analysis' {
+        $source.Mode='Branch';$source.HeadRef='branch/manual'
+        $script:branches.branches[0].commit.sha='c'*40
+        {Get-SonarQualityPolicySnapshot -Source $source -AllowPendingBaseline} | Should -Throw '*exact current target baseline*'
+        $script:branches.branches[0].commit.sha=$source.TargetSha
+        $policy=Get-SonarQualityPolicySnapshot -Source $source -AllowPendingBaseline
+        $policy.GateId | Should -Be 126237
+        $policy.BaselinePending | Should -BeFalse
     }
 
     It 'rejects gate reassignment or changed conditions during analysis' {

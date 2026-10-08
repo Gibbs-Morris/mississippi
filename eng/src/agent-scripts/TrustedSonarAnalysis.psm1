@@ -14,10 +14,12 @@ function Assert-SonarPublishedBranch {
 }
 
 function Assert-SonarTargetPolicyBaseline {
-    param([object]$Source,[object[]]$Branches)
+    param([object]$Source,[object[]]$Branches,[switch]$AllowPendingBaseline)
     $main = @($Branches | Where-Object { $_.name -ceq $Source.TargetRef })
     if ($main.Count -ne 1 -or $main[0].isMain -ne $true -or $main[0].type -cne 'LONG' -or $main[0].commit.sha -cnotmatch '^[0-9a-f]{40}$' -or $Source.TargetSha -cnotmatch '^[0-9a-f]{40}$') { throw 'Targeted analysis requires a valid LONG Sonar main baseline.' }
-    if ($main[0].commit.sha -cne $Source.TargetSha) { throw 'Targeted analysis requires the exact current target baseline in Sonar.' }
+    $pending=$main[0].commit.sha -cne $Source.TargetSha
+    if($pending -and -not $AllowPendingBaseline){throw 'Targeted analysis requires the exact current target baseline in Sonar.'}
+    return $pending
 }
 
 function Assert-SonarPullRequestPolicyBaseline {
@@ -28,11 +30,12 @@ function Assert-SonarPullRequestPolicyBaseline {
 }
 
 function Assert-SonarQueuePolicyBaseline {
-    param([object]$Source,[string]$Pattern,[object[]]$Branches)
+    param([object]$Source,[string]$Pattern,[object[]]$Branches,[switch]$AllowPendingBaseline)
     if ($Pattern -cne '(branch|release)-.*') { throw 'Queue branch classification no longer matches the reviewed policy.' }
-    Assert-SonarTargetPolicyBaseline -Source $Source -Branches $Branches
+    $pending=Assert-SonarTargetPolicyBaseline -Source $Source -Branches $Branches -AllowPendingBaseline:$AllowPendingBaseline
     $candidate = @($Branches | Where-Object { $_.name -ceq $Source.HeadRef })
     if ($candidate.Count -gt 1 -or ($candidate.Count -eq 1 -and ($candidate[0].type -cne 'SHORT' -or $candidate[0].isMain -ne $false))) { throw 'Queue candidate must be a distinct short-lived Sonar branch.' }
+    return $pending
 }
 
 function Read-SonarGitHubMetadata {
@@ -144,11 +147,13 @@ function Get-TrustedSonarSource {
     param(
         [Parameter(Mandatory)][ValidatePattern('^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$')][string]$Repository,
         [Parameter(Mandatory)][ValidateRange(1,[long]::MaxValue)][long]$RunId,
-        [Parameter(Mandatory)][string]$DefaultBranch
+        [Parameter(Mandatory)][string]$DefaultBranch,
+        [object]$AutomaticAdmission
     )
 
     $run = Read-SonarGitHubMetadata -Path "repos/$Repository/actions/runs/$RunId"
     Assert-SonarSourceRun -Run $run -Repository $Repository -RunId $RunId
+    if($null -ne $AutomaticAdmission){Assert-SonarAutomaticRun -Run $run -Admission $AutomaticAdmission}
     switch ([string]$run.event) {
         'pull_request' { return Get-SonarPullRequestSource -Run $run -Repository $Repository }
         'merge_group' { return Get-SonarQueueSource -Run $run -Repository $Repository -DefaultBranch $DefaultBranch }
@@ -221,7 +226,7 @@ function Read-SonarServiceMetadata {
 }
 
 function Get-SonarQualityPolicySnapshot {
-    param([object]$Source)
+    param([object]$Source,[switch]$AllowPendingBaseline)
     $project = 'project=Gibbs-Morris_mississippi&organization=gibbs-morris'
     $assignment = Read-SonarServiceMetadata "qualitygates/get_by_project?$project"
     $definition = Read-SonarServiceMetadata "qualitygates/show?id=$($assignment.qualityGate.id)&organization=gibbs-morris"
@@ -239,11 +244,12 @@ function Get-SonarQualityPolicySnapshot {
     if ($patterns.Count -ne 1) { throw 'Sonar branch-classification policy is unavailable.' }
     $pattern = [string]$patterns[0].value
     $branches = Read-SonarServiceMetadata "project_branches/list?$project"
-    if ($Source.Mode -ceq 'Queue') { Assert-SonarQueuePolicyBaseline -Source $Source -Pattern $pattern -Branches @($branches.branches) }
+    $pending=$false
+    if ($Source.Mode -ceq 'Queue') { $pending=Assert-SonarQueuePolicyBaseline -Source $Source -Pattern $pattern -Branches @($branches.branches) -AllowPendingBaseline:$AllowPendingBaseline }
     elseif ($Source.Mode -ceq 'PullRequest') { Assert-SonarPullRequestPolicyBaseline -Source $Source -Branches @($branches.branches) }
-    elseif ($Source.Mode -ceq 'Branch' -and $Source.HeadRef -cne $Source.TargetRef) { Assert-SonarTargetPolicyBaseline -Source $Source -Branches @($branches.branches) }
+    elseif ($Source.Mode -ceq 'Branch' -and $Source.HeadRef -cne $Source.TargetRef) { $pending=Assert-SonarTargetPolicyBaseline -Source $Source -Branches @($branches.branches) }
     return [pscustomobject]@{
-        GateId=$assignment.qualityGate.id; LongLivedPattern=$pattern
+        GateId=$assignment.qualityGate.id; LongLivedPattern=$pattern; BaselinePending=[bool]$pending
         Conditions=($definition.conditions | Sort-Object metric | Select-Object metric,op,error | ConvertTo-Json -Compress)
     }
 }
@@ -268,13 +274,13 @@ function Assert-SonarPublishedAnalysis {
 
 Export-ModuleMember -Function Get-SonarQualityPolicySnapshot,Assert-SonarQualityPolicyUnchanged,Assert-SonarPublishedAnalysis
 function Assert-TrustedSonarUploadCompletion {
-    param([object]$Source,[object]$Policy,[string]$Repository,[string]$DefaultBranch,[datetimeoffset]$StartedAt)
-    $published = Get-TrustedSonarSource -Repository $Repository -RunId $Source.RunId -DefaultBranch $DefaultBranch
+    param([object]$Source,[object]$Policy,[string]$Repository,[string]$DefaultBranch,[datetimeoffset]$StartedAt,[object]$AutomaticAdmission)
+    $published = Get-TrustedSonarSource -Repository $Repository -RunId $Source.RunId -DefaultBranch $DefaultBranch -AutomaticAdmission $AutomaticAdmission
     Assert-TrustedSonarSourceUnchanged -Before $Source -After $published
     Assert-SonarPublishedAnalysis -Source $published -Repository $Repository -StartedAt $StartedAt
     $currentPolicy = Get-SonarQualityPolicySnapshot -Source $published
     Assert-SonarQualityPolicyUnchanged -Before $Policy -After $currentPolicy
-    $final = Get-TrustedSonarSource -Repository $Repository -RunId $Source.RunId -DefaultBranch $DefaultBranch
+    $final = Get-TrustedSonarSource -Repository $Repository -RunId $Source.RunId -DefaultBranch $DefaultBranch -AutomaticAdmission $AutomaticAdmission
     Assert-TrustedSonarSourceUnchanged -Before $published -After $final
     if ($published.TargetSha -cne $final.TargetSha) { throw 'Sonar source target changed after the completed policy check.' }
     Assert-SonarCredentialDeployment -Repository $Repository -DefaultBranch $DefaultBranch
@@ -282,3 +288,44 @@ function Assert-TrustedSonarUploadCompletion {
 }
 
 Export-ModuleMember -Function Assert-TrustedSonarUploadCompletion
+
+function Get-TrustedSonarAutomaticAdmission {
+    param([string]$EventName,[object]$Payload,[ValidateRange(1,[long]::MaxValue)][long]$RunId,[string]$Repository,[string]$Enabled)
+    if($EventName -ceq 'workflow_dispatch'){return $null}
+    if($EventName -cne 'workflow_run' -or $Enabled -cne 'true' -or $Payload.action -cne 'completed'){throw 'Automatic Sonar admission is not enabled for this completed event.'}
+    $run=$Payload.workflow_run
+    if($Payload.repository.full_name -ine $Repository -or $run.repository.full_name -ine $Repository -or $run.head_repository.full_name -ine $Repository){throw 'Automatic Sonar event does not identify the approved repository.'}
+    if($run.name -cne 'SonarCloud' -or $run.workflow_id -ne 141036039 -or $run.id -ne $RunId -or $RunId -le 0 -or $run.status -cne 'completed' -or $run.conclusion -cne 'success'){throw 'Automatic Sonar event does not identify a successful approved source run.'}
+    if(($run.id -isnot [int] -and $run.id -isnot [long]) -or ($run.run_attempt -isnot [int] -and $run.run_attempt -isnot [long]) -or $run.run_attempt -le 0 -or $run.head_sha -cnotmatch '^[0-9a-f]{40}$' -or -not $run.head_branch){throw 'Automatic Sonar source attempt or identity is invalid.'}
+    return [pscustomobject]@{RunId=$RunId;RunAttempt=$run.run_attempt;HeadSha=$run.head_sha;HeadRef=$run.head_branch;Event=$run.event}
+}
+
+function Assert-SonarAutomaticRun {
+    param([object]$Run,[object]$Admission)
+    if($Run.id -ne $Admission.RunId -or $Run.run_attempt -ne $Admission.RunAttempt -or $Run.head_sha -cne $Admission.HeadSha -or $Run.head_branch -cne $Admission.HeadRef -or $Run.event -cne $Admission.Event -or $Run.name -cne 'SonarCloud' -or $Run.conclusion -cne 'success'){throw 'Automatic Sonar source no longer matches its successful triggering attempt.'}
+}
+
+function Get-TrustedSonarAnalysisKey {
+    param([object]$Source)
+    if($Source.Mode -ceq 'PullRequest'){return "pr-$($Source.PullRequest)"}
+    $hash=[Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes([string]$Source.HeadRef))
+    return 'branch-'+[Convert]::ToHexString($hash).ToLowerInvariant()
+}
+
+function Wait-TrustedSonarBaseline {
+    param([object]$Source,[object]$Policy,[string]$Repository,[string]$DefaultBranch,[Parameter(Mandatory)][object]$AutomaticAdmission,[ValidateRange(1,31)][int]$Attempts=31)
+    $capturedPolicy=$Policy
+    for($attempt=0;$attempt -lt $Attempts;$attempt++){
+        $current=Get-TrustedSonarSource -Repository $Repository -RunId $Source.RunId -DefaultBranch $DefaultBranch -AutomaticAdmission $AutomaticAdmission
+        Assert-TrustedSonarSourceUnchanged -Before $Source -After $current
+        $currentPolicy=Get-SonarQualityPolicySnapshot -Source $current -AllowPendingBaseline
+        if($null -eq $capturedPolicy){$capturedPolicy=$currentPolicy}else{Assert-SonarQualityPolicyUnchanged -Before $capturedPolicy -After $currentPolicy}
+        $final=Get-TrustedSonarSource -Repository $Repository -RunId $Source.RunId -DefaultBranch $DefaultBranch -AutomaticAdmission $AutomaticAdmission
+        Assert-TrustedSonarSourceUnchanged -Before $current -After $final
+        if(-not $currentPolicy.BaselinePending -and $current.TargetSha -ceq $final.TargetSha){return [pscustomobject]@{Source=$final;Policy=$currentPolicy}}
+        if($attempt -eq $Attempts-1){throw 'The exact Sonar baseline did not become ready while the candidate remained live.'}
+        Start-Sleep -Seconds 60
+    }
+}
+
+Export-ModuleMember -Function Get-TrustedSonarAutomaticAdmission,Get-TrustedSonarAnalysisKey,Wait-TrustedSonarBaseline
