@@ -45,7 +45,7 @@ The assigned Sonar gate, `mississippi-sdlc` (126237), retains eight criteria: ne
 
 ### Additional gates required before queue release
 
-The eleven pairs above describe today's settings. A workflow running on `merge_group` does not make its result a merge requirement. Before releasing the pilot Hold, the separately approved ruleset diff must also require these seven exact candidate contexts from Actions app **15368**:
+The eleven pairs above describe today's settings. A workflow running on `merge_group` does not make its result a merge requirement. Before releasing the pilot Hold, the separately approved ruleset diff must also require these seven exact candidate contexts: the six test/lint contexts from Actions app **15368**, and the issue-reference status from a separately reviewed dedicated trusted publisher whose expected app ID must be established before deployment.
 
 | Additional required context | Producer |
 | --- | --- |
@@ -55,9 +55,9 @@ The eleven pairs above describe today's settings. A workflow running on `merge_g
 | `AppHost locked restore (windows-latest)` | Aspire AppHost Locked Restore |
 | `L3 Spring E2E (Smoke)` | L3 Tests |
 | `Markdown Lint` | Markdown Lint |
-| `PR Issue Reference` | PR Issue Reference commit status |
+| `PR Issue Reference` | Dedicated trusted publisher; implementation/deployment required |
 
-The issue-reference requirement is the published `PR Issue Reference` commit status, not the `Validate repository issue reference` job check. On `pull_request_target`, the job belongs to the base revision while the workflow explicitly posts this status to the PR merge/head SHA; on `merge_group` it posts to the candidate SHA. Verify the status/provider on both paths before deployment.
+The issue-reference requirement is the published `PR Issue Reference` commit status, not the `Validate repository issue reference` job check. On `pull_request_target`, the job belongs to the base revision while the workflow explicitly posts this status to the PR merge/head SHA; on `merge_group` it posts to the candidate SHA. The current Actions-produced status is not sufficient for the proposed trusted-publisher binding: another candidate workflow can publish that same context through the shared Actions app. The dedicated publisher must validate current PR issue references or the complete live candidate prefix using immutable default-branch validators outside candidate-controlled execution, recheck source identity, and publish on the exact PR merge/head or candidate SHA. Its credential must remain outside candidate workflows; forwarding an unauthenticated candidate result or accepting the shared Actions app does not provide this boundary. Review its implementation and installed app ID, bind the required status to that ID, and prove invalid/missing issue references and wrong-provider successes cannot permit landing on both paths before Hold release. Publisher implementation and deployment are explicit remaining prerequisites tracked in #1030; this runbook layer does not implement or deploy them. An unavailable trusted publisher leaves release blocked.
 
 Preserve every existing pair and protection; this proposes eighteen required contexts, not a change already applied. Verify exact names, expected providers and fresh candidate-SHA results after deployment. Missing, pending, failed, canceled or unexpectedly skipped evidence must keep release blocked. Deliberately fail each additional gate under the enforced Hold and prove it remains a merge requirement when the Hold is eventually removed.
 
