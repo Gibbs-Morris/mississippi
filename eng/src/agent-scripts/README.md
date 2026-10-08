@@ -224,6 +224,10 @@ developer work.
 | `Invoke-SlnGeneration`, `Invoke-ReSharperCleanup`, `Invoke-StrykerMutationTest` | Encapsulate SLNGen, ReSharper CleanupCode, and Stryker.NET flows. |
 | `Invoke-MississippiSolution*`, `Invoke-SampleSolution*`, `Invoke-FinalSolutionsBuild`, `Invoke-SolutionsPipeline` | Canonical entry points that the `.ps1` shims expose on the command line. |
 
+### GitHub candidate identity
+
+The trusted Sonar consumer imports `GitHubPullRequestCandidate.psm1` without a forced reload. Its exported `Get-GitHubPullRequestCandidateIdentity` takes repository, PR number, already fetched PR metadata and an authenticated metadata-reader callback. It rechecks the selected PR, preserves ordinary exact two-parent proof and verifies native synthetic prefixes against the current trunk. It returns the build SHA, actual target, relevant prefix identity and fresh prefix PR records; unavailable or inconsistent metadata throws. The caller retains its own source admission and credential boundary. Behavior-level source, baseline and completion cases run in the existing canonical `TrustedSonarAnalysis.Tests.ps1` suite.
+
 ### How to extend automation
 
 1. Add the new behaviour as an advanced function inside `RepositoryAutomation.psm1` and export it.
