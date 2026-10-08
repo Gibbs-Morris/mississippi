@@ -270,6 +270,12 @@ public sealed class InletHubAuthenticationReviewTests
         Assert.Equal(retainedContext.Request.Path, evaluatedContext.Request.Path);
         Assert.Equal("preserved", evaluatedContext.Request.Headers["X-Decision-Context"].ToString());
         Assert.Same(tls, evaluatedContext.Features.Get<ITlsConnectionFeature>());
+        object? authorizationResource = AppContext.TryGetSwitch(
+                                            "Microsoft.AspNetCore.Authorization.SuppressUseHttpContextAsAuthorizationResource",
+                                            out bool useEndpointResource) &&
+                                        useEndpointResource
+            ? evaluatedContext.GetEndpoint()
+            : evaluatedContext;
         await evaluator.Received(1)
             .AuthenticateAsync(
                 Arg.Is<AuthorizationPolicy>(policy => policy.AuthenticationSchemes.Contains(virtualScheme)),
@@ -279,7 +285,7 @@ public sealed class InletHubAuthenticationReviewTests
                 Arg.Is<AuthorizationPolicy>(policy => policy.AuthenticationSchemes.Contains(virtualScheme)),
                 authentication,
                 evaluatedContext,
-                Arg.Is<object?>(resource => resource == null));
+                Arg.Is<object?>(resource => ReferenceEquals(resource, authorizationResource)));
         int eventId = decision == "success" ? 7 : 8;
         object?[] arguments = Assert.Single(
                 logger.ReceivedCalls(),
@@ -868,6 +874,63 @@ public sealed class InletHubAuthenticationReviewTests
         }
 
         await authentication.Received(1).AuthenticateAsync(Arg.Any<HttpContext>(), virtualScheme);
+    }
+
+    /// <summary>
+    ///     Custom evaluator resource checks must receive the framework-selected decision resource.
+    /// </summary>
+    /// <param name="resourceAllowed">Whether that resource permits the subscription.</param>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SubscribeUsesCustomEvaluatorAuthorizationResource(
+        bool resourceAllowed
+    )
+    {
+        IPolicyEvaluator evaluator = Substitute.For<IPolicyEvaluator>();
+        AuthenticateResult authentication =
+            AuthenticateResult.Success(new(CreatePrincipal("selected-user"), BearerScheme));
+        evaluator.AuthenticateAsync(Arg.Any<AuthorizationPolicy>(), Arg.Any<HttpContext>()).Returns(authentication);
+        evaluator.AuthorizeAsync(
+                Arg.Any<AuthorizationPolicy>(),
+                authentication,
+                Arg.Any<HttpContext>(),
+                Arg.Any<object?>())
+            .Returns(call =>
+            {
+                HttpContext decision = call.ArgAt<HttpContext>(2);
+                object? expectedResource = AppContext.TryGetSwitch(
+                                               "Microsoft.AspNetCore.Authorization.SuppressUseHttpContextAsAuthorizationResource",
+                                               out bool useEndpoint) &&
+                                           useEndpoint
+                    ? decision.GetEndpoint()
+                    : decision;
+                bool permitted = ReferenceEquals(call.ArgAt<object?>(3), expectedResource)
+                    ? resourceAllowed
+                    : !resourceAllowed;
+                return permitted ? PolicyAuthorizationResult.Success() : PolicyAuthorizationResult.Forbid();
+            });
+        await using ServiceProvider services = CreateServices(policyEvaluator: evaluator);
+        using InletHub hub = CreateHub(
+            services,
+            BearerScheme,
+            out IInletSubscriptionGrain grain,
+            out ILogger<InletHub> _);
+        HttpContext retained = Assert.IsType<HttpContext>(hub.Context.GetHttpContext(), false);
+        retained.SetEndpoint(new(_ => Task.CompletedTask, EndpointMetadataCollection.Empty, "tenant endpoint"));
+        if (resourceAllowed)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
     }
 
     /// <summary>

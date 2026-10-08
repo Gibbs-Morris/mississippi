@@ -289,6 +289,69 @@ public sealed class InletHubConnectionAuthenticationTests
                     new(CreatePrincipal(Scheme.Name == TlsScheme ? "read" : "write"), Scheme.Name)));
     }
 
+    private sealed class ScopedTenantEvaluator : IPolicyEvaluator
+    {
+        public ScopedTenantEvaluator(
+            IAuthorizationService authorization,
+            TenantScope tenant
+        )
+        {
+            Evaluator = new(authorization);
+            Tenant = tenant;
+        }
+
+        public string? AuthenticatedTenant { get; private set; }
+
+        private PolicyEvaluator Evaluator { get; }
+
+        private TenantScope Tenant { get; }
+
+        public async Task<AuthenticateResult> AuthenticateAsync(
+            AuthorizationPolicy policy,
+            HttpContext context
+        )
+        {
+            AuthenticateResult result = await Evaluator.AuthenticateAsync(policy, context);
+            AuthenticatedTenant = result.Principal?.FindFirst("tenant-scope")?.Value;
+            return result;
+        }
+
+        public Task<PolicyAuthorizationResult> AuthorizeAsync(
+            AuthorizationPolicy policy,
+            AuthenticateResult authenticationResult,
+            HttpContext context,
+            object? resource
+        ) =>
+            Task.FromResult(
+                ReferenceEquals(Tenant, context.RequestServices.GetRequiredService<TenantScope>()) &&
+                ReferenceEquals(Tenant, context.RequestServices.GetRequiredKeyedService<TenantScope>("tenant")) &&
+                ReferenceEquals(Tenant, context.RequestServices.GetKeyedService<TenantScope>("tenant")) &&
+                (AuthenticatedTenant == Tenant.Id)
+                    ? PolicyAuthorizationResult.Success()
+                    : PolicyAuthorizationResult.Forbid());
+    }
+
+    private sealed class ScopedTenantHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    {
+        public ScopedTenantHandler(
+            IOptionsMonitor<AuthenticationSchemeOptions> options,
+            ILoggerFactory logger,
+            UrlEncoder encoder,
+            TenantScope tenant
+        )
+            : base(options, logger, encoder) =>
+            Tenant = tenant;
+
+        private TenantScope Tenant { get; }
+
+        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+        {
+            ClaimsPrincipal principal = CreatePrincipal("read");
+            ((ClaimsIdentity)principal.Identity!).AddClaim(new("tenant-scope", Tenant.Id));
+            return Task.FromResult(AuthenticateResult.Success(new(principal, Scheme.Name)));
+        }
+    }
+
     private sealed class ServicesWithoutScopeFactory : IServiceProvider
     {
         public ServicesWithoutScopeFactory(
@@ -302,6 +365,35 @@ public sealed class InletHubConnectionAuthenticationTests
             Type serviceType
         ) =>
             serviceType == typeof(IServiceScopeFactory) ? null : Services.GetService(serviceType);
+    }
+
+    private sealed class TenantScope
+    {
+        public string Id { get; } = Guid.NewGuid().ToString("N");
+    }
+
+    /// <summary>
+    ///     Refreshing framework caches does not require creating another service scope.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Fact]
+    public async Task SubscribeAuthenticatesWithoutCreatingAnotherFrameworkScope()
+    {
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.Services.AddSignalR();
+        builder.Services.AddSingleton<HandlerLifetime>();
+        builder.Services.AddTransient(CreatePermissionHandler);
+        builder.Services.AddAuthentication()
+            .AddScheme<AuthenticationSchemeOptions, PermissionHandler>(TlsScheme, _ => { });
+        builder.Services.AddAuthorizationBuilder().SetDefaultPolicy(CreatePolicy(TlsScheme));
+        await using WebApplication app = builder.Build();
+        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext retained =
+            CreateOriginalContext(new ServicesWithoutScopeFactory(connectionScope.ServiceProvider));
+        retained.User = CreatePrincipal("read");
+        using InletHub hub = CreateHub(retained, retained.User, TlsScheme, out IInletSubscriptionGrain grain);
+        Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+        await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
     }
 
     /// <summary>
@@ -520,32 +612,6 @@ public sealed class InletHubConnectionAuthenticationTests
     }
 
     /// <summary>
-    ///     Missing framework scope support denies before accessing the subscription grain.
-    /// </summary>
-    /// <returns>A task that completes when the assertions have been verified.</returns>
-    [Fact]
-    public async Task SubscribeDeniesWhenFrameworkAuthenticationScopeIsUnavailable()
-    {
-        WebApplicationBuilder builder = WebApplication.CreateBuilder();
-        builder.Services.AddSignalR();
-        builder.Services.AddSingleton<HandlerLifetime>();
-        builder.Services.AddTransient(CreatePermissionHandler);
-        builder.Services.AddAuthentication()
-            .AddScheme<AuthenticationSchemeOptions, PermissionHandler>(TlsScheme, _ => { });
-        builder.Services.AddAuthorizationBuilder().SetDefaultPolicy(CreatePolicy(TlsScheme));
-        await using WebApplication app = builder.Build();
-        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
-        DefaultHttpContext retained =
-            CreateOriginalContext(new ServicesWithoutScopeFactory(connectionScope.ServiceProvider));
-        retained.User = CreatePrincipal("read");
-        using InletHub hub = CreateHub(retained, retained.User, TlsScheme, out IInletSubscriptionGrain grain);
-        HubException exception =
-            await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
-        Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
-        await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
-    }
-
-    /// <summary>
     ///     A default forwarding scheme must retain its requested name across a reduced connection context.
     /// </summary>
     /// <param name="usesFallbackPolicy">Whether the endpoint uses a scheme-selecting fallback policy.</param>
@@ -663,6 +729,44 @@ public sealed class InletHubConnectionAuthenticationTests
     }
 
     /// <summary>
+    ///     Handler dependencies, the custom evaluator and its context must share the host tenant scope.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Fact]
+    public async Task SubscribePreservesScopedTenantAcrossAuthenticationAndAuthorization()
+    {
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.Services.AddSignalR();
+        builder.Services.AddScoped(_ => new TenantScope());
+        builder.Services.AddKeyedScoped<TenantScope>(
+            "tenant",
+            (services, _) => services.GetRequiredService<TenantScope>());
+        builder.Services.AddTransient<ScopedTenantHandler>(services => new(
+            services.GetRequiredService<IOptionsMonitor<AuthenticationSchemeOptions>>(),
+            services.GetRequiredService<ILoggerFactory>(),
+            services.GetRequiredService<UrlEncoder>(),
+            services.GetRequiredService<TenantScope>()));
+        builder.Services.AddAuthentication()
+            .AddScheme<AuthenticationSchemeOptions, ScopedTenantHandler>(TlsScheme, _ => { });
+        builder.Services.AddAuthorizationBuilder().SetDefaultPolicy(CreatePolicy(TlsScheme));
+        builder.Services.AddScoped<IPolicyEvaluator>(services => new ScopedTenantEvaluator(
+            services.GetRequiredService<IAuthorizationService>(),
+            services.GetRequiredService<TenantScope>()));
+        await using WebApplication app = builder.Build();
+        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
+        TenantScope tenant = connectionScope.ServiceProvider.GetRequiredService<TenantScope>();
+        ScopedTenantEvaluator evaluator = Assert.IsType<ScopedTenantEvaluator>(
+            connectionScope.ServiceProvider.GetRequiredService<IPolicyEvaluator>());
+        DefaultHttpContext retained = CreateOriginalContext(connectionScope.ServiceProvider);
+        retained.User = CreatePrincipal("read");
+        using InletHub hub = CreateHub(retained, retained.User, TlsScheme, out IInletSubscriptionGrain grain);
+        Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+        await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        Assert.Equal(tenant.Id, evaluator.AuthenticatedTenant);
+        Assert.Same(connectionScope.ServiceProvider, retained.RequestServices);
+    }
+
+    /// <summary>
     ///     A forwarding selector must see the retained transport principal for each decision.
     /// </summary>
     /// <param name="replacementAllowed">Whether the new poll selects an authorized handler.</param>
@@ -724,6 +828,8 @@ public sealed class InletHubConnectionAuthenticationTests
         Assert.Same(replacement, retained.User);
         Assert.Same(original, hub.Context.User);
         Assert.Same(connectionScope.ServiceProvider, retained.RequestServices);
+        Assert.Equal(0, lifetime.Disposals);
+        await connectionScope.DisposeAsync();
         Assert.Equal(2, lifetime.Disposals);
     }
 }

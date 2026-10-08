@@ -108,8 +108,17 @@ public sealed class InletHub : Hub<IInletHubClient>
         if (policyEvaluator.GetType() != typeof(PolicyEvaluator))
         {
             httpContext.User = authenticationResult.Principal;
-            PolicyAuthorizationResult authorizationResult =
-                await policyEvaluator.AuthorizeAsync(policy, authenticationResult, httpContext, null);
+            object? resource = AppContext.TryGetSwitch(
+                                   "Microsoft.AspNetCore.Authorization.SuppressUseHttpContextAsAuthorizationResource",
+                                   out bool useEndpoint) &&
+                               useEndpoint
+                ? httpContext.GetEndpoint()
+                : httpContext;
+            PolicyAuthorizationResult authorizationResult = await policyEvaluator.AuthorizeAsync(
+                policy,
+                authenticationResult,
+                httpContext,
+                resource);
             if (!authorizationResult.Succeeded)
             {
                 return (authenticationResult.Principal, false);
@@ -312,7 +321,9 @@ public sealed class InletHub : Hub<IInletHubClient>
                 throw new HubException(InletHubConstants.SubscriptionDeniedMessage);
             }
 
-            AuthorizationResult authorizationResult = await AuthorizationService.AuthorizeAsync(
+            IAuthorizationService authorizationService =
+                authenticationContext?.RequestServices.GetService<IAuthorizationService>() ?? AuthorizationService;
+            AuthorizationResult authorizationResult = await authorizationService.AuthorizeAsync(
                 user,
                 null,
                 policy.Requirements);
@@ -413,23 +424,17 @@ public sealed class InletHub : Hub<IInletHubClient>
             IServiceProvider connectionServices = httpContext.RequestServices;
             IPolicyEvaluator? policyEvaluator = connectionServices.GetService<IPolicyEvaluator>();
             HttpContext decisionContext = SubscriptionAuthenticationFeatures.CreateContext(httpContext);
-            if (GetFrameworkHandlerProvider(connectionServices.GetService<IAuthenticationService>()) is null)
+            AuthenticationService? frameworkService =
+                connectionServices.GetService<IAuthenticationService>() as AuthenticationService;
+            AuthenticationHandlerProvider? handlers = GetFrameworkHandlerProvider(frameworkService);
+            if (handlers is not null)
             {
-                await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, decisionContext, policyEvaluator);
-                return;
+                decisionContext.RequestServices = new SubscriptionAuthenticationServices(
+                    connectionServices,
+                    frameworkService!,
+                    handlers.Schemes);
             }
 
-            IServiceScopeFactory? scopeFactory = connectionServices.GetService<IServiceScopeFactory>();
-            if (scopeFactory is null)
-            {
-                await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, null, policyEvaluator);
-                return;
-            }
-
-            // Framework handlers cache their first context and result for their service scope.
-            // A decision needs fresh handlers while the host's original evaluator keeps its scope.
-            await using AsyncServiceScope authenticationScope = scopeFactory.CreateAsyncScope();
-            decisionContext.RequestServices = authenticationScope.ServiceProvider;
             await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, decisionContext, policyEvaluator);
         }
         finally
