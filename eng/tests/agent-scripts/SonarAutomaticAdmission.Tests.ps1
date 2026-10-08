@@ -238,6 +238,7 @@ Describe 'Trusted Sonar automatic workflow contract' {
 Describe 'Sonar tokenless source routing' {
     BeforeAll {
         $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+        Import-Module (Join-Path $repoRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1') -Force
         $sourceYaml=Get-Content -LiteralPath (Join-Path $repoRoot '.github/workflows/sonar-cloud.yml') -Raw
         $sourceJob=[regex]::Match($sourceYaml,'(?ms)^  source:\r?\n(?<Job>.*?)(?=^  Build:)').Groups['Job'].Value
         $legacyJob=[regex]::Match($sourceYaml,'(?ms)^  Build:\r?\n(?<Job>.*)\z').Groups['Job'].Value
@@ -262,6 +263,13 @@ Describe 'Sonar tokenless source routing' {
     }
     It 'runs only a fixed message without interpolating candidate metadata into code' {
         $sourceJob | Should -Match '(?ms)shell: pwsh\s+run: \|\s+Write-Output ''Source run recorded for trusted Sonar analysis\. See the controller run for analysis results\.''\s*\z'
+    }
+    It 'keeps the legacy worker identity in the real readiness catalog without matrix expansion' {
+        $name=[regex]::Match($legacyJob,'(?m)^\s+name:\s*"([^"]+)"').Groups[1].Value
+        $patterns=@(Get-PrReadinessExpectedCheckPatterns)
+        @($patterns | Where-Object {$name -match $_}).Count | Should -Be 1
+        $name | Should -Be 'Build (ubuntu-latest)'
+        $legacyJob | Should -Not -Match '(?m)^\s+strategy:'
     }
     It 'retains the existing disabled-path scanner and measured coverage inputs' {
         $legacyJob | Should -Match 'SONAR_TOKEN: \$\{\{ secrets\.SONAR_TOKEN \}\}'

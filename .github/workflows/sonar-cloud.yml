@@ -38,11 +38,9 @@ jobs:
           Write-Output 'Source run recorded for trusted Sonar analysis. See the controller run for analysis results.'
   Build:
     if: vars.SONAR_TRUSTED_ANALYSIS_ENABLED != 'true'
-    name: "Build"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ ubuntu-latest ]
+    # Keep the worker check name stable even when routing skips the job before matrix expansion.
+    name: "Build (ubuntu-latest)"
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
