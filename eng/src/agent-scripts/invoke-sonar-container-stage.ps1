@@ -16,7 +16,7 @@ function Invoke-CheckedTool {
 }
 
 try {
-    [IO.Directory]::CreateDirectory('/tmp/home') | Out-Null
+    New-Item -ItemType Directory -Path '/tmp/home' -Force | Out-Null
     if ($Phase -eq 'Prepare') {
         foreach ($tool in @(@{Name='dotnet-sonarscanner';Version='11.3.0'},@{Name='dotnet-coverage';Version='18.11.0'},@{Name='GitVersion.Tool';Version='6.5.1'})) {
             Invoke-CheckedTool dotnet @('tool','install',$tool.Name,'--version',$tool.Version,'--tool-path','/tools/bin','--configfile','/driver/NuGet.Config')
@@ -31,7 +31,7 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'Candidate version calculation failed.' }
         exit 0
     }
-    if ($Phase -in @('Begin','End')) { [IO.Directory]::CreateDirectory('/cache/tmp') | Out-Null }
+    if ($Phase -in @('Begin','End')) { New-Item -ItemType Directory -Path '/cache/tmp' -Force | Out-Null }
     if ($Phase -eq 'Begin') {
         if (-not $env:SONAR_ANALYSIS_TOKEN) { throw 'Protected Sonar analysis credential is missing.' }
         $identity = Get-Content /driver/analysis-arguments.json -Raw | ConvertFrom-Json
