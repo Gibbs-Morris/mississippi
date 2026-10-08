@@ -8,12 +8,15 @@ The workflow and checkout revisions must also match the live default-branch tip 
 
 The controller reads source-run and current PR/queue metadata from GitHub. Candidate artifacts never supply identity or executable scripts to the host.
 
-- PR: require confirmed mergeability and a merge commit with exactly the current base and source head as its parents; build that immutable revision, fetch the actual immediate base branch into both build and upload workspaces while retaining the default-branch ref for version calculation, and report the PR's source head, number, source branch and immediate base branch.
+- Ordinary PR: require confirmed mergeability and exactly the current base and source head as merge parents. Build that immutable revision, fetch the immediate base into both workspaces while retaining the default ref for versioning, and report the source head, PR number and actual target.
+- Native stacked PR: authenticate documented stack number/position/size/trunk and complete ordered membership. Bind fresh full prefix PRs to their listed head/base identities and repository IDs. Verify each active two-parent merge against its current head and the preceding verified synthetic merge, anchored to the fresh trunk. Use that trunk for both workspace fetches and Sonar's baseline; raw branch heads cannot replace synthetic parents. No opaque PR stack ID or lightweight merge SHA is assumed.
 - Main: analyze the exact current default-branch revision with an explicit branch identity.
 - Manual branch: analyze the exact current selected branch with its own identity; snapshot the current default-branch commit as target, require that exact LONG main baseline in Sonar before and after upload, and reject target movement during source rechecks.
 - Queue: resolve the exact live candidate and complete validated constituent prefix. Analyze a distinct SHORT branch against an already analyzed, exact current target revision.
 
 Fork source runs are rejected; this layer does not grant fork workflows credentials. Stale runs, unavailable metadata, ambiguous candidates and changed source identities fail. Rechecks allow only the existing resolver's verified, landed contiguous predecessor prefix.
+
+A leading merged native prefix requires closed/merged metadata and proof that every immutable landing is contained in the current trunk. The first remaining active PR must already target that trunk after automatic rebase; transient or inconsistent metadata blocks intake. Prefix identity is rechecked before and after upload. Unrelated upper-layer additions alone do not invalidate it. Ordinary exact-parent checks and Sonar's existing fork rejection remain in force. This read-only identity proof does not establish deployed credentials or genuine held analysis.
 
 ## Credential boundary
 

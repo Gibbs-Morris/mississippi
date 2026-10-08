@@ -22,7 +22,7 @@ Describe 'Trusted Sonar source identity' {
             pull_requests=@([pscustomobject]@{number=5;head=[pscustomobject]@{sha=$head;ref='codex/test'}})
         }
         $script:sourcePr = [pscustomobject]@{
-            state='open'; merge_commit_sha=$merge; mergeable=$true
+            number=5; state='open'; merge_commit_sha=$merge; mergeable=$true
             head=[pscustomobject]@{sha=$head;ref='codex/test';repo=[pscustomobject]@{full_name='Gibbs-Morris/mississippi'}}
             base=[pscustomobject]@{sha=$target;ref='codex/parent';repo=[pscustomobject]@{full_name='Gibbs-Morris/mississippi'}}
         }
@@ -241,6 +241,206 @@ Describe 'Trusted Sonar source identity' {
         Assert-TrustedSonarSourceUnchanged -Before $before -After (Invoke-Source)
         $script:queuePage.mergeQueue.entries.nodes[0].pullRequest.body='Changed body'
         { Assert-TrustedSonarSourceUnchanged -Before $before -After (Invoke-Source) } | Should -Throw '*changed during validation*'
+    }
+}
+
+Describe 'Trusted Sonar native candidate identity' -Tag NativeCandidate {
+    BeforeAll {
+        $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+        Import-Module (Join-Path $repoRoot 'eng/src/agent-scripts/TrustedSonarAnalysis.psm1') -Force
+        $nativeHead = 'a' * 40; $nativeMerge = 'b' * 40; $nativeRoot = 'c' * 40
+        $parentMerge = 'd' * 40; $parentHead = 'e' * 40; $landing = 'f' * 40
+        function New-NativeLightMember {
+            param($PullRequest)
+            $row = [ordered]@{number=$PullRequest.number;state=$PullRequest.state;merged_at=$null}
+            foreach ($kind in @('head','base')) {
+                $side = $PullRequest.$kind
+                $row[$kind] = [pscustomobject]@{sha=$side.sha;ref=$side.ref;repo=[pscustomobject]@{id=$side.repo.id;name='mississippi';url='https://api.github.com/repos/Gibbs-Morris/mississippi'}}
+            }
+            return [pscustomobject]$row
+        }
+        function Invoke-NativeSource { Get-TrustedSonarSource -Repository Gibbs-Morris/mississippi -RunId 42 -DefaultBranch main }
+        function Set-NativeMergedPrefix {
+            $script:nativePulls['4'].state = 'closed'
+            $script:nativePulls['4'].merged = $true
+            $script:nativePulls['4'].merge_commit_sha = $landing
+            $script:nativePulls['4'].stack = $null
+            $script:nativePulls['5'].base.ref = 'main'
+            $script:nativePulls['5'].base.sha = $nativeRoot
+            $script:nativeStack.pull_requests = @((New-NativeLightMember $script:nativePulls['4']), (New-NativeLightMember $script:nativePulls['5']))
+            $script:nativeStack.pull_requests[0].merged_at = '2026-10-08T00:00:00Z'
+            $script:nativeCommits[$nativeMerge].parents[0].sha = $nativeRoot
+        }
+    }
+    BeforeEach {
+        $script:nativeRun = [pscustomobject]@{
+            id=42;workflow_id=141036039;path='.github/workflows/sonar-cloud.yml';status='completed'
+            repository=[pscustomobject]@{full_name='Gibbs-Morris/mississippi'}
+            head_repository=[pscustomobject]@{full_name='Gibbs-Morris/mississippi'}
+            event='pull_request';head_sha=$nativeHead;head_branch='codex/test'
+            pull_requests=@([pscustomobject]@{number=5;head=[pscustomobject]@{sha=$nativeHead;ref='codex/test'}})
+        }
+        $script:nativePulls = @{}
+        foreach ($number in @(4,5)) {
+            $isParent = $number -eq 4
+            $script:nativePulls[[string]$number] = [pscustomobject]@{
+                number=$number;state='open';merged=$false;mergeable=$true
+                merge_commit_sha=$(if ($isParent) {$parentMerge} else {$nativeMerge})
+                head=[pscustomobject]@{sha=$(if ($isParent) {$parentHead} else {$nativeHead});ref=$(if ($isParent) {'codex/parent'} else {'codex/test'});repo=[pscustomobject]@{id=924331982;full_name='Gibbs-Morris/mississippi'}}
+                base=[pscustomobject]@{sha=$(if ($isParent) {$nativeRoot} else {$parentHead});ref=$(if ($isParent) {'main'} else {'codex/parent'});repo=[pscustomobject]@{id=924331982;full_name='Gibbs-Morris/mississippi'}}
+                stack=[pscustomobject]@{number=1052;position=($number-3);size=2;base=[pscustomobject]@{ref='main';sha=$nativeRoot}}
+            }
+        }
+        $script:nativeStack = [pscustomobject]@{number=1052;open=$true;base=[pscustomobject]@{ref='main'};pull_requests=@((New-NativeLightMember $script:nativePulls['4']), (New-NativeLightMember $script:nativePulls['5']))}
+        $script:nativeCommits = @{}
+        $script:nativeCommits[$parentMerge] = [pscustomobject]@{sha=$parentMerge;parents=@([pscustomobject]@{sha=$nativeRoot},[pscustomobject]@{sha=$parentHead})}
+        $script:nativeCommits[$nativeMerge] = [pscustomobject]@{sha=$nativeMerge;parents=@([pscustomobject]@{sha=$parentMerge},[pscustomobject]@{sha=$nativeHead})}
+        $script:nativeRef = [pscustomobject]@{ref='refs/heads/main';object=[pscustomobject]@{type='commit';sha=$nativeRoot}}
+        $script:nativeComparison = [pscustomobject]@{base_commit=[pscustomobject]@{sha=$landing};merge_base_commit=[pscustomobject]@{sha=$landing};behind_by=0;status='ahead'}
+        Mock Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis {
+            if ($Path -match '/actions/runs/42$') { return $script:nativeRun }
+            if ($Path -match '/pulls/([0-9]+)$') { return $script:nativePulls[$Matches[1]] }
+            if ($Path -match '/stacks/105[23]$') { return $script:nativeStack }
+            if ($Path -match '/git/ref/heads/main$') { return $script:nativeRef }
+            if ($Path -match '/git/commits/([a-f0-9]{40})$') { return $script:nativeCommits[$Matches[1]] }
+            if ($Path -match '/compare/[a-f0-9]{40}\.\.\.[a-f0-9]{40}$') { return $script:nativeComparison }
+            throw "Unexpected native metadata path: $Path"
+        }
+    }
+
+    It 'accepts the verified synthetic prefix and uses its actual trunk baseline without an opaque stack ID' {
+        $source = Invoke-NativeSource
+        $source.BuildSha | Should -Be $nativeMerge
+        $source.HeadSha | Should -Be $nativeHead
+        $source.TargetRef | Should -Be 'main'
+        $source.TargetSha | Should -Be $nativeRoot
+        $source.NativeIdentity | Should -Not -BeNullOrEmpty
+        @(Get-TrustedSonarAnalysisArguments -Source $source) | Should -Contain '/d:sonar.pullrequest.base=main'
+        @(Get-TrustedSonarAnalysisArguments -Source $source) | Should -Contain "/d:sonar.scm.revision=$nativeHead"
+    }
+    It 'accepts a contained merged prefix only after the remaining PR targets the fresh trunk' {
+        Set-NativeMergedPrefix
+        $source = Invoke-NativeSource
+        $source.BuildSha | Should -Be $nativeMerge
+        $source.TargetSha | Should -Be $nativeRoot
+        $source.NativeIdentity | Should -Not -BeNullOrEmpty
+        Should -Invoke Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis -Times 1 -Exactly -ParameterFilter {$Path -like '*/compare/*'}
+    }
+    It 'keeps unrelated upper-layer growth out of completion identity' {
+        $before = Invoke-NativeSource
+        $script:nativeStack.pull_requests += [pscustomobject]@{number=6;state='open';head=[pscustomobject]@{sha=('1'*40);ref='codex/above'}}
+        foreach ($pr in $script:nativePulls.Values) {$pr.stack.size=3}
+        Assert-TrustedSonarSourceUnchanged -Before $before -After (Invoke-NativeSource)
+        Should -Invoke Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis -Times 0 -Exactly -ParameterFilter {$Path -match '/pulls/6$'}
+    }
+    It 'rejects a changed prefix membership even when all selected source and commit SHAs match' {
+        $before = Invoke-NativeSource
+        $script:nativePulls['4'].number = 6
+        $script:nativePulls['6'] = $script:nativePulls['4']
+        $script:nativePulls.Remove('4')
+        $script:nativeStack.pull_requests[0] = New-NativeLightMember $script:nativePulls['6']
+        $after = Invoke-NativeSource
+        $after.BuildSha | Should -Be $before.BuildSha
+        {Assert-TrustedSonarSourceUnchanged -Before $before -After $after} | Should -Throw '*identity changed*'
+    }
+    It 'rejects a changed stack association with unchanged source code' {
+        $before = Invoke-NativeSource
+        $script:nativeStack.number = 1053
+        foreach ($pr in $script:nativePulls.Values) {$pr.stack.number=1053}
+        {Assert-TrustedSonarSourceUnchanged -Before $before -After (Invoke-NativeSource)} | Should -Throw '*identity changed*'
+    }
+    It 'rejects selected metadata movement during intake: <Change>' -TestCases @(
+        @{Change='head'},@{Change='base'},@{Change='merge'},@{Change='membership'},@{Change='closed'}
+    ) {
+        param($Change)
+        $script:initialNativePull = $script:nativePulls['5'] | ConvertTo-Json -Depth 8 | ConvertFrom-Json
+        $script:selectedNativeReads = 0
+        switch ($Change) {
+            'head' {$script:nativePulls['5'].head.sha='2'*40}
+            'base' {$script:nativePulls['5'].base.sha='2'*40}
+            'merge' {$script:nativePulls['5'].merge_commit_sha='2'*40}
+            'membership' {$script:nativePulls['5'].stack=$null}
+            'closed' {$script:nativePulls['5'].state='closed'}
+        }
+        Mock Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis {
+            $script:selectedNativeReads++
+            if ($script:selectedNativeReads -eq 1) { return $script:initialNativePull }
+            return $script:nativePulls['5']
+        } -ParameterFilter {$Path -match '/pulls/5$'}
+        {Invoke-NativeSource} | Should -Throw
+    }
+    It 'rejects invalid native evidence: <Fault>' -TestCases @(
+        @{Fault='invalid number'},@{Fault='invalid position'},@{Fault='invalid size'},@{Fault='missing trunk'},@{Fault='stale trunk'},@{Fault='wrong stack'},@{Fault='closed stack'},
+        @{Fault='incomplete membership'},@{Fault='duplicate member'},@{Fault='reordered membership'},@{Fault='wrong selected position'},
+        @{Fault='foreign prefix repository'},@{Fault='foreign lightweight repository'},@{Fault='changed prefix head'},@{Fault='changed prefix base'},@{Fault='changed prefix stack'},
+        @{Fault='changed prefix state'},@{Fault='missing prefix stack'},@{Fault='unknown prefix state'},@{Fault='empty prefix branch'},@{Fault='wrong prefix number'},@{Fault='foreign prefix base'},
+        @{Fault='wrong prefix branch chain'},@{Fault='unconfirmed prefix merge'},@{Fault='inconsistent active merge'},@{Fault='nonboolean active merge'},@{Fault='wrong prefix merge commit'},@{Fault='wrong prefix merge parent'},@{Fault='extra prefix merge parent'},
+        @{Fault='raw branch parent'},@{Fault='wrong selected source parent'},@{Fault='wrong root ref'},@{Fault='noncommit root'},@{Fault='closed unmerged prefix'},@{Fault='merged after active'}
+    ) {
+        param($Fault)
+        switch ($Fault) {
+            'invalid number' {$script:nativePulls['5'].stack.number=0}
+            'invalid position' {$script:nativePulls['5'].stack.position=0}
+            'invalid size' {$script:nativePulls['5'].stack.size=0}
+            'missing trunk' {$script:nativePulls['5'].stack.base.ref=''}
+            'stale trunk' {$script:nativeRef.object.sha='2'*40}
+            'wrong stack' {$script:nativeStack.number=1053}
+            'closed stack' {$script:nativeStack.open=$false}
+            'incomplete membership' {$script:nativeStack.pull_requests=@($script:nativeStack.pull_requests[1])}
+            'duplicate member' {$script:nativeStack.pull_requests[0].number=5}
+            'reordered membership' {$script:nativeStack.pull_requests=@($script:nativeStack.pull_requests[1],$script:nativeStack.pull_requests[0])}
+            'wrong selected position' {$script:nativePulls['5'].stack.position=1}
+            'foreign prefix repository' {$script:nativePulls['4'].head.repo.full_name='other/repo'}
+            'foreign lightweight repository' {$script:nativeStack.pull_requests[0].head.repo.id=1}
+            'changed prefix head' {$script:nativePulls['4'].head.sha='2'*40}
+            'changed prefix base' {$script:nativePulls['4'].base.sha='2'*40}
+            'changed prefix stack' {$script:nativePulls['4'].stack.number=1053}
+            'changed prefix state' {$script:nativePulls['4'].state='closed'}
+            'missing prefix stack' {$script:nativePulls['4'].stack=$null}
+            'unknown prefix state' {$script:nativePulls['4'].state='unknown'}
+            'empty prefix branch' {$script:nativePulls['4'].head.ref=''}
+            'wrong prefix number' {$script:nativePulls['4'].number=99}
+            'foreign prefix base' {$script:nativePulls['4'].base.repo.full_name='other/repo'}
+            'wrong prefix branch chain' {$script:nativePulls['4'].base.ref='other';$script:nativeStack.pull_requests[0].base.ref='other'}
+            'unconfirmed prefix merge' {$script:nativePulls['4'].mergeable=$null}
+            'inconsistent active merge' {$script:nativePulls['4'].merged=$true}
+            'nonboolean active merge' {$script:nativePulls['4'].merged='false'}
+            'wrong prefix merge commit' {$script:nativeCommits[$parentMerge].sha='2'*40}
+            'wrong prefix merge parent' {$script:nativeCommits[$parentMerge].parents[0].sha='2'*40}
+            'extra prefix merge parent' {$script:nativeCommits[$parentMerge].parents+=[pscustomobject]@{sha=('2'*40)}}
+            'raw branch parent' {$script:nativeCommits[$nativeMerge].parents[0].sha=$parentHead}
+            'wrong selected source parent' {$script:nativeCommits[$nativeMerge].parents[1].sha='2'*40}
+            'wrong root ref' {$script:nativeRef.ref='refs/tags/main'}
+            'noncommit root' {$script:nativeRef.object.type='tag'}
+            'closed unmerged prefix' {$script:nativePulls['4'].state='closed';$script:nativeStack.pull_requests[0].state='closed';$script:nativeStack.pull_requests[0].merged_at='2026-10-08T00:00:00Z'}
+            'merged after active' {
+                $middle = $script:nativePulls['4'] | ConvertTo-Json -Depth 8 | ConvertFrom-Json
+                $middle.number=6;$middle.state='closed';$middle.merged=$true;$middle.merge_commit_sha=$landing;$middle.stack=$null
+                $middle.head.sha='2'*40;$middle.head.ref='codex/middle'
+                $script:nativePulls['6']=$middle
+                $script:nativePulls['4'].stack.size=3
+                $script:nativePulls['5'].stack.size=3;$script:nativePulls['5'].stack.position=3
+                $script:nativeStack.pull_requests=@((New-NativeLightMember $script:nativePulls['4']),(New-NativeLightMember $middle),(New-NativeLightMember $script:nativePulls['5']))
+                $script:nativeStack.pull_requests[1].merged_at='2026-10-08T00:00:00Z'
+            }
+        }
+        {Invoke-NativeSource} | Should -Throw
+    }
+    It 'rejects an unproven merged prefix: <Fault>' -TestCases @(
+        @{Fault='missing landing'},@{Fault='missing merged timestamp'},@{Fault='noninteger comparison count'},@{Fault='not contained'},@{Fault='wrong comparison base'},@{Fault='unknown comparison'},@{Fault='not rebased to trunk'}
+    ) {
+        param($Fault)
+        Set-NativeMergedPrefix
+        switch ($Fault) {
+            'missing landing' {$script:nativePulls['4'].merge_commit_sha=$null}
+            'missing merged timestamp' {$script:nativeStack.pull_requests[0].merged_at=$null}
+            'noninteger comparison count' {$script:nativeComparison.behind_by='0'}
+            'not contained' {$script:nativeComparison.merge_base_commit.sha='2'*40;$script:nativeComparison.behind_by=1;$script:nativeComparison.status='diverged'}
+            'wrong comparison base' {$script:nativeComparison.base_commit.sha='2'*40}
+            'unknown comparison' {$script:nativeComparison.status='unknown'}
+            'not rebased to trunk' {$script:nativePulls['5'].base.ref='codex/parent';$script:nativeStack.pull_requests[1].base.ref='codex/parent'}
+        }
+        {Invoke-NativeSource} | Should -Throw
     }
 }
 
