@@ -141,7 +141,7 @@ The approved legacy manual Sonar probe passed on #1045 but initially recorded th
 
 ## Coordinated rollback
 
-Record the reviewed pre-change ruleset, variable, environment policies, credential inventories and exact Sonar main revision. Stop new admission and remove held queue work before changing the reviewed queue/Hold delta; retain every original provider/review/code-scanning rule. Drain protected analysis and account for source runs that completed during the transition.
+Record the reviewed pre-change ruleset, variable, environment policies, credential inventories and exact Sonar main revision. Stop new admission and remove held queue work. Drain protected analysis and account for source runs that completed during the transition before changing the reviewed queue/Hold delta; retain every original provider/review/code-scanning rule.
 
 Redispatch only still-current run IDs/attempts through the trusted default-branch definition when needed. Never disable routing and restore a globally readable token while an old candidate workflow or tokenless source can gain it. If there is no reviewed safe legacy fallback, leave genuine analysis missing/blocked and repair the trusted path. A flag-only fallback is not a tested rollback. Repeat exact-head provider/baseline/protection checks after any transition; rollback has not yet been rehearsed.
 
