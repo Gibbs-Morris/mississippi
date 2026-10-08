@@ -234,3 +234,41 @@ Describe 'Trusted Sonar automatic workflow contract' {
         $yaml | Should -Match 'SONAR_ANALYSIS_TOKEN: \$\{\{ secrets.SONAR_ANALYSIS_TOKEN \}\}'
     }
 }
+
+Describe 'Sonar tokenless source routing' {
+    BeforeAll {
+        $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+        $sourceYaml=Get-Content -LiteralPath (Join-Path $repoRoot '.github/workflows/sonar-cloud.yml') -Raw
+        $sourceJob=[regex]::Match($sourceYaml,'(?ms)^  source:\r?\n(?<Job>.*?)(?=^  Build:)').Groups['Job'].Value
+        $legacyJob=[regex]::Match($sourceYaml,'(?ms)^  Build:\r?\n(?<Job>.*)\z').Groups['Job'].Value
+    }
+    It 'preserves the controller source identity and all source event scopes' {
+        $sourceYaml | Should -Match '\Aname: SonarCloud\r?\non:'
+        $sourceYaml | Should -Match 'workflow_dispatch:'
+        $sourceYaml | Should -Match 'merge_group:\s+types: \[checks_requested\]\s+branches:\s+- main'
+        $sourceYaml | Should -Match 'push:\s+branches:\s+- main'
+        $sourceYaml | Should -Match 'pull_request:\s+branches:\s+- main\s+- feature/\*\*\s+- topic/\*\*'
+        $sourceYaml | Should -Match 'cancel-in-progress: \$\{\{ github.event_name == ''pull_request'' \}\}'
+    }
+    It 'uses complementary guards so unset or disabled routing retains legacy analysis' {
+        $sourceJob | Should -Match 'if: vars\.SONAR_TRUSTED_ANALYSIS_ENABLED == ''true'''
+        $legacyJob | Should -Match 'if: vars\.SONAR_TRUSTED_ANALYSIS_ENABLED != ''true'''
+    }
+    It 'records source completion without checkout, action execution or credentials' {
+        $sourceJob | Should -Not -BeNullOrEmpty
+        $sourceJob | Should -Match 'permissions: \{\}'
+        $sourceJob | Should -Match 'timeout-minutes: 2'
+        $sourceJob | Should -Not -Match '(?m)(secrets\.|github\.token|^\s+(uses|env|environment|needs):|actions/checkout)'
+    }
+    It 'runs only a fixed message without interpolating candidate metadata into code' {
+        $sourceJob | Should -Match '(?ms)shell: pwsh\s+run: \|\s+Write-Output ''Source run recorded for trusted Sonar analysis\. See the controller run for analysis results\.''\s*\z'
+    }
+    It 'retains the existing disabled-path scanner and measured coverage inputs' {
+        $legacyJob | Should -Match 'SONAR_TOKEN: \$\{\{ secrets\.SONAR_TOKEN \}\}'
+        $legacyJob | Should -Match 'measure-powershell-coverage\.ps1'
+        $legacyJob | Should -Match 'sonar\.coverageReportPaths=\$RUNNER_TEMP/powershell-coverage\.xml'
+        $legacyJob | Should -Match 'dotnet dotnet-sonarscanner begin'
+        $legacyJob | Should -Match 'dotnet dotnet-sonarscanner end'
+        $legacyJob | Should -Match 'dotnet dotnet-coverage collect'
+    }
+}
