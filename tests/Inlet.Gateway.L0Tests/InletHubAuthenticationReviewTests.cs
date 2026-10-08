@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Http.Connections.Features;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
@@ -215,6 +216,7 @@ public sealed class InletHubAuthenticationReviewTests
         ArgumentNullException.ThrowIfNull(decision);
         const string virtualScheme = "Virtual";
         IPolicyEvaluator evaluator = Substitute.For<IPolicyEvaluator>();
+        HttpContext? decisionContext = null;
         ClaimsPrincipal principal = CreatePrincipal(
             "virtual-user",
             decision == "missing-permission" ? "write" : "read");
@@ -227,7 +229,8 @@ public sealed class InletHubAuthenticationReviewTests
                 Arg.Any<object?>())
             .Returns(call =>
             {
-                Assert.Same(principal, call.Arg<HttpContext>().User);
+                decisionContext = call.Arg<HttpContext>();
+                Assert.Same(principal, decisionContext.User);
                 return decision switch
                 {
                     "forbid" => PolicyAuthorizationResult.Forbid(),
@@ -243,6 +246,11 @@ public sealed class InletHubAuthenticationReviewTests
             virtualScheme,
             out IInletSubscriptionGrain grain,
             out ILogger<InletHub> logger);
+        HttpContext retainedContext = Assert.IsType<HttpContext>(hub.Context.GetHttpContext(), false);
+        retainedContext.Request.Path = "/hubs/inlet";
+        retainedContext.Request.Headers["X-Decision-Context"] = "preserved";
+        ITlsConnectionFeature tls = Substitute.For<ITlsConnectionFeature>();
+        retainedContext.Features.Set(tls);
         if (decision == "success")
         {
             Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
@@ -256,15 +264,21 @@ public sealed class InletHubAuthenticationReviewTests
             await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
         }
 
+        HttpContext evaluatedContext = Assert.IsType<HttpContext>(decisionContext, false);
+        Assert.NotSame(retainedContext, evaluatedContext);
+        Assert.Same(retainedContext.RequestServices, evaluatedContext.RequestServices);
+        Assert.Equal(retainedContext.Request.Path, evaluatedContext.Request.Path);
+        Assert.Equal("preserved", evaluatedContext.Request.Headers["X-Decision-Context"].ToString());
+        Assert.Same(tls, evaluatedContext.Features.Get<ITlsConnectionFeature>());
         await evaluator.Received(1)
             .AuthenticateAsync(
                 Arg.Is<AuthorizationPolicy>(policy => policy.AuthenticationSchemes.Contains(virtualScheme)),
-                Arg.Any<HttpContext>());
+                evaluatedContext);
         await evaluator.Received(1)
             .AuthorizeAsync(
                 Arg.Is<AuthorizationPolicy>(policy => policy.AuthenticationSchemes.Contains(virtualScheme)),
                 authentication,
-                hub.Context.GetHttpContext()!,
+                evaluatedContext,
                 Arg.Is<object?>(resource => resource == null));
         int eventId = decision == "success" ? 7 : 8;
         object?[] arguments = Assert.Single(
@@ -276,6 +290,93 @@ public sealed class InletHubAuthenticationReviewTests
         IEnumerable<KeyValuePair<string, object?>> state =
             Assert.IsType<IEnumerable<KeyValuePair<string, object?>>>(arguments[2], false);
         Assert.Equal("virtual-user", Assert.Single(state, field => field.Key == "UserId").Value);
+    }
+
+    /// <summary>
+    ///     A repoll must not change an in-flight evaluator decision or lose its new HTTP principal.
+    /// </summary>
+    /// <param name="allowed">Whether the selected caller should pass the custom evaluator.</param>
+    /// <param name="inspectUser">Whether the evaluator uses the HTTP principal after awaiting.</param>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public async Task SubscribeKeepsRepollAuthenticationIndependent(
+        bool allowed,
+        bool inspectUser
+    )
+    {
+        ClaimsPrincipal selected = CreatePrincipal(allowed ? "selected-allowed" : "selected-denied");
+        ClaimsPrincipal repoll = CreatePrincipal(allowed ? "repoll-denied" : "repoll-allowed");
+        AuthenticateResult authentication = AuthenticateResult.Success(new(selected, BearerScheme));
+        TaskCompletionSource<bool> entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<bool> release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        IPolicyEvaluator evaluator = Substitute.For<IPolicyEvaluator>();
+        evaluator.AuthenticateAsync(Arg.Any<AuthorizationPolicy>(), Arg.Any<HttpContext>()).Returns(authentication);
+        evaluator.AuthorizeAsync(
+                Arg.Any<AuthorizationPolicy>(),
+                Arg.Any<AuthenticateResult>(),
+                Arg.Any<HttpContext>(),
+                Arg.Any<object?>())
+            .Returns(async call =>
+            {
+                HttpContext decisionContext = call.Arg<HttpContext>();
+                Assert.Same(selected, decisionContext.User);
+                entered.TrySetResult(true);
+                await release.Task.WaitAsync(TestContext.Current.CancellationToken);
+                bool permitted = !inspectUser ||
+                                 (decisionContext.User.FindFirst(ClaimTypes.NameIdentifier)
+                                      ?.Value.EndsWith("-allowed", StringComparison.Ordinal) ==
+                                  true);
+                return permitted ? PolicyAuthorizationResult.Success() : PolicyAuthorizationResult.Forbid();
+            });
+        await using ServiceProvider services = CreateServices(policyEvaluator: evaluator);
+        using InletHub hub = CreateHub(
+            services,
+            BearerScheme,
+            out IInletSubscriptionGrain grain,
+            out ILogger<InletHub> _);
+        IHttpTransportFeature transport = Substitute.For<IHttpTransportFeature>();
+        transport.TransportType.Returns(HttpTransportType.LongPolling);
+        hub.Context.Features.Set(transport);
+        HttpContext retainedContext = Assert.IsType<HttpContext>(hub.Context.GetHttpContext(), false);
+        ClaimsPrincipal original = retainedContext.User;
+        Assert.Null(retainedContext.Features.Get<IAuthenticateResultFeature>());
+        Task<string> subscription = hub.SubscribeAsync(ProjectionPath, EntityId);
+        Exception? error;
+        TimeSpan timeout = TimeSpan.FromSeconds(30);
+        try
+        {
+            await entered.Task.WaitAsync(timeout, TestContext.Current.CancellationToken);
+
+            // HttpConnectionDispatcher assigns the new non-Windows poll principal independently.
+            retainedContext.User = repoll;
+            release.TrySetResult(true);
+            error = await Record.ExceptionAsync(async () =>
+            {
+                _ = await subscription.WaitAsync(timeout, TestContext.Current.CancellationToken);
+            });
+        }
+        finally
+        {
+            release.TrySetResult(true);
+        }
+
+        if (allowed)
+        {
+            Assert.Null(error);
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, Assert.IsType<HubException>(error).Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        Assert.Same(repoll, retainedContext.User);
+        Assert.Same(original, hub.Context.User);
+        Assert.Null(retainedContext.Features.Get<IAuthenticateResultFeature>());
     }
 
     /// <summary>
