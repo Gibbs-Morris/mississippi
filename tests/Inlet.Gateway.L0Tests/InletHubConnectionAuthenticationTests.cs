@@ -197,6 +197,59 @@ public sealed class InletHubConnectionAuthenticationTests
     }
 
     /// <summary>
+    ///     A retained scheme snapshot must authorize only the principal it authenticated.
+    /// </summary>
+    /// <param name="retainsOriginalPrincipal">Whether SignalR retains the originally authenticated principal.</param>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SubscribeBindsSnapshotToRetainedPrincipal(
+        bool retainsOriginalPrincipal
+    )
+    {
+        await using WebApplication app = CreateHost();
+        DefaultHttpContext original = CreateOriginalContext(app.Services);
+        PolicyEvaluator referenceEvaluator = new(app.Services.GetRequiredService<IAuthorizationService>());
+        AuthorizationPolicy policy = CreatePolicy(TlsScheme);
+        AuthenticateResult established = await referenceEvaluator.AuthenticateAsync(policy, original);
+        Assert.True(established.Succeeded);
+        Assert.True((await referenceEvaluator.AuthorizeAsync(policy, established, original, null)).Succeeded);
+        IAuthenticateResultFeature resultFeature = Substitute.For<IAuthenticateResultFeature>();
+        resultFeature.AuthenticateResult.Returns(established);
+        original.Features.Set(resultFeature);
+        await DispatchHubEndpointAsync(app, original, policy);
+        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext clone = CloneConnectionContext(original, connectionScope.ServiceProvider);
+        ClaimsPrincipal repollPrincipal = new(
+            new ClaimsIdentity(
+                [new(ClaimTypes.NameIdentifier, "repoll-user"), new("permission", "read")],
+                OtherScheme));
+        clone.User = repollPrincipal;
+        Assert.True(clone.User.Identity?.IsAuthenticated);
+        Assert.True(
+            (await app.Services.GetRequiredService<IAuthorizationService>()
+                .AuthorizeAsync(clone.User, null, policy.Requirements)).Succeeded);
+        Assert.Null(clone.Features.Get<ITlsConnectionFeature>());
+        Assert.Null(clone.Features.Get<IAuthenticateResultFeature>());
+        Assert.Equal(original.Items.Count, clone.Items.Count);
+        ClaimsPrincipal connectionPrincipal = retainsOriginalPrincipal ? original.User : repollPrincipal;
+        using InletHub hub = CreateHub(clone, connectionPrincipal, TlsScheme, out IInletSubscriptionGrain grain);
+        if (retainsOriginalPrincipal)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+    }
+
+    /// <summary>
     ///     Connection authentication must not bypass provenance, permission or custom evaluator checks.
     /// </summary>
     /// <param name="failure">The prerequisite that prevents a subscription.</param>
