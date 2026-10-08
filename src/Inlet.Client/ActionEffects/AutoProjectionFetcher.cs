@@ -101,13 +101,22 @@ public sealed class AutoProjectionFetcher : IProjectionFetcher
         // Construct the endpoint URL for specific version
         // Pattern: {RoutePrefix}/{path}/{entityId}/at/{version}
         string url = $"{RoutePrefix}/{path}/{Uri.EscapeDataString(entityId)}/at/{version}";
-        return await FetchFromUrlAsync(projectionType, url, cancellationToken);
+        return await FetchFromUrlAsync(projectionType, url, cancellationToken, version);
     }
 
+    /// <summary>
+    ///     Fetches projection data and uses an exact-route version when no ETag version can be read.
+    /// </summary>
+    /// <param name="projectionType">The registered DTO type.</param>
+    /// <param name="url">The projection endpoint URL.</param>
+    /// <param name="cancellationToken">The token used to cancel the request.</param>
+    /// <param name="fallbackVersion">The exact requested version, or zero for the latest endpoint.</param>
+    /// <returns>The fetched data and its version, or the existing not-found or null result.</returns>
     private async Task<ProjectionFetchResult?> FetchFromUrlAsync(
         Type projectionType,
         string url,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        long fallbackVersion = 0
     )
     {
         // Fetch with response headers for ETag
@@ -126,12 +135,15 @@ public sealed class AutoProjectionFetcher : IProjectionFetcher
         response.EnsureSuccessStatusCode();
 
         // Extract version from ETag header
-        long version = 0;
+        long version = fallbackVersion;
         if (response.Headers.ETag?.Tag is { } etag)
         {
             // ETag format is "\"123\"" - extract the number
             string trimmed = etag.Trim('"');
-            _ = long.TryParse(trimmed, out version);
+            if (long.TryParse(trimmed, out long returnedVersion))
+            {
+                version = returnedVersion;
+            }
         }
 
         // Deserialize to the registered DTO type
