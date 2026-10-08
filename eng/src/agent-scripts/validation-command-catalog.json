@@ -38,7 +38,7 @@
       "arguments": ["./eng/tests/orchestrate-powershell-tests.ps1"],
       "scriptPaths": ["eng/tests/orchestrate-powershell-tests.ps1"],
       "purpose": "Run the engineering-script Pester and script integration suites.",
-      "prerequisites": ["PowerShell 7", "Pester 5"],
+      "prerequisites": ["PowerShell 7", "Pester 5.7.1 or later"],
       "expectedArtifacts": ["Pester summary"]
     },
     {
