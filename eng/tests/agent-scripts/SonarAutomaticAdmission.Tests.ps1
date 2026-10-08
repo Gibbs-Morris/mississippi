@@ -242,6 +242,15 @@ Describe 'Sonar tokenless source routing' {
         $sourceYaml=Get-Content -LiteralPath (Join-Path $repoRoot '.github/workflows/sonar-cloud.yml') -Raw
         $sourceJob=[regex]::Match($sourceYaml,'(?ms)^  source:\r?\n(?<Job>.*?)(?=^  Build:)').Groups['Job'].Value
         $legacyJob=[regex]::Match($sourceYaml,'(?ms)^  Build:\r?\n(?<Job>.*)\z').Groups['Job'].Value
+        function Test-FixedSourceSteps {
+            param([string]$Job)
+            $steps = [regex]::Match($Job, '(?ms)^    steps:\r?\n(?<Steps>.*)\z').Groups['Steps'].Value
+            $fixedStep = '\A      - name: [^\r\n]+\r?\n        shell: pwsh\r?\n        run: \|\r?\n          Write-Output ''Source run recorded for trusted Sonar analysis\. See the controller run for analysis results\.''\s*\z'
+            if (([regex]::Matches($steps, '(?m)^      - ')).Count -ne 1 -or $steps -notmatch $fixedStep) {
+                throw 'Source steps must contain only the fixed message.'
+            }
+        }
+
     }
     It 'preserves the controller source identity and all source event scopes' {
         $sourceYaml | Should -Match '\Aname: SonarCloud\r?\non:'
@@ -262,7 +271,15 @@ Describe 'Sonar tokenless source routing' {
         $sourceJob | Should -Not -Match '(?m)(secrets\.|github\.token|^\s+(uses|env|environment|needs):|actions/checkout)'
     }
     It 'runs only a fixed message without interpolating candidate metadata into code' {
-        $sourceJob | Should -Match '(?ms)shell: pwsh\s+run: \|\s+Write-Output ''Source run recorded for trusted Sonar analysis\. See the controller run for analysis results\.''\s*\z'
+        { Test-FixedSourceSteps -Job $sourceJob } | Should -Not -Throw
+    }
+    It 'rejects an additional source step with <StepKind>' -TestCases @(
+        @{ StepKind = 'run'; Step = "      - run: Write-Output 'Unexpected candidate execution'" }
+        @{ StepKind = 'name'; Step = "      - name: Another step`n        shell: pwsh`n        run: Write-Output 'Unexpected candidate execution'" }
+    ) {
+        param($StepKind, $Step)
+        $changedJob = $sourceJob.Replace('    steps:', "    steps:`n$Step")
+        { Test-FixedSourceSteps -Job $changedJob } | Should -Throw '*only the fixed message*'
     }
     It 'keeps the legacy worker identity in the real readiness catalog without matrix expansion' {
         $name=[regex]::Match($legacyJob,'(?m)^\s+name:\s*"([^"]+)"').Groups[1].Value
