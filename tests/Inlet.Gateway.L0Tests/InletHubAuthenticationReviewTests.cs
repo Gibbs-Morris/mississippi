@@ -219,13 +219,16 @@ public sealed class InletHubAuthenticationReviewTests
                 Arg.Any<AuthenticateResult>(),
                 Arg.Any<HttpContext>(),
                 Arg.Any<object?>())
-            .Returns(
-                decision switch
+            .Returns(call =>
+            {
+                Assert.Same(principal, call.Arg<HttpContext>().User);
+                return decision switch
                 {
                     "forbid" => PolicyAuthorizationResult.Forbid(),
                     "challenge" => PolicyAuthorizationResult.Challenge(),
                     var _ => PolicyAuthorizationResult.Success(),
-                });
+                };
+            });
         await using ServiceProvider services = CreateServices(
             policyEvaluator: evaluator,
             registerAuthentication: false);
@@ -255,7 +258,7 @@ public sealed class InletHubAuthenticationReviewTests
             .AuthorizeAsync(
                 Arg.Is<AuthorizationPolicy>(policy => policy.AuthenticationSchemes.Contains(virtualScheme)),
                 authentication,
-                Arg.Is<HttpContext>(context => ReferenceEquals(context.User, principal)),
+                hub.Context.GetHttpContext()!,
                 Arg.Is<object?>(resource => resource == null));
         int eventId = decision == "success" ? 7 : 8;
         object?[] arguments = Assert.Single(
@@ -385,6 +388,112 @@ public sealed class InletHubAuthenticationReviewTests
             failure,
             await Assert.ThrowsAsync<InvalidOperationException>(() => hub.SubscribeAsync(ProjectionPath, EntityId)));
         await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+    }
+
+    /// <summary>
+    ///     A subscription decision must restore the retained HTTP principal and authentication result.
+    /// </summary>
+    /// <param name="decision">The authentication or authorization outcome.</param>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Theory]
+    [InlineData("success")]
+    [InlineData("missing-permission")]
+    [InlineData("no-result")]
+    [InlineData("custom-success")]
+    [InlineData("custom-forbid")]
+    [InlineData("custom-error")]
+    [InlineData("success-null-result")]
+    [InlineData("no-result-null-result")]
+    public async Task SubscribeRestoresRetainedHttpAuthentication(
+        string decision
+    )
+    {
+        ArgumentNullException.ThrowIfNull(decision);
+        ClaimsPrincipal selected = CreatePrincipal(
+            "selected-user",
+            decision == "missing-permission" ? "write" : "read");
+        AuthenticateResult authentication = decision.StartsWith("no-result", StringComparison.Ordinal)
+            ? AuthenticateResult.NoResult()
+            : AuthenticateResult.Success(new(selected, BearerScheme));
+        IAuthenticationService authenticationService = Substitute.For<IAuthenticationService>();
+        authenticationService.AuthenticateAsync(Arg.Any<HttpContext>(), BearerScheme).Returns(authentication);
+        IPolicyEvaluator? evaluator = null;
+        if (decision.StartsWith("custom", StringComparison.Ordinal))
+        {
+            evaluator = Substitute.For<IPolicyEvaluator>();
+            evaluator.AuthenticateAsync(Arg.Any<AuthorizationPolicy>(), Arg.Any<HttpContext>()).Returns(authentication);
+            evaluator.AuthorizeAsync(
+                    Arg.Any<AuthorizationPolicy>(),
+                    Arg.Any<AuthenticateResult>(),
+                    Arg.Any<HttpContext>(),
+                    Arg.Any<object?>())
+                .Returns(call =>
+                {
+                    Assert.Same(selected, call.Arg<HttpContext>().User);
+                    if (decision == "custom-error")
+                    {
+                        throw new InvalidOperationException("policy evaluator failure");
+                    }
+
+                    return decision == "custom-forbid"
+                        ? PolicyAuthorizationResult.Forbid()
+                        : PolicyAuthorizationResult.Success();
+                });
+        }
+
+        await using ServiceProvider services = CreateServices(authenticationService, policyEvaluator: evaluator);
+        using InletHub hub = CreateHub(
+            services,
+            BearerScheme,
+            out IInletSubscriptionGrain grain,
+            out ILogger<InletHub> _);
+        HttpContext context = Assert.IsType<HttpContext>(hub.Context.GetHttpContext(), false);
+        ClaimsPrincipal original = context.User;
+        AuthenticateResult originalResult = AuthenticateResult.Success(new(original, OtherScheme));
+        authenticationService.AuthenticateAsync(context, BearerScheme)
+            .Returns(call => call.Arg<HttpContext>().Request.Path == "/connect" ? originalResult : authentication);
+        context.Request.Path = "/connect";
+        AuthenticationMiddleware middleware = new(
+            _ => Task.CompletedTask,
+            services.GetRequiredService<IAuthenticationSchemeProvider>());
+        await middleware.Invoke(context);
+        context.Request.Path = "/hubs/inlet";
+        IAuthenticateResultFeature resultFeature = Assert.IsType<IAuthenticateResultFeature>(
+            context.Features.Get<IAuthenticateResultFeature>(),
+            false);
+        Assert.Same(originalResult, resultFeature.AuthenticateResult);
+        AuthenticateResult? expectedResult = originalResult;
+        if (decision.EndsWith("-null-result", StringComparison.Ordinal))
+        {
+            context.User = original;
+            Assert.Null(resultFeature.AuthenticateResult);
+            expectedResult = null;
+        }
+
+        if (decision is "success" or "custom-success" or "success-null-result")
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else if (decision == "custom-error")
+        {
+            InvalidOperationException exception =
+                await Assert.ThrowsAsync<InvalidOperationException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal("policy evaluator failure", exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        Assert.Same(original, context.User);
+        Assert.Same(original, hub.Context.User);
+        Assert.Same(resultFeature, context.Features.Get<IAuthenticateResultFeature>());
+        Assert.Same(expectedResult, resultFeature.AuthenticateResult);
     }
 
     /// <summary>

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features.Authentication;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -314,25 +315,58 @@ public sealed class InletHub : Hub<IInletHubClient>
         string? policyName
     )
     {
-        (ClaimsPrincipal? user, bool permitted) = await AuthenticateUserAsync(policy);
-        if (user is null || !permitted)
+        HttpContext? httpContext = policy.AuthenticationSchemes.Count > 0 ? Context.GetHttpContext() : null;
+        ClaimsPrincipal? previousUser = httpContext?.User;
+        IHttpAuthenticationFeature? previousHttpFeature = httpContext?.Features.Get<IHttpAuthenticationFeature>();
+        IAuthenticateResultFeature? previousResultFeature = httpContext?.Features.Get<IAuthenticateResultFeature>();
+        AuthenticateResult? previousResult = previousResultFeature?.AuthenticateResult;
+        try
         {
+            (ClaimsPrincipal? user, bool permitted) = await AuthenticateUserAsync(policy);
+            if (user is null || !permitted)
+            {
+                Logger.SubscriptionAuthorizationDenied(
+                    Context.ConnectionId,
+                    path,
+                    entityId,
+                    GetUserId(user),
+                    policyName);
+                throw new HubException(InletHubConstants.SubscriptionDeniedMessage);
+            }
+
+            AuthorizationResult authorizationResult = await AuthorizationService.AuthorizeAsync(
+                user,
+                null,
+                policy.Requirements);
+            if (authorizationResult.Succeeded)
+            {
+                Logger.SubscriptionAuthorizationSucceeded(Context.ConnectionId, path, entityId, GetUserId(user));
+                return;
+            }
+
             Logger.SubscriptionAuthorizationDenied(Context.ConnectionId, path, entityId, GetUserId(user), policyName);
             throw new HubException(InletHubConstants.SubscriptionDeniedMessage);
         }
-
-        AuthorizationResult authorizationResult = await AuthorizationService.AuthorizeAsync(
-            user,
-            null,
-            policy.Requirements);
-        if (authorizationResult.Succeeded)
+        finally
         {
-            Logger.SubscriptionAuthorizationSucceeded(Context.ConnectionId, path, entityId, GetUserId(user));
-            return;
-        }
+            if (httpContext is not null)
+            {
+                // The selected user is needed during this decision, then the connection state resumes.
+                // Restoring User alone clears ASP.NET's coupled authentication result.
+                httpContext.Features.Set(previousHttpFeature);
+                httpContext.User = previousUser!;
+                httpContext.Features.Set(previousResultFeature);
+                if (previousResultFeature is not null)
+                {
+                    previousResultFeature.AuthenticateResult = previousResult;
+                }
 
-        Logger.SubscriptionAuthorizationDenied(Context.ConnectionId, path, entityId, GetUserId(user), policyName);
-        throw new HubException(InletHubConstants.SubscriptionDeniedMessage);
+                if (previousResult is null)
+                {
+                    httpContext.User = previousUser!;
+                }
+            }
+        }
     }
 
     private async Task<AuthorizationPolicy> BuildAuthorizationPolicyAsync(
