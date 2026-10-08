@@ -39,6 +39,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         # Load the driver from the attested workflow-file revision before it verifies origin.
         with:
+          repository: Gibbs-Morris/mississippi
           ref: ${{ github.workflow_sha }}
           persist-credentials: false
       - name: Validate credential origin and source identity
@@ -73,6 +74,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         # Load the driver from the attested workflow-file revision before it verifies origin.
         with:
+          repository: Gibbs-Morris/mississippi
           ref: ${{ github.workflow_sha }}
           persist-credentials: false
       - name: Rebuild candidate without credentials and upload validated reports
