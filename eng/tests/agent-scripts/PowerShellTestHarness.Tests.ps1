@@ -57,10 +57,14 @@ Describe 'PowerShell test orchestration' {
     }
 
     It 'preserves running test mocks after invoking the actual orchestrator' {
+        Copy-Item (Join-Path $PSScriptRoot 'run-spring-validation-tests.ps1') $fixtureRunners -Force
+        Mock Invoke-Pester { [pscustomobject]@{Result='Passed';TotalCount=1;PassedCount=1;FailedCount=0} }
         Mock Get-Date { [datetime]'2001-01-01' }
-        $null = & $orchestrator -PassThru 6>$null
+        $results = @(& $orchestrator -PassThru 6>$null)
+        @($results | Where-Object Name -EQ 'run-spring-validation-tests.ps1').Status | Should -Be 'Passed'
         (Get-Date).Year | Should -Be 2001
         Should -Invoke Get-Date -Times 1 -Exactly
+        Should -Invoke Invoke-Pester -Times 1 -Exactly -ParameterFilter { $Path -like '*SpringValidation.Tests.ps1' -and $PassThru }
     }
 
     It 'runs every required suite successfully' {
