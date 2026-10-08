@@ -304,7 +304,13 @@ internal sealed class InletSignalRActionEffect
                 subscribeError = ex;
             }
 
-            isCurrentRequest = TryCompletePendingSubscription(key, reservation, subscriptionId);
+            isCurrentRequest = TryCompletePendingSubscription(key, reservation, subscriptionId, subscribeError is null);
+            if (isCurrentRequest && subscribeError is not null)
+            {
+                // Publish the older failure before another same-pair attempt can replace its state.
+                yield return ProjectionActionFactory.CreateError(projectionType, entityId, subscribeError);
+                yield break;
+            }
         }
         finally
         {
@@ -321,12 +327,6 @@ internal sealed class InletSignalRActionEffect
 
         if (cancelled)
         {
-            yield break;
-        }
-
-        if (subscribeError is not null)
-        {
-            yield return ProjectionActionFactory.CreateError(projectionType, entityId, subscribeError);
             yield break;
         }
 
@@ -533,11 +533,13 @@ internal sealed class InletSignalRActionEffect
     /// <param name="key">The projection and entity pair.</param>
     /// <param name="reservation">The completion source identifying this attempt.</param>
     /// <param name="subscriptionId">The server ID, or null when no subscription was established.</param>
+    /// <param name="completeAttempt">Whether to wake waiters after a successful reply or consumed failure.</param>
     /// <returns>Whether this attempt still represents the application's interest.</returns>
     private bool TryCompletePendingSubscription(
         (Type ProjectionType, string EntityId) key,
         TaskCompletionSource<bool> reservation,
-        string? subscriptionId
+        string? subscriptionId,
+        bool completeAttempt = true
     )
     {
         lock (subscriptionGate)
@@ -556,7 +558,11 @@ internal sealed class InletSignalRActionEffect
                 activeSubscriptions[key] = subscriptionId;
             }
 
-            reservation.TrySetResult(subscriptionId is not null);
+            if (completeAttempt)
+            {
+                reservation.TrySetResult(subscriptionId is not null);
+            }
+
             return true;
         }
     }

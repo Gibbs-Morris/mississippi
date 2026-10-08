@@ -15,8 +15,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.Abstractions.Actions;
+using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.ActionEffects;
 using Mississippi.Inlet.Client.L0Tests.Helpers;
+using Mississippi.Inlet.Client.Reducers;
 using Mississippi.Inlet.Gateway.Abstractions;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
@@ -110,7 +112,12 @@ public sealed class InletSignalRSubscriptionTests : IAsyncDisposable
         services.AddSingleton(fetcher.Object);
         services.AddSingleton<IProjectionDtoRegistry>(registry);
         services.AddSingleton(middleware.Object);
-        services.AddReservoir().AddInletBlazorSignalR();
+        services.AddReservoir()
+            .AddInletBlazorSignalR()
+            .AddFeatureState<ProjectionsFeatureState>(feature => feature
+                .AddReducer<ProjectionLoadingAction<TestProjection>>(ProjectionsReducer.ReduceLoading)
+                .AddReducer<ProjectionLoadedAction<TestProjection>>(ProjectionsReducer.ReduceLoaded)
+                .AddReducer<ProjectionErrorAction<TestProjection>>(ProjectionsReducer.ReduceError));
         serviceProvider = services.BuildServiceProvider();
         store = serviceProvider.GetRequiredService<IInletStore>();
     }
@@ -323,6 +330,66 @@ public sealed class InletSignalRSubscriptionTests : IAsyncDisposable
         Assert.Single(subscriptions);
         Assert.Equal("subscription-1", Assert.Single(unsubscribedIds));
         Assert.Empty(liveSubscriptions);
+    }
+
+    /// <summary>A failed attempt publishes its error before a new retry can replace the projection state.</summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task FailedAttemptPublishesBeforeRetry()
+    {
+        await using InletSignalRActionEffect effect = new(
+            new(() => store),
+            serviceProvider.GetRequiredService<IHubConnectionProvider>(),
+            serviceProvider.GetRequiredService<IProjectionFetcher>(),
+            serviceProvider.GetRequiredService<IProjectionDtoRegistry>());
+        SubscribeToProjectionAction<TestProjection> action = new("entity-1");
+        await using IAsyncEnumerator<IAction> owner = effect.HandleAsync(action, new(), CancellationToken.None)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await owner.MoveNextAsync());
+        store.Dispatch(owner.Current);
+        Assert.True(store.GetState<ProjectionsFeatureState>().IsProjectionLoading<TestProjection>("entity-1"));
+        Task<bool> failure = owner.MoveNextAsync().AsTask();
+        TaskCompletionSource<object?> response = await ReadSubscriptionRequestAsync();
+        response.SetException(new InvalidOperationException("Subscription failed"));
+        Assert.True(await failure.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        IAction failedAction = Assert.IsType<ProjectionErrorAction<TestProjection>>(owner.Current);
+
+        // Initiate a new intent while delivery of the older error action is paused.
+        Task<IAction[]> duplicate = CollectAsync(effect.HandleAsync(action, new(), CancellationToken.None));
+        bool retryStartedBeforeError = subscriptionRequests.Reader.TryRead(out TaskCompletionSource<object?>? retry);
+        if (!retryStartedBeforeError)
+        {
+            store.Dispatch(failedAction);
+            Assert.False(await owner.MoveNextAsync());
+            retry = await ReadSubscriptionRequestAsync();
+        }
+
+        Assert.True(liveSubscriptions.TryAdd("retry-subscription", 0));
+        Assert.IsType<TaskCompletionSource<object?>>(retry).SetResult("retry-subscription");
+        foreach (IAction retryAction in await duplicate.WaitAsync(
+                     TimeSpan.FromSeconds(10),
+                     TestContext.Current.CancellationToken))
+        {
+            store.Dispatch(retryAction);
+        }
+
+        if (retryStartedBeforeError)
+        {
+            // Deliver the older error after the ready retry, as an asynchronous dispatcher may do.
+            store.Dispatch(failedAction);
+            Assert.False(await owner.MoveNextAsync());
+        }
+
+        ProjectionsFeatureState state = store.GetState<ProjectionsFeatureState>();
+        await CollectAsync(
+            effect.HandleAsync(
+                new UnsubscribeFromProjectionAction<TestProjection>("entity-1"),
+                new(),
+                CancellationToken.None));
+        Assert.Equal("retry-subscription", Assert.Single(unsubscribedIds));
+        Assert.Empty(liveSubscriptions);
+        Assert.False(state.IsProjectionLoading<TestProjection>("entity-1"));
+        Assert.Null(state.GetProjectionError<TestProjection>("entity-1"));
     }
 
     /// <summary>
