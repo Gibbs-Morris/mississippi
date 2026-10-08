@@ -92,11 +92,17 @@ public sealed class InletHubAuthenticationReviewTests
         IPolicyEvaluator? policyEvaluator = null,
         bool registerAuthentication = true,
         bool registerPolicyEvaluator = true,
-        IAuthenticationHandlerProvider? handlerProvider = null
+        IAuthenticationHandlerProvider? handlerProvider = null,
+        int? maximumParallelInvocations = null
     )
     {
         ServiceCollection services = new();
         services.AddLogging();
+        if (maximumParallelInvocations is int parallelInvocations)
+        {
+            services.AddSignalR(options => options.MaximumParallelInvocationsPerClient = parallelInvocations);
+        }
+
         if (registerAuthentication)
         {
             services.AddAuthentication(BearerScheme).AddBearerToken(BearerScheme).AddBearerToken(OtherScheme);
@@ -494,6 +500,129 @@ public sealed class InletHubAuthenticationReviewTests
         Assert.Same(original, hub.Context.User);
         Assert.Same(resultFeature, context.Features.Get<IAuthenticateResultFeature>());
         Assert.Same(expectedResult, resultFeature.AuthenticateResult);
+    }
+
+    /// <summary>
+    ///     Parallel decisions must preserve evaluator vetoes and the retained HTTP authentication state.
+    /// </summary>
+    /// <param name="secondSelectsScheme">Whether the competing decision selects an authentication scheme.</param>
+    /// <returns>A task that completes when the assertions have been verified.</returns>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SubscribeSerializesParallelAuthentication(
+        bool secondSelectsScheme
+    )
+    {
+        HttpContext? sharedContext = null;
+        AuthorizationPolicy policy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser()
+            .RequireClaim("permission", "read")
+            .RequireAssertion(authorization =>
+                (authorization.User.FindFirst(ClaimTypes.NameIdentifier)?.Value != "connection-user") ||
+                ReferenceEquals(authorization.User, sharedContext?.User))
+            .Build();
+        ClaimsPrincipal firstPrincipal = CreatePrincipal("first-denied");
+        ClaimsPrincipal secondPrincipal = CreatePrincipal("second-allowed");
+        AuthenticateResult firstResult = AuthenticateResult.Success(new(firstPrincipal, BearerScheme));
+        AuthenticateResult secondResult = AuthenticateResult.Success(new(secondPrincipal, OtherScheme));
+        TaskCompletionSource<bool> firstEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<bool> releaseFirst = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<bool> releaseSecond = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        IPolicyEvaluator evaluator = Substitute.For<IPolicyEvaluator>();
+        evaluator.AuthenticateAsync(Arg.Any<AuthorizationPolicy>(), Arg.Any<HttpContext>())
+            .Returns(call => call.Arg<AuthorizationPolicy>().AuthenticationSchemes.Contains(BearerScheme)
+                ? firstResult
+                : secondResult);
+        evaluator.AuthorizeAsync(
+                Arg.Any<AuthorizationPolicy>(),
+                Arg.Any<AuthenticateResult>(),
+                Arg.Any<HttpContext>(),
+                Arg.Any<object?>())
+            .Returns(async call =>
+            {
+                HttpContext context = call.Arg<HttpContext>();
+                AuthenticateResult authentication = call.Arg<AuthenticateResult>();
+                Assert.Same(authentication.Principal, context.User);
+                if (ReferenceEquals(authentication, firstResult))
+                {
+                    firstEntered.TrySetResult(true);
+                    await releaseFirst.Task.WaitAsync(TestContext.Current.CancellationToken);
+                }
+                else
+                {
+                    await releaseSecond.Task.WaitAsync(TestContext.Current.CancellationToken);
+                }
+
+                return context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value == "second-allowed"
+                    ? PolicyAuthorizationResult.Success()
+                    : PolicyAuthorizationResult.Forbid();
+            });
+        IAuthenticationService authenticationService = Substitute.For<IAuthenticationService>();
+        await using ServiceProvider services = CreateServices(
+            authenticationService,
+            policy,
+            evaluator,
+            maximumParallelInvocations: 2);
+        Assert.Equal(2, services.GetRequiredService<IOptions<HubOptions>>().Value.MaximumParallelInvocationsPerClient);
+        using InletHub firstHub = CreateHub(
+            services,
+            BearerScheme,
+            out IInletSubscriptionGrain firstGrain,
+            out ILogger<InletHub> _);
+        using InletHub secondHub = CreateHub(
+            services,
+            secondSelectsScheme ? OtherScheme : string.Empty,
+            out IInletSubscriptionGrain secondGrain,
+            out ILogger<InletHub> _);
+        sharedContext = Assert.IsType<HttpContext>(firstHub.Context.GetHttpContext(), false);
+        IHttpContextFeature secondFeature = Assert.IsType<IHttpContextFeature>(
+            secondHub.Context.Features.Get<IHttpContextFeature>(),
+            false);
+        secondFeature.HttpContext.Returns(sharedContext);
+        ClaimsPrincipal original = sharedContext.User;
+        secondHub.Context.User.Returns(original);
+        AuthenticateResult originalResult = AuthenticateResult.Success(new(original, BearerScheme));
+        authenticationService.AuthenticateAsync(sharedContext, BearerScheme).Returns(originalResult);
+        AuthenticationMiddleware middleware = new(
+            _ => Task.CompletedTask,
+            services.GetRequiredService<IAuthenticationSchemeProvider>());
+        await middleware.Invoke(sharedContext);
+        IAuthenticateResultFeature originalFeature = Assert.IsType<IAuthenticateResultFeature>(
+            sharedContext.Features.Get<IAuthenticateResultFeature>(),
+            false);
+        Assert.Same(originalResult, originalFeature.AuthenticateResult);
+        Task<string> firstSubscription = firstHub.SubscribeAsync(ProjectionPath, EntityId);
+        Exception? firstError;
+        Exception? secondError;
+        TimeSpan timeout = TimeSpan.FromSeconds(30);
+        try
+        {
+            await firstEntered.Task.WaitAsync(timeout, TestContext.Current.CancellationToken);
+            Task<string> secondSubscription = secondHub.SubscribeAsync(ProjectionPath, EntityId);
+            releaseFirst.TrySetResult(true);
+            firstError = await Record.ExceptionAsync(async () =>
+            {
+                _ = await firstSubscription.WaitAsync(timeout, TestContext.Current.CancellationToken);
+            });
+            releaseSecond.TrySetResult(true);
+            secondError = await Record.ExceptionAsync(async () =>
+            {
+                _ = await secondSubscription.WaitAsync(timeout, TestContext.Current.CancellationToken);
+            });
+        }
+        finally
+        {
+            releaseFirst.TrySetResult(true);
+            releaseSecond.TrySetResult(true);
+        }
+
+        Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, Assert.IsType<HubException>(firstError).Message);
+        Assert.Null(secondError);
+        await firstGrain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        await secondGrain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        Assert.Same(original, sharedContext.User);
+        Assert.Same(originalFeature, sharedContext.Features.Get<IAuthenticateResultFeature>());
+        Assert.Same(originalResult, originalFeature.AuthenticateResult);
     }
 
     /// <summary>
