@@ -2902,6 +2902,30 @@ function Get-PrReadinessDuplicateCheckIdentity {
     return [pscustomobject]@{ AppId = $appId; CheckId = $checkId }
 }
 
+function Get-PrReadinessActionsJobAttempt {
+    param(
+        [Parameter(Mandatory)][long]$CheckId,
+        [Parameter(Mandatory)][object]$Run,
+        [Parameter(Mandatory)][string]$Repository,
+        [Parameter(Mandatory)][hashtable]$WorkflowRuns,
+        [Parameter(Mandatory)][scriptblock]$MetadataReader
+    )
+
+    $jobKey = "job:$CheckId"
+    if (-not $WorkflowRuns.ContainsKey($jobKey)) {
+        $WorkflowRuns[$jobKey] = & $MetadataReader @('api', "repos/$Repository/actions/jobs/$CheckId")
+    }
+    $job = $WorkflowRuns[$jobKey]
+    try {
+        $jobAttempt = [long]$job.run_attempt
+        $jobMatches = [long]$job.id -eq $CheckId -and [long]$job.run_id -eq [long]$Run.id -and
+            [string]$job.head_sha -eq [string]$Run.head_sha -and
+            [string]$job.check_run_url -eq "https://api.github.com/repos/$Repository/check-runs/$CheckId"
+    }
+    catch { throw 'Actions check job attempt metadata is incomplete.' }
+    if (-not $jobMatches -or $jobAttempt -le 0 -or $jobAttempt -gt [long]$Run.run_attempt) { throw 'Actions check job attempt identity is invalid.' }
+    return $jobAttempt
+}
 function Get-PrReadinessActionsCheckMetadata {
     param(
         [Parameter(Mandatory)][object]$CheckRun,
@@ -2931,7 +2955,8 @@ function Get-PrReadinessActionsCheckMetadata {
     }
     catch { throw 'Duplicate Actions check workflow metadata is incomplete.' }
     if (-not $identityMatches -or $workflowId -le 0 -or $runAttempt -le 0 -or [string]::IsNullOrWhiteSpace($eventName)) { throw 'Duplicate Actions check workflow identity is invalid.' }
-    return [pscustomobject]@{ Run = $run; RunId = $runId; RunNumber = $runNumber; RunAttempt = $runAttempt; WorkflowId = $workflowId; EventName = $eventName }
+    $jobAttempt = if ($runAttempt -gt 1) { Get-PrReadinessActionsJobAttempt -CheckId $CheckId -Run $run -Repository $Repository -WorkflowRuns $WorkflowRuns -MetadataReader $MetadataReader } else { 1L }
+    return [pscustomobject]@{ Run = $run; RunId = $runId; RunNumber = $runNumber; RunAttempt = $runAttempt; JobAttempt = $jobAttempt; WorkflowId = $workflowId; EventName = $eventName }
 }
 
 function Get-PrReadinessActionsCheckOrderTimestamp {
@@ -2945,7 +2970,8 @@ function Get-PrReadinessActionsCheckOrderTimestamp {
     }
     if ([string]$CheckRun.status -ne 'completed' -or $Metadata.RunAttempt -gt 1) {
         $attemptStarted = Get-PrReadinessEvidenceTimestamp -Value $run.run_started_at
-        if ([string]$run.status -in @('queued', 'requested', 'waiting', 'pending') -or $null -eq $started -or [string]::IsNullOrWhiteSpace([string]$started.Value)) {
+        $retainedUnstartedAttempt = $Metadata.JobAttempt -lt $Metadata.RunAttempt -and $attemptStarted -le $orderTimestamp
+        if ($retainedUnstartedAttempt -or [string]$run.status -in @('queued', 'requested', 'waiting', 'pending') -or $null -eq $started -or [string]::IsNullOrWhiteSpace([string]$started.Value)) {
             $attemptStarted = [Math]::Max($attemptStarted, (Get-PrReadinessEvidenceTimestamp -Value $run.updated_at))
         }
         $orderTimestamp = [Math]::Max($orderTimestamp, $attemptStarted)
@@ -2962,7 +2988,7 @@ function Get-PrReadinessActionsAttemptCheck {
         throw 'Actions workflow attempt state is incomplete.'
     }
     $current = $CheckRun.PSObject.Copy()
-    $fingerprint = ConvertTo-Json -InputObject @($Metadata.RunId, $Metadata.RunAttempt, $Metadata.WorkflowId, $Metadata.EventName, $Metadata.RunNumber, $OrderTimestamp, [string]$run.status, [string]$run.conclusion) -Compress
+    $fingerprint = ConvertTo-Json -InputObject @($Metadata.RunId, $Metadata.RunAttempt, $Metadata.JobAttempt, $Metadata.WorkflowId, $Metadata.EventName, $Metadata.RunNumber, $OrderTimestamp, [string]$run.status, [string]$run.conclusion) -Compress
     $current | Add-Member -NotePropertyName ReadinessWorkflowAttempt -NotePropertyValue $fingerprint
     if ($Metadata.RunAttempt -gt 1) {
         # A rerun may be admitted before any replacement check is visible.
@@ -2993,6 +3019,7 @@ function Get-PrReadinessCheckCandidate {
     $runId = 0L
     $runNumber = 0L
     $runAttempt = 0L
+    $jobAttempt = 0L
     $workflowId = 0L
     $eventName = ''
     if ($identity.AppId -eq 15368) {
@@ -3000,6 +3027,7 @@ function Get-PrReadinessCheckCandidate {
         $runId = $metadata.RunId
         $runNumber = $metadata.RunNumber
         $runAttempt = $metadata.RunAttempt
+        $jobAttempt = $metadata.JobAttempt
         $workflowId = $metadata.WorkflowId
         $eventName = $metadata.EventName
         $orderTimestamp = Get-PrReadinessActionsCheckOrderTimestamp -CheckRun $CheckRun -Metadata $metadata
@@ -3011,6 +3039,7 @@ function Get-PrReadinessCheckCandidate {
         RunId = $runId
         RunNumber = $runNumber
         RunAttempt = $runAttempt
+        JobAttempt = $jobAttempt
         OrderTimestamp = $orderTimestamp
         CheckStartTimestamp = $checkStartTimestamp
         Scope = ConvertTo-Json -InputObject @($identity.AppId, [string]$CheckRun.name, $workflowId, $eventName) -Compress
@@ -3020,7 +3049,12 @@ function Get-PrReadinessCheckCandidate {
 function Select-PrReadinessCurrentCheck {
     param([Parameter(Mandatory)][object[]]$Candidates)
 
-    $latest = @($Candidates | Sort-Object OrderTimestamp -Descending)
+    # Prefer a materialized current-attempt job over retained checks of this run.
+    $currentJobs = @($Candidates | Group-Object RunId | ForEach-Object {
+        $jobAttempt = ($_.Group | Measure-Object -Property JobAttempt -Maximum).Maximum
+        $_.Group | Where-Object JobAttempt -EQ $jobAttempt
+    })
+    $latest = @($currentJobs | Sort-Object OrderTimestamp -Descending)
     $tied = @($latest | Where-Object OrderTimestamp -EQ $latest[0].OrderTimestamp)
     if ($tied.Count -eq 1) { return $latest[0].Check }
     if ($tied[0].RunId -eq 0) { throw 'Current check ordering is ambiguous.' }

@@ -150,7 +150,7 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         }
 
         function New-SiteCheckRun {
-            param([long]$Id, [long]$RunId, [string]$Conclusion = 'success', [string]$Status = 'completed', [long]$AppId = 15368, [string]$StartedAt = '2026-10-08T00:01:00Z')
+            param([long]$Id, [long]$RunId, [string]$Conclusion = 'success', [string]$Status = 'completed', [long]$AppId = 15368, [string]$StartedAt = '2026-10-08T00:01:00Z', [long]$JobAttempt = 1)
             [pscustomobject]@{
                 id = $Id
                 name = 'Build Docusaurus Site'
@@ -158,6 +158,7 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
                 conclusion = $Conclusion
                 head_sha = 'head'
                 started_at = $StartedAt
+                FixtureJobAttempt = $JobAttempt
                 app = [pscustomobject]@{ id = $AppId }
                 details_url="https://github.com/Gibbs-Morris/mississippi/actions/runs/$RunId/job/$Id"
                 pull_requests=@([pscustomobject]@{number=744;base=[pscustomobject]@{ref='main'}})
@@ -182,7 +183,7 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         }
 
         function New-SiteReadinessSnapshot {
-            param([string]$BaseRef = 'main', [object]$Stack, [object]$FinalStack, [switch]$IncludeSiteCheck, [object[]]$SiteChecks, [object[]]$FinalSiteChecks, [hashtable]$WorkflowRuns, [hashtable]$FinalWorkflowRuns)
+            param([string]$BaseRef = 'main', [object]$Stack, [object]$FinalStack, [switch]$IncludeSiteCheck, [object[]]$SiteChecks, [object[]]$FinalSiteChecks, [hashtable]$WorkflowRuns, [hashtable]$FinalWorkflowRuns, [hashtable]$JobOverrides)
             if ($null -eq $WorkflowRuns) { $WorkflowRuns = @{ '501' = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z' } }
             $workflowBase = if ($null -ne $Stack) { [string]$Stack.base.ref } else { $BaseRef }
             $pull = [pscustomobject]@{
@@ -215,6 +216,15 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
             $provider = {
                 param([string[]]$Arguments)
                 $query = $Arguments -join ' '
+                $jobMatch = [regex]::Match($query, 'actions/jobs/(\d+)$')
+                if ($jobMatch.Success) {
+                    if ($null -ne $JobOverrides -and $JobOverrides.ContainsKey($jobMatch.Groups[1].Value)) { return $JobOverrides[$jobMatch.Groups[1].Value] }
+                    $jobCheck = @($checkPage.check_runs | Where-Object id -EQ ([long]$jobMatch.Groups[1].Value))
+                    if ($checkResponses.Count -eq 0) { $jobCheck = @($finalCheckPage.check_runs | Where-Object id -EQ ([long]$jobMatch.Groups[1].Value)) }
+                    if ($jobCheck.Count -ne 1) { throw 'Expected exact fixture job identity.' }
+                    $runId = [long]([regex]::Match($jobCheck[0].details_url, '/actions/runs/(\d+)/').Groups[1].Value)
+                    return [pscustomobject]@{ id=$jobCheck[0].id;run_id=$runId;run_attempt=$jobCheck[0].FixtureJobAttempt;head_sha='head';check_run_url="https://api.github.com/repos/Gibbs-Morris/mississippi/check-runs/$($jobCheck[0].id)" }
+                }
                 $workflowMatch = [regex]::Match($query, 'actions/runs/(\d+)$')
                 if ($workflowMatch.Success) {
                     if ($null -ne $FinalWorkflowRuns -and $checkResponses.Count -eq 0) { return $FinalWorkflowRuns[$workflowMatch.Groups[1].Value] }
@@ -579,8 +589,45 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         @($snapshot.Checks | Where-Object { $_.Name -eq 'Build Docusaurus Site' -and $_.State -eq 'fail' }).Count | Should -Be 1
     }
 
+    It 'blocks a completed <Conclusion> rerun canceled before starting while only its prior started check remains' -TestCases @(
+        @{ Conclusion = 'cancelled' }
+        @{ Conclusion = 'failure' }
+    ) {
+        param($Conclusion)
+        $prior = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:00:00Z'
+        $runs = @{
+            '501' = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
+            '502' = New-SiteWorkflowRun -Id 502 -CreatedAt '2026-10-08T00:01:00Z'
+        }
+        $runs['501'].run_attempt = 2
+        $runs['501'].status = 'completed'
+        $runs['501'].conclusion = $Conclusion
+        $runs['501'].updated_at = '2026-10-08T00:03:00Z'
+        $snapshot = New-SiteReadinessSnapshot -SiteChecks @($prior, (New-SiteCheckRun -Id 2 -RunId 502)) -WorkflowRuns $runs
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'INCOMPLETE'
+        @($snapshot.Checks | Where-Object { $_.Name -eq 'Build Docusaurus Site' -and $_.State -eq 'fail' }).Count | Should -Be 1
+        $prior.conclusion | Should -Be 'success'
+        $prior.started_at | Should -Be '2026-10-08T00:00:00Z'
+    }
+    It 'rejects untrusted rerun job identity with <Field>' -TestCases @(
+        @{ Field = 'id'; Value = 9 }
+        @{ Field = 'run_id'; Value = 999 }
+        @{ Field = 'head_sha'; Value = 'different-head' }
+        @{ Field = 'check_run_url'; Value = 'https://api.github.com/repos/other/repository/check-runs/1' }
+        @{ Field = 'run_attempt'; Value = 0 }
+        @{ Field = 'run_attempt'; Value = 3 }
+        @{ Field = 'run_attempt'; Value = $null }
+    ) {
+        param($Field, $Value)
+        $run = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
+        $run.run_attempt = 2
+        $run.run_started_at = '2026-10-08T00:02:00Z'
+        $job = [pscustomobject]@{ id=1;run_id=501;run_attempt=1;head_sha='head';check_run_url='https://api.github.com/repos/Gibbs-Morris/mississippi/check-runs/1' }
+        $job.$Field = $Value
+        { New-SiteReadinessSnapshot -SiteChecks @((New-SiteCheckRun -Id 1 -RunId 501)) -WorkflowRuns @{'501'=$run} -JobOverrides @{'1'=$job} } | Should -Throw '*job attempt*'
+    }
     It 'does not let a later completion reorder an earlier-started rerun' {
-        $rerun = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:00:00Z' -Conclusion 'failure'
+        $rerun = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:02:00Z' -Conclusion 'failure' -JobAttempt 2
         $success = New-SiteCheckRun -Id 2 -RunId 502 -StartedAt '2026-10-08T00:03:00Z'
         $runs = @{
             '501' = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
@@ -638,7 +685,7 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         @{ AttemptState = 'cancelled'; Unstarted = $true }
     ) {
         param($AttemptState, $Unstarted)
-        $rerun = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:02:00Z' -Conclusion $AttemptState
+        $rerun = New-SiteCheckRun -Id 1 -RunId 501 -StartedAt '2026-10-08T00:02:00Z' -Conclusion $AttemptState -JobAttempt 2
         $success = New-SiteCheckRun -Id 2 -RunId 502
         $runs = @{
             '501' = New-SiteWorkflowRun -Id 501 -CreatedAt '2026-10-08T00:00:00Z'
