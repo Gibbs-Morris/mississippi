@@ -43,11 +43,29 @@ The assigned Sonar gate, `mississippi-sdlc` (126237), retains eight criteria: ne
 
 [CODEOWNERS](CODEOWNERS) uses the visible, write-enabled `@Gibbs-Morris/owners` team. At audit it had one member and the organization had one owner. A second team maintainer and organization owner are still needed for recovery if that account becomes unavailable; a team name alone does not create another administrator.
 
+### Additional gates required before queue release
+
+The eleven pairs above describe today's settings. A workflow running on `merge_group` does not make its result a merge requirement. Before releasing the pilot Hold, the separately approved ruleset diff must also require these seven exact candidate contexts from Actions app **15368**:
+
+| Additional required context | Producer |
+| --- | --- |
+| `pwsh-tests (ubuntu-latest)` | PowerShell Tests |
+| `pwsh-tests (windows-latest)` | PowerShell Tests |
+| `AppHost locked restore (ubuntu-latest)` | Aspire AppHost Locked Restore |
+| `AppHost locked restore (windows-latest)` | Aspire AppHost Locked Restore |
+| `L3 Spring E2E (Smoke)` | L3 Tests |
+| `Markdown Lint` | Markdown Lint |
+| `Validate repository issue reference` | PR Issue Reference |
+
+Preserve every existing pair and protection; this proposes eighteen required contexts, not a change already applied. Verify exact names, expected providers and fresh candidate-SHA results after deployment. Missing, pending, failed, canceled or unexpectedly skipped evidence must keep release blocked. Deliberately fail each additional gate under the enforced Hold and prove it remains a merge requirement when the Hold is eventually removed.
+
+Delivery policy still requires all applicable PR checks. Other inventory entries are additional results, not automatic queue protections. If a further result is intended to gate production candidates, add an enforceable required context before releasing the Hold. Path-filtered PR workflows such as Docusaurus and project metadata cannot simply be made globally required: they must first report a stable result for every applicable PR and candidate, including conservative non-applicability. Keep the Hold enforced while any intended gate lacks that reporting or ruleset proof; operator inspection of one green candidate is not a persistent gate.
+
 ## Workflow inventory
 
 There are 25 workflow files: 24 executable YAML definitions and the guideline workflow's Markdown authoring source. The repaired stack has 19 distinct external Action references using 16 unique repository/commit pairs, all verified against upstream commits. This inventory describes source behavior, not proof of live candidate execution.
 
-In the table, **PR** means targets `main`, `feature/**` and `topic/**` unless stated otherwise; **queue** means `merge_group` (`checks_requested` for the explicitly filtered definitions); **manual** means `workflow_dispatch`. Additional checks run when applicable and must pass under delivery policy, but are not among the eleven configured required contexts.
+In the table, **PR** means targets `main`, `feature/**` and `topic/**` unless stated otherwise; **queue** means `merge_group` (`checks_requested` for the explicitly filtered definitions); **manual** means `workflow_dispatch`. Additional checks run when applicable and must pass under delivery policy. They are not among today's eleven configured required contexts; the additional-gate section above defines mandatory promotion and Hold-release requirements.
 
 | Workflow source | Events | Role and important behavior |
 | --- | --- | --- |
@@ -102,9 +120,9 @@ The following is a proposal requiring separate operational approval and live pro
    - Remove only globally visible credential copies, verify repository/organization visibility and the unique protected environment policy, then resume the reviewed admissions. Confirm a fresh source executes only the fixed tokenless job and the trusted controller supplies genuine analysis. Do not resume if any credential inventory or policy check is unknown or inconsistent.
    - Redispatch only still-current source identities when the pause caused a missed completed-run event. Legacy analysis without its old token, intake with visible global copies, missing provider evidence or interrupted migration leaves landing blocked; no flag-only transition or fabricated success is acceptable.
 3. Analyze exact current main through the trusted controller. Dispatch the trusted default definition with the completed source-run ID; do not choose candidate workflow code. Verify actual main LONG/isMain revision and all eight assigned criteria.
-4. For a separately approved held default-branch pilot, review the full sanitized ruleset payload and before/after diff. Retain all existing rules, thresholds, provider IDs and empty bypass lists. Add only `merge_queue` and the unbound required context `Merge Queue Pilot Hold` on the exact target. Keep strict checks, all review settings and code-scanning protection unchanged.
+4. For a separately approved held default-branch pilot, review the full sanitized ruleset payload and before/after diff. Retain all existing rules, thresholds, provider IDs and empty bypass lists. Add `merge_queue`, the seven additional required candidate context/provider pairs above and the required context `Merge Queue Pilot Hold` on the exact target. Do not release the Hold until every intended production gate has verified required-check enforcement. Keep strict checks, all review settings and code-scanning protection unchanged.
 5. Re-fetch the active hold before any approved enqueue. Probe source-head Hold eligibility itself needs authorization; **never publish Hold success on a candidate**. Monitor the complete queue and prove no candidate can land. Obtain required CODEOWNER approval; preparation authorization is not an approval waiver.
-6. Execute the held controls below. Remove probes/candidates before removing or restoring the reviewed hold/queue delta. Production activation is a later approval after the evidence, timing and rollback are reviewed.
+6. Execute the held controls below. Remove probes/candidates before removing or restoring the reviewed hold/queue delta. Production activation is a later approval after the evidence, timing, all eighteen required context/provider pairs and rollback are reviewed. A running additional workflow is not proof that its result blocks a merge.
 
 These conservative parameters match the existing temporary-target pilot; production does not currently use them:
 
