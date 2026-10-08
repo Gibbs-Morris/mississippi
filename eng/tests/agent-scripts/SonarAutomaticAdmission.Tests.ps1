@@ -3,6 +3,54 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 
+Describe 'Trusted controller pre-import attestation' {
+    BeforeAll {
+        $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+        $yaml=Get-Content -LiteralPath (Join-Path $repoRoot '.github/workflows/sonar-trusted-analysis.yml') -Raw
+        $bootstrap=[regex]::Matches($yaml,'(?ms)^      - name: Verify attested controller revision\r?\n        shell: pwsh\r?\n        run: \|\r?\n(?<Script>.*?)(?=^      - name:|^  [a-z]|\z)')
+    }
+    It 'verifies both checkouts before their repository driver can execute' {
+        $bootstrap.Count | Should -Be 2
+        foreach($job in @('intake','analysis')) {
+            $jobBlock=[regex]::Match($yaml,'(?ms)^  '+$job+':\r?\n(?<Job>.*?)(?=^  [a-z]|\z)').Groups['Job'].Value
+            $jobBlock.IndexOf('Verify attested controller revision') | Should -BeGreaterThan $jobBlock.IndexOf('uses: actions/checkout@')
+            $jobBlock.IndexOf('Verify attested controller revision') | Should -BeLessThan $jobBlock.IndexOf('./eng/src/agent-scripts/invoke-trusted-sonar-analysis.ps1')
+        }
+    }
+    It 'allows only the attested revision for <Case> in checkout <Index>' -ForEach @(
+        foreach($index in @(0,1)) {
+            foreach($case in @('matching','changed checkout','failed Git','invalid attestation','missing attestation')) {
+                @{ Index=$index;Case=$case }
+            }
+        }
+    ) {
+        param($Index,$Case)
+        $bootstrap.Count | Should -Be 2
+        $script=[scriptblock]::Create(([regex]::Replace($bootstrap[$Index].Groups['Script'].Value,'(?m)^          ','')).TrimEnd())
+        $priorAttestation=$env:GITHUB_WORKFLOW_SHA
+        $priorExit=Get-Variable -Name LASTEXITCODE -Scope Global -ErrorAction SilentlyContinue
+        $exitExisted=$null -ne $priorExit
+        $priorExitValue=if($exitExisted){$priorExit.Value}else{0}
+        try {
+            $env:GITHUB_WORKFLOW_SHA='a'*40
+            Mock git { $global:LASTEXITCODE=0;return ('a'*40) }
+            switch($Case) {
+                'changed checkout' { Mock git { $global:LASTEXITCODE=0;return ('b'*40) } }
+                'failed Git' { Mock git { $global:LASTEXITCODE=1;return ('a'*40) } }
+                'invalid attestation' { $env:GITHUB_WORKFLOW_SHA='invalid' }
+                'missing attestation' { $env:GITHUB_WORKFLOW_SHA=$null }
+            }
+            if($Case -eq 'matching'){ { & $script } | Should -Not -Throw }
+            else { { & $script } | Should -Throw '*attested controller*' }
+            Should -Invoke git -Times 1 -Exactly
+        }
+        finally {
+            $env:GITHUB_WORKFLOW_SHA=$priorAttestation
+            if($exitExisted){Set-Variable LASTEXITCODE -Scope Global -Value $priorExitValue}
+            else {Remove-Variable LASTEXITCODE -Scope Global -ErrorAction SilentlyContinue}
+        }
+    }
+}
 Describe 'Trusted Sonar automatic event admission' {
     BeforeAll {
         $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
@@ -177,7 +225,7 @@ Describe 'Trusted Sonar automatic workflow contract' {
         $yaml | Should -Match 'trusted-sonar-upload-.*needs.intake.outputs.analysis-key'
         ([regex]::Matches($yaml,'cancel-in-progress: false')).Count | Should -Be 2
         ([regex]::Matches($yaml,'(?m)^\s+ref:')).Count | Should -Be 2
-        ([regex]::Matches($yaml,'(?m)^\s+ref: \$\{\{ github.workflow_sha \}\}\r?$')).Count | Should -Be 2
+        ([regex]::Matches($yaml,'(?m)^\s+ref: main\r?$')).Count | Should -Be 2
         ([regex]::Matches($yaml,'(?m)^\s+repository:')).Count | Should -Be 2
         ([regex]::Matches($yaml,'(?m)^\s+repository: Gibbs-Morris/mississippi\r?$')).Count | Should -Be 2
         ([regex]::Matches($yaml,'uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1')).Count | Should -Be 2
