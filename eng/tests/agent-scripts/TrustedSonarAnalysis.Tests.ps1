@@ -22,14 +22,16 @@ Describe 'Trusted Sonar source identity' {
             pull_requests=@([pscustomobject]@{number=5;head=[pscustomobject]@{sha=$head;ref='codex/test'}})
         }
         $script:sourcePr = [pscustomobject]@{
-            state='open'; merge_commit_sha=$merge
+            state='open'; merge_commit_sha=$merge; mergeable=$true
             head=[pscustomobject]@{sha=$head;ref='codex/test';repo=[pscustomobject]@{full_name='Gibbs-Morris/mississippi'}}
             base=[pscustomobject]@{sha=$target;ref='codex/parent';repo=[pscustomobject]@{full_name='Gibbs-Morris/mississippi'}}
         }
+        $script:sourceMerge = [pscustomobject]@{sha=$merge;parents=@([pscustomobject]@{sha=$target},[pscustomobject]@{sha=$head})}
         $script:sourceRef = [pscustomobject]@{object=[pscustomobject]@{sha=$head}}
         Mock Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis {
             if ($Path -like '*/actions/runs/*') { return $script:sourceRun }
             if ($Path -like '*/pulls/*') { return $script:sourcePr }
+            if ($Path -like '*/git/commits/*') { return $script:sourceMerge }
             if ($Path -like '*/git/ref/heads/*') { return $script:sourceRef }
             throw 'Unexpected metadata path.'
         }
@@ -56,6 +58,28 @@ Describe 'Trusted Sonar source identity' {
         $arguments | Should -Contain '/d:sonar.pullrequest.base=codex/parent'
         ($arguments -join ' ') | Should -Not -Match 'sonar.branch.name'
     }
+    It 'rejects an unconfirmed or inconsistent PR merge revision <Case>' -TestCases @(
+        @{Case='pending mergeability'}, @{Case='conflicted mergeability'}, @{Case='nonboolean mergeability'},
+        @{Case='stale base parent'}, @{Case='stale source parent'}, @{Case='single parent'},
+        @{Case='extra parent'}, @{Case='different commit'}, @{Case='unavailable commit metadata'}
+    ) {
+        param($Case)
+        switch ($Case) {
+            'pending mergeability' {$script:sourcePr.mergeable=$null}
+            'conflicted mergeability' {$script:sourcePr.mergeable=$false}
+            'nonboolean mergeability' {$script:sourcePr.mergeable='true'}
+            'stale base parent' {$script:sourceMerge.parents[0].sha='d'*40}
+            'stale source parent' {$script:sourceMerge.parents[1].sha='d'*40}
+            'single parent' {$script:sourceMerge.parents=@($script:sourceMerge.parents[0])}
+            'extra parent' {$script:sourceMerge.parents+=[pscustomobject]@{sha=('d'*40)}}
+            'different commit' {$script:sourceMerge.sha='d'*40}
+            'unavailable commit metadata' {
+                Mock Read-SonarGitHubMetadata -ModuleName TrustedSonarAnalysis {throw 'Merge commit lookup failed.'} -ParameterFilter {$Path -like '*/git/commits/*'}
+            }
+        }
+        {Invoke-Source} | Should -Throw
+    }
+
     It 'accepts a source-qualified workflow path <Suffix>' -TestCases @(
         @{Suffix='codex/test'},@{Suffix='refs/heads/codex/test'},@{Suffix=('a'*40)},@{Suffix='refs/pull/5/merge'}
     ) {
@@ -175,7 +199,10 @@ Describe 'Trusted Sonar source identity' {
     It 'rejects a changed merge revision or target after analysis' -TestCases @(@{Field='merge'},@{Field='target'}) {
         param($Field)
         $before=Invoke-Source
-        if ($Field -eq 'merge') {$script:sourcePr.merge_commit_sha='d'*40} else {$script:sourcePr.base.sha='d'*40}
+        if ($Field -eq 'merge') {$script:sourcePr.merge_commit_sha='d'*40}
+        else {$script:sourcePr.base.sha='d'*40;$script:sourcePr.merge_commit_sha='e'*40}
+        $script:sourceMerge.sha=$script:sourcePr.merge_commit_sha
+        $script:sourceMerge.parents=@([pscustomobject]@{sha=$script:sourcePr.base.sha},[pscustomobject]@{sha=$script:sourcePr.head.sha})
         { Assert-TrustedSonarSourceUnchanged -Before $before -After (Invoke-Source) } | Should -Throw '*changed during analysis*'
     }
     It 'delegates candidate metadata rechecks to the same queue membership assertion' {
