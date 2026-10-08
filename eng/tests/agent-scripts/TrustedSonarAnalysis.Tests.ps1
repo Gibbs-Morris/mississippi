@@ -500,6 +500,42 @@ Describe 'Trusted Sonar post-upload completion' {
         }
         {Invoke-Completion} | Should -Throw '*permit only the exact default branch*'
     }
+    It 'requires an explicit completion admission choice for <Mode>' -TestCases @(
+        @{Mode='omitted';Omit=$true},@{Mode='manual null';Omit=$false}
+    ) {
+        param($Mode,$Omit)
+        $driver=Join-Path $TestDrive 'completion-admission.ps1'
+        @(
+            'param([string]$ModulePath,[switch]$Omit)',
+            '$ErrorActionPreference="Stop"',
+            'Import-Module $ModulePath -Force',
+            '& (Get-Module TrustedSonarAnalysis) {',
+            '  function script:Get-TrustedSonarSource { [pscustomobject]@{TargetSha=$null} }',
+            '  function script:Assert-TrustedSonarSourceUnchanged {}',
+            '  function script:Assert-SonarPublishedAnalysis {}',
+            '  function script:Get-SonarQualityPolicySnapshot { @{} }',
+            '  function script:Assert-SonarQualityPolicyUnchanged {}',
+            '  function script:Assert-SonarCredentialDeployment {}',
+            '}',
+            '$parameters=@{Source=[pscustomobject]@{RunId=42};Policy=@{};Repository="Gibbs-Morris/mississippi";DefaultBranch="main";StartedAt=[datetimeoffset]::UtcNow}',
+            'if(-not $Omit){$parameters.AutomaticAdmission=$null}',
+            'Assert-TrustedSonarUploadCompletion @parameters | Out-Null',
+            'Write-Output "COMPLETION_ACCEPTED"',
+            'exit 0'
+        ) | Set-Content -LiteralPath $driver -Encoding utf8
+        $arguments=@('-NoProfile','-NonInteractive','-File',$driver,'-ModulePath',(Join-Path $repoRoot 'eng/src/agent-scripts/TrustedSonarAnalysis.psm1'))
+        if($Omit){$arguments+='-Omit'}
+        $output=& pwsh @arguments 2>&1 | Out-String
+        if($Omit){
+            $LASTEXITCODE | Should -Not -Be 0
+            $output | Should -Match 'AutomaticAdmission'
+            $output | Should -Not -Match 'COMPLETION_ACCEPTED'
+        }else{
+            $LASTEXITCODE | Should -Be 0
+            $output | Should -Match 'COMPLETION_ACCEPTED'
+        }
+    }
+
     It 'accepts an unchanged source after a successful upload' {
         {Invoke-Completion} | Should -Not -Throw
     }
