@@ -2941,16 +2941,41 @@ function Get-PrReadinessActionsCheckOrderTimestamp {
     $orderTimestamp = Get-PrReadinessEvidenceTimestamp -Value $run.created_at
     $started = $CheckRun.PSObject.Properties['started_at']
     if ($null -ne $started -and -not [string]::IsNullOrWhiteSpace([string]$started.Value)) {
-        return [Math]::Max($orderTimestamp, (Get-PrReadinessEvidenceTimestamp -Value $started.Value))
+        $orderTimestamp = [Math]::Max($orderTimestamp, (Get-PrReadinessEvidenceTimestamp -Value $started.Value))
     }
     if ([string]$CheckRun.status -ne 'completed' -or $Metadata.RunAttempt -gt 1) {
         $attemptStarted = Get-PrReadinessEvidenceTimestamp -Value $run.run_started_at
-        if ([string]$run.status -in @('queued', 'requested', 'waiting', 'pending') -or [string]$CheckRun.status -eq 'completed') {
+        if ([string]$run.status -in @('queued', 'requested', 'waiting', 'pending') -or $null -eq $started -or [string]::IsNullOrWhiteSpace([string]$started.Value)) {
             $attemptStarted = [Math]::Max($attemptStarted, (Get-PrReadinessEvidenceTimestamp -Value $run.updated_at))
         }
         $orderTimestamp = [Math]::Max($orderTimestamp, $attemptStarted)
     }
     return $orderTimestamp
+}
+
+function Get-PrReadinessActionsAttemptCheck {
+    param([Parameter(Mandatory)][object]$CheckRun, [Parameter(Mandatory)][object]$Metadata, [Parameter(Mandatory)][long]$OrderTimestamp)
+
+    $run = $Metadata.Run
+    if ([string]$run.status -notin @('queued', 'requested', 'waiting', 'pending', 'in_progress', 'completed') -or
+        ([string]$run.status -eq 'completed' -and [string]::IsNullOrWhiteSpace([string]$run.conclusion))) {
+        throw 'Actions workflow attempt state is incomplete.'
+    }
+    $current = $CheckRun.PSObject.Copy()
+    $fingerprint = ConvertTo-Json -InputObject @($Metadata.RunId, $Metadata.RunAttempt, $Metadata.WorkflowId, $Metadata.EventName, $Metadata.RunNumber, $OrderTimestamp, [string]$run.status, [string]$run.conclusion) -Compress
+    $current | Add-Member -NotePropertyName ReadinessWorkflowAttempt -NotePropertyValue $fingerprint
+    if ($Metadata.RunAttempt -gt 1) {
+        # A rerun may be admitted before any replacement check is visible.
+        if ([string]$run.status -ne 'completed') {
+            $current.status = 'in_progress'
+            $current.conclusion = $null
+        }
+        elseif ([string]$run.conclusion -notin @('success', 'skipped', 'neutral')) {
+            $current.status = 'completed'
+            $current.conclusion = [string]$run.conclusion
+        }
+    }
+    return $current
 }
 
 function Get-PrReadinessCheckCandidate {
@@ -2962,6 +2987,9 @@ function Get-PrReadinessCheckCandidate {
     )
 
     $identity = Get-PrReadinessDuplicateCheckIdentity -CheckRun $CheckRun
+    $currentCheck = $CheckRun
+    $started = $CheckRun.PSObject.Properties['started_at']
+    $checkStartTimestamp = if ($null -ne $started -and -not [string]::IsNullOrWhiteSpace([string]$started.Value)) { Get-PrReadinessEvidenceTimestamp -Value $started.Value } else { 0L }
     $runId = 0L
     $runNumber = 0L
     $runAttempt = 0L
@@ -2975,14 +3003,16 @@ function Get-PrReadinessCheckCandidate {
         $workflowId = $metadata.WorkflowId
         $eventName = $metadata.EventName
         $orderTimestamp = Get-PrReadinessActionsCheckOrderTimestamp -CheckRun $CheckRun -Metadata $metadata
+        $currentCheck = Get-PrReadinessActionsAttemptCheck -CheckRun $CheckRun -Metadata $metadata -OrderTimestamp $orderTimestamp
     }
     else { $orderTimestamp = Get-PrReadinessEvidenceTimestamp -Value $CheckRun.started_at }
     return [pscustomobject]@{
-        Check = $CheckRun
+        Check = $currentCheck
         RunId = $runId
         RunNumber = $runNumber
         RunAttempt = $runAttempt
         OrderTimestamp = $orderTimestamp
+        CheckStartTimestamp = $checkStartTimestamp
         Scope = ConvertTo-Json -InputObject @($identity.AppId, [string]$CheckRun.name, $workflowId, $eventName) -Compress
     }
 }
@@ -3000,6 +3030,10 @@ function Select-PrReadinessCurrentCheck {
         $byNumber = @($tied | Sort-Object RunNumber -Descending)
         $tied = @($byNumber | Where-Object RunNumber -EQ $byNumber[0].RunNumber)
         if (@($tied.RunId | Select-Object -Unique).Count -ne 1) { throw 'Current check ordering is ambiguous.' }
+    }
+    if ($tied.Count -gt 1) {
+        $byExecution = @($tied | Sort-Object CheckStartTimestamp -Descending)
+        $tied = @($byExecution | Where-Object CheckStartTimestamp -EQ $byExecution[0].CheckStartTimestamp)
     }
     if ($tied.Count -ne 1) { throw 'Current check rerun ordering is ambiguous.' }
     return $tied[0].Check
@@ -3021,7 +3055,9 @@ function Get-PrReadinessCurrentCheckRuns {
         ConvertTo-Json -InputObject @([string]$_.name, $appId) -Compress
     })
     foreach ($group in $groups) {
-        if ($group.Count -eq 1) { $group.Group[0]; continue }
+        $single = $group.Group[0]
+        $app = $single.PSObject.Properties['app']
+        if ($group.Count -eq 1 -and ($null -eq $app -or $null -eq $app.Value -or [long]$app.Value.id -ne 15368)) { $single; continue }
         $candidates = foreach ($check in $group.Group) {
             Get-PrReadinessCheckCandidate -CheckRun $check -Repository $repository -WorkflowRuns $workflowRuns -MetadataReader $MetadataReader
         }
@@ -3038,7 +3074,9 @@ function Get-PrReadinessCheckFingerprint {
     $app = $CheckRun.PSObject.Properties['app']
     $checkId = if ($null -ne $id) { [string]$id.Value } else { '' }
     $appId = if ($null -ne $app -and $null -ne $app.Value) { [string]$app.Value.id } else { '' }
-    return ConvertTo-Json -InputObject @([string]$CheckRun.name, $checkId, $appId, (Get-PrReadinessCheckState -CheckRun $CheckRun)) -Compress
+    $attempt = $CheckRun.PSObject.Properties['ReadinessWorkflowAttempt']
+    $attemptIdentity = if ($null -ne $attempt) { [string]$attempt.Value } else { '' }
+    return ConvertTo-Json -InputObject @([string]$CheckRun.name, $checkId, $appId, (Get-PrReadinessCheckState -CheckRun $CheckRun), $attemptIdentity) -Compress
 }
 
 function Get-PrReadinessCommitStatusState {
