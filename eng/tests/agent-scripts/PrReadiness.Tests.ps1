@@ -146,7 +146,7 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         function New-ReadinessStack {
             param([string]$Trunk)
             if (-not $Trunk) { return $null }
-            return [pscustomobject]@{ id = 10; number = 20; position = 2; size = 2; base = [pscustomobject]@{ ref = $Trunk; sha = ('a' * 40) } }
+            return [pscustomobject]@{ number = 20; position = 2; size = 2; base = [pscustomobject]@{ ref = $Trunk; sha = ('a' * 40) } }
         }
 
         function New-SiteReadinessSnapshot {
@@ -222,18 +222,16 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
     It 'rejects malformed native trunk metadata for <Case>' -TestCases @(
         @{ Case = 'EmptyRef' }
         @{ Case = 'InvalidSha' }
-        @{ Case = 'ZeroId' }
         @{ Case = 'ZeroNumber' }
-        @{ Case = 'MissingId' }
+        @{ Case = 'MissingNumber' }
     ) {
         param($Case)
         $stack = New-ReadinessStack -Trunk 'main'
         switch ($Case) {
             'EmptyRef' { $stack.base.ref = '' }
             'InvalidSha' { $stack.base.sha = 'invalid' }
-            'ZeroId' { $stack.id = 0 }
             'ZeroNumber' { $stack.number = 0 }
-            'MissingId' { $stack.PSObject.Properties.Remove('id') }
+            'MissingNumber' { $stack.PSObject.Properties.Remove('number') }
         }
         { New-SiteReadinessSnapshot -BaseRef 'codex/parent' -Stack $stack } | Should -Throw '*native*'
     }
@@ -252,6 +250,14 @@ Describe 'Unconditional Docusaurus readiness' -Tag 'DocusaurusStableReporter' {
         $finalStack = New-ReadinessStack -Trunk 'main'
         $finalStack.base.sha = ('b' * 40)
         $snapshot = New-SiteReadinessSnapshot -BaseRef 'codex/parent' -Stack (New-ReadinessStack -Trunk 'main') -FinalStack $finalStack -IncludeSiteCheck
+        $snapshot.EvidenceStable | Should -BeFalse
+    }
+
+    It 'blocks a changed native stack number during collection' {
+        $finalStack = New-ReadinessStack -Trunk 'main'
+        $finalStack.number = 21
+        $snapshot = New-SiteReadinessSnapshot -BaseRef 'codex/parent' -Stack (New-ReadinessStack -Trunk 'main') -FinalStack $finalStack -IncludeSiteCheck
+        (Get-PrReadinessReport -Snapshot $snapshot).Status | Should -Be 'INCOMPLETE'
         $snapshot.EvidenceStable | Should -BeFalse
     }
 }

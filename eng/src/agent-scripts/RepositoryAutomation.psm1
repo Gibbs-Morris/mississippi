@@ -2944,14 +2944,13 @@ function Get-PrReadinessWorkflowBase {
     try {
         $trunk = [string]$stack.base.ref
         $trunkSha = [string]$stack.base.sha
-        $stackId = [long]$stack.id
         $stackNumber = [int]$stack.number
     }
     catch { throw 'Native stack workflow applicability metadata is incomplete.' }
-    if ([string]::IsNullOrWhiteSpace($trunk) -or $trunkSha -notmatch '^[0-9a-fA-F]{40}$' -or $stackId -le 0 -or $stackNumber -le 0) {
+    if ([string]::IsNullOrWhiteSpace($trunk) -or $trunkSha -notmatch '^[0-9a-fA-F]{40}$' -or $stackNumber -le 0) {
         throw 'Native stack workflow applicability metadata is invalid.'
     }
-    return [pscustomobject]@{ Ref = $trunk; Identity = "$stackId/$stackNumber/$trunk/$trunkSha" }
+    return [pscustomobject]@{ Ref = $trunk; Identity = "$stackNumber/$trunk/$trunkSha" }
 }
 
 function Get-PrReadinessSnapshot { # NOSONAR - readiness snapshot intentionally coordinates paginated GitHub checks, reviews, threads, and stability fingerprints.
