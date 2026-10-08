@@ -70,13 +70,15 @@ function Invoke-SonarContainer {
 }
 
 function Initialize-SonarSourceWorkspace {
-    param([string]$Path,[string]$Repository,[string]$Revision,[string]$Branch,[string]$DefaultBranch)
+    param([string]$Path,[string]$Repository,[string]$Revision,[string]$Branch,[Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$DefaultBranch,[Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$TargetRef)
     if ($Repository -cne 'Gibbs-Morris/mississippi' -or $Revision -cnotmatch '^[0-9a-f]{40}$') { throw 'Invalid immutable Sonar checkout identity.' }
     if (Test-Path -LiteralPath $Path) { throw 'Sonar source checkout must start in a fresh directory.' }
     Invoke-SonarNative git @('init','--initial-branch=sonar-source',$Path)
     Invoke-SonarNative git @('-C',$Path,'config','core.hooksPath','/dev/null')
     Invoke-SonarNative git @('-C',$Path,'remote','add','origin',"https://github.com/$Repository.git")
-    Invoke-SonarNative git @('-C',$Path,'fetch','--no-tags','origin',"+refs/heads/${DefaultBranch}:refs/remotes/origin/$DefaultBranch",$Revision)
+    $refs=@("+refs/heads/${DefaultBranch}:refs/remotes/origin/$DefaultBranch")
+    if($TargetRef -cne $DefaultBranch){$refs+="+refs/heads/${TargetRef}:refs/remotes/origin/$TargetRef"}
+    Invoke-SonarNative git (@('-C',$Path,'fetch','--no-tags','origin')+$refs+@($Revision))
     Invoke-SonarNative git @('-C',$Path,'checkout','--no-guess','-b',$Branch,$Revision)
     if (Test-Path (Join-Path $Path '.sonarqube')) { throw 'Candidate source cannot supply scanner state.' }
 }

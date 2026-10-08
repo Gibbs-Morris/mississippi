@@ -40,8 +40,8 @@ try {
     '<configuration><packageSources><clear /><add key="nuget.org" value="https://api.nuget.org/v3/index.json" /></packageSources></configuration>' | Set-Content -LiteralPath (Join-Path $driver 'NuGet.Config')
     @(Get-TrustedSonarAnalysisArguments -Source $source) | ConvertTo-Json | Set-Content (Join-Path $driver 'analysis-arguments.json')
     $branch = if ($source.Mode -ceq 'PullRequest') { "pull/$($source.PullRequest)/merge" } else { $source.HeadRef }
-    Initialize-SonarSourceWorkspace -Path $build -Repository $Repository -Revision $source.BuildSha -Branch $branch -DefaultBranch $DefaultBranch
-    Initialize-SonarSourceWorkspace -Path $upload -Repository $Repository -Revision $source.BuildSha -Branch $branch -DefaultBranch $DefaultBranch
+    Initialize-SonarSourceWorkspace -Path $build -Repository $Repository -Revision $source.BuildSha -Branch $branch -DefaultBranch $DefaultBranch -TargetRef $source.TargetRef
+    Initialize-SonarSourceWorkspace -Path $upload -Repository $Repository -Revision $source.BuildSha -Branch $branch -DefaultBranch $DefaultBranch -TargetRef $source.TargetRef
     $userId = [int](& id -u)
     if ($LASTEXITCODE -ne 0) { throw 'Cannot determine runner user identity.' }
     $groupId = [int](& id -g)

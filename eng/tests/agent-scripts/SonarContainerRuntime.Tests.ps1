@@ -59,9 +59,9 @@ Describe 'Sonar container credential boundary' {
         { Assert-SonarAssetCredentialAbsent -Directory $assets -Token '' } | Should -Throw
     }
     It 'refuses to check out a foreign repository, malformed revision or existing workspace' {
-        { Initialize-SonarSourceWorkspace -Path (Join-Path $TestDrive 'source') -Repository other/repo -Revision ('a'*40) -Branch main -DefaultBranch main } | Should -Throw
-        { Initialize-SonarSourceWorkspace -Path (Join-Path $TestDrive 'source') -Repository Gibbs-Morris/mississippi -Revision bad -Branch main -DefaultBranch main } | Should -Throw
-        { Initialize-SonarSourceWorkspace -Path $TestDrive -Repository Gibbs-Morris/mississippi -Revision ('a'*40) -Branch main -DefaultBranch main } | Should -Throw '*fresh directory*'
+        { Initialize-SonarSourceWorkspace -Path (Join-Path $TestDrive 'source') -Repository other/repo -Revision ('a'*40) -Branch main -DefaultBranch main -TargetRef main } | Should -Throw
+        { Initialize-SonarSourceWorkspace -Path (Join-Path $TestDrive 'source') -Repository Gibbs-Morris/mississippi -Revision bad -Branch main -DefaultBranch main -TargetRef main } | Should -Throw
+        { Initialize-SonarSourceWorkspace -Path $TestDrive -Repository Gibbs-Morris/mississippi -Revision ('a'*40) -Branch main -DefaultBranch main -TargetRef main } | Should -Throw '*fresh directory*'
     }
     It 'fails a container stage when Docker fails rather than uploading partial output' {
         Mock Invoke-SonarNative -ModuleName SonarContainerRuntime { throw 'Docker failed' }
@@ -71,7 +71,7 @@ Describe 'Sonar container credential boundary' {
         $script:nativeCalls = [Collections.Generic.List[object]]::new()
         Mock Invoke-SonarNative -ModuleName SonarContainerRuntime { $script:nativeCalls.Add([pscustomobject]@{Executable=$Executable;Arguments=@($Arguments)}) }
         $path = Join-Path $TestDrive 'immutable-checkout'
-        Initialize-SonarSourceWorkspace -Path $path -Repository Gibbs-Morris/mississippi -Revision ('a'*40) -Branch pull/5/merge -DefaultBranch main
+        Initialize-SonarSourceWorkspace -Path $path -Repository Gibbs-Morris/mississippi -Revision ('a'*40) -Branch pull/5/merge -DefaultBranch main -TargetRef main
         $script:nativeCalls.Count | Should -Be 5
         $script:nativeCalls[1].Arguments | Should -Contain '/dev/null'
         $script:nativeCalls[2].Arguments | Should -Contain 'https://github.com/Gibbs-Morris/mississippi.git'
@@ -80,6 +80,36 @@ Describe 'Sonar container credential boundary' {
         $script:nativeCalls[4].Arguments | Should -Contain 'pull/5/merge'
         ($script:nativeCalls.Arguments -join ' ') | Should -Not -Match 'token|extraheader|credential'
     }
+
+    It 'fetches the actual <Target> target for both real controller workspace calls' -TestCases @(
+        @{Target='feature/example'},@{Target='topic/example'},@{Target='main'}
+    ) {
+        param($Target)
+        $tokens=$null;$errors=$null
+        $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $repoRoot 'eng/src/agent-scripts/invoke-trusted-sonar-analysis.ps1'),[ref]$tokens,[ref]$errors)
+        $errors.Count | Should -Be 0
+        $calls=@($ast.FindAll({param($node) $node -is [Management.Automation.Language.CommandAst] -and $node.GetCommandName() -ceq 'Initialize-SonarSourceWorkspace'},$true))
+        $calls.Count | Should -Be 2
+        $setup=[scriptblock]::Create((@($calls | ForEach-Object {$_.Extent.Text}) -join [Environment]::NewLine))
+        $script:nativeCalls=[Collections.Generic.List[object]]::new()
+        Mock Invoke-SonarNative -ModuleName SonarContainerRuntime {$script:nativeCalls.Add([pscustomobject]@{Executable=$Executable;Arguments=@($Arguments)})}
+        $Repository='Gibbs-Morris/mississippi';$DefaultBranch='main';$branch='pull/5/merge'
+        $source=[pscustomobject]@{BuildSha=('a'*40);TargetRef=$Target}
+        $build=Join-Path $TestDrive 'controller-build';$upload=Join-Path $TestDrive 'controller-upload'
+        & $setup
+        $script:nativeCalls.Count | Should -Be 10
+        $fetches=@($script:nativeCalls | Where-Object {$_.Arguments -contains 'fetch'})
+        $fetches.Count | Should -Be 2
+        foreach($fetch in $fetches){
+            $fetch.Arguments | Should -Contain "+refs/heads/${Target}:refs/remotes/origin/$Target"
+            $fetch.Arguments | Should -Contain $source.BuildSha
+            $fetch.Arguments | Should -Contain '--no-tags'
+            $fetch.Arguments | Should -Contain '+refs/heads/main:refs/remotes/origin/main'
+            @($fetch.Arguments | Where-Object {$_ -like '+refs/heads/*'}).Count | Should -Be $(if($Target -ceq 'main'){1}else{2})
+        }
+        ($script:nativeCalls.Arguments -join ' ') | Should -Not -Match 'token|extraheader|credential'
+    }
+
     It 'matches the runner ownership while requiring a non-root container identity' {
         $arguments = @(Get-SonarContainerArguments @parameters -Phase Build -UserId 1001 -GroupId 118)
         $arguments | Should -Contain '--user=1001:118'

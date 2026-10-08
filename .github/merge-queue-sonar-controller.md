@@ -8,7 +8,7 @@ The workflow and checkout revisions must also match the live default-branch tip 
 
 The controller reads source-run and current PR/queue metadata from GitHub. Candidate artifacts never supply identity or executable scripts to the host.
 
-- PR: require confirmed mergeability and a merge commit with exactly the current base and source head as its parents; build that immutable revision and report the PR's source head, number, source branch and immediate base branch.
+- PR: require confirmed mergeability and a merge commit with exactly the current base and source head as its parents; build that immutable revision, fetch the actual immediate base branch into both build and upload workspaces while retaining the default-branch ref for version calculation, and report the PR's source head, number, source branch and immediate base branch.
 - Main: analyze the exact current default-branch revision with an explicit branch identity.
 - Manual branch: analyze the exact current selected branch with its own identity; snapshot the current default-branch commit as target, require that exact LONG main baseline in Sonar before and after upload, and reject target movement during source rechecks.
 - Queue: resolve the exact live candidate and complete validated constituent prefix. Analyze a distinct SHORT branch against an already analyzed, exact current target revision.
