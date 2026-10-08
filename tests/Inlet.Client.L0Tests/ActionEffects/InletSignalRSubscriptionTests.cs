@@ -170,6 +170,37 @@ public sealed class InletSignalRSubscriptionTests : IAsyncDisposable
         }
     }
 
+    /// <summary>Completes an unexpected retry so the regression reports actions and IDs instead of timing out.</summary>
+    /// <param name="duplicate">The held duplicate operation.</param>
+    /// <param name="context">The context holding its failed-attempt continuation.</param>
+    /// <returns>The duplicate's emitted actions.</returns>
+    private async Task<IAction[]> FinishHeldDuplicateAsync(
+        Task<IAction[]> duplicate,
+        HeldSubscriptionContinuationContext context
+    )
+    {
+        using CancellationTokenSource nextRequestCancellation =
+            CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        Task<TaskCompletionSource<object?>> nextRequest =
+            subscriptionRequests.Reader.ReadAsync(nextRequestCancellation.Token).AsTask();
+        context.Resume();
+        Task completed = await Task.WhenAny(duplicate, nextRequest)
+            .WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        if (completed == nextRequest)
+        {
+            Assert.True(liveSubscriptions.TryAdd("unexpected-retry", 0));
+            (await nextRequest).SetResult("unexpected-retry");
+        }
+        else
+        {
+            await nextRequestCancellation.CancelAsync();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                nextRequest.WaitAsync(TestContext.Current.CancellationToken));
+        }
+
+        return await duplicate.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+    }
+
     /// <summary>
     ///     Waits for a loaded or error action with a watchdog for stalled effects.
     /// </summary>
@@ -375,6 +406,49 @@ public sealed class InletSignalRSubscriptionTests : IAsyncDisposable
                 new(),
                 CancellationToken.None));
         Assert.Equal("retry-subscription", Assert.Single(unsubscribedIds));
+    }
+
+    /// <summary>Release after a failed owner retires a waiter before it takes retry ownership.</summary>
+    /// <param name="disposeEffect">Whether disposal releases interest instead of unsubscribe.</param>
+    /// <returns>A task representing the test.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ReleasedFailedHandoffDoesNotRestart(
+        bool disposeEffect
+    )
+    {
+        await using InletSignalRActionEffect effect = new(
+            new(() => store),
+            serviceProvider.GetRequiredService<IHubConnectionProvider>(),
+            serviceProvider.GetRequiredService<IProjectionFetcher>(),
+            serviceProvider.GetRequiredService<IProjectionDtoRegistry>());
+        SubscribeToProjectionAction<TestProjection> action = new("entity-1");
+        Task<IAction[]> first = CollectAsync(effect.HandleAsync(action, new(), CancellationToken.None));
+        TaskCompletionSource<object?> response = await ReadSubscriptionRequestAsync();
+        HeldSubscriptionContinuationContext context = new();
+        Task<IAction[]> duplicate =
+            context.Run(() => CollectAsync(effect.HandleAsync(action, new(), CancellationToken.None)));
+        response.SetException(new InvalidOperationException("Subscription failed"));
+        Assert.IsType<ProjectionErrorAction<TestProjection>>((await first)[1]);
+        await context.WaitForContinuationAsync(TestContext.Current.CancellationToken);
+        if (disposeEffect)
+        {
+            await effect.DisposeAsync();
+        }
+        else
+        {
+            await CollectAsync(
+                effect.HandleAsync(
+                    new UnsubscribeFromProjectionAction<TestProjection>("entity-1"),
+                    new(),
+                    CancellationToken.None));
+        }
+
+        IAction[] actions = await FinishHeldDuplicateAsync(duplicate, context);
+        Assert.Empty(actions);
+        Assert.Single(subscriptions);
+        Assert.Empty(liveSubscriptions);
     }
 
     /// <summary>

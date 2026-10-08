@@ -42,7 +42,8 @@ internal sealed class InletSignalRActionEffect
 
     private readonly IDisposable hubCallbackRegistration;
 
-    private readonly Dictionary<(Type ProjectionType, string EntityId), TaskCompletionSource<bool>>
+    private readonly
+        Dictionary<(Type ProjectionType, string EntityId), (object Interest, TaskCompletionSource<bool> Attempt)>
         pendingSubscriptions = new();
 
     private readonly object subscriptionGate = new();
@@ -133,9 +134,9 @@ internal sealed class InletSignalRActionEffect
     {
         lock (subscriptionGate)
         {
-            foreach (TaskCompletionSource<bool> pending in pendingSubscriptions.Values)
+            foreach ((object Interest, TaskCompletionSource<bool> Attempt) pending in pendingSubscriptions.Values)
             {
-                pending.TrySetResult(true);
+                pending.Attempt.TrySetResult(true);
             }
 
             pendingSubscriptions.Clear();
@@ -404,10 +405,10 @@ internal sealed class InletSignalRActionEffect
         bool isActiveSubscriptionRemoved;
         lock (subscriptionGate)
         {
-            if (pendingSubscriptions.Remove(key, out TaskCompletionSource<bool>? pending))
+            if (pendingSubscriptions.Remove(key, out (object Interest, TaskCompletionSource<bool> Attempt) pending))
             {
                 // Released interest also retires callers waiting on the same attempt.
-                pending.TrySetResult(true);
+                pending.Attempt.TrySetResult(true);
             }
 
             isActiveSubscriptionRemoved = activeSubscriptions.TryRemove(key, out subscriptionId);
@@ -541,15 +542,17 @@ internal sealed class InletSignalRActionEffect
     {
         lock (subscriptionGate)
         {
-            if (!pendingSubscriptions.TryGetValue(key, out TaskCompletionSource<bool>? pending) ||
-                !ReferenceEquals(pending, reservation))
+            if (!pendingSubscriptions.TryGetValue(
+                    key,
+                    out (object Interest, TaskCompletionSource<bool> Attempt) pending) ||
+                !ReferenceEquals(pending.Attempt, reservation))
             {
                 return false;
             }
 
-            pendingSubscriptions.Remove(key);
             if (subscriptionId is not null)
             {
+                pendingSubscriptions.Remove(key);
                 activeSubscriptions[key] = subscriptionId;
             }
 
@@ -571,9 +574,10 @@ internal sealed class InletSignalRActionEffect
         CancellationToken cancellationToken
     )
     {
+        object? interest = null;
         while (true)
         {
-            TaskCompletionSource<bool> pending;
+            (object Interest, TaskCompletionSource<bool> Attempt) pending;
             lock (subscriptionGate)
             {
                 if (activeSubscriptions.ContainsKey(key))
@@ -581,16 +585,35 @@ internal sealed class InletSignalRActionEffect
                     return false;
                 }
 
-                if (!pendingSubscriptions.TryGetValue(key, out pending!))
+                if (!pendingSubscriptions.TryGetValue(key, out pending))
                 {
-                    pendingSubscriptions.Add(key, reservation);
+                    if (interest is not null)
+                    {
+                        // This caller's interest was released while its retry was queued.
+                        return false;
+                    }
+
+                    pendingSubscriptions.Add(key, (new(), reservation));
+                    return true;
+                }
+
+                interest ??= pending.Interest;
+                if (!ReferenceEquals(interest, pending.Interest))
+                {
+                    return false;
+                }
+
+                // Successful and released attempts are removed; a retained completed attempt failed.
+                if (pending.Attempt.Task.IsCompletedSuccessfully)
+                {
+                    pendingSubscriptions[key] = (interest, reservation);
                     return true;
                 }
             }
 
             try
             {
-                if (await pending.Task.WaitAsync(cancellationToken))
+                if (await pending.Attempt.Task.WaitAsync(cancellationToken))
                 {
                     return false;
                 }
