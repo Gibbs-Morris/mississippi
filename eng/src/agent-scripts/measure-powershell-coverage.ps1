@@ -62,7 +62,7 @@ function Write-ModuleCoverage {
 function Measure-TestFileCoverage {
     param([string]$TestFile, [string[]]$ModulePaths, [string]$Destination)
 
-    Import-Module Pester -MinimumVersion 5.2.0 -ErrorAction Stop
+    Import-Module Pester -MinimumVersion 5.7.1 -ErrorAction Stop
     $configuration = New-PesterConfiguration
     $configuration.Run.Path = $TestFile
     $configuration.Run.PassThru = $true

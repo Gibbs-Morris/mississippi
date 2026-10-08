@@ -65,7 +65,8 @@ Describe 'PowerShell test orchestration' {
     It 'admits Pester <Version> only when the full harness minimum is met' -ForEach @(
         @{Version='5.0.0';ExitCode=1},
         @{Version='5.1.1';ExitCode=1},
-        @{Version='5.2.0';ExitCode=0}
+        @{Version='5.2.0';ExitCode=1},
+        @{Version='5.7.1';ExitCode=0}
     ) {
         $modulesRoot = Join-Path $TestDrive ('modules-' + $Version)
         $pesterRoot = Join-Path $modulesRoot ('Pester/' + $Version)
@@ -85,7 +86,7 @@ Describe 'PowerShell test orchestration' {
         $output = & $powerShellPath -NoProfile -File $hostScript -ModulesRoot $modulesRoot -Orchestrator $orchestrator 2>&1 | Out-String
         $LASTEXITCODE | Should -Be $ExitCode
         (Test-Path -LiteralPath $marker) | Should -Be ($ExitCode -eq 0)
-        if ($ExitCode -eq 1) { $output | Should -Match 'Pester 5\.2'; $output | Should -Not -Match 'Executing:' }
+        if ($ExitCode -eq 1) { $output | Should -Match 'Pester 5\.7\.1'; $output | Should -Not -Match 'Executing:' }
     }
 
     It 'fails a missing runner' {
