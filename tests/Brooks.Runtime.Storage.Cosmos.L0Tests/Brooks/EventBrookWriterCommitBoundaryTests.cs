@@ -56,7 +56,7 @@ public sealed class EventBrookWriterCommitBoundaryTests
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new();
         mapper.Setup(m => m.Map(It.IsAny<BrookEvent>())).Returns(new EventStorageModel());
         Mock<IBrookRecoveryService> recovery = new();
-        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(originalPosition);
         List<long> retainedPositions = [originalPosition.Value];
         bool hasPendingEvidence = false;
@@ -65,6 +65,7 @@ public sealed class EventBrookWriterCommitBoundaryTests
                 key,
                 It.Is<BrookPosition>(p => p == originalPosition),
                 finalPosition,
+                It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
             .Callback(() => hasPendingEvidence = true)
             .Returns(Task.CompletedTask);
@@ -72,22 +73,31 @@ public sealed class EventBrookWriterCommitBoundaryTests
                 key,
                 It.IsAny<IReadOnlyList<EventStorageModel>>(),
                 It.IsAny<long>(),
+                It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
-            .Callback<BrookKey, IReadOnlyList<EventStorageModel>, long, CancellationToken>((_, _, position, _) =>
+            .Callback<BrookKey, IReadOnlyList<EventStorageModel>, long, Action, CancellationToken>((
+                    _, _, position, _, _
+                ) =>
                 retainedPositions.Add(position))
             .Returns(Task.CompletedTask);
         InvalidOperationException failure = new("Cursor commit acknowledgement or pending cleanup failed.");
-        repository.Setup(r => r.CommitCursorPositionAsync(key, finalPosition, It.IsAny<CancellationToken>()))
+        repository.Setup(r => r.CommitCursorPositionAsync(
+                key,
+                finalPosition,
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()))
             .Callback(() =>
             {
                 cursor = isCursorCommitted ? finalPosition : originalPosition.Value;
                 hasPendingEvidence = !isPendingDeleted;
             })
             .ThrowsAsync(failure);
-        repository.Setup(r => r.DeleteEventAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()))
-            .Callback<BrookKey, long, CancellationToken>((_, position, _) => retainedPositions.Remove(position))
+        repository
+            .Setup(r => r.DeleteEventAsync(key, It.IsAny<long>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()))
+            .Callback<BrookKey, long, Action, CancellationToken>((_, position, _, _) =>
+                retainedPositions.Remove(position))
             .Returns(Task.CompletedTask);
-        repository.Setup(r => r.DeletePendingCursorAsync(key, It.IsAny<CancellationToken>()))
+        repository.Setup(r => r.DeletePendingCursorAsync(key, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
             .Callback(() => hasPendingEvidence = false)
             .Returns(Task.CompletedTask);
         repository.Setup(r => r.EventExistsAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()))
@@ -137,9 +147,13 @@ public sealed class EventBrookWriterCommitBoundaryTests
         Assert.Equal(!isPendingDeleted, hasPendingEvidence);
         Assert.Equal(isCursorCommitted ? finalPosition : originalPosition.Value, cursor);
         repository.Verify(
-            r => r.CommitCursorPositionAsync(key, finalPosition, It.IsAny<CancellationToken>()),
+            r => r.CommitCursorPositionAsync(key, finalPosition, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
             Times.Once);
-        repository.Verify(r => r.DeleteEventAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
-        repository.Verify(r => r.DeletePendingCursorAsync(key, It.IsAny<CancellationToken>()), Times.Never);
+        repository.Verify(
+            r => r.DeleteEventAsync(key, It.IsAny<long>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        repository.Verify(
+            r => r.DeletePendingCursorAsync(key, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 }

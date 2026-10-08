@@ -15,4 +15,15 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
   </ItemGroup>
+  <!-- Roslyn release tracking requires .md filenames; keep its input format separate from documentation lint. -->
+  <Target Name="PrepareDiagnosticReleases" BeforeTargets="CoreCompile">
+    <MakeDir Directories="$(IntermediateOutputPath)DiagnosticReleases" />
+    <Copy SourceFiles="AnalyzerReleases.Shipped.txt;AnalyzerReleases.Unshipped.txt"
+          DestinationFiles="$(IntermediateOutputPath)DiagnosticReleases/AnalyzerReleases.Shipped.md;$(IntermediateOutputPath)DiagnosticReleases/AnalyzerReleases.Unshipped.md"
+          SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <AdditionalFiles Include="$(IntermediateOutputPath)DiagnosticReleases/AnalyzerReleases.Shipped.md" />
+      <AdditionalFiles Include="$(IntermediateOutputPath)DiagnosticReleases/AnalyzerReleases.Unshipped.md" />
+    </ItemGroup>
+  </Target>
 </Project>

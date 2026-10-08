@@ -93,7 +93,6 @@ builder.UseMississippi(client =>
         reservoir.AddReservoirBlazorBuiltIns();
         reservoir.AddInletClient();
         reservoir.AddInletBlazorSignalR(signalR => signalR
-            .WithHubPath("/hubs/inlet")
             .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
     });
 });

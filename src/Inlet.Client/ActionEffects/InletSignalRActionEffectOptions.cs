@@ -9,7 +9,7 @@ public sealed class InletSignalRActionEffectOptions
     ///     Gets or sets the path to the Inlet SignalR hub.
     /// </summary>
     /// <remarks>
-    ///     Defaults to "/hubs/inlet".
+    ///     Defaults to <c>hubs/inlet</c>, relative to the application navigation base.
     /// </remarks>
-    public string HubPath { get; set; } = "/hubs/inlet";
+    public string HubPath { get; set; } = "hubs/inlet";
 }

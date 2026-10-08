@@ -81,7 +81,7 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
     }
 
     /// <summary>
-    ///     Gets the aggregate route prefix (e.g., "/api/aggregates/bank-account").
+    ///     Gets the aggregate route prefix (e.g., "api/aggregates/bank-account").
     /// </summary>
     /// <remarks>
     ///     This should return the base path to the aggregate's command endpoints,
@@ -205,8 +205,24 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
     /// </summary>
     /// <param name="action">The action containing the entity ID.</param>
     /// <returns>The full API endpoint URL.</returns>
+    /// <remarks>
+    ///     The default endpoint escapes the entity ID as one path segment. IDs containing a slash
+    ///     or equal to <c>.</c> or <c>..</c> cannot preserve their identity through the default route.
+    ///     They produce a failed lifecycle action before mapping or HTTP dispatch. Override this
+    ///     method when an application endpoint supports a different identifier contract.
+    /// </remarks>
+    /// <exception cref="HttpRequestException">The entity ID cannot be represented by the default route.</exception>
     protected virtual string GetEndpoint(
         TAction action
-    ) =>
-        $"{AggregateRoutePrefix}/{action.EntityId}/{Route}";
+    )
+    {
+        string entityId = action.EntityId;
+        if (entityId.Contains('/', StringComparison.Ordinal) || entityId is "." or "..")
+        {
+            throw new HttpRequestException(
+                "The entity ID cannot contain '/' or be '.' or '..' when using the default command endpoint.");
+        }
+
+        return $"{AggregateRoutePrefix}/{Uri.EscapeDataString(entityId)}/{Route}";
+    }
 }

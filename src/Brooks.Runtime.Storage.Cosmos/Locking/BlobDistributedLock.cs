@@ -21,7 +21,7 @@ internal sealed class BlobDistributedLock : IDistributedLock
 
     private bool disposed;
 
-    private DateTimeOffset lastRenewalTime;
+    private long lastRenewalTimestamp;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="BlobDistributedLock" /> class.
@@ -50,7 +50,7 @@ internal sealed class BlobDistributedLock : IDistributedLock
         this.lockKey = lockKey;
         this.heldDurationStopwatch = heldDurationStopwatch;
         TimeProvider = timeProvider ?? TimeProvider.System;
-        lastRenewalTime = TimeProvider.GetUtcNow();
+        lastRenewalTimestamp = TimeProvider.GetTimestamp();
 
         // Calculate renewal threshold with a safety buffer to account for network latency
         renewalThreshold = TimeSpan.FromSeconds(Math.Max(1, leaseDurationSeconds - leaseRenewalThresholdSeconds - 1));
@@ -107,26 +107,43 @@ internal sealed class BlobDistributedLock : IDistributedLock
     /// <returns>A task representing the asynchronous operation.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the lock has been disposed.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the lock cannot be renewed.</exception>
+    public Task RenewAsync(
+        CancellationToken cancellationToken = default
+    ) =>
+        RenewAsync(false, cancellationToken);
+
+    /// <summary>
+    ///     Renews the lease through the service when forced or when the ordinary threshold is reached.
+    /// </summary>
+    /// <param name="forceRenewal">Whether an actual service renewal is required.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the actual renewal or ordinary early skip.</returns>
     public async Task RenewAsync(
+        bool forceRenewal,
         CancellationToken cancellationToken = default
     )
     {
         ObjectDisposedException.ThrowIf(disposed, this);
-        DateTimeOffset now = TimeProvider.GetUtcNow();
-        TimeSpan timeSinceLastRenewal = now - lastRenewalTime;
+        long requestStart = TimeProvider.GetTimestamp();
+        TimeSpan timeSinceLastRenewal = TimeProvider.GetElapsedTime(lastRenewalTimestamp, requestStart);
 
         // Only renew if we're approaching the expiration threshold
-        if (timeSinceLastRenewal < renewalThreshold)
+        if (!forceRenewal && (timeSinceLastRenewal < renewalThreshold))
         {
             return;
         }
 
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             await LeaseClient.RenewAsync(cancellationToken: cancellationToken);
 
-            // Use the actual completion time to avoid drifting too close to expiration
-            lastRenewalTime = TimeProvider.GetUtcNow();
+            // The service may have renewed before the response reaches this process.
+            lastRenewalTimestamp = requestStart;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (RequestFailedException ex) when ((ex.Status == 409) || (ex.Status == 404))
         {

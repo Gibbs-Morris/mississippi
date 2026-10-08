@@ -2,6 +2,8 @@ using System;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.State;
@@ -32,7 +34,8 @@ public static class ReservoirRegistrations
         services.TryAddScoped<IStore>(sp => new Store(
             sp.GetServices<IFeatureStateRegistration>(),
             sp.GetServices<IMiddleware>(),
-            sp.GetRequiredService<TimeProvider>()));
+            sp.GetRequiredService<TimeProvider>(),
+            sp.GetService<ILogger<Store>>() ?? NullLogger<Store>.Instance));
         return new ReservoirBuilder(services);
     }
 }
