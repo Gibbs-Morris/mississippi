@@ -27,7 +27,8 @@ public sealed class InletStartupStatusTests
 
     private static async Task SaveStateEvidenceAsync(
         IPage page,
-        string state
+        string state,
+        int? failedNegotiationStatus = 503
     )
     {
         string? directory = Environment.GetEnvironmentVariable("SPRING_TEST_ARTIFACTS");
@@ -58,7 +59,7 @@ public sealed class InletStartupStatusTests
                 {
                     Route = page.Url,
                     State = state,
-                    FailedNegotiationStatus = 503,
+                    FailedNegotiationStatus = failedNegotiationStatus,
                     Browser = "Chromium",
                     BrowserVersion = page.Context.Browser?.Version,
                     Desktop = new
@@ -134,6 +135,50 @@ public sealed class InletStartupStatusTests
         finally
         {
             await SpringBrowserFixture.SaveBrowserArtifactsAsync(page, "inlet-startup");
+        }
+    }
+
+    /// <summary>
+    ///     A pending negotiation shows Connecting until the transport becomes usable.
+    /// </summary>
+    /// <returns>A task representing the browser journey.</returns>
+    [Fact]
+    public async Task PendingInitialNegotiationShowsConnectingUntilReady()
+    {
+        Assert.True(Fixture.IsInitialized, "The Spring application and browser must be initialized.");
+        IPage page = await Fixture.CreatePageAsync();
+        await page.Context.Tracing.StartAsync(
+            new()
+            {
+                Screenshots = true,
+                Snapshots = true,
+                Sources = true,
+            });
+        TaskCompletionSource negotiationReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource allowNegotiation = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        await page.RouteAsync(
+            "**/hubs/inlet/negotiate**",
+            async route =>
+            {
+                negotiationReached.TrySetResult();
+                await allowNegotiation.Task.WaitAsync(TestContext.Current.CancellationToken);
+                await route.ContinueAsync();
+            });
+        try
+        {
+            AccountsPage accounts = new(page);
+            await accounts.NavigateAsync(Fixture.GatewayBaseUri);
+            await negotiationReached.Task.WaitAsync(TestContext.Current.CancellationToken);
+            await accounts.WaitForConnectionStatusAsync("Connecting", 120_000);
+            await SaveStateEvidenceAsync(page, "connecting", null);
+            allowNegotiation.SetResult();
+            await accounts.WaitForConnectionStatusAsync("Connected", 120_000);
+            await SaveStateEvidenceAsync(page, "ready-after-wait", null);
+        }
+        finally
+        {
+            allowNegotiation.TrySetResult();
+            await SpringBrowserFixture.SaveBrowserArtifactsAsync(page, "inlet-readiness");
         }
     }
 }

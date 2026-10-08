@@ -27,19 +27,22 @@ internal sealed class BlobDistributedLockManager : IDistributedLockManager
     /// <param name="options">The configuration options for brook storage.</param>
     /// <param name="leaseClientFactory">Factory used to create blob lease clients.</param>
     /// <param name="logger">The logger for diagnostic output.</param>
+    /// <param name="timeProvider">The clock supplied to acquired locks, or System when omitted.</param>
     /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
     public BlobDistributedLockManager(
         [FromKeyedServices(BrookCosmosDefaults.BlobLockingServiceKey)]
         BlobServiceClient blobServiceClient,
         IOptions<BrookStorageOptions> options,
         IBlobLeaseClientFactory leaseClientFactory,
-        ILogger<BlobDistributedLockManager> logger
+        ILogger<BlobDistributedLockManager> logger,
+        TimeProvider? timeProvider = null
     )
     {
         BlobServiceClient = blobServiceClient ?? throw new ArgumentNullException(nameof(blobServiceClient));
         Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         LeaseClientFactory = leaseClientFactory ?? throw new ArgumentNullException(nameof(leaseClientFactory));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        TimeProvider = timeProvider ?? TimeProvider.System;
     }
 
     private BlobServiceClient BlobServiceClient { get; }
@@ -49,6 +52,8 @@ internal sealed class BlobDistributedLockManager : IDistributedLockManager
     private ILogger<BlobDistributedLockManager> Logger { get; }
 
     private BrookStorageOptions Options { get; }
+
+    private TimeProvider TimeProvider { get; }
 
     /// <summary>
     ///     Acquires a distributed lock for the specified key and duration.
@@ -132,6 +137,7 @@ internal sealed class BlobDistributedLockManager : IDistributedLockManager
             Options.LeaseRenewalThresholdSeconds,
             Options.LeaseDurationSeconds,
             lockKey,
-            stopwatch);
+            stopwatch,
+            TimeProvider);
     }
 }

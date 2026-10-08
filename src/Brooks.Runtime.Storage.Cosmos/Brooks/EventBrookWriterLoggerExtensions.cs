@@ -13,6 +13,26 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Brooks;
 internal static partial class EventBrookWriterLoggerExtensions
 {
     /// <summary>
+    ///     Reports shutdown failure after the append's cursor commit has been acknowledged.
+    /// </summary>
+    /// <param name="logger">The writer logger.</param>
+    /// <param name="exception">The first shutdown failure.</param>
+    /// <param name="brookId">The brook whose events are committed.</param>
+    /// <param name="finalPosition">The acknowledged cursor position.</param>
+    [LoggerMessage(
+        EventId = 1014,
+        EventName = "AppendCleanupFailed",
+        Level = LogLevel.Warning,
+        Message =
+            "Append cleanup failed for brook '{BrookId}' after committing position {FinalPosition}; the committed result was returned")]
+    public static partial void AppendCleanupFailed(
+        this ILogger logger,
+        Exception exception,
+        BrookKey brookId,
+        long finalPosition
+    );
+
+    /// <summary>
     ///     Logs an uncertain cursor commit without implying that event rollback is safe.
     /// </summary>
     /// <param name="logger">The logger.</param>

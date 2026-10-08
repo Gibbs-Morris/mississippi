@@ -20,9 +20,17 @@ namespace Mississippi.Inlet.Client.ActionEffects;
 /// </summary>
 internal sealed class HubConnectionProvider : IHubConnectionProvider
 {
+    private readonly Lock connectionLock = new();
+
     private readonly Lazy<IInletStore> lazyStore;
 
+    private Task? connectionStartTask;
+
+    private bool disposed;
+
     private int reconnectAttemptCount;
+
+    private TaskCompletionSource? reconnectionCompletion;
 
     private Task stateTransition = Task.CompletedTask;
 
@@ -99,6 +107,12 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
+        lock (connectionLock)
+        {
+            disposed = true;
+            reconnectionCompletion?.TrySetCanceled();
+        }
+
         Connection.Closed -= OnClosedAsync;
         Connection.Reconnecting -= OnReconnectingAsync;
         Connection.Reconnected -= OnReconnectedAsync;
@@ -112,33 +126,59 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
     {
         long started = Stopwatch.GetTimestamp();
         Logger.EnsureConnectionStarted(Connection.State);
-        (bool startedConnection, Task starting) = await RunStateTransitionAsync<(bool Started, Task Starting)>(() =>
+        Task? starting;
+        TaskCompletionSource<Task>? starter = null;
+        lock (connectionLock)
         {
-            if (Connection.State != HubConnectionState.Disconnected)
+            ObjectDisposedException.ThrowIf(disposed, this);
+            HubConnectionState state = Connection.State;
+            if (state == HubConnectionState.Connected)
             {
-                return (false, Task.CompletedTask);
+                Logger.EnsureConnectionCompleted(state, Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+                return;
             }
 
-            Store.Dispatch(new SignalRConnectingAction());
-            return (true, BeginConnectionAsync(cancellationToken));
-        });
-        if (startedConnection)
-        {
-            try
+            if ((state == HubConnectionState.Disconnected) &&
+                (connectionStartTask is null || connectionStartTask.IsCompleted))
             {
+                starter = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                // Publish the shared start before dispatching actions that can reenter readiness.
+                connectionStartTask = starter.Task.Unwrap();
+                reconnectionCompletion?.TrySetCanceled(CancellationToken.None);
+            }
+
+            starting = state is HubConnectionState.Disconnected or HubConnectionState.Connecting
+                ? connectionStartTask
+                : null;
+        }
+
+        if (starter is not null)
+        {
+            starter.SetResult(StartConnectionAsync(started, cancellationToken));
+        }
+
+        if (starting is not null)
+        {
+            if (starter is not null)
+            {
+                // The startup owner observes failure publication before completing.
                 await starting;
             }
-            catch (Exception exception)
+            else
             {
-                await RunStateTransitionAsync(() =>
-                {
-                    HandleStartupFailure(exception, started, cancellationToken);
-                    return true;
-                });
-                throw;
+                await starting.WaitAsync(cancellationToken);
+            }
+        }
+
+        while (!IsConnected)
+        {
+            if (Connection.State != HubConnectionState.Reconnecting)
+            {
+                throw new InvalidOperationException("The hub connection has not reached the connected state.");
             }
 
-            Store.Dispatch(new SignalRConnectedAction(Connection.ConnectionId, TimeProvider.GetUtcNow()));
+            await WaitForReconnectionAsync(cancellationToken);
         }
 
         Logger.EnsureConnectionCompleted(Connection.State, Stopwatch.GetElapsedTime(started).TotalMilliseconds);
@@ -220,6 +260,21 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
         Exception? exception
     )
     {
+        lock (connectionLock)
+        {
+            if (Connection.State == HubConnectionState.Disconnected)
+            {
+                if (exception is null)
+                {
+                    reconnectionCompletion?.TrySetCanceled();
+                }
+                else
+                {
+                    reconnectionCompletion?.TrySetException(exception);
+                }
+            }
+        }
+
         reconnectAttemptCount = 0;
         Store.Dispatch(new SignalRDisconnectedAction(exception?.Message, TimeProvider.GetUtcNow()));
         return Task.CompletedTask;
@@ -229,6 +284,14 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
         string? connectionId
     )
     {
+        lock (connectionLock)
+        {
+            if (IsConnected)
+            {
+                reconnectionCompletion?.TrySetResult();
+            }
+        }
+
         reconnectAttemptCount = 0;
         Store.Dispatch(new SignalRReconnectedAction(connectionId, TimeProvider.GetUtcNow()));
         return Task.CompletedTask;
@@ -264,5 +327,67 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
         {
             completed.SetResult();
         }
+    }
+
+    private async Task StartConnectionAsync(
+        long started,
+        CancellationToken cancellationToken
+    )
+    {
+        Task starting = await RunStateTransitionAsync(() =>
+        {
+            Store.Dispatch(new SignalRConnectingAction());
+            return BeginConnectionAsync(cancellationToken);
+        });
+        try
+        {
+            await starting;
+        }
+        catch (Exception exception)
+        {
+            await RunStateTransitionAsync(() =>
+            {
+                lock (connectionLock)
+                {
+                    // Allow an explicit retry from the failure notification without changing joined callers' outcome.
+                    connectionStartTask = null;
+                }
+
+                HandleStartupFailure(exception, started, cancellationToken);
+                return true;
+            });
+            throw;
+        }
+
+        Store.Dispatch(new SignalRConnectedAction(Connection.ConnectionId, TimeProvider.GetUtcNow()));
+    }
+
+    private async Task WaitForReconnectionAsync(
+        CancellationToken cancellationToken
+    )
+    {
+        Task reconnecting;
+        lock (connectionLock)
+        {
+            ObjectDisposedException.ThrowIf(disposed, this);
+            if (IsConnected)
+            {
+                return;
+            }
+
+            if (Connection.State != HubConnectionState.Reconnecting)
+            {
+                throw new OperationCanceledException("The hub connection stopped reconnecting.");
+            }
+
+            if (reconnectionCompletion is null || reconnectionCompletion.Task.IsCompleted)
+            {
+                reconnectionCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            }
+
+            reconnecting = reconnectionCompletion.Task;
+        }
+
+        await reconnecting.WaitAsync(cancellationToken);
     }
 }
