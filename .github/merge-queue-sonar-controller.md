@@ -2,6 +2,8 @@
 
 This controller rebuilds a completed `SonarCloud` source run using the immutable workflow definition on the repository's default branch. It is a manual, independently usable layer. `sonar-cloud.yml` continues providing the existing PR/main behavior until the subsequent source-routing layer and operator deployment are complete.
 
+The workflow and checkout revisions must also match the live default-branch tip at each controller-origin check. A rerun preserves its original workflow revision and is rejected after the default branch advances; unavailable or inconsistent ref metadata fails closed. This check does not revoke an already issued credential or make branch movement and environment admission atomic.
+
 ## Source identity
 
 The controller reads source-run and current PR/queue metadata from GitHub. Candidate artifacts never supply identity or executable scripts to the host.
