@@ -55,7 +55,9 @@ The eleven pairs above describe today's settings. A workflow running on `merge_g
 | `AppHost locked restore (windows-latest)` | Aspire AppHost Locked Restore |
 | `L3 Spring E2E (Smoke)` | L3 Tests |
 | `Markdown Lint` | Markdown Lint |
-| `Validate repository issue reference` | PR Issue Reference |
+| `PR Issue Reference` | PR Issue Reference commit status |
+
+The issue-reference requirement is the published `PR Issue Reference` commit status, not the `Validate repository issue reference` job check. On `pull_request_target`, the job belongs to the base revision while the workflow explicitly posts this status to the PR merge/head SHA; on `merge_group` it posts to the candidate SHA. Verify the status/provider on both paths before deployment.
 
 Preserve every existing pair and protection; this proposes eighteen required contexts, not a change already applied. Verify exact names, expected providers and fresh candidate-SHA results after deployment. Missing, pending, failed, canceled or unexpectedly skipped evidence must keep release blocked. Deliberately fail each additional gate under the enforced Hold and prove it remains a merge requirement when the Hold is eventually removed.
 
