@@ -14,6 +14,8 @@ The controller reads source-run and current PR/queue metadata from GitHub. Candi
 - Manual branch: analyze the exact current selected branch with its own identity; snapshot the current default-branch commit as target, require that exact LONG main baseline in Sonar before and after upload, and reject target movement during source rechecks.
 - Queue: resolve the exact live candidate and complete validated constituent prefix. Analyze a distinct SHORT branch against an already analyzed, exact current target revision.
 
+Both fresh source workspaces retain release tags from the trusted repository for GitVersion's offline version calculation. The checkout stays bound to the verified immutable candidate revision.
+
 Fork source runs are rejected; this layer does not grant fork workflows credentials. Stale runs, unavailable metadata, ambiguous candidates and changed source identities fail. Rechecks allow only the existing resolver's verified, landed contiguous predecessor prefix.
 
 A leading merged native prefix requires closed/merged metadata and proof that every immutable landing is contained in the current trunk. The first remaining active PR must already target that trunk after automatic rebase; transient or inconsistent metadata blocks intake. Prefix identity is rechecked before and after upload. Unrelated upper-layer additions alone do not invalidate it. Ordinary exact-parent checks and Sonar's existing fork rejection remain in force. This read-only identity proof does not establish deployed credentials or genuine held analysis.
