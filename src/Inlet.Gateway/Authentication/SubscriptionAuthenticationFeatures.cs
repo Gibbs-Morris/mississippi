@@ -15,15 +15,18 @@ namespace Mississippi.Inlet.Gateway.Authentication;
 /// </summary>
 internal sealed class SubscriptionAuthenticationFeatures
     : IHttpAuthenticationFeature,
-      IAuthenticateResultFeature
+      IAuthenticateResultFeature,
+      IServiceProvidersFeature
 {
     private SubscriptionAuthenticationFeatures(
         ClaimsPrincipal principal,
-        AuthenticateResult? result
+        AuthenticateResult? result,
+        IServiceProvider requestServices
     )
     {
         Principal = principal;
         Result = result;
+        RequestServices = requestServices;
     }
 
     /// <inheritdoc />
@@ -36,6 +39,9 @@ internal sealed class SubscriptionAuthenticationFeatures
             Principal = value?.Principal;
         }
     }
+
+    /// <inheritdoc />
+    public IServiceProvider RequestServices { get; set; }
 
     /// <inheritdoc />
     public ClaimsPrincipal? User
@@ -70,9 +76,11 @@ internal sealed class SubscriptionAuthenticationFeatures
 
         SubscriptionAuthenticationFeatures authentication = new(
             context.User,
-            context.Features.Get<IAuthenticateResultFeature>()?.AuthenticateResult);
+            context.Features.Get<IAuthenticateResultFeature>()?.AuthenticateResult,
+            context.RequestServices);
         features.Set<IHttpAuthenticationFeature>(authentication);
         features.Set<IAuthenticateResultFeature>(authentication);
+        features.Set<IServiceProvidersFeature>(authentication);
         return new DefaultHttpContext(features);
     }
 }
