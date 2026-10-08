@@ -12,11 +12,17 @@ function Assert-SonarPublishedBranch {
     if ($Source.Mode -ceq 'Queue' -and ($branch[0].type -cne 'SHORT' -or $branch[0].isMain -ne $false)) { throw 'Published queue analysis has the wrong branch classification.' }
 }
 
+function Assert-SonarTargetPolicyBaseline {
+    param([object]$Source,[object[]]$Branches)
+    $main = @($Branches | Where-Object { $_.name -ceq $Source.TargetRef })
+    if ($main.Count -ne 1 -or $main[0].isMain -ne $true -or $main[0].type -cne 'LONG' -or $main[0].commit.sha -cnotmatch '^[0-9a-f]{40}$' -or $Source.TargetSha -cnotmatch '^[0-9a-f]{40}$') { throw 'Targeted analysis requires a valid LONG Sonar main baseline.' }
+    if ($main[0].commit.sha -cne $Source.TargetSha) { throw 'Targeted analysis requires the exact current target baseline in Sonar.' }
+}
+
 function Assert-SonarQueuePolicyBaseline {
     param([object]$Source,[string]$Pattern,[object[]]$Branches)
     if ($Pattern -cne '(branch|release)-.*') { throw 'Queue branch classification no longer matches the reviewed policy.' }
-    $main = @($Branches | Where-Object { $_.name -ceq $Source.TargetRef -and $_.isMain -eq $true -and $_.type -ceq 'LONG' })
-    if ($main.Count -ne 1 -or $main[0].commit.sha -cne $Source.TargetSha) { throw 'Queue analysis requires the exact current target baseline in Sonar.' }
+    Assert-SonarTargetPolicyBaseline -Source $Source -Branches $Branches
     $candidate = @($Branches | Where-Object { $_.name -ceq $Source.HeadRef })
     if ($candidate.Count -gt 1 -or ($candidate.Count -eq 1 -and ($candidate[0].type -cne 'SHORT' -or $candidate[0].isMain -ne $false))) { throw 'Queue candidate must be a distinct short-lived Sonar branch.' }
 }
@@ -233,6 +239,7 @@ function Get-SonarQualityPolicySnapshot {
     $pattern = [string]$patterns[0].value
     $branches = Read-SonarServiceMetadata "project_branches/list?$project"
     if ($Source.Mode -ceq 'Queue') { Assert-SonarQueuePolicyBaseline -Source $Source -Pattern $pattern -Branches @($branches.branches) }
+    elseif ($Source.Mode -ceq 'Branch' -and $Source.HeadRef -cne $Source.TargetRef) { Assert-SonarTargetPolicyBaseline -Source $Source -Branches @($branches.branches) }
     return [pscustomobject]@{
         GateId=$assignment.qualityGate.id; LongLivedPattern=$pattern
         Conditions=($definition.conditions | Sort-Object metric | Select-Object metric,op,error | ConvertTo-Json -Compress)
