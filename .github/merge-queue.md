@@ -53,7 +53,7 @@ In the table, **PR** means targets `main`, `feature/**` and `topic/**` unless st
 | --- | --- | --- |
 | [full-build.yml](workflows/full-build.yml) | PR, queue, manual | Required Build contexts; Ubuntu, both solutions, Release, warnings as errors, independent restore/build. |
 | [l0-tests.yml](workflows/l0-tests.yml) | PR, queue, manual | Required L0 contexts; both solutions, own restore/build followed by real L0 execution. |
-| [l1-tests.yml](workflows/l1-tests.yml) | PR, queue, manual | Required L1 contexts; discovers zero declared L1 projects after build and records N/A. An added L1 project executes tests. |
+| [l1-tests.yml](workflows/l1-tests.yml) | PR, queue, manual | Required L1 contexts; Mississippi executes `Inlet.Client.L1Tests`. Samples has no declared L1 projects and records N/A after build; adding an L1 project executes tests. |
 | [l2-tests.yml](workflows/l2-tests.yml) | PR, queue on main, manual | Required L2 contexts; both solutions, own build and real infrastructure tests; test failure fails the job. |
 | [cleanup.yml](workflows/cleanup.yml) | PR, queue on main, manual | Required cleanup contexts; verifies exact checkout/payload and cumulative ancestry/range, literal changed paths and native errors; fails on tracked cleanup churn. Manual scope is full. |
 | [sonar-cloud.yml](workflows/sonar-cloud.yml) | PR, queue on main, push main, manual | Existing Sonar source identity/name/path (workflow 141036039). Routing off: legacy scanner executes. Routing on: fixed tokenless source completion; trusted controller supplies genuine Sonar. |
