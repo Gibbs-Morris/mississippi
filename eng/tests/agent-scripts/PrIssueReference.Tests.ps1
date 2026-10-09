@@ -63,6 +63,22 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body $Body
     }
 
+    It 'preserves tracking after a button ends anchor ownership: <Case>' -ForEach @(
+        @{ Case = 'explicit close'; Body = '<button><a href="https://example.test">context</button> Refs #741' }
+        @{ Case = 'replacement button'; Body = '<button><a href="https://example.test">context<button> Refs #741</button>' }
+    ) {
+        Assert-ValidReferenceBody -Body $Body
+    }
+
+    It 'preserves remaining code or external ownership at button boundaries: <Case>' -ForEach @(
+        @{ Case = 'remaining code'; Body = '<button><code>example</button> Refs #741' }
+        @{ Case = 'outer anchor'; Body = '<a href="https://example.test"><button>context</button> Refs #741</a>' }
+        @{ Case = 'unclosed button'; Body = '<button><a href="https://example.test">context Refs #741' }
+        @{ Case = 'unmatched close'; Body = '<button></button><a href="https://example.test">context</button> Refs #741' }
+    ) {
+        Assert-NoReferenceBody -Body $Body
+    }
+
     It 'ignores tracking in mathematical expressions: <Case>' -ForEach @(
         @{ Case = 'inline phantom'; Body = '$\hphantom{\#741}$' }
         @{ Case = 'display phantom'; Body = '$$\hphantom{\#741}$$' }

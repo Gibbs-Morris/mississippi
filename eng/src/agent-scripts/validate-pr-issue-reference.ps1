@@ -58,6 +58,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     $anchorHrefPattern = '(?is)^<a(?=\s|/?>)(?:"[^"]*"|''[^'']*''|[^''">])*?\s+href(?=\s|=|/?>)(?:\s*=\s*(?:"(?<Href>[^"]*)"|''(?<Href>[^'']*)''|(?<Href>[^\s>]+)))?[^>]*>'
     $insideAnchor = $false
     $insideSelect = $false
+    $buttonPriorAnchor = $null
     $tableDepth = 0
     $cellScopes = [System.Collections.Generic.Stack[object]]::new()
     $codeDepth = 0
@@ -90,6 +91,11 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                         $index += $htmlTag.Length
                         continue
                     }
+                }
+                # Closing or replacing a button ends its local anchor scope; code can persist.
+                if ($tagName -eq 'button') {
+                    if ($null -ne $buttonPriorAnchor) { $insideAnchor = $buttonPriorAnchor }
+                    $buttonPriorAnchor = if ($isClosing) { $null } else { $insideAnchor }
                 }
                 # Table scopes restore both enclosing links and code, including implied ends.
                 if ($tableDepth -gt 0 -and $cellScopes.Count -gt 0 -and $cellScopes.Peek().TableDepth -eq $tableDepth) {
