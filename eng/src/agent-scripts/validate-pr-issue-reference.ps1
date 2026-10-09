@@ -160,7 +160,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - bounded Markdown renderer appr
     $anchorHrefPattern = '(?is)<a\b(?:"[^"]*"|''[^'']*''|[^''">])*?\s+href(?=\s|=|/?>)(?:\s*=\s*(?:"(?<Href>[^"]*)"|''(?<Href>[^'']*)''|(?<Href>[^\s>]+)))?[^>]*>'
     $anchorHrefs = @([regex]::Matches($withoutCode, $anchorHrefPattern) | ForEach-Object { $_.Groups['Href'].Value })
     # Link ownership comes from its destination, not a numeric label in upstream release notes.
-    $withoutCode = [regex]::Replace($withoutCode, $anchorHrefPattern + '.*?</a\s*>', ' ')
+    $withoutCode = [regex]::Replace($withoutCode, $anchorHrefPattern + '(?:.*?</a\s*>|.*\z)', ' ')
     $withoutCode = [regex]::Replace($withoutCode, '(?m)<(?!https?://|mailto:)(?:[^>\"''\r\n]|\"[^\"]*\"|''[^'']*'')*>', '')
     if ($anchorHrefs.Count -gt 0) { $withoutCode += [Environment]::NewLine + ($anchorHrefs -join [Environment]::NewLine) }
     return $withoutCode

@@ -142,6 +142,16 @@ Describe 'PR issue reference validator' {
         $outcome.Result.References[0].Number | Should -Be 741
     }
 
+    It 'ignores the numeric label of an unclosed external HTML anchor' {
+        Assert-NoReferenceBody -Body '<a href="https://github.com/other/repo/issues/999">#741'
+    }
+
+    It 'uses the destination of an unclosed local HTML anchor' {
+        $outcome = Assert-ValidReferenceBody -Body '<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">#999'
+        @($outcome.Result.References).Count | Should -Be 1
+        $outcome.Result.References[0].Number | Should -Be 741
+    }
+
     It 'uses only the actual HTML href attribute: <Case>' -ForEach @(
         @{ Case = 'external href before local data-href'; Expected = $false; Anchor = '<a href="https://example.test" data-href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a>' }
         @{ Case = 'data-href without href'; Expected = $false; Anchor = '<a data-href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a>' }
