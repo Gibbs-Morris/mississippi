@@ -141,7 +141,7 @@ public sealed class UxProjectionControllerWithMapperTests
     }
 
     /// <summary>
-    ///     Verifies that matching headers skip mapping; only the wildcard reads the projection to establish existence.
+    ///     Verifies newly supported matching forms read current state once and skip DTO mapping.
     /// </summary>
     /// <param name="headerValues">The values of the If-None-Match header fields.</param>
     /// <returns>Asynchronous test task.</returns>
@@ -179,9 +179,7 @@ public sealed class UxProjectionControllerWithMapperTests
         StatusCodeResult statusCodeResult = Assert.IsType<StatusCodeResult>(result.Result);
         Assert.Equal(StatusCodes.Status304NotModified, statusCodeResult.StatusCode);
         Assert.Null(result.Value);
-        grainMock.Verify(
-            g => g.GetAsync(It.IsAny<CancellationToken>()),
-            headerValues is ["*"] ? Times.Once() : Times.Never());
+        grainMock.Verify(g => g.GetAsync(It.IsAny<CancellationToken>()), Times.Once());
         mapperMock.Verify(m => m.Map(It.IsAny<TestProjection>()), Times.Never);
     }
 

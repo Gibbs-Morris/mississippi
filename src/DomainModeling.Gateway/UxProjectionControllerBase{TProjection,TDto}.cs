@@ -262,7 +262,9 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
         // Check If-None-Match header for conditional GET
         StringValues ifNoneMatch = Request.Headers.IfNoneMatch;
         bool isWildcard = (ifNoneMatch.Count == 1) && (ifNoneMatch.ToString().Trim(' ', '\t') == "*");
-        if (!isWildcard && MatchesIfNoneMatch(ifNoneMatch, currentETag))
+        bool isExactMatch = (ifNoneMatch.Count == 1) && (ifNoneMatch[0] == currentETag);
+        bool hasMatch = !isWildcard && MatchesIfNoneMatch(ifNoneMatch, currentETag);
+        if (isExactMatch)
         {
             Logger.ProjectionNotModified(entityId, position.Value, ProjectionTypeName);
             return StatusCode(304);
@@ -276,7 +278,7 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
             return NotFound();
         }
 
-        if (isWildcard)
+        if (isWildcard || hasMatch)
         {
             Logger.ProjectionNotModified(entityId, position.Value, ProjectionTypeName);
             return StatusCode(304);

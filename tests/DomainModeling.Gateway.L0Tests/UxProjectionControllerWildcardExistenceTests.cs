@@ -80,4 +80,41 @@ public sealed class UxProjectionControllerWildcardExistenceTests
             m => m.Map(It.IsAny<TestProjection>()),
             expectedStatus == StatusCodes.Status200OK ? Times.Once : Times.Never);
     }
+
+    /// <summary>
+    ///     Verifies newly supported matching tag forms preserve missing-state responses.
+    /// </summary>
+    /// <param name="headerValues">The conditional header field values.</param>
+    /// <returns>An asynchronous test task.</returns>
+    [Theory]
+    [InlineData("W/\"42\"")]
+    [InlineData("\"41\", \"42\"")]
+    [InlineData("\"42\", \"43\"")]
+    [InlineData("\"41\"", "W/\"42\"")]
+    [InlineData(" \t\"42\" \t")]
+    [InlineData("", "\"42\"", "")]
+    public async Task GetAsyncReturnsNotFoundForNewMatchingTagFormsWhenProjectionIsNull(
+        params string[] headerValues
+    )
+    {
+        // Arrange
+        const string entityId = "matching-tag-missing-state-123";
+        Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
+        grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BrookPosition(42));
+        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync((TestProjection?)null);
+        Mock<IUxProjectionGrainFactory> factoryMock = new();
+        factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(entityId)).Returns(grainMock.Object);
+        Mock<IMapper<TestProjection, TestDto>> mapperMock = new();
+        UxProjectionControllerTestController controller = new(factoryMock.Object, mapperMock.Object);
+        controller.Request.Headers.IfNoneMatch = new(headerValues);
+
+        // Act
+        ActionResult<TestDto> result = await controller.GetAsync(entityId, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.IsType<NotFoundResult>(result.Result);
+        grainMock.Verify(g => g.GetAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mapperMock.Verify(m => m.Map(It.IsAny<TestProjection>()), Times.Never);
+    }
 }
