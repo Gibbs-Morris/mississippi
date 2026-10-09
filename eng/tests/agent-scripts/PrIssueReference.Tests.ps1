@@ -358,6 +358,18 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body $Body
     }
 
+    It 'preserves anchor ownership after a replacement table closes: <Case>' -ForEach @(
+        @{ Case = 'direct table'; Prefix = '<table>' }
+        @{ Case = 'row'; Prefix = '<table><tr>' }
+        @{ Case = 'table body'; Prefix = '<table><tbody>' }
+    ) {
+        Assert-NoReferenceBody -Body ($Prefix + '<table></table><td><a href="https://github.com/other/repo/issues/999">context</td> Refs #741')
+    }
+
+    It 'accepts tracking after an explicitly closed replacement-table anchor' {
+        Assert-ValidReferenceBody -Body '<table><table></table><td><a href="https://github.com/other/repo/issues/999">context</td></a> Refs #741'
+    }
+
     It 'restores the enclosing cell anchor after closing a nested table cell' {
         $outcome = Assert-ValidReferenceBody -Body 'x <table><tr><td><a href="https://github.com/other/repo/issues/999">context<table><tr><td>nested</td></tr></table> #742</td><td>Refs #741</td></tr></table>'
         @($outcome.Result.References).Count | Should -Be 1

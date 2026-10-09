@@ -88,7 +88,11 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                     }
                 }
                 if ($tagName -eq 'table') {
-                    $tableDepth = [Math]::Max(0, $tableDepth + $(if ($isClosing) { -1 } else { 1 }))
+                    if ($isClosing) { $tableDepth = [Math]::Max(0, $tableDepth - 1) }
+                    elseif ($tableDepth -eq 0 -or ($cellScopes.Count -gt 0 -and $cellScopes.Peek().TableDepth -eq $tableDepth)) {
+                        $tableDepth++
+                    }
+                    # A table outside a cell replaces the current table instead of nesting.
                 }
                 elseif (-not $isClosing -and $tableDepth -gt 0 -and $tagName -in @('caption', 'td', 'th')) {
                     $cellScopes.Push([pscustomobject]@{ Name = $tagName; TableDepth = $tableDepth; PriorAnchor = $insideAnchor; PriorCodeDepth = $codeDepth })
