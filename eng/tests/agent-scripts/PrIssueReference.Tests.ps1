@@ -47,27 +47,6 @@ Describe 'PR issue reference validator' {
         }
     }
 
-    It 'checks code and button anchor boundary ownership: <Case>' -ForEach (@(
-        'code close|true|<a href="https://example.test"><code>example</a></code> Refs #741'
-        'preformatted close|true|<a href="https://example.test"><pre>example</a></pre> Refs #741'
-        'unclosed anchor|false|<a href="https://example.test"><code>example</code> Refs #741'
-        'remaining code|false|<a href="https://example.test"><code>example</a> Refs #741</code>'
-        'code destination|false|<code><a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking</a></code>'
-        'escaped closing syntax|false|<a href="https://example.test">`</a>` Refs #741'
-        'button explicit close|true|<button><a href="https://example.test">context</button> Refs #741'
-        'replacement button|true|<button><a href="https://example.test">context<button> Refs #741</button>'
-        'button remaining code|false|<button><code>example</button> Refs #741'
-        'button outer anchor|false|<a href="https://example.test"><button>context</button> Refs #741</a>'
-        'unclosed button|false|<button><a href="https://example.test">context Refs #741'
-        'unmatched button close|false|<button></button><a href="https://example.test">context</button> Refs #741'
-    ) | ForEach-Object {
-        $caseFields = $_ -split '\|', 3
-        @{ Case = $caseFields[0]; Expected = $caseFields[1] -eq 'true'; Body = $caseFields[2] }
-    }) {
-        if ($Expected) { Assert-ValidReferenceBody -Body $Body }
-        else { Assert-NoReferenceBody -Body $Body }
-    }
-
     It 'separates tracking at rendered block boundaries: <Element>' -ForEach @(
         @{ Element = 'h1' }; @{ Element = 'h2' }; @{ Element = 'h3' }
         @{ Element = 'h4' }; @{ Element = 'h5' }; @{ Element = 'h6' }
@@ -94,7 +73,19 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body ('<a href="https://example.test">' + $Body + '<h1>Context</h1></a>')
     }
 
-    It 'checks relative, marquee, CDATA and visible anchor ownership: <Case>' -ForEach (@(
+    It 'checks rendered reference ownership: <Case>' -ForEach (@(
+        'code close|true|<a href="https://example.test"><code>example</a></code> Refs #741'
+        'preformatted close|true|<a href="https://example.test"><pre>example</a></pre> Refs #741'
+        'unclosed anchor|false|<a href="https://example.test"><code>example</code> Refs #741'
+        'remaining code|false|<a href="https://example.test"><code>example</a> Refs #741</code>'
+        'code destination|false|<code><a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking</a></code>'
+        'escaped closing syntax|false|<a href="https://example.test">`</a>` Refs #741'
+        'button explicit close|true|<button><a href="https://example.test">context</button> Refs #741'
+        'replacement button|true|<button><a href="https://example.test">context<button> Refs #741</button>'
+        'button remaining code|false|<button><code>example</button> Refs #741'
+        'button outer anchor|false|<a href="https://example.test"><button>context</button> Refs #741</a>'
+        'unclosed button|false|<button><a href="https://example.test">context Refs #741'
+        'unmatched button close|false|<button></button><a href="https://example.test">context</button> Refs #741'
         'parent issues path|true|[tracking](../issues/741)'
         'explicit current directory|true|[tracking](./../issues/741)'
         'HTML destination|true|<a href="../issues/741">tracking</a>'
