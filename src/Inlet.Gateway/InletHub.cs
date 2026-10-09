@@ -1,14 +1,21 @@
 using System;
-using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features.Authentication;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Inlet.Gateway.Abstractions;
+using Mississippi.Inlet.Gateway.Authentication;
 using Mississippi.Inlet.Runtime.Abstractions;
 using Mississippi.Inlet.Runtime.Grains;
 
@@ -64,6 +71,9 @@ public sealed class InletHub : Hub<IInletHubClient>
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    // Weak keys keep per-context async gates from extending a connection's lifetime.
+    private static ConditionalWeakTable<HttpContext, SemaphoreSlim> AuthenticationLocks { get; } = new();
+
     private IAuthorizationPolicyProvider AuthorizationPolicyProvider { get; }
 
     private IAuthorizationService AuthorizationService { get; }
@@ -76,28 +86,97 @@ public sealed class InletHub : Hub<IInletHubClient>
 
     private IProjectionAuthorizationRegistry ProjectionAuthorizationRegistry { get; }
 
-    private static bool HasMatchingAuthenticationScheme(
-        ClaimsPrincipal user,
+    /// <summary>
+    ///     Authenticates selected schemes and preserves custom evaluator authorization vetoes.
+    /// </summary>
+    /// <param name="policyEvaluator">The host's policy evaluator.</param>
+    /// <param name="policy">The subscription policy.</param>
+    /// <param name="httpContext">The connection's HTTP context.</param>
+    /// <returns>The authenticated principal and whether the evaluator permits it.</returns>
+    private static async Task<(ClaimsPrincipal? Principal, bool Permitted)> AuthenticateWithEvaluatorAsync(
+        IPolicyEvaluator policyEvaluator,
+        AuthorizationPolicy policy,
+        HttpContext httpContext
+    )
+    {
+        AuthenticateResult authenticationResult = await policyEvaluator.AuthenticateAsync(policy, httpContext);
+        if (!authenticationResult.Succeeded)
+        {
+            return (null, false);
+        }
+
+        if (policyEvaluator.GetType() != typeof(PolicyEvaluator))
+        {
+            httpContext.User = authenticationResult.Principal;
+            object? resource = AppContext.TryGetSwitch(
+                                   "Microsoft.AspNetCore.Authorization.SuppressUseHttpContextAsAuthorizationResource",
+                                   out bool useEndpoint) &&
+                               useEndpoint
+                ? httpContext.GetEndpoint()
+                : httpContext;
+            PolicyAuthorizationResult authorizationResult = await policyEvaluator.AuthorizeAsync(
+                policy,
+                authenticationResult,
+                httpContext,
+                resource);
+            if (!authorizationResult.Succeeded)
+            {
+                return (authenticationResult.Principal, false);
+            }
+        }
+
+        return (authenticationResult.Principal, true);
+    }
+
+    private static AuthenticationHandlerProvider? GetFrameworkHandlerProvider(
+        IAuthenticationService? authenticationService
+    ) =>
+        authenticationService is AuthenticationService frameworkService &&
+        (authenticationService.GetType().Assembly == typeof(AuthenticationService).Assembly) &&
+        frameworkService.Handlers is AuthenticationHandlerProvider handlers &&
+        (handlers.GetType() == typeof(AuthenticationHandlerProvider))
+            ? handlers
+            : null;
+
+    private static string? GetUserId(
+        ClaimsPrincipal? user
+    ) =>
+        user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user?.Identity?.Name;
+
+    /// <summary>
+    ///     Checks registrations required by the framework authentication path.
+    /// </summary>
+    /// <param name="authenticationService">The host's authentication service.</param>
+    /// <param name="policy">The policy whose selected schemes will be authenticated.</param>
+    /// <returns>Whether the required scheme registrations exist.</returns>
+    private static async Task<bool> HasRequiredSchemeRegistrationsAsync(
+        IAuthenticationService authenticationService,
         AuthorizationPolicy policy
     )
     {
-        if (policy.AuthenticationSchemes.Count == 0)
+        // Only the framework service and handler provider require scheme entries.
+        // Custom services, handler providers and evaluators can authenticate virtual schemes.
+        AuthenticationHandlerProvider? handlers = GetFrameworkHandlerProvider(authenticationService);
+        if (handlers is not null)
         {
-            return true;
+            foreach (string scheme in policy.AuthenticationSchemes)
+            {
+                AuthenticationScheme? registeredScheme = await handlers.Schemes.GetSchemeAsync(scheme);
+                if (registeredScheme is null)
+                {
+                    return false;
+                }
+            }
         }
 
-        return user.Identities.Any(identity => identity is not null &&
-                                               identity.IsAuthenticated &&
-                                               !string.IsNullOrWhiteSpace(identity.AuthenticationType) &&
-                                               policy.AuthenticationSchemes.Any(scheme => string.Equals(
-                                                   scheme,
-                                                   identity.AuthenticationType,
-                                                   StringComparison.OrdinalIgnoreCase)));
+        return true;
     }
 
     /// <inheritdoc />
     public override Task OnConnectedAsync()
     {
+        ConnectionAuthenticationSnapshot.BindInitialWindowsClone(Context);
+
         // Note: Client grain registration is handled by AqueductHubLifetimeManager.
         // We just log the connection here.
         Logger.ClientConnected(Context.ConnectionId);
@@ -167,6 +246,125 @@ public sealed class InletHub : Hub<IInletHubClient>
         Logger.UnsubscribedFromProjection(Context.ConnectionId, subscriptionId);
     }
 
+    private async Task<(ClaimsPrincipal? Principal, bool Permitted)> AuthenticateUserAsync(
+        AuthorizationPolicy policy,
+        HttpContext? httpContext,
+        IPolicyEvaluator? policyEvaluator
+    )
+    {
+        if (policy.AuthenticationSchemes.Count == 0)
+        {
+            return (Context.User ?? new ClaimsPrincipal(new ClaimsIdentity()), true);
+        }
+
+        if (httpContext is null)
+        {
+            return (null, false);
+        }
+
+        if (policyEvaluator is null)
+        {
+            return (null, false);
+        }
+
+        if (policyEvaluator.GetType() == typeof(PolicyEvaluator))
+        {
+            IAuthenticationService? authenticationService =
+                httpContext.RequestServices.GetService<IAuthenticationService>();
+            if (authenticationService is null)
+            {
+                return (null, false);
+            }
+
+            if (!await HasRequiredSchemeRegistrationsAsync(authenticationService, policy))
+            {
+                return (null, false);
+            }
+
+            if (ConnectionAuthenticationSnapshot.IsAuthenticatedForPolicy(httpContext, policy, Context.User))
+            {
+                // SignalR retains this principal for the connection, even when its HTTP features are reduced.
+                return (Context.User, true);
+            }
+
+            if (GetFrameworkHandlerProvider(authenticationService) is not null &&
+                ConnectionAuthenticationSnapshot.HasDifferentPrincipal(httpContext, Context.User))
+            {
+                // A reduced connection context still holds the first request's credentials.
+                return (null, false);
+            }
+        }
+
+        return await AuthenticateWithEvaluatorAsync(policyEvaluator, policy, httpContext);
+    }
+
+    private async Task AuthorizeAndRestoreAsync(
+        AuthorizationPolicy policy,
+        string path,
+        string entityId,
+        string? policyName,
+        HttpContext? httpContext,
+        IPolicyEvaluator? policyEvaluator
+    )
+    {
+        HttpContext? authenticationContext = policy.AuthenticationSchemes.Count > 0 ? httpContext : null;
+        ClaimsPrincipal? previousUser = authenticationContext?.User;
+        IHttpAuthenticationFeature? previousHttpFeature =
+            authenticationContext?.Features.Get<IHttpAuthenticationFeature>();
+        IAuthenticateResultFeature? previousResultFeature =
+            authenticationContext?.Features.Get<IAuthenticateResultFeature>();
+        AuthenticateResult? previousResult = previousResultFeature?.AuthenticateResult;
+        try
+        {
+            (ClaimsPrincipal? user, bool permitted) = await AuthenticateUserAsync(policy, httpContext, policyEvaluator);
+            if (user is null || !permitted)
+            {
+                Logger.SubscriptionAuthorizationDenied(
+                    Context.ConnectionId,
+                    path,
+                    entityId,
+                    GetUserId(user),
+                    policyName);
+                throw new HubException(InletHubConstants.SubscriptionDeniedMessage);
+            }
+
+            IAuthorizationService authorizationService =
+                authenticationContext?.RequestServices.GetService<IAuthorizationService>() ?? AuthorizationService;
+            AuthorizationResult authorizationResult = await authorizationService.AuthorizeAsync(
+                user,
+                null,
+                policy.Requirements);
+            if (authorizationResult.Succeeded)
+            {
+                Logger.SubscriptionAuthorizationSucceeded(Context.ConnectionId, path, entityId, GetUserId(user));
+                return;
+            }
+
+            Logger.SubscriptionAuthorizationDenied(Context.ConnectionId, path, entityId, GetUserId(user), policyName);
+            throw new HubException(InletHubConstants.SubscriptionDeniedMessage);
+        }
+        finally
+        {
+            if (authenticationContext is not null)
+            {
+                // The selected user is needed during this decision, then the connection state resumes.
+                // Restoring User alone clears ASP.NET's coupled authentication result.
+                authenticationContext.Features.Set(previousHttpFeature);
+                authenticationContext.User = previousUser!;
+                authenticationContext.Features.Set(previousResultFeature);
+                if (previousResultFeature is not null)
+                {
+                    previousResultFeature.AuthenticateResult = previousResult;
+                }
+
+                if (previousResult is null)
+                {
+                    authenticationContext.User = previousUser!;
+                }
+            }
+        }
+    }
+
     private async Task AuthorizeSubscriptionAsync(
         string path,
         string entityId
@@ -213,25 +411,43 @@ public sealed class InletHub : Hub<IInletHubClient>
         string? policyName
     )
     {
-        ClaimsPrincipal user = Context.User ?? new ClaimsPrincipal(new ClaimsIdentity());
-        if (!HasMatchingAuthenticationScheme(user, policy))
+        HttpContext? httpContext = Context.GetHttpContext();
+        if (httpContext is null)
         {
-            Logger.SubscriptionAuthorizationDenied(Context.ConnectionId, path, entityId, GetUserId(), policyName);
-            throw new HubException(InletHubConstants.SubscriptionDeniedMessage);
-        }
-
-        AuthorizationResult authorizationResult = await AuthorizationService.AuthorizeAsync(
-            user,
-            null,
-            policy.Requirements);
-        if (authorizationResult.Succeeded)
-        {
-            Logger.SubscriptionAuthorizationSucceeded(Context.ConnectionId, path, entityId, GetUserId());
+            await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, null, null);
             return;
         }
 
-        Logger.SubscriptionAuthorizationDenied(Context.ConnectionId, path, entityId, GetUserId(), policyName);
-        throw new HubException(InletHubConstants.SubscriptionDeniedMessage);
+        SemaphoreSlim authenticationLock = AuthenticationLocks.GetValue(httpContext, static _ => new(1, 1));
+        await authenticationLock.WaitAsync(Context.ConnectionAborted);
+        try
+        {
+            if (policy.AuthenticationSchemes.Count == 0)
+            {
+                await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, httpContext, null);
+                return;
+            }
+
+            IServiceProvider connectionServices = httpContext.RequestServices;
+            IPolicyEvaluator? policyEvaluator = connectionServices.GetService<IPolicyEvaluator>();
+            HttpContext decisionContext = SubscriptionAuthenticationFeatures.CreateContext(httpContext);
+            AuthenticationService? frameworkService =
+                connectionServices.GetService<IAuthenticationService>() as AuthenticationService;
+            AuthenticationHandlerProvider? handlers = GetFrameworkHandlerProvider(frameworkService);
+            if (handlers is not null)
+            {
+                decisionContext.RequestServices = new SubscriptionAuthenticationServices(
+                    connectionServices,
+                    frameworkService!,
+                    handlers.Schemes);
+            }
+
+            await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, decisionContext, policyEvaluator);
+        }
+        finally
+        {
+            authenticationLock.Release();
+        }
     }
 
     private async Task<AuthorizationPolicy> BuildAuthorizationPolicyAsync(
@@ -291,9 +507,6 @@ public sealed class InletHub : Hub<IInletHubClient>
 
         return builder.Build();
     }
-
-    private string? GetUserId() =>
-        Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? Context.User?.Identity?.Name;
 }
 
 /// <summary>
