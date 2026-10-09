@@ -28,6 +28,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     $tableOptions.UseHeaderForColumnCount = $true
     $null = [Markdig.MarkdownExtensions]::UsePipeTables($markdownPipelineBuilder, $tableOptions)
     $null = [Markdig.MarkdownExtensions]::UseTaskLists($markdownPipelineBuilder)
+    $null = [Markdig.MarkdownExtensions]::UseFootnotes($markdownPipelineBuilder)
     $null = [Markdig.MarkdownExtensions]::UseAutoLinks($markdownPipelineBuilder, $null)
     $null = [Markdig.MarkdownExtensions]::UseEmphasisExtras($markdownPipelineBuilder, [Markdig.Extensions.EmphasisExtras.EmphasisExtraOptions]::Strikethrough)
     $html = [Markdig.Markdown]::ToHtml($Content, $markdownPipelineBuilder.Build())

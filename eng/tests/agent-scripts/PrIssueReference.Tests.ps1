@@ -66,6 +66,25 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body $Body
     }
 
+    It 'ignores unused footnote definitions: <Case>' -ForEach @(
+        @{ Case = 'shorthand'; Body = '[^note]: Refs #741' }
+        @{ Case = 'issue URL'; Body = '[^note]: https://github.com/Gibbs-Morris/mississippi/issues/741' }
+    ) {
+        Assert-NoReferenceBody -Body $Body
+    }
+
+    It 'accepts tracking rendered in a used footnote: <Case>' -ForEach @(
+        @{ Case = 'shorthand'; Definition = 'Refs #741' }
+        @{ Case = 'issue URL'; Definition = 'https://github.com/Gibbs-Morris/mississippi/issues/741' }
+    ) {
+        Assert-ValidReferenceBody -Body ('Context[^note]' + [Environment]::NewLine + [Environment]::NewLine + '[^note]: ' + $Definition)
+    }
+
+    It 'preserves real tracking while ignoring an unused closed-issue footnote' {
+        $outcome = Assert-ValidReferenceBody -Body ('Refs #741' + [Environment]::NewLine + [Environment]::NewLine + '[^note]: Refs #742')
+        @($outcome.Result.References).Count | Should -Be 1
+    }
+
     It 'accepts a qualified same-repository issue reference' {
         Assert-ValidReferenceBody -Body 'Refs Gibbs-Morris/mississippi#741.'
     }
