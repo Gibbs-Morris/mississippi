@@ -12,11 +12,21 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$htmlTagRegex = [regex]::new('(?s)\G(?:<[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:"[^"]*"|''[^'']*''|[^\s"''=<>`]+))?)*\s*/?>|</[A-Za-z][A-Za-z0-9-]*\s*>)')
+
 function Remove-MarkdownHtmlComments { # NOSONAR - bounded Markdown comment/code scanner intentionally tracks delimiter state.
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
     $builder = [System.Text.StringBuilder]::new()
     $index = 0
     while ($index -lt $Content.Length) {
+        if ($Content[$index] -eq '<') {
+            $htmlTag = $htmlTagRegex.Match($Content, $index)
+            if ($htmlTag.Success) {
+                $null = $builder.Append($htmlTag.Value)
+                $index += $htmlTag.Length
+                continue
+            }
+        }
         if ($Content[$index] -eq '`') {
             $start = $index
             while ($index -lt $Content.Length -and $Content[$index] -eq '`') { $index++ }
@@ -120,6 +130,14 @@ function Remove-NonRenderedMarkdown { # NOSONAR - bounded Markdown renderer appr
     $builder = [System.Text.StringBuilder]::new()
     $index = 0
     while ($index -lt $withoutComments.Length) {
+        if ($withoutComments[$index] -eq '<') {
+            $htmlTag = $htmlTagRegex.Match($withoutComments, $index)
+            if ($htmlTag.Success) {
+                $null = $builder.Append($htmlTag.Value)
+                $index += $htmlTag.Length
+                continue
+            }
+        }
         if ($withoutComments[$index] -ne '`') {
             $null = $builder.Append($withoutComments[$index])
             $index++

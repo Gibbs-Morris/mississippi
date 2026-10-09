@@ -195,6 +195,21 @@ Describe 'PR issue reference validator' {
         Assert-ValidReferenceBody -Body 'The token `<!--` is code. Refs #741.'
     }
 
+    It 'preserves tracking between raw HTML tags containing quoted backticks: <Case>' -ForEach @(
+        @{ Case = 'span attributes'; Body = '<span title="`">left</span> Refs #741 <span title="`">right</span>' }
+        @{ Case = 'anchor attributes'; Body = '<a href="https://github.com/other/repo/issues/999" title="`">left</a> Refs #741 <a href="https://github.com/other/repo/issues/999" title="`">right</a>' }
+    ) {
+        Assert-ValidReferenceBody -Body $Body
+    }
+
+    It 'ignores tracking inside code containing an HTML tag with a quoted backtick' {
+        Assert-NoReferenceBody -Body 'Example ``<span title="`">Refs #741</span>`` is code.'
+    }
+
+    It 'ignores commented tracking between HTML tags containing quoted backticks' {
+        Assert-NoReferenceBody -Body '<span title="`">left</span> <!-- Refs #741 --> <span title="`">right</span>'
+    }
+
     It 'ignores an unused Markdown reference definition' {
         Assert-NoReferenceBody -Body '[tracking]: https://github.com/Gibbs-Morris/mississippi/issues/741'
     }
