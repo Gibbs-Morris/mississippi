@@ -142,6 +142,14 @@ Describe 'PR issue reference validator' {
         $outcome.Result.References[0].Number | Should -Be 741
     }
 
+    It 'preserves tracking between an inline code anchor opener and a later rendered anchor' {
+        Assert-ValidReferenceBody -Body 'Example `<a href="https://github.com/other/repo/issues/999">` is code. Refs #741. <a href="https://github.com/other/repo/issues/999">context</a>'
+    }
+
+    It 'ignores an issue anchor opener inside inline code before a rendered external anchor' {
+        Assert-NoReferenceBody -Body 'Example `<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">` is code. <a href="https://github.com/other/repo/issues/999">context</a>'
+    }
+
     It 'preserves a reference after inline comment opener code' {
         Assert-ValidReferenceBody -Body 'The token `<!--` is code. Refs #741.'
     }

@@ -115,12 +115,6 @@ function Remove-NonRenderedMarkdown { # NOSONAR - bounded Markdown renderer appr
     }
     $withoutFences = $withoutFences -join [Environment]::NewLine
     $withoutComments = Remove-MarkdownHtmlComments -Content $withoutFences
-    $anchorHrefPattern = '(?is)<a\b[^>]*\bhref\s*=\s*(?:"(?<Href>[^"]+)"|''(?<Href>[^'']+)''|(?<Href>[^\s>]+))[^>]*>'
-    $anchorHrefs = @([regex]::Matches($withoutComments, $anchorHrefPattern) | ForEach-Object { $_.Groups['Href'].Value })
-    # Link ownership comes from its destination, not a numeric label in upstream release notes.
-    $withoutComments = [regex]::Replace($withoutComments, $anchorHrefPattern + '.*?</a\s*>', ' ')
-    $withoutComments = [regex]::Replace($withoutComments, '(?m)<(?!https?://|mailto:)(?:[^>\"''\r\n]|\"[^\"]*\"|''[^'']*'')*>', '')
-    if ($anchorHrefs.Count -gt 0) { $withoutComments += [Environment]::NewLine + ($anchorHrefs -join [Environment]::NewLine) }
     $withoutComments = [regex]::Replace($withoutComments, '(?m)^(?: {4}|\t)[^\r\n]*(?:\r?\n|$)', '')
     $withoutComments = [regex]::Replace($withoutComments, '(?m)^(?:[ ]{0,3}>[ \t]?)+[ ]{4,}[^\r\n]*(?:\r?\n|$)', '')
     $builder = [System.Text.StringBuilder]::new()
@@ -162,7 +156,14 @@ function Remove-NonRenderedMarkdown { # NOSONAR - bounded Markdown renderer appr
             $null = $builder.Append($withoutComments.Substring($start, $delimiterLength))
         }
     }
-    return $builder.ToString()
+    $withoutCode = $builder.ToString()
+    $anchorHrefPattern = '(?is)<a\b[^>]*\bhref\s*=\s*(?:"(?<Href>[^"]+)"|''(?<Href>[^'']+)''|(?<Href>[^\s>]+))[^>]*>'
+    $anchorHrefs = @([regex]::Matches($withoutCode, $anchorHrefPattern) | ForEach-Object { $_.Groups['Href'].Value })
+    # Link ownership comes from its destination, not a numeric label in upstream release notes.
+    $withoutCode = [regex]::Replace($withoutCode, $anchorHrefPattern + '.*?</a\s*>', ' ')
+    $withoutCode = [regex]::Replace($withoutCode, '(?m)<(?!https?://|mailto:)(?:[^>\"''\r\n]|\"[^\"]*\"|''[^'']*'')*>', '')
+    if ($anchorHrefs.Count -gt 0) { $withoutCode += [Environment]::NewLine + ($anchorHrefs -join [Environment]::NewLine) }
+    return $withoutCode
 }
 
 function Test-UrlInsideMarkdownLinkTitle { # NOSONAR - bounded Markdown link-title detector intentionally tracks delimiter and escape state.
