@@ -94,7 +94,7 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body ('<a href="https://example.test">' + $Body + '<h1>Context</h1></a>')
     }
 
-    It 'checks path-relative issue destination ownership: <Case>' -ForEach (@(
+    It 'checks relative, marquee, CDATA and visible anchor ownership: <Case>' -ForEach (@(
         'parent issues path|true|[tracking](../issues/741)'
         'explicit current directory|true|[tracking](./../issues/741)'
         'HTML destination|true|<a href="../issues/741">tracking</a>'
@@ -107,15 +107,6 @@ Describe 'PR issue reference validator' {
         'page fragment|false|[tracking](#741)'
         'query value|false|[tracking](?next=../issues/741)'
         'normalized pull path|false|[tracking](../issues/741/../../pull/743)'
-    ) | ForEach-Object {
-        $caseFields = $_ -split '\|', 3
-        @{ Case = $caseFields[0]; Expected = $caseFields[1] -eq 'true'; Body = $caseFields[2] }
-    }) {
-        if ($Expected) { Assert-ValidReferenceBody -Body $Body }
-        else { Assert-NoReferenceBody -Body $Body }
-    }
-
-    It 'checks marquee anchor and code scope ownership: <Case>' -ForEach (@(
         'local anchor scope|true|<marquee><a href="https://example.test">context</marquee> Refs #741'
         'local code scope|true|<marquee><code>example</marquee> Refs #741'
         'nested scope|true|<marquee><a href="https://example.test">outer<marquee>inner</marquee> #742</marquee> Refs #741'
@@ -123,15 +114,6 @@ Describe 'PR issue reference validator' {
         'outer code|false|<code><marquee>context</marquee> Refs #741</code>'
         'unclosed scope|false|<marquee><a href="https://example.test">context Refs #741'
         'unmatched close|false|<a href="https://example.test">context</marquee> Refs #741'
-    ) | ForEach-Object {
-        $caseFields = $_ -split '\|', 3
-        @{ Case = $caseFields[0]; Expected = $caseFields[1] -eq 'true'; Body = $caseFields[2] }
-    }) {
-        if ($Expected) { Assert-ValidReferenceBody -Body $Body }
-        else { Assert-NoReferenceBody -Body $Body }
-    }
-
-    It 'checks top-level CDATA-like comment termination: <Case>' -ForEach (@(
         'plain delimiter|true|<![CDATA[x> Refs #741'
         'complete suffix|true|<![CDATA[x> Refs #741 ]]>'
         'retained issue URL|true|<![CDATA[x> https://github.com/Gibbs-Morris/mississippi/issues/741'
@@ -139,6 +121,18 @@ Describe 'PR issue reference validator' {
         'hidden payload|false|<![CDATA[Refs #741]]>'
         'enclosing code|false|<code><![CDATA[x> Refs #741</code>'
         'enclosing external anchor|false|<a href="https://example.test"><![CDATA[x> Refs #741</a>'
+        'empty anchor|false|<a href="https://github.com/Gibbs-Morris/mississippi/issues/741"></a>'
+        'comment-only anchor|false|<a href="https://github.com/Gibbs-Morris/mississippi/issues/741"><!-- tracking --></a>'
+        'whitespace-only anchor|false|<a href="https://github.com/Gibbs-Morris/mississippi/issues/741"> </a>'
+        'nonbreaking space|false|<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">&nbsp;</a>'
+        'zero-width space|false|<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">&#8203;</a>'
+        'empty formatting|false|<a href="https://github.com/Gibbs-Morris/mississippi/issues/741"><strong></strong></a>'
+        'line break only|false|<a href="https://github.com/Gibbs-Morris/mississippi/issues/741"><br></a>'
+        'empty code label|false|<a href="https://github.com/Gibbs-Morris/mississippi/issues/741"><code></code></a>'
+        'visible formatting|true|<a href="https://github.com/Gibbs-Morris/mississippi/issues/741"><strong>tracking</strong></a>'
+        'visible code label|true|<a href="https://github.com/Gibbs-Morris/mississippi/issues/741"><code>tracking</code></a>'
+        'visible image|true|<a href="https://github.com/Gibbs-Morris/mississippi/issues/741"><img src="https://example.test/issue.png" alt="tracking"></a>'
+        'unclosed visible anchor|true|<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking'
     ) | ForEach-Object {
         $caseFields = $_ -split '\|', 3
         @{ Case = $caseFields[0]; Expected = $caseFields[1] -eq 'true'; Body = $caseFields[2] }
@@ -146,7 +140,6 @@ Describe 'PR issue reference validator' {
         if ($Expected) { Assert-ValidReferenceBody -Body $Body }
         else { Assert-NoReferenceBody -Body $Body }
     }
-
     It 'ignores tracking in mathematical expressions: <Case>' -ForEach @(
         @{ Case = 'inline phantom'; Body = '$\hphantom{\#741}$' }
         @{ Case = 'display phantom'; Body = '$$\hphantom{\#741}$$' }

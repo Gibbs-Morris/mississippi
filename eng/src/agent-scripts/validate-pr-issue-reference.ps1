@@ -56,10 +56,13 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     $issueHrefBase = [uri]::new("https://github.com/$RepositoryOwner/$RepositoryName/pull/")
     $builder = [System.Text.StringBuilder]::new()
     $anchorHrefs = [System.Collections.Generic.List[string]]::new()
+    $anchorCandidates = [System.Collections.Generic.List[object]]::new()
+    $anchorCandidate = $null
     $anchorHrefPattern = '(?is)^<a(?=\s|/?>)(?:"[^"]*"|''[^'']*''|[^''">])*?\s+href(?=\s|=|/?>)(?:\s*=\s*(?:"(?<Href>[^"]*)"|''(?<Href>[^'']*)''|(?<Href>[^\s>]+)))?[^>]*>'
     $insideAnchor = $false
     $insideSelect = $false
     $buttonPriorAnchor = $null
+    $buttonPriorCandidate = $null
     $marqueeScopes = [System.Collections.Generic.Stack[object]]::new()
     $blockElements = @(
         'address', 'article', 'aside', 'blockquote', 'br', 'caption', 'dd', 'details', 'dialog', 'div', 'dl', 'dt',
@@ -102,16 +105,21 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                 }
                 # Closing or replacing a button ends its local anchor scope; code can persist.
                 if ($tagName -eq 'button') {
-                    if ($null -ne $buttonPriorAnchor) { $insideAnchor = $buttonPriorAnchor }
+                    if ($null -ne $buttonPriorAnchor) {
+                        $insideAnchor = $buttonPriorAnchor
+                        $anchorCandidate = $buttonPriorCandidate
+                    }
                     $buttonPriorAnchor = if ($isClosing) { $null } else { $insideAnchor }
+                    $buttonPriorCandidate = if ($isClosing) { $null } else { $anchorCandidate }
                 }
                 if ($tagName -eq 'marquee') {
                     if (-not $isClosing) {
-                        $marqueeScopes.Push([pscustomobject]@{ PriorAnchor = $insideAnchor; PriorCodeDepth = $codeDepth })
+                        $marqueeScopes.Push([pscustomobject]@{ PriorAnchor = $insideAnchor; PriorCandidate = $anchorCandidate; PriorCodeDepth = $codeDepth })
                     }
                     elseif ($marqueeScopes.Count -gt 0) {
                         $marqueeScope = $marqueeScopes.Pop()
                         $insideAnchor = $marqueeScope.PriorAnchor
+                        $anchorCandidate = $marqueeScope.PriorCandidate
                         $codeDepth = $marqueeScope.PriorCodeDepth
                     }
                 }
@@ -128,6 +136,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                     if ($closesCell) {
                         $null = $cellScopes.Pop()
                         $insideAnchor = $cellScope.PriorAnchor
+                        $anchorCandidate = $cellScope.PriorCandidate
                         $codeDepth = $cellScope.PriorCodeDepth
                     }
                 }
@@ -139,15 +148,22 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                     # A table outside a cell replaces the current table instead of nesting.
                 }
                 elseif (-not $isClosing -and $tableDepth -gt 0 -and $tagName -in @('caption', 'td', 'th')) {
-                    $cellScopes.Push([pscustomobject]@{ Name = $tagName; TableDepth = $tableDepth; PriorAnchor = $insideAnchor; PriorCodeDepth = $codeDepth })
+                    $cellScopes.Push([pscustomobject]@{ Name = $tagName; TableDepth = $tableDepth; PriorAnchor = $insideAnchor; PriorCandidate = $anchorCandidate; PriorCodeDepth = $codeDepth })
+                }
+                if ($tagName -eq 'img' -and -not $isClosing -and $insideAnchor -and $null -ne $anchorCandidate) {
+                    $null = $anchorCandidate.Label.Append([char]0xfffc)
                 }
                 if ($tagName -in @('pre', 'code')) {
                     $codeDepth = [Math]::Max(0, $codeDepth + $(if ($isClosing) { -1 } else { 1 }))
                 }
-                elseif ($tagName -eq 'a' -and $isClosing) { $insideAnchor = $false }
+                elseif ($tagName -eq 'a' -and $isClosing) {
+                    $insideAnchor = $false
+                    $anchorCandidate = $null
+                }
                 elseif ($codeDepth -eq 0) {
                     if ($tagName -eq 'a' -and -not $isClosing) {
                         $insideAnchor = $false
+                        $anchorCandidate = $null
                         $anchorHref = [regex]::Match($htmlTag.Value, $anchorHrefPattern)
                         if ($anchorHref.Success) {
                             $href = [System.Net.WebUtility]::HtmlDecode($anchorHref.Groups['Href'].Value)
@@ -163,7 +179,11 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                                 }
                                 $localIssueHref = [regex]::Match($normalizedHref, $localIssueHrefPattern)
                                 if ($localIssueHref.Success) {
-                                    $anchorHrefs.Add("https://github.com/$RepositoryOwner/$RepositoryName/issues/$($localIssueHref.Groups['Number'].Value)")
+                                    $anchorCandidate = [pscustomobject]@{
+                                        Href = "https://github.com/$RepositoryOwner/$RepositoryName/issues/$($localIssueHref.Groups['Number'].Value)"
+                                        Label = [System.Text.StringBuilder]::new()
+                                    }
+                                    $anchorCandidates.Add($anchorCandidate)
                                 }
                             }
                             $null = $builder.Append(' ')
@@ -177,8 +197,14 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                 continue
             }
         }
-        if ($codeDepth -eq 0 -and -not $insideAnchor) { $null = $builder.Append($html[$index]) }
+        if ($insideAnchor -and $null -ne $anchorCandidate) { $null = $anchorCandidate.Label.Append($html[$index]) }
+        elseif ($codeDepth -eq 0 -and -not $insideAnchor) { $null = $builder.Append($html[$index]) }
         $index++
+    }
+    foreach ($candidate in $anchorCandidates) {
+        $label = [System.Net.WebUtility]::HtmlDecode($candidate.Label.ToString())
+        $label = [regex]::Replace($label, '[\p{Cc}\p{Cf}]', '')
+        if (-not [string]::IsNullOrWhiteSpace($label)) { $anchorHrefs.Add($candidate.Href) }
     }
     $renderedText = [System.Net.WebUtility]::HtmlDecode($builder.ToString())
     if ($anchorHrefs.Count -gt 0) {
