@@ -21,32 +21,19 @@ namespace Mississippi.DomainModeling.Gateway;
 ///         or add additional endpoints.
 ///     </para>
 ///     <para>
-///         Example usage:
-///         <code>
-///             [Route("api/users/{entityId}")]
-///             public class UserController : AggregateControllerBase&lt;UserAggregate&gt;
-///             {
-///                 private readonly IUserService _service;
-///                 public UserController(
-///                     IUserService service,
-///                     ILogger&lt;UserController&gt; logger) : base(logger)
-///                 {
-///                     _service = service;
-///                 }
-///                 [HttpPost("register")]
-///                 public Task&lt;ActionResult&lt;OperationResult&gt;&gt; RegisterAsync(
-///                     [FromRoute] string entityId,
-///                     [FromBody] RegisterUser command,
-///                     CancellationToken ct = default)
-///                     =&gt; ExecuteAsync(entityId, command, _service.RegisterAsync, ct);
-///             }
-///         </code>
+///         Derived classes should apply a <c>[Route]</c> attribute. Their constructors must pass an
+///         <c>ILogger&lt;AggregateControllerBase&lt;TAggregate&gt;&gt;</c> to the base constructor.
+///         Use <c>ExecuteAsync</c> to delegate command execution to service methods, and refer to
+///         sample implementations in the repository for concrete usage patterns.
 ///     </para>
 ///     <para>
 ///         This base class provides:
 ///         <list type="bullet">
 ///             <item>Common logging for command execution at the API layer.</item>
-///             <item>Consistent error handling and HTTP response formatting.</item>
+///             <item>
+///                 HTTP response formatting for command results and caught
+///                 <see cref="InvalidOperationException" /> instances.
+///             </item>
 ///             <item>The <c>ExecuteAsync</c> helper method that delegates to service methods.</item>
 ///         </list>
 ///     </para>
