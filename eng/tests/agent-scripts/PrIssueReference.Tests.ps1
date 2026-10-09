@@ -468,6 +468,7 @@ Describe 'PR issue reference validator' {
     It 'preserves a reference-like line that continues a paragraph: <Case>' -ForEach @(
         @{ Case = 'single-line destination'; Body = "Context`n[tracking]: https://github.com/Gibbs-Morris/mississippi/issues/741" }
         @{ Case = 'continuation destination'; Body = "Context`n[tracking]:`n  https://github.com/Gibbs-Morris/mississippi/issues/741" }
+        @{ Case = 'escaped shortcut'; Body = '\[work]' + [Environment]::NewLine + '[work]: https://github.com/Gibbs-Morris/mississippi/issues/741' }
     ) {
         Assert-ValidReferenceBody -Body $Body
     }
@@ -585,7 +586,7 @@ Refs #741
     }
 
     It 'ignores escaped shortcut labels' {
-        $body = '\[work]' + [Environment]::NewLine + '[work]: https://github.com/Gibbs-Morris/mississippi/issues/741'
+        $body = '\[work]' + [Environment]::NewLine + [Environment]::NewLine + '[work]: https://github.com/Gibbs-Morris/mississippi/issues/741'
         Assert-NoReferenceBody -Body $body
     }
 
