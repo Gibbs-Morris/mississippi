@@ -95,6 +95,39 @@ public sealed class AqueductHubLifetimeManager<THub>
         hubName = DeriveHubName();
     }
 
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="AqueductHubLifetimeManager{THub}" /> class for production DI.
+    /// </summary>
+    /// <param name="serverIdProvider">The shared server identity.</param>
+    /// <param name="grainFactory">The distributed routing factory.</param>
+    /// <param name="connectionRegistry">The hub-local connections.</param>
+    /// <param name="messageSender">The local SignalR transport.</param>
+    /// <param name="heartbeatManager">The shared server heartbeat.</param>
+    /// <param name="streamSubscriptionManager">The hub-local stream subscriptions.</param>
+    /// <param name="logger">The lifetime manager logger.</param>
+    /// <param name="connectionRegistries">The registries included in server-wide heartbeat counts.</param>
+    internal AqueductHubLifetimeManager(
+        IServerIdProvider serverIdProvider,
+        IAqueductGrainFactory grainFactory,
+        IConnectionRegistry connectionRegistry,
+        ILocalMessageSender messageSender,
+        IHeartbeatManager heartbeatManager,
+        IStreamSubscriptionManager streamSubscriptionManager,
+        ILogger<AqueductHubLifetimeManager<THub>> logger,
+        HubConnectionRegistries connectionRegistries
+    )
+        : this(
+            serverIdProvider,
+            grainFactory,
+            connectionRegistry,
+            messageSender,
+            heartbeatManager,
+            streamSubscriptionManager,
+            logger) =>
+        ConnectionRegistries = connectionRegistries ?? throw new ArgumentNullException(nameof(connectionRegistries));
+
+    private HubConnectionRegistries? ConnectionRegistries { get; }
+
     private IConnectionRegistry ConnectionRegistry { get; }
 
     private IAqueductGrainFactory GrainFactory { get; }
@@ -366,7 +399,7 @@ public sealed class AqueductHubLifetimeManager<THub>
             .ConfigureAwait(false);
 
         // Start heartbeat manager
-        await HeartbeatManager.StartAsync(() => ConnectionRegistry.Count, cancellationToken).ConfigureAwait(false);
+        await HeartbeatManager.StartAsync(GetConnectionCount, cancellationToken).ConfigureAwait(false);
         backplaneInitialized = true;
         Logger.BackplaneInitialized(hubName, ServerId);
     }
@@ -375,6 +408,12 @@ public sealed class AqueductHubLifetimeManager<THub>
         string connectionId
     ) =>
         GrainFactory.GetClientGrain(hubName, connectionId);
+
+    /// <summary>
+    ///     Returns the shared heartbeat connection count, or the local count for direct construction.
+    /// </summary>
+    /// <returns>The number of connections reported to the heartbeat.</returns>
+    private int GetConnectionCount() => ConnectionRegistries?.Count ?? ConnectionRegistry.Count;
 
     private ISignalRGroupGrain GetGroupGrain(
         string groupName
