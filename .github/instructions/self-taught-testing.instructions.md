@@ -4,7 +4,7 @@ applyTo: 'tests/**'
 
 # Self-Taught Lessons: Testing
 
-Governing thought: Keep concurrent test observation safe and exercise callback reentry during shared startup.
+Governing thought: Test observable failure cases and keep concurrent observations safe.
 
 > Drift check: Before adding a lesson, compare overlapping instructions for conflicts and duplicates under `self-improvement.instructions.md`.
 
@@ -14,9 +14,11 @@ Governing thought: Keep concurrent test observation safe and exercise callback r
 
 - Shared startup tests **SHOULD** cover retry from failure callbacks. Why: In PR #909, joined-start coordination blocked `RetryFromFailureLogDoesNotPublishStaleDisconnected` until the failed attempt was cleared before its failure notification.
 
+- Tests extending conditional matching **SHOULD** combine newly accepted conditions with missing representations. Why: PR #899 returned 304 for null projection state despite 100% controller line and branch coverage.
+
 ## Scope and Audience
 
-Agents testing concurrent observations or shared asynchronous startup under `tests/**`.
+Agents writing tests under `tests/**`.
 
 ## References
 
