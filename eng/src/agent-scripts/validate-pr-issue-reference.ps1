@@ -173,8 +173,9 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                 elseif (-not $isClosing -and $tableDepth -gt 0 -and $tagName -in @('caption', 'td', 'th')) {
                     $cellScopes.Push([pscustomobject]@{ Name = $tagName; TableDepth = $tableDepth; PriorAnchor = $insideAnchor; PriorCandidate = $anchorCandidate; PriorCodeDepth = $codeDepth; PriorPreDepth = $preDepth })
                 }
-                if ($tagName -eq 'img' -and -not $isClosing -and $insideAnchor -and $null -ne $anchorCandidate) {
-                    $null = $anchorCandidate.Label.Append([char]0xfffc)
+                if ($tagName -eq 'img' -and -not $isClosing) {
+                    if ($insideAnchor -and $null -ne $anchorCandidate) { $null = $anchorCandidate.Label.Append([char]0xfffc) }
+                    elseif ($codeDepth -eq 0 -and $preDepth -eq 0 -and -not $insideAnchor) { $null = $builder.Append([char]0xfffc) }
                 }
                 if ($tagName -eq 'pre') {
                     $preDepth = [Math]::Max(0, $preDepth + $(if ($isClosing) { -1 } else { 1 }))

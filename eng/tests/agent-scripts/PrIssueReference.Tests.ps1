@@ -74,6 +74,13 @@ Describe 'PR issue reference validator' {
     }
 
     It 'checks rendered reference ownership: <Case>' -ForEach (@(
+        'standalone Markdown image|false|#![x](https://example.test/x.png)741'
+        'standalone HTML image|false|#<img src="https://example.test/x.png" alt="x">741'
+        'standalone empty image|false|#<img>741'
+        'outside Markdown image|true|![x](https://example.test/x.png) Refs #741'
+        'external image label|false|<a href="https://example.test">#<img src="https://example.test/x.png" alt="x">741</a>'
+        'code image label|false|<code>#<img src="https://example.test/x.png" alt="x">741</code>'
+        'image attributes only|false|<img src="https://example.test/x.png" alt="Refs #741">'
         'foreign CDATA SVG|true|<svg><text><![CDATA[Refs #741]]></text></svg>'
         'foreign CDATA MathML|true|<math><mtext><![CDATA[Refs #741]]></mtext></math>'
         'foreign CDATA integration|true|<svg><foreignObject><![CDATA[Refs #741]]></foreignObject></svg>'
