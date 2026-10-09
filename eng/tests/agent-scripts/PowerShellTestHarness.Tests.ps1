@@ -29,6 +29,7 @@ Describe 'PowerShell test orchestration' {
         $pesterRunners = @(
             'run-repository-automation-tests.ps1',
             'run-spring-validation-tests.ps1',
+            'run-cleanup-tests.ps1',
             'run-scratchpad-task-tests.ps1',
             'run-summarize-coverage-gaps-tests.ps1',
             'run-pr-issue-reference-tests.ps1',
@@ -57,7 +58,8 @@ Describe 'PowerShell test orchestration' {
 
     It 'runs every required suite successfully' {
         $results = & $orchestrator -PassThru 6>$null
-        $results.Count | Should -Be 11
+        $results.Count | Should -Be 12
+        $results.Name | Should -Contain 'run-cleanup-tests.ps1'
         @($results | Where-Object Status -NE 'Passed').Count | Should -Be 0
     }
 
@@ -181,7 +183,8 @@ function Invoke-MississippiSolutionBuild { param([string]`$Configuration, [strin
 function Invoke-SampleSolutionBuild { param([string]`$Configuration, [string]`$RepoRoot); Write-Output ('SAMPLES:' + `$Configuration) }
 function Invoke-MississippiSolutionCleanup { param([string]`$RepoRoot); Write-Output 'CORE:'; $failureStatement }
 function Invoke-SampleSolutionCleanup { param([string]`$RepoRoot); Write-Output 'SAMPLES:' }
-Export-ModuleMember -Function Get-RepositoryRoot, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup
+function Invoke-RepositoryCleanup { param([string]`$Mode, [string]`$RepoRoot, [string]`$Configuration, [string]`$SettingsPath, [string]`$Profile, [string]`$CachesHome, [switch]`$NoUpdates, [switch]`$SkipSamples, [switch]`$SkipMississippi, [switch]`$SkipToolRestore, [switch]`$SkipRestore, [switch]`$SkipBuild); Write-Host 'CORE:'; $failureStatement; Write-Host 'SAMPLES:' }
+Export-ModuleMember -Function Get-RepositoryRoot, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-RepositoryCleanup
 "@ | Set-Content (Join-Path $scripts 'RepositoryAutomation.psm1')
         }
         else {

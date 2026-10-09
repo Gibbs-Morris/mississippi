@@ -20,6 +20,7 @@ $testsRoot = Join-Path $repoRoot 'eng/tests/agent-scripts'
 $testRunners = @(
     @{ Name = 'run-repository-automation-tests.ps1'; Type = 'Pester' },
     @{ Name = 'run-spring-validation-tests.ps1'; Type = 'Pester' },
+    @{ Name = 'run-cleanup-tests.ps1';          Type = 'Pester' },
     @{ Name = 'run-scratchpad-task-tests.ps1';   Type = 'Pester' },
     @{ Name = 'run-summarize-coverage-gaps-tests.ps1'; Type = 'Pester' },
     @{ Name = 'run-pr-issue-reference-tests.ps1'; Type = 'Pester' },
@@ -112,6 +113,5 @@ else {
 if ($PassThru) { return $results }
 
 if ($failureCount -gt 0) { exit 1 } else { exit 0 }
-
 
 
