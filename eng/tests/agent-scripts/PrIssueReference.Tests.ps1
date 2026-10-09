@@ -74,6 +74,16 @@ Describe 'PR issue reference validator' {
     }
 
     It 'checks rendered reference ownership: <Case>' -ForEach (@(
+        'foreign CDATA SVG|true|<svg><text><![CDATA[Refs #741]]></text></svg>'
+        'foreign CDATA MathML|true|<math><mtext><![CDATA[Refs #741]]></mtext></math>'
+        'foreign CDATA integration|true|<svg><foreignObject><![CDATA[Refs #741]]></foreignObject></svg>'
+        'foreign CDATA delimiter|true|<svg><text><![CDATA[x> Refs #741]]></text></svg>'
+        'foreign CDATA local URL|true|<svg><text><![CDATA[https://github.com/Gibbs-Morris/mississippi/issues/741]]></text></svg>'
+        'foreign CDATA top level|false|<![CDATA[Refs #741]]>'
+        'foreign CDATA HTML context|false|<div><![CDATA[Refs #741]]></div>'
+        'foreign CDATA external anchor|false|<a href="https://example.test"><svg><text><![CDATA[Refs #741]]></text></svg></a>'
+        'foreign CDATA code|false|<code><svg><text><![CDATA[Refs #741]]></text></svg></code>'
+        'foreign CDATA after SVG|false|<svg></svg><![CDATA[Refs #741]]>'
         'unmatched code closer in pre|false|<pre>example</code>Refs #741</pre>'
         'unmatched pre closer in code|false|<code>example</pre>Refs #741</code>'
         'button closes local pre|true|<button><pre>example</button> Refs #741'
@@ -149,6 +159,12 @@ Describe 'PR issue reference validator' {
         if ($Expected) { Assert-ValidReferenceBody -Body $Body }
         else { Assert-NoReferenceBody -Body $Body }
     }
+    It 'checks rendered reference ownership for literal CDATA entities' {
+        $outcome = Invoke-ReferenceValidator -Body '<svg><text><![CDATA[#&#55;41]]></text></svg>'
+        $outcome.ExitCode | Should -Not -Be 0
+        @($outcome.Result.References | Where-Object Number -eq 741).Count | Should -Be 0
+    }
+
     It 'ignores tracking in mathematical expressions: <Case>' -ForEach @(
         @{ Case = 'inline phantom'; Body = '$\hphantom{\#741}$' }
         @{ Case = 'display phantom'; Body = '$$\hphantom{\#741}$$' }

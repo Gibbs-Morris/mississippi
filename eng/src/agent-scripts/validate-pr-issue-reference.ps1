@@ -15,6 +15,7 @@ $ErrorActionPreference = 'Stop'
 $htmlTagRegex = [regex]::new('(?s)\G(?:<[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:"[^"]*"|''[^'']*''|[^\s"''=<>`]+))?)*\s*/?>|</[A-Za-z][A-Za-z0-9-]*\s*>)')
 $htmlCommentRegex = [regex]::new('(?s)\G<!--(?:>|->|.*?(?:--!?>|\z))')
 $htmlNonTextRegex = [regex]::new('(?s)\G(?:<\?.*?(?:>|\z)|<![A-Za-z].*?(?:>|\z)|<!\[CDATA\[.*?(?:>|\z))')
+$htmlCdataRegex = [regex]::new('(?s)\G<!\[CDATA\[(?<Content>.*?)(?:\]\]>|\z)')
 
 function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks code and link ownership states.
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
@@ -65,6 +66,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     $buttonPriorCandidate = $null
     $buttonPriorPreDepth = $null
     $formattingScopes = [System.Collections.Generic.Stack[object]]::new()
+    $foreignElements = [System.Collections.Generic.Stack[string]]::new()
     $blockElements = @(
         'address', 'article', 'aside', 'blockquote', 'br', 'caption', 'dd', 'details', 'dialog', 'div', 'dl', 'dt',
         'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header',
@@ -82,6 +84,15 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
             continue
         }
         if ($html[$index] -eq '<') {
+            if ($foreignElements.Count -gt 0 -and $index + 9 -le $html.Length -and $html.Substring($index, 9) -ceq '<![CDATA[') {
+                $cdata = $htmlCdataRegex.Match($html, $index)
+                # Encode literal CDATA so the final HTML decode does not reinterpret its entities.
+                $cdataText = [System.Net.WebUtility]::HtmlEncode($cdata.Groups['Content'].Value)
+                if ($insideAnchor -and $null -ne $anchorCandidate) { $null = $anchorCandidate.Label.Append($cdataText) }
+                elseif ($codeDepth -eq 0 -and $preDepth -eq 0 -and -not $insideAnchor) { $null = $builder.Append($cdataText) }
+                $index += $cdata.Length
+                continue
+            }
             $htmlNonText = $htmlNonTextRegex.Match($html, $index)
             if ($htmlNonText.Success) {
                 $index += $htmlNonText.Length
@@ -103,6 +114,12 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                     else {
                         $index += $htmlTag.Length
                         continue
+                    }
+                }
+                if ($tagName -in @('svg', 'math')) {
+                    if (-not $isClosing) { $foreignElements.Push($tagName) }
+                    elseif ($foreignElements.Contains($tagName)) {
+                        do { $foreignElement = $foreignElements.Pop() } while ($foreignElement -ne $tagName)
                     }
                 }
                 # Closing or replacing a button ends its local anchor scope; code can persist.
