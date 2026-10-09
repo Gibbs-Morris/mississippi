@@ -47,6 +47,29 @@ Describe 'PR issue reference validator' {
         }
     }
 
+    It 'ignores tracking in mathematical expressions: <Case>' -ForEach @(
+        @{ Case = 'inline phantom'; Body = '$\hphantom{\#741}$' }
+        @{ Case = 'display phantom'; Body = '$$\hphantom{\#741}$$' }
+        @{ Case = 'backtick-delimited phantom'; Body = '$`\hphantom{\#741}`$' }
+        @{ Case = 'fenced math'; Body = '```math' + [Environment]::NewLine + '\hphantom{\#741}' + [Environment]::NewLine + '```' }
+    ) {
+        Assert-NoReferenceBody -Body $Body
+    }
+
+    It 'preserves real tracking around mathematical expressions: <Case>' -ForEach @(
+        @{ Case = 'ordinary dollars'; Body = '$5 to $7 Refs #741' }
+        @{ Case = 'space-delimited literal'; Body = '$ Refs #741 $' }
+        @{ Case = 'unterminated math'; Body = '$\hphantom{\#741}' }
+        @{ Case = 'text-adjacent literal'; Body = 'x$\hphantom{\#741}$x' }
+        @{ Case = 'ordinary HTML class'; Body = '<span class="math">Refs #741</span>' }
+        @{ Case = 'outside inline math'; Body = '$\hphantom{\#742}$ Refs #741' }
+        @{ Case = 'outside display math'; Body = '$$\hphantom{\#742}$$ Refs #741' }
+    ) {
+        $outcome = Assert-ValidReferenceBody -Body $Body
+        @($outcome.Result.References).Count | Should -Be 1
+        $outcome.Result.References[0].Number | Should -Be 741
+    }
+
     It 'accepts a local shorthand and same-repository issue URL' {
         $outcome = Assert-ValidReferenceBody -Body 'Refs #741 and https://github.com/Gibbs-Morris/mississippi/issues/741.'
         @($outcome.Result.ResolvedIssues).Count | Should -Be 1

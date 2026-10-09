@@ -22,6 +22,26 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     if ([string]::IsNullOrEmpty($Content)) { return '' }
     # PowerShell bundles Markdig; select GitHub extensions without its advanced-only syntax.
     Add-Type -Path (Join-Path $PSHOME 'Markdig.Signed.dll')
+    # Math source, like code, cannot establish a tracking link. Keep literal dollars.
+    $mathPipelineBuilder = [Markdig.MarkdownPipelineBuilder]::new()
+    $null = [Markdig.MarkdownExtensions]::UseMathematics($mathPipelineBuilder)
+    $null = [Markdig.MarkdownExtensions]::UsePreciseSourceLocation($mathPipelineBuilder)
+    $mathDocument = [Markdig.Markdown]::Parse($Content, $mathPipelineBuilder.Build())
+    $mathNodes = @([Markdig.Syntax.MarkdownObjectExtensions]::Descendants($mathDocument) |
+        Where-Object { $_ -is [Markdig.Extensions.Mathematics.MathInline] -or $_ -is [Markdig.Extensions.Mathematics.MathBlock] } |
+        Sort-Object { $_.Span.Start } -Descending)
+    foreach ($mathNode in $mathNodes) {
+        $mathLength = $mathNode.Span.End - $mathNode.Span.Start + 1
+        $mathSource = $Content.Substring($mathNode.Span.Start, $mathLength)
+        $isMath = if ($mathNode -is [Markdig.Extensions.Mathematics.MathInline]) {
+            $delimiterCount = $mathNode.DelimiterCount
+            $mathLength -gt 2 * $delimiterCount -and
+                -not [char]::IsWhiteSpace($mathSource[$delimiterCount]) -and
+                -not [char]::IsWhiteSpace($mathSource[$mathLength - $delimiterCount - 1])
+        }
+        else { $mathSource.TrimEnd().EndsWith('$$', [System.StringComparison]::Ordinal) }
+        if ($isMath) { $Content = $Content.Remove($mathNode.Span.Start, $mathLength).Insert($mathNode.Span.Start, ' ') }
+    }
     $markdownPipelineBuilder = [Markdig.MarkdownPipelineBuilder]::new()
     $tableOptions = [Markdig.Extensions.Tables.PipeTableOptions]::new()
     $tableOptions.UseHeaderForColumnCount = $true
