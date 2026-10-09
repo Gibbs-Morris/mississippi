@@ -152,6 +152,18 @@ Describe 'PR issue reference validator' {
         $outcome.Result.References[0].Number | Should -Be 741
     }
 
+    It 'ignores closing-anchor text inside quoted child attributes: <Case>' -ForEach @(
+        @{ Case = 'double-quoted attribute'; Body = '<a href="https://github.com/other/repo/issues/999"><span title="example </a>">#741</span></a>' }
+        @{ Case = 'single-quoted attribute'; Body = '<a href="https://github.com/other/repo/issues/999"><span title=''example </a>''>#741</span></a>' }
+    ) {
+        Assert-NoReferenceBody -Body $Body
+        Assert-ValidReferenceBody -Body ($Body + ' Refs #741')
+    }
+
+    It 'ignores a local issue URL embedded in another tag attribute' {
+        Assert-NoReferenceBody -Body '<span title=''example <a href="https://github.com/Gibbs-Morris/mississippi/issues/741">''>context</span>'
+    }
+
     It 'uses only the actual HTML href attribute: <Case>' -ForEach @(
         @{ Case = 'external href before local data-href'; Expected = $false; Anchor = '<a href="https://example.test" data-href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a>' }
         @{ Case = 'data-href without href'; Expected = $false; Anchor = '<a data-href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a>' }

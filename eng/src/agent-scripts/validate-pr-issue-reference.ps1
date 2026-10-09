@@ -175,10 +175,32 @@ function Remove-NonRenderedMarkdown { # NOSONAR - bounded Markdown renderer appr
         }
     }
     $withoutCode = $builder.ToString()
-    $anchorHrefPattern = '(?is)<a\b(?:"[^"]*"|''[^'']*''|[^''">])*?\s+href(?=\s|=|/?>)(?:\s*=\s*(?:"(?<Href>[^"]*)"|''(?<Href>[^'']*)''|(?<Href>[^\s>]+)))?[^>]*>'
-    $anchorHrefs = @([regex]::Matches($withoutCode, $anchorHrefPattern) | ForEach-Object { $_.Groups['Href'].Value })
+    $anchorHrefPattern = '(?is)^<a\b(?:"[^"]*"|''[^'']*''|[^''">])*?\s+href(?=\s|=|/?>)(?:\s*=\s*(?:"(?<Href>[^"]*)"|''(?<Href>[^'']*)''|(?<Href>[^\s>]+)))?[^>]*>'
+    $anchorHrefs = [System.Collections.Generic.List[string]]::new()
     # Link ownership comes from its destination, not a numeric label in upstream release notes.
-    $withoutCode = [regex]::Replace($withoutCode, $anchorHrefPattern + '(?:.*?</a\s*>|.*\z)', ' ')
+    $null = $builder.Clear()
+    $index = 0
+    $insideAnchor = $false
+    while ($index -lt $withoutCode.Length) {
+        if ($withoutCode[$index] -eq '<') {
+            $htmlTag = $htmlTagRegex.Match($withoutCode, $index)
+            if ($htmlTag.Success) {
+                $anchorHref = [regex]::Match($htmlTag.Value, $anchorHrefPattern)
+                if ($anchorHref.Success) {
+                    $anchorHrefs.Add($anchorHref.Groups['Href'].Value)
+                    $insideAnchor = $true
+                    $null = $builder.Append(' ')
+                }
+                elseif ($htmlTag.Value -match '^</a\s*>$') { $insideAnchor = $false }
+                elseif (-not $insideAnchor) { $null = $builder.Append($htmlTag.Value) }
+                $index += $htmlTag.Length
+                continue
+            }
+        }
+        if (-not $insideAnchor) { $null = $builder.Append($withoutCode[$index]) }
+        $index++
+    }
+    $withoutCode = $builder.ToString()
     $withoutCode = [regex]::Replace($withoutCode, '(?m)<(?!https?://|mailto:)(?:[^>\"''\r\n]|\"[^\"]*\"|''[^'']*'')*>', '')
     if ($anchorHrefs.Count -gt 0) { $withoutCode += [Environment]::NewLine + ($anchorHrefs -join [Environment]::NewLine) }
     return $withoutCode
