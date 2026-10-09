@@ -124,6 +124,22 @@ Describe 'PR issue reference validator' {
         Assert-ValidReferenceBody -Body '<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking issue</a>'
     }
 
+    It 'ignores non-rendered HTML declarations: <Case>' -ForEach @(
+        @{ Case = 'document type'; Markup = '<!DOCTYPE html PUBLIC "#741">' }
+        @{ Case = 'processing instruction'; Markup = '<?example #741 ?>' }
+        @{ Case = 'CDATA section'; Markup = '<![CDATA[Refs #741]]>' }
+    ) {
+        Assert-NoReferenceBody -Body $Markup
+        Assert-ValidReferenceBody -Body ($Markup + [Environment]::NewLine + 'Refs #741')
+    }
+
+    It 'preserves a visible HTML declaration example: <Case>' -ForEach @(
+        @{ Case = 'encoded'; Body = '&lt;!DOCTYPE html PUBLIC "#741"&gt;' }
+        @{ Case = 'escaped by the renderer'; Body = '<!doctype html PUBLIC "#741">' }
+    ) {
+        Assert-ValidReferenceBody -Body $Body
+    }
+
     It 'ends a cell-local anchor at a table boundary: <Case>' -ForEach @(
         @{ Case = 'explicit data cell'; Body = 'x <table><tr><td><a href="https://github.com/other/repo/issues/999">context</td><td>Refs #741</td></tr></table>' }
         @{ Case = 'explicit header cell'; Body = 'x <table><tr><th><a href="https://github.com/other/repo/issues/999">context</th><td>Refs #741</td></tr></table>' }

@@ -13,6 +13,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $htmlTagRegex = [regex]::new('(?s)\G(?:<[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:"[^"]*"|''[^'']*''|[^\s"''=<>`]+))?)*\s*/?>|</[A-Za-z][A-Za-z0-9-]*\s*>)')
+$htmlNonTextRegex = [regex]::new('(?s)\G(?:<\?.*?(?:\?>|\z)|<![A-Za-z].*?(?:>|\z)|<!\[CDATA\[.*?(?:\]\]>|\z))')
 
 function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks code and link ownership states.
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
@@ -37,6 +38,11 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
             continue
         }
         if ($html[$index] -eq '<') {
+            $htmlNonText = $htmlNonTextRegex.Match($html, $index)
+            if ($htmlNonText.Success) {
+                $index += $htmlNonText.Length
+                continue
+            }
             $htmlTag = $htmlTagRegex.Match($html, $index)
             if ($htmlTag.Success) {
                 $tagName = [regex]::Match($htmlTag.Value, '^</?(?<Name>[A-Za-z][A-Za-z0-9-]*)').Groups['Name'].Value.ToLowerInvariant()
