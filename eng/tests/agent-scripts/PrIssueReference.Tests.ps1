@@ -153,6 +153,22 @@ Describe 'PR issue reference validator' {
         Assert-ValidReferenceBody -Body '[tracking issue](https://github.com/Gibbs-Morris/mississippi/issues/741)'
     }
 
+    It 'accepts repository-relative issue destinations: <Case>' -ForEach @(
+        @{ Case = 'Markdown'; Body = '[Refs #741](/Gibbs-Morris/mississippi/issues/741)' }
+        @{ Case = 'HTML'; Body = '<a href="/Gibbs-Morris/mississippi/issues/741">tracking</a>' }
+        @{ Case = 'trailing URL whitespace'; Body = '<a href="https://github.com/Gibbs-Morris/mississippi/issues/741 ">tracking</a>' }
+    ) {
+        Assert-ValidReferenceBody -Body $Body
+    }
+
+    It 'ignores relative links outside the local issue destination: <Case>' -ForEach @(
+        @{ Case = 'external repository'; Body = '[Refs #741](/other/repo/issues/999)' }
+        @{ Case = 'pull request'; Body = '[Refs #741](/Gibbs-Morris/mississippi/pull/741)' }
+        @{ Case = 'leading whitespace'; Body = '<a href=" /Gibbs-Morris/mississippi/issues/741">tracking</a>' }
+    ) {
+        Assert-NoReferenceBody -Body $Body
+    }
+
     It 'accepts a rendered HTML anchor to a same-repository issue' {
         Assert-ValidReferenceBody -Body '<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking issue</a>'
     }

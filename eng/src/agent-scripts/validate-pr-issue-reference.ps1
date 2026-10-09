@@ -32,7 +32,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     $null = [Markdig.MarkdownExtensions]::UseAutoLinks($markdownPipelineBuilder, $null)
     $null = [Markdig.MarkdownExtensions]::UseEmphasisExtras($markdownPipelineBuilder, [Markdig.Extensions.EmphasisExtras.EmphasisExtraOptions]::Strikethrough)
     $html = [Markdig.Markdown]::ToHtml($Content, $markdownPipelineBuilder.Build())
-    $localIssueHrefPattern = '(?i)^https://github\.com/' + [regex]::Escape($RepositoryOwner) + '/' + [regex]::Escape($RepositoryName) + '/issues/(?<Number>\d+)(?:[/?#].*)?$'
+    $localIssueHrefPattern = '(?i)^(?:(?:https?:)?//github\.com)?/' + [regex]::Escape($RepositoryOwner) + '/' + [regex]::Escape($RepositoryName) + '/issues/(?<Number>\d+)(?:[/?#].*)?$'
     $builder = [System.Text.StringBuilder]::new()
     $anchorHrefs = [System.Collections.Generic.List[string]]::new()
     $anchorHrefPattern = '(?is)^<a(?=\s|/?>)(?:"[^"]*"|''[^'']*''|[^''">])*?\s+href(?=\s|=|/?>)(?:\s*=\s*(?:"(?<Href>[^"]*)"|''(?<Href>[^'']*)''|(?<Href>[^\s>]+)))?[^>]*>'
@@ -88,7 +88,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                         $anchorHref = [regex]::Match($htmlTag.Value, $anchorHrefPattern)
                         if ($anchorHref.Success) {
                             $href = [System.Net.WebUtility]::HtmlDecode($anchorHref.Groups['Href'].Value)
-                            $localIssueHref = [regex]::Match($href, $localIssueHrefPattern)
+                            $localIssueHref = [regex]::Match($href.TrimEnd([char[]](0..0x20)), $localIssueHrefPattern)
                             if ($localIssueHref.Success) {
                                 $anchorHrefs.Add("https://github.com/$RepositoryOwner/$RepositoryName/issues/$($localIssueHref.Groups['Number'].Value)")
                             }
