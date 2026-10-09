@@ -74,6 +74,14 @@ Describe 'PR issue reference validator' {
     }
 
     It 'checks rendered reference ownership: <Case>' -ForEach (@(
+        'unmatched code closer in pre|false|<pre>example</code>Refs #741</pre>'
+        'unmatched pre closer in code|false|<code>example</pre>Refs #741</code>'
+        'button closes local pre|true|<button><pre>example</button> Refs #741'
+        'button preserves outer pre|false|<pre><button>example</button> Refs #741</pre>'
+        'balanced pre outside|true|<pre>example</pre> Refs #741'
+        'balanced code outside|true|<code>example</code> Refs #741'
+        'preformatted only|false|<pre>Refs #741</pre>'
+        'code only|false|<code>Refs #741</code>'
         'object anchor|true|<object><a href="https://example.test">context</object> Refs #741'
         'object code|true|<object><code>example</object> Refs #741'
         'nested objects|true|<object><object><a href="https://example.test">context</object> Refs #741</object>'

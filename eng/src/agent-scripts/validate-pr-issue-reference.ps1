@@ -63,6 +63,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     $insideSelect = $false
     $buttonPriorAnchor = $null
     $buttonPriorCandidate = $null
+    $buttonPriorPreDepth = $null
     $formattingScopes = [System.Collections.Generic.Stack[object]]::new()
     $blockElements = @(
         'address', 'article', 'aside', 'blockquote', 'br', 'caption', 'dd', 'details', 'dialog', 'div', 'dl', 'dt',
@@ -73,6 +74,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     $tableDepth = 0
     $cellScopes = [System.Collections.Generic.Stack[object]]::new()
     $codeDepth = 0
+    $preDepth = 0
     $index = 0
     while ($index -lt $html.Length) {
         if ($index + 4 -le $html.Length -and $html.Substring($index, 4) -eq '<!--') {
@@ -108,19 +110,22 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                     if ($null -ne $buttonPriorAnchor) {
                         $insideAnchor = $buttonPriorAnchor
                         $anchorCandidate = $buttonPriorCandidate
+                        $preDepth = $buttonPriorPreDepth
                     }
                     $buttonPriorAnchor = if ($isClosing) { $null } else { $insideAnchor }
                     $buttonPriorCandidate = if ($isClosing) { $null } else { $anchorCandidate }
+                    $buttonPriorPreDepth = if ($isClosing) { $null } else { $preDepth }
                 }
                 if ($tagName -in @('applet', 'marquee', 'object')) {
                     if (-not $isClosing) {
-                        $formattingScopes.Push([pscustomobject]@{ Name = $tagName; PriorAnchor = $insideAnchor; PriorCandidate = $anchorCandidate; PriorCodeDepth = $codeDepth })
+                        $formattingScopes.Push([pscustomobject]@{ Name = $tagName; PriorAnchor = $insideAnchor; PriorCandidate = $anchorCandidate; PriorCodeDepth = $codeDepth; PriorPreDepth = $preDepth })
                     }
                     elseif ($formattingScopes.Count -gt 0 -and $tagName -in $formattingScopes.ToArray().Name) {
                         do { $formattingScope = $formattingScopes.Pop() } while ($formattingScope.Name -ne $tagName)
                         $insideAnchor = $formattingScope.PriorAnchor
                         $anchorCandidate = $formattingScope.PriorCandidate
                         $codeDepth = $formattingScope.PriorCodeDepth
+                        $preDepth = $formattingScope.PriorPreDepth
                     }
                 }
                 # Table scopes restore both enclosing links and code, including implied ends.
@@ -138,6 +143,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                         $insideAnchor = $cellScope.PriorAnchor
                         $anchorCandidate = $cellScope.PriorCandidate
                         $codeDepth = $cellScope.PriorCodeDepth
+                        $preDepth = $cellScope.PriorPreDepth
                     }
                 }
                 if ($tagName -eq 'table') {
@@ -148,19 +154,22 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                     # A table outside a cell replaces the current table instead of nesting.
                 }
                 elseif (-not $isClosing -and $tableDepth -gt 0 -and $tagName -in @('caption', 'td', 'th')) {
-                    $cellScopes.Push([pscustomobject]@{ Name = $tagName; TableDepth = $tableDepth; PriorAnchor = $insideAnchor; PriorCandidate = $anchorCandidate; PriorCodeDepth = $codeDepth })
+                    $cellScopes.Push([pscustomobject]@{ Name = $tagName; TableDepth = $tableDepth; PriorAnchor = $insideAnchor; PriorCandidate = $anchorCandidate; PriorCodeDepth = $codeDepth; PriorPreDepth = $preDepth })
                 }
                 if ($tagName -eq 'img' -and -not $isClosing -and $insideAnchor -and $null -ne $anchorCandidate) {
                     $null = $anchorCandidate.Label.Append([char]0xfffc)
                 }
-                if ($tagName -in @('pre', 'code')) {
+                if ($tagName -eq 'pre') {
+                    $preDepth = [Math]::Max(0, $preDepth + $(if ($isClosing) { -1 } else { 1 }))
+                }
+                elseif ($tagName -eq 'code') {
                     $codeDepth = [Math]::Max(0, $codeDepth + $(if ($isClosing) { -1 } else { 1 }))
                 }
                 elseif ($tagName -eq 'a' -and $isClosing) {
                     $insideAnchor = $false
                     $anchorCandidate = $null
                 }
-                elseif ($codeDepth -eq 0) {
+                elseif ($codeDepth -eq 0 -and $preDepth -eq 0) {
                     if ($tagName -eq 'a' -and -not $isClosing) {
                         $insideAnchor = $false
                         $anchorCandidate = $null
@@ -198,7 +207,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
             }
         }
         if ($insideAnchor -and $null -ne $anchorCandidate) { $null = $anchorCandidate.Label.Append($html[$index]) }
-        elseif ($codeDepth -eq 0 -and -not $insideAnchor) { $null = $builder.Append($html[$index]) }
+        elseif ($codeDepth -eq 0 -and $preDepth -eq 0 -and -not $insideAnchor) { $null = $builder.Append($html[$index]) }
         $index++
     }
     foreach ($candidate in $anchorCandidates) {
