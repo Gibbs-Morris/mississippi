@@ -47,36 +47,25 @@ Describe 'PR issue reference validator' {
         }
     }
 
-    It 'preserves tracking after an anchor closes within code: <Case>' -ForEach @(
-        @{ Case = 'code'; Element = 'code' }
-        @{ Case = 'preformatted'; Element = 'pre' }
-    ) {
-        Assert-ValidReferenceBody -Body ('<a href="https://example.test"><' + $Element + '>example</a></' + $Element + '> Refs #741')
-    }
-
-    It 'ignores references still owned by code or an unclosed anchor: <Case>' -ForEach @(
-        @{ Case = 'unclosed anchor'; Body = '<a href="https://example.test"><code>example</code> Refs #741' }
-        @{ Case = 'remaining code'; Body = '<a href="https://example.test"><code>example</a> Refs #741</code>' }
-        @{ Case = 'code destination'; Body = '<code><a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking</a></code>' }
-        @{ Case = 'escaped closing syntax'; Body = '<a href="https://example.test">`</a>` Refs #741' }
-    ) {
-        Assert-NoReferenceBody -Body $Body
-    }
-
-    It 'preserves tracking after a button ends anchor ownership: <Case>' -ForEach @(
-        @{ Case = 'explicit close'; Body = '<button><a href="https://example.test">context</button> Refs #741' }
-        @{ Case = 'replacement button'; Body = '<button><a href="https://example.test">context<button> Refs #741</button>' }
-    ) {
-        Assert-ValidReferenceBody -Body $Body
-    }
-
-    It 'preserves remaining code or external ownership at button boundaries: <Case>' -ForEach @(
-        @{ Case = 'remaining code'; Body = '<button><code>example</button> Refs #741' }
-        @{ Case = 'outer anchor'; Body = '<a href="https://example.test"><button>context</button> Refs #741</a>' }
-        @{ Case = 'unclosed button'; Body = '<button><a href="https://example.test">context Refs #741' }
-        @{ Case = 'unmatched close'; Body = '<button></button><a href="https://example.test">context</button> Refs #741' }
-    ) {
-        Assert-NoReferenceBody -Body $Body
+    It 'checks code and button anchor boundary ownership: <Case>' -ForEach (@(
+        'code close|true|<a href="https://example.test"><code>example</a></code> Refs #741'
+        'preformatted close|true|<a href="https://example.test"><pre>example</a></pre> Refs #741'
+        'unclosed anchor|false|<a href="https://example.test"><code>example</code> Refs #741'
+        'remaining code|false|<a href="https://example.test"><code>example</a> Refs #741</code>'
+        'code destination|false|<code><a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking</a></code>'
+        'escaped closing syntax|false|<a href="https://example.test">`</a>` Refs #741'
+        'button explicit close|true|<button><a href="https://example.test">context</button> Refs #741'
+        'replacement button|true|<button><a href="https://example.test">context<button> Refs #741</button>'
+        'button remaining code|false|<button><code>example</button> Refs #741'
+        'button outer anchor|false|<a href="https://example.test"><button>context</button> Refs #741</a>'
+        'unclosed button|false|<button><a href="https://example.test">context Refs #741'
+        'unmatched button close|false|<button></button><a href="https://example.test">context</button> Refs #741'
+    ) | ForEach-Object {
+        $caseFields = $_ -split '\|', 3
+        @{ Case = $caseFields[0]; Expected = $caseFields[1] -eq 'true'; Body = $caseFields[2] }
+    }) {
+        if ($Expected) { Assert-ValidReferenceBody -Body $Body }
+        else { Assert-NoReferenceBody -Body $Body }
     }
 
     It 'separates tracking at rendered block boundaries: <Element>' -ForEach @(
