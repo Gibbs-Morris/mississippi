@@ -189,6 +189,18 @@ Describe 'PR issue reference validator' {
         $outcome.Result.References[0].Number | Should -Be 741
     }
 
+    It 'uses a rendered Markdown link inside an external HTML anchor: <Case>' -ForEach @(
+        @{ Case = 'inline link'; Body = '<a href="https://example.test">context [tracking](https://github.com/Gibbs-Morris/mississippi/issues/741)</a>' }
+        @{ Case = 'URI autolink'; Body = '<a href="https://example.test">context <https://github.com/Gibbs-Morris/mississippi/issues/741></a>' }
+        @{ Case = 'reference link'; Body = '<a href="https://example.test">context [tracking][work]</a>' + [Environment]::NewLine + [Environment]::NewLine + '[work]: https://github.com/Gibbs-Morris/mississippi/issues/741' }
+    ) {
+        Assert-ValidReferenceBody -Body $Body
+    }
+
+    It 'ignores an issue-looking label in a nested external Markdown link' {
+        Assert-NoReferenceBody -Body '<a href="https://example.test">context [#741](https://github.com/other/repo/issues/999)</a>'
+    }
+
     It 'uses only the actual HTML href attribute: <Case>' -ForEach @(
         @{ Case = 'external href before local data-href'; Expected = $false; Anchor = '<a href="https://example.test" data-href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a>' }
         @{ Case = 'data-href without href'; Expected = $false; Anchor = '<a data-href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a>' }

@@ -14,228 +14,65 @@ $ErrorActionPreference = 'Stop'
 
 $htmlTagRegex = [regex]::new('(?s)\G(?:<[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:"[^"]*"|''[^'']*''|[^\s"''=<>`]+))?)*\s*/?>|</[A-Za-z][A-Za-z0-9-]*\s*>)')
 
-function Remove-MarkdownHtmlComments { # NOSONAR - bounded Markdown comment/code scanner intentionally tracks delimiter state.
-    param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
-    $builder = [System.Text.StringBuilder]::new()
-    $index = 0
-    while ($index -lt $Content.Length) {
-        if ($Content[$index] -eq '<') {
-            $htmlTag = $htmlTagRegex.Match($Content, $index)
-            if ($htmlTag.Success) {
-                $null = $builder.Append($htmlTag.Value)
-                $index += $htmlTag.Length
-                continue
-            }
-        }
-        if ($Content[$index] -eq '`') {
-            $start = $index
-            while ($index -lt $Content.Length -and $Content[$index] -eq '`') { $index++ }
-            $delimiterLength = $index - $start
-            $closing = $Content.IndexOf(('`' * $delimiterLength), $index, [System.StringComparison]::Ordinal)
-            if ($closing -ge 0) {
-                $null = $builder.Append($Content.Substring($start, $closing + $delimiterLength - $start))
-                $index = $closing + $delimiterLength
-                continue
-            }
-            $null = $builder.Append($Content.Substring($start))
-            break
-        }
-        if ($index + 4 -le $Content.Length -and $Content.Substring($index, 4) -eq '<!--') {
-            $closing = $Content.IndexOf('-->', $index + 4, [System.StringComparison]::Ordinal)
-            $index = if ($closing -ge 0) { $closing + 3 } else { $Content.Length }
-            continue
-        }
-        $null = $builder.Append($Content[$index])
-        $index++
-    }
-    return $builder.ToString()
-}
-
-function Remove-MarkdownLinkDestinations { # NOSONAR - bounded Markdown destination scanner intentionally tracks balanced parentheses.
-    param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
-    $builder = [System.Text.StringBuilder]::new()
-    $index = 0
-    $operations = 0
-    $operationBudget = [Math]::Max(1000, [Math]::Min(1000000, ($Content.Length * 4) + 1000))
-    while ($index -lt $Content.Length) {
-        if ($index + 1 -lt $Content.Length -and $Content[$index] -eq ']' -and $Content[$index + 1] -eq '(') {
-            $backslashCount = 0
-            for ($escapeIndex = $index - 1; $escapeIndex -ge 0 -and $Content[$escapeIndex] -eq '\'; $escapeIndex--) { $backslashCount++ }
-            if (($backslashCount % 2) -eq 1) {
-                $null = $builder.Append($Content[$index])
-                $index++
-                continue
-            }
-            $depth = 1
-            $cursor = $index + 2
-            while ($cursor -lt $Content.Length -and $depth -gt 0) {
-                $operations++
-                if ($operations -gt $operationBudget) {
-                    $null = $builder.Append($Content.Substring($index))
-                    return $builder.ToString()
-                }
-                if ($Content[$cursor] -eq '\' -and $cursor + 1 -lt $Content.Length) {
-                    $cursor += 2
-                    continue
-                }
-                if ($Content[$cursor] -eq '(') { $depth++ }
-                elseif ($Content[$cursor] -eq ')') { $depth-- }
-                $cursor++
-            }
-            if ($depth -eq 0) {
-                $null = $builder.Append(']')
-                $index = $cursor
-                continue
-            }
-        }
-        $null = $builder.Append($Content[$index])
-        $index++
-    }
-    return $builder.ToString()
-}
-
-function Remove-NonRenderedMarkdown { # NOSONAR - bounded Markdown renderer approximation intentionally coordinates fence, HTML, and code-span states.
+function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks code and link ownership states.
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
 
-    $insideFence = $false
-    $fenceCharacter = ''
-    $fenceLength = 0
-    $withoutFences = foreach ($line in ($Content -split '\r?\n')) {
-        $containerLine = $line -replace '^(?:[ ]{0,3}>[ \t]?)+', ''
-        $openingFence = [regex]::Match($containerLine, '^[ ]{0,3}(?<Fence>`{3,}|~{3,})(?<Info>.*)$')
-        if (-not $insideFence -and $openingFence.Success) {
-            $candidateFenceCharacter = $openingFence.Groups['Fence'].Value.Substring(0, 1)
-            if ($candidateFenceCharacter -eq '`' -and $openingFence.Groups['Info'].Value.Contains('`')) {
-                $line
-                continue
-            }
-            $insideFence = $true
-            $fenceCharacter = $candidateFenceCharacter
-            $fenceLength = $openingFence.Groups['Fence'].Value.Length
-            ''
-            continue
-        }
-        if ($insideFence) {
-            $closingPattern = '^[ ]{0,3}' + [regex]::Escape($fenceCharacter) + '{' + $fenceLength + ',}[ \t]*$'
-            if ($containerLine -match $closingPattern) { $insideFence = $false }
-            ''
-            continue
-        }
-        $line
-    }
-    $withoutFences = $withoutFences -join [Environment]::NewLine
-    $withoutComments = Remove-MarkdownHtmlComments -Content $withoutFences
-    $withoutComments = [regex]::Replace($withoutComments, '(?m)^(?: {4}|\t)[^\r\n]*(?:\r?\n|$)', '')
-    $withoutComments = [regex]::Replace($withoutComments, '(?m)^(?:[ ]{0,3}>[ \t]?)+[ ]{4,}[^\r\n]*(?:\r?\n|$)', '')
+    if ([string]::IsNullOrEmpty($Content)) { return '' }
+    # Preserve the validator's existing support for definitions adjacent to preceding text.
+    $Content = [regex]::Replace($Content, '(?m)^(?=[ \t]{0,3}\[[^\]\r\n]+\]:)', [Environment]::NewLine)
+    $html = (ConvertFrom-Markdown -InputObject $Content).Html
+    $localIssueHrefPattern = '(?i)^https://github\.com/' + [regex]::Escape($RepositoryOwner) + '/' + [regex]::Escape($RepositoryName) + '/issues/(?<Number>\d+)(?:[/?#].*)?$'
     $builder = [System.Text.StringBuilder]::new()
-    $index = 0
-    while ($index -lt $withoutComments.Length) {
-        if ($withoutComments[$index] -eq '<') {
-            $htmlTag = $htmlTagRegex.Match($withoutComments, $index)
-            if ($htmlTag.Success) {
-                $null = $builder.Append($htmlTag.Value)
-                $index += $htmlTag.Length
-                continue
-            }
-        }
-        if ($withoutComments[$index] -ne '`') {
-            $null = $builder.Append($withoutComments[$index])
-            $index++
-            continue
-        }
-
-        $backslashCount = 0
-        for ($escapeIndex = $index - 1; $escapeIndex -ge 0 -and $withoutComments[$escapeIndex] -eq '\'; $escapeIndex--) { $backslashCount++ }
-        if (($backslashCount % 2) -eq 1) {
-            $null = $builder.Append($withoutComments[$index])
-            $index++
-            continue
-        }
-
-        $start = $index
-        while ($index -lt $withoutComments.Length -and $withoutComments[$index] -eq '`') { $index++ }
-        $delimiterLength = $index - $start
-        $closingIndex = $index
-        $closingLength = 0
-        while ($closingIndex -lt $withoutComments.Length) {
-            if ($withoutComments[$closingIndex] -ne '`') { $closingIndex++; continue }
-            $candidate = $closingIndex
-            while ($candidate -lt $withoutComments.Length -and $withoutComments[$candidate] -eq '`') { $candidate++ }
-            if (($candidate - $closingIndex) -eq $delimiterLength) {
-                $closingLength = $candidate - $closingIndex
-                break
-            }
-            $closingIndex = $candidate
-        }
-        if ($closingLength -eq $delimiterLength) {
-            $index = $closingIndex + $closingLength
-        }
-        else {
-            $null = $builder.Append($withoutComments.Substring($start, $delimiterLength))
-        }
-    }
-    $withoutCode = $builder.ToString()
-    $anchorHrefPattern = '(?is)^<a(?=\s|/?>)(?:"[^"]*"|''[^'']*''|[^''">])*?\s+href(?=\s|=|/?>)(?:\s*=\s*(?:"(?<Href>[^"]*)"|''(?<Href>[^'']*)''|(?<Href>[^\s>]+)))?[^>]*>'
     $anchorHrefs = [System.Collections.Generic.List[string]]::new()
-    # Link ownership comes from its destination, not a numeric label in upstream release notes.
-    $null = $builder.Clear()
-    $index = 0
+    $anchorHrefPattern = '(?is)^<a(?=\s|/?>)(?:"[^"]*"|''[^'']*''|[^''">])*?\s+href(?=\s|=|/?>)(?:\s*=\s*(?:"(?<Href>[^"]*)"|''(?<Href>[^'']*)''|(?<Href>[^\s>]+)))?[^>]*>'
     $insideAnchor = $false
-    while ($index -lt $withoutCode.Length) {
-        if ($withoutCode[$index] -eq '<') {
-            $htmlTag = $htmlTagRegex.Match($withoutCode, $index)
+    $codeDepth = 0
+    $index = 0
+    while ($index -lt $html.Length) {
+        if ($index + 4 -le $html.Length -and $html.Substring($index, 4) -eq '<!--') {
+            $closing = $html.IndexOf('-->', $index + 4, [System.StringComparison]::Ordinal)
+            $index = if ($closing -ge 0) { $closing + 3 } else { $html.Length }
+            continue
+        }
+        if ($html[$index] -eq '<') {
+            $htmlTag = $htmlTagRegex.Match($html, $index)
             if ($htmlTag.Success) {
-                if ($htmlTag.Value -match '^<a(?=\s|/?>)') { $insideAnchor = $false }
-                $anchorHref = [regex]::Match($htmlTag.Value, $anchorHrefPattern)
-                if ($anchorHref.Success) {
-                    $anchorHrefs.Add($anchorHref.Groups['Href'].Value)
-                    $insideAnchor = $true
-                    $null = $builder.Append(' ')
+                $tagName = [regex]::Match($htmlTag.Value, '^</?(?<Name>[A-Za-z][A-Za-z0-9-]*)').Groups['Name'].Value.ToLowerInvariant()
+                $isClosing = $htmlTag.Value.StartsWith('</', [System.StringComparison]::Ordinal)
+                if ($tagName -in @('pre', 'code')) {
+                    $codeDepth = [Math]::Max(0, $codeDepth + $(if ($isClosing) { -1 } else { 1 }))
                 }
-                elseif ($htmlTag.Value -match '^</a\s*>$') { $insideAnchor = $false }
-                elseif (-not $insideAnchor) { $null = $builder.Append($htmlTag.Value) }
+                elseif ($codeDepth -eq 0) {
+                    if ($tagName -eq 'a' -and -not $isClosing) {
+                        $insideAnchor = $false
+                        $anchorHref = [regex]::Match($htmlTag.Value, $anchorHrefPattern)
+                        if ($anchorHref.Success) {
+                            $href = [System.Net.WebUtility]::HtmlDecode($anchorHref.Groups['Href'].Value)
+                            $localIssueHref = [regex]::Match($href, $localIssueHrefPattern)
+                            if ($localIssueHref.Success) {
+                                $anchorHrefs.Add("https://github.com/$RepositoryOwner/$RepositoryName/issues/$($localIssueHref.Groups['Number'].Value)")
+                            }
+                            $insideAnchor = $true
+                            $null = $builder.Append(' ')
+                        }
+                    }
+                    elseif ($tagName -eq 'a') { $insideAnchor = $false }
+                    elseif (-not $insideAnchor -and $tagName -in @('p', 'div', 'li', 'blockquote', 'tr', 'td', 'th', 'br')) {
+                        $null = $builder.Append(' ')
+                    }
+                }
                 $index += $htmlTag.Length
                 continue
             }
         }
-        if (-not $insideAnchor) { $null = $builder.Append($withoutCode[$index]) }
+        if ($codeDepth -eq 0 -and -not $insideAnchor) { $null = $builder.Append($html[$index]) }
         $index++
     }
-    $withoutCode = $builder.ToString()
-    $withoutCode = [regex]::Replace($withoutCode, '(?m)<(?!https?://|mailto:)(?:[^>\"''\r\n]|\"[^\"]*\"|''[^'']*'')*>', '')
-    if ($anchorHrefs.Count -gt 0) { $withoutCode += [Environment]::NewLine + ($anchorHrefs -join [Environment]::NewLine) }
-    return $withoutCode
-}
-
-function Test-UrlInsideMarkdownLinkTitle { # NOSONAR - bounded Markdown link-title detector intentionally tracks delimiter and escape state.
-    param(
-        [Parameter(Mandatory)][string]$Content,
-        [Parameter(Mandatory)][int]$UrlIndex
-    )
-
-    if ($UrlIndex -le 1) { return $false }
-    $beforeUrl = $Content.Substring(0, $UrlIndex)
-    $openerIndex = $beforeUrl.LastIndexOf('](', [System.StringComparison]::Ordinal)
-    if ($openerIndex -lt 0) { return $false }
-    $backslashCount = 0
-    for ($escapeIndex = $openerIndex - 1; $escapeIndex -ge 0 -and $Content[$escapeIndex] -eq '\'; $escapeIndex--) { $backslashCount++ }
-    if (($backslashCount % 2) -eq 1) { return $false }
-
-    $routePrefix = $beforeUrl.Substring($openerIndex + 2).TrimStart()
-    $depth = 0
-    $titleStart = -1
-    for ($index = 0; $index -lt $routePrefix.Length; $index++) {
-        if ($routePrefix[$index] -eq '(') { $depth++; continue }
-        if ($routePrefix[$index] -eq ')' -and $depth -gt 0) { $depth--; continue }
-        if ($depth -eq 0 -and [char]::IsWhiteSpace($routePrefix[$index])) {
-            $titleStart = $index
-            break
-        }
+    $renderedText = [System.Net.WebUtility]::HtmlDecode($builder.ToString())
+    if ($anchorHrefs.Count -gt 0) {
+        $renderedText += [Environment]::NewLine + [System.Net.WebUtility]::HtmlDecode(($anchorHrefs -join [Environment]::NewLine))
     }
-    if ($titleStart -lt 0) { return $false }
-    $title = $routePrefix.Substring($titleStart).TrimStart()
-    if ([string]::IsNullOrEmpty($title)) { return $false }
-    return $title[0] -eq '"' -or $title[0] -eq '''' -or $title[0] -eq '('
+    return $renderedText
 }
 
 function Get-PrIssueReferences { # NOSONAR - bounded reference extraction intentionally coordinates rendered Markdown and repository validation states.
@@ -260,30 +97,7 @@ function Get-PrIssueReferences { # NOSONAR - bounded reference extraction intent
         $references.Add([pscustomobject]@{ Number = $Number; Text = $Text })
         return $true
     }
-    $usedLabels = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-    foreach ($used in [regex]::Matches($Content, '\[[^\]\r\n]+\]\[(?<Label>[^\]\r\n]*)\]')) {
-        $backslashCount = 0
-        for ($escapeIndex = $used.Index - 1; $escapeIndex -ge 0 -and $Content[$escapeIndex] -eq '\'; $escapeIndex--) { $backslashCount++ }
-        if (($backslashCount % 2) -eq 1) { continue }
-        $label = [regex]::Replace($used.Groups['Label'].Value.Trim(), '\s+', ' ')
-        if ([string]::IsNullOrWhiteSpace($label)) { $label = [regex]::Match($used.Value, '^\[(?<Text>[^\]\r\n]+)\]\[\]$').Groups['Text'].Value.Trim(); $label = [regex]::Replace($label, '\s+', ' ') }
-        if ($label) { $null = $usedLabels.Add($label) }
-    }
-    foreach ($used in [regex]::Matches($Content, '(?<!\!)\[(?<Label>[^\]\r\n]+)\](?![ \t]*(?:\(|\[|:))')) {
-        $prefix = $Content.Substring(0, $used.Index)
-        $backslashCount = 0
-        for ($escapeIndex = $used.Index - 1; $escapeIndex -ge 0 -and $Content[$escapeIndex] -eq '\'; $escapeIndex--) { $backslashCount++ }
-        if (($backslashCount % 2) -eq 1) { continue }
-        if ($prefix -match '(?m)(?:^|\r?\n)[ \t]*[-*+][ \t]+$' -and $used.Groups['Label'].Value -match '^[ xX]$') { continue }
-        $null = $usedLabels.Add([regex]::Replace($used.Groups['Label'].Value.Trim(), '\s+', ' '))
-    }
     $contentForExtraction = $Content
-    $definitionPattern = '(?m)^[ \t]{0,3}\[(?<Label>[^\]\r\n]+)\]:[ \t]*(?:(?<Destination><[^>\r\n]+>|\S+)(?:[ \t]+[^\r\n]*)?|(?:\r?\n)[ \t]+(?<Destination><[^>\r\n]+>|\S+)(?:[ \t]+[^\r\n]*)?)(?:\r?\n[ \t]+(?:\([^\)\r\n]*\)|"[^"]*"|''[^'']*''))?'
-    foreach ($definition in [regex]::Matches($Content, $definitionPattern)) {
-        $definitionLabel = [regex]::Replace($definition.Groups['Label'].Value.Trim(), '\s+', ' ')
-        $replacement = if ($usedLabels.Contains($definitionLabel)) { " $($definition.Groups['Destination'].Value) " } else { '' }
-        $contentForExtraction = $contentForExtraction.Replace($definition.Value, $replacement)
-    }
     $fullUrlPattern = '(?<![A-Za-z0-9+./?=&%_#:-])https://github\.com/(?<Owner>[^/\s]+)/(?<Repo>[^/#\s]+)/(?<Kind>issues|pull)/(?<Number>\d+)(?:[/?#][^\s<>()]*)?(?=[\s>)\].,;!?]|$)'
     foreach ($match in [regex]::Matches($contentForExtraction, $fullUrlPattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)) {
         $matchOwner = $match.Groups['Owner'].Value
@@ -293,16 +107,12 @@ function Get-PrIssueReferences { # NOSONAR - bounded reference extraction intent
         if (-not ([string]::Equals($matchOwner, $Owner, [System.StringComparison]::OrdinalIgnoreCase) -and [string]::Equals($matchRepo, $Name, [System.StringComparison]::OrdinalIgnoreCase))) {
             continue
         }
-        if (Test-UrlInsideMarkdownLinkTitle -Content $contentForExtraction -UrlIndex $match.Index) { continue }
-        $prefix = $contentForExtraction.Substring(0, $match.Index)
-        if ($prefix -match '!\[[^\]\r\n]*\]\(\s*<?$') { continue }
         if ($kind -eq 'pull') { continue }
         if (-not (& $addReference -Number $number -Text $match.Value)) { return @($references) }
     }
 
     $withoutFullUrls = [regex]::Replace($contentForExtraction, $fullUrlPattern, '')
-    $withoutLinkDestinations = Remove-MarkdownLinkDestinations -Content $withoutFullUrls
-    $withoutUriComponents = [regex]::Replace($withoutLinkDestinations, '(?i)\b[A-Za-z][A-Za-z0-9+.-]*://[^\s<>()]+', '')
+    $withoutUriComponents = [regex]::Replace($withoutFullUrls, '(?i)\b[A-Za-z][A-Za-z0-9+.-]*://[^\s<>()]+', '')
     foreach ($match in [regex]::Matches($withoutUriComponents, '(?i)(?<![\w/])(?<Owner>[A-Za-z0-9_.-]+)/(?<Repo>[A-Za-z0-9_.-]+)#(?<QualifiedNumber>\d+)\b')) {
         if ([string]::Equals($match.Groups['Owner'].Value, $Owner, [System.StringComparison]::OrdinalIgnoreCase) -and [string]::Equals($match.Groups['Repo'].Value, $Name, [System.StringComparison]::OrdinalIgnoreCase)) {
             if (-not (& $addReference -Number ([int]$match.Groups['QualifiedNumber'].Value) -Text $match.Value)) { return @($references) }
