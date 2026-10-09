@@ -261,11 +261,20 @@ public static class SnapshotStorageProviderRegistrations
 
         private IServiceProvider ServiceProvider { get; }
 
+        /// <summary>
+        ///     Initializes Cosmos resources using the client selected by runtime options.
+        /// </summary>
+        /// <param name="cancellationToken">A token to cancel resource initialization.</param>
+        /// <returns>A task representing asynchronous database and container initialization.</returns>
         public async Task StartAsync(
             CancellationToken cancellationToken
         )
         {
             SnapshotStorageOptions o = Options.Value;
+
+            // Runtime options select the keyed CosmosClient for asynchronous resource creation at hosted startup.
+            // The service-provider dependency is used only for this configured keyed lookup.
+            // A resolver delegate would wrap the same GetRequiredKeyedService<CosmosClient>(...) call.
             CosmosClient cosmosClient = ServiceProvider.GetRequiredKeyedService<CosmosClient>(o.CosmosClientServiceKey);
             DatabaseResponse db = await cosmosClient.CreateDatabaseIfNotExistsAsync(
                 o.DatabaseId,
