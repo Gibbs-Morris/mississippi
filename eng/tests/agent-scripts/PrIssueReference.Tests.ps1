@@ -154,46 +154,37 @@ Describe 'PR issue reference validator' {
         Assert-ValidReferenceBody -Body $Body
     }
 
-    It 'ends a cell-local anchor at a table boundary: <Case>' -ForEach @(
-        @{ Case = 'explicit data cell'; Body = 'x <table><tr><td><a href="https://github.com/other/repo/issues/999">context</td><td>Refs #741</td></tr></table>' }
-        @{ Case = 'explicit header cell'; Body = 'x <table><tr><th><a href="https://github.com/other/repo/issues/999">context</th><td>Refs #741</td></tr></table>' }
-        @{ Case = 'implicit cell end'; Body = 'x <table><tr><td><a href="https://github.com/other/repo/issues/999">context<td>Refs #741</td></tr></table>' }
-        @{ Case = 'implicit row end'; Body = 'x <table><tr><td><a href="https://github.com/other/repo/issues/999">context<tr><td>Refs #741</td></tr></table>' }
-        @{ Case = 'implicit table end'; Body = 'x <table><tr><td><a href="https://github.com/other/repo/issues/999">context</table> Refs #741' }
-    ) {
+    It 'ends table-local links or code at a scope boundary: <Case>' -ForEach (@(
+        'data cell anchor|x <table><tr><td><a href="https://github.com/other/repo/issues/999">context</td><td>Refs #741</td></tr></table>'
+        'header cell anchor|x <table><tr><th><a href="https://github.com/other/repo/issues/999">context</th><td>Refs #741</td></tr></table>'
+        'implicit cell anchor|x <table><tr><td><a href="https://github.com/other/repo/issues/999">context<td>Refs #741</td></tr></table>'
+        'implicit row anchor|x <table><tr><td><a href="https://github.com/other/repo/issues/999">context<tr><td>Refs #741</td></tr></table>'
+        'implicit table anchor|x <table><tr><td><a href="https://github.com/other/repo/issues/999">context</table> Refs #741'
+        'caption anchor|<table><caption><a href="https://github.com/other/repo/issues/999">context</caption></table> Refs #741'
+        'implicit caption row|<table><caption><a href="https://github.com/other/repo/issues/999">context<tr><td>Refs #741</td></tr></table>'
+        'implicit caption table|<table><caption><a href="https://github.com/other/repo/issues/999">context</table> Refs #741'
+        'cell code|<table><tr><td><code>example</td><td>Refs #741</td></tr></table>'
+        'implicit cell code|<table><tr><td><code>example<td>Refs #741</td></tr></table>'
+        'preformatted cell|<table><tr><td><pre>example</td><td>Refs #741</td></tr></table>'
+        'caption code|<table><caption><code>example</caption><tr><td>Refs #741</td></tr></table>'
+    ) | ForEach-Object {
+        $caseFields = $_ -split '\|', 2
+        @{ Case = $caseFields[0]; Body = $caseFields[1] }
+    }) {
         Assert-ValidReferenceBody -Body $Body
     }
 
-    It 'ends a caption-local anchor at a table boundary: <Case>' -ForEach @(
-        @{ Case = 'explicit caption'; Body = '<table><caption><a href="https://github.com/other/repo/issues/999">context</caption></table> Refs #741' }
-        @{ Case = 'implicit row'; Body = '<table><caption><a href="https://github.com/other/repo/issues/999">context<tr><td>Refs #741</td></tr></table>' }
-        @{ Case = 'implicit table'; Body = '<table><caption><a href="https://github.com/other/repo/issues/999">context</table> Refs #741' }
-    ) {
-        Assert-ValidReferenceBody -Body $Body
-    }
-
-    It 'preserves enclosing caption anchors and ignores unmatched boundaries: <Case>' -ForEach @(
-        @{ Case = 'enclosing anchor'; Body = '<a href="https://github.com/other/repo/issues/999"><table><caption>#741</caption></table> #741</a>' }
-        @{ Case = 'mismatched row end'; Body = '<table><caption><a href="https://github.com/other/repo/issues/999">context</tr> #741</caption></table>' }
-        @{ Case = 'caption outside table'; Body = '<caption><a href="https://github.com/other/repo/issues/999">context</caption> #741</a>' }
-    ) {
-        Assert-NoReferenceBody -Body $Body
-    }
-
-    It 'ends table-local code at a scope boundary: <Case>' -ForEach @(
-        @{ Case = 'explicit cell'; Body = '<table><tr><td><code>example</td><td>Refs #741</td></tr></table>' }
-        @{ Case = 'implicit cell'; Body = '<table><tr><td><code>example<td>Refs #741</td></tr></table>' }
-        @{ Case = 'preformatted cell'; Body = '<table><tr><td><pre>example</td><td>Refs #741</td></tr></table>' }
-        @{ Case = 'caption'; Body = '<table><caption><code>example</caption><tr><td>Refs #741</td></tr></table>' }
-    ) {
-        Assert-ValidReferenceBody -Body $Body
-    }
-
-    It 'preserves enclosing code and ignores unmatched table boundaries: <Case>' -ForEach @(
-        @{ Case = 'enclosing code'; Body = '<code><table><tr><td>Refs #741</td></tr></table></code>' }
-        @{ Case = 'mismatched cell'; Body = '<table><tr><td><code>example</th> #741</code></td></tr></table>' }
-        @{ Case = 'cell outside table'; Body = '<td><code>example</td> #741</code>' }
-    ) {
+    It 'preserves enclosing links or code through unmatched table boundaries: <Case>' -ForEach (@(
+        'enclosing anchor|<a href="https://github.com/other/repo/issues/999"><table><caption>#741</caption></table> #741</a>'
+        'mismatched caption row|<table><caption><a href="https://github.com/other/repo/issues/999">context</tr> #741</caption></table>'
+        'caption outside table|<caption><a href="https://github.com/other/repo/issues/999">context</caption> #741</a>'
+        'enclosing code|<code><table><tr><td>Refs #741</td></tr></table></code>'
+        'mismatched cell|<table><tr><td><code>example</th> #741</code></td></tr></table>'
+        'cell outside table|<td><code>example</td> #741</code>'
+    ) | ForEach-Object {
+        $caseFields = $_ -split '\|', 2
+        @{ Case = $caseFields[0]; Body = $caseFields[1] }
+    }) {
         Assert-NoReferenceBody -Body $Body
     }
 
