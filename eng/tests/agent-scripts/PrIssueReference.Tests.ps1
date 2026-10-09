@@ -47,6 +47,22 @@ Describe 'PR issue reference validator' {
         }
     }
 
+    It 'preserves tracking after an anchor closes within code: <Case>' -ForEach @(
+        @{ Case = 'code'; Element = 'code' }
+        @{ Case = 'preformatted'; Element = 'pre' }
+    ) {
+        Assert-ValidReferenceBody -Body ('<a href="https://example.test"><' + $Element + '>example</a></' + $Element + '> Refs #741')
+    }
+
+    It 'ignores references still owned by code or an unclosed anchor: <Case>' -ForEach @(
+        @{ Case = 'unclosed anchor'; Body = '<a href="https://example.test"><code>example</code> Refs #741' }
+        @{ Case = 'remaining code'; Body = '<a href="https://example.test"><code>example</a> Refs #741</code>' }
+        @{ Case = 'code destination'; Body = '<code><a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking</a></code>' }
+        @{ Case = 'escaped closing syntax'; Body = '<a href="https://example.test">`</a>` Refs #741' }
+    ) {
+        Assert-NoReferenceBody -Body $Body
+    }
+
     It 'ignores tracking in mathematical expressions: <Case>' -ForEach @(
         @{ Case = 'inline phantom'; Body = '$\hphantom{\#741}$' }
         @{ Case = 'display phantom'; Body = '$$\hphantom{\#741}$$' }

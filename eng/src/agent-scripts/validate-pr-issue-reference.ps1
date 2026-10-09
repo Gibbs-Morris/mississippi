@@ -120,6 +120,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                 if ($tagName -in @('pre', 'code')) {
                     $codeDepth = [Math]::Max(0, $codeDepth + $(if ($isClosing) { -1 } else { 1 }))
                 }
+                elseif ($tagName -eq 'a' -and $isClosing) { $insideAnchor = $false }
                 elseif ($codeDepth -eq 0) {
                     if ($tagName -eq 'a' -and -not $isClosing) {
                         $insideAnchor = $false
@@ -140,7 +141,6 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                             $null = $builder.Append(' ')
                         }
                     }
-                    elseif ($tagName -eq 'a') { $insideAnchor = $false }
                     elseif (-not $insideAnchor -and $tagName -in @('p', 'div', 'li', 'blockquote', 'tr', 'td', 'th', 'br')) {
                         $null = $builder.Append(' ')
                     }
