@@ -8,7 +8,7 @@ namespace MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
 /// <summary>
 ///     Event raised when funds are deposited into a bank account.
 /// </summary>
-[EventStorageName("SPRING", "BANKING", "FUNDSDEPOSITED")]
+[EventStorageName("SPRING", "BANKING", "FUNDSDEPOSITED", 1)]
 [GenerateSerializer]
 [Alias("MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events.FundsDeposited")]
 internal sealed record FundsDeposited
