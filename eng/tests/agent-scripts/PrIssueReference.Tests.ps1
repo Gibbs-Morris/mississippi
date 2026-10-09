@@ -155,6 +155,16 @@ Describe 'PR issue reference validator' {
         else { Assert-NoReferenceBody -Body $Anchor }
     }
 
+    It 'uses the first duplicate HTML href attribute: <Case>' -ForEach @(
+        @{ Case = 'external before local'; Expected = $false; Anchor = '<a href="https://example.test" href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a>' }
+        @{ Case = 'local before external'; Expected = $true; Anchor = '<a href="https://github.com/Gibbs-Morris/mississippi/issues/741" href="https://example.test">tracking</a>' }
+        @{ Case = 'empty before local'; Expected = $false; Anchor = '<a href="" href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a>' }
+        @{ Case = 'bare before local'; Expected = $false; Anchor = '<a href href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a>' }
+    ) {
+        if ($Expected) { Assert-ValidReferenceBody -Body $Anchor }
+        else { Assert-NoReferenceBody -Body $Anchor }
+    }
+
     It 'preserves tracking between an inline code anchor opener and a later rendered anchor' {
         Assert-ValidReferenceBody -Body 'Example `<a href="https://github.com/other/repo/issues/999">` is code. Refs #741. <a href="https://github.com/other/repo/issues/999">context</a>'
     }
