@@ -67,7 +67,7 @@ Mississippi is a sophisticated .NET framework designed to streamline distributed
 
 Mississippi packages are published on NuGet under the `Mississippi.*` naming pattern.
 
-Recommended entry points for application developers are the SDK packages:
+The recommended entry points for application developers are the SDK packages:
 
 - `Mississippi.Sdk.Client` - client-side integration package
 - `Mississippi.Sdk.Gateway` - gateway/API integration package
