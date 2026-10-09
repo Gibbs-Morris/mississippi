@@ -164,6 +164,14 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body '<span title=''example <a href="https://github.com/Gibbs-Morris/mississippi/issues/741">''>context</span>'
     }
 
+    It 'preserves tracking after a custom element whose name begins with a' {
+        Assert-ValidReferenceBody -Body '<a-widget href="https://example.test">context</a-widget> Refs #741'
+    }
+
+    It 'ignores an issue URL in a custom element href attribute' {
+        Assert-NoReferenceBody -Body '<a-widget href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a-widget>'
+    }
+
     It 'uses only the actual HTML href attribute: <Case>' -ForEach @(
         @{ Case = 'external href before local data-href'; Expected = $false; Anchor = '<a href="https://example.test" data-href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a>' }
         @{ Case = 'data-href without href'; Expected = $false; Anchor = '<a data-href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a>' }

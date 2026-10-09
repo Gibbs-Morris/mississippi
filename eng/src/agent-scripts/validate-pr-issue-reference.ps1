@@ -175,7 +175,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - bounded Markdown renderer appr
         }
     }
     $withoutCode = $builder.ToString()
-    $anchorHrefPattern = '(?is)^<a\b(?:"[^"]*"|''[^'']*''|[^''">])*?\s+href(?=\s|=|/?>)(?:\s*=\s*(?:"(?<Href>[^"]*)"|''(?<Href>[^'']*)''|(?<Href>[^\s>]+)))?[^>]*>'
+    $anchorHrefPattern = '(?is)^<a(?=\s|/?>)(?:"[^"]*"|''[^'']*''|[^''">])*?\s+href(?=\s|=|/?>)(?:\s*=\s*(?:"(?<Href>[^"]*)"|''(?<Href>[^'']*)''|(?<Href>[^\s>]+)))?[^>]*>'
     $anchorHrefs = [System.Collections.Generic.List[string]]::new()
     # Link ownership comes from its destination, not a numeric label in upstream release notes.
     $null = $builder.Clear()
