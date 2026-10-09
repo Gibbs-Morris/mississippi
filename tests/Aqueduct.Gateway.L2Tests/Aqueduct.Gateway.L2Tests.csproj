@@ -12,10 +12,12 @@
     <!-- Orleans for in-process silo hosting -->
     <PackageReference Include="Microsoft.Orleans.Server" />
     <PackageReference Include="Microsoft.Orleans.Streaming" />
+    <PackageReference Include="NSubstitute" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- Aqueduct projects under test -->
+    <ProjectReference Include="..\..\src\Inlet.Runtime\Inlet.Runtime.csproj" />
     <ProjectReference Include="..\..\src\Aqueduct.Gateway\Aqueduct.Gateway.csproj" />
     <ProjectReference Include="..\..\src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\Aqueduct.Runtime\Aqueduct.Runtime.csproj" />

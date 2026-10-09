@@ -7,7 +7,9 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
+using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.Aqueduct.Runtime.Diagnostics;
 using Mississippi.Aqueduct.Runtime.Grains;
@@ -17,6 +19,7 @@ using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 
 using Orleans;
+using Orleans.Runtime;
 
 
 namespace Mississippi.Aqueduct.Runtime.L0Tests;
@@ -42,9 +45,12 @@ public sealed class SignalRGroupBroadcastTests
         IGrainFactory factory = Substitute.For<IGrainFactory>();
         ILogger<SignalRGroupGrain> logger = Substitute.For<ILogger<SignalRGroupGrain>>();
         logger.IsEnabled(Arg.Any<LogLevel>()).Returns(true);
+        IGrainRuntime runtime = Substitute.For<IGrainRuntime>();
         SignalRGroupGrain group = new(
             GrainContextMockBuilder.Create().WithGrainKey($"{hubName}:group").BuildObject(),
+            runtime,
             factory,
+            Options.Create(new AqueductOptions()),
             logger);
         Dictionary<string, ISignalRClientGrain> clients = new();
         foreach (string connection in new[] { "one", "two", "three" })
@@ -79,6 +85,7 @@ public sealed class SignalRGroupBroadcastTests
         ImmutableArray<object?> args = ["payload", 42];
         (SignalRGroupGrain group, IGrainFactory factory, Dictionary<string, ISignalRClientGrain> clients,
             ILogger<SignalRGroupGrain> logger) = await CreateBroadcastFixtureAsync(hubName, args);
+        using IDisposable groupLifetime = group;
         ImmutableHashSet<string> snapshot = await group.GetConnectionsAsync();
         string failedConnection = snapshot.First();
         InvalidOperationException expectedFailure = new("recipient unavailable");
@@ -175,9 +182,12 @@ public sealed class SignalRGroupBroadcastTests
         client.SendMessageAsync("update", Arg.Any<ImmutableArray<object?>>()).Returns(delivery.Task);
         ILogger<SignalRGroupGrain> logger = Substitute.For<ILogger<SignalRGroupGrain>>();
         logger.IsEnabled(Arg.Any<LogLevel>()).Returns(true);
-        SignalRGroupGrain group = new(
+        IGrainRuntime runtime = Substitute.For<IGrainRuntime>();
+        using SignalRGroupGrain group = new(
             GrainContextMockBuilder.Create().WithGrainKey($"{hubName}:group").BuildObject(),
+            runtime,
             factory,
+            Options.Create(new AqueductOptions()),
             logger);
         await group.AddConnectionAsync("original");
         Task broadcast = group.SendMessageAsync("update", []);

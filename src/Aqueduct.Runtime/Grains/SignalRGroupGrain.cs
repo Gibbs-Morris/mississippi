@@ -6,7 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
+using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.Aqueduct.Runtime.Diagnostics;
 using Mississippi.Aqueduct.Runtime.Grains.State;
@@ -39,24 +41,33 @@ namespace Mississippi.Aqueduct.Runtime.Grains;
 [Alias("Mississippi.Aqueduct.Runtime.Grains.SignalRGroupGrain")]
 internal sealed class SignalRGroupGrain
     : ISignalRGroupGrain,
-      IGrainBase
+      IGrainBase,
+      IDisposable
 {
+    private IGrainTimer? cleanupTimer;
+
     private SignalRGroupState state = new();
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SignalRGroupGrain" /> class.
     /// </summary>
     /// <param name="grainContext">Orleans grain context for this grain instance.</param>
+    /// <param name="grainRuntime">The Orleans runtime for activation lifecycle control.</param>
     /// <param name="grainFactory">Factory for creating grain references.</param>
+    /// <param name="options">Configuration options for failure cleanup timing.</param>
     /// <param name="logger">Logger instance for grain operations.</param>
     public SignalRGroupGrain(
         IGrainContext grainContext,
+        IGrainRuntime grainRuntime,
         IGrainFactory grainFactory,
+        IOptions<AqueductOptions> options,
         ILogger<SignalRGroupGrain> logger
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
+        GrainRuntime = grainRuntime ?? throw new ArgumentNullException(nameof(grainRuntime));
         GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
+        Options = options ?? throw new ArgumentNullException(nameof(options));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -65,7 +76,13 @@ internal sealed class SignalRGroupGrain
 
     private IGrainFactory GrainFactory { get; }
 
+    private IGrainRuntime GrainRuntime { get; }
+
     private ILogger<SignalRGroupGrain> Logger { get; }
+
+    private Dictionary<string, Guid> MembershipGenerations { get; } = new(StringComparer.Ordinal);
+
+    private IOptions<AqueductOptions> Options { get; }
 
     private static string ExtractHubName(
         string groupKey
@@ -90,18 +107,29 @@ internal sealed class SignalRGroupGrain
         Logger.AddingConnectionToGroup(connectionId, groupKey);
         if (state.ConnectionIds.Contains(connectionId))
         {
+            MembershipGenerations[connectionId] = Guid.NewGuid();
             Logger.ConnectionAlreadyInGroup(connectionId, groupKey);
             return Task.CompletedTask;
         }
 
+        EnsureCleanupTimer();
+        GrainRuntime.DelayDeactivation(GrainContext, Timeout.InfiniteTimeSpan);
         state = state with
         {
             ConnectionIds = state.ConnectionIds.Add(connectionId),
         };
+        MembershipGenerations[connectionId] = Guid.NewGuid();
         string hubName = ExtractHubName(groupKey);
         AqueductMetrics.RecordGroupJoin(hubName);
         Logger.ConnectionAddedToGroup(connectionId, groupKey, state.ConnectionIds.Count);
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        cleanupTimer?.Dispose();
+        cleanupTimer = null;
     }
 
     /// <inheritdoc />
@@ -138,6 +166,7 @@ internal sealed class SignalRGroupGrain
         {
             ConnectionIds = state.ConnectionIds.Remove(connectionId),
         };
+        MembershipGenerations.Remove(connectionId);
         string hubName = ExtractHubName(groupKey);
         AqueductMetrics.RecordGroupLeave(hubName);
         Logger.ConnectionRemovedFromGroup(connectionId, groupKey, state.ConnectionIds.Count);
@@ -145,6 +174,7 @@ internal sealed class SignalRGroupGrain
         // Deactivate if empty
         if (state.ConnectionIds.IsEmpty)
         {
+            Dispose();
             Logger.GroupNowEmpty(groupKey);
             this.DeactivateOnIdle();
         }
@@ -169,6 +199,73 @@ internal sealed class SignalRGroupGrain
         await Task.WhenAll(sends).ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
         AqueductMetrics.RecordGroupMessageSent(hubName, method, connectionCount);
         Logger.SentToGroup(groupKey, method, connectionCount);
+    }
+
+    /// <summary>
+    ///     Owns one timer whose awaited sweep does not block group broadcasts.
+    /// </summary>
+    private void EnsureCleanupTimer()
+    {
+        TimeSpan interval = TimeSpan.FromMinutes(Options.Value.HeartbeatIntervalMinutes);
+        cleanupTimer ??= GrainRuntime.TimerRegistry.RegisterGrainTimer(
+            GrainContext,
+            static (grain, _) => grain.RemoveOrphanedConnectionsAsync(),
+            this,
+            new()
+            {
+                DueTime = interval,
+                Period = interval,
+                Interleave = true,
+            });
+    }
+
+    /// <summary>
+    ///     Removes a disconnected member while preserving failed lookups for the next sweep.
+    /// </summary>
+    /// <param name="hubName">The hub owning the group.</param>
+    /// <param name="connectionId">The member in the current sweep snapshot.</param>
+    /// <param name="generation">The join generation owned when the lookup started.</param>
+    /// <returns>The member's cleanup operation.</returns>
+    private async Task RemoveDisconnectedConnectionAsync(
+        string hubName,
+        string connectionId,
+        Guid generation
+    )
+    {
+        try
+        {
+            ISignalRClientGrain client = GrainFactory.GetGrain<ISignalRClientGrain>($"{hubName}:{connectionId}");
+            if (await client.GetServerIdAsync()
+                    .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext) is null &&
+                MembershipGenerations.TryGetValue(connectionId, out Guid currentGeneration) &&
+                (currentGeneration == generation))
+            {
+                await RemoveConnectionAsync(connectionId)
+                    .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
+            }
+        }
+        catch (Exception ex) when (ex is OrleansException or TimeoutException)
+        {
+            Logger.ConnectionLivenessCheckFailed(this.GetPrimaryKeyString(), connectionId, ex);
+        }
+    }
+
+    /// <summary>
+    ///     Sweeps an immutable snapshot with at most one outstanding lookup, allowing ordinary requests to interleave.
+    /// </summary>
+    /// <returns>The bounded membership sweep.</returns>
+    private async Task RemoveOrphanedConnectionsAsync()
+    {
+        string hubName = ExtractHubName(this.GetPrimaryKeyString());
+        ImmutableHashSet<string> connections = state.ConnectionIds;
+        foreach (string connectionId in connections)
+        {
+            if (MembershipGenerations.TryGetValue(connectionId, out Guid generation))
+            {
+                await RemoveDisconnectedConnectionAsync(hubName, connectionId, generation)
+                    .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
+            }
+        }
     }
 
     /// <summary>

@@ -47,6 +47,8 @@ internal sealed class InletSubscriptionSetupFixture : IDisposable
             .WithGrainKey("connection")
             .Configure(mock => mock.SetupGet(value => value.ActivationServices).Returns(Services))
             .BuildObject();
+        IGrainRuntime runtime = Substitute.For<IGrainRuntime>();
+        runtime.ServiceProvider.Returns(Services);
         IAqueductGrainFactory aqueduct = Substitute.For<IAqueductGrainFactory>();
         aqueduct.GetClientGrain(InletHubConstants.HubName, "connection").Returns(Client);
         ProjectionBrookRegistry registry = new();
@@ -58,8 +60,10 @@ internal sealed class InletSubscriptionSetupFixture : IDisposable
             .Returns(call => StreamId.Create("setup", call.Arg<BrookKey>().ToString()));
         Grain = new(
             context,
+            runtime,
             Substitute.For<IGrainFactory>(),
             aqueduct,
+            Options.Create(new AqueductOptions()),
             registry,
             Options.Create(
                 new BrookProviderOptions
@@ -100,7 +104,11 @@ internal sealed class InletSubscriptionSetupFixture : IDisposable
     private ServiceProvider Services { get; }
 
     /// <inheritdoc />
-    public void Dispose() => Services.Dispose();
+    public void Dispose()
+    {
+        Grain.Dispose();
+        Services.Dispose();
+    }
 
     /// <summary>
     ///     Makes one of the two pre-handle setup dependencies fail deterministically.
