@@ -107,7 +107,10 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                             if ($localIssueHref.Success) {
                                 $anchorHrefs.Add("https://github.com/$RepositoryOwner/$RepositoryName/issues/$($localIssueHref.Groups['Number'].Value)")
                             }
-                            $insideAnchor = $href -notmatch '^[\x00-\x20]'
+                            $hrefScheme = [regex]::Match($href, '^([^/?#]*):')
+                            $schemeName = [regex]::Replace($hrefScheme.Groups[1].Value, '[\x00-\x20]', '').ToLowerInvariant()
+                            $allowedScheme = -not $hrefScheme.Success -or $schemeName -in @('http', 'https', 'mailto', 'xmpp', 'github-windows', 'github-mac')
+                            $insideAnchor = $href -notmatch '^[\x00-\x20]' -and $allowedScheme
                             $null = $builder.Append(' ')
                         }
                     }

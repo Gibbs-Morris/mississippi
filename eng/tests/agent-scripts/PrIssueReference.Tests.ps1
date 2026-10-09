@@ -207,6 +207,31 @@ Describe 'PR issue reference validator' {
         Assert-ValidReferenceBody -Body $Body
     }
 
+    It 'preserves tracking labels when GitHub strips a disallowed href scheme: <Case>' -ForEach (@(
+        'JavaScript|javascript:void(0)'
+        'data|data:text/html,example'
+        'VBScript|vbscript:example'
+        'FTP|ftp://example.test'
+        'unknown|custom:example'
+        'mixed case|JaVaScRiPt:void(0)'
+        'encoded tab|java&#9;script:void(0)'
+    ) | ForEach-Object {
+        $caseFields = $_ -split '\|', 2
+        @{ Case = $caseFields[0]; Href = $caseFields[1] }
+    }) {
+        Assert-ValidReferenceBody -Body ('<a href="' + $Href + '">Refs #741</a>')
+    }
+
+    It 'preserves allowed scheme and relative link ownership: <Href>' -ForEach @(
+        @{ Href = 'mailto:example@example.test' }
+        @{ Href = 'xmpp:example@example.test' }
+        @{ Href = 'github-windows://example' }
+        @{ Href = 'github-mac://example' }
+        @{ Href = 'example/javascript:void(0)' }
+    ) {
+        Assert-NoReferenceBody -Body ('<a href="' + $Href + '">Refs #741</a>')
+    }
+
     It 'rejects stripped links without tracking and preserves valid link ownership: <Case>' -ForEach @(
         @{ Case = 'stripped local URL'; Body = '<a href=" https://github.com/Gibbs-Morris/mississippi/issues/741 ">tracking</a>' }
         @{ Case = 'valid external URL'; Body = '<a href="https://example.test">Refs #741</a>' }
