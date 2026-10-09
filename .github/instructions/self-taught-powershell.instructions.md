@@ -1,23 +1,26 @@
 ---
-applyTo: 'eng/tests/**/*.ps1'
+applyTo: 'eng/tests/**/*.ps1,eng/src/agent-scripts/*issue-reference*.ps1'
 ---
 
 # Self-Taught Lessons: PowerShell
 
-Governing thought: Preserve collection shape when test fixtures return optional results.
+Governing thought: Preserve collection shape and repository ownership when parsing optional results.
 
-> Drift check: Check the fixture and its registered runner's strict-mode behavior before applying this lesson.
+> Drift check: Check the fixture, parser, registered runner, and overlapping guidance before applying these lessons.
 
 ## Rules (RFC 2119)
 
 - Test helpers that promise an optional collection **SHOULD** wrap conditional output in `@(...)` when callers need an empty array. Why: Seven cleanup workflow fixtures failed with `PropertyNotFoundException` on `.Count` because conditional assignment returned null under the full runner's strict mode.
+- Issue-reference parsers **MUST** determine HTML link ownership from its destination rather than treating its label as local shorthand. Why: PR #1022's upstream links caused false local lookups; a regression also showed an external numeric label incorrectly satisfying local traceability.
 
 ## Scope and Audience
 
-Agents maintaining PowerShell test helpers under `eng/tests/`.
+Agents maintaining PowerShell test helpers under `eng/tests/` and issue-reference validators under `eng/src/agent-scripts/`.
 
 ## References
 
 - [Cleanup workflow fixtures](../../eng/tests/agent-scripts/CleanupWorkflow.Tests.ps1)
+- [Issue-reference validator](../../eng/src/agent-scripts/validate-pr-issue-reference.ps1)
 - [PowerShell guidance](powershell.instructions.md)
+- [Traceability](issue-tracking.instructions.md)
 - [Self-improvement governance](self-improvement.instructions.md)
