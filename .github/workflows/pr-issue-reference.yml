@@ -40,6 +40,7 @@ jobs:
           $trustedRef = $trustedRefOutput.Trim()
           $validator = Join-Path $env:RUNNER_TEMP 'validate-pr-issue-reference.ps1'
           $mergeValidator = Join-Path $env:RUNNER_TEMP 'validate-merge-group-pr-issue-reference.ps1'
+          $mergeResolver = Join-Path $env:RUNNER_TEMP 'MergeGroupIssueReference.psm1'
           function Save-TrustedScript {
             param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][string]$Destination)
 
@@ -48,6 +49,16 @@ jobs:
             try { $bytes = [Convert]::FromBase64String(($encoded -replace '\s', '')) }
             catch { throw "Trusted validator '$Path' was not valid base64: $($_.Exception.Message)" }
             [System.IO.File]::WriteAllBytes($Destination, $bytes)
+          }
+          function Test-TrustedMergeResolver {
+            $directoryOutput = gh api --method GET "repos/$repository/contents/eng/src/agent-scripts" --header 'Accept: application/vnd.github+json' -f "ref=$trustedRef" 2>&1 | Out-String
+            if ($LASTEXITCODE -ne 0) { throw "Unable to inspect trusted queue resolver availability: $($directoryOutput.Trim())" }
+            $items = ConvertFrom-Json -InputObject $directoryOutput -NoEnumerate
+            if ($items -isnot [Array]) { throw 'Trusted validator directory was not an array.' }
+            $resolverFiles = @($items | Where-Object { $_.path -ceq 'eng/src/agent-scripts/MergeGroupIssueReference.psm1' })
+            if ($resolverFiles.Count -eq 0) { return $false }
+            if ($resolverFiles.Count -ne 1 -or $resolverFiles[0].type -cne 'file') { throw 'Trusted queue resolver was not a unique regular file.' }
+            return $true
           }
           Save-TrustedScript -Path 'eng/src/agent-scripts/validate-pr-issue-reference.ps1' -Destination $validator
           Save-TrustedScript -Path 'eng/src/agent-scripts/validate-merge-group-pr-issue-reference.ps1' -Destination $mergeValidator
@@ -68,11 +79,24 @@ jobs:
             }
             else {
               $pullRequestsPath = Join-Path $env:RUNNER_TEMP 'merge-group-pull-requests.json'
-              gh api "repos/$repository/commits/$env:GITHUB_SHA/pulls" --header 'Accept: application/vnd.github+json' --paginate --slurp | Set-Content -LiteralPath $pullRequestsPath -Encoding utf8
-              if ($LASTEXITCODE -ne 0) { throw 'Unable to resolve merge-group pull requests.' }
+              $useQueueResolver = Test-TrustedMergeResolver
+              if ($useQueueResolver) {
+                Save-TrustedScript -Path 'eng/src/agent-scripts/MergeGroupIssueReference.psm1' -Destination $mergeResolver
+                Import-Module $mergeResolver -Force
+                $group = (Get-Content -LiteralPath $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json).merge_group
+                $before = Resolve-MergeGroupIssueMembers -MergeGroup $group -Repository $repository -CandidateSha $env:GITHUB_SHA
+                ConvertTo-Json -InputObject @($before.PullRequests) -Depth 10 | Set-Content -LiteralPath $pullRequestsPath -Encoding utf8
+              }
+              else {
+                throw 'Trusted queue resolver is unavailable; merge-group issue-reference validation cannot establish candidate membership.'
+              }
               $output = & pwsh -NoProfile -File $mergeValidator -PullRequestsPath $pullRequestsPath -ValidatorPath $validator -RepositoryOwner $env:REPOSITORY_OWNER -RepositoryName $env:REPOSITORY_NAME 2>&1 | Out-String
               Write-Output $output
               if ($LASTEXITCODE -ne 0) { throw 'Merge-group issue-reference validation failed.' }
+              if ($useQueueResolver) {
+                $after = Resolve-MergeGroupIssueMembers -MergeGroup $group -Repository $repository -CandidateSha $env:GITHUB_SHA
+                Assert-MergeGroupIssueMembersUnchanged -Before $before -After $after
+              }
             }
             $state = 'success'
             $description = 'Repository issue-reference validation passed.'
