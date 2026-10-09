@@ -53,6 +53,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     $html = [Markdig.Markdown]::ToHtml($Content, $markdownPipelineBuilder.Build())
     $html = [regex]::Replace($html, '(?i)<(?=/?(?:title|textarea|style|xmp|iframe|noembed|noframes|script|plaintext)(?:\s|/?>))', '&lt;')
     $localIssueHrefPattern = '(?i)^(?:(?:https?:)?//github\.com)?/' + [regex]::Escape($RepositoryOwner) + '/' + [regex]::Escape($RepositoryName) + '/issues/(?<Number>\d+)(?:[/?#].*)?$'
+    $issueHrefBase = [uri]::new("https://github.com/$RepositoryOwner/$RepositoryName/pull/")
     $builder = [System.Text.StringBuilder]::new()
     $anchorHrefs = [System.Collections.Generic.List[string]]::new()
     $anchorHrefPattern = '(?is)^<a(?=\s|/?>)(?:"[^"]*"|''[^'']*''|[^''">])*?\s+href(?=\s|=|/?>)(?:\s*=\s*(?:"(?<Href>[^"]*)"|''(?<Href>[^'']*)''|(?<Href>[^\s>]+)))?[^>]*>'
@@ -145,6 +146,10 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                             $insideAnchor = $href -notmatch '^[\x00-\x20]' -and $allowedScheme
                             if ($insideAnchor) {
                                 $normalizedHref = [regex]::Replace($href.TrimEnd([char[]](0..0x20)), '[\t\r\n]', '')
+                                [uri]$resolvedHref = $null
+                                if ([uri]::TryCreate($issueHrefBase, $normalizedHref, [ref]$resolvedHref)) {
+                                    $normalizedHref = $resolvedHref.AbsoluteUri
+                                }
                                 $localIssueHref = [regex]::Match($normalizedHref, $localIssueHrefPattern)
                                 if ($localIssueHref.Success) {
                                     $anchorHrefs.Add("https://github.com/$RepositoryOwner/$RepositoryName/issues/$($localIssueHref.Groups['Number'].Value)")

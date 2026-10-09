@@ -94,6 +94,27 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body ('<a href="https://example.test">' + $Body + '<h1>Context</h1></a>')
     }
 
+    It 'checks path-relative issue destination ownership: <Case>' -ForEach (@(
+        'parent issues path|true|[tracking](../issues/741)'
+        'explicit current directory|true|[tracking](./../issues/741)'
+        'HTML destination|true|<a href="../issues/741">tracking</a>'
+        'repository path|true|[tracking](../../mississippi/issues/741)'
+        'query and fragment|true|[tracking](../issues/741?source=notes#event)'
+        'encoded parent segment|true|[tracking](%2e%2e/issues/741)'
+        'child of pull path|false|[tracking](issues/741)'
+        'different repository|false|[tracking](../../other/issues/741)'
+        'pull destination|false|[tracking](../pull/741)'
+        'page fragment|false|[tracking](#741)'
+        'query value|false|[tracking](?next=../issues/741)'
+        'normalized pull path|false|[tracking](../issues/741/../../pull/743)'
+    ) | ForEach-Object {
+        $caseFields = $_ -split '\|', 3
+        @{ Case = $caseFields[0]; Expected = $caseFields[1] -eq 'true'; Body = $caseFields[2] }
+    }) {
+        if ($Expected) { Assert-ValidReferenceBody -Body $Body }
+        else { Assert-NoReferenceBody -Body $Body }
+    }
+
     It 'ignores tracking in mathematical expressions: <Case>' -ForEach @(
         @{ Case = 'inline phantom'; Body = '$\hphantom{\#741}$' }
         @{ Case = 'display phantom'; Body = '$$\hphantom{\#741}$$' }
