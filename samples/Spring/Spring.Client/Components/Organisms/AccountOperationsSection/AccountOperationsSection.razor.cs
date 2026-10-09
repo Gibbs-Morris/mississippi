@@ -22,11 +22,17 @@ public sealed partial class AccountOperationsSection
 
     private bool isInitialDepositValid = true;
 
+    private bool isTransferAmountValid = true;
+
     private bool isWithdrawAmountValid = true;
 
     /// <summary>Gets or sets the balance projection.</summary>
     [Parameter]
     public BankAccountBalanceProjectionDto BalanceProjection { get; set; } = default!;
+
+    /// <summary>Gets or sets the observed balance projection version.</summary>
+    [Parameter]
+    public long BalanceVersion { get; set; } = -1;
 
     /// <summary>Gets or sets the deposit amount.</summary>
     [Parameter]
@@ -64,21 +70,37 @@ public sealed partial class AccountOperationsSection
     [Parameter]
     public bool IsAccountOpen { get; set; }
 
+    /// <summary>Gets or sets a value indicating whether the balance is loading.</summary>
+    [Parameter]
+    public bool IsBalanceLoading { get; set; }
+
     /// <summary>Gets or sets a value indicating whether execution is in progress.</summary>
     [Parameter]
     public bool IsExecutingOrLoading { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether the ledger is loading.</summary>
+    [Parameter]
+    public bool IsLedgerLoading { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether the shared SignalR connection is connected.</summary>
+    [Parameter]
+    public bool IsLiveConnectionConnected { get; set; }
 
     /// <summary>Gets or sets a value indicating whether the transfer destination is read-only.</summary>
     [Parameter]
     public bool IsTransferDestinationReadOnly { get; set; }
 
-    /// <summary>Gets or sets the last command success state.</summary>
+    /// <summary>Gets or sets the ledger read error.</summary>
     [Parameter]
-    public bool? LastCommandSucceeded { get; set; }
+    public string? LedgerError { get; set; }
 
     /// <summary>Gets or sets the ledger projection.</summary>
     [Parameter]
     public BankAccountLedgerProjectionDto LedgerProjection { get; set; } = default!;
+
+    /// <summary>Gets or sets the observed ledger projection version.</summary>
+    [Parameter]
+    public long LedgerVersion { get; set; } = -1;
 
     /// <summary>Gets or sets the callback for deposit action.</summary>
     [Parameter]
@@ -148,6 +170,10 @@ public sealed partial class AccountOperationsSection
     [Parameter]
     public EventCallback<string> TransferDestinationAccountIdChanged { get; set; }
 
+    /// <summary>Gets or sets the transfer-status read error.</summary>
+    [Parameter]
+    public string? TransferReadError { get; set; }
+
     /// <summary>Gets or sets the transfer saga id.</summary>
     [Parameter]
     public string? TransferSagaId { get; set; }
@@ -181,21 +207,43 @@ public sealed partial class AccountOperationsSection
 
     private string TransferDestinationInputId => GetInputId("transfer-destination-input");
 
+    private string TransferOutcomeText =>
+        TransferStatusProjection?.Phase switch
+        {
+            SagaPhaseDto.Completed =>
+                "Transfer completed. Verify the debit and credit in both live balances and ledgers.",
+            SagaPhaseDto.Compensated when TransferStatusProjection.LastCompletedStepIndex < 0 =>
+                "No step completed. No compensating account action was required. Read the error and verify both balances.",
+            SagaPhaseDto.Compensated =>
+                "The saga reports compensation. Check the source balance and ledger for the reversing deposit.",
+            SagaPhaseDto.Compensating => "A step failed. The saga is attempting its defined compensation.",
+            SagaPhaseDto.Failed =>
+                "Transfer failed. Read the error and verify both accounts before starting another transfer.",
+            var _ => "The transfer is pending. Its final outcome has not arrived.",
+        };
+
     private string TransferPanelId => GetInputId("transfer-panel");
 
     private string TransferStatusId => GetInputId("transfer-status");
 
     private string TransferStatusState =>
-        TransferStatusProjection?.Phase switch
-        {
-            SagaPhaseDto.Completed => RefractionStates.Complete,
-            SagaPhaseDto.Compensated => RefractionStates.Alert,
-            SagaPhaseDto.Compensating or SagaPhaseDto.Running => RefractionStates.Busy,
-            SagaPhaseDto.Failed => RefractionStates.Error,
-            var _ => RefractionStates.Quiet,
-        };
+        !string.IsNullOrEmpty(TransferReadError)
+            ? RefractionStates.Error
+            : TransferStatusProjection?.Phase switch
+            {
+                SagaPhaseDto.Completed => RefractionStates.Complete,
+                SagaPhaseDto.Compensated => RefractionStates.Alert,
+                SagaPhaseDto.Compensating or SagaPhaseDto.Running => RefractionStates.Busy,
+                SagaPhaseDto.Failed => RefractionStates.Error,
+                var _ => RefractionStates.Quiet,
+            };
 
     private string WithdrawAmountInputId => GetInputId("withdraw-amount-input");
+
+    private static string FormatAmount(
+        decimal amount
+    ) =>
+        "£" + amount.ToString("N2", CultureInfo.InvariantCulture);
 
     private static string FormatTransferTimestamp(
         DateTimeOffset? timestamp
@@ -239,6 +287,11 @@ public sealed partial class AccountOperationsSection
         bool isValid
     ) =>
         isInitialDepositValid = isValid;
+
+    private void SetTransferAmountValidity(
+        bool isValid
+    ) =>
+        isTransferAmountValid = isValid;
 
     private void SetWithdrawAmountValidity(
         bool isValid

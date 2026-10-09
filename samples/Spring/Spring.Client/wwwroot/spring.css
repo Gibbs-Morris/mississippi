@@ -1,0 +1,53 @@
+/* Spring owns this small normalization, typography and native-control utility surface.
+ * Component layouts remain in their colocated isolated stylesheets.
+ */
+/* Temporary Spring-owned layout/type primitives: #405 spring-flagship-token-migration.
+ * Refraction's defined semantic colors/focus remain the shared theme contract.
+ * Replace these application values when emitted semantic spacing/type/size tokens are available.
+ */
+:root {
+    --spring-space-tight: 0.25rem;
+    --spring-space-inline: 0.5rem;
+    --spring-space-control: 0.75rem;
+    --spring-space-heading-tight: 0.85rem;
+    --spring-space-heading: 0.9rem;
+    --spring-space-stack: 1rem;
+    --spring-space-panel: 1.25rem;
+    --spring-space-inset: 1.5rem;
+    --spring-space-section: 2rem;
+    --spring-type-caption: 0.75rem;
+    --spring-type-control: 0.8rem;
+    --spring-type-detail: 0.85rem;
+    --spring-type-support: 0.9rem;
+    --spring-type-intro: 1.05rem;
+    --spring-radius-control: 0.4rem;
+    --spring-radius-panel: 0.5rem;
+    --spring-radius-card: 0.6rem;
+    --spring-control-size: 44px;
+    --spring-border-width: 1px;
+    --spring-status-border-width: 3px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--rf-color-surface-void); color: var(--rf-color-text-primary); font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; font-size: 1rem; line-height: 1.55; }
+h1, h2, h3, p { margin-block: 0; }
+h1 { font-size: clamp(2rem, 4vw, 3.25rem); font-weight: 720; line-height: 1.1; letter-spacing: -0.035em; overflow-wrap: anywhere; }
+h2 { font-size: 1.3rem; line-height: 1.3; font-weight: 650; letter-spacing: -0.015em; }
+h3 { font-size: var(--spring-type-intro); line-height: 1.4; }
+a { color: var(--rf-color-text-accent); text-underline-offset: 0.2em; }
+button, input, select, textarea { font: inherit; }
+button, .spring-button, summary { touch-action: manipulation; }
+button, .spring-button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--spring-control-size); gap: var(--spring-space-inline); padding: 0.6rem var(--spring-space-stack); border: var(--spring-border-width) solid var(--rf-color-text-muted); border-radius: var(--spring-radius-control); background: var(--rf-color-surface-elevated); color: var(--rf-color-text-primary); font-weight: 600; line-height: 1.35; text-align: center; text-decoration: none; cursor: pointer; }
+button:hover:enabled, .spring-button:hover { border-color: var(--rf-color-action-primary); }
+button:disabled { opacity: 0.55; cursor: default; }
+.spring-primary { border-color: var(--rf-color-action-primary); background: var(--rf-color-action-primary); color: var(--rf-color-surface-void); }
+summary { min-height: var(--spring-control-size); padding-block: 0.65rem; font-weight: 600; cursor: pointer; }
+summary::marker { color: var(--rf-color-text-accent); }
+fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+legend { padding: 0; }
+table { width: 100%; border-collapse: collapse; text-align: left; }
+th, td { padding: 0.7rem var(--spring-space-inline); border-bottom: var(--spring-border-width) solid var(--rf-color-text-muted); vertical-align: top; overflow-wrap: anywhere; }
+th { color: var(--rf-color-text-secondary); font-size: var(--spring-type-detail); font-weight: 600; }
+code { font-family: ui-monospace, monospace; font-size: 0.85em; overflow-wrap: anywhere; }
+:where(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline: var(--rf-focus-ring-width) solid var(--rf-color-focus-ring); outline-offset: var(--rf-focus-ring-offset); }
+h1:focus-visible, .spring-main-content:focus-visible { outline: var(--rf-focus-ring-width) solid var(--rf-color-focus-ring); outline-offset: 6px; }
+@media (forced-colors: active) { button, .spring-button { border-color: ButtonText; } .spring-primary { background: ButtonFace; color: ButtonText; } }

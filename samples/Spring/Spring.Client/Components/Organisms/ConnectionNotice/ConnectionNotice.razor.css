@@ -1,0 +1,2 @@
+.spring-connection-notice { display: grid; justify-items: start; gap: var(--spring-space-control); padding: var(--spring-space-stack) var(--spring-space-panel); border: var(--spring-border-width) solid var(--rf-color-status-warning); border-radius: var(--spring-radius-control); background: var(--rf-color-surface-glass); overflow-wrap: anywhere; }
+.spring-connection-notice p { color: var(--rf-color-text-secondary); margin-top: 0.4rem; font-size: var(--spring-type-support); }

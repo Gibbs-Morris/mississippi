@@ -138,7 +138,7 @@ public sealed class InputFieldFeedbackTests : BunitContext
         Assert.Equal(cut.Find("[role=alert]").Id, cut.Find("input").GetAttribute("aria-describedby"));
     }
 
-    /// <summary>Clearing invalid state removes error references while preserving guidance.</summary>
+    /// <summary>Verify that clearing invalid state removes error references while preserving guidance.</summary>
     [Fact]
     public void ReturningToValidStateRemovesErrorFeedback()
     {
@@ -151,7 +151,7 @@ public sealed class InputFieldFeedbackTests : BunitContext
         Assert.Equal(id, cut.Find("input").Id);
         Assert.Equal($"{id}-helper", cut.Find("input").GetAttribute("aria-describedby"));
         Assert.False(cut.Find("input").HasAttribute("aria-invalid"));
-        Assert.Empty(cut.FindAll(".rf-input-field__error"));
+        Assert.Empty(cut.FindAll(".rf-c-input-field__error"));
         Assert.Equal("Check the address.", cut.Instance.ErrorText);
     }
 }

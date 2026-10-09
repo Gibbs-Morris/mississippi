@@ -77,9 +77,7 @@ public sealed class InletStartupStatusTests
         await page.SetViewportSizeAsync(1440, 900);
     }
 
-    /// <summary>
-    ///     A 503 startup failure shows Disconnected and the real error before a manual retry connects.
-    /// </summary>
+    /// <summary>Verify that a 503 startup failure shows Disconnected and the real error before a manual retry connects.</summary>
     /// <returns>A task representing the browser journey.</returns>
     [Fact]
     public async Task FailedInitialNegotiationShowsDisconnectedAndAllowsRetry()
@@ -108,20 +106,18 @@ public sealed class InletStartupStatusTests
             AccountsPage accounts = new(page);
             await accounts.NavigateAsync(Fixture.GatewayBaseUri);
             await accounts.WaitForConnectionStatusAsync("Disconnected", 120_000);
-            ILocator lostConnection = page.GetByRole(AriaRole.Dialog)
-                .Filter(
-                    new()
-                    {
-                        Has = page.GetByRole(
-                            AriaRole.Heading,
-                            new()
-                            {
-                                Name = "Connection Lost",
-                                Exact = true,
-                            }),
-                    });
+            ILocator lostConnection = page.GetByRole(
+                AriaRole.Region,
+                new()
+                {
+                    Name = "Live connection notice",
+                    Exact = true,
+                });
             await Expect(lostConnection).ToBeVisibleAsync();
             await Expect(lostConnection).ToContainTextAsync("503");
+            await Expect(lostConnection.GetByRole(AriaRole.Status)).ToContainTextAsync("Disconnected");
+            await Expect(lostConnection.GetByRole(AriaRole.Alert)).ToContainTextAsync("503");
+            await Expect(page.GetByRole(AriaRole.Dialog)).ToHaveCountAsync(0);
             await SaveStateEvidenceAsync(page, "disconnected");
             await page.UnrouteAsync(negotiationPattern);
             await lostConnection.GetByRole(

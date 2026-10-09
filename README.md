@@ -21,6 +21,8 @@ pwsh ./run-spring.ps1
 
 This launches the full stack—Orleans silo, API, and Blazor WASM client—so you can see event sourcing and real-time projections in action.
 
+Follow the [Spring first-run guide](samples/Spring/README.md) to prepare two accounts, make a deposit and verify live balances and ledgers. The [capability map](samples/Spring/JOURNEYS.md) covers every task and its prerequisites.
+
 ### Explore the Domain Model
 
 Take a look at [`samples/Spring/Spring.Domain`](samples/Spring/Spring.Domain) to see how aggregates, commands, events, and projections are defined. The source generators turn these concise domain definitions into a complete API and client layer.

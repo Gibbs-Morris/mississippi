@@ -1,10 +1,11 @@
-.rf-input-field {
+.rf-c-input-field {
     display: flex;
     flex-direction: column;
+    min-width: 0;
     gap: var(--rf-raw-space-1);
 }
 
-.rf-input-field__label {
+.rf-c-input-field__label {
     font-family: var(--rf-raw-font-mono);
     font-size: var(--rf-raw-text-xs);
     color: var(--rf-color-text-secondary);
@@ -12,7 +13,10 @@
     letter-spacing: 0.1em;
 }
 
-.rf-input-field__input {
+.rf-c-input-field__input {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
     font-family: var(--rf-raw-font-mono);
     font-size: var(--rf-raw-text-base);
     color: var(--rf-color-text-primary);
@@ -21,33 +25,35 @@
     padding: var(--rf-raw-space-2) var(--rf-raw-space-3);
 }
 
-.rf-input-field__input[aria-invalid="true"],
-.rf-input-field__input[aria-invalid="grammar"],
-.rf-input-field__input[aria-invalid="spelling"] {
+.rf-c-input-field__input[aria-invalid="true"],
+.rf-c-input-field__input[aria-invalid="grammar"],
+.rf-c-input-field__input[aria-invalid="spelling"] {
     border-color: var(--rf-color-status-error);
 }
 
-.rf-input-field__input:focus {
+.rf-c-input-field__input:focus {
     border-color: var(--rf-color-focus-ring);
     outline: var(--rf-focus-ring-width) solid var(--rf-color-focus-ring);
     outline-offset: var(--rf-focus-ring-offset);
 }
 
-.rf-input-field__input:focus:not(:focus-visible) {
+.rf-c-input-field__input:focus:not(:focus-visible) {
     outline: none;
 }
 
-.rf-input-field__helper,
-.rf-input-field__error {
+.rf-c-input-field__helper,
+.rf-c-input-field__error {
     margin: 0;
     font-family: var(--rf-raw-font-sans);
     font-size: var(--rf-raw-text-sm);
 }
 
-.rf-input-field__helper {
+.rf-c-input-field__helper {
     color: var(--rf-color-text-secondary);
 }
 
-.rf-input-field__error {
-    color: var(--rf-color-status-error);
+.rf-c-input-field__error {
+    /* The primary text token stays readable on supported surfaces in every theme.
+       The invalid border, explicit message and alert semantics identify the error. */
+    color: var(--rf-color-text-primary);
 }

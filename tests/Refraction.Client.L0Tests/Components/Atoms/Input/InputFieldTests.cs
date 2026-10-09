@@ -15,9 +15,7 @@ namespace Mississippi.Refraction.Client.L0Tests.Components.Atoms.Input;
 /// </summary>
 public sealed class InputFieldTests : BunitContext
 {
-    /// <summary>
-    ///     InputField associates label with input via Id.
-    /// </summary>
+    /// <summary>Verify that InputField associates label with input via Id.</summary>
     [Fact]
     public void InputFieldAssociatesLabelWithInputViaId()
     {
@@ -27,13 +25,11 @@ public sealed class InputFieldTests : BunitContext
             .Add(c => c.Id, "username-field"));
 
         // Assert
-        Assert.Equal("username-field", cut.Find(".rf-input-field__label").GetAttribute("for"));
-        Assert.Equal("username-field", cut.Find(".rf-input-field__input").GetAttribute("id"));
+        Assert.Equal("username-field", cut.Find(".rf-c-input-field__label").GetAttribute("for"));
+        Assert.Equal("username-field", cut.Find(".rf-c-input-field__input").GetAttribute("id"));
     }
 
-    /// <summary>
-    ///     InputField does not render label when empty.
-    /// </summary>
+    /// <summary>Verify that InputField does not render label when empty.</summary>
     [Fact]
     public void InputFieldDoesNotRenderLabelWhenEmpty()
     {
@@ -41,7 +37,7 @@ public sealed class InputFieldTests : BunitContext
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Label, string.Empty));
 
         // Assert
-        Assert.Empty(cut.FindAll(".rf-input-field__label"));
+        Assert.Empty(cut.FindAll(".rf-c-input-field__label"));
     }
 
     /// <summary>
@@ -238,9 +234,7 @@ public sealed class InputFieldTests : BunitContext
         Assert.True(typeof(ComponentBase).IsAssignableFrom(typeof(InputField)));
     }
 
-    /// <summary>
-    ///     InputField invokes OnBlur when input loses focus.
-    /// </summary>
+    /// <summary>Verify that InputField invokes OnBlur when input loses focus.</summary>
     [Fact]
     public void InputFieldInvokesOnBlurWhenInputLosesFocus()
     {
@@ -251,15 +245,13 @@ public sealed class InputFieldTests : BunitContext
             _ => { wasBlurred = true; }));
 
         // Act
-        cut.Find(".rf-input-field__input").Blur();
+        cut.Find(".rf-c-input-field__input").Blur();
 
         // Assert
         Assert.True(wasBlurred);
     }
 
-    /// <summary>
-    ///     InputField invokes OnFocus when input receives focus.
-    /// </summary>
+    /// <summary>Verify that InputField invokes OnFocus when input receives focus.</summary>
     [Fact]
     public void InputFieldInvokesOnFocusWhenInputReceivesFocus()
     {
@@ -270,15 +262,13 @@ public sealed class InputFieldTests : BunitContext
             _ => { wasFocused = true; }));
 
         // Act
-        cut.Find(".rf-input-field__input").Focus();
+        cut.Find(".rf-c-input-field__input").Focus();
 
         // Assert
         Assert.True(wasFocused);
     }
 
-    /// <summary>
-    ///     InputField invokes ValueChanged when input changes.
-    /// </summary>
+    /// <summary>Verify that InputField invokes ValueChanged when input changes.</summary>
     [Fact]
     public void InputFieldInvokesValueChangedWhenInputChanges()
     {
@@ -289,15 +279,13 @@ public sealed class InputFieldTests : BunitContext
             value => { receivedValue = value; }));
 
         // Act
-        cut.Find(".rf-input-field__input").Input("new value");
+        cut.Find(".rf-c-input-field__input").Input("new value");
 
         // Assert
         Assert.Equal("new value", receivedValue);
     }
 
-    /// <summary>
-    ///     InputField renders additional attributes.
-    /// </summary>
+    /// <summary>Verify that InputField renders additional attributes.</summary>
     [Fact]
     public void InputFieldRendersAdditionalAttributes()
     {
@@ -305,12 +293,10 @@ public sealed class InputFieldTests : BunitContext
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.AddUnmatched("data-testid", "input-1"));
 
         // Assert
-        Assert.Equal("input-1", cut.Find(".rf-input-field").GetAttribute("data-testid"));
+        Assert.Equal("input-1", cut.Find(".rf-c-input-field").GetAttribute("data-testid"));
     }
 
-    /// <summary>
-    ///     InputField renders custom state.
-    /// </summary>
+    /// <summary>Verify that InputField renders custom state.</summary>
     [Fact]
     public void InputFieldRendersCustomState()
     {
@@ -320,13 +306,11 @@ public sealed class InputFieldTests : BunitContext
             RefractionStates.Active));
 
         // Assert
-        string? dataState = cut.Find(".rf-input-field").GetAttribute("data-state");
+        string? dataState = cut.Find(".rf-c-input-field").GetAttribute("data-state");
         Assert.Equal("active", dataState);
     }
 
-    /// <summary>
-    ///     InputField renders disabled state correctly.
-    /// </summary>
+    /// <summary>Verify that InputField renders disabled state correctly.</summary>
     [Fact]
     public void InputFieldRendersDisabledStateCorrectly()
     {
@@ -334,12 +318,10 @@ public sealed class InputFieldTests : BunitContext
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.IsDisabled, true));
 
         // Assert
-        Assert.True(cut.Find(".rf-input-field__input").HasAttribute("disabled"));
+        Assert.True(cut.Find(".rf-c-input-field__input").HasAttribute("disabled"));
     }
 
-    /// <summary>
-    ///     InputField renders input type correctly.
-    /// </summary>
+    /// <summary>Verify that InputField renders input type correctly.</summary>
     [Fact]
     public void InputFieldRendersInputTypeCorrectly()
     {
@@ -347,12 +329,10 @@ public sealed class InputFieldTests : BunitContext
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Type, "password"));
 
         // Assert
-        Assert.Equal("password", cut.Find(".rf-input-field__input").GetAttribute("type"));
+        Assert.Equal("password", cut.Find(".rf-c-input-field__input").GetAttribute("type"));
     }
 
-    /// <summary>
-    ///     InputField renders label when provided.
-    /// </summary>
+    /// <summary>Verify that InputField renders label when provided.</summary>
     [Fact]
     public void InputFieldRendersLabelWhenProvided()
     {
@@ -362,13 +342,11 @@ public sealed class InputFieldTests : BunitContext
             .Add(c => c.Id, "test-id"));
 
         // Assert
-        string textContent = cut.Find(".rf-input-field__label").TextContent;
+        string textContent = cut.Find(".rf-c-input-field__label").TextContent;
         Assert.Contains("Test Label", textContent, StringComparison.Ordinal);
     }
 
-    /// <summary>
-    ///     InputField renders placeholder correctly.
-    /// </summary>
+    /// <summary>Verify that InputField renders placeholder correctly.</summary>
     [Fact]
     public void InputFieldRendersPlaceholderCorrectly()
     {
@@ -376,12 +354,10 @@ public sealed class InputFieldTests : BunitContext
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Placeholder, "Enter value"));
 
         // Assert
-        Assert.Equal("Enter value", cut.Find(".rf-input-field__input").GetAttribute("placeholder"));
+        Assert.Equal("Enter value", cut.Find(".rf-c-input-field__input").GetAttribute("placeholder"));
     }
 
-    /// <summary>
-    ///     InputField renders readonly state correctly.
-    /// </summary>
+    /// <summary>Verify that InputField renders readonly state correctly.</summary>
     [Fact]
     public void InputFieldRendersReadOnlyStateCorrectly()
     {
@@ -389,12 +365,10 @@ public sealed class InputFieldTests : BunitContext
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.IsReadOnly, true));
 
         // Assert
-        Assert.True(cut.Find(".rf-input-field__input").HasAttribute("readonly"));
+        Assert.True(cut.Find(".rf-c-input-field__input").HasAttribute("readonly"));
     }
 
-    /// <summary>
-    ///     InputField renders value correctly.
-    /// </summary>
+    /// <summary>Verify that InputField renders value correctly.</summary>
     [Fact]
     public void InputFieldRendersValueCorrectly()
     {
@@ -402,12 +376,10 @@ public sealed class InputFieldTests : BunitContext
         using IRenderedComponent<InputField> cut = Render<InputField>(p => p.Add(c => c.Value, "Initial value"));
 
         // Assert
-        Assert.Equal("Initial value", cut.Find(".rf-input-field__input").GetAttribute("value"));
+        Assert.Equal("Initial value", cut.Find(".rf-c-input-field__input").GetAttribute("value"));
     }
 
-    /// <summary>
-    ///     InputField renders with default state.
-    /// </summary>
+    /// <summary>Verify that InputField renders with default state.</summary>
     [Fact]
     public void InputFieldRendersWithDefaultState()
     {
@@ -415,7 +387,7 @@ public sealed class InputFieldTests : BunitContext
         using IRenderedComponent<InputField> cut = Render<InputField>();
 
         // Assert
-        string? dataState = cut.Find(".rf-input-field").GetAttribute("data-state");
+        string? dataState = cut.Find(".rf-c-input-field").GetAttribute("data-state");
         Assert.Equal("idle", dataState);
     }
 

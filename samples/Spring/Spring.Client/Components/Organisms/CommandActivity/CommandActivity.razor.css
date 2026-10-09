@@ -1,0 +1,8 @@
+.spring-command-activity { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: 0.7rem; padding: 1.1rem var(--spring-space-panel); border: var(--spring-border-width) solid var(--rf-color-text-muted); border-inline-start: var(--spring-status-border-width) solid var(--rf-color-text-accent); border-radius: var(--spring-radius-control); background: var(--rf-color-surface-glass); }
+.spring-command-summary { display: flex; flex-wrap: wrap; gap: var(--spring-space-inline) var(--spring-space-inset); justify-content: space-between; }
+.spring-command-activity p { color: var(--rf-color-text-secondary); font-size: var(--spring-type-support); overflow-wrap: anywhere; }
+.spring-command-activity .spring-command-error { color: var(--rf-color-text-primary); border-inline-start: var(--spring-status-border-width) solid var(--rf-color-status-error); padding-inline-start: var(--spring-space-control); }
+.spring-history-scroll { overflow: auto; max-height: 24rem; margin-top: var(--spring-space-control); }
+table { min-width: 600px; font-size: var(--spring-type-detail); }
+caption { text-align: left; color: var(--rf-color-text-secondary); padding-bottom: var(--spring-space-inline); }
+td:nth-child(3) { max-width: 15rem; }

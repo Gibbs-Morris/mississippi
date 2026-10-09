@@ -65,4 +65,23 @@ public sealed class DemoAccountsSectionTests : BunitContext
             cut.Find("#demo-account-b-id").ParentElement?.TextContent,
             StringComparison.Ordinal);
     }
+
+    /// <summary>
+    ///     Verify that the initialized shortcut retains the supplied encoded pair and is unavailable before
+    ///     initialization.
+    /// </summary>
+    [Fact]
+    public void InitializedShortcutPreservesBothEncodedAccountIds()
+    {
+        const string operationsUri = "/operations?a=account%20A%2F%26&b=account%20B%3F%23";
+        using IRenderedComponent<DemoAccountsSection> cut = Render<DemoAccountsSection>(parameters => parameters
+            .Add(component => component.IsInitialized, true)
+            .Add(component => component.AccountAId, "account A/&")
+            .Add(component => component.AccountBId, "account B?#")
+            .Add(component => component.OperationsUri, new(operationsUri, UriKind.Relative)));
+        Assert.Equal(operationsUri, cut.Find(".spring-demo-actions a").GetAttribute("href"));
+        Assert.Contains("Go to Operations", cut.Find(".spring-demo-actions a").TextContent, StringComparison.Ordinal);
+        cut.Render(parameters => parameters.Add(component => component.IsInitialized, false));
+        Assert.Empty(cut.FindAll(".spring-demo-actions a"));
+    }
 }

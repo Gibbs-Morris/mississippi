@@ -146,16 +146,16 @@ public sealed partial class OperationsPage
                 })
             .FillAsync(amount.ToString(CultureInfo.InvariantCulture));
 
-    /// <summary>
-    ///     Enters the transfer amount in the selected account panel.
-    /// </summary>
+    /// <summary>Enter the transfer amount in the selected account panel.</summary>
     /// <param name="amount">The transfer amount.</param>
     /// <param name="account">The account slot, A or B.</param>
     /// <returns>A task representing the async operation.</returns>
     public async Task EnterTransferAmountAsync(
         decimal amount,
         string account = "A"
-    ) =>
+    )
+    {
+        await OpenTaskAsync(account, "transfer");
         await GetAccountPanel(account)
             .GetByLabel(
                 $"Account {account} transfer amount (£)",
@@ -164,15 +164,16 @@ public sealed partial class OperationsPage
                     Exact = true,
                 })
             .FillAsync(amount.ToString(CultureInfo.InvariantCulture));
+    }
 
-    /// <summary>
-    ///     Enters the withdraw amount in the first account panel.
-    /// </summary>
+    /// <summary>Enter the withdraw amount in the first account panel.</summary>
     /// <param name="amount">The amount to withdraw.</param>
     /// <returns>A task representing the async operation.</returns>
     public async Task EnterWithdrawAmountAsync(
         decimal amount
-    ) =>
+    )
+    {
+        await OpenTaskAsync("A", "withdraw");
         await AccountAPanel.GetByLabel(
                 "Account A withdrawal amount (£)",
                 new()
@@ -180,6 +181,7 @@ public sealed partial class OperationsPage
                     Exact = true,
                 })
             .FillAsync(amount.ToString(CultureInfo.InvariantCulture));
+    }
 
     /// <summary>
     ///     Gets the displayed account header from the selected account panel.
@@ -200,15 +202,18 @@ public sealed partial class OperationsPage
         return await accountHeader.TextContentAsync();
     }
 
-    /// <summary>
-    ///     Gets the displayed balance from the first account panel's projection.
-    /// </summary>
+    /// <summary>Get the displayed balance from the first account panel's projection.</summary>
     /// <returns>The balance text (e.g., "£100.00"), or null if not present.</returns>
     public async Task<string?> GetBalanceTextAsync()
     {
-        // Balance is shown as "Balance:" label followed by the value span
-        ILocator balanceSection = AccountAPanel.Locator("section:has(h2:text-is('Account Status'))");
-        ILocator balanceValue = balanceSection.Locator("div:has(span:text-is('Balance:')) > span").Last;
+        // The balance is an accessible live output, separate from command responses.
+        ILocator balanceSection = AccountAPanel;
+        ILocator balanceValue = balanceSection.GetByLabel(
+            "Account A live balance",
+            new()
+            {
+                Exact = true,
+            });
         if (await balanceValue.CountAsync() > 0)
         {
             return await balanceValue.TextContentAsync();
@@ -217,15 +222,13 @@ public sealed partial class OperationsPage
         return null;
     }
 
-    /// <summary>
-    ///     Gets the displayed holder name from the first account panel's projection.
-    /// </summary>
+    /// <summary>Get the displayed holder name from the first account panel's projection.</summary>
     /// <returns>The holder name text, or null if not present.</returns>
     public async Task<string?> GetHolderNameTextAsync()
     {
-        // Holder is shown as "Holder:" label followed by the value span
-        ILocator holderSection = AccountAPanel.Locator("section:has(h2:text-is('Account Status'))");
-        ILocator holderValue = holderSection.Locator("div:has(span:text-is('Holder:')) > span").Last;
+        // The holder comes from the same live balance projection.
+        ILocator holderSection = AccountAPanel;
+        ILocator holderValue = holderSection.Locator("[data-spring-holder]");
         if (await holderValue.CountAsync() > 0)
         {
             return await holderValue.TextContentAsync();
@@ -234,15 +237,13 @@ public sealed partial class OperationsPage
         return null;
     }
 
-    /// <summary>
-    ///     Gets the displayed status from the first account panel's projection.
-    /// </summary>
+    /// <summary>Get the displayed status from the first account panel's projection.</summary>
     /// <returns>The status text (e.g., "Open"), or null if not present.</returns>
     public async Task<string?> GetStatusTextAsync()
     {
-        // Status is shown as "Status:" label followed by the value span
-        ILocator statusSection = AccountAPanel.Locator("section:has(h2:text-is('Account Status'))");
-        ILocator statusValue = statusSection.Locator("div:has(span:text-is('Status:')) > span").Last;
+        // Account status is projected domain data.
+        ILocator statusSection = AccountAPanel;
+        ILocator statusValue = statusSection.Locator("[data-spring-account-status]");
         if (await statusValue.CountAsync() > 0)
         {
             return await statusValue.TextContentAsync();
@@ -294,9 +295,7 @@ public sealed partial class OperationsPage
                         "Account slot must be A or B."),
                 });
 
-    /// <summary>
-    ///     Selects a theme using the shell's accessible theme controls and waits for the theme to apply.
-    /// </summary>
+    /// <summary>Select a theme using the shell's accessible theme controls and wait for the theme to apply.</summary>
     /// <param name="label">The accessible theme button label.</param>
     /// <param name="themeAttribute">The expected document theme attribute value.</param>
     /// <returns>A task representing the async operation.</returns>
@@ -305,6 +304,12 @@ public sealed partial class OperationsPage
         string themeAttribute
     )
     {
+        ILocator appearance = page.Locator("details.spring-appearance");
+        if (await appearance.GetAttributeAsync("open") is null)
+        {
+            await appearance.Locator("summary").ClickAsync();
+        }
+
         await page.GetByRole(
                 AriaRole.Group,
                 new()
@@ -327,9 +332,7 @@ public sealed partial class OperationsPage
                 });
     }
 
-    /// <summary>
-    ///     Waits for the balance projection to appear in the first account panel.
-    /// </summary>
+    /// <summary>Wait for the balance projection to appear in the selected account panel.</summary>
     /// <param name="timeout">Optional timeout in milliseconds.</param>
     /// <param name="account">The account slot, A or B.</param>
     /// <returns>A task representing the wait operation.</returns>
@@ -338,53 +341,8 @@ public sealed partial class OperationsPage
         string account = "A"
     ) =>
         await GetAccountPanel(account)
-            .Locator("section:has(h2:text-is('Account Status')) div > div:has(> span:text-is('Balance:'))")
-            .WaitForAsync(
-                new()
-                {
-                    State = WaitForSelectorState.Visible,
-                    Timeout = timeout,
-                });
-
-    /// <summary>
-    ///     Waits for the balance projection to show a specific value in the first account panel.
-    /// </summary>
-    /// <param name="expectedBalance">
-    ///     The expected balance value (e.g., "100.00"). Currency-agnostic to support different
-    ///     locales.
-    /// </param>
-    /// <param name="timeout">Optional timeout in milliseconds.</param>
-    /// <param name="account">The account slot, A or B.</param>
-    /// <returns>A task representing the wait operation.</returns>
-    public async Task WaitForBalanceValueAsync(
-        string expectedBalance,
-        float? timeout = null,
-        string account = "A"
-    ) =>
-        await GetAccountPanel(account)
-            .Locator("section:has(h2:text-is('Account Status')) div > div:has(> span:text-is('Balance:'))")
-            .Filter(
-                new()
-                {
-                    HasText = expectedBalance,
-                })
-            .WaitForAsync(
-                new()
-                {
-                    State = WaitForSelectorState.Visible,
-                    Timeout = timeout,
-                });
-
-    /// <summary>
-    ///     Waits for the command success message to appear.
-    /// </summary>
-    /// <param name="timeout">Optional timeout in milliseconds.</param>
-    /// <returns>A task representing the wait operation.</returns>
-    public async Task WaitForCommandSuccessAsync(
-        float? timeout = null
-    ) =>
-        await AccountAPanel.GetByText(
-                "Command executed successfully.",
+            .GetByLabel(
+                $"Account {account} live balance",
                 new()
                 {
                     Exact = true,
@@ -396,9 +354,64 @@ public sealed partial class OperationsPage
                     Timeout = timeout,
                 });
 
-    /// <summary>
-    ///     Waits for the SignalR connection status to reach the expected value.
-    /// </summary>
+    /// <summary>Wait for the balance projection to show a specific value in the selected account panel.</summary>
+    /// <param name="expectedBalance">
+    ///     The expected balance value (e.g., "100.00"). The Spring UI displays the GBP currency used by the domain.
+    /// </param>
+    /// <param name="timeout">Optional timeout in milliseconds.</param>
+    /// <param name="account">The account slot, A or B.</param>
+    /// <returns>A task representing the wait operation.</returns>
+    public async Task WaitForBalanceValueAsync(
+        string expectedBalance,
+        float? timeout = null,
+        string account = "A"
+    ) =>
+        await GetAccountPanel(account)
+            .GetByLabel(
+                $"Account {account} live balance",
+                new()
+                {
+                    Exact = true,
+                })
+            .Filter(
+                new()
+                {
+                    HasTextRegex = new($"^£{Regex.Escape(expectedBalance)}$"),
+                })
+            .WaitForAsync(
+                new()
+                {
+                    State = WaitForSelectorState.Visible,
+                    Timeout = timeout,
+                });
+
+    /// <summary>Wait for the command acceptance response to appear.</summary>
+    /// <param name="timeout">Optional timeout in milliseconds.</param>
+    /// <returns>A task representing the wait operation.</returns>
+    public async Task WaitForCommandSuccessAsync(
+        float? timeout = null
+    ) =>
+        await page.GetByRole(
+                AriaRole.Region,
+                new()
+                {
+                    Name = "Banking responses · this browser",
+                    Exact = true,
+                })
+            .GetByText(
+                "Latest response: accepted.",
+                new()
+                {
+                    Exact = true,
+                })
+            .WaitForAsync(
+                new()
+                {
+                    State = WaitForSelectorState.Visible,
+                    Timeout = timeout,
+                });
+
+    /// <summary>Wait for the SignalR connection status to reach the expected value.</summary>
     /// <param name="expectedStatus">The expected connection status text (e.g., "Connected").</param>
     /// <param name="timeout">Optional timeout in milliseconds.</param>
     /// <returns>A task representing the wait operation.</returns>
@@ -406,11 +419,17 @@ public sealed partial class OperationsPage
         string expectedStatus,
         float? timeout = null
     ) =>
-        await page.Locator("button[aria-label='Connection status']")
+        await page.GetByRole(
+                AriaRole.Button,
+                new()
+                {
+                    Name = $"Connection status: {expectedStatus}",
+                    Exact = true,
+                })
             .Filter(
                 new()
                 {
-                    HasTextRegex = new($"^{Regex.Escape(expectedStatus)}$"),
+                    HasTextRegex = new($"^\\s*{Regex.Escape(expectedStatus)}\\s*$"),
                 })
             .WaitForAsync(
                 new()
@@ -454,4 +473,22 @@ public sealed partial class OperationsPage
             "B" => AccountBPanel,
             var _ => throw new ArgumentOutOfRangeException(nameof(account), account, "Account slot must be A or B."),
         };
+
+    private async Task OpenTaskAsync(
+        string account,
+        string task
+    )
+    {
+        string prefix = account switch
+        {
+            "A" => "account-a",
+            "B" => "account-b",
+            var _ => throw new ArgumentOutOfRangeException(nameof(account), account, "Account slot must be A or B."),
+        };
+        ILocator disclosure = GetAccountPanel(account).Locator($"#{prefix}-{task}-task");
+        if (await disclosure.GetAttributeAsync("open") is null)
+        {
+            await disclosure.Locator("summary").ClickAsync();
+        }
+    }
 }
