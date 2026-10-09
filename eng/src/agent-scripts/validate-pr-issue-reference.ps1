@@ -59,6 +59,12 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     $insideAnchor = $false
     $insideSelect = $false
     $buttonPriorAnchor = $null
+    $blockElements = @(
+        'address', 'article', 'aside', 'blockquote', 'br', 'caption', 'dd', 'details', 'dialog', 'div', 'dl', 'dt',
+        'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header',
+        'hgroup', 'hr', 'li', 'main', 'nav', 'ol', 'p', 'section', 'summary', 'table', 'tbody', 'td', 'tfoot',
+        'th', 'thead', 'tr', 'ul'
+    )
     $tableDepth = 0
     $cellScopes = [System.Collections.Generic.Stack[object]]::new()
     $codeDepth = 0
@@ -147,7 +153,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                             $null = $builder.Append(' ')
                         }
                     }
-                    elseif (-not $insideAnchor -and $tagName -in @('p', 'div', 'li', 'blockquote', 'tr', 'td', 'th', 'br')) {
+                    elseif (-not $insideAnchor -and $tagName -in $blockElements) {
                         $null = $builder.Append(' ')
                     }
                 }

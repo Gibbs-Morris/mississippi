@@ -79,6 +79,32 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body $Body
     }
 
+    It 'separates tracking at rendered block boundaries: <Element>' -ForEach @(
+        @{ Element = 'h1' }; @{ Element = 'h2' }; @{ Element = 'h3' }
+        @{ Element = 'h4' }; @{ Element = 'h5' }; @{ Element = 'h6' }
+        @{ Element = 'dl' }; @{ Element = 'dt' }; @{ Element = 'dd' }
+        @{ Element = 'details' }; @{ Element = 'summary' }; @{ Element = 'section' }
+        @{ Element = 'ul' }; @{ Element = 'ol' }; @{ Element = 'hr' }
+    ) {
+        Assert-ValidReferenceBody -Body ('<' + $Element + '>Refs #741</' + $Element + '><' + $Element + '>Context</' + $Element + '>')
+        Assert-NoReferenceBody -Body ('<' + $Element + '>#</' + $Element + '><' + $Element + '>741</' + $Element + '>')
+    }
+
+    It 'does not combine separate heading numbers into a different issue' {
+        $outcome = Invoke-ReferenceValidator -Body '<h1>#74</h1><h1>1</h1>'
+        $outcome.ExitCode | Should -Not -Be 0
+        @($outcome.Result.References).Count | Should -Be 1
+        $outcome.Result.References[0].Number | Should -Be 74
+    }
+
+    It 'preserves inline formatting and external ownership at block boundaries: <Case>' -ForEach @(
+        @{ Case = 'inline strong'; Body = 'Refs #<strong>741</strong>' }
+        @{ Case = 'inline emphasis'; Body = 'Refs #<em>741</em>' }
+    ) {
+        Assert-ValidReferenceBody -Body $Body
+        Assert-NoReferenceBody -Body ('<a href="https://example.test">' + $Body + '<h1>Context</h1></a>')
+    }
+
     It 'ignores tracking in mathematical expressions: <Case>' -ForEach @(
         @{ Case = 'inline phantom'; Body = '$\hphantom{\#741}$' }
         @{ Case = 'display phantom'; Body = '$$\hphantom{\#741}$$' }
