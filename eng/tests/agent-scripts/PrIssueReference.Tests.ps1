@@ -163,6 +163,14 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body 'Example `<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">` is code. <a href="https://github.com/other/repo/issues/999">context</a>'
     }
 
+    It 'preserves rendered tracking after an inline code span containing a longer backtick run' {
+        Assert-ValidReferenceBody -Body 'Example `<a href="https://github.com/other/repo/issues/999">`` x` is code. Refs #741. <a href="https://github.com/other/repo/issues/999">context</a>'
+    }
+
+    It 'ignores a code anchor when its span contains a longer backtick run' {
+        Assert-NoReferenceBody -Body 'Example `<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">`` x` is code. <a href="https://github.com/other/repo/issues/999">context</a>'
+    }
+
     It 'preserves a reference after inline comment opener code' {
         Assert-ValidReferenceBody -Body 'The token `<!--` is code. Refs #741.'
     }

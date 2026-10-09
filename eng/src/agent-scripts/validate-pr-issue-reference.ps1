@@ -143,7 +143,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - bounded Markdown renderer appr
             if ($withoutComments[$closingIndex] -ne '`') { $closingIndex++; continue }
             $candidate = $closingIndex
             while ($candidate -lt $withoutComments.Length -and $withoutComments[$candidate] -eq '`') { $candidate++ }
-            if (($candidate - $closingIndex) -ge $delimiterLength) {
+            if (($candidate - $closingIndex) -eq $delimiterLength) {
                 $closingLength = $candidate - $closingIndex
                 break
             }
