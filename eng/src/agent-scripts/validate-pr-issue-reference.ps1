@@ -92,7 +92,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                             if ($localIssueHref.Success) {
                                 $anchorHrefs.Add("https://github.com/$RepositoryOwner/$RepositoryName/issues/$($localIssueHref.Groups['Number'].Value)")
                             }
-                            $insideAnchor = $true
+                            $insideAnchor = $href -notmatch '^[\x00-\x20]'
                             $null = $builder.Append(' ')
                         }
                     }

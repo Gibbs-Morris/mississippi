@@ -157,6 +157,22 @@ Describe 'PR issue reference validator' {
         Assert-ValidReferenceBody -Body '<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking issue</a>'
     }
 
+    It 'preserves tracking labels when GitHub strips a space-prefixed link: <Case>' -ForEach @(
+        @{ Case = 'external URL'; Body = '<a href=" https://example.test ">Refs #741</a>' }
+        @{ Case = 'local URL'; Body = '<a href=" https://github.com/Gibbs-Morris/mississippi/issues/741">Refs #741</a>' }
+        @{ Case = 'encoded tab'; Body = '<a href="&#9;https://example.test">Refs #741</a>' }
+    ) {
+        Assert-ValidReferenceBody -Body $Body
+    }
+
+    It 'rejects stripped links without tracking and preserves valid link ownership: <Case>' -ForEach @(
+        @{ Case = 'stripped local URL'; Body = '<a href=" https://github.com/Gibbs-Morris/mississippi/issues/741 ">tracking</a>' }
+        @{ Case = 'valid external URL'; Body = '<a href="https://example.test">Refs #741</a>' }
+        @{ Case = 'valid empty URL'; Body = '<a href="">Refs #741</a>' }
+    ) {
+        Assert-NoReferenceBody -Body $Body
+    }
+
     It 'ignores non-rendered HTML declarations: <Case>' -ForEach @(
         @{ Case = 'document type'; Markup = '<!DOCTYPE html PUBLIC "#741">' }
         @{ Case = 'processing instruction'; Markup = '<?example #741 ?>' }
