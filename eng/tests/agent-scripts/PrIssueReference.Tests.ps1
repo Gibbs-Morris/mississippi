@@ -52,6 +52,20 @@ Describe 'PR issue reference validator' {
         @($outcome.Result.ResolvedIssues).Count | Should -Be 1
     }
 
+    It 'preserves GitHub-visible Markdown text consumed by advanced extensions: <Case>' -ForEach @(
+        @{ Case = 'abbreviation definition'; Body = '*[term]: Refs #741' }
+        @{ Case = 'generic attribute syntax'; Body = 'Context {#741}' }
+    ) {
+        Assert-ValidReferenceBody -Body $Body
+    }
+
+    It 'ignores abbreviation-like text inside code or external links: <Case>' -ForEach @(
+        @{ Case = 'inline code'; Body = '`*[term]: Refs #741`' }
+        @{ Case = 'external anchor'; Body = '<a href="https://github.com/other/repo/issues/999">*[term]: Refs #741</a>' }
+    ) {
+        Assert-NoReferenceBody -Body $Body
+    }
+
     It 'accepts a qualified same-repository issue reference' {
         Assert-ValidReferenceBody -Body 'Refs Gibbs-Morris/mississippi#741.'
     }
