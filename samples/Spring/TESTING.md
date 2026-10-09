@@ -30,3 +30,52 @@ L3 shares its browser fixture within the test collection. Use separate worktrees
 The root command records the selected level, suite, project, result, and artifact directory in `summary.json`.
 
 See [Spring validation prerequisites and diagnostics](../../README.md#validate-spring-after-a-change) and the [repository test-level definitions](../../.github/instructions/testing.instructions.md).
+
+## Flagship journey coverage
+
+The full L3 suite preserves the banking, transfer, API-reference, accessible panel and theme journeys.
+InletStartupStatusTests retains the controlled HTTP 503 startup failure, real disconnected/error status, manual reconnect and connected outcome, using the named nonmodal connection notice. It also holds the initial negotiation to verify Connecting until the real transport is ready.
+CommandEntityUrlTests verifies reserved and percent-encoded identifiers through real commands and projection updates, including reload. Slash and dot-segment identifiers must show the endpoint rejection in the shared banking responses region, send no command request and leave Open Account enabled.
+FlagshipJourneysTests adds first-run completion at 390×844, updates in a second browser, rejected withdrawals with unchanged projections, a real committed deposit whose reply is lost with expanded keyboard-scrollable history at 320/390px, all six burst controls and ledger retention, high-value investigation flags, defined transfer compensation, the five-persona command/read/saga authorization matrix including reselecting the active persona, delayed allowed reads after a newer denial, and account anchors/shared links after task navigation.
+The L0 component tests distinguish accepted requests from loading projections, prioritize in-flight requests, retain mixed response history, escape snapshot content and prevent an invalid transfer draft from submitting an earlier valid amount.
+ConnectionDisclosureBrowserTests exercises both Prepare accounts and Move money at 320px, 390px and 1440px against the running server. Touch on phones and keyboard activation on desktop verify that the trigger targets its own stable disclosure, closing removes the controls reference and restores browser focus, reopening retains the target, and the page stays within its viewport. L0 tests render two instances of each page together to verify distinct targets and independent close/focus behavior; ordinary navigation renders one task page at a time.
+Rendered page L0 tests cover account switching, automatic Auth Proof reads for the selected entity and all nine missing, loading, failed and healthy investigation queue cases. Auth Proof draft tests preserve pending/completed reads during typing and blur, verify explicit trimmed/default commits, avoid repeated reads for the same normalized entity, and retain the selected command targets, saga marker and persona refreshes while a different draft is unapplied. AuthProofEntityBrowserTests verifies touch/Enter commits at 320px, 390px and 1440px, no observed HTTP reads for draft prefixes, real accepted commands and an observed count of one, then an actual 401 for the selected entity while the draft remains unapplied. The existing five-persona and obsolete-response journeys retain their assertions and explicitly submit entity selection. Pending and failed queue reads hide earlier rows and their version without deleting the cached projection.
+OperationsPageTests verifies one balance and one ledger subscription per unique account ID, including equal and case-distinct IDs, direct query selection, stable rerenders, swapped panels, selection removal and renderer disposal. SharedAccountSelectionBrowserTests selects a real, already opened account through an equal-ID shared link at 390px and 1440px, submits real deposits and observes both balances and ledgers update before and after switching and reselecting one panel. It uses touch on the phone and keyboard activation on desktop, checks page containment and saves native screenshot metadata and a trace.
+Three rendered investigation cases use German, Finnish and Thai cultures to verify fixed GBP separators and Gregorian UTC timestamps, including the conversion from a nonzero source offset. Each restores the previous current culture.
+AccountProjectionReadStatesTests uses the real projection reducers to verify cold and cached balance/ledger errors, every retained saga phase after a failed status read, loading reads and healthy ledger states. Component and page tests also verify connection-trigger focus after closing details, primary versus modified account jumps, encoded demo-pair links and actual connection diagnostics when open or closed.
+AccountProjectionReadStatesBrowserTests supplies HTTP 503 responses to the real projection fetcher at 320px, 390px and 1440px. Cold balance/ledger cases send real opening commands before the first read; cached cases first observe a real £25 deposit and retain the browser document across task navigation. Transfer cases verify an accepted start and both actual account updates while the failed status read remains unknown. No successful projection data is fabricated. Closed and expanded error captures accompany touch, keyboard, focus and page-width assertions. Cached saga phases are covered by L0 tests; these browser cases fail the first saga read. Diagnostic capture preserves a failed journey if capture also fails.
+InvestigationsQueueStatesTests verifies first-read failures and failures after observing a real flagged deposit at 320px, 390px and 1440px. It holds the real projection fetch with an explicit release gate, verifies and captures loading without the cached version or healthy outcomes, then supplies a controlled HTTP 503; successful queue data comes from the running server. The cached-data cases use touch navigation on phones and keyboard navigation on desktop. A browser document-origin assertion guards the cached-data precondition. Each failure capture shows the clear headline and guidance; its Read error details disclosure opens through touch or keyboard and retains the actual error. Closed and expanded captures accompany the assertions. Diagnostic capture preserves the original journey failure if capture also fails.
+
+Use the [capability map](JOURNEYS.md) to connect a demo task to its sources and assertions.
+See [browser review evidence](#browser-review-evidence) for the artifact workflow and its limits.
+The C# Full suite also saves named flagship PNGs and per-image route, viewport, theme and browser metadata under its runner-owned artifact directory.
+Three touch cases cover all task routes at 1440×900, 390×844 and 320×740, including active navigation, heading focus and containment.
+Existing journey assertions remain in place; screenshots support them and do not replace passing L2/L3 results.
+
+Before final validation, stop the interactive app and run the canonical cleanup and Release pipeline in addition to full L2 and L3.
+go.ps1 excludes deployed L2/L3 tests. Doctor's READY result is prerequisite evidence only.
+Samples do not require mutation testing under the current policy; report any chosen or skipped mutation run explicitly.
+
+## Browser review evidence
+
+Stop the interactive app, then run pwsh ./test-spring.ps1 -TestLevel L3 -Suite Full.
+Read the emitted SUMMARY JSON and spring.trx; PASS requires executed, passing tests.
+The runner creates a unique directory under artifacts/spring, containing its test results, resource logs, banking screenshot and trace.
+Its flagship subdirectory contains named PNGs and per-image route, viewport, theme, browser and file-timestamp metadata from the C# Playwright tests.
+
+FlagshipRouteEvidenceTests taps all five task links at 1440×900, 390×844 and 320×740, checking the active task, heading focus and page containment.
+FlagshipJourneysTests retains the existing outcome assertions and captures first-run, shared-pair, account switching, bursts, stale-read denial, investigation, persona, compensation and lost-reply states.
+The existing banking tests retain their additional setup, transfer and theme screenshots. The startup-failure journey also captures disconnected and connected states at phone and desktop sizes.
+The full command-burst journey also saves all-bursts.png and all-bursts.zip on success or failure, including account setup, network responses and console records. Its balance, request-count and retained-ledger assertions are unchanged; capture errors preserve the original test failure.
+These images are observed browser states, not pixel-comparison baselines or replacements for assertions.
+The C# capture helper does not run axe or certify accessibility; semantic, touch, focus and keyboard checks remain explicit test assertions.
+
+Generated screenshots, manifests, traces and raw results belong in the ignored artifacts directory and review attachments, not in the application source tree.
+The existing L3 Tests workflow uploads `artifacts/spring` as `spring-l3-<suite>-<runner OS>` and retains it for seven days.
+For the complete gallery in CI, dispatch that workflow on the reviewed branch with suite=Full; the normal PR run selects Smoke.
+Link the exact run and artifact in the PR, identify the captured routes and sizes, and attach selected phone and desktop previews to the PR description or a top-level comment.
+Archive needed evidence before that retention period expires.
+
+For interactive auth comparison, use run-spring.ps1 with -LocalAuth On, stop it, then relaunch with -LocalAuth Off.
+The local header personas are a development demonstration; with auth off, all five receive 401 on protected Auth Proof endpoints.
+Do not leave the interactive app running while test scripts use the same worktree.

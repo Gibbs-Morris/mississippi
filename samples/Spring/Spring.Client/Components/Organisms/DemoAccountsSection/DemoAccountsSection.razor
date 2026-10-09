@@ -1,23 +1,40 @@
 @namespace MississippiSamples.Spring.Client.Components.Organisms
 
-<Pane Title="Demo Accounts" aria-label="Demo account setup">
-    <p>Initialize two demo accounts to quickly exercise transfers and projections.</p>
-    <button type="button" @onclick="OnInitialize" disabled="@IsExecutingOrLoading">
-        Initialize demo accounts
-    </button>
-    @if (IsInitialized)
-    {
-        <dl>
+<Pane Title="Start with Ada and Grace" aria-label="Demo account setup">
+    <div class="spring-demo-setup">
+        <p>One action sends two account-opening commands. Each account starts with a £500 deposit.</p>
+        @if (IsInitialized)
+        {
+            <h3>Next: check the live accounts</h3>
+            <p>IDs are selected. Check the banking responses below, then verify Ada and Grace with £500 each on Move money.</p>
+        }
+        <div class="spring-demo-actions">
+            <button type="button" class="@(IsInitialized ? null : "spring-primary")" @onclick="OnInitialize" disabled="@IsExecutingOrLoading">Initialize demo accounts</button>
+            @if (IsInitialized)
+            {
+                <a class="spring-button spring-primary" href="@OperationsUri">Go to Operations <span aria-hidden="true">↗</span></a>
+            }
+        </div>
+        <div class="spring-demo-pair">
             <div>
-                <dt>Account A</dt>
-                <dd>@(AccountAName ?? "Account A")</dd>
-                <dd id="demo-account-a-id" aria-label="Account A ID">@AccountAId</dd>
+                <span class="spring-avatar" aria-hidden="true">A</span>
+                <h3>@(AccountAName ?? "Ada Lovelace")</h3>
+                <p>Account A · initial deposit £500</p>
+                @if (IsInitialized)
+                {
+                    <code id="demo-account-a-id" aria-label="Account A ID">@AccountAId</code>
+                }
             </div>
             <div>
-                <dt>Account B</dt>
-                <dd>@(AccountBName ?? "Account B")</dd>
-                <dd id="demo-account-b-id" aria-label="Account B ID">@AccountBId</dd>
+                <span class="spring-avatar" aria-hidden="true">G</span>
+                <h3>@(AccountBName ?? "Grace Hopper")</h3>
+                <p>Account B · initial deposit £500</p>
+                @if (IsInitialized)
+                {
+                    <code id="demo-account-b-id" aria-label="Account B ID">@AccountBId</code>
+                }
             </div>
-        </dl>
-    }
+        </div>
+        <p class="spring-demo-hint">Each initialization creates a new pair. Existing accounts remain in the running sample.</p>
+    </div>
 </Pane>

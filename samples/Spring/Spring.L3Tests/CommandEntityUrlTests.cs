@@ -158,11 +158,18 @@ public sealed class CommandEntityUrlTests
             await operations.EnterInitialDepositAsync(10m);
             await operations.ClickOpenAccountAsync();
             ILocator panel = page.Locator("#account-a-operations-panel");
-            await panel.GetByText(
-                    "The entity ID cannot contain '/' or be '.' or '..'",
+            await page.GetByRole(
+                    AriaRole.Region,
                     new()
                     {
-                        Exact = false,
+                        Name = "Banking responses · this browser",
+                        Exact = true,
+                    })
+                .GetByRole(AriaRole.Alert)
+                .Filter(
+                    new()
+                    {
+                        HasText = "The entity ID cannot contain '/' or be '.' or '..'",
                     })
                 .WaitForAsync();
             Assert.True(

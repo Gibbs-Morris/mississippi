@@ -1,10 +1,10 @@
-<div class="rf-input-field" data-state="@State" @attributes="AdditionalAttributes">
+<div class="rf-c-input-field" data-state="@State" @attributes="AdditionalAttributes">
     @if (!string.IsNullOrEmpty(Label))
     {
-        <label class="rf-input-field__label" for="@EffectiveId">@Label</label>
+        <label class="rf-c-input-field__label" for="@EffectiveId">@Label</label>
     }
     <input @attributes="InputAttributes"
-           class="rf-input-field__input"
+           class="rf-c-input-field__input"
            id="@EffectiveId"
            type="@Type"
            value="@Value"
@@ -18,10 +18,10 @@
            @onblur="HandleBlurAsync"/>
     @if (HasHelperText)
     {
-        <p id="@HelperId" class="rf-input-field__helper">@HelperText</p>
+        <p id="@HelperId" class="rf-c-input-field__helper">@HelperText</p>
     }
     @if (HasErrorText)
     {
-        <p id="@ErrorId" class="rf-input-field__error" role="alert">@ErrorText</p>
+        <p id="@ErrorId" class="rf-c-input-field__error" role="alert">@ErrorText</p>
     }
 </div>

@@ -1,23 +1,90 @@
 @page "/"
 @namespace MississippiSamples.Spring.Client.Pages
 
-<main>
-    <h1>Bank Account Demo</h1>
-    <p>Select a task to explore the sample.</p>
-    <nav>
-        <ul>
-            <li>
-                <NavLink href="/accounts">Accounts</NavLink>
-            </li>
-            <li>
-                <NavLink href="/operations">Operations</NavLink>
-            </li>
-            <li>
-                <NavLink href="/investigations">Investigations</NavLink>
-            </li>
-            <li>
-                <NavLink href="/auth-proof">Auth Proof</NavLink>
-            </li>
-        </ul>
-    </nav>
+<PageTitle>Spring · a live Mississippi demo</PageTitle>
+<main class="spring-home">
+    <section class="spring-hero" aria-labelledby="welcome-heading">
+        <div class="spring-hero-copy">
+            <p class="spring-kicker">THE MISSISSIPPI FLAGSHIP DEMO</p>
+            <h1 id="welcome-heading">Move money. <br/>See the system <br/><span>come to life.</span></h1>
+            <p class="spring-intro">
+                Open two fictional bank accounts, make a change and watch live balances
+                and transactions follow. Every outcome comes from the running system.
+            </p>
+            <a class="spring-button spring-primary" href="/accounts">Start with two accounts <span aria-hidden="true">↗</span></a>
+            <p class="spring-first-run">New here? Start with Ada and Grace, each with £500.</p>
+        </div>
+        <aside class="spring-flow" aria-label="How Mississippi handles a banking action">
+            <div class="spring-flow-heading">
+                <span>ONE ACTION. A LIVE OUTCOME.</span><span aria-hidden="true">↗</span>
+            </div>
+            <ol>
+                <li>
+                    <span class="spring-step">01</span>
+                    <div>
+                        <h2>You choose a task</h2>
+                        <p>Deposit, withdraw or transfer money.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="spring-step">02</span>
+                    <div>
+                        <h2>The command is checked</h2>
+                        <p>The domain accepts it or returns a reason.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="spring-step">03</span>
+                    <div>
+                        <h2>Events update the views</h2>
+                        <p>Inlet brings balance and ledger projections to the browser.</p>
+                    </div>
+                </li>
+            </ol>
+            <p class="spring-flow-note">
+                An accepted command and a refreshed projection are separate observations.
+                You will see both in the demo.
+            </p>
+        </aside>
+    </section>
+    <section class="spring-task-section" aria-labelledby="tasks-heading">
+        <div class="spring-section-heading">
+            <h2 id="tasks-heading">What do you want to try?</h2>
+            <p>Follow the first path, or explore a specific capability.</p>
+        </div>
+        <div class="spring-task-grid">
+            <a class="spring-task" href="/accounts">
+                <span class="spring-task-number">01 / START HERE</span>
+                <h3>Prepare your accounts</h3>
+                <p>Create the demo pair or open accounts using your own IDs.</p><span class="spring-task-next">Account commands <span aria-hidden="true">↗</span></span>
+            </a>
+            <a class="spring-task" href="/operations">
+                <span class="spring-task-number">02 / MOVE MONEY</span>
+                <h3>Make a change. Verify it.</h3>
+                <p>Deposit, withdraw and transfer. Follow balances, ledgers and saga outcomes.</p><span class="spring-task-next">Live projections &amp; sagas <span aria-hidden="true">↗</span></span>
+            </a>
+            <a class="spring-task" href="/investigations">
+                <span class="spring-task-number">03 / FOLLOW AN EVENT</span>
+                <h3>Find a flagged deposit</h3>
+                <p>A deposit above £10,000 triggers a separate investigation queue.</p><span class="spring-task-next">Event-driven effects <span aria-hidden="true">↗</span></span>
+            </a>
+            <a class="spring-task" href="/auth-proof">
+                <span class="spring-task-number">04 / TEST A BOUNDARY</span>
+                <h3>Change who has access</h3>
+                <p>Compare five local personas against authenticated, role and claim rules.</p><span class="spring-task-next">Generated authorization <span aria-hidden="true">↗</span></span>
+            </a>
+        </div>
+    </section>
+    <section class="spring-context" aria-labelledby="context-heading">
+        <div>
+            <p class="spring-kicker">BUILT WITH MISSISSIPPI</p>
+            <h2 id="context-heading">Inspect what makes it work.</h2>
+        </div>
+        <p>
+            Generated commands connect the UI to an event-sourced domain. Reservoir holds client state.
+            Inlet updates read projections. Sagas coordinate a transfer across accounts.
+            Refraction provides the presentation controls and themes.
+        </p>
+        <a href="/scalar/v1" target="_blank" rel="noopener noreferrer">Explore the generated API ↗</a>
+    </section>
 </main>

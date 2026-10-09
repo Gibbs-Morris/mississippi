@@ -3,6 +3,7 @@ using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.Reducers;
 using Mississippi.Reservoir.Abstractions;
 
+using MississippiSamples.Spring.Client.Features.AuthProof.Dtos;
 using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos;
 using MississippiSamples.Spring.Client.Features.BankAccountLedger.Dtos;
 using MississippiSamples.Spring.Client.Features.FlaggedTransactions.Dtos;
@@ -16,9 +17,7 @@ namespace MississippiSamples.Spring.Client.Features;
 /// </summary>
 internal static class ProjectionsFeatureRegistration
 {
-    /// <summary>
-    ///     Adds projection reducers for all known projection DTOs.
-    /// </summary>
+    /// <summary>Add projection reducers for all known projection DTOs.</summary>
     /// <param name="builder">The Reservoir builder.</param>
     /// <returns>The builder for chaining.</returns>
     public static IReservoirBuilder AddProjectionsFeature(
@@ -26,6 +25,7 @@ internal static class ProjectionsFeatureRegistration
     )
     {
         builder.AddFeatureState<ProjectionsFeatureState>(feature => feature
+            .AddProjectionReducers<AuthProofProjectionDto>()
             .AddProjectionReducers<BankAccountBalanceProjectionDto>()
             .AddProjectionReducers<BankAccountLedgerProjectionDto>()
             .AddProjectionReducers<FlaggedTransactionsProjectionDto>()

@@ -1,0 +1,30 @@
+@namespace MississippiSamples.Spring.Client.Components.Molecules
+
+<section class="spring-snapshot">
+    <h2>@Title</h2>
+    @if (Rows.Count == 0)
+    {
+        <p>No snapshot data available.</p>
+    }
+    else
+    {
+        <div class="spring-snapshot-scroll" role="region" aria-label="@Title" tabindex="0">
+            <table>
+                <caption>@Title</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Property</th><th scope="col">Value</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach ((string Name, string Value) row in Rows)
+                {
+                    <tr>
+                        <th scope="row">@row.Name</th><td>@row.Value</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

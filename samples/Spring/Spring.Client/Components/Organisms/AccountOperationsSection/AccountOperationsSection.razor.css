@@ -1,58 +1,38 @@
-/* Temporary spacing references: #405 spring-transfer-token-migration exclusion.
- * Scope, owner and removal conditions: https://github.com/Gibbs-Morris/mississippi/issues/405#issuecomment-5964011855
+.spring-account { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--spring-space-panel); min-width: 0; }
+.spring-account-heading { display: flex; align-items: start; justify-content: space-between; gap: var(--spring-space-stack); }
+.spring-account-heading h2 { display: grid; gap: var(--spring-space-inline); min-width: 0; }
+.spring-account-heading code { color: var(--rf-color-text-secondary); font-size: 0.7rem; font-weight: 400; letter-spacing: 0; line-height: 1.5; overflow-wrap: anywhere; }
+.spring-account-heading button { padding-inline: var(--spring-space-control); font-size: var(--spring-type-control); }
+.spring-balance { display: grid; gap: 0.35rem; padding: var(--spring-space-inset); border: var(--spring-border-width) solid var(--rf-color-text-accent); border-radius: var(--spring-radius-panel); background: var(--rf-color-surface-glass); min-width: 0; }
+.spring-holder { font-weight: 600; overflow-wrap: anywhere; }
+.spring-balance-label { color: var(--rf-color-text-secondary); font-size: var(--spring-type-detail); margin-top: var(--spring-space-control); }
+.spring-balance-value { display: block; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.3; font-weight: 650; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.spring-projection-meta { font-size: var(--spring-type-caption); color: var(--rf-color-text-secondary); margin-top: var(--spring-space-inline); }
+.spring-action-form { display: grid; gap: var(--spring-space-stack); min-width: 0; }
+.spring-action-form legend { padding-bottom: var(--spring-space-control); font-size: var(--spring-type-support); }
+.spring-action-form p, .spring-ledger > p, .spring-bursts p { color: var(--rf-color-text-secondary); font-size: var(--spring-type-detail); }
+.spring-action-form button { width: 100%; }
+.spring-prerequisite { color: var(--rf-color-text-secondary); font-size: var(--spring-type-detail); }
+.spring-transfer-content { display: grid; gap: var(--spring-space-panel); min-width: 0; }
+/* The marked TelemetryStrip public root needs wrapping for long saga IDs.
+ * No private Refraction elements are selected. Review when it exposes a layout parameter.
  */
-.spring-transfer__content {
-    display: grid;
-    gap: var(--rf-raw-space-4);
-    min-width: 0;
-}
-
-.spring-transfer__form {
-    display: grid;
-    gap: var(--rf-raw-space-4);
-    min-width: 0;
-    margin: 0;
-}
-
-.spring-transfer__field {
-    display: grid;
-    gap: var(--rf-raw-space-2);
-    min-width: 0;
-}
-
-/* These selectors cross isolation only to the Spring-marked TelemetryStrip public root.
- * Wrapping and accents preserve its base classes and do not target private elements.
- * Review when the component provides supported layout or accent parameters.
- */
-.spring-transfer__content ::deep [data-spring-transfer-status="true"] {
-    align-items: flex-start;
-    flex-wrap: wrap;
-    min-width: 0;
-    border-inline-start: 0.25rem solid var(--rf-color-text-accent);
-    overflow-wrap: anywhere;
-}
-
-.spring-transfer__status-details {
-    display: grid;
-    flex: 1 1 100%;
-    gap: var(--rf-raw-space-2);
-    min-width: 0;
-}
-
-.spring-transfer__content ::deep [data-spring-transfer-status="true"][data-state="complete"] {
-    border-inline-start-color: var(--rf-color-status-success);
-}
-
-.spring-transfer__content ::deep [data-spring-transfer-status="true"][data-state="alert"] {
-    border-inline-start-color: var(--rf-color-status-warning);
-}
-
-.spring-transfer__content ::deep [data-spring-transfer-status="true"][data-state="error"] {
-    border-inline-start-color: var(--rf-color-status-error);
-}
-
-@media (max-width: 600px) {
-    .spring-transfer__form button {
-        width: 100%;
-    }
-}
+.spring-transfer-content ::deep [data-spring-transfer-status="true"] { flex-wrap: wrap; min-width: 0; align-items: start; border-inline-start: var(--spring-status-border-width) solid var(--rf-color-text-accent); }
+.spring-transfer-content ::deep [data-spring-transfer-status="true"][data-state="complete"] { border-inline-start-color: var(--rf-color-status-success); }
+.spring-transfer-content ::deep [data-spring-transfer-status="true"][data-state="alert"] { border-inline-start-color: var(--rf-color-status-warning); }
+.spring-transfer-content ::deep [data-spring-transfer-status="true"][data-state="error"] { border-inline-start-color: var(--rf-color-status-error); }
+.spring-transfer-status { display: grid; gap: 0.6rem; flex-basis: 100%; min-width: 0; overflow-wrap: anywhere; font-size: var(--spring-type-detail); }
+.spring-step-key { color: var(--rf-color-text-secondary); font-size: var(--spring-type-caption); }
+.spring-ledger { display: grid; gap: 0.8rem; padding-block: var(--spring-space-inline); }
+.spring-ledger-heading { display: flex; justify-content: space-between; gap: var(--spring-space-stack); }
+.spring-ledger-heading span { color: var(--rf-color-text-secondary); font-size: var(--spring-type-control); }
+.spring-ledger table { font-size: var(--spring-type-detail); table-layout: fixed; }
+.spring-ledger th:first-child { width: 22%; }
+.spring-ledger th:last-child { width: 38%; text-align: right; }
+.spring-ledger td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.spring-ledger caption { text-align: left; color: var(--rf-color-text-secondary); font-size: var(--spring-type-caption); padding-bottom: var(--spring-space-inline); }
+.spring-bursts { border-top: var(--spring-border-width) solid var(--rf-color-text-muted); }
+.spring-bursts fieldset { margin-block: var(--spring-space-stack); }
+.spring-burst-buttons { display: flex; flex-wrap: wrap; gap: var(--spring-space-inline); margin-top: var(--spring-space-inline); }
+.spring-read-error { border-inline-start: var(--spring-status-border-width) solid var(--rf-color-status-error); padding-inline-start: var(--spring-space-control); overflow-wrap: anywhere; color: var(--rf-color-text-primary); font-size: var(--spring-type-detail); }
+.spring-task-disclosure { min-width: 0; border-top: var(--spring-border-width) solid var(--rf-color-text-muted); }

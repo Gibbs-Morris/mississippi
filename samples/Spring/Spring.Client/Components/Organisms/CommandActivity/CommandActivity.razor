@@ -1,0 +1,67 @@
+@using Mississippi.Inlet.Client.Abstractions.Commands
+@namespace MississippiSamples.Spring.Client.Components.Organisms
+
+<section class="spring-command-activity" aria-label="@Label">
+    <div class="spring-command-summary" role="status" aria-live="polite">
+        <strong>@Label</strong>
+        @if (State.IsExecuting)
+        {
+            <span>@State.InFlightCommands.Count request(s) awaiting a response.</span>
+        }
+        else if (State.LastCommandSucceeded is true)
+        {
+            <span>Latest response: accepted.</span>
+        }
+        else if (State.LastCommandSucceeded is false)
+        {
+            <span>Latest request: failed.</span>
+        }
+        else
+        {
+            <span>No command response yet.</span>
+        }
+    </div>
+    <p>@Explanation</p>
+    @if (State.LastCommandSucceeded is false)
+    {
+        <p>This failure status alone does not establish the server outcome. Check the error details and live projection, especially after a lost response.</p>
+    }
+    @if (!string.IsNullOrEmpty(State.ErrorMessage))
+    {
+        <p class="spring-command-error" role="alert">
+            <strong>@State.ErrorCode</strong> @State.ErrorMessage
+        </p>
+    }
+    @if (State.CommandHistory.Count > 0)
+    {
+        <details>
+            <summary>Command history · @State.CommandHistory.Count request(s)</summary>
+            <p>
+                @State.CommandHistory.Count(entry => entry.Status == CommandStatus.Succeeded) accepted ·
+                @State.CommandHistory.Count(entry => entry.Status == CommandStatus.Failed) failed.
+                Counts cover the retained history only (latest 200 requests), including earlier tasks. Responses are independent of projection updates.
+            </p>
+            <div class="spring-history-scroll" role="region" aria-label="@($"{Label} command history")" tabindex="0">
+                <table>
+                    <caption>Latest requests first. IDs identify requests, not projection versions.</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col">Command</th><th scope="col">Request status</th><th scope="col">Request ID</th><th scope="col">Detail</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (CommandHistoryEntry entry in State.CommandHistory.Reverse())
+                    {
+                        <tr>
+                            <td>@entry.CommandType</td><td>@ResponseText(entry.Status)</td>
+                            <td>
+                                <code>@entry.CommandId</code>
+                            </td><td>@entry.ErrorCode @entry.ErrorMessage</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </details>
+    }
+</section>

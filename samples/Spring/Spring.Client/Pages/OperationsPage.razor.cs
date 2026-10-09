@@ -1,7 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.SignalRConnection;
@@ -18,6 +22,7 @@ using MississippiSamples.Spring.Client.Features.DemoAccounts;
 using MississippiSamples.Spring.Client.Features.DualEntitySelection;
 using MississippiSamples.Spring.Client.Features.DualEntitySelection.Selectors;
 using MississippiSamples.Spring.Client.Features.MoneyTransferSaga.Actions;
+using MississippiSamples.Spring.Client.Features.MoneyTransferSaga.State;
 using MississippiSamples.Spring.Client.Features.MoneyTransferStatus.Dtos;
 
 
@@ -28,11 +33,19 @@ namespace MississippiSamples.Spring.Client.Pages;
 /// </summary>
 public sealed partial class OperationsPage
 {
+    private readonly string connectionDetailsId = $"spring-connection-details-{Guid.NewGuid():N}";
+
     private readonly AccountPanelState panelA = new();
 
     private readonly AccountPanelState panelB = new();
 
-    private bool isConnectionModalOpen;
+    private readonly HashSet<string> subscribedAccountIds = new(StringComparer.Ordinal);
+
+    private ElementReference accountAPanelElement;
+
+    private ElementReference accountBPanelElement;
+
+    private bool isConnectionDetailsOpen;
 
     private string? lastAutoAccountAId;
 
@@ -45,10 +58,6 @@ public sealed partial class OperationsPage
     private string? lastQueryAccountAId;
 
     private string? lastQueryAccountBId;
-
-    private string? subscribedEntityIdA;
-
-    private string? subscribedEntityIdB;
 
     private string? subscribedTransferSagaIdA;
 
@@ -98,6 +107,9 @@ public sealed partial class OperationsPage
     /// </summary>
     private BankAccountBalanceProjectionDto? BalanceProjectionB => GetBalanceProjection(AccountBId);
 
+    private BankAccountAggregateState CommandState =>
+        Select<BankAccountAggregateState, BankAccountAggregateState>(state => state);
+
     /// <summary>
     ///     Gets the current connection identifier.
     /// </summary>
@@ -123,12 +135,6 @@ public sealed partial class OperationsPage
     ///     Gets a value indicating whether the SignalR connection is not established.
     /// </summary>
     private bool IsDisconnected => Select<SignalRConnectionState, bool>(SignalRConnectionSelectors.IsDisconnected);
-
-    /// <summary>
-    ///     Gets a value indicating whether the last command succeeded.
-    /// </summary>
-    private bool? LastCommandSucceeded =>
-        Select<BankAccountAggregateState, bool?>(BankAccountAggregateSelectors.DidLastCommandSucceed);
 
     /// <summary>
     ///     Gets the timestamp when the connection was last successfully established.
@@ -187,6 +193,11 @@ public sealed partial class OperationsPage
     private int ReconnectAttemptCount =>
         Select<SignalRConnectionState, int>(SignalRConnectionSelectors.GetReconnectAttemptCount);
 
+    private string ShareUrl => NavigationManager.ToAbsoluteUri(BuildOperationsUrl(AccountAId, AccountBId)).ToString();
+
+    private MoneyTransferSagaState TransferCommandState =>
+        Select<MoneyTransferSagaState, MoneyTransferSagaState>(state => state);
+
     /// <summary>
     ///     Gets the transfer status projection for account A.
     /// </summary>
@@ -226,6 +237,19 @@ public sealed partial class OperationsPage
         return url;
     }
 
+    private static Task FocusAccountPanelAsync(
+        ElementReference panel,
+        MouseEventArgs eventArgs
+    )
+    {
+        if ((eventArgs.Button != 0) || eventArgs.CtrlKey || eventArgs.MetaKey || eventArgs.ShiftKey || eventArgs.AltKey)
+        {
+            return Task.CompletedTask;
+        }
+
+        return panel.FocusAsync().AsTask();
+    }
+
     private static string FormatTimestamp(
         DateTimeOffset? timestamp
     ) =>
@@ -243,8 +267,11 @@ public sealed partial class OperationsPage
     {
         if (disposing)
         {
-            UnsubscribeFromAccountProjections(subscribedEntityIdA);
-            UnsubscribeFromAccountProjections(subscribedEntityIdB);
+            foreach (string entityId in subscribedAccountIds)
+            {
+                UnsubscribeFromAccountProjections(entityId);
+            }
+
             UnsubscribeFromTransferSaga(subscribedTransferSagaIdA);
             UnsubscribeFromTransferSaga(subscribedTransferSagaIdB);
         }
@@ -271,11 +298,19 @@ public sealed partial class OperationsPage
         SyncAccountIdsFromQuery();
     }
 
-    private void ClearAccountA() => Dispatch(new SetEntityAIdAction(string.Empty));
+    private void ClearAccountA()
+    {
+        Dispatch(new SetEntityAIdAction(string.Empty));
+        Dispatch(new NavigateAction("/accounts#custom-accounts"));
+    }
 
-    private void ClearAccountB() => Dispatch(new SetEntityBIdAction(string.Empty));
+    private void ClearAccountB()
+    {
+        Dispatch(new SetEntityBIdAction(string.Empty));
+        Dispatch(new NavigateAction("/accounts#custom-accounts"));
+    }
 
-    private void CloseConnectionModal() => isConnectionModalOpen = false;
+    private void CloseConnectionDetails() => isConnectionDetailsOpen = false;
 
     private void DepositA() => DepositForPanel(AccountAId, panelA.DepositAmount);
 
@@ -345,16 +380,26 @@ public sealed partial class OperationsPage
     ) =>
         string.IsNullOrEmpty(accountId) ? null : GetProjection<BankAccountBalanceProjectionDto>(accountId);
 
-    private string? GetErrorMessageFor(
-        string? accountId
-    ) =>
-        Select<BankAccountAggregateState, ProjectionsFeatureState, string?>(
-            BankAccountCompositeSelectors.GetErrorMessage(accountId));
-
     private BankAccountLedgerProjectionDto? GetLedgerProjection(
         string? accountId
     ) =>
         string.IsNullOrEmpty(accountId) ? null : GetProjection<BankAccountLedgerProjectionDto>(accountId);
+
+    private string? GetReadError<T>(
+        string? entityId
+    )
+        where T : class =>
+        string.IsNullOrEmpty(entityId)
+            ? null
+            : Select<ProjectionsFeatureState, string?>(state => state.GetProjectionError<T>(entityId)?.Message);
+
+    private long GetReadVersion<T>(
+        string? entityId
+    )
+        where T : class =>
+        string.IsNullOrEmpty(entityId)
+            ? -1
+            : Select<ProjectionsFeatureState, long>(state => state.GetProjectionVersion<T>(entityId));
 
     private MoneyTransferStatusProjectionDto? GetTransferStatusProjection(
         string? sagaId
@@ -371,6 +416,13 @@ public sealed partial class OperationsPage
     ) =>
         Select<BankAccountAggregateState, ProjectionsFeatureState, bool>(
             BankAccountCompositeSelectors.IsOperationInProgress(accountId));
+
+    private bool IsReadLoading<T>(
+        string? entityId
+    )
+        where T : class =>
+        !string.IsNullOrEmpty(entityId) &&
+        Select<ProjectionsFeatureState, bool>(state => state.IsProjectionLoading<T>(entityId));
 
     private void ManageDemoAccountSelection()
     {
@@ -391,8 +443,30 @@ public sealed partial class OperationsPage
 
     private void ManageProjectionSubscriptions()
     {
-        SyncProjectionSubscription(AccountAId, ref subscribedEntityIdA);
-        SyncProjectionSubscription(AccountBId, ref subscribedEntityIdB);
+        HashSet<string> selectedAccountIds = new(StringComparer.Ordinal);
+        if (!string.IsNullOrWhiteSpace(AccountAId))
+        {
+            selectedAccountIds.Add(AccountAId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(AccountBId))
+        {
+            selectedAccountIds.Add(AccountBId);
+        }
+
+        foreach (string entityId in subscribedAccountIds.Where(entityId => !selectedAccountIds.Contains(entityId)))
+        {
+            UnsubscribeFromAccountProjections(entityId);
+        }
+
+        foreach (string entityId in selectedAccountIds.Where(entityId => !subscribedAccountIds.Contains(entityId)))
+        {
+            SubscribeToProjection<BankAccountBalanceProjectionDto>(entityId);
+            SubscribeToProjection<BankAccountLedgerProjectionDto>(entityId);
+        }
+
+        subscribedAccountIds.Clear();
+        subscribedAccountIds.UnionWith(selectedAccountIds);
     }
 
     private void ManageTransferStatusSubscriptions()
@@ -488,26 +562,6 @@ public sealed partial class OperationsPage
         }
     }
 
-    private void SyncProjectionSubscription(
-        string? currentEntityId,
-        ref string? subscribedEntityId
-    )
-    {
-        if (string.Equals(currentEntityId, subscribedEntityId, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        UnsubscribeFromAccountProjections(subscribedEntityId);
-        if (!string.IsNullOrWhiteSpace(currentEntityId))
-        {
-            SubscribeToProjection<BankAccountBalanceProjectionDto>(currentEntityId);
-            SubscribeToProjection<BankAccountLedgerProjectionDto>(currentEntityId);
-        }
-
-        subscribedEntityId = currentEntityId;
-    }
-
     private void SyncTransferDestinations()
     {
         panelA.TransferDestinationAccountId = AccountBId ?? string.Empty;
@@ -533,7 +587,7 @@ public sealed partial class OperationsPage
         subscribedSagaId = currentSagaId;
     }
 
-    private void ToggleConnectionModal() => isConnectionModalOpen = !isConnectionModalOpen;
+    private void ToggleConnectionDetails() => isConnectionDetailsOpen = !isConnectionDetailsOpen;
 
     private void UnsubscribeFromAccountProjections(
         string? entityId

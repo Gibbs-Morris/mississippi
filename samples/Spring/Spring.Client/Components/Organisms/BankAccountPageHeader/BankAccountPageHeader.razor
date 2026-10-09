@@ -1,21 +1,22 @@
 @namespace MississippiSamples.Spring.Client.Components.Organisms
 
-<nav aria-label="Account actions">
-    <button type="button" @onclick="OnNavigateInvestigations">View Investigations</button>
-    <a href="@ApiDocsUrl" target="_blank" rel="noopener noreferrer">API Docs</a>
-</nav>
-
-<header>
-    <h1>@Title</h1>
-    <p>@Subtitle</p>
-    <p>
-        <strong>Tip:</strong> @TipText
-    </p>
-    <button type="button"
-            aria-label="Connection status"
-            aria-haspopup="dialog"
-            aria-expanded="@IsConnectionModalOpen"
-            @onclick="OnToggleConnectionModal">
+<header class="spring-page-header">
+    <div>
+        <p class="spring-page-kicker">SPRING / BANKING</p>
+        <h1>@Title</h1>
+    </div>
+    <button type="button" aria-label="@($"Connection status: {ConnectionStatusText}")" aria-expanded="@(IsConnectionDetailsOpen ? "true" : "false")"
+            aria-controls="@(IsConnectionDetailsOpen ? ConnectionDetailsId : null)" @ref="connectionButton" @onclick="OnToggleConnectionDetails">
+        <span class="spring-connection-dot" data-connected="@(ConnectionStatusText == "Connected" ? "true" : "false")" aria-hidden="true"></span>
         @ConnectionStatusText
     </button>
+    <p class="spring-page-subtitle">@Subtitle</p>
+    @if (!string.IsNullOrEmpty(TipText))
+    {
+        <p class="spring-page-tip">@TipText</p>
+    }
 </header>
+<nav class="spring-header-actions" aria-label="Account actions">
+    <button type="button" @onclick="OnNavigateInvestigations">View Investigations</button>
+    <a href="@ApiDocsUrl" target="_blank" rel="noopener noreferrer">API Docs ↗</a>
+</nav>

@@ -2,42 +2,55 @@
 @namespace MississippiSamples.Spring.Client.Components.Templates.SpringShell
 
 <CascadingRefractionProvider ThemeMode="@ThemeMode" Class="spring-theme">
-    <a class="skip-link"
-       href="#main-content"
-       @onclick="FocusContentAsync"
-       @onclick:preventDefault="true">
-        Skip to content
-    </a>
+    <a class="skip-link" href="#main-content" @onclick="FocusContentAsync" @onclick:preventDefault="true">Skip to content</a>
     <div class="spring-shell">
-        <header class="topbar">
-            <a class="wordmark" href="/">
-                <span class="wordmark-primary">SPRING</span>
-                <span class="wordmark-secondary">by Mississippi</span>
+        <header class="spring-topbar">
+            <a class="spring-wordmark" href="/" aria-label="Spring by Mississippi, home">
+                <span class="spring-mark" aria-hidden="true">S<span>↗</span></span>
+                <span>
+                    <strong>spring</strong><small>by Mississippi</small>
+                </span>
             </a>
-            <nav class="navigation" aria-label="Main navigation">
-                <NavLink href="/" Match="NavLinkMatch.All">Overview</NavLink>
-                <NavLink href="/accounts">Accounts</NavLink>
-                <NavLink href="/operations">Operations</NavLink>
-                <NavLink href="/investigations">Investigations</NavLink>
-                <NavLink href="/auth-proof">Auth proof</NavLink>
-                <a href="/scalar/v1" target="_blank" rel="noopener noreferrer">API docs</a>
+            <nav class="spring-navigation" aria-label="Main navigation">
+                <NavLink href="/" Match="NavLinkMatch.All">Start here</NavLink>
+                <NavLink href="/accounts">Prepare accounts</NavLink>
+                <NavLink href="/operations">Move money</NavLink>
+                <NavLink href="/investigations">Investigate</NavLink>
+                <NavLink href="/auth-proof">Test access</NavLink>
             </nav>
-            <div class="theme-options" role="group" aria-label="Color theme">
-                @foreach (RefractionThemeMode mode in ThemeModes)
-                {
-                    <button type="button"
-                            aria-pressed="@(mode == ThemeMode ? "true" : "false")"
-                            @onclick="() => ThemeChanged.InvokeAsync(mode)">
-                        @GetModeLabel(mode)
-                    </button>
-                }
-            </div>
+            <details class="spring-appearance">
+                <summary>Appearance</summary>
+                <div class="spring-theme-options" role="group" aria-label="Color theme">
+                    @foreach (RefractionThemeMode mode in ThemeModes)
+                    {
+                        <button type="button" aria-pressed="@(mode == ThemeMode ? "true" : "false")"
+                                @onclick="() => ThemeChanged.InvokeAsync(mode)">
+                            @GetModeLabel(mode)
+                        </button>
+                    }
+                </div>
+            </details>
         </header>
-        <div id="main-content" tabindex="-1" @ref="MainContent">
-            @ChildContent
-        </div>
-        <footer>
-            State down. Intent up. Mississippi event sourcing in a bank account sample.
+        <div id="main-content" class="spring-main-content" tabindex="-1" @ref="MainContent">@ChildContent</div>
+        <footer class="spring-footer">
+            <p>A working bank. A framework you can inspect.</p>
+            <details class="spring-tools">
+                <summary>Developer tools</summary>
+                <nav aria-label="Developer tools">
+                    <a href="/scalar/v1" target="_blank" rel="noopener noreferrer">API reference ↗</a>
+                    <a href="/openapi/v1.json" target="_blank" rel="noopener noreferrer">OpenAPI document ↗</a>
+                    <a href="https://github.com/Gibbs-Morris/mississippi/tree/main/samples/Spring" target="_blank" rel="noopener noreferrer">Spring source ↗</a>
+                </nav>
+                <p>
+                    The development server exposes generated MCP tools at <code>/mcp</code>.
+                    Connect an MCP client to that endpoint; it is not a browser page.
+                </p>
+                <p>
+                    Use the Aspire dashboard URL printed by the launcher for resources, logs and traces.
+                    The Reservoir Redux DevTools integration exposes dispatched actions and state.
+                </p>
+            </details>
+            <p class="spring-footer-note">Fictional money. Real commands, events and live projections.</p>
         </footer>
     </div>
 </CascadingRefractionProvider>

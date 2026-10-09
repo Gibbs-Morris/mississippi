@@ -1,0 +1,10 @@
+.spring-page-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: var(--spring-space-heading-tight) var(--spring-space-inset); }
+.spring-page-header > div { display: grid; gap: var(--spring-space-heading-tight); min-width: 0; }
+.spring-page-kicker { color: var(--rf-color-text-accent); font-size: var(--spring-type-caption); letter-spacing: 0.1em; font-weight: 650; }
+.spring-page-subtitle { grid-column: 1 / -1; max-width: 75ch; color: var(--rf-color-text-secondary); font-size: var(--spring-type-intro); }
+.spring-page-tip { grid-column: 1 / -1; max-width: 75ch; color: var(--rf-color-text-secondary); font-size: var(--spring-type-support); }
+.spring-connection-dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--rf-color-status-warning); }
+.spring-connection-dot[data-connected="true"] { background: var(--rf-color-status-success); }
+.spring-header-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spring-space-stack); }
+.spring-header-actions button { font-size: var(--spring-type-detail); }
+@media (max-width: 600px) { .spring-page-header { gap: var(--spring-space-control); } .spring-page-header > button { font-size: var(--spring-type-control); padding-inline: 0.6rem; } }

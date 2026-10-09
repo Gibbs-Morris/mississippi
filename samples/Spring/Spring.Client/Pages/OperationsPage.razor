@@ -1,25 +1,63 @@
 @page "/operations"
 @namespace MississippiSamples.Spring.Client.Pages
+@using Mississippi.Inlet.Client.SignalRConnection
 @inherits InletComponent
 
-<main>
-    <BankAccountPageHeader ConnectionStatusText="@ConnectionStatus.ToString()"
-                           IsConnectionModalOpen="@isConnectionModalOpen"
+<PageTitle>Move money · Spring</PageTitle>
+<main class="spring-operations">
+    <BankAccountPageHeader Title="Move money"
+                           Subtitle="Start with a £25 deposit. Verify the increase in the live balance and the new ledger entry."
+                           TipText=""
+                           ConnectionStatusText="@ConnectionStatus.ToString()"
+                           ConnectionDetailsId="@connectionDetailsId"
+                           IsConnectionDetailsOpen="@isConnectionDetailsOpen"
                            OnNavigateInvestigations="@NavigateToInvestigations"
-                           OnToggleConnectionModal="@ToggleConnectionModal"/>
+                           OnToggleConnectionDetails="@ToggleConnectionDetails"/>
+    <ConnectionDetails Id="@connectionDetailsId" IsOpen="@isConnectionDetailsOpen"
+                       ConnectionStatusText="@ConnectionStatus.ToString()"
+                       ConnectionIdText="@ConnectionIdDisplay"
+                       ReconnectAttemptCount="@ReconnectAttemptCount"
+                       LastConnectedAtText="@LastConnectedAtDisplay"
+                       LastDisconnectedAtText="@LastDisconnectedAtDisplay"
+                       LastMessageReceivedAtText="@LastMessageReceivedAtDisplay"
+                       LastError="@LastError"
+                       OnClose="@CloseConnectionDetails"/>
+    <ConnectionNotice IsOpen="@IsDisconnected"
+                      ConnectionStatusText="@ConnectionStatus.ToString()"
+                      ReconnectAttemptCount="@ReconnectAttemptCount"
+                      LastError="@LastError"
+                      OnReconnect="@RequestReconnect"/>
 
     @if (!HasAccountPair)
     {
-        <section>
-            <h2>No Account Pair Selected</h2>
-            <p>Select or create two accounts before performing operations.</p>
-            <NavLink href="/accounts">Go to Accounts</NavLink>
+        <section class="spring-empty">
+            <h2>First, choose two accounts</h2>
+            <p>Prepare Ada and Grace with £500 each, or choose your own account IDs. Then return here to make a change and verify its outcome.</p>
+            <a class="spring-button spring-primary" href="/accounts">Prepare accounts</a>
         </section>
     }
     else
     {
+        <nav class="spring-account-jumps" aria-label="Account panels">
+            <a href="@($"{ShareUrl}#account-a-operations-panel")"
+               @onclick="@(args => FocusAccountPanelAsync(accountAPanelElement, args))">
+                Account A ↓
+            </a>
+            <a href="@($"{ShareUrl}#account-b-operations-panel")"
+               @onclick="@(args => FocusAccountPanelAsync(accountBPanelElement, args))">
+                Account B ↓
+            </a>
+        </nav>
+        <CommandActivity State="@CommandState" Label="Banking responses · this browser"
+                         Explanation="Shared history for this browser, including earlier account selections. Verify the live balances and ledgers below."/>
+        @if (TransferCommandState.CommandHistory.Count > 0)
+        {
+            <CommandActivity State="@TransferCommandState" Label="Transfer-start responses · this browser"
+                             Explanation="This shared history includes earlier account selections. An accepted start request does not mean the transfer completed. Follow the saga phase in the account panel and verify both balances."/>
+        }
+
         <div class="operations-panels">
-            <div id="account-a-operations-panel" class="operations-panel" role="region" aria-labelledby="account-a-panel-heading">
+            <div @ref="accountAPanelElement" id="account-a-operations-panel" class="operations-panel" tabindex="-1" role="region" aria-labelledby="account-a-panel-heading">
                 <AccountOperationsSection PanelLabel="Account A"
                                           InputIdPrefix="account-a"
                                           SelectedEntityId="@AccountAIdDisplay"
@@ -51,12 +89,18 @@
                                           TransferSagaId="@panelA.TransferSagaId"
                                           TransferStatusProjection="@TransferStatusProjectionA"
                                           BalanceProjection="@BalanceProjectionA"
-                                          ErrorMessage="@GetErrorMessageFor(AccountAId)"
-                                          LastCommandSucceeded="@LastCommandSucceeded"
+                                          ErrorMessage="@(GetReadError<BankAccountBalanceProjectionDto>(AccountAId))"
+                                          BalanceVersion="@(GetReadVersion<BankAccountBalanceProjectionDto>(AccountAId))"
+                                          IsBalanceLoading="@(IsReadLoading<BankAccountBalanceProjectionDto>(AccountAId))"
+                                          IsLedgerLoading="@(IsReadLoading<BankAccountLedgerProjectionDto>(AccountAId))"
+                                          IsLiveConnectionConnected="@(ConnectionStatus == SignalRConnectionStatus.Connected)"
+                                          LedgerError="@(GetReadError<BankAccountLedgerProjectionDto>(AccountAId))"
+                                          LedgerVersion="@(GetReadVersion<BankAccountLedgerProjectionDto>(AccountAId))"
+                                          TransferReadError="@(GetReadError<MoneyTransferStatusProjectionDto>(panelA.TransferSagaId))"
                                           LedgerProjection="@LedgerProjectionA"
                                           OnSwitchAccount="@ClearAccountA"/>
             </div>
-            <div id="account-b-operations-panel" class="operations-panel" role="region" aria-labelledby="account-b-panel-heading">
+            <div @ref="accountBPanelElement" id="account-b-operations-panel" class="operations-panel" tabindex="-1" role="region" aria-labelledby="account-b-panel-heading">
                 <AccountOperationsSection PanelLabel="Account B"
                                           InputIdPrefix="account-b"
                                           SelectedEntityId="@AccountBIdDisplay"
@@ -88,27 +132,27 @@
                                           TransferSagaId="@panelB.TransferSagaId"
                                           TransferStatusProjection="@TransferStatusProjectionB"
                                           BalanceProjection="@BalanceProjectionB"
-                                          ErrorMessage="@GetErrorMessageFor(AccountBId)"
-                                          LastCommandSucceeded="@LastCommandSucceeded"
+                                          ErrorMessage="@(GetReadError<BankAccountBalanceProjectionDto>(AccountBId))"
+                                          BalanceVersion="@(GetReadVersion<BankAccountBalanceProjectionDto>(AccountBId))"
+                                          IsBalanceLoading="@(IsReadLoading<BankAccountBalanceProjectionDto>(AccountBId))"
+                                          IsLedgerLoading="@(IsReadLoading<BankAccountLedgerProjectionDto>(AccountBId))"
+                                          IsLiveConnectionConnected="@(ConnectionStatus == SignalRConnectionStatus.Connected)"
+                                          LedgerError="@(GetReadError<BankAccountLedgerProjectionDto>(AccountBId))"
+                                          LedgerVersion="@(GetReadVersion<BankAccountLedgerProjectionDto>(AccountBId))"
+                                          TransferReadError="@(GetReadError<MoneyTransferStatusProjectionDto>(panelB.TransferSagaId))"
                                           LedgerProjection="@LedgerProjectionB"
                                           OnSwitchAccount="@ClearAccountB"/>
             </div>
         </div>
+        <details class="spring-share-pair">
+            <summary>Open this pair in another browser</summary>
+            <p>
+                Use the same running Spring server. This link selects accounts; it does not grant access.
+                Compare both windows while making a deposit to see live projection updates.
+            </p>
+            <a href="@ShareUrl">@ShareUrl</a>
+        </details>
     }
 
-    <ConnectionStatusModal IsOpen="@isConnectionModalOpen"
-                           ConnectionStatusText="@ConnectionStatus.ToString()"
-                           ConnectionIdText="@ConnectionIdDisplay"
-                           ReconnectAttemptCount="@ReconnectAttemptCount"
-                           LastConnectedAtText="@LastConnectedAtDisplay"
-                           LastDisconnectedAtText="@LastDisconnectedAtDisplay"
-                           LastMessageReceivedAtText="@LastMessageReceivedAtDisplay"
-                           LastError="@LastError"
-                           OnClose="@CloseConnectionModal"/>
 
-    <ConnectionLostModal IsOpen="@IsDisconnected"
-                         ConnectionStatusText="@ConnectionStatus.ToString()"
-                         ReconnectAttemptCount="@ReconnectAttemptCount"
-                         LastError="@LastError"
-                         OnReconnect="@RequestReconnect"/>
 </main>

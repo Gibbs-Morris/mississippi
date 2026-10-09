@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
 
@@ -10,25 +11,33 @@ namespace MississippiSamples.Spring.Client.Components.Organisms;
 /// </summary>
 public sealed partial class BankAccountPageHeader
 {
+    private ElementReference connectionButton;
+
+    private bool wasConnectionDetailsOpen;
+
     /// <summary>Gets or sets the API docs URL.</summary>
     [Parameter]
     public Uri ApiDocsUrl { get; set; } = new("/scalar/v1", UriKind.Relative);
+
+    /// <summary>Gets or sets the DOM ID of the paired connection disclosure.</summary>
+    [Parameter]
+    public string? ConnectionDetailsId { get; set; }
 
     /// <summary>Gets or sets the connection status text.</summary>
     [Parameter]
     public string ConnectionStatusText { get; set; } = string.Empty;
 
-    /// <summary>Gets or sets a value indicating whether the connection modal is open.</summary>
+    /// <summary>Gets or sets a value indicating whether connection details are expanded.</summary>
     [Parameter]
-    public bool IsConnectionModalOpen { get; set; }
+    public bool IsConnectionDetailsOpen { get; set; }
 
     /// <summary>Gets or sets the callback to navigate to investigations.</summary>
     [Parameter]
     public EventCallback OnNavigateInvestigations { get; set; }
 
-    /// <summary>Gets or sets the callback to toggle the connection modal.</summary>
+    /// <summary>Gets or sets the callback to toggle the connection details.</summary>
     [Parameter]
-    public EventCallback OnToggleConnectionModal { get; set; }
+    public EventCallback OnToggleConnectionDetails { get; set; }
 
     /// <summary>Gets or sets the subtitle text.</summary>
     [Parameter]
@@ -41,5 +50,18 @@ public sealed partial class BankAccountPageHeader
 
     /// <summary>Gets or sets the title text.</summary>
     [Parameter]
-    public string Title { get; set; } = "Bank Account Operations";
+    public string Title { get; set; } = "Move money";
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(
+        bool firstRender
+    )
+    {
+        if (wasConnectionDetailsOpen && !IsConnectionDetailsOpen)
+        {
+            await connectionButton.FocusAsync();
+        }
+
+        wasConnectionDetailsOpen = IsConnectionDetailsOpen;
+    }
 }

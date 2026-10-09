@@ -66,9 +66,7 @@ public sealed class AccountsPage
             });
     }
 
-    /// <summary>
-    ///     Waits for the SignalR connection status to reach the expected value.
-    /// </summary>
+    /// <summary>Wait for the SignalR connection status to reach the expected value.</summary>
     /// <param name="expectedStatus">The expected connection status text (e.g., "Connected").</param>
     /// <param name="timeout">Optional timeout in milliseconds.</param>
     /// <returns>A task representing the wait operation.</returns>
@@ -76,11 +74,17 @@ public sealed class AccountsPage
         string expectedStatus,
         float? timeout = null
     ) =>
-        await page.Locator("button[aria-label='Connection status']")
+        await page.GetByRole(
+                AriaRole.Button,
+                new()
+                {
+                    Name = $"Connection status: {expectedStatus}",
+                    Exact = true,
+                })
             .Filter(
                 new()
                 {
-                    HasTextRegex = new($"^{Regex.Escape(expectedStatus)}$"),
+                    HasTextRegex = new($"^\\s*{Regex.Escape(expectedStatus)}\\s*$"),
                 })
             .WaitForAsync(
                 new()

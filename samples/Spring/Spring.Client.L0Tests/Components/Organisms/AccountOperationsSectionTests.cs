@@ -25,6 +25,18 @@ public sealed class AccountOperationsSectionTests : BunitContext
         cut.FindAll("button")
             .Single(button => string.Equals(button.TextContent.Trim(), text, StringComparison.Ordinal));
 
+    /// <summary>Verify that a command acceptance flag cannot be repeated as an account projection outcome.</summary>
+    [Fact]
+    public void AccountPanelDoesNotClaimCommandSuccessWhileWaitingForBalance()
+    {
+        using IRenderedComponent<AccountOperationsSection> cut = Render<AccountOperationsSection>(parameters =>
+            parameters.Add(component => component.IsBalanceLoading, true)
+                .Add(component => component.InputIdPrefix, "account-a"));
+        Assert.Contains("Loading the live account", cut.Markup, StringComparison.Ordinal);
+        Assert.DoesNotContain("Command executed successfully", cut.Markup, StringComparison.Ordinal);
+        Assert.Empty(cut.FindAll("output[data-spring-balance]"));
+    }
+
     /// <summary>
     ///     Each panel gives every input a unique ID and an associated visible label.
     /// </summary>
@@ -84,6 +96,35 @@ public sealed class AccountOperationsSectionTests : BunitContext
         Assert.Equal("12.", accountB.Find("#account-b-deposit-amount-input").GetAttribute("value"));
     }
 
+    /// <summary>Verify that compensation copy reflects whether any forward step completed.</summary>
+    /// <param name="completedStep">The last completed forward step.</param>
+    /// <param name="outcome">The expected explanation.</param>
+    [Theory]
+    [InlineData(-1, "No step completed. No compensating account action was required.")]
+    [InlineData(0, "Check the source balance and ledger for the reversing deposit.")]
+    public void CompensationExplainsOnlyActionsSupportedByCompletedSteps(
+        int completedStep,
+        string outcome
+    )
+    {
+        MoneyTransferStatusProjectionDto projection = new(
+            null,
+            "invalid-state",
+            "A step failed.",
+            completedStep,
+            SagaPhaseDto.Compensated,
+            null);
+        using IRenderedComponent<AccountOperationsSection> cut = Render<AccountOperationsSection>(p => p
+            .Add(c => c.InputIdPrefix, "account-a")
+            .Add(c => c.TransferStatusProjection, projection));
+        Assert.Contains(outcome, cut.Find("#account-a-transfer-status").TextContent, StringComparison.Ordinal);
+        Assert.Equal("alert", cut.Find("#account-a-transfer-status").GetAttribute("data-state"));
+        if (completedStep < 0)
+        {
+            Assert.DoesNotContain("reversing deposit", cut.Markup, StringComparison.Ordinal);
+        }
+    }
+
     /// <summary>
     ///     Invalid initial deposits and withdrawals disable their direct actions.
     /// </summary>
@@ -104,6 +145,29 @@ public sealed class AccountOperationsSectionTests : BunitContext
         openAccount.Find("#account-b-withdraw-amount-input").Input("invalid");
         Assert.True(FindButton(closedAccount, "Open Account").HasAttribute("disabled"));
         Assert.True(FindButton(openAccount, "Withdraw").HasAttribute("disabled"));
+    }
+
+    /// <summary>Verify that invalid transfer text disables submission instead of sending the last valid decimal.</summary>
+    [Fact]
+    public void InvalidTransferDraftCannotSubmitAnEarlierAmount()
+    {
+        decimal? observedAmount = null;
+        using IRenderedComponent<AccountOperationsSection> cut = Render<AccountOperationsSection>(parameters =>
+            parameters.Add(component => component.PanelLabel, "Account A")
+                .Add(component => component.InputIdPrefix, "account-a")
+                .Add(component => component.IsAccountOpen, true)
+                .Add(component => component.TransferAmount, 25m)
+                .Add(
+                    component => component.TransferAmountChanged,
+                    EventCallback.Factory.Create<decimal>(this, value => observedAmount = value)));
+        cut.Find("#account-a-transfer-amount-input").Input("12.34");
+        Assert.Equal(12.34m, observedAmount);
+        Assert.False(FindButton(cut, "Start Transfer").HasAttribute("disabled"));
+        cut.Find("#account-a-transfer-amount-input").Input("12.");
+        Assert.True(FindButton(cut, "Start Transfer").HasAttribute("disabled"));
+        Assert.Equal(12.34m, observedAmount);
+        Assert.Equal("12.", cut.Find("#account-a-transfer-amount-input").GetAttribute("value"));
+        Assert.Equal("true", cut.Find("#account-a-transfer-amount-input").GetAttribute("aria-invalid"));
     }
 
     /// <summary>

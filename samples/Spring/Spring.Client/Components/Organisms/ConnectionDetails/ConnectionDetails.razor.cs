@@ -1,12 +1,14 @@
+using System;
+
 using Microsoft.AspNetCore.Components;
 
 
 namespace MississippiSamples.Spring.Client.Components.Organisms;
 
 /// <summary>
-///     Connection status modal.
+///     Non-modal connection details disclosure.
 /// </summary>
-public sealed partial class ConnectionStatusModal
+public sealed partial class ConnectionDetails
 {
     /// <summary>Gets or sets the connection id display text.</summary>
     [Parameter]
@@ -16,7 +18,11 @@ public sealed partial class ConnectionStatusModal
     [Parameter]
     public string ConnectionStatusText { get; set; } = string.Empty;
 
-    /// <summary>Gets or sets a value indicating whether the modal is open.</summary>
+    /// <summary>Gets or sets the disclosure DOM ID. Its default is unique to this component instance.</summary>
+    [Parameter]
+    public string Id { get; set; } = $"spring-connection-details-{Guid.NewGuid():N}";
+
+    /// <summary>Gets or sets a value indicating whether the connection information is visible.</summary>
     [Parameter]
     public bool IsOpen { get; set; }
 

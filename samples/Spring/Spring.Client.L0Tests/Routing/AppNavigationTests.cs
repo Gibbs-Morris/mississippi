@@ -21,9 +21,7 @@ namespace MississippiSamples.Spring.Client.L0Tests.Routing;
 /// </summary>
 public sealed class AppNavigationTests : BunitContext
 {
-    /// <summary>
-    ///     Route changes focus the destination page heading through Blazor's focus interop.
-    /// </summary>
+    /// <summary>Verify that route changes focus the destination page heading through Blazor's focus interop.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Fact]
     public async Task RouteChangesFocusDestinationHeadingAsync()
@@ -38,7 +36,7 @@ public sealed class AppNavigationTests : BunitContext
             _ => true);
         NavigationManager navigation = Services.GetRequiredService<NavigationManager>();
         using IRenderedComponent<App> cut = Render<App>();
-        Assert.Equal("Bank Account Demo", cut.Find("h1").TextContent);
+        Assert.Equal("Move money. See the system come to life.", cut.Find("h1").TextContent);
         Assert.Equal("h1", JSInterop.VerifyFocusOnNavigateInvoke().Arguments[0]);
         await cut.InvokeAsync(() => navigation.NavigateTo("/investigations"));
         Assert.Equal("Transaction Investigations", cut.Find("h1").TextContent);

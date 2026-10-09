@@ -1,0 +1,7 @@
+.spring-snapshot { display: grid; gap: var(--spring-space-control); padding-block: var(--spring-space-panel); }
+.spring-snapshot h2 { font-size: 1.1rem; }
+.spring-snapshot p { color: var(--rf-color-text-secondary); font-size: var(--spring-type-support); }
+.spring-snapshot-scroll { overflow: auto; max-height: 28rem; }
+table { table-layout: fixed; min-width: 420px; font-size: var(--spring-type-detail); }
+th { width: 45%; }
+caption { color: var(--rf-color-text-secondary); text-align: left; padding-bottom: var(--spring-space-inline); }

@@ -1,3 +1,5 @@
+using System;
+
 using Microsoft.AspNetCore.Components;
 
 
@@ -35,4 +37,8 @@ public sealed partial class DemoAccountsSection
     /// <summary>Gets or sets the initialize callback.</summary>
     [Parameter]
     public EventCallback OnInitialize { get; set; }
+
+    /// <summary>Gets or sets the operations link for the selected account pair.</summary>
+    [Parameter]
+    public Uri OperationsUri { get; set; } = new("/operations", UriKind.Relative);
 }
