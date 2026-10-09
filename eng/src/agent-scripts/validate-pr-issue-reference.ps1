@@ -13,6 +13,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $htmlTagRegex = [regex]::new('(?s)\G(?:<[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:"[^"]*"|''[^'']*''|[^\s"''=<>`]+))?)*\s*/?>|</[A-Za-z][A-Za-z0-9-]*\s*>)')
+$htmlCommentRegex = [regex]::new('(?s)\G<!--(?:>|->|.*?(?:--!?>|\z))')
 $htmlNonTextRegex = [regex]::new('(?s)\G(?:<\?.*?(?:\?>|\z)|<![A-Za-z].*?(?:>|\z)|<!\[CDATA\[.*?(?:\]\]>|\z))')
 
 function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks code and link ownership states.
@@ -42,8 +43,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     $index = 0
     while ($index -lt $html.Length) {
         if ($index + 4 -le $html.Length -and $html.Substring($index, 4) -eq '<!--') {
-            $closing = $html.IndexOf('-->', $index + 4, [System.StringComparison]::Ordinal)
-            $index = if ($closing -ge 0) { $closing + 3 } else { $html.Length }
+            $index += $htmlCommentRegex.Match($html, $index).Length
             continue
         }
         if ($html[$index] -eq '<') {

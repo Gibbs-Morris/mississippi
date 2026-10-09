@@ -256,6 +256,26 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body $Body
     }
 
+    It 'preserves tracking after rendered HTML comment termination: <Comment>' -ForEach @(
+        @{ Comment = '<!-->' }
+        @{ Comment = '<!--->' }
+        @{ Comment = '<!-- hidden --!>' }
+        @{ Comment = '<!-- hidden -->' }
+    ) {
+        Assert-ValidReferenceBody -Body ($Comment + ' Refs #741')
+    }
+
+    It 'ignores hidden or owned tracking around comment endings: <Case>' -ForEach @(
+        @{ Case = 'incomplete comment'; Body = '<!-- Refs #741' }
+        @{ Case = 'nonterminating exclamation'; Body = '<!--!> Refs #741' }
+        @{ Case = 'nonterminating dash'; Body = '<!---!> Refs #741' }
+        @{ Case = 'hidden label'; Body = '<!-- Refs #741 --!>' }
+        @{ Case = 'enclosing code'; Body = '<code><!--> Refs #741</code>' }
+        @{ Case = 'enclosing external link'; Body = '<a href="https://example.test"><!--> Refs #741</a>' }
+    ) {
+        Assert-NoReferenceBody -Body $Body
+    }
+
     It 'ignores non-rendered HTML declarations: <Case>' -ForEach @(
         @{ Case = 'document type'; Markup = '<!DOCTYPE html PUBLIC "#741">' }
         @{ Case = 'processing instruction'; Markup = '<?example #741 ?>' }
