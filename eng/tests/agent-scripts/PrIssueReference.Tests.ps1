@@ -166,6 +166,23 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body $Body
     }
 
+    It 'ends table-local code at a scope boundary: <Case>' -ForEach @(
+        @{ Case = 'explicit cell'; Body = '<table><tr><td><code>example</td><td>Refs #741</td></tr></table>' }
+        @{ Case = 'implicit cell'; Body = '<table><tr><td><code>example<td>Refs #741</td></tr></table>' }
+        @{ Case = 'preformatted cell'; Body = '<table><tr><td><pre>example</td><td>Refs #741</td></tr></table>' }
+        @{ Case = 'caption'; Body = '<table><caption><code>example</caption><tr><td>Refs #741</td></tr></table>' }
+    ) {
+        Assert-ValidReferenceBody -Body $Body
+    }
+
+    It 'preserves enclosing code and ignores unmatched table boundaries: <Case>' -ForEach @(
+        @{ Case = 'enclosing code'; Body = '<code><table><tr><td>Refs #741</td></tr></table></code>' }
+        @{ Case = 'mismatched cell'; Body = '<table><tr><td><code>example</th> #741</code></td></tr></table>' }
+        @{ Case = 'cell outside table'; Body = '<td><code>example</td> #741</code>' }
+    ) {
+        Assert-NoReferenceBody -Body $Body
+    }
+
     It 'restores the enclosing cell anchor after closing a nested table cell' {
         $outcome = Assert-ValidReferenceBody -Body 'x <table><tr><td><a href="https://github.com/other/repo/issues/999">context<table><tr><td>nested</td></tr></table> #742</td><td>Refs #741</td></tr></table>'
         @($outcome.Result.References).Count | Should -Be 1

@@ -47,30 +47,32 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
             if ($htmlTag.Success) {
                 $tagName = [regex]::Match($htmlTag.Value, '^</?(?<Name>[A-Za-z][A-Za-z0-9-]*)').Groups['Name'].Value.ToLowerInvariant()
                 $isClosing = $htmlTag.Value.StartsWith('</', [System.StringComparison]::Ordinal)
+                # Table scopes restore both enclosing links and code, including implied ends.
+                if ($tableDepth -gt 0 -and $cellScopes.Count -gt 0 -and $cellScopes.Peek().TableDepth -eq $tableDepth) {
+                    $cellScope = $cellScopes.Peek()
+                    $closesCell = if ($isClosing) {
+                        $closingBoundaries = if ($cellScope.Name -eq 'caption') { @('table') } else { @('table', 'tbody', 'thead', 'tfoot', 'tr') }
+                        $tagName -eq $cellScope.Name -or $tagName -in $closingBoundaries
+                    }
+                    else {
+                        $tagName -in @('caption', 'col', 'colgroup', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr')
+                    }
+                    if ($closesCell) {
+                        $null = $cellScopes.Pop()
+                        $insideAnchor = $cellScope.PriorAnchor
+                        $codeDepth = $cellScope.PriorCodeDepth
+                    }
+                }
+                if ($tagName -eq 'table') {
+                    $tableDepth = [Math]::Max(0, $tableDepth + $(if ($isClosing) { -1 } else { 1 }))
+                }
+                elseif (-not $isClosing -and $tableDepth -gt 0 -and $tagName -in @('caption', 'td', 'th')) {
+                    $cellScopes.Push([pscustomobject]@{ Name = $tagName; TableDepth = $tableDepth; PriorAnchor = $insideAnchor; PriorCodeDepth = $codeDepth })
+                }
                 if ($tagName -in @('pre', 'code')) {
                     $codeDepth = [Math]::Max(0, $codeDepth + $(if ($isClosing) { -1 } else { 1 }))
                 }
                 elseif ($codeDepth -eq 0) {
-                    # Cell and caption boundaries discard local anchors, preserving enclosing links.
-                    if ($tableDepth -gt 0 -and $cellScopes.Count -gt 0 -and $cellScopes.Peek().TableDepth -eq $tableDepth) {
-                        $cellScope = $cellScopes.Peek()
-                        $closesCell = if ($isClosing) {
-                            $closingBoundaries = if ($cellScope.Name -eq 'caption') { @('table') } else { @('table', 'tbody', 'thead', 'tfoot', 'tr') }
-                            $tagName -eq $cellScope.Name -or $tagName -in $closingBoundaries
-                        }
-                        else {
-                            $tagName -in @('caption', 'col', 'colgroup', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr')
-                        }
-                        if ($closesCell) {
-                            $insideAnchor = $cellScopes.Pop().PriorAnchor
-                        }
-                    }
-                    if ($tagName -eq 'table') {
-                        $tableDepth = [Math]::Max(0, $tableDepth + $(if ($isClosing) { -1 } else { 1 }))
-                    }
-                    elseif (-not $isClosing -and $tableDepth -gt 0 -and $tagName -in @('caption', 'td', 'th')) {
-                        $cellScopes.Push([pscustomobject]@{ Name = $tagName; TableDepth = $tableDepth; PriorAnchor = $insideAnchor })
-                    }
                     if ($tagName -eq 'a' -and -not $isClosing) {
                         $insideAnchor = $false
                         $anchorHref = [regex]::Match($htmlTag.Value, $anchorHrefPattern)
