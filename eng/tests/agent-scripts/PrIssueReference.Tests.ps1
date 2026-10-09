@@ -74,6 +74,16 @@ Describe 'PR issue reference validator' {
     }
 
     It 'checks rendered reference ownership: <Case>' -ForEach (@(
+        'object anchor|true|<object><a href="https://example.test">context</object> Refs #741'
+        'object code|true|<object><code>example</object> Refs #741'
+        'nested objects|true|<object><object><a href="https://example.test">context</object> Refs #741</object>'
+        'object outer anchor|false|<a href="https://example.test"><object>context</object> Refs #741</a>'
+        'object outer code|false|<code><object>context</object> Refs #741</code>'
+        'unclosed object|false|<object><a href="https://example.test">context Refs #741'
+        'unmatched object close|false|<object></object><a href="https://example.test">context</object> Refs #741'
+        'applet anchor|true|<applet><a href="https://example.test">context</applet> Refs #741'
+        'applet code|true|<applet><code>example</applet> Refs #741'
+        'mixed object close|true|<object><applet><a href="https://example.test">context</object> Refs #741</applet></object>'
         'code close|true|<a href="https://example.test"><code>example</a></code> Refs #741'
         'preformatted close|true|<a href="https://example.test"><pre>example</a></pre> Refs #741'
         'unclosed anchor|false|<a href="https://example.test"><code>example</code> Refs #741'

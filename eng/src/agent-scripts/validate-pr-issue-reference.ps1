@@ -63,7 +63,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     $insideSelect = $false
     $buttonPriorAnchor = $null
     $buttonPriorCandidate = $null
-    $marqueeScopes = [System.Collections.Generic.Stack[object]]::new()
+    $formattingScopes = [System.Collections.Generic.Stack[object]]::new()
     $blockElements = @(
         'address', 'article', 'aside', 'blockquote', 'br', 'caption', 'dd', 'details', 'dialog', 'div', 'dl', 'dt',
         'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header',
@@ -112,15 +112,15 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                     $buttonPriorAnchor = if ($isClosing) { $null } else { $insideAnchor }
                     $buttonPriorCandidate = if ($isClosing) { $null } else { $anchorCandidate }
                 }
-                if ($tagName -eq 'marquee') {
+                if ($tagName -in @('applet', 'marquee', 'object')) {
                     if (-not $isClosing) {
-                        $marqueeScopes.Push([pscustomobject]@{ PriorAnchor = $insideAnchor; PriorCandidate = $anchorCandidate; PriorCodeDepth = $codeDepth })
+                        $formattingScopes.Push([pscustomobject]@{ Name = $tagName; PriorAnchor = $insideAnchor; PriorCandidate = $anchorCandidate; PriorCodeDepth = $codeDepth })
                     }
-                    elseif ($marqueeScopes.Count -gt 0) {
-                        $marqueeScope = $marqueeScopes.Pop()
-                        $insideAnchor = $marqueeScope.PriorAnchor
-                        $anchorCandidate = $marqueeScope.PriorCandidate
-                        $codeDepth = $marqueeScope.PriorCodeDepth
+                    elseif ($formattingScopes.Count -gt 0 -and $tagName -in $formattingScopes.ToArray().Name) {
+                        do { $formattingScope = $formattingScopes.Pop() } while ($formattingScope.Name -ne $tagName)
+                        $insideAnchor = $formattingScope.PriorAnchor
+                        $anchorCandidate = $formattingScope.PriorCandidate
+                        $codeDepth = $formattingScope.PriorCodeDepth
                     }
                 }
                 # Table scopes restore both enclosing links and code, including implied ends.
