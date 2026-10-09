@@ -222,6 +222,22 @@ Describe 'PR issue reference validator' {
         Assert-ValidReferenceBody -Body ('<a href="' + $Href + '">Refs #741</a>')
     }
 
+    It 'preserves tracking across retained and stripped URL controls: <Case>' -ForEach @(
+        @{ Case = 'stripped tab in scheme'; Body = '<a href="htt&#9;ps://example.test">Refs #741</a>' }
+        @{ Case = 'stripped newline in scheme'; Body = '<a href="htt&#10;ps://example.test">Refs #741</a>' }
+        @{ Case = 'retained carriage return in local path'; Body = '<a href="https://github.com/Gibbs-Morris/missis&#13;sippi/issues/741">tracking</a>' }
+    ) {
+        Assert-ValidReferenceBody -Body $Body
+    }
+
+    It 'rejects stripped or distinct URL-control destinations without tracking: <Case>' -ForEach @(
+        @{ Case = 'tab in local scheme'; Body = '<a href="htt&#9;ps://github.com/Gibbs-Morris/mississippi/issues/741">tracking</a>' }
+        @{ Case = 'newline in local scheme'; Body = '<a href="htt&#10;ps://github.com/Gibbs-Morris/mississippi/issues/741">tracking</a>' }
+        @{ Case = 'percent-encoded path'; Body = '<a href="https://github.com/Gibbs-Morris/missis%0Dsippi/issues/741">tracking</a>' }
+    ) {
+        Assert-NoReferenceBody -Body $Body
+    }
+
     It 'preserves allowed scheme and relative link ownership: <Href>' -ForEach @(
         @{ Href = 'mailto:example@example.test' }
         @{ Href = 'xmpp:example@example.test' }

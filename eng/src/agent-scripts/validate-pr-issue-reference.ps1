@@ -101,14 +101,17 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                         $anchorHref = [regex]::Match($htmlTag.Value, $anchorHrefPattern)
                         if ($anchorHref.Success) {
                             $href = [System.Net.WebUtility]::HtmlDecode($anchorHref.Groups['Href'].Value)
-                            $localIssueHref = [regex]::Match($href.TrimEnd([char[]](0..0x20)), $localIssueHrefPattern)
-                            if ($localIssueHref.Success) {
-                                $anchorHrefs.Add("https://github.com/$RepositoryOwner/$RepositoryName/issues/$($localIssueHref.Groups['Number'].Value)")
-                            }
                             $hrefScheme = [regex]::Match($href, '^([^/?#]*):')
-                            $schemeName = [regex]::Replace($hrefScheme.Groups[1].Value, '[\x00-\x20]', '').ToLowerInvariant()
+                            $schemeName = $hrefScheme.Groups[1].Value.ToLowerInvariant()
                             $allowedScheme = -not $hrefScheme.Success -or $schemeName -in @('http', 'https', 'mailto', 'xmpp', 'github-windows', 'github-mac')
                             $insideAnchor = $href -notmatch '^[\x00-\x20]' -and $allowedScheme
+                            if ($insideAnchor) {
+                                $normalizedHref = [regex]::Replace($href.TrimEnd([char[]](0..0x20)), '[\t\r\n]', '')
+                                $localIssueHref = [regex]::Match($normalizedHref, $localIssueHrefPattern)
+                                if ($localIssueHref.Success) {
+                                    $anchorHrefs.Add("https://github.com/$RepositoryOwner/$RepositoryName/issues/$($localIssueHref.Groups['Number'].Value)")
+                                }
+                            }
                             $null = $builder.Append(' ')
                         }
                     }
