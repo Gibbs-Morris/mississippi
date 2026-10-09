@@ -465,6 +465,20 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body '<span title="`">left</span> <!-- Refs #741 --> <span title="`">right</span>'
     }
 
+    It 'preserves a reference-like line that continues a paragraph: <Case>' -ForEach @(
+        @{ Case = 'single-line destination'; Body = "Context`n[tracking]: https://github.com/Gibbs-Morris/mississippi/issues/741" }
+        @{ Case = 'continuation destination'; Body = "Context`n[tracking]:`n  https://github.com/Gibbs-Morris/mississippi/issues/741" }
+    ) {
+        Assert-ValidReferenceBody -Body $Body
+    }
+
+    It 'ignores definitions after a paragraph boundary and inside code: <Case>' -ForEach @(
+        @{ Case = 'blank-line boundary'; Body = "Context`n`n[unused]: https://github.com/Gibbs-Morris/mississippi/issues/741" }
+        @{ Case = 'code'; Body = "    Context`n    [tracking]: https://github.com/Gibbs-Morris/mississippi/issues/741" }
+    ) {
+        Assert-NoReferenceBody -Body $Body
+    }
+
     It 'ignores an unused Markdown reference definition' {
         Assert-NoReferenceBody -Body '[tracking]: https://github.com/Gibbs-Morris/mississippi/issues/741'
     }

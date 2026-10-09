@@ -19,8 +19,6 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)
 
     if ([string]::IsNullOrEmpty($Content)) { return '' }
-    # Preserve the validator's existing support for definitions adjacent to preceding text.
-    $Content = [regex]::Replace($Content, '(?m)^(?=[ \t]{0,3}\[[^\]\r\n]+\]:)', [Environment]::NewLine)
     # PowerShell bundles Markdig; select GitHub extensions without its advanced-only syntax.
     Add-Type -Path (Join-Path $PSHOME 'Markdig.Signed.dll')
     $markdownPipelineBuilder = [Markdig.MarkdownPipelineBuilder]::new()
