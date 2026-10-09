@@ -14,7 +14,7 @@ $ErrorActionPreference = 'Stop'
 
 $htmlTagRegex = [regex]::new('(?s)\G(?:<[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:"[^"]*"|''[^'']*''|[^\s"''=<>`]+))?)*\s*/?>|</[A-Za-z][A-Za-z0-9-]*\s*>)')
 $htmlCommentRegex = [regex]::new('(?s)\G<!--(?:>|->|.*?(?:--!?>|\z))')
-$htmlNonTextRegex = [regex]::new('(?s)\G(?:<\?.*?(?:>|\z)|<![A-Za-z].*?(?:>|\z)|<!\[CDATA\[.*?(?:\]\]>|\z))')
+$htmlNonTextRegex = [regex]::new('(?s)\G(?:<\?.*?(?:>|\z)|<![A-Za-z].*?(?:>|\z)|<!\[CDATA\[.*?(?:>|\z))')
 
 function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks code and link ownership states.
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Content)

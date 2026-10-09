@@ -131,6 +131,22 @@ Describe 'PR issue reference validator' {
         else { Assert-NoReferenceBody -Body $Body }
     }
 
+    It 'checks top-level CDATA-like comment termination: <Case>' -ForEach (@(
+        'plain delimiter|true|<![CDATA[x> Refs #741'
+        'complete suffix|true|<![CDATA[x> Refs #741 ]]>'
+        'retained issue URL|true|<![CDATA[x> https://github.com/Gibbs-Morris/mississippi/issues/741'
+        'unterminated comment|false|<![CDATA[Refs #741'
+        'hidden payload|false|<![CDATA[Refs #741]]>'
+        'enclosing code|false|<code><![CDATA[x> Refs #741</code>'
+        'enclosing external anchor|false|<a href="https://example.test"><![CDATA[x> Refs #741</a>'
+    ) | ForEach-Object {
+        $caseFields = $_ -split '\|', 3
+        @{ Case = $caseFields[0]; Expected = $caseFields[1] -eq 'true'; Body = $caseFields[2] }
+    }) {
+        if ($Expected) { Assert-ValidReferenceBody -Body $Body }
+        else { Assert-NoReferenceBody -Body $Body }
+    }
+
     It 'ignores tracking in mathematical expressions: <Case>' -ForEach @(
         @{ Case = 'inline phantom'; Body = '$\hphantom{\#741}$' }
         @{ Case = 'display phantom'; Body = '$$\hphantom{\#741}$$' }
