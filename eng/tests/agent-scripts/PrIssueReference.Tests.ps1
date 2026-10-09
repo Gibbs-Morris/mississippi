@@ -142,6 +142,19 @@ Describe 'PR issue reference validator' {
         $outcome.Result.References[0].Number | Should -Be 741
     }
 
+    It 'uses only the actual HTML href attribute: <Case>' -ForEach @(
+        @{ Case = 'external href before local data-href'; Expected = $false; Anchor = '<a href="https://example.test" data-href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a>' }
+        @{ Case = 'data-href without href'; Expected = $false; Anchor = '<a data-href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a>' }
+        @{ Case = 'local href before external data-href'; Expected = $true; Anchor = '<a href="https://github.com/Gibbs-Morris/mississippi/issues/741" data-href="https://example.test">context</a>' }
+        @{ Case = 'local data-href before external href'; Expected = $false; Anchor = '<a data-href="https://github.com/Gibbs-Morris/mississippi/issues/741" href="https://example.test">context</a>' }
+        @{ Case = 'external data-href before local href'; Expected = $true; Anchor = '<a data-href="https://example.test" href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a>' }
+        @{ Case = 'fake local href inside a title'; Expected = $false; Anchor = '<a href="https://example.test" title=''href="https://github.com/Gibbs-Morris/mississippi/issues/741"''>context</a>' }
+        @{ Case = 'fake external href inside a title'; Expected = $true; Anchor = '<a href="https://github.com/Gibbs-Morris/mississippi/issues/741" title=''href="https://example.test"''>tracking</a>' }
+    ) {
+        if ($Expected) { Assert-ValidReferenceBody -Body $Anchor }
+        else { Assert-NoReferenceBody -Body $Anchor }
+    }
+
     It 'preserves tracking between an inline code anchor opener and a later rendered anchor' {
         Assert-ValidReferenceBody -Body 'Example `<a href="https://github.com/other/repo/issues/999">` is code. Refs #741. <a href="https://github.com/other/repo/issues/999">context</a>'
     }
