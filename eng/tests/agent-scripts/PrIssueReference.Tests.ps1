@@ -276,6 +276,21 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body $Body
     }
 
+    It 'preserves tracking after a plain processing instruction end: <Case>' -ForEach @(
+        @{ Case = 'visible shorthand'; Body = '<?example> Refs #741' }
+        @{ Case = 'issue destination'; Body = '<?example> <a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking</a>' }
+    ) {
+        Assert-ValidReferenceBody -Body $Body
+    }
+
+    It 'ignores hidden or owned processing instruction text: <Case>' -ForEach @(
+        @{ Case = 'unterminated'; Body = '<?example Refs #741' }
+        @{ Case = 'enclosing code'; Body = '<code><?example> Refs #741</code>' }
+        @{ Case = 'enclosing external link'; Body = '<a href="https://example.test"><?example> Refs #741</a>' }
+    ) {
+        Assert-NoReferenceBody -Body $Body
+    }
+
     It 'ignores non-rendered HTML declarations: <Case>' -ForEach @(
         @{ Case = 'document type'; Markup = '<!DOCTYPE html PUBLIC "#741">' }
         @{ Case = 'processing instruction'; Markup = '<?example #741 ?>' }
