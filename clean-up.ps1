@@ -71,7 +71,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$repoRoot = [System.IO.Path]::GetFullPath($PSScriptRoot)
 $modulePath = Join-Path $repoRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1'
 Import-Module -Name $modulePath -Force -ErrorAction Stop
 
