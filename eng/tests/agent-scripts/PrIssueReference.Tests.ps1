@@ -172,6 +172,23 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body '<a-widget href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a-widget>'
     }
 
+    It 'ends the prior destination when a nested anchor has no href: <Case>' -ForEach @(
+        @{ Case = 'bare anchor'; Tag = '<a>' }
+        @{ Case = 'anchor with a quoted href decoy'; Tag = '<a title=''href="https://example.test"''>' }
+    ) {
+        Assert-ValidReferenceBody -Body ('<a href="https://github.com/other/repo/issues/999">context' + $Tag + 'Refs #741</a>')
+    }
+
+    It 'keeps an issue-looking label inside a nested external anchor untracked' {
+        Assert-NoReferenceBody -Body '<a href="https://example.test">context<a href="https://github.com/other/repo/issues/999">#741</a>'
+    }
+
+    It 'uses the destination of a nested local issue anchor' {
+        $outcome = Assert-ValidReferenceBody -Body '<a href="https://example.test">context<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">#999</a>'
+        @($outcome.Result.References).Count | Should -Be 1
+        $outcome.Result.References[0].Number | Should -Be 741
+    }
+
     It 'uses only the actual HTML href attribute: <Case>' -ForEach @(
         @{ Case = 'external href before local data-href'; Expected = $false; Anchor = '<a href="https://example.test" data-href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a>' }
         @{ Case = 'data-href without href'; Expected = $false; Anchor = '<a data-href="https://github.com/Gibbs-Morris/mississippi/issues/741">context</a>' }

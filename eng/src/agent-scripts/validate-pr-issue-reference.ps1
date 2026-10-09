@@ -185,6 +185,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - bounded Markdown renderer appr
         if ($withoutCode[$index] -eq '<') {
             $htmlTag = $htmlTagRegex.Match($withoutCode, $index)
             if ($htmlTag.Success) {
+                if ($htmlTag.Value -match '^<a(?=\s|/?>)') { $insideAnchor = $false }
                 $anchorHref = [regex]::Match($htmlTag.Value, $anchorHrefPattern)
                 if ($anchorHref.Success) {
                     $anchorHrefs.Add($anchorHref.Groups['Href'].Value)
