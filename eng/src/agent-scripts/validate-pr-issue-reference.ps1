@@ -51,11 +51,12 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                     $codeDepth = [Math]::Max(0, $codeDepth + $(if ($isClosing) { -1 } else { 1 }))
                 }
                 elseif ($codeDepth -eq 0) {
-                    # Cell boundaries discard anchors opened inside that cell, preserving enclosing links.
+                    # Cell and caption boundaries discard local anchors, preserving enclosing links.
                     if ($tableDepth -gt 0 -and $cellScopes.Count -gt 0 -and $cellScopes.Peek().TableDepth -eq $tableDepth) {
                         $cellScope = $cellScopes.Peek()
                         $closesCell = if ($isClosing) {
-                            $tagName -eq $cellScope.Name -or $tagName -in @('table', 'tbody', 'thead', 'tfoot', 'tr')
+                            $closingBoundaries = if ($cellScope.Name -eq 'caption') { @('table') } else { @('table', 'tbody', 'thead', 'tfoot', 'tr') }
+                            $tagName -eq $cellScope.Name -or $tagName -in $closingBoundaries
                         }
                         else {
                             $tagName -in @('caption', 'col', 'colgroup', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr')
@@ -67,7 +68,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                     if ($tagName -eq 'table') {
                         $tableDepth = [Math]::Max(0, $tableDepth + $(if ($isClosing) { -1 } else { 1 }))
                     }
-                    elseif (-not $isClosing -and $tableDepth -gt 0 -and $tagName -in @('td', 'th')) {
+                    elseif (-not $isClosing -and $tableDepth -gt 0 -and $tagName -in @('caption', 'td', 'th')) {
                         $cellScopes.Push([pscustomobject]@{ Name = $tagName; TableDepth = $tableDepth; PriorAnchor = $insideAnchor })
                     }
                     if ($tagName -eq 'a' -and -not $isClosing) {

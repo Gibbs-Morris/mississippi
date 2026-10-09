@@ -150,6 +150,22 @@ Describe 'PR issue reference validator' {
         Assert-ValidReferenceBody -Body $Body
     }
 
+    It 'ends a caption-local anchor at a table boundary: <Case>' -ForEach @(
+        @{ Case = 'explicit caption'; Body = '<table><caption><a href="https://github.com/other/repo/issues/999">context</caption></table> Refs #741' }
+        @{ Case = 'implicit row'; Body = '<table><caption><a href="https://github.com/other/repo/issues/999">context<tr><td>Refs #741</td></tr></table>' }
+        @{ Case = 'implicit table'; Body = '<table><caption><a href="https://github.com/other/repo/issues/999">context</table> Refs #741' }
+    ) {
+        Assert-ValidReferenceBody -Body $Body
+    }
+
+    It 'preserves enclosing caption anchors and ignores unmatched boundaries: <Case>' -ForEach @(
+        @{ Case = 'enclosing anchor'; Body = '<a href="https://github.com/other/repo/issues/999"><table><caption>#741</caption></table> #741</a>' }
+        @{ Case = 'mismatched row end'; Body = '<table><caption><a href="https://github.com/other/repo/issues/999">context</tr> #741</caption></table>' }
+        @{ Case = 'caption outside table'; Body = '<caption><a href="https://github.com/other/repo/issues/999">context</caption> #741</a>' }
+    ) {
+        Assert-NoReferenceBody -Body $Body
+    }
+
     It 'restores the enclosing cell anchor after closing a nested table cell' {
         $outcome = Assert-ValidReferenceBody -Body 'x <table><tr><td><a href="https://github.com/other/repo/issues/999">context<table><tr><td>nested</td></tr></table> #742</td><td>Refs #741</td></tr></table>'
         @($outcome.Result.References).Count | Should -Be 1
