@@ -92,7 +92,8 @@ internal sealed class SignalRClientGrain
         ArgumentException.ThrowIfNullOrEmpty(groupName);
         string connectionId = ExtractConnectionId();
         Stopwatch operationTimer = Stopwatch.StartNew();
-        Logger.ClientGroupChanging(connectionId, state.HubName, groupName, "join");
+        string logGroupName = AqueductGroupLogValue.ForName(groupName);
+        Logger.ClientGroupChanging(connectionId, state.HubName, logGroupName, "join");
         bool isConnected = !string.IsNullOrEmpty(state.ServerId);
         if (isConnected)
         {
@@ -106,7 +107,7 @@ internal sealed class SignalRClientGrain
 
         Logger.ClientGroupChanged(
             connectionId,
-            groupName,
+            logGroupName,
             "join",
             isConnected,
             groups.Count,
@@ -185,7 +186,8 @@ internal sealed class SignalRClientGrain
         ArgumentException.ThrowIfNullOrEmpty(groupName);
         string connectionId = ExtractConnectionId();
         Stopwatch operationTimer = Stopwatch.StartNew();
-        Logger.ClientGroupChanging(connectionId, state.HubName, groupName, "remove");
+        string logGroupName = AqueductGroupLogValue.ForName(groupName);
+        Logger.ClientGroupChanging(connectionId, state.HubName, logGroupName, "remove");
         bool hasHub = !string.IsNullOrEmpty(state.HubName);
         if (hasHub)
         {
@@ -197,7 +199,7 @@ internal sealed class SignalRClientGrain
 
         Logger.ClientGroupChanged(
             connectionId,
-            groupName,
+            logGroupName,
             "remove",
             hasHub,
             groups.Count,
