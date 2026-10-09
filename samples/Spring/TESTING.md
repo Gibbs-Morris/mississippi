@@ -7,6 +7,7 @@ Using Aspire does not by itself make a test L2: the browser journey through the 
 | --- | --- | --- | --- |
 | `Spring.Domain.L0Tests` | Domain handlers, reducers, and effects | Repository unit-test scripts | L0 Tests |
 | `Spring.Client.L0Tests` | Client state and component behavior in isolation | Repository unit-test scripts | L0 Tests |
+| `Spring.Gateway.L0Tests` | Gateway startup retry and cancellation behavior in isolation | Repository unit-test scripts | L0 Tests |
 | `Spring.L2Tests` | Generated API contracts, authorization, storage-backed commands, and projection queries | `pwsh ./test-spring.ps1 -TestLevel L2 -Suite Full` | L2 Tests on PR; workflow dispatch |
 | `Spring.L3Tests/Smoke` | A small set of critical browser journeys proving the app works | `pwsh ./test-spring.ps1` | L3 Tests: `L3 Spring E2E (Smoke)` on PR and merge queue |
 | `Spring.L3Tests` outside `Smoke` | Additional browser scenarios, including API reference UI | `pwsh ./test-spring.ps1 -TestLevel L3 -Suite Full` | L3 Tests: select `Full` when dispatching manually |
