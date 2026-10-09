@@ -255,6 +255,24 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body 'Example ``<span title="`">Refs #741</span>`` is code.'
     }
 
+    It 'ignores code delimited by backticks inside escaped HTML-like tags' {
+        Assert-NoReferenceBody -Body '\<span title="`">Refs #741\<span title="`">'
+    }
+
+    It 'ignores code delimited by backticks inside escaped anchor-like tags' {
+        Assert-NoReferenceBody -Body '\<a href="https://example.test" title="`">Refs #741\<a href="https://example.test" title="`">'
+    }
+
+    It 'preserves tracking between actual tags after an even number of backslashes' {
+        Assert-ValidReferenceBody -Body '\\<span title="`">Refs #741\\<span title="`">'
+    }
+
+    It 'preserves tracking after code containing escaped HTML-like tags' {
+        $outcome = Assert-ValidReferenceBody -Body '\<span title="`">Refs #742\<span title="`"> Refs #741'
+        @($outcome.Result.References).Count | Should -Be 1
+        $outcome.Result.References[0].Number | Should -Be 741
+    }
+
     It 'ignores commented tracking between HTML tags containing quoted backticks' {
         Assert-NoReferenceBody -Body '<span title="`">left</span> <!-- Refs #741 --> <span title="`">right</span>'
     }
