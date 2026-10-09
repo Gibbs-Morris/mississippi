@@ -291,6 +291,23 @@ Describe 'PR issue reference validator' {
         Assert-NoReferenceBody -Body $Body
     }
 
+    It 'preserves visible attributes on GFM-filtered tags: <Tag>' -ForEach @(
+        @{ Tag = 'textarea' }
+        @{ Tag = 'script' }
+        @{ Tag = 'title' }
+    ) {
+        Assert-ValidReferenceBody -Body ('<' + $Tag + ' title="Refs #741">example</' + $Tag + '>')
+    }
+
+    It 'ignores filtered-tag examples owned by code or external links: <Case>' -ForEach @(
+        @{ Case = 'inline code'; Body = '`<textarea title="Refs #741">example</textarea>`' }
+        @{ Case = 'enclosing external anchor'; Body = '<a href="https://example.test"><textarea title="Refs #741">example</textarea></a>' }
+        @{ Case = 'different tag name'; Body = '<textarea-custom title="Refs #741">example</textarea-custom>' }
+        @{ Case = 'external anchor inside escaped textarea'; Body = '<textarea><a href="https://github.com/other/repo/issues/999">example</textarea> Refs #741' }
+    ) {
+        Assert-NoReferenceBody -Body $Body
+    }
+
     It 'ignores non-rendered HTML declarations: <Case>' -ForEach @(
         @{ Case = 'document type'; Markup = '<!DOCTYPE html PUBLIC "#741">' }
         @{ Case = 'processing instruction'; Markup = '<?example #741 ?>' }

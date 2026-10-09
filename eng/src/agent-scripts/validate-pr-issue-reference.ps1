@@ -31,6 +31,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     $null = [Markdig.MarkdownExtensions]::UseAutoLinks($markdownPipelineBuilder, $null)
     $null = [Markdig.MarkdownExtensions]::UseEmphasisExtras($markdownPipelineBuilder, [Markdig.Extensions.EmphasisExtras.EmphasisExtraOptions]::Strikethrough)
     $html = [Markdig.Markdown]::ToHtml($Content, $markdownPipelineBuilder.Build())
+    $html = [regex]::Replace($html, '(?i)<(?=/?(?:title|textarea|style|xmp|iframe|noembed|noframes|script|plaintext)(?:\s|/?>))', '&lt;')
     $localIssueHrefPattern = '(?i)^(?:(?:https?:)?//github\.com)?/' + [regex]::Escape($RepositoryOwner) + '/' + [regex]::Escape($RepositoryName) + '/issues/(?<Number>\d+)(?:[/?#].*)?$'
     $builder = [System.Text.StringBuilder]::new()
     $anchorHrefs = [System.Collections.Generic.List[string]]::new()
