@@ -4,7 +4,7 @@ applyTo: 'tests/**'
 
 # Self-Taught Lessons: Testing
 
-Governing thought: Test observable failure cases and keep concurrent observations safe.
+Governing thought: Test observable failure cases and keep test evidence accurate.
 
 > Drift check: Before adding a lesson, compare overlapping instructions for conflicts and duplicates under `self-improvement.instructions.md`.
 
@@ -16,9 +16,11 @@ Governing thought: Test observable failure cases and keep concurrent observation
 
 - Tests extending conditional matching **SHOULD** combine newly accepted conditions with missing representations. Why: PR #899 returned 304 for null projection state despite 100% controller line and branch coverage.
 
+- Agents collecting test results **SHOULD** select the artifact paths reported by the run. Why: PR #899's collector parsed a JSON timestamp again, changed 9 October to 10 September, and included three historical RED reports.
+
 ## Scope and Audience
 
-Agents writing tests under `tests/**`.
+Agents writing or validating tests under `tests/**`.
 
 ## References
 
