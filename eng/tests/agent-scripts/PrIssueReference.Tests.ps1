@@ -124,6 +124,38 @@ Describe 'PR issue reference validator' {
         Assert-ValidReferenceBody -Body '<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking issue</a>'
     }
 
+    It 'ends a cell-local anchor at a table boundary: <Case>' -ForEach @(
+        @{ Case = 'explicit data cell'; Body = 'x <table><tr><td><a href="https://github.com/other/repo/issues/999">context</td><td>Refs #741</td></tr></table>' }
+        @{ Case = 'explicit header cell'; Body = 'x <table><tr><th><a href="https://github.com/other/repo/issues/999">context</th><td>Refs #741</td></tr></table>' }
+        @{ Case = 'implicit cell end'; Body = 'x <table><tr><td><a href="https://github.com/other/repo/issues/999">context<td>Refs #741</td></tr></table>' }
+        @{ Case = 'implicit row end'; Body = 'x <table><tr><td><a href="https://github.com/other/repo/issues/999">context<tr><td>Refs #741</td></tr></table>' }
+        @{ Case = 'implicit table end'; Body = 'x <table><tr><td><a href="https://github.com/other/repo/issues/999">context</table> Refs #741' }
+    ) {
+        Assert-ValidReferenceBody -Body $Body
+    }
+
+    It 'restores the enclosing cell anchor after closing a nested table cell' {
+        $outcome = Assert-ValidReferenceBody -Body 'x <table><tr><td><a href="https://github.com/other/repo/issues/999">context<table><tr><td>nested</td></tr></table> #742</td><td>Refs #741</td></tr></table>'
+        @($outcome.Result.References).Count | Should -Be 1
+        $outcome.Result.References[0].Number | Should -Be 741
+    }
+
+    It 'preserves an external anchor enclosing a table and subsequent text' {
+        Assert-NoReferenceBody -Body 'x <a href="https://github.com/other/repo/issues/999"><table><tr><td>#741</td></tr></table> #741</a>'
+    }
+
+    It 'ignores a mismatched cell end tag when retaining anchor ownership' {
+        Assert-NoReferenceBody -Body 'x <table><tr><td><a href="https://github.com/other/repo/issues/999">context</th> #741</td></tr></table>'
+    }
+
+    It 'ignores cell tags outside a table when retaining anchor ownership' {
+        Assert-NoReferenceBody -Body 'x <a href="https://github.com/other/repo/issues/999">context</td> #741</a>'
+    }
+
+    It 'retains a local issue destination when its anchor ends with the cell' {
+        Assert-ValidReferenceBody -Body 'x <table><tr><td><a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking</td></tr></table>'
+    }
+
     It 'ignores HTML issue-looking labels whose destination is not a repository issue: <Case>' -ForEach @(
         @{ Case = 'upstream Dependabot issue'; Anchor = '<a href="https://redirect.github.com/actions/setup-java/issues/999">#999</a>' }
         @{ Case = 'external label matching a local issue'; Anchor = '<a href="https://github.com/other/repo/issues/999">#741</a>' }

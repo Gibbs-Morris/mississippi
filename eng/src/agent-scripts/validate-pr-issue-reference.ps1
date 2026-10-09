@@ -26,6 +26,8 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     $anchorHrefs = [System.Collections.Generic.List[string]]::new()
     $anchorHrefPattern = '(?is)^<a(?=\s|/?>)(?:"[^"]*"|''[^'']*''|[^''">])*?\s+href(?=\s|=|/?>)(?:\s*=\s*(?:"(?<Href>[^"]*)"|''(?<Href>[^'']*)''|(?<Href>[^\s>]+)))?[^>]*>'
     $insideAnchor = $false
+    $tableDepth = 0
+    $cellScopes = [System.Collections.Generic.Stack[object]]::new()
     $codeDepth = 0
     $index = 0
     while ($index -lt $html.Length) {
@@ -43,6 +45,25 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                     $codeDepth = [Math]::Max(0, $codeDepth + $(if ($isClosing) { -1 } else { 1 }))
                 }
                 elseif ($codeDepth -eq 0) {
+                    # Cell boundaries discard anchors opened inside that cell, preserving enclosing links.
+                    if ($tableDepth -gt 0 -and $cellScopes.Count -gt 0 -and $cellScopes.Peek().TableDepth -eq $tableDepth) {
+                        $cellScope = $cellScopes.Peek()
+                        $closesCell = if ($isClosing) {
+                            $tagName -eq $cellScope.Name -or $tagName -in @('table', 'tbody', 'thead', 'tfoot', 'tr')
+                        }
+                        else {
+                            $tagName -in @('caption', 'col', 'colgroup', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr')
+                        }
+                        if ($closesCell) {
+                            $insideAnchor = $cellScopes.Pop().PriorAnchor
+                        }
+                    }
+                    if ($tagName -eq 'table') {
+                        $tableDepth = [Math]::Max(0, $tableDepth + $(if ($isClosing) { -1 } else { 1 }))
+                    }
+                    elseif (-not $isClosing -and $tableDepth -gt 0 -and $tagName -in @('td', 'th')) {
+                        $cellScopes.Push([pscustomobject]@{ Name = $tagName; TableDepth = $tableDepth; PriorAnchor = $insideAnchor })
+                    }
                     if ($tagName -eq 'a' -and -not $isClosing) {
                         $insideAnchor = $false
                         $anchorHref = [regex]::Match($htmlTag.Value, $anchorHrefPattern)
