@@ -92,7 +92,7 @@ Describe 'Pester module coverage for Sonar' {
 param([string]`$Helper,[string]`$TestFile,[string]`$Module,[string]`$Root,[string]`$Destination)
 Set-StrictMode -Version Latest
 `$ErrorActionPreference='Stop'
-Import-Module Pester -MinimumVersion 5.2.0
+Import-Module Pester -MinimumVersion 5.7.1
 `$tokens=`$null;`$errors=`$null
 `$ast=[Management.Automation.Language.Parser]::ParseFile(`$Helper,[ref]`$tokens,[ref]`$errors)
 foreach (`$function in `$ast.FindAll({param(`$node) `$node -is [Management.Automation.Language.FunctionDefinitionAst]},`$false)) {

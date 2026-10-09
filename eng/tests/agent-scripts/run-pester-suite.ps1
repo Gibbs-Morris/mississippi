@@ -10,7 +10,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-Import-Module Pester -MinimumVersion 5.0.0 -ErrorAction Stop
+Import-Module Pester -MinimumVersion 5.7.1 -ErrorAction Stop
 foreach ($path in $TestPath) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         throw "Test file not found: $path"

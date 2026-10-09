@@ -60,7 +60,7 @@ jobs:
         shell: pwsh
         run: |
           Set-PSRepository PSGallery -InstallationPolicy Trusted
-          Install-Module -Name Pester -Scope CurrentUser -Force -MinimumVersion 5.0.0
+          Install-Module -Name Pester -Scope CurrentUser -Force -MinimumVersion 5.7.1
 
       - name: Run PowerShell test orchestrator
         shell: pwsh

@@ -56,6 +56,17 @@ Describe 'PowerShell test orchestration' {
         Set-Content (Join-Path $fixtureRunners 'verify-scratchpad-task-scripts.ps1') 'exit 0'
     }
 
+    It 'preserves running test mocks after invoking the actual orchestrator' {
+        Copy-Item (Join-Path $PSScriptRoot 'run-spring-validation-tests.ps1') $fixtureRunners -Force
+        Mock Invoke-Pester { [pscustomobject]@{Result='Passed';TotalCount=1;PassedCount=1;FailedCount=0} }
+        Mock Get-Date { [datetime]'2001-01-01' }
+        $results = @(& $orchestrator -PassThru 6>$null)
+        @($results | Where-Object Name -EQ 'run-spring-validation-tests.ps1').Status | Should -Be 'Passed'
+        (Get-Date).Year | Should -Be 2001
+        Should -Invoke Get-Date -Times 1 -Exactly
+        Should -Invoke Invoke-Pester -Times 1 -Exactly -ParameterFilter { $Path -like '*SpringValidation.Tests.ps1' -and $PassThru }
+    }
+
     It 'runs every required suite successfully' {
         $results = & $orchestrator -PassThru 6>$null
         $results.Count | Should -Be 12
@@ -65,7 +76,8 @@ Describe 'PowerShell test orchestration' {
     It 'admits Pester <Version> only when the full harness minimum is met' -ForEach @(
         @{Version='5.0.0';ExitCode=1},
         @{Version='5.1.1';ExitCode=1},
-        @{Version='5.2.0';ExitCode=0}
+        @{Version='5.2.0';ExitCode=1},
+        @{Version='5.7.1';ExitCode=0}
     ) {
         $modulesRoot = Join-Path $TestDrive ('modules-' + $Version)
         $pesterRoot = Join-Path $modulesRoot ('Pester/' + $Version)
@@ -85,7 +97,7 @@ Describe 'PowerShell test orchestration' {
         $output = & $powerShellPath -NoProfile -File $hostScript -ModulesRoot $modulesRoot -Orchestrator $orchestrator 2>&1 | Out-String
         $LASTEXITCODE | Should -Be $ExitCode
         (Test-Path -LiteralPath $marker) | Should -Be ($ExitCode -eq 0)
-        if ($ExitCode -eq 1) { $output | Should -Match 'Pester 5\.2'; $output | Should -Not -Match 'Executing:' }
+        if ($ExitCode -eq 1) { $output | Should -Match 'Pester 5\.7\.1'; $output | Should -Not -Match 'Executing:' }
     }
 
     It 'fails a missing runner' {
