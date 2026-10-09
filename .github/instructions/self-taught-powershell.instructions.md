@@ -12,7 +12,7 @@ Governing thought: Preserve collection shape and repository ownership when parsi
 
 - Test helpers that promise an optional collection **SHOULD** wrap conditional output in `@(...)` when callers need an empty array. Why: Seven cleanup workflow fixtures failed with `PropertyNotFoundException` on `.Count` because conditional assignment returned null under the full runner's strict mode.
 - Issue-reference parsers **MUST** strip non-rendered code before extracting HTML links. Why: Regression cases showed code anchors hiding valid tracking or incorrectly satisfying traceability.
-- Issue-reference parsers **MUST** determine repository ownership from the link destination rather than its label. Why: PR #1022's upstream labels caused false local issue lookups.
+- When parsing HTML anchors, issue-reference parsers **MUST** determine repository ownership from the link destination rather than its label. Why: PR #1022's upstream HTML labels caused false local issue lookups.
 
 ## Scope and Audience
 
