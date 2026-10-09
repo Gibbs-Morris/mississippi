@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.DomainModeling.Abstractions;
+using Mississippi.DomainModeling.Runtime.Sagas;
 
 
 namespace Mississippi.DomainModeling.Runtime.L0Tests;
@@ -69,6 +70,14 @@ public sealed class SagaOrchestrationEffectTests
         configureServices?.Invoke(services);
         return services.BuildServiceProvider();
     }
+
+    private static TestSagaState CreateState(
+        params SagaStepInfo[] steps
+    ) =>
+        new()
+        {
+            StepHash = SagaStepHash.Compute(steps),
+        };
 
     /// <summary>
     ///     Verifies CanHandle accepts saga lifecycle events.
@@ -138,7 +147,7 @@ public sealed class SagaOrchestrationEffectTests
                 {
                     FromStepIndex = 0,
                 },
-                new(),
+                CreateState(steps),
                 "saga",
                 0,
                 CancellationToken.None));
@@ -172,7 +181,7 @@ public sealed class SagaOrchestrationEffectTests
                     StepIndex = 1,
                     StepName = "Credit",
                 },
-                new(),
+                CreateState(steps),
                 "saga",
                 0,
                 CancellationToken.None));
@@ -201,7 +210,7 @@ public sealed class SagaOrchestrationEffectTests
                 {
                     FromStepIndex = -1,
                 },
-                new(),
+                CreateState(),
                 "saga",
                 0,
                 CancellationToken.None));
@@ -232,7 +241,7 @@ public sealed class SagaOrchestrationEffectTests
                     StepName = "Debit",
                     CompletedAt = now,
                 },
-                new(),
+                CreateState(steps),
                 "saga",
                 0,
                 CancellationToken.None));
@@ -262,7 +271,7 @@ public sealed class SagaOrchestrationEffectTests
                     StartedAt = startedAt,
                     StepHash = "HASH",
                 },
-                new(),
+                CreateState(steps),
                 "saga",
                 0,
                 CancellationToken.None));
@@ -303,7 +312,7 @@ public sealed class SagaOrchestrationEffectTests
                     StartedAt = new(2025, 2, 12, 12, 30, 0, TimeSpan.Zero),
                     StepHash = "HASH",
                 },
-                new(),
+                CreateState(steps),
                 "saga",
                 0,
                 CancellationToken.None));
@@ -348,7 +357,7 @@ public sealed class SagaOrchestrationEffectTests
                     StepName = "Debit",
                     CompletedAt = now,
                 },
-                new(),
+                CreateState(steps),
                 "saga",
                 0,
                 CancellationToken.None));
@@ -387,7 +396,7 @@ public sealed class SagaOrchestrationEffectTests
                     StartedAt = now,
                     StepHash = "HASH",
                 },
-                new(),
+                CreateState(steps),
                 "saga",
                 0,
                 CancellationToken.None));
@@ -422,7 +431,7 @@ public sealed class SagaOrchestrationEffectTests
                 {
                     FromStepIndex = 0,
                 },
-                new(),
+                CreateState(),
                 "saga",
                 0,
                 CancellationToken.None));
@@ -450,7 +459,7 @@ public sealed class SagaOrchestrationEffectTests
                 {
                     FromStepIndex = 0,
                 },
-                new(),
+                CreateState(steps),
                 "saga",
                 0,
                 CancellationToken.None));
@@ -479,7 +488,7 @@ public sealed class SagaOrchestrationEffectTests
                 {
                     FromStepIndex = 0,
                 },
-                new(),
+                CreateState(steps),
                 "saga",
                 0,
                 CancellationToken.None));
@@ -505,7 +514,7 @@ public sealed class SagaOrchestrationEffectTests
                     StepName = "Step",
                     ErrorCode = "ERR",
                 },
-                new(),
+                CreateState(),
                 "saga",
                 0,
                 CancellationToken.None));
@@ -542,7 +551,7 @@ public sealed class SagaOrchestrationEffectTests
                     StartedAt = new(2025, 2, 12, 14, 0, 0, TimeSpan.Zero),
                     StepHash = "HASH",
                 },
-                new(),
+                CreateState(),
                 "saga",
                 0,
                 CancellationToken.None));
@@ -572,7 +581,7 @@ public sealed class SagaOrchestrationEffectTests
                                    StartedAt = new(2025, 2, 12, 13, 0, 0, TimeSpan.Zero),
                                    StepHash = "HASH",
                                },
-                               new(),
+                               CreateState(steps),
                                "saga",
                                0,
                                CancellationToken.None))
@@ -602,7 +611,7 @@ public sealed class SagaOrchestrationEffectTests
                 {
                     FromStepIndex = 0,
                 },
-                new(),
+                CreateState(steps),
                 "saga",
                 0,
                 CancellationToken.None));
@@ -631,7 +640,7 @@ public sealed class SagaOrchestrationEffectTests
                 {
                     FromStepIndex = 0,
                 },
-                new(),
+                CreateState(steps),
                 "saga",
                 0,
                 CancellationToken.None));
