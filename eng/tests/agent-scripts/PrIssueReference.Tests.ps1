@@ -74,6 +74,12 @@ Describe 'PR issue reference validator' {
     }
 
     It 'checks rendered reference ownership: <Case>' -ForEach (@(
+        'self-closing SVG|false|<svg/><![CDATA[Refs #741]]>'
+        'self-closing MathML|false|<math/><![CDATA[Refs #741]]>'
+        'self-closing spaced SVG|false|<svg /><![CDATA[Refs #741]]>'
+        'self-closing nested SVG|true|<svg><svg/><text><![CDATA[Refs #741]]></text></svg>'
+        'self-closing unquoted slash|true|<svg id=x/><![CDATA[Refs #741]]>'
+        'self-closing quoted attribute|false|<svg id="x"/><![CDATA[Refs #741]]>'
         'standalone Markdown image|false|#![x](https://example.test/x.png)741'
         'standalone HTML image|false|#<img src="https://example.test/x.png" alt="x">741'
         'standalone empty image|false|#<img>741'

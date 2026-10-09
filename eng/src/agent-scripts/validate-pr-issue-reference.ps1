@@ -12,7 +12,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$htmlTagRegex = [regex]::new('(?s)\G(?:<[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:"[^"]*"|''[^'']*''|[^\s"''=<>`]+))?)*\s*/?>|</[A-Za-z][A-Za-z0-9-]*\s*>)')
+$htmlTagRegex = [regex]::new('(?s)\G(?:<[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:"[^"]*"|''[^'']*''|[^\s"''=<>`]+))?)*\s*(?<SelfClosing>/)?>|</[A-Za-z][A-Za-z0-9-]*\s*>)')
 $htmlCommentRegex = [regex]::new('(?s)\G<!--(?:>|->|.*?(?:--!?>|\z))')
 $htmlNonTextRegex = [regex]::new('(?s)\G(?:<\?.*?(?:>|\z)|<![A-Za-z].*?(?:>|\z)|<!\[CDATA\[.*?(?:>|\z))')
 $htmlCdataRegex = [regex]::new('(?s)\G<!\[CDATA\[(?<Content>.*?)(?:\]\]>|\z)')
@@ -117,7 +117,9 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                     }
                 }
                 if ($tagName -in @('svg', 'math')) {
-                    if (-not $isClosing) { $foreignElements.Push($tagName) }
+                    if (-not $isClosing) {
+                        if (-not $htmlTag.Groups['SelfClosing'].Success) { $foreignElements.Push($tagName) }
+                    }
                     elseif ($foreignElements.Contains($tagName)) {
                         do { $foreignElement = $foreignElements.Pop() } while ($foreignElement -ne $tagName)
                     }
