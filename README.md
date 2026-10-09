@@ -29,7 +29,7 @@ Take a look at [`samples/Spring/Spring.Domain`](samples/Spring/Spring.Domain) to
 
 ## Overview
 
-Mississippi is a sophisticated .NET framework designed to streamline distributed application development. It provides a robust foundation for building scalable, maintainable .NET applications with built-in support for event sourcing, CQRS, distributed computing via Orleans, cloud storage integration, and real-time UI updates.
+Mississippi is a .NET framework designed to streamline distributed application development. It provides a robust foundation for building scalable, maintainable .NET applications with built-in support for event sourcing, CQRS, distributed computing via Orleans, cloud storage integration, and real-time UI updates.
 
 ## Design Principles
 
