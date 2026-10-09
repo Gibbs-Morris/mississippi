@@ -173,6 +173,32 @@ Describe 'PR issue reference validator' {
         Assert-ValidReferenceBody -Body '<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking issue</a>'
     }
 
+    It 'preserves rendered tracking through select markup: <Case>' -ForEach (@(
+        'plain option|<select><option>Refs #741</option></select>'
+        'ignored code token|<select><option><code>Refs #741</code></option></select>'
+        'discarded external anchor|<select><option><a href="https://github.com/other/repo/issues/999">example</select> Refs #741'
+        'ignored external link label|<select><option><a href="https://example.test">Refs #741</a></select>'
+        'nested select boundary|<select><select><a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking</a>'
+        'input boundary|<select><input><a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking</a>'
+        'table cell boundary|<table><tr><td><select><option>example</td><td><a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking</a></td></tr></table>'
+    ) | ForEach-Object {
+        $caseFields = $_ -split '\|', 2
+        @{ Case = $caseFields[0]; Body = $caseFields[1] }
+    }) {
+        Assert-ValidReferenceBody -Body $Body
+    }
+
+    It 'ignores discarded select destinations and preserves enclosing ownership: <Case>' -ForEach (@(
+        'discarded local destination|<select><option><a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking</a></select>'
+        'enclosing code|<code><select><option>Refs #741</option></select></code>'
+        'enclosing external anchor|<a href="https://example.test"><select><option>Refs #741</option></select></a>'
+    ) | ForEach-Object {
+        $caseFields = $_ -split '\|', 2
+        @{ Case = $caseFields[0]; Body = $caseFields[1] }
+    }) {
+        Assert-NoReferenceBody -Body $Body
+    }
+
     It 'preserves tracking labels when GitHub strips a space-prefixed link: <Case>' -ForEach @(
         @{ Case = 'external URL'; Body = '<a href=" https://example.test ">Refs #741</a>' }
         @{ Case = 'local URL'; Body = '<a href=" https://github.com/Gibbs-Morris/mississippi/issues/741">Refs #741</a>' }

@@ -37,6 +37,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     $anchorHrefs = [System.Collections.Generic.List[string]]::new()
     $anchorHrefPattern = '(?is)^<a(?=\s|/?>)(?:"[^"]*"|''[^'']*''|[^''">])*?\s+href(?=\s|=|/?>)(?:\s*=\s*(?:"(?<Href>[^"]*)"|''(?<Href>[^'']*)''|(?<Href>[^\s>]+)))?[^>]*>'
     $insideAnchor = $false
+    $insideSelect = $false
     $tableDepth = 0
     $cellScopes = [System.Collections.Generic.Stack[object]]::new()
     $codeDepth = 0
@@ -57,6 +58,20 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
             if ($htmlTag.Success) {
                 $tagName = [regex]::Match($htmlTag.Value, '^</?(?<Name>[A-Za-z][A-Za-z0-9-]*)').Groups['Name'].Value.ToLowerInvariant()
                 $isClosing = $htmlTag.Value.StartsWith('</', [System.StringComparison]::Ordinal)
+                if ($tagName -eq 'select') {
+                    $insideSelect = -not $isClosing -and -not $insideSelect
+                    $index += $htmlTag.Length
+                    continue
+                }
+                if ($insideSelect) {
+                    $closesSelect = (-not $isClosing -and $tagName -eq 'input') -or
+                        ($tableDepth -gt 0 -and $tagName -in @('caption', 'table', 'tbody', 'tfoot', 'thead', 'tr', 'td', 'th'))
+                    if ($closesSelect) { $insideSelect = $false }
+                    else {
+                        $index += $htmlTag.Length
+                        continue
+                    }
+                }
                 # Table scopes restore both enclosing links and code, including implied ends.
                 if ($tableDepth -gt 0 -and $cellScopes.Count -gt 0 -and $cellScopes.Peek().TableDepth -eq $tableDepth) {
                     $cellScope = $cellScopes.Peek()
