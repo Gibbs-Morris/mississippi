@@ -124,6 +124,24 @@ Describe 'PR issue reference validator' {
         Assert-ValidReferenceBody -Body '<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">tracking issue</a>'
     }
 
+    It 'ignores HTML issue-looking labels whose destination is not a repository issue: <Case>' -ForEach @(
+        @{ Case = 'upstream Dependabot issue'; Anchor = '<a href="https://redirect.github.com/actions/setup-java/issues/999">#999</a>' }
+        @{ Case = 'external label matching a local issue'; Anchor = '<a href="https://github.com/other/repo/issues/999">#741</a>' }
+        @{ Case = 'nested label markup'; Anchor = '<a href="https://github.com/other/repo/issues/999"><strong>#999</strong></a>' }
+        @{ Case = 'same-repository pull request'; Anchor = '<a href="https://github.com/Gibbs-Morris/mississippi/pull/743">#743</a>' }
+    ) {
+        Assert-NoReferenceBody -Body $Anchor
+        $outcome = Assert-ValidReferenceBody -Body ('Refs #741; context: ' + $Anchor)
+        @($outcome.Result.References).Count | Should -Be 1
+        $outcome.Result.References[0].Number | Should -Be 741
+    }
+
+    It 'uses an HTML issue destination rather than its numeric label' {
+        $outcome = Assert-ValidReferenceBody -Body '<a href="https://github.com/Gibbs-Morris/mississippi/issues/741">#999</a>'
+        @($outcome.Result.References).Count | Should -Be 1
+        $outcome.Result.References[0].Number | Should -Be 741
+    }
+
     It 'preserves a reference after inline comment opener code' {
         Assert-ValidReferenceBody -Body 'The token `<!--` is code. Refs #741.'
     }

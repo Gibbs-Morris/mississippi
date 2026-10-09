@@ -21,7 +21,8 @@ jobs:
   Stryker:
     name: "Stryker (weekly report)"
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 180
+    # The full run completed 31 of 46 targets before the former three-hour limit.
+    timeout-minutes: 360
     strategy:
       matrix:
         os: [ubuntu-latest]

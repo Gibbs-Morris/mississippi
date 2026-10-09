@@ -4,6 +4,7 @@ on:
   schedule: daily on weekdays
 
 permissions:
+  copilot-requests: write
   contents: read
   actions: read
   issues: read
