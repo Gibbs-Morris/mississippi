@@ -31,7 +31,7 @@ This layering is intentional:
 ```mermaid
 flowchart TB
     A[UseMississippi] --> B[ClientBuilder]
-    B --> C[Reservoir(...)]
+    B --> C["Reservoir(...)"]
     C --> D[IReservoirBuilder]
     D --> E[Features and Inlet]
 ```
