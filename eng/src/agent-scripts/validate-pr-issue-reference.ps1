@@ -60,6 +60,7 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
     $insideAnchor = $false
     $insideSelect = $false
     $buttonPriorAnchor = $null
+    $marqueeScopes = [System.Collections.Generic.Stack[object]]::new()
     $blockElements = @(
         'address', 'article', 'aside', 'blockquote', 'br', 'caption', 'dd', 'details', 'dialog', 'div', 'dl', 'dt',
         'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header',
@@ -103,6 +104,16 @@ function Remove-NonRenderedMarkdown { # NOSONAR - rendered HTML scanner tracks c
                 if ($tagName -eq 'button') {
                     if ($null -ne $buttonPriorAnchor) { $insideAnchor = $buttonPriorAnchor }
                     $buttonPriorAnchor = if ($isClosing) { $null } else { $insideAnchor }
+                }
+                if ($tagName -eq 'marquee') {
+                    if (-not $isClosing) {
+                        $marqueeScopes.Push([pscustomobject]@{ PriorAnchor = $insideAnchor; PriorCodeDepth = $codeDepth })
+                    }
+                    elseif ($marqueeScopes.Count -gt 0) {
+                        $marqueeScope = $marqueeScopes.Pop()
+                        $insideAnchor = $marqueeScope.PriorAnchor
+                        $codeDepth = $marqueeScope.PriorCodeDepth
+                    }
                 }
                 # Table scopes restore both enclosing links and code, including implied ends.
                 if ($tableDepth -gt 0 -and $cellScopes.Count -gt 0 -and $cellScopes.Peek().TableDepth -eq $tableDepth) {

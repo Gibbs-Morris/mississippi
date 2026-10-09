@@ -115,6 +115,22 @@ Describe 'PR issue reference validator' {
         else { Assert-NoReferenceBody -Body $Body }
     }
 
+    It 'checks marquee anchor and code scope ownership: <Case>' -ForEach (@(
+        'local anchor scope|true|<marquee><a href="https://example.test">context</marquee> Refs #741'
+        'local code scope|true|<marquee><code>example</marquee> Refs #741'
+        'nested scope|true|<marquee><a href="https://example.test">outer<marquee>inner</marquee> #742</marquee> Refs #741'
+        'outer anchor|false|<a href="https://example.test"><marquee>context</marquee> Refs #741</a>'
+        'outer code|false|<code><marquee>context</marquee> Refs #741</code>'
+        'unclosed scope|false|<marquee><a href="https://example.test">context Refs #741'
+        'unmatched close|false|<a href="https://example.test">context</marquee> Refs #741'
+    ) | ForEach-Object {
+        $caseFields = $_ -split '\|', 3
+        @{ Case = $caseFields[0]; Expected = $caseFields[1] -eq 'true'; Body = $caseFields[2] }
+    }) {
+        if ($Expected) { Assert-ValidReferenceBody -Body $Body }
+        else { Assert-NoReferenceBody -Body $Body }
+    }
+
     It 'ignores tracking in mathematical expressions: <Case>' -ForEach @(
         @{ Case = 'inline phantom'; Body = '$\hphantom{\#741}$' }
         @{ Case = 'display phantom'; Body = '$$\hphantom{\#741}$$' }
