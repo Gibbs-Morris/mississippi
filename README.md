@@ -1,6 +1,6 @@
 # Mississippi Framework
 
-> ⚠️ **EARLY ALPHA - WORK IN PROGRESS**: This framework is currently in early alpha development stage and not yet at version 1.0. APIs may change significantly without notice. Not recommended for production use at this time.
+> ⚠️ **EARLY ALPHA - WORK IN PROGRESS**: This framework is currently in early alpha development and not yet at version 1.0. APIs may change significantly without notice. Not recommended for production use at this time.
 
 ## Vision
 
