@@ -18,36 +18,31 @@ $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 $testsRoot = Join-Path $repoRoot 'eng/tests/agent-scripts'
 
 $testRunners = @(
-    @{ Name = 'run-repository-automation-tests.ps1'; Type = 'Pester' },
-    @{ Name = 'run-spring-validation-tests.ps1'; Type = 'Pester' },
-    @{ Name = 'run-scratchpad-task-tests.ps1';   Type = 'Pester' },
-    @{ Name = 'run-summarize-coverage-gaps-tests.ps1'; Type = 'Pester' },
-    @{ Name = 'run-task-automation-tests.ps1';   Type = 'Pester' },
-    @{ Name = 'run-validation-plan-tests.ps1';   Type = 'Pester' },
-    @{ Name = 'run-issue-spec-tests.ps1';        Type = 'Pester' },
-    @{ Name = 'run-agent-doctor-tests.ps1';      Type = 'Pester' },
-    @{ Name = 'run-agent-context-tests.ps1';    Type = 'Pester' },
-    @{ Name = 'verify-scratchpad-task-scripts.ps1';    Type = 'Script' }
+    'run-repository-automation-tests.ps1',
+    'run-spring-validation-tests.ps1',
+    'run-scratchpad-task-tests.ps1',
+    'run-summarize-coverage-gaps-tests.ps1',
+    'run-task-automation-tests.ps1',
+    'run-validation-plan-tests.ps1',
+    'run-issue-spec-tests.ps1',
+    'run-agent-doctor-tests.ps1',
+    'run-agent-context-tests.ps1'
 )
 
-# Ensure Pester v5+ is available when any Pester runners are present
-$needsPester = $testRunners | Where-Object { $_.Type -eq 'Pester' }
-if ($needsPester.Count -gt 0) {
-    try {
-        Import-Module Pester -MinimumVersion 5.0.0 -Force -ErrorAction Stop | Out-Null
+try {
+    Import-Module Pester -MinimumVersion 5.0.0 -Force -ErrorAction Stop | Out-Null
+}
+catch {
+    Write-Host 'Pester v5+ is required to run PowerShell tests.' -ForegroundColor Red
+    if ($env:CI) {
+        Write-Host 'Install Pester v5 in your CI image or a pre-step. Example:' -ForegroundColor Yellow
+        Write-Host '  pwsh -Command "Install-Module -Name Pester -Scope CurrentUser -Force -MinimumVersion 5.0.0"' -ForegroundColor Yellow
+        exit 1
     }
-    catch {
-        Write-Host 'Pester v5+ is required to run PowerShell tests.' -ForegroundColor Red
-        if ($env:CI) {
-            Write-Host 'Install Pester v5 in your CI image or a pre-step. Example:' -ForegroundColor Yellow
-            Write-Host '  pwsh -Command "Install-Module -Name Pester -Scope CurrentUser -Force -MinimumVersion 5.0.0"' -ForegroundColor Yellow
-            exit 1
-        }
-        else {
-            Write-Host 'Install Pester locally:' -ForegroundColor Yellow
-            Write-Host '  Install-Module -Name Pester -Scope CurrentUser -Force -MinimumVersion 5.0.0' -ForegroundColor Yellow
-            throw
-        }
+    else {
+        Write-Host 'Install Pester locally:' -ForegroundColor Yellow
+        Write-Host '  Install-Module -Name Pester -Scope CurrentUser -Force -MinimumVersion 5.0.0' -ForegroundColor Yellow
+        throw
     }
 }
 
@@ -55,38 +50,28 @@ $results = @()
 $failureCount = 0
 
 foreach ($runner in $testRunners) {
-    $path = Join-Path $testsRoot $runner.Name
-    Write-Host "Executing: $($runner.Name)" -ForegroundColor Cyan
+    $path = Join-Path $testsRoot $runner
+    Write-Host "Executing: $runner" -ForegroundColor Cyan
     try {
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-            throw "Test runner not found: $($runner.Name)"
+            throw "Test runner not found: $runner"
         }
 
-        if ($runner.Type -eq 'Pester') {
-            $result = & $path -PassThru
-            if ($null -eq $result -or $result.TotalCount -lt 1) {
-                throw "Pester runner returned no tests: $($runner.Name)"
-            }
+        $result = & $path -PassThru
+        if ($null -eq $result -or $result.TotalCount -lt 1) {
+            throw "Pester runner returned no tests: $runner"
+        }
 
-            # Result also covers discovery and container failures with no failed tests.
-            $status = if ($result.Result -eq 'Passed' -and $result.FailedCount -eq 0) { 'Passed' } else { 'Failed' }
-            $failedCount = if ($status -eq 'Failed') { [Math]::Max(1, $result.FailedCount) } else { 0 }
-            if ($status -eq 'Failed') { $failureCount++ }
-            $results += [pscustomobject]@{ Name = $runner.Name; Type = 'Pester'; Status = $status; Failed = $failedCount }
-        }
-        else {
-            $powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
-            & $powerShellPath -NoProfile -File $path | Out-Host
-            if ($LASTEXITCODE -ne 0) {
-                throw "Test runner exited with code ${LASTEXITCODE}: $($runner.Name)"
-            }
-            $results += [pscustomobject]@{ Name = $runner.Name; Type = 'Script'; Status = 'Passed'; Failed = 0 }
-        }
+        # Result also covers discovery and container failures with no failed tests.
+        $status = if ($result.Result -eq 'Passed' -and $result.FailedCount -eq 0) { 'Passed' } else { 'Failed' }
+        $failedCount = if ($status -eq 'Failed') { [Math]::Max(1, $result.FailedCount) } else { 0 }
+        if ($status -eq 'Failed') { $failureCount++ }
+        $results += [pscustomobject]@{ Name = $runner; Type = 'Pester'; Status = $status; Failed = $failedCount }
     }
     catch {
         $failureCount++
-        Write-Host "FAILED: $($runner.Name): $($_.Exception.Message)" -ForegroundColor Red
-        $results += [pscustomobject]@{ Name = $runner.Name; Type = $runner.Type; Status = 'Failed'; Failed = 1; Error = $_.Exception.Message }
+        Write-Host "FAILED: ${runner}: $($_.Exception.Message)" -ForegroundColor Red
+        $results += [pscustomobject]@{ Name = $runner; Type = 'Pester'; Status = 'Failed'; Failed = 1; Error = $_.Exception.Message }
     }
 }
 
