@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -149,16 +150,26 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
             string endpoint = GetEndpoint(typedAction);
             TRequestDto requestBody = Mapper.Map(typedAction);
             using HttpResponseMessage response = await Http.PostAsJsonAsync(endpoint, requestBody, cancellationToken);
-
-            // Check for non-success status codes before trying to parse response
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                errorMessage = $"Server error ({(int)response.StatusCode}): {responseBody}";
+                // Check for non-success status codes before trying to parse response
+                if (!response.IsSuccessStatusCode)
+                {
+                    string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    errorMessage = $"Server error ({(int)response.StatusCode}): {responseBody}";
+                }
+                else
+                {
+                    result = await response.Content.ReadFromJsonAsync<OperationResultDto>(cancellationToken);
+                }
             }
-            else
+            catch (JsonException ex)
             {
-                result = await response.Content.ReadFromJsonAsync<OperationResultDto>(cancellationToken);
+                errorMessage = $"Invalid response: {ex.Message}";
+            }
+            catch (InvalidOperationException ex)
+            {
+                errorMessage = $"Invalid response: {ex.Message}";
             }
         }
         catch (HttpRequestException ex)
