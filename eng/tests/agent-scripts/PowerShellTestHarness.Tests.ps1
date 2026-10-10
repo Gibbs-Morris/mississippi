@@ -60,6 +60,32 @@ Describe 'PowerShell test orchestration' {
         @($results | Where-Object Status -NE 'Passed').Count | Should -Be 0
     }
 
+    It 'admits Pester <Version> only when the full harness minimum is met' -ForEach @(
+        @{Version='5.0.0';ExitCode=1},
+        @{Version='5.1.1';ExitCode=1},
+        @{Version='5.2.0';ExitCode=0}
+    ) {
+        $modulesRoot = Join-Path $TestDrive ('modules-' + $Version)
+        $pesterRoot = Join-Path $modulesRoot ('Pester/' + $Version)
+        New-Item -ItemType Directory -Path $pesterRoot -Force | Out-Null
+        Set-Content (Join-Path $pesterRoot 'Pester.psd1') "@{ModuleVersion='$Version';RootModule='Pester.psm1'}"
+        Set-Content (Join-Path $pesterRoot 'Pester.psm1') '# Version-selection fixture; runners supply their own results.'
+        $marker = Join-Path $modulesRoot 'runner-started'
+        Set-Content $targetRunner "param([switch]`$PassThru); Set-Content -LiteralPath '$marker' -Value 'started'; [pscustomobject]@{Result='Passed';TotalCount=1;FailedCount=0}"
+        $hostScript = Join-Path $modulesRoot 'isolated-host.ps1'
+        Set-Content $hostScript @(
+            'param([string]$ModulesRoot,[string]$Orchestrator)',
+            '$env:PSModulePath = $ModulesRoot + [IO.Path]::PathSeparator + (Join-Path $PSHOME ''Modules'')',
+            '$env:CI = ''true''',
+            '& $Orchestrator',
+            'exit $LASTEXITCODE'
+        )
+        $output = & $powerShellPath -NoProfile -File $hostScript -ModulesRoot $modulesRoot -Orchestrator $orchestrator 2>&1 | Out-String
+        $LASTEXITCODE | Should -Be $ExitCode
+        (Test-Path -LiteralPath $marker) | Should -Be ($ExitCode -eq 0)
+        if ($ExitCode -eq 1) { $output | Should -Match 'Pester 5\.2'; $output | Should -Not -Match 'Executing:' }
+    }
+
     It 'fails a missing runner' {
         Remove-Item -LiteralPath $targetRunner
         $results = & $orchestrator -PassThru 6>$null
