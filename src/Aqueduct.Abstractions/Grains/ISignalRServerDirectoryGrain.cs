@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Orleans;
@@ -50,10 +51,12 @@ public interface ISignalRServerDirectoryGrain : IGrainWithStringKey
     ///     Registers a server as active in the directory.
     /// </summary>
     /// <param name="serverId">The unique identifier of the server.</param>
+    /// <param name="cancellationToken">A token to cancel the registration.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Alias("RegisterServerAsync")]
     Task RegisterServerAsync(
-        string serverId
+        string serverId,
+        CancellationToken cancellationToken = default
     );
 
     /// <summary>

@@ -61,7 +61,7 @@ public sealed class SignalRServerDirectoryGrainTests
         // Arrange
         ISignalRServerDirectoryGrain grain =
             TestClusterAccess.Cluster.Client.GetGrain<ISignalRServerDirectoryGrain>("default-4");
-        await grain.RegisterServerAsync("server-1");
+        await grain.RegisterServerAsync("server-1", TestContext.Current.CancellationToken);
 
         // Act - send heartbeat
         await grain.HeartbeatAsync("server-1", 10);
@@ -83,9 +83,9 @@ public sealed class SignalRServerDirectoryGrainTests
             TestClusterAccess.Cluster.Client.GetGrain<ISignalRServerDirectoryGrain>("default-6");
 
         // Act
-        await grain.RegisterServerAsync("server-1");
-        await grain.RegisterServerAsync("server-2");
-        await grain.RegisterServerAsync("server-3");
+        await grain.RegisterServerAsync("server-1", TestContext.Current.CancellationToken);
+        await grain.RegisterServerAsync("server-2", TestContext.Current.CancellationToken);
+        await grain.RegisterServerAsync("server-3", TestContext.Current.CancellationToken);
         ImmutableList<string> deadServers = await grain.GetDeadServersAsync(TimeSpan.FromHours(1));
 
         // Assert - no servers should be dead
@@ -104,7 +104,7 @@ public sealed class SignalRServerDirectoryGrainTests
             TestClusterAccess.Cluster.Client.GetGrain<ISignalRServerDirectoryGrain>("default-1");
 
         // Act
-        await grain.RegisterServerAsync("server-1");
+        await grain.RegisterServerAsync("server-1", TestContext.Current.CancellationToken);
         ImmutableList<string> deadServers = await grain.GetDeadServersAsync(TimeSpan.FromHours(1));
 
         // Assert - newly registered server should not be dead
@@ -121,7 +121,7 @@ public sealed class SignalRServerDirectoryGrainTests
         // Arrange
         ISignalRServerDirectoryGrain grain =
             TestClusterAccess.Cluster.Client.GetGrain<ISignalRServerDirectoryGrain>("default-3");
-        await grain.RegisterServerAsync("server-1");
+        await grain.RegisterServerAsync("server-1", TestContext.Current.CancellationToken);
 
         // Act
         await grain.UnregisterServerAsync("server-1");
@@ -141,7 +141,7 @@ public sealed class SignalRServerDirectoryGrainTests
         // Arrange
         ISignalRServerDirectoryGrain grain =
             TestClusterAccess.Cluster.Client.GetGrain<ISignalRServerDirectoryGrain>("default-2");
-        await grain.RegisterServerAsync("server-1");
+        await grain.RegisterServerAsync("server-1", TestContext.Current.CancellationToken);
 
         // Act
         await grain.UnregisterServerAsync("server-1");

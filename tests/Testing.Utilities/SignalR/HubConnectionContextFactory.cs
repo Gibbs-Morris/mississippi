@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -29,6 +30,9 @@ public static class HubConnectionContextFactory
     /// <param name="clientTimeout">
     ///     Optional client timeout. Defaults to 1 minute.
     /// </param>
+    /// <param name="connectionAborted">
+    ///     Optional token returned by <see cref="HubConnectionContext.ConnectionAborted" />.
+    /// </param>
     /// <returns>A configured <see cref="HubConnectionContext" /> for testing.</returns>
     [SuppressMessage(
         "Microsoft.Reliability",
@@ -41,17 +45,18 @@ public static class HubConnectionContextFactory
     public static HubConnectionContext Create(
         string connectionId,
         TimeSpan? keepAliveInterval = null,
-        TimeSpan? clientTimeout = null
+        TimeSpan? clientTimeout = null,
+        CancellationToken? connectionAborted = null
     )
     {
         TestConnectionContext connectionContext = new(connectionId);
-        return new(
-            connectionContext,
-            new()
-            {
-                KeepAliveInterval = keepAliveInterval ?? TimeSpan.FromSeconds(30),
-                ClientTimeoutInterval = clientTimeout ?? TimeSpan.FromMinutes(1),
-            },
-            NullLoggerFactory.Instance);
+        HubConnectionContextOptions options = new()
+        {
+            KeepAliveInterval = keepAliveInterval ?? TimeSpan.FromSeconds(30),
+            ClientTimeoutInterval = clientTimeout ?? TimeSpan.FromMinutes(1),
+        };
+        return connectionAborted.HasValue
+            ? new CancellableHubConnectionContext(connectionContext, options, connectionAborted.Value)
+            : new HubConnectionContext(connectionContext, options, NullLoggerFactory.Instance);
     }
 }

@@ -34,4 +34,11 @@ internal static partial class HeartbeatManagerLoggerExtensions
         this ILogger logger,
         string serverId
     );
+
+    [LoggerMessage(EventId = 4, Level = LogLevel.Warning, Message = "Server registration failed for '{ServerId}'")]
+    public static partial void RegistrationFailed(
+        this ILogger logger,
+        string serverId,
+        Exception exception
+    );
 }

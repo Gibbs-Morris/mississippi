@@ -36,8 +36,8 @@ public sealed class ServerDirectoryIntegrationTests
         ISignalRServerDirectoryGrain directoryGrain = fixture.GetServerDirectoryGrain();
 
         // Register both servers
-        await directoryGrain.RegisterServerAsync(serverId1);
-        await directoryGrain.RegisterServerAsync(serverId2);
+        await directoryGrain.RegisterServerAsync(serverId1, TestContext.Current.CancellationToken);
+        await directoryGrain.RegisterServerAsync(serverId2, TestContext.Current.CancellationToken);
 
         // Only heartbeat serverId2
         await directoryGrain.HeartbeatAsync(serverId2, 5);
@@ -69,7 +69,7 @@ public sealed class ServerDirectoryIntegrationTests
         // Arrange
         string serverId = Guid.NewGuid().ToString("N");
         ISignalRServerDirectoryGrain directoryGrain = fixture.GetServerDirectoryGrain();
-        await directoryGrain.RegisterServerAsync(serverId);
+        await directoryGrain.RegisterServerAsync(serverId, TestContext.Current.CancellationToken);
 
         // Act
         Func<Task> act = () => directoryGrain.HeartbeatAsync(serverId, 10);
@@ -88,7 +88,7 @@ public sealed class ServerDirectoryIntegrationTests
         // Arrange
         string serverId = Guid.NewGuid().ToString("N");
         ISignalRServerDirectoryGrain directoryGrain = fixture.GetServerDirectoryGrain();
-        await directoryGrain.RegisterServerAsync(serverId);
+        await directoryGrain.RegisterServerAsync(serverId, TestContext.Current.CancellationToken);
 
         // Act - send multiple heartbeats with varying connection counts
         Func<Task> act = async () =>
@@ -112,7 +112,7 @@ public sealed class ServerDirectoryIntegrationTests
         // Arrange
         string serverId = Guid.NewGuid().ToString("N");
         ISignalRServerDirectoryGrain directoryGrain = fixture.GetServerDirectoryGrain();
-        await directoryGrain.RegisterServerAsync(serverId);
+        await directoryGrain.RegisterServerAsync(serverId, TestContext.Current.CancellationToken);
         await directoryGrain.HeartbeatAsync(serverId, 5);
 
         // Use a long timeout so the server appears alive
@@ -137,7 +137,7 @@ public sealed class ServerDirectoryIntegrationTests
         ISignalRServerDirectoryGrain directoryGrain = fixture.GetServerDirectoryGrain();
 
         // Act
-        Func<Task> act = () => directoryGrain.RegisterServerAsync(serverId);
+        Func<Task> act = () => directoryGrain.RegisterServerAsync(serverId, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Null(await Record.ExceptionAsync(act));
@@ -153,7 +153,7 @@ public sealed class ServerDirectoryIntegrationTests
         // Arrange
         string serverId = Guid.NewGuid().ToString("N");
         ISignalRServerDirectoryGrain directoryGrain = fixture.GetServerDirectoryGrain();
-        await directoryGrain.RegisterServerAsync(serverId);
+        await directoryGrain.RegisterServerAsync(serverId, TestContext.Current.CancellationToken);
 
         // Act
         Func<Task> act = () => directoryGrain.UnregisterServerAsync(serverId);
@@ -172,7 +172,7 @@ public sealed class ServerDirectoryIntegrationTests
         // Arrange
         string serverId = Guid.NewGuid().ToString("N");
         ISignalRServerDirectoryGrain directoryGrain = fixture.GetServerDirectoryGrain();
-        await directoryGrain.RegisterServerAsync(serverId);
+        await directoryGrain.RegisterServerAsync(serverId, TestContext.Current.CancellationToken);
         await directoryGrain.UnregisterServerAsync(serverId);
 
         // Wait a bit and use short timeout
