@@ -20,62 +20,15 @@ Governing thought: Use the Linux vNext Cosmos emulator with HTTP mode and SDK wo
 
 Developers building Aspire-based integration tests with Azure emulators.
 
-## At-a-Glance Quick-Start
+## Mandatory route
 
-AppHost configuration:
-
-```csharp
-builder.AddAzureCosmosDB("cosmos")
-    .RunAsEmulator(emulator =>
-    {
-        emulator.WithDataExplorer();
-#pragma warning disable ASPIRECERTIFICATES001
-        emulator.WithoutHttpsCertificate(); // HTTP mode
-#pragma warning restore ASPIRECERTIFICATES001
-    });
-```
-
-`WithDataExplorer()` remains explicit because Data Explorer is opt-in. Aspire 13.6
-retires `ASPIRECOSMOSDB001`; the separate certificate API diagnostic remains
-scoped to `WithoutHttpsCertificate()` in the sample hosts.
-
-SDK client configuration:
-
-```csharp
-CosmosClientOptions options = new()
-{
-    ConnectionMode = ConnectionMode.Gateway,
-    LimitToEndpoint = true, // Use only the configured emulator endpoint
-};
-```
-
-Document model:
-
-```csharp
-public class MyDocument
-{
-    [Newtonsoft.Json.JsonProperty("id")]
-    public string Id { get; set; } = string.Empty;
-}
-```
-
-## Known Issues Reference
-
-| Issue | Symptom | Fix |
-|-------|---------|-----|
-| [SDK endpoint discovery](https://learn.microsoft.com/en-us/dotnet/api/microsoft.azure.cosmos.cosmosclientoptions.limittoendpoint) | Client can discover other regions | `LimitToEndpoint = true` |
-| [Aspire 13.6 migration](https://aspire.dev/whats-new/aspire-13-6/#breaking-changes) | `RunAsPreviewEmulator()` is obsolete | Use `RunAsEmulator()` for vNext |
-| Newtonsoft vs STJ | "Document does not contain id" | Use `Newtonsoft.Json.JsonProperty` |
-
-## Core Principles
-
-- Linux vNext emulator with its HTTP readiness probe
-- HTTP mode eliminates certificate complexity
-- SDK needs explicit single-endpoint mode for emulators
+For authoring or extending an owned Cosmos emulator integration-test fixture, use
+[author-cosmos-integration-tests](../../.agents/skills/author-cosmos-integration-tests/SKILL.md)
+with the [local Cosmos binding](../agent-guidance/cosmos-integration-bindings.md).
+Read both linked files directly if discovery is unavailable or applicability is
+unclear. The five rules above remain effective independently of skill activation.
 
 ## References
 
-- [Aspire 13.6 Cosmos integration source](https://github.com/microsoft/aspire/blob/v13.6.0/src/Aspire.Hosting.Azure.CosmosDB/AzureCosmosDBExtensions.cs)
-- Sample implementations: `samples/Crescent/Crescent.AppHost/`, `samples/Crescent/Crescent.L2Tests/`, and `samples/Spring/Spring.AppHost/`
-- Shared guardrails: `.github/instructions/shared-policies.instructions.md`
-- Testing guidance: `.github/instructions/testing.instructions.md`
+- [Shared guardrails](shared-policies.instructions.md) and [testing guidance](testing.instructions.md)
+- [Source bindings and validation](../agent-guidance/cosmos-integration-bindings.md)
