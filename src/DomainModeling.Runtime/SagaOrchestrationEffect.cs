@@ -67,7 +67,8 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);
-        return SagaLifecycleEventClassifier.IsOrchestrationLifecycleEvent(eventData);
+        return SagaLifecycleEventClassifier.IsOrchestrationLifecycleEvent(eventData) ||
+               eventData is SagaResumeRequested;
     }
 
     /// <inheritdoc />
@@ -80,6 +81,7 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);
+        ArgumentNullException.ThrowIfNull(currentState);
         return eventData switch
         {
             SagaStartedEvent => ExecuteStepAsync(currentState, 0, cancellationToken),
@@ -96,6 +98,8 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
                 currentState,
                 compensated.StepIndex,
                 cancellationToken),
+            SagaResumeRequested resume when (resume.SagaId != Guid.Empty) && (resume.SagaId == currentState.SagaId) =>
+                ExecuteResumeAsync(currentState, cancellationToken),
             var _ => AsyncEnumerable.Empty<object>(),
         };
     }
@@ -202,6 +206,14 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
             yield return evt;
         }
     }
+
+    private IAsyncEnumerable<object> ExecuteResumeAsync(
+        TSaga state,
+        CancellationToken cancellationToken
+    ) =>
+        state.Phase == SagaPhase.Running
+            ? ExecuteNextOrCompleteAsync(state, state.LastCompletedStepIndex, cancellationToken)
+            : AsyncEnumerable.Empty<object>();
 
     private async IAsyncEnumerable<object> ExecuteStepAsync(
         TSaga state,
