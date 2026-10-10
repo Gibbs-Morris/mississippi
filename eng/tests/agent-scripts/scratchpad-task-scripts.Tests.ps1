@@ -70,6 +70,18 @@ Describe 'Scratchpad task scripts' {
 
         $withData = & $listScript -ScratchpadRoot $scratchpadRoot -IncludeData
         $withData[0].Data | Should -Not -BeNullOrEmpty
+
+        & $claimScript -Id $task1.Id -Agent 'listing-workflow' -ScratchpadRoot $scratchpadRoot | Out-Null
+        & $completeScript -Id $task1.Id -Result 'Listing workflow completed' -ScratchpadRoot $scratchpadRoot | Out-Null
+        & $deferScript -Id $task2.Id -Reason 'Listing workflow deferred' -ScratchpadRoot $scratchpadRoot | Out-Null
+
+        $doneList = @(& $listScript -ScratchpadRoot $scratchpadRoot -Status 'done')
+        $doneList.Count | Should -Be 1
+        $doneList[0].Id | Should -Be $task1.Id
+        $deferredList = @(& $listScript -ScratchpadRoot $scratchpadRoot -Status 'deferred')
+        $deferredList.Count | Should -Be 1
+        $deferredList[0].Id | Should -Be $task2.Id
+        @(& $listScript -ScratchpadRoot $scratchpadRoot -Status 'pending').Count | Should -Be 0
     }
 
     It 'claims a pending task and increments attempts' {
@@ -117,11 +129,6 @@ Describe 'Scratchpad task scripts' {
         $json = Get-Content -LiteralPath $done.Path -Raw | ConvertFrom-Json
         $json.status | Should -Be 'done'
         $json.result | Should -Be 'Task finished successfully'
-
-        & $newScript -Title 'Unrelated Pending Task' -ScratchpadRoot $scratchpadRoot | Out-Null
-        $doneList = @(& $listScript -ScratchpadRoot $scratchpadRoot -Status 'done')
-        $doneList.Count | Should -Be 1
-        $doneList[0].Id | Should -Be $task.Id
     }
 
     It 'defers a pending task with reason and next steps' {
@@ -136,11 +143,6 @@ Describe 'Scratchpad task scripts' {
         $json.status | Should -Be 'deferred'
         $json.reason | Should -Be 'Blocked by dependency'
         $json.nextSteps | Should -Be 'Retry after dependency ready'
-
-        & $newScript -Title 'Unrelated Pending Task' -ScratchpadRoot $scratchpadRoot | Out-Null
-        $deferredList = @(& $listScript -ScratchpadRoot $scratchpadRoot -Status 'deferred')
-        $deferredList.Count | Should -Be 1
-        $deferredList[0].Id | Should -Be $task.Id
     }
 
     It 'defers a claimed task and retains claim metadata' {
