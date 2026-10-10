@@ -20,42 +20,20 @@ Governing thought: Every change ships only after a clean build, cleanup, and tes
 - Agents **MUST** apply the [mutation-testing policy](mutation-testing.instructions.md) when choosing or interpreting mutation validation. Why: Mutation scores and tooling thresholds are additional signals, not mandatory repository completion criteria.
 - Package versions **MUST** remain in `Directory.Packages.props`; project files **MUST NOT** add `Version` attributes. Why: Central Package Management avoids drift.
 
+- Agents **MUST** use [verify-change](../../.agents/skills/verify-change/SKILL.md) when selecting, running, or assessing change-validation checks. Why: Required gates and evidence interpretation need one maintained procedure.
+
 ## Scope and Audience
 
 All contributors changing Mississippi or Samples solutions.
 
-## At-a-Glance Quick-Start
+## Change verification
 
-- Build and cleanup (Mississippi):  
-  `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1`  
-  `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1`
-- Tests (Mississippi): `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1`
-- Optional mutation (Mississippi): `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` (report execution status and available results)
-- Samples equivalents: `build-sample-solution.ps1`, `clean-up-sample-solution.ps1`, `unit-test-sample-solution.ps1`
-- Final gate both solutions: `pwsh ./go.ps1` (mutation is opt-in with `-IncludeMutation`)
-
-Targeted cleanup (iteration only):
-
-- Changed files: `pwsh ./clean-up-targeted.ps1`
-- Explicit list: `pwsh ./clean-up-targeted.ps1 -Files src/Foo/Bar.cs,tests/FooTests.cs`
-- File list: `pwsh ./clean-up-targeted.ps1 -FileListPath .scratchpad/cleanup-files.txt`
-
-Sample benchmark (20 files, 3 runs, `jb cleanupcode --no-build`) shows targeted cleanup around `10.22x` faster than full cleanup (`~59.448s` vs `~607.558s`).
-
-## Core Principles
-
-- Zero warnings always; fix code rather than suppressing.
-- Two solutions: Mississippi (comprehensive tests, optional mutation signal) vs Samples (minimal illustrative tests, no mutation requirement).
-- Use repository scripts for consistent parameters, coverage, mutation reporting, and cleanup.
-- Tests accompany behavior changes; mutation keeps assertions strong.
-
-## Procedures
-
-1. Build in Release and fix warnings until clean.
-2. Run cleanup script; resolve any reported issues.
-3. Add/update tests (comprehensive for Mississippi, minimal for Samples).
-4. Run unit tests; add a focused mutation run only when useful and proportionate or explicitly requested.
-5. Re-run build/tests if code changed; finish with `pwsh ./go.ps1` before handoff.
+Use [verify-change](../../.agents/skills/verify-change/SKILL.md) with the
+[local check bindings](../agent-guidance/verify-change-bindings.md) for check selection,
+execution, evidence reuse, and status assessment. If skill discovery is
+unavailable or applicability is unclear, read both linked files directly.
+The Rules above remain effective independently of skill activation; a
+targeted or prerequisite check does not replace required completion gates.
 
 ## References
 
