@@ -79,6 +79,20 @@ public sealed class SnapshotStreamKeyTests
     }
 
     /// <summary>
+    ///     Default key should have non-null components.
+    /// </summary>
+    [Fact]
+    public void DefaultKeyHasNonNullComponents()
+    {
+        SnapshotStreamKey key = default;
+        Assert.Equal(string.Empty, key.BrookName);
+        Assert.Equal(string.Empty, key.SnapshotStorageName);
+        Assert.Equal(string.Empty, key.EntityId);
+        Assert.Equal(string.Empty, key.ReducersHash);
+        Assert.Equal("|||", key.ToString());
+    }
+
+    /// <summary>
     ///     Verifies the static conversion helper returns the composite string.
     /// </summary>
     [Fact]

@@ -38,6 +38,18 @@ public class AggregateKeyTests
     }
 
     /// <summary>
+    ///     Default key should have non-null entity id.
+    /// </summary>
+    [Fact]
+    public void DefaultKeyHasNonNullEntityId()
+    {
+        AggregateKey key = default;
+        Assert.NotNull(key.EntityId);
+        Assert.Equal(string.Empty, key.EntityId);
+        Assert.Equal(string.Empty, key.ToString());
+    }
+
+    /// <summary>
     ///     Equality should work correctly for identical keys.
     /// </summary>
     [Fact]
