@@ -57,6 +57,9 @@ Describe 'Scratchpad task scripts' {
         $all = & $listScript -ScratchpadRoot $scratchpadRoot
         $all.Count | Should -Be 2
 
+        $pending = @(& $listScript -ScratchpadRoot $scratchpadRoot -Status 'pending')
+        $pending.Count | Should -Be 2
+
         $filtered = & $listScript -ScratchpadRoot $scratchpadRoot -Priority 'P0'
         $filtered.Count | Should -Be 1
         $filtered[0].Id | Should -Be $task1.Id
@@ -114,6 +117,11 @@ Describe 'Scratchpad task scripts' {
         $json = Get-Content -LiteralPath $done.Path -Raw | ConvertFrom-Json
         $json.status | Should -Be 'done'
         $json.result | Should -Be 'Task finished successfully'
+
+        & $newScript -Title 'Unrelated Pending Task' -ScratchpadRoot $scratchpadRoot | Out-Null
+        $doneList = @(& $listScript -ScratchpadRoot $scratchpadRoot -Status 'done')
+        $doneList.Count | Should -Be 1
+        $doneList[0].Id | Should -Be $task.Id
     }
 
     It 'defers a pending task with reason and next steps' {
@@ -128,6 +136,11 @@ Describe 'Scratchpad task scripts' {
         $json.status | Should -Be 'deferred'
         $json.reason | Should -Be 'Blocked by dependency'
         $json.nextSteps | Should -Be 'Retry after dependency ready'
+
+        & $newScript -Title 'Unrelated Pending Task' -ScratchpadRoot $scratchpadRoot | Out-Null
+        $deferredList = @(& $listScript -ScratchpadRoot $scratchpadRoot -Status 'deferred')
+        $deferredList.Count | Should -Be 1
+        $deferredList[0].Id | Should -Be $task.Id
     }
 
     It 'defers a claimed task and retains claim metadata' {
