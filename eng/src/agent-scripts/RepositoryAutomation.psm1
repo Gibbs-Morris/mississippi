@@ -1757,7 +1757,11 @@ function Get-SolutionProjectPaths {
     $solutionDir = Split-Path -Parent (Resolve-Path -LiteralPath $canonicalPath).Path
     foreach ($project in $solution.SelectNodes('//Project')) {
         $relativePath = $project.GetAttribute('Path') -replace '\\', '/'
-        (Resolve-Path -LiteralPath (Join-Path $solutionDir $relativePath)).Path
+        $resolvedProject = (Resolve-Path -LiteralPath (Join-Path $solutionDir $relativePath)).Path
+        if ([string]::IsNullOrWhiteSpace($relativePath) -or -not (Test-Path -LiteralPath $resolvedProject -PathType Leaf)) {
+            throw "Invalid solution project declaration: '$relativePath'."
+        }
+        $resolvedProject
     }
 }
 
@@ -3218,6 +3222,135 @@ function Get-PrReadinessReport { # NOSONAR - readiness reporting intentionally e
     }
 }
 
+function Initialize-AspireCli {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$RepoRoot)
+
+    [xml]$packages = Get-Content -LiteralPath (Join-Path $RepoRoot 'Directory.Packages.props') -Raw
+    $version = ($packages.Project.ItemGroup.PackageVersion | Where-Object Include -eq 'Aspire.Hosting.AppHost').Version
+    if ([string]::IsNullOrWhiteSpace($version)) { throw 'Aspire.Hosting.AppHost version is missing from Directory.Packages.props.' }
+    $toolPath = Join-Path $RepoRoot "artifacts/tools/aspire-$version"
+    $aspire = Join-Path $toolPath $(if ($IsWindows) { 'aspire.cmd' } else { 'aspire' })
+    if (-not (Test-Path -LiteralPath $aspire -PathType Leaf)) {
+        Invoke-RepositoryProcess -FilePath dotnet -Arguments @('tool', 'install', 'Aspire.Cli', '--version', $version, '--tool-path', $toolPath) | Out-Host
+    }
+    $installedVersion = (Invoke-RepositoryProcess -FilePath $aspire -Arguments @('--version') | Out-String).Trim()
+    if ($installedVersion.Split('+')[0] -ne $version) { throw "Expected Aspire CLI $version; found $installedVersion." }
+    return $toolPath
+}
+
+function Get-CiBenchmarkBuildIdentity {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][string]$BuildVersion,
+        [string]$Configuration = 'Release'
+    )
+
+    foreach ($name in @('GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT', 'GITHUB_JOB', 'RUNNER_NAME')) {
+        if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+            throw "Prebuilt reuse requires a current Actions job identity: $name is missing."
+        }
+    }
+    if (Test-Path -LiteralPath (Join-Path $RepoRoot '.sonarqube')) { throw 'Sonar-instrumented builds cannot be reused.' }
+    $source = Get-ValidationSourceFingerprint -RepositoryRoot $RepoRoot
+    if ($source.Revision -eq 'unknown' -or $source.Dirty) { throw 'Prebuilt reuse requires a known, clean checked-out revision.' }
+    $sdk = (Invoke-RepositoryProcess -FilePath dotnet -Arguments @('--version') -SuppressCommandEcho | Out-String).Trim()
+    return [ordered]@{
+        schemaVersion = 1
+        repository = (Resolve-Path -LiteralPath $RepoRoot).Path
+        job = "$($env:GITHUB_RUN_ID)/$($env:GITHUB_RUN_ATTEMPT)/$($env:GITHUB_JOB)/$($env:RUNNER_NAME)"
+        revision = $source.Revision
+        sourceFingerprint = $source.Fingerprint
+        sdk = $sdk
+        configuration = $Configuration
+        buildVersion = $BuildVersion
+        buildProperties = @('--no-restore', '--no-incremental', '--warnaserror', "-p:Version=$BuildVersion")
+    }
+}
+
+function Get-CiBenchmarkOutputFingerprint {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$RepoRoot, [string]$Configuration = 'Release')
+
+    $project = Join-Path $RepoRoot 'samples/Spring/Spring.L3Tests/Spring.L3Tests.csproj'
+    $properties = (Invoke-RepositoryProcess -FilePath dotnet -SuppressCommandEcho -Arguments @(
+        'msbuild', $project, "-p:Configuration=$Configuration", '-getProperty:TargetPath,ProjectAssetsFile'
+    ) | Out-String) | ConvertFrom-Json
+    $target = [string]$properties.Properties.TargetPath
+    foreach ($required in @($target, [string]$properties.Properties.ProjectAssetsFile,
+        [IO.Path]::ChangeExtension($target, '.deps.json'), [IO.Path]::ChangeExtension($target, '.runtimeconfig.json'),
+        (Join-Path (Split-Path $target) 'playwright.ps1'))) {
+        if (-not (Test-Path -LiteralPath $required -PathType Leaf)) { throw "Prebuilt Spring output is missing: $required" }
+    }
+    $paths = @(
+        foreach ($folder in @('src', 'samples')) {
+            Get-ChildItem -LiteralPath (Join-Path $RepoRoot $folder) -Recurse -File -Force |
+                Where-Object { $_.FullName -match '[\\/]bin[\\/]' -or $_.FullName -match '[\\/]obj[\\/]project.assets.json$' } |
+                ForEach-Object FullName
+        }
+    )
+    if ($paths.Count -eq 0) { throw 'Prebuilt outputs and dependency assets are missing.' }
+    return (Get-ValidationSourceFingerprint -RepositoryRoot $RepoRoot -InputPath $paths).Fingerprint
+}
+
+function Invoke-CiBenchmarkBuild {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][ValidateSet('mississippi.slnx', 'samples.slnx')][string]$Solution,
+        [Parameter(Mandatory)][string]$BuildVersion,
+        [Parameter(Mandatory)][string]$ReceiptPath,
+        [string]$Configuration = 'Release'
+    )
+
+    if (Test-Path -LiteralPath $ReceiptPath) { throw 'A build receipt already exists; each benchmark job must build fresh outputs.' }
+    $before = Get-CiBenchmarkBuildIdentity -RepoRoot $RepoRoot -BuildVersion $BuildVersion -Configuration $Configuration
+    Invoke-SolutionBuild -SolutionPath (Join-Path $RepoRoot $Solution) -Configuration $Configuration -NoRestore -NoIncremental -WarnAsError -AdditionalArguments "-p:Version=$BuildVersion" | Out-Host
+    $after = Get-CiBenchmarkBuildIdentity -RepoRoot $RepoRoot -BuildVersion $BuildVersion -Configuration $Configuration
+    if (($before | ConvertTo-Json -Compress) -cne ($after | ConvertTo-Json -Compress)) { throw 'Source or build identity changed during the build.' }
+    $receipt = [ordered]@{ identity = $after; solution = $Solution }
+    if ($Solution -eq 'samples.slnx') {
+        $receipt.outputs = Get-CiBenchmarkOutputFingerprint -RepoRoot $RepoRoot -Configuration $Configuration
+    }
+    $receipt | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $ReceiptPath -Encoding utf8
+}
+
+function Assert-SpringPrebuiltBuild {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][string]$ReceiptPath,
+        [Parameter(Mandatory)][string]$BuildVersion,
+        [string]$Configuration = 'Release'
+    )
+
+    $receipt = Get-Content -LiteralPath $ReceiptPath -Raw -ErrorAction Stop | ConvertFrom-Json -AsHashtable
+    $current = Get-CiBenchmarkBuildIdentity -RepoRoot $RepoRoot -BuildVersion $BuildVersion -Configuration $Configuration
+    if ($receipt.solution -cne 'samples.slnx' -or
+        ($receipt.identity | ConvertTo-Json -Compress) -cne ($current | ConvertTo-Json -Compress) -or
+        $receipt.outputs -cne (Get-CiBenchmarkOutputFingerprint -RepoRoot $RepoRoot -Configuration $Configuration)) {
+        throw 'Prebuilt Spring build receipt does not match the current job, source, SDK, configuration, version, or outputs.'
+    }
+}
+
+function Invoke-CiBenchmarkTestLevel {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$SolutionPath,
+        [Parameter(Mandatory)][ValidateSet('L0', 'L1', 'L2')][string]$Level,
+        [Parameter(Mandatory)][string]$ResultsRoot,
+        [string]$Configuration = 'Release'
+    )
+
+    $projects = @(Get-TestProjects -SolutionPath $SolutionPath | Where-Object { $_ -match "\.$($Level)Tests\.csproj$" })
+    if ($projects.Count -eq 0 -and $Level -eq 'L1' -and [System.IO.Path]::GetFileName($SolutionPath) -eq 'samples.slnx') {
+        return [ordered]@{ status = 'NOT_APPLICABLE'; projects = @(); executed = 0 }
+    }
+    $result = Invoke-SolutionTests -SolutionPath $SolutionPath -Configuration $Configuration -TestLevels "$($Level)Tests" -AdditionalArguments '--no-build' -ResultsRoot $ResultsRoot
+    return [ordered]@{ status = 'PASS'; projects = $projects; executed = (Get-TestExecutionCount -ResultsDirectory $result.ResultsDirectory); results = $result.ResultsDirectory }
+}
+
 function Invoke-SpringValidation { # NOSONAR - Spring validation intentionally coordinates prerequisites, build, browser, and artifact phases.
     [CmdletBinding()]
     param(
@@ -3226,7 +3359,9 @@ function Invoke-SpringValidation { # NOSONAR - Spring validation intentionally c
         [ValidateSet('Smoke', 'Full')][string]$Suite = 'Smoke',
         [ValidateSet('Debug', 'Release')][string]$Configuration = 'Release',
         [switch]$Doctor,
-        [switch]$InstallBrowserDependencies
+        [switch]$InstallBrowserDependencies,
+        [string]$PrebuiltReceiptPath,
+        [string]$BuildVersion
     )
 
     $TestLevel = $TestLevel.ToUpperInvariant()
@@ -3270,24 +3405,29 @@ function Invoke-SpringValidation { # NOSONAR - Spring validation intentionally c
         }
 
         $summary.phase = 'tooling'
-        $toolPath = Join-Path $RepoRoot "artifacts/tools/aspire-$aspireVersion"
-        $aspire = Join-Path $toolPath $(if ($IsWindows) { 'aspire.cmd' } else { 'aspire' })
-        if (-not (Test-Path -LiteralPath $aspire -PathType Leaf)) {
-            Invoke-RepositoryProcess -FilePath dotnet -Arguments @('tool', 'install', 'Aspire.Cli', '--version', $aspireVersion, '--tool-path', $toolPath)
-        }
+        $toolPath = Initialize-AspireCli -RepoRoot $RepoRoot
         $env:PATH = $toolPath + [System.IO.Path]::PathSeparator + $previousPath
-        $installedVersion = (Invoke-RepositoryProcess -FilePath $aspire -Arguments @('--version') | Out-String).Trim()
-        if ($installedVersion.Split('+')[0] -ne $aspireVersion) { throw "Expected Aspire CLI $aspireVersion; found $installedVersion." }
-        $summary.phase = 'restore'
-        Invoke-RepositoryProcess -FilePath dotnet -Arguments @('restore', $project, '--locked-mode') |
-            Tee-Object -FilePath (Join-Path $runDirectory 'restore.log') | Out-Host
-        $summary.phase = 'build'
-        Invoke-SolutionBuild -SolutionPath $project -Configuration $Configuration -WarnAsError -NoRestore |
-            Tee-Object -FilePath (Join-Path $runDirectory 'build.log') | Out-Host
+        if (-not [string]::IsNullOrWhiteSpace($PrebuiltReceiptPath)) {
+            $summary.phase = 'prebuilt'
+            $phaseStarted = $timer.Elapsed.TotalSeconds
+            Assert-SpringPrebuiltBuild -RepoRoot $RepoRoot -ReceiptPath $PrebuiltReceiptPath -BuildVersion $BuildVersion -Configuration $Configuration
+            $summary.buildReuse = 'CURRENT_JOB_VERIFIED'
+            $summary.prebuiltSeconds = [Math]::Round($timer.Elapsed.TotalSeconds - $phaseStarted, 3)
+        }
+        else {
+            $summary.phase = 'restore'
+            Invoke-RepositoryProcess -FilePath dotnet -Arguments @('restore', $project, '--locked-mode') |
+                Tee-Object -FilePath (Join-Path $runDirectory 'restore.log') | Out-Host
+            $summary.phase = 'build'
+            Invoke-SolutionBuild -SolutionPath $project -Configuration $Configuration -WarnAsError -NoRestore |
+                Tee-Object -FilePath (Join-Path $runDirectory 'build.log') | Out-Host
+        }
         if ($TestLevel -eq 'L3') {
             $summary.phase = 'browser'
+            $phaseStarted = $timer.Elapsed.TotalSeconds
             $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $RepoRoot 'artifacts/tools/playwright'
             Install-SpringBrowser -Project $project -Configuration $Configuration -InstallBrowserDependencies:$InstallBrowserDependencies
+            $summary.browserSeconds = [Math]::Round($timer.Elapsed.TotalSeconds - $phaseStarted, 3)
         }
         $env:SPRING_TEST_ARTIFACTS = $runDirectory
         $summary.phase = 'test'
@@ -3295,9 +3435,11 @@ function Invoke-SpringValidation { # NOSONAR - Spring validation intentionally c
             '--report-xunit-trx', '--report-xunit-trx-filename', 'spring.trx', '--results-directory', $runDirectory,
             '--minimum-expected-tests', '1', '--timeout', '15m')
         if ($Suite -eq 'Smoke') { $testArguments += @('--filter', 'Category=Smoke') }
+        $phaseStarted = $timer.Elapsed.TotalSeconds
         Invoke-RepositoryProcess -FilePath dotnet -Arguments $testArguments |
             Tee-Object -FilePath (Join-Path $runDirectory 'test.log') | Out-Host
         $summary.passed = Get-SpringTestResult -Path (Join-Path $runDirectory 'spring.trx')
+        $summary.testSeconds = [Math]::Round($timer.Elapsed.TotalSeconds - $phaseStarted, 3)
         $summary.phase = 'complete'
         $summary.status = 'PASS'
     }
@@ -3319,6 +3461,8 @@ function Invoke-SpringValidation { # NOSONAR - Spring validation intentionally c
         Write-Output "SUMMARY: $summaryPath"
     }
 }
+
+Export-ModuleMember -Function Initialize-AspireCli, Invoke-CiBenchmarkBuild, Invoke-CiBenchmarkTestLevel
 
 Export-ModuleMember -Function Get-RepositoryRoot, Resolve-RepositoryExecutionPath, Get-RepositoryExecutionLeasePath, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease, Invoke-RepositoryProcess, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation, Get-PrReadinessGhJson, Get-PrReadinessExpectedCheckPatterns, Get-PrReadinessSnapshot, Get-PrReadinessReport
 Export-ModuleMember -Function Get-RepositoryRoot, Resolve-RepositoryExecutionPath, Get-RepositoryExecutionLeasePath, Enter-RepositoryExecutionLease, Exit-RepositoryExecutionLease, Invoke-RepositoryProcess, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Read-MutationReport, Get-MutationReportPath, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation, Get-ValidationSourceFingerprint, New-ValidationEvidenceRun, Complete-ValidationEvidenceRun, Write-ValidationEvidence, Test-ValidationEvidence, Get-PrReadinessGhJson, Get-PrReadinessExpectedCheckPatterns, Get-PrReadinessSnapshot, Get-PrReadinessReport

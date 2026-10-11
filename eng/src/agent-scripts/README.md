@@ -4,6 +4,8 @@
 
 ## Prerequisites
 
+For the two additive CI workflows and their runner-execution comparison, see [experimental consolidated validation](ci-validation-benchmark.md).
+
 - Install the .NET SDK referenced in [`global.json`](../../../global.json).
 - Use PowerShell 7+; every script starts with `#!/usr/bin/env pwsh`.
 - Run `dotnet tool restore` from the repo root to provision the required local tools.

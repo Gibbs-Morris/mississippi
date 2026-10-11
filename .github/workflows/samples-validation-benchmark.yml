@@ -1,0 +1,104 @@
+name: Experimental Samples validation benchmark
+
+on:
+  workflow_dispatch:
+  merge_group:
+    types: [checks_requested]
+    branches: [main]
+  pull_request:
+    branches: [main, 'feature/**', 'topic/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: pwsh
+
+env:
+  CONFIGURATION: Release
+
+jobs:
+  validation:
+    name: Experimental Samples shared build and tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Dotnet
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Record runner and authoritative test inventory
+        id: inventory
+        run: ./eng/src/agent-scripts/invoke-ci-benchmark.ps1 -Solution samples.slnx -Stage Inventory
+      - name: Cache NuGet packages
+        id: nuget
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+      - name: Cache GitVersion tool
+        id: gitversion-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.tool_cache }}/GitVersion.Tool/6.5.1
+          key: ${{ runner.os }}-${{ runner.arch }}-gitversion-tool-6.5.1
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
+        with:
+          versionSpec: '6.5.1'
+      - name: Determine Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
+        with:
+          configFilePath: GitVersion.yml
+      - name: Restore locked solution packages
+        run: ./eng/src/agent-scripts/invoke-ci-benchmark.ps1 -Solution samples.slnx -Stage Restore
+      - name: Build solution once
+        env:
+          BUILD_VERSION: ${{ steps.gitversion.outputs.SemVer }}
+        run: ./eng/src/agent-scripts/invoke-ci-benchmark.ps1 -Solution samples.slnx -Stage Build -BuildVersion $env:BUILD_VERSION
+      - name: Run L0
+        run: ./eng/src/agent-scripts/invoke-ci-benchmark.ps1 -Solution samples.slnx -Stage L0
+      - name: Discover and run L1
+        run: ./eng/src/agent-scripts/invoke-ci-benchmark.ps1 -Solution samples.slnx -Stage L1
+      - name: Cache versioned Aspire CLI
+        id: aspire
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: artifacts/tools/aspire-${{ steps.inventory.outputs.aspire-version }}
+          key: ${{ runner.os }}-${{ runner.arch }}-aspire-${{ steps.inventory.outputs.aspire-version }}-sdk-${{ steps.inventory.outputs.sdk }}
+      - name: Restore tools and verify local Aspire CLI
+        run: ./eng/src/agent-scripts/invoke-ci-benchmark.ps1 -Solution samples.slnx -Stage Aspire
+      - name: Run L2
+        run: ./eng/src/agent-scripts/invoke-ci-benchmark.ps1 -Solution samples.slnx -Stage L2
+      - name: Run Spring L3 Smoke with verified current build
+        env:
+          BUILD_VERSION: ${{ steps.gitversion.outputs.SemVer }}
+        run: ./test-spring.ps1 -TestLevel L3 -Suite Smoke -InstallBrowserDependencies -PrebuiltReceiptPath artifacts/ci-benchmark/build.json -BuildVersion $env:BUILD_VERSION
+      - name: Publish phase and cache summary
+        if: always()
+        env:
+          NUGET_CACHE_HIT: ${{ steps.nuget.outputs.cache-hit }}
+          GITVERSION_CACHE_HIT: ${{ steps.gitversion-cache.outputs.cache-hit }}
+          ASPIRE_CACHE_HIT: ${{ steps.aspire.outputs.cache-hit }}
+        run: ./eng/src/agent-scripts/invoke-ci-benchmark.ps1 -Solution samples.slnx -Stage Summary
+      - name: Retain benchmark and test evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: experimental-Samples-validation-${{ github.run_attempt }}
+          path: |
+            artifacts/ci-benchmark/
+            artifacts/spring/
+          if-no-files-found: error
+          retention-days: 7
