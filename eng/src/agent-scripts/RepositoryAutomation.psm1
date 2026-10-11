@@ -2806,12 +2806,12 @@ function Get-PrReadinessExpectedCheckPatterns {
         '^Build \(ubuntu-latest\)$',
         '^Build \(ubuntu-latest, mississippi\.slnx\)$',
         '^Build \(ubuntu-latest, samples\.slnx\)$',
-        '^L0 Unit Tests \(ubuntu-latest, mississippi\.slnx\)$',
-        '^L0 Unit Tests \(ubuntu-latest, samples\.slnx\)$',
-        '^L1 Light Infrastructure Tests \(ubuntu-latest, mississippi\.slnx\)$',
-        '^L1 Light Infrastructure Tests \(ubuntu-latest, samples\.slnx\)$',
-        '^L2 Integration Tests \(Aspire\) \(ubuntu-latest, mississippi\.slnx\)$',
-        '^L2 Integration Tests \(Aspire\) \(ubuntu-latest, samples\.slnx\)$',
+        '^(?:L0 Unit Tests \(ubuntu-latest, mississippi\.slnx\)|Mississippi shared build and tests)$',
+        '^(?:L0 Unit Tests \(ubuntu-latest, samples\.slnx\)|Samples shared build and tests)$',
+        '^(?:L1 Light Infrastructure Tests \(ubuntu-latest, mississippi\.slnx\)|Mississippi shared build and tests)$',
+        '^(?:L1 Light Infrastructure Tests \(ubuntu-latest, samples\.slnx\)|Samples shared build and tests)$',
+        '^(?:L2 Integration Tests \(Aspire\) \(ubuntu-latest, mississippi\.slnx\)|Mississippi shared build and tests)$',
+        '^(?:L2 Integration Tests \(Aspire\) \(ubuntu-latest, samples\.slnx\)|Samples shared build and tests)$',
         '^cleanup \(ubuntu-latest, mississippi\.slnx\)$',
         '^cleanup \(ubuntu-latest, samples\.slnx\)$',
         '^AppHost locked restore \(ubuntu-latest\)$',
@@ -2819,7 +2819,7 @@ function Get-PrReadinessExpectedCheckPatterns {
         '^pwsh-tests \(ubuntu-latest\)$',
         '^pwsh-tests \(windows-latest\)$',
         '^Markdown Lint$',
-        '^L3 Spring E2E \(Smoke\)$',
+        '^(?:L3 Spring E2E \(Smoke\)|Samples shared build and tests)$',
         '^label-by-files$',
         '^label-by-semver$',
         '^Analyze \(csharp\)$',
@@ -2833,12 +2833,12 @@ function Get-PrReadinessExpectedCheckPatterns {
         $standardWorkflowPatterns = @(
             '^SonarCloud$', '^SonarCloud Code Analysis$', '^Build \(ubuntu-latest\)$',
             '^Build \(ubuntu-latest, mississippi\.slnx\)$', '^Build \(ubuntu-latest, samples\.slnx\)$',
-            '^L0 Unit Tests \(ubuntu-latest, mississippi\.slnx\)$', '^L0 Unit Tests \(ubuntu-latest, samples\.slnx\)$',
-            '^L1 Light Infrastructure Tests \(ubuntu-latest, mississippi\.slnx\)$', '^L1 Light Infrastructure Tests \(ubuntu-latest, samples\.slnx\)$',
-            '^L2 Integration Tests \(Aspire\) \(ubuntu-latest, mississippi\.slnx\)$', '^L2 Integration Tests \(Aspire\) \(ubuntu-latest, samples\.slnx\)$',
+            '^(?:L0 Unit Tests \(ubuntu-latest, mississippi\.slnx\)|Mississippi shared build and tests)$', '^(?:L0 Unit Tests \(ubuntu-latest, samples\.slnx\)|Samples shared build and tests)$',
+            '^(?:L1 Light Infrastructure Tests \(ubuntu-latest, mississippi\.slnx\)|Mississippi shared build and tests)$', '^(?:L1 Light Infrastructure Tests \(ubuntu-latest, samples\.slnx\)|Samples shared build and tests)$',
+            '^(?:L2 Integration Tests \(Aspire\) \(ubuntu-latest, mississippi\.slnx\)|Mississippi shared build and tests)$', '^(?:L2 Integration Tests \(Aspire\) \(ubuntu-latest, samples\.slnx\)|Samples shared build and tests)$',
             '^cleanup \(ubuntu-latest, mississippi\.slnx\)$', '^cleanup \(ubuntu-latest, samples\.slnx\)$',
             '^AppHost locked restore \(ubuntu-latest\)$', '^AppHost locked restore \(windows-latest\)$',
-            '^pwsh-tests \(ubuntu-latest\)$', '^pwsh-tests \(windows-latest\)$', '^Markdown Lint$', '^L3 Spring E2E \(Smoke\)$'
+            '^pwsh-tests \(ubuntu-latest\)$', '^pwsh-tests \(windows-latest\)$', '^Markdown Lint$', '^(?:L3 Spring E2E \(Smoke\)|Samples shared build and tests)$'
         )
         foreach ($pattern in $standardWorkflowPatterns) { $null = $patterns.Remove($pattern) }
     }

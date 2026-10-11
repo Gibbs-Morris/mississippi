@@ -113,7 +113,7 @@ The repository includes sample applications demonstrating the framework:
 
 ### Validate Spring after a change
 
-Use the same entry point locally and in the **L3 Spring E2E (Smoke)** CI check:
+Use the same entry point locally and in the Spring L3 stage of [Samples Validation](.github/workflows/samples-validation.yml):
 
 ```powershell
 pwsh ./test-spring.ps1 -Doctor # Check SDK selection and Docker access
@@ -137,7 +137,7 @@ initialize accounts, observe £500, deposit £50, withdraw £25, and observe £5
 Test level and suite are separate choices. `Spring.L2Tests` holds functional API/infrastructure tests;
 `Spring.L3Tests` holds browser journeys, with the smoke subset under `Smoke/` and tagged `Category=Smoke`.
 `Full` means all tests at the selected level; run both Full commands above to verify both levels.
-The L3 Tests workflow runs Smoke on PRs and merge queues, and offers Smoke or Full when dispatched manually.
+The Samples Validation workflow runs Spring L3 Smoke on PRs and merge queues, and offers Smoke or Full when dispatched manually.
 See [where tests live and when they run](samples/Spring/TESTING.md) before adding another test.
 
 Aspire's testing host allocates test endpoints and owns the application/container lifetime.
@@ -162,7 +162,7 @@ Keep this repository's `AGENTS.md` and its engineering instructions when adding 
 The implementation follows [Aspire test lifecycle guidance](https://aspire.dev/testing/manage-app-host/),
 [bounded CI testing](https://aspire.dev/testing/testing-in-ci/), and [Playwright traces](https://playwright.dev/dotnet/docs/trace-viewer-intro).
 A test-owned AppHost gives local and CI runs the same assertions and cleanup; interactive MCP is a debugging aid, not the pass/fail gate.
-The L3 smoke CI check fails normally; repository administrators can add **L3 Spring E2E (Smoke)** to required branch checks after merging.
+A failed Spring L3 run fails the **Samples shared build and tests** CI check.
 
 ### Framework quality gates
 
