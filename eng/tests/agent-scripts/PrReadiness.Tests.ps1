@@ -78,6 +78,49 @@ Describe 'PR readiness snapshot' {
         $outcome.Status | Should -Be 'READY'
     }
 
+    It 'keeps the main validation catalog satisfied by consolidated jobs' {
+        $patterns = @(Get-PrReadinessExpectedCheckPatterns -BaseRef main | Where-Object { $_ -match 'L[0123] (Unit Tests|Light Infrastructure Tests|Integration Tests|Spring E2E)' })
+        $names = @('Mississippi shared build and tests', 'Samples shared build and tests')
+        $missing = @($patterns | Where-Object { $pattern = $_; @($names | Where-Object { $_ -match $pattern }).Count -eq 0 })
+
+        $patterns.Count | Should -Be 7
+        $missing.Count | Should -Be 0
+    }
+
+    It 'keeps the main validation catalog satisfied by existing legacy jobs' {
+        $patterns = @(Get-PrReadinessExpectedCheckPatterns -BaseRef main | Where-Object { $_ -match 'L[0123] (Unit Tests|Light Infrastructure Tests|Integration Tests|Spring E2E)' })
+        $names = @(
+            'L0 Unit Tests (ubuntu-latest, mississippi.slnx)', 'L0 Unit Tests (ubuntu-latest, samples.slnx)',
+            'L1 Light Infrastructure Tests (ubuntu-latest, mississippi.slnx)', 'L1 Light Infrastructure Tests (ubuntu-latest, samples.slnx)',
+            'L2 Integration Tests (Aspire) (ubuntu-latest, mississippi.slnx)', 'L2 Integration Tests (Aspire) (ubuntu-latest, samples.slnx)',
+            'L3 Spring E2E (Smoke)'
+        )
+        $missing = @($patterns | Where-Object { $pattern = $_; @($names | Where-Object { $_ -match $pattern }).Count -eq 0 })
+
+        $patterns.Count | Should -Be 7
+        $missing.Count | Should -Be 0
+    }
+
+    It 'requires <MissingSolution> validation when only <CompletedSolution> completes' -TestCases @(
+        @{ CompletedSolution = 'Mississippi'; MissingSolution = 'Samples'; MissingCount = 4 },
+        @{ CompletedSolution = 'Samples'; MissingSolution = 'Mississippi'; MissingCount = 3 }
+    ) {
+        param([string]$CompletedSolution, [string]$MissingSolution, [int]$MissingCount)
+
+        $patterns = @(Get-PrReadinessExpectedCheckPatterns -BaseRef main | Where-Object { $_ -match 'L[0123] (Unit Tests|Light Infrastructure Tests|Integration Tests|Spring E2E)' })
+        $names = @("$CompletedSolution shared build and tests")
+        $missing = @($patterns | Where-Object { $pattern = $_; @($names | Where-Object { $_ -match $pattern }).Count -eq 0 })
+
+        $missing.Count | Should -Be $MissingCount
+        @($missing | Where-Object { $_ -match $CompletedSolution }).Count | Should -Be 0
+    }
+
+    It 'preserves validation check filtering for nonstandard bases' {
+        $patterns = @(Get-PrReadinessExpectedCheckPatterns -BaseRef 'codex/1085-remove-legacy-test-workflows')
+
+        @($patterns | Where-Object { $_ -match 'shared build and tests|L[0123] (Unit Tests|Light Infrastructure Tests|Integration Tests|Spring E2E)' }).Count | Should -Be 0
+    }
+
     It 'keeps matrix identities separate in the expected check catalog' {
         $patterns = @(Get-PrReadinessExpectedCheckPatterns)
 
