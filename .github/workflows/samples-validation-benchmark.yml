@@ -150,7 +150,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
           Invoke-SolutionTests -SolutionPath $env:SOLUTION -Configuration $env:CONFIGURATION -TestLevels L2Tests -AdditionalArguments '--no-build' -ResultsRoot artifacts/ci-benchmark/test-results | Out-Host
-      - name: Run Spring L3 browser tests
+      - name: Run Spring L3 with canonical restore and build
         env:
           SPRING_TEST_SUITE: ${{ inputs.suite || 'Smoke' }}
         run: ./test-spring.ps1 -TestLevel L3 -Suite $env:SPRING_TEST_SUITE -Configuration $env:CONFIGURATION -InstallBrowserDependencies
