@@ -1,7 +1,13 @@
-name: Experimental Mississippi Shared Validation
+name: Samples Validation
 
 on:
   workflow_dispatch:
+    inputs:
+      suite:
+        description: Spring L3 browser suite
+        type: choice
+        options: [Smoke, Full]
+        default: Smoke
   merge_group:
     types: [checks_requested]
     branches: [main]
@@ -21,12 +27,12 @@ defaults:
 
 env:
   CONFIGURATION: Release
-  SOLUTION: mississippi.slnx
+  SOLUTION: samples.slnx
 
 jobs:
   validation:
-    name: Experimental Mississippi shared build and tests
-    runs-on: ubuntu-latest
+    name: Samples shared build and tests
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - name: Checkout
@@ -103,11 +109,18 @@ jobs:
           $ErrorActionPreference = 'Stop'
           Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
           Invoke-SolutionTests -SolutionPath $env:SOLUTION -Configuration $env:CONFIGURATION -TestLevels L0Tests -AdditionalArguments '--no-build' -ResultsRoot artifacts/ci-benchmark/test-results | Out-Host
-      - name: Run L1
+      - name: Discover and run L1
         run: |
           Set-StrictMode -Version Latest
           $ErrorActionPreference = 'Stop'
           Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
+          $projects = @(Get-TestProjects -SolutionPath $env:SOLUTION | Where-Object { $_ -match '\.L1Tests\.csproj$' })
+          if ($projects.Count -eq 0) {
+            $message = "L1 is not applicable: $env:SOLUTION declares no L1 test projects."
+            Write-Host $message
+            $message | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            exit 0
+          }
           Invoke-SolutionTests -SolutionPath $env:SOLUTION -Configuration $env:CONFIGURATION -TestLevels L1Tests -AdditionalArguments '--no-build' -ResultsRoot artifacts/ci-benchmark/test-results | Out-Host
       - name: Cache versioned Aspire CLI
         id: aspire
@@ -137,6 +150,10 @@ jobs:
           $ErrorActionPreference = 'Stop'
           Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
           Invoke-SolutionTests -SolutionPath $env:SOLUTION -Configuration $env:CONFIGURATION -TestLevels L2Tests -AdditionalArguments '--no-build' -ResultsRoot artifacts/ci-benchmark/test-results | Out-Host
+      - name: Run Spring L3 with canonical restore and build
+        env:
+          SPRING_TEST_SUITE: ${{ inputs.suite || 'Smoke' }}
+        run: ./test-spring.ps1 -TestLevel L3 -Suite $env:SPRING_TEST_SUITE -Configuration $env:CONFIGURATION -InstallBrowserDependencies
       - name: Publish cache observations
         if: always()
         env:
@@ -149,8 +166,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: experimental-Mississippi-validation-${{ github.run_attempt }}
+          name: Samples-validation-${{ github.run_attempt }}
           path: |
             artifacts/ci-benchmark/
+            artifacts/spring/
           if-no-files-found: error
           retention-days: 7
