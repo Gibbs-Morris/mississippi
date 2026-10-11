@@ -18,9 +18,7 @@ param(
     [ValidateSet('Debug', 'Release')][string]$Configuration = 'Release',
     [switch]$Doctor,
     [switch]$InstallBrowserDependencies,
-    [string]$LeaseDirectory,
-    [string]$PrebuiltReceiptPath,
-    [string]$BuildVersion
+    [string]$LeaseDirectory
 )
 
 Set-StrictMode -Version Latest
@@ -34,7 +32,7 @@ try {
         $repoRoot = $executionLease.RepositoryRoot
     }
     Invoke-SpringValidation -RepoRoot $repoRoot -TestLevel $TestLevel -Suite $Suite -Configuration $Configuration `
-        -Doctor:$Doctor -InstallBrowserDependencies:$InstallBrowserDependencies -PrebuiltReceiptPath $PrebuiltReceiptPath -BuildVersion $BuildVersion
+        -Doctor:$Doctor -InstallBrowserDependencies:$InstallBrowserDependencies
     exit 0
 }
 catch {

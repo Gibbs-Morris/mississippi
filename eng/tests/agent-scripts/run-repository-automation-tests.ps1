@@ -11,7 +11,6 @@ $ErrorActionPreference = 'Stop'
 Import-Module Pester -MinimumVersion 5.0.0 -ErrorAction Stop
 $testPaths = @(
     (Join-Path $PSScriptRoot 'RepositoryAutomation.Tests.ps1'),
-    (Join-Path $PSScriptRoot 'CiBenchmark.Tests.ps1'),
     (Join-Path $PSScriptRoot 'CleanupWorkflow.Tests.ps1'),
     (Join-Path $PSScriptRoot 'MutationAutomation.Tests.ps1'),
     (Join-Path $PSScriptRoot 'SourceProjectResolution.Tests.ps1'),

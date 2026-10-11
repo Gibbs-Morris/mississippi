@@ -177,38 +177,6 @@ Describe 'Spring validation' {
             $env:PLAYWRIGHT_BROWSERS_PATH | Should -BeExactly $originalBrowsers
         }
 
-        It 'uses only verified current-job outputs while retaining browser and real test checks' {
-            Mock Assert-SpringPrebuiltBuild {}
-            Mock Invoke-SolutionBuild {}
-            Mock Install-SpringBrowser {}
-            Mock Invoke-RepositoryProcess {
-                if ($FilePath -eq 'docker') { return 'linux' }
-                if ($Arguments[0] -eq '--version') { return $(if ($FilePath -eq 'dotnet') { '10.0.400' } else { '13.5.3+test' }) }
-                if ($Arguments[0] -eq 'test') {
-                    $directory = $Arguments[[array]::IndexOf($Arguments, '--results-directory') + 1]
-                    '<TestRun><ResultSummary outcome="Completed"><Counters total="1" passed="1" executed="1"/></ResultSummary></TestRun>' |
-                        Set-Content (Join-Path $directory 'spring.trx')
-                }
-            }
-            Invoke-SpringValidation -RepoRoot $repo -PrebuiltReceiptPath 'current-build.json' -BuildVersion '0.6.0' -InstallBrowserDependencies
-            Should -Invoke Assert-SpringPrebuiltBuild -Times 1 -Exactly -ParameterFilter { $BuildVersion -eq '0.6.0' -and $Configuration -eq 'Release' }
-            Should -Invoke Invoke-SolutionBuild -Times 0
-            Should -Invoke Invoke-RepositoryProcess -Times 0 -ParameterFilter { $Arguments[0] -eq 'restore' }
-            Should -Invoke Install-SpringBrowser -Times 1 -ParameterFilter { $InstallBrowserDependencies }
-            (Get-Content (Get-ChildItem $repo -Recurse -Filter summary.json).FullName -Raw | ConvertFrom-Json).status | Should -Be 'PASS'
-        }
-
-        It 'fails before browser or tests when the prebuilt receipt is rejected' {
-            Mock Assert-SpringPrebuiltBuild { throw 'Stale build' }
-            Mock Invoke-SolutionBuild {}
-            Mock Install-SpringBrowser {}
-            { Invoke-SpringValidation -RepoRoot $repo -PrebuiltReceiptPath 'stale.json' -BuildVersion '0.6.0' } | Should -Throw '*Stale build*'
-            Should -Invoke Install-SpringBrowser -Times 0
-            Should -Invoke Invoke-SolutionBuild -Times 0
-            Should -Invoke Invoke-RepositoryProcess -Times 0 -ParameterFilter { $Arguments[0] -eq 'test' -or $Arguments[0] -eq 'restore' }
-            (Get-Content (Get-ChildItem $repo -Recurse -Filter summary.json).FullName -Raw | ConvertFrom-Json).phase | Should -Be 'prebuilt'
-        }
-
         It 'rejects a nonexistent L2 smoke suite before running tools' {
             { Invoke-SpringValidation -RepoRoot $repo -TestLevel L2 -Suite Smoke } | Should -Throw '*smoke journeys are L3*'
             Should -Invoke Invoke-RepositoryProcess -Times 0

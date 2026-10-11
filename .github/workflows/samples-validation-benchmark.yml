@@ -1,7 +1,13 @@
-name: Experimental Samples validation benchmark
+name: Experimental Samples Shared Validation
 
 on:
   workflow_dispatch:
+    inputs:
+      suite:
+        description: Spring L3 browser suite
+        type: choice
+        options: [Smoke, Full]
+        default: Smoke
   merge_group:
     types: [checks_requested]
     branches: [main]
@@ -21,6 +27,7 @@ defaults:
 
 env:
   CONFIGURATION: Release
+  SOLUTION: samples.slnx
 
 jobs:
   validation:
@@ -39,7 +46,28 @@ jobs:
           global-json-file: global.json
       - name: Record runner and authoritative test inventory
         id: inventory
-        run: ./eng/src/agent-scripts/invoke-ci-benchmark.ps1 -Solution samples.slnx -Stage Inventory
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
+          $projects = @(Get-TestProjects -SolutionPath $env:SOLUTION)
+          $levels = [ordered]@{}
+          foreach ($level in @('L0Tests', 'L1Tests', 'L2Tests', 'L3Tests')) {
+            $levels[$level] = @($projects | Where-Object { $_ -match "\.$level\.csproj$" }).Count
+          }
+          [xml]$packages = Get-Content -LiteralPath Directory.Packages.props -Raw
+          $aspireVersion = ($packages.Project.ItemGroup.PackageVersion | Where-Object Include -eq 'Aspire.Hosting.AppHost').Version
+          if ($aspireVersion -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') { throw 'Expected one pinned Aspire version.' }
+          $sdk = (Invoke-RepositoryProcess -FilePath dotnet -Arguments @('--version') | Out-String).Trim()
+          $source = (Invoke-RepositoryProcess -FilePath git -Arguments @('rev-parse', 'HEAD') | Out-String).Trim()
+          $null = New-Item -ItemType Directory -Path artifacts/ci-benchmark -Force
+          [ordered]@{
+            source = $source; sdk = $sdk; solution = $env:SOLUTION; configuration = $env:CONFIGURATION
+            image = $env:ImageOS; imageVersion = $env:ImageVersion; architecture = $env:RUNNER_ARCH
+            runId = $env:GITHUB_RUN_ID; attempt = $env:GITHUB_RUN_ATTEMPT; aspireVersion = $aspireVersion; projects = $levels
+          } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath artifacts/ci-benchmark/inventory.json
+          "aspire-version=$aspireVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "sdk=$sdk" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
       - name: Cache NuGet packages
         id: nuget
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -62,15 +90,38 @@ jobs:
         with:
           configFilePath: GitVersion.yml
       - name: Restore locked solution packages
-        run: ./eng/src/agent-scripts/invoke-ci-benchmark.ps1 -Solution samples.slnx -Stage Restore
-      - name: Build solution once
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
+          Invoke-RepositoryProcess -FilePath dotnet -Arguments @('restore', $env:SOLUTION, '--locked-mode') | Out-Host
+      - name: Build solution once for L0-L2
         env:
           BUILD_VERSION: ${{ steps.gitversion.outputs.SemVer }}
-        run: ./eng/src/agent-scripts/invoke-ci-benchmark.ps1 -Solution samples.slnx -Stage Build -BuildVersion $env:BUILD_VERSION
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
+          Invoke-SolutionBuild -SolutionPath $env:SOLUTION -Configuration $env:CONFIGURATION -NoRestore -NoIncremental -WarnAsError -AdditionalArguments "-p:Version=$env:BUILD_VERSION" | Out-Host
       - name: Run L0
-        run: ./eng/src/agent-scripts/invoke-ci-benchmark.ps1 -Solution samples.slnx -Stage L0
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
+          Invoke-SolutionTests -SolutionPath $env:SOLUTION -Configuration $env:CONFIGURATION -TestLevels L0Tests -AdditionalArguments '--no-build' -ResultsRoot artifacts/ci-benchmark/test-results | Out-Host
       - name: Discover and run L1
-        run: ./eng/src/agent-scripts/invoke-ci-benchmark.ps1 -Solution samples.slnx -Stage L1
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
+          $projects = @(Get-TestProjects -SolutionPath $env:SOLUTION | Where-Object { $_ -match '\.L1Tests\.csproj$' })
+          if ($projects.Count -eq 0) {
+            $message = "L1 is not applicable: $env:SOLUTION declares no L1 test projects."
+            Write-Host $message
+            $message | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            exit 0
+          }
+          Invoke-SolutionTests -SolutionPath $env:SOLUTION -Configuration $env:CONFIGURATION -TestLevels L1Tests -AdditionalArguments '--no-build' -ResultsRoot artifacts/ci-benchmark/test-results | Out-Host
       - name: Cache versioned Aspire CLI
         id: aspire
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -78,20 +129,39 @@ jobs:
           path: artifacts/tools/aspire-${{ steps.inventory.outputs.aspire-version }}
           key: ${{ runner.os }}-${{ runner.arch }}-aspire-${{ steps.inventory.outputs.aspire-version }}-sdk-${{ steps.inventory.outputs.sdk }}
       - name: Restore tools and verify local Aspire CLI
-        run: ./eng/src/agent-scripts/invoke-ci-benchmark.ps1 -Solution samples.slnx -Stage Aspire
-      - name: Run L2
-        run: ./eng/src/agent-scripts/invoke-ci-benchmark.ps1 -Solution samples.slnx -Stage L2
-      - name: Run Spring L3 Smoke with verified current build
         env:
-          BUILD_VERSION: ${{ steps.gitversion.outputs.SemVer }}
-        run: ./test-spring.ps1 -TestLevel L3 -Suite Smoke -InstallBrowserDependencies -PrebuiltReceiptPath artifacts/ci-benchmark/build.json -BuildVersion $env:BUILD_VERSION
-      - name: Publish phase and cache summary
+          ASPIRE_VERSION: ${{ steps.inventory.outputs.aspire-version }}
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
+          Invoke-DotnetToolRestore -RepoRoot $env:GITHUB_WORKSPACE
+          $toolPath = Join-Path $env:GITHUB_WORKSPACE "artifacts/tools/aspire-$env:ASPIRE_VERSION"
+          $aspire = Join-Path $toolPath 'aspire'
+          if (-not (Test-Path -LiteralPath $aspire -PathType Leaf)) {
+            Invoke-RepositoryProcess -FilePath dotnet -Arguments @('tool', 'install', 'Aspire.Cli', '--version', $env:ASPIRE_VERSION, '--tool-path', $toolPath) | Out-Host
+          }
+          $installedVersion = (Invoke-RepositoryProcess -FilePath $aspire -Arguments @('--version') | Out-String).Trim()
+          if ($installedVersion.Split('+')[0] -ne $env:ASPIRE_VERSION) { throw "Expected Aspire CLI $env:ASPIRE_VERSION; found $installedVersion." }
+          $toolPath | Out-File -FilePath $env:GITHUB_PATH -Append
+      - name: Run L2
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
+          Invoke-SolutionTests -SolutionPath $env:SOLUTION -Configuration $env:CONFIGURATION -TestLevels L2Tests -AdditionalArguments '--no-build' -ResultsRoot artifacts/ci-benchmark/test-results | Out-Host
+      - name: Run Spring L3 browser tests
+        env:
+          SPRING_TEST_SUITE: ${{ inputs.suite || 'Smoke' }}
+        run: ./test-spring.ps1 -TestLevel L3 -Suite $env:SPRING_TEST_SUITE -Configuration $env:CONFIGURATION -InstallBrowserDependencies
+      - name: Publish cache observations
         if: always()
         env:
           NUGET_CACHE_HIT: ${{ steps.nuget.outputs.cache-hit }}
           GITVERSION_CACHE_HIT: ${{ steps.gitversion-cache.outputs.cache-hit }}
           ASPIRE_CACHE_HIT: ${{ steps.aspire.outputs.cache-hit }}
-        run: ./eng/src/agent-scripts/invoke-ci-benchmark.ps1 -Solution samples.slnx -Stage Summary
+        run: |
+          "NuGet cache hit: $env:NUGET_CACHE_HIT; GitVersion cache hit: $env:GITVERSION_CACHE_HIT; Aspire cache hit: $env:ASPIRE_CACHE_HIT" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
       - name: Retain benchmark and test evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
