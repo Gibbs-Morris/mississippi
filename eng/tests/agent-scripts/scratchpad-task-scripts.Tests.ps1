@@ -57,6 +57,9 @@ Describe 'Scratchpad task scripts' {
         $all = & $listScript -ScratchpadRoot $scratchpadRoot
         $all.Count | Should -Be 2
 
+        $pending = @(& $listScript -ScratchpadRoot $scratchpadRoot -Status 'pending')
+        $pending.Count | Should -Be 2
+
         $filtered = & $listScript -ScratchpadRoot $scratchpadRoot -Priority 'P0'
         $filtered.Count | Should -Be 1
         $filtered[0].Id | Should -Be $task1.Id
@@ -67,6 +70,18 @@ Describe 'Scratchpad task scripts' {
 
         $withData = & $listScript -ScratchpadRoot $scratchpadRoot -IncludeData
         $withData[0].Data | Should -Not -BeNullOrEmpty
+
+        & $claimScript -Id $task1.Id -Agent 'listing-workflow' -ScratchpadRoot $scratchpadRoot | Out-Null
+        & $completeScript -Id $task1.Id -Result 'Listing workflow completed' -ScratchpadRoot $scratchpadRoot | Out-Null
+        & $deferScript -Id $task2.Id -Reason 'Listing workflow deferred' -ScratchpadRoot $scratchpadRoot | Out-Null
+
+        $doneList = @(& $listScript -ScratchpadRoot $scratchpadRoot -Status 'done')
+        $doneList.Count | Should -Be 1
+        $doneList[0].Id | Should -Be $task1.Id
+        $deferredList = @(& $listScript -ScratchpadRoot $scratchpadRoot -Status 'deferred')
+        $deferredList.Count | Should -Be 1
+        $deferredList[0].Id | Should -Be $task2.Id
+        @(& $listScript -ScratchpadRoot $scratchpadRoot -Status 'pending').Count | Should -Be 0
     }
 
     It 'claims a pending task and increments attempts' {

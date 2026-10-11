@@ -1,6 +1,6 @@
 # Mississippi Framework
 
-> ⚠️ **EARLY ALPHA - WORK IN PROGRESS**: This framework is currently in early alpha development stage and not yet at version 1.0. APIs may change significantly without notice. Not recommended for production use at this time.
+> ⚠️ **EARLY ALPHA - WORK IN PROGRESS**: This framework is currently in early alpha development and not yet at version 1.0. APIs may change significantly without notice. Not recommended for production use at this time.
 
 ## Vision
 
@@ -29,7 +29,7 @@ Take a look at [`samples/Spring/Spring.Domain`](samples/Spring/Spring.Domain) to
 
 ## Overview
 
-Mississippi is a sophisticated .NET framework designed to streamline distributed application development. It provides a robust foundation for building scalable, maintainable .NET applications with built-in support for event sourcing, CQRS, distributed computing via Orleans, cloud storage integration, and real-time UI updates.
+Mississippi is a .NET framework designed to streamline distributed application development. It provides a robust foundation for building scalable, maintainable .NET applications with built-in support for event sourcing, CQRS, distributed computing via Orleans, cloud storage integration, and real-time UI updates.
 
 ## Design Principles
 
@@ -67,7 +67,7 @@ Mississippi is a sophisticated .NET framework designed to streamline distributed
 
 Mississippi packages are published on NuGet under the `Mississippi.*` naming pattern.
 
-Recommended entry points for application developers are the SDK packages:
+The recommended entry points for application developers are the SDK packages:
 
 - `Mississippi.Sdk.Client` - client-side integration package
 - `Mississippi.Sdk.Gateway` - gateway/API integration package
@@ -94,7 +94,7 @@ cd mississippi
 pwsh ./go.ps1
 ```
 
-Common script entry points:
+Common script entry points include:
 
 - `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1 [-Configuration Debug|Release]` – build the Mississippi solution.
 - `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 [-Configuration Debug|Release]` – run L0/L1 tests with coverage for Mississippi projects.

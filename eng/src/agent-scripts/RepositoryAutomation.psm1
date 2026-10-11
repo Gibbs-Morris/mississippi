@@ -2820,7 +2820,6 @@ function Get-PrReadinessExpectedCheckPatterns {
         '^pwsh-tests \(windows-latest\)$',
         '^Markdown Lint$',
         '^L3 Spring E2E \(Smoke\)$',
-        '^Validate repository issue reference$',
         '^label-by-files$',
         '^label-by-semver$',
         '^Analyze \(csharp\)$',

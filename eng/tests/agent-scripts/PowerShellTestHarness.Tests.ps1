@@ -31,7 +31,6 @@ Describe 'PowerShell test orchestration' {
             'run-spring-validation-tests.ps1',
             'run-scratchpad-task-tests.ps1',
             'run-summarize-coverage-gaps-tests.ps1',
-            'run-pr-issue-reference-tests.ps1',
             'run-task-automation-tests.ps1',
             'run-validation-plan-tests.ps1',
             'run-issue-spec-tests.ps1',
@@ -52,12 +51,11 @@ Describe 'PowerShell test orchestration' {
         foreach ($runner in $pesterRunners) {
             Set-Content (Join-Path $fixtureRunners $runner) 'param([switch]$PassThru); [pscustomobject]@{ Result = "Passed"; TotalCount = 1; FailedCount = 0 }'
         }
-        Set-Content (Join-Path $fixtureRunners 'verify-scratchpad-task-scripts.ps1') 'exit 0'
     }
 
     It 'runs every required suite successfully' {
         $results = & $orchestrator -PassThru 6>$null
-        $results.Count | Should -Be 11
+        $results.Count | Should -Be 9
         @($results | Where-Object Status -NE 'Passed').Count | Should -Be 0
     }
 
@@ -80,18 +78,11 @@ Describe 'PowerShell test orchestration' {
         $results[0].Failed | Should -BeGreaterThan 0
     }
 
-    It 'fails a script that exits unsuccessfully' {
-        Set-Content (Join-Path $fixtureRunners 'verify-scratchpad-task-scripts.ps1') 'exit 7'
-        $results = & $orchestrator -PassThru 6>$null
-        $results[-1].Status | Should -Be 'Failed'
-        $results[-1].Error | Should -BeLike 'Test runner exited with code 7:*'
-    }
-
-    It 'returns process exit code <ExitCode> when the script runner exits <ExitCode>' -ForEach @(
-        @{ ExitCode = 0 },
-        @{ ExitCode = 1 }
+    It 'returns process exit code <ExitCode> for Pester outcome <Outcome>' -ForEach @(
+        @{ ExitCode = 0; Outcome = 'Passed' },
+        @{ ExitCode = 1; Outcome = 'Failed' }
     ) {
-        Set-Content (Join-Path $fixtureRunners 'verify-scratchpad-task-scripts.ps1') "exit $ExitCode"
+        Set-Content $targetRunner "param([switch]`$PassThru); [pscustomobject]@{ Result = '$Outcome'; TotalCount = 1; FailedCount = $ExitCode }"
         & $powerShellPath -NoProfile -File $orchestrator | Out-Null
         $LASTEXITCODE | Should -Be $ExitCode
     }
@@ -99,24 +90,24 @@ Describe 'PowerShell test orchestration' {
 
 Describe 'Standalone Pester runners' {
     It 'returns <ExitCode> for <Case> through <Runner>' -ForEach @(
+        foreach ($scenario in @(
+            @{ Case = 'passing'; Body = "Describe 'Suite' { It 'passes' { 1 | Should -Be 1 } }"; ExitCode = 0 },
+            @{ Case = 'discovery failure'; Body = "throw 'discovery failure'"; ExitCode = 1 },
+            @{ Case = 'empty discovery'; Body = ''; ExitCode = 1 },
+            @{ Case = 'failed test'; Body = "Describe 'Suite' { It 'fails' { 1 | Should -Be 2 } }"; ExitCode = 1 }
+        )) {
+            @{ Runner = 'run-pester-suite.ps1'; TestFile = 'Suite.Tests.ps1'; Case = $scenario.Case; Body = $scenario.Body; ExitCode = $scenario.ExitCode }
+        }
         foreach ($suite in @(
             @{ Runner = 'run-scratchpad-task-tests.ps1'; TestFile = 'scratchpad-task-scripts.Tests.ps1' },
             @{ Runner = 'run-summarize-coverage-gaps-tests.ps1'; TestFile = 'summarize-coverage-gaps.Tests.ps1' },
             @{ Runner = 'run-task-automation-tests.ps1'; TestFile = 'TaskAutomation.Tests.ps1' },
             @{ Runner = 'run-validation-plan-tests.ps1'; TestFile = 'ValidationPlan.Tests.ps1' },
             @{ Runner = 'run-issue-spec-tests.ps1'; TestFile = 'IssueSpec.Tests.ps1' },
-            @{ Runner = 'run-agent-doctor-tests.ps1'; TestFile = 'AgentDoctor.Tests.ps1' }
             @{ Runner = 'run-agent-doctor-tests.ps1'; TestFile = 'AgentDoctor.Tests.ps1' },
             @{ Runner = 'run-agent-context-tests.ps1'; TestFile = 'AgentContext.Tests.ps1' }
         )) {
-            foreach ($scenario in @(
-                @{ Case = 'passing'; Body = "Describe 'Suite' { It 'passes' { 1 | Should -Be 1 } }"; ExitCode = 0 },
-                @{ Case = 'discovery failure'; Body = "throw 'discovery failure'"; ExitCode = 1 },
-                @{ Case = 'empty discovery'; Body = ''; ExitCode = 1 },
-                @{ Case = 'failed test'; Body = "Describe 'Suite' { It 'fails' { 1 | Should -Be 2 } }"; ExitCode = 1 }
-            )) {
-                @{ Runner = $suite.Runner; TestFile = $suite.TestFile; Case = $scenario.Case; Body = $scenario.Body; ExitCode = $scenario.ExitCode }
-            }
+            @{ Runner = $suite.Runner; TestFile = $suite.TestFile; Case = 'wrapper failure propagation'; Body = "Describe 'Suite' { It 'fails' { 1 | Should -Be 2 } }"; ExitCode = 1 }
         }
     ) {
         $fixture = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
@@ -124,7 +115,8 @@ Describe 'Standalone Pester runners' {
         Copy-Item (Join-Path $PSScriptRoot $Runner) $fixture
         Copy-Item (Join-Path $PSScriptRoot 'run-pester-suite.ps1') $fixture
         Set-Content (Join-Path $fixture $TestFile) $Body
-        & $powerShellPath -NoProfile -File (Join-Path $fixture $Runner) | Out-Null
+        $runnerArguments = if ($Runner -eq 'run-pester-suite.ps1') { @('-TestPath', (Join-Path $fixture $TestFile)) } else { @() }
+        & $powerShellPath -NoProfile -File (Join-Path $fixture $Runner) @runnerArguments | Out-Null
         $LASTEXITCODE | Should -Be $ExitCode
     }
 }
