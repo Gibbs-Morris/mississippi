@@ -103,18 +103,11 @@ jobs:
           $ErrorActionPreference = 'Stop'
           Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
           Invoke-SolutionTests -SolutionPath $env:SOLUTION -Configuration $env:CONFIGURATION -TestLevels L0Tests -AdditionalArguments '--no-build' -ResultsRoot artifacts/ci-benchmark/test-results | Out-Host
-      - name: Discover and run L1
+      - name: Run L1
         run: |
           Set-StrictMode -Version Latest
           $ErrorActionPreference = 'Stop'
           Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
-          $projects = @(Get-TestProjects -SolutionPath $env:SOLUTION | Where-Object { $_ -match '\.L1Tests\.csproj$' })
-          if ($projects.Count -eq 0) {
-            $message = "L1 is not applicable: $env:SOLUTION declares no L1 test projects."
-            Write-Host $message
-            $message | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-            exit 0
-          }
           Invoke-SolutionTests -SolutionPath $env:SOLUTION -Configuration $env:CONFIGURATION -TestLevels L1Tests -AdditionalArguments '--no-build' -ResultsRoot artifacts/ci-benchmark/test-results | Out-Host
       - name: Cache versioned Aspire CLI
         id: aspire
