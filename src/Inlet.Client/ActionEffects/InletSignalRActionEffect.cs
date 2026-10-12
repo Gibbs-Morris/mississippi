@@ -507,6 +507,11 @@ internal sealed class InletSignalRActionEffect
         (subscription.ConnectionGeneration == generation) &&
         (subscription.SubscriptionId == subscriptionId);
 
+    /// <summary>
+    ///     Advances the connection generation and recovers the interests captured for that connection.
+    /// </summary>
+    /// <param name="connectionId">The optional identifier supplied by SignalR after reconnecting.</param>
+    /// <returns>A task representing recovery of the captured interests.</returns>
     private async Task OnReconnectedAsync(
         string? connectionId
     )
@@ -529,72 +534,107 @@ internal sealed class InletSignalRActionEffect
             }
 
             TaskCompletionSource<bool> request = new(TaskCreationOptions.RunContinuationsAsynchronously);
-            bool isClaimed;
-            lock (subscriptionGate)
+            bool? isClaimed = TryReserveReconnect(key, request, generation);
+            if (isClaimed is null)
             {
-                if (generation != connectionGeneration)
-                {
-                    return;
-                }
-
-                if (activeSubscriptions.TryGetValue(key, out SubscriptionEntry? subscription) &&
-                    (subscription.ConnectionGeneration < generation))
-                {
-                    // A new connection supersedes pending attempts and IDs from older connections.
-                    activeSubscriptions[key] = new(null, request, generation);
-                    isClaimed = true;
-                }
-                else
-                {
-                    // This interest was removed or has already been established or claimed on this connection.
-                    isClaimed = false;
-                }
+                return;
             }
 
-            if (!isClaimed)
+            if (isClaimed is false)
             {
                 continue;
             }
 
-            string? newSubscriptionId = null;
-            try
-            {
-                newSubscriptionId = await HubConnection.InvokeAsync<string>(
-                    InletHubConstants.SubscribeMethod,
-                    path,
-                    key.EntityId,
-                    CancellationToken.None);
-                if (!TryCompletePendingSubscription(key, request, newSubscriptionId))
-                {
-                    await UnsubscribeFromHubAsync(newSubscriptionId, path, key.EntityId, CancellationToken.None);
-                    continue;
-                }
+            await RecoverSubscriptionAsync(key, path, request, generation);
+        }
+    }
 
-                // Keep the established ID when only the following fetch fails.
-                ProjectionFetchResult? result = await ProjectionFetcher.FetchAsync(
-                    key.ProjectionType,
-                    key.EntityId,
-                    CancellationToken.None);
-                if (result is not null && IsCurrentSubscription(key, newSubscriptionId, generation))
-                {
-                    Store.Dispatch(
-                        ProjectionActionFactory.CreateUpdated(
-                            key.ProjectionType,
-                            key.EntityId,
-                            result.Data,
-                            result.Version));
-                }
-            }
-            catch (Exception ex)
+    /// <summary>
+    ///     Establishes and fetches one claimed subscription while rejecting superseded work.
+    /// </summary>
+    /// <param name="key">The projection and entity pair being recovered.</param>
+    /// <param name="path">The registered projection route.</param>
+    /// <param name="request">The completion source identifying the recovery attempt.</param>
+    /// <param name="generation">The connection generation that owns this recovery.</param>
+    /// <returns>A task representing subscription and projection recovery for the pair.</returns>
+    private async Task RecoverSubscriptionAsync(
+        (Type ProjectionType, string EntityId) key,
+        string path,
+        TaskCompletionSource<bool> request,
+        long generation
+    )
+    {
+        string? newSubscriptionId = null;
+        try
+        {
+            newSubscriptionId = await HubConnection.InvokeAsync<string>(
+                InletHubConstants.SubscribeMethod,
+                path,
+                key.EntityId,
+                CancellationToken.None);
+            if (!TryCompletePendingSubscription(key, request, newSubscriptionId))
             {
-                bool isCurrentRequest = newSubscriptionId is null
-                    ? TryCompletePendingSubscription(key, request, null)
-                    : IsCurrentSubscription(key, newSubscriptionId, generation);
-                if (isCurrentRequest)
-                {
-                    Store.Dispatch(ProjectionActionFactory.CreateError(key.ProjectionType, key.EntityId, ex));
-                }
+                await UnsubscribeFromHubAsync(newSubscriptionId, path, key.EntityId, CancellationToken.None);
+                return;
             }
+
+            // Keep the established ID when only the following fetch fails.
+            ProjectionFetchResult? result = await ProjectionFetcher.FetchAsync(
+                key.ProjectionType,
+                key.EntityId,
+                CancellationToken.None);
+            if (result is not null && IsCurrentSubscription(key, newSubscriptionId, generation))
+            {
+                Store.Dispatch(
+                    ProjectionActionFactory.CreateUpdated(
+                        key.ProjectionType,
+                        key.EntityId,
+                        result.Data,
+                        result.Version));
+            }
+        }
+        catch (Exception ex)
+        {
+            bool isCurrentRequest = newSubscriptionId is null
+                ? TryCompletePendingSubscription(key, request, null)
+                : IsCurrentSubscription(key, newSubscriptionId, generation);
+            if (isCurrentRequest)
+            {
+                Store.Dispatch(ProjectionActionFactory.CreateError(key.ProjectionType, key.EntityId, ex));
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Claims only older interests while holding the subscription gate.
+    /// </summary>
+    /// <param name="key">The projection and entity pair captured at reconnect.</param>
+    /// <param name="request">The completion source owned by this recovery.</param>
+    /// <param name="generation">The connection generation requesting recovery.</param>
+    /// <returns>True when claimed, false when removed or already current, or null when superseded.</returns>
+    private bool? TryReserveReconnect(
+        (Type ProjectionType, string EntityId) key,
+        TaskCompletionSource<bool> request,
+        long generation
+    )
+    {
+        lock (subscriptionGate)
+        {
+            if (generation != connectionGeneration)
+            {
+                return null;
+            }
+
+            if (activeSubscriptions.TryGetValue(key, out SubscriptionEntry? subscription) &&
+                (subscription.ConnectionGeneration < generation))
+            {
+                // A new connection supersedes pending attempts and IDs from older connections.
+                activeSubscriptions[key] = new(null, request, generation);
+                return true;
+            }
+
+            // This interest was removed or has already been established or claimed on this connection.
+            return false;
         }
     }
 
