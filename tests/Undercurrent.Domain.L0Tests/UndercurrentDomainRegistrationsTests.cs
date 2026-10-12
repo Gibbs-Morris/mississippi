@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 
+using Mississippi.Brooks.Serialization.Abstractions;
 using Mississippi.Brooks.Serialization.Json;
 using Mississippi.DomainModeling.Abstractions;
 using Mississippi.Tributary.Abstractions;
@@ -119,13 +120,6 @@ public sealed class UndercurrentDomainRegistrationsTests
     }
 
     /// <summary>
-    ///     A missing service collection fails at the public registration boundary.
-    /// </summary>
-    [Fact]
-    public void NullServicesAreRejected() =>
-        Assert.Throws<ArgumentNullException>(() => UndercurrentDomainRegistrations.AddUndercurrentDomain(null!));
-
-    /// <summary>
     ///     Registered cleanup records serializable IDs and applies them through the root reducer.
     /// </summary>
     [Fact]
@@ -137,12 +131,21 @@ public sealed class UndercurrentDomainRegistrationsTests
         services.AddUndercurrentDomain();
         services.AddJsonSerialization();
         using ServiceProvider provider = services.BuildServiceProvider();
-        IRootCommandHandler<UserNotificationsAggregate> handler = provider.GetRequiredService<IRootCommandHandler<UserNotificationsAggregate>>();
-        IRootReducer<UserNotificationsAggregate> reducer = provider.GetRequiredService<IRootReducer<UserNotificationsAggregate>>();
-        Mississippi.Brooks.Serialization.Abstractions.ISerializationProvider serializer = provider.GetRequiredService<Mississippi.Brooks.Serialization.Abstractions.ISerializationProvider>();
-        UserNotificationsAggregate state = reducer.Reduce(new(), Aggregates.UserNotifications.UserNotificationsFixture.CreateEvent("old", now.AddDays(-8)));
-        state = reducer.Reduce(state, Aggregates.UserNotifications.UserNotificationsFixture.CreateEvent("boundary", now.AddDays(-7)));
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(new DeleteNotificationsOlderThan { Days = 7 }, state);
+        IRootCommandHandler<UserNotificationsAggregate> handler =
+            provider.GetRequiredService<IRootCommandHandler<UserNotificationsAggregate>>();
+        IRootReducer<UserNotificationsAggregate> reducer =
+            provider.GetRequiredService<IRootReducer<UserNotificationsAggregate>>();
+        ISerializationProvider serializer = provider.GetRequiredService<ISerializationProvider>();
+        UserNotificationsAggregate state = reducer.Reduce(
+            new(),
+            UserNotificationsFixture.CreateEvent("old", now.AddDays(-8)));
+        state = reducer.Reduce(state, UserNotificationsFixture.CreateEvent("boundary", now.AddDays(-7)));
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(
+            new DeleteNotificationsOlderThan
+            {
+                Days = 7,
+            },
+            state);
         Assert.True(result.Success);
         NotificationsDeleted deleted = Assert.IsType<NotificationsDeleted>(Assert.Single(result.Value));
         NotificationsDeleted restored = serializer.Deserialize<NotificationsDeleted>(serializer.Serialize(deleted));
@@ -151,6 +154,16 @@ public sealed class UndercurrentDomainRegistrationsTests
         UserNotificationsAggregate remaining = reducer.Reduce(state, restored);
         Assert.Equal("boundary", Assert.Single(remaining.Notifications).Key);
         Assert.Equal(2, state.Notifications.Count);
-        Assert.Equal(typeof(NotificationsDeleted), provider.GetRequiredService<IEventTypeRegistry>().ResolveType("MISSISSIPPI.UNDERCURRENT.NOTIFICATIONSDELETED.V1"));
+        Assert.Equal(
+            typeof(NotificationsDeleted),
+            provider.GetRequiredService<IEventTypeRegistry>()
+                .ResolveType("MISSISSIPPI.UNDERCURRENT.NOTIFICATIONSDELETED.V1"));
     }
+
+    /// <summary>
+    ///     A missing service collection fails at the public registration boundary.
+    /// </summary>
+    [Fact]
+    public void NullServicesAreRejected() =>
+        Assert.Throws<ArgumentNullException>(() => UndercurrentDomainRegistrations.AddUndercurrentDomain(null!));
 }

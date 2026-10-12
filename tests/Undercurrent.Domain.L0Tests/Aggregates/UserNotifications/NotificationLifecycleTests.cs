@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Microsoft.Extensions.Time.Testing;
 
@@ -213,15 +214,19 @@ public sealed class NotificationLifecycleTests
     [InlineData(false)]
     public void MissingReadReturnsInvalidState(
         bool withoutHistory
-    ) =>
-        new MarkNotificationAsReadHandler(timeProvider).ShouldFailWithMessage(
-            withoutHistory ? null : new UserNotificationsAggregate(),
+    )
+    {
+        OperationResult<IReadOnlyList<object>> result = new MarkNotificationAsReadHandler(timeProvider).Handle(
             new()
             {
                 NotificationId = "notice",
             },
-            AggregateErrorCodes.InvalidState,
-            "Notification does not exist.");
+            withoutHistory ? null : new UserNotificationsAggregate());
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
+        Assert.Equal("Notification does not exist.", result.ErrorMessage);
+        Assert.Null(result.Value);
+    }
 
     /// <summary>
     ///     Read handlers require an explicit time provider.
