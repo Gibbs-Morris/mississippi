@@ -158,6 +158,76 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
             Times.Once);
 
     /// <summary>
+    ///     Overlapping explicit retries of a failed interest issue only one server subscription.
+    /// </summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task ConcurrentExplicitRetriesShareOneClaim()
+    {
+        TaskCompletionSource<object?> reply = ConfigureFailedRetryWithPendingReply();
+        await FailFirstReconnectAsync();
+        Task<IAction[]> firstRetry = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        IAction[] secondRetry = await HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        reply.SetResult("recovered-id");
+        IAction[] firstActions = await firstRetry.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+        Assert.Empty(secondRetry);
+        Assert.Collection(
+            firstActions,
+            action => Assert.IsType<ProjectionLoadingAction<TestProjection>>(action),
+            action => Assert.IsType<ProjectionLoadedAction<TestProjection>>(action));
+        VerifySubscribeCount(3);
+        await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
+        VerifyUnsubscribedId("recovered-id");
+    }
+
+    /// <summary>
+    ///     A failed or cancelled explicit retry releases its claim without losing desired interest.
+    /// </summary>
+    /// <param name="isCancelled">Whether the explicit retry is cancelled instead of failing.</param>
+    /// <returns>A task representing the test.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FailedExplicitRetryKeepsInterestRetryable(
+        bool isCancelled
+    )
+    {
+        Exception retryFailure = isCancelled
+            ? new OperationCanceledException()
+            : new InvalidOperationException("Explicit retry failed");
+        hubConnection.SetupSequence(connection => connection.InvokeCoreAsync(
+                InletHubConstants.SubscribeMethod,
+                typeof(string),
+                It.IsAny<object?[]>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("old-id")
+            .ThrowsAsync(new InvalidOperationException("Reconnect subscription failed"))
+            .ThrowsAsync(retryFailure)
+            .ReturnsAsync("recovered-id");
+        await FailFirstReconnectAsync();
+        IAction[] failedActions = await HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        Assert.IsType<ProjectionLoadingAction<TestProjection>>(failedActions[0]);
+        if (isCancelled)
+        {
+            Assert.Single(failedActions);
+        }
+        else
+        {
+            ProjectionErrorAction<TestProjection> error =
+                Assert.IsType<ProjectionErrorAction<TestProjection>>(failedActions[1]);
+            Assert.Same(retryFailure, error.Error);
+            Assert.Equal(2, failedActions.Length);
+        }
+
+        await SubscribeAsync();
+        VerifySubscribeCount(4);
+        await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
+        VerifyUnsubscribedId("recovered-id");
+    }
+
+    /// <summary>
     ///     Retained interest ignores notifications until a retry establishes a usable subscription ID.
     /// </summary>
     /// <returns>A task representing the test.</returns>
@@ -293,6 +363,25 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
     }
 
     /// <summary>
+    ///     An explicit retry released before its reply cannot restore the removed interest.
+    /// </summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task LateExplicitRetryReplyAfterUnsubscribeIsCleanedUp()
+    {
+        TaskCompletionSource<object?> reply = ConfigureFailedRetryWithPendingReply();
+        await FailFirstReconnectAsync();
+        Task<IAction[]> retry = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
+        reply.SetResult("late-id");
+        IAction[] retryActions = await retry.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        Assert.IsType<ProjectionLoadingAction<TestProjection>>(Assert.Single(retryActions));
+        VerifyUnsubscribedId("late-id");
+        await reconnected("after-unsubscribe");
+        VerifySubscribeCount(3);
+    }
+
+    /// <summary>
     ///     A reconnect reply arriving after unsubscribe is cleaned up without restoring the released interest.
     /// </summary>
     /// <returns>A task representing the test.</returns>
@@ -420,6 +509,7 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
             .ReturnsAsync(ProjectionFetchResult.NotFound);
         await FailFirstReconnectAsync();
         Task<IAction[]> explicitRetry = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        VerifySubscribeCount(3);
         await reconnected("latest-connection");
         if (oldFetchFails)
         {
