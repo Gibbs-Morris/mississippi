@@ -35,13 +35,13 @@ jobs:
         run: echo "::notice::Starting Markdown lint via Super-Linter"
 
       - name: Run Super-Linter (Markdown)
-        uses: super-linter/super-linter@4ce20838b8ab83717e78138c5b3a1407148e0918 # v8.7.0
+        uses: super-linter/super-linter@2da136927bd4a73596db63044b504547c62cb854 # v9.0.0
         env:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: true
           # Inclusion-only selection disables unset validators, including Markdown Prettier.
-          # Super-Linter v8 rejects mixing true and false VALIDATE_<LANGUAGE> flags.
+          # Super-Linter rejects mixing true and false VALIDATE_<LANGUAGE> flags.
           VALIDATE_MARKDOWN: true
 
       - name: Markdown lint passed
