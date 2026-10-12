@@ -1070,26 +1070,27 @@ public sealed class GenericAggregateGrainSagaReminderTests
     }
 
     /// <summary>
-    ///     Retains protection without recovery independently of informational logging.
+    ///     Retains protection without recovery independently of debug logging.
     /// </summary>
-    /// <param name="isInformationEnabled">Whether the informational log level is enabled.</param>
+    /// <param name="isDebugEnabled">Whether the debug log level is enabled.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task ReceiveReminderRetainsProtectionWhenSagaPhaseIsNotStarted(
-        bool isInformationEnabled
+        bool isDebugEnabled
     )
     {
         Mock<IBrookCursorGrain> cursorMock = new();
         cursorMock.Setup(c => c.GetLatestPositionConfirmedAsync()).ReturnsAsync(new BrookPosition(8));
         Mock<IGrainReminder> grainReminderMock = new();
         Mock<ILogger<GenericAggregateGrain<TestSagaState>>> loggerMock = new();
-        loggerMock.Setup(l => l.IsEnabled(LogLevel.Information)).Returns(isInformationEnabled);
+        loggerMock.Setup(l => l.IsEnabled(LogLevel.Information)).Returns(true);
+        loggerMock.Setup(l => l.IsEnabled(LogLevel.Debug)).Returns(isDebugEnabled);
         object? capturedState = null;
         Exception? capturedException = null;
         loggerMock.Setup(l => l.Log(
-                LogLevel.Information,
+                LogLevel.Debug,
                 It.Is<EventId>(id => id.Id == 26),
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception?>(),
@@ -1123,18 +1124,27 @@ public sealed class GenericAggregateGrainSagaReminderTests
             loggerMock: loggerMock,
             reminderRegistryMock: reminderRegistryMock);
         await grain.ReceiveReminder(SagaReminderName, default);
+        await grain.ReceiveReminder(SagaReminderName, default);
         reminderRegistryMock.Verify(r => r.UnregisterAsync(grain, grainReminderMock.Object), Times.Never);
         loggerMock.Verify(
             l => l.Log(
-                LogLevel.Information,
+                LogLevel.Debug,
                 It.Is<EventId>(id =>
                     (id.Id == 26) &&
                     (id.Name == nameof(AggregateGrainLoggerExtensions.SagaReminderDeferredNotStarted))),
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            isInformationEnabled ? Times.Once() : Times.Never());
-        if (isInformationEnabled)
+            isDebugEnabled ? Times.Exactly(2) : Times.Never());
+        loggerMock.Verify(
+            l => l.Log(
+                LogLevel.Information,
+                It.Is<EventId>(id => id.Id == 26),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
+        if (isDebugEnabled)
         {
             IReadOnlyList<KeyValuePair<string, object?>> fields =
                 Assert.IsType<IReadOnlyList<KeyValuePair<string, object?>>>(capturedState, false);

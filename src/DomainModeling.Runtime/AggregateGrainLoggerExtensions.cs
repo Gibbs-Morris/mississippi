@@ -194,7 +194,7 @@ internal static partial class AggregateGrainLoggerExtensions
     /// <param name="aggregateKey">The aggregate key.</param>
     [LoggerMessage(
         26,
-        LogLevel.Information,
+        LogLevel.Debug,
         "Reminder {ReminderName} found saga phase NotStarted for aggregate {AggregateKey}; deferring recovery and retaining reminder protection")]
     public static partial void SagaReminderDeferredNotStarted(
         this ILogger logger,
