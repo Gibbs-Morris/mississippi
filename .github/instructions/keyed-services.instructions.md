@@ -21,53 +21,10 @@ Governing thought: Use keyed DI services for storage clients so multiple instanc
 
 Library authors and host developers integrating Mississippi with cloud storage or external services.
 
-## At-a-Glance Quick-Start
+## Registration workflow
 
-### Library Side
-
-```csharp
-// Use module-owned keys from Brooks storage defaults
-public BlobDistributedLockManager(
-    [FromKeyedServices(BrookCosmosDefaults.BlobLockingServiceKey)]
-    BlobServiceClient blobServiceClient,
-    ILogger<BlobDistributedLockManager> logger) { }
-
-// Document in registration comments
-// Caller must register a keyed BlobServiceClient with BrookCosmosDefaults.BlobLockingServiceKey
-services.AddSingleton<IDistributedLockManager, BlobDistributedLockManager>();
-```
-
-### Host Side (Aspire)
-
-```csharp
-// Register with Aspire key
-builder.AddKeyedAzureBlobServiceClient("blobs");
-
-// Forward to library key
-builder.Services.AddKeyedSingleton(
-    BrookCosmosDefaults.BlobLockingServiceKey,
-    (sp, _) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
-
-// If host also needs unkeyed for its own services
-builder.Services.AddSingleton(sp => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
-```
-
-## Core Principles
-
-- One client type, many instances: keyed services enable coexistence.
-- Keys are defined with module ownership alongside the consuming storage provider.
-- Library keys are stable contracts; host keys are deployment-specific.
-- Explicit forwarding makes the DI graph auditable.
-
-## Module-Owned Key Reference
-
-| Key | Value | Purpose |
-|-----|-------|---------|
-| `BrookCosmosDefaults.CosmosContainerServiceKey` | `"mississippi-cosmos-brooks"` | Cosmos container for event streams |
-| `SnapshotCosmosDefaults.CosmosContainerServiceKey` | `"mississippi-cosmos-snapshots"` | Cosmos container for snapshots |
-| `BrookCosmosDefaults.BlobLockingServiceKey` | `"mississippi-blob-locking"` | Blob storage for distributed locking |
-
-See also module-owned storage/container defaults (for example `BrookCosmosDefaults.ContainerId`, `SnapshotCosmosDefaults.ContainerId`).
+Use [register-dotnet-services](../../.agents/skills/register-dotnet-services/SKILL.md) with the [local source bindings](../agent-guidance/service-registration-bindings.md).
+If discovery is unavailable or applicability is unclear, read both files directly; the Rules above remain effective independently of skill activation.
 
 ## References
 
