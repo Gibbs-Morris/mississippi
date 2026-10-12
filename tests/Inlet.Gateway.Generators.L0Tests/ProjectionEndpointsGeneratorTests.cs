@@ -94,6 +94,18 @@ public class ProjectionEndpointsGeneratorTests
                 mappedWithOptionalEntries.GetType().GetProperty("OptionalEntries")!
                     .GetValue(mappedWithOptionalEntries)!;
             Assert.Equal(2, mappedOptionalEntries.GetType().GetProperty("Count")!.GetValue(mappedOptionalEntries));
+            PropertyInfo? collidingKey = mapped.GetType().GetProperty("EntriesKey");
+            if (collidingKey is not null)
+            {
+                object mappedKey = collidingKey.GetValue(mapped)!;
+                Assert.Equal(5m, mappedKey.GetType().GetProperty("Amount")!.GetValue(mappedKey));
+                Assert.Equal(
+                    7,
+                    Convert.ToInt32(
+                        mapped.GetType().GetProperty("EntriesValue")!.GetValue(mapped),
+                        CultureInfo.InvariantCulture));
+            }
+
             object mappedEntries = mapped.GetType().GetProperty("Entries")!.GetValue(mapped)!;
             Assert.Equal(2, mappedEntries.GetType().GetProperty("Count")!.GetValue(mappedEntries));
             object empty = mapped.GetType().GetProperty("Empty")!.GetValue(mapped)!;
@@ -451,6 +463,8 @@ public class ProjectionEndpointsGeneratorTests
     [InlineData("System.Collections.Generic.Dictionary<Key, int>", true)]
     [InlineData("System.Collections.Generic.Dictionary<EntryStatus, EntryStatus>", true)]
     [InlineData("System.Collections.Immutable.ImmutableDictionary<EntryStatus, EntryStatus>", true)]
+    [InlineData("System.Collections.Generic.Dictionary<EntryStatus, Entry>", true)]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary<EntryStatus, Entry>", true)]
     [InlineData("System.Collections.Generic.Dictionary<string, int>", true)]
     [InlineData("System.Collections.Immutable.ImmutableDictionary<string, int>", true)]
     [InlineData("System.Collections.Generic.Dictionary<string, Entry>", false)]
@@ -515,6 +529,7 @@ public class ProjectionEndpointsGeneratorTests
                               public {{dictionaryType}} Entries { get; init; } = {{initializer}};
                               public {{dictionaryType}} Empty { get; init; } = {{emptyInitializer}};
                               public {{dictionaryType}}? OptionalEntries { get; init; }
+                              {{((keyType == "EntryStatus") && (valueType == "Entry") ? "public Entry EntriesKey { get; init; } = new() { Amount = 5m }; public EntryStatus EntriesValue { get; init; } = EntryStatus.Complete;" : string.Empty)}}
                               public System.Collections.Generic.Dictionary<string, int> Values { get; init; } =
                                   new(System.StringComparer.OrdinalIgnoreCase) { ["keep"] = 7 };
                           }

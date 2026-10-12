@@ -407,7 +407,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             string comma = i < (projection.Model.Properties.Length - 1) ? "," : string.Empty;
             if (prop.RequiresMapper && TypeAnalyzer.IsDictionaryType(prop.SourceTypeSymbol))
             {
-                sb.AppendLine($"{prop.Name} = {GetDictionaryMappingExpression(prop, i)}{comma}");
+                sb.AppendLine($"{prop.Name} = {GetDictionaryMappingExpression(prop, i, projection.Model)}{comma}");
             }
             else if (prop.RequiresEnumerableMapper)
             {
@@ -450,7 +450,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.AppendSummary($"Initializes a new instance of the {GetMapperTypeName(projection)} class.");
         ImmutableArray<(string TypeName, string PropertyName)> dependencies = projection.Model.Properties
             .Where(prop => prop.RequiresMapper)
-            .SelectMany(GetMapperDependencies)
+            .SelectMany(property => GetMapperDependencies(property, projection.Model))
             .ToImmutableArray();
         foreach ((string typeName, string propertyName) in dependencies)
         {
@@ -700,11 +700,29 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Reserves ordinary property mapper names before naming dictionary argument mappers.
+    /// </summary>
+    private static string GetDictionaryMapperName(
+        PropertyModel property,
+        string argument,
+        ProjectionModel model
+    )
+    {
+        string name = property.Name + argument + MapperSuffix;
+        return model.Properties.Any(other => other.RequiresMapper &&
+                                             !TypeAnalyzer.IsDictionaryType(other.SourceTypeSymbol) &&
+                                             ((other.Name + MapperSuffix) == name))
+            ? name + "1"
+            : name;
+    }
+
+    /// <summary>
     ///     Builds dictionary mapping with separate key/value selectors and exposed unchanged-key comparers.
     /// </summary>
     private static string GetDictionaryMappingExpression(
         PropertyModel property,
-        int propertyIndex
+        int propertyIndex,
+        ProjectionModel model
     )
     {
         INamedTypeSymbol dictionary = (INamedTypeSymbol)property.SourceTypeSymbol;
@@ -712,10 +730,10 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         ITypeSymbol value = dictionary.TypeArguments[1];
         string keySelector = TypeAnalyzer.IsFrameworkType(key)
             ? "pair.Key"
-            : $"{property.Name}KeyMapper.Map(pair.Key)";
+            : $"{GetDictionaryMapperName(property, "Key", model)}.Map(pair.Key)";
         string valueSelector = TypeAnalyzer.IsFrameworkType(value)
             ? "pair.Value"
-            : $"{property.Name}ValueMapper.Map(pair.Value)";
+            : $"{GetDictionaryMapperName(property, "Value", model)}.Map(pair.Value)";
         bool immutable = dictionary.ContainingNamespace.ToDisplayString() == ImmutableCollectionsNamespace;
         string conversion = immutable ? "ToImmutableDictionary" : "ToDictionary";
         string source = property.IsNullable ? $"dictionary{propertyIndex}" : $"source.{property.Name}";
@@ -775,7 +793,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     ///     Gets injected mapper dependencies for a property, keeping dictionary keys and values separate.
     /// </summary>
     private static IEnumerable<(string TypeName, string PropertyName)> GetMapperDependencies(
-        PropertyModel property
+        PropertyModel property,
+        ProjectionModel model
     )
     {
         if (TypeAnalyzer.IsDictionaryType(property.SourceTypeSymbol) &&
@@ -789,7 +808,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                     string sourceName = type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
                     string dtoName = TypeAnalyzer.GetDtoTypeName(type);
                     string argument = index == 0 ? "Key" : "Value";
-                    yield return ($"IMapper<{sourceName}, {dtoName}>", property.Name + argument + MapperSuffix);
+                    yield return ($"IMapper<{sourceName}, {dtoName}>",
+                        GetDictionaryMapperName(property, argument, model));
                 }
             }
 
