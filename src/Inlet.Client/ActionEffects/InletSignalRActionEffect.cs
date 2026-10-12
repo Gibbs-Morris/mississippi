@@ -430,6 +430,13 @@ internal sealed class InletSignalRActionEffect
         await UnsubscribeFromHubAsync(subscriptionId!, path, entityId, cancellationToken);
     }
 
+    /// <summary>
+    ///     Fetches a notified projection and dispatches its returned data and version together.
+    /// </summary>
+    /// <param name="path">The registered projection route.</param>
+    /// <param name="entityId">The entity whose projection changed.</param>
+    /// <param name="newVersion">The announced version requested from the fetcher.</param>
+    /// <returns>A task representing the notification update.</returns>
     private async Task OnProjectionUpdatedAsync(
         string path,
         string entityId,
@@ -467,7 +474,7 @@ internal sealed class InletSignalRActionEffect
                 CancellationToken.None);
             if (result is not null)
             {
-                IAction action = ProjectionActionFactory.CreateUpdated(dtoType, entityId, result.Data, newVersion);
+                IAction action = ProjectionActionFactory.CreateUpdated(dtoType, entityId, result.Data, result.Version);
                 Store.Dispatch(action);
             }
         }
