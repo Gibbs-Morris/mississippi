@@ -109,21 +109,7 @@ internal static class ConnectionAuthenticationSnapshot
         string? defaultScheme = await GetDefaultAuthenticationSchemeAsync(context, feature!);
         if (ReferenceEquals(result.Principal, context.User) && ReferenceEquals(result, feature!.AuthenticateResult))
         {
-            // Items survive long-polling cloning; request features and their service scope do not.
-            Snapshot snapshot = new(
-                result.Principal,
-                Array.AsReadOnly(schemes),
-                defaultScheme,
-                OperatingSystem.IsWindows() && result.Principal.Identity is WindowsIdentity,
-                context.GetEndpoint(),
-                context.Request.Query["id"].ToString());
-            context.Items[ItemKey] = snapshot;
-            if (snapshot.Endpoint is not null && (snapshot.ConnectionToken.Length > 0))
-            {
-                // A later poll can supply the principal first read by the hub during its handshake.
-                // Bind its verified schemes to this exact principal, mapped endpoint and transport token.
-                RequestSnapshots.AddOrUpdate(result.Principal, snapshot);
-            }
+            StoreSnapshot(context, result.Principal, schemes, defaultScheme);
         }
     }
 
@@ -219,6 +205,37 @@ internal static class ConnectionAuthenticationSnapshot
                string.Equals(current.ConnectionToken, original.ConnectionToken, StringComparison.Ordinal)
             ? current
             : null;
+    }
+
+    /// <summary>
+    ///     Stores verified provenance for the connection context and the authenticated poll principal.
+    /// </summary>
+    /// <param name="context">The original authenticated request.</param>
+    /// <param name="principal">The exact principal verified by that request.</param>
+    /// <param name="schemes">The schemes that authenticated the principal.</param>
+    /// <param name="defaultScheme">The stable default scheme originally requested by middleware.</param>
+    private static void StoreSnapshot(
+        HttpContext context,
+        ClaimsPrincipal principal,
+        string[] schemes,
+        string? defaultScheme
+    )
+    {
+        // Items survive long-polling cloning; request features and their service scope do not.
+        Snapshot snapshot = new(
+            principal,
+            Array.AsReadOnly(schemes),
+            defaultScheme,
+            OperatingSystem.IsWindows() && principal.Identity is WindowsIdentity,
+            context.GetEndpoint(),
+            context.Request.Query["id"].ToString());
+        context.Items[ItemKey] = snapshot;
+        if (snapshot.Endpoint is not null && (snapshot.ConnectionToken.Length > 0))
+        {
+            // A later poll can supply the principal first read by the hub during its handshake.
+            // Bind its verified schemes to this exact principal, mapped endpoint and transport token.
+            RequestSnapshots.AddOrUpdate(principal, snapshot);
+        }
     }
 
     /// <summary>
