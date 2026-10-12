@@ -678,6 +678,67 @@ internal sealed class InletSignalRActionEffect
     }
 
     /// <summary>
+    ///     Decides whether to reserve, coalesce, or wait while holding the subscription gate.
+    /// </summary>
+    /// <param name="key">The projection and entity pair to reserve.</param>
+    /// <param name="reservation">The completion source owned by this attempt.</param>
+    /// <param name="cancellationToken">The token used to cancel this caller.</param>
+    /// <param name="interest">The interest retained across an earlier failed attempt.</param>
+    /// <param name="pendingAttempt">The earlier attempt to await when no decision is available.</param>
+    /// <returns>True when reserved, false when coalesced or released, or null when waiting is required.</returns>
+    private bool? TryReserveSubscription(
+        (Type ProjectionType, string EntityId) key,
+        TaskCompletionSource<bool> reservation,
+        CancellationToken cancellationToken,
+        ref object? interest,
+        out Task<bool>? pendingAttempt
+    )
+    {
+        pendingAttempt = null;
+        lock (subscriptionGate)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return false;
+            }
+
+            if (activeSubscriptions.TryGetValue(key, out SubscriptionEntry? activeSubscription))
+            {
+                if (activeSubscription.SubscriptionId is not null || activeSubscription.PendingRetryToken is not null)
+                {
+                    return false;
+                }
+
+                activeSubscriptions[key] = new(null, reservation, connectionGeneration);
+                return true;
+            }
+
+            if (!pendingSubscriptions.TryGetValue(
+                    key,
+                    out (object Interest, TaskCompletionSource<bool> Attempt) pending))
+            {
+                return TryReserveNewInterest(key, reservation, interest);
+            }
+
+            interest ??= pending.Interest;
+            if (!ReferenceEquals(interest, pending.Interest))
+            {
+                return false;
+            }
+
+            // Successful and released attempts are removed; a retained completed attempt failed.
+            if (pending.Attempt.Task.IsCompletedSuccessfully)
+            {
+                pendingSubscriptions[key] = (interest, reservation);
+                return true;
+            }
+
+            pendingAttempt = pending.Attempt.Task;
+            return null;
+        }
+    }
+
+    /// <summary>
     ///     Reserves a pair after failed attempts while coalescing established or released interest.
     /// </summary>
     /// <param name="key">The projection and entity pair to reserve.</param>
@@ -693,48 +754,20 @@ internal sealed class InletSignalRActionEffect
         object? interest = null;
         while (true)
         {
-            (object Interest, TaskCompletionSource<bool> Attempt) pending;
-            lock (subscriptionGate)
+            bool? reserved = TryReserveSubscription(
+                key,
+                reservation,
+                cancellationToken,
+                ref interest,
+                out Task<bool>? pendingAttempt);
+            if (reserved.HasValue)
             {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return false;
-                }
-
-                if (activeSubscriptions.TryGetValue(key, out SubscriptionEntry? activeSubscription))
-                {
-                    if (activeSubscription.SubscriptionId is not null ||
-                        activeSubscription.PendingRetryToken is not null)
-                    {
-                        return false;
-                    }
-
-                    activeSubscriptions[key] = new(null, reservation, connectionGeneration);
-                    return true;
-                }
-
-                if (!pendingSubscriptions.TryGetValue(key, out pending))
-                {
-                    return TryReserveNewInterest(key, reservation, interest);
-                }
-
-                interest ??= pending.Interest;
-                if (!ReferenceEquals(interest, pending.Interest))
-                {
-                    return false;
-                }
-
-                // Successful and released attempts are removed; a retained completed attempt failed.
-                if (pending.Attempt.Task.IsCompletedSuccessfully)
-                {
-                    pendingSubscriptions[key] = (interest, reservation);
-                    return true;
-                }
+                return reserved.Value;
             }
 
             try
             {
-                if (await pending.Attempt.Task.WaitAsync(cancellationToken))
+                if (await pendingAttempt!.WaitAsync(cancellationToken))
                 {
                     return false;
                 }
