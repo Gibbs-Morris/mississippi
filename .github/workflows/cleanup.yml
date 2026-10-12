@@ -86,7 +86,7 @@ jobs:
 
       - name: Select full cleanup for manual dispatch
         id: manual
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group'
         shell: pwsh
         run: |
           "run_mode=full" >> $env:GITHUB_OUTPUT
