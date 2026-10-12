@@ -187,6 +187,22 @@ internal static partial class AggregateGrainLoggerExtensions
     );
 
     /// <summary>
+    ///     Logs when recovery is deferred for an unstarted snapshot while reminder protection is retained.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(
+        26,
+        LogLevel.Debug,
+        "Reminder {ReminderName} found saga phase NotStarted for aggregate {AggregateKey}; deferring recovery and retaining reminder protection")]
+    public static partial void SagaReminderDeferredNotStarted(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
+
+    /// <summary>
     ///     Logs when reminder replay fails.
     /// </summary>
     /// <param name="logger">The logger.</param>
