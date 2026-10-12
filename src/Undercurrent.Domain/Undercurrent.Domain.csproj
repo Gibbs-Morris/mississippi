@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Enterprise business objects built on existing Mississippi framework capabilities.</Description>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Undercurrent.Abstractions\Undercurrent.Abstractions.csproj" />
+    </ItemGroup>
+</Project>
