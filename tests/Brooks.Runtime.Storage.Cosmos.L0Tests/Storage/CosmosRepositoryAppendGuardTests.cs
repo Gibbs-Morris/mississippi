@@ -143,7 +143,7 @@ public sealed class CosmosRepositoryAppendGuardTests
             container.Setup(c => c.CreateTransactionalBatch(It.IsAny<PartitionKey>())).Returns(batch.Object);
             batch.Setup(b => b.DeleteItem("cursor-pending", It.IsAny<TransactionalBatchItemRequestOptions>()))
                 .Returns(batch.Object);
-            batch.Setup(b => b.UpsertItem(It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
+            batch.Setup(b => b.CreateItem(It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
             batch.Setup(b => b.ExecuteAsync(It.IsAny<CancellationToken>()))
                 .Returns(async () =>
                 {

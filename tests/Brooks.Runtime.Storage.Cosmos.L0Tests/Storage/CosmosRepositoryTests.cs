@@ -248,7 +248,7 @@ public sealed class CosmosRepositoryTests
         container.Setup(c => c.CreateTransactionalBatch(It.IsAny<PartitionKey>())).Returns(batch.Object);
         batch.Setup(b => b.DeleteItem("cursor-pending", It.IsAny<TransactionalBatchItemRequestOptions>()))
             .Returns(batch.Object);
-        batch.Setup(b => b.UpsertItem(It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
+        batch.Setup(b => b.CreateItem(It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
         batch.Setup(b => b.ExecuteAsync(It.IsAny<CancellationToken>())).ReturnsAsync(response.Object);
         CosmosRepository sut = CreateRepository(container.Object);
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
@@ -294,7 +294,7 @@ public sealed class CosmosRepositoryTests
         container.Setup(c => c.CreateTransactionalBatch(It.IsAny<PartitionKey>())).Returns(batch.Object);
         batch.Setup(b => b.DeleteItem("cursor-pending", It.IsAny<TransactionalBatchItemRequestOptions>()))
             .Returns(batch.Object);
-        batch.Setup(b => b.UpsertItem(It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
+        batch.Setup(b => b.CreateItem(It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
         bool hasCursorAdvanced = false;
         bool hasPendingRemoved = false;
         int attempts = 0;
@@ -348,7 +348,7 @@ public sealed class CosmosRepositoryTests
         container.Setup(c => c.CreateTransactionalBatch(It.IsAny<PartitionKey>())).Returns(batch.Object);
         batch.Setup(b => b.DeleteItem("cursor-pending", It.IsAny<TransactionalBatchItemRequestOptions>()))
             .Returns(batch.Object);
-        batch.Setup(b => b.UpsertItem(It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
+        batch.Setup(b => b.CreateItem(It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
         batch.Setup(b => b.ExecuteAsync(It.IsAny<CancellationToken>())).ReturnsAsync(response.Object);
         CosmosRepository sut = CreateRepository(container.Object);
 
@@ -366,7 +366,7 @@ public sealed class CosmosRepositoryTests
                 It.Is<TransactionalBatchItemRequestOptions>(o => o.IfMatchEtag == "attempt-etag")),
             Times.Once);
         batch.Verify(
-            b => b.UpsertItem(It.Is<CursorDocument>(h => (h.Id == "cursor") && (h.Position == 42)), null),
+            b => b.CreateItem(It.Is<CursorDocument>(h => (h.Id == "cursor") && (h.Position == 42)), null),
             Times.Once);
         batch.Verify(b => b.ExecuteAsync(It.IsAny<CancellationToken>()), Times.Once);
         container.Verify(

@@ -486,13 +486,21 @@ public sealed class EventBrookWriterLeaseLifetimeTests
         Mock<TransactionalBatch> batch = new(MockBehavior.Strict);
         CursorDocument? candidateCursor = null;
         string? pendingCondition = null;
+        string? cursorCondition = null;
         container.Setup(c => c.CreateTransactionalBatch(new(key.ToString()))).Returns(batch.Object);
         batch.Setup(b => b.DeleteItem("cursor-pending", It.IsAny<TransactionalBatchItemRequestOptions>()))
             .Callback<string, TransactionalBatchItemRequestOptions>((_, options) =>
                 pendingCondition = options.IfMatchEtag)
             .Returns(batch.Object);
-        batch.Setup(b => b.UpsertItem(It.IsAny<CursorDocument>(), null))
-            .Callback<CursorDocument, TransactionalBatchItemRequestOptions>((value, _) => candidateCursor = value)
+        batch.Setup(b => b.ReplaceItem(
+                "cursor",
+                It.IsAny<CursorDocument>(),
+                It.IsAny<TransactionalBatchItemRequestOptions>()))
+            .Callback<string, CursorDocument, TransactionalBatchItemRequestOptions>((_, value, options) =>
+            {
+                candidateCursor = value;
+                cursorCondition = options.IfMatchEtag;
+            })
             .Returns(batch.Object);
         batch.Setup(b => b.ExecuteAsync(It.IsAny<CancellationToken>()))
             .Returns((CancellationToken token) =>
@@ -500,7 +508,9 @@ public sealed class EventBrookWriterLeaseLifetimeTests
                 token.ThrowIfCancellationRequested();
                 lock (documents)
                 {
-                    bool canCommit = pending is not null && (pendingCondition == "test-etag");
+                    bool canCommit = pending is not null &&
+                                     (pendingCondition == "test-etag") &&
+                                     (cursorCondition == "test-etag");
                     if (canCommit)
                     {
                         cursor = candidateCursor!;

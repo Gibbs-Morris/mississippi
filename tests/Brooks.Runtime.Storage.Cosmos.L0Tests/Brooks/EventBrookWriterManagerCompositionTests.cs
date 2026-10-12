@@ -112,7 +112,11 @@ public sealed class EventBrookWriterManagerCompositionTests
                 "cursor-pending",
                 It.Is<TransactionalBatchItemRequestOptions>(o => o.IfMatchEtag == "pending-attempt")))
             .Returns(batch.Object);
-        batch.Setup(b => b.UpsertItem(It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
+        batch.Setup(b => b.ReplaceItem(
+                "cursor",
+                It.IsAny<CursorDocument>(),
+                It.Is<TransactionalBatchItemRequestOptions>(o => o.IfMatchEtag == "cursor-version")))
+            .Returns(batch.Object);
         batch.Setup(b => b.ExecuteAsync(It.IsAny<CancellationToken>()))
             .Returns(async () =>
             {
@@ -219,7 +223,12 @@ public sealed class EventBrookWriterManagerCompositionTests
                 null,
                 It.IsAny<CancellationToken>()),
             Times.Exactly(2));
-        batch.Verify(b => b.UpsertItem(It.Is<CursorDocument>(d => d.Position == 2), null), Times.Once);
+        batch.Verify(
+            b => b.ReplaceItem(
+                "cursor",
+                It.Is<CursorDocument>(d => d.Position == 2),
+                It.Is<TransactionalBatchItemRequestOptions>(o => o.IfMatchEtag == "cursor-version")),
+            Times.Once);
         batch.Verify(
             b => b.DeleteItem(
                 "cursor-pending",

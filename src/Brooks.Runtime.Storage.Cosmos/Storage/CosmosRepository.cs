@@ -220,14 +220,43 @@ internal sealed class CosmosRepository : ICosmosRepository
         ArgumentException.ThrowIfNullOrWhiteSpace(pendingETag);
         beforeDispatch?.Invoke();
         cancellationToken.ThrowIfCancellationRequested();
+        CursorStorageModel? committedCursor = await RetryPolicy.ExecuteAsync(
+            async () =>
+            {
+                beforeDispatch?.Invoke();
+                cancellationToken.ThrowIfCancellationRequested();
+                return await GetCursorDocumentAsync(brookId, cancellationToken);
+            },
+            cancellationToken);
+        if (committedCursor is not null &&
+            ((committedCursor.Position.Value >= finalPosition) || string.IsNullOrWhiteSpace(committedCursor.ETag)))
+        {
+            throw new InvalidOperationException(
+                $"Cursor commit for brook '{brookId}' does not advance a versioned cursor.");
+        }
+
         TransactionalBatch batch = Container.CreateTransactionalBatch(partitionKey)
             .DeleteItem(
                 CursorPending,
                 new()
                 {
                     IfMatchEtag = pendingETag,
-                })
-            .UpsertItem(cursorDoc);
+                });
+        if (committedCursor is null)
+        {
+            batch.CreateItem(cursorDoc);
+        }
+        else
+        {
+            batch.ReplaceItem(
+                CursorDocumentId,
+                cursorDoc,
+                new()
+                {
+                    IfMatchEtag = committedCursor.ETag,
+                });
+        }
+
         using TransactionalBatchResponse response = await ExecuteBatchWithRetryAsync(
             batch,
             cancellationToken,
@@ -476,6 +505,7 @@ internal sealed class CosmosRepository : ICosmosRepository
                 new(brookId.ToString()),
                 cancellationToken: cancellationToken);
             CursorStorageModel model = CursorDocumentMapper.Map(response.Resource);
+            model.ETag = response.ETag;
             return model;
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)

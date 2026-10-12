@@ -130,10 +130,10 @@ storage identities when an existing deployment must continue reading its data.
 ### Cursor commit failures
 
 Both append paths write events before committing the cursor. The commit operation conditionally deletes pending
-metadata using the entity tag captured when the append created it. In the same brook-partition transaction it upserts
-the committed cursor. A changed pending document fails the transaction without changing either document. A failed
-acknowledgement can still follow a successful transaction, so a commit exception does not establish whether the cursor
-advanced.
+metadata using the entity tag captured when the append created it. In the same brook-partition transaction it creates
+an absent cursor or replaces the observed cursor using its entity tag. If either observed document changed, the
+transaction fails without changing either document. A failed acknowledgement can
+still follow a successful transaction, so a commit exception does not establish whether the cursor advanced.
 After a commit attempt reports failure, the writer logs the brook and target position, preserves the original exception,
 and does not delete appended events or remaining pending metadata. If an event append fails or is canceled after the
 pending attempt was created, the writer likewise preserves that attempt and any event writes that may complete later.
@@ -194,9 +194,10 @@ Message wording and remediation text describe the particular property or registr
 
 ## Compatibility
 
-Upgrade all writers sharing a brook together. Earlier versions can upsert cursors and delete pending metadata without
-entity-tag conditions, bypassing these recovery protections. This change uses existing Cosmos entity tags and does not
-migrate stored documents. It does not fence delayed event creates from an earlier writer.
+Upgrade all provider instances sharing a brook together, including readers that can trigger recovery. Earlier versions
+can change cursors and pending metadata without entity-tag conditions during append or recovery, bypassing these
+protections. This change uses existing Cosmos entity tags and does not migrate stored documents. It does not fence
+delayed event creates from an earlier writer.
 The runtime-builder entry point replaces the old provider-specific `IServiceCollection` registration calls:
 
 | Previous shape | Current shape |
