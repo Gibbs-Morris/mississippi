@@ -1080,6 +1080,34 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Detects custom enum elements below more than one collection level.
+    /// </summary>
+    /// <param name="sourceType">The collection source type.</param>
+    /// <returns>Whether nested collection elements require an unsupported conversion.</returns>
+    private static bool HasNestedEnumCollectionElements(
+        ITypeSymbol sourceType
+    )
+    {
+        ITypeSymbol collectionType = UnwrapNullable(sourceType);
+        while (collectionType is IArrayTypeSymbol || TypeAnalyzer.IsCollectionType(collectionType))
+        {
+            ITypeSymbol? elementType = TypeAnalyzer.GetCollectionElementType(collectionType);
+            if (elementType is null)
+            {
+                return false;
+            }
+
+            collectionType = UnwrapNullable(elementType);
+            if (GetEnumCollectionElement(collectionType) is not null)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     ///     Converts PascalCase to camelCase.
     /// </summary>
     private static string ToCamelCase(
@@ -1181,8 +1209,9 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             .OfType<IPropertySymbol>();
         bool valid = true;
         foreach (IPropertySymbol property in properties.Where(property =>
-                     GetEnumCollectionElement(property.Type) is not null &&
-                     (GetEnumCollectionMaterializer(new(property)).Length == 0)))
+                     HasNestedEnumCollectionElements(property.Type) ||
+                     (GetEnumCollectionElement(property.Type) is not null &&
+                      (GetEnumCollectionMaterializer(new(property)).Length == 0))))
         {
             if (reportedUnsupportedProperties.Add(property))
             {

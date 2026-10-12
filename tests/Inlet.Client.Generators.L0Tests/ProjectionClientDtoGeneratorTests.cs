@@ -45,6 +45,11 @@ public class ProjectionClientDtoGeneratorTests
                                           }
                                           """;
 
+    /// <summary>
+    ///     DTO names whose compiled enum identities are verified together.
+    /// </summary>
+    private static readonly string[] MixedEnumDtoNames = ["SagaStatusProjectionDto", "RecoveryEntryDto"];
+
     private static void AssertSuccessfulEnumOutput(
         Compilation output,
         ImmutableArray<Diagnostic> diagnostics,
@@ -98,11 +103,6 @@ public class ProjectionClientDtoGeneratorTests
             Assert.Equal(7, Assert.Single(enumType.GetMembers("Complete").OfType<IFieldSymbol>()).ConstantValue);
         }
     }
-
-    /// <summary>
-    ///     DTO names whose compiled enum identities are verified together.
-    /// </summary>
-    private static readonly string[] MixedEnumDtoNames = ["SagaStatusProjectionDto", "RecoveryEntryDto"];
 
     /// <summary>
     ///     Creates a Roslyn compilation from the provided source code and runs the generator.

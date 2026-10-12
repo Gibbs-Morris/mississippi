@@ -2324,6 +2324,14 @@ public class ProjectionEndpointsGeneratorTests
     [InlineData("Queue<ResumeSource>", true)]
     [InlineData("IImmutableQueue<ResumeSource>", true)]
     [InlineData("ResumeSource[,]", true)]
+    [InlineData("ResumeSource?[][]", false)]
+    [InlineData("ResumeSource?[][]", true)]
+    [InlineData("ResumeSource[][]", false)]
+    [InlineData("ResumeSource[][]", true)]
+    [InlineData("List<List<ResumeSource?>>", false)]
+    [InlineData("List<List<ResumeSource?>>", true)]
+    [InlineData("List<ResumeSource?[]>", false)]
+    [InlineData("List<ResumeSource?[]>", true)]
     public void GeneratedUnsupportedEnumCollectionProducesDiagnostic(
         string collectionType,
         bool nested
