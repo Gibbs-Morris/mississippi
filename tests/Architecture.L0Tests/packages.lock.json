@@ -1242,6 +1242,21 @@
           "Mississippi.Tributary.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.Tributary.Runtime.Storage.Blob": {
+        "type": "Project",
+        "dependencies": {
+          "Azure.Storage.Blobs": "[12.30.0, )",
+          "Microsoft.Extensions.Configuration": "[10.0.12, )",
+          "Microsoft.Extensions.DependencyInjection": "[10.0.12, )",
+          "Microsoft.Extensions.Hosting.Abstractions": "[10.0.12, )",
+          "Microsoft.Extensions.Options": "[10.0.12, )",
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.12, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Hosting.Runtime.Abstractions": "[1.0.0, )",
+          "Mississippi.Tributary.Abstractions": "[1.0.0, )",
+          "Mississippi.Tributary.Runtime.Storage.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.Tributary.Runtime.Storage.Cosmos": {
         "type": "Project",
         "dependencies": {

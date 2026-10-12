@@ -47,6 +47,7 @@
         <ProjectReference Include="..\..\src\Inlet.Runtime.Generators\Inlet.Runtime.Generators.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Generators.Core\Inlet.Generators.Core.csproj" />
+        <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Blob\Tributary.Runtime.Storage.Blob.csproj" />
     </ItemGroup>
     <ItemGroup>
       <PackageReference Include="Microsoft.CodeAnalysis.Common" />
