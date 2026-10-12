@@ -108,12 +108,23 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
         Assert.IsType<ProjectionErrorAction<TestProjection>>(Assert.Single(dispatchedActions));
     }
 
-    private async Task<IAction[]> HandleAsync(
+    /// <summary>
+    ///     Processes one request with the test runner's cancellation token.
+    /// </summary>
+    /// <param name="action">The request passed to the effect.</param>
+    /// <returns>The actions produced by the request.</returns>
+    private Task<IAction[]> HandleAsync(
         IAction action
+    ) =>
+        HandleWithCancellationAsync(action, TestContext.Current.CancellationToken);
+
+    private async Task<IAction[]> HandleWithCancellationAsync(
+        IAction action,
+        CancellationToken cancellationToken
     )
     {
         List<IAction> results = [];
-        await foreach (IAction result in effect.HandleAsync(action, new(), CancellationToken.None))
+        await foreach (IAction result in effect.HandleAsync(action, new(), cancellationToken))
         {
             results.Add(result);
         }
@@ -158,6 +169,37 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
             Times.Once);
 
     /// <summary>
+    ///     A cancelled waiting subscriber leaves the current claim available for later recovery.
+    /// </summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task CancelledExplicitRetryWaiterDoesNotTakeOverClaim()
+    {
+        TaskCompletionSource<object?> reply = ConfigureFailedRetryWithPendingReply();
+        await FailFirstReconnectAsync();
+        Task<IAction[]> firstRetry = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        VerifySubscribeCount(3);
+        using CancellationTokenSource cancellation =
+            CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        Task<IAction[]> waiter = HandleWithCancellationAsync(
+            new SubscribeToProjectionAction<TestProjection>(EntityId),
+            cancellation.Token);
+        Assert.False(waiter.IsCompleted);
+        await cancellation.CancelAsync();
+        Assert.Empty(await waiter.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        reply.SetException(new InvalidOperationException("Explicit retry failed"));
+        IAction[] firstActions = await firstRetry.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+        Assert.IsType<ProjectionErrorAction<TestProjection>>(firstActions[1]);
+        VerifySubscribeCount(3);
+        await SubscribeAsync();
+        VerifySubscribeCount(4);
+        await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
+        VerifyUnsubscribedId("current-id");
+    }
+
+    /// <summary>
     ///     Overlapping explicit retries of a failed interest issue only one server subscription.
     /// </summary>
     /// <returns>A task representing the test.</returns>
@@ -167,12 +209,12 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
         TaskCompletionSource<object?> reply = ConfigureFailedRetryWithPendingReply();
         await FailFirstReconnectAsync();
         Task<IAction[]> firstRetry = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
-        IAction[] secondRetry = await HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        Task<IAction[]> secondRetry = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
         reply.SetResult("recovered-id");
         IAction[] firstActions = await firstRetry.WaitAsync(
             TimeSpan.FromSeconds(10),
             TestContext.Current.CancellationToken);
-        Assert.Empty(secondRetry);
+        Assert.Empty(await secondRetry.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
         Assert.Collection(
             firstActions,
             action => Assert.IsType<ProjectionLoadingAction<TestProjection>>(action),
@@ -180,6 +222,30 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
         VerifySubscribeCount(3);
         await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
         VerifyUnsubscribedId("recovered-id");
+    }
+
+    /// <summary>
+    ///     Disposing the effect retires waiting retries without restoring disposed interest.
+    /// </summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task DisposingEffectRetiresExplicitRetryWaiter()
+    {
+        TaskCompletionSource<object?> reply = ConfigureFailedRetryWithPendingReply();
+        await FailFirstReconnectAsync();
+        Task<IAction[]> firstRetry = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        VerifySubscribeCount(3);
+        Task<IAction[]> waiter = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        Assert.False(waiter.IsCompleted);
+        await effect.DisposeAsync();
+        Assert.Empty(await waiter.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        reply.SetResult("released-id");
+        IAction[] firstActions = await firstRetry.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+        Assert.IsType<ProjectionLoadingAction<TestProjection>>(Assert.Single(firstActions));
+        VerifyUnsubscribedId("released-id");
+        VerifySubscribeCount(3);
     }
 
     /// <summary>
@@ -595,7 +661,10 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
         await FailFirstReconnectAsync();
         Task<IAction[]> retryTask = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
         VerifySubscribeCount(3);
+        Task<IAction[]> waiter = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        Assert.False(waiter.IsCompleted);
         await reconnected(null);
+        Assert.Empty(await waiter.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
         if (oldReplyFails)
         {
             retryReply.SetException(new InvalidOperationException("Superseded retry failed"));
@@ -662,6 +731,165 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
 
         await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
         VerifyUnsubscribedId("current-id");
+    }
+
+    /// <summary>
+    ///     A waiting explicit subscriber recovers when the claimed retry fails or is cancelled.
+    /// </summary>
+    /// <param name="isCancelled">Whether the claimed retry is cancelled instead of failing.</param>
+    /// <returns>A task representing the test.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OverlappingExplicitRetryRecoversAfterClaimedFailure(
+        bool isCancelled
+    )
+    {
+        TaskCompletionSource<object?> reply = ConfigureFailedRetryWithPendingReply();
+        await FailFirstReconnectAsync();
+        Task<IAction[]> firstRetry = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        VerifySubscribeCount(3);
+        Task<IAction[]> waiter = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        Assert.False(waiter.IsCompleted);
+        Exception failure = isCancelled
+            ? new OperationCanceledException()
+            : new InvalidOperationException("Explicit retry failed");
+        reply.SetException(failure);
+        IAction[] firstActions = await firstRetry.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+        Assert.IsType<ProjectionLoadingAction<TestProjection>>(firstActions[0]);
+        if (isCancelled)
+        {
+            Assert.Single(firstActions);
+        }
+        else
+        {
+            Assert.Equal(2, firstActions.Length);
+            Assert.Same(failure, Assert.IsType<ProjectionErrorAction<TestProjection>>(firstActions[1]).Error);
+        }
+
+        IAction[] recoveredActions = await waiter.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+        Assert.Collection(
+            recoveredActions,
+            action => Assert.IsType<ProjectionLoadingAction<TestProjection>>(action),
+            action => Assert.IsType<ProjectionLoadedAction<TestProjection>>(action));
+        VerifySubscribeCount(4);
+        await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
+        VerifyUnsubscribedId("current-id");
+    }
+
+    /// <summary>
+    ///     Unsubscribe retires a waiting retry before a replacement owner establishes fresh interest.
+    /// </summary>
+    /// <param name="oldReplyFails">Whether the released attempt fails instead of returning an ID.</param>
+    /// <returns>A task representing the test.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ReleasedExplicitRetryWaiterDoesNotJoinReplacementInterest(
+        bool oldReplyFails
+    )
+    {
+        TaskCompletionSource<object?> reply = ConfigureFailedRetryWithPendingReply();
+        await FailFirstReconnectAsync();
+        Task<IAction[]> firstRetry = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        VerifySubscribeCount(3);
+        Task<IAction[]> waiter = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        Assert.False(waiter.IsCompleted);
+        await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
+        await SubscribeAsync();
+        Assert.Empty(await waiter.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        if (oldReplyFails)
+        {
+            reply.SetException(new InvalidOperationException("Released retry failed"));
+        }
+        else
+        {
+            reply.SetResult("released-id");
+        }
+
+        IAction[] firstActions = await firstRetry.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+        Assert.IsType<ProjectionLoadingAction<TestProjection>>(Assert.Single(firstActions));
+        if (!oldReplyFails)
+        {
+            VerifyUnsubscribedId("released-id");
+        }
+
+        VerifySubscribeCount(4);
+        await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
+        VerifyUnsubscribedId("current-id");
+    }
+
+    /// <summary>
+    ///     An explicit subscriber waiting on a reconnect attempt recovers after that attempt fails.
+    /// </summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task RetryWaiterRecoversAfterReconnectAttemptFails()
+    {
+        TaskCompletionSource<object?> reply = ConfigureFailedRetryWithPendingReply();
+        await FailFirstReconnectAsync();
+        Task reconnect = reconnected("retry-connection");
+        VerifySubscribeCount(3);
+        Task<IAction[]> waiter = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        Assert.False(waiter.IsCompleted);
+        InvalidOperationException failure = new("Reconnect retry failed");
+        reply.SetException(failure);
+        await reconnect.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        IAction[] recoveredActions = await waiter.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+        Assert.Collection(
+            recoveredActions,
+            action => Assert.IsType<ProjectionLoadingAction<TestProjection>>(action),
+            action => Assert.IsType<ProjectionLoadedAction<TestProjection>>(action));
+        Assert.Same(failure, Assert.IsType<ProjectionErrorAction<TestProjection>>(dispatchedActions[1]).Error);
+        Assert.Equal(2, dispatchedActions.Count);
+        VerifySubscribeCount(4);
+        await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
+        VerifyUnsubscribedId("current-id");
+    }
+
+    /// <summary>
+    ///     A waiter cannot replace the projection state until the earlier error has been consumed.
+    /// </summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task RetryWaiterStartsAfterEarlierErrorIsConsumed()
+    {
+        TaskCompletionSource<object?> reply = ConfigureFailedRetryWithPendingReply();
+        await FailFirstReconnectAsync();
+        await using IAsyncEnumerator<IAction> firstRetry = effect.HandleAsync(
+                new SubscribeToProjectionAction<TestProjection>(EntityId),
+                new(),
+                CancellationToken.None)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await firstRetry.MoveNextAsync());
+        Assert.IsType<ProjectionLoadingAction<TestProjection>>(firstRetry.Current);
+        Task<bool> errorMove = firstRetry.MoveNextAsync().AsTask();
+        VerifySubscribeCount(3);
+        Task<IAction[]> waiter = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        Assert.False(waiter.IsCompleted);
+        InvalidOperationException failure = new("Explicit retry failed");
+        reply.SetException(failure);
+        Assert.True(await errorMove.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        Assert.Same(failure, Assert.IsType<ProjectionErrorAction<TestProjection>>(firstRetry.Current).Error);
+        Assert.False(waiter.IsCompleted);
+        VerifySubscribeCount(3);
+        Assert.False(await firstRetry.MoveNextAsync());
+        IAction[] recoveredActions = await waiter.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+        Assert.Collection(
+            recoveredActions,
+            action => Assert.IsType<ProjectionLoadingAction<TestProjection>>(action),
+            action => Assert.IsType<ProjectionLoadedAction<TestProjection>>(action));
+        VerifySubscribeCount(4);
     }
 
     /// <summary>

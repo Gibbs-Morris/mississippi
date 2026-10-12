@@ -142,6 +142,11 @@ internal sealed class InletSignalRActionEffect
                 pending.Attempt.TrySetResult(true);
             }
 
+            foreach (SubscriptionEntry subscription in activeSubscriptions.Values)
+            {
+                subscription.PendingRetryToken?.TrySetResult(true);
+            }
+
             pendingSubscriptions.Clear();
             activeSubscriptions.Clear();
         }
@@ -202,8 +207,9 @@ internal sealed class InletSignalRActionEffect
 
     private sealed record SubscriptionEntry(
         string? SubscriptionId,
-        object? PendingRetryToken,
-        long ConnectionGeneration
+        TaskCompletionSource<bool>? PendingRetryToken,
+        long ConnectionGeneration,
+        object Interest
     );
 
 #pragma warning disable CA1031 // Action effect converts exceptions to error actions instead of crashing
@@ -422,6 +428,7 @@ internal sealed class InletSignalRActionEffect
             }
 
             isActiveSubscriptionRemoved = activeSubscriptions.TryRemove(key, out activeSubscription);
+            activeSubscription?.PendingRetryToken?.TrySetResult(true);
         }
 
         if (!isActiveSubscriptionRemoved)
@@ -596,11 +603,21 @@ internal sealed class InletSignalRActionEffect
         catch (Exception ex)
         {
             bool isCurrentRequest = newSubscriptionId is null
-                ? TryCompletePendingSubscription(key, request, null)
+                ? TryCompletePendingSubscription(key, request, null, false)
                 : IsCurrentSubscription(key, newSubscriptionId, generation);
             if (isCurrentRequest)
             {
-                Store.Dispatch(ProjectionActionFactory.CreateError(key.ProjectionType, key.EntityId, ex));
+                try
+                {
+                    Store.Dispatch(ProjectionActionFactory.CreateError(key.ProjectionType, key.EntityId, ex));
+                }
+                finally
+                {
+                    if (newSubscriptionId is null)
+                    {
+                        _ = TryCompletePendingSubscription(key, request, null);
+                    }
+                }
             }
         }
     }
@@ -629,7 +646,8 @@ internal sealed class InletSignalRActionEffect
                 (subscription.ConnectionGeneration < generation))
             {
                 // A new connection supersedes pending attempts and IDs from older connections.
-                activeSubscriptions[key] = new(null, request, generation);
+                activeSubscriptions[key] = new(null, request, generation, subscription.Interest);
+                subscription.PendingRetryToken?.TrySetResult(false);
                 return true;
             }
 
@@ -665,7 +683,16 @@ internal sealed class InletSignalRActionEffect
 
                 if (subscriptionId is not null || completeAttempt)
                 {
-                    activeSubscriptions[key] = new(subscriptionId, null, activeSubscription.ConnectionGeneration);
+                    activeSubscriptions[key] = new(
+                        subscriptionId,
+                        null,
+                        activeSubscription.ConnectionGeneration,
+                        activeSubscription.Interest);
+                }
+
+                if (completeAttempt)
+                {
+                    reservation.TrySetResult(subscriptionId is not null);
                 }
 
                 return true;
@@ -682,7 +709,7 @@ internal sealed class InletSignalRActionEffect
             if (subscriptionId is not null)
             {
                 pendingSubscriptions.Remove(key);
-                activeSubscriptions[key] = new(subscriptionId, null, connectionGeneration);
+                activeSubscriptions[key] = new(subscriptionId, null, connectionGeneration, pending.Interest);
             }
 
             if (completeAttempt)
@@ -718,6 +745,40 @@ internal sealed class InletSignalRActionEffect
     }
 
     /// <summary>
+    ///     Reserves a failed active interest or retains the caller while its current retry is pending.
+    /// </summary>
+    /// <param name="key">The projection and entity pair protected by the subscription gate.</param>
+    /// <param name="subscription">The current active entry for the pair.</param>
+    /// <param name="reservation">The completion source identifying this caller's attempt.</param>
+    /// <param name="interest">The interest retained across failed attempts.</param>
+    /// <param name="pendingAttempt">The current retry to await when the caller must wait.</param>
+    /// <returns>True when claimed, false when established or released, or null when a retry is pending.</returns>
+    private bool? TryReserveActiveSubscription(
+        (Type ProjectionType, string EntityId) key,
+        SubscriptionEntry subscription,
+        TaskCompletionSource<bool> reservation,
+        ref object? interest,
+        out Task<bool>? pendingAttempt
+    )
+    {
+        pendingAttempt = null;
+        interest ??= subscription.Interest;
+        if (!ReferenceEquals(interest, subscription.Interest) || subscription.SubscriptionId is not null)
+        {
+            return false;
+        }
+
+        pendingAttempt = subscription.PendingRetryToken?.Task;
+        if (pendingAttempt is not null)
+        {
+            return null;
+        }
+
+        activeSubscriptions[key] = new(null, reservation, connectionGeneration, subscription.Interest);
+        return true;
+    }
+
+    /// <summary>
     ///     Decides whether to reserve, coalesce, or wait while holding the subscription gate.
     /// </summary>
     /// <param name="key">The projection and entity pair to reserve.</param>
@@ -744,13 +805,12 @@ internal sealed class InletSignalRActionEffect
 
             if (activeSubscriptions.TryGetValue(key, out SubscriptionEntry? activeSubscription))
             {
-                if (activeSubscription.SubscriptionId is not null || activeSubscription.PendingRetryToken is not null)
-                {
-                    return false;
-                }
-
-                activeSubscriptions[key] = new(null, reservation, connectionGeneration);
-                return true;
+                return TryReserveActiveSubscription(
+                    key,
+                    activeSubscription,
+                    reservation,
+                    ref interest,
+                    out pendingAttempt);
             }
 
             if (!pendingSubscriptions.TryGetValue(
