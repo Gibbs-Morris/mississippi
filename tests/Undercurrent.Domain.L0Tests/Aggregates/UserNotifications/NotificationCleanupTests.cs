@@ -43,13 +43,11 @@ public sealed class NotificationCleanupTests
         DeleteNotificationsBeforeHandler handler = new();
         OperationResult<IReadOnlyList<object>> firstResult = handler.Handle(command, state);
         Assert.True(firstResult.Success);
-        NotificationsDeleted first =
-            Assert.IsType<NotificationsDeleted>(Assert.Single(firstResult.Value));
+        NotificationsDeleted first = Assert.IsType<NotificationsDeleted>(Assert.Single(firstResult.Value));
         timeProvider.Advance(TimeSpan.FromDays(365));
         OperationResult<IReadOnlyList<object>> secondResult = handler.Handle(command, state);
         Assert.True(secondResult.Success);
-        NotificationsDeleted second =
-            Assert.IsType<NotificationsDeleted>(Assert.Single(secondResult.Value));
+        NotificationsDeleted second = Assert.IsType<NotificationsDeleted>(Assert.Single(secondResult.Value));
         Assert.Equal("old", Assert.Single(first.NotificationIds));
         Assert.Equal(first.NotificationIds, second.NotificationIds);
         Assert.Equal(cutoff, first.OlderThan);
