@@ -1,3 +1,5 @@
+using System;
+
 using Microsoft.Extensions.Logging;
 
 
@@ -17,6 +19,17 @@ internal static partial class AqueductHubLifetimeManagerLoggerExtensions
         string connectionId,
         string groupName,
         string hubName
+    );
+
+    [LoggerMessage(
+        EventId = 12,
+        Level = LogLevel.Warning,
+        Message = "Orleans backplane initialization failed for hub '{HubName}' (serverId: {ServerId})")]
+    public static partial void BackplaneInitializationFailed(
+        this ILogger logger,
+        string hubName,
+        string serverId,
+        Exception exception
     );
 
     [LoggerMessage(
@@ -68,6 +81,17 @@ internal static partial class AqueductHubLifetimeManagerLoggerExtensions
         this ILogger logger,
         string hubName,
         string serverId
+    );
+
+    [LoggerMessage(
+        EventId = 11,
+        Level = LogLevel.Debug,
+        Message = "Message delivery canceled for connection '{ConnectionId}' during {DeliveryScope}")]
+    public static partial void MessageDeliveryCanceled(
+        this ILogger logger,
+        string connectionId,
+        string deliveryScope,
+        Exception exception
     );
 
     [LoggerMessage(

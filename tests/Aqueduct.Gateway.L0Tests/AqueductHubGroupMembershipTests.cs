@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.Aqueduct.Abstractions;
@@ -40,6 +41,7 @@ public sealed class AqueductHubGroupMembershipTests
             Substitute.For<ILocalMessageSender>(),
             Substitute.For<IHeartbeatManager>(),
             subscriptions,
+            Substitute.For<IHostApplicationLifetime>(),
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance);
     }
 

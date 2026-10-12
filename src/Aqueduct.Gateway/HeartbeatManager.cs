@@ -108,7 +108,16 @@ internal sealed class HeartbeatManager : IHeartbeatManager
 
             // Register with server directory
             ISignalRServerDirectoryGrain directoryGrain = GrainFactory.GetServerDirectoryGrain();
-            await directoryGrain.RegisterServerAsync(ServerId).ConfigureAwait(false);
+            Task registrationTask = directoryGrain.RegisterServerAsync(ServerId, cancellationToken);
+
+            // Registration can finish after shutdown has canceled the local wait.
+            _ = registrationTask.ContinueWith(
+                task => Logger.RegistrationFailed(ServerId, task.Exception!),
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+            await registrationTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
             Logger.HeartbeatStarted(ServerId);
 
             // Start heartbeat timer
