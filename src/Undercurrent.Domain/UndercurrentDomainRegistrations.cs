@@ -41,8 +41,8 @@ public static class UndercurrentDomainRegistrations
             .AddCommandHandler<CreateNotification, UserNotificationsAggregate, CreateNotificationHandler>()
             .AddCommandHandler<MarkNotificationAsRead, UserNotificationsAggregate, MarkNotificationAsReadHandler>()
             .AddCommandHandler<DeleteNotification, UserNotificationsAggregate, DeleteNotificationHandler>()
-            .AddCommandHandler<DeleteNotificationsOlderThan, UserNotificationsAggregate,
-                DeleteNotificationsOlderThanHandler>()
+            .AddCommandHandler<DeleteNotificationsBefore, UserNotificationsAggregate,
+                DeleteNotificationsBeforeHandler>()
             .AddReducer<NotificationCreated, UserNotificationsAggregate, NotificationCreatedReducer>()
             .AddReducer<NotificationMarkedAsRead, UserNotificationsAggregate, NotificationMarkedAsReadReducer>()
             .AddReducer<NotificationDeleted, UserNotificationsAggregate, NotificationDeletedReducer>()

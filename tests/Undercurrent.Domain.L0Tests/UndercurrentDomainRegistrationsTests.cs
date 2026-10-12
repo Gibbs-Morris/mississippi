@@ -136,21 +136,26 @@ public sealed class UndercurrentDomainRegistrationsTests
         IRootReducer<UserNotificationsAggregate> reducer =
             provider.GetRequiredService<IRootReducer<UserNotificationsAggregate>>();
         ISerializationProvider serializer = provider.GetRequiredService<ISerializationProvider>();
+        DeleteNotificationsBefore command = new()
+        {
+            Before = now.AddDays(-7).AddTicks(1234).ToOffset(TimeSpan.FromHours(2)),
+        };
         UserNotificationsAggregate state = reducer.Reduce(
             new(),
-            UserNotificationsFixture.CreateEvent("old", now.AddDays(-8)));
-        state = reducer.Reduce(state, UserNotificationsFixture.CreateEvent("boundary", now.AddDays(-7)));
-        OperationResult<IReadOnlyList<object>> result = handler.Handle(
-            new DeleteNotificationsOlderThan
-            {
-                Days = 7,
-            },
-            state);
+            UserNotificationsFixture.CreateEvent("old", command.Before.AddTicks(-1)));
+        state = reducer.Reduce(state, UserNotificationsFixture.CreateEvent("boundary", command.Before));
+        DeleteNotificationsBefore restoredCommand =
+            serializer.Deserialize<DeleteNotificationsBefore>(serializer.Serialize(command));
+        Assert.Equal(command.Before, restoredCommand.Before);
+        Assert.Equal(command.Before.Offset, restoredCommand.Before.Offset);
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(restoredCommand, state);
         Assert.True(result.Success);
         NotificationsDeleted deleted = Assert.IsType<NotificationsDeleted>(Assert.Single(result.Value));
         NotificationsDeleted restored = serializer.Deserialize<NotificationsDeleted>(serializer.Serialize(deleted));
         Assert.Equal(deleted.NotificationIds, restored.NotificationIds);
         Assert.Equal(deleted.OlderThan, restored.OlderThan);
+        Assert.Equal(command.Before.ToUniversalTime(), restored.OlderThan);
+        Assert.Equal(TimeSpan.Zero, restored.OlderThan.Offset);
         UserNotificationsAggregate remaining = reducer.Reduce(state, restored);
         Assert.Equal("boundary", Assert.Single(remaining.Notifications).Key);
         Assert.Equal(2, state.Notifications.Count);
