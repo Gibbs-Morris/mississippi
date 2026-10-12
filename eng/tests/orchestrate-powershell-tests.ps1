@@ -26,7 +26,8 @@ $testRunners = @(
     'run-validation-plan-tests.ps1',
     'run-issue-spec-tests.ps1',
     'run-agent-doctor-tests.ps1',
-    'run-agent-context-tests.ps1'
+    'run-agent-context-tests.ps1',
+    'run-docs-tests.ps1'
 )
 
 try {

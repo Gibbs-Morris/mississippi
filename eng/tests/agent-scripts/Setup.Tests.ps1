@@ -19,7 +19,7 @@ Describe 'Canonical repository setup' {
             param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][string]$NpmScript)
             $shimRoot = Join-Path $TestDrive $Name
             New-Item -ItemType Directory -Path $shimRoot -Force | Out-Null
-            Set-Content -LiteralPath (Join-Path $shimRoot 'node.ps1') -Value "Write-Output 'v22.0.0'"
+            Set-Content -LiteralPath (Join-Path $shimRoot 'node.ps1') -Value "Write-Output 'v24.0.0'"
             Set-Content -LiteralPath (Join-Path $shimRoot 'npm.ps1') -Value $NpmScript
             $originalPath = $env:PATH
             $env:PATH = $shimRoot + [IO.Path]::PathSeparator + $originalPath

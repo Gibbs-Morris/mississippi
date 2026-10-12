@@ -66,8 +66,8 @@ These local commands cover the corresponding build and test steps. They do not r
 | [Samples Validation](../../../.github/workflows/samples-validation.yml): Spring L3 | `pwsh ./test-spring.ps1` | Canonical Spring restore/build and browser smoke tests; select `Full` when dispatching manually, or use `-TestLevel L3 -Suite Full` locally for all browser journeys. |
 | [stryker.yml](../../../.github/workflows/stryker.yml) | `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1 -ReportOnly` | Weekly/manual Mississippi mutation report; the full serial analysis is not run on every push to `main`. |
 | [cleanup.yml](../../../.github/workflows/cleanup.yml) | `pwsh ./clean-up.ps1` | Applies cleanup to both solutions; CI additionally fails if cleanup changes tracked files. |
-| [powershell-tests.yml](../../../.github/workflows/powershell-tests.yml) | `pwsh ./eng/tests/orchestrate-powershell-tests.ps1` | Nine Pester suites, including scratchpad script integration tests; requires Pester 5+. CI runs on Windows and Ubuntu. |
-| [docusaurus.yml](../../../.github/workflows/docusaurus.yml) | `pwsh ./docs/Docusaurus/test-docusaurus.ps1` | Installs locked npm dependencies, builds the site, installs Chromium, and runs Playwright tests; requires Node.js 20+. |
+| [powershell-tests.yml](../../../.github/workflows/powershell-tests.yml) | `pwsh ./eng/tests/orchestrate-powershell-tests.ps1` | Ten Pester suites, including scratchpad script integration tests; requires Pester 5+. CI runs on Windows and Ubuntu. |
+| [docusaurus.yml](../../../.github/workflows/docusaurus.yml) | `pwsh ./docs/Docusaurus/test-docusaurus.ps1` | Installs locked npm dependencies, builds the site, installs Chromium, and runs Playwright tests; requires Node.js 24+. |
 
 For documentation development, `pwsh ./run-docs.ps1` starts the development server, `-Mode Build` builds the site, and `-Mode Serve` previews an existing build. These modes do not run the browser test suite. Other workflows cover Markdown, project metadata and references, locked Aspire restore, SonarCloud, and package publication independently of `go.ps1`.
 
