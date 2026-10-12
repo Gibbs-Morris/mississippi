@@ -25,7 +25,7 @@ namespace Mississippi.Tributary.Runtime;
 ///         preserving first-match-wins semantics within the original registration order.
 ///     </para>
 ///     <para>
-///         The reducer hash includes the priority of competing indexed reducers. Reordering reducers
+///         The reducer hash includes the runtime-type sequence of competing indexed reducers. Reordering reducers
 ///         for independent event types does not change snapshot compatibility.
 ///     </para>
 /// </remarks>
