@@ -133,5 +133,3 @@ Describe 'Monthly cleanup pull request publishing' {
         }
     }
 }
-
-
