@@ -1,15 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.Aqueduct.Abstractions;
+using Mississippi.Aqueduct.Runtime.Grains;
 using Mississippi.Hosting.Abstractions;
 using Mississippi.Hosting.Runtime;
 using Mississippi.Hosting.Runtime.Abstractions;
+using Mississippi.Testing.Utilities.Mocks;
 
 using NSubstitute;
 
@@ -50,6 +55,74 @@ public sealed class AqueductRuntimeRegistrationsTests
         Assert.NotNull(captured);
         Assert.Throws<BuilderValidationException>(() => captured.AddAqueduct(_ => invoked = true));
         Assert.False(invoked);
+    }
+
+    /// <summary>Captured runtime timing properties cannot mutate the applied configuration after the callback closes.</summary>
+    [Fact]
+    public void ClosedScopeShouldRejectHeartbeatTimingChanges()
+    {
+        ServiceCollection services = [];
+        AqueductBuilder? captured = null;
+        CreateSilo(services).UseMississippi(runtime => runtime.AddAqueduct(aqueduct => captured = aqueduct));
+        Assert.NotNull(captured);
+        Assert.Throws<BuilderValidationException>(() => captured.HeartbeatIntervalMinutes = 5);
+        Assert.Throws<BuilderValidationException>(() => captured.DeadServerTimeoutMultiplier = 4);
+    }
+
+    /// <summary>The same configuration section preserves gateway heartbeat timing on a separate silo.</summary>
+    /// <param name="interval">The configured heartbeat interval in minutes.</param>
+    /// <param name="multiplier">The configured dead-server timeout multiplier.</param>
+    /// <param name="expectedInterval">The expected effective runtime interval.</param>
+    /// <param name="expectedMultiplier">The expected effective runtime multiplier.</param>
+    [Theory]
+    [InlineData("5", "3", 5, 3)]
+    [InlineData("1", "7", 1, 7)]
+    public void ConfigurationSectionShouldPreserveHeartbeatTiming(
+        string interval,
+        string multiplier,
+        int expectedInterval,
+        int expectedMultiplier
+    )
+    {
+        using ConfigurationRoot configuration = Assert.IsType<ConfigurationRoot>(
+            new ConfigurationBuilder().AddInMemoryCollection(
+                    new Dictionary<string, string?>
+                    {
+                        [nameof(AqueductOptions.HeartbeatIntervalMinutes)] = interval,
+                        [nameof(AqueductOptions.DeadServerTimeoutMultiplier)] = multiplier,
+                    })
+                .Build());
+        ServiceCollection services = [];
+        CreateSilo(services).UseMississippi(runtime => runtime.AddAqueduct(configuration));
+        using ServiceProvider provider = services.BuildServiceProvider();
+        AqueductOptions options = provider.GetRequiredService<IOptions<AqueductOptions>>().Value;
+        Assert.Equal(expectedInterval, options.HeartbeatIntervalMinutes);
+        Assert.Equal(expectedMultiplier, options.DeadServerTimeoutMultiplier);
+    }
+
+    /// <summary>Cleanup timing rejects nonpositive settings and a timeout outside TimeSpan's range.</summary>
+    /// <param name="interval">The configured heartbeat interval.</param>
+    /// <param name="multiplier">The configured timeout multiplier.</param>
+    [Theory]
+    [InlineData("0", "3")]
+    [InlineData("1", "0")]
+    [InlineData("2147483647", "2147483647")]
+    public void ConfigurationSectionShouldRejectUnusableHeartbeatTiming(
+        string interval,
+        string multiplier
+    )
+    {
+        using ConfigurationRoot configuration = Assert.IsType<ConfigurationRoot>(
+            new ConfigurationBuilder().AddInMemoryCollection(
+                    new Dictionary<string, string?>
+                    {
+                        [nameof(AqueductOptions.HeartbeatIntervalMinutes)] = interval,
+                        [nameof(AqueductOptions.DeadServerTimeoutMultiplier)] = multiplier,
+                    })
+                .Build());
+        ServiceCollection services = [];
+        Assert.Throws<BuilderValidationException>(() =>
+            CreateSilo(services).UseMississippi(runtime => runtime.AddAqueduct(configuration)));
     }
 
     /// <summary>Configuration sections use defaults for omitted stream settings.</summary>
@@ -203,6 +276,34 @@ public sealed class AqueductRuntimeRegistrationsTests
             provider.GetRequiredService<IOptions<AqueductOptions>>().Value.StreamProviderName);
     }
 
+    /// <summary>Malformed integer settings report the corresponding stable builder diagnostic.</summary>
+    /// <param name="propertyName">The configured timing property.</param>
+    /// <param name="expectedCode">The diagnostic identifying that property.</param>
+    [Theory]
+    [InlineData(
+        nameof(AqueductOptions.HeartbeatIntervalMinutes),
+        AqueductBuilderDiagnosticCodes.HeartbeatIntervalInvalid)]
+    [InlineData(
+        nameof(AqueductOptions.DeadServerTimeoutMultiplier),
+        AqueductBuilderDiagnosticCodes.DeadServerTimeoutInvalid)]
+    public void MalformedTimingShouldReportStableDiagnostic(
+        string propertyName,
+        string expectedCode
+    )
+    {
+        using ConfigurationRoot configuration = Assert.IsType<ConfigurationRoot>(
+            new ConfigurationBuilder().AddInMemoryCollection(
+                    new Dictionary<string, string?>
+                    {
+                        [propertyName] = "bad",
+                    })
+                .Build());
+        ServiceCollection services = [];
+        BuilderValidationException failure = Assert.Throws<BuilderValidationException>(() =>
+            CreateSilo(services).UseMississippi(runtime => runtime.AddAqueduct(configuration)));
+        Assert.Equal(expectedCode, Assert.Single(failure.Diagnostics).Code);
+    }
+
     /// <summary>Memory infrastructure uses the final provider selection and the required PubSubStore.</summary>
     [Fact]
     public void MemoryStreamsUseTheFinalProviderSelection()
@@ -240,6 +341,23 @@ public sealed class AqueductRuntimeRegistrationsTests
         Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<AqueductOptions>>().Value);
     }
 
+    /// <summary>Explicit runtime timing overrides materialize without altering the shared defaults.</summary>
+    [Fact]
+    public void RuntimeCallbackShouldApplyExplicitHeartbeatTiming()
+    {
+        ServiceCollection services = [];
+        CreateSilo(services)
+            .UseMississippi(runtime => runtime.AddAqueduct(aqueduct =>
+            {
+                aqueduct.HeartbeatIntervalMinutes = 5;
+                aqueduct.DeadServerTimeoutMultiplier = 4;
+            }));
+        using ServiceProvider provider = services.BuildServiceProvider();
+        AqueductOptions options = provider.GetRequiredService<IOptions<AqueductOptions>>().Value;
+        Assert.Equal(5, options.HeartbeatIntervalMinutes);
+        Assert.Equal(4, options.DeadServerTimeoutMultiplier);
+    }
+
     /// <summary>Runtime composition preserves gateway-only settings configured by the colocated gateway.</summary>
     [Fact]
     public void RuntimeCompositionPreservesGatewayOnlySettings()
@@ -257,5 +375,35 @@ public sealed class AqueductRuntimeRegistrationsTests
         Assert.Equal("gateway-broadcasts", options.AllClientsStreamNamespace);
         Assert.Equal(11, options.HeartbeatIntervalMinutes);
         Assert.Equal(17, options.DeadServerTimeoutMultiplier);
+    }
+
+    /// <summary>A gateway configured for five-minute heartbeats stays live until its next heartbeat.</summary>
+    /// <returns>The test operation.</returns>
+    [Fact]
+    public async Task SharedTimingShouldNotExpireHealthyGatewayBetweenHeartbeats()
+    {
+        using ConfigurationRoot configuration = Assert.IsType<ConfigurationRoot>(
+            new ConfigurationBuilder().AddInMemoryCollection(
+                    new Dictionary<string, string?>
+                    {
+                        [nameof(AqueductOptions.HeartbeatIntervalMinutes)] = "5",
+                        [nameof(AqueductOptions.DeadServerTimeoutMultiplier)] = "3",
+                    })
+                .Build());
+        ServiceCollection services = [];
+        CreateSilo(services).UseMississippi(runtime => runtime.AddAqueduct(configuration));
+        using ServiceProvider provider = services.BuildServiceProvider();
+        AqueductOptions options = provider.GetRequiredService<IOptions<AqueductOptions>>().Value;
+        FakeTimeProvider clock = new();
+        SignalRServerDirectoryGrain directory = new(
+            GrainContextMockBuilder.Create().WithGrainKey("default").BuildObject(),
+            Options.Create(options),
+            NullLogger<SignalRServerDirectoryGrain>.Instance,
+            clock);
+        await directory.RegisterServerAsync("five-minute-gateway");
+        clock.Advance(TimeSpan.FromMinutes(4));
+        TimeSpan runtimeTimeout = TimeSpan.FromMinutes(
+            (double)options.HeartbeatIntervalMinutes * options.DeadServerTimeoutMultiplier);
+        Assert.True(await directory.IsServerAliveAsync("five-minute-gateway", runtimeTimeout));
     }
 }

@@ -72,8 +72,12 @@ Only one `AddAqueduct(...)` call is valid for a given runtime builder. Combine s
 | --- | --- | --- |
 | `StreamProviderName` | Orleans stream provider used for SignalR delivery | `mississippi-streaming` |
 | `ServerStreamNamespace` | Namespace for server-targeted messages | `mississippi-server` |
+| `HeartbeatIntervalMinutes` | Shared gateway heartbeat interval used for runtime cleanup | `1` |
+| `DeadServerTimeoutMultiplier` | Multiplier applied to the interval for dead-server cleanup | `3` |
 
 Names must be nonempty and must not consist only of whitespace. The values are preserved as supplied.
+Timing values must be positive integers, and the product in minutes must fit within `TimeSpan`. Configure matching timing
+on gateway and runtime processes. Omitted runtime timing overrides preserve existing colocated gateway options.
 `AllClientsStreamNamespace` remains a gateway option for broadcasts and is not set or validated by the runtime builder.
 
 ## Defaults
@@ -83,6 +87,8 @@ The defaults are provided by `AqueductStreamDefaults` and `AqueductOptions`:
 - Runtime `StreamProviderName`: `mississippi-streaming`
 - Runtime `ServerStreamNamespace`: `mississippi-server`
 - Gateway `AllClientsStreamNamespace`: `mississippi-all-clients`
+- Shared `HeartbeatIntervalMinutes`: `1`
+- Shared `DeadServerTimeoutMultiplier`: `3`
 
 ## Memory Streams
 
@@ -101,13 +107,16 @@ The `IConfiguration` overload reads these exact keys from the supplied configura
 | --- | --- |
 | `StreamProviderName` | `AqueductBuilder.StreamProviderName` |
 | `ServerStreamNamespace` | `AqueductBuilder.ServerStreamNamespace` |
+| `HeartbeatIntervalMinutes` | `AqueductBuilder.HeartbeatIntervalMinutes` |
+| `DeadServerTimeoutMultiplier` | `AqueductBuilder.DeadServerTimeoutMultiplier` |
 
-Missing keys keep the runtime defaults. `AllClientsStreamNamespace` is configured on the gateway hosts that use it;
+Missing stream keys keep the runtime defaults. Missing timing keys preserve existing configured options or their defaults.
+`AllClientsStreamNamespace` is configured on the gateway hosts that use it;
 the runtime configuration overload does not read it.
 
 ## Behavior
 
-The nested configuration is applied to the runtime's staged silo, then the two runtime settings are copied into a snapshot used to configure
+The nested configuration is applied to the runtime's staged silo, then stream settings and explicit timing overrides are copied into a snapshot used to configure
 `IOptions<AqueductOptions>`. Capturing an `AqueductBuilder` beyond its callback is unsupported: the scope closes after
 success or failure, and later property changes throw `BuilderValidationException` with `MSB206`.
 
@@ -132,6 +141,8 @@ current Aqueduct diagnostic codes are:
 | `MSB202` | `ServerStreamNamespace` is empty or whitespace | Set a nonempty server namespace |
 | `MSB206` | A captured nested builder scope is closed | Configure a fresh `AddAqueduct(...)` callback |
 | `MSB207` | Aqueduct was added more than once to one runtime | Combine settings in one `AddAqueduct(...)` call |
+| `MSB208` | Heartbeat interval is not a positive integer | Set matching positive intervals on runtime and gateway hosts |
+| `MSB209` | Timeout multiplier is invalid or the product exceeds `TimeSpan` | Choose a positive multiplier and supported duration |
 
 Null runtime or configuration arguments produce `ArgumentNullException`. The optional `AddAqueduct(...)` configuration
 callback may be omitted. Required callbacks on the runtime terminal and native configuration APIs also report
