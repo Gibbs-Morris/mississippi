@@ -13,6 +13,7 @@ using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.Abstractions.Actions;
 using Mississippi.Inlet.Client.ActionEffects;
 using Mississippi.Inlet.Client.L0Tests.Helpers;
+using Mississippi.Inlet.Client.SignalRConnection;
 using Mississippi.Inlet.Gateway.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
@@ -43,6 +44,8 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
 
     private readonly Mock<IProjectionFetcher> projectionFetcher = new();
 
+    private Func<string, string, long, Task> projectionUpdated = (_, _, _) => Task.CompletedTask;
+
     private Func<string?, Task> reconnected = _ => Task.CompletedTask;
 
     /// <summary>
@@ -54,6 +57,7 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
         provider.SetupGet(value => value.Connection).Returns(hubConnection.Object);
         provider.Setup(value => value.EnsureConnectedAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         provider.Setup(value => value.RegisterHandler(It.IsAny<string>(), It.IsAny<Func<string, string, long, Task>>()))
+            .Callback((string _, Func<string, string, long, Task> handler) => projectionUpdated = handler)
             .Returns(Mock.Of<IDisposable>());
         provider.Setup(value => value.OnReconnected(It.IsAny<Func<string?, Task>>()))
             .Callback<Func<string?, Task>>(handler => reconnected = handler);
@@ -154,26 +158,47 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
             Times.Once);
 
     /// <summary>
-    ///     An explicit failed-interest retry prevents a concurrent reconnect from creating a second server subscription.
+    ///     Retained interest ignores notifications until a retry establishes a usable subscription ID.
     /// </summary>
     /// <returns>A task representing the test.</returns>
     [Fact]
-    public async Task ExplicitRetryClaimsFailedInterestAgainstConcurrentReconnect()
+    public async Task FailedInterestIgnoresNotificationsUntilRecovered()
     {
-        TaskCompletionSource<object?> retryReply = ConfigureFailedRetryWithPendingReply();
+        hubConnection.SetupSequence(connection => connection.InvokeCoreAsync(
+                InletHubConstants.SubscribeMethod,
+                typeof(string),
+                It.IsAny<object?[]>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("old-id")
+            .ThrowsAsync(new InvalidOperationException("Reconnect subscription failed"))
+            .ReturnsAsync("recovered-id");
+        projectionFetcher.Setup(value => value.FetchAtVersionAsync(
+                typeof(TestProjection),
+                EntityId,
+                It.IsAny<long>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProjectionFetchResult.NotFound);
         await FailFirstReconnectAsync();
-        Task<IAction[]> retryTask = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
-        VerifySubscribeCount(3);
-        await reconnected("overlapping-reconnect");
-        VerifySubscribeCount(3);
-        retryReply.SetResult("recovered-id");
-        IAction[] retryActions = await retryTask;
+        dispatchedActions.Clear();
+        await projectionUpdated(ProjectionPath, EntityId, 1);
+        Assert.IsType<SignalRMessageReceivedAction>(Assert.Single(dispatchedActions));
+        projectionFetcher.Verify(
+            value => value.FetchAtVersionAsync(
+                typeof(TestProjection),
+                EntityId,
+                It.IsAny<long>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+        await SubscribeAsync();
+        dispatchedActions.Clear();
+        await projectionUpdated(ProjectionPath, EntityId, 2);
         Assert.Collection(
-            retryActions,
-            action => Assert.IsType<ProjectionLoadingAction<TestProjection>>(action),
-            action => Assert.IsType<ProjectionLoadedAction<TestProjection>>(action));
-        await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
-        VerifyUnsubscribedId("recovered-id");
+            dispatchedActions,
+            action => Assert.IsType<SignalRMessageReceivedAction>(action),
+            action => Assert.IsType<ProjectionUpdatedAction<TestProjection>>(action));
+        projectionFetcher.Verify(
+            value => value.FetchAtVersionAsync(typeof(TestProjection), EntityId, 2, It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     /// <summary>
@@ -294,26 +319,259 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
     }
 
     /// <summary>
-    ///     A failed-interest reconnect is claimed while its hub reply is pending.
+    ///     Starting a new generation rejects an older reply even before the new callback reaches that interest.
     /// </summary>
+    /// <param name="oldReplyFails">Whether the older pending invocation fails instead of returning an ID.</param>
     /// <returns>A task representing the test.</returns>
-    [Fact]
-    public async Task ReconnectClaimsFailedInterestAgainstConcurrentReconnect()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NewGenerationRetiresOlderReplyBeforeReachingItsInterest(
+        bool oldReplyFails
+    )
     {
-        TaskCompletionSource<object?> retryReply = ConfigureFailedRetryWithPendingReply();
+        TaskCompletionSource<object?> oldReply = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<object?> newReply = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        hubConnection.SetupSequence(connection => connection.InvokeCoreAsync(
+                InletHubConstants.SubscribeMethod,
+                typeof(string),
+                It.IsAny<object?[]>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("initial-one")
+            .ReturnsAsync("initial-two")
+            .ReturnsAsync("older-first-id")
+            .Returns(oldReply.Task)
+            .Returns(newReply.Task)
+            .ReturnsAsync("current-last-id");
+        projectionFetcher.Setup(value => value.FetchAsync(
+                typeof(TestProjection),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProjectionFetchResult.NotFound);
+        await SubscribeAsync();
+        IAction[] otherInitial = await HandleAsync(new SubscribeToProjectionAction<TestProjection>("entity-2"));
+        Assert.IsType<ProjectionLoadedAction<TestProjection>>(otherInitial[1]);
+        Task olderReconnect = reconnected("older-connection");
+        Task latestReconnect = reconnected("latest-connection");
+        if (oldReplyFails)
+        {
+            oldReply.SetException(new InvalidOperationException("Older pending interest failed"));
+        }
+        else
+        {
+            oldReply.SetResult("older-late-id");
+        }
+
+        await olderReconnect.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        int afterOlderReply = dispatchedActions.Count;
+        newReply.SetResult("current-first-id");
+        await latestReconnect.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        Assert.Equal(1, afterOlderReply);
+        Assert.Equal(3, dispatchedActions.Count);
+        Assert.All(dispatchedActions, action => Assert.IsType<ProjectionUpdatedAction<TestProjection>>(action));
+        await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
+        await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>("entity-2"));
+        foreach (string id in new[] { "current-first-id", "current-last-id" })
+        {
+            hubConnection.Verify(
+                connection => connection.InvokeCoreAsync(
+                    InletHubConstants.UnsubscribeMethod,
+                    It.IsAny<Type>(),
+                    It.Is<object?[]>(arguments => (string?)arguments[0] == id),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        hubConnection.Verify(
+            connection => connection.InvokeCoreAsync(
+                InletHubConstants.SubscribeMethod,
+                typeof(string),
+                It.IsAny<object?[]>(),
+                It.IsAny<CancellationToken>()),
+            Times.Exactly(6));
+    }
+
+    /// <summary>
+    ///     A superseded explicit retry cannot publish its delayed initial fetch over the newest connection's state.
+    /// </summary>
+    /// <param name="oldFetchFails">Whether the earlier fetch fails instead of returning projection data.</param>
+    /// <returns>A task representing the test.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NewReconnectDiscardsSupersededExplicitRetryFetch(
+        bool oldFetchFails
+    )
+    {
+        TaskCompletionSource<ProjectionFetchResult?> oldFetch = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        hubConnection.SetupSequence(connection => connection.InvokeCoreAsync(
+                InletHubConstants.SubscribeMethod,
+                typeof(string),
+                It.IsAny<object?[]>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("old-id")
+            .ThrowsAsync(new InvalidOperationException("Reconnect subscription failed"))
+            .ReturnsAsync("retry-id")
+            .ReturnsAsync("current-id");
+        projectionFetcher
+            .SetupSequence(value => value.FetchAsync(typeof(TestProjection), EntityId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProjectionFetchResult.NotFound)
+            .Returns(oldFetch.Task)
+            .ReturnsAsync(ProjectionFetchResult.NotFound);
         await FailFirstReconnectAsync();
-        Task firstReconnect = reconnected("first-retry");
-        VerifySubscribeCount(3);
-        await reconnected("second-retry");
-        VerifySubscribeCount(3);
-        retryReply.SetResult("recovered-id");
-        await firstReconnect;
+        Task<IAction[]> explicitRetry = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        await reconnected("latest-connection");
+        if (oldFetchFails)
+        {
+            oldFetch.SetException(new InvalidOperationException("Superseded retry fetch failed"));
+        }
+        else
+        {
+            oldFetch.SetResult(ProjectionFetchResult.NotFound);
+        }
+
+        IAction[] retryActions = await explicitRetry.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+        Assert.IsType<ProjectionLoadingAction<TestProjection>>(Assert.Single(retryActions));
         Assert.Collection(
             dispatchedActions,
             action => Assert.IsType<ProjectionErrorAction<TestProjection>>(action),
             action => Assert.IsType<ProjectionUpdatedAction<TestProjection>>(action));
+        VerifySubscribeCount(4);
         await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
-        VerifyUnsubscribedId("recovered-id");
+        VerifyUnsubscribedId("current-id");
+    }
+
+    /// <summary>
+    ///     An older connection's delayed projection fetch cannot publish after a newer reconnect has recovered.
+    /// </summary>
+    /// <param name="oldFetchFails">Whether the superseded fetch fails instead of returning projection data.</param>
+    /// <returns>A task representing the test.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NewReconnectDiscardsSupersededProjectionFetch(
+        bool oldFetchFails
+    )
+    {
+        TaskCompletionSource<ProjectionFetchResult?> oldFetch = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        hubConnection.SetupSequence(connection => connection.InvokeCoreAsync(
+                InletHubConstants.SubscribeMethod,
+                typeof(string),
+                It.IsAny<object?[]>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("initial-id")
+            .ReturnsAsync("superseded-id")
+            .ReturnsAsync("current-id");
+        projectionFetcher
+            .SetupSequence(value => value.FetchAsync(typeof(TestProjection), EntityId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProjectionFetchResult.NotFound)
+            .Returns(oldFetch.Task)
+            .ReturnsAsync(ProjectionFetchResult.NotFound);
+        await SubscribeAsync();
+        Task firstReconnect = reconnected("earlier-connection");
+        VerifySubscribeCount(2);
+        await reconnected("latest-connection");
+        if (oldFetchFails)
+        {
+            oldFetch.SetException(new InvalidOperationException("Superseded fetch failed"));
+        }
+        else
+        {
+            oldFetch.SetResult(ProjectionFetchResult.NotFound);
+        }
+
+        await firstReconnect.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        VerifySubscribeCount(3);
+        Assert.IsType<ProjectionUpdatedAction<TestProjection>>(Assert.Single(dispatchedActions));
+        await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
+        VerifyUnsubscribedId("current-id");
+    }
+
+    /// <summary>
+    ///     A newer connection supersedes an explicit retry belonging to the disconnected connection.
+    /// </summary>
+    /// <param name="oldReplyFails">Whether the superseded invocation fails instead of returning an ID.</param>
+    /// <returns>A task representing the test.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NewReconnectSupersedesPendingExplicitRetry(
+        bool oldReplyFails
+    )
+    {
+        TaskCompletionSource<object?> retryReply = ConfigureFailedRetryWithPendingReply();
+        await FailFirstReconnectAsync();
+        Task<IAction[]> retryTask = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
+        VerifySubscribeCount(3);
+        await reconnected(null);
+        if (oldReplyFails)
+        {
+            retryReply.SetException(new InvalidOperationException("Superseded retry failed"));
+        }
+        else
+        {
+            retryReply.SetResult("superseded-id");
+        }
+
+        IAction[] retryActions = await retryTask.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+        VerifySubscribeCount(4);
+        Assert.IsType<ProjectionLoadingAction<TestProjection>>(Assert.Single(retryActions));
+        Assert.Collection(
+            dispatchedActions,
+            action => Assert.IsType<ProjectionErrorAction<TestProjection>>(action),
+            action => Assert.IsType<ProjectionUpdatedAction<TestProjection>>(action));
+        if (!oldReplyFails)
+        {
+            VerifyUnsubscribedId("superseded-id");
+        }
+
+        await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
+        VerifyUnsubscribedId("current-id");
+    }
+
+    /// <summary>
+    ///     The latest reconnect restores interest while the earlier connection's invocation is still pending.
+    /// </summary>
+    /// <param name="oldReplyFails">Whether the superseded invocation fails instead of returning an ID.</param>
+    /// <returns>A task representing the test.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NewReconnectSupersedesPendingReconnect(
+        bool oldReplyFails
+    )
+    {
+        TaskCompletionSource<object?> retryReply = ConfigureFailedRetryWithPendingReply();
+        await FailFirstReconnectAsync();
+        Task firstReconnect = reconnected(null);
+        VerifySubscribeCount(3);
+        await reconnected(null);
+        if (oldReplyFails)
+        {
+            retryReply.SetException(new InvalidOperationException("Superseded reconnect failed"));
+        }
+        else
+        {
+            retryReply.SetResult("superseded-id");
+        }
+
+        await firstReconnect.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        VerifySubscribeCount(4);
+        Assert.Collection(
+            dispatchedActions,
+            action => Assert.IsType<ProjectionErrorAction<TestProjection>>(action),
+            action => Assert.IsType<ProjectionUpdatedAction<TestProjection>>(action));
+        if (!oldReplyFails)
+        {
+            VerifyUnsubscribedId("superseded-id");
+        }
+
+        await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
+        VerifyUnsubscribedId("current-id");
     }
 
     /// <summary>

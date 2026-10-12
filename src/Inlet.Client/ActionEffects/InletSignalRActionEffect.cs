@@ -49,6 +49,8 @@ internal sealed class InletSignalRActionEffect
 
     private readonly object subscriptionGate = new();
 
+    private long connectionGeneration;
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="InletSignalRActionEffect" /> class.
     /// </summary>
@@ -198,7 +200,11 @@ internal sealed class InletSignalRActionEffect
         }
     }
 
-    private sealed record SubscriptionEntry(string? SubscriptionId, object? PendingRetryToken);
+    private sealed record SubscriptionEntry(
+        string? SubscriptionId,
+        object? PendingRetryToken,
+        long ConnectionGeneration
+    );
 
 #pragma warning disable CA1031 // Action effect converts exceptions to error actions instead of crashing
     private async IAsyncEnumerable<IAction> HandleRefreshAsync(
@@ -328,8 +334,14 @@ internal sealed class InletSignalRActionEffect
             yield break;
         }
 
+        long subscriptionGeneration = Volatile.Read(ref connectionGeneration);
         await foreach (IAction action in FetchInitialProjectionAsync(projectionType, entityId, cancellationToken))
         {
+            if (!IsCurrentSubscription(key, subscriptionId, subscriptionGeneration))
+            {
+                yield break;
+            }
+
             yield return action;
         }
     }
@@ -484,20 +496,35 @@ internal sealed class InletSignalRActionEffect
         }
     }
 
+    private bool IsCurrentSubscription(
+        (Type ProjectionType, string EntityId) key,
+        string? subscriptionId,
+        long generation
+    ) =>
+        subscriptionId is not null &&
+        (generation == Volatile.Read(ref connectionGeneration)) &&
+        activeSubscriptions.TryGetValue(key, out SubscriptionEntry? subscription) &&
+        (subscription.ConnectionGeneration == generation) &&
+        (subscription.SubscriptionId == subscriptionId);
+
     private async Task OnReconnectedAsync(
         string? connectionId
     )
     {
-        _ = connectionId; // Unused but required by delegate signature
-
-        // Re-subscribe to the snapshot of active interests present when this callback starts.
-        foreach ((Type ProjectionType, string EntityId) key in activeSubscriptions.Keys)
+        _ = connectionId;
+        ICollection<(Type ProjectionType, string EntityId)> interests;
+        long generation;
+        lock (subscriptionGate)
         {
-            // Look up the projection path from the DTO registry
+            generation = ++connectionGeneration;
+            interests = activeSubscriptions.Keys;
+        }
+
+        foreach ((Type ProjectionType, string EntityId) key in interests)
+        {
             string? path = ProjectionDtoRegistry.GetPath(key.ProjectionType);
             if (path is null)
             {
-                // No path registered - cannot re-subscribe
                 continue;
             }
 
@@ -505,16 +532,21 @@ internal sealed class InletSignalRActionEffect
             bool isClaimed;
             lock (subscriptionGate)
             {
-                if (activeSubscriptions.TryGetValue(key, out SubscriptionEntry? activeSubscription) &&
-                    activeSubscription.PendingRetryToken is null)
+                if (generation != connectionGeneration)
                 {
-                    // The old ID belongs to the disconnected connection; claim this interest before invoking the hub.
-                    activeSubscriptions[key] = new(null, request);
+                    return;
+                }
+
+                if (activeSubscriptions.TryGetValue(key, out SubscriptionEntry? subscription) &&
+                    (subscription.ConnectionGeneration < generation))
+                {
+                    // A new connection supersedes pending attempts and IDs from older connections.
+                    activeSubscriptions[key] = new(null, request, generation);
                     isClaimed = true;
                 }
                 else
                 {
-                    // Another retry or reconnect already owns this interest, or it was unsubscribed.
+                    // This interest was removed or has already been established or claimed on this connection.
                     isClaimed = false;
                 }
             }
@@ -524,42 +556,44 @@ internal sealed class InletSignalRActionEffect
                 continue;
             }
 
+            string? newSubscriptionId = null;
             try
             {
-                string newSubscriptionId = await HubConnection.InvokeAsync<string>(
+                newSubscriptionId = await HubConnection.InvokeAsync<string>(
                     InletHubConstants.SubscribeMethod,
                     path,
                     key.EntityId,
                     CancellationToken.None);
-                bool isCurrentRequest = TryCompletePendingSubscription(key, request, newSubscriptionId);
-                if (!isCurrentRequest)
+                if (!TryCompletePendingSubscription(key, request, newSubscriptionId))
                 {
-                    // The owner removed this interest while the hub reply was pending.
                     await UnsubscribeFromHubAsync(newSubscriptionId, path, key.EntityId, CancellationToken.None);
                     continue;
                 }
 
-                // Refresh the projection data after reconnection. Keep the new ID if this fetch fails.
+                // Keep the established ID when only the following fetch fails.
                 ProjectionFetchResult? result = await ProjectionFetcher.FetchAsync(
                     key.ProjectionType,
                     key.EntityId,
                     CancellationToken.None);
-                if (result is not null)
+                if (result is not null && IsCurrentSubscription(key, newSubscriptionId, generation))
                 {
-                    IAction action = ProjectionActionFactory.CreateUpdated(
-                        key.ProjectionType,
-                        key.EntityId,
-                        result.Data,
-                        result.Version);
-                    Store.Dispatch(action);
+                    Store.Dispatch(
+                        ProjectionActionFactory.CreateUpdated(
+                            key.ProjectionType,
+                            key.EntityId,
+                            result.Data,
+                            result.Version));
                 }
             }
             catch (Exception ex)
             {
-                // A failed invocation releases the claim so a later retry can try again.
-                _ = TryCompletePendingSubscription(key, request, null);
-                IAction action = ProjectionActionFactory.CreateError(key.ProjectionType, key.EntityId, ex);
-                Store.Dispatch(action);
+                bool isCurrentRequest = newSubscriptionId is null
+                    ? TryCompletePendingSubscription(key, request, null)
+                    : IsCurrentSubscription(key, newSubscriptionId, generation);
+                if (isCurrentRequest)
+                {
+                    Store.Dispatch(ProjectionActionFactory.CreateError(key.ProjectionType, key.EntityId, ex));
+                }
             }
         }
     }
@@ -584,9 +618,14 @@ internal sealed class InletSignalRActionEffect
             if (activeSubscriptions.TryGetValue(key, out SubscriptionEntry? activeSubscription) &&
                 ReferenceEquals(activeSubscription.PendingRetryToken, reservation))
             {
+                if (activeSubscription.ConnectionGeneration != connectionGeneration)
+                {
+                    return false;
+                }
+
                 if (subscriptionId is not null || completeAttempt)
                 {
-                    activeSubscriptions[key] = new(subscriptionId, null);
+                    activeSubscriptions[key] = new(subscriptionId, null, activeSubscription.ConnectionGeneration);
                 }
 
                 return true;
@@ -603,7 +642,7 @@ internal sealed class InletSignalRActionEffect
             if (subscriptionId is not null)
             {
                 pendingSubscriptions.Remove(key);
-                activeSubscriptions[key] = new(subscriptionId, null);
+                activeSubscriptions[key] = new(subscriptionId, null, connectionGeneration);
             }
 
             if (completeAttempt)
@@ -670,7 +709,7 @@ internal sealed class InletSignalRActionEffect
                         return false;
                     }
 
-                    activeSubscriptions[key] = new(null, reservation);
+                    activeSubscriptions[key] = new(null, reservation, connectionGeneration);
                     return true;
                 }
 
