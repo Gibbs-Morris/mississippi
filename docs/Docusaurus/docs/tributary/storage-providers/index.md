@@ -114,6 +114,7 @@ abstraction boundary, but must implement and validate its own storage semantics 
 
 ## Related tasks and reference
 
+- [Azure Blob provider reference](blob.md) for the separate snapshot backend, options, durable path, and failure behavior.
 - [Cosmos provider reference](cosmos.md) for overloads, options, defaults, constraints, diagnostics, and document mapping.
 - [Runtime composition](../../reference/runtime-composition.md) for staged services, native Orleans configuration, and
   terminal attachment.
