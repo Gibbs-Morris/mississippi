@@ -336,6 +336,9 @@ internal sealed class GenericAggregateGrain<TAggregate>
 
             if (currentState is not null && IsSagaPhaseNotStarted(currentState))
             {
+                // Retain protection because an older confirmed cursor can hide a pending start.
+                // Authoritative cleanup is tracked at:
+                // https://github.com/Gibbs-Morris/mississippi/issues/581
                 Logger.SagaReminderDeferredNotStarted(reminderName, brookKey);
                 return;
             }
