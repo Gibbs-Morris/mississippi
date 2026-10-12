@@ -2,6 +2,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>

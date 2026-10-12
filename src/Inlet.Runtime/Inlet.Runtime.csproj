@@ -15,5 +15,6 @@
     <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Runtime.Abstractions\Inlet.Runtime.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Gateway.Abstractions\Inlet.Gateway.Abstractions.csproj" />
+    <ProjectReference Include="..\Brooks.Runtime.Storage.Abstractions\Brooks.Runtime.Storage.Abstractions.csproj" />
   </ItemGroup>
 </Project>
