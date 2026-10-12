@@ -191,6 +191,40 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
         return true;
     }
 
+    private async Task<CursorStorageModel?> GetCompletedAttemptAsync(
+        BrookKey brookId,
+        IDistributedLock? writerLock,
+        Action? beforeDispatch,
+        CancellationToken cancellationToken
+    )
+    {
+        await CheckOwnershipAsync(writerLock, beforeDispatch, cancellationToken);
+        CursorStorageModel? pending = await RetryPolicy.ExecuteAsync(
+            async () =>
+            {
+                beforeDispatch?.Invoke();
+                cancellationToken.ThrowIfCancellationRequested();
+                return await Repository.GetPendingCursorDocumentAsync(brookId, cancellationToken);
+            },
+            cancellationToken);
+        await CheckOwnershipAsync(writerLock, beforeDispatch, cancellationToken);
+        if (pending is not null)
+        {
+            return null;
+        }
+
+        CursorStorageModel? committed = await RetryPolicy.ExecuteAsync(
+            async () =>
+            {
+                beforeDispatch?.Invoke();
+                cancellationToken.ThrowIfCancellationRequested();
+                return await Repository.GetCursorDocumentAsync(brookId, cancellationToken);
+            },
+            cancellationToken);
+        await CheckOwnershipAsync(writerLock, beforeDispatch, cancellationToken);
+        return committed;
+    }
+
     private async Task<BrookPosition> ReconcileUnderWriterLockAsync(
         BrookKey brookId,
         IDistributedLock? writerLock,
@@ -301,18 +335,39 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
         long targetPosition = pendingCursor.Position.Value;
         await CheckOwnershipAsync(writerLock, beforeDispatch, cancellationToken);
         Logger.RecoveryCommitting(brookId, targetPosition);
-        if (beforeDispatch is null)
+        try
         {
-            await Repository.CommitCursorPositionAsync(brookId, targetPosition, pendingCursor.ETag!, cancellationToken);
+            if (beforeDispatch is null)
+            {
+                await Repository.CommitCursorPositionAsync(
+                    brookId,
+                    targetPosition,
+                    pendingCursor.ETag!,
+                    cancellationToken);
+            }
+            else
+            {
+                await Repository.CommitCursorPositionAsync(
+                    brookId,
+                    targetPosition,
+                    pendingCursor.ETag!,
+                    beforeDispatch,
+                    cancellationToken);
+            }
         }
-        else
+        catch (InvalidOperationException)
         {
-            await Repository.CommitCursorPositionAsync(
+            CursorStorageModel? committed = await GetCompletedAttemptAsync(
                 brookId,
-                targetPosition,
-                pendingCursor.ETag!,
+                writerLock,
                 beforeDispatch,
                 cancellationToken);
+            if (committed is null || (committed.Position.Value < targetPosition))
+            {
+                throw;
+            }
+
+            return committed.Position;
         }
 
         return new(targetPosition);
