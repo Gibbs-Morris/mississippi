@@ -85,6 +85,7 @@ public readonly record struct BrookAsyncReaderKey
         string key
     )
     {
+        ArgumentNullException.ThrowIfNull(key);
         ReadOnlySpan<char> span = key.AsSpan();
         int firstSep = span.IndexOf(Separator);
         if (firstSep < 0)

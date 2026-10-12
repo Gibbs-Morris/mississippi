@@ -72,6 +72,18 @@ public sealed class SignalRGroupKeyTests
     }
 
     /// <summary>
+    ///     Default key should have non-null components.
+    /// </summary>
+    [Fact(DisplayName = "Default Key Has NonNull Components")]
+    public void DefaultKeyHasNonNullComponents()
+    {
+        SignalRGroupKey key = default;
+        Assert.Equal(string.Empty, key.HubName);
+        Assert.Equal(string.Empty, key.GroupName);
+        Assert.Equal(":", key.ToString());
+    }
+
+    /// <summary>
     ///     Verifies record equality works correctly.
     /// </summary>
     [Fact(DisplayName = "Equality Works For Equal Keys")]
