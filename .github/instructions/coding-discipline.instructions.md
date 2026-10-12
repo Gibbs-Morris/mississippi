@@ -10,55 +10,9 @@ Governing thought: Sample applications follow strict architectural patterns—Re
 
 ## Rules (RFC 2119)
 
-### Client-Side
-
-- Client state **MUST** follow Redux pattern: actions flow up, state flows down, reducers transform state, effects handle side-effects. Why: Predictable state management.
-- Components **MUST** be "dumb" (presentational); they **MUST NOT** call APIs or dispatch actions directly. Components **MUST** emit events via `EventCallback`. Why: Separation of concerns.
-- Pages **MUST** inherit from `StoreComponent` (or `InletComponent` for SignalR); pages dispatch actions and read state via `GetState<T>()`. Why: Pages are the integration point.
-- Feature folders **MUST** contain: `*State.cs`, `*Action.cs`, `*Reducers.cs`, `*FeatureRegistration.cs`; client-side effects **MAY** be implemented as `*ActionEffect.cs` types under an `ActionEffects/` folder (as in Spring). Why: Consistent feature and effect structure.
-- Ad-hoc state management outside Reservoir **MUST NOT** be used for domain state. Why: Breaks predictability.
-
-### Server-Side
-
-- Server logic **MUST** live within the domain project in `Aggregates/` or `Projections/` folders. Why: Centralizes business logic.
-- Write operations **MUST** use aggregates; everything that writes state **MUST** be an aggregate. Why: Aggregates own state transitions.
-- Read-optimized views **MUST** use projections consuming events from brooks. Why: CQRS separation.
-- Server patterns **MUST** follow actions/reducers/state/effects model:
-  - Commands are actions (intent)
-  - Handlers validate and emit events
-  - Reducers apply events to state
-  - Event effects handle server-side side-effects
-- Extensions requiring new behavior **MUST** use event effects or event-based patterns. Why: Maintains event-driven architecture.
-- Sagas and workflows **MUST** be aggregates with additional orchestration; they **MUST NOT** bypass the aggregate model. Why: Aggregates with effects can coordinate cross-aggregate behavior.
-- Logic outside `Domain/` **MUST NOT** contain business rules; Runtime/Gateway host projects contain only DI and configuration. Why: Thin hosts, rich domain.
-
-### Schema-First Development
-
-- New features **MUST** start with domain type definitions (aggregate, commands, events, projections) decorated with generation attributes. Why: Single source of truth.
-- Types **MUST** use framework generation attributes (such as `[GenerateAggregateEndpoints]`, `[GenerateCommand]`, `[GenerateProjectionEndpoints]`) to trigger generation; review `src/Inlet.Generators.Abstractions/` for the latest available attributes. Why: Automates boilerplate.
-- Client actions, DTOs, and registrations **MUST** be generated, not hand-written. Manual implementations **MAY** exist only when no generator covers the scenario. Why: DRY and consistency.
-
-### Enforcement
-
-- Code outside these patterns **MUST** be refused or refactored to comply. Why: Architecture is non-negotiable for samples.
-- PRs introducing non-aggregate writes, non-Redux client state, or business logic outside Domain **MUST** be rejected. Why: Samples are reference implementations.
-- When extending features, **MUST** use event-based extensions (event effects, new projections) over imperative additions. Why: Composable architecture.
+- Covered contributors **MUST** read the complete policy files for [sample discipline](../../samples/AGENTS.md#sample-discipline), [event-sourced domain contracts](../../src/AGENTS.md#event-sourced-domain) and apply their clauses within this instruction's original path, content, and audience scope. Why: Relocation and optional skill selection do not narrow these obligations.
+- For implementing or assessing an event-sourced application feature, contributors **MUST** follow [implement-event-sourced-feature](../../.agents/skills/implement-event-sourced-feature/SKILL.md) with [its local binding](../agent-guidance/event-sourced-feature-bindings.md). Why: The procedure is explicit; policy obligations remain effective independently of skill activation.
 
 ## Scope and Audience
 
 All contributors building sample applications with Mississippi. Samples serve as reference implementations—they demonstrate correct usage and must be exemplary.
-
-## Feature workflow
-
-For implementing or assessing an event-sourced application feature, use
-[implement-event-sourced-feature](../../.agents/skills/implement-event-sourced-feature/SKILL.md)
-with the [local source bindings](../agent-guidance/event-sourced-feature-bindings.md).
-Read these files directly if skill discovery is unavailable. The Rules above
-apply independently of skill activation.
-
-## References
-
-- Framework patterns: `.github/instructions/framework-patterns.instructions.md`
-- Mississippi framework: `.github/instructions/mississippi-framework.instructions.md`
-- Domain modeling: `.github/instructions/domain-modeling.instructions.md`
-- Blazor UX: `.github/instructions/blazor-ux-guidelines.instructions.md`

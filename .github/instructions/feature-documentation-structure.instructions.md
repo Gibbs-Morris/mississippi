@@ -10,28 +10,9 @@ Governing thought: Mississippi is migrating toward a clearer page-type-driven do
 
 ## Rules (RFC 2119)
 
-- Feature documentation **MUST** obey the selected page type before it obeys historical folder shape. Why: Page type is the current authoring contract.
-- Existing feature-oriented folders **MAY** remain in place until they are touched, but new public folders **SHOULD** use `_category_.yml` and **SHOULD** prefer generated indexes for section navigation. Why: The repo is in a hybrid migration.
-- Feature folders **MUST NOT** become catch-all buckets that mix getting-started, tutorial, reference, troubleshooting, and internals content into one long page. Why: The new governance model is page-type-driven.
-- Where a feature needs multiple page types, authors **MUST** split the content into separate pages and cross-link them. Why: Readers should not wade through unrelated material.
-- Content placement within a feature area **SHOULD** make the page type obvious from the filename or neighboring docs when practical. Why: Discoverability improves when filenames and purpose line up.
-- Feature-level entry pages **SHOULD** function as orientation pages with links to narrower child pages instead of absorbing all content categories. Why: Entry pages should guide, not sprawl.
-- Migration guides **MUST** remain isolated from release notes and generic feature overviews. Why: Upgrade risk deserves its own surface.
-- Troubleshooting content **MUST** remain symptom-driven even when it is nested under a feature folder. Why: Troubleshooting should start from the failure, not the subsystem.
+- Covered contributors **MUST** read the complete policy files for [public-documentation contracts](../../docs/Docusaurus/docs/AGENTS.md#public-documentation) and apply their clauses within this instruction's original path, content, and audience scope. Why: Relocation and optional skill selection do not narrow these obligations.
+- For product-documentation drafting or validation, authors and reviewers **MUST** read the [shared skill](../../.agents/skills/author-technical-documentation/SKILL.md), its selected page-type contract, and the corresponding local guide in the [page-contract table](../../docs/Docusaurus/docs/AGENTS.md#selected-page-contracts). Why: Classification and required contracts are explicit; ADRs retain their dedicated layout.
 
 ## Scope and Audience
 
 Contributors and agents updating feature-oriented docs while the repository transitions toward stronger page-type governance.
-
-## Core Principles
-
-- **Page Type Wins**: Structure follows reader intent first.
-- **Transition Without Thrash**: Keep stable folders when they are not the problem.
-- **Cross-Link Instead Of Collapse**: Use multiple smaller pages with clear adjacency.
-
-## References
-
-- Documentation guide: `docs/Docusaurus/docs/contributing/documentation-guide.md`
-- Documentation page focus: `.github/instructions/documentation-page-focus.instructions.md`
-- Documentation authoring: `.github/instructions/documentation-authoring.instructions.md`
-- Placement and transition: [Navigation](../../docs/Docusaurus/docs/contributing/documentation-guide.md#file-and-navigation-rules) and [migration stance](../../docs/Docusaurus/docs/contributing/documentation-guide.md#migration-stance).

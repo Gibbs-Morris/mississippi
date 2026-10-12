@@ -10,23 +10,9 @@ Governing thought: Use keyed DI services for storage clients so multiple instanc
 
 ## Rules (RFC 2119)
 
-- Library code that consumes cloud clients (BlobServiceClient, CosmosClient, Container, etc.) **MUST** use `[FromKeyedServices(<ModuleDefaults>.XxxServiceKey)]` on constructor parameters rather than expecting an unkeyed registration. Why: Enterprise apps require multiple storage accounts for different purposes (locking, state, uploads, archival).
-- Service keys **MUST** be module-owned in the package that defines the storage contract (for example `BrookCosmosDefaults`, `SnapshotCosmosDefaults`) and **MUST NOT** be centralized in a cross-module defaults hub. Why: Keeps ownership explicit and avoids accidental coupling.
-- Key constants **MUST** follow the pattern `"mississippi-{client-type}-{feature}"` (e.g., `"mississippi-cosmos-brooks"`, `"mississippi-blob-locking"`). Why: Provides unique, discoverable identifiers.
-- Registration documentation **MUST** comment which keyed services the library expects callers to provide. Why: Clarifies the DI contract.
-- Host applications **MUST** forward from their registration key (e.g., Aspire's `"cosmos"`, `"blobs"`) to the library's expected key using `AddKeyedSingleton`. Why: Decouples host naming from library requirements.
-- When a host needs both keyed (for library) and unkeyed (for its own services), it **MUST** explicitly forward using `AddSingleton(sp => sp.GetRequiredKeyedService<T>("key"))`. Why: Makes DI resolution explicit.
+- Covered contributors **MUST** read the complete policy files for [registration and keyed-service contracts](../../src/AGENTS.md#registration-and-keyed-services) and apply their clauses within this instruction's original path, content, and audience scope. Why: Relocation and optional skill selection do not narrow these obligations.
+- For registration work, contributors **MUST** follow [register-dotnet-services](../../.agents/skills/register-dotnet-services/SKILL.md) with [its local binding](../agent-guidance/service-registration-bindings.md). Why: The procedure is explicit; policy obligations remain effective independently of skill activation.
 
 ## Scope and Audience
 
 Library authors and host developers integrating Mississippi with cloud storage or external services.
-
-## Registration workflow
-
-Use [register-dotnet-services](../../.agents/skills/register-dotnet-services/SKILL.md) with the [local source bindings](../agent-guidance/service-registration-bindings.md).
-If discovery is unavailable or applicability is unclear, read both files directly; the Rules above remain effective independently of skill activation.
-
-## References
-
-- Service registration: `.github/instructions/service-registration.instructions.md`
-- Shared guardrails: `.github/instructions/shared-policies.instructions.md`

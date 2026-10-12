@@ -10,59 +10,13 @@ Governing thought: Keep `.csproj` files minimal, CPM-driven, and free of duplica
 
 ## Rules (RFC 2119)
 
-- Project files **MUST** inherit shared settings from `Directory.Build.props`; duplicate properties **MUST NOT** be added without justification. Why: Keeps one source of truth.
-- Package versions **MUST** stay in `Directory.Packages.props`; `PackageReference` items **MUST NOT** include `Version`. Why: Central Package Management compliance.
-- Project files **MUST** stay minimal: only project-specific properties/items belong in each `.csproj`. Why: Reduces drift and review noise.
-- Automatic assembly/root namespace naming **MUST NOT** be overridden without explicit justification. Why: Preserves naming consistency.
-- Project changes **MUST** be validated by a clean build with zero warnings. Why: Aligns with repository quality gates.
+- Covered contributors **MUST** read and apply [the complete global policy](../agent-guidance/global-policy.md) under [root instruction loading](../../AGENTS.md#instruction-loading), retaining the audience and task conditions below. Why: These obligations remain mandatory independently of skill selection.
+- When validating project changes, contributors **MUST** follow [verify-change](../../.agents/skills/verify-change/SKILL.md) with [its local binding](../agent-guidance/verify-change-bindings.md) and the [standalone script catalogue](../../eng/src/agent-scripts/README.md#script-catalogue). Why: Original build and final-build entrypoints retain their canonical carrier.
 
 ## Scope and Audience
 
 Anyone creating or modifying `.csproj` files.
 
-## Project Naming Conventions
-
-Projects under `src/` follow a consistent naming pattern. `Directory.Build.props` adds `Mississippi.` to package/assembly identity, so folder names stay unprefixed.
-
-### Naming Rules (RFC 2119)
-
-- Project names **MUST** follow `<Feature>.<Role>` using PascalCase dot-separated segments.
-- Role values **MUST** be one of: `Abstractions`, `Core`, `Client`, `Gateway`, `Runtime`, `TestHarness`.
-- Contributors **MUST** prefer role names over technology names (`Gateway` over `Api`, `Client` over `Blazor`, `Runtime` over `Grains`).
-- Packages **MUST** be single-concern; client/gateway/runtime logic **MUST NOT** be mixed.
-- Feature stems **MUST** stay consistent across related roles (for example `Brooks.Abstractions` + `Brooks.Runtime`).
-- Test support packages **MUST** use `TestHarness` suffix.
-- Storage provider packages **SHOULD** use `<Feature>.Runtime.Storage.<Provider>`.
-- Serialization provider packages **SHOULD** use `<Feature>.Serialization.<Format>`.
-
-### Role Detection (Validation)
-
-| SDK/Reference | Expected Role |
-|---------------|---------------|
-| `Microsoft.NET.Sdk.Razor` | `.Client` |
-| `<FrameworkReference>` to `Microsoft.AspNetCore.App` | `.Gateway` (takes precedence) |
-| `Microsoft.Orleans.Sdk` (without AspNet) | `.Runtime` or `.Abstractions` |
-
-Precedence: `AspNet` > `Orleans` when both are present.
-
-### Three-Layer Architecture (EventSourcing)
-
-```text
-DomainModeling (Layer 3 - aggregates, sagas, UX projections)
-  ├─→ Tributary (Layer 2 - reducers, snapshots)
-  │     └─→ Brooks (Layer 1 - event streams, serialization)
-  └─→ Brooks (Layer 1)
-```
-
-Layers depend strictly downward. No upward or lateral violations.
-
-## At-a-Glance Quick-Start
-
-- Use `<PackageReference Include="X" />` (no versions); add/remove via `dotnet add/remove package`.
-- Keep only project-specific properties (`OutputType`, `GeneratePackageOnBuild`, etc.).
-- Build to validate: `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1` (or Samples equivalent) or `pwsh ./eng/src/agent-scripts/final-build-solutions.ps1`.
-
 ## References
 
-- Shared guardrails: `.github/instructions/shared-policies.instructions.md`
-- Project naming spec: `spec/renaming/target.md`
+- Project naming spec: `spec/renaming/target.md` (original authority; unresolved in the pinned tree).

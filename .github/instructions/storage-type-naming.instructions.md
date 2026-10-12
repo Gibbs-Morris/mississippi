@@ -10,16 +10,8 @@ Governing thought: Persisted types carry stable, versioned attribute names (`APP
 
 ## Rules (RFC 2119)
 
-- Persisted types (events/snapshots/commands, etc.) **MUST** have a naming attribute (e.g., `[EventStorageName]`, `[SnapshotStorageName]`) with an explicit `version` parameter. Why: Provides stable, versioned identities.
-- The computed name **MUST** follow `APPNAME.MODULENAME.NAME.Vn`; app/module/name **MUST NOT** change once persisted; schema evolution **MUST** increment `version` instead. Why: Maintains compatibility.
-- Each attribute value **MUST** be globally unique; registries (e.g., `IEventTypeRegistry`) **MUST** resolve names↔types; all persisted types **SHOULD** be registered at startup via scanning. Why: Enables deterministic resolution.
-- Class/record names **MAY** be refactored freely when the attribute stays the same. Why: Decouples code identity from storage identity.
-- When members are removed from types backed by persisted data in a real (non-test) store, developers **SHOULD** keep prior versions/types available for reads. While pre-1.0 with no persisted production data, this **MAY** be skipped. See `.github/instructions/backwards-compatibility.instructions.md`. Why: Supports backward compatibility for deployed stores; does not apply to pre-release iteration.
+- Covered contributors **MUST** read the complete policy files for [persisted-identity contracts](../../src/AGENTS.md#persisted-identity) and apply their clauses within this instruction's original path, content, and audience scope. Why: Relocation and optional skill selection do not narrow these obligations.
 
 ## Scope and Audience
 
 Developers creating or consuming persisted types in event-sourced/storage components.
-
-## References
-
-- Orleans serialization: `.github/instructions/orleans-serialization.instructions.md`
