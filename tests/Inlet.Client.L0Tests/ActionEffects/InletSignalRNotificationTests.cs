@@ -170,4 +170,50 @@ public sealed class InletSignalRNotificationTests
         Assert.Equal(EntityId, fetcher.LastEntityId);
         AssertUpdatedState(actions, data, returnedVersion);
     }
+
+    /// <summary>
+    ///     Overlapping notification fetches keep each completed result paired with its own version.
+    /// </summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task OverlappingNotificationsPreserveEachReturnedDataAndVersion()
+    {
+        TestProjection olderData = new()
+        {
+            Name = "version-12",
+        };
+        TestProjection newerData = new()
+        {
+            Name = "version-15",
+        };
+        TaskCompletionSource<ProjectionFetchResult?> olderFetch = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<ProjectionFetchResult?> newerFetch = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        Mock<IProjectionFetcher> fetcher = new(MockBehavior.Strict);
+        fetcher.Setup(value => value.FetchAtVersionAsync(typeof(TestProjection), EntityId, 10, CancellationToken.None))
+            .Returns(olderFetch.Task);
+        fetcher.Setup(value => value.FetchAtVersionAsync(typeof(TestProjection), EntityId, 11, CancellationToken.None))
+            .Returns(newerFetch.Task);
+        List<IAction> actions = new();
+        await using InletSignalRActionEffect effect = CreateSubscribedEffect(
+            fetcher.Object,
+            actions,
+            out Func<string, string, long, Task> notification);
+        Task olderNotification = notification(ProjectionPath, EntityId, 10);
+        Task newerNotification = notification(ProjectionPath, EntityId, 11);
+        Assert.False(olderNotification.IsCompleted);
+        Assert.False(newerNotification.IsCompleted);
+        Assert.Equal(2, actions.Count);
+        Assert.All(actions, action => Assert.IsType<SignalRMessageReceivedAction>(action));
+        newerFetch.SetResult(ProjectionFetchResult.Create(newerData, 15));
+        await newerNotification;
+        AssertUpdatedState([actions[1], actions[2]], newerData, 15);
+        Assert.False(olderNotification.IsCompleted);
+        olderFetch.SetResult(ProjectionFetchResult.Create(olderData, 12));
+        await olderNotification;
+        Assert.Equal(4, actions.Count);
+        AssertUpdatedState([actions[0], actions[3]], olderData, 12);
+        fetcher.VerifyAll();
+    }
 }
