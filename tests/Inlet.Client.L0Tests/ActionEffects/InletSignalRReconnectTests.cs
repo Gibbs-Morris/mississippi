@@ -82,62 +82,19 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
         await hubConnection.Object.DisposeAsync();
     }
 
-    private static async Task WaitForRetryToStartAsync(
-        TaskCompletionSource<bool> retryStarted,
-        Task operation
-    )
+    private TaskCompletionSource<object?> ConfigureFailedRetryWithPendingReply()
     {
-        Task timeout = Task.Delay(TimeSpan.FromSeconds(5));
-#pragma warning disable VSTHRD003 // The operation was started by this test and is observed to bound the coordination gate.
-        Task completed = await Task.WhenAny(retryStarted.Task, operation, timeout);
-#pragma warning restore VSTHRD003
-        if (ReferenceEquals(completed, operation))
-        {
-            throw new InvalidOperationException(
-                "The retry operation completed before starting a hub subscribe request.");
-        }
-
-        if (ReferenceEquals(completed, timeout))
-        {
-            throw new TimeoutException(
-                "The retry operation did not start a hub subscribe request within five seconds.");
-        }
-    }
-
-    private void ConfigureFailedRetryWithPendingReply(
-        TaskCompletionSource<object?> retryReply,
-        TaskCompletionSource<bool> retryStarted
-    )
-    {
-        int invocationCount = 0;
-        hubConnection.Setup(connection => connection.InvokeCoreAsync(
+        TaskCompletionSource<object?> retryReply = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        hubConnection.SetupSequence(connection => connection.InvokeCoreAsync(
                 InletHubConstants.SubscribeMethod,
                 typeof(string),
                 It.IsAny<object?[]>(),
                 It.IsAny<CancellationToken>()))
-            .Returns((string _, Type _, object?[] _, CancellationToken _) =>
-            {
-                int invocation = Interlocked.Increment(ref invocationCount);
-                if (invocation == 1)
-                {
-                    return Task.FromResult<object?>("old-id");
-                }
-
-                if (invocation == 2)
-                {
-                    return Task.FromException<object?>(new InvalidOperationException("Reconnect subscription failed"));
-                }
-
-                if (invocation == 3)
-                {
-                    retryStarted.TrySetResult(true);
-#pragma warning disable VSTHRD003 // The retry reply is deliberately released by the test's completion-source gate.
-                    return retryReply.Task;
-#pragma warning restore VSTHRD003
-                }
-
-                return Task.FromResult<object?>("unexpected-id-" + invocation);
-            });
+            .ReturnsAsync("old-id")
+            .ThrowsAsync(new InvalidOperationException("Reconnect subscription failed"))
+            .Returns(retryReply.Task)
+            .ReturnsAsync("current-id");
+        return retryReply;
     }
 
     private async Task FailFirstReconnectAsync()
@@ -203,12 +160,10 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
     [Fact]
     public async Task ExplicitRetryClaimsFailedInterestAgainstConcurrentReconnect()
     {
-        TaskCompletionSource<object?> retryReply = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TaskCompletionSource<bool> retryStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        ConfigureFailedRetryWithPendingReply(retryReply, retryStarted);
+        TaskCompletionSource<object?> retryReply = ConfigureFailedRetryWithPendingReply();
         await FailFirstReconnectAsync();
         Task<IAction[]> retryTask = HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
-        await WaitForRetryToStartAsync(retryStarted, retryTask);
+        VerifySubscribeCount(3);
         await reconnected("overlapping-reconnect");
         VerifySubscribeCount(3);
         retryReply.SetResult("recovered-id");
@@ -319,12 +274,10 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
     [Fact]
     public async Task LateReconnectReplyAfterUnsubscribeIsDiscardedAndCleanedUp()
     {
-        TaskCompletionSource<object?> retryReply = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TaskCompletionSource<bool> retryStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        ConfigureFailedRetryWithPendingReply(retryReply, retryStarted);
+        TaskCompletionSource<object?> retryReply = ConfigureFailedRetryWithPendingReply();
         await FailFirstReconnectAsync();
         Task reconnectTask = reconnected("retry-before-unsubscribe");
-        await WaitForRetryToStartAsync(retryStarted, reconnectTask);
+        VerifySubscribeCount(3);
         await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(EntityId));
         hubConnection.Verify(
             connection => connection.InvokeCoreAsync(
@@ -347,12 +300,10 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
     [Fact]
     public async Task ReconnectClaimsFailedInterestAgainstConcurrentReconnect()
     {
-        TaskCompletionSource<object?> retryReply = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TaskCompletionSource<bool> retryStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        ConfigureFailedRetryWithPendingReply(retryReply, retryStarted);
+        TaskCompletionSource<object?> retryReply = ConfigureFailedRetryWithPendingReply();
         await FailFirstReconnectAsync();
         Task firstReconnect = reconnected("first-retry");
-        await WaitForRetryToStartAsync(retryStarted, firstReconnect);
+        VerifySubscribeCount(3);
         await reconnected("second-retry");
         VerifySubscribeCount(3);
         retryReply.SetResult("recovered-id");
