@@ -38,7 +38,7 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendUsing("Microsoft.Extensions.Logging");
         sb.AppendLine();
         sb.AppendUsing("Mississippi.Common.Abstractions.Mapping");
-        sb.AppendUsing("Mississippi.Inlet.Client.Abstractions.ActionEffects");
+        sb.AppendUsing("Mississippi.Inlet.Client.ActionEffects");
         sb.AppendLine();
         sb.AppendLine($"using {saga.ActionsNamespace};");
         sb.AppendLine($"using {saga.DtosNamespace};");
@@ -55,7 +55,7 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendGeneratedCodeAttribute("SagaClientActionEffectsGenerator");
         sb.AppendLine($"internal sealed class {effectTypeName}");
         sb.IncreaseIndent();
-        sb.AppendLine($": CommandActionEffectBase<{actionName}, {dtoName}, {stateTypeName},");
+        sb.AppendLine($": LoggingCommandActionEffectBase<{actionName}, {dtoName}, {stateTypeName},");
         sb.AppendLine(
             $"    Start{saga.SagaName}SagaExecutingAction, Start{saga.SagaName}SagaSucceededAction, Start{saga.SagaName}SagaFailedAction>");
         sb.DecreaseIndent();

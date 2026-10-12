@@ -5,7 +5,7 @@ using System.Net.Http;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.Common.Abstractions.Mapping;
-using Mississippi.Inlet.Client.Abstractions.ActionEffects;
+using Mississippi.Inlet.Client.ActionEffects;
 using Mississippi.Inlet.Client.L0Tests.Helpers;
 
 
@@ -15,7 +15,7 @@ namespace MississippiTests.Inlet.Client.L0Tests.ActionEffects.Commands;
 ///     Exercises the public command effect contract with test lifecycle actions.
 /// </summary>
 internal sealed class CommandEffect
-    : CommandActionEffectBase<CommandEffectAction, Dictionary<string, string>, TestAggregateState,
+    : LoggingCommandActionEffectBase<CommandEffectAction, Dictionary<string, string>, TestAggregateState,
         CommandEffectExecutingAction, CommandEffectSucceededAction, CommandEffectFailedAction>
 {
     /// <summary>

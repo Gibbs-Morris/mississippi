@@ -97,12 +97,12 @@ public sealed class CommandClientCompositionTests
                                                   public static TState ReduceCommandFailed<TState, TAction>(TState state, TAction action) => state;
                                               }
                                           }
-                                          namespace Mississippi.Inlet.Client.Abstractions.ActionEffects
+                                          namespace Mississippi.Inlet.Client.ActionEffects
                                           {
-                                              public abstract class CommandActionEffectBase<TAction, TDto, TState, TExecuting, TSucceeded, TFailed>
+                                              public abstract class LoggingCommandActionEffectBase<TAction, TDto, TState, TExecuting, TSucceeded, TFailed>
                                                   : Mississippi.Reservoir.Abstractions.IActionEffect<TState>
                                               {
-                                                  protected CommandActionEffectBase(
+                                                  protected LoggingCommandActionEffectBase(
                                                       System.Net.Http.HttpClient httpClient,
                                                       Mississippi.Common.Abstractions.Mapping.IMapper<TAction, TDto> mapper,
                                                       System.TimeProvider? timeProvider,

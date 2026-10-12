@@ -3,7 +3,7 @@ using System;
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.Inlet.Client.Abstractions.ActionEffects;
+namespace Mississippi.Inlet.Client.ActionEffects;
 
 /// <summary>
 ///     Logs response-decoding failures without recording command inputs or response bodies.

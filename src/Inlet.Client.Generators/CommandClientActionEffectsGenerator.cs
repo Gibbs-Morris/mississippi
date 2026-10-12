@@ -20,7 +20,7 @@ namespace Mississippi.Inlet.Client.Generators;
 /// <remarks>
 ///     <para>
 ///         This generator produces one action effect class per command that extends
-///         <c>CommandActionEffectBase</c> with the appropriate type parameters and route configuration.
+///         <c>LoggingCommandActionEffectBase</c> with the appropriate type parameters and route configuration.
 ///     </para>
 ///     <para>
 ///         Example: For "DepositFunds" command in "Contoso.Domain.Aggregates.BankAccount.Commands",
@@ -93,7 +93,7 @@ public sealed class CommandClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendUsing("Microsoft.Extensions.Logging");
         sb.AppendLine();
         sb.AppendUsing("Mississippi.Common.Abstractions.Mapping");
-        sb.AppendUsing("Mississippi.Inlet.Client.Abstractions.ActionEffects");
+        sb.AppendUsing("Mississippi.Inlet.Client.ActionEffects");
         sb.AppendLine();
         sb.AppendLine($"using {actionsNamespace};");
         sb.AppendLine($"using {dtosNamespace};");
@@ -110,7 +110,8 @@ public sealed class CommandClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendGeneratedCodeAttribute("CommandClientActionEffectsGenerator");
         sb.AppendLine($"internal sealed class {effectTypeName}");
         sb.IncreaseIndent();
-        sb.AppendLine($": CommandActionEffectBase<{commandName}Action, {commandName}RequestDto, {stateTypeName},");
+        sb.AppendLine(
+            $": LoggingCommandActionEffectBase<{commandName}Action, {commandName}RequestDto, {stateTypeName},");
         sb.AppendLine($"    {commandName}ExecutingAction, {commandName}SucceededAction, {commandName}FailedAction>");
         sb.DecreaseIndent();
         sb.OpenBrace();

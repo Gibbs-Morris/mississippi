@@ -7,9 +7,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Inlet.Client.Abstractions.Actions;
 using Mississippi.Inlet.Client.Abstractions.Commands;
@@ -76,32 +73,11 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
         IMapper<TAction, TRequestDto> mapper,
         TimeProvider? timeProvider = null
     )
-        : this(httpClient, mapper, timeProvider, null)
-    {
-    }
-
-    /// <summary>
-    ///     Initializes a new instance of the
-    ///     <see
-    ///         cref="CommandActionEffectBase{TAction, TRequestDto, TState, TExecutingAction, TSucceededAction, TFailedAction}" />
-    ///     class with response diagnostics.
-    /// </summary>
-    /// <param name="httpClient">The HTTP client for API calls.</param>
-    /// <param name="mapper">The mapper for action-to-DTO conversion.</param>
-    /// <param name="timeProvider">The optional clock for timestamps.</param>
-    /// <param name="logger">The optional command action logger.</param>
-    protected CommandActionEffectBase(
-        HttpClient httpClient,
-        IMapper<TAction, TRequestDto> mapper,
-        TimeProvider? timeProvider,
-        ILogger<TAction>? logger
-    )
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(mapper);
         Http = httpClient;
         Mapper = mapper;
-        Logger = logger ?? NullLogger<TAction>.Instance;
         TimeProvider = timeProvider ?? TimeProvider.System;
     }
 
@@ -136,8 +112,6 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
     ///     Gets the time provider for timestamps.
     /// </summary>
     protected TimeProvider TimeProvider { get; }
-
-    private ILogger<TAction> Logger { get; }
 
     /// <inheritdoc />
     public bool CanHandle(
@@ -191,12 +165,12 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
             }
             catch (JsonException ex)
             {
-                Logger.InvalidCommandResponse(ex, commandId, commandType, (int)response.StatusCode);
+                OnInvalidResponse(ex, commandId, commandType, (int)response.StatusCode);
                 errorMessage = $"Invalid response: {ex.Message}";
             }
             catch (InvalidOperationException ex)
             {
-                Logger.InvalidCommandResponse(ex, commandId, commandType, (int)response.StatusCode);
+                OnInvalidResponse(ex, commandId, commandType, (int)response.StatusCode);
                 errorMessage = $"Invalid response: {ex.Message}";
             }
         }
@@ -263,5 +237,25 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
         }
 
         return $"{AggregateRoutePrefix}/{Uri.EscapeDataString(entityId)}/{Route}";
+    }
+
+    /// <summary>
+    ///     Observes a response-decoding failure before its terminal lifecycle action is emitted.
+    /// </summary>
+    /// <param name="exception">The original response-decoding exception.</param>
+    /// <param name="commandId">The lifecycle correlation identifier.</param>
+    /// <param name="commandType">The command action type.</param>
+    /// <param name="statusCode">The HTTP response status.</param>
+    /// <remarks>
+    ///     This optional hook lets externally derived effects provide diagnostics from their implementation
+    ///     assembly. The default implementation does nothing and requires no logging infrastructure.
+    /// </remarks>
+    protected virtual void OnInvalidResponse(
+        Exception exception,
+        string commandId,
+        string commandType,
+        int statusCode
+    )
+    {
     }
 }
