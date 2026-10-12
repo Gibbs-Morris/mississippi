@@ -407,7 +407,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             string comma = i < (projection.Model.Properties.Length - 1) ? "," : string.Empty;
             if (prop.RequiresMapper && TypeAnalyzer.IsDictionaryType(prop.SourceTypeSymbol))
             {
-                sb.AppendLine($"{prop.Name} = {GetDictionaryMappingExpression(prop)}{comma}");
+                sb.AppendLine($"{prop.Name} = {GetDictionaryMappingExpression(prop, i)}{comma}");
             }
             else if (prop.RequiresEnumerableMapper)
             {
@@ -703,32 +703,37 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     ///     Builds dictionary mapping with separate key/value selectors and exposed unchanged-key comparers.
     /// </summary>
     private static string GetDictionaryMappingExpression(
-        PropertyModel property
+        PropertyModel property,
+        int propertyIndex
     )
     {
         INamedTypeSymbol dictionary = (INamedTypeSymbol)property.SourceTypeSymbol;
         ITypeSymbol key = dictionary.TypeArguments[0];
         ITypeSymbol value = dictionary.TypeArguments[1];
-        string keySelector = TypeAnalyzer.IsFrameworkType(key) ? "pair.Key" : $"{property.Name}KeyMapper.Map(pair.Key)";
+        string keySelector = TypeAnalyzer.IsFrameworkType(key)
+            ? "pair.Key"
+            : $"{property.Name}KeyMapper.Map(pair.Key)";
         string valueSelector = TypeAnalyzer.IsFrameworkType(value)
             ? "pair.Value"
             : $"{property.Name}ValueMapper.Map(pair.Value)";
         bool immutable = dictionary.ContainingNamespace.ToDisplayString() == ImmutableCollectionsNamespace;
         string conversion = immutable ? "ToImmutableDictionary" : "ToDictionary";
+        string source = property.IsNullable ? $"dictionary{propertyIndex}" : $"source.{property.Name}";
         string comparer = string.Empty;
         if (TypeAnalyzer.IsFrameworkType(key))
         {
             if (dictionary.Name == "Dictionary")
             {
-                comparer = $", source.{property.Name}.Comparer";
+                comparer = $", {source}.Comparer";
             }
             else if (dictionary.Name == "ImmutableDictionary")
             {
-                comparer = $", source.{property.Name}.KeyComparer";
+                comparer = $", {source}.KeyComparer";
             }
         }
 
-        return $"source.{property.Name}.{conversion}(pair => {keySelector}, pair => {valueSelector}{comparer})";
+        string mapping = $"{source}.{conversion}(pair => {keySelector}, pair => {valueSelector}{comparer})";
+        return property.IsNullable ? $"source.{property.Name} is {{ }} {source} ? {mapping} : null" : mapping;
     }
 
     /// <summary>

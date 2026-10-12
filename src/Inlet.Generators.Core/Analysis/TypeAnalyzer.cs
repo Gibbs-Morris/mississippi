@@ -75,7 +75,11 @@ public static class TypeAnalyzer
 
             // Map each type argument
             IEnumerable<string> mappedArgs = typeArgs.Select(arg => GetDtoTypeName(arg, customTypeSuffix));
-            return $"{genericTypeName}<{string.Join(", ", mappedArgs)}>";
+            string nullableSuffix = IsDictionaryType(namedType) &&
+                                    (namedType.NullableAnnotation == NullableAnnotation.Annotated)
+                ? "?"
+                : string.Empty;
+            return $"{genericTypeName}<{string.Join(", ", mappedArgs)}>{nullableSuffix}";
         }
 
         // Non-generic types

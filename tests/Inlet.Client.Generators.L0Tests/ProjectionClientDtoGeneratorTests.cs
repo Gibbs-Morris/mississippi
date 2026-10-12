@@ -225,6 +225,7 @@ public class ProjectionClientDtoGeneratorTests
                           public sealed record CatalogProjection
                           {
                               public {{dictionaryType}} Entries { get; init; } = default!;
+                              public {{dictionaryType}}? OptionalEntries { get; init; }
                           }
                           """;
         (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
@@ -247,6 +248,11 @@ public class ProjectionClientDtoGeneratorTests
                 .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
         INamedTypeSymbol projection =
             input.GetTypeByMetadataName("TestApp.Domain.Projections.Catalog.CatalogProjection")!;
+        INamedTypeSymbol dto =
+            output.GetTypeByMetadataName("TestApp.Client.Features.Catalog.Dtos.CatalogProjectionDto")!;
+        Assert.Equal(
+            NullableAnnotation.Annotated,
+            dto.GetMembers("OptionalEntries").OfType<IPropertySymbol>().Single().Type.NullableAnnotation);
         INamedTypeSymbol entries =
             (INamedTypeSymbol)projection.GetMembers("Entries").OfType<IPropertySymbol>().Single().Type;
         foreach (ITypeSymbol type in entries.TypeArguments.Where(type => type.ContainingNamespace.ToDisplayString()

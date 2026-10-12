@@ -86,7 +86,14 @@ public class ProjectionEndpointsGeneratorTests
                 .ToArray();
             object mapper = constructor.Invoke(dependencies);
             object mapped = mapperType.GetMethod("Map")!.Invoke(mapper, [source])!;
+            Assert.Null(mapped.GetType().GetProperty("OptionalEntries")!.GetValue(mapped));
             object sourceEntries = source.GetType().GetProperty("Entries")!.GetValue(source)!;
+            source.GetType().GetProperty("OptionalEntries")!.SetValue(source, sourceEntries);
+            object mappedWithOptionalEntries = mapperType.GetMethod("Map")!.Invoke(mapper, [source])!;
+            object mappedOptionalEntries =
+                mappedWithOptionalEntries.GetType().GetProperty("OptionalEntries")!
+                    .GetValue(mappedWithOptionalEntries)!;
+            Assert.Equal(2, mappedOptionalEntries.GetType().GetProperty("Count")!.GetValue(mappedOptionalEntries));
             object mappedEntries = mapped.GetType().GetProperty("Entries")!.GetValue(mapped)!;
             Assert.Equal(2, mappedEntries.GetType().GetProperty("Count")!.GetValue(mappedEntries));
             object empty = mapped.GetType().GetProperty("Empty")!.GetValue(mapped)!;
@@ -507,6 +514,7 @@ public class ProjectionEndpointsGeneratorTests
                           {
                               public {{dictionaryType}} Entries { get; init; } = {{initializer}};
                               public {{dictionaryType}} Empty { get; init; } = {{emptyInitializer}};
+                              public {{dictionaryType}}? OptionalEntries { get; init; }
                               public System.Collections.Generic.Dictionary<string, int> Values { get; init; } =
                                   new(System.StringComparer.OrdinalIgnoreCase) { ["keep"] = 7 };
                           }
@@ -575,6 +583,11 @@ public class ProjectionEndpointsGeneratorTests
                                       !dictionaryType.Contains("IReadOnlyDictionary", StringComparison.Ordinal) &&
                                       !dictionaryType.Contains("IImmutableDictionary", StringComparison.Ordinal);
         AssertDictionaryMapperResults(dtoAndMapperCompilation, preserveStringComparer);
+        INamedTypeSymbol dto =
+            dtoAndMapperCompilation.GetTypeByMetadataName("TestAssembly.Controllers.Projections.CatalogDto")!;
+        Assert.Equal(
+            NullableAnnotation.Annotated,
+            dto.GetMembers("OptionalEntries").OfType<IPropertySymbol>().Single().Type.NullableAnnotation);
     }
 
     /// <summary>
