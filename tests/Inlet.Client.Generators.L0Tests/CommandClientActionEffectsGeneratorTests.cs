@@ -379,6 +379,38 @@ public class CommandClientActionEffectsGeneratorTests
     }
 
     /// <summary>
+    ///     An omitted route argument must be distinct from explicit null and retain the default client route.
+    /// </summary>
+    /// <param name="useReferencedAssembly">Whether the domain is a referenced assembly.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GeneratedEffectKeepsDefaultRouteForOmittedAggregatePrefix(
+        bool useReferencedAssembly
+    )
+    {
+        (Compilation compilation, SyntaxTree effect) = CommandClientRouteTestFixture.Run(
+            "ignored-prefix",
+            useReferencedAssembly,
+            omitRoutePrefix: true);
+        INamedTypeSymbol? aggregate = compilation.GetTypeByMetadataName(
+            "TestApp.Domain.Aggregates.Order.OrderAggregate");
+        Assert.NotNull(aggregate);
+        AttributeData marker = aggregate.GetAttributes()
+            .Single(attribute => attribute.AttributeClass?.ToDisplayString() ==
+                                 "Mississippi.Inlet.Generators.Abstractions.GenerateAggregateEndpointsAttribute");
+        Assert.DoesNotContain(marker.NamedArguments, argument => argument.Key == "RoutePrefix");
+        PropertyDeclarationSyntax prefix = effect.GetRoot(TestContext.Current.CancellationToken)
+            .DescendantNodes()
+            .OfType<PropertyDeclarationSyntax>()
+            .Single(property => property.Identifier.ValueText == "AggregateRoutePrefix");
+        SemanticModel model = compilation.GetSemanticModel(effect);
+        Assert.Equal(
+            "api/aggregates/order",
+            model.GetConstantValue(prefix.ExpressionBody!.Expression, TestContext.Current.CancellationToken).Value);
+    }
+
+    /// <summary>
     ///     Commands without an endpoint-marked aggregate must preserve the existing generated route.
     /// </summary>
     /// <param name="useReferencedAssembly">Whether the domain is a referenced assembly.</param>

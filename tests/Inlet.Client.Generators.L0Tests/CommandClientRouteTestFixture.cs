@@ -62,18 +62,25 @@ internal static class CommandClientRouteTestFixture
     /// <param name="useReferencedAssembly">Whether the domain is supplied as an emitted assembly reference.</param>
     /// <param name="markAggregate">Whether the aggregate has the endpoint generation marker.</param>
     /// <param name="includeSecondMarkedAggregate">Whether the command namespace has ambiguous ownership.</param>
+    /// <param name="omitRoutePrefix">Whether the endpoint marker omits its route-prefix named argument.</param>
     /// <returns>The generated compilation and its single effect syntax tree.</returns>
     public static (Compilation Compilation, SyntaxTree Effect) Run(
         string? routePrefix,
         bool useReferencedAssembly,
         bool markAggregate = true,
-        bool includeSecondMarkedAggregate = false
+        bool includeSecondMarkedAggregate = false,
+        bool omitRoutePrefix = false
     )
     {
         string prefixLiteral = routePrefix is null ? "null" : SymbolDisplay.FormatLiteral(routePrefix, true);
-        string marker = markAggregate
-            ? "[GenerateAggregateEndpoints(RoutePrefix = " + prefixLiteral + ")]"
-            : string.Empty;
+        string marker = omitRoutePrefix
+            ? "[GenerateAggregateEndpoints]"
+            : "[GenerateAggregateEndpoints(RoutePrefix = " + prefixLiteral + ")]";
+        if (!markAggregate)
+        {
+            marker = string.Empty;
+        }
+
         string secondAggregate = includeSecondMarkedAggregate
             ? "[GenerateAggregateEndpoints(RoutePrefix = \"other-order\")] public sealed record OtherOrderAggregate;"
             : string.Empty;
