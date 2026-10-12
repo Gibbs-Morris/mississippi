@@ -330,6 +330,22 @@ internal static partial class AggregateGrainLoggerExtensions
     );
 
     /// <summary>
+    ///     Logs when a reminder fires for a saga that never started and is unregistered as stale.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(
+        26,
+        LogLevel.Information,
+        "Reminder {ReminderName} found saga phase NotStarted for aggregate {AggregateKey}; unregistering stale reminder instead of recovering")]
+    public static partial void SagaReminderStaleNotStarted(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
+
+    /// <summary>
     ///     Logs when a terminal saga tail event causes reminder unregistration.
     /// </summary>
     /// <param name="logger">The logger.</param>

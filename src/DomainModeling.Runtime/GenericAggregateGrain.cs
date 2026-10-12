@@ -200,6 +200,11 @@ internal sealed class GenericAggregateGrain<TAggregate>
     ) =>
         ex is OutOfMemoryException or StackOverflowException or ThreadInterruptedException;
 
+    private static bool IsSagaPhaseNotStarted(
+        TAggregate aggregate
+    ) =>
+        aggregate is ISagaState sagaState && (sagaState.Phase == SagaPhase.NotStarted);
+
     private static bool IsTerminalSagaPhase(
         TAggregate aggregate
     ) =>
@@ -325,6 +330,13 @@ internal sealed class GenericAggregateGrain<TAggregate>
             if (currentState is not null && IsTerminalSagaPhase(currentState))
             {
                 Logger.SagaReminderTerminalState(brookKey, ((ISagaState)currentState).Phase, reminderName);
+                await UnregisterSagaReminderIfExistsAsync();
+                return;
+            }
+
+            if (currentState is not null && IsSagaPhaseNotStarted(currentState))
+            {
+                Logger.SagaReminderStaleNotStarted(reminderName, brookKey);
                 await UnregisterSagaReminderIfExistsAsync();
                 return;
             }
@@ -707,6 +719,9 @@ internal sealed class GenericAggregateGrain<TAggregate>
     )
     {
         ImmutableArray<BrookEvent> brookEvents = BrookEventConverter.ToStorageEvents(brookKey, events);
+
+        // Append failures can report committed or unknown writes. Keep recovery protection until
+        // a reminder tick reconciles the confirmed cursor and snapshot.
         await RegisterSagaReminderIfNeededAsync(events);
         await AppendEventsAndUpdatePositionAsync(brookEvents, currentPosition, cancellationToken);
         await DispatchSynchronousEffectsAsync(
