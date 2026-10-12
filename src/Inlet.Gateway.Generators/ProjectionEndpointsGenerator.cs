@@ -477,19 +477,10 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         // Properties for injected mappers
         foreach (PropertyModel prop in mappedProps)
         {
-            string sourceTypeName = TypeAnalyzer.IsEnumType(prop.SourceTypeSymbol)
-                ? prop.SourceTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                : prop.SourceTypeName;
+            string sourceTypeName = GetMapperSourceTypeName(prop);
             if (prop.RequiresEnumerableMapper)
             {
-                string elementSourceTypeName =
-                    prop.ElementIsEnum &&
-                    !string.Equals(
-                        TypeAnalyzer.GetFullNamespace(prop.ElementTypeSymbol!),
-                        projection.Model.Namespace,
-                        StringComparison.Ordinal)
-                        ? prop.ElementTypeSymbol!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                        : prop.ElementSourceTypeName!;
+                string elementSourceTypeName = GetEnumerableMapperSourceTypeName(prop, projection.Model.Namespace);
                 sb.AppendLine(
                     $"private IEnumerableMapper<{elementSourceTypeName}, {prop.ElementDtoTypeName}> {prop.Name}Mapper {{ get; }}");
             }
@@ -506,21 +497,12 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         for (int i = 0; i < mappedProps.Length; i++)
         {
             PropertyModel prop = mappedProps[i];
-            string sourceTypeName = TypeAnalyzer.IsEnumType(prop.SourceTypeSymbol)
-                ? prop.SourceTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                : prop.SourceTypeName;
+            string sourceTypeName = GetMapperSourceTypeName(prop);
             string comma = i < (mappedProps.Length - 1) ? "," : string.Empty;
             string paramName = ToCamelCase(prop.Name) + MapperSuffix;
             if (prop.RequiresEnumerableMapper)
             {
-                string elementSourceTypeName =
-                    prop.ElementIsEnum &&
-                    !string.Equals(
-                        TypeAnalyzer.GetFullNamespace(prop.ElementTypeSymbol!),
-                        projection.Model.Namespace,
-                        StringComparison.Ordinal)
-                        ? prop.ElementTypeSymbol!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                        : prop.ElementSourceTypeName!;
+                string elementSourceTypeName = GetEnumerableMapperSourceTypeName(prop, projection.Model.Namespace);
                 sb.AppendLine(
                     $"IEnumerableMapper<{elementSourceTypeName}, {prop.ElementDtoTypeName}> {paramName}{comma}");
             }
@@ -876,6 +858,24 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Gets the source element type reference for an injected enumerable mapper.
+    /// </summary>
+    /// <param name="prop">The mapped collection property.</param>
+    /// <param name="projectionNamespace">The namespace imported by the projection mapper.</param>
+    /// <returns>The source element type name, qualifying enums outside the imported namespace.</returns>
+    private static string GetEnumerableMapperSourceTypeName(
+        PropertyModel prop,
+        string projectionNamespace
+    ) =>
+        prop.ElementIsEnum &&
+        !string.Equals(
+            TypeAnalyzer.GetFullNamespace(prop.ElementTypeSymbol!),
+            projectionNamespace,
+            StringComparison.Ordinal)
+            ? prop.ElementTypeSymbol!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+            : prop.ElementSourceTypeName!;
+
+    /// <summary>
     ///     Gets the conversion expression assigned to a projection DTO property.
     /// </summary>
     /// <param name="prop">The projection property.</param>
@@ -919,6 +919,18 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
 
         return $"source.{prop.Name}";
     }
+
+    /// <summary>
+    ///     Gets the source type reference for an injected mapper.
+    /// </summary>
+    /// <param name="prop">The mapped property.</param>
+    /// <returns>The source type name, qualifying scalar enums.</returns>
+    private static string GetMapperSourceTypeName(
+        PropertyModel prop
+    ) =>
+        TypeAnalyzer.IsEnumType(prop.SourceTypeSymbol)
+            ? prop.SourceTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+            : prop.SourceTypeName;
 
     /// <summary>
     ///     Gets the mapper type name.
