@@ -12,6 +12,8 @@ using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Commands;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Events;
 
+using MississippiTests.Undercurrent.Domain.L0Tests.Aggregates.UserNotifications;
+
 
 namespace MississippiTests.Undercurrent.Domain.L0Tests;
 
@@ -62,13 +64,6 @@ public sealed class UndercurrentDomainRegistrationsTests
     }
 
     /// <summary>
-    ///     A missing service collection fails at the public registration boundary.
-    /// </summary>
-    [Fact]
-    public void NullServicesAreRejected() =>
-        Assert.Throws<ArgumentNullException>(() => UndercurrentDomainRegistrations.AddUndercurrentDomain(null!));
-
-    /// <summary>
     ///     Registered read and delete handlers work after a snapshot round trip.
     /// </summary>
     [Fact]
@@ -80,23 +75,82 @@ public sealed class UndercurrentDomainRegistrationsTests
         services.AddUndercurrentDomain();
         services.AddJsonSerialization();
         using ServiceProvider provider = services.BuildServiceProvider();
-        IRootCommandHandler<UserNotificationsAggregate> handler = provider.GetRequiredService<IRootCommandHandler<UserNotificationsAggregate>>();
-        IRootReducer<UserNotificationsAggregate> reducer = provider.GetRequiredService<IRootReducer<UserNotificationsAggregate>>();
-        ISnapshotStateConverter<UserNotificationsAggregate> converter = provider.GetRequiredService<ISnapshotStateConverter<UserNotificationsAggregate>>();
-        NotificationCreated created = Aggregates.UserNotifications.UserNotificationsFixture.CreateEvent();
+        IRootCommandHandler<UserNotificationsAggregate> handler =
+            provider.GetRequiredService<IRootCommandHandler<UserNotificationsAggregate>>();
+        IRootReducer<UserNotificationsAggregate> reducer =
+            provider.GetRequiredService<IRootReducer<UserNotificationsAggregate>>();
+        ISnapshotStateConverter<UserNotificationsAggregate> converter =
+            provider.GetRequiredService<ISnapshotStateConverter<UserNotificationsAggregate>>();
+        NotificationCreated created = UserNotificationsFixture.CreateEvent();
         UserNotificationsAggregate state = reducer.Reduce(new(), created);
-        OperationResult<IReadOnlyList<object>> read = handler.Handle(new MarkNotificationAsRead { NotificationId = "notice" }, state);
+        OperationResult<IReadOnlyList<object>> read = handler.Handle(
+            new MarkNotificationAsRead
+            {
+                NotificationId = "notice",
+            },
+            state);
         Assert.True(read.Success);
         state = reducer.Reduce(state, Assert.Single(read.Value));
-        UserNotificationsAggregate restored = converter.FromEnvelope(converter.ToEnvelope(state, reducer.GetReducerHash()));
-        Assert.Equal(created.Notification with { ReadAt = readAt }, Assert.Single(restored.Notifications).Value);
-        OperationResult<IReadOnlyList<object>> deleted = handler.Handle(new DeleteNotification { NotificationId = "notice" }, restored);
+        UserNotificationsAggregate restored =
+            converter.FromEnvelope(converter.ToEnvelope(state, reducer.GetReducerHash()));
+        Assert.Equal(
+            created.Notification with
+            {
+                ReadAt = readAt,
+            },
+            Assert.Single(restored.Notifications).Value);
+        OperationResult<IReadOnlyList<object>> deleted = handler.Handle(
+            new DeleteNotification
+            {
+                NotificationId = "notice",
+            },
+            restored);
         Assert.True(deleted.Success);
         UserNotificationsAggregate remaining = reducer.Reduce(restored, Assert.Single(deleted.Value));
         Assert.Empty(remaining.Notifications);
         Assert.Single(restored.Notifications);
         IEventTypeRegistry registry = provider.GetRequiredService<IEventTypeRegistry>();
-        Assert.Equal(typeof(NotificationMarkedAsRead), registry.ResolveType("MISSISSIPPI.UNDERCURRENT.NOTIFICATIONMARKEDASREAD.V1"));
-        Assert.Equal(typeof(NotificationDeleted), registry.ResolveType("MISSISSIPPI.UNDERCURRENT.NOTIFICATIONDELETED.V1"));
+        Assert.Equal(
+            typeof(NotificationMarkedAsRead),
+            registry.ResolveType("MISSISSIPPI.UNDERCURRENT.NOTIFICATIONMARKEDASREAD.V1"));
+        Assert.Equal(
+            typeof(NotificationDeleted),
+            registry.ResolveType("MISSISSIPPI.UNDERCURRENT.NOTIFICATIONDELETED.V1"));
+    }
+
+    /// <summary>
+    ///     A missing service collection fails at the public registration boundary.
+    /// </summary>
+    [Fact]
+    public void NullServicesAreRejected() =>
+        Assert.Throws<ArgumentNullException>(() => UndercurrentDomainRegistrations.AddUndercurrentDomain(null!));
+
+    /// <summary>
+    ///     Registered cleanup records serializable IDs and applies them through the root reducer.
+    /// </summary>
+    [Fact]
+    public void AggregateRegistrationSupportsSerializedCleanup()
+    {
+        DateTimeOffset now = new(2026, 10, 12, 12, 0, 0, TimeSpan.Zero);
+        ServiceCollection services = new();
+        services.AddSingleton<TimeProvider>(new FakeTimeProvider(now));
+        services.AddUndercurrentDomain();
+        services.AddJsonSerialization();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IRootCommandHandler<UserNotificationsAggregate> handler = provider.GetRequiredService<IRootCommandHandler<UserNotificationsAggregate>>();
+        IRootReducer<UserNotificationsAggregate> reducer = provider.GetRequiredService<IRootReducer<UserNotificationsAggregate>>();
+        Mississippi.Brooks.Serialization.Abstractions.ISerializationProvider serializer = provider.GetRequiredService<Mississippi.Brooks.Serialization.Abstractions.ISerializationProvider>();
+        UserNotificationsAggregate state = reducer.Reduce(new(), Aggregates.UserNotifications.UserNotificationsFixture.CreateEvent("old", now.AddDays(-8)));
+        state = reducer.Reduce(state, Aggregates.UserNotifications.UserNotificationsFixture.CreateEvent("boundary", now.AddDays(-7)));
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(new DeleteNotificationsOlderThan { Days = 7 }, state);
+        Assert.True(result.Success);
+        NotificationsDeleted deleted = Assert.IsType<NotificationsDeleted>(Assert.Single(result.Value));
+        NotificationsDeleted restored = serializer.Deserialize<NotificationsDeleted>(serializer.Serialize(deleted));
+        Assert.Equal(deleted.NotificationIds, restored.NotificationIds);
+        Assert.Equal(deleted.OlderThan, restored.OlderThan);
+        UserNotificationsAggregate remaining = reducer.Reduce(state, restored);
+        Assert.Equal("boundary", Assert.Single(remaining.Notifications).Key);
+        Assert.Equal(2, state.Notifications.Count);
+        Assert.Equal(typeof(NotificationsDeleted), provider.GetRequiredService<IEventTypeRegistry>().ResolveType("MISSISSIPPI.UNDERCURRENT.NOTIFICATIONSDELETED.V1"));
     }
 }

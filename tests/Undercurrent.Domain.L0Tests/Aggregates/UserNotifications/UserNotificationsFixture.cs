@@ -73,8 +73,10 @@ internal static class UserNotificationsFixture
         new AggregateTestHarness<UserNotificationsAggregate>().WithHandler(new CreateNotificationHandler(timeProvider))
             .WithHandler(new MarkNotificationAsReadHandler(timeProvider))
             .WithHandler<DeleteNotificationHandler>()
+            .WithHandler(new DeleteNotificationsOlderThanHandler(timeProvider))
             .WithReducer<NotificationCreatedReducer>()
             .WithReducer<NotificationMarkedAsReadReducer>()
             .WithReducer<NotificationDeletedReducer>()
+            .WithReducer<NotificationsDeletedReducer>()
             .CreateScenario();
 }

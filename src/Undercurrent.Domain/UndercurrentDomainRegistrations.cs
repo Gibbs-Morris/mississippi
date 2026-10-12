@@ -37,11 +37,15 @@ public static class UndercurrentDomainRegistrations
         services.AddEventType<NotificationCreated>()
             .AddEventType<NotificationMarkedAsRead>()
             .AddEventType<NotificationDeleted>()
+            .AddEventType<NotificationsDeleted>()
             .AddCommandHandler<CreateNotification, UserNotificationsAggregate, CreateNotificationHandler>()
             .AddCommandHandler<MarkNotificationAsRead, UserNotificationsAggregate, MarkNotificationAsReadHandler>()
             .AddCommandHandler<DeleteNotification, UserNotificationsAggregate, DeleteNotificationHandler>()
+            .AddCommandHandler<DeleteNotificationsOlderThan, UserNotificationsAggregate,
+                DeleteNotificationsOlderThanHandler>()
             .AddReducer<NotificationCreated, UserNotificationsAggregate, NotificationCreatedReducer>()
             .AddReducer<NotificationMarkedAsRead, UserNotificationsAggregate, NotificationMarkedAsReadReducer>()
             .AddReducer<NotificationDeleted, UserNotificationsAggregate, NotificationDeletedReducer>()
+            .AddReducer<NotificationsDeleted, UserNotificationsAggregate, NotificationsDeletedReducer>()
             .AddSnapshotStateConverter<UserNotificationsAggregate>();
 }
