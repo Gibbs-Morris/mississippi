@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 
+using Mississippi.Brooks.Abstractions;
 using Mississippi.Brooks.Serialization.Abstractions;
 using Mississippi.Brooks.Serialization.Json;
 using Mississippi.DomainModeling.Abstractions;
@@ -23,6 +24,16 @@ namespace MississippiTests.Undercurrent.Domain.L0Tests;
 /// </summary>
 public sealed class UndercurrentDomainRegistrationsTests
 {
+    private static T RoundTripEvent<T>(
+        IBrookEventConverter converter,
+        T eventData
+    )
+        where T : class =>
+        Assert.IsType<T>(
+            converter.ToDomainEvent(
+                Assert.Single(
+                    converter.ToStorageEvents(BrookKey.ForType<UserNotificationsAggregate>("user-42"), [eventData]))));
+
     /// <summary>
     ///     Registered handlers, reducers, event identity, and state conversion work together without a silo.
     /// </summary>
@@ -41,15 +52,21 @@ public sealed class UndercurrentDomainRegistrationsTests
             provider.GetRequiredService<IRootReducer<UserNotificationsAggregate>>();
         ISnapshotStateConverter<UserNotificationsAggregate> converter =
             provider.GetRequiredService<ISnapshotStateConverter<UserNotificationsAggregate>>();
+        IBrookEventConverter eventConverter = provider.GetRequiredService<IBrookEventConverter>();
         CreateNotification command = new()
         {
             NotificationId = "Notice",
             Title = "Ready",
+            Description = "The deployment is ready.",
+            IconKey = "deployment",
+            TargetUrl = "/deployments/42",
         };
         OperationResult<IReadOnlyList<object>> created = handler.Handle(command, null);
         Assert.True(created.Success);
         NotificationCreated createdEvent = Assert.IsType<NotificationCreated>(Assert.Single(created.Value));
-        UserNotificationsAggregate state = reducer.Reduce(new(), createdEvent);
+        NotificationCreated restoredEvent = RoundTripEvent(eventConverter, createdEvent);
+        Assert.Equal(createdEvent, restoredEvent);
+        UserNotificationsAggregate state = reducer.Reduce(new(), restoredEvent);
         SnapshotEnvelope envelope = converter.ToEnvelope(state, reducer.GetReducerHash());
         UserNotificationsAggregate restored = converter.FromEnvelope(envelope);
         Assert.Equal(createdAt, restored.Notifications["Notice"].CreatedAt);
@@ -82,6 +99,7 @@ public sealed class UndercurrentDomainRegistrationsTests
             provider.GetRequiredService<IRootReducer<UserNotificationsAggregate>>();
         ISnapshotStateConverter<UserNotificationsAggregate> converter =
             provider.GetRequiredService<ISnapshotStateConverter<UserNotificationsAggregate>>();
+        IBrookEventConverter eventConverter = provider.GetRequiredService<IBrookEventConverter>();
         NotificationCreated created = UserNotificationsFixture.CreateEvent();
         UserNotificationsAggregate state = reducer.Reduce(new(), created);
         OperationResult<IReadOnlyList<object>> read = handler.Handle(
@@ -91,7 +109,10 @@ public sealed class UndercurrentDomainRegistrationsTests
             },
             state);
         Assert.True(read.Success);
-        state = reducer.Reduce(state, Assert.Single(read.Value));
+        NotificationMarkedAsRead readEvent = Assert.IsType<NotificationMarkedAsRead>(Assert.Single(read.Value));
+        NotificationMarkedAsRead restoredRead = RoundTripEvent(eventConverter, readEvent);
+        Assert.Equal(readEvent, restoredRead);
+        state = reducer.Reduce(state, restoredRead);
         UserNotificationsAggregate restored =
             converter.FromEnvelope(converter.ToEnvelope(state, reducer.GetReducerHash()));
         Assert.Equal(
@@ -107,7 +128,10 @@ public sealed class UndercurrentDomainRegistrationsTests
             },
             restored);
         Assert.True(deleted.Success);
-        UserNotificationsAggregate remaining = reducer.Reduce(restored, Assert.Single(deleted.Value));
+        NotificationDeleted deletedEvent = Assert.IsType<NotificationDeleted>(Assert.Single(deleted.Value));
+        NotificationDeleted restoredDeletion = RoundTripEvent(eventConverter, deletedEvent);
+        Assert.Equal(deletedEvent, restoredDeletion);
+        UserNotificationsAggregate remaining = reducer.Reduce(restored, restoredDeletion);
         Assert.Empty(remaining.Notifications);
         Assert.Single(restored.Notifications);
         IEventTypeRegistry registry = provider.GetRequiredService<IEventTypeRegistry>();
@@ -136,6 +160,7 @@ public sealed class UndercurrentDomainRegistrationsTests
         IRootReducer<UserNotificationsAggregate> reducer =
             provider.GetRequiredService<IRootReducer<UserNotificationsAggregate>>();
         ISerializationProvider serializer = provider.GetRequiredService<ISerializationProvider>();
+        IBrookEventConverter eventConverter = provider.GetRequiredService<IBrookEventConverter>();
         DeleteNotificationsBefore command = new()
         {
             Before = now.AddDays(-7).AddTicks(1234).ToOffset(TimeSpan.FromHours(2)),
@@ -151,7 +176,7 @@ public sealed class UndercurrentDomainRegistrationsTests
         OperationResult<IReadOnlyList<object>> result = handler.Handle(restoredCommand, state);
         Assert.True(result.Success);
         NotificationsDeleted deleted = Assert.IsType<NotificationsDeleted>(Assert.Single(result.Value));
-        NotificationsDeleted restored = serializer.Deserialize<NotificationsDeleted>(serializer.Serialize(deleted));
+        NotificationsDeleted restored = RoundTripEvent(eventConverter, deleted);
         Assert.Equal(deleted.NotificationIds, restored.NotificationIds);
         Assert.Equal(deleted.OlderThan, restored.OlderThan);
         Assert.Equal(command.Before.ToUniversalTime(), restored.OlderThan);
