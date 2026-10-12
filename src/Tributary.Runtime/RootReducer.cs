@@ -25,8 +25,8 @@ namespace Mississippi.Tributary.Runtime;
 ///         preserving first-match-wins semantics within the original registration order.
 ///     </para>
 ///     <para>
-///         The reducer hash includes the runtime-type sequence of competing indexed reducers. Reordering reducers
-///         for independent event types does not change snapshot compatibility.
+///         The reducer hash includes the full names and defining assembly simple names of competing indexed reducers,
+///         in priority order. Reordering independent event types does not change snapshot compatibility.
 ///     </para>
 /// </remarks>
 public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
@@ -101,8 +101,9 @@ public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
         string[] typeNames = reducers.Select(x => GetTypeName(x.GetType())).Order(StringComparer.Ordinal).ToArray();
         IEnumerable<string> competingTypeNames = index.Where(entry => entry.Value.Length > 1)
             .OrderBy(entry => GetTypeName(entry.Key), StringComparer.Ordinal)
+            .ThenBy(entry => entry.Key.Assembly.GetName().Name, StringComparer.Ordinal)
             .SelectMany(entry => entry.Value)
-            .Select(reducer => GetTypeName(reducer.GetType()));
+            .Select(reducer => GetIndexedTypeName(reducer.GetType()));
         string input = string.Join("|", typeNames.Concat(competingTypeNames));
         byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
         return Convert.ToHexString(bytes);
@@ -140,6 +141,14 @@ public sealed class RootReducer<TProjection> : IRootReducer<TProjection>
 
         return null;
     }
+
+    /// <summary>
+    ///     Gets the type and defining assembly simple names used for indexed reducer priority.
+    /// </summary>
+    private static string GetIndexedTypeName(
+        Type type
+    ) =>
+        $"{GetTypeName(type)}@{type.Assembly.GetName().Name}";
 
     /// <summary>
     ///     Gets the stable type name used in reducer fingerprints.
