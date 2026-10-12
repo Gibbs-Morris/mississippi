@@ -21,6 +21,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.Inlet.Gateway.Abstractions;
 using Mississippi.Inlet.Gateway.Authentication;
@@ -79,14 +80,15 @@ public sealed class InletHubConnectionAuthenticationTests
     )
     {
         const string scheme = "Bearer";
+        BearerTokenOptions options = services.GetRequiredService<IOptionsMonitor<BearerTokenOptions>>().Get(scheme);
+        FakeTimeProvider clock = Assert.IsType<FakeTimeProvider>(options.TimeProvider);
         AuthenticationTicket ticket = new(
             CreatePrincipal(permission),
             new()
             {
-                ExpiresUtc = new DateTimeOffset(2030, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                ExpiresUtc = clock.GetUtcNow().AddHours(1),
             },
             scheme + ":AccessToken");
-        BearerTokenOptions options = services.GetRequiredService<IOptionsMonitor<BearerTokenOptions>>().Get(scheme);
         DefaultHttpContext context = new()
         {
             RequestServices = services,
@@ -661,7 +663,8 @@ public sealed class InletHubConnectionAuthenticationTests
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.Services.AddSignalR();
         builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
-        builder.Services.AddAuthentication(scheme).AddBearerToken(scheme);
+        FakeTimeProvider clock = new(new(2040, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        builder.Services.AddAuthentication(scheme).AddBearerToken(scheme, options => options.TimeProvider = clock);
         if (authenticationMode == "evaluator")
         {
             builder.Services.AddScoped<IPolicyEvaluator>(services =>
@@ -1004,7 +1007,8 @@ public sealed class InletHubConnectionAuthenticationTests
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.Services.AddSignalR();
         builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
-        builder.Services.AddAuthentication(scheme).AddBearerToken(scheme);
+        FakeTimeProvider clock = new(new(2040, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        builder.Services.AddAuthentication(scheme).AddBearerToken(scheme, options => options.TimeProvider = clock);
         builder.Services.AddAuthentication().AddBearerToken(OtherScheme);
         builder.Services.AddAuthorizationBuilder().SetDefaultPolicy(CreatePolicy(scheme));
         await using WebApplication app = builder.Build();
