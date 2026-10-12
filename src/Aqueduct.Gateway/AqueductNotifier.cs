@@ -109,6 +109,7 @@ internal sealed class AqueductNotifier : IAqueductNotifier
         ArgumentException.ThrowIfNullOrEmpty(hubName);
         ArgumentException.ThrowIfNullOrEmpty(groupName);
         ArgumentException.ThrowIfNullOrEmpty(method);
+        AqueductUserGroupNamespace.ThrowIfReserved(groupName);
         Logger.NotifierSendingToGroup(groupName, hubName, method);
         ISignalRGroupGrain groupGrain = GetGroupGrain(hubName, groupName);
         await groupGrain.SendMessageAsync(method, args).ConfigureAwait(false);

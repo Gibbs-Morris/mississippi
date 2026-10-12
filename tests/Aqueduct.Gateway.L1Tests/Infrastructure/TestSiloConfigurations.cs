@@ -1,0 +1,23 @@
+using Mississippi.Aqueduct.Runtime;
+using Mississippi.Hosting.Runtime;
+
+using Orleans.Hosting;
+using Orleans.TestingHost;
+
+
+namespace MississippiTests.Aqueduct.Gateway.L1Tests.Infrastructure;
+
+/// <summary>
+///     Silo configuration for the SignalR Orleans test cluster.
+/// </summary>
+internal sealed class TestSiloConfigurations : ISiloConfigurator
+{
+    /// <inheritdoc />
+    public void Configure(
+        ISiloBuilder siloBuilder
+    )
+    {
+        // Configure the SignalR backplane through the canonical runtime composition path.
+        siloBuilder.UseMississippi(runtime => runtime.AddAqueduct(aqueduct => aqueduct.UseMemoryStreams()));
+    }
+}
