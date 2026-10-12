@@ -82,6 +82,60 @@ public sealed class InletSignalRReconnectSnapshotTests : IAsyncDisposable
     }
 
     /// <summary>
+    ///     A replacement interest established on the reconnected transport keeps its server subscription.
+    /// </summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task ReconnectDoesNotReplaceInterestEstablishedAfterItsSnapshot()
+    {
+        Dictionary<string, int> calls = [];
+        bool isRecovering = false;
+        string? replacementEntity = null;
+        hub.Setup(value => value.InvokeCoreAsync(
+                InletHubConstants.UnsubscribeMethod,
+                It.IsAny<Type>(),
+                It.IsAny<object?[]>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((object?)null);
+        hub.Setup(value => value.InvokeCoreAsync(
+                InletHubConstants.SubscribeMethod,
+                typeof(string),
+                It.IsAny<object?[]>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(async (string _, Type _, object?[] arguments, CancellationToken _) =>
+            {
+                string entityId = (string)arguments[1]!;
+                calls.TryGetValue(entityId, out int count);
+                calls[entityId] = ++count;
+                if (isRecovering && replacementEntity is null)
+                {
+                    // Replace whichever entry is still waiting in the reconnect snapshot.
+                    replacementEntity = entityId == "first" ? "second" : "first";
+                    await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(replacementEntity));
+                    await HandleAsync(new SubscribeToProjectionAction<TestProjection>(replacementEntity));
+                }
+
+                return entityId + "-id-" + count;
+            });
+        await HandleAsync(new SubscribeToProjectionAction<TestProjection>("first"));
+        await HandleAsync(new SubscribeToProjectionAction<TestProjection>("second"));
+        isRecovering = true;
+        await reconnected("new-connection");
+        Assert.NotNull(replacementEntity);
+        Assert.Equal(2, calls["first"]);
+        Assert.Equal(2, calls["second"]);
+        await HandleAsync(new UnsubscribeFromProjectionAction<TestProjection>(replacementEntity));
+        string replacementId = replacementEntity + "-id-2";
+        hub.Verify(
+            value => value.InvokeCoreAsync(
+                InletHubConstants.UnsubscribeMethod,
+                It.IsAny<Type>(),
+                It.Is<object?[]>(arguments => (string?)arguments[0] == replacementId),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
     ///     Interests established during reconnect recovery are not subscribed again by that recovery.
     /// </summary>
     /// <returns>A task representing the test.</returns>
