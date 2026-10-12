@@ -74,7 +74,7 @@ internal sealed class CosmosRepository : ICosmosRepository
                                   (response.StatusCode == HttpStatusCode.RequestTimeout) ||
                                   (response.StatusCode == HttpStatusCode.InternalServerError) ||
                                   (response.StatusCode == HttpStatusCode.GatewayTimeout));
-                if (!transient)
+                if (!transient || (attempt == 3))
                 {
                     return response;
                 }

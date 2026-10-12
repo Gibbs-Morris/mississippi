@@ -228,6 +228,66 @@ public sealed class CosmosRepositoryTests
     }
 
     /// <summary>
+    ///     Exhausted transient commit responses keep their status and unknown-outcome guidance.
+    /// </summary>
+    /// <param name="statusCode">The final transient storage status.</param>
+    /// <returns>The asynchronous test.</returns>
+    [Theory]
+    [InlineData(HttpStatusCode.ServiceUnavailable)]
+    [InlineData(HttpStatusCode.TooManyRequests)]
+    public async Task CommitCursorPositionAsyncKeepsLastTransientStatusAsync(
+        HttpStatusCode statusCode
+    )
+    {
+        Mock<Container> container = new(MockBehavior.Strict);
+        container.Setup(c => c.ReadItemAsync<CursorDocument>(
+                "cursor",
+                It.IsAny<PartitionKey>(),
+                null,
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new CosmosException("No cursor", HttpStatusCode.NotFound, 0, "test", 0));
+        Mock<TransactionalBatch> batch = new(MockBehavior.Strict);
+        container.Setup(c => c.CreateTransactionalBatch(It.IsAny<PartitionKey>())).Returns(batch.Object);
+        batch.Setup(b => b.DeleteItem("cursor-pending", It.IsAny<TransactionalBatchItemRequestOptions>()))
+            .Returns(batch.Object);
+        batch.Setup(b => b.CreateItem(It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
+        Mock<TransactionalBatchResponse>[] responses = Enumerable.Range(0, 4)
+            .Select(_ =>
+            {
+                Mock<TransactionalBatchResponse> response = new();
+                response.SetupGet(r => r.IsSuccessStatusCode).Returns(false);
+                response.SetupGet(r => r.StatusCode).Returns(statusCode);
+                response.SetupGet(r => r.RetryAfter).Returns(TimeSpan.Zero);
+                return response;
+            })
+            .ToArray();
+        int attempts = 0;
+        batch.Setup(b => b.ExecuteAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => responses[attempts++].Object);
+        CosmosRepository repository = CreateRepository(container.Object);
+        InvalidOperationException failure = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            repository.CommitCursorPositionAsync(
+                new("test", "last-response"),
+                42,
+                "attempt-etag",
+                TestContext.Current.CancellationToken));
+        Assert.Equal(4, attempts);
+        Assert.Contains(
+            statusCode == HttpStatusCode.TooManyRequests ? "429" : "503",
+            failure.Message,
+            StringComparison.Ordinal);
+        Assert.Contains("unknown", failure.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("reconcil", failure.Message, StringComparison.OrdinalIgnoreCase);
+        foreach (Mock<TransactionalBatchResponse> response in responses)
+        {
+            response.Protected().Verify("Dispose", Times.Once(), true, true);
+        }
+
+        responses[3].VerifyGet(r => r.RetryAfter, Times.Never);
+        batch.Verify(b => b.ExecuteAsync(It.IsAny<CancellationToken>()), Times.Exactly(4));
+    }
+
+    /// <summary>
     ///     A stale pending entity tag fails the entire commit instead of advancing the cursor.
     /// </summary>
     /// <returns>A task representing the test.</returns>
@@ -567,6 +627,52 @@ public sealed class CosmosRepositoryTests
 
         // Assert
         Assert.True(exists);
+    }
+
+    /// <summary>
+    ///     The batch caller owns the final transient response after the retry budget is exhausted.
+    /// </summary>
+    /// <returns>The asynchronous test.</returns>
+    [Fact]
+    public async Task ExecuteTransactionalBatchAsyncReturnsFinalTransientResponseAsync()
+    {
+        Mock<Container> container = new(MockBehavior.Strict);
+        Mock<TransactionalBatch> batch = new(MockBehavior.Strict);
+        container.Setup(c => c.CreateTransactionalBatch(It.IsAny<PartitionKey>())).Returns(batch.Object);
+        batch.Setup(b => b.ReplaceItem("cursor", It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
+        Mock<TransactionalBatchResponse>[] responses = Enumerable.Range(0, 4)
+            .Select(_ =>
+            {
+                Mock<TransactionalBatchResponse> response = new();
+                response.SetupGet(r => r.IsSuccessStatusCode).Returns(false);
+                response.SetupGet(r => r.StatusCode).Returns(HttpStatusCode.ServiceUnavailable);
+                response.SetupGet(r => r.RetryAfter).Returns(TimeSpan.Zero);
+                return response;
+            })
+            .ToArray();
+        int attempts = 0;
+        batch.Setup(b => b.ExecuteAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => responses[attempts++].Object);
+        CosmosRepository repository = CreateRepository(container.Object);
+        using (TransactionalBatchResponse final = await repository.ExecuteTransactionalBatchAsync(
+                   new("test", "last-response"),
+                   [],
+                   new(0),
+                   1,
+                   TestContext.Current.CancellationToken))
+        {
+            Assert.Same(responses[3].Object, final);
+            Assert.Equal(4, attempts);
+            foreach (Mock<TransactionalBatchResponse> response in responses.Take(3))
+            {
+                response.Protected().Verify("Dispose", Times.Once(), true, true);
+            }
+
+            responses[3].Protected().Verify("Dispose", Times.Never(), true, true);
+            responses[3].VerifyGet(r => r.RetryAfter, Times.Never);
+        }
+
+        responses[3].Protected().Verify("Dispose", Times.Once(), true, true);
     }
 
     /// <summary>
