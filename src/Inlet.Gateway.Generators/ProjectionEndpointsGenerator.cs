@@ -320,7 +320,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         {
             sb.AppendSummary($"Gets the {prop.Name} value.");
             sb.AppendLine("[JsonRequired]");
-            sb.AppendLine($"public required {prop.DtoTypeName} {prop.Name} {{ get; init; }}");
+            sb.AppendLine(
+                $"public required {GetDtoPropertyTypeName(prop.SourceTypeSymbol)} {prop.Name} {{ get; init; }}");
             sb.AppendLine();
         }
 
@@ -481,8 +482,16 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                 : prop.SourceTypeName;
             if (prop.RequiresEnumerableMapper)
             {
+                string elementSourceTypeName =
+                    prop.ElementIsEnum &&
+                    !string.Equals(
+                        TypeAnalyzer.GetFullNamespace(prop.ElementTypeSymbol!),
+                        projection.Model.Namespace,
+                        StringComparison.Ordinal)
+                        ? prop.ElementTypeSymbol!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                        : prop.ElementSourceTypeName!;
                 sb.AppendLine(
-                    $"private IEnumerableMapper<{prop.ElementSourceTypeName}, {prop.ElementDtoTypeName}> {prop.Name}Mapper {{ get; }}");
+                    $"private IEnumerableMapper<{elementSourceTypeName}, {prop.ElementDtoTypeName}> {prop.Name}Mapper {{ get; }}");
             }
             else
             {
@@ -504,8 +513,16 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             string paramName = ToCamelCase(prop.Name) + MapperSuffix;
             if (prop.RequiresEnumerableMapper)
             {
+                string elementSourceTypeName =
+                    prop.ElementIsEnum &&
+                    !string.Equals(
+                        TypeAnalyzer.GetFullNamespace(prop.ElementTypeSymbol!),
+                        projection.Model.Namespace,
+                        StringComparison.Ordinal)
+                        ? prop.ElementTypeSymbol!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                        : prop.ElementSourceTypeName!;
                 sb.AppendLine(
-                    $"IEnumerableMapper<{prop.ElementSourceTypeName}, {prop.ElementDtoTypeName}> {paramName}{comma}");
+                    $"IEnumerableMapper<{elementSourceTypeName}, {prop.ElementDtoTypeName}> {paramName}{comma}");
             }
             else
             {
@@ -662,7 +679,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             .ToArray();
         foreach (IPropertySymbol prop in properties)
         {
-            string propDtoTypeName = TypeAnalyzer.GetDtoTypeName(prop.Type);
+            string propDtoTypeName = GetDtoPropertyTypeName(prop.Type);
             sb.AppendSummary($"Gets the {prop.Name} value.");
             sb.AppendLine("[JsonRequired]");
             sb.AppendLine($"public required {propDtoTypeName} {prop.Name} {{ get; init; }}");
@@ -741,6 +758,23 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     {
         string baseName = projection.Model.TypeName.Replace(ProjectionSuffix, string.Empty);
         return baseName + "Controller";
+    }
+
+    /// <summary>
+    ///     Gets a DTO property type name while preserving nullable collection annotations.
+    /// </summary>
+    /// <param name="sourceType">The property source type.</param>
+    /// <returns>The DTO property type name.</returns>
+    private static string GetDtoPropertyTypeName(
+        ITypeSymbol sourceType
+    )
+    {
+        string dtoTypeName = TypeAnalyzer.GetDtoTypeName(sourceType);
+        return sourceType.IsReferenceType &&
+               (sourceType.NullableAnnotation == NullableAnnotation.Annotated) &&
+               (sourceType is IArrayTypeSymbol || TypeAnalyzer.IsCollectionType(sourceType))
+            ? dtoTypeName + "?"
+            : dtoTypeName;
     }
 
     /// <summary>
@@ -850,12 +884,13 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         PropertyModel prop
     )
     {
+        string nullGuard = GetNullableCollectionGuard(prop.SourceTypeSymbol, prop.Name);
         if (GetNullableEnumCollectionElement(prop.SourceTypeSymbol) is { } collectionEnum)
         {
             string enumDtoTypeName = TypeAnalyzer.GetDtoTypeName(collectionEnum);
             string toCollection = GetEnumCollectionMaterializer(prop);
             return
-                $"source.{prop.Name}.Select(value => value.HasValue ? ({enumDtoTypeName}?)value.Value : null){toCollection}";
+                $"{nullGuard}source.{prop.Name}.Select(value => value.HasValue ? ({enumDtoTypeName}?)value.Value : null){toCollection}";
         }
 
         if (prop.RequiresEnumerableMapper)
@@ -866,7 +901,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                 var _ when prop.IsImmutableArray => ".ToImmutableArray()",
                 var _ => ".ToList()",
             };
-            return $"{prop.Name}Mapper.Map(source.{prop.Name}){toCollection}";
+            return $"{nullGuard}{prop.Name}Mapper.Map(source.{prop.Name}){toCollection}";
         }
 
         if (prop.RequiresMapper)
@@ -911,7 +946,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         {
             string enumDtoTypeName = TypeAnalyzer.GetDtoTypeName(collectionEnum);
             string toCollection = GetEnumCollectionMaterializer(new(prop));
-            return $"source.{prop.Name}.Select(value => ({enumDtoTypeName})value){toCollection}";
+            string nullGuard = GetNullableCollectionGuard(prop.Type, prop.Name);
+            return $"{nullGuard}source.{prop.Name}.Select(value => ({enumDtoTypeName})value){toCollection}";
         }
 
         if (UnwrapNullable(prop.Type) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
@@ -925,6 +961,20 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
 
         return $"source.{prop.Name}";
     }
+
+    /// <summary>
+    ///     Gets a null guard for an annotated nullable collection property.
+    /// </summary>
+    /// <param name="sourceType">The collection source type.</param>
+    /// <param name="propertyName">The source property name.</param>
+    /// <returns>The conditional prefix, or an empty string for a non-nullable collection.</returns>
+    private static string GetNullableCollectionGuard(
+        ITypeSymbol sourceType,
+        string propertyName
+    ) =>
+        sourceType.IsReferenceType && (sourceType.NullableAnnotation == NullableAnnotation.Annotated)
+            ? $"source.{propertyName} is null ? null : "
+            : string.Empty;
 
     /// <summary>
     ///     Gets the custom enum wrapped in nullable collection elements.

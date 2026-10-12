@@ -106,7 +106,8 @@ public class ProjectionEndpointsGeneratorTests
     private static void VerifyEnumCollectionMappersCompileAndPreserveValues(
         string collectionType,
         bool nested,
-        bool nullableElements
+        bool nullableElements,
+        bool nullableCollection
     )
     {
         ArgumentNullException.ThrowIfNull(collectionType);
@@ -142,6 +143,13 @@ public class ProjectionEndpointsGeneratorTests
                 "__FrameworkCollection__",
                 collectionType.Replace("__Element__", "DayOfWeek?", StringComparison.Ordinal),
                 StringComparison.Ordinal);
+        if (nullableCollection)
+        {
+            projectionSource = "#nullable enable\n" +
+                               projectionSource.Replace(" Values {", "? Values {", StringComparison.Ordinal)
+                                   .Replace(" Days {", "? Days {", StringComparison.Ordinal);
+        }
+
         if (!nullableElements)
         {
             projectionSource = projectionSource.Replace("ResumeSource?", "ResumeSource", StringComparison.Ordinal)
@@ -213,8 +221,28 @@ public class ProjectionEndpointsGeneratorTests
                                            }
                                        }
                                        """;
-        string mappingSource = nested
-            ? mappingTemplate
+        string mappingSource = mappingTemplate;
+        if (nullableCollection)
+        {
+            const string nullProbe = """
+                                     public static bool MapNull()
+                                     {
+                                         SagaStatusProjection source = new() { Values = null, Days = null };
+                                         SagaStatusDto dto = new SagaStatusProjectionMapper().Map(source);
+                                         return dto.Values is null && dto.Days is null;
+                                     }
+
+                                     public static int?[] Map()
+                                     """;
+            mappingSource = "#nullable enable\n" +
+                            mappingSource.Replace("public static int?[] Map()", nullProbe, StringComparison.Ordinal)
+                                .Replace("dto.Days;", "dto.Days!;", StringComparison.Ordinal)
+                                .Replace("dto.Values.Select", "dto.Values!.Select", StringComparison.Ordinal);
+        }
+
+        if (nested)
+        {
+            mappingSource = mappingSource
                 .Replace(
                     "SagaStatusProjection source = new()",
                     "RecoveryEntry source = new()",
@@ -222,8 +250,9 @@ public class ProjectionEndpointsGeneratorTests
                 .Replace(
                     "SagaStatusDto dto = new SagaStatusProjectionMapper().Map(source);",
                     "RecoveryEntryDto dto = new RecoveryEntryDtoMapper().Map(source);",
-                    StringComparison.Ordinal)
-            : mappingTemplate;
+                    StringComparison.Ordinal);
+        }
+
         string? initializer = collectionType switch
         {
             "HashSet<__Element__>" or "ISet<__Element__>" or "IReadOnlySet<__Element__>" => ".ToHashSet()",
@@ -255,6 +284,28 @@ public class ProjectionEndpointsGeneratorTests
                 .Replace("DayOfWeek?", "DayOfWeek", StringComparison.Ordinal)
                 .Replace("null, ResumeSource.Manual", "ResumeSource.Manual", StringComparison.Ordinal)
                 .Replace("null, DayOfWeek.Friday", "DayOfWeek.Friday", StringComparison.Ordinal);
+        }
+
+        if (!nullableElements && !nested)
+        {
+            mappingSource = mappingSource.Replace(
+                "new SagaStatusProjectionMapper()",
+                "new SagaStatusProjectionMapper(new EnumCollectionMapper())",
+                StringComparison.Ordinal);
+            mappingSource += """
+                             namespace TestAssembly.Verification
+                             {
+                                 public sealed class EnumCollectionMapper
+                                     : Mississippi.Common.Abstractions.Mapping.IEnumerableMapper<
+                                         TestApp.Domain.Shared.ResumeSource,
+                                         TestAssembly.Controllers.Projections.ResumeSourceDto>
+                                 {
+                                     public System.Collections.Generic.IEnumerable<TestAssembly.Controllers.Projections.ResumeSourceDto> Map(
+                                         System.Collections.Generic.IEnumerable<TestApp.Domain.Shared.ResumeSource> source) =>
+                                         System.Linq.Enumerable.Select(source, value => (TestAssembly.Controllers.Projections.ResumeSourceDto)value);
+                                 }
+                             }
+                             """;
         }
 
         (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
@@ -305,6 +356,21 @@ public class ProjectionEndpointsGeneratorTests
             else
             {
                 Assert.Equal(new int?[] { null, 7, 0, null, 5, 1 }, actual);
+            }
+
+            if (nullableCollection)
+            {
+                MethodInfo mapNull = assembly.GetType("TestAssembly.Verification.NullableEnumCollectionMappingProbe")!
+                    .GetMethod("MapNull")!;
+                Assert.True(Assert.IsType<bool>(mapNull.Invoke(null, null)));
+                string dtoName = nested ? "RecoveryEntryDto" : "SagaStatusDto";
+                INamedTypeSymbol dto = mappingCompilation.GetTypeByMetadataName(
+                    "TestAssembly.Controllers.Projections." + dtoName)!;
+                foreach (string propertyName in new[] { "Values", "Days" })
+                {
+                    IPropertySymbol property = Assert.Single(dto.GetMembers(propertyName).OfType<IPropertySymbol>());
+                    Assert.Equal(NullableAnnotation.Annotated, property.Type.NullableAnnotation);
+                }
             }
         }
         finally
@@ -1613,7 +1679,7 @@ public class ProjectionEndpointsGeneratorTests
     public void GeneratedNestedNonNullableEnumCollectionMappersCompileAndPreserveValues(
         string collectionType
     ) =>
-        VerifyEnumCollectionMappersCompileAndPreserveValues(collectionType, true, false);
+        VerifyEnumCollectionMappersCompileAndPreserveValues(collectionType, true, false, false);
 
     /// <summary>
     ///     Generated mappers also preserve nullable enum values inside nested projection records.
@@ -1806,6 +1872,28 @@ public class ProjectionEndpointsGeneratorTests
     }
 
     /// <summary>
+    ///     Compiled enum collection mappers preserve null containers and populated values.
+    /// </summary>
+    /// <param name="collectionType">The nullable collection shape.</param>
+    /// <param name="nested">Whether a nested record contains the collection.</param>
+    /// <param name="nullableElements">Whether the collection elements are nullable.</param>
+    [Theory]
+    [InlineData("List<__Element__>", false, true)]
+    [InlineData("__Element__[]", false, true)]
+    [InlineData("List<__Element__>", true, true)]
+    [InlineData("__Element__[]", true, true)]
+    [InlineData("List<__Element__>", false, false)]
+    [InlineData("__Element__[]", false, false)]
+    [InlineData("List<__Element__>", true, false)]
+    [InlineData("__Element__[]", true, false)]
+    public void GeneratedNullableCollectionMappersPreserveNullContainers(
+        string collectionType,
+        bool nested,
+        bool nullableElements
+    ) =>
+        VerifyEnumCollectionMappersCompileAndPreserveValues(collectionType, nested, nullableElements, true);
+
+    /// <summary>
     ///     Compiled nullable enum collection mappers retain missing and present values and framework enum identities.
     /// </summary>
     /// <param name="collectionType">The collection shape containing nullable enum elements.</param>
@@ -1837,7 +1925,7 @@ public class ProjectionEndpointsGeneratorTests
         string collectionType,
         bool nested
     ) =>
-        VerifyEnumCollectionMappersCompileAndPreserveValues(collectionType, nested, true);
+        VerifyEnumCollectionMappersCompileAndPreserveValues(collectionType, nested, true, false);
 
     /// <summary>
     ///     Generated projection analysis should warn when authentication schemes metadata contains empty entries.

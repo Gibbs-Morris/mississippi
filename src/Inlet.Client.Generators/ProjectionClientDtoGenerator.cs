@@ -114,7 +114,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
             }
 
             first = false;
-            sb.Append($"{prop.DtoTypeName} {prop.Name}");
+            sb.Append($"{GetDtoPropertyTypeName(prop.SourceTypeSymbol)} {prop.Name}");
         }
 
         sb.AppendLine(");");
@@ -277,7 +277,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
             }
 
             first = false;
-            string propDtoTypeName = TypeAnalyzer.GetDtoTypeName(prop.Type);
+            string propDtoTypeName = GetDtoPropertyTypeName(prop.Type);
             sb.Append($"{propDtoTypeName} {prop.Name}");
         }
 
@@ -298,6 +298,23 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
                 GenerateNestedEnumDto(context, enumType, enumDtoName, targetNamespace);
             }
         }
+    }
+
+    /// <summary>
+    ///     Gets a DTO property type name while preserving nullable collection annotations.
+    /// </summary>
+    /// <param name="sourceType">The property source type.</param>
+    /// <returns>The DTO property type name.</returns>
+    private static string GetDtoPropertyTypeName(
+        ITypeSymbol sourceType
+    )
+    {
+        string dtoTypeName = TypeAnalyzer.GetDtoTypeName(sourceType);
+        return sourceType.IsReferenceType &&
+               (sourceType.NullableAnnotation == NullableAnnotation.Annotated) &&
+               (sourceType is IArrayTypeSymbol || TypeAnalyzer.IsCollectionType(sourceType))
+            ? dtoTypeName + "?"
+            : dtoTypeName;
     }
 
     /// <summary>

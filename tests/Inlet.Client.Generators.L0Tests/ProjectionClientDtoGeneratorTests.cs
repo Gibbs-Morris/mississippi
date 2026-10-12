@@ -155,6 +155,117 @@ public class ProjectionClientDtoGeneratorTests
         return (outputCompilation, diagnostics, driver.GetRunResult());
     }
 
+    private static void VerifyNullableEnumCollectionDtosCompile(
+        string collectionType,
+        bool nested,
+        bool nullableCollection
+    )
+    {
+        ArgumentNullException.ThrowIfNull(collectionType);
+        const string projectionTemplate = """
+                                          using System;
+                                          using System.Collections.Generic;
+                                          using System.Collections.Immutable;
+                                          using Mississippi.Inlet.Generators.Abstractions;
+                                          using Mississippi.Inlet.Abstractions;
+                                          using TestApp.Domain.Shared;
+
+                                          namespace TestApp.Domain.Shared
+                                          {
+                                              public enum ResumeSource { Reminder = 0, Manual = 7 }
+                                          }
+                                          namespace TestApp.Domain.Projections.Sagas
+                                          {
+                                              [GenerateProjectionEndpoints]
+                                              [ProjectionPath("saga-status")]
+                                              public sealed record SagaStatusProjection
+                                              {
+                                                  public __CustomCollection__ Values { get; init; }
+                                                  public __CustomCollection__ Again { get; init; }
+                                                  public __FrameworkCollection__ Days { get; init; }
+                                              }
+                                          }
+                                          """;
+        string projectionSource = projectionTemplate
+            .Replace(
+                "__CustomCollection__",
+                collectionType.Replace("__Element__", "ResumeSource?", StringComparison.Ordinal),
+                StringComparison.Ordinal)
+            .Replace(
+                "__FrameworkCollection__",
+                collectionType.Replace("__Element__", "DayOfWeek?", StringComparison.Ordinal),
+                StringComparison.Ordinal);
+        if (nullableCollection)
+        {
+            projectionSource = "#nullable enable\n" +
+                               projectionSource.Replace(" Values {", "? Values {", StringComparison.Ordinal)
+                                   .Replace(" Again {", "? Again {", StringComparison.Ordinal)
+                                   .Replace(" Days {", "? Days {", StringComparison.Ordinal);
+        }
+
+        if (nested)
+        {
+            projectionSource = projectionSource
+                .Replace("[GenerateProjectionEndpoints]", string.Empty, StringComparison.Ordinal)
+                .Replace("[ProjectionPath(\"saga-status\")]", string.Empty, StringComparison.Ordinal)
+                .Replace("SagaStatusProjection", "RecoveryEntry", StringComparison.Ordinal);
+            projectionSource += """
+                                namespace TestApp.Domain.Projections.Sagas
+                                {
+                                    [GenerateProjectionEndpoints]
+                                    [ProjectionPath("saga-status")]
+                                    public sealed record SagaStatusProjection
+                                    {
+                                        public ImmutableArray<RecoveryEntry> History { get; init; }
+                                    }
+                                }
+                                """;
+        }
+
+        (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Assert.Empty(diagnostics);
+        Assert.Empty(
+            outputCompilation.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        using MemoryStream assembly = new();
+        Assert.True(outputCompilation.Emit(assembly, cancellationToken: TestContext.Current.CancellationToken).Success);
+        const string dtoNamespace = "TestApp.Client.Features.Sagas.Dtos";
+        INamedTypeSymbol enumDto = outputCompilation.GetTypeByMetadataName($"{dtoNamespace}.ResumeSourceDto")!;
+        Assert.NotNull(enumDto);
+        Assert.Equal(TypeKind.Enum, enumDto.TypeKind);
+        string targetDtoName = nested ? "RecoveryEntryDto" : "SagaStatusProjectionDto";
+        INamedTypeSymbol projectionDto = outputCompilation.GetTypeByMetadataName($"{dtoNamespace}.{targetDtoName}")!;
+        Assert.NotNull(projectionDto);
+        foreach (string propertyName in new[] { "Values", "Again", "Days" })
+        {
+            IPropertySymbol property = Assert.Single(projectionDto.GetMembers(propertyName).OfType<IPropertySymbol>());
+            if (nullableCollection)
+            {
+                Assert.Equal(NullableAnnotation.Annotated, property.Type.NullableAnnotation);
+            }
+
+            ITypeSymbol element = property.Type is IArrayTypeSymbol array
+                ? array.ElementType
+                : Assert.Single(Assert.IsType<INamedTypeSymbol>(property.Type, false).TypeArguments);
+            INamedTypeSymbol nullableElement = Assert.IsType<INamedTypeSymbol>(element, false);
+            Assert.Equal(SpecialType.System_Nullable_T, nullableElement.OriginalDefinition.SpecialType);
+            ITypeSymbol expectedElement = propertyName == "Days"
+                ? outputCompilation.GetTypeByMetadataName("System.DayOfWeek")!
+                : enumDto;
+            Assert.True(
+                SymbolEqualityComparer.Default.Equals(expectedElement, Assert.Single(nullableElement.TypeArguments)));
+        }
+
+        Assert.Single(
+            runResult.GeneratedTrees.Where(tree => tree.FilePath.EndsWith(
+                ".ResumeSourceDto.g.cs",
+                StringComparison.Ordinal)));
+        Assert.DoesNotContain(
+            runResult.GeneratedTrees,
+            tree => tree.FilePath.EndsWith(".DayOfWeekDto.g.cs", StringComparison.Ordinal));
+    }
+
     /// <summary>
     ///     Projection arrays generate their custom and enum element DTOs and compile alongside primitive arrays.
     /// </summary>
@@ -1040,6 +1151,22 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Compiled client DTOs preserve nullable enum collection container annotations.
+    /// </summary>
+    /// <param name="collectionType">The nullable collection shape.</param>
+    /// <param name="nested">Whether a nested record contains the collection.</param>
+    [Theory]
+    [InlineData("List<__Element__>", false)]
+    [InlineData("__Element__[]", false)]
+    [InlineData("List<__Element__>", true)]
+    [InlineData("__Element__[]", true)]
+    public void GeneratedNullableCollectionDtosPreserveContainerAnnotations(
+        string collectionType,
+        bool nested
+    ) =>
+        VerifyNullableEnumCollectionDtosCompile(collectionType, nested, true);
+
+    /// <summary>
     ///     Nullable custom enum collection elements receive enum DTO declarations while framework enums remain unchanged.
     /// </summary>
     /// <param name="collectionType">The collection shape containing nullable enum elements.</param>
@@ -1054,99 +1181,8 @@ public class ProjectionClientDtoGeneratorTests
     public void GeneratedNullableEnumCollectionDtosCompile(
         string collectionType,
         bool nested
-    )
-    {
-        ArgumentNullException.ThrowIfNull(collectionType);
-        const string projectionTemplate = """
-                                          using System;
-                                          using System.Collections.Generic;
-                                          using System.Collections.Immutable;
-                                          using Mississippi.Inlet.Generators.Abstractions;
-                                          using Mississippi.Inlet.Abstractions;
-                                          using TestApp.Domain.Shared;
-
-                                          namespace TestApp.Domain.Shared
-                                          {
-                                              public enum ResumeSource { Reminder = 0, Manual = 7 }
-                                          }
-                                          namespace TestApp.Domain.Projections.Sagas
-                                          {
-                                              [GenerateProjectionEndpoints]
-                                              [ProjectionPath("saga-status")]
-                                              public sealed record SagaStatusProjection
-                                              {
-                                                  public __CustomCollection__ Values { get; init; }
-                                                  public __CustomCollection__ Again { get; init; }
-                                                  public __FrameworkCollection__ Days { get; init; }
-                                              }
-                                          }
-                                          """;
-        string projectionSource = projectionTemplate
-            .Replace(
-                "__CustomCollection__",
-                collectionType.Replace("__Element__", "ResumeSource?", StringComparison.Ordinal),
-                StringComparison.Ordinal)
-            .Replace(
-                "__FrameworkCollection__",
-                collectionType.Replace("__Element__", "DayOfWeek?", StringComparison.Ordinal),
-                StringComparison.Ordinal);
-        if (nested)
-        {
-            projectionSource = projectionSource
-                .Replace("[GenerateProjectionEndpoints]", string.Empty, StringComparison.Ordinal)
-                .Replace("[ProjectionPath(\"saga-status\")]", string.Empty, StringComparison.Ordinal)
-                .Replace("SagaStatusProjection", "RecoveryEntry", StringComparison.Ordinal);
-            projectionSource += """
-                                namespace TestApp.Domain.Projections.Sagas
-                                {
-                                    [GenerateProjectionEndpoints]
-                                    [ProjectionPath("saga-status")]
-                                    public sealed record SagaStatusProjection
-                                    {
-                                        public ImmutableArray<RecoveryEntry> History { get; init; }
-                                    }
-                                }
-                                """;
-        }
-
-        (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, projectionSource);
-        Assert.Empty(diagnostics);
-        Assert.Empty(
-            outputCompilation.GetDiagnostics(TestContext.Current.CancellationToken)
-                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
-        using MemoryStream assembly = new();
-        Assert.True(outputCompilation.Emit(assembly, cancellationToken: TestContext.Current.CancellationToken).Success);
-        const string dtoNamespace = "TestApp.Client.Features.Sagas.Dtos";
-        INamedTypeSymbol enumDto = outputCompilation.GetTypeByMetadataName($"{dtoNamespace}.ResumeSourceDto")!;
-        Assert.NotNull(enumDto);
-        Assert.Equal(TypeKind.Enum, enumDto.TypeKind);
-        string targetDtoName = nested ? "RecoveryEntryDto" : "SagaStatusProjectionDto";
-        INamedTypeSymbol projectionDto = outputCompilation.GetTypeByMetadataName($"{dtoNamespace}.{targetDtoName}")!;
-        Assert.NotNull(projectionDto);
-        foreach (string propertyName in new[] { "Values", "Again", "Days" })
-        {
-            IPropertySymbol property = Assert.Single(projectionDto.GetMembers(propertyName).OfType<IPropertySymbol>());
-            ITypeSymbol element = property.Type is IArrayTypeSymbol array
-                ? array.ElementType
-                : Assert.Single(Assert.IsType<INamedTypeSymbol>(property.Type, false).TypeArguments);
-            INamedTypeSymbol nullableElement = Assert.IsType<INamedTypeSymbol>(element, false);
-            Assert.Equal(SpecialType.System_Nullable_T, nullableElement.OriginalDefinition.SpecialType);
-            ITypeSymbol expectedElement = propertyName == "Days"
-                ? outputCompilation.GetTypeByMetadataName("System.DayOfWeek")!
-                : enumDto;
-            Assert.True(
-                SymbolEqualityComparer.Default.Equals(expectedElement, Assert.Single(nullableElement.TypeArguments)));
-        }
-
-        Assert.Single(
-            runResult.GeneratedTrees.Where(tree => tree.FilePath.EndsWith(
-                ".ResumeSourceDto.g.cs",
-                StringComparison.Ordinal)));
-        Assert.DoesNotContain(
-            runResult.GeneratedTrees,
-            tree => tree.FilePath.EndsWith(".DayOfWeekDto.g.cs", StringComparison.Ordinal));
-    }
+    ) =>
+        VerifyNullableEnumCollectionDtosCompile(collectionType, nested, false);
 
     /// <summary>
     ///     A projection and an enum that normalize to one DTO name produce a diagnostic without generator failure.
