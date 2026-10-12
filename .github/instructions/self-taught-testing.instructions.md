@@ -22,6 +22,8 @@ Governing thought: Test observable failure cases and keep test evidence accurate
 
 - HTTP decoding tests **SHOULD** return malformed response bytes or headers. Why: PR #844's throwing `HttpContent` fixture failed during `HttpClient` buffering, before the response-decoding catch.
 
+- Diagnostic tests **SHOULD** cover providers throwing from `IsEnabled` and `Log`. Why: PR #844 lost the terminal command action when either provider call threw.
+
 ## Scope and Audience
 
 Agents writing or validating tests under `tests/**`.

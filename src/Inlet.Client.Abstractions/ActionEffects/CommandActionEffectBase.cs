@@ -165,13 +165,13 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
             }
             catch (JsonException ex)
             {
-                OnInvalidResponse(ex, commandId, commandType, (int)response.StatusCode);
                 errorMessage = $"Invalid response: {ex.Message}";
+                ReportInvalidResponse(ex, commandId, commandType, (int)response.StatusCode);
             }
             catch (InvalidOperationException ex)
             {
-                OnInvalidResponse(ex, commandId, commandType, (int)response.StatusCode);
                 errorMessage = $"Invalid response: {ex.Message}";
+                ReportInvalidResponse(ex, commandId, commandType, (int)response.StatusCode);
             }
         }
         catch (HttpRequestException ex)
@@ -249,6 +249,7 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
     /// <remarks>
     ///     This optional hook lets externally derived effects provide diagnostics from their implementation
     ///     assembly. The default implementation does nothing and requires no logging infrastructure.
+    ///     Noncritical exceptions from this hook do not change the terminal lifecycle action.
     /// </remarks>
     protected virtual void OnInvalidResponse(
         Exception exception,
@@ -257,5 +258,31 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
         int statusCode
     )
     {
+    }
+
+    /// <summary>
+    ///     Keeps optional diagnostic failures separate from the terminal command result.
+    /// </summary>
+    /// <param name="exception">The original response-decoding exception.</param>
+    /// <param name="commandId">The lifecycle correlation identifier.</param>
+    /// <param name="commandType">The command action type.</param>
+    /// <param name="statusCode">The HTTP response status.</param>
+    private void ReportInvalidResponse(
+        Exception exception,
+        string commandId,
+        string commandType,
+        int statusCode
+    )
+    {
+        try
+        {
+            OnInvalidResponse(exception, commandId, commandType, statusCode);
+        }
+        catch (Exception diagnosticException) when (diagnosticException is not OutOfMemoryException
+                                                        and not StackOverflowException and not AccessViolationException
+                                                        and not ThreadInterruptedException)
+        {
+            // Optional diagnostics must not prevent the terminal action. Retrying the same failing sink can also fail.
+        }
     }
 }

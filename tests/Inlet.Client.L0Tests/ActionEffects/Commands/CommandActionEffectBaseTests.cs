@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.Common.Abstractions.Mapping;
+using Mississippi.Inlet.Client.L0Tests.ActionEffects.CommandUrls;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 using Moq;
@@ -480,6 +481,48 @@ public sealed class CommandActionEffectBaseTests
     }
 
     /// <summary>
+    ///     The original abstraction constructor preserves response failures with absent or failing optional diagnostics.
+    /// </summary>
+    /// <param name="throwFromHook">Whether a derived effect supplies a failing diagnostic hook.</param>
+    /// <returns>The asynchronous test operation.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task HandleAsyncPreservesLegacyResponseFailureWithOptionalDiagnosticsAsync(
+        bool throwFromHook
+    )
+    {
+        CommandUrlAction action = new("entity-1");
+        FakeTimeProvider clock = new(StartedAt);
+        Mock<IMapper<CommandUrlAction, CommandUrlRequest>> mapper = new(MockBehavior.Strict);
+        mapper.Setup(value => value.Map(action)).Returns(new CommandUrlRequest(1));
+        using CommandEffectHttpHandler handler = new((_, _) =>
+        {
+            clock.Advance(TimeSpan.FromSeconds(2));
+            return Task.FromResult(CreateResponse(HttpStatusCode.OK, "{\"success\":\"invalid\"}"));
+        });
+        using HttpClient http = CreateClient(handler);
+        CommandUrlEffect effect = throwFromHook
+            ? new ThrowingResponseDiagnosticEffect(http, mapper.Object, clock)
+            : new CommandUrlEffect(http, mapper.Object, clock);
+        List<IAction> actions = [];
+        await foreach (IAction emitted in effect.HandleAsync(action, new(), TestContext.Current.CancellationToken))
+        {
+            actions.Add(emitted);
+        }
+
+        Assert.Equal(2, actions.Count);
+        CommandUrlExecutingAction executing = Assert.IsType<CommandUrlExecutingAction>(actions[0]);
+        CommandUrlFailedAction failed = Assert.IsType<CommandUrlFailedAction>(actions[1]);
+        Assert.Equal(executing.CommandId, failed.CommandId);
+        Assert.Equal(StartedAt, executing.Timestamp);
+        Assert.Equal(StartedAt.AddSeconds(2), failed.Timestamp);
+        Assert.Equal("HttpError", failed.ErrorCode);
+        Assert.StartsWith("Invalid response: ", failed.ErrorMessage, StringComparison.Ordinal);
+        Assert.DoesNotContain("Diagnostic hook failed.", failed.ErrorMessage, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Mapping failures remain local exceptions rather than being classified as invalid server responses.
     /// </summary>
     /// <returns>The asynchronous test operation.</returns>
@@ -503,5 +546,106 @@ public sealed class CommandActionEffectBaseTests
         Assert.Same(expected, actual);
         mapper.Verify(value => value.Map(action), Times.Once);
         mapper.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
+    ///     Critical diagnostic failures propagate from the effect instead of being converted to command outcomes.
+    /// </summary>
+    /// <param name="exceptionType">The critical exception type.</param>
+    /// <returns>The asynchronous test operation.</returns>
+    [Theory]
+    [InlineData(typeof(OutOfMemoryException))]
+    [InlineData(typeof(StackOverflowException))]
+    [InlineData(typeof(AccessViolationException))]
+    [InlineData(typeof(ThreadInterruptedException))]
+    public async Task HandleAsyncPropagatesCriticalDiagnosticFailuresAsync(
+        Type exceptionType
+    )
+    {
+        CommandEffectAction action = new("entity-1");
+        Exception criticalFailure = Assert.IsType<Exception>(
+            Activator.CreateInstance(exceptionType, "Critical diagnostic failure."),
+            false);
+        Mock<ILogger<CommandEffectAction>> logger = new();
+        logger.Setup(value => value.IsEnabled(LogLevel.Warning)).Throws(criticalFailure);
+        using CommandEffectHttpHandler handler = new((_, _) =>
+            Task.FromResult(CreateResponse(HttpStatusCode.OK, "{\"success\":\"invalid\"}")));
+        using HttpClient http = CreateClient(handler);
+        CommandEffect effect = new(http, CreateMapper(action).Object, new FakeTimeProvider(StartedAt), logger.Object);
+        await using IAsyncEnumerator<IAction> enumerator = effect
+            .HandleAsync(action, new(), TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await enumerator.MoveNextAsync());
+        Assert.IsType<CommandEffectExecutingAction>(enumerator.Current);
+        Exception? actual = await Record.ExceptionAsync(() => enumerator.MoveNextAsync().AsTask());
+        Assert.Same(criticalFailure, actual);
+    }
+
+    /// <summary>
+    ///     Throwing diagnostic providers cannot prevent the original correlated terminal failure.
+    /// </summary>
+    /// <param name="isJson">Whether to simulate JSON decoding instead of charset decoding.</param>
+    /// <param name="status">The HTTP response status.</param>
+    /// <param name="throwFromEnabledCheck">Whether the provider fails in IsEnabled instead of Log.</param>
+    /// <returns>The asynchronous test operation.</returns>
+    [Theory]
+    [InlineData(true, HttpStatusCode.OK, true)]
+    [InlineData(true, HttpStatusCode.OK, false)]
+    [InlineData(false, HttpStatusCode.OK, true)]
+    [InlineData(false, HttpStatusCode.OK, false)]
+    [InlineData(false, HttpStatusCode.BadRequest, true)]
+    [InlineData(false, HttpStatusCode.BadRequest, false)]
+    public async Task HandleAsyncRetainsResponseFailureWhenLoggerThrowsAsync(
+        bool isJson,
+        HttpStatusCode status,
+        bool throwFromEnabledCheck
+    )
+    {
+        const string diagnosticMessage = "Diagnostic provider failed.";
+        CommandEffectAction action = new("entity-1");
+        FakeTimeProvider clock = new(StartedAt);
+        Mock<ILogger<CommandEffectAction>> logger = new();
+        InvalidOperationException diagnosticFailure = new(diagnosticMessage);
+        if (throwFromEnabledCheck)
+        {
+            logger.Setup(value => value.IsEnabled(LogLevel.Warning)).Throws(diagnosticFailure);
+        }
+        else
+        {
+            logger.Setup(value => value.IsEnabled(LogLevel.Warning)).Returns(true);
+            logger.Setup(value => value.Log(
+                    It.IsAny<LogLevel>(),
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception?>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
+                .Throws(diagnosticFailure);
+        }
+
+        using CommandEffectHttpHandler handler = new((_, _) =>
+        {
+            clock.Advance(TimeSpan.FromSeconds(2));
+            HttpResponseMessage response = CreateResponse(status, "{\"success\":\"invalid\"}");
+            if (!isJson)
+            {
+                response.Content.Headers.ContentType!.CharSet = "invalid-charset";
+            }
+
+            return Task.FromResult(response);
+        });
+        using HttpClient http = CreateClient(handler);
+        CommandEffect effect = new(http, CreateMapper(action).Object, clock, logger.Object);
+        List<IAction> actions = await CollectAsync(effect, action, TestContext.Current.CancellationToken);
+        CommandEffectFailedAction failed = AssertFailure(actions, "HttpError");
+        Assert.StartsWith("Invalid response: ", failed.ErrorMessage, StringComparison.Ordinal);
+        Assert.DoesNotContain(diagnosticMessage, failed.ErrorMessage, StringComparison.Ordinal);
+        if (throwFromEnabledCheck)
+        {
+            Assert.DoesNotContain(logger.Invocations, invocation => invocation.Method.Name == nameof(ILogger.Log));
+        }
+        else
+        {
+            Assert.Single(logger.Invocations, invocation => invocation.Method.Name == nameof(ILogger.Log));
+        }
     }
 }
