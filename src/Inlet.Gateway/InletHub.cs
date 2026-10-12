@@ -132,13 +132,18 @@ public sealed class InletHub : Hub<IInletHubClient>
 
     private static AuthenticationHandlerProvider? GetFrameworkHandlerProvider(
         IAuthenticationService? authenticationService
-    ) =>
-        authenticationService is AuthenticationService frameworkService &&
-        (authenticationService.GetType().Assembly == typeof(AuthenticationService).Assembly) &&
-        frameworkService.Handlers is AuthenticationHandlerProvider handlers &&
-        (handlers.GetType() == typeof(AuthenticationHandlerProvider))
+    )
+    {
+        IAuthenticationService? selected = authenticationService is ConnectionSubscriptionAuthenticationService replay
+            ? replay.FrameworkAuthentication
+            : authenticationService;
+        return selected is AuthenticationService frameworkService &&
+               (selected.GetType().Assembly == typeof(AuthenticationService).Assembly) &&
+               frameworkService.Handlers is AuthenticationHandlerProvider handlers &&
+               (handlers.GetType() == typeof(AuthenticationHandlerProvider))
             ? handlers
             : null;
+    }
 
     private static string? GetUserId(
         ClaimsPrincipal? user
@@ -290,9 +295,11 @@ public sealed class InletHub : Hub<IInletHubClient>
             }
         }
 
-        if (ConnectionAuthenticationSnapshot.HasDifferentPrincipal(httpContext, Context.User))
+        if (ConnectionAuthenticationSnapshot.HasDifferentPrincipal(httpContext, Context.User) &&
+            (httpContext.RequestServices is not SubscriptionAuthenticationServices services ||
+             !await services.CanUseEstablishedAuthenticationAsync(policy)))
         {
-            // A reduced connection context still holds the first request's credentials.
+            // A different caller can proceed only with authentication proven for that exact principal.
             return (null, false, null);
         }
 
@@ -441,7 +448,9 @@ public sealed class InletHub : Hub<IInletHubClient>
                 decisionContext.RequestServices = new SubscriptionAuthenticationServices(
                     connectionServices,
                     frameworkService!,
-                    handlers.Schemes);
+                    handlers.Schemes,
+                    decisionContext,
+                    () => Context.User);
             }
 
             await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, decisionContext, policyEvaluator);

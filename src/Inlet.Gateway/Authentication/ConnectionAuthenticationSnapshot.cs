@@ -111,8 +111,32 @@ internal static class ConnectionAuthenticationSnapshot
         string? defaultScheme = await GetDefaultAuthenticationSchemeAsync(context, feature!);
         if (ReferenceEquals(result.Principal, context.User) && ReferenceEquals(result, feature!.AuthenticateResult))
         {
-            StoreSnapshot(context, result.Principal, schemes, defaultScheme);
+            StoreSnapshot(context, result.Principal, schemes, defaultScheme, result.Properties);
         }
+    }
+
+    /// <summary>
+    ///     Recovers a verified single-scheme result for the exact established caller.
+    /// </summary>
+    /// <param name="context">The isolated connection decision context.</param>
+    /// <param name="principal">The principal retained by the hub.</param>
+    /// <param name="scheme">The scheme requested by the evaluator.</param>
+    /// <returns>The established result when its scheme or stable default alias matches.</returns>
+    internal static AuthenticateResult? GetAuthenticationResult(
+        HttpContext context,
+        ClaimsPrincipal? principal,
+        string scheme
+    )
+    {
+        Snapshot? snapshot = GetSnapshot(context, principal);
+        if (snapshot is not { Schemes.Count: 1 } ||
+            (!string.Equals(snapshot.Schemes[0], scheme, StringComparison.Ordinal) &&
+             !string.Equals(snapshot.DefaultScheme, scheme, StringComparison.Ordinal)))
+        {
+            return null;
+        }
+
+        return AuthenticateResult.Success(new(snapshot.Principal, snapshot.Properties?.Clone(), snapshot.Schemes[0]));
     }
 
     /// <summary>
@@ -217,11 +241,13 @@ internal static class ConnectionAuthenticationSnapshot
     /// <param name="principal">The principal handed to SignalR by the original request.</param>
     /// <param name="schemes">The verified schemes, or an empty list when no authentication is proven.</param>
     /// <param name="defaultScheme">The stable default scheme originally requested by middleware.</param>
+    /// <param name="properties">The verified ticket properties, or null for caller ownership only.</param>
     private static void StoreSnapshot(
         HttpContext context,
         ClaimsPrincipal principal,
         string[] schemes,
-        string? defaultScheme
+        string? defaultScheme,
+        AuthenticationProperties? properties = null
     )
     {
         // Items survive long-polling cloning; request features and their service scope do not.
@@ -231,7 +257,8 @@ internal static class ConnectionAuthenticationSnapshot
             defaultScheme,
             OperatingSystem.IsWindows() && principal.Identity is WindowsIdentity,
             context.GetEndpoint(),
-            context.Request.Query["id"].ToString());
+            context.Request.Query["id"].ToString(),
+            properties?.Clone());
         context.Items[ItemKey] = snapshot;
         if ((schemes.Length > 0) && snapshot.Endpoint is not null && (snapshot.ConnectionToken.Length > 0))
         {
@@ -250,12 +277,14 @@ internal static class ConnectionAuthenticationSnapshot
     /// <param name="RequiresWindowsBinding">Whether SignalR's initial Windows clone must be bound at startup.</param>
     /// <param name="Endpoint">The mapped endpoint that accepted the authentication result.</param>
     /// <param name="ConnectionToken">The transport token from the authenticated request.</param>
+    /// <param name="Properties">A copy of the verified ticket properties, when authentication succeeded.</param>
     private sealed record Snapshot(
         ClaimsPrincipal Principal,
         IReadOnlyList<string> Schemes,
         string? DefaultScheme,
         bool RequiresWindowsBinding,
         Endpoint? Endpoint,
-        string ConnectionToken
+        string ConnectionToken,
+        AuthenticationProperties? Properties
     );
 }

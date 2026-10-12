@@ -29,6 +29,8 @@ using Mississippi.Inlet.Gateway.Authentication;
 using Mississippi.Inlet.Runtime.Abstractions;
 using Mississippi.Inlet.Runtime.Grains;
 
+using MississippiTests.Inlet.Gateway.L0Tests.Authentication;
+
 using NSubstitute;
 
 using Orleans;
@@ -1012,6 +1014,77 @@ public sealed class InletHubConnectionAuthenticationTests
         await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
         Assert.Equal(tenant.Id, evaluator.AuthenticatedTenant);
         Assert.Same(connectionScope.ServiceProvider, retained.RequestServices);
+    }
+
+    /// <summary>
+    ///     Wrapped and derived evaluators retain verified TLS authentication while preserving their vetoes.
+    /// </summary>
+    /// <param name="useSubclass">Whether the host derives from the framework evaluator.</param>
+    /// <param name="authenticateAllowed">Whether the evaluator accepts subscription authentication.</param>
+    /// <param name="authorizeAllowed">Whether the evaluator accepts subscription authorization.</param>
+    /// <returns>A task that completes when reduced-context and veto assertions have been verified.</returns>
+    [Theory]
+    [InlineData(false, true, true)]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, false)]
+    [InlineData(true, true, true)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    public async Task SubscribePreservesVerifiedTlsAuthenticationWithCustomEvaluator(
+        bool useSubclass,
+        bool authenticateAllowed,
+        bool authorizeAllowed
+    )
+    {
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.Services.AddSignalR();
+        builder.Services.AddAuthentication()
+            .AddScheme<AuthenticationSchemeOptions, FeatureDependentHandler>(TlsScheme, _ => { });
+        AuthorizationPolicy policy = CreatePolicy(TlsScheme);
+        builder.Services.AddAuthorizationBuilder().SetDefaultPolicy(policy);
+        ConnectionEvaluatorControl control = new();
+        builder.Services.AddScoped<IPolicyEvaluator>(services => useSubclass
+            ? new DerivedConnectionPolicyEvaluator(services.GetRequiredService<IAuthorizationService>(), control)
+            : new WrappedConnectionPolicyEvaluator(services.GetRequiredService<IAuthorizationService>(), control));
+        await using WebApplication app = builder.Build();
+        await using AsyncServiceScope requestScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext original = CreateOriginalContext(requestScope.ServiceProvider);
+        IPolicyEvaluator originalEvaluator = requestScope.ServiceProvider.GetRequiredService<IPolicyEvaluator>();
+        AuthenticateResult established = await originalEvaluator.AuthenticateAsync(policy, original);
+        Assert.True(established.Succeeded);
+        Assert.Equal(PolicyAlias, original.User.Identity?.AuthenticationType);
+        Assert.True((await originalEvaluator.AuthorizeAsync(policy, established, original, original)).Succeeded);
+        IAuthenticateResultFeature feature = Substitute.For<IAuthenticateResultFeature>();
+        feature.AuthenticateResult.Returns(established);
+        original.Features.Set(feature);
+        await DispatchHubEndpointAsync(app, original, policy);
+        ClaimsPrincipal caller = original.User;
+        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext retained = CloneConnectionContext(original, connectionScope.ServiceProvider);
+        Assert.Null(retained.Features.Get<ITlsConnectionFeature>());
+        PolicyEvaluator reference = new(app.Services.GetRequiredService<IAuthorizationService>());
+        Assert.False((await reference.AuthenticateAsync(policy, retained)).Succeeded);
+        retained.User = caller;
+        control.CanAuthenticate = authenticateAllowed;
+        control.CanAuthorize = authorizeAllowed;
+        using InletHub hub = CreateHub(retained, caller, TlsScheme, out IInletSubscriptionGrain grain);
+        if (authenticateAllowed && authorizeAllowed)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        Assert.Equal(2, control.Authentications);
+        Assert.Equal(authenticateAllowed ? 2 : 1, control.Authorizations);
+        Assert.Same(caller, hub.Context.User);
+        Assert.Same(caller, retained.User);
     }
 
     /// <summary>
