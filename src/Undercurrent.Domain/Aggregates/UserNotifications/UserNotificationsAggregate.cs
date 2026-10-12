@@ -8,11 +8,13 @@ using Orleans;
 
 namespace Mississippi.Undercurrent.Domain.Aggregates.UserNotifications;
 
+// Keep the persisted schema version explicit when CleanupCode runs.
+// ReSharper disable once RedundantArgumentDefaultValue
 /// <summary>
 ///     Holds the notifications for the user identified by the aggregate entity key.
 /// </summary>
-[BrookName("MISSISSIPPI", "UNDERCURRENT", "USERNOTIFICATIONS")]
 [SnapshotStorageName("MISSISSIPPI", "UNDERCURRENT", "USERNOTIFICATIONS", 1)]
+[BrookName("MISSISSIPPI", "UNDERCURRENT", "USERNOTIFICATIONS")]
 [GenerateSerializer]
 [Alias("Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.UserNotificationsAggregate")]
 internal sealed record UserNotificationsAggregate
