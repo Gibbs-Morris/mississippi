@@ -9,12 +9,12 @@ namespace Mississippi.Inlet.Generators.Core.Analysis;
 public static class GeneratedProjectionDiagnostics
 {
     /// <summary>
-    ///     Reports a nullable enum collection without a compatible DTO materializer.
+    ///     Reports an enum collection without a compatible DTO materializer.
     /// </summary>
-    public static readonly DiagnosticDescriptor UnsupportedNullableEnumCollection = new(
+    public static readonly DiagnosticDescriptor UnsupportedEnumCollection = new(
         "INLETDTO002",
-        "Unsupported nullable enum collection shape",
-        "Property '{0}' uses nullable enum collection '{1}' without a compatible DTO materializer. Use a one-dimensional array or a supported list or set collection.",
+        "Unsupported enum collection shape",
+        "Property '{0}' uses enum collection '{1}' without a compatible DTO materializer. Use a one-dimensional array or a supported list or set collection.",
         "Mississippi.Inlet.Projections",
         DiagnosticSeverity.Error,
         true);

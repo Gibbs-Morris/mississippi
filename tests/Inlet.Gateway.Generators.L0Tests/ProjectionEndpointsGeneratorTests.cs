@@ -103,6 +103,216 @@ public class ProjectionEndpointsGeneratorTests
         return (outputCompilation, diagnostics, driver.GetRunResult());
     }
 
+    private static void VerifyEnumCollectionMappersCompileAndPreserveValues(
+        string collectionType,
+        bool nested,
+        bool nullableElements
+    )
+    {
+        ArgumentNullException.ThrowIfNull(collectionType);
+        const string projectionTemplate = """
+                                          using System;
+                                          using System.Collections.Generic;
+                                          using System.Collections.Immutable;
+                                          using Mississippi.Inlet.Generators.Abstractions;
+                                          using Mississippi.Inlet.Abstractions;
+                                          using TestApp.Domain.Shared;
+
+                                          namespace TestApp.Domain.Shared
+                                          {
+                                              public enum ResumeSource { Reminder = 0, Manual = 7 }
+                                          }
+                                          namespace TestApp.Domain.Projections.Sagas
+                                          {
+                                              [GenerateProjectionEndpoints]
+                                              [ProjectionPath("saga-status")]
+                                              public sealed record SagaStatusProjection
+                                              {
+                                                  public __CustomCollection__ Values { get; init; }
+                                                  public __FrameworkCollection__ Days { get; init; }
+                                              }
+                                          }
+                                          """;
+        string projectionSource = projectionTemplate
+            .Replace(
+                "__CustomCollection__",
+                collectionType.Replace("__Element__", "ResumeSource?", StringComparison.Ordinal),
+                StringComparison.Ordinal)
+            .Replace(
+                "__FrameworkCollection__",
+                collectionType.Replace("__Element__", "DayOfWeek?", StringComparison.Ordinal),
+                StringComparison.Ordinal);
+        if (!nullableElements)
+        {
+            projectionSource = projectionSource.Replace("ResumeSource?", "ResumeSource", StringComparison.Ordinal)
+                .Replace("DayOfWeek?", "DayOfWeek", StringComparison.Ordinal);
+        }
+
+        if (nested)
+        {
+            projectionSource = projectionSource
+                .Replace("[GenerateProjectionEndpoints]", string.Empty, StringComparison.Ordinal)
+                .Replace("[ProjectionPath(\"saga-status\")]", string.Empty, StringComparison.Ordinal)
+                .Replace("SagaStatusProjection", "RecoveryEntry", StringComparison.Ordinal);
+            projectionSource += """
+                                namespace TestApp.Domain.Projections.Sagas
+                                {
+                                    [GenerateProjectionEndpoints]
+                                    [ProjectionPath("saga-status")]
+                                    public sealed record SagaStatusProjection
+                                    {
+                                        public ImmutableArray<RecoveryEntry> History { get; init; }
+                                    }
+                                }
+                                """;
+        }
+
+        const string mappingTemplate = """
+                                       namespace Microsoft.Extensions.DependencyInjection
+                                       {
+                                           public interface IServiceCollection { }
+                                       }
+                                       namespace Mississippi.Common.Abstractions.Mapping
+                                       {
+                                           public interface IMapper<in TFrom, out TTo> { TTo Map(TFrom input); }
+                                           public interface IEnumerableMapper<in TFrom, out TTo>
+                                               : IMapper<System.Collections.Generic.IEnumerable<TFrom>,
+                                                   System.Collections.Generic.IEnumerable<TTo>> { }
+                                           public static class MappingRegistrations
+                                           {
+                                               public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddMapper<TFrom, TTo, TMapper>(
+                                                   this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+                                                   where TMapper : class, IMapper<TFrom, TTo> => services;
+                                               public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddIEnumerableMapper(
+                                                   this Microsoft.Extensions.DependencyInjection.IServiceCollection services) => services;
+                                           }
+                                       }
+                                       namespace TestAssembly.Verification
+                                       {
+                                           using System;
+                                           using System.Linq;
+                                           using TestApp.Domain.Shared;
+                                           using TestApp.Domain.Projections.Sagas;
+                                           using TestAssembly.Controllers.Projections;
+                                           using TestAssembly.Controllers.Projections.Mappers;
+
+                                           public static class NullableEnumCollectionMappingProbe
+                                           {
+                                               public static int?[] Map()
+                                               {
+                                                   SagaStatusProjection source = new()
+                                                   {
+                                                       Values = [null, ResumeSource.Manual, ResumeSource.Reminder],
+                                                       Days = [null, DayOfWeek.Friday, DayOfWeek.Monday],
+                                                   };
+                                                   SagaStatusDto dto = new SagaStatusProjectionMapper().Map(source);
+                                                   System.Collections.Generic.IEnumerable<DayOfWeek?> retainedDays = dto.Days;
+                                                   return dto.Values.Select(value => (int?)value)
+                                                       .Concat(retainedDays.Select(value => (int?)value)).ToArray();
+                                               }
+                                           }
+                                       }
+                                       """;
+        string mappingSource = nested
+            ? mappingTemplate
+                .Replace(
+                    "SagaStatusProjection source = new()",
+                    "RecoveryEntry source = new()",
+                    StringComparison.Ordinal)
+                .Replace(
+                    "SagaStatusDto dto = new SagaStatusProjectionMapper().Map(source);",
+                    "RecoveryEntryDto dto = new RecoveryEntryDtoMapper().Map(source);",
+                    StringComparison.Ordinal)
+            : mappingTemplate;
+        string? initializer = collectionType switch
+        {
+            "HashSet<__Element__>" or "ISet<__Element__>" or "IReadOnlySet<__Element__>" => ".ToHashSet()",
+            "ImmutableHashSet<__Element__>" or "IImmutableSet<__Element__>" => ".ToImmutableHashSet()",
+            "ImmutableSortedSet<__Element__>" => ".ToImmutableSortedSet()",
+            "IImmutableList<__Element__>" => ".ToImmutableList()",
+            var _ => null,
+        };
+        if (initializer is not null)
+        {
+            mappingSource = mappingSource
+                .Replace(
+                    "using System.Linq;",
+                    "using System.Linq; using System.Collections.Immutable;",
+                    StringComparison.Ordinal)
+                .Replace(
+                    "[null, ResumeSource.Manual, ResumeSource.Reminder]",
+                    "new ResumeSource?[] { null, ResumeSource.Manual, ResumeSource.Reminder }" + initializer,
+                    StringComparison.Ordinal)
+                .Replace(
+                    "[null, DayOfWeek.Friday, DayOfWeek.Monday]",
+                    "new DayOfWeek?[] { null, DayOfWeek.Friday, DayOfWeek.Monday }" + initializer,
+                    StringComparison.Ordinal);
+        }
+
+        if (!nullableElements)
+        {
+            mappingSource = mappingSource.Replace("ResumeSource?", "ResumeSource", StringComparison.Ordinal)
+                .Replace("DayOfWeek?", "DayOfWeek", StringComparison.Ordinal)
+                .Replace("null, ResumeSource.Manual", "ResumeSource.Manual", StringComparison.Ordinal)
+                .Replace("null, DayOfWeek.Friday", "DayOfWeek.Friday", StringComparison.Ordinal);
+        }
+
+        (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Assert.Empty(diagnostics);
+        SyntaxTree[] hostTrees = runResult.GeneratedTrees.Where(tree =>
+                tree.FilePath.Contains("Controller.g.cs", StringComparison.Ordinal))
+            .ToArray();
+        Compilation mappingCompilation = outputCompilation.RemoveSyntaxTrees(hostTrees)
+            .AddSyntaxTrees(
+                CSharpSyntaxTree.ParseText(mappingSource, cancellationToken: TestContext.Current.CancellationToken))
+            .AddReferences(
+                MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(JsonRequiredAttribute).Assembly.Location));
+        Assert.Empty(
+            mappingCompilation.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        Assert.Single(
+            runResult.GeneratedTrees.Where(tree => Path.GetFileName(tree.FilePath) == "ResumeSourceDto.g.cs"));
+        using MemoryStream assemblyStream = new();
+        Assert.True(
+            mappingCompilation.Emit(assemblyStream, cancellationToken: TestContext.Current.CancellationToken).Success);
+        assemblyStream.Position = 0;
+        AssemblyLoadContext context = new(nameof(GeneratedNullableEnumCollectionMappersCompileAndPreserveValues), true);
+        try
+        {
+            Assembly assembly = context.LoadFromStream(assemblyStream);
+            MethodInfo map =
+                assembly.GetType("TestAssembly.Verification.NullableEnumCollectionMappingProbe")!.GetMethod("Map")!;
+            int?[] actual = Assert.IsType<int?[]>(map.Invoke(null, null));
+            if (!nullableElements)
+            {
+                if (collectionType.Contains("Set<", StringComparison.Ordinal))
+                {
+                    Assert.Equal(new int?[] { 0, 7 }, actual.Take(2).Order());
+                    Assert.Equal(new int?[] { 1, 5 }, actual.Skip(2).Order());
+                }
+                else
+                {
+                    Assert.Equal(new int?[] { 7, 0, 5, 1 }, actual);
+                }
+            }
+            else if (collectionType.Contains("Set<", StringComparison.Ordinal))
+            {
+                Assert.Equal(new int?[] { null, 0, 7 }, actual.Take(3).Order());
+                Assert.Equal(new int?[] { null, 1, 5 }, actual.Skip(3).Order());
+            }
+            else
+            {
+                Assert.Equal(new int?[] { null, 7, 0, null, 5, 1 }, actual);
+            }
+        }
+        finally
+        {
+            context.Unload();
+        }
+    }
+
     /// <summary>
     ///     Generated controller should call base constructor correctly.
     /// </summary>
@@ -1385,6 +1595,27 @@ public class ProjectionEndpointsGeneratorTests
     }
 
     /// <summary>
+    ///     Nested non-nullable custom enum collections use DTO elements and retain their collection shape.
+    /// </summary>
+    /// <param name="collectionType">The collection shape containing enum elements.</param>
+    [Theory]
+    [InlineData("ImmutableArray<__Element__>")]
+    [InlineData("ImmutableList<__Element__>")]
+    [InlineData("List<__Element__>")]
+    [InlineData("__Element__[]")]
+    [InlineData("HashSet<__Element__>")]
+    [InlineData("ISet<__Element__>")]
+    [InlineData("IReadOnlySet<__Element__>")]
+    [InlineData("ImmutableHashSet<__Element__>")]
+    [InlineData("IImmutableSet<__Element__>")]
+    [InlineData("ImmutableSortedSet<__Element__>")]
+    [InlineData("IImmutableList<__Element__>")]
+    public void GeneratedNestedNonNullableEnumCollectionMappersCompileAndPreserveValues(
+        string collectionType
+    ) =>
+        VerifyEnumCollectionMappersCompileAndPreserveValues(collectionType, true, false);
+
+    /// <summary>
     ///     Generated mappers also preserve nullable enum values inside nested projection records.
     /// </summary>
     [Fact]
@@ -1605,185 +1836,8 @@ public class ProjectionEndpointsGeneratorTests
     public void GeneratedNullableEnumCollectionMappersCompileAndPreserveValues(
         string collectionType,
         bool nested
-    )
-    {
-        ArgumentNullException.ThrowIfNull(collectionType);
-        const string projectionTemplate = """
-                                          using System;
-                                          using System.Collections.Generic;
-                                          using System.Collections.Immutable;
-                                          using Mississippi.Inlet.Generators.Abstractions;
-                                          using Mississippi.Inlet.Abstractions;
-                                          using TestApp.Domain.Shared;
-
-                                          namespace TestApp.Domain.Shared
-                                          {
-                                              public enum ResumeSource { Reminder = 0, Manual = 7 }
-                                          }
-                                          namespace TestApp.Domain.Projections.Sagas
-                                          {
-                                              [GenerateProjectionEndpoints]
-                                              [ProjectionPath("saga-status")]
-                                              public sealed record SagaStatusProjection
-                                              {
-                                                  public __CustomCollection__ Values { get; init; }
-                                                  public __FrameworkCollection__ Days { get; init; }
-                                              }
-                                          }
-                                          """;
-        string projectionSource = projectionTemplate
-            .Replace(
-                "__CustomCollection__",
-                collectionType.Replace("__Element__", "ResumeSource?", StringComparison.Ordinal),
-                StringComparison.Ordinal)
-            .Replace(
-                "__FrameworkCollection__",
-                collectionType.Replace("__Element__", "DayOfWeek?", StringComparison.Ordinal),
-                StringComparison.Ordinal);
-        if (nested)
-        {
-            projectionSource = projectionSource
-                .Replace("[GenerateProjectionEndpoints]", string.Empty, StringComparison.Ordinal)
-                .Replace("[ProjectionPath(\"saga-status\")]", string.Empty, StringComparison.Ordinal)
-                .Replace("SagaStatusProjection", "RecoveryEntry", StringComparison.Ordinal);
-            projectionSource += """
-                                namespace TestApp.Domain.Projections.Sagas
-                                {
-                                    [GenerateProjectionEndpoints]
-                                    [ProjectionPath("saga-status")]
-                                    public sealed record SagaStatusProjection
-                                    {
-                                        public ImmutableArray<RecoveryEntry> History { get; init; }
-                                    }
-                                }
-                                """;
-        }
-
-        const string mappingTemplate = """
-                                       namespace Microsoft.Extensions.DependencyInjection
-                                       {
-                                           public interface IServiceCollection { }
-                                       }
-                                       namespace Mississippi.Common.Abstractions.Mapping
-                                       {
-                                           public interface IMapper<in TFrom, out TTo> { TTo Map(TFrom input); }
-                                           public interface IEnumerableMapper<in TFrom, out TTo>
-                                               : IMapper<System.Collections.Generic.IEnumerable<TFrom>,
-                                                   System.Collections.Generic.IEnumerable<TTo>> { }
-                                           public static class MappingRegistrations
-                                           {
-                                               public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddMapper<TFrom, TTo, TMapper>(
-                                                   this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
-                                                   where TMapper : class, IMapper<TFrom, TTo> => services;
-                                               public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddIEnumerableMapper(
-                                                   this Microsoft.Extensions.DependencyInjection.IServiceCollection services) => services;
-                                           }
-                                       }
-                                       namespace TestAssembly.Verification
-                                       {
-                                           using System;
-                                           using System.Linq;
-                                           using TestApp.Domain.Shared;
-                                           using TestApp.Domain.Projections.Sagas;
-                                           using TestAssembly.Controllers.Projections;
-                                           using TestAssembly.Controllers.Projections.Mappers;
-
-                                           public static class NullableEnumCollectionMappingProbe
-                                           {
-                                               public static int?[] Map()
-                                               {
-                                                   SagaStatusProjection source = new()
-                                                   {
-                                                       Values = [null, ResumeSource.Manual, ResumeSource.Reminder],
-                                                       Days = [null, DayOfWeek.Friday, DayOfWeek.Monday],
-                                                   };
-                                                   SagaStatusDto dto = new SagaStatusProjectionMapper().Map(source);
-                                                   System.Collections.Generic.IEnumerable<DayOfWeek?> retainedDays = dto.Days;
-                                                   return dto.Values.Select(value => (int?)value)
-                                                       .Concat(retainedDays.Select(value => (int?)value)).ToArray();
-                                               }
-                                           }
-                                       }
-                                       """;
-        string mappingSource = nested
-            ? mappingTemplate
-                .Replace(
-                    "SagaStatusProjection source = new()",
-                    "RecoveryEntry source = new()",
-                    StringComparison.Ordinal)
-                .Replace(
-                    "SagaStatusDto dto = new SagaStatusProjectionMapper().Map(source);",
-                    "RecoveryEntryDto dto = new RecoveryEntryDtoMapper().Map(source);",
-                    StringComparison.Ordinal)
-            : mappingTemplate;
-        string? initializer = collectionType switch
-        {
-            "HashSet<__Element__>" or "ISet<__Element__>" or "IReadOnlySet<__Element__>" => ".ToHashSet()",
-            "ImmutableHashSet<__Element__>" or "IImmutableSet<__Element__>" => ".ToImmutableHashSet()",
-            "ImmutableSortedSet<__Element__>" => ".ToImmutableSortedSet()",
-            "IImmutableList<__Element__>" => ".ToImmutableList()",
-            var _ => null,
-        };
-        if (initializer is not null)
-        {
-            mappingSource = mappingSource
-                .Replace(
-                    "using System.Linq;",
-                    "using System.Linq; using System.Collections.Immutable;",
-                    StringComparison.Ordinal)
-                .Replace(
-                    "[null, ResumeSource.Manual, ResumeSource.Reminder]",
-                    "new ResumeSource?[] { null, ResumeSource.Manual, ResumeSource.Reminder }" + initializer,
-                    StringComparison.Ordinal)
-                .Replace(
-                    "[null, DayOfWeek.Friday, DayOfWeek.Monday]",
-                    "new DayOfWeek?[] { null, DayOfWeek.Friday, DayOfWeek.Monday }" + initializer,
-                    StringComparison.Ordinal);
-        }
-
-        (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, projectionSource);
-        Assert.Empty(diagnostics);
-        SyntaxTree[] hostTrees = runResult.GeneratedTrees.Where(tree =>
-                tree.FilePath.Contains("Controller.g.cs", StringComparison.Ordinal))
-            .ToArray();
-        Compilation mappingCompilation = outputCompilation.RemoveSyntaxTrees(hostTrees)
-            .AddSyntaxTrees(
-                CSharpSyntaxTree.ParseText(mappingSource, cancellationToken: TestContext.Current.CancellationToken))
-            .AddReferences(
-                MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(JsonRequiredAttribute).Assembly.Location));
-        Assert.Empty(
-            mappingCompilation.GetDiagnostics(TestContext.Current.CancellationToken)
-                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
-        Assert.Single(
-            runResult.GeneratedTrees.Where(tree => Path.GetFileName(tree.FilePath) == "ResumeSourceDto.g.cs"));
-        using MemoryStream assemblyStream = new();
-        Assert.True(
-            mappingCompilation.Emit(assemblyStream, cancellationToken: TestContext.Current.CancellationToken).Success);
-        assemblyStream.Position = 0;
-        AssemblyLoadContext context = new(nameof(GeneratedNullableEnumCollectionMappersCompileAndPreserveValues), true);
-        try
-        {
-            Assembly assembly = context.LoadFromStream(assemblyStream);
-            MethodInfo map =
-                assembly.GetType("TestAssembly.Verification.NullableEnumCollectionMappingProbe")!.GetMethod("Map")!;
-            int?[] actual = Assert.IsType<int?[]>(map.Invoke(null, null));
-            if (collectionType.Contains("Set<", StringComparison.Ordinal))
-            {
-                Assert.Equal(new int?[] { null, 0, 7 }, actual.Take(3).Order());
-                Assert.Equal(new int?[] { null, 1, 5 }, actual.Skip(3).Order());
-            }
-            else
-            {
-                Assert.Equal(new int?[] { null, 7, 0, null, 5, 1 }, actual);
-            }
-        }
-        finally
-        {
-            context.Unload();
-        }
-    }
+    ) =>
+        VerifyEnumCollectionMappersCompileAndPreserveValues(collectionType, nested, true);
 
     /// <summary>
     ///     Generated projection analysis should warn when authentication schemes metadata contains empty entries.
@@ -2168,7 +2222,7 @@ public class ProjectionEndpointsGeneratorTests
     }
 
     /// <summary>
-    ///     Unsupported nullable enum collection shapes report an actionable diagnostic instead of invalid mapping code.
+    ///     Unsupported enum collection shapes report an actionable diagnostic instead of invalid mapping code.
     /// </summary>
     /// <param name="collectionType">The unsupported collection shape.</param>
     /// <param name="nested">Whether the collection belongs to a nested record.</param>
@@ -2179,7 +2233,10 @@ public class ProjectionEndpointsGeneratorTests
     [InlineData("IImmutableQueue<ResumeSource?>", true)]
     [InlineData("ResumeSource?[,]", false)]
     [InlineData("ResumeSource?[,]", true)]
-    public void GeneratedUnsupportedNullableEnumCollectionProducesDiagnostic(
+    [InlineData("Queue<ResumeSource>", true)]
+    [InlineData("IImmutableQueue<ResumeSource>", true)]
+    [InlineData("ResumeSource[,]", true)]
+    public void GeneratedUnsupportedEnumCollectionProducesDiagnostic(
         string collectionType,
         bool nested
     )
