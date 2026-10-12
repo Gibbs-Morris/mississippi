@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading.Tasks;
@@ -21,6 +22,8 @@ namespace Mississippi.Inlet.Gateway.Authentication;
 internal static class ConnectionAuthenticationSnapshot
 {
     private static object ItemKey { get; } = new();
+
+    private static ConditionalWeakTable<ClaimsPrincipal, Snapshot> RequestSnapshots { get; } = new();
 
     /// <summary>
     ///     Binds SignalR's initial Windows identity clone before the connection accepts invocations.
@@ -107,11 +110,20 @@ internal static class ConnectionAuthenticationSnapshot
         if (ReferenceEquals(result.Principal, context.User) && ReferenceEquals(result, feature!.AuthenticateResult))
         {
             // Items survive long-polling cloning; request features and their service scope do not.
-            context.Items[ItemKey] = new Snapshot(
+            Snapshot snapshot = new(
                 result.Principal,
                 Array.AsReadOnly(schemes),
                 defaultScheme,
-                OperatingSystem.IsWindows() && result.Principal.Identity is WindowsIdentity);
+                OperatingSystem.IsWindows() && result.Principal.Identity is WindowsIdentity,
+                context.GetEndpoint(),
+                context.Request.Query["id"].ToString());
+            context.Items[ItemKey] = snapshot;
+            if (snapshot.Endpoint is not null && (snapshot.ConnectionToken.Length > 0))
+            {
+                // A later poll can supply the principal first read by the hub during its handshake.
+                // Bind its verified schemes to this exact principal, mapped endpoint and transport token.
+                RequestSnapshots.AddOrUpdate(result.Principal, snapshot);
+            }
         }
     }
 
@@ -141,9 +153,7 @@ internal static class ConnectionAuthenticationSnapshot
         AuthorizationPolicy policy,
         ClaimsPrincipal? principal
     ) =>
-        context.Items.TryGetValue(ItemKey, out object? value) &&
-        value is Snapshot snapshot &&
-        ReferenceEquals(snapshot.Principal, principal) &&
+        GetSnapshot(context, principal) is Snapshot snapshot &&
         (snapshot.Schemes.SequenceEqual(policy.AuthenticationSchemes, StringComparer.Ordinal) ||
          ((policy.AuthenticationSchemes.Count == 1) &&
           string.Equals(snapshot.DefaultScheme, policy.AuthenticationSchemes[0], StringComparison.Ordinal)));
@@ -185,6 +195,32 @@ internal static class ConnectionAuthenticationSnapshot
             : (await schemes.GetDefaultAuthenticateSchemeAsync())?.Name;
     }
 
+    private static Snapshot? GetSnapshot(
+        HttpContext context,
+        ClaimsPrincipal? principal
+    )
+    {
+        if (!context.Items.TryGetValue(ItemKey, out object? value) || value is not Snapshot original)
+        {
+            return null;
+        }
+
+        if (ReferenceEquals(original.Principal, principal))
+        {
+            return original;
+        }
+
+        return principal is not null &&
+               original.Endpoint is not null &&
+               ReferenceEquals(original.Endpoint, context.GetEndpoint()) &&
+               (original.ConnectionToken.Length > 0) &&
+               RequestSnapshots.TryGetValue(principal, out Snapshot? current) &&
+               ReferenceEquals(current.Endpoint, original.Endpoint) &&
+               string.Equals(current.ConnectionToken, original.ConnectionToken, StringComparison.Ordinal)
+            ? current
+            : null;
+    }
+
     /// <summary>
     ///     Associates verified schemes with the exact principal they authenticated.
     /// </summary>
@@ -192,10 +228,14 @@ internal static class ConnectionAuthenticationSnapshot
     /// <param name="Schemes">The original selected schemes.</param>
     /// <param name="DefaultScheme">The stable default scheme originally requested by middleware.</param>
     /// <param name="RequiresWindowsBinding">Whether SignalR's initial Windows clone must be bound at startup.</param>
+    /// <param name="Endpoint">The mapped endpoint that accepted the authentication result.</param>
+    /// <param name="ConnectionToken">The transport token from the authenticated request.</param>
     private sealed record Snapshot(
         ClaimsPrincipal Principal,
         IReadOnlyList<string> Schemes,
         string? DefaultScheme,
-        bool RequiresWindowsBinding
+        bool RequiresWindowsBinding,
+        Endpoint? Endpoint,
+        string ConnectionToken
     );
 }
