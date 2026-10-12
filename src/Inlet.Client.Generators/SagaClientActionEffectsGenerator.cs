@@ -16,6 +16,11 @@ namespace Mississippi.Inlet.Client.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
 {
+    /// <summary>
+    ///     Generates the client action effect for starting a saga.
+    /// </summary>
+    /// <param name="context">The source generation output context.</param>
+    /// <param name="saga">The saga and its client types.</param>
     private static void GenerateActionEffect(
         SourceProductionContext context,
         SagaClientGeneratorHelper.SagaClientInfo saga
