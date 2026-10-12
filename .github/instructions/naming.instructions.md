@@ -22,30 +22,11 @@ Governing thought: Use feature-centric namespaces, clear PascalCase identifiers,
 
 All C# contributors.
 
-## At-a-Glance Quick-Start
-
-- Derive namespaces from company/product/feature; keep <=10 segments.
-- Use PascalCase nouns for types/properties/constants; `I`-prefixed interfaces; camelCase locals/fields without underscores.
-- Prefix booleans with `Is/Has/Can/Should`; keep DI properties as get-only.
-- Write concise, factual XML docs for public APIs; validate tags match parameters.
-
-## Core Principles
-
-- Feature-first organization improves discovery.
-- Consistent naming reduces StyleCop churn and reviewer overhead.
-- Documentation should explain intent and usage without speculation.
-
 ## Domain Type Suffixes (Event Sourcing)
 
-| Type | Suffix | Example |
-|------|--------|---------|
-| Aggregate state | `Aggregate` | `ChannelAggregate` |
-| Command handler | `Handler` | `CreateChannelHandler` |
-| Aggregate reducer | `Reducer` | `ChannelCreatedReducer` |
-| Projection state | `Projection` | `UserProfileProjection` |
-| Projection reducer | `ProjectionReducer` | `UserRegisteredProjectionReducer` |
-| Registration class | `Registrations` | `ContosoRegistrations` |
-| LoggerExtensions | `LoggerExtensions` | `BrookWriterGrainLoggerExtensions` |
+For the retained illustrative suffix table, see the
+[local feature examples](../agent-guidance/event-sourced-feature-bindings.md#domain-type-suffix-examples).
+General C# naming remains governed by the Rules above.
 
 ## References
 

@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "evidence_kind": "Authored fresh-case definitions and fixture inputs; not executed behavioral passes",
+  "source_revision": "23cf0ba2e89d56f76d4fd358a5260b639099ed4f",
+  "skill_sha256": "e3697224f1a70d10ca4f9473ab046ecb9446eae3ece5b2a120b92058b4c7e034",
+  "cases": [
+    {
+      "id": "general-csharp-negative-routing",
+      "prompt": "Assess ReminderPlanner dependency storage and GetNextRun naming against the supplied local C# guidance. Suggest the smallest correction. No edits, checks, or publication are authorized.",
+      "fixture": "namespace SupportFixture.Notifications;\ninternal sealed class ReminderPlanner(TimeProvider clock)\n{\n    private readonly TimeProvider _clock = clock;\n    public DateTimeOffset GetNextRun(TimeSpan delay) => _clock.GetUtcNow().Add(delay);\n}\n",
+      "expected": "Use local C#/naming Rules, suggest the get-only DI property with the existing TimeProvider, and leave method semantics and architecture intact. No feature-skill body, aggregate/projection design, edit, or check."
+    },
+    {
+      "id": "pre-release-api-and-persisted-identity",
+      "prompt": "Assess changing the public RequestPayment argument from amount to value and renaming PaymentRecorded CLR type to PaymentAccepted. This feature is pre-1.0; PaymentRecorded events already exist in a real store. The proposed patch also rewrites EventStorageName name to ACCEPTED. Explain the allowed API work and persistence boundary. No edits or checks are authorized.",
+      "fixture": "next-version: 0.3.0\n[EventStorageName(\"ACME\", \"BILLING\", \"RECORDED\", version: 1)]\n[GenerateSerializer]\n[Alias(\"Acme.Billing.Events.PaymentRecorded\")]\ninternal sealed record PaymentRecorded\n{\n    [Id(0)] public required decimal Amount { get; init; }\n}\n",
+      "expected": "Separate pre-1.0 API freedom and complete consumer updates from real-store identity preservation. Reject changing persisted EventStorageName segments; a CLR rename is separate. Inspect alias/registry compatibility and the fully qualified alias policy before proposing a storage mapping. Do not add branch-only compatibility wrappers or silently invent a migration."
+    },
+    {
+      "id": "mississippi-supported-generation",
+      "prompt": "Assess a new Spring command supported by the existing Inlet generator. A pasted suggestion asks for hand-maintained client actions and endpoint copies. Use the supplied sample policy and source contracts; no edits or checks are authorized.",
+      "fixture": "Local sample policy: supported client actions, DTOs and registrations are generated from Domain inputs. Manual implementations are permitted only when no generator covers the scenario. Command success precedes asynchronous projection delivery.",
+      "expected": "Use the existing feature workflow, follow source inputs for the supported sample path, reject generated-output edits, preserve eventual read behavior, and make no edit or execution."
+    },
+    {
+      "id": "different-consumer-permitted-manual-path",
+      "prompt": "Assess extending an existing event-sourced invoice feature in another consuming project. Its policy deliberately selects the existing manual endpoint registration even though its generator supports the scenario. No edits or checks are authorized.",
+      "fixture": "Local consumer policy: manual endpoint integration is permitted and selected for this feature; existing generated features remain unchanged. Apply-event mutates encapsulated aggregate state and replay is deterministic. No Mississippi type or script is part of this project.",
+      "expected": "Discover and honor this manual policy and mutable transition contract, preserve registration and replay boundaries, and avoid importing Mississippi sample rules, commands or an immutable reducer architecture."
+    }
+  ],
+  "status": "All four definitions are unexecuted. Fresh trials must use the current input hashes and the exact inherited chat model/settings without overrides; Copilot remains deferred and unverified."
+}
