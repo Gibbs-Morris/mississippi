@@ -336,8 +336,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
 
             if (currentState is not null && IsSagaPhaseNotStarted(currentState))
             {
-                Logger.SagaReminderStaleNotStarted(reminderName, brookKey);
-                await UnregisterSagaReminderIfExistsAsync();
+                Logger.SagaReminderDeferredNotStarted(reminderName, brookKey);
                 return;
             }
 

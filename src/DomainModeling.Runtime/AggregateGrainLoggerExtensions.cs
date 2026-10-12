@@ -187,6 +187,22 @@ internal static partial class AggregateGrainLoggerExtensions
     );
 
     /// <summary>
+    ///     Logs when recovery is deferred for an unstarted snapshot while reminder protection is retained.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(
+        26,
+        LogLevel.Information,
+        "Reminder {ReminderName} found saga phase NotStarted for aggregate {AggregateKey}; deferring recovery and retaining reminder protection")]
+    public static partial void SagaReminderDeferredNotStarted(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
+
+    /// <summary>
     ///     Logs when reminder replay fails.
     /// </summary>
     /// <param name="logger">The logger.</param>
@@ -324,22 +340,6 @@ internal static partial class AggregateGrainLoggerExtensions
         LogLevel.Debug,
         "Skipping reminder {ReminderName} for aggregate {AggregateKey} because saga work is already active")]
     public static partial void SagaReminderSkippedAlreadyActive(
-        this ILogger logger,
-        string reminderName,
-        string aggregateKey
-    );
-
-    /// <summary>
-    ///     Logs when a reminder fires for a saga that never started and is unregistered as stale.
-    /// </summary>
-    /// <param name="logger">The logger.</param>
-    /// <param name="reminderName">The reminder name.</param>
-    /// <param name="aggregateKey">The aggregate key.</param>
-    [LoggerMessage(
-        26,
-        LogLevel.Information,
-        "Reminder {ReminderName} found saga phase NotStarted for aggregate {AggregateKey}; unregistering stale reminder instead of recovering")]
-    public static partial void SagaReminderStaleNotStarted(
         this ILogger logger,
         string reminderName,
         string aggregateKey
