@@ -146,9 +146,10 @@ discarding evidence.
 
 A cursor read with no visible pending document returns the stored cursor without creating a Blob lock. That result is
 a read snapshot, not proof that an earlier Cosmos write cannot arrive later. If pending metadata is visible, the reader
-acquires the brook writer lease and rereads both cursor documents after acquisition. Cancellation, lock acquisition,
-and storage failures propagate. A writer uses its supervised append lease directly, checking ownership before storage
-dispatch and each retry.
+tries to acquire the brook writer lease and rereads both cursor documents after acquisition. If lease contention
+exhausts the lock manager's retries, the reader returns the committed cursor snapshot without changing pending work.
+Cancellation and other storage failures propagate. A writer uses its supervised append lease directly, checking
+ownership before storage dispatch and each retry.
 
 Recovery checks the pending range against the committed cursor and verifies every referenced event before changing
 cursor or pending metadata. A complete range can be committed; recovery returns its known target without a possibly

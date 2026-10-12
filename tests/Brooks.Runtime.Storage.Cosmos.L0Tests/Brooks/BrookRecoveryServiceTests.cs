@@ -650,6 +650,56 @@ public sealed class BrookRecoveryServiceTests
     }
 
     /// <summary>
+    ///     A reader returns the committed snapshot when an active writer holds the lease.
+    /// </summary>
+    /// <param name="committedPosition">The cursor snapshot, or minus one when absent.</param>
+    /// <returns>The asynchronous test.</returns>
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(7)]
+    public async Task ReaderReturnsCommittedSnapshotDuringWriterContentionAsync(
+        long committedPosition
+    )
+    {
+        BrookKey key = new("test", "writer-contention");
+        Mock<ICosmosRepository> repository = new(MockBehavior.Strict);
+        repository.Setup(r => r.GetPendingCursorDocumentAsync(key, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                new CursorStorageModel
+                {
+                    OriginalPosition = new(7),
+                    Position = new(9),
+                    ETag = "pending",
+                });
+        repository.Setup(r => r.GetCursorDocumentAsync(key, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                committedPosition < 0
+                    ? null
+                    : new CursorStorageModel
+                    {
+                        Position = new(committedPosition),
+                    });
+        Mock<IDistributedLockManager> locks = new(MockBehavior.Strict);
+        locks.Setup(l => l.AcquireLockAsync(key.ToString(), TimeSpan.FromSeconds(60), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(
+                new InvalidOperationException("Failed to acquire blob lease for distributed lock after retries."));
+        BrookRecoveryService service = new(
+            repository.Object,
+            new TestRetryPolicy(),
+            locks.Object,
+            Options.Create(new BrookStorageOptions()),
+            NullLogger<BrookRecoveryService>.Instance);
+        BrookPosition result =
+            await service.GetOrRecoverCursorPositionAsync(key, TestContext.Current.CancellationToken);
+        Assert.Equal(committedPosition, result.Value);
+        repository.Verify(r => r.GetPendingCursorDocumentAsync(key, It.IsAny<CancellationToken>()), Times.Once);
+        repository.Verify(r => r.GetCursorDocumentAsync(key, It.IsAny<CancellationToken>()), Times.Once);
+        repository.VerifyNoOtherCalls();
+        locks.VerifyAll();
+        locks.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
     ///     Returns the cursor committed by an expired writer before its pending document disappears.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>

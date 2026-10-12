@@ -94,11 +94,29 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
             }
 
             Logger.AcquiringRecoveryLock(brookId, Options.LeaseDurationSeconds);
-            await using IDistributedLock writerLock = await LockManager.AcquireLockAsync(
-                brookId.ToString(),
-                TimeSpan.FromSeconds(Options.LeaseDurationSeconds),
-                cancellationToken);
-            return await ReconcileUnderWriterLockAsync(brookId, writerLock, null, cancellationToken);
+            IDistributedLock writerLock;
+            try
+            {
+                writerLock = await LockManager.AcquireLockAsync(
+                    brookId.ToString(),
+                    TimeSpan.FromSeconds(Options.LeaseDurationSeconds),
+                    cancellationToken);
+            }
+            catch (InvalidOperationException exception)
+            {
+                Logger.RecoveryLockFailed(exception, brookId);
+                CursorStorageModel? committed = await RetryPolicy.ExecuteAsync(
+                    async () => await Repository.GetCursorDocumentAsync(brookId, cancellationToken),
+                    cancellationToken);
+                BrookPosition snapshot = committed?.Position ?? new BrookPosition(-1);
+                Logger.CursorPositionReturned(brookId, snapshot.Value);
+                return snapshot;
+            }
+
+            await using (writerLock)
+            {
+                return await ReconcileUnderWriterLockAsync(brookId, writerLock, null, cancellationToken);
+            }
         }
         catch (Exception exception)
         {
