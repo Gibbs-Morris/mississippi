@@ -92,26 +92,28 @@ public sealed class InletHub : Hub<IInletHubClient>
     /// <param name="policyEvaluator">The host's policy evaluator.</param>
     /// <param name="policy">The subscription policy.</param>
     /// <param name="httpContext">The connection's HTTP context.</param>
-    /// <returns>The authenticated principal and whether the evaluator permits it.</returns>
-    private static async Task<(ClaimsPrincipal? Principal, bool Permitted)> AuthenticateWithEvaluatorAsync(
-        IPolicyEvaluator policyEvaluator,
-        AuthorizationPolicy policy,
-        HttpContext httpContext
-    )
+    /// <returns>The authenticated principal, evaluator decision and exact authorization resource.</returns>
+    private static async Task<(ClaimsPrincipal? Principal, bool Permitted, object? Resource)>
+        AuthenticateWithEvaluatorAsync(
+            IPolicyEvaluator policyEvaluator,
+            AuthorizationPolicy policy,
+            HttpContext httpContext
+        )
     {
         AuthenticateResult authenticationResult = await policyEvaluator.AuthenticateAsync(policy, httpContext);
         if (!authenticationResult.Succeeded)
         {
-            return (null, false);
+            return (null, false, null);
         }
 
+        object? resource = null;
         if (policyEvaluator.GetType() != typeof(PolicyEvaluator))
         {
             httpContext.User = authenticationResult.Principal;
-            object? resource = AppContext.TryGetSwitch(
-                                   "Microsoft.AspNetCore.Authorization.SuppressUseHttpContextAsAuthorizationResource",
-                                   out bool useEndpoint) &&
-                               useEndpoint
+            resource = AppContext.TryGetSwitch(
+                           "Microsoft.AspNetCore.Authorization.SuppressUseHttpContextAsAuthorizationResource",
+                           out bool useEndpoint) &&
+                       useEndpoint
                 ? httpContext.GetEndpoint()
                 : httpContext;
             PolicyAuthorizationResult authorizationResult = await policyEvaluator.AuthorizeAsync(
@@ -121,11 +123,11 @@ public sealed class InletHub : Hub<IInletHubClient>
                 resource);
             if (!authorizationResult.Succeeded)
             {
-                return (authenticationResult.Principal, false);
+                return (authenticationResult.Principal, false, resource);
             }
         }
 
-        return (authenticationResult.Principal, true);
+        return (authenticationResult.Principal, true, resource);
     }
 
     private static AuthenticationHandlerProvider? GetFrameworkHandlerProvider(
@@ -246,7 +248,7 @@ public sealed class InletHub : Hub<IInletHubClient>
         Logger.UnsubscribedFromProjection(Context.ConnectionId, subscriptionId);
     }
 
-    private async Task<(ClaimsPrincipal? Principal, bool Permitted)> AuthenticateUserAsync(
+    private async Task<(ClaimsPrincipal? Principal, bool Permitted, object? Resource)> AuthenticateUserAsync(
         AuthorizationPolicy policy,
         HttpContext? httpContext,
         IPolicyEvaluator? policyEvaluator
@@ -254,17 +256,17 @@ public sealed class InletHub : Hub<IInletHubClient>
     {
         if (policy.AuthenticationSchemes.Count == 0)
         {
-            return (Context.User ?? new ClaimsPrincipal(new ClaimsIdentity()), true);
+            return (Context.User ?? new ClaimsPrincipal(new ClaimsIdentity()), true, null);
         }
 
         if (httpContext is null)
         {
-            return (null, false);
+            return (null, false, null);
         }
 
         if (policyEvaluator is null)
         {
-            return (null, false);
+            return (null, false, null);
         }
 
         if (policyEvaluator.GetType() == typeof(PolicyEvaluator))
@@ -273,25 +275,25 @@ public sealed class InletHub : Hub<IInletHubClient>
                 httpContext.RequestServices.GetService<IAuthenticationService>();
             if (authenticationService is null)
             {
-                return (null, false);
+                return (null, false, null);
             }
 
             if (!await HasRequiredSchemeRegistrationsAsync(authenticationService, policy))
             {
-                return (null, false);
+                return (null, false, null);
             }
 
             if (ConnectionAuthenticationSnapshot.IsAuthenticatedForPolicy(httpContext, policy, Context.User))
             {
                 // SignalR retains this principal for the connection, even when its HTTP features are reduced.
-                return (Context.User, true);
+                return (Context.User, true, null);
             }
         }
 
         if (ConnectionAuthenticationSnapshot.HasDifferentPrincipal(httpContext, Context.User))
         {
             // A reduced connection context still holds the first request's credentials.
-            return (null, false);
+            return (null, false, null);
         }
 
         return await AuthenticateWithEvaluatorAsync(policyEvaluator, policy, httpContext);
@@ -315,7 +317,8 @@ public sealed class InletHub : Hub<IInletHubClient>
         AuthenticateResult? previousResult = previousResultFeature?.AuthenticateResult;
         try
         {
-            (ClaimsPrincipal? user, bool permitted) = await AuthenticateUserAsync(policy, httpContext, policyEvaluator);
+            (ClaimsPrincipal? user, bool permitted, object? resource) =
+                await AuthenticateUserAsync(policy, httpContext, policyEvaluator);
             if (user is null || !permitted)
             {
                 Logger.SubscriptionAuthorizationDenied(
@@ -331,7 +334,7 @@ public sealed class InletHub : Hub<IInletHubClient>
                 authenticationContext?.RequestServices.GetService<IAuthorizationService>() ?? AuthorizationService;
             AuthorizationResult authorizationResult = await authorizationService.AuthorizeAsync(
                 user,
-                null,
+                resource,
                 policy.Requirements);
             if (authorizationResult.Succeeded)
             {

@@ -436,6 +436,85 @@ public sealed class InletHubAuthenticationReviewTests
     }
 
     /// <summary>
+    ///     A framework-delegating evaluator and the final requirement check must share the same resource.
+    /// </summary>
+    /// <param name="resourceAllowed">Whether the endpoint resource permits the subscription.</param>
+    /// <returns>A task that completes when the resource-sensitive assertions have been verified.</returns>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SubscribePreservesResourceAfterFrameworkDelegatingEvaluator(
+        bool resourceAllowed
+    )
+    {
+        List<object?> resources = [];
+        AuthorizationPolicy policy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser()
+            .RequireClaim("permission", "read")
+            .RequireAssertion(context =>
+            {
+                resources.Add(context.Resource);
+                Endpoint? endpoint = context.Resource switch
+                {
+                    HttpContext http => http.GetEndpoint(),
+                    Endpoint selected => selected,
+                    var _ => null,
+                };
+                return endpoint?.Metadata.GetMetadata<string>() == "tenant-allowed";
+            })
+            .Build();
+        IAuthenticationService authentication = Substitute.For<IAuthenticationService>();
+        authentication.AuthenticateAsync(Arg.Any<HttpContext>(), BearerScheme)
+            .Returns(AuthenticateResult.Success(new(CreatePrincipal("resource-user"), BearerScheme)));
+        IPolicyEvaluator evaluator = Substitute.For<IPolicyEvaluator>();
+        await using ServiceProvider services = CreateServices(authentication, policy, evaluator);
+        PolicyEvaluator framework = new(services.GetRequiredService<IAuthorizationService>());
+        evaluator.AuthenticateAsync(Arg.Any<AuthorizationPolicy>(), Arg.Any<HttpContext>())
+            .Returns(async call => await framework.AuthenticateAsync(
+                call.Arg<AuthorizationPolicy>(),
+                call.Arg<HttpContext>()));
+        evaluator.AuthorizeAsync(
+                Arg.Any<AuthorizationPolicy>(),
+                Arg.Any<AuthenticateResult>(),
+                Arg.Any<HttpContext>(),
+                Arg.Any<object?>())
+            .Returns(async call => await framework.AuthorizeAsync(
+                call.Arg<AuthorizationPolicy>(),
+                call.Arg<AuthenticateResult>(),
+                call.Arg<HttpContext>(),
+                call.ArgAt<object?>(3)));
+        using InletHub hub = CreateHub(
+            services,
+            BearerScheme,
+            out IInletSubscriptionGrain grain,
+            out ILogger<InletHub> _);
+        HttpContext retained = Assert.IsType<HttpContext>(hub.Context.GetHttpContext(), false);
+        retained.SetEndpoint(
+            new(
+                _ => Task.CompletedTask,
+                new(resourceAllowed ? "tenant-allowed" : "tenant-denied"),
+                "resource-sensitive endpoint"));
+        ClaimsPrincipal caller = hub.Context.User!;
+        if (resourceAllowed)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+            Assert.Equal(2, resources.Count);
+            Assert.Same(resources[0], resources[1]);
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+            Assert.Single(resources);
+        }
+
+        Assert.Same(caller, hub.Context.User);
+        Assert.Same(caller, retained.User);
+    }
+
+    /// <summary>
     ///     The last successful selected handler should have the same primary identity as ASP.NET.
     /// </summary>
     /// <param name="reverseSchemes">Whether the policy selects the handlers in reverse order.</param>
