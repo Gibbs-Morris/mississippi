@@ -1255,6 +1255,22 @@
           "Newtonsoft.Json": "[13.0.4, )"
         }
       },
+      "Mississippi.Undercurrent.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Undercurrent.Domain": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.12, )",
+          "Microsoft.Orleans.Sdk": "[10.4.0, )",
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
+          "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
+          "Mississippi.DomainModeling.Runtime": "[1.0.0, )",
+          "Mississippi.Tributary.Abstractions": "[1.0.0, )",
+          "Mississippi.Tributary.Runtime": "[1.0.0, )",
+          "Mississippi.Undercurrent.Abstractions": "[1.0.0, )"
+        }
+      },
       "Azure.Storage.Blobs": {
         "type": "CentralTransitive",
         "requested": "[12.30.1, )",
