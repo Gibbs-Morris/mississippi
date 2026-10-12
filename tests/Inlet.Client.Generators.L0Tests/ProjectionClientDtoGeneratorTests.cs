@@ -151,6 +151,41 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Dictionary arguments reuse enums also referenced by their nested DTO properties.
+    /// </summary>
+    /// <param name="dictionaryType">The declared dictionary type.</param>
+    [Theory]
+    [InlineData("System.Collections.Generic.Dictionary<Status, Entry>")]
+    [InlineData("System.Collections.Generic.Dictionary<Key, Entry>")]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary<Status, Entry>")]
+    public void DictionaryDtoReusesSharedNestedEnums(
+        string dictionaryType
+    )
+    {
+        string source = $$"""
+                          using Mississippi.Inlet.Generators.Abstractions;
+                          using Mississippi.Inlet.Abstractions;
+
+                          namespace TestApp.Domain.Projections.Shared;
+
+                          public enum Status { Pending = 3, Complete = 7 }
+                          public sealed record Key { public Status Status { get; init; } }
+                          public sealed record Entry { public Status Status { get; init; } }
+
+                          [GenerateProjectionEndpoints]
+                          [ProjectionPath("shared")]
+                          public sealed record SharedProjection
+                          {
+                              public {{dictionaryType}} Entries { get; init; } = default!;
+                          }
+                          """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        AssertSuccessfulEnumOutput(output, diagnostics, result, "TestApp.Client.Features.Shared.Dtos.StatusDto");
+        Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.Shared.Dtos.EntryDto"));
+    }
+
+    /// <summary>
     ///     Dictionary keys and values generate their DTOs in compilable client output.
     /// </summary>
     /// <param name="dictionaryType">The declared dictionary type.</param>

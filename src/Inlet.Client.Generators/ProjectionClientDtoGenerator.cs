@@ -141,7 +141,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         List<INamedTypeSymbol> nestedTypes = projection.Model.Properties
             .SelectMany(prop => TypeAnalyzer.GetMappedCollectionTypes(prop.SourceTypeSymbol))
             .OfType<INamedTypeSymbol>()
-            .Where(type => type.TypeKind != TypeKind.Enum &&
+            .Where(type => (type.TypeKind != TypeKind.Enum) &&
                            !generatedNestedTypes.Contains(TypeAnalyzer.GetDtoTypeName(type)))
             .GroupBy(type => TypeAnalyzer.GetDtoTypeName(type))
             .Select(group => group.First())
