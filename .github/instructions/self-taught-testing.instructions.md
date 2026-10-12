@@ -10,6 +10,8 @@ Governing thought: Test observable failure cases and keep test evidence accurate
 
 ## Rules (RFC 2119)
 
+- Subscription test fixtures **SHOULD** establish interest through handled actions instead of casting private collection fields. Why: PR #928's subscription-entry refactor broke five notification tests that assumed string-valued private dictionary entries.
+
 - Metric tests using `MeterListener` **MUST** make callback writes thread-safe and assertion reads snapshot-safe when parallel tests can emit the same meter. Valid approaches include a concurrent collection with snapshot-safe enumeration or a list whose every write and snapshot copy use the same lock, with assertions enumerating only that copy. Unique tags alone do not synchronize collection access. Why: The historical #815 full quality run threw `Collection was modified; enumeration operation may not execute` while `SnapshotStorageMetricsTests` enumerated a callback-fed `List`; issue #830 tracks the collector-safety correction.
 
 - Shared startup tests **SHOULD** cover retry from failure callbacks. Why: In PR #909, joined-start coordination blocked `RetryFromFailureLogDoesNotPublishStaleDisconnected` until the failed attempt was cleared before its failure notification.
