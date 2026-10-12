@@ -206,6 +206,43 @@ public class CommandClientActionEffectsGeneratorTests
     }
 
     /// <summary>
+    ///     Configured aggregate prefixes must produce valid XML documentation without changing route values.
+    /// </summary>
+    /// <param name="routePrefix">The configured prefix containing XML-sensitive characters.</param>
+    /// <param name="escapedPrefix">The expected XML text.</param>
+    /// <param name="useReferencedAssembly">Whether the domain is a referenced assembly.</param>
+    [Theory]
+    [InlineData("orders&returns", "orders&amp;returns", false)]
+    [InlineData("orders&returns", "orders&amp;returns", true)]
+    [InlineData("orders<returns>", "orders&lt;returns&gt;", false)]
+    [InlineData("orders<returns>", "orders&lt;returns&gt;", true)]
+    public void GeneratedEffectEscapesAggregatePrefixDocumentation(
+        string routePrefix,
+        string escapedPrefix,
+        bool useReferencedAssembly
+    )
+    {
+        (Compilation compilation, SyntaxTree effect) = CommandClientRouteTestFixture.Run(
+            routePrefix,
+            useReferencedAssembly);
+        PropertyDeclarationSyntax prefix = effect.GetRoot(TestContext.Current.CancellationToken)
+            .DescendantNodes()
+            .OfType<PropertyDeclarationSyntax>()
+            .Single(property => property.Identifier.ValueText == "AggregateRoutePrefix");
+        SemanticModel model = compilation.GetSemanticModel(effect);
+        Assert.Equal(
+            "api/aggregates/" + routePrefix,
+            model.GetConstantValue(prefix.ExpressionBody!.Expression, TestContext.Current.CancellationToken).Value);
+        Assert.DoesNotContain(
+            compilation.GetDiagnostics(TestContext.Current.CancellationToken),
+            diagnostic => diagnostic.Id == "CS1570");
+        Assert.Contains(
+            $"<c>api/aggregates/{escapedPrefix}/{{entityId}}/submit-order</c>",
+            effect.GetText(TestContext.Current.CancellationToken).ToString(),
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generated effect should have route property.
     /// </summary>
     [Fact]
@@ -363,6 +400,34 @@ public class CommandClientActionEffectsGeneratorTests
         SemanticModel model = compilation.GetSemanticModel(effect);
         Assert.Equal(
             "api/aggregates/order",
+            model.GetConstantValue(prefix.ExpressionBody!.Expression, TestContext.Current.CancellationToken).Value);
+    }
+
+    /// <summary>
+    ///     Prefix values must survive C# string-literal emission unchanged.
+    /// </summary>
+    /// <param name="routePrefix">The configured prefix containing C# string-sensitive characters.</param>
+    /// <param name="useReferencedAssembly">Whether the domain is a referenced assembly.</param>
+    [Theory]
+    [InlineData("orders\"returns", false)]
+    [InlineData("orders\"returns", true)]
+    [InlineData("orders\\returns", false)]
+    [InlineData("orders\\returns", true)]
+    public void GeneratedEffectPreservesAggregatePrefixLiteral(
+        string routePrefix,
+        bool useReferencedAssembly
+    )
+    {
+        (Compilation compilation, SyntaxTree effect) = CommandClientRouteTestFixture.Run(
+            routePrefix,
+            useReferencedAssembly);
+        PropertyDeclarationSyntax prefix = effect.GetRoot(TestContext.Current.CancellationToken)
+            .DescendantNodes()
+            .OfType<PropertyDeclarationSyntax>()
+            .Single(property => property.Identifier.ValueText == "AggregateRoutePrefix");
+        SemanticModel model = compilation.GetSemanticModel(effect);
+        Assert.Equal(
+            "api/aggregates/" + routePrefix,
             model.GetConstantValue(prefix.ExpressionBody!.Expression, TestContext.Current.CancellationToken).Value);
     }
 

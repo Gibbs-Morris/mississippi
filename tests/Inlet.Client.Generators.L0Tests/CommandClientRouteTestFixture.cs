@@ -121,7 +121,7 @@ internal static class CommandClientRouteTestFixture
                 .Where(d => d.Severity == DiagnosticSeverity.Error));
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             [new CommandClientActionEffectsGenerator().AsSourceGenerator()],
-            parseOptions: new(LanguageVersion.Preview));
+            parseOptions: new(LanguageVersion.Preview, DocumentationMode.Diagnose));
         driver = driver.RunGeneratorsAndUpdateCompilation(
             input,
             out Compilation output,
@@ -173,5 +173,5 @@ internal static class CommandClientRouteTestFixture
     private static SyntaxTree Parse(
         string source
     ) =>
-        CSharpSyntaxTree.ParseText(source, new(LanguageVersion.Preview));
+        CSharpSyntaxTree.ParseText(source, new(LanguageVersion.Preview, DocumentationMode.Diagnose));
 }
