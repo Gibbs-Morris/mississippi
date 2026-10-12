@@ -166,6 +166,12 @@ internal sealed class InletSignalRActionEffect
         return HandleCoreAsync(action, cancellationToken);
     }
 
+    /// <summary>
+    ///     Ensures the connection is started and routes a projection action to its handler.
+    /// </summary>
+    /// <param name="action">The connection or projection action to handle.</param>
+    /// <param name="cancellationToken">The token used to cancel action processing.</param>
+    /// <returns>The projection state actions produced by the selected handler.</returns>
     private async IAsyncEnumerable<IAction> HandleCoreAsync(
         IAction action,
         [EnumeratorCancellation] CancellationToken cancellationToken
@@ -205,6 +211,13 @@ internal sealed class InletSignalRActionEffect
         }
     }
 
+    /// <summary>
+    ///     Retains application interest separately from its connection-scoped ID and pending retry.
+    /// </summary>
+    /// <param name="SubscriptionId">The established server ID, or null while recovery is needed.</param>
+    /// <param name="PendingRetryToken">The current retry completion source, or null when no attempt is pending.</param>
+    /// <param name="ConnectionGeneration">The connection that owns this entry's ID or attempt.</param>
+    /// <param name="Interest">The stable identity that distinguishes retained interest from a replacement owner.</param>
     private sealed record SubscriptionEntry(
         string? SubscriptionId,
         TaskCompletionSource<bool>? PendingRetryToken,
@@ -213,6 +226,13 @@ internal sealed class InletSignalRActionEffect
     );
 
 #pragma warning disable CA1031 // Action effect converts exceptions to error actions instead of crashing
+    /// <summary>
+    ///     Fetches an explicitly refreshed projection without changing subscription interest.
+    /// </summary>
+    /// <param name="projectionType">The registered projection DTO type.</param>
+    /// <param name="entityId">The entity whose projection is refreshed.</param>
+    /// <param name="cancellationToken">The token used to cancel the fetch.</param>
+    /// <returns>Loading followed by the fetched projection or its error.</returns>
     private async IAsyncEnumerable<IAction> HandleRefreshAsync(
         Type projectionType,
         string entityId,
@@ -265,6 +285,13 @@ internal sealed class InletSignalRActionEffect
             result.Version);
     }
 
+    /// <summary>
+    ///     Reserves application interest and establishes a server subscription before loading projection data.
+    /// </summary>
+    /// <param name="projectionType">The registered projection DTO type.</param>
+    /// <param name="entityId">The entity requested by the subscriber.</param>
+    /// <param name="cancellationToken">The token used to cancel reservation, subscription, or fetch.</param>
+    /// <returns>The state actions produced while this caller still owns its attempt.</returns>
     private async IAsyncEnumerable<IAction> HandleSubscribeAsync(
         Type projectionType,
         string entityId,
@@ -410,6 +437,13 @@ internal sealed class InletSignalRActionEffect
             result.Version);
     }
 
+    /// <summary>
+    ///     Releases interest, retires waiting callers, and unsubscribes its established server ID.
+    /// </summary>
+    /// <param name="projectionType">The registered projection DTO type.</param>
+    /// <param name="entityId">The entity whose interest is released.</param>
+    /// <param name="cancellationToken">The token used to cancel the server unsubscribe.</param>
+    /// <returns>A task representing release of the local and server subscription.</returns>
     private async Task HandleUnsubscribeAsync(
         Type projectionType,
         string entityId,
@@ -503,6 +537,13 @@ internal sealed class InletSignalRActionEffect
         }
     }
 
+    /// <summary>
+    ///     Checks whether an established ID still belongs to the current connection and interest.
+    /// </summary>
+    /// <param name="key">The projection and entity pair.</param>
+    /// <param name="subscriptionId">The server ID captured by the operation.</param>
+    /// <param name="generation">The connection generation captured by the operation.</param>
+    /// <returns>Whether a result from this ID and generation can still be published.</returns>
     private bool IsCurrentSubscription(
         (Type ProjectionType, string EntityId) key,
         string? subscriptionId,
@@ -879,6 +920,14 @@ internal sealed class InletSignalRActionEffect
         }
     }
 
+    /// <summary>
+    ///     Releases an owned server ID without making cleanup failures fatal to the action effect.
+    /// </summary>
+    /// <param name="subscriptionId">The established server ID, or null when none was returned.</param>
+    /// <param name="path">The registered projection route.</param>
+    /// <param name="entityId">The entity belonging to the server subscription.</param>
+    /// <param name="cancellationToken">The token used to cancel the unsubscribe call.</param>
+    /// <returns>A task representing the best-effort server cleanup.</returns>
     private async Task UnsubscribeFromHubAsync(
         string? subscriptionId,
         string path,

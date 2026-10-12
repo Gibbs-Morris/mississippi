@@ -25,6 +25,7 @@ namespace Mississippi.Inlet.Client.L0Tests.ActionEffects;
 /// <summary>
 ///     Tests recovery of connection-scoped projection subscription IDs.
 /// </summary>
+/// <remarks>This class is public so xUnit can discover its tests.</remarks>
 public sealed class InletSignalRReconnectTests : IAsyncDisposable
 {
     private const string EntityId = "entity-1";
@@ -86,6 +87,10 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
         await hubConnection.Object.DisposeAsync();
     }
 
+    /// <summary>
+    ///     Controls the first explicit retry after an established subscription's reconnect fails.
+    /// </summary>
+    /// <returns>The completion source used to release the pending hub reply.</returns>
     private TaskCompletionSource<object?> ConfigureFailedRetryWithPendingReply()
     {
         TaskCompletionSource<object?> retryReply = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -101,6 +106,10 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
         return retryReply;
     }
 
+    /// <summary>
+    ///     Establishes interest and verifies its first reconnect reports a subscription error.
+    /// </summary>
+    /// <returns>A task representing setup of retained failed interest.</returns>
     private async Task FailFirstReconnectAsync()
     {
         await SubscribeAsync();
@@ -118,6 +127,12 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
     ) =>
         HandleWithCancellationAsync(action, TestContext.Current.CancellationToken);
 
+    /// <summary>
+    ///     Consumes all state actions produced by one subscriber, refresh, or unsubscribe request.
+    /// </summary>
+    /// <param name="action">The request passed through the real action effect.</param>
+    /// <param name="cancellationToken">The token controlling this caller's processing.</param>
+    /// <returns>The actions observed by this caller in publication order.</returns>
     private async Task<IAction[]> HandleWithCancellationAsync(
         IAction action,
         CancellationToken cancellationToken
@@ -132,6 +147,10 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
         return results.ToArray();
     }
 
+    /// <summary>
+    ///     Establishes the test entity's subscription and verifies its loading and loaded actions.
+    /// </summary>
+    /// <returns>A task representing the initial subscription.</returns>
     private async Task SubscribeAsync()
     {
         IAction[] actions = await HandleAsync(new SubscribeToProjectionAction<TestProjection>(EntityId));
@@ -141,6 +160,10 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
             action => Assert.IsType<ProjectionLoadedAction<TestProjection>>(action));
     }
 
+    /// <summary>
+    ///     Verifies the exact number of hub subscription calls for the test projection and entity.
+    /// </summary>
+    /// <param name="count">The expected number of subscription invocations.</param>
     private void VerifySubscribeCount(
         int count
     ) =>
@@ -154,6 +177,10 @@ public sealed class InletSignalRReconnectTests : IAsyncDisposable
                 It.IsAny<CancellationToken>()),
             Times.Exactly(count));
 
+    /// <summary>
+    ///     Verifies that cleanup releases the specified ID for the test projection and entity exactly once.
+    /// </summary>
+    /// <param name="subscriptionId">The expected server ID passed to unsubscribe.</param>
     private void VerifyUnsubscribedId(
         string subscriptionId
     ) =>
