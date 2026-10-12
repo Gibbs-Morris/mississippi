@@ -20,6 +20,10 @@ public sealed class CommandSourceIdentityTests
                                           {
                                               public sealed class GenerateCommandAttribute : System.Attribute { }
                                           }
+                                          namespace Microsoft.Extensions.Logging
+                                          {
+                                              public interface ILogger<T> { }
+                                          }
                                           namespace Mississippi.Common.Abstractions.Mapping
                                           {
                                               public interface IMapper<in TInput, out TOutput> { TOutput Map(TInput input); }
@@ -38,7 +42,8 @@ public sealed class CommandSourceIdentityTests
                                                   protected CommandActionEffectBase(
                                                       System.Net.Http.HttpClient httpClient,
                                                       Mississippi.Common.Abstractions.Mapping.IMapper<TAction, TDto> mapper,
-                                                      System.TimeProvider? timeProvider) { }
+                                                      System.TimeProvider? timeProvider,
+                                                      Microsoft.Extensions.Logging.ILogger<TAction>? logger) { }
                                                   protected abstract string AggregateRoutePrefix { get; }
                                                   protected abstract string Route { get; }
                                               }

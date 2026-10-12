@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -7,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.Common.Abstractions.Mapping;
@@ -22,6 +24,8 @@ namespace MississippiTests.Inlet.Client.L0Tests.ActionEffects.Commands;
 /// </summary>
 public sealed class CommandActionEffectBaseTests
 {
+    private static readonly string[] LogFieldNames = ["CommandId", "CommandType", "StatusCode", "{OriginalFormat}"];
+
     private static readonly DateTimeOffset StartedAt = new(2026, 1, 2, 3, 4, 5, TimeSpan.Zero);
 
     private static CommandEffectFailedAction AssertFailure(
@@ -345,6 +349,89 @@ public sealed class CommandActionEffectBaseTests
             TestContext.Current.CancellationToken);
         Assert.Empty(actions);
         mapper.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
+    ///     Response diagnostics retain the original exception and safe context without changing failure actions.
+    /// </summary>
+    /// <param name="isJson">Whether to simulate JSON decoding instead of charset decoding.</param>
+    /// <param name="status">The HTTP response status.</param>
+    /// <param name="isEnabled">Whether the diagnostic level is enabled.</param>
+    /// <returns>The asynchronous test operation.</returns>
+    [Theory]
+    [InlineData(true, HttpStatusCode.OK, true)]
+    [InlineData(false, HttpStatusCode.OK, true)]
+    [InlineData(false, HttpStatusCode.BadRequest, true)]
+    [InlineData(true, HttpStatusCode.OK, false)]
+    [InlineData(false, HttpStatusCode.OK, false)]
+    [InlineData(false, HttpStatusCode.BadRequest, false)]
+    public async Task HandleAsyncLogsOriginalResponseExceptionWithSafeContextAsync(
+        bool isJson,
+        HttpStatusCode status,
+        bool isEnabled
+    )
+    {
+        const string format =
+            "Command {CommandId} ({CommandType}) received an invalid response with HTTP status {StatusCode}.";
+        CommandEffectAction action = new("sensitive-entity");
+        FakeTimeProvider clock = new(StartedAt);
+        Mock<ILogger<CommandEffectAction>> logger = new();
+        logger.Setup(value => value.IsEnabled(LogLevel.Warning)).Returns(isEnabled);
+        using CommandEffectHttpHandler handler = new((_, _) =>
+        {
+            clock.Advance(TimeSpan.FromSeconds(2));
+            HttpResponseMessage response = CreateResponse(status, "{\"success\":\"invalid\"}");
+            if (!isJson)
+            {
+                response.Content.Headers.ContentType!.CharSet = "invalid-charset";
+            }
+
+            return Task.FromResult(response);
+        });
+        using HttpClient http = CreateClient(handler);
+        CommandEffect effect = new(http, CreateMapper(action).Object, clock, logger.Object);
+        List<IAction> actions = await CollectAsync(effect, action, TestContext.Current.CancellationToken);
+        CommandEffectFailedAction failed = AssertFailure(actions, "HttpError");
+        if (!isEnabled)
+        {
+            Assert.DoesNotContain(logger.Invocations, invocation => invocation.Method.Name == nameof(ILogger.Log));
+            return;
+        }
+
+        IInvocation log = Assert.Single(
+            logger.Invocations,
+            invocation => invocation.Method.Name == nameof(ILogger.Log));
+        Assert.Equal(LogLevel.Warning, Assert.IsType<LogLevel>(log.Arguments[0]));
+        EventId eventId = Assert.IsType<EventId>(log.Arguments[1]);
+        Assert.Equal(1, eventId.Id);
+        Assert.Equal("InvalidCommandResponse", eventId.Name);
+        Exception logged = Assert.IsType<Exception>(log.Arguments[3], false);
+        Assert.Equal($"Invalid response: {logged.Message}", failed.ErrorMessage);
+        Assert.NotNull(logged.StackTrace);
+        if (isJson)
+        {
+            Assert.IsType<JsonException>(logged, false);
+            Assert.IsType<InvalidOperationException>(logged.InnerException);
+            Assert.Contains("System.Text.Json", logged.StackTrace, StringComparison.Ordinal);
+        }
+        else
+        {
+            Assert.IsType<InvalidOperationException>(logged);
+            Assert.IsType<ArgumentException>(logged.InnerException);
+            string decodingFrame = status == HttpStatusCode.OK
+                ? "JsonHelpers.GetEncoding"
+                : "HttpContent.ReadBufferAsString";
+            Assert.Contains(decodingFrame, logged.StackTrace, StringComparison.Ordinal);
+        }
+
+        IReadOnlyList<KeyValuePair<string, object?>> state =
+            Assert.IsType<IReadOnlyList<KeyValuePair<string, object?>>>(log.Arguments[2], false);
+        Assert.Equal(LogFieldNames, state.Select(pair => pair.Key));
+        Assert.Equal(failed.CommandId, state[0].Value);
+        Assert.Equal(nameof(CommandEffectAction), state[1].Value);
+        Assert.Equal((int)status, state[2].Value);
+        Assert.Equal(format, state[3].Value);
+        Assert.DoesNotContain(action.EntityId, state.ToString(), StringComparison.Ordinal);
     }
 
     /// <summary>

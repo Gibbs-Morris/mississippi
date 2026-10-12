@@ -90,6 +90,8 @@ public sealed class CommandClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendLine("using System;");
         sb.AppendLine("using System.Net.Http;");
         sb.AppendLine();
+        sb.AppendUsing("Microsoft.Extensions.Logging");
+        sb.AppendLine();
         sb.AppendUsing("Mississippi.Common.Abstractions.Mapping");
         sb.AppendUsing("Mississippi.Inlet.Client.Abstractions.ActionEffects");
         sb.AppendLine();
@@ -120,15 +122,17 @@ public sealed class CommandClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendLine("/// <param name=\"httpClient\">The HTTP client for API calls.</param>");
         sb.AppendLine("/// <param name=\"mapper\">The mapper for action-to-DTO conversion.</param>");
         sb.AppendLine("/// <param name=\"timeProvider\">The time provider for timestamps.</param>");
+        sb.AppendLine("/// <param name=\"logger\">The command action logger.</param>");
         sb.AppendLine($"public {effectTypeName}(");
         sb.IncreaseIndent();
         sb.AppendLine("HttpClient httpClient,");
         sb.AppendLine($"IMapper<{commandName}Action, {commandName}RequestDto> mapper,");
-        sb.AppendLine("TimeProvider? timeProvider = null");
+        sb.AppendLine("TimeProvider? timeProvider = null,");
+        sb.AppendLine($"ILogger<{commandName}Action>? logger = null");
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.IncreaseIndent();
-        sb.AppendLine(": base(httpClient, mapper, timeProvider)");
+        sb.AppendLine(": base(httpClient, mapper, timeProvider, logger)");
         sb.DecreaseIndent();
         sb.OpenBrace();
         sb.CloseBrace();

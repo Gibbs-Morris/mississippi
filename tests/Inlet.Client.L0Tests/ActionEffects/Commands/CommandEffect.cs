@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 
+using Microsoft.Extensions.Logging;
+
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Inlet.Client.Abstractions.ActionEffects;
 using Mississippi.Inlet.Client.L0Tests.Helpers;
@@ -28,6 +30,23 @@ internal sealed class CommandEffect
         TimeProvider? timeProvider = null
     )
         : base(httpClient, mapper, timeProvider)
+    {
+    }
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="CommandEffect" /> class with a diagnostic logger.
+    /// </summary>
+    /// <param name="httpClient">The in-memory HTTP client.</param>
+    /// <param name="mapper">The request mapper.</param>
+    /// <param name="timeProvider">The optional clock.</param>
+    /// <param name="logger">The diagnostic logger.</param>
+    public CommandEffect(
+        HttpClient httpClient,
+        IMapper<CommandEffectAction, Dictionary<string, string>> mapper,
+        TimeProvider? timeProvider,
+        ILogger<CommandEffectAction> logger
+    )
+        : base(httpClient, mapper, timeProvider, logger)
     {
     }
 
