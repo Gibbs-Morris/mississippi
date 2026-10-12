@@ -37,6 +37,12 @@ internal sealed record UserNotification
     public required string NotificationId { get; init; }
 
     /// <summary>
+    ///     Gets the first server UTC timestamp when the notification was marked as read.
+    /// </summary>
+    [Id(6)]
+    public DateTimeOffset? ReadAt { get; init; }
+
+    /// <summary>
     ///     Gets the optional navigation target interpreted by the consuming application.
     /// </summary>
     [Id(4)]
