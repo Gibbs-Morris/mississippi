@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -106,13 +107,24 @@ public sealed class StreamSubscriptionRecoveryTests
     /// <summary>
     ///     Cleanup failure retains ownership and blocks fresh subscriptions until cleanup succeeds.
     /// </summary>
+    /// <param name="failureKind">The provider failure to inject during cleanup.</param>
     /// <returns>A task representing the test operation.</returns>
-    [Fact]
-    public async Task CleanupFailureShouldRetainHandleUntilRetryCanUnsubscribe()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task CleanupFailureShouldRetainHandleUntilRetryCanUnsubscribe(
+        int failureKind
+    )
     {
         using StreamSubscriptionRecoveryFixture fixture = new();
         InvalidOperationException setupFailure = new("Broadcast unavailable");
-        InvalidOperationException cleanupFailure = new("Cleanup unavailable");
+        Exception cleanupFailure = failureKind switch
+        {
+            0 => new InvalidOperationException("Cleanup unavailable"),
+            1 => new OperationCanceledException("Cleanup canceled"),
+            var _ => new IOException("Provider cleanup unavailable"),
+        };
         fixture.AllSubscribeFailure = setupFailure;
         fixture.UnsubscribeFailure = cleanupFailure;
         AggregateException failure = await Assert.ThrowsAsync<AggregateException>(() =>
@@ -125,8 +137,9 @@ public sealed class StreamSubscriptionRecoveryTests
         AssertFailureLogged(fixture, cleanupFailure, 4, "StreamSubscriptionCleanupFailed");
         Assert.Equal(1, fixture.ActiveServerSubscriptions);
         Assert.False(fixture.Manager.IsInitialized);
-        Exception retryFailure = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            fixture.InitializeAsync(TestContext.Current.CancellationToken));
+        Exception retryFailure = await Assert.ThrowsAsync(
+            cleanupFailure.GetType(),
+            () => fixture.InitializeAsync(TestContext.Current.CancellationToken));
         Assert.Same(cleanupFailure, retryFailure);
         Assert.Equal(1, fixture.ServerSubscribeCalls);
         Assert.Equal(2, fixture.UnsubscribeCalls);
