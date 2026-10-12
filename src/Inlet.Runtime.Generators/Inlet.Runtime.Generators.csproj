@@ -9,6 +9,7 @@
     <Description>Source generators that create Orleans service registrations for business commands, read models, and workflows, plus workflow status updates.</Description>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Generators.Core\Inlet.Generators.Core.csproj" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>

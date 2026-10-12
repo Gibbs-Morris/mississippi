@@ -36,8 +36,12 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Restore solution
-        run: dotnet restore ${{ github.workspace }}/${{ matrix.solution }} -p:ReferenceTrimmerIncludeTestsAndSamples=true
+      - name: Verify diagnostic lock inputs are tracked
+        shell: pwsh
+        run: ./eng/src/agent-scripts/assert-reference-trimmer-locks.ps1 -RepositoryRoot ${{ github.workspace }}
+
+      - name: Restore diagnostic inputs in locked mode
+        run: dotnet restore ${{ github.workspace }}/${{ matrix.solution }} --use-lock-file --locked-mode -p:EnableReferenceTrimmer=true
 
       - name: Build with ReferenceTrimmer and fail on RT0002
         shell: pwsh
@@ -45,10 +49,8 @@ jobs:
           $solutionPath = Join-Path $env:GITHUB_WORKSPACE '${{ matrix.solution }}'
           $logPath = Join-Path $env:RUNNER_TEMP ('rt0002-' + '${{ matrix.solution }}'.Replace('/', '_').Replace('.', '_') + '.log')
 
-          dotnet build $solutionPath --configuration $env:CONFIGURATION --no-restore -warnaserror -p:ReferenceTrimmerIncludeTestsAndSamples=true -p:GenerateDocumentationFile=true 2>&1 | Tee-Object -FilePath $logPath
-          if ($LASTEXITCODE -ne 0) {
-            throw "Build failed before RT0002 evaluation."
-          }
+          dotnet build $solutionPath --configuration $env:CONFIGURATION --no-restore -warnaserror -p:EnableReferenceTrimmer=true -p:GenerateDocumentationFile=true 2>&1 | Tee-Object -FilePath $logPath
+          $buildExitCode = $LASTEXITCODE
 
           $matchedLines = Select-String -Path $logPath -Pattern 'RT0002: ProjectReference .+ can be removed'
           $entryPattern = 'RT0002: ProjectReference (?<Reference>.+?) can be removed \[(?<Owner>.+?\.csproj)\]'
@@ -87,6 +89,9 @@ jobs:
             throw "RT0002 findings detected."
           }
 
+          if ($buildExitCode -ne 0) {
+            throw "Build failed with exit code $buildExitCode. Inspect the uploaded diagnostic log."
+          }
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "No RT0002 findings."
           Write-Host "No RT0002 findings for $solutionPath"
 
