@@ -23,22 +23,6 @@ Governing thought: Mississippi is migrating toward a clearer page-type-driven do
 
 Contributors and agents updating feature-oriented docs while the repository transitions toward stronger page-type governance.
 
-## At-a-Glance Quick-Start
-
-- Keep existing feature folders when that avoids unnecessary churn.
-- Split content by page type instead of stuffing every concern into one feature page.
-- Prefer `_category_.yml` for new public folders.
-- Use orientation pages plus cross-links instead of giant all-in-one pages.
-
-## Transitional Placement Model
-
-During the current transition:
-
-- feature folders are still allowed
-- page type still governs structure and content rules
-- new sections should prefer generated-index category metadata
-- touched legacy pages should move closer to the new model when it is safe to do so
-
 ## Core Principles
 
 - **Page Type Wins**: Structure follows reader intent first.
@@ -50,3 +34,4 @@ During the current transition:
 - Documentation guide: `docs/Docusaurus/docs/contributing/documentation-guide.md`
 - Documentation page focus: `.github/instructions/documentation-page-focus.instructions.md`
 - Documentation authoring: `.github/instructions/documentation-authoring.instructions.md`
+- Placement and transition: [Navigation](../../docs/Docusaurus/docs/contributing/documentation-guide.md#file-and-navigation-rules) and [migration stance](../../docs/Docusaurus/docs/contributing/documentation-guide.md#migration-stance).
