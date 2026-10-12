@@ -3,6 +3,12 @@
         <Description>Enterprise business objects built on existing Mississippi framework capabilities.</Description>
     </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
+        <ProjectReference Include="..\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />
+        <ProjectReference Include="..\Tributary.Abstractions\Tributary.Abstractions.csproj" />
         <ProjectReference Include="..\Undercurrent.Abstractions\Undercurrent.Abstractions.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Orleans.Sdk" />
     </ItemGroup>
 </Project>
