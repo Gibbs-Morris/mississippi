@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.BearerToken;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Builder;
@@ -76,10 +77,10 @@ public sealed class InletHubConnectionAuthenticationTests
 
     private static DefaultHttpContext CreateBearerContext(
         IServiceProvider services,
-        string permission
+        string permission,
+        string scheme = "Bearer"
     )
     {
-        const string scheme = "Bearer";
         BearerTokenOptions options = services.GetRequiredService<IOptionsMonitor<BearerTokenOptions>>().Get(scheme);
         FakeTimeProvider clock = Assert.IsType<FakeTimeProvider>(options.TimeProvider);
         AuthenticationTicket ticket = new(
@@ -654,12 +655,14 @@ public sealed class InletHubConnectionAuthenticationTests
     [InlineData(false, "service")]
     [InlineData(true, "handler-provider")]
     [InlineData(false, "handler-provider")]
+    [InlineData(true, "uncached-semicolon-policy")]
+    [InlineData(false, "uncached-semicolon-policy")]
     public async Task SubscribeDoesNotGrantOldBearerCredentialsToRepollCaller(
         bool cachedOriginalCaller,
         string authenticationMode
     )
     {
-        const string scheme = "Bearer";
+        string scheme = authenticationMode == "uncached-semicolon-policy" ? "Bearer;Alias" : "Bearer";
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.Services.AddSignalR();
         builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
@@ -717,9 +720,17 @@ public sealed class InletHubConnectionAuthenticationTests
         }
 
         builder.Services.AddAuthorizationBuilder().SetDefaultPolicy(CreatePolicy(scheme));
+        if (authenticationMode == "uncached-semicolon-policy")
+        {
+            IAuthorizationPolicyProvider provider = Substitute.For<IAuthorizationPolicyProvider>();
+            provider.AllowsCachingPolicies.Returns(false);
+            provider.GetDefaultPolicyAsync().Returns(CreatePolicy(scheme));
+            builder.Services.AddSingleton(provider);
+        }
+
         await using WebApplication app = builder.Build();
         await using AsyncServiceScope firstScope = app.Services.CreateAsyncScope();
-        DefaultHttpContext first = CreateBearerContext(firstScope.ServiceProvider, "read");
+        DefaultHttpContext first = CreateBearerContext(firstScope.ServiceProvider, "read", scheme);
         AuthenticationMiddleware middleware = new(
             _ => Task.CompletedTask,
             app.Services.GetRequiredService<IAuthenticationSchemeProvider>());
@@ -730,7 +741,7 @@ public sealed class InletHubConnectionAuthenticationTests
             new AuthorizationPolicyBuilder(scheme).RequireAuthenticatedUser().Build();
         await DispatchHubEndpointAsync(app, first, connectionPolicy);
         await using AsyncServiceScope pollScope = app.Services.CreateAsyncScope();
-        DefaultHttpContext poll = CreateBearerContext(pollScope.ServiceProvider, "write");
+        DefaultHttpContext poll = CreateBearerContext(pollScope.ServiceProvider, "write", scheme);
         await middleware.Invoke(poll);
         Assert.True(
             (await app.Services.GetRequiredService<IAuthorizationService>()
@@ -745,6 +756,92 @@ public sealed class InletHubConnectionAuthenticationTests
         Assert.NotEqual(poll.Request.Headers.Authorization, retained.Request.Headers.Authorization);
         ClaimsPrincipal caller = cachedOriginalCaller ? original : poll.User;
         using InletHub hub = CreateHub(retained, caller, scheme, out IInletSubscriptionGrain grain);
+        if (cachedOriginalCaller)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        Assert.Same(poll.User, retained.User);
+        Assert.Same(caller, hub.Context.User);
+    }
+
+    /// <summary>
+    ///     An anonymous first request must not lend its bearer credentials to a later cookie caller.
+    /// </summary>
+    /// <param name="cachedOriginalCaller">Whether SignalR retained the initial anonymous principal.</param>
+    /// <returns>A task that completes when the subscription assertions have been verified.</returns>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SubscribeDoesNotGrantUnboundBearerCredentialsToRepollCaller(
+        bool cachedOriginalCaller
+    )
+    {
+        const string bearerScheme = "Bearer";
+        const string cookieScheme = "Cookies";
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.Services.AddSignalR();
+        builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
+        FakeTimeProvider clock = new(new(2040, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        builder.Services.AddAuthentication(cookieScheme)
+            .AddCookie(cookieScheme, options => options.TimeProvider = clock)
+            .AddBearerToken(bearerScheme, options => options.TimeProvider = clock);
+        builder.Services.AddAuthorizationBuilder().SetDefaultPolicy(CreatePolicy(bearerScheme));
+        await using WebApplication app = builder.Build();
+        await using AsyncServiceScope firstScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext first = CreateBearerContext(firstScope.ServiceProvider, "read");
+        AuthenticationMiddleware middleware = new(
+            _ => Task.CompletedTask,
+            app.Services.GetRequiredService<IAuthenticationSchemeProvider>());
+        await middleware.Invoke(first);
+        ClaimsPrincipal original = first.User;
+        Assert.False(original.Identity?.IsAuthenticated);
+        AuthenticateResult bearer = await first.AuthenticateAsync(bearerScheme);
+        Assert.True(bearer.Succeeded);
+        Assert.True(bearer.Principal?.HasClaim("permission", "read"));
+        Assert.False(first.Features.Get<IAuthenticateResultFeature>()?.AuthenticateResult?.Succeeded ?? false);
+        await DispatchHubEndpointAsync(app, first, CreatePolicy(bearerScheme), false);
+        await using AsyncServiceScope pollScope = app.Services.CreateAsyncScope();
+        CookieAuthenticationOptions cookie = app.Services
+            .GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
+            .Get(cookieScheme);
+        ISecureDataFormat<AuthenticationTicket> cookieFormat =
+            Assert.IsType<ISecureDataFormat<AuthenticationTicket>>(cookie.TicketDataFormat, false);
+        Assert.NotNull(cookie.Cookie.Name);
+        ClaimsPrincipal cookiePrincipal = new(
+            new ClaimsIdentity(
+                [new(ClaimTypes.NameIdentifier, "poll-cookie-user"), new("permission", "write")],
+                cookieScheme));
+        AuthenticationTicket cookieTicket = new(
+            cookiePrincipal,
+            new()
+            {
+                ExpiresUtc = clock.GetUtcNow().AddHours(1),
+            },
+            cookieScheme);
+        DefaultHttpContext poll = new()
+        {
+            RequestServices = pollScope.ServiceProvider,
+        };
+        poll.Request.Headers.Cookie = cookie.Cookie.Name + "=" + cookieFormat.Protect(cookieTicket);
+        await middleware.Invoke(poll);
+        Assert.True(poll.User.Identity?.IsAuthenticated);
+        Assert.True(poll.User.HasClaim("permission", "write"));
+        Assert.False(poll.User.HasClaim("permission", "read"));
+        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext retained = CloneConnectionContext(first, connectionScope.ServiceProvider);
+        retained.User = poll.User;
+        Assert.Equal(first.Request.Headers.Authorization, retained.Request.Headers.Authorization);
+        ClaimsPrincipal caller = cachedOriginalCaller ? original : poll.User;
+        using InletHub hub = CreateHub(retained, caller, bearerScheme, out IInletSubscriptionGrain grain);
         if (cachedOriginalCaller)
         {
             Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));

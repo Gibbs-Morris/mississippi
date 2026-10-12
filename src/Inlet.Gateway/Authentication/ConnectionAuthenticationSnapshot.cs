@@ -67,7 +67,9 @@ internal static class ConnectionAuthenticationSnapshot
         HttpContext context
     )
     {
-        context.Items.Remove(ItemKey);
+        // Retain the first caller even when middleware did not authenticate it. Empty schemes
+        // record caller ownership only and cannot establish successful authentication.
+        StoreSnapshot(context, context.User, [], null);
         IAuthenticateResultFeature? feature = context.Features.Get<IAuthenticateResultFeature>();
         AuthenticateResult? result = feature?.AuthenticateResult;
         if (result is not { Succeeded: true, Ticket: not null } || !ReferenceEquals(result.Principal, context.User))
@@ -140,6 +142,7 @@ internal static class ConnectionAuthenticationSnapshot
         ClaimsPrincipal? principal
     ) =>
         GetSnapshot(context, principal) is Snapshot snapshot &&
+        (snapshot.Schemes.Count > 0) &&
         (snapshot.Schemes.SequenceEqual(policy.AuthenticationSchemes, StringComparer.Ordinal) ||
          ((policy.AuthenticationSchemes.Count == 1) &&
           string.Equals(snapshot.DefaultScheme, policy.AuthenticationSchemes[0], StringComparison.Ordinal)));
@@ -208,11 +211,11 @@ internal static class ConnectionAuthenticationSnapshot
     }
 
     /// <summary>
-    ///     Stores verified provenance for the connection context and the authenticated poll principal.
+    ///     Stores caller ownership and registers poll provenance only for verified schemes.
     /// </summary>
     /// <param name="context">The original authenticated request.</param>
-    /// <param name="principal">The exact principal verified by that request.</param>
-    /// <param name="schemes">The schemes that authenticated the principal.</param>
+    /// <param name="principal">The principal handed to SignalR by the original request.</param>
+    /// <param name="schemes">The verified schemes, or an empty list when no authentication is proven.</param>
     /// <param name="defaultScheme">The stable default scheme originally requested by middleware.</param>
     private static void StoreSnapshot(
         HttpContext context,
@@ -230,7 +233,7 @@ internal static class ConnectionAuthenticationSnapshot
             context.GetEndpoint(),
             context.Request.Query["id"].ToString());
         context.Items[ItemKey] = snapshot;
-        if (snapshot.Endpoint is not null && (snapshot.ConnectionToken.Length > 0))
+        if ((schemes.Length > 0) && snapshot.Endpoint is not null && (snapshot.ConnectionToken.Length > 0))
         {
             // A later poll can supply the principal first read by the hub during its handshake.
             // Bind its verified schemes to this exact principal, mapped endpoint and transport token.
