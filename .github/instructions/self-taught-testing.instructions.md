@@ -20,6 +20,8 @@ Governing thought: Test observable failure cases and keep test evidence accurate
 
 - Storage-sizing fixtures **SHOULD** use the provider's actual payload type and encoding. Why: PR #1108's JSON fixture encoded `ImmutableArray<byte>` as numeric elements, falsely failing the Cosmos size check; the provider's `byte[]` encodes as base64.
 
+- HTTP decoding tests **SHOULD** return malformed response bytes or headers. Why: PR #844's throwing `HttpContent` fixture failed during `HttpClient` buffering, before the response-decoding catch.
+
 ## Scope and Audience
 
 Agents writing or validating tests under `tests/**`.
