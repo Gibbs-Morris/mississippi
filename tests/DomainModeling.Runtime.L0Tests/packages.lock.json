@@ -729,6 +729,20 @@
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.12, )"
         }
       },
+      "Mississippi.Brooks.Serialization.Json": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.12, )",
+          "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Common.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.12, )",
+          "Microsoft.Orleans.Sdk": "[10.4.0, )"
+        }
+      },
       "Mississippi.DomainModeling.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -771,6 +785,9 @@
         }
       },
       "Mississippi.Inlet.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Inlet.Generators.Abstractions": {
         "type": "Project"
       },
       "Mississippi.Testing.Utilities": {
