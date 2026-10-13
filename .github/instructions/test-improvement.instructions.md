@@ -17,23 +17,11 @@ Governing thought: Improve meaningful unit-test coverage on legacy code, address
 - After the first clean build, agents **SHOULD** use `-NoBuild` for faster loops but **MUST** still run a build with `-warnaserror`. Why: Keeps iteration fast without skipping gates.
 - Coverage and mutation gap tasks **SHOULD** be synced from existing reports with summarizer scripts, using `-SkipMutationRun` for mutation reports. Why: Keeps scratchpad deterministic without triggering unnecessary mutation runs.
 
+- Agents **MUST** use [improve-legacy-tests](../../.agents/skills/improve-legacy-tests/SKILL.md) and the [local test-improvement binding](../agent-guidance/legacy-test-improvement-bindings.md) for legacy test improvement; if discovery is unavailable, read both linked files directly. Why: One procedure applies retained rules using current repository contracts.
+
 ## Scope and Audience
 
 Agents improving tests on legacy/non-TDD areas.
-
-## At-a-Glance Quick-Start
-
-- Restore tools: `dotnet tool restore`
-- Fast loop: `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <Name> -SkipMutation`
-- Optional mutation (Mississippi): `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <Name>`
-- Speed up after first build: add `-NoBuild`; still run `dotnet build ... -warnaserror`
-- Refresh tasks from reports: rerun `summarize-coverage-gaps.ps1` and `summarize-mutation-survivors.ps1 -SkipMutationRun`
-
-## Core Principles
-
-- Tests-only edits; deterministic, isolated tests.
-- Tight loops with quality gates intact.
-- Use automation outputs for coverage/mutation backlog rather than manual tracking.
 
 ## References
 
