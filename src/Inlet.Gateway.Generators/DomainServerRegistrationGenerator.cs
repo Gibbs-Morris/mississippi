@@ -22,6 +22,9 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
     private const string GenerateCommandAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateCommandAttribute";
 
+    private const string GenerateMcpReadToolAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateMcpReadToolAttribute";
+
     private const string GenerateProjectionEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
 
@@ -58,13 +61,15 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
     private static void AddProjectionNameIfPresent(
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol? generateProjectionAttribute,
+        INamedTypeSymbol? mcpReadToolAttribute,
         INamedTypeSymbol? projectionPathAttribute,
         string domainRoot,
         Dictionary<string, HashSet<string>> projectionNamesByDomain
     )
     {
-        if (!GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, generateProjectionAttribute) ||
-            !GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, projectionPathAttribute))
+        if ((!GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, generateProjectionAttribute) ||
+             !GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, projectionPathAttribute)) &&
+            !GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, mcpReadToolAttribute))
         {
             return;
         }
@@ -85,6 +90,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         INamespaceSymbol namespaceSymbol,
         INamedTypeSymbol? generateCommandAttribute,
         INamedTypeSymbol? generateProjectionAttribute,
+        INamedTypeSymbol? mcpReadToolAttribute,
         INamedTypeSymbol? projectionPathAttribute,
         Dictionary<string, HashSet<string>> aggregateNamesByDomain,
         Dictionary<string, HashSet<string>> projectionNamesByDomain
@@ -96,6 +102,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
                 typeSymbol,
                 generateCommandAttribute,
                 generateProjectionAttribute,
+                mcpReadToolAttribute,
                 projectionPathAttribute,
                 aggregateNamesByDomain,
                 projectionNamesByDomain);
@@ -107,6 +114,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
                 child,
                 generateCommandAttribute,
                 generateProjectionAttribute,
+                mcpReadToolAttribute,
                 projectionPathAttribute,
                 aggregateNamesByDomain,
                 projectionNamesByDomain);
@@ -194,6 +202,8 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
             compilation.GetTypeByMetadataName(GenerateCommandAttributeFullName);
         INamedTypeSymbol? generateProjectionAttribute =
             compilation.GetTypeByMetadataName(GenerateProjectionEndpointsAttributeFullName);
+        INamedTypeSymbol? mcpReadToolAttribute =
+            compilation.GetTypeByMetadataName(GenerateMcpReadToolAttributeFullName);
         INamedTypeSymbol? projectionPathAttribute = compilation.GetTypeByMetadataName(ProjectionPathAttributeFullName);
         Dictionary<string, HashSet<string>> aggregateNamesByDomain = new(StringComparer.Ordinal);
         Dictionary<string, HashSet<string>> projectionNamesByDomain = new(StringComparer.Ordinal);
@@ -203,6 +213,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
                 assembly.GlobalNamespace,
                 generateCommandAttribute,
                 generateProjectionAttribute,
+                mcpReadToolAttribute,
                 projectionPathAttribute,
                 aggregateNamesByDomain,
                 projectionNamesByDomain);
@@ -242,6 +253,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol? generateCommandAttribute,
         INamedTypeSymbol? generateProjectionAttribute,
+        INamedTypeSymbol? mcpReadToolAttribute,
         INamedTypeSymbol? projectionPathAttribute,
         Dictionary<string, HashSet<string>> aggregateNamesByDomain,
         Dictionary<string, HashSet<string>> projectionNamesByDomain
@@ -268,6 +280,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         AddProjectionNameIfPresent(
             typeSymbol,
             generateProjectionAttribute,
+            mcpReadToolAttribute,
             projectionPathAttribute,
             domainRoot,
             projectionNamesByDomain);

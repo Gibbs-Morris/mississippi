@@ -29,6 +29,7 @@ public sealed class PropertyModel
         }
 
         Name = propertySymbol.Name;
+        SourcePropertySymbol = propertySymbol;
         SourceTypeSymbol = propertySymbol.Type;
         SourceTypeName = propertySymbol.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
         DtoTypeName = TypeAnalyzer.GetDtoTypeName(propertySymbol.Type, customTypeSuffix);
@@ -143,6 +144,11 @@ public sealed class PropertyModel
     ///     Gets a value indicating whether this property requires a mapper.
     /// </summary>
     public bool RequiresMapper { get; }
+
+    /// <summary>
+    ///     Gets the source property, including its serialization metadata.
+    /// </summary>
+    public IPropertySymbol SourcePropertySymbol { get; }
 
     /// <summary>
     ///     Gets the source type name (fully qualified).

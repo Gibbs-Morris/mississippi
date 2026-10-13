@@ -14,7 +14,7 @@ using Mississippi.Inlet.Generators.Core.Naming;
 namespace Mississippi.Inlet.Runtime.Generators;
 
 /// <summary>
-///     Generates silo-side service registrations for projections marked with [GenerateProjectionEndpoints].
+///     Generates silo-side service registrations for projections exposed through HTTP or MCP.
 /// </summary>
 /// <remarks>
 ///     <para>This generator produces:</para>
@@ -23,7 +23,7 @@ namespace Mississippi.Inlet.Runtime.Generators;
 ///     </list>
 ///     <para>
 ///         The generator scans both the current compilation and referenced assemblies
-///         to find projection types decorated with [GenerateProjectionEndpoints] and their
+///         to find projection types decorated with [GenerateProjectionEndpoints] or [GenerateMcpReadTool] and their
 ///         associated reducers in sibling namespaces.
 ///     </para>
 /// </remarks>
@@ -31,6 +31,9 @@ namespace Mississippi.Inlet.Runtime.Generators;
 public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
 {
     private const string EventReducerBaseFullName = "Mississippi.Tributary.Abstractions.EventReducerBase`2";
+
+    private const string GenerateMcpReadToolAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateMcpReadToolAttribute";
 
     private const string GenerateProjectionEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
@@ -47,7 +50,8 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
     /// </summary>
     private static void FindProjectionsInNamespace(
         INamespaceSymbol namespaceSymbol,
-        INamedTypeSymbol projectionAttrSymbol,
+        INamedTypeSymbol? projectionAttrSymbol,
+        INamedTypeSymbol? mcpReadToolAttrSymbol,
         INamedTypeSymbol? reducerBaseSymbol,
         List<ProjectionRegistrationInfo> projections,
         string targetRootNamespace
@@ -59,6 +63,7 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
             ProjectionRegistrationInfo? info = TryGetProjectionInfo(
                 typeSymbol,
                 projectionAttrSymbol,
+                mcpReadToolAttrSymbol,
                 reducerBaseSymbol,
                 targetRootNamespace);
             if (info is not null)
@@ -73,6 +78,7 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
             FindProjectionsInNamespace(
                 childNs,
                 projectionAttrSymbol,
+                mcpReadToolAttrSymbol,
                 reducerBaseSymbol,
                 projections,
                 targetRootNamespace);
@@ -224,7 +230,9 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         // Get the attribute symbols
         INamedTypeSymbol? projectionAttrSymbol =
             compilation.GetTypeByMetadataName(GenerateProjectionEndpointsAttributeFullName);
-        if (projectionAttrSymbol is null)
+        INamedTypeSymbol? mcpReadToolAttrSymbol =
+            compilation.GetTypeByMetadataName(GenerateMcpReadToolAttributeFullName);
+        if (projectionAttrSymbol is null && mcpReadToolAttrSymbol is null)
         {
             return projections;
         }
@@ -238,6 +246,7 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
             FindProjectionsInNamespace(
                 referencedAssembly.GlobalNamespace,
                 projectionAttrSymbol,
+                mcpReadToolAttrSymbol,
                 reducerBaseSymbol,
                 projections,
                 targetRootNamespace);
@@ -278,15 +287,14 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
     /// </summary>
     private static ProjectionRegistrationInfo? TryGetProjectionInfo(
         INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol projectionAttrSymbol,
+        INamedTypeSymbol? projectionAttrSymbol,
+        INamedTypeSymbol? mcpReadToolAttrSymbol,
         INamedTypeSymbol? reducerBaseSymbol,
         string targetRootNamespace
     )
     {
-        // Check for [GenerateProjectionEndpoints] attribute
-        AttributeData? attr = typeSymbol.GetAttributes()
-            .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, projectionAttrSymbol));
-        if (attr is null)
+        if (!GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, projectionAttrSymbol) &&
+            !GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, mcpReadToolAttrSymbol))
         {
             return null;
         }

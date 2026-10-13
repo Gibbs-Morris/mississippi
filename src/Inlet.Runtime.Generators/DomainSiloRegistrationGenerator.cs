@@ -26,6 +26,9 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
     private const string GenerateAggregateEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateAggregateEndpointsAttribute";
 
+    private const string GenerateMcpReadToolAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateMcpReadToolAttribute";
+
     private const string GenerateProjectionEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
 
@@ -71,11 +74,13 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
     private static void AddProjectionNameIfPresent(
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol? generateProjectionAttribute,
+        INamedTypeSymbol? generateMcpReadToolAttribute,
         string domainRoot,
         Dictionary<string, HashSet<string>> projectionNamesByDomain
     )
     {
-        if (!GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, generateProjectionAttribute))
+        if (!GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, generateProjectionAttribute) &&
+            !GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, generateMcpReadToolAttribute))
         {
             return;
         }
@@ -120,6 +125,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         INamespaceSymbol namespaceSymbol,
         INamedTypeSymbol? generateAggregateAttribute,
         INamedTypeSymbol? generateProjectionAttribute,
+        INamedTypeSymbol? generateMcpReadToolAttribute,
         INamedTypeSymbol? generateSagaAttribute,
         INamedTypeSymbol? generateSagaGenericAttribute,
         Dictionary<string, HashSet<string>> aggregateNamesByDomain,
@@ -133,6 +139,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
                 typeSymbol,
                 generateAggregateAttribute,
                 generateProjectionAttribute,
+                generateMcpReadToolAttribute,
                 generateSagaAttribute,
                 generateSagaGenericAttribute,
                 aggregateNamesByDomain,
@@ -146,6 +153,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
                 child,
                 generateAggregateAttribute,
                 generateProjectionAttribute,
+                generateMcpReadToolAttribute,
                 generateSagaAttribute,
                 generateSagaGenericAttribute,
                 aggregateNamesByDomain,
@@ -220,6 +228,8 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
             compilation.GetTypeByMetadataName(GenerateAggregateEndpointsAttributeFullName);
         INamedTypeSymbol? generateProjectionAttribute =
             compilation.GetTypeByMetadataName(GenerateProjectionEndpointsAttributeFullName);
+        INamedTypeSymbol? generateMcpReadToolAttribute =
+            compilation.GetTypeByMetadataName(GenerateMcpReadToolAttributeFullName);
         INamedTypeSymbol? generateSagaAttribute =
             compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeFullName);
         INamedTypeSymbol? generateSagaGenericAttribute =
@@ -233,6 +243,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
                 assembly.GlobalNamespace,
                 generateAggregateAttribute,
                 generateProjectionAttribute,
+                generateMcpReadToolAttribute,
                 generateSagaAttribute,
                 generateSagaGenericAttribute,
                 aggregateNamesByDomain,
@@ -294,6 +305,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol? generateAggregateAttribute,
         INamedTypeSymbol? generateProjectionAttribute,
+        INamedTypeSymbol? generateMcpReadToolAttribute,
         INamedTypeSymbol? generateSagaAttribute,
         INamedTypeSymbol? generateSagaGenericAttribute,
         Dictionary<string, HashSet<string>> aggregateNamesByDomain,
@@ -314,7 +326,12 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         }
 
         AddAggregateNameIfPresent(typeSymbol, generateAggregateAttribute, domainRoot, aggregateNamesByDomain);
-        AddProjectionNameIfPresent(typeSymbol, generateProjectionAttribute, domainRoot, projectionNamesByDomain);
+        AddProjectionNameIfPresent(
+            typeSymbol,
+            generateProjectionAttribute,
+            generateMcpReadToolAttribute,
+            domainRoot,
+            projectionNamesByDomain);
         AddSagaNameIfPresent(
             typeSymbol,
             generateSagaAttribute,

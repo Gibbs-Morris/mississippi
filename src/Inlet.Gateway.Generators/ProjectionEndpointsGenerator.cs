@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
@@ -40,10 +41,19 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     private const string GenerateAuthorizationAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateAuthorizationAttribute";
 
+    private const string GenerateMcpReadToolAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateMcpReadToolAttribute";
+
     private const string GenerateProjectionEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
 
     private const string GeneratorName = "ProjectionEndpointsGenerator";
+
+    private const int JsonIgnoreAlways = 1;
+
+    private const int JsonIgnoreNever = 0;
+
+    private const int JsonIgnoreWhenWriting = 4;
 
     private const string MapperSuffix = "Mapper";
 
@@ -53,9 +63,38 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
 
     private const string ProjectionPathAttributeFullName = "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
 
-    private const string ProjectionSuffix = "Projection";
-
     private const string SystemNamespace = "System";
+
+    /// <summary>
+    ///     Emits a DTO property while retaining source JSON exclusions and compatible required-member metadata.
+    /// </summary>
+    private static void AppendDtoProperty(
+        SourceBuilder builder,
+        PropertyModel property
+    )
+    {
+        builder.AppendSummary($"Gets the {property.Name} value.");
+        (AttributeData? ignoreAttribute, TypedConstant condition) =
+            GetJsonIgnoreMetadata(property.SourcePropertySymbol);
+        if (ignoreAttribute is not null)
+        {
+            string expression = condition.Kind == TypedConstantKind.Enum
+                ? condition.ToCSharpString()
+                : "global::System.Text.Json.Serialization.JsonIgnoreCondition.Always";
+            builder.AppendLine($"[JsonIgnore(Condition = {expression})]");
+        }
+
+        bool required = ignoreAttribute is null || condition.Value is JsonIgnoreNever;
+        if (required)
+        {
+            builder.AppendLine("[JsonRequired]");
+        }
+
+        string modifier = required ? "required " : string.Empty;
+        string initializer = required ? string.Empty : " = default!;";
+        builder.AppendLine($"public {modifier}{property.DtoTypeName} {property.Name} {{ get; init; }}{initializer}");
+        builder.AppendLine();
+    }
 
     /// <summary>
     ///     Derives the output namespace from the compilation target root namespace.
@@ -71,8 +110,9 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     /// </summary>
     private static void FindProjectionsInNamespace(
         INamespaceSymbol namespaceSymbol,
-        INamedTypeSymbol generateAttrSymbol,
-        INamedTypeSymbol projectionPathAttrSymbol,
+        INamedTypeSymbol? generateAttrSymbol,
+        INamedTypeSymbol? mcpReadToolAttrSymbol,
+        INamedTypeSymbol? projectionPathAttrSymbol,
         INamedTypeSymbol? generateAuthorizationAttribute,
         INamedTypeSymbol? generateAllowAnonymousAttribute,
         string targetRootNamespace,
@@ -85,6 +125,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             ProjectionInfo? info = TryGetProjectionInfo(
                 typeSymbol,
                 generateAttrSymbol,
+                mcpReadToolAttrSymbol,
                 projectionPathAttrSymbol,
                 generateAuthorizationAttribute,
                 generateAllowAnonymousAttribute,
@@ -101,6 +142,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             FindProjectionsInNamespace(
                 childNs,
                 generateAttrSymbol,
+                mcpReadToolAttrSymbol,
                 projectionPathAttrSymbol,
                 generateAuthorizationAttribute,
                 generateAllowAnonymousAttribute,
@@ -195,11 +237,14 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             $"{GetRegistrationsTypeName(projection)}.g.cs",
             SourceText.From(registrationsSource, Encoding.UTF8));
 
-        // Generate Controller
-        string controllerSource = GenerateController(projection);
-        context.AddSource(
-            $"{GetControllerTypeName(projection)}.g.cs",
-            SourceText.From(controllerSource, Encoding.UTF8));
+        // DTOs and mappers serve both transports; HTTP controllers remain opt-in.
+        if (projection.HasHttpEndpoints)
+        {
+            string controllerSource = GenerateController(projection);
+            context.AddSource(
+                $"{GetControllerTypeName(projection)}.g.cs",
+                SourceText.From(controllerSource, Encoding.UTF8));
+        }
     }
 
     /// <summary>
@@ -225,7 +270,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.AppendFileScopedNamespace(projection.OutputNamespace);
         sb.AppendLine();
         string controllerName = GetControllerTypeName(projection);
-        string baseName = projection.Model.TypeName.Replace(ProjectionSuffix, string.Empty);
+        string baseName = projection.Model.ProjectionName;
         sb.AppendSummary($"Controller for the {baseName} projection.");
         sb.AppendGeneratedCodeAttribute(GeneratorName);
         GeneratedApiAuthorizationAnalysis.AppendAuthorizationAttributes(sb, projection.Authorization);
@@ -278,10 +323,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.OpenBrace();
         foreach (PropertyModel prop in projection.Model.Properties)
         {
-            sb.AppendSummary($"Gets the {prop.Name} value.");
-            sb.AppendLine("[JsonRequired]");
-            sb.AppendLine($"public required {prop.DtoTypeName} {prop.Name} {{ get; init; }}");
-            sb.AppendLine();
+            AppendDtoProperty(sb, prop);
         }
 
         sb.CloseBrace();
@@ -354,15 +396,18 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         ProjectionInfo projection
     )
     {
+        ImmutableArray<PropertyModel> properties = projection.Model.Properties
+            .Where(property => !IsIgnoredWhenWriting(property.SourcePropertySymbol))
+            .ToImmutableArray();
         SourceBuilder sb = new();
         sb.AppendAutoGeneratedHeader();
         sb.AppendUsing(SystemNamespace);
-        if (projection.Model.HasEnumerableMappedProperties)
+        if (properties.Any(property => property.RequiresEnumerableMapper))
         {
             sb.AppendUsing("System.Linq");
         }
 
-        if (projection.Model.HasImmutableArrayMappedProperties)
+        if (properties.Any(property => property.RequiresEnumerableMapper && property.IsImmutableArray))
         {
             sb.AppendUsing("System.Collections.Immutable");
         }
@@ -379,7 +424,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.OpenBrace();
 
         // Constructor with injected mappers for nested types
-        if (projection.Model.HasMappedProperties)
+        if (properties.Any(property => property.RequiresMapper))
         {
             GenerateMapperConstructor(sb, projection);
             sb.AppendLine();
@@ -396,10 +441,10 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.AppendLine("ArgumentNullException.ThrowIfNull(source);");
         sb.AppendLine("return new()");
         sb.OpenBrace();
-        for (int i = 0; i < projection.Model.Properties.Length; i++)
+        for (int i = 0; i < properties.Length; i++)
         {
-            PropertyModel prop = projection.Model.Properties[i];
-            string comma = i < (projection.Model.Properties.Length - 1) ? "," : string.Empty;
+            PropertyModel prop = properties[i];
+            string comma = i < (properties.Length - 1) ? "," : string.Empty;
             if (prop.RequiresEnumerableMapper)
             {
                 // Collection with custom element type - use appropriate collection conversion
@@ -440,7 +485,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     {
         sb.AppendSummary($"Initializes a new instance of the {GetMapperTypeName(projection)} class.");
         ImmutableArray<PropertyModel> mappedProps = projection.Model.Properties
-            .Where(p => p.RequiresMapper)
+            .Where(p => p.RequiresMapper && !IsIgnoredWhenWriting(p.SourcePropertySymbol))
             .ToImmutableArray();
 
         // Properties for injected mappers
@@ -506,7 +551,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.AppendFileScopedNamespace(projection.OutputNamespace + MappersNamespaceSuffix);
         sb.AppendLine();
         string registrationsName = GetRegistrationsTypeName(projection);
-        string baseName = projection.Model.TypeName.Replace(ProjectionSuffix, string.Empty);
+        string baseName = projection.Model.ProjectionName;
         sb.AppendSummary($"Service registration for {baseName} projection mappers.");
         sb.AppendGeneratedCodeAttribute(GeneratorName);
         sb.AppendLine($"internal static class {registrationsName}");
@@ -626,11 +671,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             .ToArray();
         foreach (IPropertySymbol prop in properties)
         {
-            string propDtoTypeName = TypeAnalyzer.GetDtoTypeName(prop.Type);
-            sb.AppendSummary($"Gets the {prop.Name} value.");
-            sb.AppendLine("[JsonRequired]");
-            sb.AppendLine($"public required {propDtoTypeName} {prop.Name} {{ get; init; }}");
-            sb.AppendLine();
+            AppendDtoProperty(sb, new(prop));
         }
 
         sb.CloseBrace();
@@ -675,6 +716,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         IPropertySymbol[] properties = sourceType.GetMembers()
             .OfType<IPropertySymbol>()
             .Where(p => (p.DeclaredAccessibility == Accessibility.Public) && !p.IsStatic && p.GetMethod is not null)
+            .Where(p => !IsIgnoredWhenWriting(p))
             .ToArray();
         for (int i = 0; i < properties.Length; i++)
         {
@@ -708,7 +750,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         ProjectionInfo projection
     )
     {
-        string baseName = projection.Model.TypeName.Replace(ProjectionSuffix, string.Empty);
+        string baseName = projection.Model.ProjectionName;
         return baseName + "Controller";
     }
 
@@ -748,6 +790,22 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Reads source JSON exclusion metadata without referencing the target application's JSON assembly.
+    /// </summary>
+    private static (AttributeData? Attribute, TypedConstant Condition) GetJsonIgnoreMetadata(
+        IPropertySymbol property
+    )
+    {
+        AttributeData? attribute = property.GetAttributes()
+            .FirstOrDefault(candidate => candidate.AttributeClass?.ToDisplayString() ==
+                                         "System.Text.Json.Serialization.JsonIgnoreAttribute");
+        TypedConstant condition = attribute?.NamedArguments.FirstOrDefault(argument => argument.Key == "Condition")
+                                      .Value ??
+                                  default;
+        return (attribute, condition);
+    }
+
+    /// <summary>
     ///     Gets the mapper type name.
     /// </summary>
     private static string GetMapperTypeName(
@@ -768,12 +826,14 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         // Get the attribute symbols
         INamedTypeSymbol? generateAttrSymbol =
             compilation.GetTypeByMetadataName(GenerateProjectionEndpointsAttributeFullName);
+        INamedTypeSymbol? mcpReadToolAttrSymbol =
+            compilation.GetTypeByMetadataName(GenerateMcpReadToolAttributeFullName);
         INamedTypeSymbol? projectionPathAttrSymbol = compilation.GetTypeByMetadataName(ProjectionPathAttributeFullName);
         INamedTypeSymbol? generateAuthorizationAttribute =
             compilation.GetTypeByMetadataName(GenerateAuthorizationAttributeFullName);
         INamedTypeSymbol? generateAllowAnonymousAttribute =
             compilation.GetTypeByMetadataName(GenerateAllowAnonymousAttributeFullName);
-        if (generateAttrSymbol is null || projectionPathAttrSymbol is null)
+        if (generateAttrSymbol is null && mcpReadToolAttrSymbol is null)
         {
             return projections;
         }
@@ -784,6 +844,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             FindProjectionsInNamespace(
                 referencedAssembly.GlobalNamespace,
                 generateAttrSymbol,
+                mcpReadToolAttrSymbol,
                 projectionPathAttrSymbol,
                 generateAuthorizationAttribute,
                 generateAllowAnonymousAttribute,
@@ -821,8 +882,19 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         ProjectionInfo projection
     )
     {
-        string baseName = projection.Model.TypeName.Replace(ProjectionSuffix, string.Empty);
+        string baseName = projection.Model.ProjectionName;
         return baseName + "ProjectionMapperRegistrations";
+    }
+
+    /// <summary>
+    ///     Identifies getters that serialization excludes without evaluating their values.
+    /// </summary>
+    private static bool IsIgnoredWhenWriting(
+        IPropertySymbol property
+    )
+    {
+        (AttributeData? attribute, TypedConstant condition) = GetJsonIgnoreMetadata(property);
+        return attribute is not null && condition.Value is null or JsonIgnoreAlways or JsonIgnoreWhenWriting;
     }
 
     /// <summary>
@@ -845,17 +917,17 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     /// </summary>
     private static ProjectionInfo? TryGetProjectionInfo(
         INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol generateAttrSymbol,
-        INamedTypeSymbol projectionPathAttrSymbol,
+        INamedTypeSymbol? generateAttrSymbol,
+        INamedTypeSymbol? mcpReadToolAttrSymbol,
+        INamedTypeSymbol? projectionPathAttrSymbol,
         INamedTypeSymbol? generateAuthorizationAttribute,
         INamedTypeSymbol? generateAllowAnonymousAttribute,
         string targetRootNamespace
     )
     {
-        // Check for [GenerateProjectionEndpoints] attribute
-        bool hasGenerateAttribute = typeSymbol.GetAttributes()
-            .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, generateAttrSymbol));
-        if (!hasGenerateAttribute)
+        bool hasGenerateAttribute = GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, generateAttrSymbol);
+        bool hasMcpReadToolAttribute = GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, mcpReadToolAttrSymbol);
+        if (!hasGenerateAttribute && !hasMcpReadToolAttribute)
         {
             return null;
         }
@@ -864,27 +936,23 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         AttributeData? projectionPathAttr = typeSymbol.GetAttributes()
             .FirstOrDefault(attr =>
                 SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionPathAttrSymbol));
-        if (projectionPathAttr is null)
-        {
-            return null;
-        }
-
-        // Get the path from constructor argument
-        string? projectionPath = projectionPathAttr.ConstructorArguments.FirstOrDefault().Value?.ToString();
-        if (string.IsNullOrEmpty(projectionPath))
+        string projectionPath =
+            projectionPathAttr?.ConstructorArguments.FirstOrDefault().Value?.ToString() ?? string.Empty;
+        bool hasHttpEndpoints = hasGenerateAttribute && !string.IsNullOrEmpty(projectionPath);
+        if (!hasHttpEndpoints && !hasMcpReadToolAttribute)
         {
             return null;
         }
 
         // Create projection model
-        ProjectionModel model = new(typeSymbol, projectionPath!);
+        ProjectionModel model = new(typeSymbol, projectionPath);
         GeneratedApiAuthorizationModel authorization = GeneratedApiAuthorizationAnalysis.Analyze(
             typeSymbol,
-            generateAuthorizationAttribute,
-            generateAllowAnonymousAttribute,
+            hasHttpEndpoints ? generateAuthorizationAttribute : null,
+            hasHttpEndpoints ? generateAllowAnonymousAttribute : null,
             false);
         string outputNamespace = DeriveOutputNamespace(targetRootNamespace);
-        return new(model, outputNamespace, authorization, authorization.Diagnostics);
+        return new(model, outputNamespace, authorization, authorization.Diagnostics, hasHttpEndpoints);
     }
 
     /// <summary>
@@ -971,22 +1039,27 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         /// <param name="outputNamespace">The output namespace for generated code.</param>
         /// <param name="authorization">The resolved authorization metadata.</param>
         /// <param name="diagnostics">Diagnostics emitted during projection analysis.</param>
+        /// <param name="hasHttpEndpoints">Whether the projection opts into HTTP controller generation.</param>
         public ProjectionInfo(
             ProjectionModel model,
             string outputNamespace,
             GeneratedApiAuthorizationModel authorization,
-            ImmutableArray<Diagnostic> diagnostics
+            ImmutableArray<Diagnostic> diagnostics,
+            bool hasHttpEndpoints
         )
         {
             Model = model;
             OutputNamespace = outputNamespace;
             Authorization = authorization;
             Diagnostics = diagnostics;
+            HasHttpEndpoints = hasHttpEndpoints;
         }
 
         public GeneratedApiAuthorizationModel Authorization { get; }
 
         public ImmutableArray<Diagnostic> Diagnostics { get; }
+
+        public bool HasHttpEndpoints { get; }
 
         /// <summary>
         ///     Gets the projection model.

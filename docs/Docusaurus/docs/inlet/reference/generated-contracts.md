@@ -24,6 +24,7 @@ This reference maps the contracts in the Spring sample across its runtime, gatew
 |------------|-------------------------------|-------------------------|
 | Aggregate state with `[GenerateAggregateEndpoints]` and commands with `[GenerateCommand]` | Aggregate controller, command DTOs and mappings, client actions/effects/state/reducers, registration methods | Implement the command handlers and event reducers; register the infrastructure and generated features |
 | Projection with `[GenerateProjectionEndpoints]` and `[ProjectionPath]` | Projection controller, DTOs and mappings, and client projection reducers | Define the read model and its reducers; connect its brook and projection path to the hosts |
+| Projection with `[GenerateMcpReadTool]` | Latest, exact-version, and version-only MCP read tools, shared projection DTOs and mapper registrations | Register generated mappers and MCP tools; protect MCP access through the host |
 | Saga with `[GenerateSagaEndpoints]` or its generic input form | Saga endpoints, client feature, and runtime registration | Define saga input, steps, state transitions, and compensation behavior |
 
 Generation runs during compilation. Edit the domain input and application configuration, then rebuild the consuming projects to update their generated contracts. Keep business decisions in the handlers and reducers that you own.
@@ -93,6 +94,24 @@ Protect an exposed MCP endpoint and its tools separately through the application
 The hub applies projection authorization when a client subscribes. Its authorization callback receives the user and a null resource. Use these policies for identity-based access; entity-specific permissions require an application boundary that receives and checks the requested entity ID before granting access.
 
 Verify anonymous and insufficiently privileged requests as well as successful access. [Spring auth-proof mode](../../samples/spring-sample/how-to/auth-proof-mode.md) provides executable HTTP `401`/`403` checks with development identities. Add application-specific SignalR integration tests for allowed and denied subscriptions. Configure the deployment's real authentication mechanism for an exposed application.
+
+## MCP Projection Reads
+
+Generated latest and exact-version MCP reads apply `IMapper<TProjection, TDto>` and serialize the returned DTO with `JsonSerializerOptions.Web`. HTTP controllers use the same projection-to-DTO mapping contract. Both transports share one generated DTO and mapper rather than defining separate transport shapes.
+
+Gateway DTOs remain in `<Gateway>.Controllers.Projections`, and their mapper extensions remain in `.Controllers.Projections.Mappers`. Register the individual projection mappers or the combined domain Server extension before constructing tools. `WithGeneratedMcpTools()` on the MCP server builder registers the generated tool methods. To replace a generated mapping, register your `IMapper<TProjection, TDto>` after the generated mapper registrations; the last registration is selected for a single mapper dependency.
+
+`[GenerateMcpReadTool]` works without `[GenerateProjectionEndpoints]` or `[ProjectionPath]`. An MCP-only projection receives DTOs, mappers, and domain Server mapper registration, while an HTTP controller still requires the HTTP opt-in and projection path. Its generated runtime projection and domain Silo registrations include the discovered reducers and snapshot converter. Adding both opt-ins emits the shared contract once.
+
+### JSON Compatibility
+
+Earlier generated MCP reads serialized the domain projection directly. Latest and exact-version reads now serialize the mapped DTO, so consumers must handle any values or shapes changed by the mapping. For example, a custom mapper that adds 1,000 to an `Amount` of 123 now returns `"amount":1123` instead of `"amount":123`. Update MCP consumers that relied on raw domain values, and supply the mapper when constructing generated tool classes directly.
+
+Generated server DTO properties retain source `[JsonIgnore]` conditions, including properties on generated collection-item DTOs. These exclusions apply after default or custom mapping on both HTTP and MCP reads. An ignored or conditionally ignored property remains available to CLR mappers but is optional in the DTO; `[JsonIgnore(Condition = JsonIgnoreCondition.Never)]` retains the usual required property contract. See the [JSON ignore conditions](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonignorecondition?view=net-10.0) for serialization and deserialization behavior.
+
+Default mappers skip getters excluded by `Always` (including `[JsonIgnore]` with no condition) or `WhenWriting`. Conditional exclusions still map the value before serialization decides whether to omit it. Custom mappers control their own source-property access.
+
+Tool names and parameters, cancellation forwarding, version-only results, and existing not-found messages retain their contracts. This mapping correction does not establish HTTP/MCP authorization parity; configure MCP access separately as described above.
 
 ## Projection Identity Across The Boundary
 
