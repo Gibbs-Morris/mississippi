@@ -56,6 +56,30 @@ internal sealed class CreateNotificationHandler : CommandHandlerBase<CreateNotif
         return true;
     }
 
+    private static OperationResult<IReadOnlyList<object>>? RecognizeRetainedRequest(
+        CreateNotification command,
+        UserNotificationsAggregate? state,
+        DateTimeOffset expiresAt,
+        string fingerprint
+    )
+    {
+        if (state is null ||
+            !state.CreationReceipts.TryGetValue(command.CreationKey, out NotificationCreationReceipt? receipt))
+        {
+            return null;
+        }
+
+        if ((receipt.ExpiresAt != expiresAt) ||
+            !string.Equals(receipt.RequestFingerprint, fingerprint, StringComparison.Ordinal))
+        {
+            return Fail(AggregateErrorCodes.InvalidState, "Creation key already identifies a different request.");
+        }
+
+        return state.Notifications.ContainsKey(receipt.NotificationId)
+            ? OperationResult.Ok<IReadOnlyList<object>>([])
+            : Fail(AggregateErrorCodes.InvalidState, "Notification has already been deleted.");
+    }
+
     private static OperationResult<IReadOnlyList<object>>? ValidateShape(
         CreateNotification command
     )
@@ -102,18 +126,9 @@ internal sealed class CreateNotificationHandler : CommandHandlerBase<CreateNotif
 
         string fingerprint = CreationRequestFingerprint.Create(command);
         DateTimeOffset expiresAt = command.ExpiresAt.ToUniversalTime();
-        if (state is not null &&
-            state.CreationReceipts.TryGetValue(command.CreationKey, out NotificationCreationReceipt? receipt))
+        if (RecognizeRetainedRequest(command, state, expiresAt, fingerprint) is { } recognized)
         {
-            if ((receipt.ExpiresAt != expiresAt) ||
-                !string.Equals(receipt.RequestFingerprint, fingerprint, StringComparison.Ordinal))
-            {
-                return Fail(AggregateErrorCodes.InvalidState, "Creation key already identifies a different request.");
-            }
-
-            return state.Notifications.ContainsKey(receipt.NotificationId)
-                ? OperationResult.Ok<IReadOnlyList<object>>([])
-                : Fail(AggregateErrorCodes.InvalidState, "Notification has already been deleted.");
+            return recognized;
         }
 
         if (ValidatePolicy(command) is { } outsidePolicy)
