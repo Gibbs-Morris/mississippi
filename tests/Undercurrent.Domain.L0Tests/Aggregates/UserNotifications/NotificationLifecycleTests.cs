@@ -133,14 +133,15 @@ public sealed class NotificationLifecycleTests
             },
             AggregateErrorCodes.InvalidCommand,
             "Notification ID is required.");
-        new MarkNotificationAsReadHandler(timeProvider).ShouldFailWithMessage(
-            null,
-            new()
-            {
-                NotificationId = notificationId!,
-            },
-            AggregateErrorCodes.InvalidCommand,
-            "Notification ID is required.");
+        UserNotificationsFixture.CreateReadHandler(timeProvider)
+            .ShouldFailWithMessage(
+                null,
+                new()
+                {
+                    NotificationId = notificationId!,
+                },
+                AggregateErrorCodes.InvalidCommand,
+                "Notification ID is required.");
     }
 
     /// <summary>
@@ -217,12 +218,13 @@ public sealed class NotificationLifecycleTests
         bool withoutHistory
     )
     {
-        OperationResult<IReadOnlyList<object>> result = new MarkNotificationAsReadHandler(timeProvider).Handle(
-            new()
-            {
-                NotificationId = "notice",
-            },
-            withoutHistory ? null : new UserNotificationsAggregate());
+        OperationResult<IReadOnlyList<object>> result = UserNotificationsFixture.CreateReadHandler(timeProvider)
+            .Handle(
+                new()
+                {
+                    NotificationId = "notice",
+                },
+                withoutHistory ? null : new UserNotificationsAggregate());
         Assert.False(result.Success);
         Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
         Assert.Equal("Notification does not exist.", result.ErrorMessage);
@@ -233,8 +235,12 @@ public sealed class NotificationLifecycleTests
     ///     Read handlers require an explicit time provider.
     /// </summary>
     [Fact]
-    public void NullTimeProviderIsRejected() =>
-        Assert.Throws<ArgumentNullException>(() => new MarkNotificationAsReadHandler(null!));
+    public void NullTimeProviderIsRejected()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+            new MarkNotificationAsReadHandler(null!, UserNotificationsFixture.CreateSizeLimit()));
+        Assert.Throws<ArgumentNullException>(() => new MarkNotificationAsReadHandler(timeProvider, null!));
+    }
 
     /// <summary>
     ///     Retrying a read preserves the first read time without another event.
@@ -253,7 +259,7 @@ public sealed class NotificationLifecycleTests
                 })
             .State;
         UserNotificationsFixture.AssertSuccessfulNoOp(
-            new MarkNotificationAsReadHandler(timeProvider),
+            UserNotificationsFixture.CreateReadHandler(timeProvider),
             new()
             {
                 NotificationId = "notice",

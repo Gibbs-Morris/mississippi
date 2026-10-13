@@ -28,6 +28,7 @@ internal sealed class UserNotificationPolicy
         MaxNotifications = source.MaxNotifications;
         MaxCreationReceipts = source.MaxCreationReceipts;
         MaxRequestLifetime = source.MaxRequestLifetime;
+        MaxSnapshotSizeBytes = source.MaxSnapshotSizeBytes;
         MaxCreationKeyLength = source.MaxCreationKeyLength;
         MaxTitleLength = source.MaxTitleLength;
         MaxDescriptionLength = source.MaxDescriptionLength;
@@ -55,6 +56,9 @@ internal sealed class UserNotificationPolicy
 
     /// <summary>Gets the maximum future request lifetime.</summary>
     public TimeSpan MaxRequestLifetime { get; }
+
+    /// <summary>Gets the serialized snapshot payload limit.</summary>
+    public int MaxSnapshotSizeBytes { get; }
 
     /// <summary>Gets the title length limit.</summary>
     public int MaxTitleLength { get; }

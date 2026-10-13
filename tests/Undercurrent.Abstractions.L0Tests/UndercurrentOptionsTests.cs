@@ -16,6 +16,7 @@ public sealed class UndercurrentOptionsTests
         UserNotificationsOptions options = new UndercurrentOptions().Notifications;
         Assert.Equal(1_000, options.MaxNotifications);
         Assert.Equal(10_000, options.MaxCreationReceipts);
+        Assert.Equal(1_000_000, options.MaxSnapshotSizeBytes);
         Assert.Equal(TimeSpan.FromDays(7), options.MaxRequestLifetime);
         Assert.Equal(200, options.MaxTitleLength);
         Assert.Equal(2_000, options.MaxDescriptionLength);

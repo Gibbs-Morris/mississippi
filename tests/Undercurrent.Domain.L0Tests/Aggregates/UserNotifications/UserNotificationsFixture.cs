@@ -1,10 +1,14 @@
 using System;
 using System.Collections.Generic;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Brooks.Serialization.Json;
 using Mississippi.DomainModeling.Abstractions;
 using Mississippi.DomainModeling.TestHarness.Aggregates;
+using Mississippi.Tributary.Abstractions;
+using Mississippi.Tributary.Runtime;
 using Mississippi.Undercurrent.Abstractions;
 using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications;
 using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications.Commands;
@@ -105,7 +109,18 @@ internal static class UserNotificationsFixture
                     new UndercurrentOptions
                     {
                         Notifications = options ?? new(),
-                    })));
+                    })),
+            CreateSizeLimit(options));
+
+    /// <summary>Builds a read handler with the real snapshot converter.</summary>
+    /// <param name="timeProvider">The server clock.</param>
+    /// <param name="options">The optional host policy.</param>
+    /// <returns>The configured read handler.</returns>
+    public static MarkNotificationAsReadHandler CreateReadHandler(
+        TimeProvider timeProvider,
+        UserNotificationsOptions? options = null
+    ) =>
+        new(timeProvider, CreateSizeLimit(options));
 
     /// <summary>Builds a scenario with all notification handlers and reducers.</summary>
     /// <param name="timeProvider">The server clock.</param>
@@ -114,7 +129,7 @@ internal static class UserNotificationsFixture
         TimeProvider timeProvider
     ) =>
         new AggregateTestHarness<UserNotificationsAggregate>().WithHandler(CreateHandler(timeProvider))
-            .WithHandler(new MarkNotificationAsReadHandler(timeProvider))
+            .WithHandler(CreateReadHandler(timeProvider))
             .WithHandler<DeleteNotificationHandler>()
             .WithHandler<DeleteNotificationsBeforeHandler>()
             .WithReducer<NotificationCreatedReducer>()
@@ -122,4 +137,25 @@ internal static class UserNotificationsFixture
             .WithReducer<NotificationDeletedReducer>()
             .WithReducer<NotificationsDeletedReducer>()
             .CreateScenario();
+
+    /// <summary>Builds a state-size check using the registered JSON snapshot path.</summary>
+    /// <param name="options">The optional host policy.</param>
+    /// <returns>The configured size check.</returns>
+    public static UserNotificationStateSizeLimit CreateSizeLimit(
+        UserNotificationsOptions? options = null
+    )
+    {
+        ServiceCollection services = new();
+        services.AddJsonSerialization();
+        services.AddSnapshotStateConverter<UserNotificationsAggregate>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        return new(
+            new(
+                Options.Create(
+                    new UndercurrentOptions
+                    {
+                        Notifications = options ?? new(),
+                    })),
+            provider.GetRequiredService<ISnapshotStateConverter<UserNotificationsAggregate>>());
+    }
 }

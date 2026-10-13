@@ -56,6 +56,11 @@ internal sealed class UndercurrentOptionsValidator : IValidateOptions<Undercurre
             failures.Add("MaxRequestLifetime must be positive.");
         }
 
+        if (notifications.MaxSnapshotSizeBytes <= 0)
+        {
+            failures.Add("MaxSnapshotSizeBytes must be positive.");
+        }
+
         ValidateLength(
             nameof(UserNotificationsOptions.MaxCreationKeyLength),
             notifications.MaxCreationKeyLength,

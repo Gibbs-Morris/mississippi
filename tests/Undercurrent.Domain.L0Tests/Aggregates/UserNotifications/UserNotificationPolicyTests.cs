@@ -20,6 +20,7 @@ public sealed class UserNotificationPolicyTests
         options.Notifications.MaxNotifications = 2;
         options.Notifications.MaxCreationReceipts = 4;
         options.Notifications.MaxRequestLifetime = TimeSpan.FromHours(1);
+        options.Notifications.MaxSnapshotSizeBytes = 100;
         options.Notifications.MaxCreationKeyLength = 1;
         options.Notifications.MaxTitleLength = 1;
         options.Notifications.MaxDescriptionLength = 0;
@@ -27,6 +28,7 @@ public sealed class UserNotificationPolicyTests
         options.Notifications.MaxNavigationTargetLength = 0;
         Assert.Equal(1_000, policy.MaxNotifications);
         Assert.Equal(10_000, policy.MaxCreationReceipts);
+        Assert.Equal(1_000_000, policy.MaxSnapshotSizeBytes);
         Assert.Equal(TimeSpan.FromDays(7), policy.MaxRequestLifetime);
         Assert.Equal(256, policy.MaxCreationKeyLength);
         Assert.Equal(200, policy.MaxTitleLength);

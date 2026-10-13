@@ -310,8 +310,10 @@ public sealed class CreateNotificationHandlerTests
     public void MissingDependenciesAndInvalidPolicyAreRejected()
     {
         UserNotificationPolicy policy = new(Options.Create(new UndercurrentOptions()));
-        Assert.Throws<ArgumentNullException>(() => new CreateNotificationHandler(null!, policy));
-        Assert.Throws<ArgumentNullException>(() => new CreateNotificationHandler(timeProvider, null!));
+        UserNotificationStateSizeLimit sizeLimit = UserNotificationsFixture.CreateSizeLimit();
+        Assert.Throws<ArgumentNullException>(() => new CreateNotificationHandler(null!, policy, sizeLimit));
+        Assert.Throws<ArgumentNullException>(() => new CreateNotificationHandler(timeProvider, null!, sizeLimit));
+        Assert.Throws<ArgumentNullException>(() => new CreateNotificationHandler(timeProvider, policy, null!));
         Assert.Throws<ArgumentNullException>(() => new UserNotificationPolicy(null!));
         Assert.Throws<OptionsValidationException>(() => new UserNotificationPolicy(
             Options.Create(

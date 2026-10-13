@@ -34,6 +34,14 @@ public sealed class UserNotificationsOptions
     /// <remarks>Accepted request deadlines remain fixed when this setting changes.</remarks>
     public TimeSpan MaxRequestLifetime { get; set; } = TimeSpan.FromDays(7);
 
+    /// <summary>Gets or sets the maximum serialized snapshot payload size in bytes. Defaults to 1,000,000.</summary>
+    /// <remarks>
+    ///     Creation and first-read commands fail before emitting events when the candidate payload exceeds this limit.
+    ///     The default leaves room for base64 encoding and document metadata in Cosmos storage. Hosts raising it must
+    ///     verify their snapshot provider's complete document limit. Count capacities remain upper bounds.
+    /// </remarks>
+    public int MaxSnapshotSizeBytes { get; set; } = 1_000_000;
+
     /// <summary>Gets or sets the maximum UTF-16 title length. Defaults to 200.</summary>
     public int MaxTitleLength { get; set; } = 200;
 }

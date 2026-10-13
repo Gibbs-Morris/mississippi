@@ -88,6 +88,7 @@ public static class UndercurrentDomainRegistrations
         configure(options);
         options.ValidateOnStart();
         services.TryAddSingleton<UserNotificationPolicy>();
+        services.TryAddTransient<UserNotificationStateSizeLimit>();
         services.TryAddEnumerable(
             ServiceDescriptor.Singleton<IValidateOptions<UndercurrentOptions>, UndercurrentOptionsValidator>());
         return services.AddUserNotificationsAggregate();

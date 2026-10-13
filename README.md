@@ -121,6 +121,7 @@ services.AddUndercurrentDomain(options =>
     options.Notifications.MaxNotifications = 1_000;
     options.Notifications.MaxCreationReceipts = 10_000;
     options.Notifications.MaxRequestLifetime = TimeSpan.FromDays(7);
+    options.Notifications.MaxSnapshotSizeBytes = 1_000_000;
 });
 ```
 
@@ -131,6 +132,7 @@ You can also bind the same policy from a configuration section with `services.Ad
 | MaxNotifications | 1,000 |
 | MaxCreationReceipts | 10,000 |
 | MaxRequestLifetime | Seven days |
+| MaxSnapshotSizeBytes | 1,000,000 payload bytes |
 | MaxCreationKeyLength | 256 |
 | MaxTitleLength | 200 |
 | MaxDescriptionLength | 2,000 |
@@ -138,6 +140,10 @@ You can also bind the same policy from a configuration section with `services.Ad
 | MaxNavigationTargetLength | 2,048 |
 
 Length limits count UTF-16 code units. A new creation at inbox capacity removes the oldest notification, including unread entries. If unexpired receipts fill their separate cap, new creation fails without changing the inbox. Count caps bound current aggregate state; event history and stored snapshots have separate retention.
+
+Creation and first-read commands check the complete candidate state with the registered snapshot converter. If its payload exceeds `MaxSnapshotSizeBytes`, they return `InvalidState` with no events, eviction or receipt removal. This can happen before either count cap; marking a notification as read adds a timestamp. Matching creation retries and repeated reads remain no-ops. Delete and cleanup remain available to reduce stored state after limits are lowered.
+
+The default payload limit leaves room for base64 encoding and snapshot document metadata within [Cosmos DB's 2 MB item limit](https://learn.microsoft.com/en-us/azure/cosmos-db/concepts-limits#per-item-limits). Hosts can raise it for larger snapshot storage, but must verify their complete stored document, including provider metadata and user keys. The byte limit measures serialized payload, not resident memory; each growth check serializes the candidate state.
 
 Direct callers use the public state and commands in `Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications` and its `Commands` namespace with `IAggregateGrainFactory.GetGenericAggregate<UserNotificationsAggregate>(userId)`. The application supplies the opaque user key and remains responsible for identity formatting, tenant qualification, and authorization.
 

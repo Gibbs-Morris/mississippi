@@ -20,7 +20,7 @@ using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Handlers;
 
 namespace MississippiTests.Undercurrent.Domain.L0Tests.Aggregates.UserNotifications;
 
-/// <summary>Verifies compound event persistence, supported event bounds, and full default state serialization.</summary>
+/// <summary>Verifies compound event persistence, supported event bounds, and count-limit state serialization.</summary>
 public sealed class NotificationSerializationTests
 {
     private static UserNotificationsAggregate BuildState(
@@ -143,11 +143,11 @@ public sealed class NotificationSerializationTests
     }
 
     /// <summary>
-    ///     Full default state preserves compact receipt history and exposes serialization costs without claiming peak
+    ///     A manually constructed count-limit state exposes serialization costs without claiming peak
     ///     memory.
     /// </summary>
     [Fact]
-    public void FullDefaultStateRoundTripsAndReportsSizing()
+    public void CountLimitStateRoundTripsAndReportsSizing()
     {
         using ServiceProvider provider = Provider(new(UserNotificationsFixture.CreatedAt));
         ISnapshotStateConverter<UserNotificationsAggregate> snapshots =
@@ -171,7 +171,7 @@ public sealed class NotificationSerializationTests
             restored.CreationReceipts[state.CreationReceipts.First().Key]);
         Assert.Equal(envelope.Data.Length, envelope.DataSizeBytes);
         TestContext.Current.TestOutputHelper?.WriteLine(
-            "DefaultSnapshotDataBytes=" +
+            "CountLimitSnapshotDataBytes=" +
             envelope.DataSizeBytes.ToString(CultureInfo.InvariantCulture) +
             "; StateBuildThreadAllocatedBytes=" +
             buildAllocated.ToString(CultureInfo.InvariantCulture) +

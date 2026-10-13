@@ -106,12 +106,13 @@ public sealed class NotificationCapacityTests
                 NotificationId = old.Notification.NotificationId,
             });
         NotificationCreated current = Apply(handler, UserNotificationsFixture.CreateCommand("new"), ref state);
-        OperationResult<IReadOnlyList<object>> read = new MarkNotificationAsReadHandler(timeProvider).Handle(
-            new()
-            {
-                NotificationId = old.Notification.NotificationId,
-            },
-            state);
+        OperationResult<IReadOnlyList<object>> read = UserNotificationsFixture.CreateReadHandler(timeProvider)
+            .Handle(
+                new()
+                {
+                    NotificationId = old.Notification.NotificationId,
+                },
+                state);
         Assert.False(read.Success);
         UserNotificationsFixture.AssertSuccessfulNoOp(
             new DeleteNotificationHandler(),

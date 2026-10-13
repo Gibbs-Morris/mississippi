@@ -9,6 +9,7 @@ using Mississippi.DomainModeling.Abstractions;
 using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications;
 using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications.Commands;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Events;
+using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Reducers;
 
 
 namespace Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Handlers;
@@ -19,16 +20,21 @@ internal sealed class CreateNotificationHandler : CommandHandlerBase<CreateNotif
     /// <summary>Initializes a new instance of the <see cref="CreateNotificationHandler" /> class.</summary>
     /// <param name="timeProvider">The server clock.</param>
     /// <param name="policy">The validated notification policy.</param>
+    /// <param name="sizeLimit">The serialized state capacity check.</param>
     public CreateNotificationHandler(
         TimeProvider timeProvider,
-        UserNotificationPolicy policy
+        UserNotificationPolicy policy,
+        UserNotificationStateSizeLimit sizeLimit
     )
     {
         TimeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         Policy = policy ?? throw new ArgumentNullException(nameof(policy));
+        SizeLimit = sizeLimit ?? throw new ArgumentNullException(nameof(sizeLimit));
     }
 
     private UserNotificationPolicy Policy { get; }
+
+    private UserNotificationStateSizeLimit SizeLimit { get; }
 
     private TimeProvider TimeProvider { get; }
 
@@ -166,26 +172,27 @@ internal sealed class CreateNotificationHandler : CommandHandlerBase<CreateNotif
             return Fail(AggregateErrorCodes.InvalidState, "Creation receipt capacity is exhausted.");
         }
 
-        return OperationResult.Ok<IReadOnlyList<object>>(
-        [
-            new NotificationCreated
+        NotificationCreated created = new()
+        {
+            Notification = new()
             {
-                Notification = new()
-                {
-                    NotificationId = Guid.NewGuid().ToString("D"),
-                    Title = command.Title,
-                    Description = command.Description,
-                    IconKey = command.IconKey,
-                    NavigationTarget = command.NavigationTarget,
-                    CreatedAt = now,
-                },
-                CreationKey = command.CreationKey,
-                ExpiresAt = expiresAt,
-                RequestFingerprint = fingerprint,
-                EvictedNotificationIds = evictedIds,
-                ExpiredRequestsThrough = cutoff,
+                NotificationId = Guid.NewGuid().ToString("D"),
+                Title = command.Title,
+                Description = command.Description,
+                IconKey = command.IconKey,
+                NavigationTarget = command.NavigationTarget,
+                CreatedAt = now,
             },
-        ]);
+            CreationKey = command.CreationKey,
+            ExpiresAt = expiresAt,
+            RequestFingerprint = fingerprint,
+            EvictedNotificationIds = evictedIds,
+            ExpiredRequestsThrough = cutoff,
+        };
+        UserNotificationsAggregate candidate = new NotificationCreatedReducer().Reduce(state ?? new(), created);
+        return SizeLimit.Fits(candidate)
+            ? OperationResult.Ok<IReadOnlyList<object>>([created])
+            : Fail(AggregateErrorCodes.InvalidState, "Notification snapshot capacity is exhausted.");
     }
 
     private OperationResult<IReadOnlyList<object>>? ValidatePolicy(

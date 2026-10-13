@@ -26,6 +26,7 @@ public sealed class UndercurrentOptionsValidationTests
                     ["Undercurrent:Notifications:MaxCreationReceipts"] = "8",
                     ["Undercurrent:Notifications:MaxRequestLifetime"] = "2.00:00:00",
                     ["Undercurrent:Notifications:MaxTitleLength"] = "80",
+                    ["Undercurrent:Notifications:MaxSnapshotSizeBytes"] = "2000000",
                 })
             .Build();
         ServiceCollection services = new();
@@ -38,6 +39,7 @@ public sealed class UndercurrentOptionsValidationTests
         Assert.Equal(8, options.MaxCreationReceipts);
         Assert.Equal(TimeSpan.FromDays(2), options.MaxRequestLifetime);
         Assert.Equal(80, options.MaxTitleLength);
+        Assert.Equal(2_000_000, options.MaxSnapshotSizeBytes);
         Assert.Equal(2_000, options.MaxDescriptionLength);
     }
 
@@ -192,6 +194,21 @@ public sealed class UndercurrentOptionsValidationTests
                         },
                     })
                 .Failed);
+    }
+
+    /// <summary>Nonpositive snapshot capacities fail through real startup validation.</summary>
+    /// <param name="bytes">The configured payload capacity.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void InvalidSnapshotCapacityFailsAtStartup(
+        int bytes
+    )
+    {
+        ServiceCollection services = new();
+        services.AddUndercurrentDomain(options => options.Notifications.MaxSnapshotSizeBytes = bytes);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IStartupValidator>().Validate());
     }
 
     /// <summary>Options registration rejects missing configuration callbacks, sections, and collections.</summary>

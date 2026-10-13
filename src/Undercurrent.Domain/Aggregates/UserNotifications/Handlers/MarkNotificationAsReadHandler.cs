@@ -5,6 +5,7 @@ using Mississippi.DomainModeling.Abstractions;
 using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications;
 using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications.Commands;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Events;
+using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Reducers;
 
 
 namespace Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Handlers;
@@ -19,10 +20,17 @@ internal sealed class MarkNotificationAsReadHandler
     ///     Initializes a new instance of the <see cref="MarkNotificationAsReadHandler" /> class.
     /// </summary>
     /// <param name="timeProvider">The provider of server UTC timestamps.</param>
+    /// <param name="sizeLimit">The serialized state capacity check.</param>
     public MarkNotificationAsReadHandler(
-        TimeProvider timeProvider
-    ) =>
+        TimeProvider timeProvider,
+        UserNotificationStateSizeLimit sizeLimit
+    )
+    {
         TimeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+        SizeLimit = sizeLimit ?? throw new ArgumentNullException(nameof(sizeLimit));
+    }
+
+    private UserNotificationStateSizeLimit SizeLimit { get; }
 
     private TimeProvider TimeProvider { get; }
 
@@ -52,13 +60,16 @@ internal sealed class MarkNotificationAsReadHandler
             return OperationResult.Ok<IReadOnlyList<object>>([]);
         }
 
-        return OperationResult.Ok<IReadOnlyList<object>>(
-        [
-            new NotificationMarkedAsRead
-            {
-                NotificationId = command.NotificationId,
-                ReadAt = TimeProvider.GetUtcNow().ToUniversalTime(),
-            },
-        ]);
+        NotificationMarkedAsRead read = new()
+        {
+            NotificationId = command.NotificationId,
+            ReadAt = TimeProvider.GetUtcNow().ToUniversalTime(),
+        };
+        UserNotificationsAggregate candidate = new NotificationMarkedAsReadReducer().Reduce(state, read);
+        return SizeLimit.Fits(candidate)
+            ? OperationResult.Ok<IReadOnlyList<object>>([read])
+            : OperationResult.Fail<IReadOnlyList<object>>(
+                AggregateErrorCodes.InvalidState,
+                "Notification snapshot capacity is exhausted.");
     }
 }
