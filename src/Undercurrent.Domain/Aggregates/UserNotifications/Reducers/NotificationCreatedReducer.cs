@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -27,15 +26,11 @@ internal sealed class NotificationCreatedReducer : EventReducerBase<Notification
             current.ExpiredRequestsThrough is { } previous && (previous > eventData.ExpiredRequestsThrough)
                 ? previous
                 : eventData.ExpiredRequestsThrough;
-        ImmutableDictionary<string, NotificationCreationReceipt>.Builder
-            receipts = current.CreationReceipts.ToBuilder();
-        foreach (KeyValuePair<string, NotificationCreationReceipt> pair in current.CreationReceipts.Where(pair =>
-                     (pair.Value.ExpiresAt <= cutoff) && !notifications.ContainsKey(pair.Value.NotificationId)))
-        {
-            receipts.Remove(pair.Key);
-        }
-
-        receipts.Add(
+        ImmutableDictionary<string, NotificationCreationReceipt> receipts = current.CreationReceipts.RemoveRange(
+            current.CreationReceipts.Where(pair =>
+                    (pair.Value.ExpiresAt <= cutoff) && !notifications.ContainsKey(pair.Value.NotificationId))
+                .Select(pair => pair.Key));
+        receipts = receipts.Add(
             eventData.CreationKey,
             new()
             {
@@ -49,7 +44,7 @@ internal sealed class NotificationCreatedReducer : EventReducerBase<Notification
             NotificationOrder = current.NotificationOrder.Where(id => !evicted.Contains(id))
                 .Append(eventData.Notification.NotificationId)
                 .ToImmutableArray(),
-            CreationReceipts = receipts.ToImmutable(),
+            CreationReceipts = receipts,
             ExpiredRequestsThrough = cutoff,
         };
     }
