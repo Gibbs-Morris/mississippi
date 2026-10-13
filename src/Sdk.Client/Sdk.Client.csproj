@@ -3,6 +3,7 @@
     <Description>Bundle of libraries for Blazor applications with predictable state management, HTTP commands and read-model queries, and SignalR change notifications.</Description>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Common" />
     <ProjectReference Include="..\Hosting.Client\Hosting.Client.csproj" />
     <ProjectReference Include="..\Inlet.Client\Inlet.Client.csproj" />
     <ProjectReference Include="..\Reservoir.Core\Reservoir.Core.csproj" />
