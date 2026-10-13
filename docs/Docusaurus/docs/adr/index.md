@@ -40,7 +40,7 @@ Accepted ADRs are **immutable** — if a decision changes, a new ADR supersedes 
 
 ## Proposed Decisions
 
-- [ADR-0002: Separate Metadata From Host Composition](0002-metadata-and-host-composition.md) records the planned attribute/composition migration and its consumer proof obligations.
+- [ADR-0002: Separate Metadata From Host Composition](0002-metadata-and-host-composition.md) records the planned migration and consumer proof obligations. Approved execution contracts can adopt its guide; general repository activation awaits ADR acceptance.
 
 ## Learn More
 

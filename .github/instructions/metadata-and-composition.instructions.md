@@ -4,11 +4,18 @@ applyTo: '**'
 
 # Metadata and Host Composition
 
-Governing thought: Put host composition in registrations, runtime policy in options, and immutable type facts or one static capability contract in attributes.
+Governing thought: Within the activation scope below, put host composition in registrations, runtime policy in options, and immutable type facts or one static capability contract in attributes.
 
 > Drift check: Read the operative declaration, generator or runtime reader, tests, and host call before changing a contract; the [Proposed ADR](../../docs/Docusaurus/docs/adr/0002-metadata-and-host-composition.md) records the rationale.
 
-The rules govern new and changed contracts. The API migration in
+These proposed rules apply to work whose approved issue or execution contract
+explicitly adopts them, including authorized work in attribute programme #1127.
+Global discovery of this guide does not establish repository-wide adoption.
+Repository-wide activation requires actual ADR acceptance through the existing
+lifecycle. Programme approval, publication, or merge alone does not establish
+that acceptance. The rules below are limited to this activation scope.
+
+The API migration in
 [programme #1127](https://github.com/Gibbs-Morris/mississippi/issues/1127)
 is planned until each implementing PR lands. Existing endpoint markers still
 serve several roles on the audited baseline; this guidance does not change their
@@ -65,7 +72,7 @@ consumers or make the proposed replacements available.
 
 ## Scope and Audience
 
-Framework authors and agents choosing metadata, configuration, generation, or
+Framework authors and agents working within the activation scope above and choosing metadata, configuration, generation, or
 host composition. Existing implementations are evidence of current behavior;
 planned changes remain tracked by their bounded issues.
 
