@@ -10,7 +10,8 @@ Governing thought: Use hierarchical synchronous `ServiceRegistration` extension 
 
 ## Rules (RFC 2119)
 
-- Feature registration extensions **MUST** use `{Feature}Registrations` classes and hierarchical `Add{Feature}()` methods at supported feature boundaries. Why: Keeps DI discoverable alongside the shipped RuntimeBuilder and ClientBuilder facades.
+- Service registration extension classes **MUST** use `{Feature}Registrations` unless an established [client feature contract](coding-discipline.instructions.md#client-side) or generated registration contract defines another class name. Why: Discoverable naming preserves the supported client and generated surfaces.
+- Feature registration methods **MUST** use hierarchical `Add{Feature}()` methods at supported feature boundaries. Why: Keeps DI discoverable alongside the shipped RuntimeBuilder and ClientBuilder facades.
 - Parent registrations **MUST** call child registrations rather than copy their service lists. Why: Preserves hierarchy.
 - Sub-feature registration boundaries **MUST** remain non-public unless an independently supported consumer boundary or generated host-callable helper requires public access. Why: Generated conveniences still need an explicit caller.
 - Public registration boundaries **MUST** include XML documentation. Why: Makes the supported composition surface explicit.
