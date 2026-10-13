@@ -440,11 +440,16 @@ public sealed class McpProjectionDtoExecutionTests
         string[] responses = hasHttpEndpoints
             ? [results[0], results[1], results[3], results[4]]
             : [results[0], results[1]];
-        foreach (string result in responses)
+        foreach (JsonDocument json in responses.Select(value => JsonDocument.Parse(value)))
         {
-            using JsonDocument json = JsonDocument.Parse(result);
-            Assert.Equal(serialized, json.RootElement.TryGetProperty("secret", out var _));
-            Assert.Equal(serialized, json.RootElement.GetProperty("items")[0].TryGetProperty("secret", out var _));
+            using (json)
+            {
+                using JsonElement.ObjectEnumerator rootProperties = json.RootElement.EnumerateObject();
+                using JsonElement.ObjectEnumerator itemProperties =
+                    json.RootElement.GetProperty("items")[0].EnumerateObject();
+                Assert.Equal(serialized, rootProperties.Any(property => property.NameEquals("secret")));
+                Assert.Equal(serialized, itemProperties.Any(property => property.NameEquals("secret")));
+            }
         }
     }
 
