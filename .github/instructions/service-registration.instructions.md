@@ -12,7 +12,7 @@ Governing thought: Use hierarchical synchronous `ServiceRegistration` extension 
 
 - Feature registration extensions **MUST** use `{Feature}Registrations` classes and hierarchical `Add{Feature}()` methods at supported feature boundaries. Why: Keeps DI discoverable alongside the shipped RuntimeBuilder and ClientBuilder facades.
 - Parent registrations **MUST** call child registrations rather than copy their service lists. Why: Preserves hierarchy.
-- Sub-feature registrations **MUST** remain `internal` unless an independently supported consumer boundary or generated host-callable helper requires public access. Why: Generated conveniences still need an explicit caller.
+- Sub-feature registration boundaries **MUST** remain non-public unless an independently supported consumer boundary or generated host-callable helper requires public access. Why: Generated conveniences still need an explicit caller.
 - Public registration boundaries **MUST** include XML documentation. Why: Makes the supported composition surface explicit.
 - Registration methods **MUST** be synchronous; async calls (DB, HTTP, etc.) **MUST NOT** occur during registration. Why: DI building is synchronous.
 - Any async initialization **MUST** be deferred to `IHostedService` or Orleans lifecycle participants; async factories **MUST** be registered for deferred work rather than blocking registration. Why: Avoids startup deadlocks.
@@ -50,13 +50,13 @@ Developers adding or modifying DI registration in Mississippi/Samples, including
 
 ## Domain Registration Patterns (Event Sourcing)
 
-For domain models using Mississippi event sourcing:
+For hand-written domain composition using Mississippi event sourcing:
 
 | Method Pattern | Purpose | Example |
 |----------------|---------|---------|
 | `Add{Domain}Domain()` | Public entry point | `AddContosoDomain()` |
-| `Add{Aggregate}Aggregate()` | Private per-aggregate | `AddChannelAggregate()` |
-| `Add{Projection}Projection()` | Private per-projection | `AddUserProfileProjection()` |
+| `Add{Aggregate}Aggregate()` | Implementation helper; private unless a supported consumer boundary requires broader access | `AddChannelAggregate()` |
+| `Add{Projection}Projection()` | Implementation helper; private unless a supported consumer boundary requires broader access | `AddUserProfileProjection()` |
 
 Registration order within aggregates/projections:
 
