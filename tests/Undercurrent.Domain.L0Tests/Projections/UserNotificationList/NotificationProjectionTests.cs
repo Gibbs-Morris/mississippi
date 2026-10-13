@@ -30,6 +30,10 @@ namespace MississippiTests.Undercurrent.Domain.L0Tests.Projections.UserNotificat
 /// <summary>Compares the notification list and its badge counters with the aggregate's recorded transitions.</summary>
 public sealed class NotificationProjectionTests
 {
+    /// <summary>Checks that both read models match the complete retained aggregate inbox.</summary>
+    /// <param name="aggregate">The authoritative retained state.</param>
+    /// <param name="counts">The badge counters.</param>
+    /// <param name="list">The ordered presentation state.</param>
     private static void AssertMatches(
         UserNotificationsAggregate aggregate,
         UserNotificationCountsProjection counts,
@@ -45,6 +49,13 @@ public sealed class NotificationProjectionTests
             list.Notifications.ToArray());
     }
 
+    /// <summary>Executes a real command and applies every emitted fact to the aggregate and both views.</summary>
+    /// <param name="provider">The registered domain services.</param>
+    /// <param name="command">The requested mutation.</param>
+    /// <param name="aggregate">The authoritative state to advance.</param>
+    /// <param name="counts">The count state to advance.</param>
+    /// <param name="list">The list state to advance.</param>
+    /// <returns>The emitted facts, including an empty set for retries.</returns>
     private static IReadOnlyList<object> Execute(
         ServiceProvider provider,
         object command,
@@ -66,6 +77,9 @@ public sealed class NotificationProjectionTests
         return result.Value;
     }
 
+    /// <summary>Builds the actual domain registrations and persistence/transport converters without a silo.</summary>
+    /// <param name="clock">The controlled server clock.</param>
+    /// <returns>The disposable service provider.</returns>
     private static ServiceProvider Provider(
         FakeTimeProvider clock
     )
@@ -82,6 +96,12 @@ public sealed class NotificationProjectionTests
         return services.BuildServiceProvider();
     }
 
+    /// <summary>Replays one fact through all three registered reducers and verifies consistent immutable results.</summary>
+    /// <param name="provider">The registered domain services.</param>
+    /// <param name="recorded">The recorded fact.</param>
+    /// <param name="aggregate">The authoritative state to advance.</param>
+    /// <param name="counts">The count state to advance.</param>
+    /// <param name="list">The list state to advance.</param>
     private static void Reduce(
         ServiceProvider provider,
         object recorded,
