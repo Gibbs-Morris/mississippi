@@ -16,7 +16,8 @@ Governing thought: Every instruction file follows the same concise template—fr
 - Authoring **MUST** use concise, factual US English; Rules bullets **MUST** contain one requirement per sentence with a brief “Why” when not obvious. Why: Reduces tokens and ambiguity.
 - Command examples **MUST** reference real scripts/tools; secrets **MUST NOT** appear in content or examples. Why: Keeps docs actionable and safe.
 - Changes to instructions **MUST** follow repository review policy and remain in the canonical Markdown files. Why: Keeps policy maintenance focused on one source of truth.
-- Instruction changes about registrations, options, or attributes **MUST** link [metadata and host composition](metadata-and-composition.instructions.md) and reconcile conflicting wording. Why: Responsibility and precedence rules need one canonical source.
+- Instruction changes about registrations, options, or attributes **MUST** link [metadata and host composition](metadata-and-composition.instructions.md). Why: Responsibility and precedence rules need one canonical source.
+- Instruction changes about registrations, options, or attributes **MUST** reconcile conflicting applicable wording. Why: A link alone does not remove competing obligations.
 
 ## Scope and Audience
 
