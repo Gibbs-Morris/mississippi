@@ -10,6 +10,10 @@ Governing thought: Use consistent, attribute-driven domain modeling with immutab
 
 ## Rules (RFC 2119)
 
+### Metadata Ownership
+
+- Domain metadata and generated capability choices **MUST** follow [metadata and host composition](metadata-and-composition.instructions.md). Why: Type identity, runtime composition, HTTP routing, and client feature identity have separate responsibilities.
+
 ### Domain Record Visibility
 
 - Aggregate, command, and projection records **MUST** be internal by default. They **MUST** be public when their types occur in public generated API signatures or are discovered through exported-type scanning. Why: Public C# signatures require accessible types, and exported-type discovery selects public types.
@@ -60,7 +64,8 @@ Inlet's [aggregate controller generator](../../src/Inlet.Gateway.Generators/Aggr
 
 - `[BrookName]` **MUST** use format `("APPNAME", "MODULENAME", "NAME")` with uppercase alphanumeric values only. Why: Attribute validates at runtime.
 - `[EventStorageName]` and `[SnapshotStorageName]` **MUST** use format `("APPNAME", "MODULENAME", "NAME", version: n)` with version defaulting to 1; storage names **MUST NOT** change once persisted. Why: Enables safe refactoring while maintaining storage compatibility.
-- `[Alias]` values **MUST** match the fully qualified type name (e.g., `[Alias("Contoso.Domain.Channel.Events.ChannelCreated")]`). Why: Provides stable Orleans serialization identity across refactoring.
+- Initial `[Alias]` values **MUST** match the fully qualified type name (e.g., `[Alias("Contoso.Domain.Channel.Events.ChannelCreated")]`). Why: Retains the current naming convention for new identities.
+- Existing persisted `[Alias]` values **MUST** remain unchanged during ordinary source refactors. Why: An alias can also contribute to constructed generic event storage names; a code rename is not a data migration.
 
 ### Registration
 
