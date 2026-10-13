@@ -50,10 +50,11 @@ explicit ownership of composition and effective runtime policy.
 
 The canonical author rules, decision tree, consumer worksheet, and precedence
 matrix live in
-[metadata and composition guidance](https://github.com/Gibbs-Morris/mississippi/blob/main/.github/instructions/metadata-and-composition.instructions.md).
-The link targets the proposed file on main after this PR lands; reviewers can
-inspect that file in the PR now. This ADR records the rationale and does not
-duplicate the instruction rules.
+[the canonical guide at the reviewed revision](https://github.com/Gibbs-Morris/mississippi/blob/7cc7f9a4457101ce625cc7ffef9ac7104de3e540/.github/instructions/metadata-and-composition.instructions.md).
+This immutable source link works before merge and after the proposing branch is
+deleted. The guide is a repository instruction outside the Docusaurus document
+map; links between ADRs remain relative. This ADR records the rationale and does
+not duplicate the instruction rules.
 
 Registration chooses services, implementations, lifetimes, host capabilities,
 and assembly discovery. Generated Add helpers remain explicit calls. Options
