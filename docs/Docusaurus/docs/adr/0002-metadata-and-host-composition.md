@@ -50,7 +50,7 @@ explicit ownership of composition and effective runtime policy.
 
 The canonical author rules, decision tree, consumer worksheet, and precedence
 matrix live in
-[the canonical guide at the reviewed revision](https://github.com/Gibbs-Morris/mississippi/blob/7cc7f9a4457101ce625cc7ffef9ac7104de3e540/.github/instructions/metadata-and-composition.instructions.md).
+[the canonical guide at the reviewed revision](https://github.com/Gibbs-Morris/mississippi/blob/83d4e5fe2d12ada61a6d0b59c3bf82c55031ea61/.github/instructions/metadata-and-composition.instructions.md).
 This immutable source link works before merge and after the proposing branch is
 deleted. The guide is a repository instruction outside the Docusaurus document
 map; links between ADRs remain relative. This ADR records the rationale and does

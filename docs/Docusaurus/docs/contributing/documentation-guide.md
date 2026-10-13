@@ -123,7 +123,8 @@ Use [Section Entry Pages](./documentation-section-entry-pages.md) for the detail
 ## Markdown And Docusaurus Rules
 
 - Use `.md` unless the page genuinely needs MDX components.
-- Use relative Markdown links for internal docs links.
+- Use relative Markdown links for published documentation targets, including links between ADRs.
+- For ADR references to repository files outside the published document map, follow `.github/instructions/adr.instructions.md`: use verified immutable source URLs labeled with their historical reviewed revision.
 - Use tabs only for true parallel variants such as OS, language, or hosting mode.
 - Use admonitions only when the information materially changes reader behavior.
 - All code fences must declare a language.
