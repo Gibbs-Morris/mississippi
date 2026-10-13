@@ -20,6 +20,8 @@ Governing thought: Test observable failure cases and keep test evidence accurate
 
 - Storage-sizing fixtures **SHOULD** use the provider's actual payload type and encoding. Why: PR #1108's JSON fixture encoded `ImmutableArray<byte>` as numeric elements, falsely failing the Cosmos size check; the provider's `byte[]` encodes as base64.
 
+- Clock-rollback unit tests **SHOULD** model the earlier server clock with a separate `FakeTimeProvider`. Why: Issue #1109's projection lifecycle test threw `Cannot go back in time` when `SetUtcNow` tried to move an existing fake clock backwards.
+
 ## Scope and Audience
 
 Agents writing or validating tests under `tests/**`.
