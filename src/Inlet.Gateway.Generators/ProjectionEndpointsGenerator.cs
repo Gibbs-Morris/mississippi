@@ -40,6 +40,9 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     private const string GenerateAuthorizationAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateAuthorizationAttribute";
 
+    private const string GenerateMcpReadToolAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateMcpReadToolAttribute";
+
     private const string GenerateProjectionEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
 
@@ -71,8 +74,9 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     /// </summary>
     private static void FindProjectionsInNamespace(
         INamespaceSymbol namespaceSymbol,
-        INamedTypeSymbol generateAttrSymbol,
-        INamedTypeSymbol projectionPathAttrSymbol,
+        INamedTypeSymbol? generateAttrSymbol,
+        INamedTypeSymbol? mcpReadToolAttrSymbol,
+        INamedTypeSymbol? projectionPathAttrSymbol,
         INamedTypeSymbol? generateAuthorizationAttribute,
         INamedTypeSymbol? generateAllowAnonymousAttribute,
         string targetRootNamespace,
@@ -85,6 +89,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             ProjectionInfo? info = TryGetProjectionInfo(
                 typeSymbol,
                 generateAttrSymbol,
+                mcpReadToolAttrSymbol,
                 projectionPathAttrSymbol,
                 generateAuthorizationAttribute,
                 generateAllowAnonymousAttribute,
@@ -101,6 +106,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             FindProjectionsInNamespace(
                 childNs,
                 generateAttrSymbol,
+                mcpReadToolAttrSymbol,
                 projectionPathAttrSymbol,
                 generateAuthorizationAttribute,
                 generateAllowAnonymousAttribute,
@@ -195,11 +201,14 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             $"{GetRegistrationsTypeName(projection)}.g.cs",
             SourceText.From(registrationsSource, Encoding.UTF8));
 
-        // Generate Controller
-        string controllerSource = GenerateController(projection);
-        context.AddSource(
-            $"{GetControllerTypeName(projection)}.g.cs",
-            SourceText.From(controllerSource, Encoding.UTF8));
+        // DTOs and mappers serve both transports; HTTP controllers remain opt-in.
+        if (projection.HasHttpEndpoints)
+        {
+            string controllerSource = GenerateController(projection);
+            context.AddSource(
+                $"{GetControllerTypeName(projection)}.g.cs",
+                SourceText.From(controllerSource, Encoding.UTF8));
+        }
     }
 
     /// <summary>
@@ -768,12 +777,14 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         // Get the attribute symbols
         INamedTypeSymbol? generateAttrSymbol =
             compilation.GetTypeByMetadataName(GenerateProjectionEndpointsAttributeFullName);
+        INamedTypeSymbol? mcpReadToolAttrSymbol =
+            compilation.GetTypeByMetadataName(GenerateMcpReadToolAttributeFullName);
         INamedTypeSymbol? projectionPathAttrSymbol = compilation.GetTypeByMetadataName(ProjectionPathAttributeFullName);
         INamedTypeSymbol? generateAuthorizationAttribute =
             compilation.GetTypeByMetadataName(GenerateAuthorizationAttributeFullName);
         INamedTypeSymbol? generateAllowAnonymousAttribute =
             compilation.GetTypeByMetadataName(GenerateAllowAnonymousAttributeFullName);
-        if (generateAttrSymbol is null || projectionPathAttrSymbol is null)
+        if (generateAttrSymbol is null && mcpReadToolAttrSymbol is null)
         {
             return projections;
         }
@@ -784,6 +795,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             FindProjectionsInNamespace(
                 referencedAssembly.GlobalNamespace,
                 generateAttrSymbol,
+                mcpReadToolAttrSymbol,
                 projectionPathAttrSymbol,
                 generateAuthorizationAttribute,
                 generateAllowAnonymousAttribute,
@@ -845,17 +857,17 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     /// </summary>
     private static ProjectionInfo? TryGetProjectionInfo(
         INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol generateAttrSymbol,
-        INamedTypeSymbol projectionPathAttrSymbol,
+        INamedTypeSymbol? generateAttrSymbol,
+        INamedTypeSymbol? mcpReadToolAttrSymbol,
+        INamedTypeSymbol? projectionPathAttrSymbol,
         INamedTypeSymbol? generateAuthorizationAttribute,
         INamedTypeSymbol? generateAllowAnonymousAttribute,
         string targetRootNamespace
     )
     {
-        // Check for [GenerateProjectionEndpoints] attribute
-        bool hasGenerateAttribute = typeSymbol.GetAttributes()
-            .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, generateAttrSymbol));
-        if (!hasGenerateAttribute)
+        bool hasGenerateAttribute = GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, generateAttrSymbol);
+        bool hasMcpReadToolAttribute = GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, mcpReadToolAttrSymbol);
+        if (!hasGenerateAttribute && !hasMcpReadToolAttribute)
         {
             return null;
         }
@@ -864,27 +876,22 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         AttributeData? projectionPathAttr = typeSymbol.GetAttributes()
             .FirstOrDefault(attr =>
                 SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionPathAttrSymbol));
-        if (projectionPathAttr is null)
-        {
-            return null;
-        }
-
-        // Get the path from constructor argument
-        string? projectionPath = projectionPathAttr.ConstructorArguments.FirstOrDefault().Value?.ToString();
-        if (string.IsNullOrEmpty(projectionPath))
+        string projectionPath =
+            projectionPathAttr?.ConstructorArguments.FirstOrDefault().Value?.ToString() ?? string.Empty;
+        if (hasGenerateAttribute && string.IsNullOrEmpty(projectionPath))
         {
             return null;
         }
 
         // Create projection model
-        ProjectionModel model = new(typeSymbol, projectionPath!);
+        ProjectionModel model = new(typeSymbol, projectionPath);
         GeneratedApiAuthorizationModel authorization = GeneratedApiAuthorizationAnalysis.Analyze(
             typeSymbol,
-            generateAuthorizationAttribute,
-            generateAllowAnonymousAttribute,
+            hasGenerateAttribute ? generateAuthorizationAttribute : null,
+            hasGenerateAttribute ? generateAllowAnonymousAttribute : null,
             false);
         string outputNamespace = DeriveOutputNamespace(targetRootNamespace);
-        return new(model, outputNamespace, authorization, authorization.Diagnostics);
+        return new(model, outputNamespace, authorization, authorization.Diagnostics, hasGenerateAttribute);
     }
 
     /// <summary>
@@ -971,22 +978,27 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         /// <param name="outputNamespace">The output namespace for generated code.</param>
         /// <param name="authorization">The resolved authorization metadata.</param>
         /// <param name="diagnostics">Diagnostics emitted during projection analysis.</param>
+        /// <param name="hasHttpEndpoints">Whether the projection opts into HTTP controller generation.</param>
         public ProjectionInfo(
             ProjectionModel model,
             string outputNamespace,
             GeneratedApiAuthorizationModel authorization,
-            ImmutableArray<Diagnostic> diagnostics
+            ImmutableArray<Diagnostic> diagnostics,
+            bool hasHttpEndpoints
         )
         {
             Model = model;
             OutputNamespace = outputNamespace;
             Authorization = authorization;
             Diagnostics = diagnostics;
+            HasHttpEndpoints = hasHttpEndpoints;
         }
 
         public GeneratedApiAuthorizationModel Authorization { get; }
 
         public ImmutableArray<Diagnostic> Diagnostics { get; }
+
+        public bool HasHttpEndpoints { get; }
 
         /// <summary>
         ///     Gets the projection model.

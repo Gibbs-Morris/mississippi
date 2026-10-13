@@ -5,8 +5,10 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
         <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />
+        <PackageReference Include="ModelContextProtocol.AspNetCore" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\src\Inlet.Gateway.Generators\Inlet.Gateway.Generators.csproj" />
+        <ProjectReference Include="..\..\src\DomainModeling.Gateway\DomainModeling.Gateway.csproj" />
     </ItemGroup>
 </Project>
