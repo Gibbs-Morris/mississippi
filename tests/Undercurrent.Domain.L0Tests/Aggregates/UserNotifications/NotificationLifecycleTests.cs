@@ -5,8 +5,8 @@ using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.DomainModeling.Abstractions;
 using Mississippi.DomainModeling.TestHarness.Aggregates;
-using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications;
-using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Commands;
+using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications;
+using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications.Commands;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Events;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Handlers;
 
@@ -38,14 +38,15 @@ public sealed class NotificationLifecycleTests
                 })
             .State;
         UserNotificationsFixture.AssertSuccessfulNoOp(
-            new CreateNotificationHandler(timeProvider),
+            UserNotificationsFixture.CreateHandler(timeProvider),
             new()
             {
-                NotificationId = existing.Notification.NotificationId,
+                CreationKey = existing.CreationKey,
+                ExpiresAt = existing.ExpiresAt,
                 Title = existing.Notification.Title,
                 Description = existing.Notification.Description,
                 IconKey = existing.Notification.IconKey,
-                TargetUrl = existing.Notification.TargetUrl,
+                NavigationTarget = existing.Notification.NavigationTarget,
             },
             state);
         Assert.Equal(

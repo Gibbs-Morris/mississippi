@@ -8,8 +8,9 @@ using Microsoft.Extensions.Options;
 using Mississippi.DomainModeling.Runtime;
 using Mississippi.Tributary.Runtime;
 using Mississippi.Undercurrent.Abstractions;
+using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications;
+using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications.Commands;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications;
-using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Commands;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Events;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Handlers;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Reducers;
@@ -86,6 +87,7 @@ public static class UndercurrentDomainRegistrations
         OptionsBuilder<UndercurrentOptions> options = services.AddOptions<UndercurrentOptions>();
         configure(options);
         options.ValidateOnStart();
+        services.TryAddSingleton<UserNotificationPolicy>();
         services.TryAddEnumerable(
             ServiceDescriptor.Singleton<IValidateOptions<UndercurrentOptions>, UndercurrentOptionsValidator>());
         return services.AddUserNotificationsAggregate();

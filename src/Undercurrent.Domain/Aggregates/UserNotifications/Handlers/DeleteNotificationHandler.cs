@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 
 using Mississippi.DomainModeling.Abstractions;
-using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Commands;
+using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications;
+using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications.Commands;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Events;
 
 

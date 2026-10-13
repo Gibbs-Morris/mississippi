@@ -1,4 +1,5 @@
 using Mississippi.Tributary.Abstractions;
+using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Events;
 
 

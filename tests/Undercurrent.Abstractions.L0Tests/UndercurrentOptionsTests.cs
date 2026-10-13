@@ -20,7 +20,7 @@ public sealed class UndercurrentOptionsTests
         Assert.Equal(200, options.MaxTitleLength);
         Assert.Equal(2_000, options.MaxDescriptionLength);
         Assert.Equal(128, options.MaxIconKeyLength);
-        Assert.Equal(2_048, options.MaxTargetUrlLength);
+        Assert.Equal(2_048, options.MaxNavigationTargetLength);
         Assert.Equal(256, options.MaxCreationKeyLength);
         Assert.True(typeof(UndercurrentOptions).IsPublic);
         Assert.True(typeof(UserNotificationsOptions).IsPublic);

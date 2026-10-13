@@ -1,12 +1,16 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+
 using Mississippi.Tributary.Abstractions;
+using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Events;
 
 
 namespace Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Reducers;
 
-/// <summary>
-///     Adds a created notification without changing earlier inbox state.
-/// </summary>
+/// <summary>Replays creation, recorded evictions, and receipt pruning without host policy or clocks.</summary>
 internal sealed class NotificationCreatedReducer : EventReducerBase<NotificationCreated, UserNotificationsAggregate>
 {
     /// <inheritdoc />
@@ -16,9 +20,39 @@ internal sealed class NotificationCreatedReducer : EventReducerBase<Notification
     )
     {
         UserNotificationsAggregate current = state ?? new();
+        ImmutableHashSet<string> evicted = eventData.EvictedNotificationIds.ToImmutableHashSet(StringComparer.Ordinal);
+        ImmutableDictionary<string, UserNotification> notifications = current.Notifications.RemoveRange(evicted)
+            .Add(eventData.Notification.NotificationId, eventData.Notification);
+        DateTimeOffset cutoff =
+            current.ExpiredRequestsThrough is { } previous && (previous > eventData.ExpiredRequestsThrough)
+                ? previous
+                : eventData.ExpiredRequestsThrough;
+        ImmutableDictionary<string, NotificationCreationReceipt>.Builder
+            receipts = current.CreationReceipts.ToBuilder();
+        foreach (KeyValuePair<string, NotificationCreationReceipt> pair in current.CreationReceipts)
+        {
+            if ((pair.Value.ExpiresAt <= cutoff) && !notifications.ContainsKey(pair.Value.NotificationId))
+            {
+                receipts.Remove(pair.Key);
+            }
+        }
+
+        receipts.Add(
+            eventData.CreationKey,
+            new()
+            {
+                NotificationId = eventData.Notification.NotificationId,
+                ExpiresAt = eventData.ExpiresAt,
+                RequestFingerprint = eventData.RequestFingerprint,
+            });
         return current with
         {
-            Notifications = current.Notifications.Add(eventData.Notification.NotificationId, eventData.Notification),
+            Notifications = notifications,
+            NotificationOrder = current.NotificationOrder.Where(id => !evicted.Contains(id))
+                .Append(eventData.Notification.NotificationId)
+                .ToImmutableArray(),
+            CreationReceipts = receipts.ToImmutable(),
+            ExpiredRequestsThrough = cutoff,
         };
     }
 }

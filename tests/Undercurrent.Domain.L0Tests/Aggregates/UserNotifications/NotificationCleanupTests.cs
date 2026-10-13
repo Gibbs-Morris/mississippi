@@ -5,8 +5,8 @@ using System.Collections.Immutable;
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.DomainModeling.Abstractions;
-using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications;
-using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Commands;
+using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications;
+using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications.Commands;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Events;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Handlers;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Reducers;

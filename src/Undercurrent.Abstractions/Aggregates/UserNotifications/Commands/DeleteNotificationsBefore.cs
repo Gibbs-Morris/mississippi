@@ -3,14 +3,15 @@ using System;
 using Orleans;
 
 
-namespace Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Commands;
+namespace Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications.Commands;
 
 /// <summary>
 ///     Requests deletion of notifications created strictly before the supplied instant.
 /// </summary>
+/// <remarks>Public requests let hosts select an explicit timestamp cutoff for inbox cleanup.</remarks>
 [GenerateSerializer]
-[Alias("Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Commands.DeleteNotificationsBefore")]
-internal sealed record DeleteNotificationsBefore
+[Alias("Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications.Commands.DeleteNotificationsBefore")]
+public sealed record DeleteNotificationsBefore
 {
     /// <summary>
     ///     Gets the exclusive creation-time cutoff; notifications exactly at this instant remain.

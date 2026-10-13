@@ -62,6 +62,7 @@ public sealed class UndercurrentOptionsValidationTests
     [Theory]
     [InlineData(0, 10_000)]
     [InlineData(-1, 10_000)]
+    [InlineData(-2, -1)]
     [InlineData(10_001, 20_000)]
     [InlineData(1_000, 1_000)]
     [InlineData(1_000, 0)]
@@ -164,7 +165,7 @@ public sealed class UndercurrentOptionsValidationTests
                     {
                         Notifications = new()
                         {
-                            MaxTargetUrlLength = -1,
+                            MaxNavigationTargetLength = -1,
                         },
                     })
                 .Failed);
@@ -222,7 +223,7 @@ public sealed class UndercurrentOptionsValidationTests
                 MaxCreationKeyLength = 1,
                 MaxDescriptionLength = 16_382,
                 MaxIconKeyLength = 0,
-                MaxTargetUrlLength = 0,
+                MaxNavigationTargetLength = 0,
             },
         };
         Assert.True(new UndercurrentOptionsValidator().Validate(null, options).Succeeded);

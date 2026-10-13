@@ -9,9 +9,9 @@ using Mississippi.Brooks.Serialization.Abstractions;
 using Mississippi.Brooks.Serialization.Json;
 using Mississippi.DomainModeling.Abstractions;
 using Mississippi.Tributary.Abstractions;
+using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications;
+using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications.Commands;
 using Mississippi.Undercurrent.Domain;
-using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications;
-using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Commands;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Events;
 
 using MississippiTests.Undercurrent.Domain.L0Tests.Aggregates.UserNotifications;
@@ -55,11 +55,12 @@ public sealed class UndercurrentDomainRegistrationsTests
         IBrookEventConverter eventConverter = provider.GetRequiredService<IBrookEventConverter>();
         CreateNotification command = new()
         {
-            NotificationId = "Notice",
+            CreationKey = "Notice",
+            ExpiresAt = createdAt.AddDays(7),
             Title = "Ready",
             Description = "The deployment is ready.",
             IconKey = "deployment",
-            TargetUrl = "/deployments/42",
+            NavigationTarget = "/deployments/42",
         };
         OperationResult<IReadOnlyList<object>> created = handler.Handle(command, null);
         Assert.True(created.Success);
@@ -69,9 +70,10 @@ public sealed class UndercurrentDomainRegistrationsTests
         UserNotificationsAggregate state = reducer.Reduce(new(), restoredEvent);
         SnapshotEnvelope envelope = converter.ToEnvelope(state, reducer.GetReducerHash());
         UserNotificationsAggregate restored = converter.FromEnvelope(envelope);
-        Assert.Equal(createdAt, restored.Notifications["Notice"].CreatedAt);
+        Assert.Equal(createdAt, restored.Notifications[createdEvent.Notification.NotificationId].CreatedAt);
         Assert.Equal(createdEvent.Notification, Assert.Single(restored.Notifications).Value);
-        Assert.False(restored.Notifications.ContainsKey("notice"));
+        Assert.Equal(createdEvent.Notification.NotificationId, restored.CreationReceipts["Notice"].NotificationId);
+        Assert.False(restored.CreationReceipts.ContainsKey("notice"));
         OperationResult<IReadOnlyList<object>> retry = handler.Handle(command, restored);
         Assert.True(retry.Success);
         Assert.Empty(retry.Value);

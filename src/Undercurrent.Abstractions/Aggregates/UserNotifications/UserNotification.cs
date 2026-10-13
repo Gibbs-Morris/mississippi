@@ -3,14 +3,15 @@ using System;
 using Orleans;
 
 
-namespace Mississippi.Undercurrent.Domain.Aggregates.UserNotifications;
+namespace Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications;
 
 /// <summary>
 ///     Represents a notification stored in a user's inbox.
 /// </summary>
+/// <remarks>Public values expose notification content and generated identities to aggregate readers.</remarks>
 [GenerateSerializer]
-[Alias("Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.UserNotification")]
-internal sealed record UserNotification
+[Alias("Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications.UserNotification")]
+public sealed record UserNotification
 {
     /// <summary>
     ///     Gets the server-assigned UTC creation timestamp.
@@ -31,7 +32,13 @@ internal sealed record UserNotification
     public string? IconKey { get; init; }
 
     /// <summary>
-    ///     Gets the caller-supplied notification identifier within this user's inbox.
+    ///     Gets the optional navigation target interpreted by the consuming application.
+    /// </summary>
+    [Id(4)]
+    public string? NavigationTarget { get; init; }
+
+    /// <summary>
+    ///     Gets the handler-generated GUID string identifying this notification.
     /// </summary>
     [Id(0)]
     public required string NotificationId { get; init; }
@@ -41,12 +48,6 @@ internal sealed record UserNotification
     /// </summary>
     [Id(6)]
     public DateTimeOffset? ReadAt { get; init; }
-
-    /// <summary>
-    ///     Gets the optional navigation target interpreted by the consuming application.
-    /// </summary>
-    [Id(4)]
-    public string? TargetUrl { get; init; }
 
     /// <summary>
     ///     Gets the notification heading.

@@ -2,4 +2,10 @@
     <PropertyGroup>
         <Description>Public business contracts for Undercurrent enterprise capabilities.</Description>
     </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Orleans.Sdk" />
+    </ItemGroup>
 </Project>

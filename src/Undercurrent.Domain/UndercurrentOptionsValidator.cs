@@ -69,15 +69,15 @@ internal sealed class UndercurrentOptionsValidator : IValidateOptions<Undercurre
             failures);
         ValidateLength(nameof(UserNotificationsOptions.MaxIconKeyLength), notifications.MaxIconKeyLength, 0, failures);
         ValidateLength(
-            nameof(UserNotificationsOptions.MaxTargetUrlLength),
-            notifications.MaxTargetUrlLength,
+            nameof(UserNotificationsOptions.MaxNavigationTargetLength),
+            notifications.MaxNavigationTargetLength,
             0,
             failures);
         long contentBudget = (long)notifications.MaxCreationKeyLength +
                              notifications.MaxTitleLength +
                              notifications.MaxDescriptionLength +
                              notifications.MaxIconKeyLength +
-                             notifications.MaxTargetUrlLength;
+                             notifications.MaxNavigationTargetLength;
         if (contentBudget > MaximumContentLengthBudget)
         {
             failures.Add("Combined character limits cannot exceed 16,384 UTF-16 code units.");

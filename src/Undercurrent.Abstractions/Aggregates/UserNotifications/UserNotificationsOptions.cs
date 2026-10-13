@@ -24,15 +24,15 @@ public sealed class UserNotificationsOptions
     /// <summary>Gets or sets the maximum UTF-16 icon key length. Defaults to 128.</summary>
     public int MaxIconKeyLength { get; set; } = 128;
 
+    /// <summary>Gets or sets the maximum UTF-16 navigation target length. Defaults to 2,048.</summary>
+    public int MaxNavigationTargetLength { get; set; } = 2_048;
+
     /// <summary>Gets or sets the retained notification capacity, including unread entries. Defaults to 1,000.</summary>
     public int MaxNotifications { get; set; } = 1_000;
 
     /// <summary>Gets or sets the maximum future creation-request lifetime. Defaults to seven days.</summary>
     /// <remarks>Accepted request deadlines remain fixed when this setting changes.</remarks>
     public TimeSpan MaxRequestLifetime { get; set; } = TimeSpan.FromDays(7);
-
-    /// <summary>Gets or sets the maximum UTF-16 navigation target length. Defaults to 2,048.</summary>
-    public int MaxTargetUrlLength { get; set; } = 2_048;
 
     /// <summary>Gets or sets the maximum UTF-16 title length. Defaults to 200.</summary>
     public int MaxTitleLength { get; set; } = 200;

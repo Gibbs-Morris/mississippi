@@ -1,6 +1,6 @@
 using System;
 
-using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications;
+using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Events;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Reducers;
 
@@ -19,7 +19,7 @@ public sealed class NotificationCreatedReducerTests
     private static NotificationCreated CreateEvent(
         string notificationId
     ) =>
-        new()
+        UserNotificationsFixture.CreateEvent(notificationId) with
         {
             Notification = new()
             {
@@ -27,7 +27,7 @@ public sealed class NotificationCreatedReducerTests
                 Title = " Deployment ready ",
                 Description = "The deployment is ready to inspect.",
                 IconKey = "deployment",
-                TargetUrl = "/deployments/42",
+                NavigationTarget = "/deployments/42",
                 CreatedAt = CreatedAt,
             },
         };
@@ -49,6 +49,20 @@ public sealed class NotificationCreatedReducerTests
         Assert.Equal(2, result.Notifications.Count);
         Assert.Equal(first.Notification, result.Notifications["first"]);
         Assert.Equal(second.Notification, result.Notifications["second"]);
+    }
+
+    /// <summary>Replaying a lower recorded cutoff preserves the prior expiry watermark.</summary>
+    [Fact]
+    public void ExpiryWatermarkNeverMovesBackwards()
+    {
+        UserNotificationsAggregate previous = reducer.Reduce(new(), UserNotificationsFixture.CreateEvent("first"));
+        NotificationCreated olderCutoff = UserNotificationsFixture.CreateEvent("second") with
+        {
+            ExpiredRequestsThrough = UserNotificationsFixture.CreatedAt.AddTicks(-1),
+        };
+        UserNotificationsAggregate result = reducer.Reduce(previous, olderCutoff);
+        Assert.Equal(previous.ExpiredRequestsThrough, result.ExpiredRequestsThrough);
+        Assert.Equal(2, result.Notifications.Count);
     }
 
     /// <summary>
@@ -104,7 +118,7 @@ public sealed class NotificationCreatedReducerTests
         };
         UserNotificationsAggregate result = reducer.Reduce(
             new(),
-            new()
+            UserNotificationsFixture.CreateEvent("minimal") with
             {
                 Notification = notification,
             });
@@ -112,6 +126,6 @@ public sealed class NotificationCreatedReducerTests
         Assert.Equal(notification, stored);
         Assert.Null(stored.Description);
         Assert.Null(stored.IconKey);
-        Assert.Null(stored.TargetUrl);
+        Assert.Null(stored.NavigationTarget);
     }
 }

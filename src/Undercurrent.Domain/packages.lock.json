@@ -555,7 +555,11 @@
         }
       },
       "Mississippi.Undercurrent.Abstractions": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.4.0, )",
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )"
+        }
       },
       "CloudNative.CloudEvents": {
         "type": "CentralTransitive",

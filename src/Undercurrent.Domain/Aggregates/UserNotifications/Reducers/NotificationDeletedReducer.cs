@@ -1,12 +1,13 @@
+using System;
+
 using Mississippi.Tributary.Abstractions;
+using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Events;
 
 
 namespace Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Reducers;
 
-/// <summary>
-///     Removes only the notification identified by the recorded deletion.
-/// </summary>
+/// <summary>Removes the recorded notification and ordering entry while retaining its creation receipt.</summary>
 internal sealed class NotificationDeletedReducer : EventReducerBase<NotificationDeleted, UserNotificationsAggregate>
 {
     /// <inheritdoc />
@@ -17,5 +18,6 @@ internal sealed class NotificationDeletedReducer : EventReducerBase<Notification
         state with
         {
             Notifications = state.Notifications.Remove(eventData.NotificationId),
+            NotificationOrder = state.NotificationOrder.Remove(eventData.NotificationId, StringComparer.Ordinal),
         };
 }
