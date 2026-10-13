@@ -19,6 +19,9 @@ using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Events;
 
 using MississippiTests.Undercurrent.Domain.L0Tests.Aggregates.UserNotifications;
 
+using Moq;
+
+using Orleans;
 using Orleans.Serialization;
 
 
@@ -103,6 +106,29 @@ public sealed class NotificationProjectionTests
         counts = nextCounts;
         list = nextList;
         AssertMatches(aggregate, counts, list);
+    }
+
+    /// <summary>Undercurrent alone provides the documented generic reader factory when host dependencies are available.</summary>
+    [Fact]
+    public void DomainRegistrationResolvesGenericProjectionFactory()
+    {
+        ServiceCollection services = new();
+        services.AddLogging();
+        Mock<IGrainFactory> grains = new(MockBehavior.Strict);
+        IUxProjectionGrain<UserNotificationCountsProjection> counts =
+            Mock.Of<IUxProjectionGrain<UserNotificationCountsProjection>>();
+        IUxProjectionGrain<UserNotificationListProjection> list =
+            Mock.Of<IUxProjectionGrain<UserNotificationListProjection>>();
+        grains.Setup(factory => factory.GetGrain<IUxProjectionGrain<UserNotificationCountsProjection>>("user", null))
+            .Returns(counts);
+        grains.Setup(factory => factory.GetGrain<IUxProjectionGrain<UserNotificationListProjection>>("user", null))
+            .Returns(list);
+        services.AddSingleton(grains.Object);
+        services.AddUndercurrentDomain();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IUxProjectionGrainFactory factory = provider.GetRequiredService<IUxProjectionGrainFactory>();
+        Assert.Same(counts, factory.GetUxProjectionGrain<UserNotificationCountsProjection>("user"));
+        Assert.Same(list, factory.GetUxProjectionGrain<UserNotificationListProjection>("user"));
     }
 
     /// <summary>Empty and absent-ID facts cannot create badge entries or negative counters.</summary>

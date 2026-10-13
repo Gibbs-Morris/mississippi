@@ -94,7 +94,8 @@ public static class UndercurrentDomainRegistrations
         services.TryAddTransient<UserNotificationStateSizeLimit>();
         services.TryAddEnumerable(
             ServiceDescriptor.Singleton<IValidateOptions<UndercurrentOptions>, UndercurrentOptionsValidator>());
-        return services.AddUserNotificationsAggregate()
+        return services.AddUxProjections()
+            .AddUserNotificationsAggregate()
             .AddUserNotificationCountsProjection()
             .AddUserNotificationListProjection();
     }
