@@ -64,7 +64,8 @@ consumers or make the proposed replacements available.
 
 ### Precedence and Identity
 
-- Each overlapping declaration/options contract MUST specify its own precedence and test it at every operative boundary. Why: There is no universal attributes-always-win rule.
+- Each overlapping declaration/options contract MUST specify its own precedence. Why: There is no universal attributes-always-win rule.
+- Tests MUST verify the documented precedence at every operative boundary. Why: An order written in a guide does not establish effective consumer behavior.
 - Runtime safety policy MUST be able to constrain static declarations under its documented contract. Why: A host may restrict anonymous access or apply required defaults.
 - Ordinary source/API refactors MUST preserve persisted brook, event, snapshot, and Orleans identities, including constructed generic identities. Why: Pre-1.0 API freedom does not make stored data disposable.
 - Authors MUST reconcile applicable instruction conflicts. Why: Future work needs consistent responsibility and precedence requirements.
