@@ -60,7 +60,8 @@ consumers or make the proposed replacements available.
 - Each overlapping declaration/options contract MUST specify its own precedence and test it at every operative boundary. Why: There is no universal attributes-always-win rule.
 - Runtime safety policy MUST be able to constrain static declarations under its documented contract. Why: A host may restrict anonymous access or apply required defaults.
 - Ordinary source/API refactors MUST preserve persisted brook, event, snapshot, and Orleans identities, including constructed generic identities. Why: Pre-1.0 API freedom does not make stored data disposable.
-- Authors MUST reconcile applicable instruction conflicts and link this canonical policy instead of copying competing decision rules. Why: One responsibility model should guide future work.
+- Authors MUST reconcile applicable instruction conflicts. Why: Future work needs consistent responsibility and precedence requirements.
+- Authors MUST link this canonical policy instead of copying competing decision rules. Why: One source keeps the responsibility model discoverable.
 
 ## Scope and Audience
 
