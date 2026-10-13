@@ -10,52 +10,36 @@ Governing thought: Use mutation testing as a proportionate quality signal while 
 
 ## Rules (RFC 2119)
 
-- Agents **MUST** treat mutation testing as an additional quality signal rather than a hard quality gate or completion criterion unless the user explicitly makes it part of the task's acceptance criteria. Why: A formal repository-wide mutation-testing standard is still being developed.
-- Agents **MUST NOT** impose a mandatory mutation-score threshold or a maintain-or-raise requirement based on tooling recommendations, configuration, or reported percentages. Why: The repository currently has no mandatory mutation-score threshold.
-- Agents **MUST** prioritize the requested feature or fix, correctness, maintainability, and strong conventional unit-test coverage. Why: These are the primary engineering outcomes.
-- Agents **SHOULD** keep mutation scores healthy on new features by adding or strengthening meaningful tests where this is straightforward and proportionate. Why: Mutation testing can improve assertion quality naturally as part of the work.
-- Agents **MUST NOT** spend significant time or tokens closing mutation gaps or repeatedly chasing surviving mutants unless explicitly asked. Why: Mutation work should not consume the majority of feature or fix delivery effort.
-- Agents **SHOULD** defer costly or historical mutation gaps to dedicated follow-up work after reporting them. Why: Consistent mutation coverage is being built gradually and improved systematically.
-- Agents **SHOULD** use `test-project-quality.ps1 -SkipMutation` for routine test and coverage validation. Why: The focused script includes Stryker unless this switch is supplied.
-- Before a chosen mutation run, agents **MUST** run `dotnet tool restore` and a clean build. Why: Prevents invalid runs.
-- Agents **SHOULD** select a focused run and bound mutation effort before starting. Why: A solution-wide run can be expensive and is not required for ordinary completion.
-- Agents **MUST** report mutation execution status, available scores, report paths from script output, and significant gaps identified. Why: Quality signals need traceable evidence even when they do not block delivery.
-- Skipped, failed, interrupted, or incomplete mutation runs **MUST NOT** be reported as passing. Why: Optional execution does not justify overstating validation.
-- Mutation score claims **MUST** identify the scope supported by valid reports, including any incomplete target coverage. Why: Available evidence from a failed or partial run cannot establish results for unreported targets.
-- Agents **MUST** distinguish a tooling threshold failure from build/test failures and from the task's acceptance criteria. Why: An optional Stryker command can return nonzero without creating a repository-wide score gate.
-- Production code **MUST NOT** be changed solely to kill mutants unless the mutant is provably unkillable via tests; any such change **MUST** be justified. Why: Protects intended behavior.
-- Build warnings/test failures **MUST** be fixed before continuing mutation work. Why: Keeps gates stable.
-- Agents **SHOULD** reuse existing reports with the summarizer's `-SkipMutationRun` option before considering another run. Why: Understanding evidence often costs less than rerunning Stryker.
+- Explicit mutation work **MUST** follow the [run-mutation-testing](../../.agents/skills/run-mutation-testing/SKILL.md) skill. Why: The detailed procedure and evidence contract must be applied consistently.
+- Mutation testing **MUST** remain an additional quality signal unless the caller explicitly makes it part of task acceptance. Why: The repository has no universal mutation completion gate.
+- Agents **MUST NOT** impose a mutation-score threshold from tooling configuration or recommendations. Why: A configured score is not repository policy.
+- Agents **MUST NOT** impose a maintain-or-raise requirement from tooling configuration or recommendations. Why: A configured trend is not repository policy.
+- Agents **MUST** prioritize requested correctness, maintainability, zero-warning builds, and meaningful conventional tests. Why: These are the primary engineering outcomes.
+- Mutation work **SHOULD** use a focused target and proportionate effort bound; an explicitly scoped and authorized broader run remains permitted. Why: Solution-wide execution is optional and can be expensive.
+- Before an authorized mutation run, agents **MUST** restore the required tools. Why: Mutation evidence depends on valid preconditions.
+- Before an authorized mutation run, agents **MUST** obtain the clean build required by the local binding. Why: Mutation evidence depends on a valid baseline.
+- Mutation execution **MUST** remain stopped while build warnings or conventional-test failures invalidate its preflight. Why: A mutation score cannot validate an invalid baseline.
+- Failed, skipped, interrupted, incomplete, or report-less mutation runs **MUST NOT** be reported as passing. Why: Optional execution does not justify overstating validation.
+- Mutation score claims **MUST** identify the targets and revisions supported by valid reports. Why: Partial evidence cannot establish unreported coverage.
+- Agents **MUST** distinguish mutation-tool or threshold failures from build/test failures and task acceptance. Why: Different failure classes require different decisions.
+- Production code **MUST NOT** change solely to kill mutants unless evidence proves the survivor unkillable by appropriate tests and an authorized change under that exception includes its technical justification. Why: The justified exception must remain reviewable while mutation work preserves intended behavior.
+- Agents **MUST** report execution status, scope, valid scores and report paths, significant gaps, and deferred work. Why: Quality signals need traceable evidence even when optional.
+- Agents **SHOULD** inspect a valid existing report before starting another mutation run. Why: Reusing evidence can answer the question without another expensive execution.
 
 ## Scope and Audience
 
-All agents planning, implementing, testing, or reviewing repository changes. Stryker work currently targets Mississippi solution projects; Samples do not require mutation testing.
+All agents planning, implementing, testing, or reviewing repository changes are
+covered. The local mutation binding defines supported targets, commands, report
+schemas, tool configuration, and any repository-specific exclusions; this policy
+does not encode a sample-project ban.
 
-## At-a-Glance Quick-Start
+## Mandatory route
 
-- Default tests and coverage: `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <Name> -SkipMutation`
-- Optional focused mutation run: `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject <Name>`
-- Optional solution baseline: `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1`
-- Inspect existing evidence: `pwsh ./eng/src/agent-scripts/summarize-mutation-survivors.ps1 -SkipMutationRun -RunPath <run-directory>`
-- Routine full pipeline: `pwsh ./go.ps1`; add `-IncludeMutation` only when mutation execution is intended.
-
-## Core Principles
-
-- Mutation testing is being adopted gradually; historical gaps belong in future dedicated improvement work.
-- Spend the majority of effort on the requested engineering outcome, correctness, maintainability, and meaningful unit-test coverage.
-- A useful assertion improvement is worthwhile; eliminating every survivor is not an ordinary completion condition.
-- Kill mutants with tests, not behavior changes.
-- Reporting a gap preserves visibility without committing the current task to close it.
-
-## Proportionate Workflow
-
-1. Deliver and validate the requested behavior with conventional tests first.
-2. Decide whether a focused mutation run or existing report will resolve a useful uncertainty within the task's scope and budget.
-3. If running Stryker, restore tools and build cleanly. Prefer a completed run for usable evidence; if it becomes impractical, stop and report the incomplete status and reason.
-4. Inspect significant survivors and add targeted assertions when straightforward. Reassess before rerunning; do not loop until a percentage is reached.
-5. Report the command and scope, execution status, available score and report paths, significant gaps, and any deferred follow-up. State explicitly when mutation was not run.
-
-Configured Stryker thresholds can affect report colors and command exit status. They are tooling settings, not the repository's acceptance standard. Report such failures accurately without changing thresholds merely to obtain a green result; continue the required build and conventional test validation separately. A mutation finding that exposes a real correctness defect still warrants normal defect handling.
+For explicit mutation work, read [run-mutation-testing](../../.agents/skills/run-mutation-testing/SKILL.md)
+first. If discovery is unavailable or applicability is unclear, read that
+linked `SKILL.md` directly. Then read the [local mutation binding](../agent-guidance/mutation-testing-bindings.md)
+before choosing a repository command; report any required guidance that
+remains unavailable.
 
 ## References
 
