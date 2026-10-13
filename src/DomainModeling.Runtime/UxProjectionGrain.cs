@@ -136,9 +136,11 @@ internal sealed class UxProjectionGrain<TProjection>
     /// <inheritdoc />
     public async ValueTask<TProjection?> GetAtCapturedLatestVersionAsync(
         BrookPosition version,
+        TimeSpan cursorLookupDuration,
         CancellationToken cancellationToken = default
     )
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(cursorLookupDuration, TimeSpan.Zero);
         Stopwatch sw = Stopwatch.StartNew();
         Logger.GetAsyncDelegatingToVersion(entityId, version);
         TProjection? result = await GetAtVersionAsync(version, cancellationToken);
@@ -146,7 +148,7 @@ internal sealed class UxProjectionGrain<TProjection>
         UxProjectionMetrics.RecordQuery(
             typeof(TProjection).Name,
             "latest",
-            sw.Elapsed.TotalMilliseconds,
+            cursorLookupDuration.TotalMilliseconds + sw.Elapsed.TotalMilliseconds,
             result is not null);
         return result;
     }

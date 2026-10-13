@@ -25,6 +25,35 @@ namespace Mississippi.DomainModeling.Runtime.L0Tests.Diagnostics;
 public sealed class UxProjectionCapturedLatestQueryTests
 {
     /// <summary>
+    ///     Rejects a negative lookup duration before reading or recording a query.
+    /// </summary>
+    /// <returns>An asynchronous test task.</returns>
+    [Fact]
+    public async Task CapturedReadRejectsNegativeCursorLookupDuration()
+    {
+        // Arrange
+        Mock<IUxProjectionGrainFactory> factoryMock = new(MockBehavior.Strict);
+        Mock<ILogger<UxProjectionGrain<CapturedLatestMetricProjection>>> loggerMock = new();
+        UxProjectionGrain<CapturedLatestMetricProjection> grain = new(
+            new Mock<IGrainContext>().Object,
+            factoryMock.Object,
+            loggerMock.Object);
+
+        // Act
+        ArgumentOutOfRangeException exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            grain.GetAtCapturedLatestVersionAsync(
+                    new(42),
+                    TimeSpan.FromTicks(-1),
+                    TestContext.Current.CancellationToken)
+                .AsTask());
+
+        // Assert
+        Assert.Equal("cursorLookupDuration", exception.ParamName);
+        factoryMock.VerifyNoOtherCalls();
+        Assert.Empty(loggerMock.Invocations);
+    }
+
+    /// <summary>
     ///     Verifies exact routing, cancellation, query measurements, and existing logging boundaries.
     /// </summary>
     /// <param name="version">The position selected for the query.</param>
@@ -52,6 +81,7 @@ public sealed class UxProjectionCapturedLatestQueryTests
         // Arrange
         const string entityId = "captured-metric-123";
         BrookPosition position = new(version);
+        TimeSpan lookupDuration = readKind == "captured" ? TimeSpan.FromHours(1) : TimeSpan.Zero;
         CancellationToken token = TestContext.Current.CancellationToken;
         CapturedLatestMetricProjection? projection = hasProjection ? new(version) : null;
         ConcurrentQueue<(string Name, string? Unit, double Value, IReadOnlyDictionary<string, object?> Tags)>
@@ -101,7 +131,7 @@ public sealed class UxProjectionCapturedLatestQueryTests
         // Act
         CapturedLatestMetricProjection? result = readKind switch
         {
-            "captured" => await grain.GetAtCapturedLatestVersionAsync(position, token),
+            "captured" => await grain.GetAtCapturedLatestVersionAsync(position, lookupDuration, token),
             "latest" => await grain.GetAsync(token),
             "historical" => await grain.GetAtVersionAsync(position, token),
             var _ => throw new ArgumentOutOfRangeException(nameof(readKind)),
@@ -129,7 +159,7 @@ public sealed class UxProjectionCapturedLatestQueryTests
             Assert.Equal("latest", count.Tags["query.type"]);
             (string Name, string? Unit, double Value, IReadOnlyDictionary<string, object?> Tags) duration =
                 Assert.Single(snapshot, m => m.Name == "projection.query.duration");
-            Assert.True(duration.Value >= 0);
+            Assert.True(duration.Value >= lookupDuration.TotalMilliseconds);
             Assert.Equal("ms", duration.Unit);
             Assert.Equal("latest", duration.Tags["query.type"]);
             (string Name, string? Unit, double Value, IReadOnlyDictionary<string, object?> Tags)[] empty =
