@@ -22,17 +22,6 @@ Governing thought: Use explicit `[GenerateSerializer]`, `[Id]`, and `[Alias]` wi
 
 Developers creating or changing Orleans-serialized types.
 
-## At-a-Glance Quick-Start
-
-- Add `[GenerateSerializer]`, `[Alias("Namespace.TypeName")]` (fully qualified type name), `[Id(n)]` (starting at 0) to members.
-- Keep IDs stable; add new members with new IDs; prefer widening/nullability changes.
-- Include Orleans SDK/codegen packages; treat analyzer warnings as errors.
-
-## Core Principles
-
-- Explicit, stable identifiers prevent serialization breaks.
-- Additive versioning supports rolling upgrades (post-1.0; pre-1.0 allows free changes per backwards-compatibility policy).
-
 ## References
 
 - Orleans serialization docs: <https://learn.microsoft.com/dotnet/orleans/serialization>

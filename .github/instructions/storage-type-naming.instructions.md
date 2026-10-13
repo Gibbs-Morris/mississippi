@@ -20,17 +20,6 @@ Governing thought: Persisted types carry stable, versioned attribute names (`APP
 
 Developers creating or consuming persisted types in event-sourced/storage components.
 
-## At-a-Glance Quick-Start
-
-- Decorate types with `[EventStorageName("ORDER","FULFILLMENT","SHIPPED", version: 1)]` (or appropriate attribute).
-- Keep app/module/name stable; bump `version` for breaking changes.
-- Use registries for name↔type resolution; scan assemblies at startup.
-
-## Core Principles
-
-- Storage identity is attribute-based; code identity can change.
-- Explicit versioning makes evolution safe and auditable.
-
 ## References
 
 - Orleans serialization: `.github/instructions/orleans-serialization.instructions.md`
