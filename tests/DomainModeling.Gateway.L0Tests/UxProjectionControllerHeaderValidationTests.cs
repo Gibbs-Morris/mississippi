@@ -44,7 +44,8 @@ public sealed class UxProjectionControllerHeaderValidationTests
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
         grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(42));
-        grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
+        grainMock
+            .Setup(g => g.GetAtCapturedLatestVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(projection);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
@@ -62,7 +63,7 @@ public sealed class UxProjectionControllerHeaderValidationTests
         Assert.Equal("\"42\"", controller.Response.Headers.ETag.ToString());
         Assert.Equal("private, must-revalidate", controller.Response.Headers.CacheControl.ToString());
         grainMock.Verify(
-            g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()),
+            g => g.GetAtCapturedLatestVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()),
             Times.Once);
         mapperMock.Verify(m => m.Map(projection), Times.Once);
     }
@@ -80,7 +81,8 @@ public sealed class UxProjectionControllerHeaderValidationTests
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
         grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(42));
-        grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
+        grainMock
+            .Setup(g => g.GetAtCapturedLatestVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(projection);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
@@ -97,7 +99,7 @@ public sealed class UxProjectionControllerHeaderValidationTests
         Assert.Equal(StatusCodes.Status304NotModified, statusCodeResult.StatusCode);
         Assert.Null(result.Value);
         grainMock.Verify(
-            g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()),
+            g => g.GetAtCapturedLatestVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()),
             Times.Once);
         mapperMock.Verify(m => m.Map(It.IsAny<TestProjection>()), Times.Never);
     }

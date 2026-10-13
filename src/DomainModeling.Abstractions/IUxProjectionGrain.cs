@@ -54,6 +54,24 @@ public interface IUxProjectionGrain<TProjection> : IGrainWithStringKey
     );
 
     /// <summary>
+    ///     Gets a latest-query projection at a previously captured cursor position.
+    /// </summary>
+    /// <param name="version">The position already selected for the latest query.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>The state at the captured position, or <c>default</c> when the exact read returns no state.</returns>
+    /// <remarks>
+    ///     Use this operation when a latest query has already selected its position for response metadata.
+    ///     It reads that exact position without another cursor lookup and retains latest-query instrumentation.
+    ///     It does not verify that the supplied position is still the cursor's latest position.
+    /// </remarks>
+    [ReadOnly]
+    [Alias("GetAtCapturedLatestVersionAsync")]
+    ValueTask<TProjection?> GetAtCapturedLatestVersionAsync(
+        BrookPosition version,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
     ///     Gets the projection state at a specific version.
     /// </summary>
     /// <param name="version">The specific version to retrieve.</param>

@@ -271,7 +271,7 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
         }
 
         // Read the same version selected for the ETag, even if the cursor advances.
-        TProjection? projection = await grain.GetAtVersionAsync(position, cancellationToken);
+        TProjection? projection = await grain.GetAtCapturedLatestVersionAsync(position, cancellationToken);
         if (projection is null)
         {
             Logger.ProjectionNotFound(entityId, ProjectionTypeName);

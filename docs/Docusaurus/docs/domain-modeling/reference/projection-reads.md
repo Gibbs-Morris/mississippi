@@ -20,11 +20,12 @@ sidebar_label: Projection Reads
 
 ## Read Methods
 
-The [interface](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/IUxProjectionGrain.cs) exposes three methods, each with an optional cancellation token:
+The [interface](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/IUxProjectionGrain.cs) exposes four methods, each with an optional cancellation token:
 
 | Method | Result and selection |
 | --- | --- |
 | `GetAsync` | `ValueTask<TProjection?>`; selects the cursor's known position, then reads that version. |
+| `GetAtCapturedLatestVersionAsync` | `ValueTask<TProjection?>`; reads a supplied latest-query position without another cursor lookup and retains latest-query metrics. |
 | `GetAtVersionAsync` | `ValueTask<TProjection?>`; reads the supplied `BrookPosition` directly. |
 | `GetLatestVersionAsync` | `ValueTask<BrookPosition>`; returns the cached storage or accepted-notification position without fetching projection state or verifying current storage. |
 
@@ -48,13 +49,17 @@ The built-in cache's `GetAsync` ignores that caller token. Its state load occurs
 
 `GetAsync` first calls `GetLatestVersionAsync`, then calls `GetAtVersionAsync` for that selected position. From this call sequence, the cursor can advance between selection and retrieval; the method does not loop until it observes every subsequent advance.
 
-The returned value contains state without a paired version. Separate calls for state and latest version therefore do not form an atomic state/version result.
+The returned value contains state without a paired version. Separate `GetAsync` and `GetLatestVersionAsync` calls therefore do not form an atomic state/version result.
 
 ## Latest HTTP Responses
 
-The built-in [`UxProjectionControllerBase<TProjection, TDto>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Gateway/UxProjectionControllerBase%7BTProjection,TDto%7D.cs) captures the latest known position once, then reads that exact version before mapping a successful response body. Its `ETag` identifies the same position as the returned DTO. A concurrent cursor advance can appear on a later request; the endpoint does not promise the newest state at response completion.
+The built-in [`UxProjectionControllerBase<TProjection, TDto>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Gateway/UxProjectionControllerBase%7BTProjection,TDto%7D.cs) captures the latest known position once, then calls `GetAtCapturedLatestVersionAsync` to read that exact version before mapping a successful response body. The built-in runtime delegates to `GetAtVersionAsync` and records the existing latest-query count, duration, and empty-result metrics inside the runtime, with the same meter, units, and tags. Its `ETag` identifies the same position as the returned DTO. A concurrent cursor advance can appear on a later request; the endpoint does not promise the newest state at response completion.
 
 An unset position returns `404 Not Found` before any body read. When a body or existence read is required, a null captured snapshot also returns 404. An exact matching tag retains its version-only `304 Not Modified` short circuit. Weak, list, and wildcard matches check that the captured snapshot exists before returning 304; these responses skip DTO mapping. The controller forwards the request cancellation token to both grain calls, subject to the runtime cancellation boundaries above.
+
+## Custom Grain Implementations
+
+`IUxProjectionGrain<TProjection>` now also requires `GetAtCapturedLatestVersionAsync`. Custom implementations must read the supplied position without selecting another latest position, and retain their latest-query instrumentation. The built-in implementation delegates to its existing exact read; ordinary `GetAsync` and historical `GetAtVersionAsync` retain their existing behavior.
 
 ## Empty Results And Failures
 

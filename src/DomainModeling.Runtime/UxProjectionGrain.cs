@@ -134,6 +134,24 @@ internal sealed class UxProjectionGrain<TProjection>
     }
 
     /// <inheritdoc />
+    public async ValueTask<TProjection?> GetAtCapturedLatestVersionAsync(
+        BrookPosition version,
+        CancellationToken cancellationToken = default
+    )
+    {
+        Stopwatch sw = Stopwatch.StartNew();
+        Logger.GetAsyncDelegatingToVersion(entityId, version);
+        TProjection? result = await GetAtVersionAsync(version, cancellationToken);
+        sw.Stop();
+        UxProjectionMetrics.RecordQuery(
+            typeof(TProjection).Name,
+            "latest",
+            sw.Elapsed.TotalMilliseconds,
+            result is not null);
+        return result;
+    }
+
+    /// <inheritdoc />
     public async ValueTask<TProjection?> GetAtVersionAsync(
         BrookPosition version,
         CancellationToken cancellationToken = default
