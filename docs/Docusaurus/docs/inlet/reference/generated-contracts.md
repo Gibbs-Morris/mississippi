@@ -109,6 +109,8 @@ Earlier generated MCP reads serialized the domain projection directly. Latest an
 
 Generated server DTO properties retain source `[JsonIgnore]` conditions, including properties on generated collection-item DTOs. These exclusions apply after default or custom mapping on both HTTP and MCP reads. An ignored or conditionally ignored property remains available to CLR mappers but is optional in the DTO; `[JsonIgnore(Condition = JsonIgnoreCondition.Never)]` retains the usual required property contract. See the [JSON ignore conditions](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonignorecondition?view=net-10.0) for serialization and deserialization behavior.
 
+Default mappers skip getters excluded by `Always` (including `[JsonIgnore]` with no condition) or `WhenWriting`. Conditional exclusions still map the value before serialization decides whether to omit it. Custom mappers control their own source-property access.
+
 Tool names and parameters, cancellation forwarding, version-only results, and existing not-found messages retain their contracts. This mapping correction does not establish HTTP/MCP authorization parity; configure MCP access separately as described above.
 
 ## Projection Identity Across The Boundary

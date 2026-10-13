@@ -34,7 +34,8 @@ public sealed class McpProjectionDtoExecutionTests
         bool embeddedProjectionName = false,
         bool includeSiloRegistrations = false,
         string? jsonIgnoreAttribute = null,
-        bool nullSecret = false
+        bool nullSecret = false,
+        string? ignoredGetterAttribute = null
     )
     {
         string projectionSource = $$"""
@@ -55,6 +56,7 @@ public sealed class McpProjectionDtoExecutionTests
                                         [Id(0)] public string Id { get; init; } = string.Empty;
                                         {{jsonIgnoreAttribute}}
                                         [Id(1)] public string? Secret { get; init; }
+                                        {{(ignoredGetterAttribute is null ? string.Empty : ignoredGetterAttribute + " public string IgnoredGetter => throw new System.InvalidOperationException(\"Ignored item getter was evaluated\");")}}
                                     }
 
                                     [GenerateMcpReadTool(ToolName = "read_probe", Title = "Read Probe")]
@@ -70,6 +72,7 @@ public sealed class McpProjectionDtoExecutionTests
                                         [Id(2)] public ImmutableArray<ProbeItem> Items { get; init; } = [];
                                         {{jsonIgnoreAttribute}}
                                         [Id(3)] public string? Secret { get; init; }
+                                        {{(ignoredGetterAttribute is null ? string.Empty : ignoredGetterAttribute + " public string IgnoredGetter => throw new System.InvalidOperationException(\"Ignored projection getter was evaluated\");")}}
                                     }
                                     {{(includeSiloRegistrations ? """
                                                                   [EventStorageName("TESTAPP", "TEST", "AMOUNTSET", version: 1)]
@@ -345,7 +348,8 @@ public sealed class McpProjectionDtoExecutionTests
         bool missingHttpPath = false,
         bool embeddedProjectionName = false,
         string? jsonIgnoreAttribute = null,
-        bool nullSecret = false
+        bool nullSecret = false,
+        string? ignoredGetterAttribute = null
     )
     {
         AssemblyLoadContext loadContext = new(Guid.NewGuid().ToString("N"), true);
@@ -357,7 +361,8 @@ public sealed class McpProjectionDtoExecutionTests
                 missingHttpPath,
                 embeddedProjectionName,
                 jsonIgnoreAttribute: jsonIgnoreAttribute,
-                nullSecret: nullSecret);
+                nullSecret: nullSecret,
+                ignoredGetterAttribute: ignoredGetterAttribute);
             using CancellationTokenSource cancellation = new();
             MethodInfo method = assembly.GetType("Consumer", true)!.GetMethod("RunAsync")!;
             Task<string[]> task = (Task<string[]>)method.Invoke(null, [customMapper, missing, cancellation.Token])!;
@@ -398,6 +403,31 @@ public sealed class McpProjectionDtoExecutionTests
         string[] results = await ExecuteAsync(hasHttpEndpoints, true, false, embeddedProjectionName: true);
         using JsonDocument latest = JsonDocument.Parse(results[0]);
         Assert.Equal(1123m, latest.RootElement.GetProperty("amount").GetDecimal());
+    }
+
+    /// <summary>
+    ///     Default mappers do not evaluate getters that JSON serialization always excludes from writing.
+    /// </summary>
+    /// <param name="attribute">The source getter's JSON exclusion metadata.</param>
+    /// <param name="hasHttpEndpoints">Whether the projection also opts into HTTP endpoints.</param>
+    /// <returns>The asynchronous test operation.</returns>
+    [Theory]
+    [InlineData("[JsonIgnore]", true)]
+    [InlineData("[JsonIgnore]", false)]
+    [InlineData("[JsonIgnore(Condition = JsonIgnoreCondition.Always)]", true)]
+    [InlineData("[JsonIgnore(Condition = JsonIgnoreCondition.Always)]", false)]
+    [InlineData("[JsonIgnore(Condition = JsonIgnoreCondition.WhenWriting)]", true)]
+    [InlineData("[JsonIgnore(Condition = JsonIgnoreCondition.WhenWriting)]", false)]
+    public async Task IgnoredGettersAreNotEvaluatedAsync(
+        string attribute,
+        bool hasHttpEndpoints
+    )
+    {
+        string[] results = await ExecuteAsync(hasHttpEndpoints, false, false, ignoredGetterAttribute: attribute);
+        using JsonDocument latest = JsonDocument.Parse(results[0]);
+        using JsonDocument exact = JsonDocument.Parse(results[1]);
+        Assert.Equal(123m, latest.RootElement.GetProperty("amount").GetDecimal());
+        Assert.Equal(100m, exact.RootElement.GetProperty("amount").GetDecimal());
     }
 
     /// <summary>
