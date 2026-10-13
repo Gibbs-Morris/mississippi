@@ -29,12 +29,10 @@ internal sealed class NotificationCreatedReducer : EventReducerBase<Notification
                 : eventData.ExpiredRequestsThrough;
         ImmutableDictionary<string, NotificationCreationReceipt>.Builder
             receipts = current.CreationReceipts.ToBuilder();
-        foreach (KeyValuePair<string, NotificationCreationReceipt> pair in current.CreationReceipts)
+        foreach (KeyValuePair<string, NotificationCreationReceipt> pair in current.CreationReceipts.Where(pair =>
+                     (pair.Value.ExpiresAt <= cutoff) && !notifications.ContainsKey(pair.Value.NotificationId)))
         {
-            if ((pair.Value.ExpiresAt <= cutoff) && !notifications.ContainsKey(pair.Value.NotificationId))
-            {
-                receipts.Remove(pair.Key);
-            }
+            receipts.Remove(pair.Key);
         }
 
         receipts.Add(
