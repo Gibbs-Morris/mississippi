@@ -51,7 +51,12 @@ consumers or make the proposed replacements available.
 ### Attributes
 
 - Attributes MUST describe immutable per-type identity, a workflow relationship, one generated capability, or one static contract. Why: The declaration travels with the type rather than the deployment.
-- Every public attribute member MUST have a named operative consumer, documented default, precedence, invalid-value behavior, tests, and reference documentation. Why: A getter or parsed value alone does not implement a public promise.
+- Every public attribute member MUST have a named operative consumer. Why: A getter or parsed value alone does not implement a public promise.
+- Every public attribute member MUST document its default. Why: Authors need to know the meaning of an omitted setting.
+- Every public attribute member MUST document its precedence. Why: Overlapping declarations and host options need a defined effective value.
+- Every public attribute member MUST define its invalid-value behavior. Why: Unsupported inputs need an explicit failure contract.
+- Every public attribute member MUST have tests for its operative behavior. Why: Acceptance by a parser does not prove the public promise is implemented.
+- Every public attribute member MUST have reference documentation. Why: Consumers need a discoverable contract for each setting.
 - Attributes MUST NOT contain environment secrets, deployment endpoints, provider selection, retry budgets, or runtime switches. Why: Those values vary by host or represent executable policy.
 - One attribute MAY contain several cohesive settings such as Policy, Roles, and AuthenticationSchemes. Why: Separating each field would not separate responsibilities.
 - One attribute MUST NOT select both runtime registration and transport exposure. Why: Runtime-only composition and exposed adapters are independent capabilities.
