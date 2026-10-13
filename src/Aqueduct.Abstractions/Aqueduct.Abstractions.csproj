@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Public contracts and abstractions for Aqueduct.</Description>
+    <Description>Public contracts for routing SignalR messages through Orleans to connected clients and groups.</Description>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Orleans.Sdk" />

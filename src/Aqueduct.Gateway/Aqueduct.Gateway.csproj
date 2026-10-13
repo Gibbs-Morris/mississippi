@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Core Aqueduct runtime for event flow and stream processing.</Description>
+    <Description>ASP.NET Core SignalR backplane that uses Orleans to route messages to clients connected across multiple server instances.</Description>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

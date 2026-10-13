@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Convenience SDK for integrating Mississippi in server applications.</Description>
+    <Description>Bundle of libraries for ASP.NET Core gateways that expose business commands and event-based read models over HTTP and send change notifications over SignalR.</Description>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

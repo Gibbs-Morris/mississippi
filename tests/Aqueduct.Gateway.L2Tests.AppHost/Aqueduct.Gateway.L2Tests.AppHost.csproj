@@ -2,6 +2,7 @@
   <Sdk Name="Aspire.AppHost.Sdk" Version="13.5.3" />
 
   <PropertyGroup>
+    <Description>Aspire test host for SignalR backplane integration tests, with no external service resources configured.</Description>
     <OutputType>Exe</OutputType>
     <AspireUseCliBundle>true</AspireUseCliBundle>
   </PropertyGroup>

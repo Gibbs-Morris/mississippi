@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
+        <Description>Unit tests for the ASP.NET Core SignalR backplane and local connection handling.</Description>
         <!-- Retain the established namespace shared by this project's existing tests. -->
         <RootNamespace>$(AssemblyName)</RootNamespace>
     </PropertyGroup>

@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
   <PropertyGroup>
-    <Description>Convenience SDK for integrating Mississippi in client applications.</Description>
+    <Description>Bundle of libraries for Blazor applications with predictable state management, HTTP commands and read-model queries, and SignalR change notifications.</Description>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Hosting.Client\Hosting.Client.csproj" />

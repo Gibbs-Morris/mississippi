@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Unit tests for SignalR message routing contracts that use Orleans.</Description>
+    </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj"/>
     </ItemGroup>

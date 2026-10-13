@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
+    <PropertyGroup>
+        <Description>Unit tests for Blazor UI components, design tokens, and theme behavior.</Description>
+    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="AngleSharp" />

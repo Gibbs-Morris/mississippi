@@ -10,6 +10,6 @@
     <ProjectReference Include="..\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Blazor integration for Reservoir state, actions, reducers, and effects.</Description>
+    <Description>Blazor integration for a Redux-style application state store, including reactive components, navigation, lifecycle events, and Redux DevTools support.</Description>
   </PropertyGroup>
 </Project>

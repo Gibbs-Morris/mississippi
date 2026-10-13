@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Unit tests for client read-model queries, state updates, and SignalR subscription handling.</Description>
+    </PropertyGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Inlet.Client\Inlet.Client.csproj" />

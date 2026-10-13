@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Unit tests for the banking sample&apos;s command handlers, event reducers, read models, and money transfer workflows.</Description>
+    </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     </ItemGroup>

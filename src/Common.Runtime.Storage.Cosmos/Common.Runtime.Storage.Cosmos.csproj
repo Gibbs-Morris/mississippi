@@ -8,6 +8,6 @@
     <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Azure Cosmos DB support and storage components shared across Mississippi packages.</Description>
+    <Description>Retry policies for handling transient Azure Cosmos DB storage failures.</Description>
   </PropertyGroup>
 </Project>

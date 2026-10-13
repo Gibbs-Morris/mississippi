@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Unit-test project scaffold for the bundled Blazor state management and live server read-model services.</Description>
+    </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\src\Sdk.Client\Sdk.Client.csproj" />
     </ItemGroup>

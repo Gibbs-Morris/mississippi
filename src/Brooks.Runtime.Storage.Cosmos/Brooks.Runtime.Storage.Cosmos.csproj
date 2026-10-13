@@ -13,6 +13,6 @@
     <ProjectReference Include="..\Hosting.Runtime.Abstractions\Hosting.Runtime.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Azure Cosmos DB provider for Brooks.Runtime storage.</Description>
+    <Description>Azure Cosmos DB storage for reading and appending events in persistent event streams, with Azure Blob leases to coordinate concurrent writers.</Description>
   </PropertyGroup>
 </Project>

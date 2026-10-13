@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Unit tests for shared domain-type analysis, naming, and C# source generation utilities.</Description>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Inlet.Generators.Core\Inlet.Generators.Core.csproj" />
   </ItemGroup>

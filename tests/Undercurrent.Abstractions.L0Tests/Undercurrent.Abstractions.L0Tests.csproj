@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Unit tests for per-user notification records, inbox commands, and capacity limits.</Description>
+    </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\src\Undercurrent.Abstractions\Undercurrent.Abstractions.csproj" />
     </ItemGroup>

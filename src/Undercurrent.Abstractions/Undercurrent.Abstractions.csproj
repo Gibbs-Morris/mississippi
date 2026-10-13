@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <Description>Public business contracts for Undercurrent enterprise capabilities.</Description>
+        <Description>Public contracts for per-user notification inboxes, including notification records, commands, and capacity limits.</Description>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />

@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Integration tests for SignalR client startup, readiness, failure recovery, and competing connection attempts using local test servers.</Description>
+    </PropertyGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Inlet.Client\Inlet.Client.csproj" />

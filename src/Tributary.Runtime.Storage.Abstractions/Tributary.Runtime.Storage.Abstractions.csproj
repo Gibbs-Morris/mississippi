@@ -3,6 +3,6 @@
     <ProjectReference Include="..\Tributary.Abstractions\Tributary.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Interfaces for snapshot storage providers: ISnapshotStorageProvider, ISnapshotStorageReader, and ISnapshotStorageWriter.</Description>
+    <Description>Public contracts for storage providers that read and write saved state snapshots.</Description>
   </PropertyGroup>
 </Project>

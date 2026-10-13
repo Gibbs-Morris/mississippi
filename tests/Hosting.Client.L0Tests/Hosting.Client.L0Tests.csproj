@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <Description>Unit tests for Blazor WebAssembly host configuration and service validation.</Description>
     <!-- Preserve the product namespace used by the existing hosting client tests. -->
     <RootNamespace>$(AssemblyName)</RootNamespace>
   </PropertyGroup>

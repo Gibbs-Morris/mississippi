@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
   <PropertyGroup>
-    <Description>Top-level entry-point builder for Mississippi Blazor WebAssembly client applications.</Description>
+    <Description>Configuration builder for adding application services to Blazor WebAssembly hosts and validating their configuration before registration.</Description>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components" />

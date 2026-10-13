@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <Description>Integration tests for Orleans grains that track SignalR connections, group membership, server registration, and heartbeats.</Description>
     <!-- Retain the established namespace shared by this project's existing tests. -->
     <RootNamespace>$(AssemblyName)</RootNamespace>
   </PropertyGroup>

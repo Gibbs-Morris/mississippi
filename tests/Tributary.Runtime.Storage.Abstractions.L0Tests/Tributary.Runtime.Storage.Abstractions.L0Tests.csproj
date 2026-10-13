@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Unit tests for state snapshot storage provider contracts.</Description>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Abstractions\Tributary.Runtime.Storage.Abstractions.csproj" />
   </ItemGroup>

@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <Description>Unit tests for Orleans read-model registration, subscriptions, and update notifications.</Description>
         <!-- Retain the established namespace shared by this project's existing tests. -->
         <RootNamespace>$(AssemblyName)</RootNamespace>
     </PropertyGroup>

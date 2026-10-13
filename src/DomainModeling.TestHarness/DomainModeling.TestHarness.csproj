@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Testing utilities and fixtures for Mississippi.DomainModeling.</Description>
+    <Description>Test helpers for verifying command handlers, event reducers, side effects, and business scenarios without hosting Orleans or external storage.</Description>
     <PackageTags>$(PackageTags);testing;xunit</PackageTags>
   </PropertyGroup>
   <ItemGroup>

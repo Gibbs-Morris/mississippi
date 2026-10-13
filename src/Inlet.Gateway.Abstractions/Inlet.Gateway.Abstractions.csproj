@@ -4,6 +4,6 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Public contracts and abstractions for Inlet.Gateway.</Description>
+    <Description>Public contracts and in-process helpers for subscribing to server read-model change notifications.</Description>
   </PropertyGroup>
 </Project>

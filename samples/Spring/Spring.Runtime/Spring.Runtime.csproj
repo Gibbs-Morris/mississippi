@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
+    <Description>Orleans host that executes the banking sample&apos;s business commands, persists events and snapshots, and updates read models.</Description>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 

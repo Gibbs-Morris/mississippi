@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Unit tests for object and collection mapping contracts and helpers.</Description>
+    </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\src\Common.Abstractions\Common.Abstractions.csproj" />
     </ItemGroup>

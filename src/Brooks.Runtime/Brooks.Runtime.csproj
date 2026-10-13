@@ -10,6 +10,6 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Brook runtime for appending, reading, and managing event streams.</Description>
+    <Description>Orleans grains for appending and reading persistent event streams and tracking each stream&apos;s latest position.</Description>
   </PropertyGroup>
 </Project>

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Orleans silo runtime integration for Inlet streams and projections.</Description>
+    <Description>Orleans integration that registers server read models and manages subscriptions that notify clients when those models change.</Description>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Orleans.Sdk" />

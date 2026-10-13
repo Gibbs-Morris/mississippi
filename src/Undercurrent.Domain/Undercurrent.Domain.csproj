@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <Description>Enterprise business objects built on existing Mississippi framework capabilities.</Description>
+        <Description>Event-sourced per-user notification inbox with commands to create, mark as read, delete, and clean up notifications.</Description>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />

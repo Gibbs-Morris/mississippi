@@ -2,6 +2,7 @@
   <Sdk Name="Aspire.AppHost.Sdk" Version="13.5.3" />
 
   <PropertyGroup>
+    <Description>Aspire host that provisions Azure Cosmos DB and Blob Storage emulators for the counter sample&apos;s integration tests.</Description>
     <OutputType>Exe</OutputType>
     <AspireUseCliBundle>true</AspireUseCliBundle>
   </PropertyGroup>

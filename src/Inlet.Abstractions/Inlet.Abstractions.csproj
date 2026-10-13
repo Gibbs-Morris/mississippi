@@ -7,6 +7,6 @@
         - Shared contracts projects
     -->
   <PropertyGroup>
-    <Description>Public contracts and abstractions for Inlet.</Description>
+    <Description>Public contracts for assigning shared paths to server read models and their client representations for HTTP queries and SignalR subscriptions.</Description>
   </PropertyGroup>
 </Project>
