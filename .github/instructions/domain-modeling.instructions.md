@@ -66,6 +66,7 @@ Inlet's [aggregate controller generator](../../src/Inlet.Gateway.Generators/Aggr
 - `[EventStorageName]` and `[SnapshotStorageName]` **MUST** use format `("APPNAME", "MODULENAME", "NAME", version: n)` with version defaulting to 1; storage names **MUST NOT** change once persisted. Why: Enables safe refactoring while maintaining storage compatibility.
 - Initial `[Alias]` values **MUST** match the fully qualified type name (e.g., `[Alias("Contoso.Domain.Channel.Events.ChannelCreated")]`). Why: Retains the current naming convention for new identities.
 - Existing persisted `[Alias]` values **MUST** remain unchanged during ordinary source refactors. Why: An alias can also contribute to constructed generic event storage names; a code rename is not a data migration.
+- A repository type rename that preserves an alias differing from its current full name **MUST** add an exact [AliasValidationExceptionRegistry](../../src/DomainModeling.TestHarness/Architecture/AliasValidationExceptionRegistry.cs) rule classified as [IntentionalPreservedIdentity](../../src/DomainModeling.TestHarness/Architecture/AliasExceptionClassification.cs), with the current type name and a reason. Why: The existing L0 validator expects the current full name and rejects unregistered identity-preservation exceptions.
 
 ### Registration
 
