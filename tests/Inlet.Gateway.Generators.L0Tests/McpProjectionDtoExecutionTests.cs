@@ -12,7 +12,12 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 
+using Mississippi.Brooks.Serialization.Abstractions;
+using Mississippi.Inlet.Runtime.Generators;
+
 using ModelContextProtocol.Server;
+
+using Moq;
 
 
 namespace Mississippi.Inlet.Gateway.Generators.L0Tests;
@@ -26,7 +31,8 @@ public sealed class McpProjectionDtoExecutionTests
         bool hasHttpEndpoints,
         AssemblyLoadContext loadContext,
         bool missingHttpPath = false,
-        bool embeddedProjectionName = false
+        bool embeddedProjectionName = false,
+        bool includeSiloRegistrations = false
     )
     {
         string projectionSource = $$"""
@@ -36,6 +42,7 @@ public sealed class McpProjectionDtoExecutionTests
                                     using Mississippi.Inlet.Generators.Abstractions;
                                     using Orleans;
 
+                                    [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TestApp.Server")]
                                     namespace TestApp.Domain.Projections.Probe;
 
                                     public enum ProbeStatus { Unknown, Active }
@@ -54,6 +61,11 @@ public sealed class McpProjectionDtoExecutionTests
                                         [Id(1)] public ProbeStatus Status { get; init; }
                                         [Id(2)] public ImmutableArray<ProbeItem> Items { get; init; } = [];
                                     }
+                                    {{(includeSiloRegistrations ? """
+                                                                  [EventStorageName("TESTAPP", "TEST", "AMOUNTSET", version: 1)]
+                                                                  [GenerateSerializer, Alias("TestApp.Domain.Projections.Probe.ProbeAmountSet")]
+                                                                  internal sealed record ProbeAmountSet { [Id(0)] public decimal Amount { get; init; } }
+                                                                  """ : string.Empty)}}
                                     """;
         if (embeddedProjectionName)
         {
@@ -70,6 +82,21 @@ public sealed class McpProjectionDtoExecutionTests
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(
                 NullableContextOptions.Enable));
+        if (includeSiloRegistrations)
+        {
+            domain = domain.AddSyntaxTrees(
+                CSharpSyntaxTree.ParseText(
+                    """
+                    using Mississippi.Tributary.Abstractions;
+                    namespace TestApp.Domain.Projections.Probe.Reducers;
+                    internal sealed class ProbeAmountSetReducer : EventReducerBase<ProbeAmountSet, ProbeProjection>
+                    {
+                        protected override ProbeProjection ReduceCore(ProbeProjection state, ProbeAmountSet eventData)
+                            => state with { Amount = eventData.Amount };
+                    }
+                    """));
+        }
+
         Assert.Empty(domain.GetDiagnostics().Where(d => d.Severity >= DiagnosticSeverity.Warning));
         using MemoryStream domainStream = new();
         EmitResult domainResult = domain.Emit(domainStream);
@@ -82,11 +109,20 @@ public sealed class McpProjectionDtoExecutionTests
             options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(
                 NullableContextOptions.Enable));
         Assert.Empty(input.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error));
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+        IIncrementalGenerator[] generators =
+        [
             new ProjectionEndpointsGenerator(),
             new McpProjectionToolsGenerator(),
             new DomainServerRegistrationGenerator(),
-            new McpToolRegistrationGenerator());
+            new McpToolRegistrationGenerator(),
+        ];
+        if (includeSiloRegistrations)
+        {
+            generators =
+                [.. generators, new ProjectionSiloRegistrationGenerator(), new DomainSiloRegistrationGenerator()];
+        }
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(generators);
         driver = driver.RunGeneratorsAndUpdateCompilation(
             input,
             out Compilation output,
@@ -103,7 +139,7 @@ public sealed class McpProjectionDtoExecutionTests
         Assert.Single(names, name => name == "ProbeProjectionMapperRegistrations.g.cs");
         Assert.Equal(hasHttpEndpoints, names.Contains("ProbeController.g.cs", StringComparer.Ordinal));
         Assert.Empty(output.GetDiagnostics().Where(d => d.Severity >= DiagnosticSeverity.Warning));
-        string consumerSource = ConsumerSource(hasHttpEndpoints);
+        string consumerSource = ConsumerSource(hasHttpEndpoints, includeSiloRegistrations);
         if (embeddedProjectionName)
         {
             consumerSource = consumerSource.Replace("Probe", "ProjectionProbe", StringComparison.Ordinal);
@@ -140,7 +176,8 @@ public sealed class McpProjectionDtoExecutionTests
     }
 
     private static string ConsumerSource(
-        bool hasHttpEndpoints
+        bool hasHttpEndpoints,
+        bool includeSiloRegistrations
     ) =>
         $$"""
           using System;
@@ -164,6 +201,20 @@ public sealed class McpProjectionDtoExecutionTests
 
           public static class Consumer
           {
+              {{(includeSiloRegistrations ? """
+                                            public static decimal ReduceUsingSilo(Mississippi.Brooks.Serialization.Abstractions.ISerializationProvider serializer)
+                                            {
+                                                var services = new ServiceCollection();
+                                                services.AddSingleton(serializer);
+                                                services.AddSingleton<IUxProjectionGrainFactory>(new ProbeFactory(new ProbeGrain(null, null, default)));
+                                                TestApp.Server.Registrations.DomainSiloRegistrations.AddTestAppDomainSilo(services);
+                                                using var provider = services.BuildServiceProvider(new ServiceProviderOptions
+                                                    { ValidateOnBuild = true, ValidateScopes = true });
+                                                Assert.NotNull(provider.GetRequiredService<Mississippi.Tributary.Abstractions.ISnapshotStateConverter<ProbeProjection>>());
+                                                var reducer = provider.GetRequiredService<Mississippi.Tributary.Abstractions.IEventReducer<ProbeAmountSet, ProbeProjection>>();
+                                                return reducer.Reduce(new ProbeProjection(), new ProbeAmountSet { Amount = 99m }).Amount;
+                                            }
+                                            """ : string.Empty)}}
               public static async Task<string[]> RunAsync(bool customMapper, bool missing, CancellationToken token)
               {
                   var latest = new ProbeProjection { Amount = 123m, Status = ProbeStatus.Active,
@@ -382,6 +433,31 @@ public sealed class McpProjectionDtoExecutionTests
         {
             Assert.Equal(results[0], results[3]);
             Assert.Equal(results[1], results[4]);
+        }
+    }
+
+    /// <summary>
+    ///     The domain silo registration resolves and executes projection reducers for both transport declarations.
+    /// </summary>
+    /// <param name="hasHttpEndpoints">Whether the projection also opts into HTTP endpoints.</param>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void SiloRegistrationsMaterializeProjection(
+        bool hasHttpEndpoints
+    )
+    {
+        AssemblyLoadContext loadContext = new(Guid.NewGuid().ToString("N"), true);
+        try
+        {
+            Assembly assembly = CompileConsumer(hasHttpEndpoints, loadContext, includeSiloRegistrations: true);
+            MethodInfo method = assembly.GetType("Consumer", true)!.GetMethod("ReduceUsingSilo")!;
+            Mock<ISerializationProvider> serializer = new();
+            Assert.Equal(99m, method.Invoke(null, [serializer.Object]));
+        }
+        finally
+        {
+            loadContext.Unload();
         }
     }
 }

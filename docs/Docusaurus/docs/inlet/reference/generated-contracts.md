@@ -101,7 +101,7 @@ Generated latest and exact-version MCP reads apply `IMapper<TProjection, TDto>` 
 
 Gateway DTOs remain in `<Gateway>.Controllers.Projections`, and their mapper extensions remain in `.Controllers.Projections.Mappers`. Register the individual projection mappers or the combined domain Server extension before constructing tools. `WithGeneratedMcpTools()` on the MCP server builder registers the generated tool methods. To replace a generated mapping, register your `IMapper<TProjection, TDto>` after the generated mapper registrations; the last registration is selected for a single mapper dependency.
 
-`[GenerateMcpReadTool]` works without `[GenerateProjectionEndpoints]` or `[ProjectionPath]`. An MCP-only projection receives DTOs, mappers, and domain Server mapper registration, while an HTTP controller still requires the HTTP opt-in and projection path. Adding both opt-ins emits the shared contract once.
+`[GenerateMcpReadTool]` works without `[GenerateProjectionEndpoints]` or `[ProjectionPath]`. An MCP-only projection receives DTOs, mappers, and domain Server mapper registration, while an HTTP controller still requires the HTTP opt-in and projection path. Its generated runtime projection and domain Silo registrations include the discovered reducers and snapshot converter. Adding both opt-ins emits the shared contract once.
 
 ### JSON Compatibility
 
