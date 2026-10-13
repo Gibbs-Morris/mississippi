@@ -38,6 +38,7 @@ All contributors and agents making code changes in this repository. This policy 
 
 ## References
 
+- [Metadata and host composition](metadata-and-composition.instructions.md): proposed responsibility rules within their stated activation scope.
 - GitVersion config: `GitVersion.yml` (`next-version` field)
 - Orleans serialization: `.github/instructions/orleans-serialization.instructions.md`
 - Storage naming: `.github/instructions/storage-type-naming.instructions.md`
