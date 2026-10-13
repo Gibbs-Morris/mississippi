@@ -10,17 +10,8 @@ Governing thought: Split stable public contracts into `{Vendor}.{Area}[.{Feature
 
 ## Rules (RFC 2119)
 
-- `*.Abstractions` projects **MUST** contain only public contracts (interfaces, abstract bases with documented justification, DTOs, domain exceptions, CQRS requests); no infrastructure/persistence/hosting code, and DI **MUST NOT** embed concrete dependencies. Generic DI helpers that only register the abstraction to a caller-supplied implementation type and add no new package dependencies **MAY** live in abstractions to keep consumers lightweight. Why: Keeps packages slim while enabling opt-in registration.
-- Main projects **MUST** own all implementations/infrastructure and reference their abstractions; abstractions **MUST NOT** depend on implementations; downstream consumers **SHOULD** reference abstractions unless implementation is required. Why: Preserves clean layering.
-- When all mandatory triggers apply (cross-assembly/service contracts, multiple implementations exist/expected, stable public API), contributors **MUST** create an abstractions project before adding/modifying contracts. Why: Enforces required separation early.
-- When any optional trigger applies (dependency minimization, testing/mocking, cross-team reuse, versioning flexibility), contributors **SHOULD** create an abstractions project unless deliberately documented otherwise. Why: Encourages reuse when valuable.
-- Types that describe *what* to do **SHOULD** live in abstractions; types describing *how* **MUST** stay in main project. Why: Keeps public programming model stable while implementations evolve.
-- Abstract base classes intended for external inheritance **MUST** end with `Base` and document justification; naming **SHOULD** follow `{Vendor}.{Area}[.{Feature}].Abstractions`. Why: Clarifies intent and discoverability.
+- Covered contributors **MUST** read and apply [the complete global policy](../agent-guidance/global-policy.md) under [root instruction loading](../../AGENTS.md#instruction-loading), retaining the audience and task conditions below. Why: These obligations remain mandatory independently of skill selection.
 
 ## Scope and Audience
 
 Applies whenever creating or updating libraries that expose contracts across assemblies/services.
-
-## References
-
-- Naming: `.github/instructions/naming.instructions.md`
