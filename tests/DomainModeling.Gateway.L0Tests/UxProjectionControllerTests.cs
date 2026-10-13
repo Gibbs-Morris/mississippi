@@ -129,6 +129,9 @@ public sealed class UxProjectionControllerTests
         // Assert
         StatusCodeResult statusCodeResult = Assert.IsType<StatusCodeResult>(result.Result);
         Assert.Equal(StatusCodes.Status304NotModified, statusCodeResult.StatusCode);
+        grainMock.Verify(
+            g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()),
+            Times.Never);
         grainMock.Verify(g => g.GetAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -142,7 +145,8 @@ public sealed class UxProjectionControllerTests
         // Arrange
         TestProjection expectedProjection = new(100);
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
-        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
+        grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedProjection);
         grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(42));
         Mock<IUxProjectionGrainFactory> factoryMock = new();
@@ -168,7 +172,8 @@ public sealed class UxProjectionControllerTests
         const long currentVersion = 42;
         TestProjection expectedProjection = new(100);
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
-        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
+        grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedProjection);
         grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(currentVersion));
         Mock<IUxProjectionGrainFactory> factoryMock = new();
@@ -199,7 +204,8 @@ public sealed class UxProjectionControllerTests
         const long version = 42;
         TestProjection expectedProjection = new(100);
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
-        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
+        grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedProjection);
         grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(version));
         Mock<IUxProjectionGrainFactory> factoryMock = new();
@@ -226,7 +232,8 @@ public sealed class UxProjectionControllerTests
     {
         // Arrange
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
-        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync((TestProjection?)null);
+        grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TestProjection?)null);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
         TestableController controller = CreateController(factoryMock);
@@ -250,7 +257,8 @@ public sealed class UxProjectionControllerTests
         // Arrange
         TestProjection expectedProjection = new(42);
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
-        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedProjection);
+        grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedProjection);
         grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new BrookPosition(1));
         Mock<IUxProjectionGrainFactory> factoryMock = new();
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);

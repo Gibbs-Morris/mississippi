@@ -48,7 +48,8 @@ public sealed class UxProjectionControllerWildcardExistenceTests
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
         grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(42));
-        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(hasProjection ? projection : null);
+        grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(hasProjection ? projection : null);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(entityId)).Returns(grainMock.Object);
         Mock<IMapper<TestProjection, TestDto>> mapperMock = new();
@@ -102,7 +103,8 @@ public sealed class UxProjectionControllerWildcardExistenceTests
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
         grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(42));
-        grainMock.Setup(g => g.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync((TestProjection?)null);
+        grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TestProjection?)null);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(entityId)).Returns(grainMock.Object);
         Mock<IMapper<TestProjection, TestDto>> mapperMock = new();
@@ -114,7 +116,9 @@ public sealed class UxProjectionControllerWildcardExistenceTests
 
         // Assert
         Assert.IsType<NotFoundResult>(result.Result);
-        grainMock.Verify(g => g.GetAsync(It.IsAny<CancellationToken>()), Times.Once);
+        grainMock.Verify(
+            g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()),
+            Times.Once);
         mapperMock.Verify(m => m.Map(It.IsAny<TestProjection>()), Times.Never);
     }
 }

@@ -50,6 +50,12 @@ The built-in cache's `GetAsync` ignores that caller token. Its state load occurs
 
 The returned value contains state without a paired version. Separate calls for state and latest version therefore do not form an atomic state/version result.
 
+## Latest HTTP Responses
+
+The built-in [`UxProjectionControllerBase<TProjection, TDto>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Gateway/UxProjectionControllerBase%7BTProjection,TDto%7D.cs) captures the latest known position once, then reads that exact version before mapping a successful response body. Its `ETag` identifies the same position as the returned DTO. A concurrent cursor advance can appear on a later request; the endpoint does not promise the newest state at response completion.
+
+An unset position returns `404 Not Found` before any body read. When a body or existence read is required, a null captured snapshot also returns 404. An exact matching tag retains its version-only `304 Not Modified` short circuit. Weak, list, and wildcard matches check that the captured snapshot exists before returning 304; these responses skip DTO mapping. The controller forwards the request cancellation token to both grain calls, subject to the runtime cancellation boundaries above.
+
 ## Empty Results And Failures
 
 These null outcomes describe the built-in class-constrained implementation. The unconstrained public interface exposes `TProjection?`; that is not a promise of null for every value-type implementation. A custom implementation owns its empty-result behavior.
