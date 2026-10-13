@@ -4,6 +4,7 @@
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
+        <InternalsVisibleTo Include="Mississippi.Undercurrent.Domain" />
     </ItemGroup>
     <ItemGroup>
       <PackageReference Include="Microsoft.Orleans.Sdk" />

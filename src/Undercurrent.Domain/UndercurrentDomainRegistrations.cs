@@ -10,10 +10,13 @@ using Mississippi.Tributary.Runtime;
 using Mississippi.Undercurrent.Abstractions;
 using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications;
 using Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications.Commands;
+using Mississippi.Undercurrent.Abstractions.Projections.UserNotificationCounts;
+using Mississippi.Undercurrent.Abstractions.Projections.UserNotificationList;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Events;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Handlers;
 using Mississippi.Undercurrent.Domain.Aggregates.UserNotifications.Reducers;
+using Mississippi.Undercurrent.Domain.Projections.UserNotificationCounts.Reducers;
 
 
 namespace Mississippi.Undercurrent.Domain;
@@ -91,8 +94,35 @@ public static class UndercurrentDomainRegistrations
         services.TryAddTransient<UserNotificationStateSizeLimit>();
         services.TryAddEnumerable(
             ServiceDescriptor.Singleton<IValidateOptions<UndercurrentOptions>, UndercurrentOptionsValidator>());
-        return services.AddUserNotificationsAggregate();
+        return services.AddUserNotificationsAggregate()
+            .AddUserNotificationCountsProjection()
+            .AddUserNotificationListProjection();
     }
+
+    private static IServiceCollection AddUserNotificationCountsProjection(
+        this IServiceCollection services
+    ) =>
+        services.AddSnapshotType<UserNotificationCountsProjection>()
+            .AddReducer<NotificationCreated, UserNotificationCountsProjection, NotificationCreatedProjectionReducer>()
+            .AddReducer<NotificationMarkedAsRead, UserNotificationCountsProjection,
+                NotificationMarkedAsReadProjectionReducer>()
+            .AddReducer<NotificationDeleted, UserNotificationCountsProjection, NotificationDeletedProjectionReducer>()
+            .AddReducer<NotificationsDeleted, UserNotificationCountsProjection, NotificationsDeletedProjectionReducer>()
+            .AddSnapshotStateConverter<UserNotificationCountsProjection>();
+
+    private static IServiceCollection AddUserNotificationListProjection(
+        this IServiceCollection services
+    ) =>
+        services.AddSnapshotType<UserNotificationListProjection>()
+            .AddReducer<NotificationCreated, UserNotificationListProjection,
+                Projections.UserNotificationList.Reducers.NotificationCreatedProjectionReducer>()
+            .AddReducer<NotificationMarkedAsRead, UserNotificationListProjection,
+                Projections.UserNotificationList.Reducers.NotificationMarkedAsReadProjectionReducer>()
+            .AddReducer<NotificationDeleted, UserNotificationListProjection,
+                Projections.UserNotificationList.Reducers.NotificationDeletedProjectionReducer>()
+            .AddReducer<NotificationsDeleted, UserNotificationListProjection,
+                Projections.UserNotificationList.Reducers.NotificationsDeletedProjectionReducer>()
+            .AddSnapshotStateConverter<UserNotificationListProjection>();
 
     private static IServiceCollection AddUserNotificationsAggregate(
         this IServiceCollection services
