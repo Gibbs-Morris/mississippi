@@ -80,9 +80,10 @@ and passes all three suites without dropping their validation assertions.
 
 ### Registration
 
-- Domain registration **MUST** follow the pattern `Add{Domain}Domain()` as public entry point calling private `Add{Aggregate}Aggregate()` and `Add{Projection}Projection()` methods. Why: Hierarchical registration keeps DI discoverable.
+- Hand-written domain registration **MUST** follow the pattern `Add{Domain}Domain()` as public entry point calling `Add{Aggregate}Aggregate()` and `Add{Projection}Projection()` helpers. Why: Hierarchical registration keeps DI discoverable.
+- Domain helper visibility **MUST** follow the [service-registration boundary rule](service-registration.instructions.md#rules-rfc-2119). Why: Implementation helpers remain private or internal; generated host-callable helpers retain their supported public surface.
 - Registration order **MUST** be: event types (`AddEventType<>`), command handlers (`AddCommandHandler<>`), reducers (`AddReducer<>`), snapshot converter (`AddSnapshotStateConverter<>`). Why: Dependencies must be registered before dependents.
-- Registration classes **MUST** be named `{Domain}Registrations` as `public static class`. Why: Naming convention enables discovery.
+- Hand-written domain registration classes **MUST** be named `{Domain}Registrations` as `public static class`. Why: Naming convention enables discovery.
 
 ## Scope and Audience
 
