@@ -82,9 +82,13 @@ Snapshot retention already does this: stable storage-name override, CLR-name
 override, type retention attribute, then the host default. Access policy needs
 its own boundary-specific precedence; there is no universal attribute-wins rule.
 
-This record remains **Proposed**. The approved implementation programme does not
-establish ADR acceptance. API migrations remain planned until their implementing
-PRs land; writing this record does not change generated or runtime behavior.
+This record remains **Proposed**. The canonical guide applies to approved issue
+or execution contracts that explicitly adopt it, including authorized work in
+programme #1127. Global discovery does not establish repository-wide adoption;
+that activation requires actual ADR acceptance through the existing lifecycle.
+Programme approval, publication, or merge alone does not establish acceptance.
+API migrations remain planned until their implementing PRs land; writing this
+record does not change generated or runtime behavior.
 
 ### Consequences
 

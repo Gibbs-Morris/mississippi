@@ -17,7 +17,7 @@ Governing thought: Use hierarchical `ServiceRegistration` extension methods with
 - Registration methods **MUST** be synchronous; async calls (DB, HTTP, etc.) **MUST NOT** occur during registration. Why: DI building is synchronous.
 - Any async initialization **MUST** be deferred to `IHostedService` or Orleans lifecycle participants; async factories **MUST** be registered for deferred work rather than blocking registration. Why: Avoids startup deadlocks.
 - Classes **MUST NOT** inject `IServiceProvider` directly; use explicit dependencies or `Lazy<T>` to break circular dependencies. Factory patterns resolving services at runtime are the only acceptable exception. Why: Service locator hides dependencies, complicates testing, and breaks static analysis.
-- Configuration forms, required identity arguments, options validation, and attribute ownership **MUST** follow [metadata and host composition](metadata-and-composition.instructions.md). Why: Overloads reflect real configurable options rather than a blanket three-overload rule.
+- Configuration forms, required identity arguments, options validation, and attribute ownership **MUST** follow [metadata and host composition](metadata-and-composition.instructions.md) within its activation scope. Why: Adopted contracts use real configurable options while repository-wide adoption awaits ADR acceptance.
 - Connection strings and external clients **MUST** be accepted/configured via factories; package version entries **MUST NOT** be added in project files. Why: Keeps registration testable and CPM-compliant.
 - Registered services **MUST** use the DI get-only property pattern. Why: Aligns with shared guardrails and logging patterns.
 - Registration classes **SHOULD** be static and minimal. Why: Keeps the extension-method surface focused.
@@ -30,7 +30,7 @@ Developers adding or modifying DI registration in Mississippi/Samples, including
 
 - Shape registrations as `services.Add{Feature}()` in `{Feature}Registrations.cs` under the feature namespace (e.g., `AggregateRegistrations.cs`, `InletSiloRegistrations.cs`).
 - Keep registration sync-only; move setup to `IHostedService` or Orleans lifecycle participants.
-- Follow the canonical composition policy: expose configuration forms for real options, keep required identity arguments explicit, and validate options on start.
+- For work that adopts the proposed composition guide, expose configuration forms for real options, keep required identity arguments explicit, and validate options on start.
 - Call child registrations instead of duplicating service lists.
 
 ## Core Principles

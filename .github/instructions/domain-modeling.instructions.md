@@ -12,7 +12,7 @@ Governing thought: Use consistent, attribute-driven domain modeling with immutab
 
 ### Metadata Ownership
 
-- Domain metadata and generated capability choices **MUST** follow [metadata and host composition](metadata-and-composition.instructions.md). Why: Type identity, runtime composition, HTTP routing, and client feature identity have separate responsibilities.
+- Domain metadata and generated capability choices **MUST** follow [metadata and host composition](metadata-and-composition.instructions.md) within its activation scope. Why: Adopted contracts separate these responsibilities without accepting the ADR for unrelated work.
 
 ### Domain Record Visibility
 
