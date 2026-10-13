@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Unit tests for Azure Cosmos DB retry policies and transient failure handling.</Description>
+  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Common.Runtime.Storage.Cosmos\Common.Runtime.Storage.Cosmos.csproj" />

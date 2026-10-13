@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Server runtime for exposing Inlet projections and API transport.</Description>
+    <Description>ASP.NET Core SignalR hub and service registrations for subscribing clients to server read-model updates, with configurable subscription and HTTP endpoint authorization.</Description>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

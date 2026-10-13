@@ -8,6 +8,6 @@
     <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>ASP.NET gateway exposing HTTP endpoints for aggregate commands and UX projection queries.</Description>
+    <Description>ASP.NET Core base classes for HTTP endpoints that execute business commands and query read models rebuilt from stored events.</Description>
   </PropertyGroup>
 </Project>

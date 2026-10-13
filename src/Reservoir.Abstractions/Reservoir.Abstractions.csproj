@@ -3,6 +3,6 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Public contracts and abstractions for Reservoir.</Description>
+    <Description>Public contracts for predictable application state management using a store, actions, reducers, side effects, and middleware.</Description>
   </PropertyGroup>
 </Project>

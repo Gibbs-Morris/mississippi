@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <Description>Shared Aspire test fixtures for starting the banking sample, accessing its services, and collecting deployment logs.</Description>
     <!-- Shared fixture contracts remain in a library, without the executable test-project package. -->
     <IsTestProject>false</IsTestProject>
   </PropertyGroup>

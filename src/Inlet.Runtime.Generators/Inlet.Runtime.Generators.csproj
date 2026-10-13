@@ -6,7 +6,7 @@
     <IsRoslynComponent>true</IsRoslynComponent>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <Description>Source generators for Inlet.Runtime to reduce boilerplate.</Description>
+    <Description>Source generators that create Orleans service registrations for business commands, read models, and workflows, plus workflow status updates.</Description>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />

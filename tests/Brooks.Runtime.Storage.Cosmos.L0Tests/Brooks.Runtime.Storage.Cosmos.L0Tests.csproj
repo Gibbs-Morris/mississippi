@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Unit tests for Azure Cosmos DB event storage and Azure Blob lease coordination.</Description>
+    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="CloudNative.CloudEvents"/>

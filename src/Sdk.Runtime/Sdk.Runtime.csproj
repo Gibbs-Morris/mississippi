@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Convenience SDK for integrating Mississippi in silo applications.</Description>
+    <Description>Bundle of libraries for Orleans hosts that execute event-sourced business logic, persist events and state snapshots in Azure Cosmos DB, and route SignalR messages.</Description>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Hosting.Runtime\Hosting.Runtime.csproj" />

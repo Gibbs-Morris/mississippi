@@ -4,6 +4,6 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Refraction runtime for projection-driven reactive application flows.</Description>
+    <Description>Blazor UI components and shared styling values (design tokens) for composing application layouts, controls, and themed interfaces.</Description>
   </PropertyGroup>
 </Project>

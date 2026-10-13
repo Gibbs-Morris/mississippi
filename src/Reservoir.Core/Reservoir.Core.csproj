@@ -7,6 +7,6 @@
     <ProjectReference Include="..\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Core Reservoir Redux-style state management runtime for Mississippi clients.</Description>
+    <Description>Redux-style application state store that processes actions through reducers, runs side effects, and notifies subscribers when state changes.</Description>
   </PropertyGroup>
 </Project>

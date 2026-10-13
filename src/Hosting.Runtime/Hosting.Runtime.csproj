@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Validated terminal composition for Mississippi Orleans runtime hosts.</Description>
+    <Description>Configuration builder for adding application services to Orleans hosts and validating their configuration before registration.</Description>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Hosting.Runtime.Abstractions\Hosting.Runtime.Abstractions.csproj" />

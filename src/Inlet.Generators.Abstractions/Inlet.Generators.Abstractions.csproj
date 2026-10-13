@@ -2,6 +2,6 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>14.0</LangVersion>
-    <Description>Public contracts and abstractions for Inlet.Generators.</Description>
+    <Description>Public attributes for generating HTTP endpoints, client commands, read models, workflows, authorization rules, and Model Context Protocol tools from domain types.</Description>
   </PropertyGroup>
 </Project>

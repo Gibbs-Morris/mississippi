@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Unit tests for Orleans business command execution, event processing, read models, and workflows.</Description>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Remove="SagaRuntimeTests.cs" />
   </ItemGroup>

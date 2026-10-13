@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Banking sample business logic for event-sourced accounts, balances, ledgers, transaction investigations, money transfer workflows, and authorization examples.</Description>
+  </PropertyGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="MississippiSamples.Spring.Gateway" />

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Testing utilities and fixtures for Mississippi.Reservoir.</Description>
+    <Description>Test helpers for verifying application state, reducers, side effects, and emitted actions with Given/When/Then scenarios.</Description>
     <PackageTags>$(PackageTags);testing;xunit;reservoir;state-management</PackageTags>
   </PropertyGroup>
   <ItemGroup>

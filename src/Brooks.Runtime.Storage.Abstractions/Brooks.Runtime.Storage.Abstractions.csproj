@@ -3,6 +3,6 @@
     <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Interfaces for brook storage providers: IBrookStorageProvider, IBrookStorageReader, and IBrookStorageWriter.</Description>
+    <Description>Public contracts for storage providers that read and append events in persistent event streams.</Description>
   </PropertyGroup>
 </Project>

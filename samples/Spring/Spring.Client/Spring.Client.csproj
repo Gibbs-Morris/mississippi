@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+  <PropertyGroup>
+    <Description>Blazor WebAssembly banking sample for managing accounts, viewing live balances and ledgers, and following money transfers.</Description>
+  </PropertyGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="MississippiSamples.Spring.Gateway" />

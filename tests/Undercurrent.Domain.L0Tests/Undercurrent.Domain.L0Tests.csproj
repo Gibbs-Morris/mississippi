@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Unit tests for event-sourced notification creation, read status, deletion, and inbox limits.</Description>
+    </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\src\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
         <ProjectReference Include="..\..\src\DomainModeling.TestHarness\DomainModeling.TestHarness.csproj" />

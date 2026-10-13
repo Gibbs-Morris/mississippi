@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Unit tests for Blazor UI integration with application state and actions.</Description>
+    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="AngleSharp" />

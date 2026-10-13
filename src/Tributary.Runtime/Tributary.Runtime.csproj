@@ -11,6 +11,6 @@
     <ProjectReference Include="..\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Tributary runtime providing reducer and snapshot implementations.</Description>
+    <Description>Orleans runtime that applies event reducers to rebuild state, caches the results, and saves snapshots for later reads.</Description>
   </PropertyGroup>
 </Project>

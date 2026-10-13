@@ -12,6 +12,6 @@
     <ProjectReference Include="..\Hosting.Runtime.Abstractions\Hosting.Runtime.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Azure Cosmos DB provider for Tributary.Runtime storage.</Description>
+    <Description>Azure Cosmos DB storage for reading and writing state snapshots rebuilt from event streams.</Description>
   </PropertyGroup>
 </Project>

@@ -9,6 +9,6 @@
     <ProjectReference Include="..\Reservoir.Core\Reservoir.Core.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Page composition helpers for Refraction-powered applications.</Description>
+    <Description>Blazor integration that connects UI components to application state and actions through a Redux-style store.</Description>
   </PropertyGroup>
 </Project>

@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <Description>Unit tests for Orleans host configuration and service validation.</Description>
     <!-- Match the product namespace used by the hosting test family. -->
     <RootNamespace>$(AssemblyName)</RootNamespace>
   </PropertyGroup>

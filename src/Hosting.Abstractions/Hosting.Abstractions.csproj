@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Shared builder contracts and structured diagnostics for Mississippi host composition.</Description>
+    <Description>Public contracts for configuring application hosts and reporting service configuration errors before startup.</Description>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />

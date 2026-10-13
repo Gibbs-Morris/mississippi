@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <Description>Shared test helpers for Orleans clusters, SignalR connections, grain mocks, and in-memory event storage.</Description>
     <!-- Not a test project itself - it's a utility library for tests -->
     <IsPackable>false</IsPackable>
     <IsTestProject>false</IsTestProject>

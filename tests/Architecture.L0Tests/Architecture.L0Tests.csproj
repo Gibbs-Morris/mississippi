@@ -1,4 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Architecture tests for project layering, naming, access control, dependency injection, logging, and Orleans serialization conventions.</Description>
+    </PropertyGroup>
 
     <!-- Reference all src projects to include them in architecture analysis -->
     <ItemGroup>

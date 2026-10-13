@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Integration tests for the banking sample&apos;s HTTP APIs, authorization rules, and API documentation against an Aspire test deployment.</Description>
+  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />

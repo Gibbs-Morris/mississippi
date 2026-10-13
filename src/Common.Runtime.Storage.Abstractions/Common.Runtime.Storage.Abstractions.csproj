@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Public contracts and abstractions for common runtime storage providers.</Description>
+    <Description>Public contracts for retry policies used by persistent storage providers.</Description>
   </PropertyGroup>
 </Project>

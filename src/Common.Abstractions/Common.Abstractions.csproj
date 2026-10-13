@@ -4,6 +4,6 @@
     <PackageReference Include="Microsoft.Orleans.Sdk" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Core shared abstractions and primitives used across Mississippi packages.</Description>
+    <Description>Public contracts and helpers for mapping objects and collections between .NET types.</Description>
   </PropertyGroup>
 </Project>

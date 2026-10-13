@@ -2,6 +2,7 @@
   <Sdk Name="Aspire.AppHost.Sdk" Version="13.5.3" />
 
   <PropertyGroup>
+    <Description>Aspire host that runs the banking sample&apos;s Orleans runtime, ASP.NET Core gateway, Blazor client, and storage emulators.</Description>
     <OutputType>Exe</OutputType>
     <AspireUseCliBundle>true</AspireUseCliBundle>
   </PropertyGroup>

@@ -6,7 +6,7 @@
     <IsRoslynComponent>true</IsRoslynComponent>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <Description>Source generators for Inlet.Gateway to reduce boilerplate.</Description>
+    <Description>Source generators that create ASP.NET Core HTTP controllers, data types, mappings, service registrations, and Model Context Protocol tools from attributed domain types.</Description>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />

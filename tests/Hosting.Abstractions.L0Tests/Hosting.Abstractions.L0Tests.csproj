@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <Description>Unit tests for application host configuration contracts and diagnostics.</Description>
     <!-- Match the product namespace used by the hosting test family. -->
     <RootNamespace>$(AssemblyName)</RootNamespace>
   </PropertyGroup>

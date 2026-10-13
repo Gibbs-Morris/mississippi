@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Unit tests for helpers that verify business commands, event reducers, side effects, and complete business scenarios.</Description>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/DomainModeling.TestHarness/DomainModeling.TestHarness.csproj" />
   </ItemGroup>

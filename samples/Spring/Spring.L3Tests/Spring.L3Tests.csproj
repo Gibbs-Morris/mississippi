@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Browser tests for the banking sample&apos;s user journeys, including accounts, transactions, transfers, authentication, and live state updates.</Description>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Spring.TestHarness\Spring.TestHarness.csproj" />
   </ItemGroup>

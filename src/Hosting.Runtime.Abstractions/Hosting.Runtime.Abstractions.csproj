@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Runtime-role composition contracts and Orleans integration diagnostics for Mississippi.</Description>
+    <Description>Public contracts for configuring Orleans runtime hosts and reporting service integration errors before startup.</Description>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Hosting.Abstractions\Hosting.Abstractions.csproj" />

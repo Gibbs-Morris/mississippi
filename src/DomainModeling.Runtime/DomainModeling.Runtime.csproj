@@ -15,6 +15,6 @@
     <PackageReference Include="Microsoft.Orleans.Sdk" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>DomainModeling runtime for aggregates, sagas, and ux projections.</Description>
+    <Description>Orleans runtime for executing business commands, recording events, updating read models, and coordinating multi-step workflows.</Description>
   </PropertyGroup>
 </Project>

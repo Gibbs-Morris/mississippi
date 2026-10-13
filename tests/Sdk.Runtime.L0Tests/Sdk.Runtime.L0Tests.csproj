@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Unit-test project scaffold for the bundled Orleans event-sourcing, storage, and SignalR services.</Description>
+    </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\src\Sdk.Runtime\Sdk.Runtime.csproj" />
     </ItemGroup>

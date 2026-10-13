@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Integration tests and counter domain examples for event-sourced operations using Orleans, Azure Cosmos DB, and Blob Storage emulators.</Description>
+  </PropertyGroup>
   <ItemGroup>
     <!-- Aspire Testing Infrastructure -->
     <PackageReference Include="Aspire.Hosting.Testing" />
