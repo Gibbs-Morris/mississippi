@@ -44,6 +44,7 @@ Use this page as the current active reference for what Domain Modeling owns and 
 
 ## Next Steps
 
+- Read [Native Reference Sets](./reference-sets.md) for bounded source-typed membership and replay.
 - Read [Aggregate Keys](./aggregate-keys.md) for entity-only identity and validation boundaries.
 - Read [Event Effect Dispatch](./event-effect-dispatch.md) for matching, ordering, and handler failure isolation.
 - Read [Aggregate Effect Iterations](./effect-iterations.md) for cascade limits and already-persisted follow-up events.

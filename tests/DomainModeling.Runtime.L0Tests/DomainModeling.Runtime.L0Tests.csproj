@@ -15,4 +15,11 @@
     <ProjectReference Include="..\..\src\Hosting.Runtime\Hosting.Runtime.csproj" />
     <ProjectReference Include="..\Testing.Utilities\Testing.Utilities.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
+    <ProjectReference Include="..\..\src\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Common.Abstractions\Common.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Inlet.Generators.Core\Inlet.Generators.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\src\Inlet.Gateway.Generators\Inlet.Gateway.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
 </Project>
