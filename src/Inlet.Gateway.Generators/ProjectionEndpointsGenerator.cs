@@ -878,7 +878,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                 SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionPathAttrSymbol));
         string projectionPath =
             projectionPathAttr?.ConstructorArguments.FirstOrDefault().Value?.ToString() ?? string.Empty;
-        if (hasGenerateAttribute && string.IsNullOrEmpty(projectionPath))
+        bool hasHttpEndpoints = hasGenerateAttribute && !string.IsNullOrEmpty(projectionPath);
+        if (!hasHttpEndpoints && !hasMcpReadToolAttribute)
         {
             return null;
         }
@@ -887,11 +888,11 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         ProjectionModel model = new(typeSymbol, projectionPath);
         GeneratedApiAuthorizationModel authorization = GeneratedApiAuthorizationAnalysis.Analyze(
             typeSymbol,
-            hasGenerateAttribute ? generateAuthorizationAttribute : null,
-            hasGenerateAttribute ? generateAllowAnonymousAttribute : null,
+            hasHttpEndpoints ? generateAuthorizationAttribute : null,
+            hasHttpEndpoints ? generateAllowAnonymousAttribute : null,
             false);
         string outputNamespace = DeriveOutputNamespace(targetRootNamespace);
-        return new(model, outputNamespace, authorization, authorization.Diagnostics, hasGenerateAttribute);
+        return new(model, outputNamespace, authorization, authorization.Diagnostics, hasHttpEndpoints);
     }
 
     /// <summary>

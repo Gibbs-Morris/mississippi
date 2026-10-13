@@ -24,7 +24,8 @@ public sealed class McpProjectionDtoExecutionTests
 {
     private static Assembly CompileConsumer(
         bool hasHttpEndpoints,
-        AssemblyLoadContext loadContext
+        AssemblyLoadContext loadContext,
+        bool missingHttpPath = false
     )
     {
         string projectionSource = $$"""
@@ -45,6 +46,7 @@ public sealed class McpProjectionDtoExecutionTests
                                     [SnapshotStorageName("TESTAPP", "TEST", "PROBE", version: 1)]
                                     [GenerateSerializer, Alias("TestApp.Domain.Projections.Probe.ProbeProjection")]
                                     {{(hasHttpEndpoints ? "[GenerateProjectionEndpoints, ProjectionPath(\"probe\")]" : string.Empty)}}
+                                    {{(missingHttpPath ? "[GenerateProjectionEndpoints]" : string.Empty)}}
                                     public sealed record ProbeProjection
                                     {
                                         [Id(0)] public decimal Amount { get; init; }
@@ -257,13 +259,14 @@ public sealed class McpProjectionDtoExecutionTests
     private static async Task<string[]> ExecuteAsync(
         bool hasHttpEndpoints,
         bool customMapper,
-        bool missing
+        bool missing,
+        bool missingHttpPath = false
     )
     {
         AssemblyLoadContext loadContext = new(Guid.NewGuid().ToString("N"), true);
         try
         {
-            Assembly assembly = CompileConsumer(hasHttpEndpoints, loadContext);
+            Assembly assembly = CompileConsumer(hasHttpEndpoints, loadContext, missingHttpPath);
             using CancellationTokenSource cancellation = new();
             MethodInfo method = assembly.GetType("Consumer", true)!.GetMethod("RunAsync")!;
             Task<string[]> task = (Task<string[]>)method.Invoke(null, [customMapper, missing, cancellation.Token])!;
@@ -273,6 +276,20 @@ public sealed class McpProjectionDtoExecutionTests
         {
             loadContext.Unload();
         }
+    }
+
+    /// <summary>
+    ///     A dual marker without a route still supplies mapped MCP reads without an HTTP controller.
+    /// </summary>
+    /// <returns>The asynchronous test operation.</returns>
+    [Fact]
+    public async Task DualMarkerWithoutPathReadsMappedDtoAsync()
+    {
+        string[] results = await ExecuteAsync(false, true, false, true);
+        using JsonDocument latest = JsonDocument.Parse(results[0]);
+        using JsonDocument exact = JsonDocument.Parse(results[1]);
+        Assert.Equal(1123m, latest.RootElement.GetProperty("amount").GetDecimal());
+        Assert.Equal(1100m, exact.RootElement.GetProperty("amount").GetDecimal());
     }
 
     /// <summary>
