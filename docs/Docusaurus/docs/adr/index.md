@@ -38,6 +38,10 @@ Write an ADR when a decision:
 
 Accepted ADRs are **immutable** — if a decision changes, a new ADR supersedes the original.
 
+## Proposed Decisions
+
+- [ADR-0002: Separate Metadata From Host Composition](0002-metadata-and-host-composition.md) records the planned attribute/composition migration and its consumer proof obligations.
+
 ## Learn More
 
 - [Documentation Home](../index.md) - Return to the product-area docs landing page

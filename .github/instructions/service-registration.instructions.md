@@ -10,15 +10,17 @@ Governing thought: Use hierarchical `ServiceRegistration` extension methods with
 
 ## Rules (RFC 2119)
 
-- Each feature **MUST** expose `public static class {Feature}Registrations` with `Add{Feature}()` extension methods that follow the feature namespace structure (e.g., `AggregateRegistrations`, `ReducerRegistrations`, `InletSiloRegistrations`). Why: Keeps DI discoverable and consistent.
-- Parent registrations **MUST** call child registrations; sub-feature registrations **MUST** remain `internal`; public registration **MUST** exist only at product/feature boundaries and include XML docs. Why: Preserves hierarchy and minimizes public surface.
+- Feature registration extensions **MUST** use `{Feature}Registrations` classes and hierarchical `Add{Feature}()` methods at supported feature boundaries. Why: Keeps DI discoverable alongside the shipped RuntimeBuilder and ClientBuilder facades.
+- Parent registrations **MUST** call child registrations rather than copy their service lists. Why: Preserves hierarchy.
+- Sub-feature registrations **MUST** remain `internal` unless an independently supported consumer boundary or generated host-callable helper requires public access. Why: Generated conveniences still need an explicit caller.
+- Public registration boundaries **MUST** include XML documentation. Why: Makes the supported composition surface explicit.
 - Registration methods **MUST** be synchronous; async calls (DB, HTTP, etc.) **MUST NOT** occur during registration. Why: DI building is synchronous.
 - Any async initialization **MUST** be deferred to `IHostedService` or Orleans lifecycle participants; async factories **MUST** be registered for deferred work rather than blocking registration. Why: Avoids startup deadlocks.
 - Classes **MUST NOT** inject `IServiceProvider` directly; use explicit dependencies or `Lazy<T>` to break circular dependencies. Factory patterns resolving services at runtime are the only acceptable exception. Why: Service locator hides dependencies, complicates testing, and breaks static analysis.
-- Options pattern: constructors **MUST NOT** take raw config primitives; registration **MUST** offer overloads for `Action<TOptions>`, `IConfiguration`, and explicit parameters, and options classes **MUST** be named `{Feature}Options` with sensible defaults and validation (`ValidateOnStart`/`IValidateOptions`). Why: Supports predictable configuration.
+- Configuration forms, required identity arguments, options validation, and attribute ownership **MUST** follow [metadata and host composition](metadata-and-composition.instructions.md). Why: Overloads reflect real configurable options rather than a blanket three-overload rule.
 - Connection strings and external clients **MUST** be accepted/configured via factories; package version entries **MUST NOT** be added in project files. Why: Keeps registration testable and CPM-compliant.
 - Registered services **MUST** use the DI get-only property pattern. Why: Aligns with shared guardrails and logging patterns.
-- Registration classes **SHOULD** be sealed/minimal and configuration **SHOULD** be externalized per cloud-native principles. Why: Keeps DI surface tight and environment-friendly.
+- Registration classes **SHOULD** be static and minimal. Why: Keeps the extension-method surface focused.
 
 ## Scope and Audience
 
@@ -28,7 +30,7 @@ Developers adding or modifying DI registration in Mississippi/Samples, including
 
 - Shape registrations as `services.Add{Feature}()` in `{Feature}Registrations.cs` under the feature namespace (e.g., `AggregateRegistrations.cs`, `InletSiloRegistrations.cs`).
 - Keep registration sync-only; move setup to `IHostedService` or Orleans lifecycle participants.
-- Provide overloads: explicit parameters, `Action<TOptions>`, `IConfiguration`; validate options on start.
+- Follow the canonical composition policy: expose configuration forms for real options, keep required identity arguments explicit, and validate options on start.
 - Call child registrations instead of duplicating service lists.
 
 ## Core Principles
