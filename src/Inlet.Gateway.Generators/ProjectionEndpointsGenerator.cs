@@ -56,8 +56,6 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
 
     private const string ProjectionPathAttributeFullName = "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
 
-    private const string ProjectionSuffix = "Projection";
-
     private const string SystemNamespace = "System";
 
     /// <summary>
@@ -234,7 +232,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.AppendFileScopedNamespace(projection.OutputNamespace);
         sb.AppendLine();
         string controllerName = GetControllerTypeName(projection);
-        string baseName = projection.Model.TypeName.Replace(ProjectionSuffix, string.Empty);
+        string baseName = projection.Model.ProjectionName;
         sb.AppendSummary($"Controller for the {baseName} projection.");
         sb.AppendGeneratedCodeAttribute(GeneratorName);
         GeneratedApiAuthorizationAnalysis.AppendAuthorizationAttributes(sb, projection.Authorization);
@@ -515,7 +513,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.AppendFileScopedNamespace(projection.OutputNamespace + MappersNamespaceSuffix);
         sb.AppendLine();
         string registrationsName = GetRegistrationsTypeName(projection);
-        string baseName = projection.Model.TypeName.Replace(ProjectionSuffix, string.Empty);
+        string baseName = projection.Model.ProjectionName;
         sb.AppendSummary($"Service registration for {baseName} projection mappers.");
         sb.AppendGeneratedCodeAttribute(GeneratorName);
         sb.AppendLine($"internal static class {registrationsName}");
@@ -717,7 +715,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         ProjectionInfo projection
     )
     {
-        string baseName = projection.Model.TypeName.Replace(ProjectionSuffix, string.Empty);
+        string baseName = projection.Model.ProjectionName;
         return baseName + "Controller";
     }
 
@@ -833,7 +831,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         ProjectionInfo projection
     )
     {
-        string baseName = projection.Model.TypeName.Replace(ProjectionSuffix, string.Empty);
+        string baseName = projection.Model.ProjectionName;
         return baseName + "ProjectionMapperRegistrations";
     }
 

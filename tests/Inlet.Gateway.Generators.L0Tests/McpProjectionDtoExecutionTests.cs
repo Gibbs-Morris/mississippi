@@ -25,7 +25,8 @@ public sealed class McpProjectionDtoExecutionTests
     private static Assembly CompileConsumer(
         bool hasHttpEndpoints,
         AssemblyLoadContext loadContext,
-        bool missingHttpPath = false
+        bool missingHttpPath = false,
+        bool embeddedProjectionName = false
     )
     {
         string projectionSource = $$"""
@@ -54,6 +55,11 @@ public sealed class McpProjectionDtoExecutionTests
                                         [Id(2)] public ImmutableArray<ProbeItem> Items { get; init; } = [];
                                     }
                                     """;
+        if (embeddedProjectionName)
+        {
+            projectionSource = projectionSource.Replace("Probe", "ProjectionProbe", StringComparison.Ordinal);
+        }
+
         MetadataReference[] references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
             .Split(Path.PathSeparator)
             .Select(path => MetadataReference.CreateFromFile(path))
@@ -88,21 +94,30 @@ public sealed class McpProjectionDtoExecutionTests
         Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
         string[] names = driver.GetRunResult()
             .Results.SelectMany(result => result.GeneratedSources)
-            .Select(source => source.HintName)
+            .Select(source => embeddedProjectionName
+                ? source.HintName.Replace("ProjectionProbe", "Probe", StringComparison.Ordinal)
+                : source.HintName)
             .ToArray();
         Assert.Single(names, name => name == "ProbeDto.g.cs");
         Assert.Single(names, name => name == "ProbeProjectionMapper.g.cs");
         Assert.Single(names, name => name == "ProbeProjectionMapperRegistrations.g.cs");
         Assert.Equal(hasHttpEndpoints, names.Contains("ProbeController.g.cs", StringComparer.Ordinal));
         Assert.Empty(output.GetDiagnostics().Where(d => d.Severity >= DiagnosticSeverity.Warning));
-        output = output.AddSyntaxTrees(CSharpSyntaxTree.ParseText(ConsumerSource(hasHttpEndpoints)));
+        string consumerSource = ConsumerSource(hasHttpEndpoints);
+        if (embeddedProjectionName)
+        {
+            consumerSource = consumerSource.Replace("Probe", "ProjectionProbe", StringComparison.Ordinal);
+        }
+
+        output = output.AddSyntaxTrees(CSharpSyntaxTree.ParseText(consumerSource));
         using MemoryStream outputStream = new();
         EmitResult result = output.Emit(outputStream);
         Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics));
         Assert.Empty(result.Diagnostics.Where(d => d.Severity >= DiagnosticSeverity.Warning));
         outputStream.Position = 0;
         Assembly assembly = loadContext.LoadFromStream(outputStream);
-        Type toolsType = assembly.GetType("TestApp.Server.McpTools.ProbeMcpTools", true)!;
+        string toolsTypeName = embeddedProjectionName ? "ProjectionProbeMcpTools" : "ProbeMcpTools";
+        Type toolsType = assembly.GetType("TestApp.Server.McpTools." + toolsTypeName, true)!;
         foreach ((string methodName, string toolName) in new[]
                  {
                      ("GetProbeAsync", "read_probe"),
@@ -110,7 +125,10 @@ public sealed class McpProjectionDtoExecutionTests
                      ("GetProbeVersionAsync", "read_probe_version"),
                  })
         {
-            MethodInfo method = toolsType.GetMethod(methodName)!;
+            MethodInfo method = toolsType.GetMethod(
+                embeddedProjectionName
+                    ? methodName.Replace("Probe", "ProjectionProbe", StringComparison.Ordinal)
+                    : methodName)!;
             Assert.Equal(toolName, method.GetCustomAttribute<McpServerToolAttribute>()!.Name);
             string[] parameters = methodName == "GetProbeAtVersionAsync"
                 ? ["entityId", "version", "cancellationToken"]
@@ -260,13 +278,14 @@ public sealed class McpProjectionDtoExecutionTests
         bool hasHttpEndpoints,
         bool customMapper,
         bool missing,
-        bool missingHttpPath = false
+        bool missingHttpPath = false,
+        bool embeddedProjectionName = false
     )
     {
         AssemblyLoadContext loadContext = new(Guid.NewGuid().ToString("N"), true);
         try
         {
-            Assembly assembly = CompileConsumer(hasHttpEndpoints, loadContext, missingHttpPath);
+            Assembly assembly = CompileConsumer(hasHttpEndpoints, loadContext, missingHttpPath, embeddedProjectionName);
             using CancellationTokenSource cancellation = new();
             MethodInfo method = assembly.GetType("Consumer", true)!.GetMethod("RunAsync")!;
             Task<string[]> task = (Task<string[]>)method.Invoke(null, [customMapper, missing, cancellation.Token])!;
@@ -290,6 +309,23 @@ public sealed class McpProjectionDtoExecutionTests
         using JsonDocument exact = JsonDocument.Parse(results[1]);
         Assert.Equal(1123m, latest.RootElement.GetProperty("amount").GetDecimal());
         Assert.Equal(1100m, exact.RootElement.GetProperty("amount").GetDecimal());
+    }
+
+    /// <summary>
+    ///     A projection name containing the suffix word retains its leading name through all generated registrations.
+    /// </summary>
+    /// <param name="hasHttpEndpoints">Whether the projection also opts into HTTP endpoints.</param>
+    /// <returns>The asynchronous test operation.</returns>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task EmbeddedProjectionNameResolvesMappingsAsync(
+        bool hasHttpEndpoints
+    )
+    {
+        string[] results = await ExecuteAsync(hasHttpEndpoints, true, false, embeddedProjectionName: true);
+        using JsonDocument latest = JsonDocument.Parse(results[0]);
+        Assert.Equal(1123m, latest.RootElement.GetProperty("amount").GetDecimal());
     }
 
     /// <summary>
