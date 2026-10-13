@@ -32,11 +32,14 @@ public sealed class McpProjectionDtoExecutionTests
         AssemblyLoadContext loadContext,
         bool missingHttpPath = false,
         bool embeddedProjectionName = false,
-        bool includeSiloRegistrations = false
+        bool includeSiloRegistrations = false,
+        string? jsonIgnoreAttribute = null,
+        bool nullSecret = false
     )
     {
         string projectionSource = $$"""
                                     using System.Collections.Immutable;
+                                    using System.Text.Json.Serialization;
                                     using Mississippi.Brooks.Abstractions.Attributes;
                                     using Mississippi.Inlet.Abstractions;
                                     using Mississippi.Inlet.Generators.Abstractions;
@@ -47,7 +50,12 @@ public sealed class McpProjectionDtoExecutionTests
 
                                     public enum ProbeStatus { Unknown, Active }
                                     [GenerateSerializer, Alias("TestApp.Domain.Projections.Probe.ProbeItem")]
-                                    public sealed record ProbeItem { [Id(0)] public string Id { get; init; } = string.Empty; }
+                                    public sealed record ProbeItem
+                                    {
+                                        [Id(0)] public string Id { get; init; } = string.Empty;
+                                        {{jsonIgnoreAttribute}}
+                                        [Id(1)] public string? Secret { get; init; }
+                                    }
 
                                     [GenerateMcpReadTool(ToolName = "read_probe", Title = "Read Probe")]
                                     [BrookName("TESTAPP", "TEST", "PROBE")]
@@ -60,6 +68,8 @@ public sealed class McpProjectionDtoExecutionTests
                                         [Id(0)] public decimal Amount { get; init; }
                                         [Id(1)] public ProbeStatus Status { get; init; }
                                         [Id(2)] public ImmutableArray<ProbeItem> Items { get; init; } = [];
+                                        {{jsonIgnoreAttribute}}
+                                        [Id(3)] public string? Secret { get; init; }
                                     }
                                     {{(includeSiloRegistrations ? """
                                                                   [EventStorageName("TESTAPP", "TEST", "AMOUNTSET", version: 1)]
@@ -139,7 +149,7 @@ public sealed class McpProjectionDtoExecutionTests
         Assert.Single(names, name => name == "ProbeProjectionMapperRegistrations.g.cs");
         Assert.Equal(hasHttpEndpoints, names.Contains("ProbeController.g.cs", StringComparer.Ordinal));
         Assert.Empty(output.GetDiagnostics().Where(d => d.Severity >= DiagnosticSeverity.Warning));
-        string consumerSource = ConsumerSource(hasHttpEndpoints, includeSiloRegistrations);
+        string consumerSource = ConsumerSource(hasHttpEndpoints, includeSiloRegistrations, nullSecret);
         if (embeddedProjectionName)
         {
             consumerSource = consumerSource.Replace("Probe", "ProjectionProbe", StringComparison.Ordinal);
@@ -177,7 +187,8 @@ public sealed class McpProjectionDtoExecutionTests
 
     private static string ConsumerSource(
         bool hasHttpEndpoints,
-        bool includeSiloRegistrations
+        bool includeSiloRegistrations,
+        bool nullSecret
     ) =>
         $$"""
           using System;
@@ -218,8 +229,9 @@ public sealed class McpProjectionDtoExecutionTests
               public static async Task<string[]> RunAsync(bool customMapper, bool missing, CancellationToken token)
               {
                   var latest = new ProbeProjection { Amount = 123m, Status = ProbeStatus.Active,
-                      Items = [new ProbeItem { Id = "latest" }] };
-                  var historical = latest with { Amount = 100m, Items = [new ProbeItem { Id = "historical" }] };
+                      Secret = {{(nullSecret ? "null" : "\"sensitive\"")}},
+                      Items = [new ProbeItem { Id = "latest", Secret = {{(nullSecret ? "null" : "\"sensitive\"")}} }] };
+                  var historical = latest with { Amount = 100m, Items = [latest.Items[0] with { Id = "historical" }] };
                   var grain = new ProbeGrain(missing ? null : latest, missing ? null : historical, token);
                   IUxProjectionGrainFactory factory = new ProbeFactory(grain);
                   var hostBuilder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { DisableDefaults = true });
@@ -276,7 +288,8 @@ public sealed class McpProjectionDtoExecutionTests
               {
                   Calls++;
                   return new ProbeDto { Amount = source.Amount + 1000m, Status = (ProbeStatusDto)source.Status,
-                      Items = source.Items.Select(item => new ProbeItemDto { Id = "mapped-" + item.Id }).ToImmutableArray() };
+                      Secret = source.Secret,
+                      Items = source.Items.Select(item => new ProbeItemDto { Id = "mapped-" + item.Id, Secret = item.Secret }).ToImmutableArray() };
               }
           }
 
@@ -330,13 +343,21 @@ public sealed class McpProjectionDtoExecutionTests
         bool customMapper,
         bool missing,
         bool missingHttpPath = false,
-        bool embeddedProjectionName = false
+        bool embeddedProjectionName = false,
+        string? jsonIgnoreAttribute = null,
+        bool nullSecret = false
     )
     {
         AssemblyLoadContext loadContext = new(Guid.NewGuid().ToString("N"), true);
         try
         {
-            Assembly assembly = CompileConsumer(hasHttpEndpoints, loadContext, missingHttpPath, embeddedProjectionName);
+            Assembly assembly = CompileConsumer(
+                hasHttpEndpoints,
+                loadContext,
+                missingHttpPath,
+                embeddedProjectionName,
+                jsonIgnoreAttribute: jsonIgnoreAttribute,
+                nullSecret: nullSecret);
             using CancellationTokenSource cancellation = new();
             MethodInfo method = assembly.GetType("Consumer", true)!.GetMethod("RunAsync")!;
             Task<string[]> task = (Task<string[]>)method.Invoke(null, [customMapper, missing, cancellation.Token])!;
@@ -377,6 +398,54 @@ public sealed class McpProjectionDtoExecutionTests
         string[] results = await ExecuteAsync(hasHttpEndpoints, true, false, embeddedProjectionName: true);
         using JsonDocument latest = JsonDocument.Parse(results[0]);
         Assert.Equal(1123m, latest.RootElement.GetProperty("amount").GetDecimal());
+    }
+
+    /// <summary>
+    ///     Source JSON exclusions survive mapping for root and collection-item properties on both transports.
+    /// </summary>
+    /// <param name="attribute">The source property's JSON exclusion metadata.</param>
+    /// <param name="hasHttpEndpoints">Whether the projection also opts into HTTP endpoints.</param>
+    /// <param name="customMapper">Whether the host replaces the generated mapping.</param>
+    /// <param name="nullSecret">Whether the source values are null.</param>
+    /// <param name="serialized">Whether the selected condition permits the values in the response.</param>
+    /// <returns>The asynchronous test operation.</returns>
+    [Theory]
+    [InlineData("[JsonIgnore]", true, false, false, false)]
+    [InlineData("[JsonIgnore]", false, false, false, false)]
+    [InlineData("[JsonIgnore]", true, true, false, false)]
+    [InlineData("[JsonIgnore]", false, true, false, false)]
+    [InlineData("[JsonIgnore(Condition = JsonIgnoreCondition.Always)]", true, false, false, false)]
+    [InlineData("[JsonIgnore(Condition = JsonIgnoreCondition.Never)]", true, false, false, true)]
+    [InlineData("[JsonIgnore(Condition = JsonIgnoreCondition.Never)]", false, true, true, true)]
+    [InlineData("[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]", true, false, true, false)]
+    [InlineData("[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]", false, true, false, true)]
+    [InlineData("[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]", false, true, true, false)]
+    [InlineData("[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]", true, false, false, true)]
+    [InlineData("[JsonIgnore(Condition = JsonIgnoreCondition.WhenWriting)]", false, false, false, false)]
+    [InlineData("[JsonIgnore(Condition = JsonIgnoreCondition.WhenReading)]", true, true, false, true)]
+    public async Task JsonExclusionsSurviveMappingAsync(
+        string attribute,
+        bool hasHttpEndpoints,
+        bool customMapper,
+        bool nullSecret,
+        bool serialized
+    )
+    {
+        string[] results = await ExecuteAsync(
+            hasHttpEndpoints,
+            customMapper,
+            false,
+            jsonIgnoreAttribute: attribute,
+            nullSecret: nullSecret);
+        string[] responses = hasHttpEndpoints
+            ? [results[0], results[1], results[3], results[4]]
+            : [results[0], results[1]];
+        foreach (string result in responses)
+        {
+            using JsonDocument json = JsonDocument.Parse(result);
+            Assert.Equal(serialized, json.RootElement.TryGetProperty("secret", out var _));
+            Assert.Equal(serialized, json.RootElement.GetProperty("items")[0].TryGetProperty("secret", out var _));
+        }
     }
 
     /// <summary>

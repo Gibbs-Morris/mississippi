@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
@@ -57,6 +58,40 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     private const string ProjectionPathAttributeFullName = "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
 
     private const string SystemNamespace = "System";
+
+    /// <summary>
+    ///     Emits a DTO property while retaining source JSON exclusions and compatible required-member metadata.
+    /// </summary>
+    private static void AppendDtoProperty(
+        SourceBuilder builder,
+        PropertyModel property
+    )
+    {
+        builder.AppendSummary($"Gets the {property.Name} value.");
+        AttributeData? ignoreAttribute = property.SourcePropertySymbol.GetAttributes()
+            .FirstOrDefault(attribute => attribute.AttributeClass?.ToDisplayString() ==
+                                         "System.Text.Json.Serialization.JsonIgnoreAttribute");
+        TypedConstant condition =
+            ignoreAttribute?.NamedArguments.FirstOrDefault(argument => argument.Key == "Condition").Value ?? default;
+        if (ignoreAttribute is not null)
+        {
+            string expression = condition.Kind == TypedConstantKind.Enum
+                ? condition.ToCSharpString()
+                : "global::System.Text.Json.Serialization.JsonIgnoreCondition.Always";
+            builder.AppendLine($"[JsonIgnore(Condition = {expression})]");
+        }
+
+        bool required = ignoreAttribute is null || condition.Value is 0;
+        if (required)
+        {
+            builder.AppendLine("[JsonRequired]");
+        }
+
+        string modifier = required ? "required " : string.Empty;
+        string initializer = required ? string.Empty : " = default!;";
+        builder.AppendLine($"public {modifier}{property.DtoTypeName} {property.Name} {{ get; init; }}{initializer}");
+        builder.AppendLine();
+    }
 
     /// <summary>
     ///     Derives the output namespace from the compilation target root namespace.
@@ -285,10 +320,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.OpenBrace();
         foreach (PropertyModel prop in projection.Model.Properties)
         {
-            sb.AppendSummary($"Gets the {prop.Name} value.");
-            sb.AppendLine("[JsonRequired]");
-            sb.AppendLine($"public required {prop.DtoTypeName} {prop.Name} {{ get; init; }}");
-            sb.AppendLine();
+            AppendDtoProperty(sb, prop);
         }
 
         sb.CloseBrace();
@@ -633,11 +665,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             .ToArray();
         foreach (IPropertySymbol prop in properties)
         {
-            string propDtoTypeName = TypeAnalyzer.GetDtoTypeName(prop.Type);
-            sb.AppendSummary($"Gets the {prop.Name} value.");
-            sb.AppendLine("[JsonRequired]");
-            sb.AppendLine($"public required {propDtoTypeName} {prop.Name} {{ get; init; }}");
-            sb.AppendLine();
+            AppendDtoProperty(sb, new(prop));
         }
 
         sb.CloseBrace();

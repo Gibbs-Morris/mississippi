@@ -107,6 +107,8 @@ Gateway DTOs remain in `<Gateway>.Controllers.Projections`, and their mapper ext
 
 Earlier generated MCP reads serialized the domain projection directly. Latest and exact-version reads now serialize the mapped DTO, so consumers must handle any values or shapes changed by the mapping. For example, a custom mapper that adds 1,000 to an `Amount` of 123 now returns `"amount":1123` instead of `"amount":123`. Update MCP consumers that relied on raw domain values, and supply the mapper when constructing generated tool classes directly.
 
+Generated server DTO properties retain source `[JsonIgnore]` conditions, including properties on generated collection-item DTOs. These exclusions apply after default or custom mapping on both HTTP and MCP reads. An ignored or conditionally ignored property remains available to CLR mappers but is optional in the DTO; `[JsonIgnore(Condition = JsonIgnoreCondition.Never)]` retains the usual required property contract. See the [JSON ignore conditions](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonignorecondition?view=net-10.0) for serialization and deserialization behavior.
+
 Tool names and parameters, cancellation forwarding, version-only results, and existing not-found messages retain their contracts. This mapping correction does not establish HTTP/MCP authorization parity; configure MCP access separately as described above.
 
 ## Projection Identity Across The Boundary
