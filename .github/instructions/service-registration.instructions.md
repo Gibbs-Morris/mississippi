@@ -24,7 +24,7 @@ Governing thought: Use hierarchical synchronous `ServiceRegistration` extension 
 - Outside the proposed guide's activation scope, options validation **MUST** run before the host serves work, using ValidateOnStart or an explicit validated startup lifecycle. Why: IValidateOptions supplies validation logic but does not by itself trigger eager validation.
 - External clients **MUST** be accepted or constructed via factories. Why: Keeps registration testable and defers client construction.
 - Within the proposed guide's activation scope, connection strings **MUST** be configured through validated feature options. Why: Deployment configuration belongs to the options pipeline.
-- Within that activation scope, factories constructing external clients **MUST** consume those validated options. Why: Client construction cannot bypass configuration binding and validation.
+- Within that activation scope, factories constructing external clients from connection strings **MUST** obtain those strings from validated feature options. Why: Client construction cannot bypass connection-string binding and validation.
 - Outside that activation scope, connection strings **MUST** retain factory-based configuration. Why: Deferred adoption does not remove the existing registration boundary.
 - Package version entries **MUST NOT** be added in project files. Why: Central Package Management owns dependency versions.
 - Registered services **MUST** use the DI get-only property pattern. Why: Aligns with shared guardrails and logging patterns.
