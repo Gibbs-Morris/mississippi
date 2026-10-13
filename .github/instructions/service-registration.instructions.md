@@ -4,7 +4,7 @@ applyTo: '**/*.cs'
 
 # Service Registration Pattern
 
-Governing thought: Use hierarchical `ServiceRegistration` extension methods with options-based overloads for features with bindable options and synchronous registration; defer async work to hosted services or Orleans lifecycle participants.
+Governing thought: Use hierarchical synchronous `ServiceRegistration` extension methods with overloads selected by the applicable contract; defer async work to hosted services or Orleans lifecycle participants.
 
 > Drift check: Review DI settings in `Directory.Build.props` and any referenced scripts/config before editing registration code.
 
@@ -18,6 +18,9 @@ Governing thought: Use hierarchical `ServiceRegistration` extension methods with
 - Any async initialization **MUST** be deferred to `IHostedService` or Orleans lifecycle participants; async factories **MUST** be registered for deferred work rather than blocking registration. Why: Avoids startup deadlocks.
 - Classes **MUST NOT** inject `IServiceProvider` directly; use explicit dependencies or `Lazy<T>` to break circular dependencies. Factory patterns resolving services at runtime are the only acceptable exception. Why: Service locator hides dependencies, complicates testing, and breaks static analysis.
 - Configuration forms, required identity arguments, options validation, and attribute ownership **MUST** follow [metadata and host composition](metadata-and-composition.instructions.md) within its activation scope. Why: Adopted contracts use real configurable options while repository-wide adoption awaits ADR acceptance.
+- Outside the proposed guide's activation scope, constructors **MUST NOT** take raw configuration primitives. Why: The existing options-pipeline safeguard remains in effect.
+- Outside the proposed guide's activation scope, registration **MUST** retain overloads for `Action<TOptions>`, `IConfiguration`, and explicit parameters. Why: The proposed conditional-overload policy does not replace baseline requirements for unrelated work before ADR acceptance.
+- Outside the proposed guide's activation scope, options classes **MUST** retain `{Feature}Options` names with sensible defaults and validation through ValidateOnStart/IValidateOptions. Why: Deferred adoption does not remove baseline options safeguards.
 - Connection strings and external clients **MUST** be accepted/configured via factories; package version entries **MUST NOT** be added in project files. Why: Keeps registration testable and CPM-compliant.
 - Registered services **MUST** use the DI get-only property pattern. Why: Aligns with shared guardrails and logging patterns.
 - Registration classes **SHOULD** be static and minimal. Why: Keeps the extension-method surface focused.
