@@ -35,7 +35,8 @@ consumers or make the proposed replacements available.
 ### Options
 
 - Host, deployment, and runtime tuning or defaults MUST use feature-owned {Feature}Options through the existing DI options pipeline. Why: Timeouts, retention defaults, transport settings, and access defaults belong to the host.
-- Configurable options MUST have documented defaults, configuration/callback ordering, validation, and startup validation through ValidateOnStart or IValidateOptions. Why: Invalid configuration should fail before serving work.
+- Configurable options MUST document their defaults and configuration/callback ordering. Why: Consumers need the effective configuration contract.
+- Options validation MUST run before the host serves work, using ValidateOnStart or an explicit validated startup lifecycle. Why: IValidateOptions supplies validation logic but does not by itself trigger eager validation.
 - Ordinary service constructors MUST consume options through `IOptions<T>`, `IOptionsSnapshot<T>`, or `IOptionsMonitor<T>` rather than raw configuration primitives. Why: One pipeline owns binding and validation.
 - Registration MUST NOT create hidden Configure branches, new-options copies, or a temporary provider that bypasses that pipeline. Why: Consumers should receive the same validated effective configuration.
 - An options contract MUST state whether it supports named instances, reload, or a fixed startup snapshot. Why: Binding alone does not establish those capabilities.
