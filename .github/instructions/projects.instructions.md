@@ -16,6 +16,18 @@ Governing thought: Keep `.csproj` files minimal, CPM-driven, and free of duplica
 - Automatic assembly/root namespace naming **MUST NOT** be overridden without explicit justification. Why: Preserves naming consistency.
 - Project changes **MUST** be validated by a clean build with zero warnings. Why: Aligns with repository quality gates.
 
+### Naming
+
+- Project names **MUST** follow `<Feature>.<Role>` using PascalCase dot-separated segments.
+- Role values **MUST** be one of: `Abstractions`, `Core`, `Domain`, `Client`, `Gateway`, `Runtime`, `TestHarness`.
+- Domain projects **MUST** contain reusable business behavior composed from existing framework capabilities. Why: Separates enterprise business objects from framework infrastructure.
+- Contributors **MUST** prefer role names over technology names (`Gateway` over `Api`, `Client` over `Blazor`, `Runtime` over `Grains`).
+- Packages **MUST** be single-concern; client/gateway/runtime logic **MUST NOT** be mixed.
+- Feature stems **MUST** stay consistent across related roles (for example `Brooks.Abstractions` + `Brooks.Runtime`).
+- Test support packages **MUST** use `TestHarness` suffix.
+- Storage provider packages **SHOULD** use `<Feature>.Runtime.Storage.<Provider>`.
+- Serialization provider packages **SHOULD** use `<Feature>.Serialization.<Format>`.
+
 ## Scope and Audience
 
 Anyone creating or modifying `.csproj` files.
@@ -24,26 +36,17 @@ Anyone creating or modifying `.csproj` files.
 
 Projects under `src/` follow a consistent naming pattern. `Directory.Build.props` adds `Mississippi.` to package/assembly identity, so folder names stay unprefixed.
 
-### Naming Rules (RFC 2119)
-
-- Project names **MUST** follow `<Feature>.<Role>` using PascalCase dot-separated segments.
-- Role values **MUST** be one of: `Abstractions`, `Core`, `Client`, `Gateway`, `Runtime`, `TestHarness`.
-- Contributors **MUST** prefer role names over technology names (`Gateway` over `Api`, `Client` over `Blazor`, `Runtime` over `Grains`).
-- Packages **MUST** be single-concern; client/gateway/runtime logic **MUST NOT** be mixed.
-- Feature stems **MUST** stay consistent across related roles (for example `Brooks.Abstractions` + `Brooks.Runtime`).
-- Test support packages **MUST** use `TestHarness` suffix.
-- Storage provider packages **SHOULD** use `<Feature>.Runtime.Storage.<Provider>`.
-- Serialization provider packages **SHOULD** use `<Feature>.Serialization.<Format>`.
-
 ### Role Detection (Validation)
 
 | SDK/Reference | Expected Role |
 |---------------|---------------|
 | `Microsoft.NET.Sdk.Razor` | `.Client` |
 | `<FrameworkReference>` to `Microsoft.AspNetCore.App` | `.Gateway` (takes precedence) |
-| `Microsoft.Orleans.Sdk` (without AspNet) | `.Runtime` or `.Abstractions` |
+| `Microsoft.Orleans.Sdk` (without AspNet) | `.Runtime`, `.Abstractions`, or `.Domain` |
 
 Precedence: `AspNet` > `Orleans` when both are present.
+
+Use `.Domain` when Orleans supports business objects built on existing aggregates, projections, and sagas. Use `.Runtime` for framework execution infrastructure. For example, `Undercurrent.Abstractions` defines public enterprise contracts and `Undercurrent.Domain` implements their behavior.
 
 ### Three-Layer Architecture (EventSourcing)
 

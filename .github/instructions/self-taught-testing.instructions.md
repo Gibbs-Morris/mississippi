@@ -18,6 +18,8 @@ Governing thought: Test observable failure cases and keep test evidence accurate
 
 - Agents collecting test results **SHOULD** select the artifact paths reported by the run. Why: PR #899's collector parsed a JSON timestamp again, changed 9 October to 10 September, and included three historical RED reports.
 
+- Storage-sizing fixtures **SHOULD** use the provider's actual payload type and encoding. Why: PR #1108's JSON fixture encoded `ImmutableArray<byte>` as numeric elements, falsely failing the Cosmos size check; the provider's `byte[]` encodes as base64.
+
 ## Scope and Audience
 
 Agents writing or validating tests under `tests/**`.

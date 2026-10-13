@@ -109,6 +109,52 @@ The repository includes sample applications demonstrating the framework:
 - **Spring** — A full-stack event-sourced application with Orleans silo, ASP.NET API, and Blazor WASM client. Run `pwsh ./run-spring.ps1` to launch. Explore [`samples/Spring/Spring.Domain`](samples/Spring/Spring.Domain) for the domain model.
 - **Crescent** — A minimal Aspire AppHost sample for integration testing patterns.
 
+## Configure Undercurrent notifications
+
+Undercurrent provides a per-user notification inbox built on the existing Mississippi aggregate runtime. After configuring the runtime and serialization in your host, register its business policy:
+
+```csharp
+using Mississippi.Undercurrent.Domain;
+
+services.AddUndercurrentDomain(options =>
+{
+    options.Notifications.MaxNotifications = 1_000;
+    options.Notifications.MaxCreationReceipts = 10_000;
+    options.Notifications.MaxRequestLifetime = TimeSpan.FromDays(7);
+    options.Notifications.MaxSnapshotSizeBytes = 1_000_000;
+});
+```
+
+You can also bind the same policy from a configuration section with `services.AddUndercurrentDomain(configuration.GetSection("Undercurrent"))`. Invalid configuration fails startup. The [public notification options](src/Undercurrent.Abstractions/Aggregates/UserNotifications/UserNotificationsOptions.cs) document defaults and supported ceilings.
+
+| Option | Default |
+| --- | --- |
+| MaxNotifications | 1,000 |
+| MaxCreationReceipts | 10,000 |
+| MaxRequestLifetime | Seven days |
+| MaxSnapshotSizeBytes | 1,000,000 payload bytes |
+| MaxCreationKeyLength | 256 |
+| MaxTitleLength | 200 |
+| MaxDescriptionLength | 2,000 |
+| MaxIconKeyLength | 128 |
+| MaxNavigationTargetLength | 2,048 |
+
+Length limits count UTF-16 code units. A new creation at inbox capacity removes the oldest notification, including unread entries. If unexpired receipts fill their separate cap, new creation fails without changing the inbox. Count caps bound current aggregate state; event history and stored snapshots have separate retention.
+
+Creation and first-read commands check the complete candidate state with the registered snapshot converter. If its payload exceeds `MaxSnapshotSizeBytes`, they return `InvalidState` with no events, eviction or receipt removal. This can happen before either count cap; marking a notification as read adds a timestamp. Matching creation retries and repeated reads remain no-ops. Delete and cleanup remain available to reduce stored state after limits are lowered.
+
+The default payload limit leaves room for base64 encoding and snapshot document metadata within [Cosmos DB's 2 MB item limit](https://learn.microsoft.com/en-us/azure/cosmos-db/concepts-limits#per-item-limits). Hosts can raise it for larger snapshot storage, but must verify their complete stored document, including provider metadata and user keys. The byte limit measures serialized payload, not resident memory; each growth check serializes the candidate state.
+
+Direct callers use the public state and commands in `Mississippi.Undercurrent.Abstractions.Aggregates.UserNotifications` and its `Commands` namespace with `IAggregateGrainFactory.GetGenericAggregate<UserNotificationsAggregate>(userId)`. The application supplies the opaque user key and remains responsible for identity formatting, tenant qualification, and authorization.
+
+`CreateNotification` requires a stable per-user `CreationKey`, a title, and a fixed `ExpiresAt`. Optional description, symbolic icon key, and `NavigationTarget` are preserved as supplied. The handler assigns a GUID string notification ID and server UTC creation time. Creation returns the existing success/failure result; notification IDs are available through aggregate state.
+
+Persist the original creation request in your producer's retry workflow and reuse it unchanged. Matching retained requests succeed without new events while their notification remains. Changed content or expiry conflicts; matching deleted or evicted requests return an already-deleted error. Expired deleted receipts can be pruned, after which the unchanged expired request fails. Refreshing its expiry creates a different request and defeats the bounded retry contract once its old receipt is forgotten. Request expiry does not expire the notification.
+
+Mark-as-read targets the generated notification ID and preserves the first read time. Delete-by-ID is a successful no-op when absent. `DeleteNotificationsBefore` removes notifications whose creation time is strictly before its caller-supplied `Before` instant.
+
+Configuration is captured for command handling. Replay uses recorded creations, eviction IDs, and expiry cutoffs without consulting current policy or clocks. Changed limits do not silently trim state during loading or change recorded request deadlines. Public service wrappers, projections, clients, and tenant-specific policy resolution remain later increments.
+
 ## Testing
 
 ### Validate Spring after a change
