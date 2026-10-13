@@ -22,7 +22,9 @@ Governing thought: ADRs use the MADR 4.0.0 template, live in `docs/Docusaurus/do
 - Authors **SHOULD** prefer `sequenceDiagram` for interactions over time, `flowchart` for process or decision flow, and simple architecture or C4-style Mermaid for structural relationships. Why: Default mappings reduce diagram-choice churn and improve reviewer consistency.
 - Accepted ADRs **MUST NOT** have their Context or Decision Outcome sections modified; if a decision changes, a new ADR **MUST** be created with status `superseded by [ADR-NNNN](NNNN-title.md)` on the original. Why: Immutability preserves historical reasoning.
 - Status values **MUST** be one of: `proposed`, `accepted`, `deprecated`, `superseded by [ADR-NNNN](NNNN-title.md)`. Why: Defined lifecycle with traceability.
-- ADR cross-references **MUST** use relative Markdown links. Why: Keeps links valid across environments.
+- ADR cross-references to other ADRs and published documentation targets **MUST** use relative Markdown links. Why: Those targets remain portable across routes, branches, and forks.
+- ADR references to repository files outside the published document map **MUST** use verified immutable source URLs. Why: An ordinary relative source-file link has no published document route; a mutable main-branch URL can be missing or change after review.
+- Those immutable source references **MUST** identify their historical reviewed revision. Why: Readers can distinguish recorded evidence from their current checkout's operative guidance.
 - ADRs **SHOULD** be written during or before the decision, not after. Why: Writing forces clarity; retrospective ADRs lose context.
 - Only decisions meeting the ADR threshold **SHOULD** be recorded: affects structure, hard to reverse, crosses component boundaries, involves significant trade-offs, or sets a precedent. Why: Prevents trivial decisions from cluttering the log.
 
