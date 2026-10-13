@@ -64,7 +64,7 @@
     <PackageVersion Include="Aspire.Hosting.Orleans" Version="13.6.0" />
     <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="13.6.0" />
     <PackageVersion Include="Aspire.Azure.Storage.Queues" Version="13.6.0" />
-    <PackageVersion Include="Aspire.Azure.Data.Tables" Version="13.6.0" />
+    <PackageVersion Include="Aspire.Azure.Data.Tables" Version="13.6.1" />
     <PackageVersion Include="Aspire.Microsoft.Azure.Cosmos" Version="13.6.0" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="13.6.0" />
     <!-- Playwright for E2E tests -->
