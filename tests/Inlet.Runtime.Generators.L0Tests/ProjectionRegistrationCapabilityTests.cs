@@ -517,6 +517,85 @@ public sealed class ProjectionRegistrationCapabilityTests
     }
 
     /// <summary>
+    ///     Reducerless projections retain complete runtime registration without HTTP output.
+    /// </summary>
+    /// <param name="referencedAssembly">Whether the projection is supplied by a referenced domain assembly.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReducerlessProjectionsCompileAndRegister(
+        bool referencedAssembly
+    )
+    {
+        string source = CreateSource(true, false);
+        source = source[..source.IndexOf(
+            "namespace TestApp.Domain.Projections.AccountBalance.Reducers",
+            StringComparison.Ordinal)];
+        using MemoryStream domainImage = new();
+        CSharpCompilation input;
+        if (referencedAssembly)
+        {
+            CSharpCompilation domain = CreateCompilation(source).WithAssemblyName("TestApp.Domain");
+            EmitResult emitted = domain.Emit(domainImage, cancellationToken: TestContext.Current.CancellationToken);
+            Assert.True(emitted.Success, string.Join(Environment.NewLine, emitted.Diagnostics));
+            input = CreateCompilation(string.Empty)
+                .AddReferences(MetadataReference.CreateFromImage(domainImage.ToArray()));
+        }
+        else
+        {
+            input = CreateCompilation(source);
+        }
+
+        (Compilation output, GeneratorDriverRunResult result) = Generate(true, false, input: input);
+        Assert.Single(result.Results[0].GeneratedSources);
+        Assert.Single(result.Results[1].GeneratedSources);
+        Assert.Empty(result.Results[2].GeneratedSources);
+        ProjectionFixtureLoadContext context = new();
+        try
+        {
+            Assembly? domainAssembly = null;
+            if (referencedAssembly)
+            {
+                domainImage.Position = 0;
+                domainAssembly = context.LoadFromStream(domainImage);
+            }
+
+            Assembly siloAssembly = LoadFixture(output, context);
+            Assembly projectionAssembly = domainAssembly ?? siloAssembly;
+            Type stateType = projectionAssembly.GetType(
+                "TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection",
+                true)!;
+            MethodInfo domain = GetDomainRegistration(siloAssembly);
+            MethodInfo projection = siloAssembly.GetTypes()
+                .Single(type => type.Name == "AccountBalanceProjectionRegistrations")
+                .GetMethod("AddAccountBalanceProjection")!;
+            ServiceCollection services = new();
+            Assert.Same(services, domain.Invoke(null, [services]));
+            Assert.Same(services, projection.Invoke(null, [services]));
+            Assert.Same(services, domain.Invoke(null, [services]));
+            Type rootContract = typeof(IRootReducer<>).MakeGenericType(stateType);
+            Assert.Single(services, item => item.ServiceType == rootContract);
+            Assert.Single(
+                services,
+                item => item.ServiceType == typeof(ISnapshotStateConverter<>).MakeGenericType(stateType));
+            Assert.DoesNotContain(
+                services,
+                item => item.ServiceType == typeof(IEventReducer<>).MakeGenericType(stateType));
+            Assert.Single(services, item => item.ServiceType == typeof(IUxProjectionGrainFactory));
+            using ServiceProvider provider = services.BuildServiceProvider();
+            object state = Activator.CreateInstance(stateType)!;
+            object root = provider.GetRequiredService(rootContract);
+            Assert.Same(
+                state,
+                rootContract.GetMethod(nameof(IRootReducer<object>.Reduce))!.Invoke(root, [state, new()]));
+        }
+        finally
+        {
+            context.Unload();
+        }
+    }
+
+    /// <summary>
     ///     Referenced saga reducers are discovered once through their emitted symbols.
     /// </summary>
     /// <param name="authoredReducer">Whether the referenced domain also contains an authored reducer.</param>
