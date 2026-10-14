@@ -28,6 +28,7 @@ Governing thought: Use hierarchical `ServiceRegistration` extension methods with
 
 - Domain registration **MUST** expose `Add{Domain}Domain()` in a public static `{Domain}DomainRegistrations` class, composing private `Add{Aggregate}Aggregate()` and `Add{Projection}Projection()` methods for components that exist. Why: Hierarchy keeps feature wiring discoverable without inventing projection command handlers.
 - Domain registration **MUST** register event types, command handlers where present, reducers, and snapshot converters in that order. Why: Keeps composition consistent with the existing domain entry points.
+- A projection host **MUST** register every consumed event type through producer registration or explicit `AddEventType<TEvent>()` wiring. Why: Generated projection registration adds reducers and snapshot conversion, but does not register consumed event types for replay.
 
 ## Scope and Audience
 
@@ -64,7 +65,9 @@ Registration order within aggregates/projections:
 3. `AddReducer<TEvent, TState, TReducer>()` - Register aggregate or projection reducers
 4. `AddSnapshotStateConverter<TState>()` - Register snapshot converter
 
-Projections register their consumed events and reducers. They have no command-handler registration or native event-effect dispatch; external work uses the separate supported paths in the [component outline](domain-modeling.instructions.md#component-responsibilities). [UndercurrentDomainRegistrations](../../src/Undercurrent.Domain/UndercurrentDomainRegistrations.cs) shows feature composition; [SagaRegistrations](../../src/DomainModeling.Runtime/SagaRegistrations.cs) shows named orchestration components.
+Ensure consumed event types are registered in the projection host, including public events from other assemblies when their producing aggregate is not registered there. [Generated projection registration](../../src/Inlet.Runtime.Generators/ProjectionSiloRegistrationGenerator.cs) wires reducers and a snapshot converter; register the producer or add explicit `AddEventType<TEvent>()` calls for the consumed types. [BrookEventConverter](../../src/DomainModeling.Runtime/BrookEventConverter.cs) needs those registry entries to deserialize replayed events.
+
+Projections have no command-handler registration or native event-effect dispatch; external work uses the separate supported paths in the [component outline](domain-modeling.instructions.md#component-responsibilities). [UndercurrentDomainRegistrations](../../src/Undercurrent.Domain/UndercurrentDomainRegistrations.cs) shows feature composition; [SagaRegistrations](../../src/DomainModeling.Runtime/SagaRegistrations.cs) shows named orchestration components.
 
 ## References
 
