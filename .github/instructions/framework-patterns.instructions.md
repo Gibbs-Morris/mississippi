@@ -80,7 +80,7 @@ Contributors building or extending the Mississippi framework under `src/`, inclu
 ### Pattern Hierarchy
 
 ```text
-Framework, application, sample features → Same named domain components
+Production aggregate and projection features → Same named domain components
 Low-level infrastructure → Specialized mechanisms with documented justification
 ```
 
