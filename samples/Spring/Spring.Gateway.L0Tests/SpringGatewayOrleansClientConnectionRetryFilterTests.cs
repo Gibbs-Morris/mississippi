@@ -242,7 +242,7 @@ public sealed class SpringGatewayOrleansClientConnectionRetryFilterTests
     }
 
     /// <summary>
-    ///     Verifies the one-second delay before retrying any startup failure.
+    ///     Verifies the one-second delay before retrying an eligible startup connection failure.
     /// </summary>
     /// <returns>A task representing the test.</returns>
     [Fact]
