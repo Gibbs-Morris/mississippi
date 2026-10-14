@@ -159,6 +159,57 @@ public sealed class ProjectionRegistrationCapabilityTests
     }
 
     /// <summary>
+    ///     Consumer extensions cannot alter the generated registration guard.
+    /// </summary>
+    /// <param name="serviceCollectionOverload">Whether the competing extension targets the service collection.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ConsumerExtensionsCannotChangeRegistrationGuard(
+        bool serviceCollectionOverload
+    )
+    {
+        string genericParameter = serviceCollectionOverload ? string.Empty : "<T>";
+        string elementType = serviceCollectionOverload
+            ? "global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor"
+            : "T";
+        string receiverType = serviceCollectionOverload
+            ? "global::Microsoft.Extensions.DependencyInjection.IServiceCollection"
+            : "global::System.Collections.Generic.IEnumerable<T>";
+        string source = CreateSource(true, false) +
+                        $$"""
+
+                          namespace TestApp.Domain.Projections.AccountBalance.Reducers
+                          {
+                              public static class ConsumerExtensions
+                              {
+                                  public static bool Any{{genericParameter}}(
+                                      this {{receiverType}} source,
+                                      global::System.Func<{{elementType}}, bool> predicate
+                                  ) => false;
+                              }
+                          }
+                          """;
+        (Compilation output, GeneratorDriverRunResult _) = Generate(true, false, source);
+        ProjectionFixtureLoadContext context = new();
+        try
+        {
+            Assembly assembly = LoadFixture(output, context);
+            ServiceCollection services = new();
+            MethodInfo registration = GetDomainRegistration(assembly);
+            Assert.Same(services, registration.Invoke(null, [services]));
+            Assert.Same(services, registration.Invoke(null, [services]));
+            Type state = assembly.GetType("TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection", true)!;
+            Type reducerContract = typeof(IEventReducer<>).MakeGenericType(state);
+            Assert.Single(services, descriptor => descriptor.ServiceType == reducerContract);
+        }
+        finally
+        {
+            context.Unload();
+        }
+    }
+
+    /// <summary>
     ///     Consumer types retain their identity when their name matches the private guard.
     /// </summary>
     /// <param name="consumerTypeName">The projection, event, or reducer name to replace.</param>
