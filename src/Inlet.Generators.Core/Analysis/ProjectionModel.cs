@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -12,6 +13,14 @@ namespace Mississippi.Inlet.Generators.Core.Analysis;
 /// </summary>
 public sealed class ProjectionModel
 {
+    private static readonly DiagnosticDescriptor ConflictingDictionaryDto = new(
+        "INLETPROJ001",
+        "Conflicting dictionary DTO identity",
+        "Source types '{0}' and '{1}' map to the same generated dictionary DTO '{2}'. Rename a source type to use distinct DTO names.",
+        "Inlet.Generators.Core",
+        DiagnosticSeverity.Error,
+        true);
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="ProjectionModel" /> class.
     /// </summary>
@@ -130,4 +139,50 @@ public sealed class ProjectionModel
     ///     Gets the type name (without namespace).
     /// </summary>
     public string TypeName { get; }
+
+    /// <summary>
+    ///     Registers custom dictionary DTO sources and reports conflicting output identities.
+    /// </summary>
+    /// <param name="outputNamespace">The namespace containing the generated DTOs.</param>
+    /// <param name="generatedDtoTypes">The compilation-local registry of dictionary DTO source identities.</param>
+    /// <returns>Diagnostics identifying distinct source types that request the same output identity.</returns>
+    public ImmutableArray<Diagnostic> RegisterDictionaryDtoTypes(
+        string outputNamespace,
+        Dictionary<string, INamedTypeSymbol> generatedDtoTypes
+    )
+    {
+        if (generatedDtoTypes is null)
+        {
+            throw new ArgumentNullException(nameof(generatedDtoTypes));
+        }
+
+        ImmutableArray<Diagnostic>.Builder diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+        foreach (INamedTypeSymbol type in Properties
+                     .Where(property => TypeAnalyzer.IsDictionaryType(property.SourceTypeSymbol))
+                     .SelectMany(property => TypeAnalyzer.GetMappedCollectionTypes(property.SourceTypeSymbol))
+                     .OfType<INamedTypeSymbol>()
+                     .Where(type => type.TypeKind != TypeKind.Enum))
+        {
+            string identity = outputNamespace + "." + TypeAnalyzer.GetDtoTypeName(type);
+            if (generatedDtoTypes.TryGetValue(identity, out INamedTypeSymbol? existing))
+            {
+                if (!SymbolEqualityComparer.Default.Equals(existing, type))
+                {
+                    diagnostics.Add(
+                        Diagnostic.Create(
+                            ConflictingDictionaryDto,
+                            type.Locations.FirstOrDefault() ?? Location.None,
+                            existing.ToDisplayString(),
+                            type.ToDisplayString(),
+                            identity));
+                }
+            }
+            else
+            {
+                generatedDtoTypes.Add(identity, type);
+            }
+        }
+
+        return diagnostics.ToImmutable();
+    }
 }

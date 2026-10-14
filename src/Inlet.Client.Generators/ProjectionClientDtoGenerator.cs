@@ -469,8 +469,22 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
             {
                 HashSet<string> generatedNestedTypes = new();
                 Dictionary<string, INamedTypeSymbol> generatedEnumTypes = new(StringComparer.Ordinal);
+                Dictionary<string, INamedTypeSymbol> generatedDictionaryDtoTypes = new(StringComparer.Ordinal);
                 foreach (ProjectionInfo projection in data.Projections)
                 {
+                    IEnumerable<Diagnostic> dictionaryDiagnostics = projection.Model.RegisterDictionaryDtoTypes(
+                        NamingConventions.GetClientNamespace(projection.Namespace, data.TargetRootNamespace),
+                        generatedDictionaryDtoTypes);
+                    foreach (Diagnostic diagnostic in dictionaryDiagnostics)
+                    {
+                        spc.ReportDiagnostic(diagnostic);
+                    }
+
+                    if (dictionaryDiagnostics.Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error))
+                    {
+                        continue;
+                    }
+
                     GenerateClientDto(
                         spc,
                         projection,

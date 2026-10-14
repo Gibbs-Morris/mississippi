@@ -188,7 +188,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             string nestedMapperSource = GenerateNestedTypeMapper(
                 type,
                 nestedDtoName,
-                type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
+                GetMappedSourceTypeName(projection, type),
                 projection.OutputNamespace);
             context.AddSource($"{nestedDtoName}Mapper.g.cs", SourceText.From(nestedMapperSource, Encoding.UTF8));
             GenerateEnumDtosForNestedType(context, type, projection.OutputNamespace, generatedNestedTypes);
@@ -512,7 +512,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         // Register enum mappers first
         foreach (EnumDtoInfo enumInfo in GetEnumDtosForProjection(projection))
         {
-            string enumSourceTypeName = enumInfo.EnumType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+            string enumSourceTypeName = GetMappedSourceTypeName(projection, enumInfo.EnumType);
             sb.AppendLine(
                 $"services.AddMapper<{enumSourceTypeName}, {enumInfo.DtoName}, {enumInfo.DtoName}{MapperSuffix}>();");
         }
@@ -528,7 +528,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             .ToList();
         foreach (INamedTypeSymbol type in nestedTypes)
         {
-            string sourceName = type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+            string sourceName = GetMappedSourceTypeName(projection, type);
             string dtoName = TypeAnalyzer.GetDtoTypeName(type);
             sb.AppendLine($"services.AddMapper<{sourceName}, {dtoName}, {dtoName}Mapper>();");
         }
@@ -734,6 +734,14 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         string valueSelector = TypeAnalyzer.IsFrameworkType(value)
             ? "pair.Value"
             : $"{GetDictionaryMapperName(property, "Value", model)}.Map(pair.Value)";
+        if (!TypeAnalyzer.IsFrameworkType(value) &&
+            value.IsReferenceType &&
+            (value.NullableAnnotation == NullableAnnotation.Annotated))
+        {
+            valueSelector =
+                $"pair.Value is {{ }} dictionaryValue ? {GetDictionaryMapperName(property, "Value", model)}.Map(dictionaryValue) : null";
+        }
+
         bool immutable = dictionary.ContainingNamespace.ToDisplayString() == ImmutableCollectionsNamespace;
         string conversion = immutable ? "ToImmutableDictionary" : "ToDictionary";
         string source = property.IsNullable ? $"dictionary{propertyIndex}" : $"source.{property.Name}";
@@ -790,6 +798,24 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Fully qualifies dictionary argument sources while retaining other mapper type spelling.
+    /// </summary>
+    private static string GetMappedSourceTypeName(
+        ProjectionInfo projection,
+        INamedTypeSymbol sourceType
+    )
+    {
+        bool dictionaryArgument = projection.Model.Properties
+            .Where(property => TypeAnalyzer.IsDictionaryType(property.SourceTypeSymbol))
+            .SelectMany(property => TypeAnalyzer.GetMappedCollectionTypes(property.SourceTypeSymbol))
+            .Any(type => SymbolEqualityComparer.Default.Equals(type, sourceType));
+        return sourceType.ToDisplayString(
+            dictionaryArgument
+                ? SymbolDisplayFormat.FullyQualifiedFormat
+                : SymbolDisplayFormat.MinimallyQualifiedFormat);
+    }
+
+    /// <summary>
     ///     Gets injected mapper dependencies for a property, keeping dictionary keys and values separate.
     /// </summary>
     private static IEnumerable<(string TypeName, string PropertyName)> GetMapperDependencies(
@@ -802,10 +828,11 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         {
             for (int index = 0; index < dictionary.TypeArguments.Length; index++)
             {
-                ITypeSymbol type = dictionary.TypeArguments[index];
+                ITypeSymbol type = dictionary.TypeArguments[index]
+                    .WithNullableAnnotation(NullableAnnotation.NotAnnotated);
                 if (!TypeAnalyzer.IsFrameworkType(type))
                 {
-                    string sourceName = type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+                    string sourceName = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                     string dtoName = TypeAnalyzer.GetDtoTypeName(type);
                     string argument = index == 0 ? "Key" : "Value";
                     yield return ($"IMapper<{sourceName}, {dtoName}>",
@@ -1006,8 +1033,22 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             static (spc, projections) =>
             {
                 HashSet<string> generatedNestedTypes = new();
+                Dictionary<string, INamedTypeSymbol> generatedDictionaryDtoTypes = new(StringComparer.Ordinal);
                 foreach (ProjectionInfo projection in projections)
                 {
+                    IEnumerable<Diagnostic> dictionaryDiagnostics = projection.Model.RegisterDictionaryDtoTypes(
+                        projection.OutputNamespace,
+                        generatedDictionaryDtoTypes);
+                    foreach (Diagnostic diagnostic in dictionaryDiagnostics)
+                    {
+                        spc.ReportDiagnostic(diagnostic);
+                    }
+
+                    if (dictionaryDiagnostics.Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error))
+                    {
+                        continue;
+                    }
+
                     foreach (Diagnostic diagnostic in projection.Diagnostics)
                     {
                         spc.ReportDiagnostic(diagnostic);

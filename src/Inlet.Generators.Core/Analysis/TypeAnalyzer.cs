@@ -74,7 +74,15 @@ public static class TypeAnalyzer
             ImmutableArray<ITypeSymbol> typeArgs = namedType.TypeArguments;
 
             // Map each type argument
-            IEnumerable<string> mappedArgs = typeArgs.Select(arg => GetDtoTypeName(arg, customTypeSuffix));
+            bool isDictionary = IsDictionaryType(namedType);
+            IEnumerable<string> mappedArgs = typeArgs.Select(arg =>
+                GetDtoTypeName(arg, customTypeSuffix) +
+                (isDictionary &&
+                 arg.IsReferenceType &&
+                 (arg.NullableAnnotation == NullableAnnotation.Annotated) &&
+                 !IsFrameworkType(arg)
+                    ? "?"
+                    : string.Empty));
             string nullableSuffix = IsDictionaryType(namedType) &&
                                     (namedType.NullableAnnotation == NullableAnnotation.Annotated)
                 ? "?"
@@ -135,7 +143,9 @@ public static class TypeAnalyzer
 
         if (IsDictionaryType(typeSymbol) && typeSymbol is INamedTypeSymbol dictionary)
         {
-            return dictionary.TypeArguments.Where(type => !IsFrameworkType(type)).ToImmutableArray();
+            return dictionary.TypeArguments.Where(type => !IsFrameworkType(type))
+                .Select(type => type.WithNullableAnnotation(NullableAnnotation.NotAnnotated))
+                .ToImmutableArray();
         }
 
         ITypeSymbol? element = GetCollectionElementType(typeSymbol);

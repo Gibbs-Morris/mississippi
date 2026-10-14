@@ -151,6 +151,48 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Distinct dictionary source types cannot silently share one generated DTO identity.
+    /// </summary>
+    /// <param name="reverseProperties">Whether the conflicting sources are discovered in reverse order.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DictionaryDtoIdentityConflictsReportBothSources(
+        bool reverseProperties
+    )
+    {
+        string first = "public System.Collections.Generic.Dictionary<string, A.Entry> First { get; init; } = new();";
+        string second = "public System.Collections.Generic.Dictionary<string, B.Entry> Second { get; init; } = new();";
+        string source = $$"""
+                          namespace A { public sealed record Entry { public decimal Amount { get; init; } } }
+                          namespace B { public sealed record Entry { public string Note { get; init; } = string.Empty; } }
+                          namespace TestApp.Domain.Projections.Catalog
+                          {
+                              [Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpoints]
+                              [Mississippi.Inlet.Abstractions.ProjectionPath("catalog")]
+                              public sealed record CatalogProjection
+                              {
+                                  {{(reverseProperties ? second : first)}}
+                                  {{(reverseProperties ? first : second)}}
+                              }
+                          }
+                          """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Assert.Empty(
+            input.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        TestContext.Current.TestOutputHelper?.WriteLine("INPUT_ERRORS=0;FIXTURE_GLOBAL_USING=False");
+        Assert.All(result.Results, generatorResult => Assert.Null(generatorResult.Exception));
+        Diagnostic conflict = Assert.Single(diagnostics, diagnostic => diagnostic.Id == "INLETPROJ001");
+        Assert.Equal(DiagnosticSeverity.Error, conflict.Severity);
+        Assert.Contains("A.Entry", conflict.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("B.Entry", conflict.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("EntryDto", conflict.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Dictionary arguments reuse enums also referenced by their nested DTO properties.
     /// </summary>
     /// <param name="dictionaryType">The declared dictionary type.</param>
@@ -183,6 +225,101 @@ public class ProjectionClientDtoGeneratorTests
             RunGenerator(AttributeStubs, source);
         AssertSuccessfulEnumOutput(output, diagnostics, result, "TestApp.Client.Features.Shared.Dtos.StatusDto");
         Assert.NotNull(output.GetTypeByMetadataName("TestApp.Client.Features.Shared.Dtos.EntryDto"));
+    }
+
+    /// <summary>
+    ///     Client dictionary DTOs retain nullable custom value annotations for every supported shape.
+    /// </summary>
+    /// <param name="dictionaryName">The declared dictionary shape.</param>
+    [Theory]
+    [InlineData("System.Collections.Generic.Dictionary")]
+    [InlineData("System.Collections.Generic.IDictionary")]
+    [InlineData("System.Collections.Generic.IReadOnlyDictionary")]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary")]
+    [InlineData("System.Collections.Immutable.IImmutableDictionary")]
+    public void DictionaryDtosPreserveNullableValues(
+        string dictionaryName
+    )
+    {
+        string source = $$"""
+                          using Mississippi.Inlet.Generators.Abstractions;
+                          using Mississippi.Inlet.Abstractions;
+                          namespace TestApp.Domain.Projections.Catalog;
+                          public sealed record Entry { public decimal Amount { get; init; } }
+                          [GenerateProjectionEndpoints, ProjectionPath("catalog")]
+                          public sealed record CatalogProjection
+                          {
+                              public {{dictionaryName}}<string, Entry?> Entries { get; init; } = default!;
+                          }
+                          """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Assert.Empty(
+            input.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        TestContext.Current.TestOutputHelper?.WriteLine("INPUT_ERRORS=0;FIXTURE_GLOBAL_USING=False");
+        Assert.Empty(diagnostics);
+        Assert.All(result.Results, generatorResult => Assert.Null(generatorResult.Exception));
+        Assert.Empty(
+            output.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        INamedTypeSymbol dto =
+            output.GetTypeByMetadataName("TestApp.Client.Features.Catalog.Dtos.CatalogProjectionDto")!;
+        INamedTypeSymbol entries = (INamedTypeSymbol)dto.GetMembers("Entries").OfType<IPropertySymbol>().Single().Type;
+        Assert.Equal(NullableAnnotation.Annotated, entries.TypeArguments[1].NullableAnnotation);
+        Assert.Single(result.GeneratedTrees, tree => tree.FilePath.EndsWith("EntryDto.g.cs", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    ///     Client dictionary enum arguments retain their underlying integer types and wide member values.
+    /// </summary>
+    /// <param name="dictionaryName">The declared dictionary shape.</param>
+    /// <param name="underlyingType">The source enum's integer type.</param>
+    /// <param name="memberValue">An enum member outside the Int32 range.</param>
+    [Theory]
+    [InlineData("System.Collections.Generic.Dictionary", "long", "long.MinValue")]
+    [InlineData("System.Collections.Generic.Dictionary", "ulong", "ulong.MaxValue")]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary", "long", "long.MinValue")]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary", "ulong", "ulong.MaxValue")]
+    public void DictionaryEnumsPreserveUnderlyingTypes(
+        string dictionaryName,
+        string underlyingType,
+        string memberValue
+    )
+    {
+        string source = $$"""
+                          using Mississippi.Inlet.Generators.Abstractions;
+                          using Mississippi.Inlet.Abstractions;
+                          namespace TestApp.Domain.Projections.Catalog;
+                          public enum Status : {{underlyingType}} { Wide = {{memberValue}} }
+                          [GenerateProjectionEndpoints, ProjectionPath("catalog")]
+                          public sealed record CatalogProjection
+                          {
+                              public {{dictionaryName}}<Status, Status> Entries { get; init; } = default!;
+                          }
+                          """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Assert.Empty(
+            input.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        TestContext.Current.TestOutputHelper?.WriteLine("INPUT_ERRORS=0;FIXTURE_GLOBAL_USING=False");
+        Assert.Empty(diagnostics);
+        Assert.All(result.Results, generatorResult => Assert.Null(generatorResult.Exception));
+        Assert.Empty(
+            output.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        INamedTypeSymbol sourceEnum = input.GetTypeByMetadataName("TestApp.Domain.Projections.Catalog.Status")!;
+        INamedTypeSymbol dtoEnum = output.GetTypeByMetadataName("TestApp.Client.Features.Catalog.Dtos.StatusDto")!;
+        Assert.Equal(sourceEnum.EnumUnderlyingType!.SpecialType, dtoEnum.EnumUnderlyingType!.SpecialType);
+        Assert.Equal(
+            sourceEnum.GetMembers("Wide").OfType<IFieldSymbol>().Single().ConstantValue,
+            dtoEnum.GetMembers("Wide").OfType<IFieldSymbol>().Single().ConstantValue);
+        Assert.Single(
+            result.GeneratedTrees,
+            tree => tree.FilePath.EndsWith("StatusDto.g.cs", StringComparison.Ordinal));
     }
 
     /// <summary>

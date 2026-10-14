@@ -164,6 +164,73 @@ public class ProjectionEndpointsGeneratorTests
     }
 
     /// <summary>
+    ///     Compiles and executes a consumer of the emitted dictionary DTOs, mappers, and registrations.
+    /// </summary>
+    private static bool RunDictionaryConsumer(
+        string source,
+        string consumer
+    )
+    {
+        const string contracts = """
+                                 namespace Microsoft.Extensions.DependencyInjection { public interface IServiceCollection { } }
+                                 namespace Mississippi.Common.Abstractions.Mapping
+                                 {
+                                     public interface IMapper<in TFrom, out TTo> { TTo Map(TFrom source); }
+                                     public interface IEnumerableMapper<in TFrom, out TTo> :
+                                         IMapper<System.Collections.Generic.IEnumerable<TFrom>, System.Collections.Generic.IEnumerable<TTo>> { }
+                                     public static class Registrations
+                                     {
+                                         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddMapper<TFrom, TTo, TMapper>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+                                             where TMapper : class, IMapper<TFrom, TTo> => services;
+                                         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddIEnumerableMapper(this Microsoft.Extensions.DependencyInjection.IServiceCollection services) => services;
+                                     }
+                                 }
+                                 """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, contracts, source);
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Assert.Empty(
+            input.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        TestContext.Current.TestOutputHelper?.WriteLine("INPUT_ERRORS=0;FIXTURE_GLOBAL_USING=False");
+        Assert.Empty(diagnostics);
+        Assert.All(result.Results, generatorResult => Assert.Null(generatorResult.Exception));
+        SyntaxTree[] generated = result.GeneratedTrees
+            .Where(tree => !tree.FilePath.Contains("Controller", StringComparison.Ordinal))
+            .ToArray();
+        foreach (SyntaxTree tree in generated)
+        {
+            TestContext.Current.TestOutputHelper?.WriteLine(
+                $"{tree.FilePath}\n{tree.GetText(TestContext.Current.CancellationToken)}");
+        }
+
+        Compilation compilation = input.AddSyntaxTrees(generated).AddSyntaxTrees(CSharpSyntaxTree.ParseText(consumer));
+        Assert.Empty(
+            compilation.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        INamedTypeSymbol dto = compilation.GetTypeByMetadataName("TestAssembly.Controllers.Projections.CatalogDto")!;
+        INamedTypeSymbol entries = (INamedTypeSymbol)dto.GetMembers("Entries").OfType<IPropertySymbol>().Single().Type;
+        INamedTypeSymbol sourceProjection =
+            input.GetTypeByMetadataName("TestApp.Domain.Projections.Catalog.CatalogProjection")!;
+        INamedTypeSymbol sourceEntries =
+            (INamedTypeSymbol)sourceProjection.GetMembers("Entries").OfType<IPropertySymbol>().Single().Type;
+        Assert.Equal(sourceEntries.TypeArguments[1].NullableAnnotation, entries.TypeArguments[1].NullableAnnotation);
+        using MemoryStream stream = new();
+        Assert.True(compilation.Emit(stream, cancellationToken: TestContext.Current.CancellationToken).Success);
+        stream.Position = 0;
+        AssemblyLoadContext loadContext = new("dictionary-consumer", true);
+        try
+        {
+            Assembly assembly = loadContext.LoadFromStream(stream);
+            return (bool)assembly.GetType("Consumer")!.GetMethod("Verify")!.Invoke(null, null)!;
+        }
+        finally
+        {
+            loadContext.Unload();
+        }
+    }
+
+    /// <summary>
     ///     Creates a Roslyn compilation from the provided source code and runs the generator.
     /// </summary>
     private static (Compilation OutputCompilation, ImmutableArray<Diagnostic> Diagnostics, GeneratorDriverRunResult
@@ -207,6 +274,221 @@ public class ProjectionEndpointsGeneratorTests
             out Compilation outputCompilation,
             out ImmutableArray<Diagnostic> diagnostics);
         return (outputCompilation, diagnostics, driver.GetRunResult());
+    }
+
+    /// <summary>
+    ///     Distinct dictionary source types cannot silently share one generated DTO identity.
+    /// </summary>
+    /// <param name="reverseProperties">Whether the conflicting sources are discovered in reverse order.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DictionaryDtoIdentityConflictsReportBothSources(
+        bool reverseProperties
+    )
+    {
+        string first = "public System.Collections.Generic.Dictionary<string, A.Entry> First { get; init; } = new();";
+        string second = "public System.Collections.Generic.Dictionary<string, B.Entry> Second { get; init; } = new();";
+        string source = $$"""
+                          namespace A { public sealed record Entry { public decimal Amount { get; init; } } }
+                          namespace B { public sealed record Entry { public string Note { get; init; } = string.Empty; } }
+                          namespace TestApp.Domain.Projections.Catalog
+                          {
+                              [Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpoints]
+                              [Mississippi.Inlet.Abstractions.ProjectionPath("catalog")]
+                              public sealed record CatalogProjection
+                              {
+                                  {{(reverseProperties ? second : first)}}
+                                  {{(reverseProperties ? first : second)}}
+                              }
+                          }
+                          """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Assert.Empty(
+            input.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        TestContext.Current.TestOutputHelper?.WriteLine("INPUT_ERRORS=0;FIXTURE_GLOBAL_USING=False");
+        Assert.All(result.Results, generatorResult => Assert.Null(generatorResult.Exception));
+        Diagnostic conflict = Assert.Single(diagnostics, diagnostic => diagnostic.Id == "INLETPROJ001");
+        Assert.Equal(DiagnosticSeverity.Error, conflict.Severity);
+        Assert.Contains("A.Entry", conflict.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("B.Entry", conflict.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("EntryDto", conflict.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Wide enum dictionary arguments retain their underlying types and values.
+    /// </summary>
+    /// <param name="dictionaryName">The declared dictionary shape.</param>
+    /// <param name="underlyingType">The source enum's integer type.</param>
+    /// <param name="memberValue">An enum member outside the Int32 range.</param>
+    [Theory]
+    [InlineData("System.Collections.Generic.Dictionary", "long", "long.MinValue")]
+    [InlineData("System.Collections.Generic.Dictionary", "ulong", "ulong.MaxValue")]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary", "long", "long.MinValue")]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary", "ulong", "ulong.MaxValue")]
+    public void DictionaryEnumsPreserveUnderlyingTypes(
+        string dictionaryName,
+        string underlyingType,
+        string memberValue
+    )
+    {
+        ArgumentNullException.ThrowIfNull(dictionaryName);
+        string source = $$"""
+                          using Mississippi.Inlet.Generators.Abstractions;
+                          using Mississippi.Inlet.Abstractions;
+                          namespace TestApp.Domain.Projections.Catalog;
+                          public enum Status : {{underlyingType}} { Wide = {{memberValue}} }
+                          [GenerateProjectionEndpoints, ProjectionPath("catalog")]
+                          public sealed record CatalogProjection
+                          {
+                              public {{dictionaryName}}<Status, Status> Entries { get; init; } = default!;
+                          }
+                          """;
+        string consumer = $$"""
+                            using TestApp.Domain.Projections.Catalog;
+                            using TestAssembly.Controllers.Projections;
+                            using TestAssembly.Controllers.Projections.Mappers;
+                            public static class Consumer
+                            {
+                                public static bool Verify()
+                                {
+                                    var entries = {{(dictionaryName.Contains("Immutable", StringComparison.Ordinal) ? "System.Collections.Immutable.ImmutableDictionary<Status, Status>.Empty.Add(Status.Wide, Status.Wide)" : "new System.Collections.Generic.Dictionary<Status, Status> { [Status.Wide] = Status.Wide }")}};
+                                    var mapper = new CatalogProjectionMapper(new StatusDtoMapper(), new StatusDtoMapper());
+                                    var mapped = mapper.Map(new CatalogProjection { Entries = entries });
+                                    return mapped.Entries.Count == 1 && mapped.Entries[(StatusDto)Status.Wide] == (StatusDto)Status.Wide
+                                        && System.Enum.GetUnderlyingType(typeof(StatusDto)) == typeof({{underlyingType}});
+                                }
+                            }
+                            """;
+        Assert.True(RunDictionaryConsumer(source, consumer));
+    }
+
+    /// <summary>
+    ///     Qualified custom dictionary arguments compile without consumer global imports.
+    /// </summary>
+    /// <param name="keyType">The qualified source key type.</param>
+    /// <param name="valueType">The qualified source value type.</param>
+    [Theory]
+    [InlineData("Models.Key", "Models.Entry")]
+    [InlineData("string", "Models.Entry")]
+    [InlineData("Models.Status", "int")]
+    [InlineData("string", "Models.Status")]
+    public void DictionaryMappersResolveQualifiedArgumentTypes(
+        string keyType,
+        string valueType
+    )
+    {
+        string source = $$"""
+                          namespace Models
+                          {
+                              public sealed record Key { public string Code { get; init; } = string.Empty; }
+                              public sealed record Entry { public decimal Amount { get; init; } }
+                              public enum Status { Complete = 7 }
+                          }
+                          namespace TestApp.Domain.Projections.Catalog
+                          {
+                              [Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpoints]
+                              [Mississippi.Inlet.Abstractions.ProjectionPath("catalog")]
+                              public sealed record CatalogProjection
+                              {
+                                  public System.Collections.Generic.Dictionary<{{keyType}}, {{valueType}}> Entries { get; init; } = new();
+                              }
+                          }
+                          """;
+        string firstKey = keyType switch
+        {
+            "string" => "\"entry\"",
+            "Models.Key" => "new Models.Key { Code = \"entry\" }",
+            var _ => "Models.Status.Complete",
+        };
+        string mappedKey = keyType switch
+        {
+            "string" => "\"entry\"",
+            "Models.Key" => "new KeyDto { Code = \"entry\" }",
+            var _ => "StatusDto.Complete",
+        };
+        string firstValue = valueType switch
+        {
+            "int" => "42",
+            "Models.Entry" => "new Models.Entry { Amount = 42m }",
+            var _ => "Models.Status.Complete",
+        };
+        string result = valueType switch
+        {
+            "int" => "== 42",
+            "Models.Entry" => ".Amount == 42m",
+            var _ => "== StatusDto.Complete",
+        };
+        string dependencies = string.Join(
+            ", ",
+            new[] { keyType, valueType }.Where(type => type.StartsWith("Models.", StringComparison.Ordinal))
+                .Select(type =>
+                    "new " + type.Replace("Models.", string.Empty, StringComparison.Ordinal) + "DtoMapper()"));
+        string consumer = $$"""
+                            using TestApp.Domain.Projections.Catalog;
+                            using TestAssembly.Controllers.Projections;
+                            using TestAssembly.Controllers.Projections.Mappers;
+                            public static class Consumer
+                            {
+                                public static bool Verify()
+                                {
+                                    var source = new CatalogProjection();
+                                    source.Entries.Add({{firstKey}}, {{firstValue}});
+                                    var mapped = new CatalogProjectionMapper({{dependencies}}).Map(source);
+                                    return mapped.Entries.Count == 1 && mapped.Entries[{{mappedKey}}]{{result}};
+                                }
+                            }
+                            """;
+        Assert.True(RunDictionaryConsumer(source, consumer));
+    }
+
+    /// <summary>
+    ///     Nullable custom dictionary values retain null entries and map populated entries.
+    /// </summary>
+    /// <param name="dictionaryName">The declared dictionary shape.</param>
+    [Theory]
+    [InlineData("System.Collections.Generic.Dictionary")]
+    [InlineData("System.Collections.Generic.IDictionary")]
+    [InlineData("System.Collections.Generic.IReadOnlyDictionary")]
+    [InlineData("System.Collections.Immutable.ImmutableDictionary")]
+    [InlineData("System.Collections.Immutable.IImmutableDictionary")]
+    public void DictionaryMappersRetainNullableCustomValues(
+        string dictionaryName
+    )
+    {
+        ArgumentNullException.ThrowIfNull(dictionaryName);
+        string source = $$"""
+                          using Mississippi.Inlet.Generators.Abstractions;
+                          using Mississippi.Inlet.Abstractions;
+                          namespace TestApp.Domain.Projections.Catalog;
+                          public sealed record Entry { public decimal Amount { get; init; } }
+                          [GenerateProjectionEndpoints, ProjectionPath("catalog")]
+                          public sealed record CatalogProjection
+                          {
+                              public {{dictionaryName}}<string, Entry?> Entries { get; init; } = default!;
+                          }
+                          """;
+        string initializer = dictionaryName.Contains("Immutable", StringComparison.Ordinal)
+            ? "System.Collections.Immutable.ImmutableDictionary<string, Entry?>.Empty.Add(\"null\", null).Add(\"value\", new Entry { Amount = 42m })"
+            : "new System.Collections.Generic.Dictionary<string, Entry?> { [\"null\"] = null, [\"value\"] = new Entry { Amount = 42m } }";
+        string consumer = $$"""
+                            using TestApp.Domain.Projections.Catalog;
+                            using TestAssembly.Controllers.Projections.Mappers;
+                            public static class Consumer
+                            {
+                                public static bool Verify()
+                                {
+                                    var source = new CatalogProjection { Entries = {{initializer}} };
+                                    var mapped = new CatalogProjectionMapper(new EntryDtoMapper()).Map(source);
+                                    return mapped.Entries.Count == 2 && mapped.Entries.ContainsKey("null")
+                                        && mapped.Entries["null"] is null && mapped.Entries["value"]?.Amount == 42m;
+                                }
+                            }
+                            """;
+        Assert.True(RunDictionaryConsumer(source, consumer));
     }
 
     /// <summary>
