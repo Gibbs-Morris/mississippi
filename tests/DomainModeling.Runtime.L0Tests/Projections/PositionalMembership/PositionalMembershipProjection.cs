@@ -11,6 +11,8 @@ namespace MississippiTests.DomainModeling.Runtime.L0Tests.Projections.Positional
 /// <summary>Demonstrates an unsupported consumer without a public parameterless constructor.</summary>
 /// <param name="References">The constructor-required membership.</param>
 [BrookName("TEST", "REFERENCESET", "SAVEDITEMS")]
+
+// ReSharper disable once RedundantArgumentDefaultValue
 [SnapshotStorageName("TEST", "REFERENCESET", "POSITIONALMEMBERSHIP", 1)]
 [GenerateSerializer]
 [Alias(

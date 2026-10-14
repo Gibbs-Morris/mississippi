@@ -10,7 +10,9 @@ namespace MississippiTests.DomainModeling.Runtime.L0Tests.Projections.PinnedItem
 
 /// <summary>Provides a named read-only membership view over its collection brook.</summary>
 [BrookName("TEST", "REFERENCESET", "PINNEDITEMS")]
-[SnapshotStorageName("TEST", "REFERENCESET", "PINNEDITEMSMEMBERSHIP")]
+
+// ReSharper disable once RedundantArgumentDefaultValue
+[SnapshotStorageName("TEST", "REFERENCESET", "PINNEDITEMSMEMBERSHIP", 1)]
 [GenerateSerializer]
 [Alias(
     "MississippiTests.DomainModeling.Runtime.L0Tests.Projections.PinnedItemsMembership.PinnedItemsMembershipProjection")]
