@@ -87,10 +87,12 @@ Read through `IUxProjectionGrainFactory.GetUxProjectionGrain<SavedItemsMembershi
 
 | Read | Result |
 | --- | --- |
-| `GetAsync()` | Membership at the collection cursor's current version. |
-| `GetLatestVersionAsync()` | Collection-stream position; `NotSet` (`-1`) for an untouched stream. |
-| `GetAtVersionAsync(new BrookPosition(version))` | Membership replayed at the requested exact collection version. |
-| Latest read on an untouched stream, or exact read at `-1` | Null; no event or version-zero snapshot is invented. |
+| `GetAsync()` | Membership at the version currently known to the collection cursor. |
+| `GetLatestVersionAsync()` | Cached cursor position; it may lag or lead persisted progress. `NotSet` (`-1`) while no events are known. |
+| `GetAtVersionAsync(new BrookPosition(version))` | Membership at the requested collection event position when its stored snapshot or replay is available. |
+| Latest read with a `NotSet` cursor, or exact read at `-1` | Null; no event or version-zero snapshot is invented. |
+
+Latest reads use the cached cursor; they do not query storage afresh or return an atomic state/version pair. Explicit versions beyond available events, including zero for an empty brook, can fail with `InvalidOperationException`. Key, storage and reconstruction failures propagate. Event positions do not pin reducer code: replay uses the deployed reducers. See [Projection Reads](./projection-reads.md) for the existing freshness, failure and snapshot-persistence boundaries.
 
 Versions identify the collection's events, independently of the observed source versions stored in membership. Duplicate adds and missing removes append no event and therefore do not advance that version. Reads preserve the observed source version until removal and re-addition; later collection changes leave earlier projection state unchanged. Source-only changes append no collection event, refresh no membership fact, and require no source hydration.
 
