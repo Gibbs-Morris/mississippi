@@ -70,7 +70,7 @@ The extension registers event identities, command handlers, reducers, the named 
 
 ## Read-only membership projection
 
-Define a sealed projection record containing `ReferenceSetState<TSource>` and the usual serialization attributes. Its `BrookName` must match the collection aggregate so it reads that collection's events. Give it a distinct, stable `SnapshotStorageName`; aggregate and projection snapshots have separate identities.
+Define a sealed projection record containing `ReferenceSetState<TSource>` and the usual serialization attributes. The projection must have a public parameterless constructor; the helper enforces the `class, new()` constraint. Its `BrookName` must match the collection aggregate so it reads that collection's events. Give it a distinct, stable `SnapshotStorageName`; aggregate and projection snapshots have separate identities.
 
 This excerpt matches the compiled `SavedItemsMembershipProjection` consumer in `tests/DomainModeling.Runtime.L0Tests`. It uses the same `CatalogItemProjection` source type as `SavedItemsAggregate`:
 
