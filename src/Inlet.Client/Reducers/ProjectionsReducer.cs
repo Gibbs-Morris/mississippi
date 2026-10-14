@@ -15,6 +15,13 @@ namespace Mississippi.Inlet.Client.Reducers;
 ///         Each method is a pure function with no side effects.
 ///     </para>
 ///     <para>
+///         Successful loaded and updated actions are admitted per projection type and entity ID.
+///         A lower version leaves the existing entry unchanged, including loading, error and connection fields.
+///         Equal and newer versions retain normal success behavior. Empty entries start at version -1,
+///         so a first result at version zero is accepted. This does not order unversioned errors or
+///         distinguish requests returning the same version.
+///     </para>
+///     <para>
 ///         Register these reducers using the source-generated registration methods,
 ///         which wire up the correct action types for each projection DTO.
 ///     </para>
@@ -85,13 +92,15 @@ public static class ProjectionsReducer
         ArgumentNullException.ThrowIfNull(action);
         return state.WithEntryTransform<T>(
             action.EntityId,
-            entry => entry with
-            {
-                Data = action.Data,
-                Version = action.Version,
-                IsLoading = false,
-                Error = null,
-            });
+            entry => action.Version < entry.Version
+                ? entry
+                : entry with
+                {
+                    Data = action.Data,
+                    Version = action.Version,
+                    IsLoading = false,
+                    Error = null,
+                });
     }
 
     /// <summary>
@@ -135,12 +144,14 @@ public static class ProjectionsReducer
         ArgumentNullException.ThrowIfNull(action);
         return state.WithEntryTransform<T>(
             action.EntityId,
-            entry => entry with
-            {
-                Data = action.Data,
-                Version = action.Version,
-                IsLoading = false,
-                Error = null,
-            });
+            entry => action.Version < entry.Version
+                ? entry
+                : entry with
+                {
+                    Data = action.Data,
+                    Version = action.Version,
+                    IsLoading = false,
+                    Error = null,
+                });
     }
 }
