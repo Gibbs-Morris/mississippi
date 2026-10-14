@@ -183,7 +183,7 @@ authorization services.
 | Audited coupling | Contract and availability |
 | --- | --- |
 | GenerateAggregateEndpoints also selects runtime registration | GenerateAggregateRegistration in #1129; endpoint metadata retains HTTP ownership. |
-| GenerateProjectionEndpoints also selects runtime registration before A03 | Implemented in #1130 / [PR #1168](https://github.com/Gibbs-Morris/mississippi/pull/1168): GenerateProjectionRegistration selects individual and composite silo helpers; GenerateProjectionEndpoints retains HTTP controller, DTO, and mapping ownership. Neither marker activates subscriptions. |
+| GenerateProjectionEndpoints also selects runtime registration before A03 | Implemented in #1130 / [PR #1168](https://github.com/Gibbs-Morris/mississippi/pull/1168): GenerateProjectionRegistration selects individual and composite silo helpers; GenerateProjectionEndpoints retains HTTP controller, response DTO, mappings, matching client DTO, and shared projection-feature inclusion in generated domain-client registration. Neither marker activates subscriptions. |
 | Saga input stored on HTTP endpoint metadata | `SagaInput<TInput>` in #1131; GenerateSagaRegistration in #1132. |
 | Endpoint metadata stores client FeatureKey | ClientFeatureKey in #1133. |
 | GenerateCommand drives HTTP and MCP selection | POST-only GenerateCommandEndpoint in #1134/#1136; independent GenerateMcpTool in #1135. |

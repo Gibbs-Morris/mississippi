@@ -105,7 +105,7 @@ Spring exposes MCP tools at `http://localhost:5101/mcp` in Development, with bot
 - Extend your local MCP prompts using the Spring tool names validated in this page.
 - [Host Architecture](../concepts/host-applications.md) - Revisit how the MCP surface fits into the Spring gateway host.
 - [Key Concepts](../concepts/key-concepts.md) - Revisit the domain-modeling vocabulary behind the generated tools.
-- [Domain Registration Generators](../../../archived/reference/domain-registration-generators.md) - Look up how the host registration surface is generated.
+- [Generated Application Contracts](../../../inlet/reference/generated-contracts.md) - Look up how the host registration surface is generated.
 
 ## References
 
