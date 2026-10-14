@@ -21,8 +21,10 @@ namespace Mississippi.DomainModeling.Gateway;
 ///         or add additional endpoints.
 ///     </para>
 ///     <para>
-///         Derived classes should apply a <c>[Route]</c> attribute. Their constructors must pass an
-///         <c>ILogger&lt;AggregateControllerBase&lt;TAggregate&gt;&gt;</c> to the base constructor.
+///         Derived classes should apply a <c>[Route]</c> attribute and inject
+///         <c>ILogger&lt;DerivedController&gt;</c>, where <c>DerivedController</c> is the concrete controller type.
+///         Pass this logger to the base constructor; covariance makes it assignable to
+///         <c>ILogger&lt;AggregateControllerBase&lt;TAggregate&gt;&gt;</c> without changing its concrete category.
 ///         Use <c>ExecuteAsync</c> to delegate command execution to service methods, and refer to
 ///         sample implementations in the repository for concrete usage patterns.
 ///     </para>
