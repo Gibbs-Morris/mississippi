@@ -11,7 +11,9 @@ using Mississippi.DomainModeling.Abstractions.Aggregates.ReferenceSet;
 using Mississippi.DomainModeling.Abstractions.Aggregates.ReferenceSet.Commands;
 using Mississippi.DomainModeling.Abstractions.Aggregates.ReferenceSet.State;
 using Mississippi.DomainModeling.Runtime.Aggregates.ReferenceSet.Events;
+using Mississippi.DomainModeling.Runtime.Aggregates.ReferenceSet.Handlers;
 using Mississippi.DomainModeling.Runtime.Aggregates.ReferenceSet.Registrations;
+using Mississippi.DomainModeling.Runtime.Aggregates.ReferenceSet.State;
 using Mississippi.Tributary.Abstractions;
 
 using MississippiTests.DomainModeling.Runtime.L0Tests.Aggregates.SavedItems.Commands;
@@ -136,6 +138,24 @@ public sealed class ReferenceSetTests
         Assert.Single(first.References.Members);
     }
 
+    /// <summary>Named handlers reject malformed inputs before invoking the application snapshot reader.</summary>
+    [Fact]
+    public void NamedHandlersValidateInputsBeforeReadingState()
+    {
+        ReferenceSetStateAccess<SavedItemsAggregate, CatalogItemProjection> access = new(
+            _ => throw new InvalidOperationException("Invalid commands must not read state."),
+            (_, _) => new());
+        AddReferenceHandler<AddCatalogItem, SavedItemsAggregate, CatalogItemProjection> add = new(access);
+        RemoveReferenceHandler<RemoveCatalogItem, SavedItemsAggregate, CatalogItemProjection> remove = new(access);
+        foreach (string? id in new[] { null, string.Empty, " ", new('x', 257) })
+        {
+            Assert.Equal(AggregateErrorCodes.InvalidCommand, add.Handle(Add(id!), null).ErrorCode);
+            Assert.Equal(AggregateErrorCodes.InvalidCommand, remove.Handle(new(id!), null).ErrorCode);
+        }
+
+        Assert.Equal(AggregateErrorCodes.InvalidCommand, add.Handle(Add("A", -1), null).ErrorCode);
+    }
+
     /// <summary>Negative versions fail even for an existing member.</summary>
     /// <param name="version">The negative observed source version.</param>
     [Theory]
@@ -232,13 +252,15 @@ public sealed class ReferenceSetTests
                     .ToImmutableDictionary(index => index.ToString(CultureInfo.InvariantCulture), _ => 0L),
             },
         };
-        SavedItemsAggregate historical = reducer.Reduce(
-            full,
-            new ReferenceAdded
-            {
-                SourceId = "recorded",
-                ObservedSourceVersion = 8,
-            });
+        SavedItemsAggregate historical = provider
+            .GetRequiredService<IEventReducer<ReferenceAdded, SavedItemsAggregate>>()
+            .Reduce(
+                full,
+                new()
+                {
+                    SourceId = "recorded",
+                    ObservedSourceVersion = 8,
+                });
         Assert.Equal(1001, historical.References.Members.Count);
         Assert.Equal(8, historical.References.Members["recorded"]);
         Assert.Equal(1000, full.References.Members.Count);
