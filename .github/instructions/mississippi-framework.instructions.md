@@ -29,7 +29,7 @@ Governing thought: Build applications using the Mississippi framework with sourc
 | Domain | Aggregates with `[GenerateAggregateEndpoints]` | Runtime registration, Gateway controller, Client feature/state/reducers, feature registration (`Add{Aggregate}Feature()`) |
 | Domain | Commands with `[GenerateCommand]` | DTOs, mappers, HTTP endpoints, client actions, action effects, command state |
 | Domain | Projections with `[GenerateProjectionRegistration]` | Silo reducer and snapshot-converter registration; inclusion in domain-silo registration |
-| Domain | Projections with `[GenerateProjectionEndpoints]` and `[ProjectionPath]` | Gateway controller, response DTO, and mappings |
+| Domain | Projections with `[GenerateProjectionEndpoints]` and `[ProjectionPath]` | Gateway controller, response DTO, and mappings; matching client DTO and shared projection-feature inclusion in generated domain-client registration |
 | Domain | Event effects extending `EventEffectBase` or `SimpleEventEffectBase` | Runtime registration (`AddEventEffect<TEffect, TAggregate>()`) |
 
 ### Solution Structure
@@ -111,7 +111,7 @@ Governing thought: Build applications using the Mississippi framework with sourc
 - Projections **SHOULD** be small and highly componentized. Why: Enables reuse across different UX contexts.
 - Projections **MUST** use `[BrookName]`, `[SnapshotStorageName]`, `[GenerateSerializer]`, and `[Alias]` attributes. Why: These attributes identify the source stream, persisted state, and serialization contract.
 - Projections using generated runtime registration **MUST** declare `[GenerateProjectionRegistration]`. Why: Both the individual projection helper and domain-silo helper select this marker independently of HTTP generation.
-- Projections using generated HTTP contracts **MUST** declare `[GenerateProjectionEndpoints]` and `[ProjectionPath]`. Why: These attributes select the controller, response DTO, and mappings; they do not select runtime registration.
+- Projections using generated HTTP contracts **MUST** declare `[GenerateProjectionEndpoints]` and `[ProjectionPath]`. Why: These attributes select the controller, response DTO, mappings, matching client DTO, and shared projection-feature inclusion in generated domain-client registration. Runtime registration remains independent, and feature registration does not activate subscriptions.
 - Hosts exposing projection subscriptions **MUST** explicitly register addressed projections, using `ScanProjectionAssemblies(...)` or equivalent registry composition. Why: The path is the shared external address, and neither generation marker activates subscriptions.
 - Contributors changing projection metadata or composition **MUST** follow [metadata and host composition](metadata-and-composition.instructions.md) when its activation scope applies. Why: Capability opt-in and explicit host composition have separate responsibilities.
 - Projection reducers **MUST** inherit from `EventReducerBase<TEvent, TProjection>` and return new instances (using `with` expressions or constructors). Why: Enforces immutability.
@@ -178,7 +178,7 @@ Contributors **SHOULD** review all custom attributes under `src/` (particularly 
 | `[EventStorageName]` | Stable event storage identity with versioning `(APP, MODULE, NAME, version)` | Required on all event types | Event versioning; enables safe refactoring without breaking stored events; names are immutable once deployed |
 | `[GenerateAggregateEndpoints]` | Generates runtime registration, gateway controller, and client feature code | Required on aggregate records exposed via API | Endpoint generation; creates `Add{Aggregate}()` extension methods |
 | `[GenerateProjectionRegistration]` | Generates silo reducer and snapshot-converter registration | Projections using generated runtime helpers | Creates `Add{Projection}Projection()` and includes it in the domain-silo helper; does not require `[ProjectionPath]` |
-| `[GenerateProjectionEndpoints]` | Generates read-only HTTP endpoints, response DTO, and mappings | Projections using generated HTTP contracts | Requires `[ProjectionPath]`; does not generate runtime registration or activate subscriptions |
+| `[GenerateProjectionEndpoints]` | Generates read-only HTTP endpoints, response DTO, mappings, matching client DTO, and shared projection-feature inclusion in domain-client registration | Projections using generated HTTP contracts | Requires `[ProjectionPath]`; does not generate runtime registration or activate subscriptions |
 | `[GenerateCommand]` | Exposes command as HTTP POST endpoint with generated client action | Required on commands that should be callable from UX | Command exposure; `Route` property controls endpoint path |
 | `[ProjectionPath]` | Defines the shared external address for projection HTTP and subscriptions | Addressed server projections and matching client DTOs | Subscription routing; path must match between server and client; runtime-only projections can omit it |
 | `[GenerateSerializer]` | Orleans serialization support | Required on all types that cross grain boundaries | Orleans serialization; requires pairing with `[Id(n)]` on properties—IDs start at 0 and must be unique per inheritance level |

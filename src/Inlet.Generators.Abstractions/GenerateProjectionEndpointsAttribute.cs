@@ -4,7 +4,7 @@ using System;
 namespace Mississippi.Inlet.Generators.Abstractions;
 
 /// <summary>
-///     Selects HTTP read endpoints, response DTOs, and mappings for a projection.
+///     Selects HTTP read endpoints, response DTOs, mappings, and matching client contracts for a projection.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -20,6 +20,13 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///                 <c>{Projection}Controller</c> - Read-only GET endpoint.<br />
 ///                 <c>{Projection}Dto</c> - Response DTO.<br />
 ///                 <c>{Projection}Mapper</c> - Maps projection to DTO.
+///             </description>
+///         </item>
+///         <item>
+///             <term>Inlet.Client.Generators</term>
+///             <description>
+///                 Matching projection DTO and shared projection-feature inclusion in domain client registration.
+///                 Feature registration does not activate subscriptions.
 ///             </description>
 ///         </item>
 ///     </list>
