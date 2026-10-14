@@ -400,7 +400,7 @@ public class ProjectionSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains(
-            "services.AddSnapshotStateConverter<global::TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection>();",
+            "global::Mississippi.Tributary.Runtime.SnapshotRegistrations.AddSnapshotStateConverter<global::TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection>(services);",
             generatedCode,
             StringComparison.Ordinal);
     }
@@ -441,7 +441,10 @@ public class ProjectionSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
-        Assert.Contains("services.AddUxProjections();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "global::Mississippi.DomainModeling.Runtime.UxProjectionRegistrations.AddUxProjections(services);",
+            generatedCode,
+            StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -529,11 +532,11 @@ public class ProjectionSiloRegistrationGeneratorTests
 
         // Both reducers should be registered
         Assert.Contains(
-            "services.AddReducer<global::TestApp.Domain.Projections.AccountBalance.Events.BalanceIncreased, global::TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection, global::TestApp.Domain.Projections.AccountBalance.Reducers.BalanceIncreasedReducer>();",
+            "global::Mississippi.Tributary.Runtime.ReducerRegistrations.AddReducer<global::TestApp.Domain.Projections.AccountBalance.Events.BalanceIncreased, global::TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection, global::TestApp.Domain.Projections.AccountBalance.Reducers.BalanceIncreasedReducer>(services);",
             generatedCode,
             StringComparison.Ordinal);
         Assert.Contains(
-            "services.AddReducer<global::TestApp.Domain.Projections.AccountBalance.Events.BalanceDecreased, global::TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection, global::TestApp.Domain.Projections.AccountBalance.Reducers.BalanceDecreasedReducer>();",
+            "global::Mississippi.Tributary.Runtime.ReducerRegistrations.AddReducer<global::TestApp.Domain.Projections.AccountBalance.Events.BalanceDecreased, global::TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection, global::TestApp.Domain.Projections.AccountBalance.Reducers.BalanceDecreasedReducer>(services);",
             generatedCode,
             StringComparison.Ordinal);
     }
@@ -617,7 +620,7 @@ public class ProjectionSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains(
-            "services.AddReducer<global::TestApp.Domain.Projections.AccountBalance.Events.BalanceUpdated, global::TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection, global::TestApp.Domain.Projections.AccountBalance.Reducers.BalanceUpdatedReducer>();",
+            "global::Mississippi.Tributary.Runtime.ReducerRegistrations.AddReducer<global::TestApp.Domain.Projections.AccountBalance.Events.BalanceUpdated, global::TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection, global::TestApp.Domain.Projections.AccountBalance.Reducers.BalanceUpdatedReducer>(services);",
             generatedCode,
             StringComparison.Ordinal);
     }

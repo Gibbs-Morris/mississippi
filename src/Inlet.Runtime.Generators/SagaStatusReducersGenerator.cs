@@ -16,9 +16,6 @@ namespace Mississippi.Inlet.Runtime.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
 {
-    private const string GenerateSagaStatusReducersAttributeFullName =
-        "Mississippi.Inlet.Generators.Abstractions.GenerateSagaStatusReducersAttribute";
-
     private const string GeneratorName = "SagaStatusReducersGenerator";
 
     private static void FindProjectionsInNamespace(
@@ -83,50 +80,13 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
         sb.AppendUsing("Mississippi.DomainModeling.Abstractions");
         sb.AppendFileScopedNamespace(projection.Namespace + ".Reducers");
         sb.AppendLine();
-        const string sagaStartedBody = "Phase = SagaPhase.Running,\n" +
-                                       "StartedAt = eventData.StartedAt,\n" +
-                                       "LastCompletedStepIndex = -1,\n" +
-                                       "ErrorCode = null,\n" +
-                                       "ErrorMessage = null,\n" +
-                                       "CompletedAt = null,";
-        const string sagaStepCompletedBody = "LastCompletedStepIndex = eventData.StepIndex,";
-        const string sagaStepFailedBody =
-            "ErrorCode = eventData.ErrorCode,\n" + "ErrorMessage = eventData.ErrorMessage,";
-        const string sagaFailedBody = "Phase = SagaPhase.Failed,\n" +
-                                      "ErrorCode = eventData.ErrorCode,\n" +
-                                      "ErrorMessage = eventData.ErrorMessage,\n" +
-                                      "CompletedAt = eventData.FailedAt,";
-        const string sagaCompletedBody = "Phase = SagaPhase.Completed,\n" + "CompletedAt = eventData.CompletedAt,";
-        const string sagaCompensatingBody = "Phase = SagaPhase.Compensating,";
-        const string sagaCompensatedBody = "Phase = SagaPhase.Compensated,\n" + "CompletedAt = eventData.CompletedAt,";
-        List<string> reducerBlocks =
-        [
-            GenerateReducerClass(projection.TypeName, "SagaStartedStatusReducer", "SagaStartedEvent", sagaStartedBody),
-            GenerateReducerClass(
-                projection.TypeName,
-                "SagaStepCompletedStatusReducer",
-                "SagaStepCompleted",
-                sagaStepCompletedBody),
-            GenerateReducerClass(
-                projection.TypeName,
-                "SagaStepFailedStatusReducer",
-                "SagaStepFailed",
-                sagaStepFailedBody),
-            GenerateReducerClass(projection.TypeName, "SagaFailedStatusReducer", "SagaFailed", sagaFailedBody),
-            GenerateReducerClass(projection.TypeName, "SagaCompletedStatusReducer", "SagaCompleted", sagaCompletedBody),
-            GenerateReducerClass(
-                projection.TypeName,
-                "SagaCompensatingStatusReducer",
-                "SagaCompensating",
-                sagaCompensatingBody),
-            GenerateReducerClass(
-                projection.TypeName,
-                "SagaCompensatedStatusReducer",
-                "SagaCompensated",
-                sagaCompensatedBody),
-        ];
-        foreach (string reducerBlock in reducerBlocks)
+        foreach (SagaStatusReducerDefinition definition in SagaStatusReducerDefinition.All)
         {
+            string reducerBlock = GenerateReducerClass(
+                projection.TypeName,
+                definition.ClassName,
+                definition.EventTypeName,
+                definition.ReduceBody);
             sb.AppendLine(reducerBlock);
             sb.AppendLine();
         }
@@ -142,7 +102,7 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
     {
         List<ProjectionInfo> projections = new();
         INamedTypeSymbol? attributeSymbol = compilation.GetTypeByMetadataName(
-            GenerateSagaStatusReducersAttributeFullName);
+            SagaStatusReducerDefinition.AttributeFullName);
         if (attributeSymbol is null)
         {
             return projections;
