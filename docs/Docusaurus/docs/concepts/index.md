@@ -47,19 +47,21 @@ flowchart TB
 
 ## Delivery and Client Surface
 
-Teams define projection types and mark them with attributes. The framework takes those definitions and delivers them to clients through generated endpoints, real-time notifications, and a predictable client state store.
+Projection types select runtime helpers and HTTP contracts independently. Generated endpoints and client artifacts supply the contracts. Hosts explicitly discover addressed projections, and clients dispatch subscription actions to activate Inlet's existing notification path and update the Reservoir store.
 
 ```mermaid
 flowchart TB
     PT[Projection types and attributes] --> IN[Inlet code generation]
     IN --> HTTP[HTTP endpoints and controllers]
-    IN --> SUB[SignalR subscription management]
+    PT --> DISC[Explicit host projection discovery]
+    DISC --> SUB[SignalR subscription management]
+    CA[Client subscription actions] --> SUB
     SUB --> AQ[Aqueduct SignalR transport]
     HTTP --> RS[Reservoir client state store]
     AQ --> RS
 ```
 
-- **Inlet** takes projection types, aggregates, and sagas marked with attributes such as `[GenerateAggregateEndpoints]` and `[GenerateProjectionEndpoints]` and generates HTTP controllers, client DTOs, client-side Redux actions and reducers, and MCP tool definitions. At runtime, Inlet manages per-connection projection subscriptions through a SignalR hub that notifies clients when projections change.
+- **Inlet** takes projection types, aggregates, and sagas marked with attributes such as `[GenerateAggregateEndpoints]` and `[GenerateProjectionEndpoints]` and generates HTTP controllers, client DTOs, client-side Redux actions and reducers, and MCP tool definitions. Hosts register addressed projections with `ScanProjectionAssemblies(...)` or equivalent registries, and clients dispatch subscription actions. Inlet's existing SignalR hub then manages per-connection subscriptions and notifies clients when projections change.
 - **Aqueduct** provides the SignalR infrastructure that works across an Orleans cluster, so notifications reach clients regardless of which server they are connected to.
 - **Reservoir** provides Redux-style client state management. Actions flow through reducers that produce immutable state slices. Action effects handle async side effects such as fetching updated projections after a change notification.
 - **Refraction** provides a Blazor component library and design-token system for client UIs.
