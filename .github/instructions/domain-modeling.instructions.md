@@ -120,7 +120,7 @@ The [placement archetypes](namespace-folder-placement.instructions.md#archetype-
 │   ├── {ProjectionName}Projection.cs
 │   └── Reducers/
 │       └── {Event}ProjectionReducer.cs
-└── {Domain}Registrations.cs
+└── {Domain}DomainRegistrations.cs
 ```
 
 For a reusable framework feature, the public state/commands can occupy matching archetype paths in its Abstractions project. Internal events, handlers, reducers, effects, and concrete wiring remain in its implementation project. [Undercurrent registration](../../src/Undercurrent.Domain/UndercurrentDomainRegistrations.cs) composes that split; [Saga registration](../../src/DomainModeling.Runtime/SagaRegistrations.cs) also wires named handlers, reducers, and an effect. [Spring's BankAccount aggregate](../../samples/Spring/Spring.Domain/Aggregates/BankAccount) and [FlaggedTransactions projection](../../samples/Spring/Spring.Domain/Projections/FlaggedTransactions) show application components. These sources demonstrate responsibilities; the archetype policy governs new placement.

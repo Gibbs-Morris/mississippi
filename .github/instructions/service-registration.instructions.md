@@ -26,7 +26,7 @@ Governing thought: Use hierarchical `ServiceRegistration` extension methods with
 
 ### Domain Registration Conventions
 
-- Domain registration **MUST** expose `Add{Domain}Domain()` in a public static `{Domain}Registrations` class, composing private `Add{Aggregate}Aggregate()` and `Add{Projection}Projection()` methods for components that exist. Why: Hierarchy keeps feature wiring discoverable without inventing projection command handlers.
+- Domain registration **MUST** expose `Add{Domain}Domain()` in a public static `{Domain}DomainRegistrations` class, composing private `Add{Aggregate}Aggregate()` and `Add{Projection}Projection()` methods for components that exist. Why: Hierarchy keeps feature wiring discoverable without inventing projection command handlers.
 - Domain registration **MUST** register event types, command handlers where present, reducers, and snapshot converters in that order. Why: Keeps composition consistent with the existing domain entry points.
 
 ## Scope and Audience
