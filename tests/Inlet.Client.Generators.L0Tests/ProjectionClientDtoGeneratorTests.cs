@@ -151,6 +151,121 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Dictionary DTO emission is unique within each feature namespace and deduplicates shared local dependencies.
+    /// </summary>
+    /// <param name="distinctSources">Whether the features use distinct source records with the same name.</param>
+    /// <param name="sameProjectionName">Whether the features also share a projection type name.</param>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void DictionaryDtoEmissionIncludesFeatureNamespace(
+        bool distinctSources,
+        bool sameProjectionName
+    )
+    {
+        string firstSource = distinctSources ? "A.Entry" : "Models.Entry";
+        string secondSource = distinctSources ? "B.Entry" : "Models.Entry";
+        string ordersName = sameProjectionName ? "CatalogProjection" : "OrdersProjection";
+        string source = $$"""
+                          namespace Models
+                          {
+                              public enum Status : long { Ready = long.MaxValue }
+                              public sealed record Entry
+                              {
+                                  public decimal Amount { get; init; }
+                                  public Status Status { get; init; }
+                              }
+                          }
+                          namespace A
+                          {
+                              public sealed record Entry
+                              {
+                                  public decimal Amount { get; init; }
+                                  public Models.Status Status { get; init; }
+                              }
+                          }
+                          namespace B
+                          {
+                              public sealed record Entry
+                              {
+                                  public string Note { get; init; } = string.Empty;
+                                  public Models.Status Status { get; init; }
+                              }
+                          }
+                          namespace TestApp.Domain.Projections.Catalog
+                          {
+                              [Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpoints]
+                              [Mississippi.Inlet.Abstractions.ProjectionPath("catalog")]
+                              public sealed record CatalogProjection
+                              {
+                                  public System.Collections.Generic.Dictionary<string, {{firstSource}}> Entries { get; init; } = new();
+                              }
+                              [Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpoints]
+                              [Mississippi.Inlet.Abstractions.ProjectionPath("catalog-extra")]
+                              public sealed record CatalogExtraProjection
+                              {
+                                  public System.Collections.Generic.Dictionary<string, {{firstSource}}> Entries { get; init; } = new();
+                              }
+                          }
+                          namespace TestApp.Domain.Projections.Orders
+                          {
+                              [Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpoints]
+                              [Mississippi.Inlet.Abstractions.ProjectionPath("orders")]
+                              public sealed record {{ordersName}}
+                              {
+                                  public System.Collections.Generic.Dictionary<string, {{secondSource}}> Entries { get; init; } = new();
+                              }
+                          }
+                          """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Assert.Empty(
+            input.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        TestContext.Current.TestOutputHelper?.WriteLine("INPUT_ERRORS=0;FEATURE_NAMESPACE_IDENTITY");
+        foreach (GeneratorRunResult generated in result.Results)
+        {
+            TestContext.Current.TestOutputHelper?.WriteLine($"GENERATOR_EXCEPTION={generated.Exception}");
+        }
+
+        foreach (Diagnostic error in output.GetDiagnostics(TestContext.Current.CancellationToken)
+                     .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error))
+        {
+            TestContext.Current.TestOutputHelper?.WriteLine(error.ToString());
+        }
+
+        Assert.Empty(diagnostics);
+        Assert.All(result.Results, generated => Assert.Null(generated.Exception));
+        Assert.Empty(
+            output.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        GeneratorRunResult generatedResult = Assert.Single(result.Results);
+        Assert.Equal(
+            generatedResult.GeneratedSources.Length,
+            generatedResult.GeneratedSources.Select(item => item.HintName).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(7, result.GeneratedTrees.Length);
+        foreach (string feature in new[] { "Catalog", "Orders" })
+        {
+            string dtoNamespace = "TestApp.Client.Features." + feature + ".Dtos.";
+            INamedTypeSymbol entry = Assert.IsType<INamedTypeSymbol>(
+                output.GetTypeByMetadataName(dtoNamespace + "EntryDto"),
+                false);
+            Assert.Single(entry.DeclaringSyntaxReferences);
+            string memberName = (feature == "Orders") && distinctSources ? "Note" : "Amount";
+            Assert.Single(entry.GetMembers(memberName).OfType<IPropertySymbol>());
+            INamedTypeSymbol status = Assert.IsType<INamedTypeSymbol>(
+                output.GetTypeByMetadataName(dtoNamespace + "StatusDto"),
+                false);
+            Assert.Single(status.DeclaringSyntaxReferences);
+            Assert.Equal(SpecialType.System_Int64, status.EnumUnderlyingType!.SpecialType);
+            Assert.Equal(long.MaxValue, Assert.Single(status.GetMembers("Ready").OfType<IFieldSymbol>()).ConstantValue);
+        }
+    }
+
+    /// <summary>
     ///     Distinct dictionary source types cannot silently share one generated DTO identity.
     /// </summary>
     /// <param name="reverseProperties">Whether the conflicting sources are discovered in reverse order.</param>
