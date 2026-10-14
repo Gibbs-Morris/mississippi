@@ -28,8 +28,11 @@ namespace Mississippi.DomainModeling.Gateway;
 ///     </para>
 ///     <para>
 ///         Derived classes should apply a <c>[Route]</c> attribute and define their own constructor.
-///         Pass the projection grain factory, mapper, and logger to the base constructor, using
-///         <c>UxProjectionControllerBase&lt;TProjection, TDto&gt;</c> as the logger category.
+///         Inject <c>ILogger&lt;DerivedController&gt;</c>, where <c>DerivedController</c> is the concrete controller type.
+///         Pass the projection grain factory, mapper, and logger to the base constructor.
+///         Covariance makes this logger assignable to
+///         <c>ILogger&lt;UxProjectionControllerBase&lt;TProjection, TDto&gt;&gt;</c> without changing its concrete
+///         category.
 ///         Refer to sample implementations in the repository for concrete usage patterns.
 ///     </para>
 ///     <para>
