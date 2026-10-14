@@ -24,6 +24,10 @@ namespace MississippiTests.DomainModeling.Runtime.L0Tests.Aggregates.ReferenceSe
 /// <summary>Verifies bounded membership decisions and immutable ordinal replay.</summary>
 public sealed class ReferenceSetTests
 {
+    /// <summary>Creates an immutable concrete consumer command with the supplied membership inputs.</summary>
+    /// <param name="id">The exact source identifier.</param>
+    /// <param name="version">The observed source version.</param>
+    /// <returns>The add command.</returns>
     private static AddCatalogItem Add(
         string id,
         long version = 0
