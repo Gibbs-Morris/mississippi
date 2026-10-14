@@ -48,7 +48,7 @@ Key framework references:
 - [`FireAndForgetEventEffectBase<TEvent, TAggregate>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/FireAndForgetEventEffectBase.cs)
 - [`GenerateCommandAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateCommandAttribute.cs)
 - [`GenerateAggregateEndpointsAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateAggregateEndpointsAttribute.cs)
-- [`GenerateProjectionRegistrationAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateProjectionRegistrationAttribute.cs)
+- [`GenerateProjectionRegistrationAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/ac0fde069c6c420c79bccd532f70be055c32c531/src/Inlet.Generators.Abstractions/GenerateProjectionRegistrationAttribute.cs)
 - [`GenerateProjectionEndpointsAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateProjectionEndpointsAttribute.cs)
 - [`GenerateSagaEndpointsAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute.cs)
 - [`ProjectionPathAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Abstractions/ProjectionPathAttribute.cs)
