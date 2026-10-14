@@ -28,7 +28,8 @@ Governing thought: Build applications using the Mississippi framework with sourc
 |---------------|-----------------|------------------|
 | Domain | Aggregates with `[GenerateAggregateEndpoints]` | Runtime registration, Gateway controller, Client feature/state/reducers, feature registration (`Add{Aggregate}Feature()`) |
 | Domain | Commands with `[GenerateCommand]` | DTOs, mappers, HTTP endpoints, client actions, action effects, command state |
-| Domain | Projections with `[GenerateProjectionEndpoints]` | Gateway controller, Client subscription, DTOs |
+| Domain | Projections with `[GenerateProjectionRegistration]` | Silo reducer and snapshot-converter registration; inclusion in domain-silo registration |
+| Domain | Projections with `[GenerateProjectionEndpoints]` and `[ProjectionPath]` | Gateway controller, response DTO, and mappings |
 | Domain | Event effects extending `EventEffectBase` or `SimpleEventEffectBase` | Runtime registration (`AddEventEffect<TEffect, TAggregate>()`) |
 
 ### Solution Structure
@@ -108,7 +109,11 @@ Governing thought: Build applications using the Mississippi framework with sourc
 
 - Multiple projections **MAY** be defined over the same brook (event stream). Why: Enables different read-optimized views of the same data.
 - Projections **SHOULD** be small and highly componentized. Why: Enables reuse across different UX contexts.
-- Projections **MUST** use `[BrookName]`, `[SnapshotStorageName]`, `[GenerateSerializer]`, and `[Alias]` attributes. Projections exposed to clients **MUST** also use `[ProjectionPath]` and `[GenerateProjectionEndpoints]` (see Projection Subscriptions and Framework Attributes Reference). Why: Core attributes enable event sourcing; client-facing attributes are conditional on exposure.
+- Projections **MUST** use `[BrookName]`, `[SnapshotStorageName]`, `[GenerateSerializer]`, and `[Alias]` attributes. Why: These attributes identify the source stream, persisted state, and serialization contract.
+- Projections using generated runtime registration **MUST** declare `[GenerateProjectionRegistration]`. Why: Both the individual projection helper and domain-silo helper select this marker independently of HTTP generation.
+- Projections using generated HTTP contracts **MUST** declare `[GenerateProjectionEndpoints]` and `[ProjectionPath]`. Why: These attributes select the controller, response DTO, and mappings; they do not select runtime registration.
+- Hosts exposing projection subscriptions **MUST** explicitly register addressed projections, using `ScanProjectionAssemblies(...)` or equivalent registry composition. Why: The path is the shared external address, and neither generation marker activates subscriptions.
+- Contributors changing projection metadata or composition **MUST** follow [metadata and host composition](metadata-and-composition.instructions.md) when its activation scope applies. Why: Capability opt-in and explicit host composition have separate responsibilities.
 - Projection reducers **MUST** inherit from `EventReducerBase<TEvent, TProjection>` and return new instances (using `with` expressions or constructors). Why: Enforces immutability.
 
 ### Brooks (Event Streams)
@@ -172,9 +177,10 @@ Contributors **SHOULD** review all custom attributes under `src/` (particularly 
 | `[SnapshotRetention]` | Sets the checkpoint retention modulus for a state type | Optional on snapshot-enabled aggregates and projections; omit it to use a configured override or fallback | Stable storage-name and CLR type-name overrides take precedence, then this attribute, then the global default (50 unless configured); the modulus must be positive |
 | `[EventStorageName]` | Stable event storage identity with versioning `(APP, MODULE, NAME, version)` | Required on all event types | Event versioning; enables safe refactoring without breaking stored events; names are immutable once deployed |
 | `[GenerateAggregateEndpoints]` | Generates runtime registration, gateway controller, and client feature code | Required on aggregate records exposed via API | Endpoint generation; creates `Add{Aggregate}()` extension methods |
-| `[GenerateProjectionEndpoints]` | Generates read-only GET endpoint and SignalR subscription code | Required on projections exposed to clients | Endpoint generation; creates projection controller and client subscription |
+| `[GenerateProjectionRegistration]` | Generates silo reducer and snapshot-converter registration | Projections using generated runtime helpers | Creates `Add{Projection}Projection()` and includes it in the domain-silo helper; does not require `[ProjectionPath]` |
+| `[GenerateProjectionEndpoints]` | Generates read-only HTTP endpoints, response DTO, and mappings | Projections using generated HTTP contracts | Requires `[ProjectionPath]`; does not generate runtime registration or activate subscriptions |
 | `[GenerateCommand]` | Exposes command as HTTP POST endpoint with generated client action | Required on commands that should be callable from UX | Command exposure; `Route` property controls endpoint path |
-| `[ProjectionPath]` | Defines subscription and API path for projections | Required on server projections and matching client DTOs | Subscription routing; path must match between server and client |
+| `[ProjectionPath]` | Defines the shared external address for projection HTTP and subscriptions | Addressed server projections and matching client DTOs | Subscription routing; path must match between server and client; runtime-only projections can omit it |
 | `[GenerateSerializer]` | Orleans serialization support | Required on all types that cross grain boundaries | Orleans serialization; requires pairing with `[Id(n)]` on properties—IDs start at 0 and must be unique per inheritance level |
 | `[Alias]` | Stable Orleans type identity that survives refactoring | Required on all serialized types | Type versioning; use fully qualified name format |
 
@@ -221,10 +227,10 @@ Contributors only write code in the **Domain project**; client-side actions, eff
 3. Create events with `[EventStorageName]`
 4. Implement command handlers extending `CommandHandlerBase`
 5. Implement aggregate reducers extending `EventReducerBase`
-6. Define projections with `[ProjectionPath]` and `[GenerateProjectionEndpoints]` (if exposed to clients)
+6. Define projections with `[GenerateProjectionRegistration]` for generated runtime helpers; add `[ProjectionPath]` and `[GenerateProjectionEndpoints]` for generated HTTP contracts
 7. Implement projection reducers
 8. **Build** — source generators create runtime registrations, gateway controllers, and client features
-9. Client subscribes via Inlet; dispatches generated actions to trigger commands
+9. Configure `ScanProjectionAssemblies(...)` in hosts, then dispatch Inlet subscription actions from the client for addressed projections; dispatch generated command actions to trigger commands
 
 ## Core Principles
 
@@ -245,7 +251,7 @@ The 1-to-1 aggregate-to-brook relationship combined with Orleans' single-threade
 
 ### End-to-End Traceability
 
-From UI action dispatch through HTTP, Orleans grain, event persistence, projection update, and SignalR push-back to the client, every step is generated from domain definitions. This means:
+Generated contracts and explicit host and client composition connect UI actions, HTTP, Orleans grains, event persistence, projection updates, and SignalR notifications. This means:
 
 - Debugging follows a predictable path
 - Breaking changes surface at compile time via source generators
@@ -268,13 +274,13 @@ Event sourcing means the brook contains the complete history. Combined with immu
 
 ### Developer Velocity
 
-Source generation eliminates hand-written DTOs, mappers, controllers, SignalR hubs, and client actions. Contributors focus on:
+Source generation supplies DTOs, mappers, controllers, runtime helpers, and client actions. Hosts configure the existing SignalR hub and projection discovery explicitly. Contributors focus on:
 
 1. Domain modeling (aggregates, commands, events)
 2. Business logic (command handlers, reducers)
 3. UX (components consuming projections)
 
-Everything in between is generated, reducing surface area for bugs and keeping the codebase DRY.
+Generated contracts reduce boilerplate; explicit host registration and client subscription actions activate the selected capabilities.
 
 ### Testability at Every Layer
 
