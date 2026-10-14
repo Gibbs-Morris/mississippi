@@ -76,6 +76,7 @@ public static class ReferenceSetRegistrations
         ArgumentNullException.ThrowIfNull(read);
         ArgumentNullException.ThrowIfNull(write);
         services.AddEventType<ReferenceAdded>().AddEventType<ReferenceRemoved>();
+        services.AddUxProjections();
         services.AddSnapshotType<TProjection>();
         services.AddSingleton(new ReferenceSetStateAccess<TProjection, TSource>(read, write));
         services.AddReducer<ReferenceAdded, TProjection, ReferenceAddedReducer<TProjection, TSource>>();

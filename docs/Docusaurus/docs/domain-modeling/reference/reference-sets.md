@@ -81,7 +81,7 @@ services.AddReferenceSetProjection<SavedItemsMembershipProjection,
     (state, references) => (state ?? new()) with { References = references });
 ```
 
-The helper registers the existing membership event types, named typed reducers, the projection snapshot type and its state converter. It installs no projection command handlers or effects. Supply the usual serialization/storage providers and runtime hosting separately. The callbacks are pure accessors and immutable composition; they do not query source objects.
+The helper registers the existing membership event types, named typed reducers, the projection snapshot type, its state converter and the UX projection grain factory. It installs no projection command handlers or effects. Supply the usual serialization/storage providers and runtime hosting separately. The callbacks are pure accessors and immutable composition; they do not query source objects.
 
 Read through `IUxProjectionGrainFactory.GetUxProjectionGrain<SavedItemsMembershipProjection>(collectionId)`:
 
