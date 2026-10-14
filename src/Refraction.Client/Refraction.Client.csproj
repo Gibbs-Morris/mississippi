@@ -2,6 +2,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
   </ItemGroup>
   <PropertyGroup>
     <Description>Blazor UI components and shared styling values (design tokens) for composing application layouts, controls, and themed interfaces.</Description>
