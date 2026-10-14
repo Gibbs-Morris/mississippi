@@ -1,31 +1,47 @@
 <Solution>
-    <Folder Name="/Build/">
-        <File Path="Directory.Build.props" />
-        <File Path="Directory.Packages.props" />
-        <File Path="global.json" />
-    </Folder>
-    <Folder Name="/Samples/" />
-    <Folder Name="/Samples/Crescent/">
-        <Project Path="samples\Crescent\Crescent.AppHost\Crescent.AppHost.csproj" />
-        <Project Path="samples\Crescent\Crescent.L0Tests\Crescent.L0Tests.csproj" />
-        <Project Path="samples\Crescent\Crescent.L2Tests\Crescent.L2Tests.csproj" />
-    </Folder>
-    <Folder Name="/Samples/Spring/">
-        <Project Path="samples\Spring\Spring.Domain\Spring.Domain.csproj" />
-        <Project Path="samples\Spring\Spring.Client\Spring.Client.csproj" />
-        <Project Path="samples\Spring\Spring.Client.L0Tests\Spring.Client.L0Tests.csproj" />
-        <Project Path="samples\Spring\Spring.Gateway\Spring.Gateway.csproj" />
-        <Project Path="samples\Spring\Spring.Runtime\Spring.Runtime.csproj" />
-        <Project Path="samples\Spring\Spring.AppHost\Spring.AppHost.csproj" />
-        <Project Path="samples\Spring\Spring.Domain.L0Tests\Spring.Domain.L0Tests.csproj" />
-        <Project Path="samples\Spring\Spring.L2Tests\Spring.L2Tests.csproj" />
-        <Project Path="samples\Spring\Spring.L3Tests\Spring.L3Tests.csproj" />
-        <Project Path="samples\Spring\Spring.TestHarness\Spring.TestHarness.csproj" />
-    </Folder>
-    <Folder Name="/Samples/LightSpeed/">
-        <Project Path="samples\LightSpeed\LightSpeed.Client\LightSpeed.Client.csproj" />
-        <Project Path="samples\LightSpeed\LightSpeed.Client.L0Tests\LightSpeed.Client.L0Tests.csproj" />
-        <Project Path="samples\LightSpeed\LightSpeed.Gateway\LightSpeed.Gateway.csproj" />
-        <Project Path="samples\LightSpeed\LightSpeed.AppHost\LightSpeed.AppHost.csproj" />
-    </Folder>
+  <Folder Name="/Samples/" />
+  <Folder Name="/Samples/Crescent/">
+    <Project Path="samples\Crescent\Crescent.AppHost\Crescent.AppHost.csproj" />
+  </Folder>
+  <Folder Name="/Samples/Crescent/Tests/">
+    <Project Path="samples\Crescent\Crescent.L0Tests\Crescent.L0Tests.csproj" />
+    <Project Path="samples\Crescent\Crescent.L2Tests\Crescent.L2Tests.csproj" />
+  </Folder>
+  <Folder Name="/Samples/LightSpeed/">
+    <File Path="samples\LightSpeed\README.md" />
+    <Project Path="samples\LightSpeed\LightSpeed.AppHost\LightSpeed.AppHost.csproj" />
+    <Project Path="samples\LightSpeed\LightSpeed.Client\LightSpeed.Client.csproj" />
+    <Project Path="samples\LightSpeed\LightSpeed.Gateway\LightSpeed.Gateway.csproj" />
+  </Folder>
+  <Folder Name="/Samples/LightSpeed/Tests/">
+    <Project Path="samples\LightSpeed\LightSpeed.Client.L0Tests\LightSpeed.Client.L0Tests.csproj" />
+  </Folder>
+  <Folder Name="/Samples/Spring/">
+    <File Path="samples\Spring\README.md" />
+    <File Path="samples\Spring\JOURNEYS.md" />
+    <File Path="samples\Spring\TESTING.md" />
+    <Project Path="samples\Spring\Spring.AppHost\Spring.AppHost.csproj" />
+    <Project Path="samples\Spring\Spring.Client\Spring.Client.csproj" />
+    <Project Path="samples\Spring\Spring.Domain\Spring.Domain.csproj" />
+    <Project Path="samples\Spring\Spring.Gateway\Spring.Gateway.csproj" />
+    <Project Path="samples\Spring\Spring.Runtime\Spring.Runtime.csproj" />
+    <Project Path="samples\Spring\Spring.TestHarness\Spring.TestHarness.csproj" />
+  </Folder>
+  <Folder Name="/Samples/Spring/Tests/">
+    <Project Path="samples\Spring\Spring.Client.L0Tests\Spring.Client.L0Tests.csproj" />
+    <Project Path="samples\Spring\Spring.Domain.L0Tests\Spring.Domain.L0Tests.csproj" />
+    <Project Path="samples\Spring\Spring.L2Tests\Spring.L2Tests.csproj" />
+    <Project Path="samples\Spring\Spring.L3Tests\Spring.L3Tests.csproj" />
+  </Folder>
+  <Folder Name="/Engineering/" />
+  <Folder Name="/Engineering/Build/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+  </Folder>
+  <Folder Name="/Engineering/Workflows/">
+    <File Path=".github\workflows\cleanup.yml" />
+    <File Path=".github\workflows\full-build.yml" />
+    <File Path=".github\workflows\samples-validation.yml" />
+  </Folder>
 </Solution>
