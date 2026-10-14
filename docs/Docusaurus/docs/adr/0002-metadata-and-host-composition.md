@@ -50,14 +50,14 @@ explicit ownership of composition and effective runtime policy.
 
 The canonical author rules, decision tree, consumer worksheet, and precedence
 matrix live in
-[the canonical guide at the reviewed revision](https://github.com/Gibbs-Morris/mississippi/blob/e7ae036c6db5ac4601bbae00040a004a897746fd/.github/instructions/metadata-and-composition.instructions.md).
+[the canonical guide at the reviewed revision](https://github.com/Gibbs-Morris/mississippi/blob/5d7c50d2bcecc078c55df26576e8544724870e6f/.github/instructions/metadata-and-composition.instructions.md).
 This immutable source link works before merge and after the proposing branch is
 deleted. The guide is a repository instruction outside the Docusaurus document
 map; links between ADRs remain relative. This ADR records the rationale and does
 not duplicate the instruction rules.
 
-Registration chooses services, implementations, lifetimes, host capabilities,
-and assembly discovery. Generated Add helpers remain explicit calls. Options
+Registration owns the composition choices a feature offers. Generated Add
+helpers remain explicit calls. Options
 configure host/runtime defaults and tuning through the normal options pipeline.
 Attributes describe immutable type identity, workflow relationships, one
 generated capability, or one static contract.
