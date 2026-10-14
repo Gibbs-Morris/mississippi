@@ -9,6 +9,7 @@ CI runs these tests in [Samples Validation](../../.github/workflows/samples-vali
 | --- | --- | --- | --- |
 | `Spring.Domain.L0Tests` | Domain handlers, reducers, and effects | Repository unit-test scripts | Samples Validation: L0 |
 | `Spring.Client.L0Tests` | Client state and component behavior in isolation | Repository unit-test scripts | Samples Validation: L0 |
+| `Spring.Gateway.L0Tests` | Gateway startup retry and cancellation behavior in isolation | Repository unit-test scripts | Samples Validation: L0 |
 | `Spring.L2Tests` | Generated API contracts, authorization, storage-backed commands, and projection queries | `pwsh ./test-spring.ps1 -TestLevel L2 -Suite Full` | Samples Validation: L2 on PR, merge queue and workflow dispatch |
 | `Spring.L3Tests/Smoke` | A small set of critical browser journeys proving the app works | `pwsh ./test-spring.ps1` | Samples Validation: Spring L3 Smoke on PR and merge queue |
 | `Spring.L3Tests` outside `Smoke` | Additional browser scenarios, including API reference UI | `pwsh ./test-spring.ps1 -TestLevel L3 -Suite Full` | Samples Validation: select `Full` when dispatching manually |
