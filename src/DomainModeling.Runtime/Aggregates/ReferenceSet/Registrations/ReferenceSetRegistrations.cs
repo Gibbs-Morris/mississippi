@@ -63,6 +63,13 @@ public static class ReferenceSetRegistrations
         return services.AddSnapshotStateConverter<TAggregate>();
     }
 
+    /// <summary>Decides whether a valid addition changes membership, retaining existing loading floors.</summary>
+    /// <typeparam name="TAggregate">The named aggregate snapshot type.</typeparam>
+    /// <typeparam name="TSource">The source projection type.</typeparam>
+    /// <param name="command">The caller-supplied identifier and observed version.</param>
+    /// <param name="state">The current snapshot, or null for an untouched stream.</param>
+    /// <param name="read">The pure membership reader.</param>
+    /// <returns>One recorded addition, a successful empty result, or a validation failure.</returns>
     private static OperationResult<IReadOnlyList<object>> Add<TAggregate, TSource>(
         IAddReference<TSource> command,
         TAggregate? state,
@@ -100,11 +107,21 @@ public static class ReferenceSetRegistrations
         ]);
     }
 
+    /// <summary>Checks identifier bounds without changing its identity.</summary>
+    /// <param name="sourceId">The caller-supplied source identifier.</param>
+    /// <returns>Whether the identifier is nonblank and within the fixed UTF-16 length bound.</returns>
     private static bool IsValidId(
         string? sourceId
     ) =>
         !string.IsNullOrWhiteSpace(sourceId) && (sourceId.Length <= ReferenceSetLimits.MaximumSourceIdLength);
 
+    /// <summary>Decides whether a valid removal changes membership.</summary>
+    /// <typeparam name="TAggregate">The named aggregate snapshot type.</typeparam>
+    /// <typeparam name="TSource">The source projection type.</typeparam>
+    /// <param name="command">The caller-supplied identifier.</param>
+    /// <param name="state">The current snapshot, or null for an untouched stream.</param>
+    /// <param name="read">The pure membership reader.</param>
+    /// <returns>One recorded removal, a successful empty result, or a validation failure.</returns>
     private static OperationResult<IReadOnlyList<object>> Remove<TAggregate, TSource>(
         IRemoveReference<TSource> command,
         TAggregate? state,

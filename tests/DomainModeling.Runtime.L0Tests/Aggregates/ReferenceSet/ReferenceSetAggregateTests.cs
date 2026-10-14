@@ -33,6 +33,11 @@ namespace MississippiTests.DomainModeling.Runtime.L0Tests.Aggregates.ReferenceSe
 /// <summary>Exercises actual aggregate dispatch and conversion with only the external storage grain seams mocked.</summary>
 public sealed class ReferenceSetAggregateTests
 {
+    /// <summary>Verifies real aggregate dispatch, conversion and concurrency using mocked external storage seams.</summary>
+    /// <typeparam name="TAggregate">The independently named consumer snapshot.</typeparam>
+    /// <param name="create">Creates its empty snapshot for replay.</param>
+    /// <param name="read">Reads its source-typed membership.</param>
+    /// <returns>The asynchronous verification.</returns>
     private static async Task VerifyAggregateAsync<TAggregate>(
         Func<TAggregate> create,
         Func<TAggregate, ReferenceSetState<CatalogItemProjection>> read
