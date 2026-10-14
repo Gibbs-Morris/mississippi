@@ -14,6 +14,8 @@ Governing thought: Record validated source-editing failures without weakening co
 
 - Generator authors **MUST** qualify emitted consumer type references when introducing helper types that can shadow them. Why: A03's private `RegistrationMarker` captured valid projection, event, and reducer names and caused `CS0311` in compiled generated output.
 
+- Generator authors **MUST** qualify emitted framework calls that can bind to consumer extensions. Why: Imported consumer namespaces can make an extension call ambiguous or select a different overload; A03's unqualified `Any` caused both a compiler failure and duplicate reducer registration.
+
 ## Scope and Audience
 
 Agents editing C# source documentation or source generator emission.
