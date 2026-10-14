@@ -210,7 +210,8 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         // Add snapshot state converter
         sb.AppendLine("// Add snapshot state converter for projection");
         sb.AppendLine($"services.AddSnapshotStateConverter<{projection.Model.FullTypeName}>();");
-        sb.AppendLine("services.AddSingleton(new RegistrationMarker());");
+        sb.AppendLine(
+            "global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, new RegistrationMarker());");
         sb.AppendLine("return services;");
         sb.CloseBrace();
         sb.AppendLine();

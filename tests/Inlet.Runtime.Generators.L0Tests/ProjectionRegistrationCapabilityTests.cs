@@ -210,6 +210,28 @@ public sealed class ProjectionRegistrationCapabilityTests
     }
 
     /// <summary>
+    ///     Consumer singleton extensions do not capture marker registration.
+    /// </summary>
+    [Fact]
+    public void ConsumerSingletonExtensionsCannotCaptureRegistration()
+    {
+        string source = CreateSource(true, false) + """
+
+            namespace TestApp.Domain.Projections.AccountBalance.Reducers
+            {
+                public static class ConsumerExtensions
+                {
+                    public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection AddSingleton<T>(
+                        this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services,
+                        T instance
+                    ) where T : class => services;
+                }
+            }
+            """;
+        _ = Generate(true, false, source);
+    }
+
+    /// <summary>
     ///     Consumer types retain their identity when their name matches the private guard.
     /// </summary>
     /// <param name="consumerTypeName">The projection, event, or reducer name to replace.</param>
