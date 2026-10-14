@@ -25,8 +25,13 @@ consumers or make the proposed replacements available.
 
 ### Registrations
 
-- Registrations MUST select services, provider implementations, lifetimes, host capabilities, and assembly discovery explicitly. Why: The composition root owns the host graph.
+- Service inclusion choices offered by a feature MUST be made explicitly through registration. Why: The composition root owns which services participate.
+- Provider implementation choices offered by a feature MUST be made explicitly through registration. Why: The host owns its provider selection.
+- Service lifetime choices offered by a feature MUST be made explicitly through registration. Why: The host owns service lifecycles.
+- Host capability choices offered by a feature MUST be made explicitly through registration. Why: The host owns which capabilities it enables.
+- Assembly discovery choices offered by a feature MUST be made explicitly through registration. Why: The host owns its discovery boundary.
 - Registrations MUST be synchronous. Why: Container composition is not an asynchronous initialization boundary.
+- Registration code MUST NOT create temporary service providers, including through BuildServiceProvider. Why: A second container can create duplicate singleton graphs outside the host's ownership.
 - Network work and asynchronous initialization MUST be deferred to factories, hosted services, or supported lifecycle participants. Why: Registration cannot prove resource readiness.
 - Feature registration MUST compose with earlier valid registrations. Why: Adding a second module should preserve the first module's graph.
 - An identical feature registration request MUST be idempotent. Why: Repeated inclusion should not duplicate descriptors, adapters, or registry entries.
@@ -45,7 +50,8 @@ consumers or make the proposed replacements available.
 - Configurable options MUST document their defaults and configuration/callback ordering. Why: Consumers need the effective configuration contract.
 - Options validation MUST run before the host serves work, using ValidateOnStart or an explicit validated startup lifecycle. Why: IValidateOptions supplies validation logic but does not by itself trigger eager validation.
 - Ordinary service constructors MUST consume options through `IOptions<T>`, `IOptionsSnapshot<T>`, or `IOptionsMonitor<T>` rather than raw configuration primitives. Why: One pipeline owns binding and validation.
-- Registration MUST NOT create hidden Configure branches, new-options copies, or a temporary provider that bypasses that pipeline. Why: Consumers should receive the same validated effective configuration.
+- Registration MUST NOT create hidden Configure branches. Why: Consumers should receive configuration through the same validated options pipeline.
+- Registration MUST NOT create new-options copies. Why: Consumers should receive the same validated effective configuration.
 - An options contract MUST state whether it supports named instances, reload, or a fixed startup snapshot. Why: Binding alone does not establish those capabilities.
 
 ### Attributes
