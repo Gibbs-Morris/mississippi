@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,6 +28,7 @@ using MississippiTests.DomainModeling.Runtime.L0Tests.Aggregates.SavedItems.Comm
 using MississippiTests.DomainModeling.Runtime.L0Tests.Aggregates.SavedItems.State;
 using MississippiTests.DomainModeling.Runtime.L0Tests.Projections.CatalogItem;
 using MississippiTests.DomainModeling.Runtime.L0Tests.Projections.PinnedItemsMembership;
+using MississippiTests.DomainModeling.Runtime.L0Tests.Projections.PositionalMembership;
 using MississippiTests.DomainModeling.Runtime.L0Tests.Projections.SavedItemsMembership;
 
 using Moq;
@@ -302,6 +304,20 @@ public sealed class ReferenceSetProjectionTests
         Assert.Same(projection.Object, factory.GetUxProjectionGrain<SavedItemsMembershipProjection>("collection"));
         grains.VerifyAll();
     }
+
+    /// <summary>The public helper rejects projection types the snapshot cache cannot construct.</summary>
+    [Fact]
+    public void ProjectionRegistrationRequiresPublicParameterlessConstructor()
+    {
+        MethodInfo registration =
+            typeof(ReferenceSetRegistrations).GetMethod(nameof(ReferenceSetRegistrations.AddReferenceSetProjection))!;
+        Assert.NotNull(
+            registration.MakeGenericMethod(typeof(SavedItemsMembershipProjection), typeof(CatalogItemProjection)));
+        Assert.Throws<ArgumentException>(() => registration.MakeGenericMethod(
+            typeof(PositionalMembershipProjection),
+            typeof(CatalogItemProjection)));
+    }
+
     /// <summary>Projection registration rejects missing callbacks before installing services.</summary>
     [Fact]
     public void RegistrationRejectsNullArguments()

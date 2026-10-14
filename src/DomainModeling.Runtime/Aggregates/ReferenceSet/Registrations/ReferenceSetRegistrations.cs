@@ -55,7 +55,7 @@ public static class ReferenceSetRegistrations
     }
 
     /// <summary>Registers read-only membership replay for an application-defined projection.</summary>
-    /// <typeparam name="TProjection">The named projection snapshot type.</typeparam>
+    /// <typeparam name="TProjection">The named projection snapshot type with a public parameterless constructor.</typeparam>
     /// <typeparam name="TSource">The source projection type.</typeparam>
     /// <param name="services">The service collection.</param>
     /// <param name="read">Reads membership from the projection.</param>
@@ -70,7 +70,7 @@ public static class ReferenceSetRegistrations
         Func<TProjection?, ReferenceSetState<TSource>> read,
         Func<TProjection?, ReferenceSetState<TSource>, TProjection> write
     )
-        where TProjection : class
+        where TProjection : class, new()
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(read);
