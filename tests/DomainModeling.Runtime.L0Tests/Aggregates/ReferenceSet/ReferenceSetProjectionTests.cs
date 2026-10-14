@@ -279,6 +279,29 @@ public sealed class ReferenceSetProjectionTests
             () => new PinnedItemsMembershipProjection(),
             state => state.References.Members);
 
+    /// <summary>The feature helper alone supplies the UX factory used by documented named reads.</summary>
+    [Fact]
+    public void ProjectionOnlyRegistrationResolvesActualUxFactory()
+    {
+        ServiceCollection services = new();
+        services.AddReferenceSetProjection<SavedItemsMembershipProjection, CatalogItemProjection>(
+            state => state?.References ?? new(),
+            (state, references) => (state ?? new()) with
+            {
+                References = references,
+            });
+        services.AddLogging();
+        Mock<IGrainFactory> grains = new(MockBehavior.Strict);
+        Mock<IUxProjectionGrain<SavedItemsMembershipProjection>> projection = new(MockBehavior.Strict);
+        grains.Setup(item => item.GetGrain<IUxProjectionGrain<SavedItemsMembershipProjection>>("collection", null))
+            .Returns(projection.Object);
+        services.AddSingleton(grains.Object);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IUxProjectionGrainFactory factory = provider.GetRequiredService<IUxProjectionGrainFactory>();
+        Assert.IsType<UxProjectionGrainFactory>(factory);
+        Assert.Same(projection.Object, factory.GetUxProjectionGrain<SavedItemsMembershipProjection>("collection"));
+        grains.VerifyAll();
+    }
     /// <summary>Projection registration rejects missing callbacks before installing services.</summary>
     [Fact]
     public void RegistrationRejectsNullArguments()
