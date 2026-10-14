@@ -3,6 +3,11 @@
         <Description>Architecture tests for project layering, naming, access control, dependency injection, logging, and Orleans serialization conventions.</Description>
     </PropertyGroup>
 
+    <!-- Record the expected set independently of files copied to the test output. -->
+    <ItemGroup>
+        <_FrameworkProject Include="..\..\src\*\*.csproj" />
+        <AssemblyMetadata Include="@(_FrameworkProject->'Mississippi.%(Filename)')" Value="ArchitectureFrameworkAssembly" />
+    </ItemGroup>
     <!-- Reference all src projects to include them in architecture analysis -->
     <ItemGroup>
         <ProjectReference Include="..\..\src\DomainModeling.TestHarness\DomainModeling.TestHarness.csproj" />
@@ -29,6 +34,7 @@
         <ProjectReference Include="..\..\src\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
         <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Client\Inlet.Client.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Runtime\Inlet.Runtime.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Gateway\Inlet.Gateway.csproj" />
