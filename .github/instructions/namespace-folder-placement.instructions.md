@@ -54,6 +54,8 @@ Contributors moving or adding source files under `src/`, `tests/`, and `samples/
 
 Segments list supported component locations, not folders to create unconditionally. State can remain at the established feature root as in Spring and Undercurrent. Public contracts can span matching archetype paths in Abstractions; behavior and concrete wiring stay in the appropriate implementation project under the [abstractions policy](abstractions-projects.instructions.md).
 
+Placement does not establish runtime capabilities. External work associated with a projection follows the supported paths in the [component outline](domain-modeling.instructions.md#component-responsibilities); an `Effects` folder does not create projection effect dispatch.
+
 ## Core Principles
 
 - Determinism beats preference.

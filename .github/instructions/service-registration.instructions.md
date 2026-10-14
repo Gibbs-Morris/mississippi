@@ -64,7 +64,7 @@ Registration order within aggregates/projections:
 3. `AddReducer<TEvent, TState, TReducer>()` - Register aggregate or projection reducers
 4. `AddSnapshotStateConverter<TState>()` - Register snapshot converter
 
-Projections register their consumed events and reducers, plus separate effects when needed. They have no command-handler registration. [UndercurrentDomainRegistrations](../../src/Undercurrent.Domain/UndercurrentDomainRegistrations.cs) shows feature composition; [SagaRegistrations](../../src/DomainModeling.Runtime/SagaRegistrations.cs) shows named orchestration components.
+Projections register their consumed events and reducers. They have no command-handler registration or native event-effect dispatch; external work uses the separate supported paths in the [component outline](domain-modeling.instructions.md#component-responsibilities). [UndercurrentDomainRegistrations](../../src/Undercurrent.Domain/UndercurrentDomainRegistrations.cs) shows feature composition; [SagaRegistrations](../../src/DomainModeling.Runtime/SagaRegistrations.cs) shows named orchestration components.
 
 ## References
 

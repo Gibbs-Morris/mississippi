@@ -96,8 +96,10 @@ Contributors implementing new or modified production aggregate and projection fe
 | Handlers | `{Command}Handler : CommandHandlerBase<TCommand, TAggregate>` validates input/state and returns events or failure | None |
 | Events | Named past-tense records describing accepted facts | Consumes existing events; does not author business events |
 | Reducers | `{Event}Reducer : EventReducerBase<TEvent, TAggregate>` implements `ReduceCore()` for replay | `{Event}ProjectionReducer : EventReducerBase<TEvent, TProjection>` implements `ReduceCore()` for read-model derivation |
-| Effects | Named implementations for side effects when needed | Separate named implementations only when side effects are needed |
-| Registration | Composes types, options, descriptors, and factories | Composes existing event types, reducers, and optional effects |
+| Effects | Named implementations for side effects when needed | Supported aggregate effects or host services for external work, separate from projection replay |
+| Registration | Composes types, options, descriptors, and factories | Composes reducers and snapshot support; ensures consumed event types are available in the host |
+
+Current projection replay has no native event-effect dispatch. Keep external work in supported aggregate effects or host services; registering `AddEventEffect<TEffect, TProjection>()` does not make a projection execute it. The [projection cache](../../src/DomainModeling.Runtime/UxProjectionVersionedCacheGrain.cs) loads reduced state, while [aggregate execution](../../src/DomainModeling.Runtime/GenericAggregateGrain.cs) dispatches event effects.
 
 ### Folder Structure
 
