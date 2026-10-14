@@ -2,12 +2,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.DomainModeling.Abstractions;
+using Mississippi.DomainModeling.Runtime.Aggregates.ReferenceSet.Events;
+using Mississippi.DomainModeling.Runtime.Aggregates.ReferenceSet.Handlers;
+using Mississippi.DomainModeling.Runtime.Aggregates.ReferenceSet.Reducers;
 using Mississippi.Tributary.Abstractions;
 
 using MississippiTests.DomainModeling.Runtime.L0Tests.Aggregates.PinnedItems.State;
 using MississippiTests.DomainModeling.Runtime.L0Tests.Aggregates.SavedItems.Commands;
 using MississippiTests.DomainModeling.Runtime.L0Tests.Aggregates.SavedItems.State;
 using MississippiTests.DomainModeling.Runtime.L0Tests.Controllers.Aggregates.Commands.SavedItems;
+using MississippiTests.DomainModeling.Runtime.L0Tests.Projections.CatalogItem;
 
 
 namespace MississippiTests.DomainModeling.Runtime.L0Tests.Aggregates.ReferenceSet;
@@ -20,6 +24,14 @@ public sealed class ReferenceSetConsumerTests
     public void GeneratedCommandsExecuteForTwoNamedCollections()
     {
         using ServiceProvider provider = ReferenceSetFixture.Provider();
+        Assert.IsType<AddReferenceHandler<AddCatalogItem, SavedItemsAggregate, CatalogItemProjection>>(
+            provider.GetRequiredService<ICommandHandler<AddCatalogItem, SavedItemsAggregate>>());
+        Assert.IsType<RemoveReferenceHandler<RemoveCatalogItem, SavedItemsAggregate, CatalogItemProjection>>(
+            provider.GetRequiredService<ICommandHandler<RemoveCatalogItem, SavedItemsAggregate>>());
+        Assert.IsType<ReferenceAddedReducer<SavedItemsAggregate, CatalogItemProjection>>(
+            provider.GetRequiredService<IEventReducer<ReferenceAdded, SavedItemsAggregate>>());
+        Assert.IsType<ReferenceRemovedReducer<SavedItemsAggregate, CatalogItemProjection>>(
+            provider.GetRequiredService<IEventReducer<ReferenceRemoved, SavedItemsAggregate>>());
         AddCatalogItem command = provider.GetRequiredService<IMapper<AddCatalogItemDto, AddCatalogItem>>()
             .Map(
                 new()
