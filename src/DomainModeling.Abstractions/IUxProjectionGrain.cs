@@ -1,4 +1,3 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -46,32 +45,11 @@ public interface IUxProjectionGrain<TProjection> : IGrainWithStringKey
     /// </returns>
     /// <remarks>
     ///     This method gets the latest version from the cursor grain, then delegates to
-    ///     <see cref="GetAtVersionAsync" /> to retrieve the projection from a versioned cache grain.
+    ///     the same exact-version cache read path as <see cref="GetAtVersionAsync" />.
     /// </remarks>
     [ReadOnly]
     [Alias("GetAsync")]
     ValueTask<TProjection?> GetAsync(
-        CancellationToken cancellationToken = default
-    );
-
-    /// <summary>
-    ///     Gets a latest-query projection at a previously captured cursor position.
-    /// </summary>
-    /// <param name="version">The position already selected for the latest query.</param>
-    /// <param name="cursorLookupDuration">The nonnegative elapsed duration of the lookup that selected the position.</param>
-    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
-    /// <returns>The state at the captured position, or <c>default</c> when the exact read returns no state.</returns>
-    /// <remarks>
-    ///     Use this operation when a latest query has already selected its position for response metadata.
-    ///     It reads that exact position without another cursor lookup and retains latest-query instrumentation.
-    ///     Query duration combines the supplied cursor-lookup duration with this exact read.
-    ///     It does not verify that the supplied position is still the cursor's latest position.
-    /// </remarks>
-    [ReadOnly]
-    [Alias("GetAtCapturedLatestVersionAsync")]
-    ValueTask<TProjection?> GetAtCapturedLatestVersionAsync(
-        BrookPosition version,
-        TimeSpan cursorLookupDuration,
         CancellationToken cancellationToken = default
     );
 

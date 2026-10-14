@@ -1,4 +1,3 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -49,10 +48,7 @@ public sealed class UxProjectionControllerWildcardExistenceTests
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
         grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(42));
-        grainMock.Setup(g => g.GetAtCapturedLatestVersionAsync(
-                It.IsAny<BrookPosition>(),
-                It.IsAny<TimeSpan>(),
-                It.IsAny<CancellationToken>()))
+        grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(hasProjection ? projection : null);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(entityId)).Returns(grainMock.Object);
@@ -107,10 +103,7 @@ public sealed class UxProjectionControllerWildcardExistenceTests
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
         grainMock.Setup(g => g.GetLatestVersionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(42));
-        grainMock.Setup(g => g.GetAtCapturedLatestVersionAsync(
-                It.IsAny<BrookPosition>(),
-                It.IsAny<TimeSpan>(),
-                It.IsAny<CancellationToken>()))
+        grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestProjection?)null);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(entityId)).Returns(grainMock.Object);
@@ -124,10 +117,7 @@ public sealed class UxProjectionControllerWildcardExistenceTests
         // Assert
         Assert.IsType<NotFoundResult>(result.Result);
         grainMock.Verify(
-            g => g.GetAtCapturedLatestVersionAsync(
-                It.IsAny<BrookPosition>(),
-                It.IsAny<TimeSpan>(),
-                It.IsAny<CancellationToken>()),
+            g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()),
             Times.Once);
         mapperMock.Verify(m => m.Map(It.IsAny<TestProjection>()), Times.Never);
     }

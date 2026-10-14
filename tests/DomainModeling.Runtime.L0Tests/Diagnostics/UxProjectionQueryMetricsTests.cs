@@ -20,41 +20,12 @@ using Orleans.Runtime;
 namespace Mississippi.DomainModeling.Runtime.L0Tests.Diagnostics;
 
 /// <summary>
-///     Tests captured latest-query reads and their runtime instrumentation; public for xUnit discovery.
+///     Tests latest and exact-version query instrumentation; public for xUnit discovery.
 /// </summary>
-public sealed class UxProjectionCapturedLatestQueryTests
+public sealed class UxProjectionQueryMetricsTests
 {
     /// <summary>
-    ///     Rejects a negative lookup duration before reading or recording a query.
-    /// </summary>
-    /// <returns>An asynchronous test task.</returns>
-    [Fact]
-    public async Task CapturedReadRejectsNegativeCursorLookupDuration()
-    {
-        // Arrange
-        Mock<IUxProjectionGrainFactory> factoryMock = new(MockBehavior.Strict);
-        Mock<ILogger<UxProjectionGrain<CapturedLatestMetricProjection>>> loggerMock = new();
-        UxProjectionGrain<CapturedLatestMetricProjection> grain = new(
-            new Mock<IGrainContext>().Object,
-            factoryMock.Object,
-            loggerMock.Object);
-
-        // Act
-        ArgumentOutOfRangeException exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
-            grain.GetAtCapturedLatestVersionAsync(
-                    new(42),
-                    TimeSpan.FromTicks(-1),
-                    TestContext.Current.CancellationToken)
-                .AsTask());
-
-        // Assert
-        Assert.Equal("cursorLookupDuration", exception.ParamName);
-        factoryMock.VerifyNoOtherCalls();
-        Assert.Empty(loggerMock.Invocations);
-    }
-
-    /// <summary>
-    ///     Verifies exact routing, cancellation, query measurements, and existing logging boundaries.
+    ///     Verifies one query measurement, exact routing, cancellation, and existing logging boundaries.
     /// </summary>
     /// <param name="version">The position selected for the query.</param>
     /// <param name="hasProjection">Whether the versioned cache returns state.</param>
@@ -62,16 +33,17 @@ public sealed class UxProjectionCapturedLatestQueryTests
     /// <param name="readKind">The public operation to exercise.</param>
     /// <returns>An asynchronous test task.</returns>
     [Theory]
-    [InlineData(0, true, true, "captured")]
-    [InlineData(42, true, true, "captured")]
-    [InlineData(42, false, true, "captured")]
-    [InlineData(-1, false, true, "captured")]
-    [InlineData(42, true, false, "captured")]
+    [InlineData(0, true, true, "versioned")]
+    [InlineData(42, true, true, "versioned")]
+    [InlineData(42, false, true, "versioned")]
+    [InlineData(-1, false, true, "versioned")]
+    [InlineData(42, true, false, "versioned")]
+    [InlineData(0, true, true, "latest")]
     [InlineData(42, true, true, "latest")]
+    [InlineData(42, false, true, "latest")]
     [InlineData(-1, false, true, "latest")]
-    [InlineData(42, true, true, "historical")]
-    [InlineData(42, false, true, "historical")]
-    public async Task ReadPreservesSelectedVersionAndQueryInstrumentation(
+    [InlineData(42, true, false, "latest")]
+    public async Task ReadRecordsOneQueryAndPreservesSelectedVersion(
         int version,
         bool hasProjection,
         bool isLoggingEnabled,
@@ -79,11 +51,10 @@ public sealed class UxProjectionCapturedLatestQueryTests
     )
     {
         // Arrange
-        const string entityId = "captured-metric-123";
+        const string entityId = "query-metric-123";
         BrookPosition position = new(version);
-        TimeSpan lookupDuration = readKind == "captured" ? TimeSpan.FromHours(1) : TimeSpan.Zero;
         CancellationToken token = TestContext.Current.CancellationToken;
-        CapturedLatestMetricProjection? projection = hasProjection ? new(version) : null;
+        VersionedQueryMetricProjection? projection = hasProjection ? new(version) : null;
         ConcurrentQueue<(string Name, string? Unit, double Value, IReadOnlyDictionary<string, object?> Tags)>
             measurements = new();
         using MeterListener listener = new();
@@ -103,12 +74,12 @@ public sealed class UxProjectionCapturedLatestQueryTests
         Mock<IGrainContext> contextMock = new();
         contextMock.Setup(c => c.GrainId).Returns(GrainId.Create("test", entityId));
         Mock<IUxProjectionGrainFactory> factoryMock = new(MockBehavior.Strict);
-        Mock<IUxProjectionVersionedCacheGrain<CapturedLatestMetricProjection>> cacheMock = new(MockBehavior.Strict);
+        Mock<IUxProjectionVersionedCacheGrain<VersionedQueryMetricProjection>> cacheMock = new(MockBehavior.Strict);
         cacheMock.Setup(c => c.GetAsync(token)).ReturnsAsync(projection);
         if (!position.NotSet)
         {
-            UxProjectionVersionedCacheKey key = new("TEST.MODULE.CAPTUREDMETRIC", entityId, position);
-            factoryMock.Setup(f => f.GetUxProjectionVersionedCacheGrain<CapturedLatestMetricProjection>(key))
+            UxProjectionVersionedCacheKey key = new("TEST.MODULE.QUERYMETRIC", entityId, position);
+            factoryMock.Setup(f => f.GetUxProjectionVersionedCacheGrain<VersionedQueryMetricProjection>(key))
                 .Returns(cacheMock.Object);
         }
 
@@ -120,20 +91,19 @@ public sealed class UxProjectionCapturedLatestQueryTests
                 .Returns(cursorMock.Object);
         }
 
-        Mock<ILogger<UxProjectionGrain<CapturedLatestMetricProjection>>> loggerMock = new();
+        Mock<ILogger<UxProjectionGrain<VersionedQueryMetricProjection>>> loggerMock = new();
         loggerMock.Setup(l => l.IsEnabled(LogLevel.Debug)).Returns(isLoggingEnabled);
-        UxProjectionGrain<CapturedLatestMetricProjection> grain = new(
+        UxProjectionGrain<VersionedQueryMetricProjection> grain = new(
             contextMock.Object,
             factoryMock.Object,
             loggerMock.Object);
         await grain.OnActivateAsync(token);
 
         // Act
-        CapturedLatestMetricProjection? result = readKind switch
+        VersionedQueryMetricProjection? result = readKind switch
         {
-            "captured" => await grain.GetAtCapturedLatestVersionAsync(position, lookupDuration, token),
             "latest" => await grain.GetAsync(token),
-            "historical" => await grain.GetAtVersionAsync(position, token),
+            "versioned" => await grain.GetAtVersionAsync(position, token),
             var _ => throw new ArgumentOutOfRangeException(nameof(readKind)),
         };
 
@@ -143,45 +113,50 @@ public sealed class UxProjectionCapturedLatestQueryTests
         factoryMock.Verify(
             f => f.GetUxProjectionCursorGrain(It.IsAny<UxProjectionCursorKey>()),
             readKind == "latest" ? Times.Once : Times.Never);
+        cursorMock.Verify(c => c.GetPositionAsync(), readKind == "latest" ? Times.Once : Times.Never);
+        factoryMock.Verify(
+            f => f.GetUxProjectionVersionedCacheGrain<VersionedQueryMetricProjection>(
+                It.Is<UxProjectionVersionedCacheKey>(key =>
+                    (key.BrookName == "TEST.MODULE.QUERYMETRIC") &&
+                    (key.EntityId == entityId) &&
+                    (key.Version == position))),
+            position.NotSet ? Times.Never : Times.Once);
+        factoryMock.VerifyNoOtherCalls();
         (string Name, string? Unit, double Value, IReadOnlyDictionary<string, object?> Tags)[] snapshot =
             measurements.ToArray();
-        if (readKind == "historical")
+        (string Name, string? Unit, double Value, IReadOnlyDictionary<string, object?> Tags) count = Assert.Single(
+            snapshot,
+            m => m.Name == "projection.query.count");
+        Assert.Equal(1, count.Value);
+        Assert.Equal("queries", count.Unit);
+        Assert.Equal(readKind, count.Tags["query.type"]);
+        Assert.Equal(2, count.Tags.Count);
+        (string Name, string? Unit, double Value, IReadOnlyDictionary<string, object?> Tags) duration = Assert.Single(
+            snapshot,
+            m => m.Name == "projection.query.duration");
+        Assert.True(duration.Value >= 0);
+        Assert.Equal("ms", duration.Unit);
+        Assert.Equal(readKind, duration.Tags["query.type"]);
+        Assert.Equal(2, duration.Tags.Count);
+        (string Name, string? Unit, double Value, IReadOnlyDictionary<string, object?> Tags)[] empty =
+            snapshot.Where(m => m.Name == "projection.query.empty").ToArray();
+        if (hasProjection)
         {
-            Assert.Empty(snapshot);
+            Assert.Empty(empty);
         }
         else
         {
-            (string Name, string? Unit, double Value, IReadOnlyDictionary<string, object?> Tags) count = Assert.Single(
-                snapshot,
-                m => m.Name == "projection.query.count");
-            Assert.Equal(1, count.Value);
-            Assert.Equal("queries", count.Unit);
-            Assert.Equal("latest", count.Tags["query.type"]);
-            (string Name, string? Unit, double Value, IReadOnlyDictionary<string, object?> Tags) duration =
-                Assert.Single(snapshot, m => m.Name == "projection.query.duration");
-            Assert.True(duration.Value >= lookupDuration.TotalMilliseconds);
-            Assert.Equal("ms", duration.Unit);
-            Assert.Equal("latest", duration.Tags["query.type"]);
-            (string Name, string? Unit, double Value, IReadOnlyDictionary<string, object?> Tags)[] empty =
-                snapshot.Where(m => m.Name == "projection.query.empty").ToArray();
-            if (hasProjection)
-            {
-                Assert.Empty(empty);
-            }
-            else
-            {
-                (string Name, string? Unit, double Value, IReadOnlyDictionary<string, object?> Tags) emptyMeasurement =
-                    Assert.Single(empty);
-                Assert.Equal(1, emptyMeasurement.Value);
-                Assert.Equal("queries", emptyMeasurement.Unit);
-                Assert.Single(emptyMeasurement.Tags);
-            }
+            (string Name, string? Unit, double Value, IReadOnlyDictionary<string, object?> Tags) emptyMeasurement =
+                Assert.Single(empty);
+            Assert.Equal(1, emptyMeasurement.Value);
+            Assert.Equal("queries", emptyMeasurement.Unit);
+            Assert.Single(emptyMeasurement.Tags);
         }
 
         IInvocation[] delegationLogs = loggerMock.Invocations
             .Where(i => (i.Method.Name == "Log") && (((EventId)i.Arguments[1]).Id == 3))
             .ToArray();
-        if (isLoggingEnabled && (readKind != "historical") && !(position.NotSet && (readKind == "latest")))
+        if (isLoggingEnabled && (readKind == "latest") && !position.NotSet)
         {
             IInvocation invocation = Assert.Single(delegationLogs);
             Assert.Equal(LogLevel.Debug, invocation.Arguments[0]);
@@ -190,12 +165,6 @@ public sealed class UxProjectionCapturedLatestQueryTests
                 Assert.IsType<IReadOnlyList<KeyValuePair<string, object?>>>(invocation.Arguments[2], false);
             Assert.Contains(state, field => (field.Key == "EntityId") && Equals(field.Value, entityId));
             Assert.Contains(state, field => (field.Key == "Version") && Equals(field.Value, position));
-            Assert.Contains(
-                state,
-                field => (field.Key == "{OriginalFormat}") &&
-                         Equals(
-                             field.Value,
-                             "GetAsync delegating to versioned cache for UX projection entity '{EntityId}' at version {Version}"));
         }
         else
         {
@@ -217,7 +186,7 @@ public sealed class UxProjectionCapturedLatestQueryTests
             }
 
             if (tagMap.TryGetValue("projection.type", out object? projectionType) &&
-                (projectionType as string == nameof(CapturedLatestMetricProjection)))
+                (projectionType as string == nameof(VersionedQueryMetricProjection)))
             {
                 measurements.Enqueue((instrument.Name, instrument.Unit, value, tagMap));
             }

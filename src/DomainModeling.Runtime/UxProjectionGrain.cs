@@ -45,7 +45,7 @@ namespace Mississippi.DomainModeling.Runtime;
 ///         <list type="number">
 ///             <item>Get current brook position from <see cref="IUxProjectionCursorGrain" />.</item>
 ///             <item>
-///                 Delegate to <see cref="GetAtVersionAsync" /> which routes to
+///                 Use the same exact-version read path as <see cref="GetAtVersionAsync" />, routing to
 ///                 <see cref="IUxProjectionVersionedCacheGrain{TProjection}" />.
 ///             </item>
 ///         </list>
@@ -127,29 +127,9 @@ internal sealed class UxProjectionGrain<TProjection>
 
         // Delegate to versioned cache grain for single responsibility
         Logger.GetAsyncDelegatingToVersion(entityId, latestVersion);
-        TProjection? result = await GetAtVersionAsync(latestVersion, cancellationToken);
+        TProjection? result = await GetAtVersionCoreAsync(latestVersion, cancellationToken);
         sw.Stop();
         UxProjectionMetrics.RecordQuery(projectionTypeName, "latest", sw.Elapsed.TotalMilliseconds, result is not null);
-        return result;
-    }
-
-    /// <inheritdoc />
-    public async ValueTask<TProjection?> GetAtCapturedLatestVersionAsync(
-        BrookPosition version,
-        TimeSpan cursorLookupDuration,
-        CancellationToken cancellationToken = default
-    )
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(cursorLookupDuration, TimeSpan.Zero);
-        Stopwatch sw = Stopwatch.StartNew();
-        Logger.GetAsyncDelegatingToVersion(entityId, version);
-        TProjection? result = await GetAtVersionAsync(version, cancellationToken);
-        sw.Stop();
-        UxProjectionMetrics.RecordQuery(
-            typeof(TProjection).Name,
-            "latest",
-            cursorLookupDuration.TotalMilliseconds + sw.Elapsed.TotalMilliseconds,
-            result is not null);
         return result;
     }
 
@@ -159,20 +139,14 @@ internal sealed class UxProjectionGrain<TProjection>
         CancellationToken cancellationToken = default
     )
     {
-        // Validate version
-        if (version.NotSet)
-        {
-            Logger.VersionedRequestInvalidVersion(entityId, version);
-            return default;
-        }
-
-        // Route to versioned cache grain for the specific version
-        Logger.VersionedRequestRouting(entityId, version);
-        UxProjectionVersionedCacheKey versionedCacheKey = new(BrookName, entityId, version);
-        IUxProjectionVersionedCacheGrain<TProjection> versionedCacheGrain =
-            UxProjectionGrainFactory.GetUxProjectionVersionedCacheGrain<TProjection>(versionedCacheKey);
-        TProjection? result = await versionedCacheGrain.GetAsync(cancellationToken);
-        Logger.VersionedRequestCompleted(entityId, version);
+        Stopwatch sw = Stopwatch.StartNew();
+        TProjection? result = await GetAtVersionCoreAsync(version, cancellationToken);
+        sw.Stop();
+        UxProjectionMetrics.RecordQuery(
+            typeof(TProjection).Name,
+            "versioned",
+            sw.Elapsed.TotalMilliseconds,
+            result is not null);
         return result;
     }
 
@@ -210,5 +184,27 @@ internal sealed class UxProjectionGrain<TProjection>
         entityId = this.GetPrimaryKeyString();
         Logger.ProjectionGrainActivated(entityId, BrookName);
         return Task.CompletedTask;
+    }
+
+    private async ValueTask<TProjection?> GetAtVersionCoreAsync(
+        BrookPosition version,
+        CancellationToken cancellationToken = default
+    )
+    {
+        // Validate version
+        if (version.NotSet)
+        {
+            Logger.VersionedRequestInvalidVersion(entityId, version);
+            return default;
+        }
+
+        // Route to versioned cache grain for the specific version
+        Logger.VersionedRequestRouting(entityId, version);
+        UxProjectionVersionedCacheKey versionedCacheKey = new(BrookName, entityId, version);
+        IUxProjectionVersionedCacheGrain<TProjection> versionedCacheGrain =
+            UxProjectionGrainFactory.GetUxProjectionVersionedCacheGrain<TProjection>(versionedCacheKey);
+        TProjection? result = await versionedCacheGrain.GetAsync(cancellationToken);
+        Logger.VersionedRequestCompleted(entityId, version);
+        return result;
     }
 }

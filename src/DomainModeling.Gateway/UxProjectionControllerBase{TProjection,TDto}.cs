@@ -1,6 +1,5 @@
 using System;
 using System.Buffers;
-using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -251,9 +250,7 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
         IUxProjectionGrain<TProjection> grain = UxProjectionGrainFactory.GetUxProjectionGrain<TProjection>(entityId);
 
         // Get the latest version first for ETag support
-        long cursorLookupStarted = Stopwatch.GetTimestamp();
         BrookPosition position = await grain.GetLatestVersionAsync(cancellationToken);
-        TimeSpan cursorLookupDuration = Stopwatch.GetElapsedTime(cursorLookupStarted);
         if (position.NotSet)
         {
             Logger.ProjectionNotFound(entityId, ProjectionTypeName);
@@ -274,10 +271,7 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
         }
 
         // Read the same version selected for the ETag, even if the cursor advances.
-        TProjection? projection = await grain.GetAtCapturedLatestVersionAsync(
-            position,
-            cursorLookupDuration,
-            cancellationToken);
+        TProjection? projection = await grain.GetAtVersionAsync(position, cancellationToken);
         if (projection is null)
         {
             Logger.ProjectionNotFound(entityId, ProjectionTypeName);

@@ -1,4 +1,3 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -51,7 +50,7 @@ public sealed class UxProjectionControllerVersionPairingTests
                 return new(selected);
             });
         grainMock.Setup(g => g.GetAsync(token)).Returns(() => new(new TestProjection(currentVersion)));
-        grainMock.Setup(g => g.GetAtCapturedLatestVersionAsync(new(capturedVersion), It.IsAny<TimeSpan>(), token))
+        grainMock.Setup(g => g.GetAtVersionAsync(new(capturedVersion), token))
             .ReturnsAsync(new TestProjection(capturedVersion));
         Mock<IUxProjectionGrainFactory> factoryMock = new(MockBehavior.Strict);
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(entityId)).Returns(grainMock.Object);
@@ -72,9 +71,7 @@ public sealed class UxProjectionControllerVersionPairingTests
         Assert.Equal($"Mapped: {capturedVersion}", dto.Name);
         Assert.Equal("private, must-revalidate", controller.Response.Headers.CacheControl.ToString());
         grainMock.Verify(g => g.GetLatestVersionAsync(token), Times.Once);
-        grainMock.Verify(
-            g => g.GetAtCapturedLatestVersionAsync(new(capturedVersion), It.IsAny<TimeSpan>(), token),
-            Times.Once);
+        grainMock.Verify(g => g.GetAtVersionAsync(new(capturedVersion), token), Times.Once);
         grainMock.Verify(g => g.GetAsync(It.IsAny<CancellationToken>()), Times.Never);
         mapperMock.Verify(m => m.Map(It.Is<TestProjection>(p => p.Value == capturedVersion)), Times.Once);
     }
@@ -105,8 +102,7 @@ public sealed class UxProjectionControllerVersionPairingTests
                 return new(new BrookPosition(42));
             });
         grainMock.Setup(g => g.GetAsync(token)).Returns(() => new(hasAdvanced ? new TestProjection(43) : null));
-        grainMock.Setup(g => g.GetAtCapturedLatestVersionAsync(new(42), It.IsAny<TimeSpan>(), token))
-            .ReturnsAsync((TestProjection?)null);
+        grainMock.Setup(g => g.GetAtVersionAsync(new(42), token)).ReturnsAsync((TestProjection?)null);
         Mock<IUxProjectionGrainFactory> factoryMock = new(MockBehavior.Strict);
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(entityId)).Returns(grainMock.Object);
         Mock<IMapper<TestProjection, TestDto>> mapperMock = new(MockBehavior.Strict);
@@ -122,7 +118,7 @@ public sealed class UxProjectionControllerVersionPairingTests
         Assert.IsType<NotFoundResult>(result.Result);
         Assert.Equal(0, controller.Response.Headers.ETag.Count);
         grainMock.Verify(g => g.GetLatestVersionAsync(token), Times.Once);
-        grainMock.Verify(g => g.GetAtCapturedLatestVersionAsync(new(42), It.IsAny<TimeSpan>(), token), Times.Once);
+        grainMock.Verify(g => g.GetAtVersionAsync(new(42), token), Times.Once);
         grainMock.Verify(g => g.GetAsync(It.IsAny<CancellationToken>()), Times.Never);
         mapperMock.Verify(m => m.Map(It.IsAny<TestProjection>()), Times.Never);
     }
