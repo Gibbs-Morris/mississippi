@@ -18,6 +18,7 @@ Governing thought: File location and namespace layout must be deterministic, ver
 - Vertical splitting **MAY** occur before the 20-per-type limit when it materially improves discoverability and repeated pattern alignment; if a folder/type exceeds 20, vertical split **MUST** be applied. Why: Enables proactive organization while keeping a hard ceiling.
 - Horizontal technical-bucket splits (`Services`, `Models`, `Helpers`, `Utils`, `Common`) **MUST NOT** be introduced unless the segment is an established domain feature name and explicitly justified. Why: Avoids non-domain junk-drawer structures.
 - Aggregate, Projection, and Saga code **MUST** follow consistent archetype patterns across `src/**`, `tests/**`, and `samples/**`; tests **SHOULD** mirror production vertical structure under test namespace roots. Why: Repetition improves user onboarding and maintenance.
+- Aggregate and projection child folders **MUST** contain meaningful components under the [domain-modeling pattern](domain-modeling.instructions.md#production-feature-pattern). Why: Optional effects do not require empty folders, and projections do not gain commands or command handlers for symmetry.
 - Archetype conformance deviations **MUST** include reason, approval metadata, and evidence; deviations by convenience/preference **MUST NOT** be accepted. Why: Allows edge cases without policy erosion.
 - Exception usage **SHOULD** remain <=1% of mapped files; if it exceeds 1%, execution **MUST** stop for rules reassessment and recorded decision. Why: Keeps exceptions rare and intentional.
 - Conflict resolution precedence **MUST** be: valid bounded-context naming, then archetype consistency, then per-type cap splitting inside the archetype branch, then deterministic qualifiers. Why: Prevents inconsistent tie-break behavior.
@@ -48,8 +49,10 @@ Contributors moving or adding source files under `src/`, `tests/`, and `samples/
 | Artifact | Canonical Segments |
 |----------|--------------------|
 | Aggregate | `Aggregates/<Name>/Commands`, `Events`, `Reducers`, `Effects`, `State`, `Handlers`, `Registrations` |
-| Projection | `Projections/<Name>/Reducers`, `Effects`, `State`, `Handlers`, `Contracts`, `Registrations` |
+| Projection | `Projections/<Name>/Reducers`, `Effects`, `State`, `Contracts`, `Registrations` |
 | Saga | `Sagas/<Name>/Commands`, `Events`, `Reducers`, `Effects`, `State`, `Compensation`, `Registrations` |
+
+Segments list supported component locations, not folders to create unconditionally. State can remain at the established feature root as in Spring and Undercurrent. Public contracts can span matching archetype paths in Abstractions; behavior and concrete wiring stay in the appropriate implementation project under the [abstractions policy](abstractions-projects.instructions.md).
 
 ## Core Principles
 
