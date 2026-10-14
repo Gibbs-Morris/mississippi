@@ -26,7 +26,7 @@ public sealed class DomainSiloRegistrationGeneratorTests
                                               }
 
                                               [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-                                              public sealed class GenerateProjectionEndpointsAttribute : Attribute
+                                              public sealed class GenerateProjectionRegistrationAttribute : Attribute
                                               {
                                               }
 
@@ -138,7 +138,7 @@ public sealed class DomainSiloRegistrationGeneratorTests
 
                               namespace TestApp.Domain.Projections.Balance
                               {
-                                  [GenerateProjectionEndpoints]
+                                  [GenerateProjectionRegistration]
                                   public sealed record BalanceProjection;
                               }
                               """;

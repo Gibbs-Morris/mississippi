@@ -12,5 +12,9 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\src\Inlet.Runtime.Generators\Inlet.Runtime.Generators.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Gateway.Generators\Inlet.Gateway.Generators.csproj" />
+        <ProjectReference Include="..\..\src\DomainModeling.Runtime\DomainModeling.Runtime.csproj" />
+        <ProjectReference Include="..\..\src\DomainModeling.Gateway\DomainModeling.Gateway.csproj" />
     </ItemGroup>
 </Project>

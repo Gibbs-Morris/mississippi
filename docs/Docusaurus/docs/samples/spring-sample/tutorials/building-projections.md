@@ -39,7 +39,7 @@ Before following this tutorial, read these pages:
 
 ## Step 1: Define the Projection State
 
-A projection state record is similar to an aggregate state record. It uses `[BrookName]` to subscribe to the correct event stream and `[GenerateProjectionEndpoints]` to generate API and SignalR infrastructure.
+A projection state record is similar to an aggregate state record. It uses `[BrookName]` to select its event stream, `[GenerateProjectionRegistration]` to generate silo registration, and `[GenerateProjectionEndpoints]` with `[ProjectionPath]` to generate its HTTP contract.
 
 ### BankAccountBalanceProjection
 
@@ -47,6 +47,7 @@ A projection state record is similar to an aggregate state record. It uses `[Bro
 [ProjectionPath("bank-account-balance")]
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
 [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTBALANCE")]
+[GenerateProjectionRegistration]
 [GenerateProjectionEndpoints]
 [GenerateSerializer]
 [Alias("Spring.Domain.Projections.BankAccountBalance.BankAccountBalanceProjection")]
@@ -65,7 +66,12 @@ Key attributes:
 | `[ProjectionPath]` | Defines the API and SignalR path for this projection |
 | `[BrookName]` | Subscribes to the same event stream as the BankAccount aggregate |
 | `[SnapshotStorageName]` | Separate snapshot storage from the aggregate |
-| `[GenerateProjectionEndpoints]` | Source-generates API endpoints and real-time SignalR subscriptions |
+| `[GenerateProjectionRegistration]` | Generates silo helpers that register reducers and snapshot conversion |
+| `[GenerateProjectionEndpoints]` | Generates the HTTP controller, response DTO, and mappings |
+
+Call the generated projection helper or domain silo helper in the runtime host. Both generation markers are needed for Spring's runtime and HTTP behavior. A runtime-only projection can omit the HTTP marker and `[ProjectionPath]` while retaining its brook, snapshot metadata, and reducers.
+
+For real-time updates, configure `ScanProjectionAssemblies(...)` for addressed projections in the server hosts and dispatch the existing client subscription actions. Neither marker activates subscriptions.
 
 The projection uses a different `[SnapshotStorageName]` from the aggregate even though it subscribes to the same brook. This ensures the aggregate and projection snapshots are stored independently.
 
@@ -140,7 +146,7 @@ These `EventReducer`s subscribe to the same events as the aggregate's `EventRedu
 
 At this point, your projection implementation should include:
 
-- one projection state record with `ProjectionPath`, `BrookName`, and snapshot metadata
+- one projection state record with both generation markers, `ProjectionPath`, `BrookName`, and snapshot metadata
 - reducer types that apply the relevant events to projection state
 - a clear separation between aggregate state and read-model state
 
@@ -155,6 +161,7 @@ The ledger projection demonstrates a more complex read model. It maintains a sli
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
 [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTLEDGER")]
 [SnapshotRetention(100)]
+[GenerateProjectionRegistration]
 [GenerateProjectionEndpoints]
 [GenerateSerializer]
 public sealed record BankAccountLedgerProjection
@@ -232,6 +239,7 @@ The `FlaggedTransactionsProjection` subscribes to events from the `TransactionIn
 [ProjectionPath("flagged-transactions")]
 [BrookName("SPRING", "COMPLIANCE", "INVESTIGATION")]
 [SnapshotStorageName("SPRING", "COMPLIANCE", "FLAGGEDTXPROJECTION")]
+[GenerateProjectionRegistration]
 [GenerateProjectionEndpoints]
 [GenerateSerializer]
 public sealed record FlaggedTransactionsProjection
@@ -256,6 +264,7 @@ The `MoneyTransferStatusProjection` demonstrates a projection over a saga's even
 [ProjectionPath("money-transfer-status")]
 [BrookName("SPRING", "BANKING", "TRANSFER")]
 [SnapshotStorageName("SPRING", "BANKING", "TRANSFERSTATUS")]
+[GenerateProjectionRegistration]
 [GenerateProjectionEndpoints]
 [GenerateSerializer]
 [GenerateSagaStatusReducers]
@@ -320,7 +329,7 @@ Projections/
 
 ## Summary
 
-Projections in Mississippi are read-optimized state records with their own `EventReducer`s. They subscribe to event streams via `[BrookName]`, maintain independent snapshots, and are served through source-generated API endpoints and real-time SignalR subscriptions. A single event stream can feed multiple projections, each shaped for a specific read pattern.
+Projections in Mississippi are read-optimized state records with their own `EventReducer`s. They subscribe to event streams via `[BrookName]`, maintain independent snapshots, and use separate markers for runtime registration and HTTP contracts. Configured host scanning and explicit client actions support real-time subscriptions. A single event stream can feed multiple projections, each shaped for a specific read pattern.
 
 ## Next Steps
 

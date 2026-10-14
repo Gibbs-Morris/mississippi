@@ -26,8 +26,8 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
     private const string GenerateAggregateEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateAggregateEndpointsAttribute";
 
-    private const string GenerateProjectionEndpointsAttributeFullName =
-        "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
+    private const string GenerateProjectionRegistrationAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionRegistrationAttribute";
 
     private const string GenerateSagaEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute";
@@ -219,7 +219,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         INamedTypeSymbol? generateAggregateAttribute =
             compilation.GetTypeByMetadataName(GenerateAggregateEndpointsAttributeFullName);
         INamedTypeSymbol? generateProjectionAttribute =
-            compilation.GetTypeByMetadataName(GenerateProjectionEndpointsAttributeFullName);
+            compilation.GetTypeByMetadataName(GenerateProjectionRegistrationAttributeFullName);
         INamedTypeSymbol? generateSagaAttribute =
             compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeFullName);
         INamedTypeSymbol? generateSagaGenericAttribute =
