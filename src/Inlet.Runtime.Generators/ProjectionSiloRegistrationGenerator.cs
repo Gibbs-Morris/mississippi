@@ -49,6 +49,7 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         INamespaceSymbol namespaceSymbol,
         INamedTypeSymbol projectionAttrSymbol,
         INamedTypeSymbol? reducerBaseSymbol,
+        INamedTypeSymbol? sagaStatusAttribute,
         List<ProjectionRegistrationInfo> projections,
         string targetRootNamespace
     )
@@ -60,6 +61,7 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
                 typeSymbol,
                 projectionAttrSymbol,
                 reducerBaseSymbol,
+                sagaStatusAttribute,
                 targetRootNamespace);
             if (info is not null)
             {
@@ -74,6 +76,7 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
                 childNs,
                 projectionAttrSymbol,
                 reducerBaseSymbol,
+                sagaStatusAttribute,
                 projections,
                 targetRootNamespace);
         }
@@ -189,7 +192,8 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
 
         // Add UX projection infrastructure
         sb.AppendLine("// Add UX projection infrastructure");
-        sb.AppendLine("services.AddUxProjections();");
+        sb.AppendLine(
+            "global::Mississippi.DomainModeling.Runtime.UxProjectionRegistrations.AddUxProjections(services);");
         sb.AppendLine(
             "if (global::System.Linq.Enumerable.Any(services, descriptor => descriptor.ServiceType == typeof(RegistrationMarker)))");
         sb.OpenBrace();
@@ -202,14 +206,15 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         foreach (ReducerInfo reducer in projection.Reducers)
         {
             sb.AppendLine(
-                $"services.AddReducer<{reducer.EventFullTypeName}, {projection.Model.FullTypeName}, {reducer.FullTypeName}>();");
+                $"global::Mississippi.Tributary.Runtime.ReducerRegistrations.AddReducer<{reducer.EventFullTypeName}, {projection.Model.FullTypeName}, {reducer.FullTypeName}>(services);");
         }
 
         sb.AppendLine();
 
         // Add snapshot state converter
         sb.AppendLine("// Add snapshot state converter for projection");
-        sb.AppendLine($"services.AddSnapshotStateConverter<{projection.Model.FullTypeName}>();");
+        sb.AppendLine(
+            $"global::Mississippi.Tributary.Runtime.SnapshotRegistrations.AddSnapshotStateConverter<{projection.Model.FullTypeName}>(services);");
         sb.AppendLine(
             "global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, new RegistrationMarker());");
         sb.AppendLine("return services;");
@@ -242,14 +247,21 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
 
         // Get base type symbols for reducer detection
         INamedTypeSymbol? reducerBaseSymbol = compilation.GetTypeByMetadataName(EventReducerBaseFullName);
+        INamedTypeSymbol? sagaStatusAttribute =
+            compilation.GetTypeByMetadataName(SagaStatusReducerDefinition.AttributeFullName);
 
         // Scan all assemblies referenced by this compilation
         foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
         {
+            INamedTypeSymbol? currentSagaStatusAttribute =
+                SymbolEqualityComparer.Default.Equals(referencedAssembly, compilation.Assembly)
+                    ? sagaStatusAttribute
+                    : null;
             FindProjectionsInNamespace(
                 referencedAssembly.GlobalNamespace,
                 projectionAttrSymbol,
                 reducerBaseSymbol,
+                currentSagaStatusAttribute,
                 projections,
                 targetRootNamespace);
         }
@@ -291,6 +303,7 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol projectionAttrSymbol,
         INamedTypeSymbol? reducerBaseSymbol,
+        INamedTypeSymbol? sagaStatusAttribute,
         string targetRootNamespace
     )
     {
@@ -310,6 +323,21 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         List<ReducerInfo> reducers = containingNs is not null
             ? FindReducersForProjection(containingNs, typeSymbol, reducerBaseSymbol)
             : [];
+        if (sagaStatusAttribute is not null &&
+            typeSymbol.GetAttributes()
+                .Any(attribute => SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, sagaStatusAttribute)))
+        {
+            foreach (SagaStatusReducerDefinition definition in SagaStatusReducerDefinition.All)
+            {
+                reducers.Add(
+                    new(
+                        "global::" + model.Namespace + ".Reducers." + definition.ClassName,
+                        definition.ClassName,
+                        "global::" + SagaStatusReducerDefinition.EventNamespace + "." + definition.EventTypeName,
+                        definition.EventTypeName,
+                        SagaStatusReducerDefinition.EventNamespace));
+            }
+        }
 
         // Only generate if there are reducers
         if (reducers.Count == 0)
