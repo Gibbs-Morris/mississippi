@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.Brooks.Abstractions;
 using Mississippi.Brooks.Abstractions.Attributes;
@@ -128,7 +129,7 @@ public sealed class ReferenceSetProjectionTests
             aggregateSnapshots.Object,
             aggregateReducer,
             Options.Create(new AggregateEffectOptions()),
-            TimeProvider.System,
+            new FakeTimeProvider(),
             NullLogger<GenericAggregateGrain<TAggregate>>.Instance,
             [],
             Mock.Of<ISagaReminderRegistry>());
