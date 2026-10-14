@@ -12,7 +12,7 @@ description: Start here to understand what Mississippi is for, how the pieces fi
 
 Mississippi is an end-to-end application model for event-sourced systems built on Orleans.
 
-Every subsystem in Mississippi — aggregates, event streams, reducers, projections, subscriptions, and SignalR transport — runs as Orleans grains. Teams write domain types: state records, command handlers, event reducers, and saga steps. The framework hosts those types in the appropriate grains, generates the HTTP, SignalR, and client surfaces around them, and manages registration, serialization, and storage.
+Every subsystem in Mississippi — aggregates, event streams, reducers, projections, subscriptions, and SignalR transport — runs as Orleans grains. Teams write domain types: state records, command handlers, event reducers, and saga steps. The framework hosts those types in the appropriate grains, generates HTTP contracts and client artifacts, and hosts the existing SignalR subscription infrastructure, and manages registration, serialization, and storage.
 
 ## What This Section Covers
 

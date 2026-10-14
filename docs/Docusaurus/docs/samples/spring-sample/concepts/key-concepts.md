@@ -29,7 +29,7 @@ Use this table as a translation guide from plain-language architecture terms to 
 | Saga step | `WithdrawFromSourceStep` | `ISagaStep<TSaga>`, `[SagaStep<TSaga>(index)]` | One executable workflow step with ordered execution. |
 | Saga compensation | `WithdrawFromSourceStep.CompensateAsync` | `ICompensatable<TSaga>` | Optional rollback behavior invoked when a later step fails. |
 | Projection (domain model) | `BankAccountBalanceProjection` | `[GenerateProjectionRegistration]`, `[GenerateProjectionEndpoints]`, `[ProjectionPath]`, `[BrookName]` | Read-optimized domain projection record built from events. |
-| UX projection runtime | Generated projection query/subscription runtime | `IUxProjectionGrain<TProjection>` / `UxProjectionGrain<TProjection>` | Orleans runtime abstraction that serves projection queries and versioned projection reads. |
+| UX projection runtime | Framework projection query/subscription runtime | `IUxProjectionGrain<TProjection>` / `UxProjectionGrain<TProjection>` | Orleans runtime abstraction that serves projection queries and versioned projection reads. |
 | Brook | `SPRING.BANKING.ACCOUNT` | `[BrookName]`, `BrookKey` | Canonical event stream identity (name + entity key). |
 
 Notes:
