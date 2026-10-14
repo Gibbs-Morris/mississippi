@@ -1,8 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Unit tests for the banking sample&apos;s gateway startup retries, cancellation, permanent failures, and connection diagnostics.</Description>
+    </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\Spring.Gateway\Spring.Gateway.csproj" />
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+        <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     </ItemGroup>
 </Project>
