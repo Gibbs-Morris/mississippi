@@ -161,8 +161,11 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         sb.AppendUsing(projection.Model.Namespace);
 
         // Add using for reducers namespace
-        string reducersNamespace = projection.Model.Namespace + ".Reducers";
-        sb.AppendUsing(reducersNamespace);
+        if (projection.Reducers.Count > 0)
+        {
+            string reducersNamespace = projection.Model.Namespace + ".Reducers";
+            sb.AppendUsing(reducersNamespace);
+        }
 
         // Add usings for event namespaces (they may come from aggregate events)
         foreach (string eventNamespace in projection.Reducers.Select(r => r.EventNamespace).Distinct())
@@ -203,6 +206,12 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
 
         // Register reducers
         sb.AppendLine($"// Register reducers for {projection.Model.TypeName}");
+        if (projection.Reducers.Count == 0)
+        {
+            sb.AppendLine(
+                $"global::Mississippi.Tributary.Runtime.ReducerRegistrations.AddRootReducer<{projection.Model.FullTypeName}>(services);");
+        }
+
         foreach (ReducerInfo reducer in projection.Reducers)
         {
             sb.AppendLine(
@@ -337,12 +346,6 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
                         definition.EventTypeName,
                         SagaStatusReducerDefinition.EventNamespace));
             }
-        }
-
-        // Only generate if there are reducers
-        if (reducers.Count == 0)
-        {
-            return null;
         }
 
         // Output namespace: {ProductRoot}.Silo.Registrations

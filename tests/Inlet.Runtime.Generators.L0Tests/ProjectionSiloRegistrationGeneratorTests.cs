@@ -685,31 +685,6 @@ public class ProjectionSiloRegistrationGeneratorTests
     }
 
     /// <summary>
-    ///     Generator should produce no output when projection has no reducers.
-    /// </summary>
-    [Fact]
-    public void GeneratorProducesNoOutputWhenProjectionHasNoReducers()
-    {
-        const string projectionSource = """
-                                        using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
-
-                                        namespace TestApp.Domain.Projections.AccountBalance
-                                        {
-                                            [GenerateProjectionRegistration]
-                                            [ProjectionPath("account-balance")]
-                                            public sealed record AccountBalanceProjection
-                                            {
-                                                public decimal Balance { get; init; }
-                                            }
-                                        }
-                                        """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeAndBaseStubs, projectionSource);
-        Assert.Empty(runResult.GeneratedTrees);
-    }
-
-    /// <summary>
     ///     Generator should produce output when projection has reducers.
     /// </summary>
     [Fact]
@@ -745,6 +720,42 @@ public class ProjectionSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         Assert.Single(runResult.GeneratedTrees);
+    }
+
+    /// <summary>
+    ///     Generator should retain snapshot and root registration when a projection has no reducers.
+    /// </summary>
+    [Fact]
+    public void GeneratorProducesSnapshotRegistrationWhenProjectionHasNoReducers()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionRegistration]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, projectionSource);
+        SyntaxTree generated = Assert.Single(runResult.GeneratedTrees);
+        string registration = generated.ToString();
+        Assert.Contains(
+            "global::Mississippi.Tributary.Runtime.ReducerRegistrations.AddRootReducer<global::TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection>(services);",
+            registration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "AddSnapshotStateConverter<global::TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection>(services);",
+            registration,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(".Reducers;", registration, StringComparison.Ordinal);
+        Assert.DoesNotContain("AddReducer<", registration, StringComparison.Ordinal);
     }
 
     /// <summary>
