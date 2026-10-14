@@ -492,6 +492,96 @@ public class ProjectionEndpointsGeneratorTests
     }
 
     /// <summary>
+    ///     Nested custom dictionary values report the unsupported recursive conversion clearly.
+    /// </summary>
+    /// <param name="collectionType">The nested collection value type.</param>
+    [Theory]
+    [InlineData("System.Collections.Generic.List<Entry>")]
+    [InlineData("System.Collections.Immutable.ImmutableArray<Entry>")]
+    [InlineData("System.Collections.Generic.List<System.Collections.Generic.List<Entry>>")]
+    public void DictionaryNestedCustomValuesReportFlatSupportBoundary(
+        string collectionType
+    )
+    {
+        string source = $$"""
+                          namespace TestApp.Domain.Projections.Catalog
+                          {
+                              public sealed record Entry { public decimal Amount { get; init; } }
+                              [Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpoints]
+                              [Mississippi.Inlet.Abstractions.ProjectionPath("catalog")]
+                              public sealed record CatalogProjection
+                              {
+                                  public System.Collections.Generic.Dictionary<string, {{collectionType}}> Entries { get; init; } = new();
+                              }
+                          }
+                          """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Assert.Empty(
+            input.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        TestContext.Current.TestOutputHelper?.WriteLine("INPUT_ERRORS=0;FIXTURE_GLOBAL_USING=False");
+        Assert.All(result.Results, generatorResult => Assert.Null(generatorResult.Exception));
+        foreach (Diagnostic error in output.GetDiagnostics(TestContext.Current.CancellationToken)
+                     .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error))
+        {
+            TestContext.Current.TestOutputHelper?.WriteLine(error.ToString());
+        }
+
+        Diagnostic unsupported = Assert.Single(diagnostics, diagnostic => diagnostic.Id == "INLETPROJ002");
+        Assert.Equal(DiagnosticSeverity.Error, unsupported.Severity);
+        string message = unsupported.GetMessage(CultureInfo.InvariantCulture);
+        Assert.Contains("Entries", message, StringComparison.Ordinal);
+        Assert.Contains("Entry", message, StringComparison.Ordinal);
+        Assert.Contains("flat", message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Nested primitive dictionary values retain their shapes and direct assignment.
+    /// </summary>
+    /// <param name="immutable">Whether to use immutable dictionary and array values.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DictionaryNestedPrimitiveValuesRetainDirectAssignment(
+        bool immutable
+    )
+    {
+        string dictionaryType = immutable
+            ? "System.Collections.Immutable.ImmutableDictionary<string, System.Collections.Immutable.ImmutableArray<int>>"
+            : "System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<int>>";
+        string source = $$"""
+                          using Mississippi.Inlet.Generators.Abstractions;
+                          using Mississippi.Inlet.Abstractions;
+                          namespace TestApp.Domain.Projections.Catalog;
+                          [GenerateProjectionEndpoints, ProjectionPath("catalog")]
+                          public sealed record CatalogProjection
+                          {
+                              public {{dictionaryType}} Entries { get; init; } = default!;
+                          }
+                          """;
+        string initializer = immutable
+            ? "System.Collections.Immutable.ImmutableDictionary<string, System.Collections.Immutable.ImmutableArray<int>>.Empty.Add(\"values\", System.Collections.Immutable.ImmutableArray.Create(42, 99))"
+            : "new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<int>> { [\"values\"] = new() { 42, 99 } }";
+        string consumer = $$"""
+                            using TestApp.Domain.Projections.Catalog;
+                            using TestAssembly.Controllers.Projections.Mappers;
+                            public static class Consumer
+                            {
+                                public static bool Verify()
+                                {
+                                    var source = new CatalogProjection { Entries = {{initializer}} };
+                                    var mapped = new CatalogProjectionMapper().Map(source);
+                                    return object.ReferenceEquals(source.Entries, mapped.Entries) && mapped.Entries.Count == 1
+                                        && mapped.Entries["values"][0] == 42 && mapped.Entries["values"][1] == 99;
+                                }
+                            }
+                            """;
+        Assert.True(RunDictionaryConsumer(source, consumer));
+    }
+
+    /// <summary>
     ///     Generated controller should call base constructor correctly.
     /// </summary>
     [Fact]

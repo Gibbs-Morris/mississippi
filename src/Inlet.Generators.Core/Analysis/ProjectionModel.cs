@@ -21,6 +21,14 @@ public sealed class ProjectionModel
         DiagnosticSeverity.Error,
         true);
 
+    private static readonly DiagnosticDescriptor UnsupportedNestedDictionaryValue = new(
+        "INLETPROJ002",
+        "Unsupported nested dictionary value",
+        "Dictionary property '{0}' has collection value type '{1}' requiring recursive DTO conversion. Only flat custom dictionary values are supported.",
+        "Inlet.Generators.Core",
+        DiagnosticSeverity.Error,
+        true);
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="ProjectionModel" /> class.
     /// </summary>
@@ -141,7 +149,29 @@ public sealed class ProjectionModel
     public string TypeName { get; }
 
     /// <summary>
-    ///     Registers custom dictionary DTO sources and reports conflicting output identities.
+    ///     Detects custom leaves inside collection values for the flat dictionary diagnostic.
+    /// </summary>
+    private static bool ContainsCustomCollectionLeaf(
+        ITypeSymbol collection
+    )
+    {
+        if (TypeAnalyzer.GetMappedCollectionTypes(collection).Length > 0)
+        {
+            return true;
+        }
+
+        if (collection is IArrayTypeSymbol array)
+        {
+            return TypeAnalyzer.IsCollectionType(array.ElementType) && ContainsCustomCollectionLeaf(array.ElementType);
+        }
+
+        return collection is INamedTypeSymbol named &&
+               named.TypeArguments.Any(type =>
+                   TypeAnalyzer.IsCollectionType(type) && ContainsCustomCollectionLeaf(type));
+    }
+
+    /// <summary>
+    ///     Registers custom dictionary DTO sources and reports unsupported values or conflicting output identities.
     /// </summary>
     /// <param name="outputNamespace">The namespace containing the generated DTOs.</param>
     /// <param name="generatedDtoTypes">The compilation-local registry of dictionary DTO source identities.</param>
@@ -157,6 +187,21 @@ public sealed class ProjectionModel
         }
 
         ImmutableArray<Diagnostic>.Builder diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+        foreach (PropertyModel property in Properties.Where(property =>
+                     TypeAnalyzer.IsDictionaryType(property.SourceTypeSymbol)))
+        {
+            ITypeSymbol value = ((INamedTypeSymbol)property.SourceTypeSymbol).TypeArguments[1];
+            if (TypeAnalyzer.IsCollectionType(value) && ContainsCustomCollectionLeaf(value))
+            {
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        UnsupportedNestedDictionaryValue,
+                        Location.None,
+                        TypeName + "." + property.Name,
+                        value.ToDisplayString()));
+            }
+        }
+
         foreach (INamedTypeSymbol type in Properties
                      .Where(property => TypeAnalyzer.IsDictionaryType(property.SourceTypeSymbol))
                      .SelectMany(property => TypeAnalyzer.GetMappedCollectionTypes(property.SourceTypeSymbol))

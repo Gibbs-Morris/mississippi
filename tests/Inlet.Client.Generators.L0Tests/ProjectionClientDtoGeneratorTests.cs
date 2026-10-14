@@ -323,6 +323,52 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Nested custom dictionary values report the unsupported recursive conversion clearly.
+    /// </summary>
+    /// <param name="collectionType">The nested collection value type.</param>
+    [Theory]
+    [InlineData("System.Collections.Generic.List<Entry>")]
+    [InlineData("System.Collections.Immutable.ImmutableArray<Entry>")]
+    [InlineData("System.Collections.Generic.List<System.Collections.Generic.List<Entry>>")]
+    public void DictionaryNestedCustomValuesReportFlatSupportBoundary(
+        string collectionType
+    )
+    {
+        string source = $$"""
+                          namespace TestApp.Domain.Projections.Catalog
+                          {
+                              public sealed record Entry { public decimal Amount { get; init; } }
+                              [Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpoints]
+                              [Mississippi.Inlet.Abstractions.ProjectionPath("catalog")]
+                              public sealed record CatalogProjection
+                              {
+                                  public System.Collections.Generic.Dictionary<string, {{collectionType}}> Entries { get; init; } = new();
+                              }
+                          }
+                          """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Assert.Empty(
+            input.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        TestContext.Current.TestOutputHelper?.WriteLine("INPUT_ERRORS=0;FIXTURE_GLOBAL_USING=False");
+        Assert.All(result.Results, generatorResult => Assert.Null(generatorResult.Exception));
+        foreach (Diagnostic error in output.GetDiagnostics(TestContext.Current.CancellationToken)
+                     .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error))
+        {
+            TestContext.Current.TestOutputHelper?.WriteLine(error.ToString());
+        }
+
+        Diagnostic unsupported = Assert.Single(diagnostics, diagnostic => diagnostic.Id == "INLETPROJ002");
+        Assert.Equal(DiagnosticSeverity.Error, unsupported.Severity);
+        string message = unsupported.GetMessage(CultureInfo.InvariantCulture);
+        Assert.Contains("Entries", message, StringComparison.Ordinal);
+        Assert.Contains("Entry", message, StringComparison.Ordinal);
+        Assert.Contains("flat", message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Dictionary keys and values generate their DTOs in compilable client output.
     /// </summary>
     /// <param name="dictionaryType">The declared dictionary type.</param>
