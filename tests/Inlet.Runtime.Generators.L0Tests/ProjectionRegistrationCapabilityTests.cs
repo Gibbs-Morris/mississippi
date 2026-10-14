@@ -215,19 +215,20 @@ public sealed class ProjectionRegistrationCapabilityTests
     [Fact]
     public void ConsumerSingletonExtensionsCannotCaptureRegistration()
     {
-        string source = CreateSource(true, false) + """
+        string source = CreateSource(true, false) +
+                        """
 
-            namespace TestApp.Domain.Projections.AccountBalance.Reducers
-            {
-                public static class ConsumerExtensions
-                {
-                    public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection AddSingleton<T>(
-                        this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services,
-                        T instance
-                    ) where T : class => services;
-                }
-            }
-            """;
+                        namespace TestApp.Domain.Projections.AccountBalance.Reducers
+                        {
+                            public static class ConsumerExtensions
+                            {
+                                public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection AddSingleton<T>(
+                                    this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services,
+                                    T instance
+                                ) where T : class => services;
+                            }
+                        }
+                        """;
         _ = Generate(true, false, source);
     }
 
