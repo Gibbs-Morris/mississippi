@@ -319,6 +319,56 @@ public class ProjectionEndpointsGeneratorTests
     }
 
     /// <summary>
+    ///     Dictionary enum and record sources cannot silently share one generated DTO identity.
+    /// </summary>
+    /// <param name="reverseProperties">Whether the record source is encountered first.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DictionaryEnumRecordIdentityConflictsReportBothSources(
+        bool reverseProperties
+    )
+    {
+        const string first =
+            "public System.Collections.Generic.Dictionary<string, A.Entry> First { get; init; } = new();";
+        const string second =
+            "public System.Collections.Generic.Dictionary<string, B.Entry> Second { get; init; } = new();";
+        string source = $$"""
+                          namespace A { public enum Entry { Ready = 7 } }
+                          namespace B { public sealed record Entry { public decimal Amount { get; init; } } }
+                          namespace TestApp.Domain.Projections.Catalog
+                          {
+                              [Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpoints]
+                              [Mississippi.Inlet.Abstractions.ProjectionPath("catalog")]
+                              public sealed record CatalogProjection
+                              {
+                                  {{(reverseProperties ? second : first)}}
+                                  {{(reverseProperties ? first : second)}}
+                              }
+                          }
+                          """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        Compilation input = output.RemoveSyntaxTrees(result.GeneratedTrees);
+        Assert.Empty(
+            input.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        TestContext.Current.TestOutputHelper?.WriteLine("INPUT_ERRORS=0;ENUM_RECORD_DICTIONARY_IDENTITY");
+        foreach (GeneratorRunResult generated in result.Results)
+        {
+            TestContext.Current.TestOutputHelper?.WriteLine($"GENERATOR_EXCEPTION={generated.Exception}");
+        }
+
+        Diagnostic conflict = Assert.Single(diagnostics, diagnostic => diagnostic.Id == "INLETPROJ001");
+        Assert.All(result.Results, generated => Assert.Null(generated.Exception));
+        Assert.Equal(DiagnosticSeverity.Error, conflict.Severity);
+        string message = conflict.GetMessage(CultureInfo.InvariantCulture);
+        Assert.Contains("A.Entry", message, StringComparison.Ordinal);
+        Assert.Contains("B.Entry", message, StringComparison.Ordinal);
+        Assert.Contains("EntryDto", message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Wide enum dictionary arguments retain their underlying types and values.
     /// </summary>
     /// <param name="dictionaryName">The declared dictionary shape.</param>

@@ -205,8 +205,7 @@ public sealed class ProjectionModel
         foreach (INamedTypeSymbol type in Properties
                      .Where(property => TypeAnalyzer.IsDictionaryType(property.SourceTypeSymbol))
                      .SelectMany(property => TypeAnalyzer.GetMappedCollectionTypes(property.SourceTypeSymbol))
-                     .OfType<INamedTypeSymbol>()
-                     .Where(type => type.TypeKind != TypeKind.Enum))
+                     .OfType<INamedTypeSymbol>())
         {
             string identity = outputNamespace + "." + TypeAnalyzer.GetDtoTypeName(type);
             if (generatedDtoTypes.TryGetValue(identity, out INamedTypeSymbol? existing))
