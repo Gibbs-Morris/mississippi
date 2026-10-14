@@ -103,7 +103,7 @@ Current projection replay has no native event-effect dispatch. Keep external wor
 
 ### Folder Structure
 
-The [placement archetypes](namespace-folder-placement.instructions.md#archetype-segment-naming-canonical) govern optional child folders. This outline uses state records at the feature root, as in current source; create folders only for components the feature has.
+The [placement archetypes](namespace-folder-placement.instructions.md#archetype-segment-naming-canonical) govern optional child folders. This hand-authored outline uses state records at the feature root, as in current source; create folders only for components the feature has. Generated wiring retains the entry points described by [service registration](service-registration.instructions.md#domain-registration-patterns-event-sourcing).
 
 ```text
 {Domain}/

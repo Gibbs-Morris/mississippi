@@ -10,8 +10,8 @@ Governing thought: Use hierarchical `ServiceRegistration` extension methods with
 
 ## Rules (RFC 2119)
 
-- Each feature **MUST** expose `public static class {Feature}Registrations` with `Add{Feature}()` extension methods that follow the feature namespace structure (e.g., `AggregateRegistrations`, `ReducerRegistrations`, `InletSiloRegistrations`). Why: Keeps DI discoverable and consistent.
-- Parent registrations **MUST** call child registrations; sub-feature registrations **MUST** remain `internal`; public registration **MUST** exist only at product/feature boundaries and include XML docs. Why: Preserves hierarchy and minimizes public surface.
+- Each hand-authored feature registration **MUST** expose `public static class {Feature}Registrations` with `Add{Feature}()` extension methods that follow the feature namespace structure (e.g., `AggregateRegistrations`, `ReducerRegistrations`, `InletSiloRegistrations`). Why: Keeps DI discoverable and consistent.
+- Parent registrations **MUST** call child registrations; hand-authored sub-feature registration classes **MUST** remain `internal`; public registration **MUST** exist only at product/feature boundaries and include XML docs. Why: Preserves hierarchy and minimizes public surface.
 - Registration methods **MUST** be synchronous; async calls (DB, HTTP, etc.) **MUST NOT** occur during registration. Why: DI building is synchronous.
 - Aggregate and projection registration **MUST** compose named components under the [domain-modeling pattern](domain-modeling.instructions.md#production-feature-pattern). Why: Wiring stays separate from feature behavior.
 - Registration lambdas and private registration methods **MUST NOT** contain domain decisions, event construction, or replay algorithms. Why: Moving anonymous behavior into a private registration helper still hides the feature.
@@ -26,8 +26,9 @@ Governing thought: Use hierarchical `ServiceRegistration` extension methods with
 
 ### Domain Registration Conventions
 
-- Domain registration **MUST** expose `Add{Domain}Domain()` in a public static `{Domain}DomainRegistrations` class, composing private `Add{Aggregate}Aggregate()` and `Add{Projection}Projection()` methods for components that exist. Why: Hierarchy keeps feature wiring discoverable without inventing projection command handlers.
-- Domain registration **MUST** register event types, command handlers where present, reducers, and snapshot converters in that order. Why: Keeps composition consistent with the existing domain entry points.
+- Hand-authored domain registration **MUST** expose `Add{Domain}Domain()` in a public static `{Domain}DomainRegistrations` class, composing private `Add{Aggregate}Aggregate()` and `Add{Projection}Projection()` methods for components that exist. Why: Hierarchy keeps feature wiring discoverable without inventing projection command handlers.
+- Generated domain registration **MUST** retain the generator-defined entry points and visibility while composing named feature components. Why: The established generated API is an alternative wiring shape, not an exception to the production component pattern.
+- Hand-authored domain registration **MUST** register event types, command handlers where present, reducers, and snapshot converters in that order. Why: Keeps composition consistent with the existing domain entry points.
 - A projection host **MUST** register every consumed event type through producer registration or explicit `AddEventType<TEvent>()` wiring. Why: Generated projection registration adds reducers and snapshot conversion, but does not register consumed event types for replay.
 
 ## Scope and Audience
@@ -50,13 +51,15 @@ Developers adding or modifying DI registration in Mississippi/Samples, including
 
 ## Domain Registration Patterns (Event Sourcing)
 
-For domain models using Mississippi event sourcing:
+For hand-authored domain registration using Mississippi event sourcing:
 
 | Method Pattern | Purpose | Example |
 |----------------|---------|---------|
 | `Add{Domain}Domain()` | Public entry point | `AddContosoDomain()` |
 | `Add{Aggregate}Aggregate()` | Private per-aggregate | `AddChannelAggregate()` |
 | `Add{Projection}Projection()` | Private per-projection | `AddUserProfileProjection()` |
+
+The [domain silo generator](../../src/Inlet.Runtime.Generators/DomainSiloRegistrationGenerator.cs) emits `DomainSiloRegistrations.Add{Domain}DomainSilo()`, composing public child methods emitted by the [aggregate](../../src/Inlet.Runtime.Generators/AggregateSiloRegistrationGenerator.cs) and [projection](../../src/Inlet.Runtime.Generators/ProjectionSiloRegistrationGenerator.cs) registration generators. Use those existing generated entry points without duplicating or renaming them to fit the manual convention. Both paths wire named behavior rather than embedding it.
 
 Registration order within aggregates/projections:
 
