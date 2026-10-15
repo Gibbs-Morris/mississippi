@@ -26,6 +26,15 @@ public sealed class EventBrookReaderTests
 {
     private static readonly DateTimeOffset BaseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
+    private sealed class DirectRetryPolicy : IRetryPolicy
+    {
+        public Task<T> ExecuteAsync<T>(
+            Func<Task<T>> operation,
+            CancellationToken cancellationToken = default
+        ) =>
+            operation();
+    }
+
     /// <summary>
     ///     Verifies that the <see cref="EventBrookReader" /> constructor throws when <c>options</c> is null.
     /// </summary>
@@ -33,7 +42,7 @@ public sealed class EventBrookReaderTests
     public void ConstructorThrowsWhenOptionsIsNull()
     {
         ICosmosRepository repository = new Mock<ICosmosRepository>(MockBehavior.Strict).Object;
-        IRetryPolicy retryPolicy = new Mock<IRetryPolicy>(MockBehavior.Strict).Object;
+        DirectRetryPolicy retryPolicy = new();
         IMapper<EventStorageModel, BrookEvent> mapper =
             new Mock<IMapper<EventStorageModel, BrookEvent>>(MockBehavior.Strict).Object;
         ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() =>
@@ -50,13 +59,19 @@ public sealed class EventBrookReaderTests
     {
         // Arrange
         Mock<ICosmosRepository> repositoryMock = new(MockBehavior.Strict);
-        IRetryPolicy retryPolicy = new Mock<IRetryPolicy>(MockBehavior.Strict).Object;
+        DirectRetryPolicy retryPolicy = new();
         Mock<IMapper<EventStorageModel, BrookEvent>> mapperMock = new(MockBehavior.Strict);
         BrookStorageOptions options = new()
         {
             QueryBatchSize = 2,
         };
         BrookRangeKey range = new("type", "id", 0, 3);
+        repositoryMock.Setup(r => r.GetCursorDocumentAsync(range.ToBrookCompositeKey(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                new CursorStorageModel
+                {
+                    Position = range.End,
+                });
         EventStorageModel e1 = new()
         {
             EventId = "e1",
@@ -164,13 +179,19 @@ public sealed class EventBrookReaderTests
     {
         // Arrange
         Mock<ICosmosRepository> repositoryMock = new(MockBehavior.Strict);
-        IRetryPolicy retryPolicy = new Mock<IRetryPolicy>(MockBehavior.Strict).Object;
+        DirectRetryPolicy retryPolicy = new();
         Mock<IMapper<EventStorageModel, BrookEvent>> mapperMock = new(MockBehavior.Strict);
         BrookStorageOptions options = new()
         {
             QueryBatchSize = 10,
         };
         BrookRangeKey range = new("type", "id", 0, 100);
+        repositoryMock.Setup(r => r.GetCursorDocumentAsync(range.ToBrookCompositeKey(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                new CursorStorageModel
+                {
+                    Position = range.End,
+                });
         EventStorageModel e1 = new()
         {
             EventId = "e1",

@@ -64,9 +64,29 @@ internal sealed class EventBrookReader : IEventBrookReader
     )
     {
         Logger.ReadingEvents(brookRange);
+        if (brookRange.Count == 0)
+        {
+            Logger.ReadCompleted(brookRange, 0);
+            yield break;
+        }
+
+        CursorStorageModel? cursor = await RetryPolicy.ExecuteAsync(
+            () => Repository.GetCursorDocumentAsync(brookRange.ToBrookCompositeKey(), cancellationToken),
+            cancellationToken);
+        long visibleEnd = Math.Min(brookRange.End.Value, cursor?.Position.Value ?? -1);
+        if (visibleEnd < brookRange.Start.Value)
+        {
+            Logger.ReadCompleted(brookRange, 0);
+            yield break;
+        }
+
+        BrookRangeKey visibleRange = BrookRangeKey.FromBrookCompositeKey(
+            brookRange.ToBrookCompositeKey(),
+            brookRange.Start.Value,
+            (visibleEnd - brookRange.Start.Value) + 1);
         int eventCount = 0;
         await foreach (EventStorageModel eventStorageModel in Repository.QueryEventsAsync(
-                           brookRange,
+                           visibleRange,
                            Options.QueryBatchSize,
                            cancellationToken))
         {

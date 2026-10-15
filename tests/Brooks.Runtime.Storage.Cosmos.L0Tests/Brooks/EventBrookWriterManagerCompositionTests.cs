@@ -32,14 +32,14 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Brooks;
 public sealed class EventBrookWriterManagerCompositionTests
 {
     /// <summary>
-    ///     The shared clock drives actual service renewals through held pending deletion in either batch path.
+    ///     The shared clock drives actual service renewals through a held atomic cursor commit in either batch path.
     /// </summary>
     /// <param name="large">Whether the two events use separate batches.</param>
     /// <returns>The asynchronous test.</returns>
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task RealManagerClockCoversPendingDeletionAsync(
+    public async Task RealManagerClockCoversAtomicCommitAsync(
         bool large
     )
     {
@@ -79,6 +79,7 @@ public sealed class EventBrookWriterManagerCompositionTests
         };
         Mock<ItemResponse<CursorDocument>> cursorResponse = new();
         cursorResponse.SetupGet(r => r.Resource).Returns(cursor);
+        cursorResponse.SetupGet(r => r.ETag).Returns("cursor-version");
         container.Setup(c => c.ReadItemAsync<CursorDocument>(
                 "cursor",
                 It.IsAny<PartitionKey>(),
@@ -96,31 +97,32 @@ public sealed class EventBrookWriterManagerCompositionTests
                 It.IsAny<PartitionKey>(),
                 null,
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Mock.Of<ItemResponse<CursorDocument>>());
+            .ReturnsAsync(Mock.Of<ItemResponse<CursorDocument>>(r => r.ETag == "pending-attempt"));
         container.Setup(c => c.CreateItemAsync(
                 It.IsAny<EventDocument>(),
                 It.IsAny<PartitionKey>(),
                 null,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Mock.Of<ItemResponse<EventDocument>>());
-        container.Setup(c => c.UpsertItemAsync(
-                It.IsAny<CursorDocument>(),
-                It.IsAny<PartitionKey>(),
-                null,
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Mock.Of<ItemResponse<CursorDocument>>());
         TaskCompletionSource deleteEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource finishDelete = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        container.Setup(c => c.DeleteItemAsync<CursorDocument>(
+        Mock<TransactionalBatch> batch = new(MockBehavior.Strict);
+        container.Setup(c => c.CreateTransactionalBatch(It.IsAny<PartitionKey>())).Returns(batch.Object);
+        batch.Setup(b => b.DeleteItem(
                 "cursor-pending",
-                It.IsAny<PartitionKey>(),
-                null,
-                It.IsAny<CancellationToken>()))
+                It.Is<TransactionalBatchItemRequestOptions>(o => o.IfMatchEtag == "pending-attempt")))
+            .Returns(batch.Object);
+        batch.Setup(b => b.ReplaceItem(
+                "cursor",
+                It.IsAny<CursorDocument>(),
+                It.Is<TransactionalBatchItemRequestOptions>(o => o.IfMatchEtag == "cursor-version")))
+            .Returns(batch.Object);
+        batch.Setup(b => b.ExecuteAsync(It.IsAny<CancellationToken>()))
             .Returns(async () =>
             {
                 deleteEntered.TrySetResult();
                 await finishDelete.Task.WaitAsync(CancellationToken.None);
-                return Mock.Of<ItemResponse<CursorDocument>>();
+                return Mock.Of<TransactionalBatchResponse>(r => r.IsSuccessStatusCode);
             });
         Mock<IRetryPolicy> retry = new();
         retry.Setup(r => r.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
@@ -221,13 +223,25 @@ public sealed class EventBrookWriterManagerCompositionTests
                 null,
                 It.IsAny<CancellationToken>()),
             Times.Exactly(2));
+        batch.Verify(
+            b => b.ReplaceItem(
+                "cursor",
+                It.Is<CursorDocument>(d => d.Position == 2),
+                It.Is<TransactionalBatchItemRequestOptions>(o => o.IfMatchEtag == "cursor-version")),
+            Times.Once);
+        batch.Verify(
+            b => b.DeleteItem(
+                "cursor-pending",
+                It.Is<TransactionalBatchItemRequestOptions>(o => o.IfMatchEtag == "pending-attempt")),
+            Times.Once);
+        batch.Verify(b => b.ExecuteAsync(It.IsAny<CancellationToken>()), Times.Once);
         container.Verify(
             c => c.UpsertItemAsync(
-                It.Is<CursorDocument>(d => d.Position == 2),
+                It.IsAny<CursorDocument>(),
                 It.IsAny<PartitionKey>(),
                 null,
                 It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Never);
         client.Verify(c => c.ReleaseAsync(It.IsAny<RequestConditions>(), It.IsAny<CancellationToken>()), Times.Once);
         Assert.Equal(0, clock.ActiveTimers);
     }

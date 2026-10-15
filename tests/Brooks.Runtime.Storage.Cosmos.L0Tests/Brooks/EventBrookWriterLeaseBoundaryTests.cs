@@ -35,6 +35,7 @@ public sealed class EventBrookWriterLeaseBoundaryTests
             r => r.CommitCursorPositionAsync(
                 context.Key,
                 It.IsAny<long>(),
+                It.IsAny<string>(),
                 It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()),
             Times.Never);
@@ -42,7 +43,11 @@ public sealed class EventBrookWriterLeaseBoundaryTests
             r => r.DeleteEventAsync(context.Key, It.IsAny<long>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()),
             Times.Never);
         context.Repository.Verify(
-            r => r.DeletePendingCursorAsync(context.Key, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            r => r.DeletePendingCursorAsync(
+                context.Key,
+                It.IsAny<string>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -75,6 +80,64 @@ public sealed class EventBrookWriterLeaseBoundaryTests
             CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         watchdog.CancelAfter(TimeSpan.FromSeconds(10));
         return watchdog;
+    }
+
+    /// <summary>
+    ///     Both append paths retain their original failure and describe the remaining evidence.
+    /// </summary>
+    /// <param name="isLarge">Whether to split the events into multiple batches.</param>
+    /// <param name="isLoggingEnabled">Whether the diagnostic level is enabled.</param>
+    /// <returns>The asynchronous test.</returns>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task AppendFailureLogsRetainedEvidenceAsync(
+        bool isLarge,
+        bool isLoggingEnabled
+    )
+    {
+        using CancellationTokenSource watchdog = CreateWatchdog();
+        EventWriterLeaseTestContext context = CreateContext(isLarge);
+        context.HeldBoundary = 2;
+        InvalidOperationException failure = new("Event create outcome is unknown");
+        context.StorageFailure = failure;
+        context.Logger.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(isLoggingEnabled);
+        Task<BrookPosition> append = context.Writer.AppendEventsAsync(
+            context.Key,
+            context.Events,
+            null,
+            watchdog.Token);
+        try
+        {
+            await context.StorageEntered.Task.WaitAsync(watchdog.Token);
+            context.FinishStorage.TrySetResult();
+            InvalidOperationException actual =
+                await Assert.ThrowsAsync<InvalidOperationException>(() => append.WaitAsync(watchdog.Token));
+            Assert.Same(failure, actual);
+            context.Logger.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.Is<EventId>(id => (id.Id == 1015) && (id.Name == "EventAppendFailed")),
+                    It.Is<It.IsAnyType>((state, _) =>
+                        ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(new("BrookId", context.Key)) &&
+                        ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(new("FinalPosition", 2L)) &&
+                        ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(
+                            new(
+                                "{OriginalFormat}",
+                                "Event append failed for brook '{BrookId}' at position {FinalPosition}; events and pending evidence were retained"))),
+                    failure,
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                isLoggingEnabled ? Times.Once() : Times.Never());
+            AssertNoCommitOrDeletes(context);
+            Assert.Equal(0, context.Clock.ActiveTimers);
+        }
+        finally
+        {
+            context.FinishStorage.TrySetResult();
+            await Record.ExceptionAsync(() => append.WaitAsync(CancellationToken.None));
+        }
     }
 
     /// <summary>
@@ -156,7 +219,12 @@ public sealed class EventBrookWriterLeaseBoundaryTests
         }
 
         context.Repository.Verify(
-            r => r.CommitCursorPositionAsync(context.Key, 2, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            r => r.CommitCursorPositionAsync(
+                context.Key,
+                2,
+                It.IsAny<string>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()),
             Times.Once);
         context.Lease.Verify(l => l.DisposeAsync(), Times.Once);
         context.Logger.Verify(
@@ -222,7 +290,12 @@ public sealed class EventBrookWriterLeaseBoundaryTests
         }
 
         context.Repository.Verify(
-            r => r.CommitCursorPositionAsync(context.Key, 2, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            r => r.CommitCursorPositionAsync(
+                context.Key,
+                2,
+                It.IsAny<string>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()),
             Times.Once);
         context.Repository.Verify(
             r => r.DeleteEventAsync(context.Key, It.IsAny<long>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()),
@@ -280,7 +353,12 @@ public sealed class EventBrookWriterLeaseBoundaryTests
         }
 
         context.Repository.Verify(
-            r => r.CommitCursorPositionAsync(context.Key, 2, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            r => r.CommitCursorPositionAsync(
+                context.Key,
+                2,
+                It.IsAny<string>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()),
             Times.Once);
         context.Repository.Verify(
             r => r.DeleteEventAsync(context.Key, It.IsAny<long>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()),
@@ -398,7 +476,12 @@ public sealed class EventBrookWriterLeaseBoundaryTests
             r => r.CreatePendingCursorAsync(context.Key, new(0), 2, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
             Times.Once);
         context.Repository.Verify(
-            r => r.CommitCursorPositionAsync(context.Key, 2, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            r => r.CommitCursorPositionAsync(
+                context.Key,
+                2,
+                It.IsAny<string>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()),
             Times.Once);
         context.Lease.Verify(l => l.DisposeAsync(), Times.Once);
         Assert.Equal(0, context.Clock.ActiveTimers);
@@ -571,58 +654,6 @@ public sealed class EventBrookWriterLeaseBoundaryTests
     }
 
     /// <summary>
-    ///     Cancellation during compensating deletion preserves the earlier storage failure.
-    /// </summary>
-    /// <returns>The asynchronous test.</returns>
-    [Fact]
-    public async Task RollbackCancellationRetainsOriginalStorageFailureAsync()
-    {
-        using CancellationTokenSource caller = CreateWatchdog();
-        EventWriterLeaseTestContext context = CreateContext(true);
-        context.HeldBoundary = 2;
-        InvalidOperationException primary = new("The first storage request failed");
-        context.StorageFailure = primary;
-        context.Repository
-            .Setup(r => r.DeletePendingCursorAsync(context.Key, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
-            .Returns(async (BrookKey _, Action guard, CancellationToken _) =>
-            {
-                await caller.CancelAsync();
-                guard();
-            });
-        Task<BrookPosition> append = context.Writer.AppendEventsAsync(context.Key, context.Events, null, caller.Token);
-        try
-        {
-            await context.StorageEntered.Task.WaitAsync(caller.Token);
-            context.FinishStorage.TrySetResult();
-            InvalidOperationException actual =
-                await Assert.ThrowsAsync<InvalidOperationException>(() => append.WaitAsync(CancellationToken.None));
-            Assert.Same(primary, actual);
-        }
-        finally
-        {
-            context.FinishStorage.TrySetResult();
-            await Record.ExceptionAsync(() => append.WaitAsync(CancellationToken.None));
-        }
-
-        Assert.True(caller.IsCancellationRequested);
-        context.Repository.Verify(
-            r => r.DeletePendingCursorAsync(context.Key, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
-            Times.Once);
-        context.Repository.Verify(
-            r => r.CommitCursorPositionAsync(
-                context.Key,
-                It.IsAny<long>(),
-                It.IsAny<Action>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
-        context.Repository.Verify(
-            r => r.DeleteEventAsync(context.Key, It.IsAny<long>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-        context.Lease.Verify(l => l.DisposeAsync(), Times.Once);
-        Assert.Equal(0, context.Clock.ActiveTimers);
-    }
-
-    /// <summary>
     ///     A storage SDK cancellation wrapper retains the ownership failure that canceled its token.
     /// </summary>
     /// <param name="large">Whether to force multiple batches.</param>
@@ -680,6 +711,67 @@ public sealed class EventBrookWriterLeaseBoundaryTests
         }
 
         AssertNoCommitOrDeletes(context);
+        context.Lease.Verify(l => l.DisposeAsync(), Times.Once);
+        Assert.Equal(0, context.Clock.ActiveTimers);
+    }
+
+    /// <summary>
+    ///     An append failure retains its cause and does not dispatch compensating deletion.
+    /// </summary>
+    /// <returns>The asynchronous test.</returns>
+    [Fact]
+    public async Task StorageFailureRetainsEvidenceWithoutRollbackAsync()
+    {
+        using CancellationTokenSource caller = CreateWatchdog();
+        EventWriterLeaseTestContext context = CreateContext(true);
+        context.HeldBoundary = 2;
+        InvalidOperationException primary = new("The first storage request failed");
+        context.StorageFailure = primary;
+        context.Repository
+            .Setup(r => r.DeletePendingCursorAsync(
+                context.Key,
+                It.IsAny<string>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(async (BrookKey _, string _, Action guard, CancellationToken _) =>
+            {
+                await caller.CancelAsync();
+                guard();
+            });
+        Task<BrookPosition> append = context.Writer.AppendEventsAsync(context.Key, context.Events, null, caller.Token);
+        try
+        {
+            await context.StorageEntered.Task.WaitAsync(caller.Token);
+            context.FinishStorage.TrySetResult();
+            InvalidOperationException actual =
+                await Assert.ThrowsAsync<InvalidOperationException>(() => append.WaitAsync(CancellationToken.None));
+            Assert.Same(primary, actual);
+        }
+        finally
+        {
+            context.FinishStorage.TrySetResult();
+            await Record.ExceptionAsync(() => append.WaitAsync(CancellationToken.None));
+        }
+
+        Assert.False(caller.IsCancellationRequested);
+        context.Repository.Verify(
+            r => r.DeletePendingCursorAsync(
+                context.Key,
+                It.IsAny<string>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+        context.Repository.Verify(
+            r => r.CommitCursorPositionAsync(
+                context.Key,
+                It.IsAny<long>(),
+                It.IsAny<string>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+        context.Repository.Verify(
+            r => r.DeleteEventAsync(context.Key, It.IsAny<long>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            Times.Never);
         context.Lease.Verify(l => l.DisposeAsync(), Times.Once);
         Assert.Equal(0, context.Clock.ActiveTimers);
     }

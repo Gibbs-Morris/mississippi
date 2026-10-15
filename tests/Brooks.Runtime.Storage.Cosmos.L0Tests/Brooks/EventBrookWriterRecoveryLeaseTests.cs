@@ -27,15 +27,15 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Brooks;
 public sealed class EventBrookWriterRecoveryLeaseTests
 {
     /// <summary>
-    ///     Append-triggered recovery stops new mutations at t14 while its separate duration15 lease remains valid.
+    ///     Append-owned recovery observes its deadline after a held event read while the physical lease remains valid.
     /// </summary>
-    /// <param name="complete">Whether recovery checks complete events or rolls back missing events.</param>
+    /// <param name="isComplete">Whether the held read reports an existing event.</param>
     /// <returns>The asynchronous test.</returns>
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task RecoveryChecksAppendDeadlineBeforeFurtherDispatchAsync(
-        bool complete
+        bool isComplete
     )
     {
         BrookKey key = new("test", "append-recovery");
@@ -47,7 +47,7 @@ public sealed class EventBrookWriterRecoveryLeaseTests
         TaskCompletionSource finishStorage = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource renewalEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource finishRenewal = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TaskCompletionSource recoveryReleased = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource readCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
         Mock<IDistributedLock> appendLease = new();
         appendLease.SetupSequence(l => l.RenewAsync(true, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask)
@@ -56,27 +56,25 @@ public sealed class EventBrookWriterRecoveryLeaseTests
                 renewalEntered.TrySetResult();
                 await finishRenewal.Task.WaitAsync(CancellationToken.None);
             });
-        Mock<IDistributedLock> recoveryLease = new();
-        recoveryLease.Setup(l => l.DisposeAsync())
-            .Returns(() =>
-            {
-                recoveryReleased.TrySetResult();
-                return default;
-            });
         Mock<IDistributedLockManager> locks = new(MockBehavior.Strict);
         locks.Setup(l => l.AcquireLockAsync(key.ToString(), TimeSpan.FromSeconds(15), It.IsAny<CancellationToken>()))
             .ReturnsAsync(appendLease.Object);
         long recoveryStarted = -1;
-        locks.Setup(l => l.AcquireLockAsync("recovery-" + key, TimeSpan.FromSeconds(15), It.IsAny<CancellationToken>()))
-            .Callback(() => recoveryStarted = clock.GetTimestamp())
-            .ReturnsAsync(recoveryLease.Object);
         Mock<Container> container = new(MockBehavior.Strict);
+        CursorDocument cursor = new()
+        {
+            Id = "cursor",
+            Position = 0,
+        };
+        Mock<ItemResponse<CursorDocument>> cursorResponse = new();
+        cursorResponse.SetupGet(r => r.Resource).Returns(cursor);
+        cursorResponse.SetupGet(r => r.ETag).Returns("cursor-version");
         container.Setup(c => c.ReadItemAsync<CursorDocument>(
                 "cursor",
                 It.IsAny<PartitionKey>(),
                 null,
                 It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new CosmosException("No committed cursor", HttpStatusCode.NotFound, 0, "missing", 0));
+            .ReturnsAsync(cursorResponse.Object);
         CursorDocument pending = new()
         {
             Id = "cursor-pending",
@@ -85,47 +83,31 @@ public sealed class EventBrookWriterRecoveryLeaseTests
         };
         Mock<ItemResponse<CursorDocument>> pendingResponse = new();
         pendingResponse.SetupGet(r => r.Resource).Returns(pending);
+        pendingResponse.SetupGet(r => r.ETag).Returns("pending-attempt");
         container.Setup(c => c.ReadItemAsync<CursorDocument>(
                 "cursor-pending",
                 It.IsAny<PartitionKey>(),
                 null,
                 It.IsAny<CancellationToken>()))
+            .Callback(() => recoveryStarted = clock.GetTimestamp())
             .ReturnsAsync(pendingResponse.Object);
-        if (complete)
-        {
-            container.Setup(c => c.ReadItemAsync<EventDocument>(
-                    "1",
-                    It.IsAny<PartitionKey>(),
-                    null,
-                    It.IsAny<CancellationToken>()))
-                .Returns(async () =>
+        container.Setup(c => c.ReadItemAsync<EventDocument>(
+                "1",
+                It.IsAny<PartitionKey>(),
+                null,
+                It.IsAny<CancellationToken>()))
+            .Returns(async () =>
+            {
+                storageEntered.TrySetResult();
+                await finishStorage.Task.WaitAsync(CancellationToken.None);
+                readCompleted.TrySetResult();
+                if (!isComplete)
                 {
-                    storageEntered.TrySetResult();
-                    await finishStorage.Task.WaitAsync(CancellationToken.None);
-                    return Mock.Of<ItemResponse<EventDocument>>();
-                });
-        }
-        else
-        {
-            container.Setup(c => c.ReadItemAsync<EventDocument>(
-                    "1",
-                    It.IsAny<PartitionKey>(),
-                    null,
-                    It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new CosmosException("Missing event", HttpStatusCode.NotFound, 0, "missing", 0));
-            container.Setup(c => c.DeleteItemAsync<EventDocument>(
-                    "1",
-                    It.IsAny<PartitionKey>(),
-                    null,
-                    It.IsAny<CancellationToken>()))
-                .Returns(async () =>
-                {
-                    storageEntered.TrySetResult();
-                    await finishStorage.Task.WaitAsync(CancellationToken.None);
-                    return Mock.Of<ItemResponse<EventDocument>>();
-                });
-        }
+                    throw new CosmosException("Missing event", HttpStatusCode.NotFound, 0, "missing", 0);
+                }
 
+                return Mock.Of<ItemResponse<EventDocument>>();
+            });
         Mock<IRetryPolicy> retry = new();
         retry.Setup(r => r.ExecuteAsync(It.IsAny<Func<Task<CursorStorageModel?>>>(), It.IsAny<CancellationToken>()))
             .Returns((Func<Task<CursorStorageModel?>> operation, CancellationToken _) => operation());
@@ -138,6 +120,12 @@ public sealed class EventBrookWriterRecoveryLeaseTests
                 {
                     Position = new(2),
                     OriginalPosition = new(0),
+                });
+        cursorMapper.Setup(m => m.Map(cursor))
+            .Returns(
+                new CursorStorageModel
+                {
+                    Position = new(0),
                 });
         CosmosRepository repository = new(
             container.Object,
@@ -190,7 +178,7 @@ public sealed class EventBrookWriterRecoveryLeaseTests
             Assert.Equal(TimeSpan.FromSeconds(14), clock.GetElapsedTime(recoveryStarted));
             Assert.True(clock.GetElapsedTime(recoveryStarted) < TimeSpan.FromSeconds(15));
             finishStorage.TrySetResult();
-            await recoveryReleased.Task.WaitAsync(watchdog.Token);
+            await readCompleted.Task.WaitAsync(watchdog.Token);
             Assert.False(append.IsCompleted);
             appendLease.Verify(l => l.DisposeAsync(), Times.Never);
         }
@@ -201,6 +189,7 @@ public sealed class EventBrookWriterRecoveryLeaseTests
             await Assert.ThrowsAsync<TimeoutException>(() => append.WaitAsync(CancellationToken.None));
         }
 
+        container.Verify(c => c.CreateTransactionalBatch(It.IsAny<PartitionKey>()), Times.Never);
         container.Verify(
             c => c.UpsertItemAsync(
                 It.IsAny<CursorDocument>(),
@@ -212,11 +201,18 @@ public sealed class EventBrookWriterRecoveryLeaseTests
             c => c.DeleteItemAsync<CursorDocument>(
                 It.IsAny<string>(),
                 It.IsAny<PartitionKey>(),
-                null,
+                It.IsAny<ItemRequestOptions>(),
                 It.IsAny<CancellationToken>()),
             Times.Never);
         container.Verify(
-            c => c.DeleteItemAsync<EventDocument>("2", It.IsAny<PartitionKey>(), null, It.IsAny<CancellationToken>()),
+            c => c.DeleteItemAsync<EventDocument>(
+                It.IsAny<string>(),
+                It.IsAny<PartitionKey>(),
+                It.IsAny<ItemRequestOptions>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+        container.Verify(
+            c => c.ReadItemAsync<EventDocument>("2", It.IsAny<PartitionKey>(), null, It.IsAny<CancellationToken>()),
             Times.Never);
         container.Verify(
             c => c.CreateItemAsync(
@@ -225,7 +221,10 @@ public sealed class EventBrookWriterRecoveryLeaseTests
                 null,
                 It.IsAny<CancellationToken>()),
             Times.Never);
-        recoveryLease.Verify(l => l.DisposeAsync(), Times.Once);
+        locks.Verify(
+            l => l.AcquireLockAsync(key.ToString(), TimeSpan.FromSeconds(15), It.IsAny<CancellationToken>()),
+            Times.Once);
+        locks.VerifyNoOtherCalls();
         appendLease.Verify(l => l.DisposeAsync(), Times.Once);
         Assert.Equal(0, clock.ActiveTimers);
     }
@@ -245,6 +244,8 @@ public sealed class EventBrookWriterRecoveryLeaseTests
                 {
                     Position = new(3),
                 });
+        repository.Setup(r => r.GetPendingCursorDocumentAsync(key, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CursorStorageModel?)null);
         Mock<IRetryPolicy> retry = new(MockBehavior.Strict);
         retry.Setup(r => r.ExecuteAsync(It.IsAny<Func<Task<CursorStorageModel?>>>(), It.IsAny<CancellationToken>()))
             .Returns((Func<Task<CursorStorageModel?>> operation, CancellationToken _) => operation());
@@ -259,6 +260,7 @@ public sealed class EventBrookWriterRecoveryLeaseTests
             await recovery.GetOrRecoverCursorPositionAsync(key, TestContext.Current.CancellationToken);
         Assert.Equal(3, result.Value);
         repository.Verify(r => r.GetCursorDocumentAsync(key, It.IsAny<CancellationToken>()), Times.Once);
+        repository.Verify(r => r.GetPendingCursorDocumentAsync(key, It.IsAny<CancellationToken>()), Times.Once);
         repository.VerifyNoOtherCalls();
         locks.VerifyNoOtherCalls();
     }

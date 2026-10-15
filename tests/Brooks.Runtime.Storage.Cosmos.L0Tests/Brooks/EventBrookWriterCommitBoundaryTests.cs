@@ -68,7 +68,7 @@ public sealed class EventBrookWriterCommitBoundaryTests
                 It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
             .Callback(() => hasPendingEvidence = true)
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("attempt-etag");
         repository.Setup(r => r.AppendEventBatchAsync(
                 key,
                 It.IsAny<IReadOnlyList<EventStorageModel>>(),
@@ -84,6 +84,7 @@ public sealed class EventBrookWriterCommitBoundaryTests
         repository.Setup(r => r.CommitCursorPositionAsync(
                 key,
                 finalPosition,
+                "attempt-etag",
                 It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
             .Callback(() =>
@@ -97,7 +98,11 @@ public sealed class EventBrookWriterCommitBoundaryTests
             .Callback<BrookKey, long, Action, CancellationToken>((_, position, _, _) =>
                 retainedPositions.Remove(position))
             .Returns(Task.CompletedTask);
-        repository.Setup(r => r.DeletePendingCursorAsync(key, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
+        repository.Setup(r => r.DeletePendingCursorAsync(
+                key,
+                "attempt-etag",
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()))
             .Callback(() => hasPendingEvidence = false)
             .Returns(Task.CompletedTask);
         repository.Setup(r => r.EventExistsAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()))
@@ -147,13 +152,18 @@ public sealed class EventBrookWriterCommitBoundaryTests
         Assert.Equal(!isPendingDeleted, hasPendingEvidence);
         Assert.Equal(isCursorCommitted ? finalPosition : originalPosition.Value, cursor);
         repository.Verify(
-            r => r.CommitCursorPositionAsync(key, finalPosition, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            r => r.CommitCursorPositionAsync(
+                key,
+                finalPosition,
+                "attempt-etag",
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()),
             Times.Once);
         repository.Verify(
             r => r.DeleteEventAsync(key, It.IsAny<long>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()),
             Times.Never);
         repository.Verify(
-            r => r.DeletePendingCursorAsync(key, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            r => r.DeletePendingCursorAsync(key, "attempt-etag", It.IsAny<Action>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

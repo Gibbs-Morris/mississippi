@@ -49,7 +49,7 @@ public sealed class EstablishedBrookPendingRecoveryTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task NextAppendRecoversPendingAfterRenewalLossAsync(
+    public async Task NextAppendRetainsUnresolvedPendingAfterRenewalLossAsync(
         bool large
     )
     {
@@ -112,6 +112,7 @@ public sealed class EstablishedBrookPendingRecoveryTests
                 {
                     OriginalPosition = original,
                     Position = new(target),
+                    ETag = "attempt-etag",
                 };
                 if (++pendingWrites == 1)
                 {
@@ -119,6 +120,8 @@ public sealed class EstablishedBrookPendingRecoveryTests
                     pendingCreated.TrySetResult();
                     await finishPending.Task.WaitAsync(CancellationToken.None);
                 }
+
+                return "attempt-etag";
             });
         List<long> appended = new();
         repository.Setup(r => r.AppendEventBatchAsync(
@@ -155,8 +158,12 @@ public sealed class EstablishedBrookPendingRecoveryTests
                 deleted.Add(position);
                 return Task.CompletedTask;
             });
-        repository.Setup(r => r.DeletePendingCursorAsync(key, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
-            .Returns((BrookKey _, Action guard, CancellationToken token) =>
+        repository.Setup(r => r.DeletePendingCursorAsync(
+                key,
+                It.IsAny<string>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()))
+            .Returns((BrookKey _, string _, Action guard, CancellationToken token) =>
             {
                 guard();
                 token.ThrowIfCancellationRequested();
@@ -166,9 +173,10 @@ public sealed class EstablishedBrookPendingRecoveryTests
         repository.Setup(r => r.CommitCursorPositionAsync(
                 key,
                 It.IsAny<long>(),
+                It.IsAny<string>(),
                 It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
-            .Returns((BrookKey _, long position, Action guard, CancellationToken token) =>
+            .Returns((BrookKey _, long position, string _, Action guard, CancellationToken token) =>
             {
                 guard();
                 token.ThrowIfCancellationRequested();
@@ -238,17 +246,24 @@ public sealed class EstablishedBrookPendingRecoveryTests
         Assert.Empty(appended);
         Assert.Empty(deleted);
         Assert.Equal(0, clock.ActiveTimers);
-        Assert.Equal(12, (await writer.AppendEventsAsync(key, events, new(10), watchdog.Token)).Value);
-        Assert.Equal(new long[] { 11, 12 }, deleted);
-        Assert.Equal(new long[] { 11, 12 }, appended);
-        Assert.Equal(12, committed);
-        Assert.Null(pending);
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            writer.AppendEventsAsync(key, events, new(10), watchdog.Token));
+        Assert.Empty(deleted);
+        Assert.Empty(appended);
+        Assert.Equal(10, committed);
+        Assert.NotNull(pending);
+        Assert.Equal(12, pending.Position.Value);
         repository.Verify(
-            r => r.CommitCursorPositionAsync(key, 12, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
-            Times.Once);
+            r => r.CommitCursorPositionAsync(
+                key,
+                12,
+                It.IsAny<string>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
         repository.Verify(
-            r => r.DeletePendingCursorAsync(key, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
-            Times.Once);
+            r => r.DeletePendingCursorAsync(key, It.IsAny<string>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            Times.Never);
         firstLease.Verify(l => l.DisposeAsync(), Times.Once);
         secondLease.Verify(l => l.DisposeAsync(), Times.Once);
         locks.Verify(
@@ -284,6 +299,7 @@ public sealed class EstablishedBrookPendingRecoveryTests
                 {
                     OriginalPosition = new(10),
                     Position = new(12),
+                    ETag = "attempt-etag",
                 });
         bool lost = false;
         repository.Setup(r => r.EventExistsAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()))
@@ -313,13 +329,18 @@ public sealed class EstablishedBrookPendingRecoveryTests
                 TestContext.Current.CancellationToken));
         Assert.Same(failure, actual);
         repository.Verify(
-            r => r.CommitCursorPositionAsync(key, It.IsAny<long>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            r => r.CommitCursorPositionAsync(
+                key,
+                It.IsAny<long>(),
+                It.IsAny<string>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
         repository.Verify(
             r => r.DeleteEventAsync(key, It.IsAny<long>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()),
             Times.Never);
         repository.Verify(
-            r => r.DeletePendingCursorAsync(key, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            r => r.DeletePendingCursorAsync(key, It.IsAny<string>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()),
             Times.Never);
         locks.VerifyNoOtherCalls();
     }
@@ -372,15 +393,24 @@ public sealed class EstablishedBrookPendingRecoveryTests
                 deleted.Add(position);
                 return Task.CompletedTask;
             });
-        repository.Setup(r => r.DeletePendingCursorAsync(key, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
-            .Returns((BrookKey _, Action guard, CancellationToken _) =>
+        repository.Setup(r => r.DeletePendingCursorAsync(
+                key,
+                It.IsAny<string>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()))
+            .Returns((BrookKey _, string _, Action guard, CancellationToken _) =>
             {
                 guard();
                 hasPending = false;
                 return Task.CompletedTask;
             });
-        repository.Setup(r => r.CommitCursorPositionAsync(key, 12, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
-            .Returns((BrookKey _, long position, Action guard, CancellationToken _) =>
+        repository.Setup(r => r.CommitCursorPositionAsync(
+                key,
+                12,
+                It.IsAny<string>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()))
+            .Returns((BrookKey _, long position, string _, Action guard, CancellationToken _) =>
             {
                 guard();
                 committed = position;
@@ -395,8 +425,8 @@ public sealed class EstablishedBrookPendingRecoveryTests
                 It.IsAny<CancellationToken>()))
             .Returns(() =>
                 hasPending
-                    ? Task.FromException(new InvalidOperationException("Pending cursor already exists (409)."))
-                    : Task.CompletedTask);
+                    ? Task.FromException<string>(new InvalidOperationException("Pending cursor already exists (409)."))
+                    : Task.FromResult("attempt-etag"));
         BrookRecoveryService recovery = new(
             repository.Object,
             new TestRetryPolicy(),
@@ -404,26 +434,18 @@ public sealed class EstablishedBrookPendingRecoveryTests
             Options.Create(new BrookStorageOptions()),
             NullLogger<BrookRecoveryService>.Instance);
         Action guard = () => TestContext.Current.CancellationToken.ThrowIfCancellationRequested();
-        BrookPosition position = await recovery.GetOrRecoverCursorPositionAsync(
-            key,
-            guard,
-            TestContext.Current.CancellationToken);
-        await repository.Object.CreatePendingCursorAsync(
-            key,
-            position,
-            position.Value + 1,
-            guard,
-            TestContext.Current.CancellationToken);
-        Assert.Equal(complete ? 12 : 10, position.Value);
-        Assert.Equal(complete ? new long[] { 11, 12 } : new long[] { 11 }, checkedPositions);
-        Assert.Equal(complete ? Array.Empty<long>() : new long[] { 11, 12 }, deleted);
-        Assert.False(hasPending);
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            recovery.GetOrRecoverCursorPositionAsync(key, guard, TestContext.Current.CancellationToken));
+        Assert.Equal(10, committed);
+        Assert.Empty(checkedPositions);
+        Assert.Empty(deleted);
+        Assert.True(hasPending);
         repository.Verify(
-            r => r.CommitCursorPositionAsync(key, 12, guard, It.IsAny<CancellationToken>()),
-            complete ? Times.Once() : Times.Never());
+            r => r.CommitCursorPositionAsync(key, 12, It.IsAny<string>(), guard, It.IsAny<CancellationToken>()),
+            Times.Never);
         repository.Verify(
-            r => r.DeletePendingCursorAsync(key, guard, It.IsAny<CancellationToken>()),
-            complete ? Times.Never() : Times.Once());
+            r => r.DeletePendingCursorAsync(key, It.IsAny<string>(), guard, It.IsAny<CancellationToken>()),
+            Times.Never);
         locks.VerifyNoOtherCalls();
     }
 }

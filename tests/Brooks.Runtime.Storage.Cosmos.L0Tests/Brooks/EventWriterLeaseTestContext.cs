@@ -82,6 +82,7 @@ internal sealed class EventWriterLeaseTestContext
             {
                 guard();
                 await HoldAsync(1);
+                return "attempt-etag";
             });
         Repository.Setup(r => r.AppendEventBatchAsync(
                 Key,
@@ -104,8 +105,13 @@ internal sealed class EventWriterLeaseTestContext
                     }
                 }
             });
-        Repository.Setup(r => r.CommitCursorPositionAsync(Key, 2, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
-            .Returns(async (BrookKey _, long _, Action guard, CancellationToken _) =>
+        Repository.Setup(r => r.CommitCursorPositionAsync(
+                Key,
+                2,
+                It.IsAny<string>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(async (BrookKey _, long _, string _, Action guard, CancellationToken _) =>
             {
                 guard();
                 await HoldAsync(3);
@@ -117,7 +123,11 @@ internal sealed class EventWriterLeaseTestContext
                 It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        Repository.Setup(r => r.DeletePendingCursorAsync(Key, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
+        Repository.Setup(r => r.DeletePendingCursorAsync(
+                Key,
+                It.IsAny<string>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         Repository.Setup(r => r.EventExistsAsync(Key, It.IsAny<long>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
