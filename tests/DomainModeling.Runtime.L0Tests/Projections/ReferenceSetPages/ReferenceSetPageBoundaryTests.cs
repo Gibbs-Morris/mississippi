@@ -99,7 +99,9 @@ public sealed class ReferenceSetPageBoundaryTests
             item => item.Log(
                 LogLevel.Debug,
                 It.Is<EventId>(id => (id.Id == 5) && (id.Name == "PageCacheActivating")),
-                It.Is<It.IsAnyType>((state, _) => HasIdentity(state, ReferenceSetPageLoggerExtensions.GetEntityHash("collection"))),
+                It.Is<It.IsAnyType>((state, _) => HasIdentity(
+                    state,
+                    ReferenceSetPageLoggerExtensions.GetEntityHash("collection"))),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Exactly(3));
@@ -167,16 +169,17 @@ public sealed class ReferenceSetPageBoundaryTests
         Mock<IUxProjectionCursorGrain> cursor = new(MockBehavior.Strict);
         cursor.Setup(item => item.GetPositionAsync()).ReturnsAsync(new BrookPosition(-1));
         Mock<IUxProjectionGrainFactory> projections = new(MockBehavior.Strict);
-        projections.Setup(item => item.GetUxProjectionCursorGrain(
-                new UxProjectionCursorKey("TEST.REFERENCESET.SAVEDITEMS", "collection")))
+        projections.Setup(item => item.GetUxProjectionCursorGrain(new("TEST.REFERENCESET.SAVEDITEMS", "collection")))
             .Returns(cursor.Object);
         Mock<IGrainFactory> grains = new(MockBehavior.Strict);
         ReferenceSetPageReader<SavedItemsMembershipProjection, CatalogItemProjection> reader = new(
             projections.Object,
             grains.Object,
             NullLogger<ReferenceSetPageReader<SavedItemsMembershipProjection, CatalogItemProjection>>.Instance);
-        grains.Setup(item => item.GetGrain<IReferenceSetPageCacheGrain<SavedItemsMembershipProjection, CatalogItemProjection>>(
-                It.IsAny<string>(), null))
+        grains.Setup(item =>
+                item.GetGrain<IReferenceSetPageCacheGrain<SavedItemsMembershipProjection, CatalogItemProjection>>(
+                    It.IsAny<string>(),
+                    null))
             .Throws(new InvalidOperationException("The requested exact snapshot is unavailable."));
         await Assert.ThrowsAsync<InvalidOperationException>(async () => await reader.ReadAsync(
             "collection",

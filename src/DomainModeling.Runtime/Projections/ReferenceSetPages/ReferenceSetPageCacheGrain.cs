@@ -113,7 +113,11 @@ internal sealed class ReferenceSetPageCacheGrain<TProjection, TSource>
             Version = key.Version,
             References = offset >= index.Length ? [] : index.Slice(offset, Math.Min(limit, index.Length - offset)),
         };
-        Logger.PageReadCompleted(entityHash, page.Version.Value, page.References.Length, timer.Elapsed.TotalMilliseconds);
+        Logger.PageReadCompleted(
+            entityHash,
+            page.Version.Value,
+            page.References.Length,
+            timer.Elapsed.TotalMilliseconds);
         return ValueTask.FromResult(page);
     }
 }

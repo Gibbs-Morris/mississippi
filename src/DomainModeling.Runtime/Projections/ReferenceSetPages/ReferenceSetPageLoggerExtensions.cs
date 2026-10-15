@@ -26,7 +26,8 @@ internal static partial class ReferenceSetPageLoggerExtensions
     [LoggerMessage(
         EventId = 5,
         Level = LogLevel.Debug,
-        Message = "Collection {EntityHash}: Activating membership page cache for {ProjectionType} at version {Version}")]
+        Message =
+            "Collection {EntityHash}: Activating membership page cache for {ProjectionType} at version {Version}")]
     public static partial void PageCacheActivating(
         this ILogger logger,
         string entityHash,
@@ -76,7 +77,8 @@ internal static partial class ReferenceSetPageLoggerExtensions
     [LoggerMessage(
         EventId = 2,
         Level = LogLevel.Debug,
-        Message = "Collection {EntityHash}: Read membership page at version {Version} with {Count} references in {ElapsedMilliseconds} ms")]
+        Message =
+            "Collection {EntityHash}: Read membership page at version {Version} with {Count} references in {ElapsedMilliseconds} ms")]
     public static partial void PageReadCompleted(
         this ILogger logger,
         string entityHash,
@@ -95,7 +97,8 @@ internal static partial class ReferenceSetPageLoggerExtensions
     [LoggerMessage(
         EventId = 1,
         Level = LogLevel.Debug,
-        Message = "Collection {EntityHash}: Reading membership page for {ProjectionType}, offset {Offset}, limit {Limit}, version {Version}")]
+        Message =
+            "Collection {EntityHash}: Reading membership page for {ProjectionType}, offset {Offset}, limit {Limit}, version {Version}")]
     public static partial void PageReadStarted(
         this ILogger logger,
         string entityHash,

@@ -66,7 +66,6 @@ internal sealed class ReferenceSetPageReader<TProjection, TSource> : IReferenceS
         }
 
         ArgumentOutOfRangeException.ThrowIfLessThan(selected.Value, -1);
-
         ReferenceSetPage<TProjection, TSource> result = selected.NotSet
             ? new()
             {
@@ -79,7 +78,11 @@ internal sealed class ReferenceSetPageReader<TProjection, TSource> : IReferenceS
             : await Grains.GetGrain<IReferenceSetPageCacheGrain<TProjection, TSource>>(
                     UxProjectionVersionedCacheKey.FromCursorKey(cursorKey, selected))
                 .ReadAsync(offset, limit, cancellationToken);
-        Logger.PageReadCompleted(entityHash, result.Version.Value, result.References.Length, timer.Elapsed.TotalMilliseconds);
+        Logger.PageReadCompleted(
+            entityHash,
+            result.Version.Value,
+            result.References.Length,
+            timer.Elapsed.TotalMilliseconds);
         return result;
     }
 }

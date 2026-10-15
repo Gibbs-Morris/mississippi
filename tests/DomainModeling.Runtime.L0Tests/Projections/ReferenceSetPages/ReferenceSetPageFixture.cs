@@ -72,7 +72,9 @@ internal sealed class ReferenceSetPageFixture<TProjection, TSource>
             {
                 UxProjectionVersionedCacheKey key = ValidateKey(text);
                 BeforePageResolution?.Invoke();
-                return pageCaches.TryGetValue(key.Version.Value, out ReferenceSetPageCacheGrain<TProjection, TSource>? page)
+                return pageCaches.TryGetValue(
+                    key.Version.Value,
+                    out ReferenceSetPageCacheGrain<TProjection, TSource>? page)
                     ? page
                     : throw new InvalidOperationException("The requested exact snapshot is unavailable.");
             });
