@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Streaming;
 using Mississippi.Brooks.Runtime.Storage.Cosmos.Locking;
 using Mississippi.Brooks.Runtime.Storage.Cosmos.Storage;
 using Mississippi.Common.Runtime.Storage.Abstractions.Retry;
@@ -27,12 +28,14 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
     /// <param name="lockManager">The distributed lock manager for concurrency control.</param>
     /// <param name="options">The configuration options for brook storage.</param>
     /// <param name="logger">The logger for diagnostic output.</param>
+    /// <param name="cursorPublisher">Optional runtime publication of confirmed writer-path recovery.</param>
     public BrookRecoveryService(
         ICosmosRepository repository,
         IRetryPolicy retryPolicy,
         IDistributedLockManager lockManager,
         IOptions<BrookStorageOptions> options,
-        ILogger<BrookRecoveryService> logger
+        ILogger<BrookRecoveryService> logger,
+        Func<BrookCursorMovedEvent, CancellationToken, Task>? cursorPublisher = null
     )
     {
         Repository = repository;
@@ -40,7 +43,10 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
         LockManager = lockManager;
         Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         Logger = logger;
+        CursorPublisher = cursorPublisher;
     }
+
+    private Func<BrookCursorMovedEvent, CancellationToken, Task>? CursorPublisher { get; }
 
     private IDistributedLockManager LockManager { get; }
 
@@ -318,6 +324,10 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
                 writerLock,
                 beforeDispatch,
                 cancellationToken);
+            if (beforeDispatch is not null && CursorPublisher is not null)
+            {
+                await CursorPublisher(new(brookId.ToString(), position), CancellationToken.None);
+            }
         }
 
         Logger.CursorPositionReturned(brookId, position.Value);

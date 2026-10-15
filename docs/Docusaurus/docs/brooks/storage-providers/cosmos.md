@@ -161,6 +161,10 @@ captured entity tag, retrying transient cleanup under renewed lease. An older de
 pending document with a different entity tag. A missing event or inconsistent range produces an explicit failure and
 retains pending evidence.
 
+When recovery during an append commits a complete prior range, the runtime publishes that recovered position before
+the new append continues. A later failure or cancellation of the new append does not hide the recovered prefix from
+cached cursor readers.
+
 Blob leases coordinate active writers but do not fence Cosmos requests already in flight after lease expiry. The
 conditional pending delete protects that document from a delayed delete; the conditional transaction also prevents
 an expired writer from advancing the cursor after a newer pending attempt replaces its own. Neither condition fences
@@ -201,6 +205,9 @@ Upgrade all provider instances sharing a brook together, including readers that 
 can change cursors and pending metadata without entity-tag conditions during append or recovery, bypassing these
 protections. This change uses existing Cosmos entity tags and does not migrate stored documents. It does not fence
 delayed event creates from an earlier writer.
+Upgrade `Mississippi.Brooks.Runtime` and `Mississippi.Brooks.Runtime.Storage.Cosmos` together so `AddEventSourcing` supplies
+recovery notifications through the configured Orleans stream provider.
+
 The runtime-builder entry point replaces the old provider-specific `IServiceCollection` registration calls:
 
 | Previous shape | Current shape |

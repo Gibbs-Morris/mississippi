@@ -1,16 +1,22 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
+using Mississippi.Brooks.Abstractions;
 using Mississippi.Brooks.Abstractions.Factory;
 using Mississippi.Brooks.Abstractions.Streaming;
 using Mississippi.Brooks.Runtime.Factory;
 using Mississippi.Brooks.Runtime.Reader;
 using Mississippi.Hosting.Abstractions;
 using Mississippi.Hosting.Runtime.Abstractions;
+
+using Orleans.Streams;
 
 
 namespace Mississippi.Brooks.Runtime;
@@ -59,6 +65,8 @@ public static class BrooksRuntimeRegistrations
         services.AddSingleton<IBrookGrainFactory>(sp => sp.GetRequiredService<BrookGrainFactory>());
         services.AddSingleton<IInternalBrookGrainFactory>(sp => sp.GetRequiredService<BrookGrainFactory>());
         services.TryAddSingleton<IStreamIdFactory, StreamIdFactory>();
+        services.TryAddSingleton<Func<BrookCursorMovedEvent, CancellationToken, Task>>(provider =>
+            (update, token) => PublishRecoveredCursorAsync(provider, update, token));
         services.AddOptions<BrookReaderOptions>();
         services.AddOptions<BrookProviderOptions>();
         if (configureOptions is not null)
@@ -67,5 +75,19 @@ public static class BrooksRuntimeRegistrations
         }
 
         return builder;
+    }
+
+    private static Task PublishRecoveredCursorAsync(
+        IServiceProvider services,
+        BrookCursorMovedEvent update,
+        CancellationToken cancellationToken
+    )
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        BrookProviderOptions options = services.GetRequiredService<IOptions<BrookProviderOptions>>().Value;
+        IStreamProvider provider = services.GetRequiredKeyedService<IStreamProvider>(options.OrleansStreamProviderName);
+        IStreamIdFactory ids = services.GetRequiredService<IStreamIdFactory>();
+        return provider.GetStream<BrookCursorMovedEvent>(ids.Create(BrookKey.FromString(update.BrookKey)))
+            .OnNextAsync(update);
     }
 }
