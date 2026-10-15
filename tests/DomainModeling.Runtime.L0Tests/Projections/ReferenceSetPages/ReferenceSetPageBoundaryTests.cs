@@ -26,6 +26,19 @@ namespace MississippiTests.DomainModeling.Runtime.L0Tests.Projections.ReferenceS
 /// <summary>Verifies failure, cancellation and diagnostic contracts at the new runtime boundaries.</summary>
 public sealed class ReferenceSetPageBoundaryTests
 {
+    /// <summary>Checks the masked collection identity in a structured event.</summary>
+    /// <param name="state">The generated structured fields.</param>
+    /// <param name="entityHash">The expected masked entity.</param>
+    /// <returns>Whether the identity is present.</returns>
+    private static bool HasIdentity(
+        object state,
+        string entityHash
+    )
+    {
+        IReadOnlyList<KeyValuePair<string, object?>> fields = (IReadOnlyList<KeyValuePair<string, object?>>)state;
+        return fields.Any(field => (field.Key == "EntityHash") && Equals(field.Value, entityHash));
+    }
+
     private static bool HasSelection(
         object state
     )
@@ -71,7 +84,7 @@ public sealed class ReferenceSetPageBoundaryTests
             item => item.Log(
                 LogLevel.Debug,
                 It.Is<EventId>(id => (id.Id == 5) && (id.Name == "PageCacheActivating")),
-                It.IsAny<It.IsAnyType>(),
+                It.Is<It.IsAnyType>((state, _) => HasIdentity(state, ReferenceSetPageLoggerExtensions.GetEntityHash("collection"))),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Exactly(2));
@@ -103,23 +116,31 @@ public sealed class ReferenceSetPageBoundaryTests
     {
         Mock<ILogger> logger = new();
         logger.Setup(item => item.IsEnabled(LogLevel.Debug)).Returns(true);
-        logger.Object.PageReadStarted("NamedProjection", 2, 5, 7);
+        string entityHash = ReferenceSetPageLoggerExtensions.GetEntityHash("collection");
+        Assert.Equal(64, entityHash.Length);
+        Assert.Equal(entityHash, ReferenceSetPageLoggerExtensions.GetEntityHash("collection"));
+        Assert.NotEqual(entityHash, ReferenceSetPageLoggerExtensions.GetEntityHash("other-collection"));
+        Assert.DoesNotContain("collection", entityHash, StringComparison.OrdinalIgnoreCase);
+        logger.Object.PageReadStarted(entityHash, "NamedProjection", 2, 5, 7);
         logger.Verify(
             item => item.Log(
                 LogLevel.Debug,
                 It.Is<EventId>(id => (id.Id == 1) && (id.Name == "PageReadStarted")),
-                It.Is<It.IsAnyType>((state, _) => HasSelection(state)),
+                It.Is<It.IsAnyType>((state, _) => HasSelection(state) && HasIdentity(state, entityHash)),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
-        logger.Object.PageReadCompleted(7, 2, 1.5);
-        logger.Object.PageIndexPrepared(7, 3, 2.5);
-        logger.Object.PageCacheDeactivated(7);
-        logger.Object.PageCacheActivating("NamedProjection", 7);
+        logger.Object.PageReadCompleted(entityHash, 7, 2, 1.5);
+        logger.Object.PageIndexPrepared(entityHash, 7, 3, 2.5);
+        logger.Object.PageCacheDeactivated(entityHash, 7);
+        logger.Object.PageCacheActivating(entityHash, "NamedProjection", 7);
         Assert.Equal(5, logger.Invocations.Count(item => item.Method.Name == "Log"));
+        Assert.All(
+            logger.Invocations.Where(item => item.Method.Name == "Log"),
+            invocation => Assert.True(HasIdentity(invocation.Arguments[2], entityHash)));
         logger.Invocations.Clear();
         logger.Setup(item => item.IsEnabled(LogLevel.Debug)).Returns(false);
-        logger.Object.PageReadStarted("Disabled", 0, 50, null);
+        logger.Object.PageReadStarted(entityHash, "Disabled", 0, 50, null);
         Assert.DoesNotContain(logger.Invocations, item => item.Method.Name == "Log");
     }
 

@@ -52,10 +52,11 @@ internal sealed class ReferenceSetPageReader<TProjection, TSource> : IReferenceS
     {
         ReferenceSetPageSelection.Validate(offset, limit);
         cancellationToken.ThrowIfCancellationRequested();
+        UxProjectionCursorKey cursorKey = new(BrookNameHelper.GetBrookName<TProjection>(), entityId);
+        string entityHash = ReferenceSetPageLoggerExtensions.GetEntityHash(entityId);
         Stopwatch timer = Stopwatch.StartNew();
         long? requestedVersion = version.HasValue ? version.GetValueOrDefault().Value : null;
-        Logger.PageReadStarted(typeof(TProjection).Name, offset, limit, requestedVersion);
-        UxProjectionCursorKey cursorKey = new(BrookNameHelper.GetBrookName<TProjection>(), entityId);
+        Logger.PageReadStarted(entityHash, typeof(TProjection).Name, offset, limit, requestedVersion);
         BrookPosition selected = version.GetValueOrDefault();
         if (!version.HasValue)
         {
@@ -78,7 +79,7 @@ internal sealed class ReferenceSetPageReader<TProjection, TSource> : IReferenceS
             : await Grains.GetGrain<IReferenceSetPageCacheGrain<TProjection, TSource>>(
                     UxProjectionVersionedCacheKey.FromCursorKey(cursorKey, selected))
                 .ReadAsync(offset, limit, cancellationToken);
-        Logger.PageReadCompleted(result.Version.Value, result.References.Length, timer.Elapsed.TotalMilliseconds);
+        Logger.PageReadCompleted(entityHash, result.Version.Value, result.References.Length, timer.Elapsed.TotalMilliseconds);
         return result;
     }
 }

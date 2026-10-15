@@ -27,6 +27,8 @@ internal sealed class ReferenceSetPageCacheGrain<TProjection, TSource>
       IGrainBase
     where TProjection : class
 {
+    private string entityHash = string.Empty;
+
     private ImmutableArray<ReferenceSetMember> index = [];
 
     private UxProjectionVersionedCacheKey key;
@@ -67,7 +69,8 @@ internal sealed class ReferenceSetPageCacheGrain<TProjection, TSource>
     {
         Stopwatch timer = Stopwatch.StartNew();
         key = UxProjectionVersionedCacheKey.Parse(this.GetPrimaryKeyString());
-        Logger.PageCacheActivating(typeof(TProjection).Name, key.Version.Value);
+        entityHash = ReferenceSetPageLoggerExtensions.GetEntityHash(key.EntityId);
+        Logger.PageCacheActivating(entityHash, typeof(TProjection).Name, key.Version.Value);
         TProjection projection =
             await Projections.GetUxProjectionVersionedCacheGrain<TProjection>(key).GetAsync(token) ??
             throw new InvalidOperationException("The requested membership snapshot is unavailable.");
@@ -75,7 +78,7 @@ internal sealed class ReferenceSetPageCacheGrain<TProjection, TSource>
             .Members.OrderBy(member => member.Key, StringComparer.Ordinal)
             .Select(member => new ReferenceSetMember(member.Key, member.Value))
             .ToImmutableArray();
-        Logger.PageIndexPrepared(key.Version.Value, index.Length, timer.Elapsed.TotalMilliseconds);
+        Logger.PageIndexPrepared(entityHash, key.Version.Value, index.Length, timer.Elapsed.TotalMilliseconds);
     }
 
     /// <summary>Records the end of this activation's immutable cache lifetime.</summary>
@@ -87,7 +90,7 @@ internal sealed class ReferenceSetPageCacheGrain<TProjection, TSource>
         CancellationToken token
     )
     {
-        Logger.PageCacheDeactivated(key.Version.Value);
+        Logger.PageCacheDeactivated(entityHash, key.Version.Value);
         return Task.CompletedTask;
     }
 
@@ -101,7 +104,7 @@ internal sealed class ReferenceSetPageCacheGrain<TProjection, TSource>
         ReferenceSetPageSelection.Validate(offset, limit);
         cancellationToken.ThrowIfCancellationRequested();
         Stopwatch timer = Stopwatch.StartNew();
-        Logger.PageReadStarted(typeof(TProjection).Name, offset, limit, key.Version.Value);
+        Logger.PageReadStarted(entityHash, typeof(TProjection).Name, offset, limit, key.Version.Value);
         ReferenceSetPage<TProjection, TSource> page = new()
         {
             Offset = offset,
@@ -110,7 +113,7 @@ internal sealed class ReferenceSetPageCacheGrain<TProjection, TSource>
             Version = key.Version,
             References = offset >= index.Length ? [] : index.Slice(offset, Math.Min(limit, index.Length - offset)),
         };
-        Logger.PageReadCompleted(page.Version.Value, page.References.Length, timer.Elapsed.TotalMilliseconds);
+        Logger.PageReadCompleted(entityHash, page.Version.Value, page.References.Length, timer.Elapsed.TotalMilliseconds);
         return ValueTask.FromResult(page);
     }
 }
