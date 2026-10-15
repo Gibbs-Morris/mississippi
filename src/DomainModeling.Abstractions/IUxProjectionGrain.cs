@@ -45,7 +45,7 @@ public interface IUxProjectionGrain<TProjection> : IGrainWithStringKey
     /// </returns>
     /// <remarks>
     ///     This method gets the latest version from the cursor grain, then delegates to
-    ///     <see cref="GetAtVersionAsync" /> to retrieve the projection from a versioned cache grain.
+    ///     the same exact-version cache read path as <see cref="GetAtVersionAsync" />.
     /// </remarks>
     [ReadOnly]
     [Alias("GetAsync")]

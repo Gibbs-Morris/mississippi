@@ -28,7 +28,7 @@ The [interface](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Domain
 | `GetAtVersionAsync` | `ValueTask<TProjection?>`; reads the supplied `BrookPosition` directly. |
 | `GetLatestVersionAsync` | `ValueTask<BrookPosition>`; returns the cached storage or accepted-notification position without fetching projection state or verifying current storage. |
 
-The [implementation](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionGrain.cs) obtains the brook name from `TProjection`'s `BrookNameAttribute`. Activation validates that attribute and reads the entity ID from the grain's string key. A missing attribute throws `InvalidOperationException`.
+The [implementation](https://github.com/Gibbs-Morris/mississippi/blob/d2b5d71e82a3b52172f15a4afa5ea0a6905f949c/src/DomainModeling.Runtime/UxProjectionGrain.cs) obtains the brook name from `TProjection`'s `BrookNameAttribute`. Activation validates that attribute and reads the entity ID from the grain's string key. A missing attribute throws `InvalidOperationException`.
 
 The [versioned cache](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionVersionedCacheGrain.cs) also needs `[SnapshotStorageName]`; a missing storage-name attribute throws `InvalidOperationException` during activation. Routed keys require nonblank, pipe-free entity IDs and a combined encoded length of at most 4192 UTF-16 code units. Activation also constructs a `SnapshotStreamKey` limited by `brookName.Length + snapshotStorageName.Length + entityId.Length + reducersHash.Length + 3 <= 4192`; the built-in reducer hash has 64 characters. A valid cache key can still exceed that downstream budget and throw `ArgumentException`. See [Projection Cache Keys](./projection-cache-keys.md).
 
@@ -46,9 +46,21 @@ Activation has no atomic read-and-subscribe handoff or second storage read. If a
 
 The built-in cache's `GetAsync` ignores that caller token. Its state load occurs during activation using a separate activation token, so forwarding the method argument does not cancel that load.
 
-`GetAsync` first calls `GetLatestVersionAsync`, then calls `GetAtVersionAsync` for that selected position. From this call sequence, the cursor can advance between selection and retrieval; the method does not loop until it observes every subsequent advance.
+`GetAsync` first calls `GetLatestVersionAsync`, then uses the same internal exact-read path as `GetAtVersionAsync` for that selected position. From this call sequence, the cursor can advance between selection and retrieval; the method does not loop until it observes every subsequent advance.
 
-The returned value contains state without a paired version. Separate calls for state and latest version therefore do not form an atomic state/version result.
+The returned value contains state without a paired version. Separate `GetAsync` and `GetLatestVersionAsync` calls therefore do not form an atomic state/version result.
+
+## Latest HTTP Responses
+
+The built-in [`UxProjectionControllerBase<TProjection, TDto>`](https://github.com/Gibbs-Morris/mississippi/blob/d2b5d71e82a3b52172f15a4afa5ea0a6905f949c/src/DomainModeling.Gateway/UxProjectionControllerBase%7BTProjection,TDto%7D.cs) captures the latest known position once, then calls the existing `GetAtVersionAsync` to read that exact version before mapping a successful response body. Its `ETag` identifies the same position as the returned DTO. No second cursor lookup is needed. A concurrent cursor advance can appear on a later request; the endpoint does not promise the newest state at response completion.
+
+An unset position returns `404 Not Found` before any body read. When a body or existence read is required, a null captured snapshot also returns 404. An exact matching tag retains its version-only `304 Not Modified` short circuit. Weak, list, and wildcard matches check that the captured snapshot exists before returning 304; these responses skip DTO mapping. The controller forwards the request cancellation token to both grain calls, subject to the runtime cancellation boundaries above.
+
+## Query Metrics
+
+The built-in runtime records `projection.query.count`, `projection.query.duration`, and, for null results, `projection.query.empty` under the `Mississippi.DomainModeling.Runtime.UxProjections` meter. Each completed state read records one query. Counts use `queries`; duration uses `ms`; all measurements include `projection.type`.
+
+`GetAsync` records `query.type=latest` for count and duration, including its cursor lookup and exact read. `GetAtVersionAsync` records `query.type=versioned` for count and duration, measuring only its runtime exact read. Empty-result counts carry only `projection.type`. The HTTP controller's captured read therefore records a versioned query; its separate cursor lookup, DTO mapping, and HTTP response time are outside that query duration. Dashboards filtering only `query.type=latest` must include versioned queries to count these HTTP reads. No additional grain method or caller-supplied timing argument is required.
 
 ## Empty Results And Failures
 
