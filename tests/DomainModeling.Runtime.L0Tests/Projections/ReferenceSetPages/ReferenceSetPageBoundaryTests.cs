@@ -161,6 +161,42 @@ public sealed class ReferenceSetPageBoundaryTests
         Assert.DoesNotContain(logger.Invocations, item => item.Method.Name == "Log");
     }
 
+    /// <summary>Stops the caller's wait when cancellation occurs while the shared cursor call is pending.</summary>
+    /// <returns>The asynchronous verification.</returns>
+    [Fact]
+    public async Task ReaderCancellationDoesNotWaitForPendingCursor()
+    {
+        TaskCompletionSource<BrookPosition> position = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        Mock<IUxProjectionCursorGrain> cursor = new(MockBehavior.Strict);
+        cursor.Setup(item => item.GetPositionAsync()).Returns(position.Task);
+        Mock<IUxProjectionGrainFactory> projections = new(MockBehavior.Strict);
+        projections.Setup(item => item.GetUxProjectionCursorGrain(new("TEST.REFERENCESET.SAVEDITEMS", "collection")))
+            .Returns(cursor.Object);
+        Mock<IGrainFactory> grains = new(MockBehavior.Strict);
+        ReferenceSetPageReader<SavedItemsMembershipProjection, CatalogItemProjection> reader = new(
+            projections.Object,
+            grains.Object,
+            NullLogger<ReferenceSetPageReader<SavedItemsMembershipProjection, CatalogItemProjection>>.Instance);
+        using CancellationTokenSource canceled = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken);
+        Task<ReferenceSetPage<SavedItemsMembershipProjection, CatalogItemProjection>> read =
+            reader.ReadAsync("collection", cancellationToken: canceled.Token).AsTask();
+        try
+        {
+            Assert.False(read.IsCompleted);
+            await canceled.CancelAsync();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+                await read.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+            Assert.False(position.Task.IsCompleted);
+            cursor.Verify(item => item.GetPositionAsync(), Times.Once);
+            grains.VerifyNoOtherCalls();
+        }
+        finally
+        {
+            position.TrySetResult(new(-1));
+        }
+    }
+
     /// <summary>Rejects future empty-history versions and observes cancellation after an uncancelable cursor call.</summary>
     /// <returns>The asynchronous verification.</returns>
     [Fact]

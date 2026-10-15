@@ -61,7 +61,7 @@ internal sealed class ReferenceSetPageReader<TProjection, TSource> : IReferenceS
         if (!version.HasValue)
         {
             IUxProjectionCursorGrain cursor = Projections.GetUxProjectionCursorGrain(cursorKey);
-            selected = await cursor.GetPositionAsync();
+            selected = await cursor.GetPositionAsync().WaitAsync(cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
         }
 
