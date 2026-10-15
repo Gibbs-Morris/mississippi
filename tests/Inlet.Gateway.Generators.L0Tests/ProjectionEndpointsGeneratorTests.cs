@@ -108,7 +108,8 @@ public class ProjectionEndpointsGeneratorTests
         bool nested,
         bool nullableElements,
         bool nullableCollection,
-        bool verifyDefaultAndEmpty = false
+        bool verifyDefaultAndEmpty = false,
+        bool globalNamespaceEnum = false
     )
     {
         ArgumentNullException.ThrowIfNull(collectionType);
@@ -145,6 +146,26 @@ public class ProjectionEndpointsGeneratorTests
                 "__FrameworkCollection__",
                 collectionType.Replace("__Element__", "DayOfWeek?", StringComparison.Ordinal),
                 StringComparison.Ordinal);
+        if (globalNamespaceEnum)
+        {
+            const string namespacedEnum = """
+                                          namespace TestApp.Domain.Shared
+                                          {
+                                              public enum ResumeSource { Reminder = 0, Manual = 7 }
+                                          }
+                                          """;
+            projectionSource = projectionSource
+                .Replace("using TestApp.Domain.Shared;", string.Empty, StringComparison.Ordinal)
+                .Replace(
+                    namespacedEnum,
+                    "public enum ResumeSource { Reminder = 0, Manual = 7 }",
+                    StringComparison.Ordinal)
+                .Replace(
+                    " Days { get; init; }",
+                    " Days { get; init; }\npublic global::ResumeSource? Selected { get; init; }",
+                    StringComparison.Ordinal);
+        }
+
         if (nullableCollection)
         {
             projectionSource = "#nullable enable\n" +
@@ -224,6 +245,28 @@ public class ProjectionEndpointsGeneratorTests
                                        }
                                        """;
         string mappingSource = mappingTemplate;
+        if (globalNamespaceEnum)
+        {
+            const string scalarProbe = """
+                                       public static int? MapScalar(bool present)
+                                       {
+                                           SagaStatusProjection source = new()
+                                           {
+                                               Values = [],
+                                               Days = [],
+                                               Selected = present ? ResumeSource.Manual : null,
+                                           };
+                                           SagaStatusDto dto = new SagaStatusProjectionMapper().Map(source);
+                                           return (int?)dto.Selected;
+                                       }
+
+                                       public static int?[] Map()
+                                       """;
+            mappingSource = mappingSource
+                .Replace("using TestApp.Domain.Shared;", string.Empty, StringComparison.Ordinal)
+                .Replace("public static int?[] Map()", scalarProbe, StringComparison.Ordinal);
+        }
+
         if (verifyDefaultAndEmpty)
         {
             const string emptyProbe = """
@@ -361,8 +404,35 @@ public class ProjectionEndpointsGeneratorTests
         Assert.Empty(
             mappingCompilation.GetDiagnostics(TestContext.Current.CancellationToken)
                 .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
-        Assert.Single(
-            runResult.GeneratedTrees.Where(tree => Path.GetFileName(tree.FilePath) == "ResumeSourceDto.g.cs"));
+        if (globalNamespaceEnum)
+        {
+            Assert.DoesNotContain(
+                runResult.GeneratedTrees,
+                tree => Path.GetFileName(tree.FilePath) == "ResumeSourceDto.g.cs");
+            INamedTypeSymbol sourceEnum = Assert.IsType<INamedTypeSymbol>(
+                outputCompilation.GetTypeByMetadataName("ResumeSource"),
+                false);
+            INamedTypeSymbol dto = Assert.IsType<INamedTypeSymbol>(
+                outputCompilation.GetTypeByMetadataName("TestAssembly.Controllers.Projections.SagaStatusDto"),
+                false);
+            INamedTypeSymbol scalar = Assert.IsType<INamedTypeSymbol>(
+                Assert.Single(dto.GetMembers("Selected").OfType<IPropertySymbol>()).Type,
+                false);
+            Assert.Equal(SpecialType.System_Nullable_T, scalar.OriginalDefinition.SpecialType);
+            Assert.True(SymbolEqualityComparer.Default.Equals(sourceEnum, Assert.Single(scalar.TypeArguments)));
+            IArrayTypeSymbol collection = Assert.IsType<IArrayTypeSymbol>(
+                Assert.Single(dto.GetMembers("Values").OfType<IPropertySymbol>()).Type,
+                false);
+            INamedTypeSymbol element = Assert.IsType<INamedTypeSymbol>(collection.ElementType, false);
+            Assert.Equal(SpecialType.System_Nullable_T, element.OriginalDefinition.SpecialType);
+            Assert.True(SymbolEqualityComparer.Default.Equals(sourceEnum, Assert.Single(element.TypeArguments)));
+        }
+        else
+        {
+            Assert.Single(
+                runResult.GeneratedTrees.Where(tree => Path.GetFileName(tree.FilePath) == "ResumeSourceDto.g.cs"));
+        }
+
         using MemoryStream assemblyStream = new();
         Assert.True(
             mappingCompilation.Emit(assemblyStream, cancellationToken: TestContext.Current.CancellationToken).Success);
@@ -394,6 +464,14 @@ public class ProjectionEndpointsGeneratorTests
             else
             {
                 Assert.Equal(new int?[] { null, 7, 0, null, 5, 1 }, actual);
+            }
+
+            if (globalNamespaceEnum)
+            {
+                MethodInfo mapScalar = assembly.GetType("TestAssembly.Verification.NullableEnumCollectionMappingProbe")!
+                    .GetMethod("MapScalar")!;
+                Assert.Null(mapScalar.Invoke(null, new object[] { false }));
+                Assert.Equal(7, Assert.IsType<int>(mapScalar.Invoke(null, new object[] { true })));
             }
 
             if (verifyDefaultAndEmpty)
@@ -1433,6 +1511,18 @@ public class ProjectionEndpointsGeneratorTests
             Assert.Contains("#nullable enable", generatedCode, StringComparison.Ordinal);
         }
     }
+
+    /// <summary>
+    ///     Global-namespace nullable enums retain their source types and map null and present values.
+    /// </summary>
+    [Fact]
+    public void GeneratedGlobalNamespaceNullableEnumsPreserveSourceTypesAndValues() =>
+        VerifyEnumCollectionMappersCompileAndPreserveValues(
+            "__Element__[]",
+            false,
+            true,
+            false,
+            globalNamespaceEnum: true);
 
     /// <summary>
     ///     Default and empty immutable enum arrays map to empty arrays that can be serialized.
