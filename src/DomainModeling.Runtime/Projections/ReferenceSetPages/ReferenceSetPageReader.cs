@@ -53,7 +53,8 @@ internal sealed class ReferenceSetPageReader<TProjection, TSource> : IReferenceS
         ReferenceSetPageSelection.Validate(offset, limit);
         cancellationToken.ThrowIfCancellationRequested();
         Stopwatch timer = Stopwatch.StartNew();
-        Logger.PageReadStarted(typeof(TProjection).Name, offset, limit, version?.Value);
+        long? requestedVersion = version.HasValue ? version.GetValueOrDefault().Value : null;
+        Logger.PageReadStarted(typeof(TProjection).Name, offset, limit, requestedVersion);
         IUxProjectionCursorGrain cursor = Projections.GetUxProjectionCursorGrain<TProjection>(entityId);
         BrookPosition latest = await cursor.GetPositionAsync();
         cancellationToken.ThrowIfCancellationRequested();
