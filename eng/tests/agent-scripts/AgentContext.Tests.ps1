@@ -800,3 +800,52 @@ applyTo: '.github/agents/cs-*.agent.md'
         ($json | ConvertFrom-Json).Complete | Should -BeTrue
     }
 }
+
+Describe 'Public documentation policy contracts' {
+    BeforeAll {
+        $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+        $policy = Get-Content -LiteralPath (Join-Path $root 'docs/Docusaurus/docs/AGENTS.md') -Raw
+        $guide = Get-Content -LiteralPath (Join-Path $root 'docs/Docusaurus/docs/contributing/documentation-guide.md') -Raw
+        $taxonomy = [regex]::Match($guide, '(?s)## Choose The Page Type First(.*?)## Decide').Groups[1].Value
+        $types = @([regex]::Matches($taxonomy, '\| `([^`]+)` \|') | ForEach-Object { $_.Groups[1].Value })
+        function Assert-PageTypes([string]$Text) {
+            $rule = [regex]::Match($Text, '(?m)^- DOC2[^:]*: .*\*\*MUST\*\*.*exactly one of.*$').Value
+            $declared = @([regex]::Matches($rule, '`([^`]+)`') | ForEach-Object { $_.Groups[1].Value })
+            if ($types.Count -ne 9 -or $rule -notmatch 'before writing' -or ($declared -join ',') -ne ($types -join ',')) { throw 'Missing exhaustive page-type contract' }
+        }
+        function Assert-Diagram([string]$Text) {
+            $rule = [regex]::Match($Text, '(?m)^- DOC6\.2: .+$').Value
+            if ($rule -notmatch '\*\*MUST\*\*.*introductory sentence and a clear main point') { throw 'Missing both diagram explanations' }
+        }
+        function Assert-SkillRules([string]$Text) {
+            $rules = @([regex]::Matches($Text, '(?m)^- DOC10[^:]*: .+$'))
+            if ($rules.Count -lt 4) { throw 'Compound skill requirements' }
+            foreach ($rule in $rules) {
+                if ([regex]::Matches($rule.Value, '\*\*(MUST(?: NOT)?|SHOULD(?: NOT)?|MAY)\*\*').Count -ne 1 -or $rule.Value -notmatch 'Why:\s+\S') { throw 'Compound skill requirements or missing rationale' }
+            }
+        }
+    }
+
+    It 'restricts classification before writing to the public guide taxonomy' {
+        { Assert-PageTypes $policy } | Should -Not -Throw
+    }
+
+    It 'rejects a table-only taxonomy with an unrestricted classification rule' {
+        $regressed = $policy -replace '(?m)^- DOC2[^:]*: .*exactly one of.*$', '- DOC2: Each page **MUST** use exactly one type.'
+        { Assert-PageTypes $regressed } | Should -Throw '*page-type contract*'
+    }
+
+    It 'requires an introductory sentence and a clear main point for every diagram' {
+        { Assert-Diagram $policy } | Should -Not -Throw
+    }
+    It 'rejects a diagram introduction without the main point' {
+        { Assert-Diagram ($policy.Replace(' and a clear main point','')) } | Should -Throw '*diagram explanations*'
+    }
+
+    It 'keeps skill, fallback, applicability and ADR obligations in separate rationale-bearing rules' {
+        { Assert-SkillRules $policy } | Should -Not -Throw
+    }
+    It 'rejects chained mandatory skill requirements without a rationale' {
+        { Assert-SkillRules '- DOC10: Authors **MUST** use the skill; if discovery fails, they **MUST** read it directly.' } | Should -Throw '*skill requirements*'
+    }
+}
