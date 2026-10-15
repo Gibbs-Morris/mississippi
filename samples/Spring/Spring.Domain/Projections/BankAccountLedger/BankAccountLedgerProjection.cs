@@ -24,6 +24,7 @@ namespace MississippiSamples.Spring.Domain.Projections.BankAccountLedger;
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
 [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTLEDGER")]
 [SnapshotRetention(100)]
+[GenerateProjectionRegistration]
 [GenerateProjectionEndpoints]
 [GenerateMcpReadTool(
     Title = "Get Bank Account Ledger",

@@ -12,11 +12,20 @@ Governing thought: Record validated source-editing failures without weakening co
 
 - Agents making bulk XML documentation edits **SHOULD** inspect the source newline format and replacement API overload before applying them. Why: PR #1108 produced `SA1625` duplicate remarks when an LF removal assumed Windows CRLF and static `Regex.Replace(..., 1)` selected `RegexOptions` rather than a replacement count.
 
+- Generator authors **MUST** qualify emitted consumer type references when introducing helper types that can shadow them. Why: A03's private `RegistrationMarker` captured valid projection, event, and reducer names and caused `CS0311` in compiled generated output.
+
+- Generator authors **MUST** qualify emitted framework calls that can bind to consumer extensions. Why: Imported consumer namespaces can make an extension call ambiguous or select a different overload; A03's unqualified `Any` caused both a compiler failure and duplicate reducer registration.
+
+- Generator authors **MUST** account for same-compilation generated types without assuming sibling generator output is present in the input compilation. Why: A03's saga-status projection silently omitted seven generated reducers when an authored reducer was present.
+
+- Generator authors **MUST** validate the combined outputs in one generator invocation. Why: A03's saga-status projection without authored reducers produced `CS1061` for a missing registration helper.
+
 ## Scope and Audience
 
-Agents editing C# source documentation.
+Agents editing C# source documentation or source generator emission.
 
 ## References
 
 - [Self-improvement governance](self-improvement.instructions.md)
 - [C# guidance](csharp.instructions.md)
+- [Metadata and host composition](metadata-and-composition.instructions.md), within its activation scope

@@ -16,6 +16,7 @@ namespace MississippiSamples.Spring.Domain.Projections.MoneyTransferStatus;
 [ProjectionPath("money-transfer-status")]
 [BrookName("SPRING", "BANKING", "TRANSFER")]
 [SnapshotStorageName("SPRING", "BANKING", "TRANSFERSTATUS")]
+[GenerateProjectionRegistration]
 [GenerateProjectionEndpoints]
 [GenerateMcpReadTool(
     Title = "Get Money Transfer Status",

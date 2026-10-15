@@ -12,7 +12,7 @@ description: Explain what Mississippi is, why it exists, and how its major subsy
 
 Mississippi is an opinionated application model for building event-sourced systems on Orleans.
 
-It treats event sourcing, runtime composition, generated delivery surfaces, and client state as one architectural model instead of four separate concerns. Teams define domain types such as aggregate state, commands, events, reducers, saga steps, and projections. Mississippi then composes the Orleans runtime, generated HTTP and SignalR surfaces, and client state infrastructure around those types.
+It treats event sourcing, runtime composition, generated delivery surfaces, and client state as one architectural model instead of four separate concerns. Teams define domain types such as aggregate state, commands, events, reducers, saga steps, and projections. Mississippi then composes the Orleans runtime, generated HTTP contracts, explicitly configured SignalR services, and client state infrastructure around those types.
 
 ## The Problem This Solves
 
@@ -35,7 +35,7 @@ Mississippi starts from a few explicit domain artifacts and composes outward.
 - Command handlers validate commands against current state and emit events.
 - Brooks stores those events in per-aggregate brooks.
 - Tributary reducers rebuild both aggregate state and projection state from events.
-- Projection types define read models over the same brook and can opt into generated delivery with `[GenerateProjectionEndpoints]`.
+- Projection types define read models over the same brook. `[GenerateProjectionRegistration]` selects runtime helpers, while `[GenerateProjectionEndpoints]` with `[ProjectionPath]` selects HTTP contracts.
 - Inlet generators derive gateway and client scaffolding from those types and attributes.
 - Reservoir keeps client state predictable by reducing actions into immutable feature slices.
 
@@ -57,7 +57,8 @@ This diagram shows how projection definitions become delivery surfaces and clien
 flowchart TB
     P[Projection types and attributes] --> IN[Inlet code generation]
     IN --> HTTP[HTTP endpoints and controllers]
-    IN --> SUB[SignalR subscription management]
+    P --> CFG[Explicit host projection discovery]
+    CFG --> SUB[SignalR subscription management]
     SUB --> AQ[Aqueduct SignalR transport]
     HTTP --> RS[Reservoir client state store]
     AQ --> RS
@@ -79,7 +80,7 @@ In public package terms, the major responsibilities break down like this.
 
 - Mississippi has a real end-to-end composition model rather than a single server-side helper package. The repository contains dedicated runtime, gateway, and client projects for the same concepts.
 - Aggregate, projection, and saga generation is attribute-driven. For example, `[GenerateAggregateEndpoints]`, `[GenerateProjectionEndpoints]`, `[GenerateCommand]`, and `[GenerateSagaEndpoints]` each drive concrete generator output.
-- The same model is visible in the Spring sample, where projection types marked with `[GenerateProjectionEndpoints]` feed generated endpoints and real-time client projection updates.
+- Spring's projections use both generation markers for runtime helpers and HTTP contracts. Explicit `ScanProjectionAssemblies(...)` calls and client subscription actions connect addressed projections to real-time updates.
 
 ## Non-Guarantees
 
@@ -98,6 +99,7 @@ In public package terms, the major responsibilities break down like this.
 - Use [Write Model](./write-model.md) when the question is about commands, events, reducers, and effects inside aggregates.
 - Use [Read Models and Client Sync](./read-models-and-client-sync.md) when the question is about projections, generated GET endpoints, SignalR notifications, and client refresh behavior.
 - Use [Sagas and Orchestration](./sagas-and-orchestration.md) when the question is about ordered steps and compensation.
+- Use [Generated Contracts](../inlet/reference/generated-contracts.md) for projection capability selection and migration.
 - Use [Domain Modeling](../domain-modeling/index.md) or [Inlet](../inlet/index.md) when you need subsystem-specific detail.
 
 ## Summary
