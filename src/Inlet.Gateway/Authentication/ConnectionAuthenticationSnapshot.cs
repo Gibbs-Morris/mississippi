@@ -172,6 +172,32 @@ internal static class ConnectionAuthenticationSnapshot
           string.Equals(snapshot.DefaultScheme, policy.AuthenticationSchemes[0], StringComparison.Ordinal)));
 
     /// <summary>
+    ///     Applies credentials from a separately proven anonymous poll to a private decision context.
+    /// </summary>
+    /// <param name="context">The isolated subscription authentication context.</param>
+    /// <param name="principal">The principal retained by the hub.</param>
+    /// <returns>Whether a current anonymous poll supplied the decision's request metadata.</returns>
+    internal static bool TryUseAnonymousPollRequest(
+        HttpContext context,
+        ClaimsPrincipal? principal
+    )
+    {
+        Snapshot? current = GetSnapshot(context, principal);
+        if (current is not { Schemes.Count: 0, AnonymousRequest: not null } ||
+            principal is null ||
+            principal.Identities.Any(identity => identity.IsAuthenticated) ||
+            !context.Items.TryGetValue(ItemKey, out object? value) ||
+            value is not Snapshot { AnonymousRequest: not null } original ||
+            original.Principal.Identities.Any(identity => identity.IsAuthenticated))
+        {
+            return false;
+        }
+
+        context.Features.Set(current.AnonymousRequest.CreateFeature());
+        return true;
+    }
+
+    /// <summary>
     ///     Recovers the stable default scheme requested by authentication middleware.
     /// </summary>
     /// <param name="context">The original authenticated request.</param>
@@ -251,6 +277,9 @@ internal static class ConnectionAuthenticationSnapshot
     )
     {
         // Items survive long-polling cloning; request features and their service scope do not.
+        ConnectionAnonymousRequest? anonymousRequest = principal.Identities.Any(identity => identity.IsAuthenticated)
+            ? null
+            : new(context.Request);
         Snapshot snapshot = new(
             principal,
             Array.AsReadOnly(schemes),
@@ -258,9 +287,12 @@ internal static class ConnectionAuthenticationSnapshot
             OperatingSystem.IsWindows() && principal.Identity is WindowsIdentity,
             context.GetEndpoint(),
             context.Request.Query["id"].ToString(),
-            properties?.Clone());
+            properties?.Clone(),
+            anonymousRequest);
         context.Items[ItemKey] = snapshot;
-        if ((schemes.Length > 0) && snapshot.Endpoint is not null && (snapshot.ConnectionToken.Length > 0))
+        if (((schemes.Length > 0) || snapshot.AnonymousRequest is not null) &&
+            snapshot.Endpoint is not null &&
+            (snapshot.ConnectionToken.Length > 0))
         {
             // A later poll can supply the principal first read by the hub during its handshake.
             // Bind its verified schemes to this exact principal, mapped endpoint and transport token.
@@ -278,6 +310,7 @@ internal static class ConnectionAuthenticationSnapshot
     /// <param name="Endpoint">The mapped endpoint that accepted the authentication result.</param>
     /// <param name="ConnectionToken">The transport token from the authenticated request.</param>
     /// <param name="Properties">A copy of the verified ticket properties, when authentication succeeded.</param>
+    /// <param name="AnonymousRequest">Copied request metadata when middleware handed SignalR an anonymous caller.</param>
     private sealed record Snapshot(
         ClaimsPrincipal Principal,
         IReadOnlyList<string> Schemes,
@@ -285,6 +318,7 @@ internal static class ConnectionAuthenticationSnapshot
         bool RequiresWindowsBinding,
         Endpoint? Endpoint,
         string ConnectionToken,
-        AuthenticationProperties? Properties
+        AuthenticationProperties? Properties,
+        ConnectionAnonymousRequest? AnonymousRequest
     );
 }

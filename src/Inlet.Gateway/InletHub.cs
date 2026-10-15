@@ -296,6 +296,7 @@ public sealed class InletHub : Hub<IInletHubClient>
         }
 
         if (ConnectionAuthenticationSnapshot.HasDifferentPrincipal(httpContext, Context.User) &&
+            !ConnectionAuthenticationSnapshot.TryUseAnonymousPollRequest(httpContext, Context.User) &&
             (httpContext.RequestServices is not SubscriptionAuthenticationServices services ||
              !await services.CanUseEstablishedAuthenticationAsync(policy)))
         {

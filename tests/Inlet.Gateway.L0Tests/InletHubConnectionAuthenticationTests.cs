@@ -1155,6 +1155,74 @@ public sealed class InletHubConnectionAuthenticationTests
     }
 
     /// <summary>
+    ///     Anonymous repolls use their own credentials only when endpoint and connection token remain bound.
+    /// </summary>
+    /// <param name="permission">The current poll's bearer permission, or a missing-token marker.</param>
+    /// <param name="sameToken">Whether the poll belongs to the original transport token.</param>
+    /// <param name="sameEndpoint">Whether the poll uses the original mapped endpoint.</param>
+    /// <param name="allowed">Whether the subscription should reach the grain.</param>
+    /// <returns>A task that completes when anonymous-poll boundaries have been checked.</returns>
+    [Theory]
+    [InlineData("read", true, true, true)]
+    [InlineData("write", true, true, false)]
+    [InlineData("missing", true, true, false)]
+    [InlineData("read", false, true, false)]
+    [InlineData("read", true, false, false)]
+    public async Task SubscribeUsesCurrentAnonymousPollCredentials(
+        string permission,
+        bool sameToken,
+        bool sameEndpoint,
+        bool allowed
+    )
+    {
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.Services.AddSignalR();
+        builder.Services.AddDataProtection();
+        builder.Services.AddAuthentication()
+            .AddBearerToken(
+                "Bearer",
+                options => options.TimeProvider = new FakeTimeProvider(new(2040, 1, 1, 0, 0, 0, TimeSpan.Zero)));
+        builder.Services.AddAuthorizationBuilder().SetDefaultPolicy(CreatePolicy("Bearer"));
+        await using WebApplication app = builder.Build();
+        await using AsyncServiceScope scope = app.Services.CreateAsyncScope();
+        DefaultHttpContext original = CreateBearerContext(scope.ServiceProvider, "read");
+        AuthorizationPolicy policy = CreatePolicy("Bearer");
+        await DispatchHubEndpointAsync(app, original, policy, false);
+        ClaimsPrincipal initial = original.User;
+        DefaultHttpContext retained = CloneConnectionContext(original, scope.ServiceProvider);
+        DefaultHttpContext poll = CreateBearerContext(scope.ServiceProvider, permission);
+        if (permission == "missing")
+        {
+            poll.Request.Headers.Remove("Authorization");
+        }
+
+        poll.Request.QueryString = new(sameToken ? "?id=unavailable-connection" : "?id=another-connection");
+        poll.SetEndpoint(
+            sameEndpoint ? original.GetEndpoint() : new(_ => Task.CompletedTask, new(), "another endpoint"));
+        Assert.NotSame(initial, poll.User);
+        Assert.DoesNotContain(poll.User.Identities, identity => identity.IsAuthenticated);
+        await ConnectionAuthenticationSnapshot.CaptureAsync(poll);
+        ClaimsPrincipal caller = poll.User;
+        retained.User = caller;
+        using InletHub hub = CreateHub(retained, caller, "Bearer", out IInletSubscriptionGrain grain);
+        if (allowed)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        Assert.Same(caller, retained.User);
+        Assert.Same(caller, hub.Context.User);
+    }
+
+    /// <summary>
     ///     A principal established by a current poll must retain its own verified scheme and permissions.
     /// </summary>
     /// <param name="permission">The current caller's permission.</param>
