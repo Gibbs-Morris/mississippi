@@ -440,6 +440,8 @@ public sealed class InletHub : Hub<IInletHubClient>
             IServiceProvider connectionServices = httpContext.RequestServices;
             IPolicyEvaluator? policyEvaluator = connectionServices.GetService<IPolicyEvaluator>();
             HttpContext decisionContext = SubscriptionAuthenticationFeatures.CreateContext(httpContext);
+            using ConnectionTlsCertificateFeature decisionCertificate = new();
+            decisionContext.Features.Set(decisionCertificate);
             AuthenticationService? frameworkService = ConnectionAuthenticationRouter.GetFrameworkAuthentication(
                 connectionServices.GetService<IAuthenticationService>());
             AuthenticationHandlerProvider? handlers = GetFrameworkHandlerProvider(frameworkService);

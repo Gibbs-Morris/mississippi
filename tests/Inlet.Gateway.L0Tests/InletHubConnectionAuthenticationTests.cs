@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
@@ -1243,6 +1244,66 @@ public sealed class InletHubConnectionAuthenticationTests
         await connectionScope.DisposeAsync();
         Assert.True(owned.IsDisposed);
         Assert.Equal(3, state.Disposals);
+    }
+
+    /// <summary>
+    ///     Anonymous polls retain their own public certificate data after the request-owned certificate is disposed.
+    /// </summary>
+    /// <param name="permission">The current certificate permission, or a missing-certificate marker.</param>
+    /// <param name="allowed">Whether the current TLS credentials authorize the subscription.</param>
+    /// <returns>A task that completes when TLS ownership and stale-certificate boundaries have been checked.</returns>
+    [Theory]
+    [InlineData("read", true)]
+    [InlineData("write", false)]
+    [InlineData("missing", false)]
+    public async Task SubscribeUsesCurrentAnonymousPollCertificate(
+        string permission,
+        bool allowed
+    )
+    {
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.Services.AddSignalR();
+        builder.Services.AddAuthentication()
+            .AddScheme<AuthenticationSchemeOptions, CertificatePermissionAuthenticationHandler>(TlsScheme, _ => { });
+        builder.Services.AddAuthorizationBuilder().SetDefaultPolicy(CreatePolicy(TlsScheme));
+        await using WebApplication app = builder.Build();
+        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
+        using X509Certificate2 originalCertificate = CertificateConnectionTestData.CreateCertificate("read");
+        DefaultHttpContext original = CertificateConnectionTestData.CreateContext(
+            connectionScope.ServiceProvider,
+            originalCertificate);
+        AuthorizationPolicy policy = CreatePolicy(TlsScheme);
+        await DispatchHubEndpointAsync(app, original, policy, false);
+        DefaultHttpContext retained = CloneConnectionContext(original, connectionScope.ServiceProvider);
+        Assert.Null(retained.Features.Get<ITlsConnectionFeature>());
+        await using AsyncServiceScope pollScope = app.Services.CreateAsyncScope();
+        using X509Certificate2? certificate = permission == "missing"
+            ? null
+            : CertificateConnectionTestData.CreateCertificate(permission);
+        DefaultHttpContext poll = CertificateConnectionTestData.CreateContext(pollScope.ServiceProvider, certificate);
+        poll.SetEndpoint(original.GetEndpoint());
+        poll.Request.QueryString = new("?id=unavailable-connection");
+        await ConnectionAuthenticationSnapshot.CaptureAsync(poll);
+        certificate?.Dispose();
+        ClaimsPrincipal caller = poll.User;
+        retained.User = caller;
+        using InletHub hub = CreateHub(retained, caller, TlsScheme, out IInletSubscriptionGrain grain);
+        if (allowed)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        Assert.Same(caller, retained.User);
+        Assert.Same(caller, hub.Context.User);
+        Assert.Same(connectionScope.ServiceProvider, retained.RequestServices);
     }
 
     /// <summary>

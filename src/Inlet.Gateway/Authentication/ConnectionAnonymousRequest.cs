@@ -17,11 +17,13 @@ internal sealed class ConnectionAnonymousRequest
     /// <summary>
     ///     Initializes a new instance of the <see cref="ConnectionAnonymousRequest" /> class.
     /// </summary>
-    /// <param name="request">The current anonymous transport request.</param>
+    /// <param name="context">The current anonymous transport request.</param>
     public ConnectionAnonymousRequest(
-        HttpRequest request
+        HttpContext context
     )
     {
+        HttpRequest request = context.Request;
+        CertificateData = context.Features.Get<ITlsConnectionFeature>()?.ClientCertificate?.RawData;
         Scheme = request.Scheme;
         Method = request.Method;
         PathBase = request.PathBase.Value ?? string.Empty;
@@ -33,6 +35,8 @@ internal sealed class ConnectionAnonymousRequest
             header => new StringValues(header.Value.ToArray()),
             StringComparer.OrdinalIgnoreCase);
     }
+
+    private byte[]? CertificateData { get; }
 
     private IReadOnlyDictionary<string, StringValues> Headers { get; }
 
@@ -47,6 +51,15 @@ internal sealed class ConnectionAnonymousRequest
     private string QueryString { get; }
 
     private string Scheme { get; }
+
+    /// <summary>
+    ///     Loads copied credentials into the certificate holder owned by the private decision.
+    /// </summary>
+    /// <param name="certificate">The decision-owned holder.</param>
+    internal void ApplyTlsCertificate(
+        ConnectionTlsCertificateFeature certificate
+    ) =>
+        certificate.LoadCertificate(CertificateData);
 
     /// <summary>
     ///     Creates independent metadata for one private authentication decision.

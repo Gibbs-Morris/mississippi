@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Features.Authentication;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
@@ -195,7 +196,8 @@ internal static class ConnectionAuthenticationSnapshot
     )
     {
         Snapshot? current = GetSnapshot(context, principal);
-        if (current is not { Schemes.Count: 0, AnonymousRequest: not null } ||
+        if (context.Features.Get<ConnectionTlsCertificateFeature>() is not { } decisionCertificate ||
+            current is not { Schemes.Count: 0, AnonymousRequest: not null } ||
             principal is null ||
             principal.Identities.Any(identity => identity.IsAuthenticated) ||
             !context.Items.TryGetValue(ItemKey, out object? value) ||
@@ -206,6 +208,9 @@ internal static class ConnectionAuthenticationSnapshot
         }
 
         context.Features.Set(current.AnonymousRequest.CreateFeature());
+        current.AnonymousRequest.ApplyTlsCertificate(decisionCertificate);
+        context.Features.Set<ITlsConnectionFeature>(
+            decisionCertificate.ClientCertificate is null ? null : decisionCertificate);
         return true;
     }
 
@@ -293,7 +298,7 @@ internal static class ConnectionAuthenticationSnapshot
         // Items survive long-polling cloning; request features and their service scope do not.
         ConnectionAnonymousRequest? anonymousRequest = principal.Identities.Any(identity => identity.IsAuthenticated)
             ? null
-            : new(context.Request);
+            : new(context);
         Snapshot snapshot = new(
             principal,
             Array.AsReadOnly(schemes),
