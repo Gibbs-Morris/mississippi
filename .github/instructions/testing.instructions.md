@@ -81,11 +81,14 @@ Filter uses `FullyQualifiedName` matching on project naming convention (e.g., `*
 2. Add tests to hit behavior, edges, and branches; keep determinism.
 3. If coverage < target, inspect Cobertura output under `.scratchpad/coverage-test-results/<Project>/`.
 
-### Optional Mutation Work (Mississippi)
+### Optional Mutation Work
 
-1. Apply the [proportionate workflow](mutation-testing.instructions.md#proportionate-workflow); use a focused run or existing report when useful to the requested task.
-2. Add meaningful assertions for straightforward gaps; defer costly survivor investigation unless explicitly requested.
-3. Report execution status, available results and paths, and significant gaps. A low score or skipped run does not by itself prevent completion.
+For explicit mutation execution or report assessment, read
+[run-mutation-testing](../../.agents/skills/run-mutation-testing/SKILL.md) and
+the [local mutation bindings](../agent-guidance/mutation-testing-bindings.md).
+If discovery is unavailable, read the linked skill directly. Keep mutation
+optional unless the task makes it acceptance criteria, and report its status,
+scope, valid results, paths, and significant gaps under the mutation policy.
 
 ### Legacy Test Improvements
 
