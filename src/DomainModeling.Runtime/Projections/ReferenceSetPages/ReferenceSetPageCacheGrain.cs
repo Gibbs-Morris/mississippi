@@ -67,7 +67,7 @@ internal sealed class ReferenceSetPageCacheGrain<TProjection, TSource>
     {
         Stopwatch timer = Stopwatch.StartNew();
         key = UxProjectionVersionedCacheKey.Parse(this.GetPrimaryKeyString());
-        Logger.PageReadStarted(typeof(TProjection).Name, 0, 100, key.Version.Value);
+        Logger.PageCacheActivating(typeof(TProjection).Name, key.Version.Value);
         TProjection projection =
             await Projections.GetUxProjectionVersionedCacheGrain<TProjection>(key).GetAsync(token) ??
             throw new InvalidOperationException("The requested membership snapshot is unavailable.");

@@ -54,16 +54,34 @@ public sealed class ReferenceSetPageBoundaryTests
             {
                 References = references,
             });
+        Mock<ILogger<ReferenceSetPageCacheGrain<SavedItemsMembershipProjection, CatalogItemProjection>>> logger = new();
+        logger.Setup(item => item.IsEnabled(LogLevel.Debug)).Returns(true);
         ReferenceSetPageCacheGrain<SavedItemsMembershipProjection, CatalogItemProjection> cache = new(
             ReferenceSetPageFixture<SavedItemsMembershipProjection, CatalogItemProjection>.Context(key).Object,
             projections.Object,
             membership,
-            NullLogger<ReferenceSetPageCacheGrain<SavedItemsMembershipProjection, CatalogItemProjection>>.Instance);
+            logger.Object);
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await cache.OnActivateAsync(TestContext.Current.CancellationToken));
         whole.Setup(item => item.GetAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SavedItemsMembershipProjection());
         await cache.OnActivateAsync(TestContext.Current.CancellationToken);
+        logger.Verify(
+            item => item.Log(
+                LogLevel.Debug,
+                It.Is<EventId>(id => (id.Id == 5) && (id.Name == "PageCacheActivating")),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Exactly(2));
+        logger.Verify(
+            item => item.Log(
+                LogLevel.Debug,
+                It.Is<EventId>(id => id.Id == 1),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
         Assert.Empty((await cache.ReadAsync(int.MaxValue, 1, TestContext.Current.CancellationToken)).References);
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
             await cache.ReadAsync(-1, 1, TestContext.Current.CancellationToken));
@@ -96,7 +114,8 @@ public sealed class ReferenceSetPageBoundaryTests
         logger.Object.PageReadCompleted(7, 2, 1.5);
         logger.Object.PageIndexPrepared(7, 3, 2.5);
         logger.Object.PageCacheDeactivated(7);
-        Assert.Equal(4, logger.Invocations.Count(item => item.Method.Name == "Log"));
+        logger.Object.PageCacheActivating("NamedProjection", 7);
+        Assert.Equal(5, logger.Invocations.Count(item => item.Method.Name == "Log"));
         logger.Invocations.Clear();
         logger.Setup(item => item.IsEnabled(LogLevel.Debug)).Returns(false);
         logger.Object.PageReadStarted("Disabled", 0, 50, null);
