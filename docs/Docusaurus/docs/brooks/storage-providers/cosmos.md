@@ -119,6 +119,9 @@ Writes use the configured event-count and estimated-size limits. Reads pass `Que
 page request and continue draining the async iterator. Blob leases coordinate distributed writes. The read, write, and
 startup initialization operations accept cancellation tokens where their contracts expose them.
 
+Normal event reads, including explicit ranges, stop at a committed cursor snapshot. Retained pending events remain
+hidden until cursor publication succeeds.
+
 The Cosmos database identifier, event-container identifier, and `/brookPartitionKey` path define the persisted event
 and cursor storage identity. `LockContainerName` identifies the Blob container used for lock coordination. The
 Cosmos client key, fixed Blob client key, and keyed provider-container key are dependency-injection lookup aliases;
