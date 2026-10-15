@@ -96,7 +96,48 @@ Latest reads use the cached cursor; they do not query storage afresh or return a
 
 Versions identify the collection's events, independently of the observed source versions stored in membership. Duplicate adds and missing removes append no event and therefore do not advance that version. Reads preserve the observed source version until removal and re-addition; later collection changes leave earlier projection state unchanged. Source-only changes append no collection event, refresh no membership fact, and require no source hydration.
 
-Each named projection uses its own typed reducer and snapshot registrations. The compiled saved and pinned membership consumers read their respective collection brooks without sharing membership state. This helper returns the whole membership projection; paging, ordering/filtering, HTTP/MCP exposure and client subscriptions/following are outside this contract.
+Each named projection uses its own typed reducer and snapshot registrations. The compiled saved and pinned membership consumers read their respective collection brooks without sharing membership state. This helper returns the whole membership projection. Bounded runtime reads require the explicit opt-in below; HTTP/MCP exposure, client subscriptions/following and business ordering/filtering remain separate.
+
+## Bounded runtime pages
+
+Opt in with `AddReferenceSetProjectionPages<TProjection,TSource>()` from `Mississippi.DomainModeling.Runtime.Projections.ReferenceSetPages` in place of the ordinary membership registration. It composes that registration and adds `IReferenceSetPageReader<TProjection,TSource>`. The reader and result contracts are in `Mississippi.DomainModeling.Abstractions.Projections.ReferenceSetPages`. The ordinary three-method UX grain contract and whole-projection reads remain available.
+
+This excerpt is exercised by the compiled `ReferenceSetPageTests` consumer. Supply the usual runtime hosting, Orleans, serialization and storage services:
+
+```csharp
+services.AddReferenceSetProjectionPages<SavedItemsMembershipProjection,
+    CatalogItemProjection>(
+    state => state?.References ?? new(),
+    (state, references) => (state ?? new()) with { References = references });
+
+IReferenceSetPageReader<SavedItemsMembershipProjection, CatalogItemProjection> reader =
+    provider.GetRequiredService<
+        IReferenceSetPageReader<SavedItemsMembershipProjection, CatalogItemProjection>>();
+ReferenceSetPage<SavedItemsMembershipProjection, CatalogItemProjection> first =
+    await reader.ReadAsync("collection", limit: 2);
+ReferenceSetPage<SavedItemsMembershipProjection, CatalogItemProjection> next =
+    await reader.ReadAsync("collection", offset: 2, limit: 100, version: first.Version);
+```
+
+| Parameter or result | Contract |
+| --- | --- |
+| `offset` / `Offset` | Zero-based `Int32`, from zero through `Int32.MaxValue`; omitted means zero. |
+| `limit` / `Limit` | From 1 through 100; omitted means 50. Invalid values are rejected rather than clamped. |
+| `version` | Omitted/null captures the cached cursor once. A supplied `BrookPosition` pins that collection position. |
+| `Version` | The captured or requested collection version used for all returned data and metadata. |
+| `TotalCount` | Membership count at that version, before selection. |
+| `References` | Bounded immutable `ReferenceSetMember` entries ordered by ordinal `SourceId`, retaining `ObservedSourceVersion`. |
+| `ProjectionType` / `SourceType` | Computed type metadata; excluded from JSON, with no source instance or content. |
+
+A valid offset beyond the end returns an empty array with the requested offset/limit, unchanged total and actual version. Untouched history returns an empty page with version `-1`; an exact request at `-1` also selects empty history. A collection emptied by removals retains its nonnegative event version.
+
+A latest read does not refresh storage: its cursor may lag or lead persisted progress. It captures once and uses that exact immutable version even if writes occur during the read. Pin the returned version while traversing several pages to avoid shifting membership. Pinned reads use that exact snapshot without consulting the cached cursor, so a lagging cursor does not reject an available historical version. New latest reads can shift after collection writes. Observed source versions remain loading floors, independently of collection versions.
+
+Negative offsets and limits outside 1–100 throw `ArgumentOutOfRangeException`; `BrookPosition` rejects values below `-1`. Invalid entity keys, unavailable snapshots/replay, cancellation and storage errors propagate. A future or unavailable nonempty version fails with `InvalidOperationException` through exact snapshot reconstruction; incomplete storage ranges cannot return a partial page. Positions pin membership events, not deployed reducer code.
+
+The runtime page-cache activation uses the existing projection/version key and immutable whole-projection cache, including its snapshot/reducer identity. It loads membership inside the runtime and prepares an ordinal index once per activation. Each request derives a bounded result; no page variants are retained or prebuilt. Stateless workers can have multiple activations, so preparation is not globally once-only. Paging bounds the returned references, while internal membership and index costs remain proportional to the finite collection.
+
+Page reads append no events and load no referenced sources. The application still owns tenant/entity authorization and source permissions; a reference grants no access. No HTTP/MCP adapter, client subscription, source following or business filtering/sorting is installed.
 
 ## Replay and compatibility
 
@@ -104,7 +145,7 @@ Replay applies saved membership facts without consulting sources, permissions or
 
 The internal event storage names are `MISSISSIPPI.REFERENCESET.ADDED.V1` and `MISSISSIPPI.REFERENCESET.REMOVED.V1`. Named aggregate brook/snapshot identities remain application-owned. Existing aggregate concurrency and empty-stream behavior remain unchanged.
 
-Bounded pages, client following, ordering/filtering and automatic cleanup of unavailable sources are outside this primitive.
+Client following, business ordering/filtering and automatic cleanup of unavailable sources are outside this primitive.
 
 ## Next steps
 
