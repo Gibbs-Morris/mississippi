@@ -191,6 +191,9 @@ internal sealed class ReferenceSetPageFixture<TProjection, TSource>
         return ordinary;
     }
 
+    /// <summary>Checks that a resolved cache belongs to this named collection.</summary>
+    /// <param name="text">The resolved cache key.</param>
+    /// <returns>The verified versioned key.</returns>
     private UxProjectionVersionedCacheKey ValidateKey(
         string text
     )

@@ -31,6 +31,9 @@ public sealed class ReferenceSetPageTests
 
     private static readonly string[] NextIds = ["a", "z"];
 
+    /// <summary>Registers both named consumers in one application container.</summary>
+    /// <param name="grains">The external Orleans proxy seam.</param>
+    /// <returns>The configured service provider.</returns>
     private static ServiceProvider Provider(
         Mock<IGrainFactory> grains
     )

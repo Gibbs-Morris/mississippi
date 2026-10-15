@@ -34,6 +34,10 @@ internal static partial class ReferenceSetPageLoggerExtensions
         long version
     );
 
+    /// <summary>Records the end of an immutable page-cache activation.</summary>
+    /// <param name="logger">The typed logger.</param>
+    /// <param name="entityHash">The masked collection identity.</param>
+    /// <param name="version">The immutable collection version.</param>
     [LoggerMessage(
         EventId = 4,
         Level = LogLevel.Debug,
@@ -44,6 +48,12 @@ internal static partial class ReferenceSetPageLoggerExtensions
         long version
     );
 
+    /// <summary>Records preparation of the ordinal membership index.</summary>
+    /// <param name="logger">The typed logger.</param>
+    /// <param name="entityHash">The masked collection identity.</param>
+    /// <param name="version">The immutable collection version.</param>
+    /// <param name="count">The indexed membership count.</param>
+    /// <param name="elapsedMilliseconds">The preparation duration.</param>
     [LoggerMessage(
         EventId = 3,
         Level = LogLevel.Debug,
@@ -57,6 +67,12 @@ internal static partial class ReferenceSetPageLoggerExtensions
         double elapsedMilliseconds
     );
 
+    /// <summary>Records a completed bounded membership read.</summary>
+    /// <param name="logger">The typed logger.</param>
+    /// <param name="entityHash">The masked collection identity.</param>
+    /// <param name="version">The actual collection version.</param>
+    /// <param name="count">The returned reference count.</param>
+    /// <param name="elapsedMilliseconds">The read duration.</param>
     [LoggerMessage(
         EventId = 2,
         Level = LogLevel.Debug,
@@ -69,6 +85,13 @@ internal static partial class ReferenceSetPageLoggerExtensions
         double elapsedMilliseconds
     );
 
+    /// <summary>Records the caller's requested membership selection.</summary>
+    /// <param name="logger">The typed logger.</param>
+    /// <param name="entityHash">The masked collection identity.</param>
+    /// <param name="projectionType">The named projection type.</param>
+    /// <param name="offset">The requested offset.</param>
+    /// <param name="limit">The requested maximum reference count.</param>
+    /// <param name="version">The pinned version, or null for a latest read.</param>
     [LoggerMessage(
         EventId = 1,
         Level = LogLevel.Debug,

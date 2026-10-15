@@ -39,6 +39,9 @@ public sealed class ReferenceSetPageBoundaryTests
         return fields.Any(field => (field.Key == "EntityHash") && Equals(field.Value, entityHash));
     }
 
+    /// <summary>Checks the requested selection fields in a generated event.</summary>
+    /// <param name="state">The structured event fields.</param>
+    /// <returns>Whether the named selection is present.</returns>
     private static bool HasSelection(
         object state
     )
