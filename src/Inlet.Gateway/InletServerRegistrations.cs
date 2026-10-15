@@ -2,6 +2,7 @@ using System;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.SignalR;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Options;
 
 using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Gateway;
+using Mississippi.Inlet.Gateway.Authentication;
 using Mississippi.Inlet.Runtime;
 
 
@@ -53,6 +55,8 @@ public static class InletServerRegistrations
         ArgumentNullException.ThrowIfNull(services);
         services.AddInletSilo();
         services.AddSignalR();
+        ConnectionAuthenticationRegistrations.AddRouter(services);
+        services.TryAddSingleton<SubscriptionAuthenticationHandlerFactory>(_ => new(services));
         services.Configure(configureOptions ?? (_ => { }));
         services.TryAddEnumerable(
             ServiceDescriptor.Transient<IConfigureOptions<MvcOptions>, GeneratedApiAuthorizationMvcOptionsSetup>());
@@ -101,6 +105,12 @@ public static class InletServerRegistrations
     ///         When <c>AllowAnonymousOptOut</c> is enabled, authorization is evaluated per
     ///         subscription using projection metadata.
     ///     </para>
+    ///     <para>
+    ///         Mapping through this method retains the established connection's authentication
+    ///         scheme result for subscriptions using the same schemes, including Long Polling.
+    ///         Compound ticket names require a policy provider that permits caching; otherwise,
+    ///         subscription authentication uses the configured policy evaluator again.
+    ///     </para>
     /// </remarks>
     public static HubEndpointConventionBuilder MapInletHub(
         this IEndpointRouteBuilder endpoints,
@@ -109,6 +119,18 @@ public static class InletServerRegistrations
     {
         ArgumentNullException.ThrowIfNull(endpoints);
         HubEndpointConventionBuilder hubEndpointBuilder = endpoints.MapHub<InletHub>(pattern);
+        hubEndpointBuilder.Add(static endpointBuilder =>
+        {
+            RequestDelegate? next = endpointBuilder.RequestDelegate;
+            if (next is not null)
+            {
+                endpointBuilder.RequestDelegate = async context =>
+                {
+                    await ConnectionAuthenticationSnapshot.CaptureAsync(context);
+                    await next(context);
+                };
+            }
+        });
         IOptions<InletServerOptions>? options = endpoints.ServiceProvider.GetService<IOptions<InletServerOptions>>();
         GeneratedApiAuthorizationOptions generatedApiAuthorization = options?.Value.GeneratedApiAuthorization ??
                                                                      new GeneratedApiAuthorizationOptions();

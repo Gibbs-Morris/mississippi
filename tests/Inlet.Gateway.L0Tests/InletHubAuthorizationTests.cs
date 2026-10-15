@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -76,6 +77,7 @@ public sealed class InletHubAuthorizationTests
         HubCallerContext context = Substitute.For<HubCallerContext>();
         context.ConnectionId.Returns("connection-1");
         context.User.Returns(CreateAuthenticatedUser());
+        context.Features.Returns(new FeatureCollection());
         return new(
             grainFactory,
             projectionAuthorizationRegistry,
