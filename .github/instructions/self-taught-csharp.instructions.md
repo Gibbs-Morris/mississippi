@@ -16,7 +16,9 @@ Governing thought: Record validated source-editing failures without weakening co
 
 - Generator authors **MUST** qualify emitted framework calls that can bind to consumer extensions. Why: Imported consumer namespaces can make an extension call ambiguous or select a different overload; A03's unqualified `Any` caused both a compiler failure and duplicate reducer registration.
 
-- Generator authors **MUST** account for same-compilation generated types without assuming sibling generator output is present in the input compilation. They **MUST** validate the combined outputs in one generator invocation. Why: A03's saga-status projection produced `CS1061` for a missing registration helper without authored reducers and silently omitted seven generated reducers when an authored reducer was present.
+- Generator authors **MUST** account for same-compilation generated types without assuming sibling generator output is present in the input compilation. Why: A03's saga-status projection silently omitted seven generated reducers when an authored reducer was present.
+
+- Generator authors **MUST** validate the combined outputs in one generator invocation. Why: A03's saga-status projection without authored reducers produced `CS1061` for a missing registration helper.
 
 ## Scope and Audience
 
