@@ -375,7 +375,8 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         HashSet<string> seen = new(StringComparer.Ordinal);
         foreach (PropertyModel prop in projection.Model.Properties)
         {
-            if (UnwrapNullable(prop.SourceTypeSymbol) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
+            ITypeSymbol sourceType = UnwrapNullable(prop.SourceTypeSymbol);
+            if (sourceType is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
                 !TypeAnalyzer.IsFrameworkType(enumType))
             {
                 string key = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
@@ -385,8 +386,8 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
                 }
             }
 
-            if ((prop.IsCollection || prop.SourceTypeSymbol is IArrayTypeSymbol) &&
-                TypeAnalyzer.GetCollectionElementType(prop.SourceTypeSymbol) is { } elementType &&
+            if ((TypeAnalyzer.IsCollectionType(sourceType) || sourceType is IArrayTypeSymbol) &&
+                TypeAnalyzer.GetCollectionElementType(sourceType) is { } elementType &&
                 UnwrapNullable(elementType) is INamedTypeSymbol { TypeKind: TypeKind.Enum } elementEnum &&
                 !TypeAnalyzer.IsFrameworkType(elementEnum))
             {
@@ -410,9 +411,10 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         ITypeSymbol sourceType
     )
     {
-        ITypeSymbol enumSource = sourceType is IArrayTypeSymbol || TypeAnalyzer.IsCollectionType(sourceType)
-            ? TypeAnalyzer.GetCollectionElementType(sourceType) ?? sourceType
-            : sourceType;
+        ITypeSymbol unwrappedSource = UnwrapNullable(sourceType);
+        ITypeSymbol enumSource = unwrappedSource is IArrayTypeSymbol || TypeAnalyzer.IsCollectionType(unwrappedSource)
+            ? TypeAnalyzer.GetCollectionElementType(unwrappedSource) ?? unwrappedSource
+            : unwrappedSource;
         return UnwrapNullable(enumSource);
     }
 

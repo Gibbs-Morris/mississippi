@@ -752,10 +752,12 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         ITypeSymbol sourceType,
         string propertyName
     ) =>
-        sourceType is INamedTypeSymbol { Name: "ImmutableArray", TypeArguments.Length: 1 } collectionType &&
+        UnwrapNullable(sourceType) is INamedTypeSymbol collectionType &&
+        (collectionType.Name == "ImmutableArray") &&
+        (collectionType.TypeArguments.Length == 1) &&
         (collectionType.ContainingNamespace.ToDisplayString() == SystemCollectionsImmutableNamespace) &&
-        GetEnumCollectionElement(sourceType) is not null
-            ? $"source.{propertyName}.IsDefault ? {TypeAnalyzer.GetDtoTypeName(sourceType)}.Empty : "
+        GetEnumCollectionElement(collectionType) is not null
+            ? $"{GetEnumCollectionSourceExpression(sourceType, propertyName)}.IsDefault ? {TypeAnalyzer.GetDtoTypeName(collectionType)}.Empty : "
             : string.Empty;
 
     /// <summary>
@@ -782,12 +784,15 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     /// <returns>The custom enum element, or <c>null</c> for other types.</returns>
     private static INamedTypeSymbol? GetEnumCollectionElement(
         ITypeSymbol sourceType
-    ) =>
-        (sourceType is IArrayTypeSymbol || TypeAnalyzer.IsCollectionType(sourceType)) &&
-        GetEnumSourceType(sourceType) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
-        !TypeAnalyzer.IsFrameworkType(enumType)
+    )
+    {
+        ITypeSymbol collectionType = UnwrapNullable(sourceType);
+        return (collectionType is IArrayTypeSymbol || TypeAnalyzer.IsCollectionType(collectionType)) &&
+               GetEnumSourceType(collectionType) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
+               !TypeAnalyzer.IsFrameworkType(enumType)
             ? enumType
             : null;
+    }
 
     /// <summary>
     ///     Selects a materializer compatible with the enum collection.
@@ -798,12 +803,13 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         PropertyModel prop
     )
     {
-        if (prop.SourceTypeSymbol is IArrayTypeSymbol arrayType)
+        ITypeSymbol sourceType = UnwrapNullable(prop.SourceTypeSymbol);
+        if (sourceType is IArrayTypeSymbol arrayType)
         {
             return arrayType.Rank == 1 ? ".ToArray()" : string.Empty;
         }
 
-        if (prop.SourceTypeSymbol is not INamedTypeSymbol { TypeArguments.Length: 1 } collectionType)
+        if (sourceType is not INamedTypeSymbol { TypeArguments.Length: 1 } collectionType)
         {
             return string.Empty;
         }
@@ -822,6 +828,20 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Gets a collection value after the nullable-container guard has succeeded.
+    /// </summary>
+    /// <param name="sourceType">The collection source type.</param>
+    /// <param name="propertyName">The source property name.</param>
+    /// <returns>The present source collection expression.</returns>
+    private static string GetEnumCollectionSourceExpression(
+        ITypeSymbol sourceType,
+        string propertyName
+    ) =>
+        sourceType is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T }
+            ? $"source.{propertyName}.Value"
+            : $"source.{propertyName}";
+
+    /// <summary>
     ///     Gets enum DTOs required for a projection.
     /// </summary>
     private static List<EnumDtoInfo> GetEnumDtosForProjection(
@@ -832,7 +852,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         HashSet<string> seen = new(StringComparer.Ordinal);
         foreach (PropertyModel prop in projection.Model.Properties)
         {
-            if (UnwrapNullable(prop.SourceTypeSymbol) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
+            ITypeSymbol sourceType = UnwrapNullable(prop.SourceTypeSymbol);
+            if (sourceType is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
                 !TypeAnalyzer.IsFrameworkType(enumType))
             {
                 string key = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
@@ -842,8 +863,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                 }
             }
 
-            if ((prop.IsCollection || prop.SourceTypeSymbol is IArrayTypeSymbol) &&
-                TypeAnalyzer.GetCollectionElementType(prop.SourceTypeSymbol) is { } elementType &&
+            if ((TypeAnalyzer.IsCollectionType(sourceType) || sourceType is IArrayTypeSymbol) &&
+                TypeAnalyzer.GetCollectionElementType(sourceType) is { } elementType &&
                 UnwrapNullable(elementType) is INamedTypeSymbol { TypeKind: TypeKind.Enum } elementEnum &&
                 !TypeAnalyzer.IsFrameworkType(elementEnum))
             {
@@ -867,9 +888,10 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         ITypeSymbol sourceType
     )
     {
-        ITypeSymbol enumSource = sourceType is IArrayTypeSymbol || TypeAnalyzer.IsCollectionType(sourceType)
-            ? TypeAnalyzer.GetCollectionElementType(sourceType) ?? sourceType
-            : sourceType;
+        ITypeSymbol unwrappedSource = UnwrapNullable(sourceType);
+        ITypeSymbol enumSource = unwrappedSource is IArrayTypeSymbol || TypeAnalyzer.IsCollectionType(unwrappedSource)
+            ? TypeAnalyzer.GetCollectionElementType(unwrappedSource) ?? unwrappedSource
+            : unwrappedSource;
         return UnwrapNullable(enumSource);
     }
 
@@ -900,6 +922,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         PropertyModel prop
     )
     {
+        string sourceExpression = GetEnumCollectionSourceExpression(prop.SourceTypeSymbol, prop.Name);
         string nullGuard = GetNullableCollectionGuard(prop.SourceTypeSymbol, prop.Name) +
                            GetDefaultEnumCollectionGuard(prop.SourceTypeSymbol, prop.Name);
         if (GetNullableEnumCollectionElement(prop.SourceTypeSymbol) is { } collectionEnum)
@@ -907,7 +930,15 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             string enumDtoTypeName = TypeAnalyzer.GetDtoTypeName(collectionEnum);
             string toCollection = GetEnumCollectionMaterializer(prop);
             return
-                $"{nullGuard}source.{prop.Name}.Select(value => value.HasValue ? ({enumDtoTypeName}?)value.Value : null){toCollection}";
+                $"{nullGuard}{sourceExpression}.Select(value => value.HasValue ? ({enumDtoTypeName}?)value.Value : null){toCollection}";
+        }
+
+        if ((prop.SourceTypeSymbol.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T) &&
+            GetEnumCollectionElement(prop.SourceTypeSymbol) is { } nonNullableEnum)
+        {
+            string enumDtoTypeName = TypeAnalyzer.GetDtoTypeName(nonNullableEnum);
+            string toCollection = GetEnumCollectionMaterializer(prop);
+            return $"{nullGuard}{sourceExpression}.Select(value => ({enumDtoTypeName})value){toCollection}";
         }
 
         if (prop.RequiresEnumerableMapper)
@@ -975,11 +1006,12 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
 
         if (GetEnumCollectionElement(prop.Type) is { } collectionEnum)
         {
+            string sourceExpression = GetEnumCollectionSourceExpression(prop.Type, prop.Name);
             string enumDtoTypeName = TypeAnalyzer.GetDtoTypeName(collectionEnum);
             string toCollection = GetEnumCollectionMaterializer(new(prop));
             string nullGuard = GetNullableCollectionGuard(prop.Type, prop.Name) +
                                GetDefaultEnumCollectionGuard(prop.Type, prop.Name);
-            return $"{nullGuard}source.{prop.Name}.Select(value => ({enumDtoTypeName})value){toCollection}";
+            return $"{nullGuard}{sourceExpression}.Select(value => ({enumDtoTypeName})value){toCollection}";
         }
 
         if (UnwrapNullable(prop.Type) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
@@ -995,7 +1027,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    ///     Gets a null guard for an annotated nullable collection property.
+    ///     Gets a null guard for a nullable reference or value-type collection property.
     /// </summary>
     /// <param name="sourceType">The collection source type.</param>
     /// <param name="propertyName">The source property name.</param>
@@ -1003,10 +1035,17 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     private static string GetNullableCollectionGuard(
         ITypeSymbol sourceType,
         string propertyName
-    ) =>
-        sourceType.IsReferenceType && (sourceType.NullableAnnotation == NullableAnnotation.Annotated)
+    )
+    {
+        if (sourceType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+        {
+            return $"!source.{propertyName}.HasValue ? null : ";
+        }
+
+        return sourceType.IsReferenceType && (sourceType.NullableAnnotation == NullableAnnotation.Annotated)
             ? $"source.{propertyName} is null ? null : "
             : string.Empty;
+    }
 
     /// <summary>
     ///     Gets the custom enum wrapped in nullable collection elements.
@@ -1017,8 +1056,9 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         ITypeSymbol sourceType
     )
     {
-        if ((sourceType is IArrayTypeSymbol || TypeAnalyzer.IsCollectionType(sourceType)) &&
-            TypeAnalyzer.GetCollectionElementType(sourceType) is INamedTypeSymbol elementType &&
+        ITypeSymbol collectionType = UnwrapNullable(sourceType);
+        if ((collectionType is IArrayTypeSymbol || TypeAnalyzer.IsCollectionType(collectionType)) &&
+            TypeAnalyzer.GetCollectionElementType(collectionType) is INamedTypeSymbol elementType &&
             (elementType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T) &&
             UnwrapNullable(elementType) is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType &&
             !TypeAnalyzer.IsFrameworkType(enumType))

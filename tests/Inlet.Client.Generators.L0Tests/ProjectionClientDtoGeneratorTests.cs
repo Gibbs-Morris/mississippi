@@ -162,6 +162,7 @@ public class ProjectionClientDtoGeneratorTests
     )
     {
         ArgumentNullException.ThrowIfNull(collectionType);
+        bool nullableValueContainer = nullableCollection && (collectionType == "ImmutableArray<__Element__>");
         const string projectionTemplate = """
                                           using System;
                                           using System.Collections.Generic;
@@ -240,14 +241,21 @@ public class ProjectionClientDtoGeneratorTests
         foreach (string propertyName in new[] { "Values", "Again", "Days" })
         {
             IPropertySymbol property = Assert.Single(projectionDto.GetMembers(propertyName).OfType<IPropertySymbol>());
-            if (nullableCollection)
+            ITypeSymbol collection = property.Type;
+            if (nullableValueContainer)
+            {
+                INamedTypeSymbol nullableContainer = Assert.IsType<INamedTypeSymbol>(collection, false);
+                Assert.Equal(SpecialType.System_Nullable_T, nullableContainer.OriginalDefinition.SpecialType);
+                collection = Assert.Single(nullableContainer.TypeArguments);
+            }
+            else if (nullableCollection)
             {
                 Assert.Equal(NullableAnnotation.Annotated, property.Type.NullableAnnotation);
             }
 
-            ITypeSymbol element = property.Type is IArrayTypeSymbol array
+            ITypeSymbol element = collection is IArrayTypeSymbol array
                 ? array.ElementType
-                : Assert.Single(Assert.IsType<INamedTypeSymbol>(property.Type, false).TypeArguments);
+                : Assert.Single(Assert.IsType<INamedTypeSymbol>(collection, false).TypeArguments);
             INamedTypeSymbol nullableElement = Assert.IsType<INamedTypeSymbol>(element, false);
             Assert.Equal(SpecialType.System_Nullable_T, nullableElement.OriginalDefinition.SpecialType);
             ITypeSymbol expectedElement = propertyName == "Days"
@@ -1183,6 +1191,18 @@ public class ProjectionClientDtoGeneratorTests
         bool nested
     ) =>
         VerifyNullableEnumCollectionDtosCompile(collectionType, nested, false);
+
+    /// <summary>
+    ///     Nullable immutable-array containers discover enum DTOs and retain their nullable value type.
+    /// </summary>
+    /// <param name="nested">Whether the collection belongs to a nested record.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GeneratedNullableImmutableEnumArrayDtosCompile(
+        bool nested
+    ) =>
+        VerifyNullableEnumCollectionDtosCompile("ImmutableArray<__Element__>", nested, true);
 
     /// <summary>
     ///     A projection and an enum that normalize to one DTO name produce a diagnostic without generator failure.

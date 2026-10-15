@@ -112,6 +112,7 @@ public class ProjectionEndpointsGeneratorTests
     )
     {
         ArgumentNullException.ThrowIfNull(collectionType);
+        bool nullableValueContainer = nullableCollection && (collectionType == "ImmutableArray<__Element__>");
         const string projectionTemplate = """
                                           using System;
                                           using System.Collections.Generic;
@@ -257,8 +258,24 @@ public class ProjectionEndpointsGeneratorTests
                                      """;
             mappingSource = "#nullable enable\n" +
                             mappingSource.Replace("public static int?[] Map()", nullProbe, StringComparison.Ordinal)
-                                .Replace("dto.Days;", "dto.Days!;", StringComparison.Ordinal)
-                                .Replace("dto.Values.Select", "dto.Values!.Select", StringComparison.Ordinal);
+                                .Replace(
+                                    "dto.Days;",
+                                    nullableValueContainer ? "dto.Days!.Value;" : "dto.Days!;",
+                                    StringComparison.Ordinal)
+                                .Replace(
+                                    "dto.Values.Select",
+                                    nullableValueContainer ? "dto.Values!.Value.Select" : "dto.Values!.Select",
+                                    StringComparison.Ordinal);
+            if (nullableValueContainer)
+            {
+                mappingSource = mappingSource
+                    .Replace(
+                        "Values = defaultArray ? default : [],",
+                        "Values = defaultArray ? default(System.Collections.Immutable.ImmutableArray<ResumeSource?>) : [],",
+                        StringComparison.Ordinal)
+                    .Replace("dto.Values.IsDefault", "dto.Values!.Value.IsDefault", StringComparison.Ordinal)
+                    .Replace("dto.Values.IsEmpty", "dto.Values!.Value.IsEmpty", StringComparison.Ordinal);
+            }
         }
 
         if (nested)
@@ -307,7 +324,7 @@ public class ProjectionEndpointsGeneratorTests
                 .Replace("null, DayOfWeek.Friday", "DayOfWeek.Friday", StringComparison.Ordinal);
         }
 
-        if (!nullableElements && !nested)
+        if (!nullableElements && !nested && !nullableValueContainer)
         {
             mappingSource = mappingSource.Replace(
                 "new SagaStatusProjectionMapper()",
@@ -400,7 +417,15 @@ public class ProjectionEndpointsGeneratorTests
                 foreach (string propertyName in new[] { "Values", "Days" })
                 {
                     IPropertySymbol property = Assert.Single(dto.GetMembers(propertyName).OfType<IPropertySymbol>());
-                    Assert.Equal(NullableAnnotation.Annotated, property.Type.NullableAnnotation);
+                    if (nullableValueContainer)
+                    {
+                        INamedTypeSymbol nullableContainer = Assert.IsType<INamedTypeSymbol>(property.Type, false);
+                        Assert.Equal(SpecialType.System_Nullable_T, nullableContainer.OriginalDefinition.SpecialType);
+                    }
+                    else
+                    {
+                        Assert.Equal(NullableAnnotation.Annotated, property.Type.NullableAnnotation);
+                    }
                 }
             }
         }
@@ -1978,6 +2003,27 @@ public class ProjectionEndpointsGeneratorTests
         bool nested
     ) =>
         VerifyEnumCollectionMappersCompileAndPreserveValues(collectionType, nested, true, false);
+
+    /// <summary>
+    ///     Nullable immutable enum arrays preserve absent, default, empty and populated values.
+    /// </summary>
+    /// <param name="nested">Whether the collection belongs to a nested record.</param>
+    /// <param name="nullableElements">Whether individual enum elements can be null.</param>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void GeneratedNullableImmutableEnumArraysPreserveContainerStates(
+        bool nested,
+        bool nullableElements
+    ) =>
+        VerifyEnumCollectionMappersCompileAndPreserveValues(
+            "ImmutableArray<__Element__>",
+            nested,
+            nullableElements,
+            true,
+            true);
 
     /// <summary>
     ///     Generated projection analysis should warn when authentication schemes metadata contains empty entries.
