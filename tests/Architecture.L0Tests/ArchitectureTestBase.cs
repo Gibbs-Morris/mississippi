@@ -38,6 +38,24 @@ public abstract class ArchitectureTestBase
     protected static IReadOnlyList<Assembly> MississippiAssemblies { get; }
 
     /// <summary>
+    ///     Builds the complete required path set independently of the output directory contents.
+    /// </summary>
+    /// <param name="baseDirectory">The standalone test output directory.</param>
+    /// <param name="expectedAssemblyNames">The framework names recorded from source projects at build time.</param>
+    /// <returns>Every required framework assembly path.</returns>
+    internal static string[] GetRequiredAssemblyPaths(
+        string baseDirectory,
+        IEnumerable<string> expectedAssemblyNames
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(baseDirectory);
+        ArgumentNullException.ThrowIfNull(expectedAssemblyNames);
+        return expectedAssemblyNames.Order(StringComparer.Ordinal)
+            .Select(name => Path.Combine(baseDirectory, $"{name}.dll"))
+            .ToArray();
+    }
+
+    /// <summary>
     ///     Loads assembly candidates using the runtime assembly loader.
     /// </summary>
     /// <param name="assemblyPaths">Assembly file paths to inspect.</param>
@@ -114,10 +132,13 @@ public abstract class ArchitectureTestBase
 
     private static Assembly[] GetMississippiAssemblies()
     {
-        // Keep discovery in the test base so every architecture rule shares the same fail-closed assembly set.
-        string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-        string[] assemblyPaths = Directory.GetFiles(baseDir, "Mississippi.*.dll");
-        return LoadMississippiAssemblies(assemblyPaths);
+        string[] expectedAssemblyNames = typeof(ArchitectureTestBase).Assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .Where(attribute => attribute.Value == "ArchitectureFrameworkAssembly")
+            .Select(attribute => attribute.Key)
+            .ToArray();
+        return LoadMississippiAssemblies(
+            GetRequiredAssemblyPaths(AppDomain.CurrentDomain.BaseDirectory, expectedAssemblyNames));
     }
 }
 

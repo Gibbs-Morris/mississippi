@@ -53,4 +53,48 @@ public sealed class ArchitectureTestBaseTests
         Assert.Single(assemblies);
         Assert.Equal([paths[0]], loadedPaths);
     }
+
+    /// <summary>Ensures a missing required file cannot silently shrink standalone coverage.</summary>
+    [Fact]
+    public void RequiredDiscoveryFailsWhenExpectedAssemblyIsMissing()
+    {
+        string missingPath = Path.Combine("standalone", "Mississippi.Missing.dll");
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+            ArchitectureTestBase.LoadMississippiAssemblies(
+                ArchitectureTestBase.GetRequiredAssemblyPaths(
+                    "standalone",
+                    ["Mississippi.Core", "Mississippi.Missing"]),
+                path => path == missingPath
+                    ? throw new FileNotFoundException("Required fixture assembly is absent.", path)
+                    : typeof(ArchitectureTestBase).Assembly));
+        Assert.Contains(missingPath, exception.Message, StringComparison.Ordinal);
+        Assert.Contains("Required fixture assembly is absent.", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>Ensures all required paths are loaded in deterministic order.</summary>
+    [Fact]
+    public void RequiredDiscoveryLoadsEveryExpectedAssembly()
+    {
+        List<string> loadedPaths = new();
+        Assembly[] assemblies = ArchitectureTestBase.LoadMississippiAssemblies(
+            ArchitectureTestBase.GetRequiredAssemblyPaths("standalone", ["Mississippi.Second", "Mississippi.First"]),
+            path =>
+            {
+                loadedPaths.Add(path);
+                return typeof(ArchitectureTestBase).Assembly;
+            });
+        Assert.Equal(2, assemblies.Length);
+        Assert.Equal(
+            [Path.Combine("standalone", "Mississippi.First.dll"), Path.Combine("standalone", "Mississippi.Second.dll")],
+            loadedPaths);
+    }
+
+    /// <summary>Ensures the source inventory is required even when no assemblies are recorded.</summary>
+    [Fact]
+    public void RequiredDiscoveryRejectsEmptyExpectedInventory()
+    {
+        Assert.Throws<InvalidOperationException>(() => ArchitectureTestBase.LoadMississippiAssemblies(
+            ArchitectureTestBase.GetRequiredAssemblyPaths("standalone", []),
+            _ => typeof(ArchitectureTestBase).Assembly));
+    }
 }
