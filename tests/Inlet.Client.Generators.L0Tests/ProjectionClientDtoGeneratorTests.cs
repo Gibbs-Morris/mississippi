@@ -159,7 +159,8 @@ public class ProjectionClientDtoGeneratorTests
         string collectionType,
         bool nested,
         bool nullableCollection,
-        string enumNamespace = "TestApp.Domain.Shared"
+        string enumNamespace = "TestApp.Domain.Shared",
+        bool keywordEnumMembers = false
     )
     {
         ArgumentNullException.ThrowIfNull(collectionType);
@@ -225,6 +226,12 @@ public class ProjectionClientDtoGeneratorTests
         }
 
         projectionSource = projectionSource.Replace("TestApp.Domain.Shared", enumNamespace, StringComparison.Ordinal);
+        if (keywordEnumMembers)
+        {
+            projectionSource = projectionSource.Replace("Reminder", "@new", StringComparison.Ordinal)
+                .Replace("Manual", "@class", StringComparison.Ordinal);
+        }
+
         (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
         Assert.Empty(diagnostics);
@@ -237,6 +244,12 @@ public class ProjectionClientDtoGeneratorTests
         INamedTypeSymbol enumDto = outputCompilation.GetTypeByMetadataName($"{dtoNamespace}.ResumeSourceDto")!;
         Assert.NotNull(enumDto);
         Assert.Equal(TypeKind.Enum, enumDto.TypeKind);
+        if (keywordEnumMembers)
+        {
+            Assert.Equal(0, Assert.Single(enumDto.GetMembers("new").OfType<IFieldSymbol>()).ConstantValue);
+            Assert.Equal(7, Assert.Single(enumDto.GetMembers("class").OfType<IFieldSymbol>()).ConstantValue);
+        }
+
         string targetDtoName = nested ? "RecoveryEntryDto" : "SagaStatusProjectionDto";
         INamedTypeSymbol projectionDto = outputCompilation.GetTypeByMetadataName($"{dtoNamespace}.{targetDtoName}")!;
         Assert.NotNull(projectionDto);
@@ -1074,6 +1087,18 @@ public class ProjectionClientDtoGeneratorTests
                 ".WorkflowDto.g.cs",
                 StringComparison.Ordinal)));
     }
+
+    /// <summary>
+    ///     Escaped enum members remain valid identifiers in top-level and nested DTOs.
+    /// </summary>
+    /// <param name="nested">Whether the collection belongs to a nested record.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GeneratedKeywordEnumMembersCompile(
+        bool nested
+    ) =>
+        VerifyNullableEnumCollectionDtosCompile("__Element__[]", nested, false, keywordEnumMembers: true);
 
     /// <summary>
     ///     Framework lookalike namespaces still produce compiled custom enum DTOs.

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
@@ -619,8 +620,11 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             .Where(f => f.HasConstantValue);
         foreach (IFieldSymbol member in enumMembers)
         {
+            string memberName = SyntaxFacts.GetKeywordKind(member.Name) == SyntaxKind.None
+                ? member.Name
+                : "@" + member.Name;
             sb.AppendSummary($"{member.Name} value.");
-            sb.AppendLine($"{member.Name} = {member.ConstantValue},");
+            sb.AppendLine($"{memberName} = {member.ConstantValue},");
             sb.AppendLine();
         }
 

@@ -110,7 +110,8 @@ public class ProjectionEndpointsGeneratorTests
         bool nullableCollection,
         bool verifyDefaultAndEmpty = false,
         bool globalNamespaceEnum = false,
-        string enumNamespace = "TestApp.Domain.Shared"
+        string enumNamespace = "TestApp.Domain.Shared",
+        bool keywordEnumMembers = false
     )
     {
         ArgumentNullException.ThrowIfNull(collectionType);
@@ -392,6 +393,14 @@ public class ProjectionEndpointsGeneratorTests
 
         projectionSource = projectionSource.Replace("TestApp.Domain.Shared", enumNamespace, StringComparison.Ordinal);
         mappingSource = mappingSource.Replace("TestApp.Domain.Shared", enumNamespace, StringComparison.Ordinal);
+        if (keywordEnumMembers)
+        {
+            projectionSource = projectionSource.Replace("Reminder", "@new", StringComparison.Ordinal)
+                .Replace("Manual", "@class", StringComparison.Ordinal);
+            mappingSource = mappingSource.Replace("Reminder", "@new", StringComparison.Ordinal)
+                .Replace("Manual", "@class", StringComparison.Ordinal);
+        }
+
         (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
         Assert.Empty(diagnostics);
@@ -434,6 +443,14 @@ public class ProjectionEndpointsGeneratorTests
         {
             Assert.Single(
                 runResult.GeneratedTrees.Where(tree => Path.GetFileName(tree.FilePath) == "ResumeSourceDto.g.cs"));
+            if (keywordEnumMembers)
+            {
+                INamedTypeSymbol enumDto = Assert.IsType<INamedTypeSymbol>(
+                    outputCompilation.GetTypeByMetadataName("TestAssembly.Controllers.Projections.ResumeSourceDto"),
+                    false);
+                Assert.Equal(0, Assert.Single(enumDto.GetMembers("new").OfType<IFieldSymbol>()).ConstantValue);
+                Assert.Equal(7, Assert.Single(enumDto.GetMembers("class").OfType<IFieldSymbol>()).ConstantValue);
+            }
         }
 
         using MemoryStream assemblyStream = new();
@@ -1547,6 +1564,23 @@ public class ProjectionEndpointsGeneratorTests
             nullableElements,
             false,
             true);
+
+    /// <summary>
+    ///     Escaped enum members compile and preserve nulls and values through generated mappings.
+    /// </summary>
+    /// <param name="nested">Whether the collection belongs to a nested record.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GeneratedKeywordEnumMembersCompileAndPreserveValues(
+        bool nested
+    ) =>
+        VerifyEnumCollectionMappersCompileAndPreserveValues(
+            "__Element__[]",
+            nested,
+            true,
+            false,
+            keywordEnumMembers: true);
 
     /// <summary>
     ///     Framework lookalike namespaces still produce compiled and working custom enum mappings.
