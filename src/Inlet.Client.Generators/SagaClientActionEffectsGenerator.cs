@@ -16,6 +16,11 @@ namespace Mississippi.Inlet.Client.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
 {
+    /// <summary>
+    ///     Generates the client action effect for starting a saga.
+    /// </summary>
+    /// <param name="context">The source generation output context.</param>
+    /// <param name="saga">The saga and its client types.</param>
     private static void GenerateActionEffect(
         SourceProductionContext context,
         SagaClientGeneratorHelper.SagaClientInfo saga
@@ -30,8 +35,10 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendLine("using System;");
         sb.AppendLine("using System.Net.Http;");
         sb.AppendLine();
+        sb.AppendUsing("Microsoft.Extensions.Logging");
+        sb.AppendLine();
         sb.AppendUsing("Mississippi.Common.Abstractions.Mapping");
-        sb.AppendUsing("Mississippi.Inlet.Client.Abstractions.ActionEffects");
+        sb.AppendUsing("Mississippi.Inlet.Client.ActionEffects");
         sb.AppendLine();
         sb.AppendLine($"using {saga.ActionsNamespace};");
         sb.AppendLine($"using {saga.DtosNamespace};");
@@ -48,7 +55,7 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendGeneratedCodeAttribute("SagaClientActionEffectsGenerator");
         sb.AppendLine($"internal sealed class {effectTypeName}");
         sb.IncreaseIndent();
-        sb.AppendLine($": CommandActionEffectBase<{actionName}, {dtoName}, {stateTypeName},");
+        sb.AppendLine($": LoggingCommandActionEffectBase<{actionName}, {dtoName}, {stateTypeName},");
         sb.AppendLine(
             $"    Start{saga.SagaName}SagaExecutingAction, Start{saga.SagaName}SagaSucceededAction, Start{saga.SagaName}SagaFailedAction>");
         sb.DecreaseIndent();
@@ -59,15 +66,17 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendLine("/// <param name=\"httpClient\">The HTTP client for API calls.</param>");
         sb.AppendLine("/// <param name=\"mapper\">The mapper for action-to-DTO conversion.</param>");
         sb.AppendLine("/// <param name=\"timeProvider\">The time provider for timestamps.</param>");
+        sb.AppendLine("/// <param name=\"logger\">The command action logger.</param>");
         sb.AppendLine($"public {effectTypeName}(");
         sb.IncreaseIndent();
         sb.AppendLine("HttpClient httpClient,");
         sb.AppendLine($"IMapper<{actionName}, {dtoName}> mapper,");
-        sb.AppendLine("TimeProvider? timeProvider = null");
+        sb.AppendLine("TimeProvider? timeProvider = null,");
+        sb.AppendLine($"ILogger<{actionName}>? logger = null");
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.IncreaseIndent();
-        sb.AppendLine(": base(httpClient, mapper, timeProvider)");
+        sb.AppendLine(": base(httpClient, mapper, timeProvider, logger)");
         sb.DecreaseIndent();
         sb.OpenBrace();
         sb.CloseBrace();

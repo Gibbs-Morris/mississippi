@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -149,16 +150,28 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
             string endpoint = GetEndpoint(typedAction);
             TRequestDto requestBody = Mapper.Map(typedAction);
             using HttpResponseMessage response = await Http.PostAsJsonAsync(endpoint, requestBody, cancellationToken);
-
-            // Check for non-success status codes before trying to parse response
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                errorMessage = $"Server error ({(int)response.StatusCode}): {responseBody}";
+                // Check for non-success status codes before trying to parse response
+                if (!response.IsSuccessStatusCode)
+                {
+                    string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    errorMessage = $"Server error ({(int)response.StatusCode}): {responseBody}";
+                }
+                else
+                {
+                    result = await response.Content.ReadFromJsonAsync<OperationResultDto>(cancellationToken);
+                }
             }
-            else
+            catch (JsonException ex)
             {
-                result = await response.Content.ReadFromJsonAsync<OperationResultDto>(cancellationToken);
+                errorMessage = $"Invalid response: {ex.Message}";
+                ReportInvalidResponse(ex, commandId, commandType, (int)response.StatusCode);
+            }
+            catch (InvalidOperationException ex)
+            {
+                errorMessage = $"Invalid response: {ex.Message}";
+                ReportInvalidResponse(ex, commandId, commandType, (int)response.StatusCode);
             }
         }
         catch (HttpRequestException ex)
@@ -224,5 +237,52 @@ public abstract class CommandActionEffectBase<TAction, TRequestDto, TState, TExe
         }
 
         return $"{AggregateRoutePrefix}/{Uri.EscapeDataString(entityId)}/{Route}";
+    }
+
+    /// <summary>
+    ///     Observes a response-decoding failure before its terminal lifecycle action is emitted.
+    /// </summary>
+    /// <param name="exception">The original response-decoding exception.</param>
+    /// <param name="commandId">The lifecycle correlation identifier.</param>
+    /// <param name="commandType">The command action type.</param>
+    /// <param name="statusCode">The HTTP response status.</param>
+    /// <remarks>
+    ///     This optional hook lets externally derived effects provide diagnostics from their implementation
+    ///     assembly. The default implementation does nothing and requires no logging infrastructure.
+    ///     Noncritical exceptions from this hook do not change the terminal lifecycle action.
+    /// </remarks>
+    protected virtual void OnInvalidResponse(
+        Exception exception,
+        string commandId,
+        string commandType,
+        int statusCode
+    )
+    {
+    }
+
+    /// <summary>
+    ///     Keeps optional diagnostic failures separate from the terminal command result.
+    /// </summary>
+    /// <param name="exception">The original response-decoding exception.</param>
+    /// <param name="commandId">The lifecycle correlation identifier.</param>
+    /// <param name="commandType">The command action type.</param>
+    /// <param name="statusCode">The HTTP response status.</param>
+    private void ReportInvalidResponse(
+        Exception exception,
+        string commandId,
+        string commandType,
+        int statusCode
+    )
+    {
+        try
+        {
+            OnInvalidResponse(exception, commandId, commandType, statusCode);
+        }
+        catch (Exception diagnosticException) when (diagnosticException is not OutOfMemoryException
+                                                        and not StackOverflowException and not AccessViolationException
+                                                        and not ThreadInterruptedException)
+        {
+            // Optional diagnostics must not prevent the terminal action. Retrying the same failing sink can also fail.
+        }
     }
 }

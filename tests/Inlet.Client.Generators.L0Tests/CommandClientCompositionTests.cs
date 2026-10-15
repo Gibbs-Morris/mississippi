@@ -27,6 +27,10 @@ public sealed class CommandClientCompositionTests
                                           {
                                               public interface IServiceCollection { }
                                           }
+                                          namespace Microsoft.Extensions.Logging
+                                          {
+                                              public interface ILogger<T> { }
+                                          }
                                           namespace Mississippi.Common.Abstractions.Mapping
                                           {
                                               public interface IMapper<in TInput, out TOutput> { TOutput Map(TInput input); }
@@ -93,15 +97,16 @@ public sealed class CommandClientCompositionTests
                                                   public static TState ReduceCommandFailed<TState, TAction>(TState state, TAction action) => state;
                                               }
                                           }
-                                          namespace Mississippi.Inlet.Client.Abstractions.ActionEffects
+                                          namespace Mississippi.Inlet.Client.ActionEffects
                                           {
-                                              public abstract class CommandActionEffectBase<TAction, TDto, TState, TExecuting, TSucceeded, TFailed>
+                                              public abstract class LoggingCommandActionEffectBase<TAction, TDto, TState, TExecuting, TSucceeded, TFailed>
                                                   : Mississippi.Reservoir.Abstractions.IActionEffect<TState>
                                               {
-                                                  protected CommandActionEffectBase(
+                                                  protected LoggingCommandActionEffectBase(
                                                       System.Net.Http.HttpClient httpClient,
                                                       Mississippi.Common.Abstractions.Mapping.IMapper<TAction, TDto> mapper,
-                                                      System.TimeProvider? timeProvider) { }
+                                                      System.TimeProvider? timeProvider,
+                                                      Microsoft.Extensions.Logging.ILogger<TAction>? logger) { }
                                                   protected abstract string AggregateRoutePrefix { get; }
                                                   protected abstract string Route { get; }
                                               }

@@ -20,6 +20,10 @@ public sealed class CommandSourceIdentityTests
                                           {
                                               public sealed class GenerateCommandAttribute : System.Attribute { }
                                           }
+                                          namespace Microsoft.Extensions.Logging
+                                          {
+                                              public interface ILogger<T> { }
+                                          }
                                           namespace Mississippi.Common.Abstractions.Mapping
                                           {
                                               public interface IMapper<in TInput, out TOutput> { TOutput Map(TInput input); }
@@ -31,14 +35,15 @@ public sealed class CommandSourceIdentityTests
                                               public interface ICommandSucceededAction<TAction> { }
                                               public interface ICommandFailedAction<TAction> { }
                                           }
-                                          namespace Mississippi.Inlet.Client.Abstractions.ActionEffects
+                                          namespace Mississippi.Inlet.Client.ActionEffects
                                           {
-                                              public abstract class CommandActionEffectBase<TAction, TDto, TState, TExecuting, TSucceeded, TFailed>
+                                              public abstract class LoggingCommandActionEffectBase<TAction, TDto, TState, TExecuting, TSucceeded, TFailed>
                                               {
-                                                  protected CommandActionEffectBase(
+                                                  protected LoggingCommandActionEffectBase(
                                                       System.Net.Http.HttpClient httpClient,
                                                       Mississippi.Common.Abstractions.Mapping.IMapper<TAction, TDto> mapper,
-                                                      System.TimeProvider? timeProvider) { }
+                                                      System.TimeProvider? timeProvider,
+                                                      Microsoft.Extensions.Logging.ILogger<TAction>? logger) { }
                                                   protected abstract string AggregateRoutePrefix { get; }
                                                   protected abstract string Route { get; }
                                               }
