@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -14,7 +15,9 @@ namespace Mississippi.Inlet.Gateway.Authentication;
 /// <summary>
 ///     Refreshes framework authentication caches while preserving the host's scoped services.
 /// </summary>
-internal sealed class SubscriptionAuthenticationServices : IKeyedServiceProvider
+internal sealed class SubscriptionAuthenticationServices
+    : IKeyedServiceProvider,
+      IAsyncDisposable
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="SubscriptionAuthenticationServices" /> class.
@@ -33,6 +36,7 @@ internal sealed class SubscriptionAuthenticationServices : IKeyedServiceProvider
     )
     {
         Services = services;
+        HandlerFactory = services.GetService<SubscriptionAuthenticationHandlerFactory>();
         Handlers = new(schemes);
         AuthenticationService frameworkAuthentication = (AuthenticationService)ActivatorUtilities.CreateInstance(
             services,
@@ -46,35 +50,67 @@ internal sealed class SubscriptionAuthenticationServices : IKeyedServiceProvider
 
     private ConnectionSubscriptionAuthenticationService Authentication { get; }
 
+    private SubscriptionAuthenticationHandlerFactory? HandlerFactory { get; }
+
     private AuthenticationHandlerProvider Handlers { get; }
 
+    private List<IAuthenticationHandler> OwnedHandlers { get; } = [];
+
     private IServiceProvider Services { get; }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        for (int index = OwnedHandlers.Count - 1; index >= 0; index--)
+        {
+            if (OwnedHandlers[index] is IAsyncDisposable asynchronous)
+            {
+                await asynchronous.DisposeAsync();
+            }
+            else if (OwnedHandlers[index] is IDisposable synchronous)
+            {
+                synchronous.Dispose();
+            }
+        }
+
+        OwnedHandlers.Clear();
+    }
 
     /// <inheritdoc />
     public object? GetKeyedService(
         Type serviceType,
         object? serviceKey
     ) =>
-        Services.GetKeyedService(serviceType, serviceKey);
+        GetScopedHandler(serviceType, serviceKey) ?? Services.GetKeyedService(serviceType, serviceKey);
 
     /// <inheritdoc />
     public object GetRequiredKeyedService(
         Type serviceType,
         object? serviceKey
     ) =>
-        Services.GetRequiredKeyedService(serviceType, serviceKey);
+        GetScopedHandler(serviceType, serviceKey) ?? Services.GetRequiredKeyedService(serviceType, serviceKey);
 
     /// <inheritdoc />
     public object? GetService(
         Type serviceType
     )
     {
+        if ((serviceType == typeof(IServiceProvider)) || (serviceType == typeof(IKeyedServiceProvider)))
+        {
+            return this;
+        }
+
         if (serviceType == typeof(IAuthenticationService))
         {
             return Authentication;
         }
 
-        return serviceType == typeof(IAuthenticationHandlerProvider) ? Handlers : Services.GetService(serviceType);
+        if (serviceType == typeof(IAuthenticationHandlerProvider))
+        {
+            return Handlers;
+        }
+
+        return GetScopedHandler(serviceType) ?? Services.GetService(serviceType);
     }
 
     /// <summary>
@@ -86,4 +122,18 @@ internal sealed class SubscriptionAuthenticationServices : IKeyedServiceProvider
         AuthorizationPolicy policy
     ) =>
         Authentication.CanUseEstablishedAuthenticationAsync(policy);
+
+    private IAuthenticationHandler? GetScopedHandler(
+        Type serviceType,
+        object? serviceKey = null
+    )
+    {
+        IAuthenticationHandler? handler = HandlerFactory?.CreateScopedHandler(serviceType, this, serviceKey);
+        if (handler is not null && !OwnedHandlers.Exists(existing => ReferenceEquals(existing, handler)))
+        {
+            OwnedHandlers.Add(handler);
+        }
+
+        return handler;
+    }
 }

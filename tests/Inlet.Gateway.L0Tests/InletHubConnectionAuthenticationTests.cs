@@ -1155,6 +1155,97 @@ public sealed class InletHubConnectionAuthenticationTests
     }
 
     /// <summary>
+    ///     Scoped handlers must observe changed request permissions for each subscription decision.
+    /// </summary>
+    /// <param name="replacementAllowed">Whether the second decision has read permission.</param>
+    /// <param name="useFactory">Whether handler configuration comes from a custom scoped factory.</param>
+    /// <returns>A task that completes when both sequential decisions and the host scope have been verified.</returns>
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    [InlineData(false, true)]
+    public async Task SubscribeRefreshesScopedHandlerAfterPermissionChanges(
+        bool replacementAllowed,
+        bool useFactory
+    )
+    {
+        string? tenantId = null;
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.Services.AddInletServer();
+        builder.Services.AddAuthentication()
+            .AddScheme<AuthenticationSchemeOptions, HeaderPermissionAuthenticationHandler>(OtherScheme, _ => { });
+        builder.Services.AddScoped<ConnectionHandlerScope>();
+        if (useFactory)
+        {
+            builder.Services.AddScoped<HeaderPermissionAuthenticationHandler>(services => new(
+                services.GetRequiredService<IOptionsMonitor<AuthenticationSchemeOptions>>(),
+                services.GetRequiredService<ILoggerFactory>(),
+                services.GetRequiredService<UrlEncoder>(),
+                services.GetRequiredService<ConnectionHandlerScope>(),
+                "host-factory"));
+        }
+        else
+        {
+            builder.Services.AddScoped<HeaderPermissionAuthenticationHandler>();
+        }
+
+        ServiceDescriptor registration = builder.Services.Last(service =>
+            service.ServiceType == typeof(HeaderPermissionAuthenticationHandler));
+        Assert.Equal(ServiceLifetime.Scoped, registration.Lifetime);
+        builder.Services.AddAuthorizationBuilder()
+            .SetDefaultPolicy(
+                new AuthorizationPolicyBuilder().RequireAuthenticatedUser()
+                    .RequireClaim("permission", "read")
+                    .RequireAssertion(context => context.User.HasClaim("tenant", tenantId!) &&
+                                                 (!useFactory || context.User.HasClaim("factory", "host-factory")))
+                    .Build());
+        await using WebApplication app = builder.Build();
+        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
+        ConnectionHandlerScope state = connectionScope.ServiceProvider.GetRequiredService<ConnectionHandlerScope>();
+        tenantId = state.Id;
+        HeaderPermissionAuthenticationHandler owned =
+            connectionScope.ServiceProvider.GetRequiredService<HeaderPermissionAuthenticationHandler>();
+        DefaultHttpContext retained = CreateOriginalContext(connectionScope.ServiceProvider);
+        ClaimsPrincipal caller = CreatePrincipal("read");
+        retained.User = caller;
+        retained.Request.Headers[OtherScheme] = replacementAllowed ? "write" : "read";
+        using InletHub hub = CreateHub(retained, caller, OtherScheme, out IInletSubscriptionGrain grain);
+        if (replacementAllowed)
+        {
+            await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+        }
+        else
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+        }
+
+        grain.ClearReceivedCalls();
+        retained.Request.Headers[OtherScheme] = replacementAllowed ? "read" : "write";
+        if (replacementAllowed)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        Assert.Same(caller, retained.User);
+        Assert.Same(caller, hub.Context.User);
+        Assert.Same(connectionScope.ServiceProvider, retained.RequestServices);
+        Assert.False(owned.IsDisposed);
+        Assert.Equal(2, state.Disposals);
+        await connectionScope.DisposeAsync();
+        Assert.True(owned.IsDisposed);
+        Assert.Equal(3, state.Disposals);
+    }
+
+    /// <summary>
     ///     Anonymous repolls use their own credentials only when endpoint and connection token remain bound.
     /// </summary>
     /// <param name="permission">The current poll's bearer permission, or a missing-token marker.</param>

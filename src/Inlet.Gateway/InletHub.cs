@@ -444,14 +444,12 @@ public sealed class InletHub : Hub<IInletHubClient>
             AuthenticationService? frameworkService =
                 connectionServices.GetService<IAuthenticationService>() as AuthenticationService;
             AuthenticationHandlerProvider? handlers = GetFrameworkHandlerProvider(frameworkService);
-            if (handlers is not null)
+            await using SubscriptionAuthenticationServices? decisionServices = handlers is null
+                ? null
+                : new(connectionServices, frameworkService!, handlers.Schemes, decisionContext, () => Context.User);
+            if (decisionServices is not null)
             {
-                decisionContext.RequestServices = new SubscriptionAuthenticationServices(
-                    connectionServices,
-                    frameworkService!,
-                    handlers.Schemes,
-                    decisionContext,
-                    () => Context.User);
+                decisionContext.RequestServices = decisionServices;
             }
 
             await AuthorizeAndRestoreAsync(policy, path, entityId, policyName, decisionContext, policyEvaluator);
