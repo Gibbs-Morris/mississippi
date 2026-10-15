@@ -1314,6 +1314,68 @@ public sealed class InletHubConnectionAuthenticationTests
     }
 
     /// <summary>
+    ///     A default forwarding alias keeps its actual authentication outcome with dynamic policies.
+    /// </summary>
+    /// <param name="allowed">Whether the certificate caller has read permission.</param>
+    /// <returns>A task that completes when the dynamic-provider alias has been checked.</returns>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SubscribeUsesDefaultAliasWithDynamicPolicyProvider(
+        bool allowed
+    )
+    {
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.Services.AddInletServer();
+        builder.Services.AddSingleton<HubLifetimeManager<InletHub>, DefaultHubLifetimeManager<InletHub>>();
+        builder.Services.AddAuthentication(PolicyAlias)
+            .AddPolicyScheme(PolicyAlias, null, options => options.ForwardDefault = TlsScheme)
+            .AddScheme<AuthenticationSchemeOptions, CompositeConnectionAuthenticationHandler>(TlsScheme, _ => { });
+        AuthorizationPolicy policy = CreatePolicy(PolicyAlias);
+        builder.Services.AddAuthorizationBuilder().SetDefaultPolicy(policy);
+        IAuthorizationPolicyProvider provider = Substitute.For<IAuthorizationPolicyProvider>();
+        provider.AllowsCachingPolicies.Returns(false);
+        provider.GetDefaultPolicyAsync().Returns(policy);
+        builder.Services.AddSingleton(provider);
+        await using WebApplication app = builder.Build();
+        await using AsyncServiceScope scope = app.Services.CreateAsyncScope();
+        Assert.False(scope.ServiceProvider.GetRequiredService<IAuthorizationPolicyProvider>().AllowsCachingPolicies);
+        DefaultHttpContext original = CreateOriginalContext(scope.ServiceProvider);
+        original.Request.Headers[TlsScheme] = allowed ? "read" : "write";
+        AuthenticationMiddleware middleware = new(
+            _ => Task.CompletedTask,
+            scope.ServiceProvider.GetRequiredService<IAuthenticationSchemeProvider>());
+        await middleware.Invoke(original);
+        Assert.True(original.Features.Get<IAuthenticateResultFeature>()?.AuthenticateResult?.Succeeded);
+        await DispatchHubEndpointAsync(app, original, policy, false);
+        ClaimsPrincipal caller = original.User;
+        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext retained = CloneConnectionContext(original, connectionScope.ServiceProvider);
+        Assert.Null(retained.Features.Get<ITlsConnectionFeature>());
+        Assert.Null(ConnectionAuthenticationSnapshot.GetAuthenticationResult(retained, caller, PolicyAlias));
+        Assert.NotNull(ConnectionAuthenticationSnapshot.GetAuthenticationResult(retained, caller, TlsScheme));
+        PolicyEvaluator referenceEvaluator = new(app.Services.GetRequiredService<IAuthorizationService>());
+        Assert.False((await referenceEvaluator.AuthenticateAsync(policy, retained)).Succeeded);
+        retained.User = caller;
+        using InletHub hub = CreateHub(retained, caller, PolicyAlias, out IInletSubscriptionGrain grain);
+        if (allowed)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        Assert.Same(caller, retained.User);
+        Assert.Same(caller, hub.Context.User);
+    }
+
+    /// <summary>
     ///     Certificate-only projection policies cannot borrow bearer identities from a composite endpoint result.
     /// </summary>
     /// <param name="certificatePermission">The certificate permission, or no-result marker.</param>
