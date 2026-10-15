@@ -2310,6 +2310,27 @@ public class ProjectionEndpointsGeneratorTests
     }
 
     /// <summary>
+    ///     Top-level non-nullable enum collections retain their declared shape and values.
+    /// </summary>
+    /// <param name="collectionType">The collection shape containing enum elements.</param>
+    [Theory]
+    [InlineData("ImmutableArray<__Element__>")]
+    [InlineData("ImmutableList<__Element__>")]
+    [InlineData("List<__Element__>")]
+    [InlineData("__Element__[]")]
+    [InlineData("HashSet<__Element__>")]
+    [InlineData("ISet<__Element__>")]
+    [InlineData("IReadOnlySet<__Element__>")]
+    [InlineData("ImmutableHashSet<__Element__>")]
+    [InlineData("IImmutableSet<__Element__>")]
+    [InlineData("ImmutableSortedSet<__Element__>")]
+    [InlineData("IImmutableList<__Element__>")]
+    public void GeneratedTopLevelNonNullableEnumCollectionMappersCompileAndPreserveValues(
+        string collectionType
+    ) =>
+        VerifyEnumCollectionMappersCompileAndPreserveValues(collectionType, false, false, false);
+
+    /// <summary>
     ///     Unsupported enum collection shapes report an actionable diagnostic instead of invalid mapping code.
     /// </summary>
     /// <param name="collectionType">The unsupported collection shape.</param>
