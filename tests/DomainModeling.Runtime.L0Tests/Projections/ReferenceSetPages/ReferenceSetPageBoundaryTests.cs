@@ -62,8 +62,13 @@ public sealed class ReferenceSetPageBoundaryTests
         Mock<IUxProjectionGrainFactory> projections = new(MockBehavior.Strict);
         projections.Setup(item => item.GetUxProjectionVersionedCacheGrain<SavedItemsMembershipProjection>(key))
             .Returns(whole.Object);
+        int indexReads = 0;
         ReferenceSetStateAccess<SavedItemsMembershipProjection, CatalogItemProjection> membership = new(
-            state => state!.References,
+            state =>
+            {
+                indexReads++;
+                return state!.References;
+            },
             (state, references) => state! with
             {
                 References = references,
@@ -78,8 +83,15 @@ public sealed class ReferenceSetPageBoundaryTests
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await cache.OnActivateAsync(TestContext.Current.CancellationToken));
         whole.Setup(item => item.GetAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Incomplete requested range."));
+        InvalidOperationException failure = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await cache.OnActivateAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("Incomplete requested range.", failure.Message);
+        Assert.Equal(0, indexReads);
+        whole.Setup(item => item.GetAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SavedItemsMembershipProjection());
         await cache.OnActivateAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(1, indexReads);
         logger.Verify(
             item => item.Log(
                 LogLevel.Debug,
@@ -87,7 +99,7 @@ public sealed class ReferenceSetPageBoundaryTests
                 It.Is<It.IsAnyType>((state, _) => HasIdentity(state, ReferenceSetPageLoggerExtensions.GetEntityHash("collection"))),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Exactly(2));
+            Times.Exactly(3));
         logger.Verify(
             item => item.Log(
                 LogLevel.Debug,
