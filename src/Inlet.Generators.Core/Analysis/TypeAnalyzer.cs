@@ -116,6 +116,37 @@ public static class TypeAnalyzer
     }
 
     /// <summary>
+    ///     Detects custom enum elements below more than one collection level.
+    /// </summary>
+    /// <param name="sourceType">The property source type.</param>
+    /// <returns>Whether the collection contains unsupported nested custom enum elements.</returns>
+    public static bool HasNestedEnumCollectionElements(
+        ITypeSymbol sourceType
+    )
+    {
+        if (sourceType is null)
+        {
+            return false;
+        }
+
+        ITypeSymbol collectionType = UnwrapNullable(sourceType);
+        int depth = 0;
+        while (collectionType is IArrayTypeSymbol || IsCollectionType(collectionType))
+        {
+            ITypeSymbol? elementType = GetCollectionElementType(collectionType);
+            if (elementType is null)
+            {
+                return false;
+            }
+
+            collectionType = UnwrapNullable(elementType);
+            depth++;
+        }
+
+        return (depth > 1) && (collectionType.TypeKind == TypeKind.Enum) && !IsFrameworkType(collectionType);
+    }
+
+    /// <summary>
     ///     Determines whether a type is a collection type.
     /// </summary>
     /// <param name="typeSymbol">The type symbol to analyze.</param>
@@ -183,7 +214,8 @@ public static class TypeAnalyzer
         }
 
         return FrameworkNamespacePrefixes.Any(prefix =>
-            containingNamespace.StartsWith(prefix, StringComparison.Ordinal));
+            containingNamespace.Equals(prefix, StringComparison.Ordinal) ||
+            containingNamespace.StartsWith(prefix + ".", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -276,4 +308,17 @@ public static class TypeAnalyzer
             .Aggregate(typeName, (current, suffix) => current.Substring(0, current.Length - suffix.Length));
         return result == typeName ? typeName : result;
     }
+
+    /// <summary>
+    ///     Gets the value type inside a nullable wrapper.
+    /// </summary>
+    /// <param name="typeSymbol">The source type.</param>
+    /// <returns>The underlying type, or the unchanged source type.</returns>
+    private static ITypeSymbol UnwrapNullable(
+        ITypeSymbol typeSymbol
+    ) =>
+        typeSymbol is INamedTypeSymbol namedType &&
+        (namedType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+            ? namedType.TypeArguments[0]
+            : typeSymbol;
 }

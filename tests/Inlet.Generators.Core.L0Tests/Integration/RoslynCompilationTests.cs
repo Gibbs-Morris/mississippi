@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -288,6 +289,57 @@ public class RoslynCompilationTests
         Assert.True(TypeAnalyzer.IsFrameworkType(nameProp.Type));
         Assert.True(TypeAnalyzer.IsFrameworkType(countProp.Type));
         Assert.True(TypeAnalyzer.IsFrameworkType(amountProp.Type));
+    }
+
+    /// <summary>
+    ///     A missing type does not contain nested enum collections.
+    /// </summary>
+    [Fact]
+    public void NestedEnumCollectionDetectionHandlesNull() =>
+        Assert.False(TypeAnalyzer.HasNestedEnumCollectionElements(null!));
+
+    /// <summary>
+    ///     Nested custom enum collections are distinguished from supported and framework shapes.
+    /// </summary>
+    /// <param name="collectionType">The property collection type.</param>
+    /// <param name="expected">Whether the type contains unsupported nested custom enum elements.</param>
+    [Theory]
+    [InlineData("State?[]", false)]
+    [InlineData("State?[][]", true)]
+    [InlineData("State[][]", true)]
+    [InlineData("List<List<State?>>", true)]
+    [InlineData("List<State?[]>", true)]
+    [InlineData("List<State[]>[]", true)]
+    [InlineData("DayOfWeek?[][]", false)]
+    [InlineData("int[][]", false)]
+    [InlineData("ImmutableArray<State?[]>?", true)]
+    [InlineData("ImmutableArray<State?>?", false)]
+    public void NestedEnumCollectionDetectionUsesCompiledSymbols(
+        string collectionType,
+        bool expected
+    )
+    {
+        ArgumentNullException.ThrowIfNull(collectionType);
+        const string sourceTemplate = """
+                                      using System;
+                                      using System.Collections.Generic;
+                                      using System.Collections.Immutable;
+                                      namespace TestApp;
+                                      public enum State { Ready }
+                                      public sealed record Model
+                                      {
+                                          public __Type__ Values { get; init; } = default!;
+                                      }
+                                      """;
+        CSharpCompilation compilation =
+            CreateCompilation(sourceTemplate.Replace("__Type__", collectionType, StringComparison.Ordinal))
+                .AddReferences(MetadataReference.CreateFromFile(typeof(ImmutableArray<>).Assembly.Location));
+        Assert.Empty(
+            compilation.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        INamedTypeSymbol model = compilation.GetTypeByMetadataName("TestApp.Model")!;
+        IPropertySymbol property = Assert.Single(model.GetMembers("Values").OfType<IPropertySymbol>());
+        Assert.Equal(expected, TypeAnalyzer.HasNestedEnumCollectionElements(property.Type));
     }
 
     /// <summary>
