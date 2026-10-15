@@ -109,7 +109,8 @@ public class ProjectionEndpointsGeneratorTests
         bool nullableElements,
         bool nullableCollection,
         bool verifyDefaultAndEmpty = false,
-        bool globalNamespaceEnum = false
+        bool globalNamespaceEnum = false,
+        string enumNamespace = "TestApp.Domain.Shared"
     )
     {
         ArgumentNullException.ThrowIfNull(collectionType);
@@ -389,6 +390,8 @@ public class ProjectionEndpointsGeneratorTests
                              """;
         }
 
+        projectionSource = projectionSource.Replace("TestApp.Domain.Shared", enumNamespace, StringComparison.Ordinal);
+        mappingSource = mappingSource.Replace("TestApp.Domain.Shared", enumNamespace, StringComparison.Ordinal);
         (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
         Assert.Empty(diagnostics);
@@ -1544,6 +1547,25 @@ public class ProjectionEndpointsGeneratorTests
             nullableElements,
             false,
             true);
+
+    /// <summary>
+    ///     Framework lookalike namespaces still produce compiled and working custom enum mappings.
+    /// </summary>
+    /// <param name="enumNamespace">The custom enum namespace.</param>
+    [Theory]
+    [InlineData("Systematic.Domain")]
+    [InlineData("Microsofting.Domain")]
+    [InlineData("Orleansish.Domain")]
+    [InlineData("Newtonsoftish.Domain")]
+    public void GeneratedLookalikeFrameworkEnumMappersCompileAndPreserveValues(
+        string enumNamespace
+    ) =>
+        VerifyEnumCollectionMappersCompileAndPreserveValues(
+            "__Element__[]",
+            false,
+            true,
+            false,
+            enumNamespace: enumNamespace);
 
     /// <summary>
     ///     Generated mapper should have Map method with ArgumentNullException check.

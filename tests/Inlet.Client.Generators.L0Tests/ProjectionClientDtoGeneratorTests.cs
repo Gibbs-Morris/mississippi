@@ -158,7 +158,8 @@ public class ProjectionClientDtoGeneratorTests
     private static void VerifyNullableEnumCollectionDtosCompile(
         string collectionType,
         bool nested,
-        bool nullableCollection
+        bool nullableCollection,
+        string enumNamespace = "TestApp.Domain.Shared"
     )
     {
         ArgumentNullException.ThrowIfNull(collectionType);
@@ -223,6 +224,7 @@ public class ProjectionClientDtoGeneratorTests
                                 """;
         }
 
+        projectionSource = projectionSource.Replace("TestApp.Domain.Shared", enumNamespace, StringComparison.Ordinal);
         (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
         Assert.Empty(diagnostics);
@@ -1072,6 +1074,20 @@ public class ProjectionClientDtoGeneratorTests
                 ".WorkflowDto.g.cs",
                 StringComparison.Ordinal)));
     }
+
+    /// <summary>
+    ///     Framework lookalike namespaces still produce compiled custom enum DTOs.
+    /// </summary>
+    /// <param name="enumNamespace">The custom enum namespace.</param>
+    [Theory]
+    [InlineData("Systematic.Domain")]
+    [InlineData("Microsofting.Domain")]
+    [InlineData("Orleansish.Domain")]
+    [InlineData("Newtonsoftish.Domain")]
+    public void GeneratedLookalikeFrameworkEnumDtosCompile(
+        string enumNamespace
+    ) =>
+        VerifyNullableEnumCollectionDtosCompile("__Element__[]", false, false, enumNamespace);
 
     /// <summary>
     ///     Projection DTOs retain discovery metadata and nested dependencies in both discovery orders.

@@ -369,6 +369,38 @@ public class TypeAnalyzerTests
     }
 
     /// <summary>
+    ///     Framework classification respects namespace boundaries and retains empty namespaces.
+    /// </summary>
+    /// <param name="namespaceName">The namespace to classify.</param>
+    /// <param name="expected">Whether the namespace belongs to a framework.</param>
+    [Theory]
+    [InlineData("", true)]
+    [InlineData("System", true)]
+    [InlineData("System.Collections", true)]
+    [InlineData("Microsoft", true)]
+    [InlineData("Microsoft.Extensions", true)]
+    [InlineData("Orleans", true)]
+    [InlineData("Orleans.Runtime", true)]
+    [InlineData("Newtonsoft", true)]
+    [InlineData("Newtonsoft.Json", true)]
+    [InlineData("Systematic.Domain", false)]
+    [InlineData("Microsofting.Domain", false)]
+    [InlineData("Orleansish.Domain", false)]
+    [InlineData("Newtonsoftish.Domain", false)]
+    public void IsFrameworkTypeMatchesNamespaceBoundaries(
+        string namespaceName,
+        bool expected
+    )
+    {
+        ITypeSymbol type = CreateTypeWithNamespace("Choice", namespaceName);
+        Assert.Equal(expected, TypeAnalyzer.IsFrameworkType(type));
+        if (!expected)
+        {
+            Assert.Equal("ChoiceDto", TypeAnalyzer.GetDtoTypeName(type));
+        }
+    }
+
+    /// <summary>
     ///     IsFrameworkType should return false for custom types in non-framework namespace.
     /// </summary>
     [Fact]

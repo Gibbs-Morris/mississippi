@@ -183,7 +183,8 @@ public static class TypeAnalyzer
         }
 
         return FrameworkNamespacePrefixes.Any(prefix =>
-            containingNamespace.StartsWith(prefix, StringComparison.Ordinal));
+            containingNamespace.Equals(prefix, StringComparison.Ordinal) ||
+            containingNamespace.StartsWith(prefix + ".", StringComparison.Ordinal));
     }
 
     /// <summary>
