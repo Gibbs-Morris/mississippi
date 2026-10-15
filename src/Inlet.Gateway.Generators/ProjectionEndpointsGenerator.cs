@@ -1140,34 +1140,6 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    ///     Detects custom enum elements below more than one collection level.
-    /// </summary>
-    /// <param name="sourceType">The collection source type.</param>
-    /// <returns>Whether nested collection elements require an unsupported conversion.</returns>
-    private static bool HasNestedEnumCollectionElements(
-        ITypeSymbol sourceType
-    )
-    {
-        ITypeSymbol collectionType = UnwrapNullable(sourceType);
-        while (collectionType is IArrayTypeSymbol || TypeAnalyzer.IsCollectionType(collectionType))
-        {
-            ITypeSymbol? elementType = TypeAnalyzer.GetCollectionElementType(collectionType);
-            if (elementType is null)
-            {
-                return false;
-            }
-
-            collectionType = UnwrapNullable(elementType);
-            if (GetEnumCollectionElement(collectionType) is not null)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
     ///     Converts PascalCase to camelCase.
     /// </summary>
     private static string ToCamelCase(
@@ -1253,41 +1225,15 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         SourceProductionContext context,
         ProjectionInfo projection,
         HashSet<IPropertySymbol> reportedUnsupportedProperties
-    )
-    {
-        IEnumerable<IPropertySymbol> properties = projection.SourceType.GetMembers()
-            .OfType<IPropertySymbol>()
-            .Concat(
-                projection.Model.Properties.SelectMany(prop =>
-                    prop.ElementTypeSymbol is INamedTypeSymbol { TypeKind: not TypeKind.Enum } nestedType
-                        ? nestedType.GetMembers().OfType<IPropertySymbol>()
-                        : Enumerable.Empty<IPropertySymbol>()))
-            .Where(prop => (prop.DeclaredAccessibility == Accessibility.Public) &&
-                           !prop.IsStatic &&
-                           prop.GetMethod is not null)
-            .Distinct(SymbolEqualityComparer.Default)
-            .OfType<IPropertySymbol>();
-        bool valid = true;
-        foreach (IPropertySymbol property in properties.Where(property =>
-                     HasNestedEnumCollectionElements(property.Type) ||
-                     (GetEnumCollectionElement(property.Type) is not null &&
-                      (GetEnumCollectionMaterializer(new(property)).Length == 0))))
-        {
-            if (reportedUnsupportedProperties.Add(property))
-            {
-                context.ReportDiagnostic(
-                    Diagnostic.Create(
-                        GeneratedProjectionDiagnostics.UnsupportedEnumCollection,
-                        property.Locations.FirstOrDefault(location => location.IsInSource) ?? Location.None,
-                        property.Name,
-                        property.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
-            }
-
-            valid = false;
-        }
-
-        return valid;
-    }
+    ) =>
+        GeneratedProjectionDiagnostics.ValidateEnumCollectionShapes(
+            context,
+            projection.SourceType,
+            projection.Model,
+            reportedUnsupportedProperties,
+            property => TypeAnalyzer.HasNestedEnumCollectionElements(property.Type) ||
+                        (GetEnumCollectionElement(property.Type) is not null &&
+                         (GetEnumCollectionMaterializer(new(property)).Length == 0)));
 
     /// <summary>
     ///     Initializes the generator pipeline.

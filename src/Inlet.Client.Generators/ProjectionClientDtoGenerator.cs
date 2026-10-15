@@ -562,12 +562,21 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
             {
                 GeneratedDtoNameRegistry generatedNestedTypes = new();
                 Dictionary<string, INamedTypeSymbol> generatedEnumTypes = new(StringComparer.Ordinal);
-                foreach (ProjectionInfo projection in data.Projections)
+                HashSet<IPropertySymbol> reportedUnsupportedProperties = new(SymbolEqualityComparer.Default);
+                List<ProjectionInfo> validProjections = data.Projections.Where(projection =>
+                        GeneratedProjectionDiagnostics.ValidateEnumCollectionShapes(
+                            spc,
+                            projection.SourceType,
+                            projection.Model,
+                            reportedUnsupportedProperties,
+                            property => TypeAnalyzer.HasNestedEnumCollectionElements(property.Type)))
+                    .ToList();
+                foreach (ProjectionInfo projection in validProjections)
                 {
                     GenerateClientDto(spc, projection, data.TargetRootNamespace, generatedNestedTypes);
                 }
 
-                foreach (ProjectionInfo projection in data.Projections)
+                foreach (ProjectionInfo projection in validProjections)
                 {
                     GenerateNestedDtosForProjection(
                         spc,

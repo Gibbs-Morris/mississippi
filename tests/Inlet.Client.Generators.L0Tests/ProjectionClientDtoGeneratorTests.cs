@@ -1090,6 +1090,112 @@ public class ProjectionClientDtoGeneratorTests
         VerifyNullableEnumCollectionDtosCompile("__Element__[]", false, false, enumNamespace);
 
     /// <summary>
+    ///     Unsupported nested enum collections report a source diagnostic before client output.
+    /// </summary>
+    /// <param name="collectionType">The unsupported collection type.</param>
+    /// <param name="nested">Whether the property belongs to a nested record.</param>
+    [Theory]
+    [InlineData("ResumeSource?[][]", false)]
+    [InlineData("ResumeSource?[][]", true)]
+    [InlineData("ResumeSource[][]", false)]
+    [InlineData("ResumeSource[][]", true)]
+    [InlineData("List<List<ResumeSource?>>", false)]
+    [InlineData("List<List<ResumeSource?>>", true)]
+    [InlineData("List<ResumeSource?[]>", false)]
+    [InlineData("List<ResumeSource?[]>", true)]
+    public void GeneratedNestedEnumCollectionsProduceDiagnostic(
+        string collectionType,
+        bool nested
+    )
+    {
+        ArgumentNullException.ThrowIfNull(collectionType);
+        const string sourceTemplate = """
+                                      using System.Collections.Generic;
+                                      using System.Collections.Immutable;
+                                      using Mississippi.Inlet.Generators.Abstractions;
+                                      using Mississippi.Inlet.Abstractions;
+                                      namespace TestApp.Domain.Projections.Sagas
+                                      {
+                                          public enum ResumeSource { Reminder = 0, Manual = 7 }
+                                          [GenerateProjectionEndpoints]
+                                          [ProjectionPath("saga-status")]
+                                          public sealed record SagaStatusProjection
+                                          {
+                                              public __Collection__ Values { get; init; } = default!;
+                                          }
+                                      }
+                                      """;
+        string source = sourceTemplate.Replace("__Collection__", collectionType, StringComparison.Ordinal);
+        if (nested)
+        {
+            source = source.Replace("[GenerateProjectionEndpoints]", string.Empty, StringComparison.Ordinal)
+                .Replace("[ProjectionPath(\"saga-status\")]", string.Empty, StringComparison.Ordinal)
+                .Replace("SagaStatusProjection", "RecoveryEntry", StringComparison.Ordinal);
+            source += """
+                      namespace TestApp.Domain.Projections.Sagas
+                      {
+                          [GenerateProjectionEndpoints]
+                          [ProjectionPath("saga-status")]
+                          public sealed record SagaStatusProjection
+                          {
+                              public ImmutableArray<RecoveryEntry> History { get; init; }
+                          }
+                      }
+                      """;
+        }
+
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        Diagnostic diagnostic = Assert.Single(diagnostics);
+        Assert.Equal("INLETDTO002", diagnostic.Id);
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
+        Assert.Contains("Values", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.True(diagnostic.Location.IsInSource);
+        Assert.Equal(
+            "Values",
+            diagnostic.Location.SourceTree.GetText(TestContext.Current.CancellationToken)
+                .ToString(diagnostic.Location.SourceSpan));
+        Assert.All(result.Results, generator => Assert.Null(generator.Exception));
+        Assert.Empty(result.GeneratedTrees);
+        Assert.Empty(
+            output.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(item => item.Severity == DiagnosticSeverity.Error));
+    }
+
+    /// <summary>
+    ///     Shared invalid nested properties are reported once while unrelated projections still generate.
+    /// </summary>
+    [Fact]
+    public void GeneratedNestedEnumDiagnosticsAreDeduplicatedWithoutSuppressingValidProjections()
+    {
+        const string source = """
+                              using System.Collections.Immutable;
+                              using Mississippi.Inlet.Generators.Abstractions;
+                              using Mississippi.Inlet.Abstractions;
+                              namespace TestApp.Domain.Projections.Sagas;
+                              public enum State { Ready }
+                              public sealed record Entry { public State?[][] Values { get; init; } = []; }
+                              [GenerateProjectionEndpoints, ProjectionPath("first")]
+                              public sealed record FirstProjection { public ImmutableArray<Entry> Entries { get; init; } }
+                              [GenerateProjectionEndpoints, ProjectionPath("second")]
+                              public sealed record SecondProjection { public ImmutableArray<Entry> Entries { get; init; } }
+                              [GenerateProjectionEndpoints, ProjectionPath("safe")]
+                              public sealed record SafeProjection { public int Value { get; init; } }
+                              """;
+        (Compilation output, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult result) =
+            RunGenerator(AttributeStubs, source);
+        Assert.Equal("INLETDTO002", Assert.Single(diagnostics).Id);
+        const string dtoNamespace = "TestApp.Client.Features.Sagas.Dtos";
+        Assert.NotNull(output.GetTypeByMetadataName($"{dtoNamespace}.SafeProjectionDto"));
+        Assert.Null(output.GetTypeByMetadataName($"{dtoNamespace}.FirstProjectionDto"));
+        Assert.Null(output.GetTypeByMetadataName($"{dtoNamespace}.SecondProjectionDto"));
+        Assert.All(result.Results, generator => Assert.Null(generator.Exception));
+        Assert.Empty(
+            output.GetDiagnostics(TestContext.Current.CancellationToken)
+                .Where(item => item.Severity == DiagnosticSeverity.Error));
+    }
+
+    /// <summary>
     ///     Projection DTOs retain discovery metadata and nested dependencies in both discovery orders.
     /// </summary>
     /// <param name="nestedFirst">Whether the containing projection is discovered first.</param>
