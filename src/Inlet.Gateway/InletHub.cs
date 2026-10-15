@@ -134,9 +134,8 @@ public sealed class InletHub : Hub<IInletHubClient>
         IAuthenticationService? authenticationService
     )
     {
-        IAuthenticationService? selected = authenticationService is ConnectionSubscriptionAuthenticationService replay
-            ? replay.FrameworkAuthentication
-            : authenticationService;
+        AuthenticationService? selected =
+            ConnectionAuthenticationRouter.GetFrameworkAuthentication(authenticationService);
         return selected is AuthenticationService frameworkService &&
                (selected.GetType().Assembly == typeof(AuthenticationService).Assembly) &&
                frameworkService.Handlers is AuthenticationHandlerProvider handlers &&
@@ -441,8 +440,8 @@ public sealed class InletHub : Hub<IInletHubClient>
             IServiceProvider connectionServices = httpContext.RequestServices;
             IPolicyEvaluator? policyEvaluator = connectionServices.GetService<IPolicyEvaluator>();
             HttpContext decisionContext = SubscriptionAuthenticationFeatures.CreateContext(httpContext);
-            AuthenticationService? frameworkService =
-                connectionServices.GetService<IAuthenticationService>() as AuthenticationService;
+            AuthenticationService? frameworkService = ConnectionAuthenticationRouter.GetFrameworkAuthentication(
+                connectionServices.GetService<IAuthenticationService>());
             AuthenticationHandlerProvider? handlers = GetFrameworkHandlerProvider(frameworkService);
             await using SubscriptionAuthenticationServices? decisionServices = handlers is null
                 ? null

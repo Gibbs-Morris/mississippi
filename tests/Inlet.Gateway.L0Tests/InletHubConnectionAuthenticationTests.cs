@@ -1467,4 +1467,71 @@ public sealed class InletHubConnectionAuthenticationTests
         Assert.Same(poll.User, retained.User);
         Assert.Same(poll.User, hub.Context.User);
     }
+
+    /// <summary>
+    ///     An injected authentication service must use the replacement poll's proven principal.
+    /// </summary>
+    /// <param name="replacementAllowed">Whether the replacement caller has read permission.</param>
+    /// <returns>A task that completes when stale grant and denial boundaries have been verified.</returns>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SubscribeUsesReplacementCallerWithInjectedAuthenticationService(
+        bool replacementAllowed
+    )
+    {
+        const string scheme = OtherScheme;
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.Services.AddInletServer();
+        builder.Services.AddSingleton<HubLifetimeManager<InletHub>, DefaultHubLifetimeManager<InletHub>>();
+        builder.Services.AddAuthentication(scheme)
+            .AddScheme<AuthenticationSchemeOptions, CompositeConnectionAuthenticationHandler>(scheme, _ => { });
+        builder.Services.AddAuthorizationBuilder().SetDefaultPolicy(CreatePolicy(scheme));
+        builder.Services.AddScoped<IPolicyEvaluator, InjectedConnectionPolicyEvaluator>();
+        await using WebApplication app = builder.Build();
+        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext original = CreateOriginalContext(connectionScope.ServiceProvider);
+        original.Request.Headers[scheme] = replacementAllowed ? "write" : "read";
+        AuthorizationPolicy policy = CreatePolicy(scheme);
+        IPolicyEvaluator evaluator = connectionScope.ServiceProvider.GetRequiredService<IPolicyEvaluator>();
+        Assert.True((await evaluator.AuthenticateAsync(policy, original)).Succeeded);
+        AuthenticationMiddleware originalMiddleware = new(
+            _ => Task.CompletedTask,
+            connectionScope.ServiceProvider.GetRequiredService<IAuthenticationSchemeProvider>());
+        await originalMiddleware.Invoke(original);
+        await DispatchHubEndpointAsync(app, original, policy);
+        DefaultHttpContext retained = CloneConnectionContext(original, connectionScope.ServiceProvider);
+        await using AsyncServiceScope pollScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext poll = CreateOriginalContext(pollScope.ServiceProvider);
+        poll.Request.Headers[scheme] = replacementAllowed ? "read" : "write";
+        poll.SetEndpoint(original.GetEndpoint());
+        poll.Request.QueryString = new("?id=unavailable-connection");
+        AuthenticationMiddleware pollMiddleware = new(
+            _ => Task.CompletedTask,
+            pollScope.ServiceProvider.GetRequiredService<IAuthenticationSchemeProvider>());
+        await pollMiddleware.Invoke(poll);
+        await ConnectionAuthenticationSnapshot.CaptureAsync(poll);
+        ClaimsPrincipal caller = poll.User;
+        retained.User = caller;
+        Assert.NotNull(ConnectionAuthenticationSnapshot.GetAuthenticationResult(retained, caller, scheme));
+        Assert.Equal(1, Assert.IsType<int>(original.Items[scheme + "-calls"]));
+        using InletHub hub = CreateHub(retained, caller, scheme, out IInletSubscriptionGrain grain);
+        if (replacementAllowed)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        Assert.Same(caller, retained.User);
+        Assert.Same(caller, hub.Context.User);
+        Assert.Same(connectionScope.ServiceProvider, retained.RequestServices);
+        Assert.Same(evaluator, connectionScope.ServiceProvider.GetRequiredService<IPolicyEvaluator>());
+    }
 }

@@ -46,6 +46,7 @@ internal sealed class SubscriptionAuthenticationServices
             authentication.Transform,
             Options.Create(authentication.Options));
         Authentication = new(frameworkAuthentication, context, principalProvider);
+        context.Features.Set(Authentication);
     }
 
     private ConnectionSubscriptionAuthenticationService Authentication { get; }

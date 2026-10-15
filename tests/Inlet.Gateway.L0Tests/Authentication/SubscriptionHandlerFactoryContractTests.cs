@@ -46,8 +46,9 @@ public sealed class SubscriptionHandlerFactoryContractTests
         await using AsyncServiceScope scope = app.Services.CreateAsyncScope();
         HeaderPermissionAuthenticationHandler hostOwned =
             scope.ServiceProvider.GetRequiredKeyedService<HeaderPermissionAuthenticationHandler>(handlerKey);
-        AuthenticationService framework =
-            (AuthenticationService)scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
+        AuthenticationService? framework = ConnectionAuthenticationRouter.GetFrameworkAuthentication(
+            scope.ServiceProvider.GetRequiredService<IAuthenticationService>());
+        Assert.NotNull(framework);
         IAuthenticationSchemeProvider schemes =
             scope.ServiceProvider.GetRequiredService<IAuthenticationSchemeProvider>();
         DefaultHttpContext firstContext = new()

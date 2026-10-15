@@ -119,7 +119,8 @@ internal static class ConnectionAuthenticationResults
         HttpContext context
     )
     {
-        IAuthenticationService? authentication = context.RequestServices.GetService<IAuthenticationService>();
+        AuthenticationService? authentication = ConnectionAuthenticationRouter.GetFrameworkAuthentication(
+            context.RequestServices.GetService<IAuthenticationService>());
         return authentication is AuthenticationService framework &&
                (authentication.GetType().Assembly == typeof(AuthenticationService).Assembly) &&
                (framework.Transform.GetType() == typeof(NoopClaimsTransformation)) &&

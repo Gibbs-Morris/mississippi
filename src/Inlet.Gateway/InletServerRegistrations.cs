@@ -55,6 +55,7 @@ public static class InletServerRegistrations
         ArgumentNullException.ThrowIfNull(services);
         services.AddInletSilo();
         services.AddSignalR();
+        ConnectionAuthenticationRegistrations.AddRouter(services);
         services.TryAddSingleton<SubscriptionAuthenticationHandlerFactory>(_ => new(services));
         services.Configure(configureOptions ?? (_ => { }));
         services.TryAddEnumerable(
