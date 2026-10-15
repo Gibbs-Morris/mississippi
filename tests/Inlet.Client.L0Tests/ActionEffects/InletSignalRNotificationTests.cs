@@ -1,10 +1,13 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Reflection;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Connections;
+using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.AspNetCore.SignalR.Protocol;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.Inlet.Client.Abstractions;
@@ -63,43 +66,73 @@ public sealed class InletSignalRNotificationTests
     /// </summary>
     /// <param name="fetcher">The fetcher used by the notification handler.</param>
     /// <param name="actions">The destination for dispatched actions.</param>
-    /// <param name="notification">The registered projection update callback.</param>
-    /// <returns>The effect that owns the captured callback.</returns>
-    private static InletSignalRActionEffect CreateSubscribedEffect(
-        IProjectionFetcher fetcher,
-        List<IAction> actions,
-        out Func<string, string, long, Task> notification
-    )
+    /// <returns>The effect and its registered notification callback.</returns>
+    private static async Task<(InletSignalRActionEffect Effect, Func<string, string, long, Task> Notification)>
+        CreateSubscribedEffectAsync(
+            IProjectionFetcher fetcher,
+            List<IAction> actions
+        )
     {
         Mock<IInletStore> store = new();
         store.Setup(value => value.Dispatch(It.IsAny<IAction>())).Callback<IAction>(actions.Add);
         Mock<IProjectionDtoRegistry> registry = new();
         registry.Setup(value => value.GetDtoType(ProjectionPath)).Returns(typeof(TestProjection));
+        registry.Setup(value => value.GetPath(typeof(TestProjection))).Returns(ProjectionPath);
+        Mock<HubConnection> hub = new(
+            Mock.Of<IConnectionFactory>(),
+            new JsonHubProtocol(),
+            new IPEndPoint(IPAddress.Loopback, 80),
+            Mock.Of<IServiceProvider>(),
+            NullLoggerFactory.Instance);
+        hub.Setup(value => value.InvokeCoreAsync(
+                InletHubConstants.SubscribeMethod,
+                typeof(string),
+                It.IsAny<object?[]>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("subscription-1");
         Mock<IHubConnectionProvider> provider = new();
+        provider.SetupGet(value => value.Connection).Returns(hub.Object);
+        provider.Setup(value => value.EnsureConnectedAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         Func<string, string, long, Task>? handler = null;
         provider.Setup(value => value.RegisterHandler(
                 InletHubConstants.ProjectionUpdatedMethod,
                 It.IsAny<Func<string, string, long, Task>>()))
             .Callback<string, Func<string, string, long, Task>>((_, callback) => handler = callback)
             .Returns(Mock.Of<IDisposable>());
+        Mock<IProjectionFetcher> subscriptionFetcher = new();
+        subscriptionFetcher.Setup(value => value.FetchAsync(
+                It.IsAny<Type>(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProjectionFetchResult.NotFound);
+        subscriptionFetcher.Setup(value => value.FetchAtVersionAsync(
+                It.IsAny<Type>(),
+                It.IsAny<string>(),
+                It.IsAny<long>(),
+                It.IsAny<CancellationToken>()))
+            .Returns((Type type, string entityId, long version, CancellationToken token) =>
+                fetcher.FetchAtVersionAsync(type, entityId, version, token));
         InletSignalRActionEffect effect = new(
             new(() => store.Object),
             provider.Object,
-            fetcher,
+            subscriptionFetcher.Object,
             registry.Object,
             new FakeTimeProvider());
+        List<IAction> subscriptionActions = new();
+        await foreach (IAction action in effect.HandleAsync(
+                           new SubscribeToProjectionAction<TestProjection>(EntityId),
+                           new(),
+                           CancellationToken.None))
+        {
+            subscriptionActions.Add(action);
+        }
 
-        // Seed an established subscription to isolate notification handling without network IO.
-        FieldInfo? field = typeof(InletSignalRActionEffect).GetField(
-            "activeSubscriptions",
-            BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.NotNull(field);
-        ConcurrentDictionary<(Type ProjectionType, string EntityId), string> subscriptions =
-            Assert.IsType<ConcurrentDictionary<(Type ProjectionType, string EntityId), string>>(field.GetValue(effect));
-        Assert.True(subscriptions.TryAdd((typeof(TestProjection), EntityId), "subscription-1"));
+        Assert.Collection(
+            subscriptionActions,
+            action => Assert.IsType<ProjectionLoadingAction<TestProjection>>(action),
+            action => Assert.IsType<ProjectionLoadedAction<TestProjection>>(action));
         Assert.NotNull(handler);
-        notification = handler;
-        return effect;
+        return (effect, handler);
     }
 
     /// <summary>
@@ -122,10 +155,9 @@ public sealed class InletSignalRNotificationTests
                 CancellationToken.None))
             .ReturnsAsync(ProjectionFetchResult.Create(data, Version));
         List<IAction> actions = new();
-        await using InletSignalRActionEffect effect = CreateSubscribedEffect(
-            fetcher.Object,
-            actions,
-            out Func<string, string, long, Task> notification);
+        (InletSignalRActionEffect effect, Func<string, string, long, Task> notification) =
+            await CreateSubscribedEffectAsync(fetcher.Object, actions);
+        await using InletSignalRActionEffect subscribedEffect = effect;
         await notification(ProjectionPath, EntityId, Version);
         AssertUpdatedState(actions, data, Version);
         fetcher.Verify(
@@ -160,10 +192,9 @@ public sealed class InletSignalRNotificationTests
             Result = ProjectionFetchResult.Create(data, returnedVersion),
         };
         List<IAction> actions = new();
-        await using InletSignalRActionEffect effect = CreateSubscribedEffect(
-            fetcher,
-            actions,
-            out Func<string, string, long, Task> notification);
+        (InletSignalRActionEffect effect, Func<string, string, long, Task> notification) =
+            await CreateSubscribedEffectAsync(fetcher, actions);
+        await using InletSignalRActionEffect subscribedEffect = effect;
         await notification(ProjectionPath, EntityId, notificationVersion);
         Assert.Equal(1, fetcher.FetchCount);
         Assert.Equal(typeof(TestProjection), fetcher.LastProjectionType);
@@ -196,10 +227,9 @@ public sealed class InletSignalRNotificationTests
         fetcher.Setup(value => value.FetchAtVersionAsync(typeof(TestProjection), EntityId, 11, CancellationToken.None))
             .Returns(newerFetch.Task);
         List<IAction> actions = new();
-        await using InletSignalRActionEffect effect = CreateSubscribedEffect(
-            fetcher.Object,
-            actions,
-            out Func<string, string, long, Task> notification);
+        (InletSignalRActionEffect effect, Func<string, string, long, Task> notification) =
+            await CreateSubscribedEffectAsync(fetcher.Object, actions);
+        await using InletSignalRActionEffect subscribedEffect = effect;
         Task olderNotification = notification(ProjectionPath, EntityId, 10);
         Task newerNotification = notification(ProjectionPath, EntityId, 11);
         Assert.False(olderNotification.IsCompleted);
