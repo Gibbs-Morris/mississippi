@@ -3,3 +3,5 @@ Rule ID | Category | Severity | Notes
 --------|----------|----------|--------------------
 INLETAUTH001 | Inlet.Gateway.Generators | Warning | Malformed generated authorization list metadata
 INLETAUTH002 | Inlet.Gateway.Generators | Warning | AllowAnonymous on mutating generated endpoint
+INLETPROJ001 | Inlet.Generators.Core | Error | Distinct dictionary sources share a generated DTO identity
+INLETPROJ002 | Inlet.Generators.Core | Error | Unsupported recursive custom dictionary values

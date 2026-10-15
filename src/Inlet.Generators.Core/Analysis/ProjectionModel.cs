@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -12,6 +13,22 @@ namespace Mississippi.Inlet.Generators.Core.Analysis;
 /// </summary>
 public sealed class ProjectionModel
 {
+    private static readonly DiagnosticDescriptor ConflictingDictionaryDto = new(
+        "INLETPROJ001",
+        "Conflicting dictionary DTO identity",
+        "Source types '{0}' and '{1}' map to the same generated dictionary DTO '{2}'. Rename a source type to use distinct DTO names.",
+        "Inlet.Generators.Core",
+        DiagnosticSeverity.Error,
+        true);
+
+    private static readonly DiagnosticDescriptor UnsupportedNestedDictionaryValue = new(
+        "INLETPROJ002",
+        "Unsupported nested dictionary value",
+        "Dictionary property '{0}' has collection value type '{1}' requiring recursive DTO conversion. Only flat custom dictionary values are supported.",
+        "Inlet.Generators.Core",
+        DiagnosticSeverity.Error,
+        true);
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="ProjectionModel" /> class.
     /// </summary>
@@ -67,7 +84,10 @@ public sealed class ProjectionModel
 
         // Determine which custom types need their own DTOs
         NestedCustomTypes = Properties.Where(p => p.RequiresMapper)
-            .Select(p => p.RequiresEnumerableMapper ? p.ElementSourceTypeName! : p.SourceTypeName)
+            .SelectMany(p => p.IsCollection
+                ? TypeAnalyzer.GetMappedCollectionTypes(p.SourceTypeSymbol)
+                    .Select(type => type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat))
+                : new[] { p.SourceTypeName })
             .Distinct()
             .ToImmutableArray();
     }
@@ -127,4 +147,86 @@ public sealed class ProjectionModel
     ///     Gets the type name (without namespace).
     /// </summary>
     public string TypeName { get; }
+
+    /// <summary>
+    ///     Detects custom leaves inside collection values for the flat dictionary diagnostic.
+    /// </summary>
+    private static bool ContainsCustomCollectionLeaf(
+        ITypeSymbol collection
+    )
+    {
+        if (TypeAnalyzer.GetMappedCollectionTypes(collection).Length > 0)
+        {
+            return true;
+        }
+
+        if (collection is IArrayTypeSymbol array)
+        {
+            return TypeAnalyzer.IsCollectionType(array.ElementType) && ContainsCustomCollectionLeaf(array.ElementType);
+        }
+
+        return collection is INamedTypeSymbol named &&
+               named.TypeArguments.Any(type =>
+                   TypeAnalyzer.IsCollectionType(type) && ContainsCustomCollectionLeaf(type));
+    }
+
+    /// <summary>
+    ///     Registers custom dictionary DTO sources and reports unsupported values or conflicting output identities.
+    /// </summary>
+    /// <param name="outputNamespace">The namespace containing the generated DTOs.</param>
+    /// <param name="generatedDtoTypes">The compilation-local registry of dictionary DTO source identities.</param>
+    /// <returns>Diagnostics identifying distinct source types that request the same output identity.</returns>
+    public ImmutableArray<Diagnostic> RegisterDictionaryDtoTypes(
+        string outputNamespace,
+        Dictionary<string, INamedTypeSymbol> generatedDtoTypes
+    )
+    {
+        if (generatedDtoTypes is null)
+        {
+            throw new ArgumentNullException(nameof(generatedDtoTypes));
+        }
+
+        ImmutableArray<Diagnostic>.Builder diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+        foreach (PropertyModel property in Properties.Where(property =>
+                     TypeAnalyzer.IsDictionaryType(property.SourceTypeSymbol)))
+        {
+            ITypeSymbol value = ((INamedTypeSymbol)property.SourceTypeSymbol).TypeArguments[1];
+            if (TypeAnalyzer.IsCollectionType(value) && ContainsCustomCollectionLeaf(value))
+            {
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        UnsupportedNestedDictionaryValue,
+                        Location.None,
+                        TypeName + "." + property.Name,
+                        value.ToDisplayString()));
+            }
+        }
+
+        foreach (INamedTypeSymbol type in Properties
+                     .Where(property => TypeAnalyzer.IsDictionaryType(property.SourceTypeSymbol))
+                     .SelectMany(property => TypeAnalyzer.GetMappedCollectionTypes(property.SourceTypeSymbol))
+                     .OfType<INamedTypeSymbol>())
+        {
+            string identity = outputNamespace + "." + TypeAnalyzer.GetDtoTypeName(type);
+            if (generatedDtoTypes.TryGetValue(identity, out INamedTypeSymbol? existing))
+            {
+                if (!SymbolEqualityComparer.Default.Equals(existing, type))
+                {
+                    diagnostics.Add(
+                        Diagnostic.Create(
+                            ConflictingDictionaryDto,
+                            type.Locations.FirstOrDefault() ?? Location.None,
+                            existing.ToDisplayString(),
+                            type.ToDisplayString(),
+                            identity));
+                }
+            }
+            else
+            {
+                generatedDtoTypes.Add(identity, type);
+            }
+        }
+
+        return diagnostics.ToImmutable();
+    }
 }

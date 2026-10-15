@@ -23,7 +23,7 @@ public static class TypeAnalyzer
         "Newtonsoft");
 
     /// <summary>
-    ///     Gets the element type of a collection.
+    ///     Gets the element type of a collection, or the value type of a dictionary.
     /// </summary>
     /// <param name="typeSymbol">The collection type symbol.</param>
     /// <returns>The element type, or <c>null</c> if not a collection.</returns>
@@ -38,7 +38,7 @@ public static class TypeAnalyzer
 
         if (typeSymbol is INamedTypeSymbol { IsGenericType: true } namedType && (namedType.TypeArguments.Length > 0))
         {
-            return namedType.TypeArguments[0];
+            return namedType.TypeArguments[IsDictionaryType(namedType) ? 1 : 0];
         }
 
         return null;
@@ -74,8 +74,20 @@ public static class TypeAnalyzer
             ImmutableArray<ITypeSymbol> typeArgs = namedType.TypeArguments;
 
             // Map each type argument
-            IEnumerable<string> mappedArgs = typeArgs.Select(arg => GetDtoTypeName(arg, customTypeSuffix));
-            return $"{genericTypeName}<{string.Join(", ", mappedArgs)}>";
+            bool isDictionary = IsDictionaryType(namedType);
+            IEnumerable<string> mappedArgs = typeArgs.Select(arg =>
+                GetDtoTypeName(arg, customTypeSuffix) +
+                (isDictionary &&
+                 arg.IsReferenceType &&
+                 (arg.NullableAnnotation == NullableAnnotation.Annotated) &&
+                 !IsFrameworkType(arg)
+                    ? "?"
+                    : string.Empty));
+            string nullableSuffix = IsDictionaryType(namedType) &&
+                                    (namedType.NullableAnnotation == NullableAnnotation.Annotated)
+                ? "?"
+                : string.Empty;
+            return $"{genericTypeName}<{string.Join(", ", mappedArgs)}>{nullableSuffix}";
         }
 
         // Non-generic types
@@ -116,6 +128,33 @@ public static class TypeAnalyzer
     }
 
     /// <summary>
+    ///     Gets custom collection types requiring DTO conversion, including dictionary keys and values.
+    /// </summary>
+    /// <param name="typeSymbol">The collection type symbol.</param>
+    /// <returns>The custom element types, or an empty array if none require conversion.</returns>
+    public static ImmutableArray<ITypeSymbol> GetMappedCollectionTypes(
+        ITypeSymbol typeSymbol
+    )
+    {
+        if (!IsCollectionType(typeSymbol))
+        {
+            return ImmutableArray<ITypeSymbol>.Empty;
+        }
+
+        if (IsDictionaryType(typeSymbol) && typeSymbol is INamedTypeSymbol dictionary)
+        {
+            return dictionary.TypeArguments.Where(type => !IsFrameworkType(type))
+                .Select(type => type.WithNullableAnnotation(NullableAnnotation.NotAnnotated))
+                .ToImmutableArray();
+        }
+
+        ITypeSymbol? element = GetCollectionElementType(typeSymbol);
+        return element is not null && !IsFrameworkType(element)
+            ? ImmutableArray.Create(element)
+            : ImmutableArray<ITypeSymbol>.Empty;
+    }
+
+    /// <summary>
     ///     Determines whether a type is a collection type.
     /// </summary>
     /// <param name="typeSymbol">The type symbol to analyze.</param>
@@ -144,6 +183,22 @@ public static class TypeAnalyzer
         string typeName = namedType.ConstructedFrom.ToDisplayString();
         return IsKnownCollectionType(typeName);
     }
+
+    /// <summary>
+    ///     Determines whether a type is a supported mutable or immutable dictionary declaration.
+    /// </summary>
+    /// <param name="typeSymbol">The type symbol.</param>
+    /// <returns><c>true</c> for supported dictionary declarations; otherwise, <c>false</c>.</returns>
+    public static bool IsDictionaryType(
+        ITypeSymbol typeSymbol
+    ) =>
+        typeSymbol is INamedTypeSymbol { IsGenericType: true } namedType &&
+        (namedType.TypeArguments.Length == 2) &&
+        namedType.OriginalDefinition.ToDisplayString() is "System.Collections.Generic.Dictionary<TKey, TValue>"
+            or "System.Collections.Generic.IDictionary<TKey, TValue>"
+            or "System.Collections.Generic.IReadOnlyDictionary<TKey, TValue>"
+            or "System.Collections.Immutable.ImmutableDictionary<TKey, TValue>"
+            or "System.Collections.Immutable.IImmutableDictionary<TKey, TValue>";
 
     /// <summary>
     ///     Determines whether a type is an enum.
@@ -213,7 +268,7 @@ public static class TypeAnalyzer
         ITypeSymbol propertyType
     )
     {
-        if (!IsCollectionType(propertyType))
+        if (!IsCollectionType(propertyType) || IsDictionaryType(propertyType))
         {
             return false;
         }
@@ -234,8 +289,7 @@ public static class TypeAnalyzer
         // Check if it's a collection with custom element type
         if (IsCollectionType(propertyType))
         {
-            ITypeSymbol? elementType = GetCollectionElementType(propertyType);
-            return elementType is not null && !IsFrameworkType(elementType);
+            return !GetMappedCollectionTypes(propertyType).IsEmpty;
         }
 
         // Direct custom type
