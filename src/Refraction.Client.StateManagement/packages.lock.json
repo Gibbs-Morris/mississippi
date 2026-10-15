@@ -132,31 +132,10 @@
         "resolved": "10.0.12",
         "contentHash": "bLgqhSs2YS3i2sOe8Mo11JzgdktB+/VADJXx2oSCE1crpg3RbFESn1mEBfiO4MjX9icW+An1zdGBFucIwIYwmA=="
       },
-      "Mississippi.Refraction.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.13, )"
-        }
-      },
-      "Mississippi.Refraction.Client": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.AspNetCore.Components": "[10.0.12, )",
-          "Microsoft.AspNetCore.Components.Web": "[10.0.12, )"
-        }
-      },
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.13, )"
-        }
-      },
-      "Mississippi.Reservoir.Core": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.13, )",
-          "Microsoft.Extensions.Logging.Abstractions": "[10.0.12, )",
-          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
       "Microsoft.Extensions.Configuration": {
