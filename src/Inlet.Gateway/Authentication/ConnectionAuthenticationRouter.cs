@@ -43,11 +43,31 @@ internal sealed class ConnectionAuthenticationRouter : IAuthenticationService
         };
 
     /// <inheritdoc />
-    public Task<AuthenticateResult> AuthenticateAsync(
+    public async Task<AuthenticateResult> AuthenticateAsync(
         HttpContext context,
         string? scheme
-    ) =>
-        GetAuthentication(context).AuthenticateAsync(context, scheme);
+    )
+    {
+        if (context.Features.Get<ConnectionSubscriptionAuthenticationService>() is { } decision)
+        {
+            return await decision.AuthenticateAsync(context, scheme);
+        }
+
+        AuthenticateResult result = await FrameworkAuthentication.AuthenticateAsync(context, scheme);
+        if (scheme is not null)
+        {
+            ConnectionAuthenticationOutcomes? outcomes = context.Features.Get<ConnectionAuthenticationOutcomes>();
+            if (outcomes is null)
+            {
+                outcomes = new();
+                context.Features.Set(outcomes);
+            }
+
+            outcomes.Record(scheme, result);
+        }
+
+        return result;
+    }
 
     /// <inheritdoc />
     public Task ChallengeAsync(

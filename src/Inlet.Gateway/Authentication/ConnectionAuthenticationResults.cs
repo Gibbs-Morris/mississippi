@@ -40,6 +40,17 @@ internal static class ConnectionAuthenticationResults
 
         foreach (string scheme in schemes)
         {
+            AuthenticateResult? recorded = context.Features.Get<ConnectionAuthenticationOutcomes>()?.GetResult(scheme);
+            if (recorded is not null)
+            {
+                if (!recorded.Succeeded || ContainsOnlyEstablishedIdentities(recorded.Principal, principal))
+                {
+                    results[scheme] = CopyResult(recorded);
+                }
+
+                continue;
+            }
+
             IAuthenticationHandler? handler = await handlers.GetHandlerAsync(context, scheme);
             if (!CanReadCachedResult(handler))
             {
