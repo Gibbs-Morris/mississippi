@@ -2,9 +2,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Orleans.Sdk" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
-  </ItemGroup>
   <PropertyGroup>
     <Description>Public contracts for discovering server read models, managing subscriptions, and describing subscription authorization requirements.</Description>
   </PropertyGroup>

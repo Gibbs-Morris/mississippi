@@ -217,20 +217,11 @@
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.12, )",
           "Mississippi.Hosting.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
-          "Mississippi.Reservoir.Client": "[1.0.0, )",
           "Mississippi.Reservoir.Core": "[1.0.0, )"
         }
       },
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
-      },
-      "Mississippi.Reservoir.Client": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.12, )",
-          "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
-          "Mississippi.Reservoir.Core": "[1.0.0, )"
-        }
       },
       "Mississippi.Reservoir.Core": {
         "type": "Project",

@@ -12,6 +12,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Refraction.Client.StateManagement\Refraction.Client.StateManagement.csproj" />
+        <ProjectReference Include="..\..\src\Reservoir.Core\Reservoir.Core.csproj" />
     </ItemGroup>
 
 </Project>
