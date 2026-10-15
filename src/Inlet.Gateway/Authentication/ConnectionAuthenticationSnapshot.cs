@@ -109,14 +109,16 @@ internal static class ConnectionAuthenticationSnapshot
         }
 
         string? defaultScheme = await GetDefaultAuthenticationSchemeAsync(context, feature!);
+        IReadOnlyDictionary<string, AuthenticateResult> results =
+            await ConnectionAuthenticationResults.CaptureAsync(context, result.Principal, schemes);
         if (ReferenceEquals(result.Principal, context.User) && ReferenceEquals(result, feature!.AuthenticateResult))
         {
-            StoreSnapshot(context, result.Principal, schemes, defaultScheme, result.Properties);
+            StoreSnapshot(context, result.Principal, schemes, defaultScheme, result.Properties, results);
         }
     }
 
     /// <summary>
-    ///     Recovers a verified single-scheme result for the exact established caller.
+    ///     Recovers a verified selected-scheme result for the exact established caller.
     /// </summary>
     /// <param name="context">The isolated connection decision context.</param>
     /// <param name="principal">The principal retained by the hub.</param>
@@ -129,6 +131,16 @@ internal static class ConnectionAuthenticationSnapshot
     )
     {
         Snapshot? snapshot = GetSnapshot(context, principal);
+        if (snapshot?.Results?.TryGetValue(scheme, out AuthenticateResult? selected) == true)
+        {
+            return !selected.Succeeded ||
+                   ConnectionAuthenticationResults.ContainsOnlyEstablishedIdentities(
+                       selected.Principal,
+                       snapshot.Principal)
+                ? ConnectionAuthenticationResults.CopyResult(selected)
+                : null;
+        }
+
         if (snapshot is not { Schemes.Count: 1 } ||
             (!string.Equals(snapshot.Schemes[0], scheme, StringComparison.Ordinal) &&
              !string.Equals(snapshot.DefaultScheme, scheme, StringComparison.Ordinal)))
@@ -268,12 +280,14 @@ internal static class ConnectionAuthenticationSnapshot
     /// <param name="schemes">The verified schemes, or an empty list when no authentication is proven.</param>
     /// <param name="defaultScheme">The stable default scheme originally requested by middleware.</param>
     /// <param name="properties">The verified ticket properties, or null for caller ownership only.</param>
+    /// <param name="results">Attributable individual scheme outcomes for a composite caller.</param>
     private static void StoreSnapshot(
         HttpContext context,
         ClaimsPrincipal principal,
         string[] schemes,
         string? defaultScheme,
-        AuthenticationProperties? properties = null
+        AuthenticationProperties? properties = null,
+        IReadOnlyDictionary<string, AuthenticateResult>? results = null
     )
     {
         // Items survive long-polling cloning; request features and their service scope do not.
@@ -288,7 +302,8 @@ internal static class ConnectionAuthenticationSnapshot
             context.GetEndpoint(),
             context.Request.Query["id"].ToString(),
             properties?.Clone(),
-            anonymousRequest);
+            anonymousRequest,
+            results);
         context.Items[ItemKey] = snapshot;
         if (((schemes.Length > 0) || snapshot.AnonymousRequest is not null) &&
             snapshot.Endpoint is not null &&
@@ -311,6 +326,7 @@ internal static class ConnectionAuthenticationSnapshot
     /// <param name="ConnectionToken">The transport token from the authenticated request.</param>
     /// <param name="Properties">A copy of the verified ticket properties, when authentication succeeded.</param>
     /// <param name="AnonymousRequest">Copied request metadata when middleware handed SignalR an anonymous caller.</param>
+    /// <param name="Results">Verified individual outcomes from the original composite authentication.</param>
     private sealed record Snapshot(
         ClaimsPrincipal Principal,
         IReadOnlyList<string> Schemes,
@@ -319,6 +335,7 @@ internal static class ConnectionAuthenticationSnapshot
         Endpoint? Endpoint,
         string ConnectionToken,
         AuthenticationProperties? Properties,
-        ConnectionAnonymousRequest? AnonymousRequest
+        ConnectionAnonymousRequest? AnonymousRequest,
+        IReadOnlyDictionary<string, AuthenticateResult>? Results
     );
 }

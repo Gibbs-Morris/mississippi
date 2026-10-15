@@ -1223,6 +1223,86 @@ public sealed class InletHubConnectionAuthenticationTests
     }
 
     /// <summary>
+    ///     Certificate-only projection policies cannot borrow bearer identities from a composite endpoint result.
+    /// </summary>
+    /// <param name="certificatePermission">The certificate permission, or no-result marker.</param>
+    /// <param name="bearerPermission">The other scheme's permission, or no-result marker.</param>
+    /// <param name="allowed">Whether certificate-only authorization should allow the subscription.</param>
+    /// <returns>A task that completes when scheme attribution and authorization have been verified.</returns>
+    [Theory]
+    [InlineData("read", "write", true)]
+    [InlineData("write", "read", false)]
+    [InlineData("none", "read", false)]
+    [InlineData("read", "none", true)]
+    public async Task SubscribeUsesOnlySuccessfulSelectedSchemeFromCompositeEndpoint(
+        string certificatePermission,
+        string bearerPermission,
+        bool allowed
+    )
+    {
+        List<ClaimsPrincipal> decisions = [];
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.Services.AddSignalR();
+        builder.Services.AddAuthentication()
+            .AddScheme<AuthenticationSchemeOptions, CompositeConnectionAuthenticationHandler>(TlsScheme, _ => { })
+            .AddScheme<AuthenticationSchemeOptions, CompositeConnectionAuthenticationHandler>(OtherScheme, _ => { });
+        builder.Services.AddAuthorizationBuilder()
+            .SetDefaultPolicy(
+                new AuthorizationPolicyBuilder().RequireAuthenticatedUser()
+                    .RequireClaim("permission", "read")
+                    .RequireAssertion(context =>
+                    {
+                        decisions.Add(context.User);
+                        return true;
+                    })
+                    .Build());
+        await using WebApplication app = builder.Build();
+        await using AsyncServiceScope requestScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext original = CreateOriginalContext(requestScope.ServiceProvider);
+        original.Request.Headers[TlsScheme] = certificatePermission;
+        original.Request.Headers[OtherScheme] = bearerPermission;
+        AuthorizationPolicy endpointPolicy =
+            new AuthorizationPolicyBuilder(TlsScheme, OtherScheme).RequireAuthenticatedUser().Build();
+        PolicyEvaluator evaluator = new(app.Services.GetRequiredService<IAuthorizationService>());
+        AuthenticateResult established = await evaluator.AuthenticateAsync(endpointPolicy, original);
+        Assert.True(established.Succeeded);
+        Assert.True((await evaluator.AuthorizeAsync(endpointPolicy, established, original, original)).Succeeded);
+        IAuthenticateResultFeature feature = Substitute.For<IAuthenticateResultFeature>();
+        feature.AuthenticateResult.Returns(established);
+        original.Features.Set(feature);
+        await DispatchHubEndpointAsync(app, original, endpointPolicy);
+        Assert.Equal(1, Assert.IsType<int>(original.Items[TlsScheme + "-calls"]));
+        Assert.Equal(1, Assert.IsType<int>(original.Items[OtherScheme + "-calls"]));
+        ClaimsPrincipal caller = original.User;
+        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext retained = CloneConnectionContext(original, connectionScope.ServiceProvider);
+        Assert.Null(retained.Features.Get<ITlsConnectionFeature>());
+        Assert.False((await evaluator.AuthenticateAsync(CreatePolicy(TlsScheme), retained)).Succeeded);
+        retained.User = caller;
+        using InletHub hub = CreateHub(retained, caller, TlsScheme, out IInletSubscriptionGrain grain);
+        if (allowed)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+            ClaimsPrincipal selected = Assert.Single(decisions);
+            Assert.Equal(TlsScheme, selected.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            Assert.True(selected.HasClaim("permission", "read"));
+            Assert.False(selected.HasClaim(ClaimTypes.NameIdentifier, OtherScheme));
+            Assert.False(selected.HasClaim("permission", "write"));
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        Assert.Same(caller, hub.Context.User);
+        Assert.Same(caller, retained.User);
+    }
+
+    /// <summary>
     ///     A principal established by a current poll must retain its own verified scheme and permissions.
     /// </summary>
     /// <param name="permission">The current caller's permission.</param>
