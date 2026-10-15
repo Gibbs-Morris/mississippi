@@ -104,12 +104,15 @@ public sealed class ReferenceSetPageTests
                 SourceId = "a",
                 ObservedSourceVersion = 99,
             });
+        fixture.Latest = -1;
         ReferenceSetPage<SavedItemsMembershipProjection, CatalogItemProjection> pinned = await fixture.Reader.ReadAsync(
             "collection",
             1,
             1,
             captured.Version,
             TestContext.Current.CancellationToken);
+        Assert.Equal(1, fixture.CursorReads);
+        Assert.Equal(-1, fixture.Latest);
         Assert.Equal(captured.Version, pinned.Version);
         Assert.Equal(2, pinned.TotalCount);
         Assert.Equal("b", Assert.Single(pinned.References).SourceId);
@@ -119,6 +122,7 @@ public sealed class ReferenceSetPageTests
                 limit: 1,
                 version: captured.Version,
                 cancellationToken: TestContext.Current.CancellationToken);
+        fixture.Latest = fixture.Appends - 1;
         ReferenceSetPage<SavedItemsMembershipProjection, CatalogItemProjection> current =
             await fixture.Reader.ReadAsync(
                 "collection",
@@ -127,7 +131,7 @@ public sealed class ReferenceSetPageTests
         Assert.Equal(7, historical.References[0].ObservedSourceVersion);
         Assert.Equal(99, current.References[0].ObservedSourceVersion);
         Assert.Throws<ArgumentOutOfRangeException>(() => new BrookPosition(-2));
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await fixture.Reader.ReadAsync(
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.Reader.ReadAsync(
             "collection",
             version: new(5),
             cancellationToken: TestContext.Current.CancellationToken));

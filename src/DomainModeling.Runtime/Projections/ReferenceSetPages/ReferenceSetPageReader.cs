@@ -55,15 +55,16 @@ internal sealed class ReferenceSetPageReader<TProjection, TSource> : IReferenceS
         Stopwatch timer = Stopwatch.StartNew();
         long? requestedVersion = version.HasValue ? version.GetValueOrDefault().Value : null;
         Logger.PageReadStarted(typeof(TProjection).Name, offset, limit, requestedVersion);
-        IUxProjectionCursorGrain cursor = Projections.GetUxProjectionCursorGrain<TProjection>(entityId);
-        BrookPosition latest = await cursor.GetPositionAsync();
-        cancellationToken.ThrowIfCancellationRequested();
-        BrookPosition selected = version ?? latest;
-        ArgumentOutOfRangeException.ThrowIfLessThan(selected.Value, -1);
-        if (selected.Value > latest.Value)
+        UxProjectionCursorKey cursorKey = new(BrookNameHelper.GetBrookName<TProjection>(), entityId);
+        BrookPosition selected = version.GetValueOrDefault();
+        if (!version.HasValue)
         {
-            throw new ArgumentOutOfRangeException(nameof(version), "Version exceeds the captured collection cursor.");
+            IUxProjectionCursorGrain cursor = Projections.GetUxProjectionCursorGrain(cursorKey);
+            selected = await cursor.GetPositionAsync();
+            cancellationToken.ThrowIfCancellationRequested();
         }
+
+        ArgumentOutOfRangeException.ThrowIfLessThan(selected.Value, -1);
 
         ReferenceSetPage<TProjection, TSource> result = selected.NotSet
             ? new()
@@ -75,7 +76,7 @@ internal sealed class ReferenceSetPageReader<TProjection, TSource> : IReferenceS
                 References = [],
             }
             : await Grains.GetGrain<IReferenceSetPageCacheGrain<TProjection, TSource>>(
-                    new UxProjectionVersionedCacheKey(BrookNameHelper.GetBrookName<TProjection>(), entityId, selected))
+                    UxProjectionVersionedCacheKey.FromCursorKey(cursorKey, selected))
                 .ReadAsync(offset, limit, cancellationToken);
         Logger.PageReadCompleted(result.Version.Value, result.References.Length, timer.Elapsed.TotalMilliseconds);
         return result;

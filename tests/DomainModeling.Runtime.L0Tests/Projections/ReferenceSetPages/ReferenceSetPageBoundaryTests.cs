@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.Brooks.Abstractions;
 using Mississippi.DomainModeling.Abstractions;
+using Mississippi.DomainModeling.Abstractions.Projections.ReferenceSetPages;
 using Mississippi.DomainModeling.Runtime.Aggregates.ReferenceSet.State;
 using Mississippi.DomainModeling.Runtime.Projections.ReferenceSetPages;
 
@@ -130,14 +131,18 @@ public sealed class ReferenceSetPageBoundaryTests
         Mock<IUxProjectionCursorGrain> cursor = new(MockBehavior.Strict);
         cursor.Setup(item => item.GetPositionAsync()).ReturnsAsync(new BrookPosition(-1));
         Mock<IUxProjectionGrainFactory> projections = new(MockBehavior.Strict);
-        projections.Setup(item => item.GetUxProjectionCursorGrain<SavedItemsMembershipProjection>("collection"))
+        projections.Setup(item => item.GetUxProjectionCursorGrain(
+                new UxProjectionCursorKey("TEST.REFERENCESET.SAVEDITEMS", "collection")))
             .Returns(cursor.Object);
         Mock<IGrainFactory> grains = new(MockBehavior.Strict);
         ReferenceSetPageReader<SavedItemsMembershipProjection, CatalogItemProjection> reader = new(
             projections.Object,
             grains.Object,
             NullLogger<ReferenceSetPageReader<SavedItemsMembershipProjection, CatalogItemProjection>>.Instance);
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await reader.ReadAsync(
+        grains.Setup(item => item.GetGrain<IReferenceSetPageCacheGrain<SavedItemsMembershipProjection, CatalogItemProjection>>(
+                It.IsAny<string>(), null))
+            .Throws(new InvalidOperationException("The requested exact snapshot is unavailable."));
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await reader.ReadAsync(
             "collection",
             version: new(0),
             cancellationToken: TestContext.Current.CancellationToken));
@@ -150,6 +155,10 @@ public sealed class ReferenceSetPageBoundaryTests
             });
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
             await reader.ReadAsync("collection", cancellationToken: canceled.Token));
-        grains.VerifyNoOtherCalls();
+        cursor.Verify(item => item.GetPositionAsync(), Times.Once);
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await reader.ReadAsync(
+            null!,
+            version: new(-1),
+            cancellationToken: TestContext.Current.CancellationToken));
     }
 }

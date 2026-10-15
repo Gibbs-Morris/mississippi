@@ -21,8 +21,8 @@ public interface IReferenceSetPageReader<TProjection, TSource>
     /// <param name="cancellationToken">Cancels the read.</param>
     /// <returns>The selection, total count, version and references from the same immutable snapshot.</returns>
     /// <remarks>
-    ///     Invalid selections and versions beyond the captured cursor throw ArgumentOutOfRangeException.
-    ///     Position -1 represents empty history. Storage and reconstruction failures propagate.
+    ///     Invalid selections throw ArgumentOutOfRangeException. Pinned reads do not consult the cached cursor.
+    ///     Position -1 represents empty history. Unavailable/future snapshot reconstruction and storage failures propagate.
     /// </remarks>
     ValueTask<ReferenceSetPage<TProjection, TSource>> ReadAsync(
         string entityId,
