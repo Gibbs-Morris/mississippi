@@ -107,7 +107,8 @@ public class ProjectionEndpointsGeneratorTests
         string collectionType,
         bool nested,
         bool nullableElements,
-        bool nullableCollection
+        bool nullableCollection,
+        bool verifyDefaultAndEmpty = false
     )
     {
         ArgumentNullException.ThrowIfNull(collectionType);
@@ -222,6 +223,26 @@ public class ProjectionEndpointsGeneratorTests
                                        }
                                        """;
         string mappingSource = mappingTemplate;
+        if (verifyDefaultAndEmpty)
+        {
+            const string emptyProbe = """
+                                      public static bool MapEmpty(bool defaultArray)
+                                      {
+                                          SagaStatusProjection source = new()
+                                          {
+                                              Values = defaultArray ? default : [],
+                                              Days = [],
+                                          };
+                                          SagaStatusDto dto = new SagaStatusProjectionMapper().Map(source);
+                                          return !dto.Values.IsDefault && dto.Values.IsEmpty &&
+                                              System.Text.Json.JsonSerializer.Serialize(dto.Values) == "[]";
+                                      }
+
+                                      public static int?[] Map()
+                                      """;
+            mappingSource = mappingSource.Replace("public static int?[] Map()", emptyProbe, StringComparison.Ordinal);
+        }
+
         if (nullableCollection)
         {
             const string nullProbe = """
@@ -356,6 +377,16 @@ public class ProjectionEndpointsGeneratorTests
             else
             {
                 Assert.Equal(new int?[] { null, 7, 0, null, 5, 1 }, actual);
+            }
+
+            if (verifyDefaultAndEmpty)
+            {
+                MethodInfo mapEmpty = assembly.GetType("TestAssembly.Verification.NullableEnumCollectionMappingProbe")!
+                    .GetMethod("MapEmpty")!;
+                foreach (bool defaultArray in new[] { false, true })
+                {
+                    Assert.True(Assert.IsType<bool>(mapEmpty.Invoke(null, new object[] { defaultArray })));
+                }
             }
 
             if (nullableCollection)
@@ -1377,6 +1408,27 @@ public class ProjectionEndpointsGeneratorTests
             Assert.Contains("#nullable enable", generatedCode, StringComparison.Ordinal);
         }
     }
+
+    /// <summary>
+    ///     Default and empty immutable enum arrays map to empty arrays that can be serialized.
+    /// </summary>
+    /// <param name="nested">Whether the collection belongs to a nested record.</param>
+    /// <param name="nullableElements">Whether individual enum elements can be null.</param>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void GeneratedImmutableEnumCollectionsMapDefaultAndEmptyToJsonArrays(
+        bool nested,
+        bool nullableElements
+    ) =>
+        VerifyEnumCollectionMappersCompileAndPreserveValues(
+            "ImmutableArray<__Element__>",
+            nested,
+            nullableElements,
+            false,
+            true);
 
     /// <summary>
     ///     Generated mapper should have Map method with ArgumentNullException check.

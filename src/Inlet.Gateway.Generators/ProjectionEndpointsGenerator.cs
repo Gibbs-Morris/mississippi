@@ -743,6 +743,22 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Maps a default custom enum immutable array to an empty DTO array before enumeration.
+    /// </summary>
+    /// <param name="sourceType">The collection source type.</param>
+    /// <param name="propertyName">The source property name.</param>
+    /// <returns>The conditional prefix, or an empty string for other collection types.</returns>
+    private static string GetDefaultEnumCollectionGuard(
+        ITypeSymbol sourceType,
+        string propertyName
+    ) =>
+        sourceType is INamedTypeSymbol { Name: "ImmutableArray", TypeArguments.Length: 1 } collectionType &&
+        (collectionType.ContainingNamespace.ToDisplayString() == SystemCollectionsImmutableNamespace) &&
+        GetEnumCollectionElement(sourceType) is not null
+            ? $"source.{propertyName}.IsDefault ? {TypeAnalyzer.GetDtoTypeName(sourceType)}.Empty : "
+            : string.Empty;
+
+    /// <summary>
     ///     Gets a DTO property type name while preserving nullable collection annotations.
     /// </summary>
     /// <param name="sourceType">The property source type.</param>
@@ -884,7 +900,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         PropertyModel prop
     )
     {
-        string nullGuard = GetNullableCollectionGuard(prop.SourceTypeSymbol, prop.Name);
+        string nullGuard = GetNullableCollectionGuard(prop.SourceTypeSymbol, prop.Name) +
+                           GetDefaultEnumCollectionGuard(prop.SourceTypeSymbol, prop.Name);
         if (GetNullableEnumCollectionElement(prop.SourceTypeSymbol) is { } collectionEnum)
         {
             string enumDtoTypeName = TypeAnalyzer.GetDtoTypeName(collectionEnum);
@@ -960,7 +977,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         {
             string enumDtoTypeName = TypeAnalyzer.GetDtoTypeName(collectionEnum);
             string toCollection = GetEnumCollectionMaterializer(new(prop));
-            string nullGuard = GetNullableCollectionGuard(prop.Type, prop.Name);
+            string nullGuard = GetNullableCollectionGuard(prop.Type, prop.Name) +
+                               GetDefaultEnumCollectionGuard(prop.Type, prop.Name);
             return $"{nullGuard}source.{prop.Name}.Select(value => ({enumDtoTypeName})value){toCollection}";
         }
 
