@@ -60,6 +60,7 @@ public sealed class EventBrookWriterLeaseLifetimeTests
     {
         Mock<ItemResponse<T>> response = new();
         response.SetupGet(r => r.Resource).Returns(value);
+        response.SetupGet(r => r.ETag).Returns("test-etag");
         return response.Object;
     }
 
@@ -482,36 +483,38 @@ public sealed class EventBrookWriterLeaseLifetimeTests
                 token.ThrowIfCancellationRequested();
                 return CreateItemResponse(value);
             });
-        container.Setup(c => c.UpsertItemAsync(
-                It.IsAny<CursorDocument>(),
-                It.IsAny<PartitionKey?>(),
-                It.IsAny<ItemRequestOptions>(),
-                It.IsAny<CancellationToken>()))
-            .Returns((CursorDocument value, PartitionKey? _, ItemRequestOptions? _, CancellationToken token) =>
-            {
-                token.ThrowIfCancellationRequested();
-                mutations.Enqueue(new("cursor-upsert", leases.ActiveLeaseId, value.Position, clock.GetUtcNow()));
-                lock (documents)
-                {
-                    cursor = value;
-                }
-
-                return Task.FromResult(CreateItemResponse(value));
-            });
-        container.Setup(c => c.DeleteItemAsync<CursorDocument>(
-                "cursor-pending",
-                It.IsAny<PartitionKey>(),
-                It.IsAny<ItemRequestOptions>(),
-                It.IsAny<CancellationToken>()))
-            .Returns((string _, PartitionKey _, ItemRequestOptions? _, CancellationToken token) =>
+        Mock<TransactionalBatch> batch = new(MockBehavior.Strict);
+        CursorDocument? candidateCursor = null;
+        string? pendingCondition = null;
+        container.Setup(c => c.CreateTransactionalBatch(new(key.ToString()))).Returns(batch.Object);
+        batch.Setup(b => b.DeleteItem("cursor-pending", It.IsAny<TransactionalBatchItemRequestOptions>()))
+            .Callback<string, TransactionalBatchItemRequestOptions>((_, options) =>
+                pendingCondition = options.IfMatchEtag)
+            .Returns(batch.Object);
+        batch.Setup(b => b.UpsertItem(It.IsAny<CursorDocument>(), null))
+            .Callback<CursorDocument, TransactionalBatchItemRequestOptions>((value, _) => candidateCursor = value)
+            .Returns(batch.Object);
+        batch.Setup(b => b.ExecuteAsync(It.IsAny<CancellationToken>()))
+            .Returns((CancellationToken token) =>
             {
                 token.ThrowIfCancellationRequested();
                 lock (documents)
                 {
-                    pending = null;
-                }
+                    bool canCommit = pending is not null && (pendingCondition == "test-etag");
+                    if (canCommit)
+                    {
+                        cursor = candidateCursor!;
+                        pending = null;
+                        mutations.Enqueue(
+                            new("cursor-commit", leases.ActiveLeaseId, cursor.Position, clock.GetUtcNow()));
+                    }
 
-                return Task.FromResult(CreateItemResponse(new CursorDocument()));
+                    Mock<TransactionalBatchResponse> response = new();
+                    response.SetupGet(r => r.IsSuccessStatusCode).Returns(canCommit);
+                    response.SetupGet(r => r.StatusCode)
+                        .Returns(canCommit ? HttpStatusCode.OK : HttpStatusCode.PreconditionFailed);
+                    return Task.FromResult(response.Object);
+                }
             });
         ImmediateRetryPolicy retry = new();
         CosmosRepository repository = new(
@@ -612,7 +615,7 @@ public sealed class EventBrookWriterLeaseLifetimeTests
 
             Assert.Equal(2, resultA.Value);
             Assert.Equal(ExpectedPositions, observed.Where(m => m.Operation == "event-create").Select(m => m.Position));
-            Assert.Single(observed, m => m.Operation == "cursor-upsert");
+            Assert.Single(observed, m => m.Operation == "cursor-commit");
             Assert.All(observed, mutation => Assert.Equal(LeaseA, mutation.Owner));
             Assert.Equal(LeaseA, ownerAt61);
         }

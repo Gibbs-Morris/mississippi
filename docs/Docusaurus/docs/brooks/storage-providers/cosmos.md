@@ -129,15 +129,39 @@ storage identities when an existing deployment must continue reading its data.
 
 ### Cursor commit failures
 
-Large appends write event batches before committing the cursor. The commit operation upserts the cursor and then
-deletes pending metadata, so it can report failure after the cursor has advanced or after pending metadata was removed.
+Both append paths write events before committing the cursor. The commit operation conditionally deletes pending
+metadata using the entity tag captured when the append created it. In the same brook-partition transaction it upserts
+the committed cursor. A changed pending document fails the transaction without changing either document. A failed
+acknowledgement can still follow a successful transaction, so a commit exception does not establish whether the cursor
+advanced.
 After a commit attempt reports failure, the writer logs the brook and target position, preserves the original exception,
-and does not delete appended events or remaining pending metadata. The exception alone does not establish whether the
-cursor advanced.
+and does not delete appended events or remaining pending metadata. If an event append fails or is canceled after the
+pending attempt was created, the writer likewise preserves that attempt and any event writes that may complete later.
+An incomplete range remains unresolved and blocks later writes until its actual outcome is reconciled. This version
+provides no automatic timeout-based abandonment or administrative abandon API. Lease expiry and a client timeout do
+not establish that an earlier event create can no longer arrive; intervention must establish that boundary before
+discarding evidence.
 
-If the cursor advanced but pending metadata remains, the current recovery service skips that metadata when it sees the
-committed cursor. A later append can then fail while creating the fixed pending document. Safe reconciliation of that
-state remains separate from this data-preservation boundary.
+### Pending append recovery
+
+A cursor read with no visible pending document returns the stored cursor without creating a Blob lock. That result is
+a read snapshot, not proof that an earlier Cosmos write cannot arrive later. If pending metadata is visible, the reader
+acquires the brook writer lease and rereads both cursor documents after acquisition. Cancellation, lock acquisition,
+and storage failures propagate. A writer uses its supervised append lease directly, checking ownership before storage
+dispatch and each retry.
+
+Recovery checks the pending range against the committed cursor and verifies every referenced event before changing
+cursor or pending metadata. A complete range can be committed; recovery returns its known target without a possibly
+stale post-commit read. If the cursor already includes the range, recovery removes stale pending metadata with the
+captured entity tag, retrying transient cleanup under renewed lease. An older delayed delete cannot remove a replacement
+pending document with a different entity tag. A missing event or inconsistent range produces an explicit failure and
+retains pending evidence.
+
+Blob leases coordinate active writers but do not fence Cosmos requests already in flight after lease expiry. The
+conditional pending delete protects that document from a delayed delete; the conditional transaction also prevents
+an expired writer from advancing the cursor after a newer pending attempt replaces its own. Neither condition fences
+delayed event creation. Cosmos read consistency depends on the configured account and client. Recovery failures use the
+structured `RecoveryFailed` log on reader and writer paths.
 
 Scalar option failures, a closed nested scope, and duplicate composition are reported by
 `BuilderValidationException`. Its `Diagnostics` collection contains a stable `Code`, a `Message`, and `Remediation`
@@ -169,6 +193,9 @@ Message wording and remediation text describe the particular property or registr
 
 ## Compatibility
 
+Upgrade all writers sharing a brook together. Earlier versions can upsert cursors and delete pending metadata without
+entity-tag conditions, bypassing these recovery protections. This change uses existing Cosmos entity tags and does not
+migrate stored documents. It does not fence delayed event creates from an earlier writer.
 The runtime-builder entry point replaces the old provider-specific `IServiceCollection` registration calls:
 
 | Previous shape | Current shape |

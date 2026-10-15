@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Azure;
-
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -54,113 +52,89 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
 
     private IRetryPolicy RetryPolicy { get; }
 
-    /// <summary>
-    ///     Gets the current cursor position for a brook, or recovers it if necessary.
-    /// </summary>
-    /// <param name="brookId">The brook identifier specifying the target brook.</param>
-    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
-    /// <returns>The current or recovered cursor position of the brook.</returns>
-    public Task<BrookPosition> GetOrRecoverCursorPositionAsync(
-        BrookKey brookId,
-        CancellationToken cancellationToken = default
-    ) =>
-        GetOrRecoverCursorPositionAsync(brookId, null, cancellationToken);
+    private static async Task CheckOwnershipAsync(
+        IDistributedLock? writerLock,
+        Action? beforeDispatch,
+        CancellationToken cancellationToken
+    )
+    {
+        beforeDispatch?.Invoke();
+        cancellationToken.ThrowIfCancellationRequested();
+        if (writerLock is not null)
+        {
+            await writerLock.RenewAsync(cancellationToken);
+        }
+    }
 
     /// <summary>
     ///     Gets the current cursor position for a brook, or recovers it if necessary.
     /// </summary>
     /// <param name="brookId">The brook identifier specifying the target brook.</param>
-    /// <param name="beforeDispatch">The append ownership check, or null for an ordinary standalone call.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>The current or recovered cursor position of the brook.</returns>
+    public async Task<BrookPosition> GetOrRecoverCursorPositionAsync(
+        BrookKey brookId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        Logger.GettingOrRecoveringCursor(brookId);
+        try
+        {
+            CursorStorageModel? pendingCursor = await RetryPolicy.ExecuteAsync(
+                async () => { return await Repository.GetPendingCursorDocumentAsync(brookId, cancellationToken); },
+                cancellationToken);
+            if (pendingCursor is null)
+            {
+                CursorStorageModel? cursorDocument = await RetryPolicy.ExecuteAsync(
+                    async () => { return await Repository.GetCursorDocumentAsync(brookId, cancellationToken); },
+                    cancellationToken);
+                BrookPosition position = cursorDocument?.Position ?? new BrookPosition(-1);
+                Logger.CursorPositionReturned(brookId, position.Value);
+                return position;
+            }
+
+            Logger.AcquiringRecoveryLock(brookId, Options.LeaseDurationSeconds);
+            await using IDistributedLock writerLock = await LockManager.AcquireLockAsync(
+                brookId.ToString(),
+                TimeSpan.FromSeconds(Options.LeaseDurationSeconds),
+                cancellationToken);
+            return await ReconcileUnderWriterLockAsync(brookId, writerLock, null, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            Logger.RecoveryFailed(exception, brookId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    ///     Reconciles pending evidence while the caller supervises its append lease.
+    /// </summary>
+    /// <param name="brookId">The brook identifier.</param>
+    /// <param name="beforeDispatch">The append ownership check, or null for a standalone call.</param>
+    /// <param name="cancellationToken">The append cancellation token.</param>
+    /// <returns>The current or recovered cursor position.</returns>
     public async Task<BrookPosition> GetOrRecoverCursorPositionAsync(
         BrookKey brookId,
         Action? beforeDispatch,
         CancellationToken cancellationToken
     )
     {
+        if (beforeDispatch is null)
+        {
+            return await GetOrRecoverCursorPositionAsync(brookId, cancellationToken);
+        }
+
         Logger.GettingOrRecoveringCursor(brookId);
-        CursorStorageModel? cursorDocument = await RetryPolicy.ExecuteAsync(
-            async () =>
-            {
-                beforeDispatch?.Invoke();
-                return await Repository.GetCursorDocumentAsync(brookId, cancellationToken);
-            },
-            cancellationToken);
-        if (cursorDocument is not null && beforeDispatch is not null)
+        try
         {
-            cursorDocument.Position = await RecoverPendingCursorAsync(
-                brookId,
-                cursorDocument.Position,
-                beforeDispatch,
-                cancellationToken);
+            return await ReconcileUnderWriterLockAsync(brookId, null, beforeDispatch, cancellationToken);
         }
-
-        if (cursorDocument == null)
+        catch (Exception exception)
         {
-            CursorStorageModel? pendingCursor = await RetryPolicy.ExecuteAsync(
-                async () =>
-                {
-                    beforeDispatch?.Invoke();
-                    return await Repository.GetPendingCursorDocumentAsync(brookId, cancellationToken);
-                },
-                cancellationToken);
-            if (pendingCursor != null)
-            {
-                long originalPos = pendingCursor.OriginalPosition?.Value ?? -1;
-                long targetPos = pendingCursor.Position.Value;
-                Logger.PendingCursorDetected(brookId, originalPos, targetPos);
-
-                // Use a shorter timeout for recovery lock to prevent deadlocks
-                TimeSpan recoveryTimeout = TimeSpan.FromSeconds(Math.Min(Options.LeaseDurationSeconds, 30));
-                Logger.AcquiringRecoveryLock(brookId, recoveryTimeout.TotalSeconds);
-                try
-                {
-                    beforeDispatch?.Invoke();
-                    await using IDistributedLock recoveryLock = await LockManager.AcquireLockAsync(
-                        $"recovery-{brookId}", // Use different lock key for recovery
-                        recoveryTimeout,
-                        cancellationToken);
-                    await RecoverFromOrphanedOperationAsync(brookId, pendingCursor, beforeDispatch, cancellationToken);
-                    cursorDocument = await RetryPolicy.ExecuteAsync(
-                        async () =>
-                        {
-                            beforeDispatch?.Invoke();
-                            return await Repository.GetCursorDocumentAsync(brookId, cancellationToken);
-                        },
-                        cancellationToken);
-                }
-                catch (RequestFailedException ex)
-                {
-                    Logger.RecoveryLockFailed(ex, brookId);
-
-                    // If we can't acquire the recovery lock, assume another process is handling recovery
-                    // Wait a bit and try to read the cursor again
-                    await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
-                    cursorDocument = await RetryPolicy.ExecuteAsync(
-                        async () =>
-                        {
-                            beforeDispatch?.Invoke();
-                            return await Repository.GetCursorDocumentAsync(brookId, cancellationToken);
-                        },
-                        cancellationToken);
-
-                    // If the cursor is still null after waiting, we have a problem
-                    if (cursorDocument == null)
-                    {
-                        InvalidOperationException invalidOperationException = new(
-                            $"Unable to recover cursor position for brook {brookId}. " +
-                            "Another recovery operation may be in progress or has failed.");
-                        Logger.RecoveryFailed(invalidOperationException, brookId);
-                        throw invalidOperationException;
-                    }
-                }
-            }
+            Logger.RecoveryFailed(exception, brookId);
+            throw;
         }
-
-        BrookPosition position = cursorDocument?.Position ?? new BrookPosition(-1);
-        Logger.CursorPositionReturned(brookId, position.Value);
-        return position;
     }
 
     private async Task<bool> CheckAllEventsExistAsync(
@@ -175,6 +149,7 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
         if ((targetPosition - originalPosition) > 10)
         {
             beforeDispatch?.Invoke();
+            cancellationToken.ThrowIfCancellationRequested();
             ISet<long> existingPositions = await Repository.GetExistingEventPositionsAsync(
                 brookId,
                 originalPosition + 1,
@@ -184,9 +159,11 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
             return existingPositions.Count == expectedCount;
         }
 
-        for (long pos = originalPosition + 1; pos <= targetPosition; pos++)
+        for (long pos = originalPosition; pos < targetPosition;)
         {
+            pos++;
             beforeDispatch?.Invoke();
+            cancellationToken.ThrowIfCancellationRequested();
             if (!await Repository.EventExistsAsync(brookId, pos, cancellationToken))
             {
                 return false;
@@ -196,147 +173,127 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
         return true;
     }
 
-    private async Task<BrookPosition> RecoverFromOrphanedOperationAsync(
+    private async Task<BrookPosition> ReconcileUnderWriterLockAsync(
         BrookKey brookId,
-        CursorStorageModel pendingCursor,
+        IDistributedLock? writerLock,
         Action? beforeDispatch,
         CancellationToken cancellationToken
     )
     {
-        long originalPosition = pendingCursor.OriginalPosition?.Value ?? -1;
-        long targetPosition = pendingCursor.Position.Value;
-        bool allEventsExist = await CheckAllEventsExistAsync(
-            brookId,
-            originalPosition,
-            targetPosition,
-            beforeDispatch,
+        await CheckOwnershipAsync(writerLock, beforeDispatch, cancellationToken);
+        CursorStorageModel? pendingCursor = await RetryPolicy.ExecuteAsync(
+            async () =>
+            {
+                beforeDispatch?.Invoke();
+                return await Repository.GetPendingCursorDocumentAsync(brookId, cancellationToken);
+            },
             cancellationToken);
-        if (allEventsExist)
-        {
-            Logger.RecoveryCommitting(brookId, targetPosition);
-            beforeDispatch?.Invoke();
-            if (beforeDispatch is null)
+        CursorStorageModel? cursorDocument = await RetryPolicy.ExecuteAsync(
+            async () =>
             {
-                await Repository.CommitCursorPositionAsync(brookId, targetPosition, cancellationToken);
-            }
-            else
-            {
-                await Repository.CommitCursorPositionAsync(brookId, targetPosition, beforeDispatch, cancellationToken);
-            }
-        }
-        else
+                beforeDispatch?.Invoke();
+                return await Repository.GetCursorDocumentAsync(brookId, cancellationToken);
+            },
+            cancellationToken);
+        await CheckOwnershipAsync(writerLock, beforeDispatch, cancellationToken);
+        BrookPosition position = cursorDocument?.Position ?? new BrookPosition(-1);
+        if (pendingCursor != null)
         {
-            await RollbackOrphanedOperationAsync(
+            long committedPosition = cursorDocument?.Position.Value ?? -1;
+            long originalPosition = pendingCursor.OriginalPosition.GetValueOrDefault(new(-1)).Value;
+            long targetPosition = pendingCursor.Position.Value;
+            Logger.PendingCursorDetected(brookId, originalPosition, targetPosition);
+            if ((targetPosition <= originalPosition) ||
+                ((committedPosition < targetPosition) && (committedPosition != originalPosition)))
+            {
+                throw new InvalidOperationException(
+                    $"Pending cursor for brook {brookId} does not match its committed history.");
+            }
+
+            if (string.IsNullOrWhiteSpace(pendingCursor.ETag))
+            {
+                throw new InvalidOperationException($"Pending cursor for brook {brookId} has no attempt entity tag.");
+            }
+
+            await CheckOwnershipAsync(writerLock, beforeDispatch, cancellationToken);
+            bool hasAllEvents = await CheckAllEventsExistAsync(
                 brookId,
                 originalPosition,
                 targetPosition,
                 beforeDispatch,
                 cancellationToken);
+            await CheckOwnershipAsync(writerLock, beforeDispatch, cancellationToken);
+            if (!hasAllEvents)
+            {
+                // A missing event does not fence a create request still in flight after the old lease expired.
+                throw new InvalidOperationException(
+                    $"Pending append for brook {brookId} is incomplete; its outcome remains unresolved and recovery metadata is retained.");
+            }
+
+            if (committedPosition >= targetPosition)
+            {
+                // A lost commit acknowledgement must never cause committed events to be deleted.
+                await RetryPolicy.ExecuteAsync(
+                    async () =>
+                    {
+                        await CheckOwnershipAsync(writerLock, beforeDispatch, cancellationToken);
+                        if (beforeDispatch is null)
+                        {
+                            await Repository.DeletePendingCursorAsync(brookId, pendingCursor.ETag, cancellationToken);
+                        }
+                        else
+                        {
+                            await Repository.DeletePendingCursorAsync(
+                                brookId,
+                                pendingCursor.ETag,
+                                beforeDispatch,
+                                cancellationToken);
+                        }
+
+                        return true;
+                    },
+                    cancellationToken);
+            }
+            else
+            {
+                position = await RecoverFromOrphanedOperationAsync(
+                    brookId,
+                    pendingCursor,
+                    writerLock,
+                    beforeDispatch,
+                    cancellationToken);
+            }
         }
 
-        return new(allEventsExist ? targetPosition : originalPosition);
+        Logger.CursorPositionReturned(brookId, position.Value);
+        return position;
     }
 
-    /// <summary>
-    ///     Repairs pending metadata while the caller owns the append lease, preserving committed history.
-    /// </summary>
-    /// <param name="brookId">The brook whose append lease is held.</param>
-    /// <param name="committedPosition">The acknowledged committed position.</param>
-    /// <param name="beforeDispatch">The append ownership check.</param>
-    /// <param name="cancellationToken">The append cancellation token.</param>
-    /// <returns>The committed position after guarded pending repair.</returns>
-    private async Task<BrookPosition> RecoverPendingCursorAsync(
+    private async Task<BrookPosition> RecoverFromOrphanedOperationAsync(
         BrookKey brookId,
-        BrookPosition committedPosition,
-        Action beforeDispatch,
-        CancellationToken cancellationToken
-    )
-    {
-        CursorStorageModel? pending = await RetryPolicy.ExecuteAsync(
-            async () =>
-            {
-                beforeDispatch();
-                return await Repository.GetPendingCursorDocumentAsync(brookId, cancellationToken);
-            },
-            cancellationToken);
-        if (pending is null)
-        {
-            return committedPosition;
-        }
-
-        Logger.PendingCursorDetected(brookId, pending.OriginalPosition?.Value ?? -1, pending.Position.Value);
-        if (pending.Position.Value > committedPosition.Value)
-        {
-            return await RecoverFromOrphanedOperationAsync(
-                brookId,
-                new()
-                {
-                    OriginalPosition = committedPosition,
-                    Position = pending.Position,
-                },
-                beforeDispatch,
-                cancellationToken);
-        }
-
-        await RetryPolicy.ExecuteAsync(
-            async () =>
-            {
-                beforeDispatch();
-                await Repository.DeletePendingCursorAsync(brookId, beforeDispatch, cancellationToken);
-                return true;
-            },
-            cancellationToken);
-        return committedPosition;
-    }
-
-    private async Task RollbackOrphanedOperationAsync(
-        BrookKey brookId,
-        long originalPosition,
-        long targetPosition,
+        CursorStorageModel pendingCursor,
+        IDistributedLock? writerLock,
         Action? beforeDispatch,
         CancellationToken cancellationToken
     )
     {
-        Logger.RollingBack(brookId, originalPosition, targetPosition);
-        long eventsDeleted = 0;
-        for (long pos = originalPosition + 1; pos <= targetPosition; pos++)
+        long targetPosition = pendingCursor.Position.Value;
+        await CheckOwnershipAsync(writerLock, beforeDispatch, cancellationToken);
+        Logger.RecoveryCommitting(brookId, targetPosition);
+        if (beforeDispatch is null)
         {
-            Logger.DeletingOrphanedEvent(brookId, pos);
-            await RetryPolicy.ExecuteAsync(
-                async () =>
-                {
-                    beforeDispatch?.Invoke();
-                    if (beforeDispatch is null)
-                    {
-                        await Repository.DeleteEventAsync(brookId, pos, cancellationToken);
-                    }
-                    else
-                    {
-                        await Repository.DeleteEventAsync(brookId, pos, beforeDispatch, cancellationToken);
-                    }
-
-                    return true;
-                },
+            await Repository.CommitCursorPositionAsync(brookId, targetPosition, pendingCursor.ETag!, cancellationToken);
+        }
+        else
+        {
+            await Repository.CommitCursorPositionAsync(
+                brookId,
+                targetPosition,
+                pendingCursor.ETag!,
+                beforeDispatch,
                 cancellationToken);
-            eventsDeleted++;
         }
 
-        await RetryPolicy.ExecuteAsync(
-            async () =>
-            {
-                beforeDispatch?.Invoke();
-                if (beforeDispatch is null)
-                {
-                    await Repository.DeletePendingCursorAsync(brookId, cancellationToken);
-                }
-                else
-                {
-                    await Repository.DeletePendingCursorAsync(brookId, beforeDispatch, cancellationToken);
-                }
-
-                return true;
-            },
-            cancellationToken);
-        Logger.RollbackCompleted(brookId, eventsDeleted);
+        return new(targetPosition);
     }
 }

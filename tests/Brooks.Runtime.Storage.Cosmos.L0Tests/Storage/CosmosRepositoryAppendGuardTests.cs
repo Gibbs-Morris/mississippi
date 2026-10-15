@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -44,6 +45,8 @@ public sealed class CosmosRepositoryAppendGuardTests
                     It.IsAny<Func<Task<ItemResponse<CursorDocument>>>>(),
                     It.IsAny<CancellationToken>()))
                 .Returns((Func<Task<ItemResponse<CursorDocument>>> operation, CancellationToken _) => operation());
+            retry.Setup(r => r.ExecuteAsync(It.IsAny<Func<Task<CursorStorageModel?>>>(), It.IsAny<CancellationToken>()))
+                .Returns((Func<Task<CursorStorageModel?>> operation, CancellationToken _) => operation());
             retryPolicy = retry.Object;
         }
 
@@ -91,9 +94,9 @@ public sealed class CosmosRepositoryAppendGuardTests
         {
             0 => repository.AppendEventBatchAsync(Key, [new()], 1, guard, caller.Token),
             1 => repository.CreatePendingCursorAsync(Key, new(0), 1, guard, caller.Token),
-            2 => repository.CommitCursorPositionAsync(Key, 1, guard, caller.Token),
+            2 => repository.CommitCursorPositionAsync(Key, 1, "attempt-etag", guard, caller.Token),
             3 => repository.DeleteEventAsync(Key, 1, guard, caller.Token),
-            var _ => repository.DeletePendingCursorAsync(Key, guard, caller.Token),
+            var _ => repository.DeletePendingCursorAsync(Key, "attempt-etag", guard, caller.Token),
         });
         Assert.Equal(1, checks);
         container.VerifyNoOtherCalls();
@@ -130,16 +133,23 @@ public sealed class CosmosRepositoryAppendGuardTests
         Mock<Container> container = new(MockBehavior.Strict);
         if (commit)
         {
-            container.Setup(c => c.UpsertItemAsync(
-                    It.IsAny<CursorDocument>(),
+            container.Setup(c => c.ReadItemAsync<CursorDocument>(
+                    "cursor",
                     It.IsAny<PartitionKey>(),
                     null,
                     It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new CosmosException("No cursor", HttpStatusCode.NotFound, 0, "test", 0));
+            Mock<TransactionalBatch> batch = new(MockBehavior.Strict);
+            container.Setup(c => c.CreateTransactionalBatch(It.IsAny<PartitionKey>())).Returns(batch.Object);
+            batch.Setup(b => b.DeleteItem("cursor-pending", It.IsAny<TransactionalBatchItemRequestOptions>()))
+                .Returns(batch.Object);
+            batch.Setup(b => b.UpsertItem(It.IsAny<CursorDocument>(), null)).Returns(batch.Object);
+            batch.Setup(b => b.ExecuteAsync(It.IsAny<CancellationToken>()))
                 .Returns(async () =>
                 {
                     mutationEntered.TrySetResult();
                     await finishMutation.Task.WaitAsync(CancellationToken.None);
-                    return Mock.Of<ItemResponse<CursorDocument>>();
+                    return Mock.Of<TransactionalBatchResponse>(r => r.IsSuccessStatusCode);
                 });
         }
         else
@@ -166,7 +176,12 @@ public sealed class CosmosRepositoryAppendGuardTests
         {
             await owner.StartAsync();
             mutation = commit
-                ? repository.CommitCursorPositionAsync(Key, 2, owner.ThrowIfFailed, owner.CancellationToken)
+                ? repository.CommitCursorPositionAsync(
+                    Key,
+                    2,
+                    "attempt-etag",
+                    owner.ThrowIfFailed,
+                    owner.CancellationToken)
                 : repository.AppendEventBatchAsync(
                     Key,
                     [
@@ -189,7 +204,16 @@ public sealed class CosmosRepositoryAppendGuardTests
             clock.Advance(TimeSpan.FromSeconds(39));
             Assert.False(owner.CancellationToken.IsCancellationRequested);
             finishMutation.TrySetResult();
-            await Assert.ThrowsAsync<TimeoutException>(() => ownedMutation.WaitAsync(CancellationToken.None));
+            if (commit)
+            {
+                await ownedMutation.WaitAsync(CancellationToken.None);
+                Assert.Throws<TimeoutException>(owner.ThrowIfFailed);
+            }
+            else
+            {
+                await Assert.ThrowsAsync<TimeoutException>(() => ownedMutation.WaitAsync(CancellationToken.None));
+            }
+
             Assert.True(owner.CancellationToken.IsCancellationRequested);
             Assert.False(owner.CanRollback);
         }
@@ -228,7 +252,7 @@ public sealed class CosmosRepositoryAppendGuardTests
                 It.IsAny<PartitionKey>(),
                 null,
                 It.IsAny<CancellationToken>()),
-            commit ? Times.Once() : Times.Never());
+            Times.Never());
         Assert.Equal(0, clock.ActiveTimers);
     }
 

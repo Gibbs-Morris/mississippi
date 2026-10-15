@@ -77,7 +77,7 @@ public sealed class EventBrookWriterTests
                 final,
                 It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("attempt-etag");
         repository.InSequence(seq)
             .Setup(r => r.AppendEventBatchAsync(
                 brook,
@@ -87,7 +87,12 @@ public sealed class EventBrookWriterTests
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         repository.InSequence(seq)
-            .Setup(r => r.CommitCursorPositionAsync(brook, final, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.CommitCursorPositionAsync(
+                brook,
+                final,
+                "attempt-etag",
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         Mock<IDistributedLock> lockMock = new(MockBehavior.Strict);
         lockMock.Setup(l => l.RenewAsync(true, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
@@ -133,6 +138,12 @@ public sealed class EventBrookWriterTests
         // Assert (sequence ensures CreatePendingCursorAsync happened before AppendEventBatchAsync)
         Assert.Equal(1, result.Value);
         repository.VerifyAll();
+        recovery.Verify(
+            r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        lockManager.Verify(
+            m => m.AcquireLockAsync(brook.ToString(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     /// <summary>
@@ -180,10 +191,6 @@ public sealed class EventBrookWriterTests
         BrookEvent[] b2 = new[] { allEvents[2], allEvents[3] };
         sizeEstimator.Setup(s => s.CreateSizeLimitedBatches(allEvents, 2, It.IsAny<long>())).Returns(new[] { b1, b2 });
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
-        retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
-        retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         mapper.Setup(m => m.Map(allEvents[0]))
             .Returns(
@@ -219,7 +226,7 @@ public sealed class EventBrookWriterTests
                 final,
                 It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("attempt-etag");
 
         // First batch succeeds
         repository.Setup(r => r.AppendEventBatchAsync(
@@ -230,7 +237,7 @@ public sealed class EventBrookWriterTests
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        // Second batch fails -> triggers rollback
+        // Second batch fails; its storage outcome is unknown.
         repository.Setup(r => r.AppendEventBatchAsync(
                 brook,
                 It.Is<IReadOnlyList<EventStorageModel>>(l => l.Count == 2),
@@ -238,18 +245,6 @@ public sealed class EventBrookWriterTests
                 It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
             .Returns(Task.FromException(new InvalidOperationException("batch failure")));
-
-        // Rollback expectations for positions 101 and 102
-        repository.Setup(r => r.DeleteEventAsync(brook, 101, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        repository.Setup(r => r.DeleteEventAsync(brook, 102, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        repository.Setup(r => r.DeletePendingCursorAsync(brook, It.IsAny<Action>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        repository.Setup(r => r.EventExistsAsync(brook, 101, It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(false));
-        repository.Setup(r => r.EventExistsAsync(brook, 102, It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(false));
         Mock<ILogger<EventBrookWriter>> logger = new();
         EventBrookWriter sut = new(
             repository.Object,
@@ -269,6 +264,16 @@ public sealed class EventBrookWriterTests
         // Act + Assert
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await sut.AppendEventsAsync(brook, allEvents, null, TestContext.Current.CancellationToken));
+        repository.Verify(
+            r => r.DeleteEventAsync(brook, It.IsAny<long>(), It.IsAny<Action>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        repository.Verify(
+            r => r.DeletePendingCursorAsync(
+                brook,
+                It.IsAny<string>(),
+                It.IsAny<Action>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
         repository.VerifyAll();
         sizeEstimator.VerifyAll();
         mapper.VerifyAll();
@@ -590,7 +595,7 @@ public sealed class EventBrookWriterTests
                 final,
                 It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("attempt-etag");
         repository.Setup(r => r.AppendEventBatchAsync(
                 brook,
                 It.Is<IReadOnlyList<EventStorageModel>>(l => l.Count == 2),
@@ -615,6 +620,7 @@ public sealed class EventBrookWriterTests
         repository.Setup(r => r.CommitCursorPositionAsync(
                 brook,
                 final,
+                "attempt-etag",
                 It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -721,7 +727,7 @@ public sealed class EventBrookWriterTests
                 final,
                 It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("attempt-etag");
         repository.Setup(r => r.AppendEventBatchAsync(
                 brook,
                 It.Is<IReadOnlyList<EventStorageModel>>(lst => lst.Count == 3),
@@ -732,6 +738,7 @@ public sealed class EventBrookWriterTests
         repository.Setup(r => r.CommitCursorPositionAsync(
                 brook,
                 final,
+                "attempt-etag",
                 It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -830,7 +837,7 @@ public sealed class EventBrookWriterTests
                 final,
                 It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("attempt-etag");
 
         // Expect 6 appends starting at positions 1,3,5,7,9,11
         for (int i = 0; i < 6; i++)
@@ -855,6 +862,7 @@ public sealed class EventBrookWriterTests
         repository.Setup(r => r.CommitCursorPositionAsync(
                 brook,
                 final,
+                "attempt-etag",
                 It.IsAny<Action>(),
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
