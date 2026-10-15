@@ -33,7 +33,7 @@ internal static class ConnectionAuthenticationResults
     {
         Dictionary<string, AuthenticateResult> results = new(StringComparer.Ordinal);
         AuthenticationHandlerProvider? handlers = GetFrameworkHandlers(context);
-        if (handlers is null || (schemes.Count <= 1))
+        if (schemes.Count <= 1)
         {
             return new ReadOnlyDictionary<string, AuthenticateResult>(results);
         }
@@ -48,6 +48,11 @@ internal static class ConnectionAuthenticationResults
                     results[scheme] = CopyResult(recorded);
                 }
 
+                continue;
+            }
+
+            if (handlers is null)
+            {
                 continue;
             }
 

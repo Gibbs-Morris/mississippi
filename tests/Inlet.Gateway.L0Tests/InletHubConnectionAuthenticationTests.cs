@@ -1616,4 +1616,96 @@ public sealed class InletHubConnectionAuthenticationTests
         Assert.Same(connectionScope.ServiceProvider, retained.RequestServices);
         Assert.Same(evaluator, connectionScope.ServiceProvider.GetRequiredService<IPolicyEvaluator>());
     }
+
+    /// <summary>
+    ///     Certificate-only projection policies cannot borrow bearer identities from a composite endpoint result.
+    /// </summary>
+    /// <param name="certificatePermission">The certificate permission, or no-result marker.</param>
+    /// <param name="bearerPermission">The other scheme's permission, or no-result marker.</param>
+    /// <param name="allowed">Whether certificate-only authorization should allow the subscription.</param>
+    /// <param name="cloneIdentities">Whether transformation creates independent identities and adds claims.</param>
+    /// <returns>A task that completes when scheme attribution and authorization have been verified.</returns>
+    [Theory]
+    [InlineData("read", "write", true, false)]
+    [InlineData("read", "write", true, true)]
+    [InlineData("write", "read", false, false)]
+    [InlineData("write", "read", false, true)]
+    [InlineData("none", "read", false, false)]
+    [InlineData("none", "read", false, true)]
+    [InlineData("read", "none", true, false)]
+    [InlineData("read", "none", true, true)]
+    public async Task SubscribeUsesTransformedSelectedCompositeIdentity(
+        string certificatePermission,
+        string bearerPermission,
+        bool allowed,
+        bool cloneIdentities
+    )
+    {
+        List<ClaimsPrincipal> decisions = [];
+        ConnectionClaimsTransformation transformation = new(cloneIdentities);
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.Services.AddInletServer();
+        builder.Services.AddSingleton<HubLifetimeManager<InletHub>, DefaultHubLifetimeManager<InletHub>>();
+        builder.Services.AddAuthentication()
+            .AddScheme<AuthenticationSchemeOptions, CompositeConnectionAuthenticationHandler>(TlsScheme, _ => { })
+            .AddScheme<AuthenticationSchemeOptions, CompositeConnectionAuthenticationHandler>(OtherScheme, _ => { });
+        builder.Services.AddSingleton<IClaimsTransformation>(transformation);
+        builder.Services.AddAuthorizationBuilder()
+            .SetDefaultPolicy(
+                new AuthorizationPolicyBuilder().RequireAuthenticatedUser()
+                    .RequireClaim("permission", "read")
+                    .RequireAssertion(context =>
+                    {
+                        decisions.Add(context.User);
+                        return true;
+                    })
+                    .Build());
+        await using WebApplication app = builder.Build();
+        await using AsyncServiceScope requestScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext original = CreateOriginalContext(requestScope.ServiceProvider);
+        original.Request.Headers[TlsScheme] = certificatePermission;
+        original.Request.Headers[OtherScheme] = bearerPermission;
+        AuthorizationPolicy endpointPolicy =
+            new AuthorizationPolicyBuilder(TlsScheme, OtherScheme).RequireAuthenticatedUser().Build();
+        PolicyEvaluator evaluator = new(app.Services.GetRequiredService<IAuthorizationService>());
+        AuthenticateResult established = await evaluator.AuthenticateAsync(endpointPolicy, original);
+        Assert.True(established.Succeeded);
+        Assert.True((await evaluator.AuthorizeAsync(endpointPolicy, established, original, original)).Succeeded);
+        IAuthenticateResultFeature feature = Substitute.For<IAuthenticateResultFeature>();
+        feature.AuthenticateResult.Returns(established);
+        original.Features.Set(feature);
+        int transformations = transformation.Calls;
+        await DispatchHubEndpointAsync(app, original, endpointPolicy);
+        Assert.Equal(transformations, transformation.Calls);
+        Assert.Equal(1, Assert.IsType<int>(original.Items[TlsScheme + "-calls"]));
+        Assert.Equal(1, Assert.IsType<int>(original.Items[OtherScheme + "-calls"]));
+        ClaimsPrincipal caller = original.User;
+        await using AsyncServiceScope connectionScope = app.Services.CreateAsyncScope();
+        DefaultHttpContext retained = CloneConnectionContext(original, connectionScope.ServiceProvider);
+        Assert.Null(retained.Features.Get<ITlsConnectionFeature>());
+        Assert.False((await evaluator.AuthenticateAsync(CreatePolicy(TlsScheme), retained)).Succeeded);
+        retained.User = caller;
+        using InletHub hub = CreateHub(retained, caller, TlsScheme, out IInletSubscriptionGrain grain);
+        if (allowed)
+        {
+            Assert.Equal("subscription-1", await hub.SubscribeAsync(ProjectionPath, EntityId));
+            await grain.Received(1).SubscribeAsync(ProjectionPath, EntityId);
+            ClaimsPrincipal selected = Assert.Single(decisions);
+            Assert.Equal(TlsScheme, selected.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            Assert.True(selected.HasClaim("permission", "read"));
+            Assert.False(selected.HasClaim(ClaimTypes.NameIdentifier, OtherScheme));
+            Assert.False(selected.HasClaim("permission", "write"));
+            Assert.Equal(cloneIdentities, selected.HasClaim("transformed", "yes"));
+        }
+        else
+        {
+            HubException exception =
+                await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(ProjectionPath, EntityId));
+            Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+            await grain.DidNotReceive().SubscribeAsync(Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        Assert.Same(caller, hub.Context.User);
+        Assert.Same(caller, retained.User);
+    }
 }
