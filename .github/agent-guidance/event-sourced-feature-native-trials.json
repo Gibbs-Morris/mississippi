@@ -1,0 +1,77 @@
+{
+  "candidate_git_blob": "bf6b4ec60ab3b95f42a14e26b6b91fb8f193b7e2",
+  "candidate_lf_sha256": "efb84cb7505ba35d74c06dd63fd1a247b6b773030bc012bcbf30ba444b203ec3",
+  "codex_cli": "0.158.0-alpha.2.1",
+  "model": "gpt-5.5",
+  "reasoning_effort": "medium",
+  "trials": [
+    {
+      "mode": "implementation",
+      "candidate_read": true,
+      "changed_files": [
+        "domain.mjs"
+      ],
+      "fixture_files": 6,
+      "protected_files_preserved": true,
+      "usage": {
+        "input_tokens": 302413,
+        "cached_input_tokens": 278016,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 3971,
+        "reasoning_output_tokens": 689
+      },
+      "output_sha256": "27fe54baa2106eec683669815e6f87399edf2578af02dde51d30883d56a6602f",
+      "thread_id": "01a0dead-aceb-7631-bfaa-9b782ada6730"
+    },
+    {
+      "mode": "assessment",
+      "candidate_read": true,
+      "changed_files": [],
+      "fixture_files": 4,
+      "protected_files_preserved": true,
+      "usage": {
+        "input_tokens": 124529,
+        "cached_input_tokens": 99200,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2549,
+        "reasoning_output_tokens": 689
+      },
+      "output_sha256": "0915e20d06148a2dbe77e1b2f30602f48aaf004135c474cf66e8728cfedec174",
+      "thread_id": "01a0dead-9ce8-79e2-8b8d-3a4b484c9f6d"
+    },
+    {
+      "mode": "negative",
+      "candidate_read": false,
+      "changed_files": [],
+      "fixture_files": 2,
+      "protected_files_preserved": true,
+      "usage": {
+        "input_tokens": 21413,
+        "cached_input_tokens": 2432,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 24,
+        "reasoning_output_tokens": 16
+      },
+      "output_sha256": "844347e54f00c4b97fe4736909730faaf8365292b076ea5a1378ebd1b0fd3bbb",
+      "thread_id": "01a0dead-a39a-7ab1-bf12-31cfb337256b"
+    }
+  ],
+  "independent_checker": {
+    "status": "PASS",
+    "executed_assertions": 15
+  },
+  "retained_rules_exact": true,
+  "rubric_cases": 7,
+  "method": "Synthetic native CLI fixtures; the implementation changes only domain.mjs, other modes preserve every file. Candidate read is observed in command traces. Hash equality covers every fixture file. Independent node checker verifies meaningful behavior. Input usage includes host framing and guidance, not native savings. Assessment reporting recheck is recorded separately. Copilot is deferred and unverified.",
+  "assessment_recheck": {
+    "thread_id": "01a0deb0-d341-7b82-aefb-943ea7e2c88c",
+    "usage": {
+      "input_tokens": 126063,
+      "cached_input_tokens": 90624,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 2331,
+      "reasoning_output_tokens": 656
+    },
+    "result": "Known generated output location retained; unsupported gap corrected after source recheck; no writes or checks."
+  }
+}
