@@ -6,12 +6,12 @@ sidebar_position: 17
 
 # Native Reference Sets
 
-A native reference set stores unique source IDs and their versions observed at addition inside a named aggregate, using ordinary commands, membership events and immutable replay.
+A native reference set stores unique source IDs and their versions observed at addition inside a named aggregate, with optional named read-only projections using the same membership events and immutable replay.
 
 ## Applies to
 
 - `Mississippi.DomainModeling.Abstractions.Aggregates.ReferenceSet`: command contracts, fixed limits and `State.ReferenceSetState<TSource>`.
-- `Mississippi.DomainModeling.Runtime.Aggregates.ReferenceSet.Registrations`: `AddReferenceSet<TAggregate, TSource, TAddCommand, TRemoveCommand>()`.
+- `Mississippi.DomainModeling.Runtime.Aggregates.ReferenceSet.Registrations`: `AddReferenceSet<TAggregate, TSource, TAddCommand, TRemoveCommand>()` and `AddReferenceSetProjection<TProjection, TSource>()`.
 - Existing aggregate, Brooks event-storage and Tributary snapshot infrastructure.
 
 ## Contract
@@ -68,13 +68,43 @@ services.AddReferenceSet<SavedItemsAggregate, CatalogItemProjection,
 
 The extension registers event identities, command handlers, reducers, the named snapshot type and its state converter. Supply the usual serialization/storage providers and runtime hosting separately. The read and write callbacks must be pure; the write callback returns a new aggregate record. Send the concrete command through `IGenericAggregateGrain<TAggregate>.ExecuteAsync`.
 
+## Read-only membership projection
+
+Define a sealed projection record containing `ReferenceSetState<TSource>` and the usual serialization attributes. The projection must have a public parameterless constructor; the helper enforces the `class, new()` constraint. Its `BrookName` must match the collection aggregate so it reads that collection's events. Give it a distinct, stable `SnapshotStorageName`; aggregate and projection snapshots have separate identities.
+
+This excerpt matches the compiled `SavedItemsMembershipProjection` consumer in `tests/DomainModeling.Runtime.L0Tests`. It uses the same `CatalogItemProjection` source type as `SavedItemsAggregate`:
+
+```csharp
+services.AddReferenceSetProjection<SavedItemsMembershipProjection,
+    CatalogItemProjection>(
+    state => state?.References ?? new(),
+    (state, references) => (state ?? new()) with { References = references });
+```
+
+The helper registers the existing membership event types, named typed reducers, the projection snapshot type, its state converter and the UX projection grain factory. It installs no projection command handlers or effects. Supply the usual serialization/storage providers and runtime hosting separately. The callbacks are pure accessors and immutable composition; they do not query source objects.
+
+Read through `IUxProjectionGrainFactory.GetUxProjectionGrain<SavedItemsMembershipProjection>(collectionId)`:
+
+| Read | Result |
+| --- | --- |
+| `GetAsync()` | Membership at the version currently known to the collection cursor. |
+| `GetLatestVersionAsync()` | Cached cursor position; it may lag or lead persisted progress. `NotSet` (`-1`) while no events are known. |
+| `GetAtVersionAsync(new BrookPosition(version))` | Membership at the requested collection event position when its stored snapshot or replay is available. |
+| Latest read with a `NotSet` cursor, or exact read at `-1` | Null; no event or version-zero snapshot is invented. |
+
+Latest reads use the cached cursor; they do not query storage afresh or return an atomic state/version pair. Explicit versions beyond available events, including zero for an empty brook, can fail with `InvalidOperationException`. Key, storage and reconstruction failures propagate. Event positions do not pin reducer code: replay uses the deployed reducers. See [Projection Reads](./projection-reads.md) for the existing freshness, failure and snapshot-persistence boundaries.
+
+Versions identify the collection's events, independently of the observed source versions stored in membership. Duplicate adds and missing removes append no event and therefore do not advance that version. Reads preserve the observed source version until removal and re-addition; later collection changes leave earlier projection state unchanged. Source-only changes append no collection event, refresh no membership fact, and require no source hydration.
+
+Each named projection uses its own typed reducer and snapshot registrations. The compiled saved and pinned membership consumers read their respective collection brooks without sharing membership state. This helper returns the whole membership projection; paging, ordering/filtering, HTTP/MCP exposure and client subscriptions/following are outside this contract.
+
 ## Replay and compatibility
 
 Replay applies saved membership facts without consulting sources, permissions or current capacity policy. Every reduction produces a new aggregate snapshot; earlier membership remains unchanged. JSON storage and Orleans transport serialize IDs and observed versions.
 
 The internal event storage names are `MISSISSIPPI.REFERENCESET.ADDED.V1` and `MISSISSIPPI.REFERENCESET.REMOVED.V1`. Named aggregate brook/snapshot identities remain application-owned. Existing aggregate concurrency and empty-stream behavior remain unchanged.
 
-Membership projections, bounded pages, client following, ordering/filtering and automatic cleanup of unavailable sources are outside this primitive.
+Bounded pages, client following, ordering/filtering and automatic cleanup of unavailable sources are outside this primitive.
 
 ## Next steps
 
