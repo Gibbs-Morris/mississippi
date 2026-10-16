@@ -35,7 +35,8 @@ Describe 'PowerShell test orchestration' {
             'run-validation-plan-tests.ps1',
             'run-issue-spec-tests.ps1',
             'run-agent-doctor-tests.ps1',
-            'run-agent-context-tests.ps1'
+            'run-agent-context-tests.ps1',
+            'run-docs-tests.ps1'
         )
         $targetRunner = Join-Path $fixtureRunners $pesterRunners[0]
     }
@@ -55,7 +56,7 @@ Describe 'PowerShell test orchestration' {
 
     It 'runs every required suite successfully' {
         $results = & $orchestrator -PassThru 6>$null
-        $results.Count | Should -Be 9
+        $results.Count | Should -Be 10
         @($results | Where-Object Status -NE 'Passed').Count | Should -Be 0
     }
 

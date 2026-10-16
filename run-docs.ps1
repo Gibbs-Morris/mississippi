@@ -62,9 +62,25 @@ if (-not (Test-Path $packageJsonPath)) {
     Stop-Script -Message "package.json not found at: $packageJsonPath"
 }
 
+$nodeCommand = Get-Command node -ErrorAction SilentlyContinue
+if ($null -eq $nodeCommand) {
+    Stop-Script -Message 'Node.js was not found on PATH. Install Node.js 24 or newer.'
+}
+
+$nodeVersion = if ($nodeCommand.Source.EndsWith('.ps1', [System.StringComparison]::OrdinalIgnoreCase)) {
+    & pwsh -NoProfile -File $nodeCommand.Source --version
+}
+else {
+    & $nodeCommand.Source --version
+}
+$nodeVersionMatch = [regex]::Match(([string]$nodeVersion).Trim(), '^v?(?<Major>\d+)\.\d+\.\d+$')
+if ($LASTEXITCODE -ne 0 -or -not $nodeVersionMatch.Success -or [int]$nodeVersionMatch.Groups['Major'].Value -lt 24) {
+    Stop-Script -Message "Node.js 24 or newer is required (found: $nodeVersion)."
+}
+
 $npmCommand = Get-Command npm -ErrorAction SilentlyContinue
 if ($null -eq $npmCommand) {
-    Stop-Script -Message 'npm was not found on PATH. Install Node.js 20+ and ensure npm is available.'
+    Stop-Script -Message 'npm was not found on PATH. Install Node.js 24+ and ensure npm is available.'
 }
 
 $script:NpmExecutable = $npmCommand.Source
