@@ -98,6 +98,10 @@ The supporting Pester harness lives in `eng/tests/agent-scripts/`:
 
 ---
 
+## Merge-queue candidate identity
+
+MergeGroupIssueReference.psm1 resolves a candidate's complete live queue prefix and verifies its repository, target, predecessor chain and PR identity. The trusted Sonar controller uses this metadata to reject changing or ambiguous candidate membership. The hosted issue-reference validator remains retired.
+
 ## Example invocations
 
 Windows / PowerShell:
