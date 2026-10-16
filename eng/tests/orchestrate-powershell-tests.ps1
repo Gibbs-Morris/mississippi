@@ -31,18 +31,18 @@ $testRunners = @(
 )
 
 try {
-    Import-Module Pester -MinimumVersion 5.2.0 -Force -ErrorAction Stop | Out-Null
+    Import-Module Pester -MinimumVersion 5.7.1 -ErrorAction Stop | Out-Null
 }
 catch {
-    Write-Host 'Pester 5.2 or later is required to run PowerShell tests.' -ForegroundColor Red
+    Write-Host 'Pester 5.7.1 or later is required to run PowerShell tests.' -ForegroundColor Red
     if ($env:CI) {
-        Write-Host 'Install Pester 5.2 or later in your CI image or a pre-step. Example:' -ForegroundColor Yellow
-        Write-Host '  pwsh -Command "Install-Module -Name Pester -Scope CurrentUser -Force -MinimumVersion 5.2.0"' -ForegroundColor Yellow
+        Write-Host 'Install Pester 5.7.1 or later in your CI image or a pre-step. Example:' -ForegroundColor Yellow
+        Write-Host '  pwsh -Command "Install-Module -Name Pester -Scope CurrentUser -Force -MinimumVersion 5.7.1"' -ForegroundColor Yellow
         exit 1
     }
     else {
         Write-Host 'Install Pester locally:' -ForegroundColor Yellow
-        Write-Host '  Install-Module -Name Pester -Scope CurrentUser -Force -MinimumVersion 5.2.0' -ForegroundColor Yellow
+        Write-Host '  Install-Module -Name Pester -Scope CurrentUser -Force -MinimumVersion 5.7.1' -ForegroundColor Yellow
         throw
     }
 }
