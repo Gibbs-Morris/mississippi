@@ -4,16 +4,14 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 jobs:
   # Label based on changed files using PR branch config for pre-merge validation.
   label-by-files:
+    if: github.event.action != 'edited' || github.event.changes.base != null
     runs-on: ubuntu-latest
-    # Skip on 'edited' since file labels don't change when title changes
-    if: github.event.action != 'edited'
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
     permissions:
       contents: read
       pull-requests: write
