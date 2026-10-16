@@ -7,11 +7,14 @@ on:
         description: Completed SonarCloud source run to rebuild and analyze
         required: true
         type: string
+  workflow_run:
+    workflows: [SonarCloud]
+    types: [completed]
 
 permissions: {}
 
 concurrency:
-  group: trusted-sonar-${{ inputs.source-run-id }}
+  group: trusted-sonar-${{ inputs.source-run-id || github.event.workflow_run.id }}
   cancel-in-progress: false
 
 jobs:
@@ -20,23 +23,40 @@ jobs:
       contents: read
       actions: read
       pull-requests: read
-    if: github.repository == 'Gibbs-Morris/mississippi' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    if: >-
+      github.repository == 'Gibbs-Morris/mississippi' &&
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
+      (github.event_name == 'workflow_dispatch' ||
+      (vars.SONAR_TRUSTED_ANALYSIS_ENABLED == 'true' &&
+      github.event.action == 'completed' && github.event.workflow_run.conclusion == 'success'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       source-run-id: ${{ steps.intake.outputs.source-run-id }}
+      analysis-key: ${{ steps.intake.outputs.analysis-key }}
     steps:
-      - name: Check out immutable controller definition
+      - name: Check out protected controller branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.workflow_sha }}
+          repository: Gibbs-Morris/mississippi
+          ref: main
           persist-credentials: false
+      - name: Verify attested controller revision
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          $revision = ([string](& git rev-parse --verify HEAD)).Trim()
+          if ($LASTEXITCODE -ne 0 -or $env:GITHUB_WORKFLOW_SHA -notmatch '^[0-9a-fA-F]{40}$' -or $revision -cne $env:GITHUB_WORKFLOW_SHA) {
+            throw 'Checkout does not match the attested controller revision.'
+          }
       - name: Validate credential origin and source identity
         id: intake
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          SOURCE_RUN_ID: ${{ inputs.source-run-id }}
+          SOURCE_RUN_ID: ${{ inputs.source-run-id || github.event.workflow_run.id }}
+          AUTOMATIC_ADMISSION_ENABLED: ${{ vars.SONAR_TRUSTED_ANALYSIS_ENABLED == 'true' }}
           REPOSITORY: ${{ github.repository }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GLOBAL_SONAR_TOKEN_PRESENT: ${{ secrets.SONAR_TOKEN != '' }}
@@ -51,21 +71,35 @@ jobs:
       checks: read
       pull-requests: read
     needs: intake
+    concurrency:
+      group: trusted-sonar-upload-${{ needs.intake.outputs.analysis-key }}
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 120
     environment: sonar-analysis
     steps:
-      - name: Check out immutable controller definition
+      - name: Check out protected controller branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.workflow_sha }}
+          repository: Gibbs-Morris/mississippi
+          ref: main
           persist-credentials: false
+      - name: Verify attested controller revision
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          $revision = ([string](& git rev-parse --verify HEAD)).Trim()
+          if ($LASTEXITCODE -ne 0 -or $env:GITHUB_WORKFLOW_SHA -notmatch '^[0-9a-fA-F]{40}$' -or $revision -cne $env:GITHUB_WORKFLOW_SHA) {
+            throw 'Checkout does not match the attested controller revision.'
+          }
       - name: Rebuild candidate without credentials and upload validated reports
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
           SONAR_ANALYSIS_TOKEN: ${{ secrets.SONAR_ANALYSIS_TOKEN }}
           SOURCE_RUN_ID: ${{ needs.intake.outputs.source-run-id }}
+          AUTOMATIC_ADMISSION_ENABLED: ${{ vars.SONAR_TRUSTED_ANALYSIS_ENABLED == 'true' }}
           REPOSITORY: ${{ github.repository }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
