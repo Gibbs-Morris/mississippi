@@ -56,6 +56,8 @@ The default summary command and `go.ps1 -IncludeMutation` generate survivor repo
 
 ### GitHub Actions mapping
 
+See the [CI and merge-queue runbook](../../../.github/merge-queue.md) for all workflow triggers, required provider checks, credential boundaries, held rollout controls and outstanding operational evidence.
+
 These local commands cover the corresponding build and test steps. They do not reproduce GitHub permissions, artifact uploads, deployment, or every independent CI gate.
 
 | Workflow | Local entry point | Scope and differences |
