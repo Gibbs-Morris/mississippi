@@ -13,6 +13,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 ///     This is a discriminated union type that carries either a success indicator
 ///     or an error code with message. Use <see cref="OperationResult.Ok" /> and
 ///     <see cref="OperationResult.Fail" /> factory methods to create instances.
+///     A default-initialized result represents success without a value.
 /// </remarks>
 [GenerateSerializer]
 [Alias("Mississippi.DomainModeling.Abstractions.OperationResult")]
@@ -38,13 +39,13 @@ public readonly record struct OperationResult
     /// <summary>
     ///     Gets the error code when the operation failed.
     /// </summary>
-    [Id(1)]
+    [field: Id(1)]
     public string? ErrorCode { get; }
 
     /// <summary>
     ///     Gets the error message when the operation failed.
     /// </summary>
-    [Id(2)]
+    [field: Id(2)]
     public string? ErrorMessage { get; }
 
     /// <summary>
@@ -53,7 +54,7 @@ public readonly record struct OperationResult
     [Id(0)]
     [MemberNotNullWhen(false, nameof(ErrorCode))]
     [MemberNotNullWhen(false, nameof(ErrorMessage))]
-    public bool Success { get; }
+    public bool Success => field || (ErrorCode is null && ErrorMessage is null);
 
     /// <summary>
     ///     Creates a failed operation result with the specified error details.
@@ -114,6 +115,7 @@ public readonly record struct OperationResult
 ///     This is a discriminated union type that carries either a success value
 ///     or an error code with message. Use the static <c>Ok</c> and <c>Fail</c>
 ///     factory methods to create instances.
+///     A default-initialized result represents an uninitialized failure, with no success value.
 /// </remarks>
 [GenerateSerializer]
 [Alias("Mississippi.DomainModeling.Abstractions.OperationResult`1")]
@@ -143,13 +145,13 @@ public readonly record struct OperationResult<T>
     ///     Gets the error code when the operation failed.
     /// </summary>
     [Id(2)]
-    public string? ErrorCode { get; }
+    public string? ErrorCode => field ?? (Success ? null : "UNINITIALIZED_RESULT");
 
     /// <summary>
     ///     Gets the error message when the operation failed.
     /// </summary>
     [Id(3)]
-    public string? ErrorMessage { get; }
+    public string? ErrorMessage => field ?? (Success ? null : "The operation result has not been initialized.");
 
     /// <summary>
     ///     Gets a value indicating whether the operation succeeded.

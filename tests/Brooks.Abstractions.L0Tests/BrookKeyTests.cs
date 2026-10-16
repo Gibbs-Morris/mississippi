@@ -1,5 +1,9 @@
 using System;
 
+using Microsoft.Extensions.DependencyInjection;
+
+using Orleans.Serialization;
+
 
 namespace Mississippi.Brooks.Abstractions.L0Tests;
 
@@ -86,6 +90,18 @@ public sealed class BrookKeyTests
     }
 
     /// <summary>
+    ///     Default key should have non-null components.
+    /// </summary>
+    [Fact]
+    public void DefaultKeyHasNonNullComponents()
+    {
+        BrookKey key = default;
+        Assert.Equal(string.Empty, key.BrookName);
+        Assert.Equal(string.Empty, key.EntityId);
+        Assert.Equal("|", key.ToString());
+    }
+
+    /// <summary>
     ///     FromBrookKey should return the same string representation as ToString.
     /// </summary>
     [Fact]
@@ -137,6 +153,26 @@ public sealed class BrookKeyTests
         BrookKey parsed = BrookKey.FromString("t|i");
         Assert.Equal("t", parsed.BrookName);
         Assert.Equal("i", parsed.EntityId);
+    }
+
+    /// <summary>
+    ///     Orleans transport preserves constructed and zero-initialized key components.
+    /// </summary>
+    [Fact]
+    public void SerializationPreservesKeyComponents()
+    {
+        ServiceCollection services = new();
+        services.AddSerializer(builder => builder.AddAssembly(typeof(BrookKey).Assembly));
+        using ServiceProvider serviceProvider = services.BuildServiceProvider();
+        Serializer serializer = serviceProvider.GetRequiredService<Serializer>();
+        BrookKey[] keys = [default, new("brook", "entity")];
+        foreach (BrookKey original in keys)
+        {
+            BrookKey restored = serializer.Deserialize<BrookKey>(serializer.SerializeToArray(original));
+            Assert.Equal(original.BrookName, restored.BrookName);
+            Assert.Equal(original.EntityId, restored.EntityId);
+            Assert.Equal(original.ToString(), restored.ToString());
+        }
     }
 
     /// <summary>
