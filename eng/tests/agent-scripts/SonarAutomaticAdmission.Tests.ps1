@@ -234,3 +234,77 @@ Describe 'Trusted Sonar automatic workflow contract' {
         $yaml | Should -Match 'SONAR_ANALYSIS_TOKEN: \$\{\{ secrets.SONAR_ANALYSIS_TOKEN \}\}'
     }
 }
+
+Describe 'Sonar tokenless source routing' {
+    BeforeAll {
+        $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+        Import-Module (Join-Path $repoRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1') -Force
+        $sourceYaml=Get-Content -LiteralPath (Join-Path $repoRoot '.github/workflows/sonar-cloud.yml') -Raw
+        $sourceJob=[regex]::Match($sourceYaml,'(?ms)^  source:\r?\n(?<Job>.*?)(?=^  Build:)').Groups['Job'].Value
+        $legacyJob=[regex]::Match($sourceYaml,'(?ms)^  Build:\r?\n(?<Job>.*)\z').Groups['Job'].Value
+        $sourcePermissionsPattern = '(?m)^    permissions: \{\}\r?$'
+        function Test-FixedSourceSteps {
+            param([string]$Job)
+            $steps = [regex]::Match($Job, '(?ms)^    steps:\r?\n(?<Steps>.*)\z').Groups['Steps'].Value
+            $fixedStep = '\A      - name: [^\r\n]+\r?\n        shell: pwsh\r?\n        run: \|\r?\n          Write-Output ''Source run recorded for trusted Sonar analysis\. See the controller run for analysis results\.''\s*\z'
+            if (([regex]::Matches($steps, '(?m)^      - ')).Count -ne 1 -or $steps -notmatch $fixedStep) {
+                throw 'Source steps must contain only the fixed message.'
+            }
+        }
+
+    }
+    It 'preserves the controller source identity and all source event scopes' {
+        $sourceYaml | Should -Match '\Aname: SonarCloud\r?\non:'
+        $sourceYaml | Should -Match 'workflow_dispatch:'
+        $sourceYaml | Should -Match 'merge_group:\s+types: \[checks_requested\]\s+branches:\s+- main'
+        $sourceYaml | Should -Match 'push:\s+branches:\s+- main'
+        $sourceYaml | Should -Match 'pull_request:\s+branches:\s+- main\s+- feature/\*\*\s+- topic/\*\*'
+        $sourceYaml | Should -Match 'cancel-in-progress: \$\{\{ github.event_name == ''pull_request'' \}\}'
+    }
+    It 'uses complementary guards so unset or disabled routing retains legacy analysis' {
+        $sourceJob | Should -Match 'if: vars\.SONAR_TRUSTED_ANALYSIS_ENABLED == ''true'''
+        $legacyJob | Should -Match 'if: vars\.SONAR_TRUSTED_ANALYSIS_ENABLED != ''true'''
+    }
+    It 'records source completion without checkout, action execution or credentials' {
+        $sourceJob | Should -Not -BeNullOrEmpty
+        $sourceJob | Should -Match $sourcePermissionsPattern
+        $sourceJob | Should -Match 'timeout-minutes: 2'
+        $sourceJob | Should -Not -Match '(?m)(secrets\.|github\.token|^\s+(uses|env|environment|needs):|actions/checkout)'
+    }
+    It 'rejects a misleading source permissions field: <Case>' -TestCases @(
+        @{ Case = 'comment before grant'; Replacement = '    # permissions: {}'+[Environment]::NewLine+'    permissions:'+ [Environment]::NewLine+'      contents: read' }
+        @{ Case = 'comment after grant'; Replacement = '    permissions:'+ [Environment]::NewLine+'      contents: read'+[Environment]::NewLine+'    # permissions: {}' }
+        @{ Case = 'nested field before grant'; Replacement = '      permissions: {}'+[Environment]::NewLine+'    permissions:'+ [Environment]::NewLine+'      contents: read' }
+    ) {
+        param($Case, $Replacement)
+        $changedJob = $sourceJob.Replace('    permissions: {}', $Replacement)
+        $changedJob | Should -Not -Match $sourcePermissionsPattern
+    }
+
+    It 'runs only a fixed message without interpolating candidate metadata into code' {
+        { Test-FixedSourceSteps -Job $sourceJob } | Should -Not -Throw
+    }
+    It 'rejects an additional source step with <StepKind>' -TestCases @(
+        @{ StepKind = 'run'; Step = "      - run: Write-Output 'Unexpected candidate execution'" }
+        @{ StepKind = 'name'; Step = "      - name: Another step`n        shell: pwsh`n        run: Write-Output 'Unexpected candidate execution'" }
+    ) {
+        param($StepKind, $Step)
+        $changedJob = $sourceJob.Replace('    steps:', "    steps:`n$Step")
+        { Test-FixedSourceSteps -Job $changedJob } | Should -Throw '*only the fixed message*'
+    }
+    It 'keeps the legacy worker identity in the real readiness catalog without matrix expansion' {
+        $name=[regex]::Match($legacyJob,'(?m)^\s+name:\s*"([^"]+)"').Groups[1].Value
+        $patterns=@(Get-PrReadinessExpectedCheckPatterns)
+        @($patterns | Where-Object {$name -match $_}).Count | Should -Be 1
+        $name | Should -Be 'Build (ubuntu-latest)'
+        $legacyJob | Should -Not -Match '(?m)^\s+strategy:'
+    }
+    It 'retains the existing disabled-path scanner and measured coverage inputs' {
+        $legacyJob | Should -Match 'SONAR_TOKEN: \$\{\{ secrets\.SONAR_TOKEN \}\}'
+        $legacyJob | Should -Match 'measure-powershell-coverage\.ps1'
+        $legacyJob | Should -Match 'sonar\.coverageReportPaths=\$RUNNER_TEMP/powershell-coverage\.xml'
+        $legacyJob | Should -Match 'dotnet dotnet-sonarscanner begin'
+        $legacyJob | Should -Match 'dotnet dotnet-sonarscanner end'
+        $legacyJob | Should -Match 'dotnet dotnet-coverage collect'
+    }
+}
