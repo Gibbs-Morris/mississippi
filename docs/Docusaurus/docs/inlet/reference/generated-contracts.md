@@ -38,7 +38,7 @@ These are different registration surfaces, each with a specific receiver.
 |------|--------------------------------------|----------|----------|
 | Runtime | `AddMississippiSamplesSpringDomainSilo()` | `IServiceCollection` | Generated aggregate, saga, and projection registrations discovered for the domain |
 | Gateway | `AddMississippiSamplesSpringDomainServer()` | `IServiceCollection` | Generated aggregate and projection mapper registrations |
-| Client | `AddMississippiSamplesSpringDomainClient()` | `MississippiClientBuilder` | Generated aggregate and saga Reservoir features, plus projection feature registration |
+| Client | `AddMississippiSamplesSpringDomainClient()` | `ClientBuilder` | Generated aggregate and saga Reservoir features, plus projection feature registration |
 
 The domain name comes from the domain root namespace. The domain-level generated extension namespaces follow the consuming project's root namespace:
 
@@ -64,7 +64,7 @@ Generated domain registrations compose application types. Supply their host infr
 |------|------------------------------|
 | Runtime | Orleans silo and stream provider, event sourcing and snapshot storage, `AddInletSilo()`, projection assembly scan, and generated domain registrations |
 | Gateway | Orleans client, JSON serialization, aggregate and UX projection support, SignalR and Aqueduct services, configured authentication/authorization and `AddInletServer(...)`, projection assembly scan and generated mappers; map controllers and `MapInletHub()` |
-| Client | An `HttpClient` with the gateway base address, `AddMississippiClient(...)`, generated domain features, `AddInletClient()` and `AddInletBlazorSignalR(...)` on the Reservoir builder |
+| Client | An `HttpClient` with the gateway base address, `UseMississippi(...)`, generated domain features, `AddInletClient()` and `AddInletBlazorSignalR(...)` on the Reservoir builder |
 
 Use the complete [Spring host configuration](../../samples/spring-sample/concepts/host-applications.md) as a starting point. In particular, retain Spring's explicit `AddAqueduct<InletHub>(...)` services and matching stream-provider configuration alongside `AddInletServer()`.
 
