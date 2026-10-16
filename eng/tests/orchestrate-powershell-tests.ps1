@@ -22,6 +22,7 @@ $testRunners = @(
     'run-spring-validation-tests.ps1',
     'run-scratchpad-task-tests.ps1',
     'run-summarize-coverage-gaps-tests.ps1',
+    'run-trusted-sonar-tests.ps1',
     'run-task-automation-tests.ps1',
     'run-validation-plan-tests.ps1',
     'run-issue-spec-tests.ps1',
@@ -96,6 +97,3 @@ else {
 if ($PassThru) { return $results }
 
 if ($failureCount -gt 0) { exit 1 } else { exit 0 }
-
-
-
