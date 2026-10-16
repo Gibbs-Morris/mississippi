@@ -35,9 +35,9 @@ Source:
 ```mermaid
 flowchart TB
     A[Generated Feature Methods] --> B[Domain Registration Generator]
-    B --> C[Add{Domain}Client]
-    B --> D[Add{Domain}Server]
-    B --> E[Add{Domain}Silo]
+    B --> C["Add{Domain}Client"]
+    B --> D["Add{Domain}Server"]
+    B --> E["Add{Domain}Silo"]
     C --> F[Host Program.cs]
     D --> F
     E --> F
