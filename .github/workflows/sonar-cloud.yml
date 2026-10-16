@@ -103,13 +103,25 @@ jobs:
           Install-Module -Name Pester -Scope CurrentUser -Force -RequiredVersion 5.7.1 -ErrorAction Stop
           Import-Module Pester -RequiredVersion 5.7.1
           $configuration = New-PesterConfiguration
-          $configuration.Run.Path = @('./eng/tests/agent-scripts/PesterCoverage.Tests.ps1', './eng/tests/agent-scripts/AgentDoctor.Tests.ps1')
+          $configuration.Run.Path = @(
+            './eng/tests/agent-scripts/PesterCoverage.Tests.ps1',
+            './eng/tests/agent-scripts/AgentDoctor.Tests.ps1',
+            './eng/tests/agent-scripts/Cleanup.Tests.ps1',
+            './eng/tests/agent-scripts/RepositoryAutomation.Tests.ps1'
+          )
           if (Test-Path -LiteralPath './eng/tests/agent-scripts/RunDocs.Tests.ps1') {
             $configuration.Run.Path = @($configuration.Run.Path.Value) + './eng/tests/agent-scripts/RunDocs.Tests.ps1'
           }
           $configuration.Run.PassThru = $true
           $configuration.CodeCoverage.Enabled = $true
-          $configuration.CodeCoverage.Path = @('./run-docs.ps1', './eng/src/agent-scripts/AgentDoctor.psm1', './eng/src/agent-scripts/PesterCoverage.psm1')
+          $configuration.CodeCoverage.Path = @(
+            './run-docs.ps1',
+            './clean-up.ps1',
+            './clean-up-targeted.ps1',
+            './eng/src/agent-scripts/AgentDoctor.psm1',
+            './eng/src/agent-scripts/PesterCoverage.psm1',
+            './eng/src/agent-scripts/RepositoryAutomation.psm1'
+          )
           $configuration.CodeCoverage.OutputPath = Join-Path $PWD.Path 'pester-coverage.xml'
           $configuration.CodeCoverage.OutputFormat = 'JaCoCo'
           $result = Invoke-Pester -Configuration $configuration

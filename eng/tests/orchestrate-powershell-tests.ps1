@@ -20,6 +20,7 @@ $testsRoot = Join-Path $repoRoot 'eng/tests/agent-scripts'
 $testRunners = @(
     'run-repository-automation-tests.ps1',
     'run-spring-validation-tests.ps1',
+    'run-cleanup-tests.ps1',
     'run-scratchpad-task-tests.ps1',
     'run-summarize-coverage-gaps-tests.ps1',
     'run-task-automation-tests.ps1',
@@ -96,6 +97,5 @@ else {
 if ($PassThru) { return $results }
 
 if ($failureCount -gt 0) { exit 1 } else { exit 0 }
-
 
 
