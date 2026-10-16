@@ -8,9 +8,10 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-Import-Module Pester -MinimumVersion 5.0.0 -ErrorAction Stop
+Import-Module Pester -MinimumVersion 5.2.0 -ErrorAction Stop
 $testPaths = @(
     (Join-Path $PSScriptRoot 'RepositoryAutomation.Tests.ps1'),
+    (Join-Path $PSScriptRoot 'PowerShellCoverage.Tests.ps1'),
     (Join-Path $PSScriptRoot 'CleanupWorkflow.Tests.ps1'),
     (Join-Path $PSScriptRoot 'MutationAutomation.Tests.ps1'),
     (Join-Path $PSScriptRoot 'SourceProjectResolution.Tests.ps1'),
