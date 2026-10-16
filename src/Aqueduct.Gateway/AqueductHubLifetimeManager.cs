@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.Aqueduct.Abstractions;
@@ -57,9 +58,11 @@ public sealed class AqueductHubLifetimeManager<THub>
 {
     private readonly string hubName;
 
-    private volatile bool backplaneInitialized;
+    private readonly object initializationLock = new();
 
     private bool disposed;
+
+    private Task? initializationTask;
 
     private IDisposable? lifecycleSubscription;
 
@@ -72,6 +75,7 @@ public sealed class AqueductHubLifetimeManager<THub>
     /// <param name="messageSender">The service for sending messages to local connections.</param>
     /// <param name="heartbeatManager">The manager for server heartbeat operations.</param>
     /// <param name="streamSubscriptionManager">The manager for Orleans stream subscriptions.</param>
+    /// <param name="hostApplicationLifetime">The host lifetime provider for manager-wide cancellation.</param>
     /// <param name="logger">Logger instance for backplane operations.</param>
     public AqueductHubLifetimeManager(
         IServerIdProvider serverIdProvider,
@@ -80,6 +84,7 @@ public sealed class AqueductHubLifetimeManager<THub>
         ILocalMessageSender messageSender,
         IHeartbeatManager heartbeatManager,
         IStreamSubscriptionManager streamSubscriptionManager,
+        IHostApplicationLifetime hostApplicationLifetime,
         ILogger<AqueductHubLifetimeManager<THub>> logger
     )
     {
@@ -90,6 +95,8 @@ public sealed class AqueductHubLifetimeManager<THub>
         HeartbeatManager = heartbeatManager ?? throw new ArgumentNullException(nameof(heartbeatManager));
         StreamSubscriptionManager = streamSubscriptionManager ??
                                     throw new ArgumentNullException(nameof(streamSubscriptionManager));
+        HostApplicationLifetime = hostApplicationLifetime ??
+                                  throw new ArgumentNullException(nameof(hostApplicationLifetime));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         ServerId = serverIdProvider.ServerId;
         hubName = DeriveHubName();
@@ -100,6 +107,8 @@ public sealed class AqueductHubLifetimeManager<THub>
     private IAqueductGrainFactory GrainFactory { get; }
 
     private IHeartbeatManager HeartbeatManager { get; }
+
+    private IHostApplicationLifetime HostApplicationLifetime { get; }
 
     private ILogger<AqueductHubLifetimeManager<THub>> Logger { get; }
 
@@ -145,7 +154,7 @@ public sealed class AqueductHubLifetimeManager<THub>
         ArgumentNullException.ThrowIfNull(connection);
 
         // Shared backplane initialization must outlive an individual connection.
-        await EnsureStreamSetupAsync(CancellationToken.None).ConfigureAwait(false);
+        await EnsureStreamSetupAsync().ConfigureAwait(false);
         ConnectionRegistry.TryAdd(connection.ConnectionId, connection);
         ISignalRClientGrain clientGrain = GetClientGrain(connection.ConnectionId);
         await clientGrain.ConnectAsync(hubName, ServerId).ConfigureAwait(false);
@@ -177,7 +186,7 @@ public sealed class AqueductHubLifetimeManager<THub>
         lifecycleSubscription = lifecycle.Subscribe(
             nameof(AqueductHubLifetimeManager<THub>),
             ServiceLifecycleStage.Active,
-            async ct => await EnsureStreamSetupAsync(ct).ConfigureAwait(false));
+            async ct => await EnsureStreamSetupAsync().WaitAsync(ct).ConfigureAwait(false));
     }
 
     /// <inheritdoc />
@@ -202,7 +211,9 @@ public sealed class AqueductHubLifetimeManager<THub>
     )
     {
         ArgumentException.ThrowIfNullOrEmpty(methodName);
-        await EnsureStreamSetupAsync(cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+        await EnsureStreamSetupAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
         AllMessage message = new()
         {
             MethodName = methodName,
@@ -220,7 +231,9 @@ public sealed class AqueductHubLifetimeManager<THub>
     )
     {
         ArgumentException.ThrowIfNullOrEmpty(methodName);
-        await EnsureStreamSetupAsync(cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+        await EnsureStreamSetupAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
         AllMessage message = new()
         {
             MethodName = methodName,
@@ -245,7 +258,22 @@ public sealed class AqueductHubLifetimeManager<THub>
         HubConnectionContext? connection = ConnectionRegistry.GetConnection(connectionId);
         if (connection != null)
         {
-            await MessageSender.SendAsync(connection, methodName, args ?? []).ConfigureAwait(false);
+            using CancellationTokenSource? linkedCancellationTokenSource = cancellationToken.CanBeCanceled
+                ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, connection.ConnectionAborted)
+                : null;
+            CancellationToken deliveryToken = linkedCancellationTokenSource?.Token ?? connection.ConnectionAborted;
+            try
+            {
+                await MessageSender.SendAsync(connection, methodName, args ?? [], deliveryToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException exception) when (connection.ConnectionAborted.IsCancellationRequested &&
+                                                               !cancellationToken.IsCancellationRequested &&
+                                                               (exception.CancellationToken == deliveryToken))
+            {
+                // A connection can abort after the registry lookup and before the write completes.
+                Logger.MessageDeliveryCanceled(connection.ConnectionId, "direct send", exception);
+            }
+
             return;
         }
 
@@ -346,15 +374,40 @@ public sealed class AqueductHubLifetimeManager<THub>
         await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
-    private async Task EnsureStreamSetupAsync(
-        CancellationToken cancellationToken = default
+    private Task EnsureStreamSetupAsync()
+    {
+        lock (initializationLock)
+        {
+            if (initializationTask is null || initializationTask.IsFaulted || initializationTask.IsCanceled)
+            {
+                initializationTask = InitializeBackplaneAsync(HostApplicationLifetime.ApplicationStopping);
+
+                // Observe a late failure even if every broadcast caller has stopped waiting.
+                _ = initializationTask.ContinueWith(
+                    task => Logger.BackplaneInitializationFailed(hubName, ServerId, task.Exception!),
+                    CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Default);
+            }
+
+            return initializationTask;
+        }
+    }
+
+    private ISignalRClientGrain GetClientGrain(
+        string connectionId
+    ) =>
+        GrainFactory.GetClientGrain(hubName, connectionId);
+
+    private ISignalRGroupGrain GetGroupGrain(
+        string groupName
+    ) =>
+        GrainFactory.GetGroupGrain(hubName, groupName);
+
+    private async Task InitializeBackplaneAsync(
+        CancellationToken cancellationToken
     )
     {
-        if (backplaneInitialized && StreamSubscriptionManager.IsInitialized)
-        {
-            return;
-        }
-
         Logger.InitializingBackplane(hubName, ServerId);
 
         // Initialize stream subscriptions via the manager
@@ -367,19 +420,8 @@ public sealed class AqueductHubLifetimeManager<THub>
 
         // Start heartbeat manager
         await HeartbeatManager.StartAsync(() => ConnectionRegistry.Count, cancellationToken).ConfigureAwait(false);
-        backplaneInitialized = true;
         Logger.BackplaneInitialized(hubName, ServerId);
     }
-
-    private ISignalRClientGrain GetClientGrain(
-        string connectionId
-    ) =>
-        GrainFactory.GetClientGrain(hubName, connectionId);
-
-    private ISignalRGroupGrain GetGroupGrain(
-        string groupName
-    ) =>
-        GrainFactory.GetGroupGrain(hubName, groupName);
 
     private async Task OnAllMessageAsync(
         AllMessage message
@@ -395,7 +437,22 @@ public sealed class AqueductHubLifetimeManager<THub>
             bool isExcluded = message.ExcludedConnectionIds?.Contains(connection.ConnectionId) ?? false;
             if (!isExcluded)
             {
-                await MessageSender.SendAsync(connection, message.MethodName, message.Args).ConfigureAwait(false);
+                try
+                {
+                    await MessageSender.SendAsync(
+                            connection,
+                            message.MethodName,
+                            message.Args,
+                            connection.ConnectionAborted)
+                        .ConfigureAwait(false);
+                }
+                catch (OperationCanceledException exception) when
+                    (connection.ConnectionAborted.IsCancellationRequested &&
+                     (exception.CancellationToken == connection.ConnectionAborted))
+                {
+                    // A connection can abort after the pre-check and before the write completes.
+                    Logger.MessageDeliveryCanceled(connection.ConnectionId, "broadcast", exception);
+                }
             }
         }
     }
@@ -407,7 +464,22 @@ public sealed class AqueductHubLifetimeManager<THub>
         HubConnectionContext? connection = ConnectionRegistry.GetConnection(message.ConnectionId);
         if (connection != null)
         {
-            await MessageSender.SendAsync(connection, message.MethodName, message.Args).ConfigureAwait(false);
+            try
+            {
+                await MessageSender.SendAsync(
+                        connection,
+                        message.MethodName,
+                        message.Args,
+                        connection.ConnectionAborted)
+                    .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException exception) when (connection.ConnectionAborted.IsCancellationRequested &&
+                                                               (exception.CancellationToken ==
+                                                                connection.ConnectionAborted))
+            {
+                // A connection can abort after the registry lookup and before the write completes.
+                Logger.MessageDeliveryCanceled(connection.ConnectionId, "targeted send", exception);
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -74,9 +75,11 @@ public sealed class AqueductHubStartupTests
             Substitute.For<ILocalMessageSender>(),
             heartbeat,
             fixture.Streams,
+            Substitute.For<IHostApplicationLifetime>(),
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance);
         TaskCompletionSource registration = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        fixture.Directory.RegisterServerAsync(heartbeat.ServerId).Returns(registration.Task);
+        fixture.Directory.RegisterServerAsync(heartbeat.ServerId, Arg.Any<CancellationToken>())
+            .Returns(registration.Task);
         Task first = manager.SendAllAsync("update", ["first"], TestContext.Current.CancellationToken);
         Assert.True(fixture.Streams.IsInitialized);
         Task second = manager.SendAllAsync("update", ["second"], TestContext.Current.CancellationToken);
@@ -86,7 +89,7 @@ public sealed class AqueductHubStartupTests
         await Task.WhenAll(first, second);
         Assert.False(firstCompletedBeforeRegistration);
         Assert.False(secondCompletedBeforeRegistration);
-        await fixture.Directory.Received(1).RegisterServerAsync(heartbeat.ServerId);
+        await fixture.Directory.Received(1).RegisterServerAsync(heartbeat.ServerId, Arg.Any<CancellationToken>());
         await fixture.Streams.Received(2).PublishToAllAsync(Arg.Any<AllMessage>());
     }
 
@@ -116,9 +119,10 @@ public sealed class AqueductHubStartupTests
             Substitute.For<ILocalMessageSender>(),
             heartbeat,
             fixture.Streams,
+            Substitute.For<IHostApplicationLifetime>(),
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance);
         OrleansException expectedFailure = new("server directory unavailable");
-        fixture.Directory.RegisterServerAsync(heartbeat.ServerId)
+        fixture.Directory.RegisterServerAsync(heartbeat.ServerId, Arg.Any<CancellationToken>())
             .Returns(Task.FromException(expectedFailure), Task.CompletedTask);
         HubConnectionContext connection =
             HubConnectionContextFactory.Create(nameof(FailedRegistrationShouldBeRetriedAfterStreamInitialization));
@@ -138,7 +142,7 @@ public sealed class AqueductHubStartupTests
         Assert.True(fixture.Streams.IsInitialized);
         await startup();
         await startup();
-        await fixture.Directory.Received(2).RegisterServerAsync(heartbeat.ServerId);
+        await fixture.Directory.Received(2).RegisterServerAsync(heartbeat.ServerId, Arg.Any<CancellationToken>());
     }
 
     /// <summary>
@@ -162,11 +166,12 @@ public sealed class AqueductHubStartupTests
             Substitute.For<ILocalMessageSender>(),
             heartbeat,
             fixture.Streams,
+            Substitute.For<IHostApplicationLifetime>(),
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance);
         await manager.SendAllAsync("update", ["first"], TestContext.Current.CancellationToken);
         await manager.SendAllAsync("update", ["second"], TestContext.Current.CancellationToken);
         await manager.SendAllAsync("update", ["third"], TestContext.Current.CancellationToken);
-        await fixture.Directory.Received(1).RegisterServerAsync(heartbeat.ServerId);
+        await fixture.Directory.Received(1).RegisterServerAsync(heartbeat.ServerId, Arg.Any<CancellationToken>());
         await fixture.Streams.Received(1)
             .EnsureInitializedAsync(
                 nameof(TestAqueductHub),

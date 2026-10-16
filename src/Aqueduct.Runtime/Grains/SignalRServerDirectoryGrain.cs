@@ -121,10 +121,12 @@ internal sealed class SignalRServerDirectoryGrain
 
     /// <inheritdoc />
     public Task RegisterServerAsync(
-        string serverId
+        string serverId,
+        CancellationToken cancellationToken = default
     )
     {
         ArgumentException.ThrowIfNullOrEmpty(serverId);
+        cancellationToken.ThrowIfCancellationRequested();
         Logger.RegisteringServer(serverId);
         SignalRServerInfo serverInfo = new()
         {

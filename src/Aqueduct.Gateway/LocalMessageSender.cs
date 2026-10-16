@@ -37,14 +37,16 @@ internal sealed class LocalMessageSender : ILocalMessageSender
     public async Task SendAsync(
         HubConnectionContext connection,
         string methodName,
-        IReadOnlyList<object?> args
+        IReadOnlyList<object?> args,
+        CancellationToken cancellationToken
     )
     {
         ArgumentNullException.ThrowIfNull(connection);
         ArgumentException.ThrowIfNullOrEmpty(methodName);
+        ArgumentNullException.ThrowIfNull(args);
         Logger.SendingLocalMessage(connection.ConnectionId, methodName);
         object?[] argsArray = args as object?[] ?? args.ToArray();
         InvocationMessage invocation = new(methodName, argsArray);
-        await connection.WriteAsync(invocation, CancellationToken.None).ConfigureAwait(false);
+        await connection.WriteAsync(invocation, cancellationToken).ConfigureAwait(false);
     }
 }
