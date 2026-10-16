@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 
 using SnapshotStorageNameAttribute = Mississippi.Brooks.Abstractions.Attributes.SnapshotStorageNameAttribute;
 
@@ -18,6 +19,7 @@ public sealed class SnapshotStorageNameAttributeTests
     {
         SnapshotStorageNameAttribute sut = new("APP", "MODULE", "STATE");
         Assert.Equal(1, sut.Version);
+        Assert.Equal("APP.MODULE.STATE.V1", sut.StorageName);
     }
 
     /// <summary>
@@ -285,5 +287,18 @@ public sealed class SnapshotStorageNameAttributeTests
         SnapshotStorageNameAttribute sut = new("APP", "MODULE", "STATE", version);
         Assert.Equal(version, sut.Version);
         Assert.EndsWith($".V{version}", sut.StorageName, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Verifies that the public versioned constructor requires an explicit version argument.
+    /// </summary>
+    [Fact]
+    public void VersionedConstructorRequiresVersionArgument()
+    {
+        ConstructorInfo versionedConstructor = Assert.IsType<ConstructorInfo>(
+            typeof(SnapshotStorageNameAttribute).GetConstructor(
+                [typeof(string), typeof(string), typeof(string), typeof(int)]),
+            false);
+        Assert.False(versionedConstructor.GetParameters()[3].IsOptional);
     }
 }

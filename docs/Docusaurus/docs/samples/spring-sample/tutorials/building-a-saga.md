@@ -41,7 +41,7 @@ The saga state record tracks the lifecycle of the workflow. It implements `ISaga
 
 ```csharp
 [BrookName("SPRING", "BANKING", "TRANSFER")]
-[SnapshotStorageName("SPRING", "BANKING", "TRANSFERSTATE")]
+[SnapshotStorageName("SPRING", "BANKING", "TRANSFERSTATE", 1)]
 [GenerateSagaEndpoints(
     InputType = typeof(StartMoneyTransferCommand),
     RoutePrefix = "money-transfer",

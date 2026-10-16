@@ -8,7 +8,7 @@ namespace MississippiSamples.Crescent.L2Tests;
 /// <summary>
 ///     Event raised when the counter is decremented.
 /// </summary>
-[EventStorageName("CRESCENT", "SAMPLE", "COUNTERDECREMENTED")]
+[EventStorageName("CRESCENT", "SAMPLE", "COUNTERDECREMENTED", 1)]
 [GenerateSerializer]
 [Alias("MississippiSamples.Crescent.L2Tests.CounterDecremented")]
 internal sealed record CounterDecremented

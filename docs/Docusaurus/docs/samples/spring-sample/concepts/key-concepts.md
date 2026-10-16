@@ -3,14 +3,14 @@ id: spring-key-concepts
 title: Key Concepts
 sidebar_label: Key Concepts
 sidebar_position: 2
-description: Quick reference for every event sourcing concept used in the Spring sample app.
+description: Explain the event-sourcing concepts used in the Spring sample and how they connect to Mississippi types.
 ---
 
 # Key Concepts
 
 ## Overview
 
-This page defines every concept used in the Spring sample. Each concept maps to a specific base class or interface in the Mississippi framework. Read this page first if you are new to event sourcing or to Mississippi.
+The Spring sample shows how commands, events, reducers, aggregates, effects, sagas, projections, and brooks fit together. This page explains those concepts through Spring domain types and Mississippi framework types.
 
 ## Domain Terms → Framework Types
 
@@ -114,7 +114,7 @@ An event is an immutable fact that something happened. Events are the source of 
 Events are `internal sealed record` types decorated with `[EventStorageName]` to define their storage identity. Events are internal because external consumers read projections, not raw events.
 
 ```csharp
-[EventStorageName("SPRING", "BANKING", "FUNDSDEPOSITED")]
+[EventStorageName("SPRING", "BANKING", "FUNDSDEPOSITED", 1)]
 [GenerateSerializer]
 internal sealed record FundsDeposited
 {
