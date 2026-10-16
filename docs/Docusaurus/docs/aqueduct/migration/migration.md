@@ -13,6 +13,13 @@ two-setting builder API verified at revision `10cb90b1b53d6839e016c88f96c793154b
 silo-level `UseAqueduct(...)` and `AqueductSiloOptions`; the target uses nested `runtime.AddAqueduct(...)`. These
 revisions identify API shapes in the repository and are not NuGet release numbers.
 
+> The sections below describe those pinned revisions. Current runtime cleanup also consumes `HeartbeatIntervalMinutes`
+> and `DeadServerTimeoutMultiplier`, with defaults of one minute and three. The current runtime builder and configuration
+> overload support both settings. Keep gateway and runtime values aligned; see
+> [current configuration steps](../how-to/how-to.md#match-heartbeat-timing-across-gateway-and-runtime-hosts) and
+> [current option constraints](../reference/reference.md#options). The historical two-setting target below predates this
+> cleanup contract.
+
 ## Overview
 
 The runtime API change leaves the default stream identity values and persisted contracts unchanged. A custom PubSub
