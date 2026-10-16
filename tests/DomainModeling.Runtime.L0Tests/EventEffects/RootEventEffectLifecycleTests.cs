@@ -179,7 +179,7 @@ public sealed class RootEventEffectLifecycleTests : IDisposable
     /// <param name="effectType">The expected effect type name.</param>
     /// <returns>Whether all three type tags match the expected context.</returns>
     private static bool HasContext(
-        object state,
+        object? state,
         string effectType
     ) =>
         state is IEnumerable<KeyValuePair<string, object?>> tags &&

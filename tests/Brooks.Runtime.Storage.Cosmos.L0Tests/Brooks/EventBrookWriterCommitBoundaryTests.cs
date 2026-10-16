@@ -137,6 +137,7 @@ public sealed class EventBrookWriterCommitBoundaryTests
                 LogLevel.Error,
                 It.Is<EventId>(id => id.Id == 1013),
                 It.Is<It.IsAnyType>((state, _) =>
+                    (state != null) &&
                     ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(new("BrookId", key)) &&
                     ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(
                         new("FinalPosition", finalPosition))),

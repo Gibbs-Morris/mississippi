@@ -643,12 +643,12 @@ public class GenericAggregateGrainTests
         BrookCursorPublicationException observed = await Assert.ThrowsAsync<BrookCursorPublicationException>(() =>
             grain.ExecuteAsync(new AggregateGrainTestCommand("first"), CancellationToken.None));
         Assert.Same(publicationFailure, observed);
-        object[][] errorLogs = loggerMock.Invocations.Where(i => i.Method.Name == "Log")
+        object?[][] errorLogs = loggerMock.Invocations.Where(i => i.Method.Name == "Log")
             .Select(i => i.Arguments.ToArray())
             .ToArray();
         if (isLogEnabled)
         {
-            object[] log = Assert.Single(errorLogs);
+            object?[] log = Assert.Single(errorLogs);
             Assert.Equal(LogLevel.Error, log[0]);
             EventId eventId = Assert.IsType<EventId>(log[1]);
             Assert.Equal(24, eventId.Id);
