@@ -96,7 +96,7 @@ public sealed class AqueductRegistrationsTests
             services.FirstOrDefault(d => d.ServiceType == typeof(HubLifetimeManager<TestHub>));
         Assert.NotNull(descriptor);
         Assert.Equal(ServiceLifetime.Singleton, descriptor.Lifetime);
-        Assert.Equal(typeof(AqueductHubLifetimeManager<TestHub>), descriptor.ImplementationType);
+        Assert.NotNull(descriptor.ImplementationFactory);
     }
 
     /// <summary>

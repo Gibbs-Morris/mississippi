@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -57,12 +56,8 @@ public static class InletServerRegistrations
         services.TryAddEnumerable(
             ServiceDescriptor.Transient<IConfigureOptions<MvcOptions>, GeneratedApiAuthorizationMvcOptionsSetup>());
 
-        // Register Aqueduct backplane specifically for InletHub
-        // This must be a closed generic registration because AddSignalR() already registers
-        // DefaultHubLifetimeManager<> as the open generic fallback. TryAddSingleton for open
-        // generics would be a no-op if called after AddSignalR().
-        services.TryAddSingleton<HubLifetimeManager<InletHub>, AqueductHubLifetimeManager<InletHub>>();
-        services.AddAqueductGrainFactory();
+        // Compose the hub-keyed backplane through the Aqueduct child registration.
+        services.AddAqueduct<InletHub>();
         return services;
     }
 

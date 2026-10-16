@@ -45,10 +45,12 @@ public sealed class MapInletHubAuthTests
         serverIdProvider.ServerId.Returns("server-1");
         services.AddSingleton(serverIdProvider);
         services.AddSingleton(Substitute.For<IGrainFactory>());
-        services.AddSingleton(Substitute.For<IConnectionRegistry>());
+        services.AddKeyedSingleton<IConnectionRegistry>(typeof(InletHub), Substitute.For<IConnectionRegistry>());
         services.AddSingleton(Substitute.For<ILocalMessageSender>());
         services.AddSingleton(Substitute.For<IHeartbeatManager>());
-        services.AddSingleton(Substitute.For<IStreamSubscriptionManager>());
+        services.AddKeyedSingleton<IStreamSubscriptionManager>(
+            typeof(InletHub),
+            Substitute.For<IStreamSubscriptionManager>());
     }
 
     /// <summary>
