@@ -153,7 +153,9 @@ Persist the original creation request in your producer's retry workflow and reus
 
 Mark-as-read targets the generated notification ID and preserves the first read time. Delete-by-ID is a successful no-op when absent. `DeleteNotificationsBefore` removes notifications whose creation time is strictly before its caller-supplied `Before` instant.
 
-Configuration is captured for command handling. Replay uses recorded creations, eviction IDs, and expiry cutoffs without consulting current policy or clocks. Changed limits do not silently trim state during loading or change recorded request deadlines. Public service wrappers, projections, clients, and tenant-specific policy resolution remain later increments.
+Configuration is captured for command handling. Replay uses recorded creations, eviction IDs, and expiry cutoffs without consulting current policy or clocks. Changed limits do not silently trim state during loading or change recorded request deadlines. Public service wrappers, clients, and tenant-specific policy resolution remain later increments.
+
+`AddUndercurrentDomain` also registers two read models on the same per-user stream: `UserNotificationCountsProjection` exposes `TotalCount` and `UnreadCount` for the retained inbox; `UserNotificationListProjection` exposes notification content newest creation first. Both follow recorded reads, deletions, cleanup and rolling evictions without applying additional retention. Counts keep serialized internal ID/read-status bookkeeping; the list excludes creation receipts and fingerprints. Each has a separate snapshot identity, so callers can read either through the existing generic projection API using the same application-defined user key. No notification endpoints or user interface are added.
 
 ## Testing
 
