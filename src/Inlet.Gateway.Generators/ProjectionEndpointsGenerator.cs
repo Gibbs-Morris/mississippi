@@ -45,6 +45,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
 
     private const string GeneratorName = "ProjectionEndpointsGenerator";
 
+    private const string ImmutableCollectionsNamespace = "System.Collections.Immutable";
+
     private const string MapperSuffix = "Mapper";
 
     private const string MappersNamespaceSuffix = ".Mappers";
@@ -56,6 +58,33 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     private const string ProjectionSuffix = "Projection";
 
     private const string SystemNamespace = "System";
+
+    /// <summary>
+    ///     Appends collection namespaces needed by mapped projection properties.
+    /// </summary>
+    /// <param name="builder">The source builder receiving the collection imports.</param>
+    /// <param name="model">The projection model describing mapped properties.</param>
+    private static void AppendMapperCollectionUsings(
+        SourceBuilder builder,
+        ProjectionModel model
+    )
+    {
+        bool hasMappedDictionaries = model.Properties.Any(prop =>
+            prop.RequiresMapper && TypeAnalyzer.IsDictionaryType(prop.SourceTypeSymbol));
+        if (model.HasEnumerableMappedProperties || hasMappedDictionaries)
+        {
+            builder.AppendUsing("System.Linq");
+        }
+
+        if (model.HasImmutableArrayMappedProperties ||
+            model.Properties.Any(prop =>
+                prop.RequiresMapper &&
+                TypeAnalyzer.IsDictionaryType(prop.SourceTypeSymbol) &&
+                (prop.SourceTypeSymbol.ContainingNamespace.ToDisplayString() == ImmutableCollectionsNamespace)))
+        {
+            builder.AppendUsing(ImmutableCollectionsNamespace);
+        }
+    }
 
     /// <summary>
     ///     Derives the output namespace from the compilation target root namespace.
@@ -143,46 +172,26 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
 
         // Generate DTOs for nested custom types (e.g., collection element types)
         // Use GroupBy to avoid duplicate generation for the same DTO type name
-        List<PropertyModel> nestedTypeProperties = projection.Model.Properties
-            .Where(prop => prop.ElementTypeSymbol is INamedTypeSymbol &&
-                           prop.ElementDtoTypeName is string elementDtoTypeName &&
-                           !generatedNestedTypes.Contains(elementDtoTypeName))
-            .GroupBy(prop => prop.ElementDtoTypeName)
-            .Select(g => g.First())
+        List<INamedTypeSymbol> nestedTypes = projection.Model.Properties
+            .SelectMany(prop => TypeAnalyzer.GetMappedCollectionTypes(prop.SourceTypeSymbol))
+            .OfType<INamedTypeSymbol>()
+            .Where(type => !generatedNestedTypes.Contains(TypeAnalyzer.GetDtoTypeName(type)))
+            .GroupBy(type => TypeAnalyzer.GetDtoTypeName(type))
+            .Select(group => group.First())
             .ToList();
-        foreach (PropertyModel prop in nestedTypeProperties)
+        foreach (INamedTypeSymbol type in nestedTypes)
         {
-            INamedTypeSymbol elementType = (INamedTypeSymbol)prop.ElementTypeSymbol!;
-            generatedNestedTypes.Add(prop.ElementDtoTypeName!);
-            string nestedDtoSource = GenerateNestedTypeDto(
-                elementType,
-                prop.ElementDtoTypeName!,
-                projection.OutputNamespace);
-            context.AddSource($"{prop.ElementDtoTypeName}.g.cs", SourceText.From(nestedDtoSource, Encoding.UTF8));
-            if (elementType.TypeKind == TypeKind.Enum)
-            {
-                string enumMapperSource = GenerateEnumMapper(
-                    elementType,
-                    prop.ElementDtoTypeName!,
-                    projection.OutputNamespace);
-                context.AddSource(
-                    $"{prop.ElementDtoTypeName}Mapper.g.cs",
-                    SourceText.From(enumMapperSource, Encoding.UTF8));
-                continue;
-            }
-
-            // Generate mapper for nested type
+            string nestedDtoName = TypeAnalyzer.GetDtoTypeName(type);
+            generatedNestedTypes.Add(nestedDtoName);
+            string nestedDtoSource = GenerateNestedTypeDto(type, nestedDtoName, projection.OutputNamespace);
+            context.AddSource($"{nestedDtoName}.g.cs", SourceText.From(nestedDtoSource, Encoding.UTF8));
             string nestedMapperSource = GenerateNestedTypeMapper(
-                elementType,
-                prop.ElementDtoTypeName!,
-                prop.ElementSourceTypeName!,
+                type,
+                nestedDtoName,
+                GetMappedSourceTypeName(projection, type),
                 projection.OutputNamespace);
-            context.AddSource(
-                $"{prop.ElementDtoTypeName}Mapper.g.cs",
-                SourceText.From(nestedMapperSource, Encoding.UTF8));
-
-            // Generate enum DTOs for enum properties within the nested type
-            GenerateEnumDtosForNestedType(context, elementType, projection.OutputNamespace, generatedNestedTypes);
+            context.AddSource($"{nestedDtoName}Mapper.g.cs", SourceText.From(nestedMapperSource, Encoding.UTF8));
+            GenerateEnumDtosForNestedType(context, type, projection.OutputNamespace, generatedNestedTypes);
         }
 
         // Generate Mapper
@@ -268,7 +277,12 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         SourceBuilder sb = new();
         sb.AppendAutoGeneratedHeader();
         sb.AppendUsing("System");
-        sb.AppendUsing("System.Collections.Immutable");
+        if (projection.Model.Properties.Any(prop => TypeAnalyzer.IsDictionaryType(prop.SourceTypeSymbol)))
+        {
+            sb.AppendUsing("System.Collections.Generic");
+        }
+
+        sb.AppendUsing(ImmutableCollectionsNamespace);
         sb.AppendUsing("System.Text.Json.Serialization");
         sb.AppendFileScopedNamespace(projection.OutputNamespace);
         sb.AppendLine();
@@ -357,16 +371,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         SourceBuilder sb = new();
         sb.AppendAutoGeneratedHeader();
         sb.AppendUsing(SystemNamespace);
-        if (projection.Model.HasEnumerableMappedProperties)
-        {
-            sb.AppendUsing("System.Linq");
-        }
-
-        if (projection.Model.HasImmutableArrayMappedProperties)
-        {
-            sb.AppendUsing("System.Collections.Immutable");
-        }
-
+        AppendMapperCollectionUsings(sb, projection.Model);
         sb.AppendUsing(MappingNamespace);
         sb.AppendUsing(projection.Model.Namespace);
         sb.AppendFileScopedNamespace(projection.OutputNamespace + MappersNamespaceSuffix);
@@ -400,7 +405,11 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         {
             PropertyModel prop = projection.Model.Properties[i];
             string comma = i < (projection.Model.Properties.Length - 1) ? "," : string.Empty;
-            if (prop.RequiresEnumerableMapper)
+            if (prop.RequiresMapper && TypeAnalyzer.IsDictionaryType(prop.SourceTypeSymbol))
+            {
+                sb.AppendLine($"{prop.Name} = {GetDictionaryMappingExpression(prop, i, projection.Model)}{comma}");
+            }
+            else if (prop.RequiresEnumerableMapper)
             {
                 // Collection with custom element type - use appropriate collection conversion
                 string toCollection = prop.SourceTypeSymbol switch
@@ -439,53 +448,32 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     )
     {
         sb.AppendSummary($"Initializes a new instance of the {GetMapperTypeName(projection)} class.");
-        ImmutableArray<PropertyModel> mappedProps = projection.Model.Properties
-            .Where(p => p.RequiresMapper)
+        ImmutableArray<(string TypeName, string PropertyName)> dependencies = projection.Model.Properties
+            .Where(prop => prop.RequiresMapper)
+            .SelectMany(property => GetMapperDependencies(property, projection.Model))
             .ToImmutableArray();
-
-        // Properties for injected mappers
-        foreach (PropertyModel prop in mappedProps)
+        foreach ((string typeName, string propertyName) in dependencies)
         {
-            if (prop.RequiresEnumerableMapper)
-            {
-                sb.AppendLine(
-                    $"private IEnumerableMapper<{prop.ElementSourceTypeName}, {prop.ElementDtoTypeName}> {prop.Name}Mapper {{ get; }}");
-            }
-            else
-            {
-                sb.AppendLine(
-                    $"private IMapper<{prop.SourceTypeName}, {prop.DtoTypeName}> {prop.Name}Mapper {{ get; }}");
-            }
+            sb.AppendLine($"private {typeName} {propertyName} {{ get; }}");
         }
 
         sb.AppendLine();
         sb.Append($"public {GetMapperTypeName(projection)}(");
         sb.AppendLine();
         sb.IncreaseIndent();
-        for (int i = 0; i < mappedProps.Length; i++)
+        for (int i = 0; i < dependencies.Length; i++)
         {
-            PropertyModel prop = mappedProps[i];
-            string comma = i < (mappedProps.Length - 1) ? "," : string.Empty;
-            string paramName = ToCamelCase(prop.Name) + MapperSuffix;
-            if (prop.RequiresEnumerableMapper)
-            {
-                sb.AppendLine(
-                    $"IEnumerableMapper<{prop.ElementSourceTypeName}, {prop.ElementDtoTypeName}> {paramName}{comma}");
-            }
-            else
-            {
-                sb.AppendLine($"IMapper<{prop.SourceTypeName}, {prop.DtoTypeName}> {paramName}{comma}");
-            }
+            (string typeName, string propertyName) = dependencies[i];
+            string comma = i < (dependencies.Length - 1) ? "," : string.Empty;
+            sb.AppendLine($"{typeName} {ToCamelCase(propertyName)}{comma}");
         }
 
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
-        for (int j = 0; j < mappedProps.Length; j++)
+        foreach ((string _, string propertyName) in dependencies)
         {
-            PropertyModel prop = mappedProps[j];
-            string paramName = ToCamelCase(prop.Name) + MapperSuffix;
-            sb.AppendLine($"{prop.Name}{MapperSuffix} = {paramName};");
+            sb.AppendLine($"{propertyName} = {ToCamelCase(propertyName)};");
         }
 
         sb.CloseBrace();
@@ -524,26 +512,25 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         // Register enum mappers first
         foreach (EnumDtoInfo enumInfo in GetEnumDtosForProjection(projection))
         {
-            string enumSourceTypeName = enumInfo.EnumType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+            string enumSourceTypeName = GetMappedSourceTypeName(projection, enumInfo.EnumType);
             sb.AppendLine(
                 $"services.AddMapper<{enumSourceTypeName}, {enumInfo.DtoName}, {enumInfo.DtoName}{MapperSuffix}>();");
         }
 
         // Register nested type mappers (required for enumerable mappers to resolve)
         // Use GroupBy to avoid duplicate registration for the same source type
-        List<PropertyModel> nestedMapperProperties = projection.Model.Properties
-            .Where(prop => prop.RequiresMapper &&
-                           prop.ElementTypeSymbol is INamedTypeSymbol { TypeKind: not TypeKind.Enum } &&
-                           prop.ElementSourceTypeName is not null &&
-                           prop.ElementDtoTypeName is not null)
-            .GroupBy(prop => prop.ElementSourceTypeName)
-            .Select(g => g.First())
+        List<INamedTypeSymbol> nestedTypes = projection.Model.Properties
+            .SelectMany(prop => TypeAnalyzer.GetMappedCollectionTypes(prop.SourceTypeSymbol))
+            .OfType<INamedTypeSymbol>()
+            .Where(type => type.TypeKind != TypeKind.Enum)
+            .GroupBy(type => type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))
+            .Select(group => group.First())
             .ToList();
-        foreach (PropertyModel prop in nestedMapperProperties)
+        foreach (INamedTypeSymbol type in nestedTypes)
         {
-            string nestedMapperTypeName = $"{prop.ElementDtoTypeName}Mapper";
-            sb.AppendLine(
-                $"services.AddMapper<{prop.ElementSourceTypeName}, {prop.ElementDtoTypeName}, {nestedMapperTypeName}>();");
+            string sourceName = GetMappedSourceTypeName(projection, type);
+            string dtoName = TypeAnalyzer.GetDtoTypeName(type);
+            sb.AppendLine($"services.AddMapper<{sourceName}, {dtoName}, {dtoName}Mapper>();");
         }
 
         // Register IEnumerableMapper if any properties need it
@@ -612,7 +599,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         SourceBuilder sb = new();
         sb.AppendAutoGeneratedHeader();
         sb.AppendUsing(SystemNamespace);
-        sb.AppendUsing("System.Collections.Immutable");
+        sb.AppendUsing(ImmutableCollectionsNamespace);
         sb.AppendUsing("System.Text.Json.Serialization");
         sb.AppendFileScopedNamespace(outputNamespace);
         sb.AppendLine();
@@ -713,6 +700,69 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Reserves ordinary property mapper names before naming dictionary argument mappers.
+    /// </summary>
+    private static string GetDictionaryMapperName(
+        PropertyModel property,
+        string argument,
+        ProjectionModel model
+    )
+    {
+        string name = property.Name + argument + MapperSuffix;
+        return model.Properties.Any(other => other.RequiresMapper &&
+                                             !TypeAnalyzer.IsDictionaryType(other.SourceTypeSymbol) &&
+                                             ((other.Name + MapperSuffix) == name))
+            ? name + "1"
+            : name;
+    }
+
+    /// <summary>
+    ///     Builds dictionary mapping with separate key/value selectors and exposed unchanged-key comparers.
+    /// </summary>
+    private static string GetDictionaryMappingExpression(
+        PropertyModel property,
+        int propertyIndex,
+        ProjectionModel model
+    )
+    {
+        INamedTypeSymbol dictionary = (INamedTypeSymbol)property.SourceTypeSymbol;
+        ITypeSymbol key = dictionary.TypeArguments[0];
+        ITypeSymbol value = dictionary.TypeArguments[1];
+        string keySelector = TypeAnalyzer.IsFrameworkType(key)
+            ? "pair.Key"
+            : $"{GetDictionaryMapperName(property, "Key", model)}.Map(pair.Key)";
+        string valueSelector = TypeAnalyzer.IsFrameworkType(value)
+            ? "pair.Value"
+            : $"{GetDictionaryMapperName(property, "Value", model)}.Map(pair.Value)";
+        if (!TypeAnalyzer.IsFrameworkType(value) &&
+            value.IsReferenceType &&
+            (value.NullableAnnotation == NullableAnnotation.Annotated))
+        {
+            valueSelector =
+                $"pair.Value is {{ }} dictionaryValue ? {GetDictionaryMapperName(property, "Value", model)}.Map(dictionaryValue) : null";
+        }
+
+        bool immutable = dictionary.ContainingNamespace.ToDisplayString() == ImmutableCollectionsNamespace;
+        string conversion = immutable ? "ToImmutableDictionary" : "ToDictionary";
+        string source = property.IsNullable ? $"dictionary{propertyIndex}" : $"source.{property.Name}";
+        string comparer = string.Empty;
+        if (TypeAnalyzer.IsFrameworkType(key))
+        {
+            if (dictionary.Name == "Dictionary")
+            {
+                comparer = $", {source}.Comparer";
+            }
+            else if (dictionary.Name == "ImmutableDictionary")
+            {
+                comparer = $", {source}.KeyComparer";
+            }
+        }
+
+        string mapping = $"{source}.{conversion}(pair => {keySelector}, pair => {valueSelector}{comparer})";
+        return property.IsNullable ? $"source.{property.Name} is {{ }} {source} ? {mapping} : null" : mapping;
+    }
+
+    /// <summary>
     ///     Gets enum DTOs required for a projection.
     /// </summary>
     private static List<EnumDtoInfo> GetEnumDtosForProjection(
@@ -732,19 +782,71 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                 }
             }
 
-            if (prop.ElementIsEnum &&
-                prop.ElementTypeSymbol is INamedTypeSymbol elementEnum &&
-                prop.ElementDtoTypeName is not null)
+            foreach (INamedTypeSymbol elementEnum in TypeAnalyzer.GetMappedCollectionTypes(prop.SourceTypeSymbol)
+                         .OfType<INamedTypeSymbol>()
+                         .Where(type => type.TypeKind == TypeKind.Enum))
             {
                 string key = elementEnum.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 if (seen.Add(key))
                 {
-                    enumInfos.Add(new(elementEnum, prop.ElementDtoTypeName));
+                    enumInfos.Add(new(elementEnum, TypeAnalyzer.GetDtoTypeName(elementEnum)));
                 }
             }
         }
 
         return enumInfos;
+    }
+
+    /// <summary>
+    ///     Fully qualifies dictionary argument sources while retaining other mapper type spelling.
+    /// </summary>
+    private static string GetMappedSourceTypeName(
+        ProjectionInfo projection,
+        INamedTypeSymbol sourceType
+    )
+    {
+        bool dictionaryArgument = projection.Model.Properties
+            .Where(property => TypeAnalyzer.IsDictionaryType(property.SourceTypeSymbol))
+            .SelectMany(property => TypeAnalyzer.GetMappedCollectionTypes(property.SourceTypeSymbol))
+            .Any(type => SymbolEqualityComparer.Default.Equals(type, sourceType));
+        return sourceType.ToDisplayString(
+            dictionaryArgument
+                ? SymbolDisplayFormat.FullyQualifiedFormat
+                : SymbolDisplayFormat.MinimallyQualifiedFormat);
+    }
+
+    /// <summary>
+    ///     Gets injected mapper dependencies for a property, keeping dictionary keys and values separate.
+    /// </summary>
+    private static IEnumerable<(string TypeName, string PropertyName)> GetMapperDependencies(
+        PropertyModel property,
+        ProjectionModel model
+    )
+    {
+        if (TypeAnalyzer.IsDictionaryType(property.SourceTypeSymbol) &&
+            property.SourceTypeSymbol is INamedTypeSymbol dictionary)
+        {
+            for (int index = 0; index < dictionary.TypeArguments.Length; index++)
+            {
+                ITypeSymbol type = dictionary.TypeArguments[index]
+                    .WithNullableAnnotation(NullableAnnotation.NotAnnotated);
+                if (!TypeAnalyzer.IsFrameworkType(type))
+                {
+                    string sourceName = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                    string dtoName = TypeAnalyzer.GetDtoTypeName(type);
+                    string argument = index == 0 ? "Key" : "Value";
+                    yield return ($"IMapper<{sourceName}, {dtoName}>",
+                        GetDictionaryMapperName(property, argument, model));
+                }
+            }
+
+            yield break;
+        }
+
+        string mapperType = property.RequiresEnumerableMapper
+            ? $"IEnumerableMapper<{property.ElementSourceTypeName}, {property.ElementDtoTypeName}>"
+            : $"IMapper<{property.SourceTypeName}, {property.DtoTypeName}>";
+        yield return (mapperType, property.Name + MapperSuffix);
     }
 
     /// <summary>
@@ -931,8 +1033,22 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             static (spc, projections) =>
             {
                 HashSet<string> generatedNestedTypes = new();
+                Dictionary<string, INamedTypeSymbol> generatedDictionaryDtoTypes = new(StringComparer.Ordinal);
                 foreach (ProjectionInfo projection in projections)
                 {
+                    IEnumerable<Diagnostic> dictionaryDiagnostics = projection.Model.RegisterDictionaryDtoTypes(
+                        projection.OutputNamespace,
+                        generatedDictionaryDtoTypes);
+                    foreach (Diagnostic diagnostic in dictionaryDiagnostics)
+                    {
+                        spc.ReportDiagnostic(diagnostic);
+                    }
+
+                    if (dictionaryDiagnostics.Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error))
+                    {
+                        continue;
+                    }
+
                     foreach (Diagnostic diagnostic in projection.Diagnostics)
                     {
                         spc.ReportDiagnostic(diagnostic);
