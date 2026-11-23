@@ -78,15 +78,15 @@ jobs:
         id: gitversion-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ${{ runner.tool_cache }}/GitVersion.Tool/6.5.1
-          key: ${{ runner.os }}-${{ runner.arch }}-gitversion-tool-6.5.1
+          path: ${{ runner.tool_cache }}/GitVersion.Tool/7.0.1
+          key: ${{ runner.os }}-${{ runner.arch }}-gitversion-tool-7.0.1
       - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
+        uses: gittools/actions/gitversion/setup@389fe43e6b0189b98c40c43553070ac029304635 # v5.0.0
         with:
-          versionSpec: '6.5.1'
+          versionSpec: '7.0.1'
       - name: Determine Version
         id: gitversion
-        uses: gittools/actions/gitversion/execute@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
+        uses: gittools/actions/gitversion/execute@389fe43e6b0189b98c40c43553070ac029304635 # v5.0.0
         with:
           configFilePath: GitVersion.yml
       - name: Restore locked solution packages
@@ -97,7 +97,7 @@ jobs:
           Invoke-RepositoryProcess -FilePath dotnet -Arguments @('restore', $env:SOLUTION, '--locked-mode') | Out-Host
       - name: Build solution once for L0-L2
         env:
-          BUILD_VERSION: ${{ steps.gitversion.outputs.SemVer }}
+          BUILD_VERSION: ${{ steps.gitversion.outputs.semVer }}
         run: |
           Set-StrictMode -Version Latest
           $ErrorActionPreference = 'Stop'
