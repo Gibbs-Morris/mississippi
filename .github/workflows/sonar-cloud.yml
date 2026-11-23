@@ -76,13 +76,13 @@ jobs:
             ${{ runner.os }}-sonar-scanner
 
       - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
+        uses: gittools/actions/gitversion/setup@389fe43e6b0189b98c40c43553070ac029304635 # v5.0.0
         with:
-          versionSpec: "6.5.1"
+          versionSpec: "7.0.1"
 
       - name: Determine Version
         id: gitversion
-        uses: gittools/actions/gitversion/execute@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
+        uses: gittools/actions/gitversion/execute@389fe43e6b0189b98c40c43553070ac029304635 # v5.0.0
         with:
           configFilePath: "GitVersion.yml"
 
@@ -113,10 +113,10 @@ jobs:
             set --
           fi
 
-          dotnet dotnet-sonarscanner begin /s:"${{ github.workspace }}/SonarQube.Analysis.xml" /k:"${{ env.SONAR_PROJECT_KEY }}" /o:"${{ env.SONAR_ORGANIZATION }}" /d:sonar.token="$SONAR_TOKEN" /d:sonar.host.url="${{ env.SONAR_HOST_URL }}" /v:${{ steps.gitversion.outputs.SemVer }} /d:"sonar.cs.vscoveragexml.reportsPaths=coverage.xml" /d:sonar.coverage.exclusions="**/*.ps1,**/*.psm1,**/*.psd1" /d:sonar.exclusions="**/*.lock.json, **/*.DotSettings,**/packages.lock.json,docs/**" /d:sonar.cpd.exclusions="**/Inlet.Client.Generators/**,**/Inlet.Gateway.Generators/**,**/Inlet.Runtime.Generators/**,**/setup.ps1,**/Setup.Tests.ps1,**/AgentDoctor.Tests.ps1" /d:sonar.issue.ignore.multicriteria=s107 /d:sonar.issue.ignore.multicriteria.s107.ruleKey=csharpsquid:S107 /d:sonar.issue.ignore.multicriteria.s107.resourceKey='**/*.cs' "$@"
+          dotnet dotnet-sonarscanner begin /s:"${{ github.workspace }}/SonarQube.Analysis.xml" /k:"${{ env.SONAR_PROJECT_KEY }}" /o:"${{ env.SONAR_ORGANIZATION }}" /d:sonar.token="$SONAR_TOKEN" /d:sonar.host.url="${{ env.SONAR_HOST_URL }}" /v:${{ steps.gitversion.outputs.semVer }} /d:"sonar.cs.vscoveragexml.reportsPaths=coverage.xml" /d:sonar.coverage.exclusions="**/*.ps1,**/*.psm1,**/*.psd1" /d:sonar.exclusions="**/*.lock.json, **/*.DotSettings,**/packages.lock.json,docs/**" /d:sonar.cpd.exclusions="**/Inlet.Client.Generators/**,**/Inlet.Gateway.Generators/**,**/Inlet.Runtime.Generators/**,**/setup.ps1,**/Setup.Tests.ps1,**/AgentDoctor.Tests.ps1" /d:sonar.issue.ignore.multicriteria=s107 /d:sonar.issue.ignore.multicriteria.s107.ruleKey=csharpsquid:S107 /d:sonar.issue.ignore.multicriteria.s107.resourceKey='**/*.cs' "$@"
 
           dotnet restore ${{ env.SOLUTION_PATH }}
-          dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
+          dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.semVer }}
 
           dotnet dotnet-coverage collect "pwsh -NoProfile -File ./eng/src/agent-scripts/test-solution.ps1 -SolutionPath ${{ env.SOLUTION_PATH }} -Configuration ${{ env.CONFIGURATION }} -NoBuild" -f xml -o "coverage.xml"
 

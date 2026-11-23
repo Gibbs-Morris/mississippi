@@ -1,65 +1,73 @@
-assembly-file-versioning-scheme: MajorMinorPatchTag
-assembly-versioning-scheme: MajorMinorPatch
-branches:
-  feature:
-    increment: Minor
-    is-release-branch: false
-    mode: ContinuousDelivery
-    regex: ^features?[/-](?<BranchName>.+)
-    source-branches: ["main", "feature"]
-    label: '{BranchName}'
-    track-merge-target: false
-    tracks-release-branches: false
-  hotfix:
-    increment: Patch
-    is-release-branch: false
-    mode: ContinuousDelivery
-    regex: ^hotfix(es)?[/-](?<BranchName>.+)
-    label: '{BranchName}'
-    track-merge-target: false
-    tracks-release-branches: false
-  main:
-    increment: Minor
-    is-main-branch: true
-    is-release-branch: false
-    mode: ContinuousDelivery
-    regex: ^main
-    label: "next"
-    track-merge-target: true
-    tracks-release-branches: false
-  pull-request:
-    increment: Inherit
-    is-release-branch: false
-    mode: ContinuousDelivery
-    regex: ^(pull|pull\-requests|pr)[/-]
-    label: PullRequest
-    track-merge-target: false
-    tracks-release-branches: false
-  release:
-    increment: Patch
-    is-release-branch: true
-    mode: ContinuousDeployment
-    pre-release-weight: 1000
-    regex: ^releases?[/-].+
-    label: ""
-    track-merge-target: false
-    tracks-release-branches: false
-  topic:
-    increment: Minor
-    is-release-branch: false
-    mode: ContinuousDelivery
-    regex: ^topic[/-](?<BranchName>.+)
-    source-branches: ["main", "feature"]
-    label: '{BranchName}'
-    track-merge-target: false
-    tracks-release-branches: false
-commit-message-incrementing: Enabled
-increment: Inherit
-major-version-bump-message: '\+semver:\s?(breaking|major)'
-minor-version-bump-message: '\+semver:\s?(feature|minor)'
-mode: ContinuousDelivery
-next-version: 0.0.1
-no-bump-message: '\+semver:\s?(none|skip)'
-patch-version-bump-message: '\+semver:\s?(fix|patch)'
-tag-prefix: "[vV]?"
-version-in-branch-pattern: (?<version>[vV]?\d+(\.\d+)?(\.\d+)?).*
+calculation:
+  branches:
+    feature:
+      increment: Minor
+      is-release-branch: false
+      label: "{BranchName}"
+      mode: ContinuousDelivery
+      regex: "^features?[/-](?<BranchName>.+)"
+      source-branches:
+        - main
+        - feature
+      track-merge-target: false
+      tracks-release-branches: false
+    hotfix:
+      increment: Patch
+      is-release-branch: false
+      label: "{BranchName}"
+      mode: ContinuousDelivery
+      regex: "^hotfix(es)?[/-](?<BranchName>.+)"
+      track-merge-target: false
+      tracks-release-branches: false
+    main:
+      increment: Minor
+      is-main-branch: true
+      is-release-branch: false
+      label: next
+      mode: ContinuousDelivery
+      regex: ^main
+      track-merge-target: true
+      tracks-release-branches: false
+    pull-request:
+      increment: Inherit
+      is-release-branch: false
+      label: PullRequest
+      mode: ContinuousDelivery
+      regex: "^(pull|pull\\-requests|pr)[/-]"
+      track-merge-target: false
+      tracks-release-branches: false
+    release:
+      increment: Patch
+      is-release-branch: true
+      label: ''
+      mode: ContinuousDeployment
+      regex: "^releases?[/-].+"
+      track-merge-target: false
+      tracks-release-branches: false
+    topic:
+      increment: Minor
+      is-release-branch: false
+      label: "{BranchName}"
+      mode: ContinuousDelivery
+      regex: "^topic[/-](?<BranchName>.+)"
+      source-branches:
+        - main
+        - feature
+      track-merge-target: false
+      tracks-release-branches: false
+  commit-message-incrementing: Enabled
+  increment: Inherit
+  major-version-bump-message: "\\+semver:\\s?(breaking|major)"
+  minor-version-bump-message: "\\+semver:\\s?(feature|minor)"
+  mode: ContinuousDelivery
+  next-version: 0.0.1
+  no-bump-message: "\\+semver:\\s?(none|skip)"
+  patch-version-bump-message: "\\+semver:\\s?(fix|patch)"
+  tag-prefix: "[vV]?"
+  version-in-branch-pattern: "(?<version>[vV]?\\d+(\\.\\d+)?(\\.\\d+)?).*"
+output:
+  assembly-file-versioning-scheme: MajorMinorPatchTag
+  assembly-versioning-scheme: MajorMinorPatch
+  branches:
+    release:
+      pre-release-weight: 1000
