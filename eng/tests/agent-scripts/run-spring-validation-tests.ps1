@@ -4,7 +4,7 @@ param([switch]$PassThru)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-Import-Module Pester -MinimumVersion 5.0.0 -Force
+Import-Module Pester -RequiredVersion 6.2.0 -Force
 $result = Invoke-Pester -Path (Join-Path $PSScriptRoot 'SpringValidation.Tests.ps1') -PassThru
 if ($result.PassedCount -eq 0) { throw 'Spring validation runner did not execute any passing tests.' }
 if ($PassThru) { return $result }
