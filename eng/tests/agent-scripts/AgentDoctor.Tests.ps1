@@ -23,7 +23,7 @@ Describe 'Repository prerequisite doctor' {
             'dotnet-tools' = [pscustomobject]@{ Available = $true; Output = 'Resolver metadata and executable paths verified.'; ExitCode = 0; Error = '' }
             'git-root' = [pscustomobject]@{ Available = $true; Output = $fixtureRoot; ExitCode = 0; Error = '' }
             'docker-ostype' = [pscustomobject]@{ Available = $true; Output = 'linux'; ExitCode = 0; Error = '' }
-            'node-version' = [pscustomobject]@{ Available = $true; Output = 'v22.0.0'; ExitCode = 0; Error = '' }
+            'node-version' = [pscustomobject]@{ Available = $true; Output = 'v22.12.0'; ExitCode = 0; Error = '' }
             'npm-version' = [pscustomobject]@{ Available = $true; Output = '10.0.0'; ExitCode = 0; Error = '' }
             'git-remote' = [pscustomobject]@{ Available = $true; Output = 'https://github.com/example/repo.git'; ExitCode = 0; Error = '' }
             'github-repository' = [pscustomobject]@{ Available = $true; Output = '{"nameWithOwner":"example/repo"}'; ExitCode = 0; Error = '' }
@@ -138,13 +138,18 @@ Describe 'Repository prerequisite doctor' {
         }
     }
 
-    It 'rejects an unsupported Docs Node version' {
+    It 'reports Docs Node <NodeVersion> as <State>' -ForEach @(
+        @{ NodeVersion = 'v20.18.0'; State = 'unsupported' }
+        @{ NodeVersion = 'v22.11.0'; State = 'unsupported' }
+        @{ NodeVersion = 'v22.12.0'; State = 'ready' }
+        @{ NodeVersion = 'v26.13.1'; State = 'ready' }
+    ) {
         $probes = @{} + $readyProbes
-        $probes['node-version'] = [pscustomobject]@{ Available = $true; Output = 'v18.20.0'; ExitCode = 0; Error = '' }
+        $probes['node-version'] = [pscustomobject]@{ Available = $true; Output = $NodeVersion; ExitCode = 0; Error = '' }
         $report = Get-AgentDoctorReport -RepositoryRoot $fixtureRoot -Profile Docs -ProbeOverrides $probes
 
-        @($report.Checks | Where-Object Name -EQ 'node').State | Should -Be 'unsupported'
-        $report.RequiredFailures | Should -Contain 'node'
+        @($report.Checks | Where-Object Name -EQ 'node').State | Should -Be $State
+        ($report.RequiredFailures -contains 'node') | Should -Be ($State -eq 'unsupported')
     }
 
     It 'reports an incomplete global.json without throwing' {
