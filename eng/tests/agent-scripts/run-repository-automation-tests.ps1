@@ -8,7 +8,6 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-Import-Module Pester -MinimumVersion 5.0.0 -ErrorAction Stop
 $testPaths = @(
     (Join-Path $PSScriptRoot 'RepositoryAutomation.Tests.ps1'),
     (Join-Path $PSScriptRoot 'CleanupWorkflow.Tests.ps1'),
@@ -26,8 +25,29 @@ $testPaths = @(
 foreach ($testPath in $testPaths) {
     if (-not (Test-Path -LiteralPath $testPath -PathType Leaf)) { throw "Test file not found: $testPath" }
 }
-$result = Invoke-Pester -Path $testPaths -PassThru
+
+$runner = Join-Path $PSScriptRoot 'run-pester-suite.ps1'
+$runs = foreach ($testPath in $testPaths) {
+    $run = & $runner -TestPath $testPath -PassThru
+    if ($null -eq $run -or $run.TotalCount -lt 1) {
+        throw "Pester runner returned no tests for $testPath"
+    }
+
+    $run
+}
+
+$failedRuns = @($runs | Where-Object { $_.Result -ne 'Passed' })
+$result = [pscustomobject]@{
+    Result = if ($failedRuns.Count -eq 0) { 'Passed' } else { 'Failed' }
+    TotalCount = ($runs | Measure-Object -Property TotalCount -Sum).Sum
+    FailedCount = ($runs | Measure-Object -Property FailedCount -Sum).Sum
+    PassedCount = ($runs | Measure-Object -Property PassedCount -Sum).Sum
+    SkippedCount = ($runs | Measure-Object -Property SkippedCount -Sum).Sum
+    Containers = @($runs | ForEach-Object { $_.Containers })
+    # Keep the native runs for test details, timings, and configuration.
+    Runs = $runs
+}
 
 if ($PassThru) { return $result }
-if ($null -eq $result -or $result.TotalCount -lt 1 -or $result.Result -ne 'Passed') { exit 1 }
+if ($result.Result -ne 'Passed') { exit 1 }
 exit 0

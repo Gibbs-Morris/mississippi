@@ -64,7 +64,7 @@ function Get-SetupPlan {
     if ($profiles -contains 'Browser') {
         Add-SetupStep -Steps $steps -Name 'browser-doctor' -Executable 'pwsh' -Arguments @('./test-spring.ps1', '-Doctor') -WorkingDirectory $Root -Purpose 'Report SDK and Docker/browser prerequisites without starting the application.'
     }
-    if ($ShouldInstallPester) { $steps.Insert(0, [pscustomobject][ordered]@{ Name = 'install-pester'; Executable = 'pwsh'; Arguments = @('-NoProfile', '-Command', "Install-Module -Name Pester -Scope CurrentUser -Force -Confirm:`$false -RequiredVersion 5.7.1 -Repository PSGallery"); WorkingDirectory = $Root; Purpose = 'Install the repository-pinned PowerShell test dependency.' }) }
+    if ($ShouldInstallPester) { $steps.Insert(0, [pscustomobject][ordered]@{ Name = 'install-pester'; Executable = 'pwsh'; Arguments = @('-NoProfile', '-Command', "Install-Module -Name Pester -Scope CurrentUser -Force -Confirm:`$false -RequiredVersion 6.2.0 -Repository PSGallery"); WorkingDirectory = $Root; Purpose = 'Install the repository-pinned PowerShell test dependency.' }) }
     return [pscustomobject][ordered]@{ SchemaVersion = '1.0'; Profile = $RequestedProfile; Profiles = $profiles; InstallPester = $ShouldInstallPester; Steps = @($steps) }
 }
 
@@ -81,7 +81,8 @@ function Invoke-SetupStep {
     }
     Push-Location -LiteralPath $Step.WorkingDirectory
     try {
-        if ($script:SetupJsonOutput) { & $Step.Executable @($Step.Arguments) *> $null } else { & $Step.Executable @($Step.Arguments) }
+        $arguments = @($Step.Arguments)
+        if ($script:SetupJsonOutput) { & $Step.Executable @arguments *> $null } else { & $Step.Executable @arguments }
         if ($LASTEXITCODE -ne 0) { throw "Setup step '$($Step.Name)' failed with exit code $LASTEXITCODE." }
         if ($Step.Name -eq 'restore-tools') {
             $manifestPath = Join-Path $root '.config/dotnet-tools.json'
@@ -107,6 +108,10 @@ function Invoke-SetupStep {
 }
 
 try {
+    if ($InstallPester -and $PSVersionTable.PSVersion -lt [version]'7.4') {
+        throw 'Pester 6.2.0 requires PowerShell 7.4 or later. Run setup in a supported version to install Pester.'
+    }
+
     $root = (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
     $plan = Get-SetupPlan -Root $root -RequestedProfile $Profile -ShouldInstallPester:$InstallPester
     if ($OutputFormat -eq 'Json' -or $PlanOnly) {

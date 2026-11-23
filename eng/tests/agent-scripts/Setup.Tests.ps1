@@ -19,8 +19,14 @@ Describe 'Canonical repository setup' {
             param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][string]$NpmScript)
             $shimRoot = Join-Path $TestDrive $Name
             New-Item -ItemType Directory -Path $shimRoot -Force | Out-Null
-            Set-Content -LiteralPath (Join-Path $shimRoot 'node.ps1') -Value "Write-Output 'v22.0.0'"
-            Set-Content -LiteralPath (Join-Path $shimRoot 'npm.ps1') -Value $NpmScript
+            Set-Content -LiteralPath (Join-Path $shimRoot 'node.ps1') -Value "Write-Output 'v22.12.0'"
+            $npmVersionProbe = @'
+if ($args.Count -eq 1 -and $args[0] -eq '--version') {
+    Write-Output '10.9.0'
+    exit 0
+}
+'@
+            Set-Content -LiteralPath (Join-Path $shimRoot 'npm.ps1') -Value @($npmVersionProbe, $NpmScript)
             $originalPath = $env:PATH
             $env:PATH = $shimRoot + [IO.Path]::PathSeparator + $originalPath
             try {
@@ -64,7 +70,7 @@ Describe 'Canonical repository setup' {
         $outcome.ExitCode | Should -Be 0
         $step = @($outcome.Plan.Steps | Where-Object Name -EQ 'install-pester')
         $step.Count | Should -Be 1
-        $step.Arguments -join ' ' | Should -Match 'RequiredVersion 5\.7\.1'
+        $step.Arguments -join ' ' | Should -Match 'RequiredVersion 6\.2\.0'
     }
 
     It 'honors Pester installation for a non-core profile' {
@@ -82,7 +88,13 @@ Describe 'Canonical repository setup' {
     }
 
     It 'executes the Docs profile with controlled node and npm shims' {
-        $outcome = Invoke-DocsSetupShim -Name 'setup-shims' -NpmScript 'exit 0'
+        $npmScript = @'
+if ($args.Count -ne 2 -or $args[0] -ne 'ci' -or $args[1] -ne '--ignore-scripts') {
+    exit 91
+}
+exit 0
+'@
+        $outcome = Invoke-DocsSetupShim -Name 'setup-shims' -NpmScript $npmScript
 
         $outcome.ExitCode | Should -Be 0
         ($outcome.Output | ConvertFrom-Json).Status | Should -Be 'READY'
@@ -93,6 +105,7 @@ Describe 'Canonical repository setup' {
         $outcome = Invoke-DocsSetupShim -Name 'setup-failure-shims' -NpmScript 'exit 7'
 
         $outcome.ExitCode | Should -Not -Be 0
+        $outcome.Output | Should -Match "Setup step 'restore-docs' failed with exit code 7"
         $outcome.Output | Should -Not -Match '"Status"\s*:\s*"READY"'
     }
 }
