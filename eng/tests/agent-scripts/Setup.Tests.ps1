@@ -64,7 +64,7 @@ Describe 'Canonical repository setup' {
         $outcome.ExitCode | Should -Be 0
         $step = @($outcome.Plan.Steps | Where-Object Name -EQ 'install-pester')
         $step.Count | Should -Be 1
-        $step.Arguments -join ' ' | Should -Match 'RequiredVersion 5\.7\.1'
+        $step.Arguments -join ' ' | Should -Match 'RequiredVersion 6\.2\.0'
     }
 
     It 'honors Pester installation for a non-core profile' {
