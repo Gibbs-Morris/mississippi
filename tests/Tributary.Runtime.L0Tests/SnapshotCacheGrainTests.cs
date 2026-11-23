@@ -94,6 +94,15 @@ public sealed class SnapshotCacheGrainTests
         yield break;
     }
 
+    /// <summary>Models a range reader that delivers a prefix and then rejects the unavailable requested end.</summary>
+    /// <returns>The incomplete event stream.</returns>
+    private static async IAsyncEnumerable<BrookEvent> GetIncompleteEventsAsync()
+    {
+        yield return new();
+        await Task.Yield();
+        throw new InvalidOperationException("Incomplete requested range.");
+    }
+
     /// <summary>
     ///     Verifies that constructor throws when brookEventConverter is null.
     /// </summary>
@@ -611,6 +620,53 @@ public sealed class SnapshotCacheGrainTests
                 It.IsAny<BrookPosition?>(),
                 It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    /// <summary>Propagates incomplete-range failures without serializing or persisting partially reduced state.</summary>
+    /// <returns>The asynchronous verification.</returns>
+    [Fact]
+    public async Task OnActivateAsyncRejectsIncompleteReplayWithoutPersistingPartialState()
+    {
+        Mock<IBrookAsyncReaderGrain> reader = new();
+        reader.Setup(item => item.ReadEventsAsync(
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(GetIncompleteEventsAsync);
+        Mock<IBrookGrainFactory> brooks = new();
+        brooks.Setup(item => item.GetBrookAsyncReaderGrain(It.IsAny<BrookKey>())).Returns(reader.Object);
+        Mock<IRootReducer<SnapshotCacheGrainTestState>> reducer = new();
+        reducer.Setup(item => item.GetReducerHash()).Returns("test-hash");
+        reducer.Setup(item => item.Reduce(It.IsAny<SnapshotCacheGrainTestState>(), It.IsAny<object>()))
+            .Returns(
+                new SnapshotCacheGrainTestState
+                {
+                    Value = 99,
+                });
+        Mock<IBrookEventConverter> events = new();
+        events.Setup(item => item.ToDomainEvent(It.IsAny<BrookEvent>())).Returns(new object());
+        Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converter = new(MockBehavior.Strict);
+        Mock<ISnapshotGrainFactory> snapshots = new(MockBehavior.Strict);
+        SnapshotCacheGrain<SnapshotCacheGrainTestState> grain = CreateGrain(
+            brookGrainFactoryMock: brooks,
+            rootReducerMock: reducer,
+            snapshotStateConverterMock: converter,
+            snapshotGrainFactoryMock: snapshots,
+            retentionOptions: Options.Create(
+                new SnapshotRetentionOptions
+                {
+                    ShouldPersistAllSnapshots = true,
+                }),
+            brookEventConverterMock: events);
+        InvalidOperationException failure = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await grain.OnActivateAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("Incomplete requested range.", failure.Message);
+        reducer.Verify(item => item.Reduce(It.IsAny<SnapshotCacheGrainTestState>(), It.IsAny<object>()), Times.Once);
+        reader.Verify(
+            item => item.ReadEventsAsync(new BrookPosition(1), new BrookPosition(5), It.IsAny<CancellationToken>()),
+            Times.Once);
+        converter.VerifyNoOtherCalls();
+        snapshots.Verify(item => item.GetSnapshotPersisterGrain(It.IsAny<SnapshotKey>()), Times.Never);
     }
 
     /// <summary>
