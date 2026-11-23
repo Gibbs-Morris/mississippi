@@ -70,4 +70,5 @@ output:
   assembly-versioning-scheme: MajorMinorPatch
   branches:
     release:
+      # GitVersion 7 applies branch weights when producing version output.
       pre-release-weight: 1000
