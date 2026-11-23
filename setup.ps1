@@ -108,6 +108,10 @@ function Invoke-SetupStep {
 }
 
 try {
+    if ($InstallPester -and $PSVersionTable.PSVersion -lt [version]'7.4') {
+        throw 'Pester 6.2.0 requires PowerShell 7.4 or later. Run setup in a supported version to install Pester.'
+    }
+
     $root = (Resolve-Path -LiteralPath $RepositoryRoot -ErrorAction Stop).Path
     $plan = Get-SetupPlan -Root $root -RequestedProfile $Profile -ShouldInstallPester:$InstallPester
     if ($OutputFormat -eq 'Json' -or $PlanOnly) {
