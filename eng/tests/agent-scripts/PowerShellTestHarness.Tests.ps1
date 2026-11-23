@@ -119,6 +119,24 @@ Describe 'Standalone Pester runners' {
         & $powerShellPath -NoProfile -File (Join-Path $fixture $Runner) @runnerArguments | Out-Null
         $LASTEXITCODE | Should -Be $ExitCode
     }
+
+    It 'aggregates a late repository automation test with exit <ExitCode>' -ForEach @(
+        @{ ExpectedValue = 1; ExitCode = 0 },
+        @{ ExpectedValue = 2; ExitCode = 1 }
+    ) {
+        $fixture = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $fixture | Out-Null
+        Copy-Item (Join-Path $PSScriptRoot 'run-repository-automation-tests.ps1') $fixture
+        Copy-Item (Join-Path $PSScriptRoot 'run-pester-suite.ps1') $fixture
+
+        foreach ($file in (Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.Tests.ps1' -File)) {
+            $expectation = if ($file.Name -eq 'Setup.Tests.ps1') { $ExpectedValue } else { 1 }
+            Set-Content -LiteralPath (Join-Path $fixture $file.Name) -Value "Describe '$($file.BaseName)' { It 'runs' { 1 | Should -Be $expectation } }"
+        }
+
+        & $powerShellPath -NoProfile -File (Join-Path $fixture 'run-repository-automation-tests.ps1') | Out-Null
+        $LASTEXITCODE | Should -Be $ExitCode
+    }
 }
 
 Describe 'Build entry point process boundaries' {
