@@ -12,10 +12,11 @@ Governing thought: Validate every queued change that has not reached the target 
 
 - Merge-group diff selection **SHOULD** compare the candidate with the unique common ancestor of its verified parent and target branch. Why: The payload's `base_sha` can already contain a preceding queue candidate, so a parent-to-head diff can omit queued code.
 - Queue regression fixtures **SHOULD** use a preceding synthetic commit as the payload base and distinguish queued changes from changes already on the target branch. Why: A docs-only follower must retain its queued predecessor's cleanup scope without rechecking code already merged.
+- Repeated Blazor WebAssembly builds in the same checkout **SHOULD** use the same MSBuild `Version`. Why: Changing the version between validation steps produced 404s for fingerprinted framework assets during Spring L3.
 
 ## Scope and Audience
 
-Agents maintaining GitHub Actions workflows that select files for queue validation.
+Agents maintaining GitHub Actions validation workflows.
 
 ## References
 
