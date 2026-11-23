@@ -24,7 +24,7 @@ public class ProjectionSiloRegistrationGeneratorTests
                                                      using System;
 
                                                      [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-                                                     public sealed class GenerateProjectionEndpointsAttribute : Attribute
+                                                     public sealed class GenerateProjectionRegistrationAttribute : Attribute
                                                      {
                                                          public bool GenerateClientSubscription { get; set; } = true;
                                                      }
@@ -130,7 +130,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
+                                            [GenerateProjectionRegistration]
                                             [ProjectionPath("account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
@@ -172,7 +172,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
+                                            [GenerateProjectionRegistration]
                                             [ProjectionPath("account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
@@ -214,7 +214,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
+                                            [GenerateProjectionRegistration]
                                             [ProjectionPath("account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
@@ -253,7 +253,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
+                                            [GenerateProjectionRegistration]
                                             [ProjectionPath("account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
@@ -294,7 +294,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
+                                            [GenerateProjectionRegistration]
                                             [ProjectionPath("account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
@@ -333,7 +333,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
+                                            [GenerateProjectionRegistration]
                                             [ProjectionPath("account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
@@ -376,7 +376,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
+                                            [GenerateProjectionRegistration]
                                             [ProjectionPath("account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
@@ -400,7 +400,7 @@ public class ProjectionSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains(
-            "services.AddSnapshotStateConverter<AccountBalanceProjection>();",
+            "global::Mississippi.Tributary.Runtime.SnapshotRegistrations.AddSnapshotStateConverter<global::TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection>(services);",
             generatedCode,
             StringComparison.Ordinal);
     }
@@ -418,7 +418,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
+                                            [GenerateProjectionRegistration]
                                             [ProjectionPath("account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
@@ -441,7 +441,10 @@ public class ProjectionSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
-        Assert.Contains("services.AddUxProjections();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "global::Mississippi.DomainModeling.Runtime.UxProjectionRegistrations.AddUxProjections(services);",
+            generatedCode,
+            StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -457,7 +460,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
+                                            [GenerateProjectionRegistration]
                                             [ProjectionPath("account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
@@ -498,7 +501,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
+                                            [GenerateProjectionRegistration]
                                             [ProjectionPath("account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
@@ -529,11 +532,11 @@ public class ProjectionSiloRegistrationGeneratorTests
 
         // Both reducers should be registered
         Assert.Contains(
-            "services.AddReducer<BalanceIncreased, AccountBalanceProjection, BalanceIncreasedReducer>();",
+            "global::Mississippi.Tributary.Runtime.ReducerRegistrations.AddReducer<global::TestApp.Domain.Projections.AccountBalance.Events.BalanceIncreased, global::TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection, global::TestApp.Domain.Projections.AccountBalance.Reducers.BalanceIncreasedReducer>(services);",
             generatedCode,
             StringComparison.Ordinal);
         Assert.Contains(
-            "services.AddReducer<BalanceDecreased, AccountBalanceProjection, BalanceDecreasedReducer>();",
+            "global::Mississippi.Tributary.Runtime.ReducerRegistrations.AddReducer<global::TestApp.Domain.Projections.AccountBalance.Events.BalanceDecreased, global::TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection, global::TestApp.Domain.Projections.AccountBalance.Reducers.BalanceDecreasedReducer>(services);",
             generatedCode,
             StringComparison.Ordinal);
     }
@@ -551,7 +554,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
+                                            [GenerateProjectionRegistration]
                                             [ProjectionPath("account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
@@ -593,7 +596,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
+                                            [GenerateProjectionRegistration]
                                             [ProjectionPath("account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
@@ -617,7 +620,7 @@ public class ProjectionSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains(
-            "services.AddReducer<BalanceUpdated, AccountBalanceProjection, BalanceUpdatedReducer>();",
+            "global::Mississippi.Tributary.Runtime.ReducerRegistrations.AddReducer<global::TestApp.Domain.Projections.AccountBalance.Events.BalanceUpdated, global::TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection, global::TestApp.Domain.Projections.AccountBalance.Reducers.BalanceUpdatedReducer>(services);",
             generatedCode,
             StringComparison.Ordinal);
     }
@@ -635,7 +638,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
+                                            [GenerateProjectionRegistration]
                                             [ProjectionPath("account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
@@ -682,31 +685,6 @@ public class ProjectionSiloRegistrationGeneratorTests
     }
 
     /// <summary>
-    ///     Generator should produce no output when projection has no reducers.
-    /// </summary>
-    [Fact]
-    public void GeneratorProducesNoOutputWhenProjectionHasNoReducers()
-    {
-        const string projectionSource = """
-                                        using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
-
-                                        namespace TestApp.Domain.Projections.AccountBalance
-                                        {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
-                                            public sealed record AccountBalanceProjection
-                                            {
-                                                public decimal Balance { get; init; }
-                                            }
-                                        }
-                                        """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeAndBaseStubs, projectionSource);
-        Assert.Empty(runResult.GeneratedTrees);
-    }
-
-    /// <summary>
     ///     Generator should produce output when projection has reducers.
     /// </summary>
     [Fact]
@@ -719,7 +697,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
+                                            [GenerateProjectionRegistration]
                                             [ProjectionPath("account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
@@ -745,6 +723,42 @@ public class ProjectionSiloRegistrationGeneratorTests
     }
 
     /// <summary>
+    ///     Generator should retain snapshot and root registration when a projection has no reducers.
+    /// </summary>
+    [Fact]
+    public void GeneratorProducesSnapshotRegistrationWhenProjectionHasNoReducers()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionRegistration]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, projectionSource);
+        SyntaxTree generated = Assert.Single(runResult.GeneratedTrees);
+        string registration = generated.ToString();
+        Assert.Contains(
+            "global::Mississippi.Tributary.Runtime.ReducerRegistrations.AddRootReducer<global::TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection>(services);",
+            registration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "AddSnapshotStateConverter<global::TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection>(services);",
+            registration,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(".Reducers;", registration, StringComparison.Ordinal);
+        Assert.DoesNotContain("AddReducer<", registration, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Multiple projections should generate separate registration files.
     /// </summary>
     [Fact]
@@ -757,7 +771,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
+                                            [GenerateProjectionRegistration]
                                             [ProjectionPath("account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
@@ -779,7 +793,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.TransactionHistory
                                         {
-                                            [GenerateProjectionEndpoints]
+                                            [GenerateProjectionRegistration]
                                             [ProjectionPath("transaction-history")]
                                             public sealed record TransactionHistoryProjection
                                             {

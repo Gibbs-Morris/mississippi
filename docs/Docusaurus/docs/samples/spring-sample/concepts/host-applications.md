@@ -331,7 +331,7 @@ Gateway generators can emit a domain-level convenience method, but Spring.Gatewa
 
 `Spring.AppHost` is separate from those generated methods. It is an Aspire entry point that provisions Azurite, Cosmos emulator resources, Orleans configuration, and project startup order for local development.
 
-For more details on domain registration generators, see [Domain Registration Generators](../../../archived/reference/domain-registration-generators.md).
+For more details on domain registration generators, see [Generated Application Contracts](../../../inlet/reference/generated-contracts.md).
 
 ## The Key Insight
 
@@ -354,4 +354,4 @@ Mississippi's source generators transform domain annotations into infrastructure
 
 - [Overview](../index.md) - Return to the Spring Sample App overview
 - [Key Concepts](./key-concepts.md) - Revisit the concept reference for all patterns used
-- [Domain Registration Generators](../../../archived/reference/domain-registration-generators.md) - Deep dive into how generation works
+- [Generated Application Contracts](../../../inlet/reference/generated-contracts.md) - Deep dive into how generation works

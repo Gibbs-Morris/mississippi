@@ -15,11 +15,14 @@ Repository-wide activation requires actual ADR acceptance through the existing
 lifecycle. Programme approval, publication, or merge alone does not establish
 that acceptance. The rules below are limited to this activation scope.
 
-The API migration in
-[programme #1127](https://github.com/Gibbs-Morris/mississippi/issues/1127)
-is planned until each implementing PR lands. Existing endpoint markers still
-serve several roles on the audited baseline; this guidance does not change their
-consumers or make the proposed replacements available.
+API migration availability follows the source revision being built.
+The audited coupling below describes revisions before each implementing change;
+this guide alone does not change generator consumers or supply a replacement API.
+The projection runtime/HTTP split is implemented in
+[PR #1168](https://github.com/Gibbs-Morris/mississippi/pull/1168) for
+[programme #1127](https://github.com/Gibbs-Morris/mississippi/issues/1127).
+Other migrations remain planned where their implementing changes are absent.
+Check declarations and operative consumers in the current checkout before use.
 
 ## Rules (RFC 2119)
 
@@ -139,7 +142,7 @@ These are design examples, not runnable application snippets.
 | Call a generated Add helper explicitly from host composition. | Claim that applying a generation marker registers services. | The generated helper's caller owns inclusion. |
 | Keep Policy/Roles/AuthenticationSchemes together. | Use tool ReadOnly metadata as proof of authorization. | Access is enforced at the real boundary; hints only describe behavior. |
 | Add configuration overloads for a real options family. | Create empty options for a marker or a sole required type identity. | Existing registration hierarchy and builders remain the entry points. |
-| Select runtime, HTTP, and MCP capabilities independently. | Use an endpoint marker to imply all three choices. | Planned marker migrations below own the separate consumers. |
+| Select runtime, HTTP, and MCP capabilities independently. | Use an endpoint marker to imply all three choices. | The migration status below identifies implemented and planned consumers. |
 
 ## Metadata Consumer Checklist
 
@@ -169,27 +172,29 @@ executed generator, host startup, or authorization evidence.
 | Stored identity | Explicit persisted identity; transport routes and client keys never replace it | Preserve existing values and derived generic names during ordinary refactors. |
 | HTTP/client wire route | One static route contract interpreted consistently by both consumers | Configured aggregate-route parity remains owned by #861 / PR #862. |
 | Access metadata and defaults | Resolve group/operation metadata, anonymous opt-out and validated host policy for each operation at the enforcing boundary | Planned #1150, #1151 and #1154; these rules do not claim completed HTTP/SignalR/MCP parity. |
-| Capability selection | Independent runtime/HTTP/MCP opt-in plus the corresponding explicit host registration/mapping | Planned marker migration; metadata presence does not attach a host. |
+| Capability selection | Independent runtime/HTTP/MCP opt-in plus the corresponding explicit host registration/mapping | Projection runtime/HTTP separation is implemented in #1130; other marker migrations remain planned. Metadata presence does not attach a host. |
 
 Missing named policies or schemes are configuration errors to diagnose at the
 owning boundary; declaring their names does not register authentication or
 authorization services.
 
-## Planned Consumer Migration
+## Consumer Migration Status
 
-| Current coupling | Planned contract and implementing issue |
+| Audited coupling | Contract and availability |
 | --- | --- |
 | GenerateAggregateEndpoints also selects runtime registration | GenerateAggregateRegistration in #1129; endpoint metadata retains HTTP ownership. |
-| GenerateProjectionEndpoints also selects runtime registration | GenerateProjectionRegistration in #1130. |
+| GenerateProjectionEndpoints also selects runtime registration before A03 | Implemented in #1130 / [PR #1168](https://github.com/Gibbs-Morris/mississippi/pull/1168): GenerateProjectionRegistration selects individual and composite silo helpers; GenerateProjectionEndpoints retains HTTP controller, response DTO, mappings, matching client DTO, and shared projection-feature inclusion in generated domain-client registration. Neither marker activates subscriptions. |
 | Saga input stored on HTTP endpoint metadata | `SagaInput<TInput>` in #1131; GenerateSagaRegistration in #1132. |
 | Endpoint metadata stores client FeatureKey | ClientFeatureKey in #1133. |
 | GenerateCommand drives HTTP and MCP selection | POST-only GenerateCommandEndpoint in #1134/#1136; independent GenerateMcpTool in #1135. |
 | GenerateAuthorization / GenerateAllowAnonymous live with generator markers | Neutral InletAuthorize / InletAllowAnonymous in #1144 with separate enforcing-boundary work. |
 | Unread DTO controls and placeholder generation promises | Property contract, requiredness, GeneratedDtoIgnore and GeneratedDtoJsonName in #1139-#1142; removals in #1137/#1138. |
 
-All names in the planned column are unavailable until their implementing child
-lands. Stored identity values, aliases, and versions stay outside these source
-renames. Existing alias-policy work belongs to #370, and explicit sample storage
+Projection consumers on revisions containing A03 can use
+`GenerateProjectionRegistration`; older revisions retain the audited coupling.
+Other replacements remain planned unless their implementing change is present
+in the source revision being built. Stored identity values, aliases, and versions
+stay outside these source renames. Existing alias-policy work belongs to #370, and explicit sample storage
 versions belong to #718.
 
 ## Registration Procedure Ownership

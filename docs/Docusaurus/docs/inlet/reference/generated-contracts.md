@@ -23,12 +23,33 @@ This reference maps the contracts in the Spring sample across its runtime, gatew
 | Domain input | Generated application surface | Consumer responsibility |
 |------------|-------------------------------|-------------------------|
 | Aggregate state with `[GenerateAggregateEndpoints]` and commands with `[GenerateCommand]` | Aggregate controller, command DTOs and mappings, client actions/effects/state/reducers, registration methods | Implement the command handlers and event reducers; register the infrastructure and generated features |
-| Projection with `[GenerateProjectionEndpoints]` and `[ProjectionPath]` | Projection controller, DTOs and mappings, and client projection reducers | Define the read model and its reducers; connect its brook and projection path to the hosts |
+| Projection with `[GenerateProjectionRegistration]` | Individual and domain silo helpers for the root reducer, available event reducers, and snapshot conversion | Define its brook and snapshot identity; add event reducers when needed and call a generated helper in the runtime host |
+| Projection with `[GenerateProjectionEndpoints]` and `[ProjectionPath]` | HTTP controller, response DTO, mappings, matching client DTO, and shared projection-feature inclusion in domain-client registration | Register gateway infrastructure and generated mappings; call the generated domain-client helper |
+| Projection DTO with `[ProjectionPath]` | Client projection reducer registration | Register the client feature and dispatch subscription actions when needed |
 | Saga with `[GenerateSagaEndpoints]` or its generic input form | Saga endpoints, client feature, and runtime registration | Define saga input, steps, state transitions, and compensation behavior |
 
 Generation runs during compilation. Edit the domain input and application configuration, then rebuild the consuming projects to update their generated contracts. Keep business decisions in the handlers and reducers that you own.
 
 That division gives teams one place to review a rule such as “withdraw only an available balance.” It also gives an AI coding assistant a bounded task: change the domain rule, supply its examples and tests, rebuild the contracts, and verify the consumer behavior.
+
+## Select Projection Capabilities
+
+Choose runtime registration and HTTP generation independently:
+
+| Markers on the domain projection | Silo registration | HTTP controller, DTO, and mappings | Client DTO and shared projection feature |
+|----------------------------------|-------------------|------------------------------------|------------------------------------------|
+| `[GenerateProjectionRegistration]` | Generated | Absent | Absent |
+| `[GenerateProjectionEndpoints]` with `[ProjectionPath]` | Absent | Generated | Generated |
+| Both markers with `[ProjectionPath]` | Generated | Generated | Generated |
+| Neither marker | Absent | Absent | Absent |
+
+A runtime-only projection needs its existing `[BrookName]` and snapshot metadata. Event reducers are optional: the generated helper still registers the root reducer and snapshot converter, and a root with no event reducers leaves state unchanged. It does not need `[ProjectionPath]`. Call the generated `Add{Projection}Projection()` helper, or its domain-level silo helper, in the composition root. Repeating those calls includes the projection once.
+
+When upgrading an existing projection that uses `[GenerateProjectionEndpoints]` for both roles, add `[GenerateProjectionRegistration]` and keep the HTTP marker and path. Spring's projections use both markers. Existing helper names, reducers, brook and snapshot identities, HTTP routes, and DTO payloads stay the same.
+
+The HTTP marker also selects the matching client DTO and includes `reservoir.AddProjectionsFeature()` in the generated domain-client helper. This registers the shared client feature; it does not start a subscription.
+
+`[ProjectionPath]` remains the shared external address for HTTP and subscriptions. Supply addressed projections to `ScanProjectionAssemblies(...)` in the server hosts and dispatch the existing client subscription actions. Neither generation marker activates a subscription. The legacy `GenerateClientSubscription` property is retained for compatibility; current generators do not read it.
 
 ## Host Registration Map
 

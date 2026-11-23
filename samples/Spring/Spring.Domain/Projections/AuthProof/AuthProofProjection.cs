@@ -13,6 +13,7 @@ namespace MississippiSamples.Spring.Domain.Projections.AuthProof;
 [ProjectionPath("auth-proof")]
 [BrookName("SPRING", "AUTHPROOF", "FLOW")]
 [SnapshotStorageName("SPRING", "AUTHPROOF", "FLOWPROJECTION")]
+[GenerateProjectionRegistration]
 [GenerateProjectionEndpoints]
 [GenerateAuthorization(Policy = "spring.auth-proof.claim")]
 [GenerateSerializer]

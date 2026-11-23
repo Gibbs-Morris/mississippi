@@ -49,7 +49,9 @@ flowchart TB
 
 The main pieces in the generated HTTP and Blazor SignalR path are:
 
-- Projection records are annotated with `[ProjectionPath(...)]` and `[BrookName(...)]`, and they add `[GenerateProjectionEndpoints]` when the generated HTTP and client surface is desired.
+- Projection records use `[BrookName(...)]` to select their source stream and `[GenerateProjectionRegistration]` to generate runtime helpers. Runtime-only projections can omit a path.
+- `[GenerateProjectionEndpoints]` with `[ProjectionPath(...)]` selects the HTTP controller, response DTO, and mappings independently of runtime registration.
+- Hosts call `ScanProjectionAssemblies(...)` for addressed projections, and clients dispatch Inlet subscription actions. Neither generation marker activates subscriptions.
 - Projection reducers inherit from `EventReducerBase<TEvent, TProjection>`.
 - The projection runtime serves the latest projection state, historical versions, and the latest version number through `IUxProjectionGrain<TProjection>`.
 - `UxProjectionControllerBase<TProjection, TDto>` exposes `GET`, `GET at version`, and `GET version` endpoints.
@@ -71,8 +73,8 @@ The main pieces in the generated HTTP and Blazor SignalR path are:
 
 - Mississippi does not give clients strong read-after-write consistency across the entire stack. Projection delivery is eventually consistent.
 - A successful command does not mean every client has already received or fetched the new projection version.
-- Client subscription generation is optional. `GenerateProjectionEndpointsAttribute.GenerateClientSubscription` can be set to `false`.
-- Not every projection needs real-time client subscription. Teams can expose read endpoints without opting into generated client subscription behavior.
+- The legacy `GenerateProjectionEndpointsAttribute.GenerateClientSubscription` property is retained for compatibility, but current generators do not read it. Host discovery and client subscription actions select the subscription path explicitly.
+- Not every projection needs real-time client subscription. Teams can expose read endpoints without subscribing clients.
 
 ## Trade-Offs
 
@@ -84,11 +86,12 @@ The main pieces in the generated HTTP and Blazor SignalR path are:
 
 - Use [Write Model](./write-model.md) for the event-producing side of this flow.
 - Use [Sagas and Orchestration](./sagas-and-orchestration.md) when the projection reflects a multi-step workflow rather than a single aggregate.
+- Use [Generated Contracts](../inlet/reference/generated-contracts.md) for the capability matrix and migration steps.
 - Use [Inlet](../inlet/index.md) and [Reservoir](../reservoir/index.md) for subsystem-specific detail.
 
 ## Summary
 
-Mississippi read models move from event streams to versioned projection access, generated HTTP endpoints, and client-state updates through one coherent delivery path - no hand-wired controllers, no manual SignalR subscriptions, no imperative client state mutation.
+Mississippi read models move from event streams to versioned projection access, generated HTTP endpoints, and client-state updates. Generation supplies the contracts; explicit host composition and client actions activate subscriptions.
 
 ## Next Steps
 

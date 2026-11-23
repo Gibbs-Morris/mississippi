@@ -28,8 +28,8 @@ Use this table as a translation guide from plain-language architecture terms to 
 | Saga | `MoneyTransferSagaState` | `ISagaState`, `[GenerateSagaEndpoints]` | Long-running orchestration state for multi-step workflows across aggregates. |
 | Saga step | `WithdrawFromSourceStep` | `ISagaStep<TSaga>`, `[SagaStep<TSaga>(index)]` | One executable workflow step with ordered execution. |
 | Saga compensation | `WithdrawFromSourceStep.CompensateAsync` | `ICompensatable<TSaga>` | Optional rollback behavior invoked when a later step fails. |
-| Projection (domain model) | `BankAccountBalanceProjection` | `[GenerateProjectionEndpoints]`, `[ProjectionPath]`, `[BrookName]` | Read-optimized domain projection record built from events. |
-| UX projection runtime | Generated projection query/subscription runtime | `IUxProjectionGrain<TProjection>` / `UxProjectionGrain<TProjection>` | Orleans runtime abstraction that serves projection queries and versioned projection reads. |
+| Projection (domain model) | `BankAccountBalanceProjection` | `[GenerateProjectionRegistration]`, `[GenerateProjectionEndpoints]`, `[ProjectionPath]`, `[BrookName]` | Read-optimized domain projection record built from events. |
+| UX projection runtime | Framework projection query/subscription runtime | `IUxProjectionGrain<TProjection>` / `UxProjectionGrain<TProjection>` | Orleans runtime abstraction that serves projection queries and versioned projection reads. |
 | Brook | `SPRING.BANKING.ACCOUNT` | `[BrookName]`, `BrookKey` | Canonical event stream identity (name + entity key). |
 
 Notes:
@@ -48,6 +48,7 @@ Key framework references:
 - [`FireAndForgetEventEffectBase<TEvent, TAggregate>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/FireAndForgetEventEffectBase.cs)
 - [`GenerateCommandAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateCommandAttribute.cs)
 - [`GenerateAggregateEndpointsAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateAggregateEndpointsAttribute.cs)
+- [`GenerateProjectionRegistrationAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/ac0fde069c6c420c79bccd532f70be055c32c531/src/Inlet.Generators.Abstractions/GenerateProjectionRegistrationAttribute.cs)
 - [`GenerateProjectionEndpointsAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateProjectionEndpointsAttribute.cs)
 - [`GenerateSagaEndpointsAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute.cs)
 - [`ProjectionPathAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Abstractions/ProjectionPathAttribute.cs)
@@ -284,11 +285,12 @@ public sealed record StartMoneyTransferCommand
 
 ## Projection
 
-A projection is a read-optimized view built from an event stream. Projections subscribe to the same events as aggregates but maintain their own state records tailored for specific read patterns. They are decorated with `[ProjectionPath]`, `[BrookName]`, and `[GenerateProjectionEndpoints]`.
+A projection is a read-optimized view built from an event stream. Projections subscribe to the same events as aggregates but maintain their own state records tailored for specific read patterns. Spring's projections declare `[GenerateProjectionRegistration]` for runtime helpers and `[GenerateProjectionEndpoints]` with `[ProjectionPath]` for HTTP contracts. `[BrookName]` selects the source stream. Runtime-only projections can omit the HTTP marker and path.
 
 ```csharp
 [ProjectionPath("bank-account-balance")]
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
+[GenerateProjectionRegistration]
 [GenerateProjectionEndpoints]
 [GenerateSerializer]
 public sealed record BankAccountBalanceProjection
