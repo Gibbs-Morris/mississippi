@@ -4,21 +4,32 @@ applyTo: '**/*.cs'
 
 # Service Registration Pattern
 
-Governing thought: Use hierarchical `ServiceRegistration` extension methods with options-based overloads and synchronous registration; defer async work to hosted services or Orleans lifecycle participants.
+Governing thought: Use hierarchical synchronous `ServiceRegistration` extension methods with overloads selected by the applicable contract; defer async work to hosted services or Orleans lifecycle participants.
 
 > Drift check: Review DI settings in `Directory.Build.props` and any referenced scripts/config before editing registration code.
 
 ## Rules (RFC 2119)
 
-- Each feature **MUST** expose `public static class {Feature}Registrations` with `Add{Feature}()` extension methods that follow the feature namespace structure (e.g., `AggregateRegistrations`, `ReducerRegistrations`, `InletSiloRegistrations`). Why: Keeps DI discoverable and consistent.
-- Parent registrations **MUST** call child registrations; sub-feature registrations **MUST** remain `internal`; public registration **MUST** exist only at product/feature boundaries and include XML docs. Why: Preserves hierarchy and minimizes public surface.
+- Service registration extension classes **MUST** use `{Feature}Registrations` unless an established [client feature contract](coding-discipline.instructions.md#client-side) or generated registration contract defines another class name. Why: Discoverable naming preserves the supported client and generated surfaces.
+- Feature registration methods **MUST** use hierarchical `Add{Feature}()` methods at supported feature boundaries. Why: Keeps DI discoverable alongside the shipped RuntimeBuilder and ClientBuilder facades.
+- Parent registrations **MUST** call child registrations rather than copy their service lists. Why: Preserves hierarchy.
+- Sub-feature registration boundaries **MUST** remain non-public unless an independently supported consumer boundary or generated host-callable helper requires public access. Why: Generated conveniences still need an explicit caller.
+- Public registration boundaries **MUST** include XML documentation. Why: Makes the supported composition surface explicit.
 - Registration methods **MUST** be synchronous; async calls (DB, HTTP, etc.) **MUST NOT** occur during registration. Why: DI building is synchronous.
 - Any async initialization **MUST** be deferred to `IHostedService` or Orleans lifecycle participants; async factories **MUST** be registered for deferred work rather than blocking registration. Why: Avoids startup deadlocks.
 - Classes **MUST NOT** inject `IServiceProvider` directly; use explicit dependencies or `Lazy<T>` to break circular dependencies. Factory patterns resolving services at runtime are the only acceptable exception. Why: Service locator hides dependencies, complicates testing, and breaks static analysis.
-- Options pattern: constructors **MUST NOT** take raw config primitives; registration **MUST** offer overloads for `Action<TOptions>`, `IConfiguration`, and explicit parameters, and options classes **MUST** be named `{Feature}Options` with sensible defaults and validation (`ValidateOnStart`/`IValidateOptions`). Why: Supports predictable configuration.
-- Connection strings and external clients **MUST** be accepted/configured via factories; package version entries **MUST NOT** be added in project files. Why: Keeps registration testable and CPM-compliant.
+- Configuration forms, required identity arguments, options validation, and attribute ownership **MUST** follow [metadata and host composition](metadata-and-composition.instructions.md) within its activation scope. Why: Adopted contracts use real configurable options while repository-wide adoption awaits ADR acceptance.
+- Service constructors **MUST** follow the [C# options-consumption rule](csharp.instructions.md#rules-rfc-2119). Why: That existing safeguard applies within and outside the proposed guide's activation scope.
+- Outside the proposed guide's activation scope, options classes **MUST** retain `{Feature}Options` names. Why: Deferred adoption does not remove the baseline naming safeguard.
+- Outside the proposed guide's activation scope, options classes **MUST** provide sensible defaults. Why: Unrelated features still need predictable default configuration.
+- Outside the proposed guide's activation scope, options validation **MUST** run before the host serves work, using ValidateOnStart or an explicit validated startup lifecycle. Why: IValidateOptions supplies validation logic but does not by itself trigger eager validation.
+- External clients **MUST** be accepted or constructed via factories. Why: Keeps registration testable and defers client construction.
+- Within the proposed guide's activation scope, connection strings **MUST** be configured through validated feature options. Why: Deployment configuration belongs to the options pipeline.
+- Within that activation scope, factories constructing external clients from connection strings **MUST** obtain those strings from validated feature options. Why: Client construction cannot bypass connection-string binding and validation.
+- Outside that activation scope, connection strings **MUST** retain factory-based configuration. Why: Deferred adoption does not remove the existing registration boundary.
+- Package version entries **MUST NOT** be added in project files. Why: Central Package Management owns dependency versions.
 - Registered services **MUST** use the DI get-only property pattern. Why: Aligns with shared guardrails and logging patterns.
-- Registration classes **SHOULD** be sealed/minimal and configuration **SHOULD** be externalized per cloud-native principles. Why: Keeps DI surface tight and environment-friendly.
+- Registration classes **SHOULD** be static and minimal. Why: Keeps the extension-method surface focused.
 
 ## Scope and Audience
 
@@ -28,7 +39,7 @@ Developers adding or modifying DI registration in Mississippi/Samples, including
 
 - Shape registrations as `services.Add{Feature}()` in `{Feature}Registrations.cs` under the feature namespace (e.g., `AggregateRegistrations.cs`, `InletSiloRegistrations.cs`).
 - Keep registration sync-only; move setup to `IHostedService` or Orleans lifecycle participants.
-- Provide overloads: explicit parameters, `Action<TOptions>`, `IConfiguration`; validate options on start.
+- For work that adopts the proposed composition guide, expose configuration forms for real options, keep required identity arguments explicit, and validate options on start.
 - Call child registrations instead of duplicating service lists.
 
 ## Core Principles
@@ -40,13 +51,13 @@ Developers adding or modifying DI registration in Mississippi/Samples, including
 
 ## Domain Registration Patterns (Event Sourcing)
 
-For domain models using Mississippi event sourcing:
+For hand-written domain composition using Mississippi event sourcing:
 
 | Method Pattern | Purpose | Example |
 |----------------|---------|---------|
 | `Add{Domain}Domain()` | Public entry point | `AddContosoDomain()` |
-| `Add{Aggregate}Aggregate()` | Private per-aggregate | `AddChannelAggregate()` |
-| `Add{Projection}Projection()` | Private per-projection | `AddUserProfileProjection()` |
+| `Add{Aggregate}Aggregate()` | Implementation helper; private unless a supported consumer boundary requires broader access | `AddChannelAggregate()` |
+| `Add{Projection}Projection()` | Implementation helper; private unless a supported consumer boundary requires broader access | `AddUserProfileProjection()` |
 
 Registration order within aggregates/projections:
 

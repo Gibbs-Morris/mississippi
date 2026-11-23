@@ -10,6 +10,10 @@ Governing thought: Use consistent, attribute-driven domain modeling with immutab
 
 ## Rules (RFC 2119)
 
+### Metadata Ownership
+
+- Domain metadata and generated capability choices **MUST** follow [metadata and host composition](metadata-and-composition.instructions.md) within its activation scope. Why: Adopted contracts separate these responsibilities without accepting the ADR for unrelated work.
+
 ### Domain Record Visibility
 
 - Aggregate, command, and projection records **MUST** be internal by default. They **MUST** be public when their types occur in public generated API signatures or are discovered through exported-type scanning. Why: Public C# signatures require accessible types, and exported-type discovery selects public types.
@@ -60,13 +64,26 @@ Inlet's [aggregate controller generator](../../src/Inlet.Gateway.Generators/Aggr
 
 - `[BrookName]` **MUST** use format `("APPNAME", "MODULENAME", "NAME")` with uppercase alphanumeric values only. Why: Attribute validates at runtime.
 - `[EventStorageName]` and `[SnapshotStorageName]` **MUST** use format `("APPNAME", "MODULENAME", "NAME", version: n)` with version defaulting to 1; storage names **MUST NOT** change once persisted. Why: Enables safe refactoring while maintaining storage compatibility.
-- `[Alias]` values **MUST** match the fully qualified type name (e.g., `[Alias("Contoso.Domain.Channel.Events.ChannelCreated")]`). Why: Provides stable Orleans serialization identity across refactoring.
+- Initial `[Alias]` values **MUST** match the fully qualified type name (e.g., `[Alias("Contoso.Domain.Channel.Events.ChannelCreated")]`). Why: Retains the current naming convention for new identities.
+- Existing persisted `[Alias]` values **MUST** remain unchanged during ordinary source refactors. Why: An alias can also contribute to constructed generic event storage names; a code rename is not a data migration.
+- A repository type rename that preserves an alias differing from its current full name **MUST** record an exact [AliasValidationExceptionRegistry](../../src/DomainModeling.TestHarness/Architecture/AliasValidationExceptionRegistry.cs) rule classified as [IntentionalPreservedIdentity](../../src/DomainModeling.TestHarness/Architecture/AliasExceptionClassification.cs), with the current type name and a reason. Why: The existing L0 validator expects the current full name and rejects unregistered identity-preservation exceptions.
+- A preserved-alias exception **MUST** have an executable L0 assertion of the exact pre-refactor alias literal. Why: The current validator matches the exception by type name and cannot detect an arbitrary replacement alias on that type.
+- Constructed generic persistence identities affected by a rename **MUST** have executable L0 assertions of their exact pre-refactor values. Why: Pinning the type alias alone does not prove every derived stored identity remains unchanged.
+- Alias exception changes **MUST** preserve mismatch and stale-rule detection in every consuming architecture suite. Why: A valid exception for one assembly scan can be stale in another.
+
+The [framework](../../tests/Architecture.L0Tests/AliasAttributeArchitectureTests.cs),
+[Spring](../../samples/Spring/Spring.Domain.L0Tests/Architecture/AliasAttributeNamespaceValidationTests.cs),
+and [Crescent](../../samples/Crescent/Crescent.L0Tests/AliasAttributeNamespaceValidationTests.cs)
+suites currently receive the shared registry unfiltered. Adding an entry alone
+is insufficient: the implementing PR reconciles exception scope with each scan
+and passes all three suites without dropping their validation assertions.
 
 ### Registration
 
-- Domain registration **MUST** follow the pattern `Add{Domain}Domain()` as public entry point calling private `Add{Aggregate}Aggregate()` and `Add{Projection}Projection()` methods. Why: Hierarchical registration keeps DI discoverable.
+- Hand-written domain registration **MUST** follow the pattern `Add{Domain}Domain()` as public entry point calling `Add{Aggregate}Aggregate()` and `Add{Projection}Projection()` helpers. Why: Hierarchical registration keeps DI discoverable.
+- Domain helper visibility **MUST** follow the [service-registration boundary rule](service-registration.instructions.md#rules-rfc-2119). Why: Implementation helpers remain private or internal; generated host-callable helpers retain their supported public surface.
 - Registration order **MUST** be: event types (`AddEventType<>`), command handlers (`AddCommandHandler<>`), reducers (`AddReducer<>`), snapshot converter (`AddSnapshotStateConverter<>`). Why: Dependencies must be registered before dependents.
-- Registration classes **MUST** be named `{Domain}Registrations` as `public static class`. Why: Naming convention enables discovery.
+- Hand-written domain registration classes **MUST** be named `{Domain}Registrations` as `public static class`. Why: Naming convention enables discovery.
 
 ## Scope and Audience
 

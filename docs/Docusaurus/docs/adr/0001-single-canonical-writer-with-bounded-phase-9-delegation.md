@@ -109,9 +109,12 @@ The underlying solution design described the single canonical writer pattern for
 
 The Three Amigos synthesis captured cross-functional agreement on keeping a single canonical writer while allowing bounded Phase 9 delegation to a specialist without introducing multi-writer ledger semantics.
 
-Related durable references:
+Related durable references at historical reviewed revision `14c8d2f49951`:
 
-- Published workflow contract: `.github/clean-squad/WORKFLOW.md`
-- ADR authoring mechanics, template, and lifecycle rules: `.github/instructions/adr.instructions.md`
+- [Workflow contract](https://github.com/Gibbs-Morris/mississippi/blob/14c8d2f49951615068552f3e3acb542928523d98/.github/clean-squad/WORKFLOW.md).
+- [ADR authoring mechanics, template, and lifecycle rules](https://github.com/Gibbs-Morris/mississippi/blob/14c8d2f49951615068552f3e3acb542928523d98/.github/instructions/adr.instructions.md).
+
+These links record the reviewed source evidence; current repository guidance
+remains authoritative for new work.
 
 The decision to reuse the existing event envelope for delegated provenance was intentionally kept inside this ADR rather than published as a separate record, because the current design does not show an independently justified architectural fork on schema shape.

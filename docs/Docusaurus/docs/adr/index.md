@@ -38,6 +38,12 @@ Write an ADR when a decision:
 
 Accepted ADRs are **immutable** — if a decision changes, a new ADR supersedes the original.
 
+## Proposed Decisions
+
+- [ADR-0001: Keep A Single Canonical Writer With Bounded Phase 9 Delegation](0001-single-canonical-writer-with-bounded-phase-9-delegation.md) records the proposed Clean Squad ownership and delegation model.
+
+- [ADR-0002: Separate Metadata From Host Composition](0002-metadata-and-host-composition.md) records the planned migration and consumer proof obligations. Approved execution contracts can adopt its guide; general repository activation awaits ADR acceptance.
+
 ## Learn More
 
 - [Documentation Home](../index.md) - Return to the product-area docs landing page
