@@ -21,7 +21,7 @@ namespace Mississippi.DomainModeling.Runtime.Aggregates.ReferenceSet.Registratio
 public static class ReferenceSetRegistrations
 {
     /// <summary>Registers membership decisions, replay, event identities and snapshot conversion.</summary>
-    /// <typeparam name="TAggregate">The named aggregate snapshot type.</typeparam>
+    /// <typeparam name="TAggregate">The named aggregate snapshot type with a public parameterless constructor.</typeparam>
     /// <typeparam name="TSource">The source projection type.</typeparam>
     /// <typeparam name="TAddCommand">The concrete add command with declared properties.</typeparam>
     /// <typeparam name="TRemoveCommand">The concrete remove command with declared properties.</typeparam>
@@ -35,7 +35,7 @@ public static class ReferenceSetRegistrations
         Func<TAggregate?, ReferenceSetState<TSource>> read,
         Func<TAggregate?, ReferenceSetState<TSource>, TAggregate> write
     )
-        where TAggregate : class
+        where TAggregate : class, new()
         where TAddCommand : class, IAddReference<TSource>
         where TRemoveCommand : class, IRemoveReference<TSource>
     {

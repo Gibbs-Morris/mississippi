@@ -29,6 +29,8 @@ Use positional command records for the currently verified generated consumer. Co
 
 ## Defaults and constraints
 
+`TAggregate` must be a reference type with a public parameterless constructor. The snapshot cache requires this constructor even when registration callbacks handle a null aggregate.
+
 An untouched collection has no aggregate snapshot. Registration callbacks must interpret a null aggregate as empty membership.
 
 - Maximum membership: `ReferenceSetLimits.MaximumMembers = 1000`.

@@ -1,3 +1,7 @@
+using System;
+using System.Linq;
+using System.Reflection;
+
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Common.Abstractions.Mapping;
@@ -5,7 +9,9 @@ using Mississippi.DomainModeling.Abstractions;
 using Mississippi.DomainModeling.Runtime.Aggregates.ReferenceSet.Events;
 using Mississippi.DomainModeling.Runtime.Aggregates.ReferenceSet.Handlers;
 using Mississippi.DomainModeling.Runtime.Aggregates.ReferenceSet.Reducers;
+using Mississippi.DomainModeling.Runtime.Aggregates.ReferenceSet.Registrations;
 using Mississippi.Tributary.Abstractions;
+using Mississippi.Tributary.Runtime;
 
 using MississippiTests.DomainModeling.Runtime.L0Tests.Aggregates.PinnedItems.State;
 using MississippiTests.DomainModeling.Runtime.L0Tests.Aggregates.SavedItems.Commands;
@@ -19,6 +25,10 @@ namespace MississippiTests.DomainModeling.Runtime.L0Tests.Aggregates.ReferenceSe
 /// <summary>Proves declared consumer commands compile, generate and execute through actual registrations.</summary>
 public sealed class ReferenceSetConsumerTests
 {
+    /// <summary>Models a snapshot shape that cannot satisfy the cache construction requirement.</summary>
+    /// <param name="Name">The value required by its only constructor.</param>
+    private sealed record ConstructorOnlyAggregate(string Name);
+
     /// <summary>Generated mappings preserve inputs and the same behavior supports independent named collections.</summary>
     [Fact]
     public void GeneratedCommandsExecuteForTwoNamedCollections()
@@ -65,5 +75,26 @@ public sealed class ReferenceSetConsumerTests
         Assert.Empty(removed.References.Members);
         Assert.Single(savedState.References.Members);
         Assert.Single(pinnedState.References.Members);
+    }
+
+    /// <summary>Rejects collection types that the normal snapshot hydration path cannot construct.</summary>
+    [Fact]
+    public void RegistrationRejectsSnapshotTypesWithoutPublicParameterlessConstructor()
+    {
+        Type snapshotCache = typeof(SnapshotRegistrations).Assembly.GetTypes()
+            .Single(type => type.IsGenericTypeDefinition &&
+                            type.GetInterfaces()
+                                .Any(contract =>
+                                    contract.IsGenericType &&
+                                    (contract.GetGenericTypeDefinition() == typeof(ISnapshotCacheGrain<>))));
+        Assert.Throws<ArgumentException>(() => snapshotCache.MakeGenericType(typeof(ConstructorOnlyAggregate)));
+        MethodInfo registration = Assert.IsType<MethodInfo>(
+            typeof(ReferenceSetRegistrations).GetMethod(nameof(ReferenceSetRegistrations.AddReferenceSet)),
+            false);
+        Assert.Throws<ArgumentException>(() => registration.MakeGenericMethod(
+            typeof(ConstructorOnlyAggregate),
+            typeof(CatalogItemProjection),
+            typeof(AddCatalogItem),
+            typeof(RemoveCatalogItem)));
     }
 }
