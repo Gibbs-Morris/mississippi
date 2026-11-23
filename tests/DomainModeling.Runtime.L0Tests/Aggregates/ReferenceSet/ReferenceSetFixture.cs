@@ -8,6 +8,8 @@ using MississippiTests.DomainModeling.Runtime.L0Tests.Aggregates.SavedItems.Comm
 using MississippiTests.DomainModeling.Runtime.L0Tests.Aggregates.SavedItems.State;
 using MississippiTests.DomainModeling.Runtime.L0Tests.Controllers.Aggregates.Commands.SavedItems.Mappers;
 using MississippiTests.DomainModeling.Runtime.L0Tests.Projections.CatalogItem;
+using MississippiTests.DomainModeling.Runtime.L0Tests.Projections.PinnedItemsMembership;
+using MississippiTests.DomainModeling.Runtime.L0Tests.Projections.SavedItemsMembership;
 
 using Orleans.Serialization;
 
@@ -29,6 +31,18 @@ internal static class ReferenceSetFixture
                 References = references,
             });
         services.AddReferenceSet<PinnedItemsAggregate, CatalogItemProjection, AddCatalogItem, RemoveCatalogItem>(
+            state => state?.References ?? new(),
+            (state, references) => (state ?? new()) with
+            {
+                References = references,
+            });
+        services.AddReferenceSetProjection<SavedItemsMembershipProjection, CatalogItemProjection>(
+            state => state?.References ?? new(),
+            (state, references) => (state ?? new()) with
+            {
+                References = references,
+            });
+        services.AddReferenceSetProjection<PinnedItemsMembershipProjection, CatalogItemProjection>(
             state => state?.References ?? new(),
             (state, references) => (state ?? new()) with
             {
