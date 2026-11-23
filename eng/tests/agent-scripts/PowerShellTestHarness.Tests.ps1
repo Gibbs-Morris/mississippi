@@ -130,7 +130,7 @@ Describe 'Standalone Pester runners' {
         Copy-Item (Join-Path $PSScriptRoot 'run-pester-suite.ps1') $fixture
 
         foreach ($file in (Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.Tests.ps1' -File)) {
-            $expectation = if ($file.Name -eq 'Setup.Tests.ps1') { $ExpectedValue } else { 1 }
+            $expectation = if ($file.Name -eq 'PrFeedbackSkill.Tests.ps1') { $ExpectedValue } else { 1 }
             Set-Content -LiteralPath (Join-Path $fixture $file.Name) -Value "Describe '$($file.BaseName)' { It 'runs' { 1 | Should -Be $expectation } }"
         }
 
