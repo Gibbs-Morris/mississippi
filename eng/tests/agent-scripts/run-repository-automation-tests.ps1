@@ -41,6 +41,10 @@ $result = [pscustomobject]@{
     Result = if ($failedRuns.Count -eq 0) { 'Passed' } else { 'Failed' }
     TotalCount = ($runs | Measure-Object -Property TotalCount -Sum).Sum
     FailedCount = ($runs | Measure-Object -Property FailedCount -Sum).Sum
+    PassedCount = ($runs | Measure-Object -Property PassedCount -Sum).Sum
+    SkippedCount = ($runs | Measure-Object -Property SkippedCount -Sum).Sum
+    Containers = @($runs | ForEach-Object { $_.Containers })
+    # Keep the native runs for test details, timings, and configuration.
     Runs = $runs
 }
 
