@@ -14,6 +14,8 @@ Governing thought: Record validated build recovery steps without changing the ca
 
 - For generated-source inspection, agents **SHOULD** check the evaluated output path and keep emitted files outside compilation globs. Why: EmitCompilerGeneratedFilesOptIn emitted project-root Generated files when IntermediateOutputPath was empty; the next build compiled them again and reported duplicate definitions.
 
+- While the repository uses .NET SDK 11.0.100 and GitVersion.Tool 7.0.1, agents **SHOULD** keep GitVersion last in the local tool manifest and retest a cold restore when either version changes. Why: A fresh restore incorrectly reported GitVersion's command for later tools. [SDK issue](https://github.com/dotnet/sdk/issues/53783)
+
 ## Scope and Audience
 
 Agents diagnosing repository build and cleanup failures.
