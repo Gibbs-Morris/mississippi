@@ -81,7 +81,8 @@ function Invoke-SetupStep {
     }
     Push-Location -LiteralPath $Step.WorkingDirectory
     try {
-        if ($script:SetupJsonOutput) { & $Step.Executable @($Step.Arguments) *> $null } else { & $Step.Executable @($Step.Arguments) }
+        $arguments = @($Step.Arguments)
+        if ($script:SetupJsonOutput) { & $Step.Executable @arguments *> $null } else { & $Step.Executable @arguments }
         if ($LASTEXITCODE -ne 0) { throw "Setup step '$($Step.Name)' failed with exit code $LASTEXITCODE." }
         if ($Step.Name -eq 'restore-tools') {
             $manifestPath = Join-Path $root '.config/dotnet-tools.json'
