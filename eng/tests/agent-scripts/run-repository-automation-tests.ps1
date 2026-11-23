@@ -22,6 +22,10 @@ $testPaths = @(
     (Join-Path $PSScriptRoot 'AgentEvaluation.Tests.ps1'),
     (Join-Path $PSScriptRoot 'PrFeedbackSkill.Tests.ps1')
 )
+foreach ($testPath in $testPaths) {
+    if (-not (Test-Path -LiteralPath $testPath -PathType Leaf)) { throw "Test file not found: $testPath" }
+}
+
 $runner = Join-Path $PSScriptRoot 'run-pester-suite.ps1'
 $runs = foreach ($testPath in $testPaths) {
     $run = & $runner -TestPath $testPath -PassThru
