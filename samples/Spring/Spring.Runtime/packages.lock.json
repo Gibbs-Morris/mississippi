@@ -31,9 +31,9 @@
       },
       "Aspire.Microsoft.Azure.Cosmos": {
         "type": "Direct",
-        "requested": "[13.6.0, )",
-        "resolved": "13.6.0",
-        "contentHash": "la5aUeKyI1nBfVNJEIxEFJn/EdqckiIY8VfKuohtPvvdNLUZgqaZuimyuoyuNudqjmGwy9mFIHeVJrb+kRL/xw==",
+        "requested": "[13.6.1, )",
+        "resolved": "13.6.1",
+        "contentHash": "SmwzBQek7NzjjVDHof8o/Xo7mXVzs/UXxOQ7QZ3vlF7kID3gUrYtecrwnsag+BN18bA8hEuJXLkFQlcuGG5t9Q==",
         "dependencies": {
           "Azure.Core": "1.62.0",
           "Azure.Identity": "1.21.0",
