@@ -45,10 +45,10 @@
       "id": "markdown-lint",
       "mode": "final",
       "executable": "npx",
-      "arguments": ["--yes", "markdownlint-cli2@0.17.2", "{{CHANGED_MARKDOWN_PATHS}}"],
+      "arguments": ["--yes", "markdownlint-cli2@0.24.2", "{{CHANGED_MARKDOWN_PATHS}}"],
       "scriptPaths": [],
       "purpose": "Lint changed Markdown and MDX content.",
-      "prerequisites": ["Node.js", "npm registry or cached markdownlint-cli2"],
+      "prerequisites": ["Node.js 22 or later", "npm registry or cached markdownlint-cli2"],
       "expectedArtifacts": ["markdownlint summary"]
     },
     {
