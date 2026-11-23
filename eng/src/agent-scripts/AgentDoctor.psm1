@@ -422,10 +422,14 @@ function Get-AgentDoctorReport { # NOSONAR - top-level doctor assembly coordinat
         $lockFile = Join-Path $root 'docs/Docusaurus/package-lock.json'
         $node = Invoke-DoctorProbe -Name 'node-version' -FilePath 'node' -Arguments @('--version') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
         $npm = Invoke-DoctorProbe -Name 'npm-version' -FilePath 'npm' -Arguments @('--version') -WorkingDirectory $root -ProbeOverrides $ProbeOverrides
-        $nodeVersionMatch = if ($node.Available -and $node.ExitCode -eq 0) { [regex]::Match($node.Output.Trim(), '^v?(?<Major>\d+)(?:\.(?<Minor>\d+))?(?:\.(?<Patch>\d+))?') } else { $null }
-        $nodeState = if (-not $node.Available) { 'missing' } elseif ($node.ExitCode -ne 0) { 'unknown' } elseif (-not $nodeVersionMatch.Success) { 'unknown' } elseif ([int]$nodeVersionMatch.Groups['Major'].Value -lt 20) { 'unsupported' } else { 'ready' }
+        $minimumNodeVersion = [version]'22.12.0'
+        $nodeVersion = $null
+        $nodeState = if (-not $node.Available) { 'missing' }
+        elseif ($node.ExitCode -ne 0 -or -not [version]::TryParse(($node.Output.Trim() -replace '^v', ''), [ref]$nodeVersion)) { 'unknown' }
+        elseif ($nodeVersion -lt $minimumNodeVersion) { 'unsupported' }
+        else { 'ready' }
         $nodeDetails = Get-DoctorProbeDetails -Probe $node
-        $nodeRemediation = if ($nodeState -eq 'ready') { '' } elseif ($nodeState -eq 'unsupported') { 'Install Node.js 20 or later for the documentation profile.' } else { 'Install Node.js 20 or later and verify node --version.' }
+        $nodeRemediation = if ($nodeState -eq 'ready') { '' } else { "Install Node.js $minimumNodeVersion or later and verify node --version." }
         Add-DoctorCheck -Checks $checks -Name 'node' -State $nodeState -Required $true -Details $nodeDetails -Remediation $nodeRemediation
         Add-DoctorCheck -Checks $checks -Name 'npm' -State $(if ($npm.Available -and $npm.ExitCode -eq 0) { 'ready' } elseif (-not $npm.Available) { 'missing' } else { 'unknown' }) -Required $true -Details (Get-DoctorProbeDetails -Probe $npm) -Remediation 'Install npm for the documentation profile.'
         $docsManifestState = 'missing'
