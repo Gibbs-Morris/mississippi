@@ -10,11 +10,11 @@
       },
       "Microsoft.AspNetCore.Components.WebAssembly.Server": {
         "type": "Direct",
-        "requested": "[10.0.13, )",
-        "resolved": "10.0.13",
-        "contentHash": "EeFVBmuxdbvNcjty7Jkvck9LG1hGjFnRaJUKDrGfoMKmHJF7iRXcp4rx85Qhm+JmRKKIm4vZMUdv2i2KNsR5JQ==",
+        "requested": "[10.0.15, )",
+        "resolved": "10.0.15",
+        "contentHash": "0fLVpTv9PMxOihGgSCxwTFQ8MOk0He2lqD5Hh97WKhXyZPiOj3N7c3SEBNYwUlk7J4Bv6Qe49G58SldIoJq1EA==",
         "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "10.0.13"
+          "Microsoft.AspNetCore.Components.WebAssembly": "10.0.15"
         }
       },
       "Microsoft.CodeAnalysis.NetAnalyzers": {
@@ -43,8 +43,8 @@
       },
       "Microsoft.JSInterop.WebAssembly": {
         "type": "Transitive",
-        "resolved": "10.0.13",
-        "contentHash": "kh68RQ3KmgKSsIpkQetbuHxxLEsIkjaJ+GfJhGn7NQCgrT067JXGmbCzXM42uiPcdXW5dJ8S5AKwJcyRDJFWzQ=="
+        "resolved": "10.0.15",
+        "contentHash": "/UTg2l5MAipHsPlCXBTfTCCLHUsyVeQM+z+QSStjfbP2b4RCrxl9NoKVZ7Ls9heBUT1/4yRjhMbqojl59A/xew=="
       },
       "Mississippi.LightSpeed.Client": {
         "type": "Project",
@@ -92,10 +92,10 @@
       "Microsoft.AspNetCore.Components.WebAssembly": {
         "type": "CentralTransitive",
         "requested": "[10.0.12, )",
-        "resolved": "10.0.13",
-        "contentHash": "w3V2ij4WptDXOLLu78o3/SIqHIVoW6uzCjKZzSr4hTJFKvv8/79YhwRyyGonktM+qP8hrFvBVNCQa51ZpoJ6Cw==",
+        "resolved": "10.0.15",
+        "contentHash": "YWFk0tbTM25BfeJ2kFuUQ9E2HB0t6GK8jWFm2oIJeTVp3CS7CXGPU/TEpwLvtvK/uQGSX7eL4lpoRQGXgyWJZA==",
         "dependencies": {
-          "Microsoft.JSInterop.WebAssembly": "10.0.13"
+          "Microsoft.JSInterop.WebAssembly": "10.0.15"
         }
       }
     }
