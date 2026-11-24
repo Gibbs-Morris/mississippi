@@ -48,55 +48,13 @@ Governing thought: Sample applications follow strict architectural patterns—Re
 
 All contributors building sample applications with Mississippi. Samples serve as reference implementations—they demonstrate correct usage and must be exemplary.
 
-## At-a-Glance Quick-Start
+## Feature workflow
 
-### Client Pattern
-
-```text
-User Action → Component EventCallback → Page Dispatch(Action) → Store
-Store → Reducers (sync state) → Effects (async, API calls) → New Actions
-State ← Store ← Component reads via GetState<T>()
-```
-
-### Server Pattern
-
-```text
-HTTP Request → Controller → Aggregate Grain → Command Handler
-Handler → Validates → Emits Events → Events persisted to Brook
-Brook → Projection Reducers → Projection State
-Projection → SignalR → Client subscription
-```
-
-### Feature Folders
-
-```text
-Client/Features/{Feature}/
-├── {Feature}State.cs           # IFeatureState record
-├── {Action}Action.cs           # IAction records
-├── {Feature}Reducers.cs        # Pure reducer functions
-├── {Feature}FeatureRegistration.cs
-└── ActionEffects/              # Optional async effects
-    └── {Action}ActionEffect.cs
-
-{DomainProject}/Aggregates/{Aggregate}/
-├── {Aggregate}Aggregate.cs     # State record with attributes
-├── Commands/{Command}.cs       # Command records
-├── Events/{Event}.cs           # Event records
-├── Handlers/{Command}Handler.cs
-├── Reducers/{Event}Reducer.cs
-└── Effects/{Effect}Effect.cs   # Optional event effects
-
-{DomainProject}/Projections/{Projection}/
-├── {Projection}Projection.cs   # Projection state record
-└── Reducers/{Event}ProjectionReducer.cs
-```
-
-## Core Principles
-
-- Redux everywhere: actions/reducers/state/effects on client AND server
-- Aggregates own writes; projections optimize reads
-- Schema-first: attributes define, generators implement
-- **Zero tolerance**: refuse non-compliant code in samples
+For implementing or assessing an event-sourced application feature, use
+[implement-event-sourced-feature](../../.agents/skills/implement-event-sourced-feature/SKILL.md)
+with the [local source bindings](../agent-guidance/event-sourced-feature-bindings.md).
+Read these files directly if skill discovery is unavailable. The Rules above
+apply independently of skill activation.
 
 ## References
 
