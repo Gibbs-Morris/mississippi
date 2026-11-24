@@ -1,0 +1,83 @@
+{
+  "tool": "codex-cli 0.142.5",
+  "model": "gpt-5.5",
+  "reasoning": "medium",
+  "skill_content_revision": "8c72aba1126468c06042ba5af806db6df3e83005",
+  "candidate_lf_sha256": "eea91fb6176b24159a765001b3e746105131574df3249ba356b4d354b4e6a912",
+  "limits": "Synthetic Node fixtures, one trial per case; no whole-repository Copilot or Codex behavior claim. Usage totals are complete multi-request turns including personal/plugin context and cache; they are not before/after savings.",
+  "cases": [
+    {
+      "case": "explicit",
+      "skill_read_observed": true,
+      "changed_files": [
+        "value.mjs"
+      ],
+      "added_files": [],
+      "independently_rerun_check": {
+        "exit_code": 0,
+        "output": "CHECK_PASS: 3 cases"
+      },
+      "usage": {
+        "input_tokens": 155300,
+        "cached_input_tokens": 128256,
+        "output_tokens": 1254,
+        "reasoning_output_tokens": 155
+      },
+      "candidate_lf_sha256": "eea91fb6176b24159a765001b3e746105131574df3249ba356b4d354b4e6a912"
+    },
+    {
+      "case": "implicit",
+      "skill_read_observed": true,
+      "changed_files": [
+        "value.mjs"
+      ],
+      "added_files": [],
+      "independently_rerun_check": {
+        "exit_code": 0,
+        "output": "CHECK_PASS: 3 cases"
+      },
+      "usage": {
+        "input_tokens": 162876,
+        "cached_input_tokens": 134784,
+        "output_tokens": 1419,
+        "reasoning_output_tokens": 220
+      },
+      "candidate_lf_sha256": "eea91fb6176b24159a765001b3e746105131574df3249ba356b4d354b4e6a912"
+    },
+    {
+      "case": "negative",
+      "skill_read_observed": false,
+      "changed_files": [],
+      "added_files": [],
+      "independently_rerun_check": null,
+      "usage": {
+        "input_tokens": 18524,
+        "cached_input_tokens": 9600,
+        "output_tokens": 12,
+        "reasoning_output_tokens": 0
+      },
+      "candidate_lf_sha256": "eea91fb6176b24159a765001b3e746105131574df3249ba356b4d354b4e6a912"
+    },
+    {
+      "case": "assessment",
+      "skill_read_observed": true,
+      "changed_files": [],
+      "added_files": [],
+      "independently_rerun_check": null,
+      "usage": {
+        "input_tokens": 89729,
+        "cached_input_tokens": 66048,
+        "output_tokens": 2018,
+        "reasoning_output_tokens": 572
+      },
+      "candidate_lf_sha256": "eea91fb6176b24159a765001b3e746105131574df3249ba356b4d354b4e6a912"
+    }
+  ],
+  "copilot": {
+    "version": "1.0.83-5",
+    "model_observed": "gpt-5.4",
+    "discovery": "enabled project skill",
+    "behavior": "blocked before model output by HTTP 402 additional usage limit",
+    "files_changed": []
+  }
+}
