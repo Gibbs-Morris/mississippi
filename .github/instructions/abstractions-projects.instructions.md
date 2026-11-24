@@ -15,6 +15,9 @@ Governing thought: Split stable public contracts into `{Vendor}.{Area}[.{Feature
 - When all mandatory triggers apply (cross-assembly/service contracts, multiple implementations exist/expected, stable public API), contributors **MUST** create an abstractions project before adding/modifying contracts. Why: Enforces required separation early.
 - When any optional trigger applies (dependency minimization, testing/mocking, cross-team reuse, versioning flexibility), contributors **SHOULD** create an abstractions project unless deliberately documented otherwise. Why: Encourages reuse when valuable.
 - Types that describe *what* to do **SHOULD** live in abstractions; types describing *how* **MUST** stay in main project. Why: Keeps public programming model stable while implementations evolve.
+- Aggregate and projection features **MUST** expose only the smallest justified public cross-assembly contracts, state, and requests in Abstractions. Why: Sharing a feature does not require publishing its implementation.
+- Feature implementations, internal events, handlers, reducers, effects, and concrete wiring **MUST** stay in the appropriate implementation project (`.Domain` for reusable business behavior; `.Runtime` for execution infrastructure). Why: Consumers depend on contracts without taking behavior or infrastructure dependencies.
+- Intentional public event extension contracts **MAY** live in Abstractions. Why: Events consumed across an intentional public boundary are contracts rather than internal implementation facts.
 - Abstract base classes intended for external inheritance **MUST** end with `Base` and document justification; naming **SHOULD** follow `{Vendor}.{Area}[.{Feature}].Abstractions`. Why: Clarifies intent and discoverability.
 
 ## Scope and Audience

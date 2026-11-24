@@ -29,9 +29,10 @@ Governing thought: Framework code prioritizes developer experience and minimizes
 ### Pattern Consistency
 
 - Framework APIs **MUST** expose the same patterns developers use: actions/reducers/state/effects for client; commands/handlers/events/reducers for server. Why: Developers learn one model.
-- Internal framework code **SHOULD** follow these patterns when practical. Why: Consistency aids maintenance.
-- Framework code **MAY** deviate when infrastructure requirements demand it (e.g., low-level Orleans integration, source generators, storage providers). Why: Framework builds the patterns; it can't always use them.
-- Deviations **MUST** be documented with justification in code comments. Why: Future maintainers need context.
+- Production framework aggregate and projection features **MUST** follow the [domain-modeling pattern](domain-modeling.instructions.md#production-feature-pattern). Why: Reusable domain behavior has the same responsibilities as application features.
+- Low-level framework infrastructure **SHOULD** follow familiar patterns where practical. Why: Dispatchers, source generators, and storage providers enable features under different constraints.
+- Infrastructure code **MAY** use specialized implementations when its actual infrastructure requirements demand them. Why: This allowance covers enabling mechanisms, not aggregate or projection decisions embedded in them.
+- Infrastructure deviations **MUST** be documented with justification in code comments. Why: Future maintainers need evidence for the boundary.
 
 ### Extension Points
 
@@ -61,43 +62,43 @@ Governing thought: Framework code prioritizes developer experience and minimizes
 
 - `ICommandHandler`, `IEventReducer`, `IEventEffect` define the server pattern. Why: Core contracts.
 - `IRootCommandHandler`, `IRootReducer` compose handlers/reducers for dispatch. Why: Single entry point.
-- Framework grains **SHOULD** follow aggregate patterns where applicable. Why: Consistency.
+- Framework grains hosting aggregate or projection features **MUST** preserve the named feature components defined by [domain modeling](domain-modeling.instructions.md). Why: A grain host does not replace handlers or reducers.
 - Infrastructure grains (worker grains, coordination grains) **MAY** have custom patterns when orchestrating aggregates. Why: Infrastructure enables patterns.
 
 ### Flexibility for Edge Cases
 
-- When a pattern cannot support a requirement, framework code **MAY** implement custom solutions. Why: Framework must be complete.
+- When infrastructure cannot support a requirement through existing mechanisms, framework infrastructure **MAY** implement custom solutions within the boundary above. Why: Infrastructure flexibility does not grant a production-feature exception.
 - Custom solutions **SHOULD** still expose familiar interfaces to developers. Why: Developer-facing API consistency matters more than internal consistency.
 - New patterns added to handle edge cases **SHOULD** be generalized if reusable. Why: One-offs become patterns if needed twice.
 
 ## Scope and Audience
 
-Contributors building or extending the Mississippi framework under `src/`. This is about building the infrastructure that enables the strict patterns enforced in samples.
+Contributors building or extending the Mississippi framework under `src/`, including reusable production domain features and the infrastructure that enables them.
 
 ## At-a-Glance Quick-Start
 
 ### Pattern Hierarchy
 
 ```text
-Framework exposes patterns → Samples follow patterns strictly
-Framework MAY deviate internally → But MUST NOT leak deviations to developers
+Production aggregate and projection features → Same named domain components
+Low-level infrastructure → Specialized mechanisms with documented justification
 ```
 
 ### When to Follow vs Deviate
 
 | Scenario | Guidance |
 |----------|----------|
-| New feature for developers | MUST follow patterns |
-| Internal plumbing | SHOULD follow, MAY deviate with justification |
-| Source generators | MUST produce pattern-compliant code |
-| Orleans integration | MAY use Orleans patterns directly |
-| Storage providers | MAY use provider-specific patterns |
+| Production aggregate or projection, including framework features | Follow the canonical domain-modeling pattern |
+| Internal dispatch or delegate adapters | Use infrastructure shapes; keep feature decisions in named components |
+| Source generators | Produce pattern-compliant feature code |
+| Low-level Orleans integration | Use Orleans patterns for infrastructure |
+| Storage providers | Use provider-specific infrastructure patterns |
 
 ### Framework Contracts
 
 ```text
 Client: IStore, IAction, IFeatureState, IActionReducer, IActionEffect
-Server: ICommandHandler, IEventReducer, IEventEffect, IAggregate, IProjection
+Server: ICommandHandler, IEventReducer, IEventEffect
 Generators: [GenerateCommand], [GenerateAggregateEndpoints], [GenerateProjectionEndpoints], etc.
 ```
 
