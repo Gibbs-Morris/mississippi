@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "status": "definitions-only; no native trial results",
+  "source_revision": "3d258825642463390c356abdda0b35c92cbdcad7",
+  "cases": [
+    {
+      "id": "nine-reader-intents",
+      "prompt": "Choose one page contract for each independent request: first sample result; guided learning project; rotate a verified cache key; explain asynchronous visibility; look up exact timeout values; operate a deployed cluster; diagnose a timeout symptom; upgrade 1.4 to 2.0; summarize the 2.0 release. Return classifications only.",
+      "expected": "getting-started, tutorials, how-to, concepts, reference, operations, troubleshooting, migration, release-notes, in that order; no extra taxonomy or pages."
+    },
+    {
+      "id": "focused-first-success",
+      "prompt": "Draft a getting-started outline for the verified local sample. The reader needs one first successful result; optional cloud deployment is outside scope. Use the supplied local authoring format and include verification.",
+      "expected": "One happy path, explicit prerequisites and observable verification; selected contract plus local format; deeper branches linked rather than mixed into the page."
+    },
+    {
+      "id": "legacy-feature-placement",
+      "prompt": "Plan a focused correction to a symptom-driven troubleshooting page in an existing feature folder. Preserve its current URL. A separate new sibling section is also requested. State placement and metadata decisions without writing files.",
+      "expected": "Keep the stable existing placement, retain symptom-driven structure, use new-folder category metadata/generated-index guidance where applicable, and do not turn the feature page into a catch-all or rename unrelated pages."
+    },
+    {
+      "id": "generated-manual-evidence",
+      "prompt": "Outline a how-to page with a verified preferred generated registration path and an evidenced manual customization path. Shared prerequisites are identical. No evidence establishes different ordering or durability guarantees.",
+      "expected": "Choose how-to first, teach shared setup before branching, show and mark the preferred generated path first, explain manual intent, and do not invent runtime differences."
+    },
+    {
+      "id": "runtime-unknowns",
+      "prompt": "Review a concept draft that promises global ordering and automatic recovery. Supplied evidence establishes only per-activation scheduling. Apply the local runtime checklist; report missing evidence rather than inventing behavior.",
+      "expected": "Bound guarantees to evidence and assess all relevant checklist topics, including retry/timeouts, durability/recovery, versioning, cluster assumptions, telemetry, security, and unsupported or dangerous patterns."
+    },
+    {
+      "id": "partial-review-authority",
+      "prompt": "Review only a reference default row: the draft says 5 seconds and supplied configuration says 10. Return Must Fix/Should Fix/Consider findings. Do not edit or publish.",
+      "expected": "Report the evidenced default error in the caller format without rewriting the page or escalating review authority."
+    },
+    {
+      "id": "adjacent-adr",
+      "prompt": "Plan an ADR recording an approved multi-component architecture decision. Use the existing MADR lifecycle and applicable diagram/C4 guidance. Do not draft a concept page or edit an accepted decision.",
+      "expected": "Keep the separate ADR policy/template and applicable structural-diagram guidance; the documentation router does not replace the ADR contract."
+    },
+    {
+      "id": "different-project-format",
+      "prompt": "Draft a narrow how-to in a separate handbook project. Local policy requires only title metadata and Overview, Steps, Validation headings. The supplied verified command is git status --short -- sample.txt, with output ?? sample.txt; do not change files.",
+      "expected": "Honor the local override and verified command/output; do not import Docusaurus paths, sidebar metadata, publication, or configuration changes."
+    }
+  ]
+}

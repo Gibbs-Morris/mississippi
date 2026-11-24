@@ -21,27 +21,6 @@ Governing thought: Every Mississippi documentation page should serve one reader 
 
 All contributors and agents writing or updating public docs under `docs/Docusaurus/docs/`.
 
-## At-a-Glance Quick-Start
-
-- Choose the page type first.
-- State the page outcome or scope in the opening.
-- Keep one page for one reader intent.
-- Split and cross-link when the topic spans multiple intents.
-
-## Classification Questions
-
-Ask these questions before writing:
-
-- Is the reader trying to get to a first success?
-- Is the reader trying to learn by following a guided sequence?
-- Is the reader trying to complete a specific task quickly?
-- Is the reader trying to understand a model, guarantee, or trade-off?
-- Is the reader trying to look up exact facts?
-- Is the reader trying to run Mississippi safely in production?
-- Is the reader diagnosing a symptom?
-- Is the reader upgrading between versions?
-- Is the reader scanning a release summary?
-
 ## Core Principles
 
 - **One Intent**: One page should answer one main question.
@@ -53,3 +32,4 @@ Ask these questions before writing:
 - Public guide: `docs/Docusaurus/docs/contributing/documentation-guide.md`
 - Documentation authoring: `.github/instructions/documentation-authoring.instructions.md`
 - Feature documentation structure: `.github/instructions/feature-documentation-structure.instructions.md`
+- Page-contract selection: [Author technical documentation](../../.agents/skills/author-technical-documentation/SKILL.md#select-the-page-contract).

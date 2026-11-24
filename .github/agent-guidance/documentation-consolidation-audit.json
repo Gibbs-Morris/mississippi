@@ -1,0 +1,184 @@
+{
+  "version": 1,
+  "evidence_kind": "source preservation and authored-output inspection; not native activation results",
+  "source_revision": "3d258825642463390c356abdda0b35c92cbdcad7",
+  "boundary_pr": "https://github.com/Gibbs-Morris/mississippi/pull/622",
+  "pre_implementation_plans": [
+    "https://github.com/Gibbs-Morris/mississippi/issues/556#issuecomment-5848675525",
+    "https://github.com/Gibbs-Morris/mississippi/issues/555#issuecomment-5848675670"
+  ],
+  "instruction_counts": {
+    "before_lines": 237,
+    "after_lines": 185,
+    "reduction_lines": 52,
+    "before_bytes": 16382,
+    "after_bytes": 15028,
+    "measurement": "LF git source blobs and matching LF output bytes; no token or latency claim"
+  },
+  "files": [
+    {
+      "path": ".github/instructions/documentation-page-focus.instructions.md",
+      "before_lines": 55,
+      "after_lines": 35,
+      "before_bytes": 3076,
+      "after_bytes": 2465,
+      "before_sha256": "6a9c3e4c2938de6966885726b57bcec4ec096acb2e84c84c6e155977c0713820",
+      "after_sha256": "e49e98a544601c15b31825e39faf73cfcad5c9c8beaecb83173391290e0a5cd3"
+    },
+    {
+      "path": ".github/instructions/feature-documentation-structure.instructions.md",
+      "before_lines": 52,
+      "after_lines": 37,
+      "before_bytes": 3259,
+      "after_bytes": 2883,
+      "before_sha256": "0d6df1a585156260c0451bd91423b897c59da8870c5f1c4b5ff9dddb79a7799f",
+      "after_sha256": "a85a17624987318cecc2e0e32abef8279b6f6194c71dd6db075fc1f14c440604"
+    },
+    {
+      "path": ".github/instructions/feature-docs-pattern.instructions.md",
+      "before_lines": 55,
+      "after_lines": 49,
+      "before_bytes": 2832,
+      "after_bytes": 2781,
+      "before_sha256": "35e8397118024121f00a8e670c8dec296434b38882f6af659b0974e4faf31658",
+      "after_sha256": "fa3e5305e72caa3c5e23861802a1b482b812346e30c9028d26fc0bcbf25d5fb1"
+    },
+    {
+      "path": ".github/instructions/documentation-authoring.instructions.md",
+      "before_lines": 75,
+      "after_lines": 64,
+      "before_bytes": 7215,
+      "after_bytes": 6899,
+      "before_sha256": "9dd5563e1b9d8123a7a21dab104b373b09760592eb829b8284925210be15d088",
+      "after_sha256": "2642d5a0214fc954e1acc10156e74193f8ee38b1fea3c006da3489aaea282f14"
+    }
+  ],
+  "preservation": {
+    "rule_bullets": 38,
+    "frontmatter_blocks": 4,
+    "contract_table_rows": 9,
+    "runtime_topics": 11,
+    "comparison": "Exact complete frontmatter, Rules section, and table text equality; exact unchanged guide checklist substring"
+  },
+  "skill_package": {
+    "status": "unchanged",
+    "sha256": "da2ad40d169667c049669cbb43197d28b61235a46907ccca8ed62ac8fcdebac8",
+    "hash_algorithm": "SHA-256 over case-sensitive sorted repo-relative UTF-8 path, NUL, committed LF blob, NUL for each file",
+    "files": [
+      {
+        "path": ".agents/skills/author-technical-documentation/SKILL.md",
+        "sha256": "26516ee4c44514bd7622ed2a0fbf342f009a9c57da02e490a4b7db5929e02790",
+        "lines": 93
+      },
+      {
+        "path": ".agents/skills/author-technical-documentation/references/concepts.md",
+        "sha256": "4566cd40878906d0c29da1c15ec7aff1aba0fe495d524f0a95788a910ec9b6d8",
+        "lines": 20
+      },
+      {
+        "path": ".agents/skills/author-technical-documentation/references/getting-started.md",
+        "sha256": "39e2b66abb010cbd4c56e4dd98d13ed9353b4d76cc62605e184cbb1eabb02bbd",
+        "lines": 22
+      },
+      {
+        "path": ".agents/skills/author-technical-documentation/references/how-to.md",
+        "sha256": "c676e8dda564d989557acbe742eef889297a89a967b63fca57a50bf81f233186",
+        "lines": 21
+      },
+      {
+        "path": ".agents/skills/author-technical-documentation/references/migration.md",
+        "sha256": "ea85bef964302f0f5341af3f9b582c5e416eedc6cd85f70688ca3b7e48d5b350",
+        "lines": 24
+      },
+      {
+        "path": ".agents/skills/author-technical-documentation/references/operations.md",
+        "sha256": "1c928f2945c6c7e35168c270b5f55a61601db03d02744600f38df9d9cfd7e32f",
+        "lines": 23
+      },
+      {
+        "path": ".agents/skills/author-technical-documentation/references/reference.md",
+        "sha256": "c530cfa1d49c76a3a1c09ba236f2d77f238a1532cc6f2f883f1585f7e9371ab8",
+        "lines": 27
+      },
+      {
+        "path": ".agents/skills/author-technical-documentation/references/release-notes.md",
+        "sha256": "0a1af11edc8cadd309998c2d6074d74f84d8d3b7b07cdf12845c529da14a6910",
+        "lines": 22
+      },
+      {
+        "path": ".agents/skills/author-technical-documentation/references/troubleshooting.md",
+        "sha256": "7b164ef962cfdc1ba58336c229c1e3a28fda78ab178366feab0f1804e59a3f05",
+        "lines": 23
+      },
+      {
+        "path": ".agents/skills/author-technical-documentation/references/tutorials.md",
+        "sha256": "44a43f6317dd1b0bf30401ab2476761c23a7db67a7bb59e0189d75e42b1b2e5f",
+        "lines": 19
+      }
+    ]
+  },
+  "checks": {
+    "skill_schema": "Skill is valid!",
+    "case_json_schema": "pass",
+    "markdownlint": "pass; markdownlint-cli 0.45.0 with .github/linters/.markdown-lint.yml",
+    "relative_links_and_anchors": {
+      "status": "pass",
+      "relative_links": 50,
+      "anchors": 14
+    }
+  },
+  "authored_fixture": {
+    "evidence_kind": "same-model authored output; not blind activation/native conformance",
+    "case_id": "different-project-format",
+    "page_type": "how-to",
+    "local_headings": [
+      "Overview",
+      "Steps",
+      "Validation"
+    ],
+    "checked_relative_links": 1,
+    "executed_command": "git status --short -- sample.txt",
+    "execution_binding": "Per-command safe.directory and an empty explicit excludes file avoid unrelated host configuration.",
+    "stdout": "?? sample.txt",
+    "exit_code": 0,
+    "sample_content_sha256": "46bc6ca97400a5c1d1a6c770f657af0bf0dc9d2280ddd5768a497fa317290a5f",
+    "sample_content_unchanged": true,
+    "artifacts": {
+      "prompt.txt": "c1a19157472528932a4642768487a2eb2b46fe225cc536c3cdc8236c0082b9f6",
+      "how-to.md": "df2c8d6f55f8843ffbaf4f1305e8cd40ed6be905a38bdfe08bcb30ccec8dbd6e",
+      "reference.md": "86acd21ecf5726eb3538d2b61f139e67e0ec267a2ce157b23c2d92355d1a07a5"
+    },
+    "remaining": "Independent root inspection, native activation and Copilot trials are not included.",
+    "markdownlint": "pass; pinned markdownlint-cli 0.45.0, repository config, fixture-relative paths"
+  },
+  "remaining": [
+    "Independent root inspection of authored fixture",
+    "Fresh native activation/collision/output matrix unverified",
+    "Copilot behavior, review, app and IDE trials deferred until verified capacity",
+    "Current head/base CI and complete review disposition before delivery",
+    "Canonical cleanup/build/unit tests, Docusaurus/app builds and mutation were not run for this scoped guidance preparation"
+  ],
+  "validator_dependencies": "PyYAML 6.0.2 and jsonschema 4.23.0 installed in an isolated temporary directory; no repository dependency change",
+  "unchanged_controls": [
+    {
+      "path": "docs/Docusaurus/docs/contributing/documentation-guide.md",
+      "sha256": "cc90d30b7c1e5d4007807badfeb3c75ef7479582af8426028705cc15faf3538a"
+    },
+    {
+      "path": ".github/instructions/adr.instructions.md",
+      "sha256": "f1915cf4275332e6d577955325e846dae4399e7d51f6c65f34176623e48c1a0a"
+    },
+    {
+      "path": ".github/instructions/markdown.instructions.md",
+      "sha256": "2eba2b9c968875c7a937bcb0c76d2cdba73a93e524b539130e107920d828ae26"
+    },
+    {
+      "path": ".github/instructions/rfc2119.instructions.md",
+      "sha256": "1e8aa031df94b4ca8e54943eec2e61a0123509a1f8b425f7398c97ed9eabd7d1"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "668aec376f19f9d04bd4a2a3aeb97bf6ab4eb1d59e9e614d8f0eea81557894af"
+    }
+  ]
+}
