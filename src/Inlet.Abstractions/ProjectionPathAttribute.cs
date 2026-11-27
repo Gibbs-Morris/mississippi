@@ -11,7 +11,7 @@ namespace Mississippi.Inlet.Abstractions;
 ///         This attribute provides a unified path-based addressing scheme for projections.
 ///         The same attribute can be applied to:
 ///         <list type="bullet">
-///             <item>Server-side projection classes (Orleans grains)</item>
+///             <item>Server-side projection state classes</item>
 ///             <item>Client-side DTO classes (Blazor WASM)</item>
 ///             <item>Shared contract classes</item>
 ///         </list>
@@ -35,15 +35,8 @@ namespace Mississippi.Inlet.Abstractions;
 ///         </list>
 ///     </para>
 ///     <para>
-///         Example usage:
-///         <code>
-///             // Server-side projection (in Domain project):
-///             [ProjectionPath("chat/channels")]
-///             public sealed record ChannelMessagesProjection { ... }
-///             // Client-side DTO (in Contracts project, WASM-safe):
-///             [ProjectionPath("chat/channels")]
-///             public sealed record ChannelMessagesDto { ... }
-///         </code>
+///         Apply the same projection path to the server-side projection type and its client DTO
+///         so API routes and subscriptions use a consistent address.
 ///     </para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]

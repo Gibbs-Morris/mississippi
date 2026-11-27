@@ -21,13 +21,6 @@ namespace MississippiSamples.Spring.Client.Features.BankAccountAggregate.Selecto
 ///         feature state. This centralizes cross-cutting logic and keeps components clean.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///     // In a component (using two-state Select overload):
-///     private bool IsOperationInProgress => Select(
-///         BankAccountCompositeSelectors.IsOperationInProgress(SelectedEntityId));
-///     </code>
-/// </example>
 internal static class BankAccountCompositeSelectors
 {
     /// <summary>
